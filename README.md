@@ -1,0 +1,2 @@
+# subiquity
+Ubuntu Server Installer
