@@ -13,15 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Base Frame Widget """
+""" UI utilities """
 
-from urwid import Frame, WidgetWrap
-from subiquity.ui.anchors import Header, Footer, Body
+from urwid import Padding as _Padding
+from functools import partialmethod
 
 
-class BaseFrame(WidgetWrap):
-    def __init__(self):
-        _frame = Frame(Body(),
-                       Header(),
-                       Footer())
-        super().__init__(_frame)
+class Padding:
+    center = partialmethod(_Padding, align='center',
+                           width=('relative', 50))

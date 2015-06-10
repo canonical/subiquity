@@ -13,15 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Base Frame Widget """
+""" Subiquity """
 
-from urwid import Frame, WidgetWrap
-from subiquity.ui.anchors import Header, Footer, Body
-
-
-class BaseFrame(WidgetWrap):
-    def __init__(self):
-        _frame = Frame(Body(),
-                       Header(),
-                       Footer())
-        super().__init__(_frame)
+__version__ = "0.0.1"

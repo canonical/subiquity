@@ -13,15 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Base Frame Widget """
+from urwid import Button
+from functools import partial
 
-from urwid import Frame, WidgetWrap
-from subiquity.ui.anchors import Header, Footer, Body
-
-
-class BaseFrame(WidgetWrap):
-    def __init__(self):
-        _frame = Frame(Body(),
-                       Header(),
-                       Footer())
-        super().__init__(_frame)
+confirm_btn = partial(Button, label="Confirm", on_press=None)
+cancel_btn = partial(Button, label="Cancel", on_press=None)

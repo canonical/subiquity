@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright 2015 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,15 +14,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Base Frame Widget """
+import urwid
+from subiquity.palette import STYLES
+from subiquity.views import StartView
 
-from urwid import Frame, WidgetWrap
-from subiquity.ui.anchors import Header, Footer, Body
 
+def main():
+    screen = urwid.raw_display.Screen()
+    screen.set_terminal_properties(256)
+    screen.register_palette(STYLES)
 
-class BaseFrame(WidgetWrap):
-    def __init__(self):
-        _frame = Frame(Body(),
-                       Header(),
-                       Footer())
-        super().__init__(_frame)
+    def unhandled_input(key):
+        if key in ('Q', 'q', 'esc'):
+            raise urwid.ExitMainLoop()
+    urwid.MainLoop(StartView(), screen=screen,
+                   unhandled_input=unhandled_input).run()
+
+if __name__ == '__main__':
+    main()
