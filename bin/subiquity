@@ -14,14 +14,32 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
+import sys
 import urwid
+import urwid.curses_display
 from subiquity.palette import STYLES
 from subiquity.views import StartView
 
 
+def parse_options(argv):
+    parser = argparse.ArgumentParser(
+        description='SUbiquity - Ubiquity for Servers',
+        prog='subiquity')
+    parser.add_argument('--serial', action='store_true',
+                        dest='run_on_serial',
+                        help='Run the installer over serial console.')
+    return parser.parse_args(argv)
+
+
 def main():
-    screen = urwid.raw_display.Screen()
-    screen.set_terminal_properties(256)
+    opts = parse_options(sys.argv[1:])
+    if opts.run_on_serial:
+        screen = urwid.curses_display.Screen()
+    else:
+        screen = urwid.raw_display.Screen()
+        screen.set_mouse_tracking(False)
+        screen.set_terminal_properties(256)
     screen.register_palette(STYLES)
 
     def unhandled_input(key):
