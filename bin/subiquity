@@ -19,7 +19,7 @@ import sys
 import urwid
 import urwid.curses_display
 from subiquity.palette import STYLES
-from subiquity.views import StartView
+from subiquity.controllers.welcome import WelcomeController
 
 
 def parse_options(argv):
@@ -45,7 +45,7 @@ def main():
     def unhandled_input(key):
         if key in ('Q', 'q', 'esc'):
             raise urwid.ExitMainLoop()
-    urwid.MainLoop(StartView(), screen=screen,
+    urwid.MainLoop(WelcomeController().show(), screen=screen,
                    unhandled_input=unhandled_input).run()
 
 if __name__ == '__main__':

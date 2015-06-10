@@ -13,25 +13,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import (WidgetWrap, ListBox, AttrWrap, Columns, Text,
-                   # emitters
-                   signals, emit_signal)
+from urwid import (WidgetWrap, ListBox, AttrWrap, Columns, Text)
 from subiquity.ui.anchors import Header, Footer, Body  # NOQA
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding
 
 
-class StartView(WidgetWrap):
-    __metaclass__ = signals.MetaSignals
-    signals = ['done']
-
-    def __init__(self):
+class WelcomeView(WidgetWrap):
+    def __init__(self, cb=None):
         Header.title = "SUbiquity - Ubiquity for Servers"
+        self.cb = cb
         self.layout = [
             Header(),
             Text(""),
             Text("Begin the installation", align='center'),
-            Padding.center(self._build_buttons()),
+            Padding.center_50(self._build_buttons()),
             Footer()
         ]
         super().__init__(ListBox(self.layout))
@@ -46,7 +42,11 @@ class StartView(WidgetWrap):
         return Columns(self.buttons)
 
     def confirm(self, button):
-        emit_signal(self, 'done', True)
+        if self.cb is not None:
+            return self.cb(True, 'Moving to next controller.')
 
     def cancel(self, button):
-        emit_signal(self, 'done', False)
+        if self.cb is None:
+            raise SystemExit('Cancelled.')
+        else:
+            return self.cb(False, 'Cancelled with callback.')

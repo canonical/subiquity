@@ -18,7 +18,7 @@
 
 def apply_default_colors(cls):
     color_map = {'orange': '#d51',
-                 'light_orange': '#d81',
+                 'light_orange': '#d31',
                  'white': 'white',
                  'black': 'black',
                  'light_aubergine': '#77216F',

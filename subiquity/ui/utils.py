@@ -19,6 +19,40 @@ from urwid import Padding as _Padding
 from functools import partialmethod
 
 
+def apply_padders(cls):
+    """ Decorator for generating useful padding methods
+
+    Loops through and generates methods like:
+
+      Padding.push_1(Widget)
+
+      Sets the left padding attribute by 1
+
+      Padding.pull_24(Widget)
+
+      Sets right padding attribute by 24.
+
+      Padding.center_50(Widget)
+
+      Provides center padding with a relative width of 50
+    """
+    padding_count = 100
+
+    for i in range(1, padding_count):
+        setattr(cls, 'push_{}'.format(i), partialmethod(_Padding, left=i))
+        setattr(cls, 'pull_{}'.format(i), partialmethod(_Padding, right=i))
+        setattr(cls, 'center_{}'.format(i),
+                partialmethod(_Padding, align='center',
+                              width=('relative', i)))
+        setattr(cls, 'left_{}'.format(i),
+                partialmethod(_Padding, align='left',
+                              width=('relative', i)))
+        setattr(cls, 'right_{}'.format(i),
+                partialmethod(_Padding, align='right',
+                              width=('relative', i)))
+    return cls
+
+
+@apply_padders
 class Padding:
-    center = partialmethod(_Padding, align='center',
-                           width=('relative', 50))
+    pass
