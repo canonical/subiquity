@@ -21,12 +21,11 @@ def apply_default_colors(cls):
                  'light_orange': '#d31',
                  'white': 'white',
                  'black': 'black',
-                 'light_aubergine': '#77216F',
-                 'mid_aubergine': '#5E2750',
-                 'dark_aubergine': '#2C001E',
-                 'warm_grey': '#AEA79F',
+                 'light_aubergine': '#719',
+                 'mid_aubergine': '#525',
+                 'dark_aubergine': '#201',
+                 'warm_grey': '#aaa',
                  'cool_grey': '#333',
-                 'small_dot_grey': '#AEA79F',
                  'text_grey': '#333'}
     for k, v in color_map.items():
         setattr(cls, k, v)
