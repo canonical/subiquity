@@ -1,0 +1,97 @@
+#!/bin/bash
+# Copyright 2015 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+# https://github.com/smoser/talk-simplestreams/blob/master/bin/u-stool
+
+declare -A sdata
+CIU_COM="http://cloud-images.ubuntu.com"
+CIU_COM_R="$CIU_COM/releases"
+MU_COM="http://maas.ubuntu.com/images/ephemeral-v2/"
+CST="https://swift.canonistack.canonical.com/v1/AUTH_a48765cc0e864be980ee21ae26aaaed4"
+sdata=(
+  [uc-release]="$CIU_COM_R/streams/v1/index.sjson"
+  [uc-aws]="$CIU_COM_R/streams/v1/com.ubuntu.cloud:released:aws.sjson"
+  [uc-azure]="$CIU_COM_R/streams/v1/com.ubuntu.cloud:released:azure.sjson"
+  [uc-dl]="$CIU_COM_R/streams/v1/com.ubuntu.cloud:released:download.sjson"
+  [uc-daily]="$CIU_COM/daily/streams/v1/index.sjson"
+  [maas-release]="$MU_COM/releases/streams/v1/index.sjson"
+  [maas-daily]="$MU_COM/daily/streams/v1/index.sjson"
+  [cirros]="http://download.cirros-cloud.net/streams/v1/index.json"
+  [cstack]="$CST/simplestreams/data/streams/v1/index.json"
+  [luc-release]="./luc-release/streams/v1/index.json"
+  [luc-aws]="./luc-release/streams/v1/com.ubuntu.cloud:released:aws.json"
+)
+
+SPROG="sstream-query"
+case "$0" in
+   *smirror) SPROG="sstream-mirror";;
+   *squery) SPROG="sstream-query";;
+   *)
+      echo "Expect to be called usmirror or usquery, not ${0##*/}";
+      exit 1;;
+esac
+
+error() { echo "$@" 1>&2; }
+fail() { [ $# -eq 0 ] || error "$@"; exit 1; }
+Usage() {
+   cat <<EOF
+Usage: ${0##*/} name options opt
+   a friendly wrapper to $SPROG.
+
+Name must be one of:
+EOF
+   for i in "${!sdata[@]}"; do
+      printf "%-12s %s\n"  "$i" "${sdata[$i]}"
+   done | sort
+}
+
+name=""
+url=""
+dry=false
+for i in "$@"; do
+   case "$i" in
+      --help) { Usage; exit 0; };;
+      --dry-run) dry=true;;
+      ---dry-run) opts[${#opts[@]}]="--dry-run";;
+      -*) opts[${#opts[@]}]="$i";;
+      *)
+         # the first argument is 'name'
+         if [ -z "$name" ]; then
+             name="$i"
+             [ -n "${sdata[$name]}" ] ||
+                fail "unknown name $name. see '--help' for list"
+             url=${sdata[$name]}
+             i="$url"
+         fi
+         args[${#args[@]}]="$i"
+         ;;
+   esac
+done
+
+[ -n "$name" ] || { Usage 1>&2; exit 1; }
+
+keyopt=""
+case "$url" in
+   *.json) :;;
+   *) keyopt="--keyring=/usr/share/keyrings/ubuntu-cloudimage-keyring.gpg";;
+esac
+
+cmd=( "$SPROG" ${keyopt:+"${keyopt}"} "${opts[@]}" "${args[@]}" )
+
+$dry && echo "${cmd[@]}" && exit
+
+"${cmd[@]}"

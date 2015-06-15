@@ -1,0 +1,483 @@
+#!/bin/bash
+# Copyright 2015 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+PROG=`basename $0`
+TOPDIR=`pwd`
+USQUERY=${TOPDIR}/usquery
+LOGFILE="geninstaller.log"
+PREFIX="${PROG}"
+RESOURCES=`pwd`/resources
+PKG_DEPS="
+qemu-utils
+kpartx
+parted
+extlinux
+syslinux-common
+grub2-common"
+SRC_DEPS=(
+  "bzr" "lp:curtin"
+)
+CACHEDIR=""
+
+cleanup_noexit() {
+    [ -n "${CACHEDIR}" ] && {
+        sudo umount ${CACHEDIR}/mnt/{dev,proc,sys} || exit
+        sudo umount ${CACHEDIR}/mnt  || exit
+        sudo kpartx -v -d ${CACHEDIR}/installer.img || exit
+        [ -e "/dev/mapper/`basename $DEV`" ] && {
+            sudo dmsetup remove $DEV || exit
+        }
+        if sudo losetup -a | grep -q $LOOPDEV; then
+            sudo losetup -d $LOOPDEV || exit
+        fi
+    }
+}
+
+cleanup() {
+    cleanup_noexit
+    exit
+}
+
+trap cleanup EXIT HUP INT TERM
+
+log() {
+    echo "`date +%s`: $@" | tee -a ${LOGFILE}
+}
+
+write_metadata() {
+    cat <<EOF
+instance-id: 'inst-${RANDOM}'
+local-hostname: ubuntu-server-installer
+EOF
+}
+
+userdata_write_file() {
+    local path=${1}; shift;
+    local owner=${1}; shift;
+    local permissions=${1}; shift;
+    echo "-   content: |"
+    for x in "$@"; do
+        sed 's,^,        ,' "$x" || return
+    done
+    echo "    path: $path"
+    echo "    owner: $owner"
+    echo "    permissions: '$permissions'"
+}
+
+usage() {
+    cat << EOF
+
+usage: $PROG [PARAMS] [ARGS]
+ -a, --arch=ARCH                For ARCH in [i386, amd64, ppc64el, armf, arm64]
+ -b, --bootloader=TYPE          For TYPE in [syslinux, grub2, uboot]
+ -h, --help                     This output.
+ -r, --release=RELEASE          For RELEASE in  [trusty, utopic, vivid, wily]
+ -v, --verbose
+
+
+Example usage:
+  # generate an grub2-based install image for wily on amd64
+  $PROG --arch=amd64 --release=wily --bootloader=grub2
+
+EOF
+}
+
+install_deps() {
+    local packages="$1"
+    local to_install=""
+
+    log "Checking for build package dependencies"
+    for p in $packages; do
+        if ! dpkg-query -s "$p" &>/dev/null; then
+            to_install="$to_install $p";
+        fi
+    done
+
+    [ -n "$to_install" ] && {
+        log "Installing dependencies: $to_install";
+        sudo apt-get install -q -y $to_install || {
+            log "Failed to install one or more dependencies in $to_install";
+            return 1;
+        }
+   }
+   return 0
+}
+
+install_src() {
+    local dldir=${1}; shift;
+
+    log "Acquiring src packages..."
+    while [ $# -gt 0 ]; do
+        local proto=${1}; shift
+        local url=${1}; shift
+
+        [ -z "${proto}" -o -z "${url}" ] && {
+            log "ERROR installing source with args: $@"
+            return 1;
+        }
+
+        local target=""
+        case $url in
+            lp:*)
+                target="$dldir/${url#lp:*}";;
+            *)
+                target="$dldir/`basename $url`";;
+        esac
+        case "$proto" in
+            git)
+                cmd="git clone $url $target";;
+            bzr)
+                cmd="bzr branch $url $target";;
+            *)
+                log "ERROR: unsupported src protocol: $proto $url";;
+        esac
+
+        if [ ! -d "${target}" ]; then
+            log "Acquiring src @ $url with $proto"
+            $cmd || {
+                log "ERROR: failed to fetch src: $proto $url into $target";
+                return 1;
+            }
+        else
+            log "  Using cached src for repo $url @ $target"
+        fi
+    done
+}
+
+acquire_image() {
+    _RETVAL=""
+    [ $# -lt 1 ] && {
+        log "ERROR: not enough arguments passed to $FUNCNAME";
+        return 1;
+    }
+
+    # what to get from maas
+    local item_name="root-image.gz"
+    local dldir=${1}; shift;
+
+    local label=${1:-"daily"}
+    local release=${2-"wily"};
+    local arch=${3-"amd64"};
+    local version=${4};
+
+    # run a query unless they specify all params
+    if [ $# -lt 5 ]; then
+        log "Querying simplestreams for latest image: $label $release $arch"
+        case "$label" in
+            daily)
+             ssresult=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-daily release=$release arch=$arch item_name=$item_name` )
+             local version=${ssresult[0]}
+             local item_url=${ssresult[1]}
+             local sha256=${ssresult[2]}
+             ;;
+           release)
+             ssresult=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-release release=$release arch=$arch item_name=$item_name` )
+             local version=${ssresult[0]}
+             local item_url=${ssresult[1]}
+             local sha256=${ssresult[2]}
+             ;;
+           *)
+             log "ERROR: simplestream label must be one of: [daily, release]"
+             return 1;
+             ;;
+        esac
+    fi
+    local cachedir=$dldir/maas/${label}/${release}/${arch}/${version}
+    local ephimg=${cachedir}/${item_name}
+    local roottar=${cachedir}/root.tar.gz
+    local rootfs=${cachedir}/rootfs
+
+    # cache policy:
+    #   $ephimg must be a file and it must checksum to $sha256 value otherwise
+    #   we will nuke the cachedir and reacquire $item_name @ $item_url
+    #   and re-assemble roottar and rootfs which was based on ephimg
+
+    [ -r "$ephimg" ] && CACHE_SUM=( `sha256sum $ephimg 2>/dev/null` )
+    if [ "${sha256}" != "${CACHE_SUM[0]}" ]; then
+        log "WARNING: sha256 csum mismatch"
+        log "WARNING: expected: [$sha256]"
+        log "            found: [${CACHE_SUM[0]}]"
+        # didn't match so nuke the cache
+        rm -fr "${cachedir}" || {
+            log "ERROR: failed to remove stale cachedir: $cachedir";
+            return 1;
+        }
+    fi
+
+    # download the image if it's not in the cache
+    log "Downloading installer root image @ $item_url"
+    if [ ! -r "${ephimg}" ]; then
+        mkdir -p $cachedir &&
+        wget --progress=bar -c "${item_url}" -O "${ephimg}" || {
+            log "ERROR: failed to download: ${item_url}";
+            return 1;
+        }
+    else
+        log "  Using cached $label $release $arch $item_name:"
+        log "  $ephimg"
+    fi
+
+    # convert to root.tar.gz
+    log "Converting mass ephemeral image to roottar"
+    if [ ! -r ${roottar} ]; then
+        $dldir/curtin/tools/maas2roottar $ephimg $roottar
+        [ "$?" != "0" ] && {
+            log "ERROR: Failed to convert ephemeral to roottar";
+            return 1;
+        }
+    else
+        log "  Using cached $label $release $arch root.tar.gz"
+        log "  $roottar"
+    fi
+
+    # unpack rootfs tar
+    log "Unpacking roottar: $label $release $arch";
+    if [ ! -e ${rootfs}/vmlinuz ]; then
+        mkdir -p ${rootfs} &&
+        sudo tar -C $rootfs -xz --numeric-owner --xattrs -f $roottar
+    else
+        log "  Using cached $label $release $arch rootfs:"
+        log "  $rootfs"
+    fi
+
+    _RETVAL=${cachedir}
+}
+
+generate_seed() {
+    _RETVAL=""
+    [ $# -lt 2 ] && {
+        log "ERROR: not enough arguments passed to $FUNCNAME";
+        return 1;
+    }
+
+    local dldir=${1};
+    local cachedir=${2};
+    local seed=$cachedir/seed/nocloud-net
+    local installer_user_data=${TOPDIR}/resources/user-data/installer-user-data
+
+    # create curtin payload
+    log "Generating curtin payload file"
+    local curtin_cmd=$dldir/curtin-cmd
+    (
+        instcmd="curtin install cp:///"
+        cd $dldir/curtin
+        PYTHONPATH=$PYTHONPATH:`pwd` ./bin/curtin pack -- $instcmd > $curtin_cmd
+    )
+
+    # inject user-data/meta-data into seed
+    log "Writing seed meta-data"
+    mkdir -p ${seed} && write_metadata > $seed/meta-data || {
+        log "Failed to write meta-data into $seed";
+        return 1;
+    }
+    log "Writing seed user-data"
+    # remove the old seed; copy in the base template and
+    # append the curtin-cmd file
+    rm -f ${seed}/user-data &&
+    cp $installer_user_data $seed/user-data &&
+    userdata_write_file "/usr/local/bin/curtin" \
+                         "root:root" "0755" \
+                         "$curtin_cmd" >> $seed/user-data || {
+        log "Failed to write user-data into $seed";
+        return 1;
+    }
+
+    return 0
+}
+
+generate_img() {
+    _RETVAL=""
+    [ $# -lt 2 ] && {
+        log "ERROR: not enough arguments passed to $FUNCNAME";
+        return 1;
+    }
+
+    local dldir=${1};
+    local cachedir=${2};
+    local extlinux_conf=${TOPDIR}/resources/menu/extlinux-menu.conf
+    local gptmbr=$(dpkg -L syslinux-common | grep \/gptmbr.bin | grep -v efi)
+    local installimg=${cachedir}/installer.img
+    local mnt=${cachedir}/mnt
+    local rootfs=${cachedir}/rootfs
+    local seed=$cachedir/seed/nocloud-net
+    local splash=${TOPDIR}/resources/images/splash.png
+    local syslinux_path=$(dpkg -L syslinux-common | grep \/vesamenu.c32 |
+                          grep -v efi | xargs -i dirname {})
+
+    # prep image
+    log "Generating Installer image file"
+    qemu-img create -f raw $installimg 2G || {
+        log "Failed to create empty file: $installimg"
+        return 1;
+    }
+
+    log "Partitioning Installer image"
+    parted -s $installimg mklabel gpt &&
+    parted -s $installimg mkpart primary 2048s 100% || {
+        log "Failed to partition image: $installimg"
+        return 1;
+    }
+
+    [ -z "$gptmbr" ] && {
+        log "ERROR: failed to find GPT MBR record on host";
+        return 1;
+    }
+    log "Embedding bootloader"
+    dd bs=440 conv=notrunc count=1 if=$gptmbr of=$installimg || {
+        log "Failed to embed bootloader into $installimg";
+        return 1;
+    }
+
+    log "Syncing rootfs into install image"
+    local kpartx_ret=$(sudo kpartx -va $installimg)
+    [ -z "$kpartx_ret" ] && {
+        log "Failed to map image partitions into LVM"
+        return 1;
+    }
+
+    local looppart=`echo ${kpartx_ret} | fmt -w 1 | grep ^loop`
+    DEV="/dev/mapper/${looppart}"
+
+    # frob the bits for gpt boot?
+    # http://www.funtoo.org/Extlinux
+    # /dev/loopX is what we want
+    LOOPDEV="`echo ${kpartx_ret} | fmt -w 1 | grep ^/dev`"
+    log "Marking partitions bootable on $installimg ($LOOPDEV)"
+    sudo sgdisk $LOOPDEV --attributes=1:set:2 &&
+    sudo sgdisk $LOOPDEV --attributes=1:show || {
+        log "ERROR: failed to set bootable partition in $installimg";
+        return 1
+    }
+
+    log "Creating and syncing filesystem for install image rootfs"
+    sudo mkfs.ext3 -L cloudimg-rootfs $DEV &&
+    mkdir -p ${mnt} &&
+    sudo mount $DEV ${mnt} &&
+    sudo rsync -a ${rootfs}/ ${mnt}/ || {
+        log "ERROR: failed to sync rootfs into install image";
+        return 1
+    }
+
+
+    log "Installing bootloader configuration"
+    set +x
+    sudo mount none -t proc ${mnt}/proc &&
+    sudo mount none -t sysfs ${mnt}/sys &&
+    sudo mount -o bind /dev ${mnt}/dev &&
+    sudo mkdir -p ${mnt}/boot/extlinux &&
+    sudo extlinux --install ${mnt}/boot/extlinux &&
+    sudo cp -av ${syslinux_path}/*menu* ${mnt}/boot/extlinux &&
+    sudo cp -av ${splash} ${mnt}/boot/extlinux &&
+    cat ${extlinux_conf} | sudo tee ${mnt}/boot/extlinux/extlinux.conf &&
+    sudo mkdir -p ${mnt}/var/lib/cloud/seed &&
+    sudo cp -a ${seed} ${mnt}/var/lib/cloud/seed && sync || {
+        log "Failed to install bootloader and configuration";
+        return 1;
+    }
+    set -x
+
+
+    _RETVAL="$installimg";
+    return 0;
+}
+
+parse_args() {
+    # -b,--bootloader [syslinux, grub2]
+    # -h,--help <help output>
+    # -r,--release [trusty, utopic, vivid, wily]
+    # -v,--verbose
+
+    # args:
+    [ $# -lt 1 ] && { usage; exit 0; }
+
+    OPTS_LONG="arch:bootloader:,download:help,release:,stream:verbose"
+    OPTS="a:b:d:h,r:s:v"
+    ARGS=`getopt --name "$PROG" --long $OPTS_LONG --options $OPTS -- "$@"`
+    if [ $? -ne 0 ]; then
+        echo "$PROG: usage error (use -h for help)" >&2
+        exit 2
+    fi
+    eval set -- $ARGS
+
+    ARCH="amd64"
+    BOOTLOADER="syslinux"
+    DLDIR=~/download
+    RELEASE="wily"
+    STREAM="daily"
+    VERBOSE="no"
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -a | --arch)        ARCH="$2"; shift;;
+            -b | --bootloader)  BOOTLOADER="$2"; shift;;
+            -d | --download)    DLDIR="$2"; shift;;
+            -h | --help)        usage; exit 0;;
+            -r | --release)     RELEASE="$2"; shift;;
+            -s | --stream)      STREAM="$2"; shift;;
+            -v | --verbose)     VERBOSE="yes";;
+            --)                 shift; break;; # end of options
+        esac
+        shift
+    done
+    ARGS="$@"
+
+    [ "${VERBOSE}" == "yes" ] && set -x
+
+    return 0
+}
+
+main() {
+    log "INFO: Starting $PROG with params: $@"
+
+    parse_args "$@"
+
+    # get prereqs installed first
+    install_deps "$PKG_DEPS" || { return 1; }
+
+    [ -z "$OUTPUT" ] && {
+        OUTPUT="ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img"
+    }
+
+    install_src ${DLDIR} ${SRC_DEPS[@]} || {
+        return 1;
+    }
+
+    acquire_image ${DLDIR} "$STREAM" "$RELEASE" "$ARCH" || {
+        return 1;
+    }
+    CACHEDIR=${_RETVAL}
+    log "CACHEDIR=$CACHEDIR"
+
+    generate_seed ${DLDIR} $CACHEDIR || {
+        return 1;
+    }
+
+    generate_img ${DLDIR} $CACHEDIR || {
+        return 1;
+    }
+    INSTALLIMG=${_RETVAL}
+    cleanup_noexit &&
+    mv $INSTALLIMG ${OUTPUT} &&
+    ln -fs ${OUTPUT} installer.img || {
+        log "ERROR: failed to move $INSTALLIMG to $OUTPUT";
+        return 1;
+    }
+    log "Installer image complete: $OUTPUT"
+
+    return 0
+}
+
+main $@
+exit $?

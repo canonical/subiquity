@@ -1,0 +1,32 @@
+#!/bin/bash
+# Copyright 2015 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+ARCH=${ARCH-"x86_64"}
+MEM=${MEM-"1024"}
+INSTALLER=${INSTALLER-"installer.img"}
+TARGET=${TARGET-"target.img"}
+SPORT=2445
+
+[ ! -f ${TARGET} ] && {
+    qemu-img create -f raw ${TARGET} 10G || exit 1
+}
+# TODO, curses should work, but my xmonad setup blocks using it
+sudo qemu-system-$ARCH -m $MEM -enable-kvm -hda $INSTALLER -hdb $TARGET \
+                       -monitor telnet:127.0.0.1:2446,server,nowait -serial stdio
+#sudo qemu-system-$ARCH -m $MEM -enable-kvm -hda $INSTALLER -hdb $TARGET \
+#                       -monitor telnet:127.0.0.1:2446,server,nowait -curses
+
+exit $?
