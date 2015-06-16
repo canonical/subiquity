@@ -308,7 +308,7 @@ generate_seed() {
     # append the curtin-cmd file
     rm -f ${seed}/user-data &&
     cp $installer_user_data $seed/user-data &&
-    userdata_write_file "/usr/local/bin/curtin" \
+    userdata_write_file "/usr/local/bin/curtin-archive" \
                          "root:root" "0755" "none" \
                          "$curtin_cmd" >> $seed/user-data || {
         log "Failed to embed curtin into $seed";

@@ -10,11 +10,11 @@ runcmd:
     - cp /usr/share/doc/python-urwid/examples/input_test.py /tmp/installer.py
     - tar -C /usr/local -xf /tmp/subiquity.tar
     - chmod +x /tmp/installer.py /usr/local/bin/subiquity
+    - (cd /usr/local && bin/curtin-archive extract --no-execute)
     - systemctl enable subiquity.service
     - systemctl stop getty@tty1.service
-#    - systemctl stop serial-getty@ttyS0.service
+#   - systemctl stop serial-getty@ttyS0.service
     - /tmp/installer.sh
-    - telinit 0
 write_files:
 -   content: |
         #!/bin/bash
@@ -47,4 +47,4 @@ write_files:
         WantedBy=default.target
     path: /lib/systemd/system/subiquity.service
     owner: root:root
-    permissions: '0755'
+    permissions: '0644'
