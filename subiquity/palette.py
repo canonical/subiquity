@@ -38,9 +38,10 @@ class Palette:
 
 STYLES = [('frame_header', Palette.white, Palette.black,
            'default', Palette.white, Palette.orange),
-          ('frame_footer', Palette.white, Palette.black),
+          ('frame_footer', Palette.white, Palette.black,
+           'default', Palette.white, Palette.orange),
           ('body', Palette.white, 'default', 'default',
-           Palette.white, Palette.orange),
+           Palette.white, Palette.black),
           ('button_primary', Palette.white, 'default',
            'default', Palette.white, Palette.cool_grey),
           ('button_primary focus', Palette.white,
@@ -50,3 +51,15 @@ STYLES = [('frame_header', Palette.white, Palette.black,
            'default', Palette.white, Palette.cool_grey),
           ('button_secondary focus', Palette.white,
            'default', 'default', Palette.white, Palette.light_orange)]
+
+STYLES_MONO = [('frame_header', Palette.white, Palette.black,
+                'default', Palette.white, Palette.black),
+               ('frame_footer', Palette.white, Palette.black,
+                'default', Palette.white, Palette.black),
+               ('body', 'default', 'default'),
+               ('button_primary', 'default', 'default'),
+               ('button_primary focus', 'default',
+                'default', 'underline,bold'),
+               ('button_secondary', 'default', 'default'),
+               ('button_secondary focus', 'default',
+                'default', 'underline')]

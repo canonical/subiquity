@@ -18,7 +18,7 @@ import argparse
 import sys
 import urwid
 import urwid.curses_display
-from subiquity.palette import STYLES
+from subiquity.palette import STYLES, STYLES_MONO
 from subiquity.controllers.welcome import WelcomeController
 
 
@@ -36,11 +36,12 @@ def main():
     opts = parse_options(sys.argv[1:])
     if opts.run_on_serial:
         screen = urwid.curses_display.Screen()
+        screen.register_palette(STYLES_MONO)
     else:
         screen = urwid.raw_display.Screen()
         screen.set_mouse_tracking(False)
         screen.set_terminal_properties(256)
-    screen.register_palette(STYLES)
+        screen.register_palette(STYLES)
 
     def unhandled_input(key):
         if key in ('Q', 'q', 'esc'):
