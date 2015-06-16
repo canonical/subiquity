@@ -8,11 +8,11 @@ INSTALLIMG=ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img
 .PHONY: installer run clean
 
 ui-view:
-	PYTHONPATH=$(shell pwd):$(PYTHONPATH) bin/subiquity
+	(PYTHONPATH=$(shell pwd) bin/subiquity)
 
 installer:
 	[ -e "installer/$(INSTALLIMG)" ] || \
-	(cd installer && ./geninstaller -r $(RELEASE) -a $(ARCH) -s $(STREAM))
+	(cd installer && ./geninstaller -v -r $(RELEASE) -a $(ARCH) -s $(STREAM))
 
 run: installer
 	(cd installer && INSTALLER=$(INSTALLIMG) ./runinstaller)

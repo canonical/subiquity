@@ -6,17 +6,24 @@ output: {all: '| tee -a /var/log/cloud-init-output.log'}
 packages:
  - python-urwid
  - python3-urwid
+power_state:
+ mode: poweroff
+ message: Bye Bye
+ timeout: 30
 runcmd:
     - cp /usr/share/doc/python-urwid/examples/input_test.py /tmp/installer.py
-    - chmod +x /tmp/installer.py
+    - tar -C /usr/local -xf /tmp/subiquity.tar
+    - chmod +x /tmp/installer.py /usr/local/bin/subiquity
     - systemctl enable subiquity.service
-    - systemctl stop serial-getty@ttyS0.service
+    - systemctl stop getty@tty1.service
+#    - systemctl stop serial-getty@ttyS0.service
     - /tmp/installer.sh
+    - telinit 0
 write_files:
 -   content: |
         #!/bin/bash
 
-        #chvt 2
+        chvt 2
         systemctl start subiquity
         # restart getty service after exiting "installer"
         # systemctl stop serial-getty@ttyS0.service
@@ -26,11 +33,12 @@ write_files:
 -   content: |
         [Unit]
         Description=Ubuntu Servier Installer Service
-        After=getty@tty2.service
+        After=getty@tty1.service
 
         [Service]
         Type=oneshot
-        ExecStart=/tmp/installer.py
+        Environment="PYTHONPATH=/usr/local"
+        ExecStart=/usr/local/bin/subiquity
         StandardInput=tty-force
         StandardOutput=tty
         StandardError=tty
