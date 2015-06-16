@@ -13,33 +13,34 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import (WidgetWrap, ListBox, AttrWrap, Columns, Text)
+from urwid import (WidgetWrap, ListBox, Pile)
 from subiquity.ui.anchors import Header, Footer, Body  # NOQA
 from subiquity.ui.buttons import confirm_btn, cancel_btn
-from subiquity.ui.utils import Padding
+from subiquity.ui.utils import Padding, Color
 
 
 class WelcomeView(WidgetWrap):
     def __init__(self, cb=None):
-        Header.title = "SUbiquity - Ubiquity for Servers"
+        Header.title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
+        Header.excerpt = "Please choose your preferred language"
+        Footer.message = ("Use UP, DOWN arrow keys, and ENTER, to "
+                          "select your language.")
         self.cb = cb
         self.layout = [
             Header(),
-            Text(""),
-            Text("Begin the installation", align='center'),
-            Padding.center_50(self._build_buttons()),
+            Padding.center_20(self._build_buttons()),
             Footer()
         ]
         super().__init__(ListBox(self.layout))
 
     def _build_buttons(self):
         self.buttons = [
-            AttrWrap(confirm_btn(on_press=self.confirm),
-                     'button_primary', 'button_primary focus'),
-            AttrWrap(cancel_btn(on_press=self.cancel),
-                     'button_secondary', 'button_secondary focus'),
+            Color.button_primary(confirm_btn(on_press=self.confirm),
+                                 focus_map='button_primary focus'),
+            Color.button_secondary(cancel_btn(on_press=self.cancel),
+                                   focus_map='button_secondary focus'),
         ]
-        return Columns(self.buttons)
+        return Pile(self.buttons)
 
     def confirm(self, button):
         if self.cb is not None:
