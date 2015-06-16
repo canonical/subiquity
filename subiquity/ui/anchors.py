@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import WidgetWrap, AttrWrap, Pile, Text
+from urwid import WidgetWrap, Pile, Text
+from subiquity.ui.utils import Padding, Color
 
 
 class Header(WidgetWrap):
@@ -26,10 +27,17 @@ class Header(WidgetWrap):
     """
 
     title = "Ubuntu Server Installer"
+    excerpt = ""
 
     def __init__(self):
-        title_widget = AttrWrap(Text(self.title), "frame_header")
-        pile = Pile([title_widget])
+        border = Color.frame_header(Text(" "))
+        title_widget = Padding.left_10(Color.body(Text(self.title)))
+        excerpt_widget = Padding.left_10(Color.body(Text(self.excerpt)))
+        pile = Pile([border,
+                     title_widget,
+                     Text(""),
+                     excerpt_widget,
+                     Text("")])
         super().__init__(pile)
 
 
@@ -39,8 +47,13 @@ class Footer(WidgetWrap):
     Style key: `frame_footer`
 
     """
+
+    message = ""
+
     def __init__(self):
-        status = Pile([Text("")])
+        border = Color.frame_footer(Text(""))
+        message_widget = Padding.left_10(Color.body(Text(self.message)))
+        status = Pile([border, message_widget])
         super().__init__(status)
 
 
