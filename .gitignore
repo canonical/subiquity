@@ -55,3 +55,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# subiquity installer images
+installer/*.img

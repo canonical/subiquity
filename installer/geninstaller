@@ -68,10 +68,24 @@ userdata_write_file() {
     local path=${1}; shift;
     local owner=${1}; shift;
     local permissions=${1}; shift;
-    echo "-   content: |"
-    for x in "$@"; do
-        sed 's,^,        ,' "$x" || return
-    done
+    local encoding=${1}; shift;
+    case $encoding in 
+        none)
+            echo "-   content: |"
+            for x in "$@"; do
+                sed 's,^,        ,' "$x" || return
+            done
+            ;;
+        b64)
+            echo "-   encoding: $encoding"
+            echo "    content: |"
+            base64 "$@" | sed 's,^,        ,'
+            ;;
+        *)
+            log "ERROR: unsupported encoding $encoding"
+            return 1;
+            ;;
+    esac
     echo "    path: $path"
     echo "    owner: $owner"
     echo "    permissions: '$permissions'"
@@ -283,15 +297,29 @@ generate_seed() {
         log "Failed to write meta-data into $seed";
         return 1;
     }
-    log "Writing seed user-data"
+    log "Writing seed user-data (curtin)"
     # remove the old seed; copy in the base template and
     # append the curtin-cmd file
     rm -f ${seed}/user-data &&
     cp $installer_user_data $seed/user-data &&
     userdata_write_file "/usr/local/bin/curtin" \
-                         "root:root" "0755" \
+                         "root:root" "0755" "none" \
                          "$curtin_cmd" >> $seed/user-data || {
-        log "Failed to write user-data into $seed";
+        log "Failed to embed curtin into $seed";
+        return 1;
+    }
+
+    log "Writing seed user-data (subiquity)"
+    local subiquity_tar=$dldir/subiquity.tar
+    (cd ${TOPDIR}/.. &&
+     tar -cpf $subiquity_tar bin subiquity) || {
+        log "ERROR: Failed to package subiquity installer";
+        return 1;
+    }
+    userdata_write_file "/tmp/subiquity.tar" \
+                        "root:root" "0644" "b64" \
+                        "$subiquity_tar" >> $seed/user-data || {
+        log "Failed to subiquity into $seed";
         return 1;
     }
 
