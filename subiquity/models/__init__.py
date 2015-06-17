@@ -23,13 +23,17 @@ input from the user.
 class Model:
     """Base model"""
 
-    def to_json(self):
-        """Marshals the model to json"""
-        return NotImplementedError
+    fields = []
 
-    def create(self):
-        """Creates model instance with validation"""
-        return NotImplementedError
+    @classmethod
+    def to_json(cls):
+        """Marshals the model to json"""
+        raise NotImplementedError
+
+    @classmethod
+    def to_yaml(cls):
+        """Marshals the model to yaml"""
+        raise NotImplementedError
 
 
 class Field:
@@ -40,10 +44,24 @@ class Field:
     """
     default_error_messages = {
         'invalid_choice': ('Value %(value)r is not a valid choice.'),
-        'null': ('This field cannot be null.'),
         'blank': ('This field cannot be blank.')
     }
 
-    def __init__(self, name=None, blank=False, null=False):
+    def __init__(self, name=None, blank=False):
         self.name = name
-        self.blank, self.null = blank, null
+        self.blank = blank
+
+
+class ChoiceField(Field):
+    """ Choices Field
+
+    Provide a list of known options
+
+    :param list options: list of options to choose from
+    """
+
+    def __init__(self, options):
+        self.options = options
+
+    def list_options(cls):
+        return cls.options
