@@ -24,6 +24,7 @@ PKG_DEPS="
 qemu-utils
 kpartx
 parted
+gdisk
 extlinux
 simplestreams
 syslinux-common
