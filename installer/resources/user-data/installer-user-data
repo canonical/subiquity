@@ -7,26 +7,25 @@ packages:
  - python-urwid
  - python3-urwid
 runcmd:
-    - cp /usr/share/doc/python-urwid/examples/input_test.py /tmp/installer.py
     - tar -C /usr/local -xf /tmp/subiquity.tar
-    - chmod +x /tmp/installer.py /usr/local/bin/subiquity
     - (cd /usr/local && bin/curtin-archive extract --no-execute)
-    - systemctl enable subiquity.service
-    - systemctl stop getty@tty1.service
-#   - systemctl stop serial-getty@ttyS0.service
     - /tmp/installer.sh
 write_files:
 -   content: |
         #!/bin/bash
-
-        chvt 1
-        systemctl start subiquity
-        # restart getty service after exiting "installer"
-        # systemctl stop serial-getty@ttyS0.service
-    path: /tmp/installer.sh
-    owner: root:root
-    permissions: '0755'
--   content: |
+        LASTCON=$(cat /proc/cmdline | fmt -w 1 | grep ^console= | tail -n 1)
+        case $LASTCON in
+            console=ttyS[0-9])
+                SERIAL="--serial"
+                systemctl stop serial-getty@ttyS0.service
+                ;;
+            console=tty[0-9])
+                SERIAL=""
+                chvt 1
+                systemctl stop getty@tty1.service;
+                ;;
+        esac
+        cat <<EOF >/lib/systemd/system/subiquity.service
         [Unit]
         Description=Ubuntu Servier Installer Service
         After=getty@tty1.service
@@ -34,7 +33,7 @@ write_files:
         [Service]
         Type=oneshot
         Environment="PYTHONPATH=/usr/local"
-        ExecStart=/usr/local/bin/subiquity
+        ExecStart=/usr/local/bin/subiquity ${SERIAL}
         StandardInput=tty-force
         StandardOutput=tty
         StandardError=tty
@@ -45,6 +44,10 @@ write_files:
 
         [Install]
         WantedBy=default.target
-    path: /lib/systemd/system/subiquity.service
+        EOF
+
+        systemctl enable subiquity.service
+        systemctl start subiquity
+    path: /tmp/installer.sh
     owner: root:root
-    permissions: '0644'
+    permissions: '0755'
