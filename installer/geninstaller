@@ -25,6 +25,7 @@ qemu-utils
 kpartx
 parted
 extlinux
+simplestreams
 syslinux-common
 grub2-common"
 SRC_DEPS=(
