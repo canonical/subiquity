@@ -30,10 +30,9 @@ class Header(WidgetWrap):
     excerpt = ""
 
     def __init__(self):
-        border = Color.frame_header(Text(" "))
         title_widget = Padding.push_10(Color.body(Text(self.title)))
         excerpt_widget = Padding.push_10(Color.body(Text(self.excerpt)))
-        pile = Pile([border,
+        pile = Pile([Text(""),
                      title_widget,
                      Text(""),
                      excerpt_widget,
@@ -51,7 +50,7 @@ class Footer(WidgetWrap):
     message = ""
 
     def __init__(self):
-        border = Color.frame_footer(Text(""))
+        border = Text("")
         message_widget = Padding.push_10(Color.body(Text(self.message)))
         status = Pile([border, message_widget])
         super().__init__(status)
