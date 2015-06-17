@@ -16,6 +16,7 @@
 from subiquity.controllers import BaseController
 from subiquity.views.welcome import WelcomeView
 from subiquity.models.welcome import WelcomeModel
+import subprocess
 
 
 class WelcomeController(BaseController):
@@ -27,4 +28,5 @@ class WelcomeController(BaseController):
         return WelcomeView(model, self.finish)
 
     def finish(self, code, val):
+        subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
         raise SystemExit("Saw res: {}, val: {}".format(code, val))
