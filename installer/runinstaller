@@ -14,11 +14,28 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-ARCH=${ARCH-"x86_64"}
+ARCH=${ARCH-"`uname -m`"}
 MEM=${MEM-"1024"}
 INSTALLER=${INSTALLER-"installer.img"}
 TARGET=${TARGET-"target.img"}
 SPORT=2445
+
+QEMU=`which qemu-system-$ARCH`;
+if [ -z $QEMU ]; then
+   case $ARCH in
+      i386|x86_64) PKG=qemu-system-x86 ;;
+      arm*) PKG=qemu-system-arm ;;
+      ppc*) PKG=qemu-system-ppc ;;
+      *)
+         echo "Unsupported arch: $ARCH";
+         exit 1;
+         ;;
+    esac
+    sudo apt-get install $PKG || {
+       echo "Failed to install qemu-system package $PKG";
+       exit 1;
+    }
+fi
 
 [ ! -f ${TARGET} ] && {
     qemu-img create -f raw ${TARGET} 10G || exit 1
