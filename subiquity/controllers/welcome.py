@@ -15,6 +15,7 @@
 
 from subiquity.controllers import BaseController
 from subiquity.views.welcome import WelcomeView
+from subiquity.models.welcome import WelcomeModel
 
 
 class WelcomeController(BaseController):
@@ -22,7 +23,8 @@ class WelcomeController(BaseController):
     controller_name = "Welcome to Ubuntu"
 
     def show(self):
-        return WelcomeView(self.finish)
+        model = WelcomeModel()
+        return WelcomeView(model, self.finish)
 
     def finish(self, code, val):
         raise SystemExit("Saw res: {}, val: {}".format(code, val))

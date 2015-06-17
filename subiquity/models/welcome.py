@@ -15,7 +15,7 @@
 
 """ Welcome Model
 
-Welcome model provides user with installation options
+Welcome model provides user with language selection
 
 """
 
@@ -23,7 +23,8 @@ from subiquity import models
 
 
 class WelcomeModel(models.Model):
-    """ Model representing installation type
+    """ Model representing language selection
     """
 
-    install_type = None
+    supported_languages = ['English', 'Belgian', 'German', 'Italian']
+    selected_language = None
