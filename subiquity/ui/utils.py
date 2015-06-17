@@ -126,7 +126,7 @@ def apply_style_map(cls):
 
 @apply_style_map
 class Color:
-    """ Partial methods for :class:`subiquity.palette.STYLES`
+    """ Partial methods for :class:`~subiquity.palette.STYLES`
 
     .. py:meth:: frame_header(:class:`urwid.Widget`)
 
