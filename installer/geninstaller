@@ -133,6 +133,10 @@ install_deps() {
 
 install_src() {
     local dldir=${1}; shift;
+    mkdir -p ${dldir} || {
+        log "ERROR: failed to mkdir $dldir";
+        return 1;
+    }
 
     log "Acquiring src packages..."
     while [ $# -gt 0 ]; do
