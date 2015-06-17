@@ -413,7 +413,7 @@ generate_img() {
     sudo mount -o bind /dev ${mnt}/dev &&
     sudo mkdir -p ${mnt}/boot/extlinux &&
     sudo extlinux --install ${mnt}/boot/extlinux &&
-    sudo cp -av ${syslinux_path}/*menu* ${mnt}/boot/extlinux &&
+    sudo cp -av ${syslinux_path}/*.c32 ${mnt}/boot/extlinux &&
     sudo cp -av ${splash} ${mnt}/boot/extlinux &&
     cat ${extlinux_conf} | sudo tee ${mnt}/boot/extlinux/extlinux.conf &&
     sudo mkdir -p ${mnt}/var/lib/cloud/seed &&
