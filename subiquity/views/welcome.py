@@ -13,21 +13,25 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import (WidgetWrap, ListBox, Pile)
+from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
+from subiquity.ui.lists import SimpleList
 from subiquity.ui.anchors import Header, Footer, Body  # NOQA
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 
 
 class WelcomeView(WidgetWrap):
-    def __init__(self, cb=None):
+    def __init__(self, model, cb=None):
         Header.title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
         Header.excerpt = "Please choose your preferred language"
         Footer.message = ("Use UP, DOWN arrow keys, and ENTER, to "
                           "select your language.")
+        self.model = model
         self.cb = cb
+        self.items = []
         self.layout = [
             Header(),
+            Padding.center_79(self._build_model_inputs()),
             Padding.center_20(self._build_buttons()),
             Footer()
         ]
@@ -41,6 +45,11 @@ class WelcomeView(WidgetWrap):
                                    focus_map='button_secondary focus'),
         ]
         return Pile(self.buttons)
+
+    def _build_model_inputs(self):
+        sl = SimpleList(self.model.supported_languages)
+        return BoxAdapter(sl,
+                          height=len(self.model.supported_languages))
 
     def confirm(self, button):
         if self.cb is not None:
