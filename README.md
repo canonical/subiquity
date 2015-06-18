@@ -9,6 +9,6 @@ Ubuntu Server Installer
 
 # overrides
 ```
-make RELEASE=[wily, vivid, trusty] ARCH=[amd64, i386, armf, arm64, ppc64el]
-make RELEAse=wily run
+make RELEASE=[wily, vivid, trusty] ARCH=[amd64, i386, armf, arm64, ppc64el] installer
+make RELEASE=wily ARCH=arm64 run
 ```
