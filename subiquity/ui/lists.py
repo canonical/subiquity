@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import ListBox, SimpleListWalker, WidgetWrap, Button
+from urwid import ListBox, SimpleListWalker, WidgetWrap
 
 
 class SimpleList(WidgetWrap):
@@ -22,6 +22,6 @@ class SimpleList(WidgetWrap):
         super().__init__(self._build_widget())
 
     def _build_widget(self):
-        lw = SimpleListWalker([Button(x) for x in self.contents])
+        lw = SimpleListWalker([x for x in self.contents])
 
         return ListBox(lw)

@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from abc import ABCMeta, abstractmethod
+from importlib import import_module
+import pkgutil
 
 
 class BaseController(metaclass=ABCMeta):
@@ -41,3 +43,21 @@ class BaseController(metaclass=ABCMeta):
         to move to the next controller or end the install.
         """
         pass
+
+    def next_controller(self, name, *args):
+        """ Loads next controller and associated View
+
+        :param str name: Name of next controller
+        :param list args: List of arguments for next controller to use.
+        """
+        controller = import_module('subiquity.controllers.' + name)
+        controller.__controller_class__().show(*args)
+
+    def prev_controller(self, name, *args):
+        """ Loads previous controller and associated View
+
+        :param str name: Name of previous controller
+        :param list args: List of arguments for previous controller to use.
+        """
+        controller = import_module('subiquity.controllers.' + name)
+        controller.__controller_class__().show(*args)

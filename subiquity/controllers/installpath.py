@@ -15,16 +15,21 @@
 
 from subiquity.controllers import BaseController
 from subiquity.views.installpath import InstallpathView
-from subiquity.models.welcome import InstallpathModel
+from subiquity.models.installpath import InstallpathModel
 
 
 class InstallpathController(BaseController):
     """InstallpathController"""
-    controller_name = "Ubuntu Install selection"
+    controller_name = "Installation path controller"
 
     def show(self):
         model = InstallpathModel()
-        return InstallpathView(model, self.finish)
+        InstallpathView(model, self.finish)
 
-    def finish(self, install_selection):
-        raise SystemExit("Install selection: {}".format(install_selection))
+    def finish(self, install_selection=None):
+        if install_selection is None:
+            self.prev_controller("WelcomeController")
+        else:
+            raise SystemExit("Install selection: {}".format(install_selection))
+
+__controller_class__ = InstallpathController

@@ -21,12 +21,18 @@ import subprocess
 
 class WelcomeController(BaseController):
     """WelcomeController"""
-    controller_name = "Welcome to Ubuntu"
+    controller_name = "Language Selection Controller"
 
     def show(self):
         model = WelcomeModel()
         return WelcomeView(model, self.finish)
 
-    def finish(self, code, val):
-        subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
-        raise SystemExit("Saw res: {}, val: {}".format(code, val))
+    def finish(self, language=None):
+        # subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
+        if language is None:
+            raise SystemExit("No language selected, exiting as there are no "
+                             "more previous controllers to render.")
+        self.selected_language = language
+        self.next_controller("installpath")
+
+__controller_class__ = WelcomeController

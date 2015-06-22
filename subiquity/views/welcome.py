@@ -15,13 +15,13 @@
 
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
-from subiquity.ui.anchors import Header, Footer, Body  # NOQA
+from subiquity.ui.anchors import Header, Footer
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 
 
 class WelcomeView(WidgetWrap):
-    def __init__(self, model, cb=None):
+    def __init__(self, model, cb):
         Header.title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
         Header.excerpt = "Please choose your preferred language"
         Footer.message = ("Use UP, DOWN arrow keys, and ENTER, to "
@@ -39,24 +39,23 @@ class WelcomeView(WidgetWrap):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button_primary(confirm_btn(on_press=self.confirm),
-                                 focus_map='button_primary focus'),
             Color.button_secondary(cancel_btn(on_press=self.cancel),
                                    focus_map='button_secondary focus'),
         ]
         return Pile(self.buttons)
 
     def _build_model_inputs(self):
-        sl = SimpleList(self.model.supported_languages)
-        return BoxAdapter(sl,
-                          height=len(self.model.supported_languages))
+        sl = []
+        for lang in self.model.supported_languages:
+            sl.append(Color.button_primary(
+                confirm_btn(label=lang, on_press=self.confirm),
+                focus_map="button_primary focus"))
+
+        return BoxAdapter(SimpleList(sl),
+                          height=len(sl))
 
     def confirm(self, button):
-        if self.cb is not None:
-            return self.cb(True, 'Moving to next controller.')
+        return self.cb(button.label)
 
     def cancel(self, button):
-        if self.cb is None:
-            raise SystemExit('Cancelled.')
-        else:
-            return self.cb(False, 'Cancelled with callback.')
+        return self.cb(None)
