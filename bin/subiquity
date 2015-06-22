@@ -35,7 +35,8 @@ def parse_options(argv):
 def main():
     opts = parse_options(sys.argv[1:])
     if opts.run_on_serial:
-        screen = urwid.curses_display.Screen()
+        # screen = urwid.curses_display.Screen()
+        screen = urwid.raw_display.Screen()
         screen.register_palette(STYLES_MONO)
     else:
         screen = urwid.raw_display.Screen()

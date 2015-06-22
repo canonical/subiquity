@@ -22,9 +22,9 @@ class InstallpathController(BaseController):
     """InstallpathController"""
     controller_name = "Installation path controller"
 
-    def show(self):
+    def show(self, *args, **kwds):
         model = InstallpathModel()
-        InstallpathView(model, self.finish)
+        return InstallpathView(model, self.finish)
 
     def finish(self, install_selection=None):
         if install_selection is None:

@@ -13,31 +13,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from abc import ABCMeta, abstractmethod
+""" Network Model
+
+Provides network device listings and extended network information
+
+"""
+
+from subiquity import models
 
 
-class BaseController(metaclass=ABCMeta):
-    controller_name = None
+class NetworkModel(models.Model):
+    """ Model representing network interfaces
+    """
 
-    @classmethod
-    def name(cls):
-        if cls.controller_name:
-            return cls.controller_name
-        return cls.__name__.lower()
+    interfaces = ['em1',
+                  'em2',
+                  'bond0']
 
-    @abstractmethod
-    def show(self, *args, **kwds):
-        """ Implements show action for the controller
-
-        Renders the View for controller.
-        """
-        pass
-
-    @abstractmethod
-    def finish(self):
-        """ Implements finish action for controller.
-
-        This handles any callback data/procedures required
-        to move to the next controller or end the install.
-        """
-        pass
+    additional_options = ['Set default route',
+                          'Bond interfaces',
+                          'Install network driver']

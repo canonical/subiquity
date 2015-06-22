@@ -13,31 +13,28 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from abc import ABCMeta, abstractmethod
+""" Filesystem Model
+
+Provides storage device selection and additional storage
+configuration.
+
+"""
+
+from subiquity import models
 
 
-class BaseController(metaclass=ABCMeta):
-    controller_name = None
+class FilesystemModel(models.Model):
+    """ Model representing storage options
+    """
 
-    @classmethod
-    def name(cls):
-        if cls.controller_name:
-            return cls.controller_name
-        return cls.__name__.lower()
+    available_disks = ['/dev/sda',
+                       '/dev/sdb',
+                       '/dev/sdc',
+                       '/dev/sdd',
+                       '/dev/sde']
 
-    @abstractmethod
-    def show(self, *args, **kwds):
-        """ Implements show action for the controller
-
-        Renders the View for controller.
-        """
-        pass
-
-    @abstractmethod
-    def finish(self):
-        """ Implements finish action for controller.
-
-        This handles any callback data/procedures required
-        to move to the next controller or end the install.
-        """
-        pass
+    additional_options = ['Connecti iSCSI network disk',
+                          'Connect Ceph network disk',
+                          'Create volume group (LVM2)',
+                          'Create software RAID (MD)',
+                          'Setup hierarchichal storage (bcache)']

@@ -23,16 +23,16 @@ class WelcomeController(BaseController):
     """WelcomeController"""
     controller_name = "Language Selection Controller"
 
-    def show(self):
+    def show(self, *args, **kwds):
         model = WelcomeModel()
         return WelcomeView(model, self.finish)
 
     def finish(self, language=None):
-        # subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
         if language is None:
             raise SystemExit("No language selected, exiting as there are no "
                              "more previous controllers to render.")
         self.selected_language = language
-        self.next_controller("installpath")
+        subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
+        return
 
 __controller_class__ = WelcomeController
