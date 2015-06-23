@@ -16,7 +16,11 @@
 """ Application entry point """
 
 import urwid
+import logging
 from subiquity.routes import Routes
+from subiquity.ui.frame import SubiquityUI
+
+log = logging.getLogger('subiquity.app')
 
 
 class ApplicationError(Exception):
@@ -28,44 +32,33 @@ class Application:
     def __init__(self, screen, opts):
         self.screen = screen
         self.opts = opts
-        self.welcome_controller = Routes.first()
-
-        # Setup eventloop
-        self.loop = self._build_loop()
-        self.loop.set_alarm_in(2, self.update)
-
-    def _build_loop(self):
-        """ Builds urwid eventloop, passing in itself to the controllers
-        for further display manipulation
-        """
-        return urwid.MainLoop(self.welcome_controller(routes=Routes,
-                                                      application=self).show(),
-                              screen=self.screen,
-                              unhandled_input=self.unhandled_input)
+        self.routes = Routes
+        self.ui = SubiquityUI()
+        self.loop = None
 
     def unhandled_input(self, key):
         if key in ('Q', 'q', 'esc'):
             raise urwid.ExitMainLoop()
         if key in ('r', 'R'):
-            self.redraw_screen()
-
-    def redraw_screen(self):
-        try:
             self.loop.draw_screen()
-        except AssertionError as e:
-            # self.log.exception("exception failure in redraw_screen")
-            raise e
-
-    def set_alarm_in(self, interval, cb):
-        self.loop.set_alarm_in(interval, cb)
-
-    def update(self, *args, **kwds):
-        if self.loop is not None:
-            self.redraw_screen()
-            self.set_alarm_in(1, self.update)
 
     def start(self):
         try:
+            self.loop = urwid.MainLoop(self.ui,
+                                       screen=self.screen,
+                                       unhandled_input=self.unhandled_input)
+
             self.loop.run()
         except:
             raise ApplicationError("Exception in loop.run()")
+        return self.initialize()
+
+    def initialize(self):
+        # Build common dictionary for use throughout application
+        common = dict(opts=self.opts,
+                      routes=self.routes,
+                      ui=self.ui,
+                      loop=self.loop)
+        # Setup first controller
+        controller = Routes.first()
+        return controller(common).show()

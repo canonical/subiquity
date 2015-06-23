@@ -16,7 +16,6 @@
 import logging
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
-from subiquity.ui.anchors import Header, Footer
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 
@@ -27,22 +26,13 @@ log = logging.getLogger('subiquity.installpathView')
 class InstallpathView(WidgetWrap):
     def __init__(self, model, cb):
         log.debug("In install path view")
-        Header.title = "15.10"
-        Header.excerpt = ("Welcome to Ubuntu! The world’s favourite platform "
-                          "for clouds, clusters and amazing internet things. "
-                          "This is the installer for Ubuntu on servers and "
-                          "internet devices.")
-        Footer.message = ("Use UP, DOWN arrow keys, and ENTER, to "
-                          "navigate options..")
         self.model = model
         self.cb = cb
         self.items = []
         self.body = [
-            Header(),
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.center_20(self._build_buttons()),
-            Footer()
         ]
         super().__init__(ListBox(self.body))
 

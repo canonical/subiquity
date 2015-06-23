@@ -29,9 +29,9 @@ def setup_logger(name=__name__):
                                    backupCount=7)
     log.setLevel('DEBUG')
     log.setFormatter(logging.Formatter(
-        "[%(levelname)-4s: %(asctime)s, "
-        "%(filename)s:%(lineno)d] %(message)s",
-        datefmt='%m-%d %H:%M:%S'))
+        "%(asctime)s "
+        "%(name)s:%(lineno)d %(message)s",
+        datefmt='%m/%d %H:%M'))
     log_filter = logging.Filter(name='subiquity')
     log.addFilter(log_filter)
 

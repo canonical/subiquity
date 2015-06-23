@@ -28,12 +28,8 @@ class BaseControllerError(Exception):
 class BaseController(metaclass=ABCMeta):
     controller_name = None
 
-    def __init__(self, routes, application):
-        """ Basecontroller
-        :param :class:`subiquity.app.Application` application: App class
-        """
-        self.application = application
-        self.routes = routes
+    def __init__(self, common):
+        self.common = common
 
     @classmethod
     def name(cls):
@@ -58,16 +54,30 @@ class BaseController(metaclass=ABCMeta):
         """
         pass
 
+    def set_header(self, title, excerpt):
+        self.common['ui'].set_header(title, excerpt)
+        self.redraw_screen()
+
+    def set_footer(self, message):
+        self.common['ui'].set_footer(message)
+        self.redraw_screen()
+
+    def set_body(self, widget):
+        self.common['ui'].set_body(widget)
+        self.redraw_screen()
+
+    def redraw_screen(self):
+        try:
+            self.common['loop'].draw_screen()
+        except AssertionError as e:
+            raise BaseControllerError(e)
+
     def next_controller(self, *args, **kwds):
-        next_controller = self.routes.next()
-        log.debug("Loading next controller: {}".format(next_controller))
-        next_controller(routes=self.routes,
-                        application=self.application).show(*args, **kwds)
-        self.application.redraw_screen()
+        controller = self.common['routes'].next()
+        controller(self.common).show(*args, **kwds)
+        self.redraw_screen()
 
     def prev_controller(self, *args, **kwds):
-        prev_controller = self.routes.prev()
-        log.debug("Loading previous controller: {}".format(prev_controller))
-        prev_controller(routes=self.routes,
-                        application=self.application).show(*args, **kwds)
-        self.application.redraw_screen()
+        controller = self.common['routes'].prev()
+        controller(self.common).show(*args, **kwds)
+        self.redraw_screen()

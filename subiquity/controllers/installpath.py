@@ -24,11 +24,21 @@ log = logging.getLogger('subiquity.installpath')
 class InstallpathController(BaseController):
     """InstallpathController"""
     controller_name = "Installation path controller"
+    title = "15.10"
+    excerpt = ("Welcome to Ubuntu! The world’s favourite platform "
+               "for clouds, clusters and amazing internet things. "
+               "This is the installer for Ubuntu on servers and "
+               "internet devices.")
+    footer = ("Use UP, DOWN arrow keys, and ENTER, to "
+              "navigate options")
 
     def show(self, *args, **kwds):
         log.debug("Loading install path controller")
+        self.set_header(self.title, self.excerpt)
+        self.set_footer(self.footer)
         model = InstallpathModel()
-        return InstallpathView(model, self.finish)
+        self.set_body(InstallpathView(model, self.finish))
+        return
 
     def finish(self, install_selection=None):
         if install_selection is None:

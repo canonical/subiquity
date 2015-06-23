@@ -17,6 +17,10 @@ from subiquity.controllers import BaseController
 from subiquity.views.welcome import WelcomeView
 from subiquity.models.welcome import WelcomeModel
 import subprocess
+import logging
+
+
+log = logging.getLogger('subiquity.controllers.welcome')
 
 
 class WelcomeController(BaseController):
@@ -24,8 +28,16 @@ class WelcomeController(BaseController):
     controller_name = "Language Selection Controller"
 
     def show(self, *args, **kwds):
+        title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
+        excerpt = "Please choose your preferred language"
+        footer = ("Use UP, DOWN arrow keys, and ENTER, to "
+                  "select your language.")
+
+        self.set_header(title, excerpt)
+        self.set_footer(footer)
         model = WelcomeModel()
-        return WelcomeView(model, self.finish)
+        self.set_body(WelcomeView(model, self.finish))
+        return
 
     def finish(self, language=None):
         if language is None:

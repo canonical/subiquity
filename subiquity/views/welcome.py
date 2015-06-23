@@ -15,26 +15,19 @@
 
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
-from subiquity.ui.anchors import Header, Footer
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 
 
 class WelcomeView(WidgetWrap):
     def __init__(self, model, cb):
-        Header.title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
-        Header.excerpt = "Please choose your preferred language"
-        Footer.message = ("Use UP, DOWN arrow keys, and ENTER, to "
-                          "select your language.")
         self.model = model
         self.cb = cb
         self.items = []
         self.body = [
-            Header(),
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.center_20(self._build_buttons()),
-            Footer()
         ]
         super().__init__(ListBox(self.body))
 
