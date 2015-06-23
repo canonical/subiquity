@@ -21,7 +21,7 @@ from subiquity.ui.anchors import Header, Footer, Body
 
 class SubiquityUI(WidgetWrap):
     def __init__(self):
-        self.frame = Frame(Body(),
-                           Header(),
-                           Footer())
+        self._frame = Frame(Body(),
+                            Header(),
+                            Footer())
         super().__init__(self._frame)

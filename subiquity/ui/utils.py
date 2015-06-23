@@ -16,7 +16,7 @@
 """ UI utilities """
 
 from urwid import Padding as _Padding
-from urwid import AttrMap
+from urwid import AttrMap, Text
 from functools import partialmethod
 from subiquity.palette import STYLES
 
@@ -108,7 +108,7 @@ class Padding:
                                 "width of 10 columns"))
 
     """
-    pass
+    line_break = partialmethod(Text)
 
 
 def apply_style_map(cls):

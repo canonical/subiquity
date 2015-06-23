@@ -32,6 +32,7 @@ class WelcomeView(WidgetWrap):
         self.body = [
             Header(),
             Padding.center_79(self._build_model_inputs()),
+            Padding.line_break(""),
             Padding.center_20(self._build_buttons()),
             Footer()
         ]
