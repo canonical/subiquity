@@ -19,9 +19,9 @@ from urwid import Frame, WidgetWrap
 from subiquity.ui.anchors import Header, Footer, Body
 
 
-class BaseFrame(WidgetWrap):
+class SubiquityUI(WidgetWrap):
     def __init__(self):
-        _frame = Frame(Body(),
-                       Header(),
-                       Footer())
-        super().__init__(_frame)
+        self.frame = Frame(Body(),
+                           Header(),
+                           Footer())
+        super().__init__(self._frame)

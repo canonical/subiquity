@@ -30,8 +30,8 @@ class Header(WidgetWrap):
     excerpt = ""
 
     def __init__(self):
-        title_widget = Padding.push_10(Color.body(Text(self.title)))
-        excerpt_widget = Padding.push_10(Color.body(Text(self.excerpt)))
+        title_widget = Padding.center_79(Color.body(Text(self.title)))
+        excerpt_widget = Padding.center_79(Color.body(Text(self.excerpt)))
         pile = Pile([Text(""),
                      title_widget,
                      Text(""),
@@ -51,7 +51,7 @@ class Footer(WidgetWrap):
 
     def __init__(self):
         border = Text("")
-        message_widget = Padding.push_10(Color.body(Text(self.message)))
+        message_widget = Padding.center_79(Color.body(Text(self.message)))
         status = Pile([border, message_widget])
         super().__init__(status)
 
@@ -59,8 +59,9 @@ class Footer(WidgetWrap):
 class Body(WidgetWrap):
     """ Body widget
     """
+
+    body = Pile([Text("Welcome to the Ubuntu Server Installation",
+                      align="center")])
+
     def __init__(self):
-        self.text = [
-            Text("Welcome to the Ubuntu Server Installation", align="center")
-        ]
-        super().__init__(Pile(self.text))
+        super().__init__(self.body)

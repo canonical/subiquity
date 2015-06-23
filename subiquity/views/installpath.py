@@ -32,13 +32,13 @@ class InstallpathView(WidgetWrap):
         self.model = model
         self.cb = cb
         self.items = []
-        self.layout = [
+        self.body = [
             Header(),
             Padding.center_79(self._build_model_inputs()),
-            Padding.pull_50(self._build_buttons()),
+            Padding.center_20(self._build_buttons()),
             Footer()
         ]
-        super().__init__(ListBox(self.layout))
+        super().__init__(ListBox(self.body))
 
     def _build_buttons(self):
         self.buttons = [

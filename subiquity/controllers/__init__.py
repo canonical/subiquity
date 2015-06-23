@@ -16,8 +16,20 @@
 from abc import ABCMeta, abstractmethod
 
 
+class BaseControllerError(Exception):
+    """ Basecontroller exception """
+    pass
+
+
 class BaseController(metaclass=ABCMeta):
     controller_name = None
+
+    def __init__(self, routes, application):
+        """ Basecontroller
+        :param :class:`subiquity.app.Application` application: App class
+        """
+        self.application = application
+        self.routes = routes
 
     @classmethod
     def name(cls):
@@ -41,3 +53,15 @@ class BaseController(metaclass=ABCMeta):
         to move to the next controller or end the install.
         """
         pass
+
+    def next_controller(self, *args, **kwds):
+        next_controller = self.routes.next()
+        next_controller(routes=self.routes,
+                        application=self.application).show(*args, **kwds)
+        self.application.redraw_screen()
+
+    def prev_controller(self, *args, **kwds):
+        prev_controller = self.routes.prev()
+        prev_controller(routes=self.routes,
+                        application=self.application).show(*args, **kwds)
+        self.application.redraw_screen()

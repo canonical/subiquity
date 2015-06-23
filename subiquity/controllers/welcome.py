@@ -32,7 +32,7 @@ class WelcomeController(BaseController):
             raise SystemExit("No language selected, exiting as there are no "
                              "more previous controllers to render.")
         self.selected_language = language
-        subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
-        return
+        # subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
+        self.next_controller()
 
 __controller_class__ = WelcomeController

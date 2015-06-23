@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquity.controllers import BaseController
+from subiquity.controllers import BaseController, BaseControllerError
 from subiquity.views.installpath import InstallpathView
 from subiquity.models.installpath import InstallpathModel
 
@@ -28,8 +28,9 @@ class InstallpathController(BaseController):
 
     def finish(self, install_selection=None):
         if install_selection is None:
-            self.prev_controller("WelcomeController")
+            raise BaseControllerError("No install selection found")
         else:
-            raise SystemExit("Install selection: {}".format(install_selection))
+            raise BaseControllerError(
+                "Install selection: {}".format(install_selection))
 
 __controller_class__ = InstallpathController
