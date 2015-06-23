@@ -16,6 +16,9 @@
 from subiquity.controllers import BaseController, BaseControllerError
 from subiquity.views.installpath import InstallpathView
 from subiquity.models.installpath import InstallpathModel
+import logging
+
+log = logging.getLogger('subiquity.installpath')
 
 
 class InstallpathController(BaseController):
@@ -23,6 +26,7 @@ class InstallpathController(BaseController):
     controller_name = "Installation path controller"
 
     def show(self, *args, **kwds):
+        log.debug("Loading install path controller")
         model = InstallpathModel()
         return InstallpathView(model, self.finish)
 

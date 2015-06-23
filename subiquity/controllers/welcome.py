@@ -33,6 +33,6 @@ class WelcomeController(BaseController):
                              "more previous controllers to render.")
         self.selected_language = language
         # subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
-        self.next_controller()
+        return self.next_controller()
 
 __controller_class__ = WelcomeController

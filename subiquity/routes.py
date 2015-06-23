@@ -52,16 +52,6 @@ class Routes:
         return cls.route(-1)
 
     @classmethod
-    def go_to_beginning(cls):
-        cls.current_route_idx = 0
-        return cls.route(0)
-
-    @classmethod
-    def go_to_end(cls):
-        cls.current_route_idx = len(cls.routes) - 1
-        return cls.route(-1)
-
-    @classmethod
     def next(cls):
         cls.current_route_idx = cls.current_route_idx + 1
         return cls.route(cls.current_route_idx)

@@ -16,11 +16,12 @@
 
 import argparse
 import sys
+import logging
 import urwid
 import urwid.curses_display
 from subiquity.palette import STYLES, STYLES_MONO
-from subiquity.controllers.welcome import WelcomeController
 from subiquity.app import Application
+from subiquity.log import setup_logger
 
 
 def parse_options(argv):
@@ -35,6 +36,9 @@ def parse_options(argv):
 
 def main():
     opts = parse_options(sys.argv[1:])
+    setup_logger()
+    logger = logging.getLogger('subiquity')
+    
     if opts.run_on_serial:
         # screen = urwid.curses_display.Screen()
         screen = urwid.raw_display.Screen()

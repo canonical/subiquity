@@ -28,7 +28,7 @@ class Application:
     def __init__(self, screen, opts):
         self.screen = screen
         self.opts = opts
-        self.initial_controller = Routes.first()
+        self.welcome_controller = Routes.first()
 
         # Setup eventloop
         self.loop = self._build_loop()
@@ -38,7 +38,7 @@ class Application:
         """ Builds urwid eventloop, passing in itself to the controllers
         for further display manipulation
         """
-        return urwid.MainLoop(self.initial_controller(routes=Routes,
+        return urwid.MainLoop(self.welcome_controller(routes=Routes,
                                                       application=self).show(),
                               screen=self.screen,
                               unhandled_input=self.unhandled_input)
