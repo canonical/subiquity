@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.anchors import Header, Footer
@@ -20,8 +21,12 @@ from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 
 
+log = logging.getLogger('subiquity.installpathView')
+
+
 class InstallpathView(WidgetWrap):
     def __init__(self, model, cb):
+        log.debug("In install path view")
         Header.title = "15.10"
         Header.excerpt = ("Welcome to Ubuntu! The world’s favourite platform "
                           "for clouds, clusters and amazing internet things. "

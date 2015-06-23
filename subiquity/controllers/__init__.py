@@ -13,7 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from abc import ABCMeta, abstractmethod
+
+
+log = logging.getLogger('subiquity.controller')
 
 
 class BaseControllerError(Exception):
@@ -56,12 +60,14 @@ class BaseController(metaclass=ABCMeta):
 
     def next_controller(self, *args, **kwds):
         next_controller = self.routes.next()
+        log.debug("Loading next controller: {}".format(next_controller))
         next_controller(routes=self.routes,
                         application=self.application).show(*args, **kwds)
         self.application.redraw_screen()
 
     def prev_controller(self, *args, **kwds):
         prev_controller = self.routes.prev()
+        log.debug("Loading previous controller: {}".format(prev_controller))
         prev_controller(routes=self.routes,
                         application=self.application).show(*args, **kwds)
         self.application.redraw_screen()

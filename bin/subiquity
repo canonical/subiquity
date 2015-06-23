@@ -22,6 +22,7 @@ import urwid.curses_display
 from subiquity.palette import STYLES, STYLES_MONO
 from subiquity.app import Application
 from subiquity.log import setup_logger
+from subiquity import __version__ as VERSION
 
 
 def parse_options(argv):
@@ -38,7 +39,8 @@ def main():
     opts = parse_options(sys.argv[1:])
     setup_logger()
     logger = logging.getLogger('subiquity')
-    
+    logger.info("Starting SUbiquity v{}".format(VERSION))
+    logger.info("Arguments passed: {}".format(sys.argv))
     if opts.run_on_serial:
         # screen = urwid.curses_display.Screen()
         screen = urwid.raw_display.Screen()
