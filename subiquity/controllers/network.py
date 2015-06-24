@@ -34,7 +34,7 @@ class NetworkController(ControllerPolicy):
     def show(self, *args, **kwds):
         self.ui.set_header(self.title, self.excerpt)
         self.ui.set_footer(self.footer)
-        model = NetworkModel()
+        model = NetworkModel
         self.ui.set_body(NetworkView(model, self.finish))
         return
 
