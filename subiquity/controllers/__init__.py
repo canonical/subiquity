@@ -15,7 +15,9 @@
 
 import logging
 import urwid
+import urwid.curses_display
 from subiquity.routes import Routes
+from subiquity.palette import STYLES, STYLES_MONO
 
 
 log = logging.getLogger('subiquity.controller')
@@ -27,9 +29,8 @@ class BaseControllerError(Exception):
 
 
 class BaseController:
-    def __init__(self, ui, palette, opts):
+    def __init__(self, ui, opts):
         self.ui = ui
-        self.palette = palette
         self.opts = opts
 
     def next_controller(self, *args, **kwds):
@@ -52,15 +53,17 @@ class BaseController:
         return
 
     def update(self, *args, **kwds):
-        log.debug("Updating ...")
         route = Routes.current_idx()
         if route == 0:
             self.begin()
         self.set_alarm_in(1, self.update)
 
+    def exit(self):
+        raise urwid.ExitMainLoop()
+
     def header_hotkeys(self, key):
         if key in ['q', 'Q']:
-            raise urwid.ExitMainLoop()
+            self.exit()
 
     def set_body(self, w):
         self.ui.set_body(w)
@@ -76,11 +79,20 @@ class BaseController:
 
     def run(self):
         if not hasattr(self, 'loop'):
-            self.loop = urwid.MainLoop(self.ui, self.palette,
+            if self.opts.run_on_serial:
+                screen = urwid.raw_display.Screen()
+                screen.register_palette(STYLES_MONO)
+            else:
+                screen = urwid.raw_display.Screen()
+                screen.set_mouse_tracking(False)
+                screen.set_terminal_properties(256)
+                screen.register_palette(STYLES)
+
+            self.loop = urwid.MainLoop(self.ui, screen=screen,
                                        unhandled_input=self.header_hotkeys)
 
         try:
-            self.update()
+            self.begin()
             self.loop.run()
         except:
             log.exception("Exception in controller.run():")

@@ -21,7 +21,6 @@ from subiquity.log import setup_logger
 from subiquity import __version__ as VERSION
 from subiquity.controllers import BaseController as Subiquity
 from subiquity.ui.frame import SubiquityUI
-from subiquity.palette import STYLES, STYLES_MONO
 
 
 def parse_options(argv):
@@ -42,11 +41,8 @@ def main():
     logger.info("Arguments passed: {}".format(sys.argv))
 
     ui = SubiquityUI()
-    palette = STYLES
-    if opts.run_on_serial:
-        palette = STYLES_MONO
 
-    subiquity_interface = Subiquity(ui, palette, opts)
+    subiquity_interface = Subiquity(ui, opts)
     subiquity_interface.run()
 
 if __name__ == '__main__':

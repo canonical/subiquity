@@ -15,6 +15,7 @@
 
 from subiquity.controllers.welcome import WelcomeController
 from subiquity.controllers.installpath import InstallpathController
+from subiquity.controllers.network import NetworkController
 
 
 class RoutesError(Exception):
@@ -29,7 +30,8 @@ class Routes:
     this order is required for routing to work.
     """
     routes = [WelcomeController,
-              InstallpathController]
+              InstallpathController,
+              NetworkController]
     current_route_idx = 0
 
     @classmethod

@@ -28,3 +28,6 @@ class WelcomeModel(models.Model):
 
     supported_languages = ['English', 'Belgian', 'German', 'Italian']
     selected_language = None
+
+    def __repr__(self):
+        return "<Selected: {}>".format(self.selected_language)

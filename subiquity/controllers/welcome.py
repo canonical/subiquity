@@ -16,7 +16,6 @@
 from subiquity.controllers.policy import ControllerPolicy
 from subiquity.views.welcome import WelcomeView
 from subiquity.models.welcome import WelcomeModel
-import subprocess
 import logging
 
 
@@ -33,16 +32,15 @@ class WelcomeController(ControllerPolicy):
     def show(self, *args, **kwds):
         self.ui.set_header(self.title, self.excerpt)
         self.ui.set_footer(self.footer)
-        model = WelcomeModel()
-        self.ui.set_body(WelcomeView(model, self.finish))
+        self.ui.set_body(WelcomeView(WelcomeModel, self.finish))
         return
 
     def finish(self, language=None):
         if language is None:
             raise SystemExit("No language selected, exiting as there are no "
                              "more previous controllers to render.")
-        self.selected_language = language
-        # subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
+        WelcomeModel.selected_language = language
+        log.debug("Welcome Model: {}".format(WelcomeModel()))
         return self.ui.next_controller()
 
 __controller_class__ = WelcomeController
