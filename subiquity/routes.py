@@ -42,6 +42,11 @@ class Routes:
         return _route
 
     @classmethod
+    def current_idx(cls):
+        """ Returns current route index """
+        return cls.current_route_idx
+
+    @classmethod
     def reset(cls):
         """ Resets current route """
         cls.current_route_idx = 0

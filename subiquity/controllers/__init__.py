@@ -41,15 +41,22 @@ class BaseController:
         controller(self).show(*args, **kwds)
 
     def redraw_screen(self):
-        try:
-            self.loop.draw_screen()
-        except AssertionError as e:
-            log.exception("exception failure in redraw_screen")
-            raise e
+        if hasattr(self, 'loop'):
+            try:
+                self.loop.draw_screen()
+            except AssertionError as e:
+                log.critical(e)
 
     def set_alarm_in(self, interval, cb):
         self.loop.set_alarm_in(interval, cb)
         return
+
+    def update(self, *args, **kwds):
+        log.debug("Updating ...")
+        route = Routes.current_idx()
+        if route == 0:
+            self.begin()
+        self.set_alarm_in(1, self.update)
 
     def header_hotkeys(self, key):
         if key in ['q', 'Q']:
@@ -68,19 +75,19 @@ class BaseController:
         self.redraw_screen()
 
     def run(self):
-        self.main_loop()
-
-    def main_loop(self):
-        """ Run eventloop
-        """
-        self.loop = urwid.MainLoop(self.ui, self.palette,
-                                   unhandled_input=self.header_hotkeys)
+        if not hasattr(self, 'loop'):
+            self.loop = urwid.MainLoop(self.ui, self.palette,
+                                       unhandled_input=self.header_hotkeys)
 
         try:
+            self.update()
             self.loop.run()
         except:
             log.exception("Exception in controller.run():")
             raise
+
+    def begin(self):
+        """ Initializes the first controller for installation """
         Routes.reset()
         initial_controller = Routes.first()
-        self.set_body(initial_controller(self).show())
+        initial_controller(self).show()
