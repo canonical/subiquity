@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquity.controllers import BaseController, BaseControllerError
+from subiquity.controllers.policy import ControllerPolicy
 from subiquity.views.installpath import InstallpathView
 from subiquity.models.installpath import InstallpathModel
 import logging
@@ -21,9 +21,9 @@ import logging
 log = logging.getLogger('subiquity.installpath')
 
 
-class InstallpathController(BaseController):
+class InstallpathController(ControllerPolicy):
     """InstallpathController"""
-    controller_name = "Installation path controller"
+
     title = "15.10"
     excerpt = ("Welcome to Ubuntu! The world’s favourite platform "
                "for clouds, clusters and amazing internet things. "
@@ -34,17 +34,17 @@ class InstallpathController(BaseController):
 
     def show(self, *args, **kwds):
         log.debug("Loading install path controller")
-        self.set_header(self.title, self.excerpt)
-        self.set_footer(self.footer)
+        self.ui.set_header(self.title, self.excerpt)
+        self.ui.set_footer(self.footer)
         model = InstallpathModel()
-        self.set_body(InstallpathView(model, self.finish))
+        self.ui.set_body(InstallpathView(model, self.finish))
         return
 
     def finish(self, install_selection=None):
         if install_selection is None:
-            raise BaseControllerError("No install selection found")
+            raise Exception("No install selection found")
         else:
-            raise BaseControllerError(
+            raise Exception(
                 "Install selection: {}".format(install_selection))
 
 __controller_class__ = InstallpathController

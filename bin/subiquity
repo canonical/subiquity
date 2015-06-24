@@ -17,12 +17,11 @@
 import argparse
 import sys
 import logging
-import urwid
-import urwid.curses_display
-from subiquity.palette import STYLES, STYLES_MONO
-from subiquity.app import Application
 from subiquity.log import setup_logger
 from subiquity import __version__ as VERSION
+from subiquity.controllers import BaseController as Subiquity
+from subiquity.ui.frame import SubiquityUI
+from subiquity.palette import STYLES, STYLES_MONO
 
 
 def parse_options(argv):
@@ -41,17 +40,14 @@ def main():
     logger = logging.getLogger('subiquity')
     logger.info("Starting SUbiquity v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
-    if opts.run_on_serial:
-        # screen = urwid.curses_display.Screen()
-        screen = urwid.raw_display.Screen()
-        screen.register_palette(STYLES_MONO)
-    else:
-        screen = urwid.raw_display.Screen()
-        screen.set_mouse_tracking(False)
-        screen.set_terminal_properties(256)
-        screen.register_palette(STYLES)
 
-    Application(screen, opts).start()
+    ui = SubiquityUI()
+    palette = STYLES
+    if opts.run_on_serial:
+        palette = STYLES_MONO
+
+    subiquity_interface = Subiquity(ui, palette, opts)
+    subiquity_interface.run()
 
 if __name__ == '__main__':
     main()

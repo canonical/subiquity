@@ -14,7 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from abc import ABCMeta, abstractmethod
+import urwid
+from subiquity.routes import Routes
 
 
 log = logging.getLogger('subiquity.controller')
@@ -25,59 +26,57 @@ class BaseControllerError(Exception):
     pass
 
 
-class BaseController(metaclass=ABCMeta):
-    controller_name = None
+class BaseController:
+    def __init__(self, ui, palette, opts):
+        self.ui = ui
+        self.palette = palette
+        self.opts = opts
 
-    def __init__(self, common):
-        self.common = common
+    def next_controller(self, *args, **kwds):
+        controller = Routes.next()
+        controller(self).show(*args, **kwds)
 
-    @classmethod
-    def name(cls):
-        if cls.controller_name:
-            return cls.controller_name
-        return cls.__name__.lower()
-
-    @abstractmethod
-    def show(self, *args, **kwds):
-        """ Implements show action for the controller
-
-        Renders the View for controller.
-        """
-        pass
-
-    @abstractmethod
-    def finish(self):
-        """ Implements finish action for controller.
-
-        This handles any callback data/procedures required
-        to move to the next controller or end the install.
-        """
-        pass
-
-    def set_header(self, title, excerpt):
-        self.common['ui'].set_header(title, excerpt)
-        self.redraw_screen()
-
-    def set_footer(self, message):
-        self.common['ui'].set_footer(message)
-        self.redraw_screen()
-
-    def set_body(self, widget):
-        self.common['ui'].set_body(widget)
-        self.redraw_screen()
+    def prev_controller(self, *args, **kwds):
+        controller = Routes.prev()
+        controller(self).show(*args, **kwds)
 
     def redraw_screen(self):
         try:
-            self.common['loop'].draw_screen()
+            self.loop.draw_screen()
         except AssertionError as e:
-            raise BaseControllerError(e)
+            log.exception("exception failure in redraw_screen")
+            raise e
 
-    def next_controller(self, *args, **kwds):
-        controller = self.common['routes'].next()
-        controller(self.common).show(*args, **kwds)
+    def set_alarm_in(self, interval, cb):
+        self.loop.set_alarm_in(interval, cb)
+        return
+
+    def header_hotkeys(self, key):
+        if key in ['q', 'Q']:
+            raise urwid.ExitMainLoop()
+
+    def set_body(self, w):
+        self.ui.set_body(w)
         self.redraw_screen()
 
-    def prev_controller(self, *args, **kwds):
-        controller = self.common['routes'].prev()
-        controller(self.common).show(*args, **kwds)
+    def set_header(self, title, excerpt):
+        self.ui.set_header(title, excerpt)
         self.redraw_screen()
+
+    def set_footer(self, message):
+        self.ui.set_footer(message)
+        self.redraw_screen()
+
+    def run(self):
+        """ Run eventloop
+        """
+        self.loop = urwid.MainLoop(self.ui, self.palette,
+                                   unhandled_input=self.header_hotkeys)
+
+        try:
+            self.loop.run()
+            initial_controller = Routes.first()
+            self.set_body(initial_controller(self).show())
+        except:
+            log.exception("Exception in controller.run():")
+            raise
