@@ -39,6 +39,8 @@ class NetworkController(ControllerPolicy):
         return
 
     def finish(self, interface=None):
+        if interface is None:
+            return self.ui.prev_controller()
         log.info("Network Interface choosen: {}".format(interface))
         return self.ui.next_controller()
 

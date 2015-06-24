@@ -37,6 +37,8 @@ class FilesystemController(ControllerPolicy):
         return
 
     def finish(self, disk=None):
+        if disk is None:
+            return self.ui.prev_controller()
         log.info("Filesystem Interface choosen: {}".format(disk))
         return self.ui.exit()
 

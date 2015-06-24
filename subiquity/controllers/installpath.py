@@ -42,6 +42,8 @@ class InstallpathController(ControllerPolicy):
         return
 
     def finish(self, install_selection=None):
+        if install_selection is None:
+            return self.ui.prev_controller()
         # subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
         return self.ui.next_controller()
 
