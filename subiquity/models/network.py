@@ -13,15 +13,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import ListBox, SimpleListWalker, WidgetWrap
+""" Network Model
+
+Provides network device listings and extended network information
+
+"""
+
+from subiquity import models
 
 
-class SimpleList(WidgetWrap):
-    def __init__(self, contents):
-        self.contents = contents
-        super().__init__(self._build_widget())
+class NetworkModel(models.Model):
+    """ Model representing network interfaces
+    """
 
-    def _build_widget(self):
-        lw = SimpleListWalker([x for x in self.contents])
+    interfaces = ['em1',
+                  'em2',
+                  'bond0']
 
-        return ListBox(lw)
+    additional_options = ['Set default route',
+                          'Bond interfaces',
+                          'Install network driver']

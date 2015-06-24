@@ -13,15 +13,28 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import ListBox, SimpleListWalker, WidgetWrap
+""" Filesystem Model
+
+Provides storage device selection and additional storage
+configuration.
+
+"""
+
+from subiquity import models
 
 
-class SimpleList(WidgetWrap):
-    def __init__(self, contents):
-        self.contents = contents
-        super().__init__(self._build_widget())
+class FilesystemModel(models.Model):
+    """ Model representing storage options
+    """
 
-    def _build_widget(self):
-        lw = SimpleListWalker([x for x in self.contents])
+    available_disks = ['/dev/sda',
+                       '/dev/sdb',
+                       '/dev/sdc',
+                       '/dev/sdd',
+                       '/dev/sde']
 
-        return ListBox(lw)
+    additional_options = ['Connecti iSCSI network disk',
+                          'Connect Ceph network disk',
+                          'Create volume group (LVM2)',
+                          'Create software RAID (MD)',
+                          'Setup hierarchichal storage (bcache)']

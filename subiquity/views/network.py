@@ -13,13 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
+import logging
+from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, Text)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 
 
-class WelcomeView(WidgetWrap):
+log = logging.getLogger('subiquity.networkView')
+
+
+class NetworkView(WidgetWrap):
     def __init__(self, model, cb):
         self.model = model
         self.cb = cb
@@ -27,26 +31,38 @@ class WelcomeView(WidgetWrap):
         self.body = [
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
+            Padding.center_79(self._build_additional_options()),
+            Padding.line_break(""),
             Padding.center_20(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
 
     def _build_buttons(self):
-        self.buttons = [
+        buttons = [
             Color.button_secondary(cancel_btn(on_press=self.cancel),
                                    focus_map='button_secondary focus'),
         ]
-        return Pile(self.buttons)
+        return Pile(buttons)
 
     def _build_model_inputs(self):
         sl = []
-        for lang in self.model.supported_languages:
-            sl.append(Color.button_primary(
-                confirm_btn(label=lang, on_press=self.confirm),
-                focus_map="button_primary focus"))
+        for iface in self.model.interfaces:
+            sl.append(Color.button_primary(confirm_btn(label=iface,
+                                                       on_press=self.confirm),
+                                           focus_map='button_primary focus'))
+            sl.append(Padding.push_10(Text("Adapter info")))
 
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))
+
+    def _build_additional_options(self):
+        opts = []
+        for opt in self.model.additional_options:
+            opts.append(
+                Color.button_secondary(confirm_btn(label=opt,
+                                                   on_press=self.confirm),
+                                       focus_map='button_secondary focus'))
+        return Pile(opts)
 
     def confirm(self, button):
         return self.cb(button.label)

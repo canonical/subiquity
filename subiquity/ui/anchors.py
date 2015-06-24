@@ -15,6 +15,7 @@
 
 from urwid import WidgetWrap, Pile, Text
 from subiquity.ui.utils import Padding, Color
+from subiquity.ui.lists import SimpleList
 
 
 class Header(WidgetWrap):
@@ -26,12 +27,9 @@ class Header(WidgetWrap):
     :returns: Header()
     """
 
-    title = "Ubuntu Server Installer"
-    excerpt = ""
-
-    def __init__(self):
-        title_widget = Padding.push_10(Color.body(Text(self.title)))
-        excerpt_widget = Padding.push_10(Color.body(Text(self.excerpt)))
+    def __init__(self, title="Ubuntu Server Installer", excerpt=""):
+        title_widget = Padding.center_79(Color.body(Text(title)))
+        excerpt_widget = Padding.center_79(Color.body(Text(excerpt)))
         pile = Pile([Text(""),
                      title_widget,
                      Text(""),
@@ -47,20 +45,23 @@ class Footer(WidgetWrap):
 
     """
 
-    message = ""
-
-    def __init__(self):
-        border = Text("")
-        message_widget = Padding.push_10(Color.body(Text(self.message)))
-        status = Pile([border, message_widget])
+    def __init__(self, message=""):
+        message_widget = Padding.center_79(Color.body(Text(message)))
+        status = Pile([Padding.line_break(""), message_widget])
         super().__init__(status)
 
 
 class Body(WidgetWrap):
     """ Body widget
     """
+
     def __init__(self):
-        self.text = [
-            Text("Welcome to the Ubuntu Server Installation", align="center")
+        text = [
+            Padding.line_break(""),
+            Padding.center_79(
+                Text("Welcome to the Ubuntu Server Installation",
+                     align="center")),
+            Padding.line_break("")
         ]
-        super().__init__(Pile(self.text))
+        w = (SimpleList(text))
+        super().__init__(w)

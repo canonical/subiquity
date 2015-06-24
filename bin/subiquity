@@ -16,10 +16,11 @@
 
 import argparse
 import sys
-import urwid
-import urwid.curses_display
-from subiquity.palette import STYLES, STYLES_MONO
-from subiquity.controllers.welcome import WelcomeController
+import logging
+from subiquity.log import setup_logger
+from subiquity import __version__ as VERSION
+from subiquity.controllers import BaseController as Subiquity
+from subiquity.ui.frame import SubiquityUI
 
 
 def parse_options(argv):
@@ -34,20 +35,15 @@ def parse_options(argv):
 
 def main():
     opts = parse_options(sys.argv[1:])
-    if opts.run_on_serial:
-        screen = urwid.curses_display.Screen()
-        screen.register_palette(STYLES_MONO)
-    else:
-        screen = urwid.raw_display.Screen()
-        screen.set_mouse_tracking(False)
-        screen.set_terminal_properties(256)
-        screen.register_palette(STYLES)
+    setup_logger()
+    logger = logging.getLogger('subiquity')
+    logger.info("Starting SUbiquity v{}".format(VERSION))
+    logger.info("Arguments passed: {}".format(sys.argv))
 
-    def unhandled_input(key):
-        if key in ('Q', 'q', 'esc'):
-            raise urwid.ExitMainLoop()
-    urwid.MainLoop(WelcomeController().show(), screen=screen,
-                   unhandled_input=unhandled_input).run()
+    ui = SubiquityUI()
+
+    subiquity_interface = Subiquity(ui, opts)
+    subiquity_interface.run()
 
 if __name__ == '__main__':
     main()

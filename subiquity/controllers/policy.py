@@ -13,15 +13,29 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import ListBox, SimpleListWalker, WidgetWrap
+""" Controller policy """
+
+from abc import ABCMeta, abstractmethod
 
 
-class SimpleList(WidgetWrap):
-    def __init__(self, contents):
-        self.contents = contents
-        super().__init__(self._build_widget())
+class ControllerPolicy(metaclass=ABCMeta):
 
-    def _build_widget(self):
-        lw = SimpleListWalker([x for x in self.contents])
+    def __init__(self, ui):
+        self.ui = ui
 
-        return ListBox(lw)
+    @abstractmethod
+    def show(self, *args, **kwds):
+        """ Implements show action for the controller
+
+        Renders the View for controller.
+        """
+        pass
+
+    @abstractmethod
+    def finish(self):
+        """ Implements finish action for controller.
+
+        This handles any callback data/procedures required
+        to move to the next controller or end the install.
+        """
+        pass

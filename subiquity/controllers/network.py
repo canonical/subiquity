@@ -14,35 +14,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from subiquity.controllers.policy import ControllerPolicy
-from subiquity.views.installpath import InstallpathView
-from subiquity.models.installpath import InstallpathModel
+from subiquity.views.network import NetworkView
+from subiquity.models.network import NetworkModel
 import logging
-import subprocess
 
-log = logging.getLogger('subiquity.installpath')
+log = logging.getLogger('subiquity.network')
 
 
-class InstallpathController(ControllerPolicy):
+class NetworkController(ControllerPolicy):
     """InstallpathController"""
 
-    title = "15.10"
-    excerpt = ("Welcome to Ubuntu! The world’s favourite platform "
-               "for clouds, clusters and amazing internet things. "
-               "This is the installer for Ubuntu on servers and "
-               "internet devices.")
-    footer = ("Use UP, DOWN arrow keys, and ENTER, to "
-              "navigate options")
+    title = "Network connections"
+    excerpt = ("Configure at least the main interface this server will "
+               "use to talk to other machines, and preferably provide "
+               "sufficient access for updates.")
+
+    footer = ("Additional networking info here")
 
     def show(self, *args, **kwds):
-        log.debug("Loading install path controller")
         self.ui.set_header(self.title, self.excerpt)
         self.ui.set_footer(self.footer)
-        model = InstallpathModel()
-        self.ui.set_body(InstallpathView(model, self.finish))
+        model = NetworkModel()
+        self.ui.set_body(NetworkView(model, self.finish))
         return
 
-    def finish(self, install_selection=None):
-        # subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
-        return self.ui.next_controller()
+    def finish(self, interface=None):
+        log.info("Network Interface choosen: {}".format(interface))
+        return self.ui.exit()
 
-__controller_class__ = InstallpathController
+__controller_class__ = NetworkController

@@ -17,11 +17,25 @@
 
 from urwid import Frame, WidgetWrap
 from subiquity.ui.anchors import Header, Footer, Body
+import logging
 
 
-class BaseFrame(WidgetWrap):
-    def __init__(self):
-        _frame = Frame(Body(),
-                       Header(),
-                       Footer())
-        super().__init__(_frame)
+log = logging.getLogger('subiquity.ui.frame')
+
+
+class SubiquityUI(WidgetWrap):
+    def __init__(self, header=None, body=None, footer=None):
+        self.header = header if header else Header()
+        self.body = body if body else Body()
+        self.footer = footer if footer else Footer()
+        self.frame = Frame(self.body, header=self.header, footer=self.footer)
+        super().__init__(self.frame)
+
+    def set_header(self, title, excerpt):
+        self.frame.header = Header(title, excerpt)
+
+    def set_footer(self, message):
+        self.frame.footer = Footer(message)
+
+    def set_body(self, widget):
+        self.frame.body = widget

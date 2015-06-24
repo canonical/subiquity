@@ -13,20 +13,34 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquity.controllers import BaseController
+from subiquity.controllers.policy import ControllerPolicy
 from subiquity.views.welcome import WelcomeView
 from subiquity.models.welcome import WelcomeModel
-import subprocess
+import logging
 
 
-class WelcomeController(BaseController):
+log = logging.getLogger('subiquity.controllers.welcome')
+
+
+class WelcomeController(ControllerPolicy):
     """WelcomeController"""
-    controller_name = "Welcome to Ubuntu"
+    title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
+    excerpt = "Please choose your preferred language"
+    footer = ("Use UP, DOWN arrow keys, and ENTER, to "
+              "select your language.")
 
-    def show(self):
-        model = WelcomeModel()
-        return WelcomeView(model, self.finish)
+    def show(self, *args, **kwds):
+        self.ui.set_header(self.title, self.excerpt)
+        self.ui.set_footer(self.footer)
+        self.ui.set_body(WelcomeView(WelcomeModel, self.finish))
+        return
 
-    def finish(self, code, val):
-        subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
-        raise SystemExit("Saw res: {}, val: {}".format(code, val))
+    def finish(self, language=None):
+        if language is None:
+            raise SystemExit("No language selected, exiting as there are no "
+                             "more previous controllers to render.")
+        WelcomeModel.selected_language = language
+        log.debug("Welcome Model: {}".format(WelcomeModel()))
+        return self.ui.next_controller()
+
+__controller_class__ = WelcomeController
