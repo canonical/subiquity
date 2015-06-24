@@ -16,6 +16,7 @@
 from subiquity.controllers.welcome import WelcomeController
 from subiquity.controllers.installpath import InstallpathController
 from subiquity.controllers.network import NetworkController
+from subiquity.controllers.filesystem import FilesystemController
 
 
 class RoutesError(Exception):
@@ -31,7 +32,8 @@ class Routes:
     """
     routes = [WelcomeController,
               InstallpathController,
-              NetworkController]
+              NetworkController,
+              FilesystemController]
     current_route_idx = 0
 
     @classmethod

@@ -14,32 +14,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from subiquity.controllers.policy import ControllerPolicy
-from subiquity.views.network import NetworkView
-from subiquity.models.network import NetworkModel
+from subiquity.views.filesystem import FilesystemView
+from subiquity.models.filesystem import FilesystemModel
 import logging
 
-log = logging.getLogger('subiquity.network')
+log = logging.getLogger('subiquity.filesystem')
 
 
-class NetworkController(ControllerPolicy):
-    """InstallpathController"""
+class FilesystemController(ControllerPolicy):
+    """ Filesystem Controller """
 
-    title = "Network connections"
-    excerpt = ("Configure at least the main interface this server will "
-               "use to talk to other machines, and preferably provide "
-               "sufficient access for updates.")
+    title = "Filesystem setup"
+    excerpt = ("")
 
-    footer = ("Additional networking info here")
+    footer = ("Select available disks to format and mount")
 
     def show(self, *args, **kwds):
         self.ui.set_header(self.title, self.excerpt)
         self.ui.set_footer(self.footer)
-        model = NetworkModel
-        self.ui.set_body(NetworkView(model, self.finish))
+        model = FilesystemModel
+        self.ui.set_body(FilesystemView(model, self.finish))
         return
 
-    def finish(self, interface=None):
-        log.info("Network Interface choosen: {}".format(interface))
-        return self.ui.next_controller()
+    def finish(self, disk=None):
+        log.info("Filesystem Interface choosen: {}".format(disk))
+        return self.ui.exit()
 
-__controller_class__ = NetworkController
+__controller_class__ = FilesystemController
