@@ -68,6 +68,9 @@ class BaseController:
         self.redraw_screen()
 
     def run(self):
+        self.main_loop()
+
+    def main_loop(self):
         """ Run eventloop
         """
         self.loop = urwid.MainLoop(self.ui, self.palette,
@@ -75,8 +78,9 @@ class BaseController:
 
         try:
             self.loop.run()
-            initial_controller = Routes.first()
-            self.set_body(initial_controller(self).show())
         except:
             log.exception("Exception in controller.run():")
             raise
+        Routes.reset()
+        initial_controller = Routes.first()
+        self.set_body(initial_controller(self).show())

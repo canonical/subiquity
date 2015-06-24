@@ -42,6 +42,11 @@ class Routes:
         return _route
 
     @classmethod
+    def reset(cls):
+        """ Resets current route """
+        cls.current_route_idx = 0
+
+    @classmethod
     def first(cls):
         """ first controller/start of install """
         return cls.route(0)
