@@ -1,6 +1,7 @@
 #
 # Makefile for subiquity
 #
+PYTHONSRC=subiquity
 STREAM=daily
 RELEASE=wily
 ARCH=amd64
@@ -10,7 +11,16 @@ INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 
 
 ui-view:
-	(PYTHONPATH=$(shell pwd) bin/subiquity)
+	(PYTHONPATH=$(shell pwd) bin/$(PYTHONSRC))
+
+lint:
+	echo "Running flake8 lint tests..."
+	flake8 bin/$(PYTHONSRC) --ignore=F403
+	flake8 --exclude $(PYTHONSRC)/tests/ $(PYTHONSRC) --ignore=F403
+
+unit:
+	echo "Running unit tests..."
+	python3 -m "nose" -v --nologcapture --with-coverage $(PYTHONSRC)/tests/
 
 installer/$(INSTALLIMG): installer/geninstaller installer/runinstaller $(INSTALLER_RESOURCES)
 	(cd installer && ./geninstaller -v -r $(RELEASE) -a $(ARCH) -s $(STREAM))
