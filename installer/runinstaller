@@ -41,7 +41,11 @@ fi
     qemu-img create -f raw ${TARGET} 10G || exit 1
 }
 # TODO, curses should work, but my xmonad setup blocks using it
-sudo qemu-system-$ARCH -m $MEM -enable-kvm -hda $INSTALLER -hdb $TARGET \
+sudo qemu-system-$ARCH -smp 2 -m $MEM -enable-kvm -hda $INSTALLER -hdb $TARGET \
+                       -net nic,model=e1000 \
+                       -net nic,model=virtio \
+                       -net nic,model=i82559er \
+                       -net user \
                        -monitor telnet:127.0.0.1:2446,server,nowait -serial stdio
 #sudo qemu-system-$ARCH -m $MEM -enable-kvm -hda $INSTALLER -hdb $TARGET \
 #                       -monitor telnet:127.0.0.1:2446,server,nowait -curses

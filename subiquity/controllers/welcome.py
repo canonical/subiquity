@@ -44,3 +44,5 @@ class WelcomeController(ControllerPolicy):
         return self.ui.next_controller()
 
 __controller_class__ = WelcomeController
+
+

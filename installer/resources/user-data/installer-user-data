@@ -1,13 +1,21 @@
 #cloud-config
 #http_proxy: http://my-proxy:3129/
+bootcmd:
+    - rm -f /etc/network/interfaces
+    - echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
+    - /bin/ls -1 /sys/class/net | grep -v ^lo$ | xargs -i bash -c 'D={}; echo -e "auto $D\niface $D inet dhcp"' | tee /etc/network/interfaces
+    - /bin/ls -1 /sys/class/net | grep -v ^lo$ | xargs -i ifup {}
 password: passw0rd
 chpasswd: { expire: False }
 output: {all: '| tee -a /var/log/cloud-init-output.log'}
 packages:
  - python-urwid
  - python3-urwid
+ - python3-pyudev
+ - python3-netifaces
 runcmd:
     - tar -C /usr/local -xf /tmp/subiquity.tar
+    - tar -C /usr/local -xf /tmp/probert.tar
     - (cd /usr/local && bin/curtin-archive extract --no-execute)
     - /tmp/installer.sh
 write_files:

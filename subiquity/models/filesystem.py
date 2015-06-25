@@ -21,20 +21,42 @@ configuration.
 """
 
 from subiquity import models
+import argparse
+import math
+import time
+from probert import prober
 
 
 class FilesystemModel(models.Model):
     """ Model representing storage options
     """
 
-    available_disks = ['/dev/sda',
-                       '/dev/sdb',
-                       '/dev/sdc',
-                       '/dev/sdd',
-                       '/dev/sde']
-
     additional_options = ['Connecti iSCSI network disk',
                           'Connect Ceph network disk',
                           'Create volume group (LVM2)',
                           'Create software RAID (MD)',
                           'Setup hierarchichal storage (bcache)']
+    def __init__(self):
+        self.storage= {}
+        self.options = argparse.Namespace(probe_storage=True, probe_network=False)
+        self.prober = prober.Prober(self.options)
+
+    def probe_storage(self):
+        self.prober.probe()
+        self.storage = self.prober.get_results().get('storage'}
+
+    def get_available_disks(self):
+        return [disk for disk in self.storage.keys()
+                if self.storage[disk]['DEVTYPE'] == 'disk' and
+                    self.storage[disk]['MAJOR'] == '8']
+
+    def _humanize_size(self, size):
+        size = abs(size)
+        if (size==0):
+            return "0B"
+        units = ['B','KiB','MiB','GiB','TiB','PiB','EiB','ZiB','YiB']
+        p = math.floor(math.log(size, 2)/10)
+        return "%.3f %s" % (size/math.pow(1024,p),units[int(p)])
+
+    def get_disk_size(self, disk):
+        return self._humanize_size(int(self.storage[disk]['attrs']['size']))

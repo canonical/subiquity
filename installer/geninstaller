@@ -31,6 +31,7 @@ syslinux-common
 grub2-common"
 SRC_DEPS=(
   "bzr" "lp:curtin"
+  "git" "https://github.com/CanonicalLtd/probert.git"
 )
 CACHEDIR=""
 
@@ -101,6 +102,8 @@ usage: $PROG [PARAMS] [ARGS]
  -b, --bootloader=TYPE          For TYPE in [syslinux, grub2, uboot]
  -h, --help                     This output.
  -r, --release=RELEASE          For RELEASE in  [trusty, utopic, vivid, wily]
+ -s, --stream=STREAM            For STREAM in [daily, released]
+ -V, --version=VERSION          VERSION=YYYYMMDD , 20150623
  -v, --verbose
 
 
@@ -194,7 +197,7 @@ acquire_image() {
     local version=${4};
 
     # run a query unless they specify all params
-    if [ $# -lt 5 ]; then
+    if [ $# -le 4 -a -z "${version}" ]; then
         log "Querying simplestreams for latest image: $label $release $arch"
         case "$label" in
             daily)
@@ -226,12 +229,17 @@ acquire_image() {
     #   and re-assemble roottar and rootfs which was based on ephimg
 
     [ -r "$ephimg" ] && CACHE_SUM=( `sha256sum $ephimg 2>/dev/null` )
+    if [ -z "${sha256}" -a -f "${ephimg}.sha256" ]; then
+        log "Using sha256sum from cached file";
+        sha256=`cat ${ephimg}.sha256 | cut -d' ' -f1`
+    fi
     if [ "${sha256}" != "${CACHE_SUM[0]}" ]; then
         log "WARNING: sha256 csum mismatch"
         log "WARNING: expected: [$sha256]"
         log "            found: [${CACHE_SUM[0]}]"
         # didn't match so nuke the cache
-        rm -fr "${cachedir}" || {
+        log "WARNING: removing old cache"
+        sudo rm -fr "${cachedir}" || {
             log "ERROR: failed to remove stale cachedir: $cachedir";
             return 1;
         }
@@ -245,6 +253,8 @@ acquire_image() {
             log "ERROR: failed to download: ${item_url}";
             return 1;
         }
+        (cd `dirname ${ephimg}` &&
+         sha256sum `basename ${ephimg}` > ${ephimg}.sha256)
     else
         log "  Using cached $label $release $arch $item_name:"
         log "  $ephimg"
@@ -328,7 +338,19 @@ generate_seed() {
         log "Failed to subiquity into $seed";
         return 1;
     }
-
+    log "Writing seed user-data (probert)"
+    local probert_tar=$dldir/probert.tar
+    (cd ${dldir}/probert.git &&
+     tar -cpf $probert_tar bin probert) || {
+        log "ERROR: Failed to package probert installer";
+        return 1;
+    }
+    userdata_write_file "/tmp/probert.tar" \
+                        "root:root" "0644" "b64" \
+                        "$probert_tar" >> $seed/user-data || {
+        log "Failed to subiquity into $seed";
+        return 1;
+    }
     return 0
 }
 
@@ -437,8 +459,8 @@ parse_args() {
     # args:
     [ $# -lt 1 ] && { usage; exit 0; }
 
-    OPTS_LONG="arch:bootloader:,download:help,release:,stream:verbose"
-    OPTS="a:b:d:h,r:s:v"
+    OPTS_LONG="arch:,bootloader:,download:,help,release:,stream:,verbose,version:"
+    OPTS="a:b:d:hr:s:vV:"
     ARGS=`getopt --name "$PROG" --long $OPTS_LONG --options $OPTS -- "$@"`
     if [ $? -ne 0 ]; then
         echo "$PROG: usage error (use -h for help)" >&2
@@ -452,6 +474,7 @@ parse_args() {
     RELEASE="wily"
     STREAM="daily"
     VERBOSE="no"
+    VERSION=""
     while [ $# -gt 0 ]; do
         case "$1" in
             -a | --arch)        ARCH="$2"; shift;;
@@ -460,6 +483,7 @@ parse_args() {
             -h | --help)        usage; exit 0;;
             -r | --release)     RELEASE="$2"; shift;;
             -s | --stream)      STREAM="$2"; shift;;
+            -V | --version)     VERSION="$2"; shift;;
             -v | --verbose)     VERBOSE="yes";;
             --)                 shift; break;; # end of options
         esac
@@ -488,7 +512,7 @@ main() {
         return 1;
     }
 
-    acquire_image ${DLDIR} "$STREAM" "$RELEASE" "$ARCH" || {
+    acquire_image ${DLDIR} "$STREAM" "$RELEASE" "$ARCH" "$VERSION" || {
         return 1;
     }
     CACHEDIR=${_RETVAL}

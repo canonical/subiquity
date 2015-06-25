@@ -46,7 +46,8 @@ class NetworkView(WidgetWrap):
 
     def _build_model_inputs(self):
         sl = []
-        for iface in self.model.interfaces:
+        self.model.probe_network()
+        for iface in self.model.get_interfaces():
             sl.append(Color.button_primary(confirm_btn(label=iface,
                                                        on_press=self.confirm),
                                            focus_map='button_primary focus'))
