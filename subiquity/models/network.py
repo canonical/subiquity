@@ -21,8 +21,6 @@ Provides network device listings and extended network information
 
 from subiquity import models
 import argparse
-import math
-import time
 from probert import prober
 
 
