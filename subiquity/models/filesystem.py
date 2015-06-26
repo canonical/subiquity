@@ -60,4 +60,5 @@ class FilesystemModel(models.Model):
         return "%.3f %s" % (size / math.pow(1024, p), units[int(p)])
 
     def get_disk_size(self, disk):
-        return self._humanize_size(int(self.storage[disk]['attrs']['size']))
+        return self._humanize_size(
+            int(self.storage[disk]['attrs']['size']) * 512)
