@@ -34,7 +34,8 @@ class NetworkModel(models.Model):
 
     def __init__(self):
         self.hwdata = {}
-        self.options = argparse.Namespace(probe_storage=False, probe_network=True)
+        self.options = argparse.Namespace(probe_storage=False,
+                                          probe_network=True)
         self.prober = prober.Prober(self.options)
 
     def probe_network(self):
@@ -42,5 +43,5 @@ class NetworkModel(models.Model):
         self.hwdata = self.prober.get_results()
 
     def get_interfaces(self):
-        return [n for n in self.hwdata['network'].keys() 
+        return [n for n in self.hwdata['network'].keys()
                 if self.hwdata['network'][n]['type'] == 'eth']
