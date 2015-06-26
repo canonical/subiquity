@@ -46,12 +46,14 @@ class NetworkView(WidgetWrap):
 
     def _build_model_inputs(self):
         sl = []
-        self.model.probe_network()
-        for iface in self.model.get_interfaces():
+        nm = self.model()
+        nm.probe_network()
+        for iface in nm.get_interfaces():
             sl.append(Color.button_primary(confirm_btn(label=iface,
                                                        on_press=self.confirm),
                                            focus_map='button_primary focus'))
-            sl.append(Padding.push_10(Text("Adapter info")))
+            ifinfo = nm.get_iface_info(iface)
+            sl.append(Padding.push_10(Text(ifinfo)))
 
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))

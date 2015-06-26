@@ -33,15 +33,23 @@ class NetworkModel(models.Model):
                           'Install network driver']
 
     def __init__(self):
-        self.hwdata = {}
+        self.network = {}
         self.options = argparse.Namespace(probe_storage=False,
                                           probe_network=True)
         self.prober = prober.Prober(self.options)
 
     def probe_network(self):
         self.prober.probe()
-        self.hwdata = self.prober.get_results()
+        self.network = self.prober.get_results().get('network')
 
     def get_interfaces(self):
-        return [n for n in self.hwdata['network'].keys()
-                if self.hwdata['network'][n]['type'] == 'eth']
+        return [iface for iface in self.network.keys()
+                if self.network[iface]['type'] == 'eth']
+
+    def get_iface_info(self, iface):
+        ipinfo = self.network[iface]['ip']
+        hwinfo = self.network[iface]['hardware']
+        return "{}/{} -- {} {}".format(ipinfo['addr'],
+                                       ipinfo['netmask'],
+                                       hwinfo['ID_VENDOR_FROM_DATABASE'],
+                                       hwinfo['ID_MODEL_FROM_DATABASE'])

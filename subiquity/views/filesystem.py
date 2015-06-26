@@ -46,13 +46,14 @@ class FilesystemView(WidgetWrap):
 
     def _build_model_inputs(self):
         sl = []
-        self.model.probe_storage()
-        for disk in self.model.get_available_disks():
+        sm = self.model()
+        sm.probe_storage()
+        for disk in sm.get_available_disks():
 
             sl.append(Color.button_primary(confirm_btn(label=disk,
                                                        on_press=self.confirm),
                                            focus_map='button_primary focus'))
-            disk_sz = self.model.get_disk_size(disk)
+            disk_sz = sm.get_disk_size(disk)
             sl.append(Padding.push_10(Text(disk_sz)))
 
         return BoxAdapter(SimpleList(sl),
