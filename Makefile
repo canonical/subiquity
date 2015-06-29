@@ -11,7 +11,7 @@ INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 
 
 ui-view:
-	(PYTHONPATH=$(shell pwd) bin/$(PYTHONSRC))
+	(PYTHONPATH=$(shell pwd):$(shell pwd)/probert bin/$(PYTHONSRC))
 
 lint:
 	echo "Running flake8 lint tests..."
