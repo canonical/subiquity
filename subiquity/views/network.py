@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, Text)
+from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, Text, Columns)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
@@ -45,19 +45,31 @@ class NetworkView(WidgetWrap):
         return Pile(buttons)
 
     def _build_model_inputs(self):
-        sl = []
         log.info("probing for network devices")
         self.model.probe_network()
-        for iface in self.model.get_interfaces():
-            log.info("looking at {}".format(iface))
-            sl.append(Color.button_primary(confirm_btn(label=iface,
-                                                       on_press=self.confirm),
-                                           focus_map='button_primary focus'))
-            ifinfo = self.model.get_iface_info(iface)
-            sl.append(Padding.push_10(Text(ifinfo)))
+        ifaces = self.model.get_interfaces()
 
-        return BoxAdapter(SimpleList(sl),
-                          height=len(sl))
+        col_1 = []
+        for iface in ifaces:
+            col_1.append(
+                Color.button_primary(confirm_btn(label=iface,
+                                                 on_press=self.confirm),
+                                     focus_map='button_primary focus'))
+        col_1 = BoxAdapter(SimpleList(col_1),
+                           height=len(col_1))
+
+        col_2 = []
+        for iface in ifaces:
+            ifinfo, iface_vendor, iface_model = self.model.get_iface_info(
+                iface)
+            col_2.append(Text("Address: {}".format(ifinfo.addr)))
+            col_2.append(
+                Text("{} - {}".format(iface_vendor,
+                                      iface_model)))
+        col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
+                           height=len(col_2))
+
+        return Columns([(10, col_1), col_2], 2)
 
     def _build_additional_options(self):
         opts = []

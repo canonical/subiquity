@@ -24,7 +24,20 @@ from subiquity import models
 import argparse
 from probert import prober
 
-log = logging.getLogger('subiquity.filesystemView')
+log = logging.getLogger('subiquity.networkModel')
+
+
+class SimpleInterface:
+    """ A simple interface class to encapsulate network information for
+    particular interface
+    """
+    def __init__(self, attrs):
+        self.attrs = attrs
+        for i in self.attrs.keys():
+            if self.attrs[i] is None:
+                setattr(self, i, "Unknown")
+            else:
+                setattr(self, i, self.attrs[i])
 
 
 class NetworkModel(models.Model):
@@ -86,8 +99,5 @@ class NetworkModel(models.Model):
         return 'Unknown Model'
 
     def get_iface_info(self, iface):
-        ipinfo = self.network[iface]['ip']
-        return "{}/{} -- {} {}".format(ipinfo['addr'],
-                                       ipinfo['netmask'],
-                                       self.get_vendor(iface),
-                                       self.get_model(iface))
+        ipinfo = SimpleInterface(self.network[iface]['ip'])
+        return (ipinfo, self.get_vendor(iface), self.get_model(iface))
