@@ -19,9 +19,12 @@ Provides network device listings and extended network information
 
 """
 
+import logging
 from subiquity import models
 import argparse
 from probert import prober
+
+log = logging.getLogger('subiquity.filesystemView')
 
 
 class NetworkModel(models.Model):
@@ -44,12 +47,47 @@ class NetworkModel(models.Model):
 
     def get_interfaces(self):
         return [iface for iface in self.network.keys()
-                if self.network[iface]['type'] == 'eth']
+                if self.network[iface]['type'] == 'eth' and
+                not self.network[iface]['hardware']['DEVPATH'].startswith(
+                    '/devices/virtual/net')]
+
+    def get_vendor(self, iface):
+        hwinfo = self.network[iface]['hardware']
+        vendor_keys = [
+            'ID_VENDOR_FROM_DATABASE',
+            'ID_VENDOR',
+            'ID_VENDOR_ID'
+        ]
+        for key in vendor_keys:
+            try:
+                return hwinfo[key]
+            except KeyError:
+                log.warn('Failed to get key '
+                         '{} from interface {}'.format(key, iface))
+                pass
+
+        return 'Unknown Vendor'
+
+    def get_model(self, iface):
+        hwinfo = self.network[iface]['hardware']
+        model_keys = [
+            'ID_MODEL_FROM_DATABASE',
+            'ID_MODEL',
+            'ID_MODEL_ID'
+        ]
+        for key in model_keys:
+            try:
+                return hwinfo[key]
+            except KeyError:
+                log.warn('Failed to get key '
+                         '{} from interface {}'.format(key, iface))
+                pass
+
+        return 'Unknown Model'
 
     def get_iface_info(self, iface):
         ipinfo = self.network[iface]['ip']
-        hwinfo = self.network[iface]['hardware']
         return "{}/{} -- {} {}".format(ipinfo['addr'],
                                        ipinfo['netmask'],
-                                       hwinfo['ID_VENDOR_FROM_DATABASE'],
-                                       hwinfo['ID_MODEL_FROM_DATABASE'])
+                                       self.get_vendor(iface),
+                                       self.get_model(iface))
