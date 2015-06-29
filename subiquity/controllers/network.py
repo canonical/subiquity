@@ -32,10 +32,10 @@ class NetworkController(ControllerPolicy):
     footer = ("Additional networking info here")
 
     def show(self, *args, **kwds):
+        self.model = NetworkModel()
         self.ui.set_header(self.title, self.excerpt)
         self.ui.set_footer(self.footer)
-        model = NetworkModel
-        self.ui.set_body(NetworkView(model, self.finish))
+        self.ui.set_body(NetworkView(self.model, self.finish))
         return
 
     def finish(self, interface=None):
