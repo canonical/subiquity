@@ -1,0 +1,3 @@
+[submodule "probert"]
+	path = probert
+	url = git@github.com:CanonicalLtd/probert.git
