@@ -51,6 +51,11 @@ class FilesystemModel(models.Model):
                 if self.storage[disk]['DEVTYPE'] == 'disk' and
                 self.storage[disk]['MAJOR'] == '8']
 
+    def get_partitions(self):
+        return [part for part in self.storage.keys()
+                if self.storage[part]['DEVTYPE'] == 'partition' and
+                self.storage[part]['MAJOR'] == '8']
+
     def _humanize_size(self, size):
         size = abs(size)
         if size == 0:

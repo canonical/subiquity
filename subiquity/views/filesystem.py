@@ -29,6 +29,8 @@ class FilesystemView(WidgetWrap):
         self.cb = cb
         self.items = []
         self.body = [
+            Padding.center_79(self._build_partition_list()),
+            Padding.line_break(""),
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.center_79(self._build_additional_options()),
@@ -36,6 +38,16 @@ class FilesystemView(WidgetWrap):
             Padding.center_20(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
+
+    def _build_partition_list(self):
+        pl = [Text("FILE SYSTEM")]
+        if len(self.model.get_partitions()) == 0:
+            pl.append(Color.info_minor(
+                Text("No disks or partitions mounted")))
+            return Pile(pl)
+        for part in self.model.get_partitions():
+            pl.append(Text(part))
+        return Pile(pl)
 
     def _build_buttons(self):
         buttons = [
@@ -45,7 +57,7 @@ class FilesystemView(WidgetWrap):
         return Pile(buttons)
 
     def _build_model_inputs(self):
-        sl = []
+        sl = [Text("AVAILABLE DISKS")]
         self.model.probe_storage()
         for disk in self.model.get_available_disks():
 
