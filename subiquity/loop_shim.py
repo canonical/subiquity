@@ -125,5 +125,7 @@ class AsyncioEventLoop(object):
         self._loop.set_exception_handler(self._exception_handler)
         self._loop.run_forever()
         if self._exc_info:
-            raise (self._exc_info[0], self._exc_info[1], self._exc_info[2])
+            raise Exception(self._exc_info[0],
+                            self._exc_info[1],
+                            self._exc_info[2])
             self._exc_info = None
