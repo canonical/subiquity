@@ -85,22 +85,27 @@ class BaseController:
     def run(self):
         if not hasattr(self, 'loop'):
             palette = STYLES
-            loop_opts = {'screen': urwid.raw_display.Screen(),
-                         'unhandled_input': self.header_hotkeys}
+            additional_opts = {
+                'screen': urwid.raw_display.Screen(),
+                'unhandled_input': self.header_hotkeys,
+                'handle_mouse': False
+            }
             if self.opts.run_on_serial:
                 palette = STYLES_MONO
-                loop_opts['screen'] = urwid.curses_display.Screen()
-                loop_opts['handle_mouse'] = False
+                additional_opts['screen'] = urwid.curses_display.Screen()
             else:
-                loop_opts['screen'].set_terminal_properties(colors=256)
-                loop_opts['screen'].reset_default_terminal_palette()
-                loop_opts['event_loop'] = AsyncioEventLoop(
+                additional_opts['screen'].set_terminal_properties(colors=256)
+                additional_opts['screen'].reset_default_terminal_palette()
+                additional_opts['event_loop'] = AsyncioEventLoop(
                     loop=asyncio.get_event_loop())
 
             self.loop = urwid.MainLoop(
-                self.ui, palette, **loop_opts)
+                self.ui, palette, **additional_opts)
 
         try:
+            if self.opts.run_on_serial:
+                self.loop.screen.start()
+
             self.begin()
             self.loop.run()
         except:

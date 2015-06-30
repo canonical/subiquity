@@ -17,6 +17,9 @@ INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 ui-view:
 	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC))
 
+ui-view-serial:
+	(TERM=att4424 PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) --serial)
+
 lint:
 	echo "Running flake8 lint tests..."
 	flake8 bin/$(PYTHONSRC) --ignore=F403
