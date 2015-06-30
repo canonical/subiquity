@@ -14,17 +14,7 @@ INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 .PHONY: run clean
 
 
-setup-virtualenv:
-	@if [ ! -d $(VENVPATH) ]; then virtualenv venv; fi
-	(/bin/bash -c "source $(VENVACTIVATE)")
-
-install-requirements: setup-virtualenv
-	@pip install -rrequirements.txt -q
-
-upgrade-pip: setup-virtualenv
-	@pip install --upgrade pip
-
-ui-view: install-requirements
+ui-view:
 	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC))
 
 lint:

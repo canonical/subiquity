@@ -17,6 +17,10 @@ import logging
 import asyncio
 import urwid
 import urwid.curses_display
+if urwid.version.VERSION >= (1, 3, 0):
+    from urwid import AsyncioEventLoop
+else:
+    from subiquity.loop_shim import AsyncioEventLoop
 from subiquity.routes import Routes
 from subiquity.palette import STYLES, STYLES_MONO
 
@@ -80,20 +84,21 @@ class BaseController:
 
     def run(self):
         if not hasattr(self, 'loop'):
+            palette = STYLES
+            loop_opts = {'screen': urwid.raw_display.Screen(),
+                         'unhandled_input': self.header_hotkeys}
             if self.opts.run_on_serial:
-                screen = urwid.raw_display.Screen()
-                screen.register_palette(STYLES_MONO)
+                palette = STYLES_MONO
+                loop_opts['screen'] = urwid.curses_display.Screen()
+                loop_opts['handle_mouse'] = False
             else:
-                screen = urwid.raw_display.Screen()
-                screen.set_mouse_tracking(False)
-                screen.set_terminal_properties(256)
-                screen.register_palette(STYLES)
+                loop_opts['screen'].set_terminal_properties(colors=256)
+                loop_opts['screen'].reset_default_terminal_palette()
+                loop_opts['event_loop'] = AsyncioEventLoop(
+                    loop=asyncio.get_event_loop())
 
             self.loop = urwid.MainLoop(
-                self.ui, screen=screen,
-                unhandled_input=self.header_hotkeys,
-                event_loop=urwid.AsyncioEventLoop(
-                    loop=asyncio.get_event_loop()))
+                self.ui, palette, **loop_opts)
 
         try:
             self.begin()

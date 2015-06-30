@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from urwid.main_loop import ExitMainLoop
+
+log = logging.getLogger('subiquity.loop_shim')
 
 
 class AsyncioEventLoop(object):
@@ -28,6 +31,8 @@ class AsyncioEventLoop(object):
     _idle_emulation_delay = 1.0 / 256  # a short time (in seconds)
 
     def __init__(self, **kwargs):
+        log.debug("Running the AsyncioEventLoop shim because current "
+                  "version of urwid < 1.3.0")
         if 'loop' in kwargs:
             self._loop = kwargs.pop('loop')
         else:
