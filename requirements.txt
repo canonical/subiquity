@@ -1,0 +1,6 @@
+urwid==1.3.0
+pyudev==0.16.1
+netifaces==0.10.4
+nose-cov
+nose
+flake8

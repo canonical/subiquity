@@ -2,6 +2,10 @@
 # Makefile for subiquity
 #
 PYTHONSRC=subiquity
+PYTHONPATH=$(shell pwd):$(shell pwd)/probert:$PYTHONPATH
+VENVPATH=$(shell pwd)/venv
+VENVACTIVATE=$(VENVPATH)/bin/activate
+TOPDIR=$(shell pwd)
 STREAM=daily
 RELEASE=wily
 ARCH=amd64
@@ -10,8 +14,18 @@ INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 .PHONY: run clean
 
 
-ui-view:
-	(PYTHONPATH=$(shell pwd):$(shell pwd)/probert bin/$(PYTHONSRC))
+setup-virtualenv:
+	@if [ ! -d $(VENVPATH) ]; then virtualenv venv; fi
+	(/bin/bash -c "source $(VENVACTIVATE)")
+
+install-requirements: setup-virtualenv
+	@pip install -rrequirements.txt -q
+
+upgrade-pip: setup-virtualenv
+	@pip install --upgrade pip
+
+ui-view: install-requirements
+	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC))
 
 lint:
 	echo "Running flake8 lint tests..."
