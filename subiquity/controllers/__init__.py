@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import asyncio
 import urwid
 import urwid.curses_display
 from subiquity.routes import Routes
@@ -62,7 +63,7 @@ class BaseController:
         raise urwid.ExitMainLoop()
 
     def header_hotkeys(self, key):
-        if key in ['q', 'Q']:
+        if key in ['q', 'Q', 'ctrl c']:
             self.exit()
 
     def set_body(self, w):
@@ -88,8 +89,11 @@ class BaseController:
                 screen.set_terminal_properties(256)
                 screen.register_palette(STYLES)
 
-            self.loop = urwid.MainLoop(self.ui, screen=screen,
-                                       unhandled_input=self.header_hotkeys)
+            self.loop = urwid.MainLoop(
+                self.ui, screen=screen,
+                unhandled_input=self.header_hotkeys,
+                event_loop=urwid.AsyncioEventLoop(
+                    loop=asyncio.get_event_loop()))
 
         try:
             self.begin()
