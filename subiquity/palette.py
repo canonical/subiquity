@@ -25,7 +25,7 @@ def apply_default_colors(cls):
                  'mid_aubergine': '#525',
                  'dark_aubergine': '#201',
                  'warm_grey': '#aaa',
-                 'cool_grey': '#333',
+                 'cool_grey': '#666',
                  'text_grey': '#333'}
     for k, v in color_map.items():
         setattr(cls, k, v)
@@ -36,28 +36,38 @@ def apply_default_colors(cls):
 class Palette:
     pass
 
-STYLES = [('frame_header', Palette.white, Palette.black,
-           'default', Palette.white, Palette.orange),
-          ('frame_footer', Palette.white, Palette.black,
-           'default', Palette.white, Palette.orange),
-          ('body', Palette.white, 'default', 'default',
-           Palette.white, Palette.black),
-          ('button_primary', Palette.white, 'default',
-           'default', Palette.white, Palette.cool_grey),
-          ('button_primary focus', Palette.white,
-           'default', 'default', Palette.white,
-           Palette.light_orange),
-          ('button_secondary', Palette.white, 'default',
-           'default', Palette.white, Palette.cool_grey),
-          ('button_secondary focus', Palette.white,
-           'default', 'default', Palette.white, Palette.light_orange)]
+STYLES = [
+    ('frame_header', '', '', '',
+     Palette.white, Palette.orange),
+    ('frame_footer', '', '', '',
+     Palette.white, Palette.orange),
+    ('body', '', '', '',
+     Palette.white, Palette.black),
+    ('button_primary', '', '',
+     '', Palette.white, Palette.cool_grey),
+    ('button_primary focus', '', '', '',
+     Palette.white, Palette.light_orange),
+    ('button_secondary', '', '', '',
+     Palette.white, Palette.cool_grey),
+    ('button_secondary focus', '', '', '',
+     Palette.white, Palette.light_orange),
+    ('info_minor', '', '', '',
+     Palette.text_grey, Palette.black)
+]
 
 STYLES_MONO = [('frame_header', Palette.white, Palette.black,
-                'default', Palette.white, Palette.black),
+                '', '', ''),
                ('frame_footer', Palette.white, Palette.black,
-                'default', Palette.white, Palette.black),
-               ('body', 'default', 'default'),
-               ('button_primary', 'default', 'default'),
-               ('button_primary focus', 'default', 'default'),
-               ('button_secondary', 'default', 'default'),
-               ('button_secondary focus', 'default', 'default')]
+                '', '', ''),
+               ('body', Palette.white, Palette.black,
+                '', '', ''),
+               ('info_minor', Palette.white, Palette.black,
+                '', '', ''),
+               ('button_primary', Palette.white, Palette.black,
+                '', '', ''),
+               ('button_primary focus', Palette.white, Palette.black,
+                '', '', ''),
+               ('button_secondary', Palette.white, Palette.black,
+                '', '', ''),
+               ('button_secondary focus', Palette.white, Palette.black,
+                '', '', '')]
