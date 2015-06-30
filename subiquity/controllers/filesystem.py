@@ -16,6 +16,7 @@
 from subiquity.controllers.policy import ControllerPolicy
 from subiquity.views.filesystem import FilesystemView
 from subiquity.models.filesystem import FilesystemModel
+
 import logging
 
 log = logging.getLogger('subiquity.filesystem')
@@ -32,7 +33,7 @@ class FilesystemController(ControllerPolicy):
     def show(self, *args, **kwds):
         self.ui.set_header(self.title, self.excerpt)
         self.ui.set_footer(self.footer)
-        model = FilesystemModel
+        model = FilesystemModel()
         self.ui.set_body(FilesystemView(model, self.finish))
         return
 
