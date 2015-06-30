@@ -58,6 +58,6 @@ STYLES_MONO = [('frame_header', Palette.white, Palette.black,
                 'default', Palette.white, Palette.black),
                ('body', 'default', 'default'),
                ('button_primary', 'default', 'default'),
-               ('button_primary focus', 'default',  'default'),
+               ('button_primary focus', 'default', 'default'),
                ('button_secondary', 'default', 'default'),
                ('button_secondary focus', 'default', 'default')]
