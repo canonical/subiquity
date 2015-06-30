@@ -26,7 +26,7 @@ class InstallpathController(ControllerPolicy):
     """InstallpathController"""
 
     title = "15.10"
-    excerpt = ("Welcome to Ubuntu! The world’s favourite platform "
+    excerpt = ("Welcome to Ubuntu! The world's favourite platform "
                "for clouds, clusters and amazing internet things. "
                "This is the installer for Ubuntu on servers and "
                "internet devices.")
