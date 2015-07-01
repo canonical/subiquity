@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, Text)
+from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, Text, Columns)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
@@ -29,8 +29,10 @@ class FilesystemView(WidgetWrap):
         self.cb = cb
         self.items = []
         self.body = [
+            Padding.center_79(Text("FILE SYSTEM")),
             Padding.center_79(self._build_partition_list()),
             Padding.line_break(""),
+            Padding.center_79(Text("AVAILABLE DISKS")),
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.center_79(self._build_additional_options()),
@@ -40,7 +42,7 @@ class FilesystemView(WidgetWrap):
         super().__init__(ListBox(self.body))
 
     def _build_partition_list(self):
-        pl = [Text("FILE SYSTEM")]
+        pl = []
         if len(self.model.get_partitions()) == 0:
             pl.append(Color.info_minor(
                 Text("No disks or partitions mounted")))
@@ -57,18 +59,25 @@ class FilesystemView(WidgetWrap):
         return Pile(buttons)
 
     def _build_model_inputs(self):
-        sl = [Text("AVAILABLE DISKS")]
         self.model.probe_storage()
-        for disk in self.model.get_available_disks():
+        disks = self.model.get_available_disks()
+        col_1 = []
+        col_2 = []
 
-            sl.append(Color.button_primary(confirm_btn(label=disk,
-                                                       on_press=self.confirm),
-                                           focus_map='button_primary focus'))
+        for disk in disks:
+            col_1.append(
+                Color.button_primary(confirm_btn(label=disk,
+                                                 on_press=self.confirm),
+                                     focus_map='button_primary focus'))
             disk_sz = self.model.get_disk_size(disk)
-            sl.append(Padding.push_10(Text(disk_sz)))
 
-        return BoxAdapter(SimpleList(sl),
-                          height=len(sl))
+            col_2.append(Text(disk_sz))
+
+        col_1 = BoxAdapter(SimpleList(col_1),
+                           height=len(col_1))
+        col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
+                           height=len(col_2))
+        return Columns([(30, col_1), col_2], 2)
 
     def _build_additional_options(self):
         opts = []

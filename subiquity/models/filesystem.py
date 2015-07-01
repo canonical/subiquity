@@ -30,7 +30,7 @@ class FilesystemModel(models.Model):
     """ Model representing storage options
     """
 
-    additional_options = ['Connecti iSCSI network disk',
+    additional_options = ['Connect iSCSI network disk',
                           'Connect Ceph network disk',
                           'Create volume group (LVM2)',
                           'Create software RAID (MD)',
