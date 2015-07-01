@@ -19,21 +19,22 @@ Model's represent the stateful data bound from
 input from the user.
 """
 
+import json
+import yaml
+
 
 class Model:
     """Base model"""
 
     fields = []
 
-    @classmethod
-    def to_json(cls):
+    def to_json(self):
         """Marshals the model to json"""
-        raise NotImplementedError
+        return json.dumps(self.__dict__)
 
-    @classmethod
-    def to_yaml(cls):
+    def to_yaml(self):
         """Marshals the model to yaml"""
-        raise NotImplementedError
+        return yaml.dump(self.__dict__)
 
 
 class Field:
