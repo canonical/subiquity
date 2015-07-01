@@ -14,13 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import asyncio
 import urwid
 import urwid.curses_display
-if urwid.version.VERSION >= (1, 3, 0):
-    from urwid import AsyncioEventLoop
-else:
-    from subiquity.loop_shim import AsyncioEventLoop
 from subiquity.routes import Routes
 from subiquity.palette import STYLES, STYLES_MONO
 
@@ -51,17 +46,15 @@ class BaseController:
             try:
                 self.loop.draw_screen()
             except AssertionError as e:
-                log.critical(e)
+                log.critical("Redraw screen error: {}".format(e))
 
     def set_alarm_in(self, interval, cb):
         self.loop.set_alarm_in(interval, cb)
         return
 
     def update(self, *args, **kwds):
-        route = Routes.current_idx()
-        if route == 0:
-            self.begin()
-        self.set_alarm_in(1, self.update)
+        """ Update loop """
+        pass
 
     def exit(self):
         raise urwid.ExitMainLoop()
@@ -96,23 +89,18 @@ class BaseController:
             else:
                 additional_opts['screen'].set_terminal_properties(colors=256)
                 additional_opts['screen'].reset_default_terminal_palette()
-                additional_opts['event_loop'] = AsyncioEventLoop(
-                    loop=asyncio.get_event_loop())
 
             self.loop = urwid.MainLoop(
                 self.ui, palette, **additional_opts)
 
         try:
-            if self.opts.run_on_serial:
-                self.loop.screen.start()
-
-            self.begin()
+            self.set_alarm_in(0.05, self.begin)
             self.loop.run()
         except:
             log.exception("Exception in controller.run():")
             raise
 
-    def begin(self):
+    def begin(self, *args, **kwargs):
         """ Initializes the first controller for installation """
         Routes.reset()
         initial_controller = Routes.first()

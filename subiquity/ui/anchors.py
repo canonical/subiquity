@@ -27,7 +27,7 @@ class Header(WidgetWrap):
     :returns: Header()
     """
 
-    def __init__(self, title="Ubuntu Server Installer", excerpt=""):
+    def __init__(self, title="", excerpt=""):
         title_widget = Padding.center_79(Color.body(Text(title)))
         excerpt_widget = Padding.center_79(Color.body(Text(excerpt)))
         pile = Pile([Text(""),
@@ -58,10 +58,6 @@ class Body(WidgetWrap):
     def __init__(self):
         text = [
             Padding.line_break(""),
-            Padding.center_79(
-                Text("Welcome to the Ubuntu Server Installation",
-                     align="center")),
-            Padding.line_break("")
         ]
         w = (SimpleList(text))
         super().__init__(w)
