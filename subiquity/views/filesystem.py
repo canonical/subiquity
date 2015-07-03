@@ -77,7 +77,7 @@ class FilesystemView(WidgetWrap):
                            height=len(col_1))
         col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                            height=len(col_2))
-        return Columns([(30, col_1), col_2], 2)
+        return Columns([(15, col_1), col_2], 2)
 
     def _build_additional_options(self):
         opts = []
