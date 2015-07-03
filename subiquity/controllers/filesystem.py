@@ -26,12 +26,11 @@ class FilesystemController(ControllerPolicy):
     """ Filesystem Controller """
 
     title = "Filesystem setup"
-    excerpt = ("")
 
     footer = ("Select available disks to format and mount")
 
     def show(self, *args, **kwds):
-        self.ui.set_header(self.title, self.excerpt)
+        self.ui.set_header(self.title)
         self.ui.set_footer(self.footer)
         model = FilesystemModel()
         self.ui.set_body(FilesystemView(model, self.finish))
