@@ -37,7 +37,7 @@ class SubiquityUI(WidgetWrap):
         key = self.key_conversion_map.get(key, key)
         return super().keypress(size, key)
 
-    def set_header(self, title, excerpt):
+    def set_header(self, title=None, excerpt=None):
         self.frame.header = Header(title, excerpt)
 
     def set_footer(self, message):

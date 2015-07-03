@@ -41,6 +41,10 @@ class BaseController:
         controller = Routes.prev()
         controller(self).show(*args, **kwds)
 
+    def current_controller(self, *args, **kwds):
+        controller = Routes.current()
+        return controller(self)
+
     def redraw_screen(self):
         if hasattr(self, 'loop'):
             try:
@@ -67,7 +71,7 @@ class BaseController:
         self.ui.set_body(w)
         self.redraw_screen()
 
-    def set_header(self, title, excerpt):
+    def set_header(self, title=None, excerpt=None):
         self.ui.set_header(title, excerpt)
         self.redraw_screen()
 
