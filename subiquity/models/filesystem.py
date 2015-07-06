@@ -25,6 +25,7 @@ import argparse
 from probert import prober
 from probert.storage import StorageInfo
 import logging
+import json
 
 log = logging.getLogger('subiquity.filesystemModel')
 
@@ -50,7 +51,8 @@ class FilesystemModel(models.Model):
         self.disks = {}
         self.prober.probe()
         self.storage = self.prober.get_results().get('storage')
-        log.info('storage probe data:\n{}'.format(self.storage))
+        log.debug('storage probe data:\n{}'.format(
+                  json.dumps(self.storage, indent=4, sort_keys=True)))
 
         # TODO: replace this with Storage.get_device_by_match()
         # which takes a lambda fn for matching
@@ -58,8 +60,10 @@ class FilesystemModel(models.Model):
         for disk in self.storage.keys():
             if self.storage[disk]['DEVTYPE'] == 'disk' and \
                self.storage[disk]['MAJOR'] in VALID_MAJORS:
-                log.info('disk={} storage={}'.format(disk, self.storage))
                 self.disks[disk] = StorageInfo({disk: self.storage[disk]})
+                log.debug('disk={}\n{}'.format(disk,
+                          json.dumps(self.storage[disk], indent=4,
+                                     sort_keys=True)))
 
     def get_partitions(self):
         return [part for part in self.storage.keys()
