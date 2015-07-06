@@ -19,7 +19,7 @@ dryrun:
 	$(MAKE) ui-view DRYRUN="--dry-run"
 
 ui-view:
-	(PYTHONPATH=$(shell pwd) bin/$(PYTHONSRC) $(DRYRUN))
+	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) $(DRYRUN))
 
 ui-view-serial:
 	(TERM=att4424 PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) $(DRYRUN) --serial)
