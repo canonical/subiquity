@@ -37,11 +37,13 @@ if [ -z $QEMU ]; then
     }
 fi
 
-[ ! -f ${TARGET} ] && {
-    qemu-img create -f raw ${TARGET} 10G || exit 1
-}
+# always recreate the target image
+qemu-img create -f raw ${TARGET} 10G
+
 # TODO, curses should work, but my xmonad setup blocks using it
-sudo qemu-system-$ARCH -smp 2 -m $MEM -enable-kvm -hda $INSTALLER -hdb $TARGET \
+sudo qemu-system-$ARCH -smp 2 -m $MEM -enable-kvm \
+                       -drive cache=unsafe,if=virtio,file=$INSTALLER,serial=QM_INSTALL_01 \
+                       -drive cache=unsafe,if=virtio,file=$TARGET,serial=QM_TARGET_01 \
                        -net nic,model=e1000 \
                        -net nic,model=virtio \
                        -net nic,model=i82559er \

@@ -11,6 +11,7 @@ output: {all: '| tee -a /var/log/cloud-init-output.log'}
 packages:
  - python-urwid
  - python3-urwid
+ - python3-parted
  - python3-pyudev
  - python3-netifaces
 runcmd:

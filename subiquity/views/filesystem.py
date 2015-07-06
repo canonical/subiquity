@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import math
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, Text, Columns)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
@@ -21,6 +22,15 @@ from subiquity.ui.utils import Padding, Color
 
 
 log = logging.getLogger('subiquity.filesystemView')
+
+
+def _humanize_size(size):
+    size = abs(size)
+    if size == 0:
+        return "0B"
+    units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
+    p = math.floor(math.log(size, 2) / 10)
+    return "%.3f %s" % (size / math.pow(1024, p), units[int(p)])
 
 
 class FilesystemView(WidgetWrap):
@@ -59,18 +69,16 @@ class FilesystemView(WidgetWrap):
         return Pile(buttons)
 
     def _build_model_inputs(self):
-        self.model.probe_storage()
-        disks = self.model.get_available_disks()
         col_1 = []
         col_2 = []
 
-        for disk in disks:
+        for dname in self.model.get_available_disks():
+            disk = self.model.get_disk_info(dname)
             col_1.append(
-                Color.button_primary(confirm_btn(label=disk,
+                Color.button_primary(confirm_btn(label=disk.name,
                                                  on_press=self.confirm),
                                      focus_map='button_primary focus'))
-            disk_sz = self.model.get_disk_size(disk)
-
+            disk_sz = str(_humanize_size(disk.size))
             col_2.append(Text(disk_sz))
 
         col_1 = BoxAdapter(SimpleList(col_1),
@@ -89,7 +97,12 @@ class FilesystemView(WidgetWrap):
         return Pile(opts)
 
     def confirm(self, button):
-        return self.cb(button.label)
+        log.info("Filesystem View confirm() getting disk info")
+        disk = self.model.get_disk_info(button.label)
+        log.info("Filesystem View callback({}, {}, {})".format(disk.name,
+                                                               disk.model,
+                                                               disk.serial))
+        return self.cb(disk.name, disk.model, disk.serial)
 
     def cancel(self, button):
         return self.cb(None)
