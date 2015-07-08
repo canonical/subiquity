@@ -356,14 +356,16 @@ generate_seed() {
 
 generate_img() {
     _RETVAL=""
-    [ $# -lt 2 ] && {
+    [ $# -lt 3 ] && {
         log "ERROR: not enough arguments passed to $FUNCNAME";
         return 1;
     }
 
     local dldir=${1};
     local cachedir=${2};
+    local bootloader=${3};
     local extlinux_conf=${TOPDIR}/resources/menu/extlinux-menu.conf
+    local grub_conf=${TOPDIR}/resources/grub/grub.cfg
     local gptmbr=$(dpkg -L syslinux-common | grep \/gptmbr.bin | grep -v efi)
     local installimg=${cachedir}/installer.img
     local mnt=${cachedir}/mnt
@@ -387,15 +389,21 @@ generate_img() {
         return 1;
     }
 
-    [ -z "$gptmbr" ] && {
-        log "ERROR: failed to find GPT MBR record on host";
+    if [ "${bootloader}" == "syslinux" ]; then
+        [ -z "$gptmbr" ] && {
+            log "ERROR: failed to find GPT MBR record on host";
+            return 1;
+        }
+        log "Embedding bootloader"
+        dd bs=440 conv=notrunc count=1 if=$gptmbr of=$installimg || {
+            log "Failed to embed bootloader into $installimg";
+            return 1;
+        }
+    elif [ "${bootloader}" != "grub2" ]; then
+        log "Bootloader ${bootloader} not supported, cannot install"
+        usage;
         return 1;
-    }
-    log "Embedding bootloader"
-    dd bs=440 conv=notrunc count=1 if=$gptmbr of=$installimg || {
-        log "Failed to embed bootloader into $installimg";
-        return 1;
-    }
+    fi
 
     log "Syncing rootfs into install image"
     local kpartx_ret=$(sudo kpartx -va $installimg)
@@ -430,14 +438,27 @@ generate_img() {
 
     log "Installing bootloader configuration"
     set +x
+    sudo mkdir ${mnt}/proc
+    sudo mkdir ${mnt}/sys
+    sudo mkdir ${mnt}/dev
     sudo mount none -t proc ${mnt}/proc &&
     sudo mount none -t sysfs ${mnt}/sys &&
     sudo mount -o bind /dev ${mnt}/dev &&
-    sudo mkdir -p ${mnt}/boot/extlinux &&
-    sudo extlinux --install ${mnt}/boot/extlinux &&
-    sudo cp -av ${syslinux_path}/*.c32 ${mnt}/boot/extlinux &&
-    sudo cp -av ${splash} ${mnt}/boot/extlinux &&
-    cat ${extlinux_conf} | sudo tee ${mnt}/boot/extlinux/extlinux.conf &&
+
+    if [ "${bootloader}" == "syslinux" ]; then
+        sudo mkdir -p ${mnt}/boot/extlinux &&
+        sudo extlinux --install ${mnt}/boot/extlinux &&
+        sudo cp -av ${syslinux_path}/*.c32 ${mnt}/boot/extlinux &&
+        sudo cp -av ${splash} ${mnt}/boot/extlinux &&
+        cat ${extlinux_conf} | sudo tee ${mnt}/boot/extlinux/extlinux.conf
+    else
+        log "Installing grub2"
+        sudo mkdir -p ${mnt}/boot/grub &&
+        sudo grub-install --boot-directory=${mnt}/boot $LOOPDEV --force &&
+        sudo cp -av ${splash} ${mnt}/boot/grub &&
+        cat ${grub_conf} | sudo tee ${mnt}/boot/grub/grub.cfg
+    fi
+
     sudo mkdir -p ${mnt}/var/lib/cloud/seed &&
     sudo cp -a ${seed} ${mnt}/var/lib/cloud/seed && sync || {
         log "Failed to install bootloader and configuration";
@@ -522,7 +543,7 @@ main() {
         return 1;
     }
 
-    generate_img ${DLDIR} $CACHEDIR || {
+    generate_img ${DLDIR} $CACHEDIR $BOOTLOADER || {
         return 1;
     }
     INSTALLIMG=${_RETVAL}
