@@ -16,7 +16,7 @@
 from subiquity.controllers.policy import ControllerPolicy
 from subiquity.views.filesystem import FilesystemView
 from subiquity.models.filesystem import FilesystemModel
-from subiquity.curtin import curtin_write_storage_template
+from subiquity.curtin import curtin_write_storage_actions
 
 import logging
 import subprocess
@@ -39,17 +39,12 @@ class FilesystemController(ControllerPolicy):
         self.ui.set_body(FilesystemView(model, self.finish))
         return
 
-    def finish(self, disk=None, disk_model=None, disk_serial=None):
-        if disk is None:
+    def finish(self, reset=False, actions=None):
+        if actions is None and reset is False:
             return self.ui.prev_controller()
-        log.info("Filesystem Interface choosen: {}".format(disk))
-        log.info("params: disk={} model={} serial={}".format(
-                 disk, disk_model, disk_serial))
-        log.debug(
-            "FilesystemController: dry_run: {}".format(self.ui.opts.dry_run))
 
         log.info("Rendering curtin config from user choices")
-        curtin_write_storage_template(disk, disk_model, disk_serial)
+        curtin_write_storage_actions(actions=actions)
         if self.ui.opts.dry_run:
             log.debug("filesystem: this is a dry-run")
             print("\033c")

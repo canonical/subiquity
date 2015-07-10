@@ -17,7 +17,7 @@ import logging
 import math
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, Text, Columns)
 from subiquity.ui.lists import SimpleList
-from subiquity.ui.buttons import confirm_btn, cancel_btn
+from subiquity.ui.buttons import done_btn, reset_btn
 from subiquity.ui.utils import Padding, Color
 
 
@@ -47,9 +47,20 @@ class FilesystemView(WidgetWrap):
             Padding.line_break(""),
             Padding.center_79(self._build_additional_options()),
             Padding.line_break(""),
+            self._build_used_disks(),
             Padding.center_20(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
+
+    def _build_used_disks(self):
+        pl = []
+        for disk in self.model.get_used_disks():
+            pl.append(Text(disk.path))
+        if len(pl):
+            return Padding.center_79(Text("USED DISKS"),
+                                     Padding.line_break(""),
+                                     Pile(pl))
+        return Pile(pl)
 
     def _build_partition_list(self):
         pl = []
@@ -63,7 +74,9 @@ class FilesystemView(WidgetWrap):
 
     def _build_buttons(self):
         buttons = [
-            Color.button_secondary(cancel_btn(on_press=self.cancel),
+            Color.button_secondary(reset_btn(on_press=self.reset),
+                                   focus_map='button_secondary focus'),
+            Color.button_secondary(done_btn(on_press=self.done),
                                    focus_map='button_secondary focus'),
         ]
         return Pile(buttons)
@@ -75,8 +88,8 @@ class FilesystemView(WidgetWrap):
         for dname in self.model.get_available_disks():
             disk = self.model.get_disk_info(dname)
             col_1.append(
-                Color.button_primary(confirm_btn(label=disk.name,
-                                                 on_press=self.confirm),
+                Color.button_primary(done_btn(label=disk.name,
+                                              on_press=self.done),
                                      focus_map='button_primary focus'))
             disk_sz = str(_humanize_size(disk.size))
             col_2.append(Text(disk_sz))
@@ -91,18 +104,18 @@ class FilesystemView(WidgetWrap):
         opts = []
         for opt in self.model.additional_options:
             opts.append(
-                Color.button_secondary(confirm_btn(label=opt,
-                                                   on_press=self.confirm),
+                Color.button_secondary(done_btn(label=opt,
+                                                on_press=self.done),
                                        focus_map='button_secondary focus'))
         return Pile(opts)
 
-    def confirm(self, button):
-        log.info("Filesystem View confirm() getting disk info")
-        disk = self.model.get_disk_info(button.label)
-        log.info("Filesystem View callback({}, {}, {})".format(disk.name,
-                                                               disk.model,
-                                                               disk.serial))
-        return self.cb(disk.name, disk.model, disk.serial)
+    def done(self, button):
+        log.info("Filesystem View done() getting disk info")
+        actions = self.model.get_actions()
+        return self.cb(actions=actions)
 
     def cancel(self, button):
         return self.cb(None)
+
+    def reset(self, button):
+        return self.cb(reset=True)

@@ -18,3 +18,5 @@ from functools import partial
 
 confirm_btn = partial(Button, label="Confirm", on_press=None)
 cancel_btn = partial(Button, label="Cancel", on_press=None)
+done_btn = partial(Button, label="Done", on_press=None)
+reset_btn = partial(Button, label="Reset", on_press=None)
