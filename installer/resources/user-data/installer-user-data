@@ -5,12 +5,14 @@ bootcmd:
     - echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
     - /bin/ls -1 /sys/class/net | grep -v ^lo$ | xargs -i bash -c 'D={}; echo -e "auto $D\niface $D inet dhcp"' | tee /etc/network/interfaces
     - /bin/ls -1 /sys/class/net | grep -v ^lo$ | xargs -i ifup {}
+    - tee -a /etc/modprobe.d/blacklist.conf <<<"blacklist floppy"
 password: passw0rd
 chpasswd: { expire: False }
 output: {all: '| tee -a /var/log/cloud-init-output.log'}
 packages:
  - python-urwid
  - python3-urwid
+ - python3-parted
  - python3-pyudev
  - python3-netifaces
 runcmd:

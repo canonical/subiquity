@@ -16,10 +16,13 @@
 from subiquity.controllers.policy import ControllerPolicy
 from subiquity.views.filesystem import FilesystemView
 from subiquity.models.filesystem import FilesystemModel
+from subiquity.curtin import curtin_write_storage_template
 
 import logging
+import subprocess
 
-log = logging.getLogger('subiquity.filesystem')
+
+log = logging.getLogger('subiquity.filesystemController')
 
 
 class FilesystemController(ControllerPolicy):
@@ -36,10 +39,30 @@ class FilesystemController(ControllerPolicy):
         self.ui.set_body(FilesystemView(model, self.finish))
         return
 
-    def finish(self, disk=None):
+    def finish(self, disk=None, disk_model=None, disk_serial=None):
         if disk is None:
             return self.ui.prev_controller()
         log.info("Filesystem Interface choosen: {}".format(disk))
+        log.info("params: disk={} model={} serial={}".format(
+                 disk, disk_model, disk_serial))
+        log.debug(
+            "FilesystemController: dry_run: {}".format(self.ui.opts.dry_run))
+
+        log.info("Rendering curtin config from user choices")
+        curtin_write_storage_template(disk, disk_model, disk_serial)
+        if self.ui.opts.dry_run:
+            log.debug("filesystem: this is a dry-run")
+            print("\033c")
+            print("**** DRY_RUN ****")
+            print('NOT calling: '
+                  'subprocess.check_call("/usr/local/bin/curtin_wrap.sh")')
+            print("**** DRY_RUN ****")
+        else:
+            log.debug("filesystem: this is the *real* thing")
+            print("\033c")
+            print("**** Calling curtin installer ****")
+            subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
+
         return self.ui.exit()
 
 __controller_class__ = FilesystemController

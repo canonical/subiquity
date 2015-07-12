@@ -22,8 +22,12 @@ configuration.
 
 from subiquity import models
 import argparse
-import math
 from probert import prober
+from probert.storage import StorageInfo
+import logging
+import json
+
+log = logging.getLogger('subiquity.filesystemModel')
 
 
 class FilesystemModel(models.Model):
@@ -41,29 +45,33 @@ class FilesystemModel(models.Model):
         self.options = argparse.Namespace(probe_storage=True,
                                           probe_network=False)
         self.prober = prober.Prober(self.options)
+        self.probe_storage()
 
     def probe_storage(self):
+        self.disks = {}
         self.prober.probe()
         self.storage = self.prober.get_results().get('storage')
+        log.debug('storage probe data:\n{}'.format(
+                  json.dumps(self.storage, indent=4, sort_keys=True)))
 
-    def get_available_disks(self):
-        return [disk for disk in self.storage.keys()
-                if self.storage[disk]['DEVTYPE'] == 'disk' and
-                self.storage[disk]['MAJOR'] == '8']
+        # TODO: replace this with Storage.get_device_by_match()
+        # which takes a lambda fn for matching
+        VALID_MAJORS = ['8', '253']
+        for disk in self.storage.keys():
+            if self.storage[disk]['DEVTYPE'] == 'disk' and \
+               self.storage[disk]['MAJOR'] in VALID_MAJORS:
+                self.disks[disk] = StorageInfo({disk: self.storage[disk]})
+                log.debug('disk={}\n{}'.format(disk,
+                          json.dumps(self.storage[disk], indent=4,
+                                     sort_keys=True)))
 
     def get_partitions(self):
         return [part for part in self.storage.keys()
                 if self.storage[part]['DEVTYPE'] == 'partition' and
                 self.storage[part]['MAJOR'] == '8']
 
-    def _humanize_size(self, size):
-        size = abs(size)
-        if size == 0:
-            return "0B"
-        units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
-        p = math.floor(math.log(size, 2) / 10)
-        return "%.3f %s" % (size / math.pow(1024, p), units[int(p)])
+    def get_available_disks(self):
+        return self.disks.keys()
 
-    def get_disk_size(self, disk):
-        return self._humanize_size(
-            int(self.storage[disk]['attrs']['size']) * 512)
+    def get_disk_info(self, disk):
+        return self.disks[disk]
