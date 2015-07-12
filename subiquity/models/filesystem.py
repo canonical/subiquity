@@ -19,14 +19,14 @@ Provides storage device selection and additional storage
 configuration.
 
 """
-
-from subiquity import models
-import argparse
-from probert import prober
-from probert.storage import StorageInfo
 import logging
 import json
+import argparse
 
+from subiquity import models
+from subiquity.models.blockdev import Blockdev
+from probert import prober
+from probert.storage import StorageInfo
 log = logging.getLogger('subiquity.filesystemModel')
 
 
@@ -42,13 +42,14 @@ class FilesystemModel(models.Model):
 
     def __init__(self):
         self.storage = {}
+        self.info = {}
+        self.devices = {}
         self.options = argparse.Namespace(probe_storage=True,
                                           probe_network=False)
         self.prober = prober.Prober(self.options)
         self.probe_storage()
 
     def probe_storage(self):
-        self.disks = {}
         self.prober.probe()
         self.storage = self.prober.get_results().get('storage')
         log.debug('storage probe data:\n{}'.format(
@@ -60,18 +61,40 @@ class FilesystemModel(models.Model):
         for disk in self.storage.keys():
             if self.storage[disk]['DEVTYPE'] == 'disk' and \
                self.storage[disk]['MAJOR'] in VALID_MAJORS:
-                self.disks[disk] = StorageInfo({disk: self.storage[disk]})
                 log.debug('disk={}\n{}'.format(disk,
                           json.dumps(self.storage[disk], indent=4,
                                      sort_keys=True)))
+                self.info[disk] = StorageInfo({disk: self.storage[disk]})
+
+    def get_disk(self, disk):
+        if disk not in self.devices:
+                self.devices[disk] = Blockdev(disk, self.info[disk].serial)
+        return self.devices[disk]
 
     def get_partitions(self):
-        return [part for part in self.storage.keys()
-                if self.storage[part]['DEVTYPE'] == 'partition' and
-                self.storage[part]['MAJOR'] == '8']
+        partitions = []
+        for dev in self.devices.values():
+            partnames = [part.path for part in dev.disk.partitions]
+            partitions += partnames
+
+        sorted(partitions)
+        return partitions
 
     def get_available_disks(self):
-        return self.disks.keys()
+        return self.info.keys()
+
+    def get_used_disks(self):
+        return [dev.disk.path for dev in self.devices.values()
+                if dev.available is False]
 
     def get_disk_info(self, disk):
-        return self.disks[disk]
+        return self.info[disk]
+
+    def get_disk_action(self, disk):
+        return self.devices[disk].get_actions()
+
+    def get_actions(self):
+        actions = []
+        for dev in self.devices.values():
+            actions += dev.get_actions()
+        return actions
