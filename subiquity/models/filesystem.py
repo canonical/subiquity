@@ -30,6 +30,15 @@ from probert.storage import StorageInfo
 log = logging.getLogger('subiquity.filesystemModel')
 
 
+class DiskPartitionModel(models.Model):
+    """ Disk partitioning/formatting model """
+
+    options = [
+        'Add first GPT partition',
+        'Format or create swap on entire device (unusual, advanced)'
+    ]
+
+
 class FilesystemModel(models.Model):
     """ Model representing storage options
     """

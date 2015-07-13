@@ -15,7 +15,7 @@
 
 from subiquity.controllers.policy import ControllerPolicy
 from subiquity.views.filesystem import FilesystemView
-from subiquity.models.filesystem import FilesystemModel
+from subiquity.models.filesystem import FilesystemModel, DiskPartitionModel
 from subiquity.curtin import curtin_write_storage_actions
 
 import logging
@@ -23,6 +23,17 @@ import subprocess
 
 
 log = logging.getLogger('subiquity.filesystemController')
+
+
+class DiskPartitionController(ControllerPolicy):
+    """ Disk partition modification controller """
+    def show(self, disk=None):
+        self.ui.set_header("Partition, format and mount {}".format(disk))
+        model = DiskPartitionModel()
+        pass
+
+    def finish(self, reset=False):
+        pass
 
 
 class FilesystemController(ControllerPolicy):
