@@ -81,7 +81,7 @@ class FilesystemModel(models.Model):
         return partitions
 
     def get_available_disks(self):
-        return self.info.keys()
+        return sorted(self.info.keys())
 
     def get_used_disks(self):
         return [dev.disk.path for dev in self.devices.values()
