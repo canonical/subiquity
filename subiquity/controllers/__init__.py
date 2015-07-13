@@ -64,6 +64,10 @@ class BaseController:
         raise urwid.ExitMainLoop()
 
     def header_hotkeys(self, key):
+        if key in ['esc'] and Routes.current_route_idx != 0:
+            Routes.prev()
+            current_route = Routes.current()
+            current_route(self).show()
         if key in ['q', 'Q', 'ctrl c']:
             self.exit()
 
