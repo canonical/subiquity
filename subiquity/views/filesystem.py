@@ -15,7 +15,8 @@
 
 import logging
 import math
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, Text, Columns)
+from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, Text, Columns,
+                   connect_signal)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import done_btn, reset_btn
 from subiquity.ui.utils import Padding, Color
@@ -87,10 +88,11 @@ class FilesystemView(WidgetWrap):
 
         for dname in self.model.get_available_disks():
             disk = self.model.get_disk_info(dname)
+            btn = done_btn(label=disk.name)
+            connect_signal(btn, 'click', self.show_disk_partition_view)
+
             col_1.append(
-                Color.button_primary(done_btn(label=disk.name,
-                                              on_press=self.done),
-                                     focus_map='button_primary focus'))
+                Color.button_primary(btn, focus_map='button_primary focus'))
             disk_sz = str(_humanize_size(disk.size))
             col_2.append(Text(disk_sz))
 
@@ -119,3 +121,7 @@ class FilesystemView(WidgetWrap):
 
     def reset(self, button):
         return self.cb(reset=True)
+
+    # Sub-panel views
+    def show_disk_partition_view(self, partition):
+        log.info("Disk partition view selected, {}".format(partition.label))
