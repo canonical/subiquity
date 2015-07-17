@@ -14,7 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from subiquity.views.filesystem import (FilesystemView,
-                                        DiskPartitionView)
+                                        DiskPartitionView,
+                                        AddPartitionView)
 from subiquity.models.filesystem import FilesystemModel
 from subiquity.curtin import curtin_write_storage_actions
 
@@ -85,15 +86,34 @@ class FilesystemController:
         self.ui.set_header(title)
         self.ui.set_footer(footer)
         dp_view = DiskPartitionView(self.fs_model,
-                                    disk,
-                                    self.finish_disk_paritition_view)
+                                    disk)
 
         connect_signal(dp_view, 'fs:dp:done', self.finish_disk_paritition_view)
+        connect_signal(dp_view, 'fs:show-add-partition',
+                       self.show_add_disk_partition_view)
+
         self.ui.set_body(dp_view)
         return
 
-    def finish_disk_paritition_view(self, is_finish):
-        log.debug("Finish disk-p-v: {}".format(is_finish))
+    def finish_disk_paritition_view(self, result):
+        log.debug("Finish disk-p-v: {}".format(result))
+        return self.ui.exit()
+
+    # ADD Partitioning actions
+    def show_add_disk_partition_view(self, disk):
+        adp_view = AddPartitionView(self.fs_model,
+                                    disk)
+        connect_signal(adp_view,
+                       'fs:add-partition:done',
+                       self.finish_add_disk_paritition_view)
+        self.ui.set_body(adp_view)
+        return
+
+    def finish_add_disk_partition_view(self, partition_spec):
+        if not partition_spec:
+            log.debug("New partition: {}".format(partition_spec))
+        else:
+            log.debug("Empty partition spec, should go back one.")
         return self.ui.exit()
 
 

@@ -47,6 +47,16 @@ class FilesystemModel(models.Model):
         'Format or create swap on entire device (unusual, advanced)'
     ]
 
+    supported_filesystems = [
+        'ext4',
+        'xfs',
+        'btrfs',
+        'swap',
+        'bcache cache',
+        'bcache store',
+        'leave unformatted'
+    ]
+
     def __init__(self):
         self.storage = {}
         self.info = {}
