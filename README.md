@@ -1,5 +1,5 @@
 # subiquity
-Ubuntu Server Installer
+> Ubuntu Server Installer
 
 # building installer
 `make installer`
@@ -9,6 +9,10 @@ Ubuntu Server Installer
 
 # running the UI locally
 `make ui-view`
+
+with `--dry-run`
+
+`make dryrun`
 
 # overrides
 ```
