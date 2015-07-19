@@ -19,6 +19,9 @@ from abc import ABCMeta, abstractmethod
 
 
 class ControllerPolicy(metaclass=ABCMeta):
+    """ Policy class for controller specifics
+    """
+    signals = ('done', 'cancel', 'reset')
 
     def __init__(self, ui):
         self.ui = ui
@@ -27,7 +30,8 @@ class ControllerPolicy(metaclass=ABCMeta):
     def show(self, *args, **kwds):
         """ Implements show action for the controller
 
-        Renders the View for controller.
+        This is the entrypoint for all initial controller
+        views.
         """
         pass
 

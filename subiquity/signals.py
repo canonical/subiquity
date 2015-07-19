@@ -13,10 +13,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import Button
-from functools import partial
+import urwid
 
-confirm_btn = partial(Button, label="Confirm", on_press=None)
-cancel_btn = partial(Button, label="Cancel", on_press=None)
-done_btn = partial(Button, label="Done", on_press=None)
-reset_btn = partial(Button, label="Reset", on_press=None)
+SIGNALS = {}
+
+
+def register_signal(obj, name):
+    if obj.__class__ not in SIGNALS:
+        SIGNALS[obj.__class__] = []
+    if name not in SIGNALS[obj.__class__]:
+        SIGNALS[obj.__class__].append(name)
+        urwid.register_signal(obj.__class__, SIGNALS[obj.__class__])
+
+
+def emit_signal(obj, name, args):
+    register_signal(obj, name)
+    urwid.emit_signal(obj, name, args)

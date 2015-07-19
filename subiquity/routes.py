@@ -66,6 +66,11 @@ class Routes:
         return cls.route(-1)
 
     @classmethod
+    def current(cls):
+        """ return current route's controller """
+        return cls.route(cls.current_route_idx)
+
+    @classmethod
     def next(cls):
         cls.current_route_idx = cls.current_route_idx + 1
         return cls.route(cls.current_route_idx)

@@ -27,15 +27,17 @@ class Header(WidgetWrap):
     :returns: Header()
     """
 
-    def __init__(self, title="Ubuntu Server Installer", excerpt=""):
-        title_widget = Padding.center_79(Color.body(Text(title)))
-        excerpt_widget = Padding.center_79(Color.body(Text(excerpt)))
-        pile = Pile([Text(""),
-                     title_widget,
-                     Text(""),
-                     excerpt_widget,
-                     Text("")])
-        super().__init__(pile)
+    def __init__(self, title=None, excerpt=None):
+        widgets = [Text("")]
+        if title is not None:
+            widgets.append(
+                Padding.center_79(Color.body(Text(title))))
+            widgets.append(Text(""))
+        if excerpt is not None:
+            widgets.append(
+                Padding.center_79(Color.body(Text(excerpt))))
+            widgets.append(Text(""))
+        super().__init__(Pile(widgets))
 
 
 class Footer(WidgetWrap):
@@ -58,10 +60,6 @@ class Body(WidgetWrap):
     def __init__(self):
         text = [
             Padding.line_break(""),
-            Padding.center_79(
-                Text("Welcome to the Ubuntu Server Installation",
-                     align="center")),
-            Padding.line_break("")
         ]
         w = (SimpleList(text))
         super().__init__(w)

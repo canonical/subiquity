@@ -41,35 +41,39 @@ class BaseController:
         controller = Routes.prev()
         controller(self).show(*args, **kwds)
 
+    def current_controller(self, *args, **kwds):
+        controller = Routes.current()
+        return controller(self)
+
     def redraw_screen(self):
         if hasattr(self, 'loop'):
             try:
                 self.loop.draw_screen()
             except AssertionError as e:
-                log.critical(e)
+                log.critical("Redraw screen error: {}".format(e))
 
     def set_alarm_in(self, interval, cb):
         self.loop.set_alarm_in(interval, cb)
         return
 
     def update(self, *args, **kwds):
-        route = Routes.current_idx()
-        if route == 0:
-            self.begin()
-        self.set_alarm_in(1, self.update)
+        """ Update loop """
+        pass
 
     def exit(self):
         raise urwid.ExitMainLoop()
 
     def header_hotkeys(self, key):
-        if key in ['q', 'Q']:
+        if key in ['esc'] and Routes.current_idx() != 0:
+            self.prev_controller()
+        if key in ['q', 'Q', 'ctrl c']:
             self.exit()
 
     def set_body(self, w):
         self.ui.set_body(w)
         self.redraw_screen()
 
-    def set_header(self, title, excerpt):
+    def set_header(self, title=None, excerpt=None):
         self.ui.set_header(title, excerpt)
         self.redraw_screen()
 
@@ -79,26 +83,30 @@ class BaseController:
 
     def run(self):
         if not hasattr(self, 'loop'):
+            palette = STYLES
+            additional_opts = {
+                'screen': urwid.raw_display.Screen(),
+                'unhandled_input': self.header_hotkeys,
+                'handle_mouse': False
+            }
             if self.opts.run_on_serial:
-                screen = urwid.raw_display.Screen()
-                screen.register_palette(STYLES_MONO)
+                palette = STYLES_MONO
+                additional_opts['screen'] = urwid.curses_display.Screen()
             else:
-                screen = urwid.raw_display.Screen()
-                screen.set_mouse_tracking(False)
-                screen.set_terminal_properties(256)
-                screen.register_palette(STYLES)
+                additional_opts['screen'].set_terminal_properties(colors=256)
+                additional_opts['screen'].reset_default_terminal_palette()
 
-            self.loop = urwid.MainLoop(self.ui, screen=screen,
-                                       unhandled_input=self.header_hotkeys)
+            self.loop = urwid.MainLoop(
+                self.ui, palette, **additional_opts)
 
         try:
-            self.begin()
+            self.set_alarm_in(0.05, self.begin)
             self.loop.run()
         except:
             log.exception("Exception in controller.run():")
             raise
 
-    def begin(self):
+    def begin(self, *args, **kwargs):
         """ Initializes the first controller for installation """
         Routes.reset()
         initial_controller = Routes.first()

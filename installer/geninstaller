@@ -30,13 +30,14 @@ simplestreams
 syslinux-common
 grub2-common"
 SRC_DEPS=(
-  "bzr" "lp:curtin"
-  "git" "https://github.com/CanonicalLtd/probert.git"
+  "bzr" "lp:~wesley-wiedenmeier/curtin/custom-partitioning-layout" "curtin"
+  "git" "https://github.com/CanonicalLtd/probert.git" "probert"
 )
 CACHEDIR=""
 
 cleanup_noexit() {
     [ -n "${CACHEDIR}" ] && {
+        sync
         sudo umount ${CACHEDIR}/mnt/{dev,proc,sys} || exit
         sudo umount ${CACHEDIR}/mnt  || exit
         sudo kpartx -v -d ${CACHEDIR}/installer.img || exit
@@ -146,19 +147,14 @@ install_src() {
     while [ $# -gt 0 ]; do
         local proto=${1}; shift
         local url=${1}; shift
+        local localdir=${1}; shift
 
         [ -z "${proto}" -o -z "${url}" ] && {
             log "ERROR installing source with args: $@"
             return 1;
         }
 
-        local target=""
-        case $url in
-            lp:*)
-                target="$dldir/${url#lp:*}";;
-            *)
-                target="$dldir/`basename $url`";;
-        esac
+        local target="$dldir/$localdir"
         case "$proto" in
             git)
                 cmd="git clone $url $target";;
@@ -304,8 +300,11 @@ generate_seed() {
     (
         instcmd="curtin install cp:///"
         cd $dldir/curtin
-        PYTHONPATH=$PYTHONPATH:`pwd` ./bin/curtin pack -- $instcmd > $curtin_cmd
-    )
+        PYTHONPATH=`pwd` ./bin/curtin pack -- $instcmd > $curtin_cmd
+    ) || {
+            log "ERROR: failed to pack curtin installer";
+            return 1;
+    }
 
     # inject user-data/meta-data into seed
     log "Writing seed meta-data"
@@ -340,7 +339,7 @@ generate_seed() {
     }
     log "Writing seed user-data (probert)"
     local probert_tar=$dldir/probert.tar
-    (cd ${dldir}/probert.git &&
+    (cd ${dldir}/probert &&
      tar -cpf $probert_tar bin probert) || {
         log "ERROR: Failed to package probert installer";
         return 1;

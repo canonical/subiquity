@@ -2,6 +2,10 @@
 # Makefile for subiquity
 #
 PYTHONSRC=subiquity
+PYTHONPATH=$(shell pwd):$(shell pwd)/probert:$PYTHONPATH
+VENVPATH=$(shell pwd)/venv
+VENVACTIVATE=$(VENVPATH)/bin/activate
+TOPDIR=$(shell pwd)
 STREAM=daily
 RELEASE=wily
 ARCH=amd64
@@ -9,9 +13,16 @@ INSTALLIMG=ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img
 INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 .PHONY: run clean
 
+all: dryrun
+
+dryrun:
+	$(MAKE) ui-view DRYRUN="--dry-run"
 
 ui-view:
-	(PYTHONPATH=$(shell pwd):$(shell pwd)/probert bin/$(PYTHONSRC))
+	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) $(DRYRUN))
+
+ui-view-serial:
+	(TERM=att4424 PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) $(DRYRUN) --serial)
 
 lint:
 	echo "Running flake8 lint tests..."

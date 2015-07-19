@@ -19,46 +19,99 @@ Provides storage device selection and additional storage
 configuration.
 
 """
+import logging
+import json
+import argparse
 
 from subiquity import models
-import argparse
-import math
+from subiquity.models.blockdev import Blockdev
 from probert import prober
+from probert.storage import StorageInfo
+log = logging.getLogger('subiquity.filesystemModel')
 
 
 class FilesystemModel(models.Model):
     """ Model representing storage options
     """
 
-    additional_options = ['Connecti iSCSI network disk',
-                          'Connect Ceph network disk',
-                          'Create volume group (LVM2)',
-                          'Create software RAID (MD)',
-                          'Setup hierarchichal storage (bcache)']
+    fs_menu = [
+        'Connect iSCSI network disk',
+        'Connect Ceph network disk',
+        'Create volume group (LVM2)',
+        'Create software RAID (MD)',
+        'Setup hierarchichal storage (bcache)'
+    ]
+
+    partition_menu = [
+        'Add first GPT partition',
+        'Format or create swap on entire device (unusual, advanced)'
+    ]
+
+    supported_filesystems = [
+        'ext4',
+        'xfs',
+        'btrfs',
+        'swap',
+        'bcache cache',
+        'bcache store',
+        'leave unformatted'
+    ]
 
     def __init__(self):
         self.storage = {}
+        self.info = {}
+        self.devices = {}
         self.options = argparse.Namespace(probe_storage=True,
                                           probe_network=False)
         self.prober = prober.Prober(self.options)
+        self.probe_storage()
 
     def probe_storage(self):
         self.prober.probe()
         self.storage = self.prober.get_results().get('storage')
+        log.debug('storage probe data:\n{}'.format(
+                  json.dumps(self.storage, indent=4, sort_keys=True)))
+
+        # TODO: replace this with Storage.get_device_by_match()
+        # which takes a lambda fn for matching
+        VALID_MAJORS = ['8', '253']
+        for disk in self.storage.keys():
+            if self.storage[disk]['DEVTYPE'] == 'disk' and \
+               self.storage[disk]['MAJOR'] in VALID_MAJORS:
+                log.debug('disk={}\n{}'.format(disk,
+                          json.dumps(self.storage[disk], indent=4,
+                                     sort_keys=True)))
+                self.info[disk] = StorageInfo({disk: self.storage[disk]})
+
+    def get_disk(self, disk):
+        if disk not in self.devices:
+                self.devices[disk] = Blockdev(disk, self.info[disk].serial)
+        return self.devices[disk]
+
+    def get_partitions(self):
+        partitions = []
+        for dev in self.devices.values():
+            partnames = [part.path for part in dev.disk.partitions]
+            partitions += partnames
+
+        sorted(partitions)
+        return partitions
 
     def get_available_disks(self):
-        return [disk for disk in self.storage.keys()
-                if self.storage[disk]['DEVTYPE'] == 'disk' and
-                self.storage[disk]['MAJOR'] == '8']
+        return sorted(self.info.keys())
 
-    def _humanize_size(self, size):
-        size = abs(size)
-        if size == 0:
-            return "0B"
-        units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB']
-        p = math.floor(math.log(size, 2) / 10)
-        return "%.3f %s" % (size / math.pow(1024, p), units[int(p)])
+    def get_used_disks(self):
+        return [dev.disk.path for dev in self.devices.values()
+                if dev.available is False]
 
-    def get_disk_size(self, disk):
-        return self._humanize_size(
-            int(self.storage[disk]['attrs']['size']) * 512)
+    def get_disk_info(self, disk):
+        return self.info[disk]
+
+    def get_disk_action(self, disk):
+        return self.devices[disk].get_actions()
+
+    def get_actions(self):
+        actions = []
+        for dev in self.devices.values():
+            actions += dev.get_actions()
+        return actions

@@ -17,7 +17,6 @@ from subiquity.controllers.policy import ControllerPolicy
 from subiquity.views.installpath import InstallpathView
 from subiquity.models.installpath import InstallpathModel
 import logging
-import subprocess
 
 log = logging.getLogger('subiquity.installpath')
 
@@ -26,7 +25,7 @@ class InstallpathController(ControllerPolicy):
     """InstallpathController"""
 
     title = "15.10"
-    excerpt = ("Welcome to Ubuntu! The world’s favourite platform "
+    excerpt = ("Welcome to Ubuntu! The world's favourite platform "
                "for clouds, clusters and amazing internet things. "
                "This is the installer for Ubuntu on servers and "
                "internet devices.")
@@ -42,9 +41,9 @@ class InstallpathController(ControllerPolicy):
         return
 
     def finish(self, install_selection=None):
+        log.debug("installpath cb selection: {}".format(install_selection))
         if install_selection is None:
             return self.ui.prev_controller()
-        # subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
         return self.ui.next_controller()
 
 __controller_class__ = InstallpathController
