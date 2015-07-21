@@ -28,8 +28,7 @@ from probert import prober
 from probert.storage import StorageInfo
 import math
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
-                   Text, Columns, LineBox, Edit, RadioButton,
-                   emit_signal)
+                   Text, Columns, LineBox, Edit, RadioButton)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import done_btn, reset_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
@@ -329,8 +328,8 @@ class FilesystemView(WidgetWrap):
         buttons = [
             Color.button_secondary(reset_btn(on_press=self.reset),
                                    focus_map='button_secondary focus'),
-            Color.button_secondary(done_btn(on_press=self.done),
-                                   focus_map='button_secondary focus'),
+            #Color.button_secondary(done_btn(on_press=self.done),
+             #                      focus_map='button_secondary focus'),
         ]
         return Pile(buttons)
 
@@ -356,20 +355,22 @@ class FilesystemView(WidgetWrap):
 
     def _build_menu(self):
         opts = []
-        for opt in self.model.fs_menu:
+        for opt, sig, _ in self.model.fs_menu:
             opts.append(
-                Color.button_secondary(done_btn(label=opt,
-                                                on_press=self.done),
-                                       focus_map='button_secondary focus'))
+                Color.button_secondary(
+                    done_btn(label=opt,
+                             on_press=self.on_fs_menu_press),
+                    focus_map='button_secondary focus'))
         return Pile(opts)
 
-    def done(self, button):
+    def on_fs_menu_press(self, result):
         log.info("Filesystem View done() getting disk info")
         actions = self.model.get_actions()
-        self.signal.emit_signal('filesystem:done', False, actions)
+        self.signal.emit_signal(
+            self.model.get_signal_by_name(result.label), False, actions)
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:done')
+        self.signal.emit_signal('network:show')
 
     def reset(self, button):
         self.signal.emit_signal('filesystem:done', True)

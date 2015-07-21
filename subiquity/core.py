@@ -59,22 +59,10 @@ class Controller:
             [
                 ('welcome:show',
                  self.welcome),
-                ('welcome:finish',
-                 self.welcome_handler),
-                ('installpath:finish',
-                 self.installpath_handler),
                 ('installpath:show',
                  self.installpath),
                 ('network:show',
                  self.network),
-                ('network:finish',
-                 self.network_handler),
-                ('network:finish-set-default-route',
-                 self.set_default_route_handler),
-                ('network:finish-bond-interfaces',
-                 self.bond_interfaces_handler),
-                ('network:install-network-driver',
-                 self.install_network_driver_handler),
                 ('filesystem:show',
                  self.filesystem),
                 ('filesystem:finish',
@@ -185,14 +173,6 @@ class Controller:
         view = WelcomeView(self.models['welcome'], self.signal)
         self.ui.set_body(view)
 
-    def welcome_handler(self, language=None):
-        log.debug("Welcome handler")
-        if language is None:
-            raise SystemExit("No language selected, exiting as there are no "
-                             "more previous controllers to render.")
-        log.debug("Welcome Model: {}".format(self.models["welcome"]))
-        self.signal.emit_signal('installpath:show')
-
     # InstallPath -------------------------------------------------------------
     def installpath(self):
         title = "15.10"
@@ -208,39 +188,20 @@ class Controller:
         self.ui.set_body(InstallpathView(self.models["installpath"],
                                          self.signal))
 
-    def installpath_handler(self):
-        log.debug("InstallPath handler called.")
-        pass
-
     def install_ubuntu(self):
         log.debug("Installing Ubuntu path chosen.")
         self.signal.emit_signal('network:show')
 
-    def install_ubuntu_handler(self):
-        pass
-
     def install_maas_region_server(self):
-        pass
-
-    def install_maas_region_server_handler(self):
         pass
 
     def install_maas_cluster_server(self):
         pass
 
-    def install_maas_cluster_server_handler(self):
-        pass
-
     def test_media(self):
         pass
 
-    def test_media_handler(self):
-        pass
-
     def test_memory(self):
-        pass
-
-    def test_memory_handler(self):
         pass
 
     # Network -----------------------------------------------------------------
@@ -254,28 +215,13 @@ class Controller:
         self.ui.set_footer(footer)
         self.ui.set_body(NetworkView(self.models["network"], self.signal))
 
-    def network_handler(self, interface=None):
-        log.info("Network Interface choosen: {}".format(interface))
-        if interface is None:
-            urwid.emit_signal(self.signal, 'installpath:show')
-        urwid.emit_signal(self.signal, 'filesystem:show')
-
     def set_default_route(self):
-        pass
-
-    def set_default_route_handler(self):
         pass
 
     def bond_interfaces(self):
         pass
 
-    def bond_interfaces_handler(self):
-        pass
-
     def install_network_driver(self):
-        pass
-
-    def install_network_driver_handler(self):
         pass
 
     # Filesystem --------------------------------------------------------------
@@ -343,31 +289,16 @@ class Controller:
     def connect_iscsi_disk(self):
         pass
 
-    def connect_iscsi_disk_handler(self):
-        pass
-
     def connect_ceph_disk(self):
-        pass
-
-    def connect_ceph_disk_handler(self):
         pass
 
     def create_volume_group(self):
         pass
 
-    def create_volume_group_handler(self):
-        pass
-
     def create_raid(self):
         pass
 
-    def create_raid_handler(self):
-        pass
-
     def setup_bcache(self):
-        pass
-
-    def setup_bcache_handler(self):
         pass
 
     def add_first_gpt_partition(self):

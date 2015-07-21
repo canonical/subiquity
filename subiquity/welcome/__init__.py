@@ -67,8 +67,10 @@ class WelcomeView(WidgetWrap):
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))
 
-    def confirm(self, button):
-        emit_signal(self.signal, 'welcome:finish', button.label)
+    def confirm(self, result):
+        self.model.selected_language = result.label
+        emit_signal(self.signal, 'installpath:show')
 
     def cancel(self, button):
-        emit_signal(self.signal, 'welcome:finish', None)
+        raise SystemExit("No language selected, exiting as there are no "
+                         "more previous controllers to render.")

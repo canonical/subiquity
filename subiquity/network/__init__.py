@@ -151,9 +151,10 @@ class NetworkView(WidgetWrap):
         col_1 = []
         for iface in ifaces:
             col_1.append(
-                Color.button_primary(confirm_btn(label=iface,
-                                                 on_press=self.confirm),
-                                     focus_map='button_primary focus'))
+                Color.button_primary(
+                    confirm_btn(label=iface,
+                                on_press=self.on_net_dev_press),
+                    focus_map='button_primary focus'))
         col_1 = BoxAdapter(SimpleList(col_1),
                            height=len(col_1))
 
@@ -174,14 +175,18 @@ class NetworkView(WidgetWrap):
         opts = []
         for opt, sig, _ in self.model.additional_options:
             opts.append(
-                Color.button_secondary(confirm_btn(label=opt,
-                                                   on_press=self.confirm),
-                                       focus_map='button_secondary focus'))
+                Color.button_secondary(
+                    confirm_btn(label=opt,
+                                on_press=self.additional_menu_select),
+                    focus_map='button_secondary focus'))
         return Pile(opts)
 
-    def confirm(self, result):
-        log.debug("Selected network dev: {}".format(result.label))
+    def additional_menu_select(self, result):
         self.signal.emit_signal(self.model.get_signal_by_name(result.label))
+
+    def on_net_dev_press(self, result):
+        log.debug("Selected network dev: {}".format(result.label))
+        self.signal.emit_signal('filesystem:show')
 
     def cancel(self, button):
         self.signal.emit_signal('installpath:show')
