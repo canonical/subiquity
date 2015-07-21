@@ -13,21 +13,37 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+""" Install Path
+
+Provides high level options for Ubuntu install
+
+"""
 import logging
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
+from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, emit_signal)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 
-
 log = logging.getLogger('subiquity.installpathView')
 
 
+class InstallpathModel:
+    """ Model representing install options
+    """
+
+    install_paths = ['Install Ubuntu',
+                     'Install MAAS Region Server',
+                     'Install MAAS Cluster Server',
+                     'Test installation media',
+                     'Test machine memory']
+    selected_path = None
+
+
 class InstallpathView(WidgetWrap):
-    def __init__(self, model, cb):
+    def __init__(self, model, signal):
         log.debug("In install path view")
         self.model = model
-        self.cb = cb
+        self.signal = signal
         self.items = []
         self.body = [
             Padding.center_79(self._build_model_inputs()),
@@ -54,7 +70,7 @@ class InstallpathView(WidgetWrap):
                           height=len(sl))
 
     def confirm(self, button):
-        return self.cb(button.label)
+        emit_signal(self.signal, 'installpath:finish', button.label)
 
     def cancel(self, button):
-        return self.cb(None)
+        emit_signal(self.signal, 'welcome:show', None)

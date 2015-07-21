@@ -15,9 +15,8 @@
 
 """ Base Frame Widget """
 
-from urwid import Frame, WidgetWrap
+from urwid import Frame, WidgetWrap, register_signal
 from subiquity.ui.anchors import Header, Footer, Body
-from subiquity.signals import register_signal
 import logging
 
 

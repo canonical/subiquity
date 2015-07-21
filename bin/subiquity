@@ -19,7 +19,7 @@ import sys
 import logging
 from subiquity.log import setup_logger
 from subiquity import __version__ as VERSION
-from subiquity.controllers import BaseController as Subiquity
+from subiquity.core import Controller as Subiquity
 from subiquity.ui.frame import SubiquityUI
 
 

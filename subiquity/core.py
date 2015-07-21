@@ -1,0 +1,253 @@
+# Copyright 2015 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import logging
+import urwid
+import urwid.curses_display
+import subprocess
+from subiquity.signals import Signal
+from subiquity.palette import STYLES, STYLES_MONO
+from subiquity.curtin import curtin_write_storage_actions
+
+# Modes import ----------------------------------------------------------------
+from subiquity.welcome import WelcomeView, WelcomeModel
+from subiquity.network import NetworkView, NetworkModel
+from subiquity.installpath import InstallpathView, InstallpathModel
+from subiquity.filesystem import (FilesystemView,
+                                  DiskPartitionView,
+                                  AddPartitionView,
+                                  FilesystemModel)
+
+log = logging.getLogger('subiquity.core')
+
+
+class CoreControllerError(Exception):
+    """ Basecontroller exception """
+    pass
+
+
+class Controller:
+    def __init__(self, ui, opts):
+        self.ui = ui
+        self.opts = opts
+        self.signal = Signal()
+        self.signal.register_signals()
+
+# EventLoop -------------------------------------------------------------------
+    def redraw_screen(self):
+        if hasattr(self, 'loop'):
+            try:
+                self.loop.draw_screen()
+            except AssertionError as e:
+                log.critical("Redraw screen error: {}".format(e))
+
+    def set_alarm_in(self, interval, cb):
+        self.loop.set_alarm_in(interval, cb)
+        return
+
+    def update(self, *args, **kwds):
+        """ Update loop """
+        pass
+
+    def exit(self):
+        raise urwid.ExitMainLoop()
+
+    def header_hotkeys(self, key):
+        if key in ['q', 'Q', 'ctrl c']:
+            self.exit()
+
+    def run(self):
+        if not hasattr(self, 'loop'):
+            palette = STYLES
+            additional_opts = {
+                'screen': urwid.raw_display.Screen(),
+                'unhandled_input': self.header_hotkeys,
+                'handle_mouse': False
+            }
+            if self.opts.run_on_serial:
+                palette = STYLES_MONO
+                additional_opts['screen'] = urwid.curses_display.Screen()
+            else:
+                additional_opts['screen'].set_terminal_properties(colors=256)
+                additional_opts['screen'].reset_default_terminal_palette()
+
+            self.loop = urwid.MainLoop(
+                self.ui, palette, **additional_opts)
+
+        try:
+            self.set_alarm_in(0.05, self.welcome)
+            self.loop.run()
+        except:
+            log.exception("Exception in controller.run():")
+            raise
+
+# Base UI Actions -------------------------------------------------------------
+    def set_body(self, w):
+        self.ui.set_body(w)
+        self.redraw_screen()
+
+    def set_header(self, title=None, excerpt=None):
+        self.ui.set_header(title, excerpt)
+        self.redraw_screen()
+
+    def set_footer(self, message):
+        self.ui.set_footer(message)
+        self.redraw_screen()
+
+
+# Modes ----------------------------------------------------------------------
+
+    # Welcome -----------------------------------------------------------------
+    def welcome(self, *args, **kwargs):
+        title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
+        excerpt = "Please choose your preferred language"
+        footer = ("Use UP, DOWN arrow keys, and ENTER, to "
+                  "select your language.")
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer)
+        model = WelcomeModel()
+        view = WelcomeView(model, self.signal)
+        urwid.connect_signal(self.signal, 'welcome:finish',
+                             self.welcome_handler)
+        urwid.connect_signal(self.signal, 'installpath:show', self.installpath)
+        self.ui.set_body(view)
+        self.welcome_model = WelcomeModel()
+
+    def welcome_handler(self, language=None):
+        log.debug("Welcome handler")
+        if language is None:
+            raise SystemExit("No language selected, exiting as there are no "
+                             "more previous controllers to render.")
+        self.welcome_model.selected_language = language
+        log.debug("Welcome Model: {}".format(self.welcome_model))
+        urwid.emit_signal(self.signal, 'installpath:show')
+
+    # InstallPath -------------------------------------------------------------
+    def installpath(self):
+        title = "15.10"
+        excerpt = ("Welcome to Ubuntu! The world's favourite platform "
+                   "for clouds, clusters and amazing internet things. "
+                   "This is the installer for Ubuntu on servers and "
+                   "internet devices.")
+        footer = ("Use UP, DOWN arrow keys, and ENTER, to "
+                  "navigate options")
+
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer)
+        self.installpath_model = InstallpathModel()
+        urwid.connect_signal(self.signal, 'installpath:finish',
+                             self.installpath_handler)
+        urwid.connect_signal(self.signal, 'welcome:show', self.welcome)
+        self.ui.set_body(InstallpathView(self.installpath_model, self.signal))
+
+    def installpath_handler(self, install_selection=None):
+        if install_selection is None:
+            urwid.emit_signal(self.signal, 'welcome:show', [])
+        urwid.emit_signal(self.signal, 'network:show', [])
+
+    # Network -----------------------------------------------------------------
+    def network(self):
+        title = "Network connections"
+        excerpt = ("Configure at least the main interface this server will "
+                   "use to talk to other machines, and preferably provide "
+                   "sufficient access for updates.")
+        footer = ("Additional networking info here")
+        self.network_model = NetworkModel()
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer)
+        urwid.connect_signal(self.signal, 'network:finish',
+                             self.network_handler)
+        urwid.connect_signal(self.signal, 'installpath:show', self.installpath)
+        urwid.connect_signal(self.signal, 'filesystem:show', self.filesystem)
+        self.ui.set_body(NetworkView(self.network_model))
+
+    def network_handler(self, interface=None):
+        log.info("Network Interface choosen: {}".format(interface))
+        if interface is None:
+            urwid.emit_signal(self.signal, 'installpath:show', [])
+        urwid.emit_signal(self.signal, 'filesystem:show', [])
+
+    # Filesystem --------------------------------------------------------------
+    def filesystem(self):
+        title = "Filesystem setup"
+        footer = ("Select available disks to format and mount")
+        self.ui.set_header(title)
+        self.ui.set_footer(footer)
+
+        self.fs_model = FilesystemModel()
+        urwid.connect_signal(self.signal, 'filesystem:finish',
+                             self.filesystem_handler)
+        urwid.connect_signal(self.signal, 'filesystem:show-disk-partition',
+                             self.disk_partition)
+        self.ui.set_body(FilesystemView(self.fs_model))
+
+    def filesystem_handler(self, reset=False, actions=None):
+        if actions is None and reset is False:
+            urwid.emit_signal(self.signal, 'network:show', [])
+
+        log.info("Rendering curtin config from user choices")
+        curtin_write_storage_actions(actions=actions)
+        if self.opts.dry_run:
+            log.debug("filesystem: this is a dry-run")
+            print("\033c")
+            print("**** DRY_RUN ****")
+            print('NOT calling: '
+                  'subprocess.check_call("/usr/local/bin/curtin_wrap.sh")')
+            print("**** DRY_RUN ****")
+        else:
+            log.debug("filesystem: this is the *real* thing")
+            print("\033c")
+            print("**** Calling curtin installer ****")
+            subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
+        return self.ui.exit()
+
+    # Filesystem/Disk partition -----------------------------------------------
+    def disk_partition(self, disk):
+        log.debug("In disk partition view, using {} as the disk.".format(disk))
+        title = ("Paritition, format, and mount {}".format(disk))
+        footer = ("Paritition the disk, or format the entire device "
+                  "without partitions.")
+        self.ui.set_header(title)
+        self.ui.set_footer(footer)
+        dp_view = DiskPartitionView(self.fs_model,
+                                    disk)
+
+        urwid.connect_signal(self.signal, 'filesystem:finish-disk-partition',
+                             self.disk_paritition_handler)
+        urwid.connect_signal(self.signal, 'filesystem:add-disk-partition',
+                             self.add_disk_partition)
+
+        self.ui.set_body(dp_view)
+
+    def disk_partition_handler(self, spec=None):
+        log.debug("Disk partition: {}".format(spec))
+        if spec is None:
+            urwid.emit_signal(self.signal, 'filesystem:show', [])
+        urwid.emit_signal(self.signal, 'filesystem:show-disk-partition', [])
+
+    def add_disk_partition(self, disk):
+        adp_view = AddPartitionView(self.fs_model,
+                                    disk)
+        urwid.connect_signal(self.signal,
+                             'filesystem:finish-add-disk-partition',
+                             self.add_disk_paritition_handler)
+        self.ui.set_body(adp_view)
+
+    def add_disk_partition_handler(self, partition_spec):
+        self.exit()
+        if not partition_spec:
+            log.debug("New partition: {}".format(partition_spec))
+        else:
+            log.debug("Empty partition spec, should go back one.")

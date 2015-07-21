@@ -15,17 +15,19 @@
 
 import urwid
 
-SIGNALS = {}
 
+class Signal:
+    signals = [
+        'welcome:show',
+        'welcome:finish',
+        'installpath:show',
+        'installpath:finish',
+        'filesystem:show',
+        'filesystem:show-disk-partition',
+        'filesystem:finish-disk-partition',
+        'filesystem:finish',
+        'filesystem:add-disk-partition'
+    ]
 
-def register_signal(obj, name):
-    if obj.__class__ not in SIGNALS:
-        SIGNALS[obj.__class__] = []
-    if name not in SIGNALS[obj.__class__]:
-        SIGNALS[obj.__class__].append(name)
-        urwid.register_signal(obj.__class__, SIGNALS[obj.__class__])
-
-
-def emit_signal(obj, name, args):
-    register_signal(obj, name)
-    urwid.emit_signal(obj, name, args)
+    def register_signals(self):
+        urwid.register_signal(Signal, self.signals)
