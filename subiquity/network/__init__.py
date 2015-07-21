@@ -22,7 +22,8 @@ Provides network device listings and extended network information
 import logging
 import argparse
 from probert import prober
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, Text, Columns)
+from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
+                   Text, Columns, emit_signal)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
@@ -48,15 +49,29 @@ class NetworkModel:
     """ Model representing network interfaces
     """
 
-    additional_options = ['Set default route',
-                          'Bond interfaces',
-                          'Install network driver']
+    additional_options = [
+        ('Set default route',
+         'network:set-default-route',
+         'set_default_route'),
+        ('Bond interfaces',
+         'network:bond-interfaces',
+         'bond_interfaces'),
+        ('Install network driver',
+         'network:install-network-driver',
+         'install_network_driver')
+    ]
 
     def __init__(self):
         self.network = {}
         self.options = argparse.Namespace(probe_storage=False,
                                           probe_network=True)
         self.prober = prober.Prober(self.options)
+
+    # TODO: make reusable
+    def get_signal_by_name(self, selection):
+        for x, y, z in self.additional_options:
+            if x == selection:
+                return y
 
     def probe_network(self):
         self.prober.probe()
@@ -108,9 +123,9 @@ class NetworkModel:
 
 
 class NetworkView(WidgetWrap):
-    def __init__(self, model, cb):
+    def __init__(self, model, signal):
         self.model = model
-        self.cb = cb
+        self.signal = signal
         self.items = []
         self.body = [
             Padding.center_79(self._build_model_inputs()),
@@ -157,15 +172,16 @@ class NetworkView(WidgetWrap):
 
     def _build_additional_options(self):
         opts = []
-        for opt in self.model.additional_options:
+        for opt, sig, _ in self.model.additional_options:
             opts.append(
                 Color.button_secondary(confirm_btn(label=opt,
                                                    on_press=self.confirm),
                                        focus_map='button_secondary focus'))
         return Pile(opts)
 
-    def confirm(self, button):
-        return self.cb(button.label)
+    def confirm(self, result):
+        log.debug("Selected network dev: {}".format(result.label))
+        self.signal.emit_signal(self.model.get_signal_by_name(result.label))
 
     def cancel(self, button):
-        return self.cb(None)
+        self.signal.emit_signal('installpath:show')

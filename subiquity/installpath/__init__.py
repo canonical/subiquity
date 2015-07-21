@@ -19,29 +19,45 @@ Provides high level options for Ubuntu install
 
 """
 import logging
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, emit_signal)
+from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 
-log = logging.getLogger('subiquity.installpathView')
+log = logging.getLogger('subiquity.installpath')
 
 
 class InstallpathModel:
     """ Model representing install options
+
+    List of install paths in the form of:
+    ('UI Text seen by user', <signal name>, <callback function string>)
     """
 
-    install_paths = ['Install Ubuntu',
-                     'Install MAAS Region Server',
-                     'Install MAAS Cluster Server',
-                     'Test installation media',
-                     'Test machine memory']
-    selected_path = None
+    install_paths = [('Install Ubuntu',
+                      'installpath:ubuntu',
+                      'install_ubuntu'),
+                     ('Install MAAS Region Server',
+                      'installpath:maas-region-server',
+                      'install_maas_region_server'),
+                     ('Install MAAS Cluster Server',
+                      'installpath:maas-cluster-server',
+                      'install_maas_cluster_server'),
+                     ('Test installation media',
+                      'installpath:test-media',
+                      'test_media'),
+                     ('Test machine memory',
+                      'installpath:test-memory',
+                      'test_memory')]
+
+    def get_signal_by_name(self, selection):
+        for x, y, z in self.install_paths:
+            if x == selection:
+                return y
 
 
 class InstallpathView(WidgetWrap):
     def __init__(self, model, signal):
-        log.debug("In install path view")
         self.model = model
         self.signal = signal
         self.items = []
@@ -61,7 +77,8 @@ class InstallpathView(WidgetWrap):
 
     def _build_model_inputs(self):
         sl = []
-        for ipath in self.model.install_paths:
+        for ipath, sig, _ in self.model.install_paths:
+            log.debug("Building inputs: {}".format(ipath))
             sl.append(Color.button_primary(confirm_btn(label=ipath,
                                                        on_press=self.confirm),
                                            focus_map='button_primary focus'))
@@ -69,8 +86,9 @@ class InstallpathView(WidgetWrap):
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))
 
-    def confirm(self, button):
-        emit_signal(self.signal, 'installpath:finish', button.label)
+    def confirm(self, result):
+        self.signal.emit_signal(
+            self.model.get_signal_by_name(result.label))
 
     def cancel(self, button):
-        emit_signal(self.signal, 'welcome:show', None)
+        self.signal.emit_signal('welcome:show')

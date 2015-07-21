@@ -28,7 +28,8 @@ from probert import prober
 from probert.storage import StorageInfo
 import math
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
-                   Text, Columns, LineBox, Edit, RadioButton)
+                   Text, Columns, LineBox, Edit, RadioButton,
+                   emit_signal)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import done_btn, reset_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
@@ -41,16 +42,30 @@ class FilesystemModel:
     """
 
     fs_menu = [
-        'Connect iSCSI network disk',
-        'Connect Ceph network disk',
-        'Create volume group (LVM2)',
-        'Create software RAID (MD)',
-        'Setup hierarchichal storage (bcache)'
+        ('Connect iSCSI network disk',
+         'filesystem:connect-iscsi-disk',
+         'connect_iscsi_disk'),
+        ('Connect Ceph network disk',
+         'filesystem:connect-ceph-disk',
+         'connect_ceph_disk'),
+        ('Create volume group (LVM2)',
+         'filesystem:create-volume-group',
+         'create_volume_group'),
+        ('Create software RAID (MD)',
+         'filesystem:create-raid',
+         'create_raid'),
+        ('Setup hierarchichal storage (bcache)',
+         'filesystem:setup-bcache',
+         'setup_bcache')
     ]
 
     partition_menu = [
-        'Add first GPT partition',
-        'Format or create swap on entire device (unusual, advanced)'
+        ('Add first GPT partition',
+         'filesystem:add-first-gpt-partition',
+         'add_first_gpt_partition'),
+        ('Format or create swap on entire device (unusual, advanced)',
+         'filesystem:create-swap-entire-device',
+         'create_swap_entire_device')
     ]
 
     supported_filesystems = [
@@ -71,6 +86,14 @@ class FilesystemModel:
                                           probe_network=False)
         self.prober = prober.Prober(self.options)
         self.probe_storage()
+
+    def get_signal_by_name(self, selection):
+        for x, y, z in self.fs_menu:
+            if x == selection:
+                return y
+        for x, y, z in self.partition_menu:
+            if x == selection:
+                return y
 
     def probe_storage(self):
         self.prober.probe()
@@ -133,13 +156,10 @@ def _humanize_size(size):
 
 
 class AddPartitionView(WidgetWrap):
-    signals = [
-        'fs:add-partition:done',
-        'fs:add-partition:cancel'
-    ]
 
-    def __init__(self, model, selected_disk):
+    def __init__(self, model, signal, selected_disk):
         self.partition_spec = {}
+        self.signal = signal
         self.model = model
         body = ListBox([
             Padding.center_79(
@@ -188,7 +208,7 @@ class AddPartitionView(WidgetWrap):
         return SimpleList(total_items)
 
     def cancel(self, button):
-        emit_signal(self, 'fs:add-partition:done', False)
+        self.signal.emit_signal('filesystem:finish-add-disk-partition')
 
     def done(self):
         """ partition spec
@@ -202,17 +222,14 @@ class AddPartitionView(WidgetWrap):
         if not self.partition_spec:
             # TODO: Maybe popup warning?
             return
-        emit_signal(self, 'fs:add-partition:done', self.partition_spec)
+        self.signal.emit_signal(
+            'filesystem:finish-add-disk-partition', self.partition_spec)
 
 
 class DiskPartitionView(WidgetWrap):
-    signals = [
-        'fs:dp:show-add-partition',
-        'fs:dp:done',
-    ]
-
-    def __init__(self, model, selected_disk):
+    def __init__(self, model, signal, selected_disk):
         self.model = model
+        self.signal = signal
         self.selected_disk = selected_disk
         self.body = [
             Padding.center_79(self._build_model_inputs()),
@@ -260,24 +277,19 @@ class DiskPartitionView(WidgetWrap):
         return Pile(opts)
 
     def add_partition(self, partition):
-        emit_signal(self, 'fs:dp:show-add-partition', True)
+        self.signal.emit_signal('filesystem:add-disk-partition')
 
     def done(self, button):
-        emit_signal(self, 'fs:dp:done', True)
+        self.signal.emit_signal('filesystem:finish-disk-partition')
 
     def cancel(self, button):
-        emit_signal(self, 'fs:dp:done', False)
+        self.signal.emit_signal('filesystem:finish-disk-partition', False)
 
 
 class FilesystemView(WidgetWrap):
-    signals = [
-        "fs:done",
-        "fs:reset",
-        "fs:dp:view"
-    ]
-
-    def __init__(self, model):
+    def __init__(self, model, signal):
         self.model = model
+        self.signal = signal
         self.items = []
         self.body = [
             Padding.center_79(Text("FILE SYSTEM")),
@@ -354,13 +366,14 @@ class FilesystemView(WidgetWrap):
     def done(self, button):
         log.info("Filesystem View done() getting disk info")
         actions = self.model.get_actions()
-        emit_signal(self, 'fs:done', False, actions)
+        self.signal.emit_signal('filesystem:done', False, actions)
 
     def cancel(self, button):
-        emit_signal(self, 'fs:done')
+        self.signal.emit_signal('filesystem:done')
 
     def reset(self, button):
-        emit_signal(self, 'fs:done', True)
+        self.signal.emit_signal('filesystem:done', True)
 
     def show_disk_partition_view(self, partition):
-        emit_signal(self, 'fs:dp:view', partition.label)
+        self.signal.emit_signal('filesystem:show-disk-partition',
+                                partition.label)

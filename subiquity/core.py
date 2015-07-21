@@ -42,8 +42,73 @@ class Controller:
     def __init__(self, ui, opts):
         self.ui = ui
         self.opts = opts
+        self.models = {
+            "welcome": WelcomeModel(),
+            "network": NetworkModel(),
+            "installpath": InstallpathModel(),
+            "filesystem": FilesystemModel()
+        }
         self.signal = Signal()
-        self.signal.register_signals()
+        # self.signal.register_signals()
+        self._connect_signals()
+
+    def _connect_signals(self):
+        """ Connect signals used in the core controller
+        """
+        self.signal.connect_signals(
+            [
+                ('welcome:show',
+                 self.welcome),
+                ('welcome:finish',
+                 self.welcome_handler),
+                ('installpath:finish',
+                 self.installpath_handler),
+                ('installpath:show',
+                 self.installpath),
+                ('network:show',
+                 self.network),
+                ('network:finish',
+                 self.network_handler),
+                ('network:finish-set-default-route',
+                 self.set_default_route_handler),
+                ('network:finish-bond-interfaces',
+                 self.bond_interfaces_handler),
+                ('network:install-network-driver',
+                 self.install_network_driver_handler),
+                ('filesystem:show',
+                 self.filesystem),
+                ('filesystem:finish',
+                 self.filesystem_handler),
+                ('filesystem:show-disk-partition',
+                 self.disk_partition),
+                ('filesystem:finish-disk-partition',
+                 self.disk_partition_handler),
+                ('filesystem:add-disk-partition',
+                 self.add_disk_partition),
+                ('filesystem:finish-add-disk-partition',
+                 self.add_disk_partition_handler)
+            ]
+        )
+        signals = []
+
+        # Pull signals emitted from install path selections
+        for name, sig, cb in self.models["installpath"].install_paths:
+            signals.append((sig, getattr(self, cb)))
+
+        # Pull signals emitted from network selections
+        for name, sig, cb in self.models["network"].additional_options:
+            signals.append((sig, getattr(self, cb)))
+
+        # Pull signals emitted from filesystem selections
+        for name, sig, cb in self.models["filesystem"].fs_menu:
+            signals.append((sig, getattr(self, cb)))
+
+        # Pull signals emitted from partition selections
+        for name, sig, cb in self.models["filesystem"].partition_menu:
+            signals.append((sig, getattr(self, cb)))
+
+        self.signal.connect_signals(signals)
+
 
 # EventLoop -------------------------------------------------------------------
     def redraw_screen(self):
@@ -117,22 +182,16 @@ class Controller:
                   "select your language.")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
-        model = WelcomeModel()
-        view = WelcomeView(model, self.signal)
-        urwid.connect_signal(self.signal, 'welcome:finish',
-                             self.welcome_handler)
-        urwid.connect_signal(self.signal, 'installpath:show', self.installpath)
+        view = WelcomeView(self.models['welcome'], self.signal)
         self.ui.set_body(view)
-        self.welcome_model = WelcomeModel()
 
     def welcome_handler(self, language=None):
         log.debug("Welcome handler")
         if language is None:
             raise SystemExit("No language selected, exiting as there are no "
                              "more previous controllers to render.")
-        self.welcome_model.selected_language = language
-        log.debug("Welcome Model: {}".format(self.welcome_model))
-        urwid.emit_signal(self.signal, 'installpath:show')
+        log.debug("Welcome Model: {}".format(self.models["welcome"]))
+        self.signal.emit_signal('installpath:show')
 
     # InstallPath -------------------------------------------------------------
     def installpath(self):
@@ -146,16 +205,43 @@ class Controller:
 
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
-        self.installpath_model = InstallpathModel()
-        urwid.connect_signal(self.signal, 'installpath:finish',
-                             self.installpath_handler)
-        urwid.connect_signal(self.signal, 'welcome:show', self.welcome)
-        self.ui.set_body(InstallpathView(self.installpath_model, self.signal))
+        self.ui.set_body(InstallpathView(self.models["installpath"],
+                                         self.signal))
 
-    def installpath_handler(self, install_selection=None):
-        if install_selection is None:
-            urwid.emit_signal(self.signal, 'welcome:show', [])
-        urwid.emit_signal(self.signal, 'network:show', [])
+    def installpath_handler(self):
+        log.debug("InstallPath handler called.")
+        pass
+
+    def install_ubuntu(self):
+        log.debug("Installing Ubuntu path chosen.")
+        self.signal.emit_signal('network:show')
+
+    def install_ubuntu_handler(self):
+        pass
+
+    def install_maas_region_server(self):
+        pass
+
+    def install_maas_region_server_handler(self):
+        pass
+
+    def install_maas_cluster_server(self):
+        pass
+
+    def install_maas_cluster_server_handler(self):
+        pass
+
+    def test_media(self):
+        pass
+
+    def test_media_handler(self):
+        pass
+
+    def test_memory(self):
+        pass
+
+    def test_memory_handler(self):
+        pass
 
     # Network -----------------------------------------------------------------
     def network(self):
@@ -164,20 +250,33 @@ class Controller:
                    "use to talk to other machines, and preferably provide "
                    "sufficient access for updates.")
         footer = ("Additional networking info here")
-        self.network_model = NetworkModel()
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
-        urwid.connect_signal(self.signal, 'network:finish',
-                             self.network_handler)
-        urwid.connect_signal(self.signal, 'installpath:show', self.installpath)
-        urwid.connect_signal(self.signal, 'filesystem:show', self.filesystem)
-        self.ui.set_body(NetworkView(self.network_model))
+        self.ui.set_body(NetworkView(self.models["network"], self.signal))
 
     def network_handler(self, interface=None):
         log.info("Network Interface choosen: {}".format(interface))
         if interface is None:
-            urwid.emit_signal(self.signal, 'installpath:show', [])
-        urwid.emit_signal(self.signal, 'filesystem:show', [])
+            urwid.emit_signal(self.signal, 'installpath:show')
+        urwid.emit_signal(self.signal, 'filesystem:show')
+
+    def set_default_route(self):
+        pass
+
+    def set_default_route_handler(self):
+        pass
+
+    def bond_interfaces(self):
+        pass
+
+    def bond_interfaces_handler(self):
+        pass
+
+    def install_network_driver(self):
+        pass
+
+    def install_network_driver_handler(self):
+        pass
 
     # Filesystem --------------------------------------------------------------
     def filesystem(self):
@@ -185,13 +284,8 @@ class Controller:
         footer = ("Select available disks to format and mount")
         self.ui.set_header(title)
         self.ui.set_footer(footer)
-
-        self.fs_model = FilesystemModel()
-        urwid.connect_signal(self.signal, 'filesystem:finish',
-                             self.filesystem_handler)
-        urwid.connect_signal(self.signal, 'filesystem:show-disk-partition',
-                             self.disk_partition)
-        self.ui.set_body(FilesystemView(self.fs_model))
+        self.ui.set_body(FilesystemView(self.models["filesystem"],
+                                        self.signal))
 
     def filesystem_handler(self, reset=False, actions=None):
         if actions is None and reset is False:
@@ -221,13 +315,9 @@ class Controller:
                   "without partitions.")
         self.ui.set_header(title)
         self.ui.set_footer(footer)
-        dp_view = DiskPartitionView(self.fs_model,
+        dp_view = DiskPartitionView(self.models["filesystem"],
+                                    self.signal,
                                     disk)
-
-        urwid.connect_signal(self.signal, 'filesystem:finish-disk-partition',
-                             self.disk_paritition_handler)
-        urwid.connect_signal(self.signal, 'filesystem:add-disk-partition',
-                             self.add_disk_partition)
 
         self.ui.set_body(dp_view)
 
@@ -238,11 +328,9 @@ class Controller:
         urwid.emit_signal(self.signal, 'filesystem:show-disk-partition', [])
 
     def add_disk_partition(self, disk):
-        adp_view = AddPartitionView(self.fs_model,
+        adp_view = AddPartitionView(self.models["filesystem"],
+                                    self.signal,
                                     disk)
-        urwid.connect_signal(self.signal,
-                             'filesystem:finish-add-disk-partition',
-                             self.add_disk_paritition_handler)
         self.ui.set_body(adp_view)
 
     def add_disk_partition_handler(self, partition_spec):
@@ -251,3 +339,39 @@ class Controller:
             log.debug("New partition: {}".format(partition_spec))
         else:
             log.debug("Empty partition spec, should go back one.")
+
+    def connect_iscsi_disk(self):
+        pass
+
+    def connect_iscsi_disk_handler(self):
+        pass
+
+    def connect_ceph_disk(self):
+        pass
+
+    def connect_ceph_disk_handler(self):
+        pass
+
+    def create_volume_group(self):
+        pass
+
+    def create_volume_group_handler(self):
+        pass
+
+    def create_raid(self):
+        pass
+
+    def create_raid_handler(self):
+        pass
+
+    def setup_bcache(self):
+        pass
+
+    def setup_bcache_handler(self):
+        pass
+
+    def add_first_gpt_partition(self):
+        pass
+
+    def create_swap_entire_device(self):
+        pass
