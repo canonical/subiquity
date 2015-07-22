@@ -301,7 +301,6 @@ generate_seed() {
     local cachedir=${2};
     local seed=$cachedir/seed/nocloud-net
     local installer_user_data=${TOPDIR}/resources/user-data/installer-user-data
-    local installer_user_data_offline=${TOPDIR}/resources/user-data/installer-offline-data
 
     # create curtin payload
     log "Generating curtin payload file"
@@ -327,8 +326,13 @@ generate_seed() {
     rm -f ${seed}/user-data &&
     cp $installer_user_data $seed/user-data &&
 
-    if [ "${OFFLINE}" == "yes" ]; then
-        log "Disabling package_update/upgrade"
+    if [ "${OFFLINE}" == "no" ]; then
+        log "Enabling cloud-init package installation"
+        local packages=""
+        for pkg in ${INSTALLER_DEPS[@]}; do
+            packages="$packages - $pkg\n"
+        done
+        sed -i "s/#packages/packages:\n$packages/" ${seed}/user-data
     fi
 
     userdata_write_file "/usr/local/bin/curtin-archive" \
@@ -451,9 +455,9 @@ generate_img() {
 
     log "Installing bootloader configuration"
     set +x
-    sudo mkdir -p ${mnt}/proc
-    sudo mkdir -p ${mnt}/sys
-    sudo mkdir -p ${mnt}/dev
+    sudo mkdir ${mnt}/proc
+    sudo mkdir ${mnt}/sys
+    sudo mkdir ${mnt}/dev
     sudo mount none -t proc ${mnt}/proc &&
     sudo mount none -t sysfs ${mnt}/sys &&
     sudo mount -o bind /dev ${mnt}/dev &&
