@@ -194,12 +194,12 @@ class AddPartitionView(WidgetWrap):
         self.signal = signal
         self.model = model
         body = [
-            Padding.center_79(
+            Padding.center_95(
                 Text("Adding partition to {}".format(selected_disk))),
             Padding.line_break(""),
-            Padding.center_95(self._container()),
+            Padding.center_90(self._container()),
             Padding.line_break(""),
-            Padding.center_70(self._build_buttons())
+            Padding.center_40(self._build_buttons())
         ]
         partition_box = Padding.center_65(Box(body))
         super().__init__(partition_box)
