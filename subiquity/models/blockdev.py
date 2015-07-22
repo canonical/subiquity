@@ -13,12 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import parted
 import yaml
 from itertools import count
 
 from subiquity.models.actions import (
-    Action,
+    DiskAction,
     PartitionAction,
     FormatAction,
     MountAction
@@ -59,11 +60,12 @@ class Bcachedev():
 
 
 class Blockdev():
-    def __init__(self, devpath, serial):
+    def __init__(self, devpath, serial, parttype='msdos'):
         self.serial = serial
         self.devpath = devpath
+        self._parttype = parttype
         self.device = parted.getDevice(self.devpath)
-        self.disk = parted.freshDisk(self.device, 'gpt')
+        self.disk = parted.freshDisk(self.device, self.parttype)
         self.mounts = {}
         self.bcache = []
         self.lvm = []
@@ -83,6 +85,14 @@ class Blockdev():
                 max_size = r.length
 
         return region
+
+    @property
+    def parttype(self):
+        return self._parttype
+
+    @parttype.setter  # NOQA
+    def parttype(self, value):
+        self._parttype = value
 
     @property
     def available(self):
@@ -113,7 +123,7 @@ class Blockdev():
         # find and remove from self.fstable
         pass
 
-    def add_partition(self, partnum, size, fstype, mountpoint):
+    def add_partition(self, partnum, size, fstype, mountpoint, flag=None):
         ''' add a new partition to this disk '''
         if size > self.freepartition:
             raise Exception('Not enough space')
@@ -124,7 +134,7 @@ class Blockdev():
 
         # convert size into a geometry based on existing partitions
         try:
-            start = self.disk.partitions[-1].geometry.start + 1
+            start = self.disk.partitions[-1].geometry.end + 1
         except IndexError:
             start = 0
         length = parted.sizeToSectors(size, 'B', self.device.sectorSize)
@@ -150,6 +160,17 @@ class Blockdev():
             fs = None
         partition = parted.Partition(disk=self.disk, type=parttype,
                                      fs=fs, geometry=geometry)
+
+        # add flags
+        flags = {
+            "boot": parted.PARTITION_BOOT,
+            "lvm": parted.PARTITION_LVM,
+            "raid": parted.PARTITION_RAID,
+            "bios_grub": parted.PARTITION_BIOS_GRUB
+        }
+        if flag in flags:
+            partition.setFlag(flags[flag])
+
         self.disk.addPartition(partition=partition, constraint=constraint)
 
         # fetch the newly created partition
@@ -167,14 +188,9 @@ class Blockdev():
 
     def get_actions(self):
         actions = []
-        baseaction = Action(self.disk.device.path)
-        action = {
-            'id': self.disk.device.path,
-            'type': 'disk',
-            'ptable': 'gpt',
-            'model': self.device.model,
-            'serial': self.serial,
-        }
+        baseaction = DiskAction(os.path.basename(self.disk.device.path),
+                                self.device.model, self.serial, self.parttype)
+        action = baseaction.get()
         for part in self.disk.partitions:
             fs_size = int(part.getSize(unit='B'))
             if part.fileSystem:
@@ -223,14 +239,25 @@ if __name__ == '__main__':
         print("USED DISKS")
 
     devices = []
-    sda = Blockdev('/dev/sda', 'abc123')
+    sda = Blockdev('/dev/sda', 'QM_TARGET_01', parttype='gpt')
     sdb = Blockdev('/dev/sdb', 'dafunk')
 
-    sda.add_partition(1, 8 * 1024 * 1024 * 1024, 'ext4', '/')
-    sda.add_partition(2, 80 * 1024 * 1024 * 1024, 'ext4', '/home')
+    sda.add_partition(1, 8 * 1024 * 1024 * 1024, 'ext4', '/', 'bios_grub')
+    sda.add_partition(2, 2 * 1024 * 1024 * 1024, 'ext4', '/home')
     sdb.add_partition(1, 50 * 1024 * 1024 * 1024, 'btrfs', '/opt')
 
     get_filesystems([sda, sdb])
     print()
+    HEADER = '''
+reporter:
+ subiquity:
+  path: /tmp/curtin_progress_subiquity
+  progress: True
+
+partitioning_commands:
+ builtin: curtin block-meta custom
+'''
+    print(HEADER)
+
     actions = {'storage': sda.get_actions() + sdb.get_actions()}
     print(yaml.dump(actions, default_flow_style=False))
