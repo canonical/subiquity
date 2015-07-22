@@ -32,6 +32,7 @@ from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
                    IntEdit)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import done_btn, reset_btn, cancel_btn
+from subiquity.ui.widgets import Box
 from subiquity.ui.utils import Padding, Color
 
 log = logging.getLogger('subiquity.filesystem')
@@ -203,7 +204,8 @@ class AddPartitionView(WidgetWrap):
             Padding.line_break(""),
             Padding.center_60(self._build_buttons())
         ]
-        super().__init__(ListBox(body))
+        partition_box = Padding.center_65(Box(body))
+        super().__init__(partition_box)
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
