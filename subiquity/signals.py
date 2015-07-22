@@ -58,3 +58,6 @@ class Signal:
             if sig not in self.known_signals:
                 self.register_signals(sig)
             self.connect_signal(sig, cb)
+
+    def __repr__(self):
+        return "Known Signals: {}".format(self.known_signals)

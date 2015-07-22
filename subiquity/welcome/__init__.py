@@ -23,16 +23,38 @@ from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, emit_signal)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
+from subiquity.model import ModelPolicy
 
 log = logging.getLogger('subiquity.welcome')
 
 
-class WelcomeModel:
+class WelcomeModel(ModelPolicy):
     """ Model representing language selection
     """
+    prev_signal = None
 
-    supported_languages = ['English', 'Belgian', 'German', 'Italian']
+    signals = [
+        ("Welcome view",
+         'welcome:show',
+         'welcome')
+    ]
+
+    supported_languages = ['English',
+                           'Belgian',
+                           'German',
+                           'Italian']
     selected_language = None
+
+    def get_signals(self):
+        return self.signals
+
+    def get_menu(self):
+        return self.supported_languages
+
+    def get_signal_by_name(self, selection):
+        for x, y, z in self.get_menu():
+            if x == selection:
+                return y
 
     def __repr__(self):
         return "<Selected: {}>".format(self.selected_language)
@@ -59,7 +81,7 @@ class WelcomeView(WidgetWrap):
 
     def _build_model_inputs(self):
         sl = []
-        for lang in self.model.supported_languages:
+        for lang in self.model.get_menu():
             sl.append(Color.button_primary(
                 confirm_btn(label=lang, on_press=self.confirm),
                 focus_map="button_primary focus"))

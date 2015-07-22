@@ -39,6 +39,32 @@ log = logging.getLogger('subiquity.filesystem')
 class FilesystemModel:
     """ Model representing storage options
     """
+    prev_signal = (
+        'Back to network path',
+        'network:show',
+        'network'
+    )
+
+    signals = [
+        ('Filesystem view',
+         'filesystem:show',
+         'filesystem'),
+        ('Filesystem finish',
+         'filesystem:finish',
+         'filesystem_handler'),
+        ('Show disk partition view',
+         'filesystem:show-disk-partition',
+         'disk_partition'),
+        ('Finish disk partition',
+         'filesystem:finish-disk-partition',
+         'disk_partition_handler'),
+        ('Add disk partition',
+         'filesystem:add-disk-partition',
+         'add_disk_partition'),
+        ('Finish add disk partition',
+         'filesystem:finish-add-disk-partition',
+         'add_disk_partition_handler')
+    ]
 
     fs_menu = [
         ('Connect iSCSI network disk',
@@ -87,12 +113,15 @@ class FilesystemModel:
         self.probe_storage()
 
     def get_signal_by_name(self, selection):
-        for x, y, z in self.fs_menu:
+        for x, y, z in self.get_signals():
             if x == selection:
                 return y
-        for x, y, z in self.partition_menu:
-            if x == selection:
-                return y
+
+    def get_signals(self):
+        return self.signals + self.fs_menu + self.partition_menu
+
+    def get_menu(self):
+        return self.fs_menu
 
     def probe_storage(self):
         self.prober.probe()
@@ -328,8 +357,6 @@ class FilesystemView(WidgetWrap):
         buttons = [
             Color.button_secondary(reset_btn(on_press=self.reset),
                                    focus_map='button_secondary focus'),
-            #Color.button_secondary(done_btn(on_press=self.done),
-             #                      focus_map='button_secondary focus'),
         ]
         return Pile(buttons)
 
@@ -355,7 +382,7 @@ class FilesystemView(WidgetWrap):
 
     def _build_menu(self):
         opts = []
-        for opt, sig, _ in self.model.fs_menu:
+        for opt, sig, _ in self.model.get_menu():
             opts.append(
                 Color.button_secondary(
                     done_btn(label=opt,
@@ -370,7 +397,7 @@ class FilesystemView(WidgetWrap):
             self.model.get_signal_by_name(result.label), False, actions)
 
     def cancel(self, button):
-        self.signal.emit_signal('network:show')
+        self.signal.emit_signal(self.model.get_previous_signal)
 
     def reset(self, button):
         self.signal.emit_signal('filesystem:done', True)

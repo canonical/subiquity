@@ -29,6 +29,7 @@ from subiquity.filesystem import (FilesystemView,
                                   DiskPartitionView,
                                   AddPartitionView,
                                   FilesystemModel)
+from subiquity.ui.dummy import DummyView
 
 log = logging.getLogger('subiquity.core')
 
@@ -55,47 +56,26 @@ class Controller:
     def _connect_signals(self):
         """ Connect signals used in the core controller
         """
-        self.signal.connect_signals(
-            [
-                ('welcome:show',
-                 self.welcome),
-                ('installpath:show',
-                 self.installpath),
-                ('network:show',
-                 self.network),
-                ('filesystem:show',
-                 self.filesystem),
-                ('filesystem:finish',
-                 self.filesystem_handler),
-                ('filesystem:show-disk-partition',
-                 self.disk_partition),
-                ('filesystem:finish-disk-partition',
-                 self.disk_partition_handler),
-                ('filesystem:add-disk-partition',
-                 self.add_disk_partition),
-                ('filesystem:finish-add-disk-partition',
-                 self.add_disk_partition_handler)
-            ]
-        )
         signals = []
 
+        # Pull signals emitted from welcome path selections
+        for name, sig, cb in self.models["welcome"].get_signals():
+            signals.append((sig, getattr(self, cb)))
+
         # Pull signals emitted from install path selections
-        for name, sig, cb in self.models["installpath"].install_paths:
+        for name, sig, cb in self.models["installpath"].get_signals():
             signals.append((sig, getattr(self, cb)))
 
         # Pull signals emitted from network selections
-        for name, sig, cb in self.models["network"].additional_options:
+        for name, sig, cb in self.models["network"].get_signals():
             signals.append((sig, getattr(self, cb)))
 
         # Pull signals emitted from filesystem selections
-        for name, sig, cb in self.models["filesystem"].fs_menu:
-            signals.append((sig, getattr(self, cb)))
-
-        # Pull signals emitted from partition selections
-        for name, sig, cb in self.models["filesystem"].partition_menu:
+        for name, sig, cb in self.models["filesystem"].get_signals():
             signals.append((sig, getattr(self, cb)))
 
         self.signal.connect_signals(signals)
+        log.debug(self.signal)
 
 
 # EventLoop -------------------------------------------------------------------
@@ -193,16 +173,16 @@ class Controller:
         self.signal.emit_signal('network:show')
 
     def install_maas_region_server(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def install_maas_cluster_server(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def test_media(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def test_memory(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     # Network -----------------------------------------------------------------
     def network(self):
@@ -216,13 +196,13 @@ class Controller:
         self.ui.set_body(NetworkView(self.models["network"], self.signal))
 
     def set_default_route(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def bond_interfaces(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def install_network_driver(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     # Filesystem --------------------------------------------------------------
     def filesystem(self):
@@ -287,22 +267,22 @@ class Controller:
             log.debug("Empty partition spec, should go back one.")
 
     def connect_iscsi_disk(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def connect_ceph_disk(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def create_volume_group(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def create_raid(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def setup_bcache(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def add_first_gpt_partition(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))
 
     def create_swap_entire_device(self):
-        pass
+        self.ui.set_body(DummyView(self.signal))

@@ -23,10 +23,11 @@ import logging
 import argparse
 from probert import prober
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
-                   Text, Columns, emit_signal)
+                   Text, Columns)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
+from subiquity.model import ModelPolicy
 
 
 log = logging.getLogger('subiquity.network')
@@ -45,9 +46,19 @@ class SimpleInterface:
                 setattr(self, i, self.attrs[i])
 
 
-class NetworkModel:
+class NetworkModel(ModelPolicy):
     """ Model representing network interfaces
     """
+
+    prev_signal = ('Back to install path',
+                   'installpath:show',
+                   'installpath')
+
+    signals = [
+        ('Network main view',
+         'network:show',
+         'network')
+    ]
 
     additional_options = [
         ('Set default route',
@@ -67,11 +78,16 @@ class NetworkModel:
                                           probe_network=True)
         self.prober = prober.Prober(self.options)
 
-    # TODO: make reusable
     def get_signal_by_name(self, selection):
-        for x, y, z in self.additional_options:
+        for x, y, z in self.get_signals():
             if x == selection:
                 return y
+
+    def get_signals(self):
+        return self.signals + self.additional_options
+
+    def get_menu(self):
+        return self.additional_options
 
     def probe_network(self):
         self.prober.probe()
@@ -173,7 +189,7 @@ class NetworkView(WidgetWrap):
 
     def _build_additional_options(self):
         opts = []
-        for opt, sig, _ in self.model.additional_options:
+        for opt, sig, _ in self.model.get_menu():
             opts.append(
                 Color.button_secondary(
                     confirm_btn(label=opt,
@@ -189,4 +205,4 @@ class NetworkView(WidgetWrap):
         self.signal.emit_signal('filesystem:show')
 
     def cancel(self, button):
-        self.signal.emit_signal('installpath:show')
+        self.signal.emit_signal(self.model.get_previous_signal)

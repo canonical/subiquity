@@ -23,16 +23,26 @@ from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
+from subiquity.model import ModelPolicy
 
 log = logging.getLogger('subiquity.installpath')
 
 
-class InstallpathModel:
+class InstallpathModel(ModelPolicy):
     """ Model representing install options
 
     List of install paths in the form of:
     ('UI Text seen by user', <signal name>, <callback function string>)
     """
+    prev_signal = ('Back to welcome screen',
+                   'welcome:show',
+                   'welcome')
+
+    signals = [
+        ('Install Path View',
+         'installpath:show',
+         'installpath')
+    ]
 
     install_paths = [('Install Ubuntu',
                       'installpath:ubuntu',
@@ -51,9 +61,15 @@ class InstallpathModel:
                       'test_memory')]
 
     def get_signal_by_name(self, selection):
-        for x, y, z in self.install_paths:
+        for x, y, z in self.get_signals():
             if x == selection:
                 return y
+
+    def get_signals(self):
+        return self.signals + self.install_paths
+
+    def get_menu(self):
+        return self.install_paths
 
 
 class InstallpathView(WidgetWrap):
@@ -77,7 +93,7 @@ class InstallpathView(WidgetWrap):
 
     def _build_model_inputs(self):
         sl = []
-        for ipath, sig, _ in self.model.install_paths:
+        for ipath, sig, _ in self.model.get_menu():
             log.debug("Building inputs: {}".format(ipath))
             sl.append(Color.button_primary(confirm_btn(label=ipath,
                                                        on_press=self.confirm),
@@ -91,4 +107,4 @@ class InstallpathView(WidgetWrap):
             self.model.get_signal_by_name(result.label))
 
     def cancel(self, button):
-        self.signal.emit_signal('welcome:show')
+        self.signal.emit_signal(self.model.get_previous_signal)
