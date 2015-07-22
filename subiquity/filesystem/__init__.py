@@ -187,6 +187,32 @@ def _humanize_size(size):
     return "%.3f %s" % (size / math.pow(1024, p), units[int(p)])
 
 
+def _dehumanize_size(size):
+    # convert human 'size' to integer
+    size_in = size
+    if size.endswith("B"):
+        size = size[:-1]
+
+    mpliers = {'B': 1, 'K': 2 ** 10, 'M': 2 ** 20, 'G': 2 ** 30, 'T': 2 ** 40}
+
+    num = size
+    mplier = 'B'
+    for m in mpliers:
+        if size.endswith(m):
+            mplier = m
+            num = size[0:-len(m)]
+
+    try:
+        num = float(num)
+    except ValueError:
+        raise ValueError("'%s' is not valid input." % size_in)
+
+    if num < 0:
+        raise ValueError("'%s': cannot be negative" % size_in)
+
+    return int(num * mpliers[mplier])
+
+
 class AddPartitionView(WidgetWrap):
 
     def __init__(self, model, signal, selected_disk):
