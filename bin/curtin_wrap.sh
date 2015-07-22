@@ -15,10 +15,10 @@ else
 fi
 
 if tail -n 1 $OUTPUT | grep -q "$INSTALL_OK"; then
-    echo "Curtin installed OK, shutting down (Press Any Key)"
+    echo "Curtin installed OK, rebooting (Press Any Key)"
     read a
-    echo "Shutting down after running $CURTIN $CMD"
-    telinit 0
+    echo "Rebooting down after running $CURTIN $CMD"
+    telinit 6
 else
     echo "Error running curting, exiting..."
     exit 1;
