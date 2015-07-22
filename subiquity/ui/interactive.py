@@ -52,18 +52,17 @@ class IntegerEditor(WidgetWrap):
 class Selector(WidgetWrap):
     """ Radio selection list of options
     """
-    def __init__(self, opts, group=[]):
+    def __init__(self, opts):
         """
         :param list opts: list of options to display
         """
         self.opts = opts
-        self.group = group
+        self.group = []
         self._add_options()
 
     def _add_options(self):
         for item in self.opts:
             RadioButton(self.group, item)
-        log.debug(self.group)
 
     @property
     def value(self):

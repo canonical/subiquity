@@ -262,9 +262,13 @@ class Controller:
                                     disk)
         self.ui.set_body(adp_view)
 
-    def add_disk_partition_handler(self, disk, partition_spec):
-        log.debug("Adding partition spec to "
-                  "Filesystem model: {}".format(partition_spec))
+    def add_disk_partition_handler(self, disk, spec):
+        current_disk = self.models["filesystem"].get_disk(disk)
+        current_disk.add_partition(spec["partnum"],
+                                   spec["bytes"],
+                                   spec["fstype"],
+                                   spec["mountpoint"])
+        log.debug("FS Table: {}".format(current_disk.get_fs_table()))
         self.signal.emit_signal('filesystem:show-disk-partition', disk)
 
     def connect_iscsi_disk(self, *args, **kwargs):
