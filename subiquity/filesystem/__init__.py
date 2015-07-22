@@ -205,10 +205,10 @@ def _dehumanize_size(size):
     try:
         num = float(num)
     except ValueError:
-        raise ValueError("'%s' is not valid input." % size_in)
+        raise ValueError("'{}' is not valid input.".format(size_in))
 
     if num < 0:
-        raise ValueError("'%s': cannot be negative" % size_in)
+        raise ValueError("'{}': cannot be negative".format(size_in))
 
     return int(num * mpliers[mplier])
 
