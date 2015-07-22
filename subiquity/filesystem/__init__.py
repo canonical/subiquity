@@ -194,15 +194,12 @@ class AddPartitionView(WidgetWrap):
         self.signal = signal
         self.model = model
         body = [
-            Padding.center_70(
+            Padding.center_79(
                 Text("Adding partition to {}".format(selected_disk))),
             Padding.line_break(""),
-            Padding.center_65(self._partition_edit()),
-            Padding.center_65(self._size_edit()),
-            Padding.center_65(self._format_edit()),
-            Padding.center_65(self._mount_point_edit()),
+            Padding.center_95(self._container()),
             Padding.line_break(""),
-            Padding.center_60(self._build_buttons())
+            Padding.center_70(self._build_buttons())
         ]
         partition_box = Padding.center_65(Box(body))
         super().__init__(partition_box)
@@ -242,7 +239,7 @@ class AddPartitionView(WidgetWrap):
             self._mount_point_edit()
         ]
 
-        return SimpleList(total_items)
+        return Pile(total_items)
 
     def cancel(self, button):
         self.signal.emit_signal('filesystem:show')
