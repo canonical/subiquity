@@ -34,6 +34,7 @@ from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import done_btn, reset_btn, cancel_btn
 from subiquity.ui.widgets import Box
 from subiquity.ui.utils import Padding, Color
+from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector)
 
 log = logging.getLogger('subiquity.filesystem')
 
@@ -146,7 +147,7 @@ class FilesystemModel:
 
     def get_disk(self, disk):
         if disk not in self.devices:
-                self.devices[disk] = Blockdev(disk, self.info[disk].serial)
+            self.devices[disk] = Blockdev(disk, self.info[disk].serial)
         return self.devices[disk]
 
     def get_partitions(self):
@@ -205,10 +206,10 @@ def _dehumanize_size(size):
     try:
         num = float(num)
     except ValueError:
-        raise ValueError("'%s' is not valid input." % size_in)
+        raise ValueError("'{}' is not valid input.".format(size_in))
 
     if num < 0:
-        raise ValueError("'%s': cannot be negative" % size_in)
+        raise ValueError("'{}': cannot be negative".format(size_in))
 
     return int(num * mpliers[mplier])
 
@@ -216,12 +217,21 @@ def _dehumanize_size(size):
 class AddPartitionView(WidgetWrap):
 
     def __init__(self, model, signal, selected_disk):
-        self.partition_spec = {}
-        self.signal = signal
         self.model = model
+        self.signal = signal
+        self.selected_disk = self.model.get_disk(selected_disk)
+
+        self.partnum = IntegerEditor(caption="Partition number (1-4): ",
+                                     default=1)
+        self.size = StringEditor(
+            caption="Size (max {}): ".format(
+                _humanize_size(self.selected_disk.freespace)))
+        self.mountpoint = StringEditor(caption="Mount: ", edit_text="/")
+        self.fstype = Selector(opts=self.model.supported_filesystems)
         body = [
             Padding.center_95(
-                Text("Adding partition to {}".format(selected_disk))),
+                Text("Adding partition to {}".format(
+                    self.selected_disk.devpath))),
             Padding.line_break(""),
             Padding.center_90(self._container()),
             Padding.line_break(""),
@@ -240,29 +250,16 @@ class AddPartitionView(WidgetWrap):
         ]
         return Pile(buttons)
 
-    def _partition_edit(self):
-        return IntEdit(caption="Partition number (1-4): ",
-                       default=1)
-
-    def _size_edit(self):
-        return Edit(caption="Size (max 2Tb): ")
-
     def _format_edit(self):
-        group = []
-        for fs in self.model.supported_filesystems:
-            RadioButton(group, fs)
-        formats_list = Pile(group)
+        formats_list = Pile(self.fstype.group)
         return Columns([(10, Text("Format: ")), formats_list], 2)
-
-    def _mount_point_edit(self):
-        return Edit(caption="Mount: ", edit_text="/")
 
     def _container(self):
         total_items = [
-            self._partition_edit(),
-            self._size_edit(),
+            self.partnum,
+            self.size,
             self._format_edit(),
-            self._mount_point_edit()
+            self.mountpoint
         ]
 
         return Pile(total_items)
@@ -270,7 +267,7 @@ class AddPartitionView(WidgetWrap):
     def cancel(self, button):
         self.signal.emit_signal('filesystem:show')
 
-    def done(self):
+    def done(self, result):
         """ partition spec
 
         { 'partition_number': Int,
@@ -279,11 +276,17 @@ class AddPartitionView(WidgetWrap):
           'mount_point': Str
         }
         """
-        if not self.partition_spec:
-            # TODO: Maybe popup warning?
-            return
+        result = {
+            "partnum": self.partnum.value,
+            "raw_size": self.size.value,
+            "bytes": _dehumanize_size(self.size.value),
+            "fstype": self.fstype.value,
+            "mountpoint": self.mountpoint.value
+        }
+        log.debug("Add Partition Result: {}".format(result))
         self.signal.emit_signal(
-            'filesystem:finish-add-disk-partition', self.partition_spec)
+            'filesystem:finish-add-disk-partition',
+            self.selected_disk.devpath, result)
 
 
 class DiskPartitionView(WidgetWrap):
@@ -311,22 +314,35 @@ class DiskPartitionView(WidgetWrap):
         return Pile(buttons)
 
     def _build_model_inputs(self):
-        col_1 = []
-        col_2 = []
+        partitioned_disks = []
 
-        disk = self.model.get_disk_info(self.selected_disk)
-        log.debug("Get disk info: {}".format(disk))
+        disk = self.model.get_disk(self.selected_disk)
+
+        for mnt, size, fstype, path in disk.get_fs_table():
+            mnt = Text(mnt)
+            size = Text("{} GB".format(size))
+            fstype = Text(fstype) if fstype else '-'
+            path = Text(path) if path else '-'
+            partition_column = Columns([
+                (15, path),
+                size,
+                fstype,
+                mnt
+            ], 4)
+            partitioned_disks.append(partition_column)
         btn = done_btn(label="FREE SPACE", on_press=self.add_partition)
-        col_1.append(Color.button_primary(btn,
-                                          focus_map='button_primary focus'))
-        disk_sz = str(_humanize_size(disk.size))
-        col_2.append(Text(disk_sz))
+        btn = Color.button_primary(btn,
+                                   focus_map='button_primary focus')
+        free_space = str(_humanize_size(disk.freespace))
+        partitioned_disks.append(Columns([
+            (15, btn),
+            Text(free_space),
+            Text(""),
+            Text("")
+        ], 4))
 
-        col_1 = BoxAdapter(SimpleList(col_1),
-                           height=len(col_1))
-        col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
-                           height=len(col_2))
-        return Columns([(15, col_1), col_2], 2)
+        return BoxAdapter(SimpleList(partitioned_disks),
+                          height=len(partitioned_disks))
 
     def _build_menu(self):
         opts = []

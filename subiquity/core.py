@@ -262,11 +262,14 @@ class Controller:
                                     disk)
         self.ui.set_body(adp_view)
 
-    def add_disk_partition_handler(self, partition_spec):
-        if not partition_spec:
-            log.debug("New partition: {}".format(partition_spec))
-        else:
-            log.debug("Empty partition spec, should go back one.")
+    def add_disk_partition_handler(self, disk, spec):
+        current_disk = self.models["filesystem"].get_disk(disk)
+        current_disk.add_partition(spec["partnum"],
+                                   spec["bytes"],
+                                   spec["fstype"],
+                                   spec["mountpoint"])
+        log.debug("FS Table: {}".format(current_disk.get_fs_table()))
+        self.signal.emit_signal('filesystem:show-disk-partition', disk)
 
     def connect_iscsi_disk(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
