@@ -16,10 +16,13 @@
 import yaml
 
 
-class Action():
-    def __init__(self, action_id):
+class DiskAction():
+    def __init__(self, action_id, model, serial, ptable='gpt'):
         self._action_id = action_id
         self.parent = None
+        self._ptable = ptable
+        self._model = model
+        self._serial = serial
 
     def get_parent(self):
         return self.parent
@@ -29,19 +32,26 @@ class Action():
         return str(self._action_id)
 
     def get(self):
-        return {'id': self.action_id}
+        return {
+            'id': self.action_id,
+            'model': self._model,
+            'ptable': self._ptable,
+            'serial': self._serial,
+            'type': 'disk',
+        }
 
     def dump(self):
         return yaml.dump(self.get(), default_flow_style=False)
 
 
-class PartitionAction(Action):
+class PartitionAction(DiskAction):
     def __init__(self, parent, partnumber, size, flags=None):
         self.parent = parent
         self.partnumber = int(partnumber)
         self._size = int(size)
         self.flags = flags
-        self._action_id = "{}{}".format(self.parent.action_id, self.partnumber)
+        self._action_id = "{}{}_part".format(self.parent.action_id,
+                                             self.partnumber)
 
     @property
     def size(self):
@@ -52,12 +62,13 @@ class PartitionAction(Action):
             'device': self.parent.action_id,
             'flag': self.flags,
             'id': self.action_id,
-            'size': self.size,
+            'number': self.partnumber,
+            'size': '{}B'.format(self.size),
             'type': 'partition',
         }
 
 
-class BcacheAction(Action):
+class BcacheAction(DiskAction):
     def __init__(self, backing_id, cache_id, bcache_num):
         self.parent = None
         self.bcachenum = int(bcache_num)
@@ -74,11 +85,14 @@ class BcacheAction(Action):
         }
 
 
-class FormatAction(Action):
+class FormatAction(DiskAction):
     def __init__(self, parent, fstype):
         self.parent = parent
         self._fstype = fstype
         self._action_id = "{}_fmt".format(self.parent.action_id)
+        # fat filesystem require an id of <= 11 chars
+        if fstype.startswith('fat'):
+            self._action_id = self._action_id[:11]
 
     @property
     def fstype(self):
@@ -93,11 +107,11 @@ class FormatAction(Action):
         }
 
 
-class MountAction(Action):
+class MountAction(DiskAction):
     def __init__(self, parent, path):
         self.parent = parent
         self._path = path
-        self._action_id = "{}_mount".format(self.parent.action_id)
+        self._action_id = "{}_mnt".format(self.parent.action_id)
 
     @property
     def path(self):
