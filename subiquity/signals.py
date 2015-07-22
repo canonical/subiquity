@@ -32,6 +32,8 @@ class Signal:
     def register_signals(self, signals):
         if type(signals) is list:
             self.known_signals.extend(signals)
+        else:
+            self.known_signals.append(signals)
         urwid.register_signal(Signal, signals)
 
     def emit_signal(self, name, *args, **kwargs):

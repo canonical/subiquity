@@ -28,7 +28,8 @@ from probert import prober
 from probert.storage import StorageInfo
 import math
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
-                   Text, Columns, LineBox, Edit, RadioButton)
+                   Text, Columns, LineBox, Edit, RadioButton,
+                   IntEdit)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import done_btn, reset_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
@@ -126,8 +127,10 @@ class FilesystemModel:
     def probe_storage(self):
         self.prober.probe()
         self.storage = self.prober.get_results().get('storage')
-        log.debug('storage probe data:\n{}'.format(
-                  json.dumps(self.storage, indent=4, sort_keys=True)))
+        # TODO: Put this into a logging namespace for probert
+        #       since its quite a bit of log information.
+        # log.debug('storage probe data:\n{}'.format(
+        #          json.dumps(self.storage, indent=4, sort_keys=True)))
 
         # TODO: replace this with Storage.get_device_by_match()
         # which takes a lambda fn for matching
@@ -189,15 +192,18 @@ class AddPartitionView(WidgetWrap):
         self.partition_spec = {}
         self.signal = signal
         self.model = model
-        body = ListBox([
-            Padding.center_79(
+        body = [
+            Padding.center_70(
                 Text("Adding partition to {}".format(selected_disk))),
-            Padding.center_79(self._container()),
-            Padding.center_79(self._build_buttons())
-        ])
-        box = BoxAdapter(body,
-                         len(body))
-        super().__init__(LineBox(box))
+            Padding.line_break(""),
+            Padding.center_65(self._partition_edit()),
+            Padding.center_65(self._size_edit()),
+            Padding.center_65(self._format_edit()),
+            Padding.center_65(self._mount_point_edit()),
+            Padding.line_break(""),
+            Padding.center_60(self._build_buttons())
+        ]
+        super().__init__(ListBox(body))
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
@@ -210,20 +216,21 @@ class AddPartitionView(WidgetWrap):
         return Pile(buttons)
 
     def _partition_edit(self):
-        return Edit(caption="Partition number (1-4)",
-                    edit_text="1")
+        return IntEdit(caption="Partition number (1-4): ",
+                       default=1)
 
     def _size_edit(self):
-        return Edit(caption="Size (max 2Tb)")
+        return Edit(caption="Size (max 2Tb): ")
 
     def _format_edit(self):
         group = []
         for fs in self.model.supported_filesystems:
             RadioButton(group, fs)
-        return SimpleList(group)
+        formats_list = Pile(group)
+        return Columns([Text("Format: "), formats_list])
 
     def _mount_point_edit(self):
-        return Edit(caption="Mount", edit_text="/")
+        return Edit(caption="Mount: ", edit_text="/")
 
     def _container(self):
         total_items = [
@@ -236,7 +243,7 @@ class AddPartitionView(WidgetWrap):
         return SimpleList(total_items)
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:finish-add-disk-partition')
+        self.signal.emit_signal('filesystem:show')
 
     def done(self):
         """ partition spec
@@ -283,6 +290,7 @@ class DiskPartitionView(WidgetWrap):
         col_2 = []
 
         disk = self.model.get_disk_info(self.selected_disk)
+        log.debug("Get disk info: {}".format(disk))
         btn = done_btn(label="FREE SPACE", on_press=self.add_partition)
         col_1.append(Color.button_primary(btn,
                                           focus_map='button_primary focus'))
@@ -300,18 +308,26 @@ class DiskPartitionView(WidgetWrap):
         for opt, sig, _ in self.model.partition_menu:
             opts.append(
                 Color.button_secondary(done_btn(label=opt,
-                                                on_press=self.done),
+                                                on_press=self.on_menu_press),
                                        focus_map='button_secondary focus'))
         return Pile(opts)
 
     def add_partition(self, partition):
-        self.signal.emit_signal('filesystem:add-disk-partition', partition.label)
+        if partition.label == "FREE SPACE":
+            self.signal.emit_signal('filesystem:add-disk-partition',
+                                    self.selected_disk)
+        else:
+            self.signal.emit_signal('filesystem:add-disk-partition',
+                                    partition.label)
 
-    def done(self, button):
-        self.signal.emit_signal('filesystem:finish-disk-partition')
+    def on_menu_press(self, result):
+        self.signal.emit_signal(self.model.get_signal_by_name(result.label))
+
+    def done(self, result):
+        self.signal.emit_signal('quit')
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:finish-disk-partition', False)
+        self.signal.emit_signal('filesystem:show')
 
 
 class FilesystemView(WidgetWrap):

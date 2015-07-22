@@ -254,13 +254,13 @@ class Controller:
         urwid.emit_signal(self.signal, 'filesystem:show-disk-partition', [])
 
     def add_disk_partition(self, disk):
+        log.debug("Adding partition to {}".format(disk))
         adp_view = AddPartitionView(self.models["filesystem"],
                                     self.signal,
                                     disk)
         self.ui.set_body(adp_view)
 
     def add_disk_partition_handler(self, partition_spec):
-        self.exit()
         if not partition_spec:
             log.debug("New partition: {}".format(partition_spec))
         else:
