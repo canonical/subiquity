@@ -266,23 +266,23 @@ class Controller:
         else:
             log.debug("Empty partition spec, should go back one.")
 
-    def connect_iscsi_disk(self):
+    def connect_iscsi_disk(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
 
-    def connect_ceph_disk(self):
+    def connect_ceph_disk(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
 
-    def create_volume_group(self):
+    def create_volume_group(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
 
-    def create_raid(self):
+    def create_raid(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
 
-    def setup_bcache(self):
+    def setup_bcache(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
 
-    def add_first_gpt_partition(self):
+    def add_first_gpt_partition(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
 
-    def create_swap_entire_device(self):
+    def create_swap_entire_device(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))

@@ -283,7 +283,7 @@ class DiskPartitionView(WidgetWrap):
         col_2 = []
 
         disk = self.model.get_disk_info(self.selected_disk)
-        btn = done_btn(label="FREE SPACE", on_press=self.add_paritition)
+        btn = done_btn(label="FREE SPACE", on_press=self.add_partition)
         col_1.append(Color.button_primary(btn,
                                           focus_map='button_primary focus'))
         disk_sz = str(_humanize_size(disk.size))
@@ -297,7 +297,7 @@ class DiskPartitionView(WidgetWrap):
 
     def _build_menu(self):
         opts = []
-        for opt in self.model.partition_menu:
+        for opt, sig, _ in self.model.partition_menu:
             opts.append(
                 Color.button_secondary(done_btn(label=opt,
                                                 on_press=self.done),
@@ -305,7 +305,7 @@ class DiskPartitionView(WidgetWrap):
         return Pile(opts)
 
     def add_partition(self, partition):
-        self.signal.emit_signal('filesystem:add-disk-partition')
+        self.signal.emit_signal('filesystem:add-disk-partition', partition.label)
 
     def done(self, button):
         self.signal.emit_signal('filesystem:finish-disk-partition')
