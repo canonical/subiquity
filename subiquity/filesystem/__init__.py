@@ -227,7 +227,7 @@ class AddPartitionView(WidgetWrap):
         for fs in self.model.supported_filesystems:
             RadioButton(group, fs)
         formats_list = Pile(group)
-        return Columns([Text("Format: "), formats_list])
+        return Columns([(10, Text("Format: ")), formats_list], 2)
 
     def _mount_point_edit(self):
         return Edit(caption="Mount: ", edit_text="/")
