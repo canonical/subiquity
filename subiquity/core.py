@@ -255,6 +255,8 @@ class Controller:
 
     def add_disk_partition(self, disk):
         log.debug("Adding partition to {}".format(disk))
+        footer = ("Select whole disk, or partition, to format and mount.")
+        self.ui.set_footer(footer)
         adp_view = AddPartitionView(self.models["filesystem"],
                                     self.signal,
                                     disk)
