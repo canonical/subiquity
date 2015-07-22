@@ -236,8 +236,8 @@ class Controller:
     # Filesystem/Disk partition -----------------------------------------------
     def disk_partition(self, disk):
         log.debug("In disk partition view, using {} as the disk.".format(disk))
-        title = ("Paritition, format, and mount {}".format(disk))
-        footer = ("Paritition the disk, or format the entire device "
+        title = ("Partition, format, and mount {}".format(disk))
+        footer = ("Partition the disk, or format the entire device "
                   "without partitions.")
         self.ui.set_header(title)
         self.ui.set_footer(footer)
