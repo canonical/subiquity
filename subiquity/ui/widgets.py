@@ -13,22 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Install Path Model
-
-Provides high level options for Ubuntu install
-
-"""
-
-from subiquity import models
+from urwid import (LineBox, ListBox)
 
 
-class InstallpathModel(models.Model):
-    """ Model representing install options
-    """
-
-    install_paths = ['Install Ubuntu',
-                     'Install MAAS Region Server',
-                     'Install MAAS Cluster Server',
-                     'Test installation media',
-                     'Test machine memory']
-    selected_path = None
+def Box(items, title=""):
+    """ Draws a linebox around a set of items """
+    container = ListBox(items)
+    return LineBox(container, title=title)

@@ -451,9 +451,9 @@ generate_img() {
 
     log "Installing bootloader configuration"
     set +x
-    sudo mkdir ${mnt}/proc
-    sudo mkdir ${mnt}/sys
-    sudo mkdir ${mnt}/dev
+    sudo mkdir -p ${mnt}/proc
+    sudo mkdir -p ${mnt}/sys
+    sudo mkdir -p ${mnt}/dev
     sudo mount none -t proc ${mnt}/proc &&
     sudo mount none -t sysfs ${mnt}/sys &&
     sudo mount -o bind /dev ${mnt}/dev &&

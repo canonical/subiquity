@@ -13,19 +13,53 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+""" Registers all known signal emitters
+"""
 import urwid
+import logging
 
-SIGNALS = {}
-
-
-def register_signal(obj, name):
-    if obj.__class__ not in SIGNALS:
-        SIGNALS[obj.__class__] = []
-    if name not in SIGNALS[obj.__class__]:
-        SIGNALS[obj.__class__].append(name)
-        urwid.register_signal(obj.__class__, SIGNALS[obj.__class__])
+log = logging.getLogger('subiquity.signals')
 
 
-def emit_signal(obj, name, args):
-    register_signal(obj, name)
-    urwid.emit_signal(obj, name, args)
+class SignalException(Exception):
+    "Problem with a signal"
+
+
+class Signal:
+    known_signals = []
+
+    def register_signals(self, signals):
+        if type(signals) is list:
+            self.known_signals.extend(signals)
+        else:
+            self.known_signals.append(signals)
+        urwid.register_signal(Signal, signals)
+
+    def emit_signal(self, name, *args, **kwargs):
+        log.debug("Emitter: {}, {}, {}".format(name, args, kwargs))
+        urwid.emit_signal(self, name, *args, **kwargs)
+
+    def connect_signal(self, name, cb, **kwargs):
+        log.debug(
+            "Emitter Connection: {}, {}, {}".format(name,
+                                                    cb,
+                                                    kwargs))
+        urwid.connect_signal(self, name, cb, **kwargs)
+
+    def connect_signals(self, signal_callback):
+        """ Connects a batch of signals
+
+        :param list signal_callback: List of tuples
+                                     eg. ('welcome:show', self.cb)
+        """
+        if not type(signal_callback) is list:
+            raise SignalException(
+                "Passed something other than a required list.")
+        for sig, cb in signal_callback:
+            if sig not in self.known_signals:
+                self.register_signals(sig)
+            self.connect_signal(sig, cb)
+
+    def __repr__(self):
+        return "Known Signals: {}".format(self.known_signals)
