@@ -17,7 +17,7 @@ import parted
 import yaml
 from itertools import count
 
-from subiquity.models.actions import (
+from subiquity.filesystem.actions import (
     Action,
     PartitionAction,
     FormatAction,
