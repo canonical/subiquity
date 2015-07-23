@@ -93,6 +93,9 @@ class FormatAction(DiskAction):
         # fat filesystem require an id of <= 11 chars
         if fstype.startswith('fat'):
             self._action_id = self._action_id[:11]
+        # curtin detects fstype as 'swap'
+        elif fstype.startswith('linux-swap'):
+            self._fstype = 'swap'
 
     @property
     def fstype(self):
