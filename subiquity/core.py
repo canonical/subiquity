@@ -32,6 +32,7 @@ from subiquity.filesystem import (FilesystemView,
                                   FilesystemModel)
 from subiquity.ui.dummy import DummyView
 
+BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
 log = logging.getLogger('subiquity.core')
 
 
@@ -272,6 +273,16 @@ class Controller:
 
     def add_disk_partition_handler(self, disk, spec):
         current_disk = self.models["filesystem"].get_disk(disk)
+
+        ''' create a gpt boot partition if one doesn't exist '''
+        if current_disk.parttype == 'gpt' and \
+           len(current_disk.disk.partitions) == 0:
+            log.debug('Adding grub_bios gpt partition first')
+            current_disk.add_partition(partnum=1,
+                                       size=BIOS_GRUB_SIZE_BYTES,
+                                       fstype=None,
+                                       flag='bios_grub')
+
         if spec["fstype"] in ["swap"]:
             current_disk.add_partition(partnum=spec["partnum"],
                                        size=spec["bytes"],
