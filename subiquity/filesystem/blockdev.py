@@ -63,7 +63,7 @@ class Bcachedev():
 
 
 class Blockdev():
-    def __init__(self, devpath, serial, parttype='msdos'):
+    def __init__(self, devpath, serial, parttype='gpt'):
         self.serial = serial
         self.devpath = devpath
         self._parttype = parttype
