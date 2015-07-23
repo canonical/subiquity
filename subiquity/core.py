@@ -19,7 +19,8 @@ import urwid.curses_display
 import subprocess
 from subiquity.signals import Signal
 from subiquity.palette import STYLES, STYLES_MONO
-from subiquity.curtin import curtin_write_storage_actions
+from subiquity.curtin import (curtin_write_storage_actions,
+                              curtin_write_postinst_config)
 
 # Modes import ----------------------------------------------------------------
 from subiquity.welcome import WelcomeView, WelcomeModel
@@ -224,6 +225,8 @@ class Controller:
 
         log.info("Rendering curtin config from user choices")
         curtin_write_storage_actions(actions=actions)
+        log.info("Generating post-install config")
+        curtin_write_postinst_config()
         if self.opts.dry_run:
             log.debug("filesystem: this is a dry-run")
             print("\033c")
@@ -270,14 +273,14 @@ class Controller:
     def add_disk_partition_handler(self, disk, spec):
         current_disk = self.models["filesystem"].get_disk(disk)
         if spec["fstype"] in ["swap"]:
-            current_disk.add_partition(spec["partnum"],
-                                       spec["bytes"],
-                                       spec["fstype"])
+            current_disk.add_partition(partnum=spec["partnum"],
+                                       size=spec["bytes"],
+                                       fstype=spec["fstype"])
         else:
-            current_disk.add_partition(spec["partnum"],
-                                       spec["bytes"],
-                                       spec["fstype"],
-                                       spec["mountpoint"])
+            current_disk.add_partition(partnum=spec["partnum"],
+                                       size=spec["bytes"],
+                                       fstype=spec["fstype"],
+                                       mountpoint=spec["mountpoint"])
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
         self.signal.emit_signal('filesystem:show-disk-partition', disk)
 

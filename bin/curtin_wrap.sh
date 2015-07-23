@@ -1,6 +1,7 @@
 #!/bin/bash -x
 
-CMD="-v --showtrace install -c /tmp/subiquity-config.yaml cp:///"
+CONFIGS="-c /tmp/subiquity-config.yaml -c /tmp/subiquity-postinst.yaml"
+CMD="-v --showtrace install $CONFIGS cp:///"
 CURTIN="/usr/local/curtin/bin/curtin"
 OUTPUT="/tmp/.curtin_wrap_ran"
 INSTALL_OK="Installation finished. No error reported."
@@ -14,7 +15,8 @@ else
    echo $CURTIN $CMD | tee -a $OUTPUT
 fi
 
-if tail -n 1 $OUTPUT | grep -q "$INSTALL_OK"; then
+clear
+if tail -n 2 $OUTPUT | grep -q "$INSTALL_OK"; then
     echo "Curtin installed OK, rebooting (Press Any Key)"
     read a
     echo "Rebooting down after running $CURTIN $CMD"
