@@ -34,6 +34,7 @@ SRC_DEPS=(
   "git" "https://github.com/CanonicalLtd/probert.git" "probert"
 )
 INSTALLER_DEPS=(
+  "petname"
   "python3-parted"
   "python3-urwid"
   "python3-pyudev"

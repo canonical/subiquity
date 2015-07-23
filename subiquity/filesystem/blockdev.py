@@ -133,13 +133,17 @@ class Blockdev():
         # find and remove from self.fstable
         pass
 
-    def add_partition(self, partnum, size, fstype, mountpoint, flag=None):
+    def add_partition(self, partnum, size, fstype, mountpoint=None, flag=None):
         ''' add a new partition to this disk '''
+        log.debug('add_partition:'
+                  ' partnum:%s size:%s fstype:%s mountpoint:%s flag=%s' % (
+                      partnum, size, fstype, mountpoint, flag))
+
         if size > self.freepartition:
             raise Exception('Not enough space')
 
-            if fstype in ["swap"]:
-                fstype = "linux-swap(v1)"
+        if fstype in ["swap"]:
+            fstype = "linux-swap(v1)"
 
         geometry = self._get_largest_free_region()
         if not geometry:
@@ -167,7 +171,7 @@ class Blockdev():
                                    start=data['start'],
                                    end=data['end'])
         # create partition
-        if fstype not in ['bcache cache', 'bcache store']:
+        if fstype not in [None, 'bcache cache', 'bcache store']:
             fs = parted.FileSystem(type=fstype, geometry=geometry)
         else:
             fs = None
@@ -191,7 +195,7 @@ class Blockdev():
         newpart = self.disk.getPartitionByPath(partpath)
 
         # create bcachedev if neded
-        if fstype.startswith('bcache'):
+        if fstype and fstype.startswith('bcache'):
             mode = fstype.split()[-1]
             self.bcache.append(Bcachedev(backing=newpart, mode=mode))
 
@@ -220,9 +224,10 @@ class Blockdev():
                 format_action = FormatAction(partition_action,
                                              fs_type)
                 actions.append(format_action)
-                mountpoint = self.mounts[part.path]
-                mount_action = MountAction(format_action, mountpoint)
-                actions.append(mount_action)
+                mountpoint = self.mounts.get(part.path)
+                if mountpoint:
+                    mount_action = MountAction(format_action, mountpoint)
+                    actions.append(mount_action)
 
         return [action] + [a.get() for a in actions]
 
@@ -231,7 +236,7 @@ class Blockdev():
         fs_table = []
         for part in self.disk.partitions:
             if part.fileSystem:
-                mntpoint = self.mounts[part.path]
+                mntpoint = self.mounts.get(part.path, part.fileSystem.type)
                 fs_size = int(part.getSize(unit='GB'))
                 fs_type = part.fileSystem.type
                 devpath = part.path
