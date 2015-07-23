@@ -419,14 +419,28 @@ class FilesystemView(ViewPolicy):
             pl.append(Color.info_minor(
                 Text("No disks or partitions mounted")))
             return Pile(pl)
-        for part in self.model.get_partitions():
-            pl.append(Text(part))
+        for dev in self.model.devices.values():
+            for mnt, size, fstype, path in dev.get_fs_table():
+                mnt = Text(mnt)
+                size = Text("{} GB".format(size))
+                fstype = Text(fstype) if fstype else '-'
+                path = Text(path) if path else '-'
+                partition_column = Columns([
+                    (15, path),
+                    size,
+                    fstype,
+                    mnt
+                ], 4)
+                pl.append(partition_column)
         return Pile(pl)
 
     def _build_buttons(self):
         buttons = [
-            Color.button_secondary(reset_btn(on_press=self.reset),
+            Color.button_secondary(reset_btn(on_press=self.cancel),
                                    focus_map='button_secondary focus'),
+            Color.button_secondary(reset_btn(on_press=self.done),
+                                   focus_map='button_secondary focus'),
+
         ]
         return Pile(buttons)
 
@@ -468,7 +482,11 @@ class FilesystemView(ViewPolicy):
         self.signal.emit_signal(self.model.get_previous_signal)
 
     def reset(self, button):
-        self.signal.emit_signal('filesystem:show', True)
+        self.signal.emit_signal('filesystem:reset', True)
+
+    def done(self, button):
+        actions = self.model.get_actions()
+        self.signal.emit_signal('filesystem:finish', False, actions)
 
     def show_disk_partition_view(self, partition):
         self.signal.emit_signal('filesystem:show-disk-partition',

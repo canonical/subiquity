@@ -271,10 +271,15 @@ class Controller:
 
     def add_disk_partition_handler(self, disk, spec):
         current_disk = self.models["filesystem"].get_disk(disk)
-        current_disk.add_partition(spec["partnum"],
-                                   spec["bytes"],
-                                   spec["fstype"],
-                                   spec["mountpoint"])
+        if spec["fstype"] in ["swap"]:
+            current_disk.add_partition(spec["partnum"],
+                                       spec["bytes"],
+                                       spec["fstype"])
+        else:
+            current_disk.add_partition(spec["partnum"],
+                                       spec["bytes"],
+                                       spec["fstype"],
+                                       spec["mountpoint"])
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
         self.signal.emit_signal('filesystem:show-disk-partition', disk)
 

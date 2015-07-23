@@ -16,6 +16,7 @@
 import os
 import parted
 import yaml
+import logging
 from itertools import count
 
 from subiquity.filesystem.actions import (
@@ -24,6 +25,8 @@ from subiquity.filesystem.actions import (
     FormatAction,
     MountAction
 )
+
+log = logging.getLogger("subiquity.filesystem.blockdev")
 
 
 # TODO: Bcachepart class
@@ -128,6 +131,9 @@ class Blockdev():
         if size > self.freepartition:
             raise Exception('Not enough space')
 
+            if fstype in ["swap"]:
+                fstype = "linux-swap(v1)"
+
         geometry = self._get_largest_free_region()
         if not geometry:
             raise Exception('No free sectors available')
@@ -154,7 +160,7 @@ class Blockdev():
                                    start=data['start'],
                                    end=data['end'])
         # create partition
-        if not fstype.startswith('bcache'):
+        if fstype not in ['bcache cache', 'bcache store']:
             fs = parted.FileSystem(type=fstype, geometry=geometry)
         else:
             fs = None
