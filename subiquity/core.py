@@ -58,6 +58,9 @@ class Controller:
         """
         signals = []
 
+        # Add quit signal
+        signals.append(('quit', self.exit))
+
         # Pull signals emitted from welcome path selections
         for name, sig, cb in self.models["welcome"].get_signals():
             signals.append((sig, getattr(self, cb)))
@@ -205,7 +208,11 @@ class Controller:
         self.ui.set_body(DummyView(self.signal))
 
     # Filesystem --------------------------------------------------------------
-    def filesystem(self):
+    def filesystem(self, reset=False):
+        # FIXME: Is this the best way to zero out this list for a reset?
+        if reset:
+            self.models["filesystem"].devices = {}
+
         title = "Filesystem setup"
         footer = ("Select available disks to format and mount")
         self.ui.set_header(title)
@@ -215,7 +222,7 @@ class Controller:
 
     def filesystem_handler(self, reset=False, actions=None):
         if actions is None and reset is False:
-            urwid.emit_signal(self.signal, 'network:show', [])
+            urwid.emit_signal(self.signal, 'network:show')
 
         log.info("Rendering curtin config from user choices")
         curtin_write_storage_actions(actions=actions)

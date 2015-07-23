@@ -22,12 +22,13 @@ Provides network device listings and extended network information
 import logging
 import argparse
 from probert import prober
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
+from urwid import (ListBox, Pile, BoxAdapter,
                    Text, Columns)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 from subiquity.model import ModelPolicy
+from subiquity.view import ViewPolicy
 
 
 log = logging.getLogger('subiquity.network')
@@ -139,7 +140,7 @@ class NetworkModel(ModelPolicy):
         return (ipinfo, self.get_vendor(iface), self.get_model(iface))
 
 
-class NetworkView(WidgetWrap):
+class NetworkView(ViewPolicy):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

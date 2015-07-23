@@ -28,18 +28,19 @@ from probert import prober
 from probert.storage import StorageInfo
 import math
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
-                   Text, Columns, LineBox, Edit, RadioButton,
-                   IntEdit)
+                   Text, Columns)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import done_btn, reset_btn, cancel_btn
 from subiquity.ui.widgets import Box
 from subiquity.ui.utils import Padding, Color
 from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector)
+from subiquity.model import ModelPolicy
+from subiquity.view import ViewPolicy
 
 log = logging.getLogger('subiquity.filesystem')
 
 
-class FilesystemModel:
+class FilesystemModel(ModelPolicy):
     """ Model representing storage options
     """
     prev_signal = (
@@ -383,7 +384,7 @@ class DiskPartitionView(WidgetWrap):
         self.signal.emit_signal('filesystem:show')
 
 
-class FilesystemView(WidgetWrap):
+class FilesystemView(ViewPolicy):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal
@@ -459,18 +460,15 @@ class FilesystemView(WidgetWrap):
                     focus_map='button_secondary focus'))
         return Pile(opts)
 
-    # FIXME: needs to pass actions
     def on_fs_menu_press(self, result):
-        log.info("Filesystem View done() getting disk info")
-        actions = self.model.get_actions()
         self.signal.emit_signal(
-            self.model.get_signal_by_name(result.label), False, actions)
+            self.model.get_signal_by_name(result.label))
 
     def cancel(self, button):
         self.signal.emit_signal(self.model.get_previous_signal)
 
     def reset(self, button):
-        self.signal.emit_signal('filesystem:finish', True)
+        self.signal.emit_signal('filesystem:show', True)
 
     def show_disk_partition_view(self, partition):
         self.signal.emit_signal('filesystem:show-disk-partition',
