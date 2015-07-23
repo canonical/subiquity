@@ -348,7 +348,7 @@ class DiskPartitionView(WidgetWrap):
         entire device button if no partition exists, otherwise
         it is disabled.
         """
-        text = ("Format or create swap on entire"
+        text = ("Format or create swap on entire "
                 "device (unusual, advanced)")
         if len(self.model.get_partitions()) == 0:
             return Color.button_secondary(done_btn(label=text,
