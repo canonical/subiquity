@@ -4,3 +4,4 @@ netifaces==0.10.4
 nose-cov
 nose
 flake8
+python3-parted

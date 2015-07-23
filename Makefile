@@ -2,7 +2,7 @@
 # Makefile for subiquity
 #
 PYTHONSRC=subiquity
-PYTHONPATH=$(shell pwd):$(shell pwd)/probert:$PYTHONPATH
+PYTHONPATH=$(shell pwd):$(HOME)/download/probert:
 VENVPATH=$(shell pwd)/venv
 VENVACTIVATE=$(VENVPATH)/bin/activate
 TOPDIR=$(shell pwd)
@@ -14,6 +14,9 @@ INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 .PHONY: run clean
 
 all: dryrun
+
+install_deps:
+	sudo apt-get install python3-urwid python3-pyudev python3-netifaces python3-nose python3-flake8 python3-parted python3-yaml git bzr ubuntu-cloudimage-keyring python3-jinja2
 
 dryrun:
 	$(MAKE) ui-view DRYRUN="--dry-run"
