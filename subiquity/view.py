@@ -13,22 +13,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Install Path Model
+""" View policy
 
-Provides high level options for Ubuntu install
-
+Contains some default key navigations
 """
 
-from subiquity import models
+from urwid import WidgetWrap
 
 
-class InstallpathModel(models.Model):
-    """ Model representing install options
-    """
-
-    install_paths = ['Install Ubuntu',
-                     'Install MAAS Region Server',
-                     'Install MAAS Cluster Server',
-                     'Test installation media',
-                     'Test machine memory']
-    selected_path = None
+class ViewPolicy(WidgetWrap):
+    def keypress(self, size, key):
+        if key == 'esc':
+            self.signal.emit_signal(self.model.get_previous_signal)
+        if key == 'Q' or key == 'q' or key == 'ctrl c':
+            self.signal.register_signals('quit')
+            self.signal.emit_signal('quit')
+        super().keypress(size, key)

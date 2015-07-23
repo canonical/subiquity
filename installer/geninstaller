@@ -33,6 +33,13 @@ SRC_DEPS=(
   "bzr" "lp:~wesley-wiedenmeier/curtin/custom-partitioning-layout" "curtin"
   "git" "git@github.com:CanonicalLtd/probert.git" "probert"
 )
+INSTALLER_DEPS=(
+  "python3-parted"
+  "python3-urwid"
+  "python3-pyudev"
+  "python3-netifaces"
+  "python-urwid"
+)
 CACHEDIR=""
 
 cleanup_noexit() {
@@ -102,6 +109,7 @@ usage: $PROG [PARAMS] [ARGS]
  -a, --arch=ARCH                For ARCH in [i386, amd64, ppc64el, armf, arm64]
  -b, --bootloader=TYPE          For TYPE in [syslinux, grub2, uboot]
  -h, --help                     This output.
+ -o, --offline                  Offline installer img.
  -r, --release=RELEASE          For RELEASE in  [trusty, utopic, vivid, wily]
  -s, --stream=STREAM            For STREAM in [daily, released]
  -V, --version=VERSION          VERSION=YYYYMMDD , 20150623
@@ -284,7 +292,7 @@ acquire_image() {
 
 generate_seed() {
     _RETVAL=""
-    [ $# -lt 2 ] && {
+    [ $# -lt 3 ] && {
         log "ERROR: not enough arguments passed to $FUNCNAME";
         return 1;
     }
@@ -317,6 +325,16 @@ generate_seed() {
     # append the curtin-cmd file
     rm -f ${seed}/user-data &&
     cp $installer_user_data $seed/user-data &&
+
+    if [ "${OFFLINE}" == "no" ]; then
+        log "Enabling cloud-init package installation"
+        local packages=""
+        for pkg in ${INSTALLER_DEPS[@]}; do
+            packages="$packages - $pkg\n"
+        done
+        sed -i "s/#packages/packages:\n$packages/" ${seed}/user-data
+    fi
+
     userdata_write_file "/usr/local/bin/curtin-archive" \
                          "root:root" "0755" "none" \
                          "$curtin_cmd" >> $seed/user-data || {
@@ -355,14 +373,16 @@ generate_seed() {
 
 generate_img() {
     _RETVAL=""
-    [ $# -lt 2 ] && {
+    [ $# -lt 4 ] && {
         log "ERROR: not enough arguments passed to $FUNCNAME";
         return 1;
     }
 
     local dldir=${1};
     local cachedir=${2};
+    local bootloader=${3};
     local extlinux_conf=${TOPDIR}/resources/menu/extlinux-menu.conf
+    local grub_conf=${TOPDIR}/resources/grub/grub.cfg
     local gptmbr=$(dpkg -L syslinux-common | grep \/gptmbr.bin | grep -v efi)
     local installimg=${cachedir}/installer.img
     local mnt=${cachedir}/mnt
@@ -386,15 +406,21 @@ generate_img() {
         return 1;
     }
 
-    [ -z "$gptmbr" ] && {
-        log "ERROR: failed to find GPT MBR record on host";
+    if [ "${bootloader}" == "syslinux" ]; then
+        [ -z "$gptmbr" ] && {
+            log "ERROR: failed to find GPT MBR record on host";
+            return 1;
+        }
+        log "Embedding bootloader"
+        dd bs=440 conv=notrunc count=1 if=$gptmbr of=$installimg || {
+            log "Failed to embed bootloader into $installimg";
+            return 1;
+        }
+    elif [ "${bootloader}" != "grub2" ]; then
+        log "Bootloader ${bootloader} not supported, cannot install"
+        usage;
         return 1;
-    }
-    log "Embedding bootloader"
-    dd bs=440 conv=notrunc count=1 if=$gptmbr of=$installimg || {
-        log "Failed to embed bootloader into $installimg";
-        return 1;
-    }
+    fi
 
     log "Syncing rootfs into install image"
     local kpartx_ret=$(sudo kpartx -va $installimg)
@@ -429,14 +455,41 @@ generate_img() {
 
     log "Installing bootloader configuration"
     set +x
+    sudo mkdir ${mnt}/proc
+    sudo mkdir ${mnt}/sys
+    sudo mkdir ${mnt}/dev
     sudo mount none -t proc ${mnt}/proc &&
     sudo mount none -t sysfs ${mnt}/sys &&
     sudo mount -o bind /dev ${mnt}/dev &&
-    sudo mkdir -p ${mnt}/boot/extlinux &&
-    sudo extlinux --install ${mnt}/boot/extlinux &&
-    sudo cp -av ${syslinux_path}/*.c32 ${mnt}/boot/extlinux &&
-    sudo cp -av ${splash} ${mnt}/boot/extlinux &&
-    cat ${extlinux_conf} | sudo tee ${mnt}/boot/extlinux/extlinux.conf &&
+
+    if [ "${OFFLINE}" == "yes" ]; then
+        set -x
+        log "Setting up for offline use"
+        local resolvconf=${mnt}/etc/resolv.conf
+        sudo mv ${resolvconf} ${resolvconf}.old
+        sudo cp /etc/resolv.conf ${resolvconf}
+        for installer_package in "${INSTALLER_DEPS[@]}"; do
+            sudo chroot ${mnt} apt-get install $installer_package
+        done
+        sudo rm ${resolvconf}
+        sudo mv ${resolvconf}.old ${resolvconf}
+        set +x
+    fi
+
+    if [ "${bootloader}" == "syslinux" ]; then
+        sudo mkdir -p ${mnt}/boot/extlinux &&
+        sudo extlinux --install ${mnt}/boot/extlinux &&
+        sudo cp -av ${syslinux_path}/*.c32 ${mnt}/boot/extlinux &&
+        sudo cp -av ${splash} ${mnt}/boot/extlinux &&
+        cat ${extlinux_conf} | sudo tee ${mnt}/boot/extlinux/extlinux.conf
+    else
+        log "Installing grub2"
+        sudo mkdir -p ${mnt}/boot/grub &&
+        sudo grub-install --boot-directory=${mnt}/boot $LOOPDEV --force &&
+        sudo cp -av ${splash} ${mnt}/boot/grub &&
+        cat ${grub_conf} | sudo tee ${mnt}/boot/grub/grub.cfg
+    fi
+
     sudo mkdir -p ${mnt}/var/lib/cloud/seed &&
     sudo cp -a ${seed} ${mnt}/var/lib/cloud/seed && sync || {
         log "Failed to install bootloader and configuration";
@@ -458,8 +511,8 @@ parse_args() {
     # args:
     [ $# -lt 1 ] && { usage; exit 0; }
 
-    OPTS_LONG="arch:,bootloader:,download:,help,release:,stream:,verbose,version:"
-    OPTS="a:b:d:hr:s:vV:"
+    OPTS_LONG="arch:,bootloader:,download:,help,offline,release:,stream:,verbose,version:"
+    OPTS="a:b:d:hor:s:vV:"
     ARGS=`getopt --name "$PROG" --long $OPTS_LONG --options $OPTS -- "$@"`
     if [ $? -ne 0 ]; then
         echo "$PROG: usage error (use -h for help)" >&2
@@ -470,6 +523,7 @@ parse_args() {
     ARCH="amd64"
     BOOTLOADER="syslinux"
     DLDIR=~/download
+    OFFLINE="no"
     RELEASE="wily"
     STREAM="daily"
     VERBOSE="no"
@@ -480,6 +534,7 @@ parse_args() {
             -b | --bootloader)  BOOTLOADER="$2"; shift;;
             -d | --download)    DLDIR="$2"; shift;;
             -h | --help)        usage; exit 0;;
+            -o | --offline)     OFFLINE="yes";;
             -r | --release)     RELEASE="$2"; shift;;
             -s | --stream)      STREAM="$2"; shift;;
             -V | --version)     VERSION="$2"; shift;;
@@ -517,11 +572,11 @@ main() {
     CACHEDIR=${_RETVAL}
     log "CACHEDIR=$CACHEDIR"
 
-    generate_seed ${DLDIR} $CACHEDIR || {
+    generate_seed ${DLDIR} $CACHEDIR $OFFLINE || {
         return 1;
     }
 
-    generate_img ${DLDIR} $CACHEDIR || {
+    generate_img ${DLDIR} $CACHEDIR $BOOTLOADER $OFFLINE || {
         return 1;
     }
     INSTALLIMG=${_RETVAL}

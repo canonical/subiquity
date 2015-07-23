@@ -9,12 +9,7 @@ bootcmd:
 password: passw0rd
 chpasswd: { expire: False }
 output: {all: '| tee -a /var/log/cloud-init-output.log'}
-packages:
- - python-urwid
- - python3-urwid
- - python3-parted
- - python3-pyudev
- - python3-netifaces
+#packages
 runcmd:
     - tar -C /usr/local -xf /tmp/subiquity.tar
     - tar -C /usr/local -xf /tmp/probert.tar

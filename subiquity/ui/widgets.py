@@ -13,21 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Welcome Model
-
-Welcome model provides user with language selection
-
-"""
-
-from subiquity import models
+from urwid import (LineBox, ListBox)
 
 
-class WelcomeModel(models.Model):
-    """ Model representing language selection
-    """
-
-    supported_languages = ['English', 'Belgian', 'German', 'Italian']
-    selected_language = None
-
-    def __repr__(self):
-        return "<Selected: {}>".format(self.selected_language)
+def Box(items, title=""):
+    """ Draws a linebox around a set of items """
+    container = ListBox(items)
+    return LineBox(container, title=title)

@@ -13,16 +13,58 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
+""" Welcome
+
+Welcome provides user with language selection
+
+"""
+import logging
+from urwid import (ListBox, Pile, BoxAdapter, emit_signal)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
+from subiquity.model import ModelPolicy
+from subiquity.view import ViewPolicy
+
+log = logging.getLogger('subiquity.welcome')
 
 
-class WelcomeView(WidgetWrap):
-    def __init__(self, model, cb):
+class WelcomeModel(ModelPolicy):
+    """ Model representing language selection
+    """
+    prev_signal = None
+
+    signals = [
+        ("Welcome view",
+         'welcome:show',
+         'welcome')
+    ]
+
+    supported_languages = ['English',
+                           'Belgian',
+                           'German',
+                           'Italian']
+    selected_language = None
+
+    def get_signals(self):
+        return self.signals
+
+    def get_menu(self):
+        return self.supported_languages
+
+    def get_signal_by_name(self, selection):
+        for x, y, z in self.get_menu():
+            if x == selection:
+                return y
+
+    def __repr__(self):
+        return "<Selected: {}>".format(self.selected_language)
+
+
+class WelcomeView(ViewPolicy):
+    def __init__(self, model, signal):
         self.model = model
-        self.cb = cb
+        self.signal = signal
         self.items = []
         self.body = [
             Padding.center_79(self._build_model_inputs()),
@@ -40,7 +82,7 @@ class WelcomeView(WidgetWrap):
 
     def _build_model_inputs(self):
         sl = []
-        for lang in self.model.supported_languages:
+        for lang in self.model.get_menu():
             sl.append(Color.button_primary(
                 confirm_btn(label=lang, on_press=self.confirm),
                 focus_map="button_primary focus"))
@@ -48,8 +90,10 @@ class WelcomeView(WidgetWrap):
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))
 
-    def confirm(self, button):
-        return self.cb(button.label)
+    def confirm(self, result):
+        self.model.selected_language = result.label
+        emit_signal(self.signal, 'installpath:show')
 
     def cancel(self, button):
-        return self.cb(None)
+        raise SystemExit("No language selected, exiting as there are no "
+                         "more previous controllers to render.")

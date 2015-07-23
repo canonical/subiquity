@@ -9,6 +9,8 @@ TOPDIR=$(shell pwd)
 STREAM=daily
 RELEASE=wily
 ARCH=amd64
+BOOTLOADER=grub2
+OFFLINE=-o
 INSTALLIMG=ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img
 INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 .PHONY: run clean
@@ -37,7 +39,7 @@ unit:
 	python3 -m "nose" -v --nologcapture --with-coverage $(PYTHONSRC)/tests/
 
 installer/$(INSTALLIMG): installer/geninstaller installer/runinstaller $(INSTALLER_RESOURCES)
-	(cd installer && ./geninstaller -v -r $(RELEASE) -a $(ARCH) -s $(STREAM))
+	(cd installer && ./geninstaller -v $(OFFLINE) -r $(RELEASE) -a $(ARCH) -s $(STREAM) -b $(BOOTLOADER)) 
 	echo $(INSTALLER_RESOURCES)
 
 installer: installer/$(INSTALLIMG)
