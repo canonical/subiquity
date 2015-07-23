@@ -110,6 +110,11 @@ class FilesystemModel(ModelPolicy):
         self.prober = prober.Prober(self.options)
         self.probe_storage()
 
+    def reset(self):
+        log.debug('FilesystemModel: resetting disks')
+        for disk in self.devices.values():
+            disk.reset()
+
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
             if x == selection:
@@ -377,8 +382,8 @@ class DiskPartitionView(WidgetWrap):
         self.signal.emit_signal('filesystem:create-swap-entire-device')
 
     def done(self, result):
-        actions = self.disk_obj.get_actions()
-        self.signal.emit_signal('filesystem:finish', False, actions)
+        ''' Return to FilesystemView '''
+        self.signal.emit_signal('filesystem:show')
 
     def cancel(self, button):
         self.signal.emit_signal('filesystem:show')
@@ -436,7 +441,7 @@ class FilesystemView(ViewPolicy):
 
     def _build_buttons(self):
         buttons = [
-            Color.button_secondary(reset_btn(on_press=self.cancel),
+            Color.button_secondary(reset_btn(on_press=self.reset),
                                    focus_map='button_secondary focus'),
             Color.button_secondary(done_btn(on_press=self.done),
                                    focus_map='button_secondary focus'),
@@ -482,7 +487,7 @@ class FilesystemView(ViewPolicy):
         self.signal.emit_signal(self.model.get_previous_signal)
 
     def reset(self, button):
-        self.signal.emit_signal('filesystem:reset', True)
+        self.signal.emit_signal('filesystem:show', True)
 
     def done(self, button):
         actions = self.model.get_actions()

@@ -73,6 +73,13 @@ class Blockdev():
         self.bcache = []
         self.lvm = []
 
+    def reset(self):
+        ''' Wipe out any actions queued for this disk '''
+        self.disk = parted.freshDisk(self.device, self.parttype)
+        self.mounts = {}
+        self.bcache = []
+        self.lvm = []
+
     def _get_largest_free_region(self):
         """Finds largest free region on the disk"""
         # There are better ways to do it, but let's be straightforward

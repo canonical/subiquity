@@ -80,7 +80,6 @@ class Controller:
         self.signal.connect_signals(signals)
         log.debug(self.signal)
 
-
 # EventLoop -------------------------------------------------------------------
     def redraw_screen(self):
         if hasattr(self, 'loop'):
@@ -142,9 +141,7 @@ class Controller:
         self.ui.set_footer(message)
         self.redraw_screen()
 
-
 # Modes ----------------------------------------------------------------------
-
     # Welcome -----------------------------------------------------------------
     def welcome(self, *args, **kwargs):
         title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
@@ -211,7 +208,8 @@ class Controller:
     def filesystem(self, reset=False):
         # FIXME: Is this the best way to zero out this list for a reset?
         if reset:
-            self.models["filesystem"].devices = {}
+            log.info("Resetting Filesystem model")
+            self.models["filesystem"].reset()
 
         title = "Filesystem setup"
         footer = ("Select available disks to format and mount")
