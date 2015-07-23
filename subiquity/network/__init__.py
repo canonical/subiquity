@@ -94,8 +94,9 @@ class NetworkModel(ModelPolicy):
         self.network = self.prober.get_results().get('network')
 
     def get_interfaces(self):
+        VALID_NIC_TYPES = ['eth', 'wlan']
         return [iface for iface in self.network.keys()
-                if self.network[iface]['type'] == 'eth' and
+                if self.network[iface]['type'] in VALID_NIC_TYPES and
                 not self.network[iface]['hardware']['DEVPATH'].startswith(
                     '/devices/virtual/net')]
 
