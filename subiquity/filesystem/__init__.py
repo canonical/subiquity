@@ -376,7 +376,8 @@ class DiskPartitionView(WidgetWrap):
         self.signal.emit_signal('filesystem:create-swap-entire-device')
 
     def done(self, result):
-        self.signal.emit_signal('quit')
+        actions = self.disk_obj.get_actions()
+        self.signal.emit_signal('filesystem:finish', False, actions)
 
     def cancel(self, button):
         self.signal.emit_signal('filesystem:show')

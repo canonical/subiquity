@@ -231,7 +231,7 @@ class Controller:
             print("\033c")
             print("**** Calling curtin installer ****")
             subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
-        return self.ui.exit()
+        return self.exit()
 
     # Filesystem/Disk partition -----------------------------------------------
     def disk_partition(self, disk):
