@@ -438,7 +438,7 @@ class FilesystemView(ViewPolicy):
         buttons = [
             Color.button_secondary(reset_btn(on_press=self.cancel),
                                    focus_map='button_secondary focus'),
-            Color.button_secondary(reset_btn(on_press=self.done),
+            Color.button_secondary(done_btn(on_press=self.done),
                                    focus_map='button_secondary focus'),
 
         ]
