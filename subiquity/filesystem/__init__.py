@@ -66,7 +66,10 @@ class FilesystemModel:
          'add_disk_partition'),
         ('Finish add disk partition',
          'filesystem:finish-add-disk-partition',
-         'add_disk_partition_handler')
+         'add_disk_partition_handler'),
+        ('Format or create swap on entire device (unusual, advanced)',
+         'filesystem:create-swap-entire-device',
+         'create_swap_entire_device')
     ]
 
     fs_menu = [
@@ -85,15 +88,6 @@ class FilesystemModel:
         ('Setup hierarchichal storage (bcache)',
          'filesystem:setup-bcache',
          'setup_bcache')
-    ]
-
-    partition_menu = [
-        ('Add first GPT partition',
-         'filesystem:add-first-gpt-partition',
-         'add_first_gpt_partition'),
-        ('Format or create swap on entire device (unusual, advanced)',
-         'filesystem:create-swap-entire-device',
-         'create_swap_entire_device')
     ]
 
     supported_filesystems = [
@@ -121,7 +115,7 @@ class FilesystemModel:
                 return y
 
     def get_signals(self):
-        return self.signals + self.fs_menu + self.partition_menu
+        return self.signals + self.fs_menu
 
     def get_menu(self):
         return self.fs_menu
@@ -294,6 +288,8 @@ class DiskPartitionView(WidgetWrap):
         self.model = model
         self.signal = signal
         self.selected_disk = selected_disk
+        self.disk_obj = self.model.get_disk(self.selected_disk)
+
         self.body = [
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
@@ -316,9 +312,7 @@ class DiskPartitionView(WidgetWrap):
     def _build_model_inputs(self):
         partitioned_disks = []
 
-        disk = self.model.get_disk(self.selected_disk)
-
-        for mnt, size, fstype, path in disk.get_fs_table():
+        for mnt, size, fstype, path in self.disk_obj.get_fs_table():
             mnt = Text(mnt)
             size = Text("{} GB".format(size))
             fstype = Text(fstype) if fstype else '-'
@@ -330,39 +324,56 @@ class DiskPartitionView(WidgetWrap):
                 mnt
             ], 4)
             partitioned_disks.append(partition_column)
-        btn = done_btn(label="FREE SPACE", on_press=self.add_partition)
-        btn = Color.button_primary(btn,
-                                   focus_map='button_primary focus')
-        free_space = str(_humanize_size(disk.freespace))
+        free_space = str(_humanize_size(self.disk_obj.freespace))
         partitioned_disks.append(Columns([
-            (15, btn),
+            (15, Text("FREE SPACE")),
             Text(free_space),
             Text(""),
             Text("")
         ], 4))
 
-        return BoxAdapter(SimpleList(partitioned_disks),
+        return BoxAdapter(SimpleList(partitioned_disks, is_selectable=False),
                           height=len(partitioned_disks))
 
     def _build_menu(self):
-        opts = []
-        for opt, sig, _ in self.model.partition_menu:
-            opts.append(
-                Color.button_secondary(done_btn(label=opt,
-                                                on_press=self.on_menu_press),
-                                       focus_map='button_secondary focus'))
-        return Pile(opts)
+        """
+        Builds the add partition menu with user visible
+        changes to the button depending on if existing
+        partitions exist or not.
+        """
+        return Pile([self.add_partition_w(), self.create_swap_w()])
 
-    def add_partition(self, partition):
-        if partition.label == "FREE SPACE":
-            self.signal.emit_signal('filesystem:add-disk-partition',
-                                    self.selected_disk)
-        else:
-            self.signal.emit_signal('filesystem:add-disk-partition',
-                                    partition.label)
+    def create_swap_w(self):
+        """ Handles presenting an enabled create swap on
+        entire device button if no partition exists, otherwise
+        it is disabled.
+        """
+        text = ("Format or create swap on entire"
+                "device (unusual, advanced)")
+        if len(self.model.get_partitions()) == 0:
+            return Color.button_secondary(done_btn(label=text,
+                                                   on_press=self.create_swap),
+                                          focus_map='button_secondary focus')
+        return Color.info_minor(Text(text))
 
-    def on_menu_press(self, result):
-        self.signal.emit_signal(self.model.get_signal_by_name(result.label))
+    def add_partition_w(self):
+        """ Handles presenting the add partition widget button
+        depending on if partitions exist already or not.
+        """
+        text = "Add first GPT partition"
+        if len(self.model.get_partitions()) > 0:
+            text = "Add partition (max size {})".format(
+                _humanize_size(self.disk_obj.freespace))
+        return Color.button_secondary(done_btn(label=text,
+                                               on_press=self.add_partition),
+                                      focus_map='button_secondary focus')
+
+    def add_partition(self, result):
+        self.signal.emit_signal('filesystem:add-disk-partition',
+                                self.selected_disk)
+
+    def create_swap(self, result):
+        self.signal.emit_signal('filesystem:create-swap-entire-device')
 
     def done(self, result):
         self.signal.emit_signal('quit')
@@ -447,6 +458,7 @@ class FilesystemView(WidgetWrap):
                     focus_map='button_secondary focus'))
         return Pile(opts)
 
+    # FIXME: needs to pass actions
     def on_fs_menu_press(self, result):
         log.info("Filesystem View done() getting disk info")
         actions = self.model.get_actions()
@@ -457,7 +469,7 @@ class FilesystemView(WidgetWrap):
         self.signal.emit_signal(self.model.get_previous_signal)
 
     def reset(self, button):
-        self.signal.emit_signal('filesystem:done', True)
+        self.signal.emit_signal('filesystem:finish', True)
 
     def show_disk_partition_view(self, partition):
         self.signal.emit_signal('filesystem:show-disk-partition',
