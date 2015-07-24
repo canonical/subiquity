@@ -467,11 +467,18 @@ generate_img() {
         set -x
         log "Setting up for offline use"
         local resolvconf=${mnt}/etc/resolv.conf
-        sudo mv ${resolvconf} ${resolvconf}.old
-        sudo cp /etc/resolv.conf ${resolvconf}
+        local packages=""
         for installer_package in "${INSTALLER_DEPS[@]}"; do
-            sudo chroot ${mnt} apt-get install $installer_package
+            packages="$packages $installer_package"
         done
+        sudo mv ${resolvconf} ${resolvconf}.old &&
+        sudo cp /etc/resolv.conf ${resolvconf} &&
+        log "Installing on rootfs: $packages"
+        sudo chroot ${mnt} apt-get update &&
+        sudo chroot ${mnt} apt-get install $packages || {
+            log "Failed to install packages on rootfs";
+            return 1;
+        }
         sudo rm ${resolvconf}
         sudo mv ${resolvconf}.old ${resolvconf}
         set +x
