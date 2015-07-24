@@ -17,13 +17,10 @@
 
 
 def apply_default_colors(cls):
-    color_map = {'orange': '#d51',
-                 'light_orange': '#d31',
+    color_map = {'orange': '#f30',
+                 'light_orange': '#f60',
                  'white': 'white',
                  'black': 'black',
-                 'light_aubergine': '#719',
-                 'mid_aubergine': '#525',
-                 'dark_aubergine': '#201',
                  'warm_grey': '#999',
                  'cool_grey': '#666',
                  'text_grey': '#333'}
