@@ -24,7 +24,7 @@ class ProgressOutput(WidgetWrap):
         self.txt = Text(txt)
         flr = Filler(Color.info_minor(self.txt),
                      valign="bottom")
-        super().__init__(BoxAdapter(flr, height=15))
+        super().__init__(BoxAdapter(flr, height=25))
 
     def set_text(self, data):
         self.txt.set_text(data)
