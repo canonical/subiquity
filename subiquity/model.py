@@ -61,5 +61,7 @@ class ModelPolicy(ABC):
     def get_previous_signal(self):
         """ Returns the previous defined signal
         """
+        if self.prev_signal is None:
+            return 'welcome:show'
         name, signal, cb = self.prev_signal
         return signal

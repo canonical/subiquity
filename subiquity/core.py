@@ -19,7 +19,8 @@ import urwid.curses_display
 import subprocess
 from subiquity.signals import Signal
 from subiquity.palette import STYLES, STYLES_MONO
-from subiquity.curtin import curtin_write_storage_actions
+from subiquity.curtin import (curtin_write_storage_actions,
+                              curtin_write_postinst_config)
 
 # Modes import ----------------------------------------------------------------
 from subiquity.welcome import WelcomeView, WelcomeModel
@@ -31,6 +32,7 @@ from subiquity.filesystem import (FilesystemView,
                                   FilesystemModel)
 from subiquity.ui.dummy import DummyView
 
+BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
 log = logging.getLogger('subiquity.core')
 
 
@@ -58,6 +60,9 @@ class Controller:
         """
         signals = []
 
+        # Add quit signal
+        signals.append(('quit', self.exit))
+
         # Pull signals emitted from welcome path selections
         for name, sig, cb in self.models["welcome"].get_signals():
             signals.append((sig, getattr(self, cb)))
@@ -76,7 +81,6 @@ class Controller:
 
         self.signal.connect_signals(signals)
         log.debug(self.signal)
-
 
 # EventLoop -------------------------------------------------------------------
     def redraw_screen(self):
@@ -139,9 +143,7 @@ class Controller:
         self.ui.set_footer(message)
         self.redraw_screen()
 
-
 # Modes ----------------------------------------------------------------------
-
     # Welcome -----------------------------------------------------------------
     def welcome(self, *args, **kwargs):
         title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
@@ -205,7 +207,12 @@ class Controller:
         self.ui.set_body(DummyView(self.signal))
 
     # Filesystem --------------------------------------------------------------
-    def filesystem(self):
+    def filesystem(self, reset=False):
+        # FIXME: Is this the best way to zero out this list for a reset?
+        if reset:
+            log.info("Resetting Filesystem model")
+            self.models["filesystem"].reset()
+
         title = "Filesystem setup"
         footer = ("Select available disks to format and mount")
         self.ui.set_header(title)
@@ -215,10 +222,12 @@ class Controller:
 
     def filesystem_handler(self, reset=False, actions=None):
         if actions is None and reset is False:
-            urwid.emit_signal(self.signal, 'network:show', [])
+            urwid.emit_signal(self.signal, 'network:show')
 
         log.info("Rendering curtin config from user choices")
         curtin_write_storage_actions(actions=actions)
+        log.info("Generating post-install config")
+        curtin_write_postinst_config()
         if self.opts.dry_run:
             log.debug("filesystem: this is a dry-run")
             print("\033c")
@@ -231,7 +240,7 @@ class Controller:
             print("\033c")
             print("**** Calling curtin installer ****")
             subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
-        return self.ui.exit()
+        return self.exit()
 
     # Filesystem/Disk partition -----------------------------------------------
     def disk_partition(self, disk):
@@ -264,10 +273,25 @@ class Controller:
 
     def add_disk_partition_handler(self, disk, spec):
         current_disk = self.models["filesystem"].get_disk(disk)
-        current_disk.add_partition(spec["partnum"],
-                                   spec["bytes"],
-                                   spec["fstype"],
-                                   spec["mountpoint"])
+
+        ''' create a gpt boot partition if one doesn't exist '''
+        if current_disk.parttype == 'gpt' and \
+           len(current_disk.disk.partitions) == 0:
+            log.debug('Adding grub_bios gpt partition first')
+            current_disk.add_partition(partnum=1,
+                                       size=BIOS_GRUB_SIZE_BYTES,
+                                       fstype=None,
+                                       flag='bios_grub')
+
+        if spec["fstype"] in ["swap"]:
+            current_disk.add_partition(partnum=spec["partnum"],
+                                       size=spec["bytes"],
+                                       fstype=spec["fstype"])
+        else:
+            current_disk.add_partition(partnum=spec["partnum"],
+                                       size=spec["bytes"],
+                                       fstype=spec["fstype"],
+                                       mountpoint=spec["mountpoint"])
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
         self.signal.emit_signal('filesystem:show-disk-partition', disk)
 

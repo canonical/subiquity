@@ -53,6 +53,10 @@ class PartitionAction(DiskAction):
         self._action_id = "{}{}_part".format(self.parent.action_id,
                                              self.partnumber)
 
+        ''' rename action_id for readability '''
+        if self.flags in ['bios_grub']:
+            self._action_id = 'bios_boot_partition'
+
     @property
     def size(self):
         return self._size
@@ -93,6 +97,9 @@ class FormatAction(DiskAction):
         # fat filesystem require an id of <= 11 chars
         if fstype.startswith('fat'):
             self._action_id = self._action_id[:11]
+        # curtin detects fstype as 'swap'
+        elif fstype.startswith('linux-swap'):
+            self._fstype = 'swap'
 
     @property
     def fstype(self):

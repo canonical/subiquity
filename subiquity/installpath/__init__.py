@@ -19,11 +19,12 @@ Provides high level options for Ubuntu install
 
 """
 import logging
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter)
+from urwid import (ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 from subiquity.model import ModelPolicy
+from subiquity.view import ViewPolicy
 
 log = logging.getLogger('subiquity.installpath')
 
@@ -72,7 +73,7 @@ class InstallpathModel(ModelPolicy):
         return self.install_paths
 
 
-class InstallpathView(WidgetWrap):
+class InstallpathView(ViewPolicy):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

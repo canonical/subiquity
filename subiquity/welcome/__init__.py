@@ -19,11 +19,12 @@ Welcome provides user with language selection
 
 """
 import logging
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter, emit_signal)
+from urwid import (ListBox, Pile, BoxAdapter, emit_signal)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 from subiquity.model import ModelPolicy
+from subiquity.view import ViewPolicy
 
 log = logging.getLogger('subiquity.welcome')
 
@@ -60,7 +61,7 @@ class WelcomeModel(ModelPolicy):
         return "<Selected: {}>".format(self.selected_language)
 
 
-class WelcomeView(WidgetWrap):
+class WelcomeView(ViewPolicy):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

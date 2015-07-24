@@ -15,7 +15,7 @@
 
 """ Base Frame Widget """
 
-from urwid import Frame, WidgetWrap, register_signal
+from urwid import Frame, WidgetWrap
 from subiquity.ui.anchors import Header, Footer, Body
 import logging
 
@@ -31,10 +31,6 @@ class SubiquityUI(WidgetWrap):
         self.body = body if body else Body()
         self.footer = footer if footer else Footer()
         self.frame = Frame(self.body, header=self.header, footer=self.footer)
-
-        # Register base set of signals available throughout application
-        for sig in ['cancel', 'done', 'reset']:
-            register_signal(SubiquityUI, sig)
         super().__init__(self.frame)
 
     def keypress(self, size, key):
