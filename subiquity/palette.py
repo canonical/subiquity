@@ -24,7 +24,7 @@ def apply_default_colors(cls):
                  'light_aubergine': '#719',
                  'mid_aubergine': '#525',
                  'dark_aubergine': '#201',
-                 'warm_grey': '#aaa',
+                 'warm_grey': '#999',
                  'cool_grey': '#666',
                  'text_grey': '#333'}
     for k, v in color_map.items():
@@ -52,7 +52,7 @@ STYLES = [
     ('button_secondary focus', '', '', '',
      Palette.white, Palette.light_orange),
     ('info_minor', '', '', '',
-     Palette.text_grey, Palette.black)
+     Palette.warm_grey, Palette.black)
 ]
 
 STYLES_MONO = [('frame_header', Palette.white, Palette.black,
