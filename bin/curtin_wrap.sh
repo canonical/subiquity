@@ -17,7 +17,6 @@ fi
 
 clear
 if tail -n 2 $OUTPUT | grep -q "$INSTALL_OK"; then
-    echo ""
     echo "Ubuntu Server is now installed, press any key to reboot into the new system."
     read a
     echo "Rebooting down after running $CURTIN $CMD"

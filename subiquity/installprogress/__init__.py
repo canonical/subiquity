@@ -31,8 +31,7 @@ class ProgressOutput(WidgetWrap):
 
     def set_text(self, data):
         data = data.decode("utf8")
-        last_ten_lines = data[-1500:]
-        lines = self.split_text() + last_ten_lines.splitlines()
+        lines = self.split_text() + data.splitlines()
         out = "\n".join(lines[-20:])
         self.txt.set_text(out)
 
