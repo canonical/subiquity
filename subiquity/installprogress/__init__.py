@@ -24,10 +24,17 @@ class ProgressOutput(WidgetWrap):
         self.txt = Text(txt)
         flr = Filler(Color.info_minor(self.txt),
                      valign="bottom")
-        super().__init__(BoxAdapter(flr, height=25))
+        super().__init__(BoxAdapter(flr, height=20))
+
+    def split_text(self):
+        return self.txt.text.splitlines()
 
     def set_text(self, data):
-        self.txt.set_text(data)
+        data = data.decode("utf8")
+        last_ten_lines = data[-1500:]
+        lines = self.split_text() + last_ten_lines.splitlines()
+        out = "\n".join(lines[-20:])
+        self.txt.set_text(out)
 
 
 class ProgressView(ViewPolicy):

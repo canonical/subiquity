@@ -314,7 +314,7 @@ class Controller:
         title = ("Installing system")
         excerpt = ("Please wait for the installation "
                    "to finish before rebooting.")
-        footer = ("")
+        footer = ("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
         if self.opts.dry_run:
@@ -327,12 +327,14 @@ class Controller:
                 "",
                 "Press (Q) to Quit."
             ]
+            self.progress_output_w = ProgressOutput("\n".join(banner))
         else:
             log.debug("filesystem: this is the *real* thing")
-            banner = ["**** Calling curtin installer ****"]
             subprocess.Popen(["/usr/local/bin/curtin_wrap.sh"],
-                             stdout=self.install_progress_fd)
-        self.progress_output_w = ProgressOutput("\n".join(banner))
+                             stdout=self.install_progress_fd,
+                             bufsize=1,
+                             universal_newlines=True)
+        self.progress_output_w = ProgressOutput("Wait for it...\n\n")
         self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
 
     def install_progress_status(self, data):
