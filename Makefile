@@ -18,7 +18,7 @@ INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 all: dryrun
 
 install_deps:
-	sudo apt-get install python3-urwid python3-pyudev python3-netifaces python3-nose python3-flake8 python3-parted python3-yaml git bzr ubuntu-cloudimage-keyring python3-jinja2
+	sudo apt-get install python3-urwid python3-pyudev python3-netifaces python3-nose python3-flake8 python3-parted python3-yaml git bzr ubuntu-cloudimage-keyring python3-jinja2 python3-coverage
 
 dryrun:
 	$(MAKE) ui-view DRYRUN="--dry-run"
@@ -36,7 +36,7 @@ lint:
 
 unit:
 	echo "Running unit tests..."
-	python3 -m "nose" -v --nologcapture --with-coverage $(PYTHONSRC)/tests/
+	python3 -m "nose" -v --nologcapture --with-coverage ${TOPDIR}/tests/
 
 installer/$(INSTALLIMG): installer/geninstaller installer/runinstaller $(INSTALLER_RESOURCES)
 	(cd installer && ./geninstaller -v $(OFFLINE) -r $(RELEASE) -a $(ARCH) -s $(STREAM) -b $(BOOTLOADER)) 
