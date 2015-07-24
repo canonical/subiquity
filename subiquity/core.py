@@ -31,6 +31,9 @@ from subiquity.filesystem import (FilesystemView,
                                   AddPartitionView,
                                   FilesystemModel)
 from subiquity.ui.dummy import DummyView
+from subiquity.installprogress import (ProgressOutput,
+                                       ProgressView)
+
 
 BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
 log = logging.getLogger('subiquity.core')
@@ -125,6 +128,8 @@ class Controller:
 
         try:
             self.set_alarm_in(0.05, self.welcome)
+            self.install_progress_fd = self.loop.watch_pipe(
+                self.install_progress_status)
             self.loop.run()
         except:
             log.exception("Exception in controller.run():")
@@ -228,19 +233,7 @@ class Controller:
         curtin_write_storage_actions(actions=actions)
         log.info("Generating post-install config")
         curtin_write_postinst_config()
-        if self.opts.dry_run:
-            log.debug("filesystem: this is a dry-run")
-            print("\033c")
-            print("**** DRY_RUN ****")
-            print('NOT calling: '
-                  'subprocess.check_call("/usr/local/bin/curtin_wrap.sh")')
-            print("**** DRY_RUN ****")
-        else:
-            log.debug("filesystem: this is the *real* thing")
-            print("\033c")
-            print("**** Calling curtin installer ****")
-            subprocess.check_call("/usr/local/bin/curtin_wrap.sh")
-        return self.exit()
+        self.install_progress()
 
     # Filesystem/Disk partition -----------------------------------------------
     def disk_partition(self, disk):
@@ -315,3 +308,32 @@ class Controller:
 
     def create_swap_entire_device(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
+
+    # Progress View -----------------------------------------------------------
+    def install_progress(self):
+        title = ("Installing system")
+        excerpt = ("Please wait for the installation "
+                   "to finish before rebooting.")
+        footer = ("")
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer)
+        if self.opts.dry_run:
+            log.debug("Filesystem: this is a dry-run")
+            banner = [
+                "**** DRY_RUN ****",
+                "NOT calling:"
+                "subprocess.check_call(/usr/local/bin/curtin_wrap.sh)"
+                "",
+                "",
+                "Press (Q) to Quit."
+            ]
+        else:
+            log.debug("filesystem: this is the *real* thing")
+            banner = ["**** Calling curtin installer ****"]
+            subprocess.Popen(["/usr/local/bin/curtin_wrap.sh"],
+                             stdout=self.install_progress_fd)
+        self.progress_output_w = ProgressOutput("\n".join(banner))
+        self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
+
+    def install_progress_status(self, data):
+        self.progress_output_w.set_text(data)
