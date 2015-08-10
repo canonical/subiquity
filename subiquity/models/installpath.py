@@ -13,20 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Install Path
-
-Provides high level options for Ubuntu install
-
-"""
 import logging
-from urwid import (ListBox, Pile, BoxAdapter)
-from subiquity.ui.lists import SimpleList
-from subiquity.ui.buttons import confirm_btn, cancel_btn
-from subiquity.ui.utils import Padding, Color
 from subiquity.model import ModelPolicy
-from subiquity.view import ViewPolicy
 
-log = logging.getLogger('subiquity.installpath')
+
+log = logging.getLogger("subiquity.models.installpath")
 
 
 class InstallpathModel(ModelPolicy):
@@ -71,41 +62,3 @@ class InstallpathModel(ModelPolicy):
 
     def get_menu(self):
         return self.install_paths
-
-
-class InstallpathView(ViewPolicy):
-    def __init__(self, model, signal):
-        self.model = model
-        self.signal = signal
-        self.items = []
-        self.body = [
-            Padding.center_79(self._build_model_inputs()),
-            Padding.line_break(""),
-            Padding.center_20(self._build_buttons()),
-        ]
-        super().__init__(ListBox(self.body))
-
-    def _build_buttons(self):
-        self.buttons = [
-            Color.button_secondary(cancel_btn(on_press=self.cancel),
-                                   focus_map='button_secondary focus'),
-        ]
-        return Pile(self.buttons)
-
-    def _build_model_inputs(self):
-        sl = []
-        for ipath, sig, _ in self.model.get_menu():
-            log.debug("Building inputs: {}".format(ipath))
-            sl.append(Color.button_primary(confirm_btn(label=ipath,
-                                                       on_press=self.confirm),
-                                           focus_map='button_primary focus'))
-
-        return BoxAdapter(SimpleList(sl),
-                          height=len(sl))
-
-    def confirm(self, result):
-        self.signal.emit_signal(
-            self.model.get_signal_by_name(result.label))
-
-    def cancel(self, button):
-        self.signal.emit_signal(self.model.get_previous_signal)

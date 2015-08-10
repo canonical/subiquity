@@ -19,7 +19,7 @@ import yaml
 import logging
 from itertools import count
 
-from subiquity.filesystem.actions import (
+from .actions import (
     DiskAction,
     PartitionAction,
     FormatAction,

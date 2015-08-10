@@ -13,55 +13,22 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Welcome
+""" Install Path
 
-Welcome provides user with language selection
+Provides high level options for Ubuntu install
 
 """
 import logging
-from urwid import (ListBox, Pile, BoxAdapter, emit_signal)
+from urwid import (ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import confirm_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
-from subiquity.model import ModelPolicy
 from subiquity.view import ViewPolicy
 
-log = logging.getLogger('subiquity.welcome')
+log = logging.getLogger('subiquity.installpath')
 
 
-class WelcomeModel(ModelPolicy):
-    """ Model representing language selection
-    """
-    prev_signal = None
-
-    signals = [
-        ("Welcome view",
-         'welcome:show',
-         'welcome')
-    ]
-
-    supported_languages = ['English',
-                           'Belgian',
-                           'German',
-                           'Italian']
-    selected_language = None
-
-    def get_signals(self):
-        return self.signals
-
-    def get_menu(self):
-        return self.supported_languages
-
-    def get_signal_by_name(self, selection):
-        for x, y, z in self.get_menu():
-            if x == selection:
-                return y
-
-    def __repr__(self):
-        return "<Selected: {}>".format(self.selected_language)
-
-
-class WelcomeView(ViewPolicy):
+class InstallpathView(ViewPolicy):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal
@@ -82,18 +49,18 @@ class WelcomeView(ViewPolicy):
 
     def _build_model_inputs(self):
         sl = []
-        for lang in self.model.get_menu():
-            sl.append(Color.button_primary(
-                confirm_btn(label=lang, on_press=self.confirm),
-                focus_map="button_primary focus"))
+        for ipath, sig, _ in self.model.get_menu():
+            log.debug("Building inputs: {}".format(ipath))
+            sl.append(Color.button_primary(confirm_btn(label=ipath,
+                                                       on_press=self.confirm),
+                                           focus_map='button_primary focus'))
 
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))
 
     def confirm(self, result):
-        self.model.selected_language = result.label
-        emit_signal(self.signal, 'installpath:show')
+        self.signal.emit_signal(
+            self.model.get_signal_by_name(result.label))
 
     def cancel(self, button):
-        raise SystemExit("No language selected, exiting as there are no "
-                         "more previous controllers to render.")
+        self.signal.emit_signal(self.model.get_previous_signal)

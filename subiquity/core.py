@@ -23,16 +23,12 @@ from subiquity.curtin import (curtin_write_storage_actions,
                               curtin_write_postinst_config)
 
 # Modes import ----------------------------------------------------------------
-from subiquity.welcome import WelcomeView, WelcomeModel
-from subiquity.network import NetworkView, NetworkModel
-from subiquity.installpath import InstallpathView, InstallpathModel
-from subiquity.filesystem import (FilesystemView,
-                                  DiskPartitionView,
-                                  AddPartitionView,
-                                  FilesystemModel)
+from subiquity.models import (WelcomeModel, NetworkModel, InstallpathModel,
+                              FilesystemModel)
+from subiquity.ui.views import (WelcomeView, NetworkView, InstallpathView,
+                                DiskPartitionView, AddPartitionView,
+                                FilesystemView, ProgressView, ProgressOutput)
 from subiquity.ui.dummy import DummyView
-from subiquity.installprogress import (ProgressOutput,
-                                       ProgressView)
 
 
 BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
