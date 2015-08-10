@@ -63,20 +63,9 @@ class Controller:
         signals.append(('quit', self.exit))
 
         # Pull signals emitted from welcome path selections
-        for name, sig, cb in self.models["welcome"].get_signals():
-            signals.append((sig, getattr(self, cb)))
-
-        # Pull signals emitted from install path selections
-        for name, sig, cb in self.models["installpath"].get_signals():
-            signals.append((sig, getattr(self, cb)))
-
-        # Pull signals emitted from network selections
-        for name, sig, cb in self.models["network"].get_signals():
-            signals.append((sig, getattr(self, cb)))
-
-        # Pull signals emitted from filesystem selections
-        for name, sig, cb in self.models["filesystem"].get_signals():
-            signals.append((sig, getattr(self, cb)))
+        for model, model_class in self.models.items():
+            for name, sig, cb in model_class.get_signals():
+                signals.append((sig, getattr(self, cb)))
 
         self.signal.connect_signals(signals)
         log.debug(self.signal)
