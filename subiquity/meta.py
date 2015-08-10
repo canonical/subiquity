@@ -12,24 +12,3 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-import logging
-from functools import wraps
-from threading import Thread
-
-log = logging.getLogger('subiquity.utils')
-
-
-def async(func):
-    """
-    Decorator for executing a function in a separate :class:`threading.Thread`.
-
-    Only used if we do not care about failures or waiting for some sort of
-    promise, callback, return, etc.
-    """
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        thread = Thread(target=func, args=args, kwargs=kwargs)
-        thread.daemon = True
-        return thread.start()
-    return wrapper
