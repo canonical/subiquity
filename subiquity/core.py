@@ -319,7 +319,7 @@ class Controller:
                              stdout=self.install_progress_fd,
                              bufsize=1,
                              universal_newlines=True)
-        self.progress_output_w = ProgressOutput("Wait for it...\n\n")
+            self.progress_output_w = ProgressOutput("Wait for it...\n\n")
         self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
 
     def install_progress_status(self, data):
