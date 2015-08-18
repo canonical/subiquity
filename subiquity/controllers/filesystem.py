@@ -56,6 +56,7 @@ class FilesystemController(ControllerPolicy):
         curtin_write_storage_actions(actions=actions)
         log.info("Generating post-install config")
         curtin_write_postinst_config()
+        urwid.emit_signal(self.signal, 'identity:show')
         # self.install_progress()
 
     # Filesystem/Disk partition -----------------------------------------------

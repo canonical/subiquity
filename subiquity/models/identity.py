@@ -44,11 +44,6 @@ class IdentityModel(ModelPolicy):
          "validate_confirm_password")
     ]
 
-    username = None
-    password = None
-    confirm_password = None
-    encrypted_password = None
-
     def get_signals(self):
         return self.signals
 

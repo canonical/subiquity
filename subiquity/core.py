@@ -24,6 +24,7 @@ from subiquity.controllers import (WelcomeController,
                                    InstallpathController,
                                    NetworkController,
                                    FilesystemController,
+                                   IdentityController,
                                    InstallProgressController)
 
 log = logging.getLogger('subiquity.core')
@@ -44,6 +45,7 @@ class Controller:
             "installpath": InstallpathController(self.ui, self.signal),
             "network": NetworkController(self.ui, self.signal),
             "filesystem": FilesystemController(self.ui, self.signal),
+            "identity": IdentityController(self.ui, self.signal),
             "progress": InstallProgressController(self.ui, self.signal),
         }
         self._connect_base_signals()

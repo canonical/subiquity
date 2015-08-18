@@ -37,6 +37,13 @@ class StringEditor(WidgetWrap):
         return self._edit.get_edit_text()
 
 
+class PasswordEditor(StringEditor):
+    """ Password input prompt with masking
+    """
+    def __init__(self, caption, mask="*"):
+        super().__init__(caption, mask=mask)
+
+
 class IntegerEditor(WidgetWrap):
     """ IntEdit input class
     """

@@ -18,3 +18,4 @@ from .network import NetworkView
 from .installpath import InstallpathView
 from .installprogress import ProgressOutput, ProgressView
 from .welcome import WelcomeView
+from .identity import IdentityView

@@ -18,3 +18,4 @@ from .installpath import InstallpathController
 from .network import NetworkController
 from .filesystem import FilesystemController
 from .installprogress import InstallProgressController
+from .identity import IdentityController

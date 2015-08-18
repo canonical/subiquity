@@ -13,8 +13,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .filesystem import FilesystemModel
-from .installpath import InstallpathModel
-from .network import NetworkModel
-from .welcome import WelcomeModel
-from .identity import IdentityModel
+from subiquity.controller import ControllerPolicy
+from subiquity.models import IdentityModel
+from subiquity.ui.views import IdentityView
+
+
+class IdentityController(ControllerPolicy):
+    def __init__(self, ui, signal):
+        self.ui = ui
+        self.signal = signal
+        self.model = IdentityModel()
+
+    def identity(self):
+        title = "Profile setup"
+        excerpt = ("Input your username and password to log in to the system.")
+        footer = ""
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer)
+        self.ui.set_body(IdentityView(self.model, self.signal))
