@@ -13,8 +13,28 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .welcome import WelcomeController
-from .installpath import InstallpathController
-from .network import NetworkController
-from .filesystem import FilesystemController
-from .installprogress import InstallProgressController
+""" Controller Policy
+"""
+
+import logging
+
+log = logging.getLogger("subiquity.controller")
+
+
+class ControllerPolicyException(Exception):
+    "Problem in Controller policy"
+
+
+class ControllerPolicy:
+    """ Expected contract for defining controllers
+    """
+
+    def register_signals(self):
+        """ Defines signals associated with controller from model """
+        if hasattr(self, 'model'):
+            signals = []
+            for name, sig, cb in self.model.get_signals():
+                signals.append((sig, getattr(self, cb)))
+            self.signal.connect_signals(signals)
+        else:
+            log.debug("No model signals found for {}".format(self))
