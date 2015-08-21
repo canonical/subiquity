@@ -40,8 +40,9 @@ class AddPartitionView(WidgetWrap):
         self.signal = signal
         self.selected_disk = self.model.get_disk(selected_disk)
 
-        self.partnum = IntegerEditor(caption="Partition number (1-4): ",
-                                     default=1)
+        self.partnum = IntegerEditor(
+            caption="Partition number: ",
+            default=self.selected_disk.lastpartnumber + 1)
         self.size_str = _humanize_size(self.selected_disk.freespace)
         self.size = StringEditor(
                 caption="Size (max {}): ".format(self.size_str))

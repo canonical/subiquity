@@ -142,7 +142,8 @@ class Blockdev():
 
     @property
     def lastpartnumber(self):
-        return self.disk.lastPartitionNumber
+        return self.disk.lastPartitionNumber if \
+            self.disk.lastPartitionNumber > 0 else 0
 
     def delete_partition(self, partnum=None, sector=None, mountpoint=None):
         # find part and then call deletePartition()
