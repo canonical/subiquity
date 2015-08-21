@@ -90,25 +90,40 @@ class FilesystemController(ControllerPolicy):
 
     def add_disk_partition_handler(self, disk, spec):
         current_disk = self.model.get_disk(disk)
+        log.debug('spec: {}'.format(spec))
+        log.debug('disk.freespace: {}'.format(current_disk.freespace))
 
-        ''' create a gpt boot partition if one doesn't exist '''
-        if current_disk.parttype == 'gpt' and \
-           len(current_disk.disk.partitions) == 0:
-            log.debug('Adding grub_bios gpt partition first')
-            current_disk.add_partition(partnum=1,
-                                       size=BIOS_GRUB_SIZE_BYTES,
-                                       fstype=None,
-                                       flag='bios_grub')
+        try:
+            ''' create a gpt boot partition if one doesn't exist '''
+            if current_disk.parttype == 'gpt' and \
+               len(current_disk.disk.partitions) == 0:
+                log.debug('Adding grub_bios gpt partition first')
+                current_disk.add_partition(partnum=1,
+                                           size=BIOS_GRUB_SIZE_BYTES,
+                                           fstype=None,
+                                           flag='bios_grub')
 
-        if spec["fstype"] in ["swap"]:
-            current_disk.add_partition(partnum=spec["partnum"],
-                                       size=spec["bytes"],
-                                       fstype=spec["fstype"])
-        else:
-            current_disk.add_partition(partnum=spec["partnum"],
-                                       size=spec["bytes"],
-                                       fstype=spec["fstype"],
-                                       mountpoint=spec["mountpoint"])
+                # adjust downward the partition size to accommodate
+                # the bios/grub partition
+                spec['bytes'] -= BIOS_GRUB_SIZE_BYTES
+
+            if spec["fstype"] in ["swap"]:
+                current_disk.add_partition(partnum=spec["partnum"],
+                                           size=spec["bytes"],
+                                           fstype=spec["fstype"])
+            else:
+                current_disk.add_partition(partnum=spec["partnum"],
+                                           size=spec["bytes"],
+                                           fstype=spec["fstype"],
+                                           mountpoint=spec["mountpoint"])
+        except Exception:
+            log.exception('Failed to add disk partition')
+            log.debug('Returning to add-disk-partition')
+            # FIXME: on failure, we should repopulate input values
+            self.signal.emit_signal('filesystem:add-disk-partition', disk)
+
+        log.info("Successfully added partition")
+
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
         self.signal.emit_signal('filesystem:show-disk-partition', disk)
 

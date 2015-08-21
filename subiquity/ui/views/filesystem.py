@@ -42,9 +42,9 @@ class AddPartitionView(WidgetWrap):
 
         self.partnum = IntegerEditor(caption="Partition number (1-4): ",
                                      default=1)
+        self.size_str = _humanize_size(self.selected_disk.freespace)
         self.size = StringEditor(
-            caption="Size (max {}): ".format(
-                _humanize_size(self.selected_disk.freespace)))
+                caption="Size (max {}): ".format(self.size_str))
         self.mountpoint = StringEditor(caption="Mount: ", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
         body = [
@@ -102,6 +102,13 @@ class AddPartitionView(WidgetWrap):
             "fstype": self.fstype.value,
             "mountpoint": self.mountpoint.value
         }
+        if self.size.value == self.size_str:
+            log.debug(
+                'User specified max value({}), fixing up: {} -> {}'.format(
+                    self.size.value,
+                    result['bytes'],
+                    int(self.selected_disk.freespace)))
+            result['bytes'] = int(self.selected_disk.freespace)
         log.debug("Add Partition Result: {}".format(result))
         self.signal.emit_signal(
             'filesystem:finish-add-disk-partition',
@@ -194,6 +201,7 @@ class DiskPartitionView(WidgetWrap):
                                       focus_map='button_secondary focus')
 
     def add_partition(self, result):
+        log.debug('add_partition: result={}'.format(result))
         self.signal.emit_signal('filesystem:add-disk-partition',
                                 self.selected_disk)
 
@@ -268,18 +276,34 @@ class FilesystemView(ViewPolicy):
         ]
         return Pile(buttons)
 
+    def _get_percent_free(self, device):
+        ''' return the device free space and percentage
+            of the whole device'''
+        percent = "%d" % (
+            int((1.0 - (device.usedspace / device.size)) * 100))
+        free = _humanize_size(device.freespace)
+        rounded = "{}{}".format(int(float(free[:-1])), free[-1])
+        return (rounded, percent)
+ 
     def _build_model_inputs(self):
         col_1 = []
         col_2 = []
 
         for dname in self.model.get_available_disks():
             disk = self.model.get_disk_info(dname)
+            device = self.model.get_disk(dname)
             btn = done_btn(label=disk.name,
                            on_press=self.show_disk_partition_view)
 
             col_1.append(
                 Color.button_primary(btn, focus_map='button_primary focus'))
             disk_sz = _humanize_size(disk.size)
+            log.debug('device partitions: {}'.format(len(device.partitions)))
+            # if we've consumed some of the device, show
+            # the remaining space and percentage of the whole
+            if len(device.partitions) > 0:
+                free, percent = self._get_percent_free(device)
+                disk_sz = "{} ({}%) free".format(free, percent)
             col_2.append(Text(disk_sz))
 
         col_1 = BoxAdapter(SimpleList(col_1),

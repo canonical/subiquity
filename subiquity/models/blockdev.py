@@ -105,6 +105,14 @@ class Blockdev():
         self._parttype = value
 
     @property
+    def size(self):
+        return self.disk.device.getLength(unit='B')
+
+    @property
+    def partitions(self):
+        return self.disk.partitions
+
+    @property
     def available(self):
         ''' return True if has free space or partitions not
             assigned '''
@@ -113,10 +121,18 @@ class Blockdev():
         return False
 
     @property
-    def freespace(self, unit='b'):
+    def usedspace(self, unit='b'):
+        ''' return amount of used space'''
+        return sum([part.geometry.getSize(unit=unit) for part in
+                    self.disk.partitions])
+
+    @property
+    def freespace(self, unit='B'):
         ''' return amount of free space '''
-        return sum([geo.getSize(unit=unit) for geo in
-                    self.disk.getFreeSpaceRegions()])
+        geo = self._get_largest_free_region()
+        if geo:
+            return geo.getLength(unit=unit)
+        return 0
 
     @property
     def freepartition(self, unit='b'):
@@ -148,6 +164,7 @@ class Blockdev():
         geometry = self._get_largest_free_region()
         if not geometry:
             raise Exception('No free sectors available')
+        log.debug('largest free region:\n{}'.format(geometry))
 
         # convert size into a geometry based on existing partitions
         try:
@@ -155,6 +172,7 @@ class Blockdev():
         except IndexError:
             start = 0
         length = parted.sizeToSectors(size, 'B', self.device.sectorSize)
+        log.debug('requested start: {} length: {}'.format(start, length))
         req_geo = parted.Geometry(self.device, start=start, length=length)
 
         # find common area
