@@ -139,7 +139,7 @@ class DiskPartitionView(WidgetWrap):
 
         for mnt, size, fstype, path in self.disk_obj.get_fs_table():
             mnt = Text(mnt)
-            size = Text("{} GB".format(size))
+            size = Text("{}".format(_humanize_size(size)))
             fstype = Text(fstype) if fstype else '-'
             path = Text(path) if path else '-'
             partition_column = Columns([
@@ -149,7 +149,7 @@ class DiskPartitionView(WidgetWrap):
                 mnt
             ], 4)
             partitioned_disks.append(partition_column)
-        free_space = str(_humanize_size(self.disk_obj.freespace))
+        free_space = _humanize_size(self.disk_obj.freespace)
         partitioned_disks.append(Columns([
             (15, Text("FREE SPACE")),
             Text(free_space),
@@ -279,7 +279,7 @@ class FilesystemView(ViewPolicy):
 
             col_1.append(
                 Color.button_primary(btn, focus_map='button_primary focus'))
-            disk_sz = str(_humanize_size(disk.size))
+            disk_sz = _humanize_size(disk.size)
             col_2.append(Text(disk_sz))
 
         col_1 = BoxAdapter(SimpleList(col_1),

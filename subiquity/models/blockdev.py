@@ -237,7 +237,7 @@ class Blockdev():
         for part in self.disk.partitions:
             if part.fileSystem:
                 mntpoint = self.mounts.get(part.path, part.fileSystem.type)
-                fs_size = int(part.getSize(unit='GB'))
+                fs_size = part.getSize(unit='B')
                 fs_type = part.fileSystem.type
                 devpath = part.path
                 fs_table.append(
