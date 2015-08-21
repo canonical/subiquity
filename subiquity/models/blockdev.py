@@ -69,14 +69,14 @@ class Blockdev():
         self._parttype = parttype
         self.device = parted.getDevice(self.devpath)
         self.disk = parted.freshDisk(self.device, self.parttype)
-        self.mounts = {}
+        self._mounts = {}
         self.bcache = []
         self.lvm = []
 
     def reset(self):
         ''' Wipe out any actions queued for this disk '''
         self.disk = parted.freshDisk(self.device, self.parttype)
-        self.mounts = {}
+        self._mounts = {}
         self.bcache = []
         self.lvm = []
 
@@ -97,12 +97,24 @@ class Blockdev():
         return region
 
     @property
+    def mounts(self):
+        return self._mounts.values()
+
+    @property
     def parttype(self):
         return self._parttype
 
     @parttype.setter  # NOQA
     def parttype(self, value):
         self._parttype = value
+
+    @property
+    def size(self):
+        return self.disk.device.getLength(unit='B')
+
+    @property
+    def partitions(self):
+        return self.disk.partitions
 
     @property
     def available(self):
@@ -113,10 +125,18 @@ class Blockdev():
         return False
 
     @property
-    def freespace(self, unit='b'):
+    def usedspace(self, unit='b'):
+        ''' return amount of used space'''
+        return sum([part.geometry.getSize(unit=unit) for part in
+                    self.disk.partitions])
+
+    @property
+    def freespace(self, unit='B'):
         ''' return amount of free space '''
-        return sum([geo.getSize(unit=unit) for geo in
-                    self.disk.getFreeSpaceRegions()])
+        geo = self._get_largest_free_region()
+        if geo:
+            return geo.getLength(unit=unit)
+        return 0
 
     @property
     def freepartition(self, unit='b'):
@@ -126,7 +146,8 @@ class Blockdev():
 
     @property
     def lastpartnumber(self):
-        return self.disk.lastPartitionNumber
+        return self.disk.lastPartitionNumber if \
+            self.disk.lastPartitionNumber > 0 else 0
 
     def delete_partition(self, partnum=None, sector=None, mountpoint=None):
         # find part and then call deletePartition()
@@ -148,6 +169,7 @@ class Blockdev():
         geometry = self._get_largest_free_region()
         if not geometry:
             raise Exception('No free sectors available')
+        log.debug('largest free region:\n{}'.format(geometry))
 
         # convert size into a geometry based on existing partitions
         try:
@@ -155,6 +177,7 @@ class Blockdev():
         except IndexError:
             start = 0
         length = parted.sizeToSectors(size, 'B', self.device.sectorSize)
+        log.debug('requested start: {} length: {}'.format(start, length))
         req_geo = parted.Geometry(self.device, start=start, length=length)
 
         # find common area
@@ -201,7 +224,7 @@ class Blockdev():
 
         # associate partition devpath with mountpoint
         if mountpoint:
-            self.mounts[partpath] = mountpoint
+            self._mounts[partpath] = mountpoint
 
     def get_actions(self):
         actions = []
@@ -224,7 +247,7 @@ class Blockdev():
                 format_action = FormatAction(partition_action,
                                              fs_type)
                 actions.append(format_action)
-                mountpoint = self.mounts.get(part.path)
+                mountpoint = self._mounts.get(part.path)
                 if mountpoint:
                     mount_action = MountAction(format_action, mountpoint)
                     actions.append(mount_action)
@@ -236,8 +259,8 @@ class Blockdev():
         fs_table = []
         for part in self.disk.partitions:
             if part.fileSystem:
-                mntpoint = self.mounts.get(part.path, part.fileSystem.type)
-                fs_size = int(part.getSize(unit='GB'))
+                mntpoint = self._mounts.get(part.path, part.fileSystem.type)
+                fs_size = part.getSize(unit='B')
                 fs_type = part.fileSystem.type
                 devpath = part.path
                 fs_table.append(
