@@ -60,3 +60,5 @@ target/
 installer/*.img
 logs/*
 venv
+debian
+.pybuild

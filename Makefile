@@ -1,7 +1,9 @@
 #
 # Makefile for subiquity
 #
-PYTHONSRC=subiquity
+NAME=subiquity
+VERSION=0.0.1
+PYTHONSRC=$(NAME)
 PYTHONPATH=$(shell pwd):$(HOME)/download/probert:
 VENVPATH=$(shell pwd)/venv
 VENVACTIVATE=$(VENVPATH)/bin/activate
@@ -13,9 +15,16 @@ BOOTLOADER=grub2
 OFFLINE=-o
 INSTALLIMG=ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img
 INSTALLER_RESOURCES += $(shell find installer/resources -type f)
+GITDEBDIR=/tmp/subiquity-deb
+DEBDIR=./debian
 .PHONY: run clean
 
 all: dryrun
+
+$(NAME)_$(VERSION).orig.tar.gz: clean
+	cd .. && tar czf $(NAME)_$(VERSION).orig.tar.gz $(shell basename `pwd`) --exclude-vcs --exclude=debian --exclude='.tox*'
+
+tarball: $(NAME)_$(VERSION).orig.tar.gz
 
 install_deps:
 	sudo apt-get install python3-urwid python3-pyudev python3-netifaces python3-nose python3-flake8 python3-parted python3-yaml git bzr ubuntu-cloudimage-keyring python3-jinja2 python3-coverage
@@ -47,7 +56,29 @@ installer: installer/$(INSTALLIMG)
 run: installer
 	(cd installer && INSTALLER=$(INSTALLIMG) ./runinstaller)
 
+git-checkout-deb:
+	@if [ ! -d "$(GITDEBDIR)" ]; then \
+		git clone -q https://github.com/CanonicalLtd/subiquity-deb.git $(GITDEBDIR); \
+	fi
+	@if [ ! -h "$(DEBDIR)" ]; then \
+		ln -sf $(GITDEBDIR)/debian $(DEBDIR); \
+	fi
+DPKGBUILDARGS = -us -uc -i'.git.*|.tox|.bzr.*|.editorconfig|.travis-yaml'
+deb-src: git-checkout-deb clean tarball
+	@dpkg-buildpackage -S -sa $(DPKGBUILDARGS)
+
+deb-release: git-checkout-deb
+	@dpkg-buildpackage -S -sd $(DPKGBUILDARGS)
+
+deb: git-checkout-deb
+	@dpkg-buildpackage -b $(DPKGBUILDARGS)
+
 clean:
+	@-debian/rules clean
+	@rm -rf debian/subiquity
+	@rm -rf ../$(NAME)_*.deb ../$(NAME)_*.tar.gz ../$(NAME)_$.dsc ../$(NAME)_*.changes \
+		../$(NAME)_*.build ../$(NAME)_*.upload
+	wrap-and-sort
 	rm -f installer/target.img
 	rm -f installer/installer.img
 	rm -f installer/geninstaller.log
