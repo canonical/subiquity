@@ -81,7 +81,6 @@ class AddPartitionView(WidgetWrap):
             self._format_edit(),
             self.mountpoint
         ]
-
         return Pile(total_items)
 
     def cancel(self, button):
@@ -103,6 +102,18 @@ class AddPartitionView(WidgetWrap):
             "fstype": self.fstype.value,
             "mountpoint": self.mountpoint.value
         }
+        # Validate mountpoint input
+        if self.mountpoint.value in self.selected_disk.mounts:
+            log.error('provided mountpoint already allocated' +
+                      ' ({}'.format(self.mountpoint.value))
+            val = self.mountpoint.value
+            # FIXME: update the error message widget instead
+            self.mountpoint.value = 'ERROR: {} already mounted'.format(val)
+            self.signal.emit_signal(
+                'filesystem:add-disk-partiion',
+                self.selected_disk)
+            return
+        # Validate size (bytes) input
         if self.size.value == self.size_str:
             log.debug(
                 'User specified max value({}), fixing up: {} -> {}'.format(

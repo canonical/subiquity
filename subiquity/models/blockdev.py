@@ -69,14 +69,14 @@ class Blockdev():
         self._parttype = parttype
         self.device = parted.getDevice(self.devpath)
         self.disk = parted.freshDisk(self.device, self.parttype)
-        self.mounts = {}
+        self._mounts = {}
         self.bcache = []
         self.lvm = []
 
     def reset(self):
         ''' Wipe out any actions queued for this disk '''
         self.disk = parted.freshDisk(self.device, self.parttype)
-        self.mounts = {}
+        self._mounts = {}
         self.bcache = []
         self.lvm = []
 
@@ -95,6 +95,10 @@ class Blockdev():
                 max_size = r.length
 
         return region
+
+    @property
+    def mounts(self):
+        return self._mounts.values()
 
     @property
     def parttype(self):
@@ -220,7 +224,7 @@ class Blockdev():
 
         # associate partition devpath with mountpoint
         if mountpoint:
-            self.mounts[partpath] = mountpoint
+            self._mounts[partpath] = mountpoint
 
     def get_actions(self):
         actions = []
@@ -243,7 +247,7 @@ class Blockdev():
                 format_action = FormatAction(partition_action,
                                              fs_type)
                 actions.append(format_action)
-                mountpoint = self.mounts.get(part.path)
+                mountpoint = self._mounts.get(part.path)
                 if mountpoint:
                     mount_action = MountAction(format_action, mountpoint)
                     actions.append(mount_action)
@@ -255,7 +259,7 @@ class Blockdev():
         fs_table = []
         for part in self.disk.partitions:
             if part.fileSystem:
-                mntpoint = self.mounts.get(part.path, part.fileSystem.type)
+                mntpoint = self._mounts.get(part.path, part.fileSystem.type)
                 fs_size = part.getSize(unit='B')
                 fs_type = part.fileSystem.type
                 devpath = part.path
