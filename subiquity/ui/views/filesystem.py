@@ -246,7 +246,7 @@ class FilesystemView(ViewPolicy):
         for dev in self.model.devices.values():
             for mnt, size, fstype, path in dev.get_fs_table():
                 mnt = Text(mnt)
-                size = Text("{} GB".format(size))
+                size = Text("{}".format(_humanize_size(size)))
                 fstype = Text(fstype) if fstype else '-'
                 path = Text(path) if path else '-'
                 partition_column = Columns([
