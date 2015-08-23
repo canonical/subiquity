@@ -16,6 +16,7 @@
 import logging
 import urwid
 import urwid.curses_display
+from tornado.ioloop import IOLoop
 from subiquity.signals import Signal
 from subiquity.palette import STYLES, STYLES_MONO
 
@@ -102,8 +103,10 @@ class Controller:
                 additional_opts['screen'].set_terminal_properties(colors=256)
                 additional_opts['screen'].reset_default_terminal_palette()
 
+            evl = urwid.TornadoEventLoop(IOLoop())
             self.loop = urwid.MainLoop(
-                self.ui, palette, **additional_opts)
+                self.ui, palette, event_loop=evl, **additional_opts)
+            log.debug("Running event loop: {}".format(self.loop.event_loop))
 
         try:
             self.set_alarm_in(0.05, self.welcome)

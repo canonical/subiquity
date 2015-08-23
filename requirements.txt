@@ -5,3 +5,4 @@ nose-cov
 nose
 flake8
 python3-parted
+tornado

@@ -17,30 +17,27 @@
 Provides async operations for various api calls and other non-blocking
 work.
 
-The way this works is you create your IO/CPU bound thread:
+The way this works is you create your non-blocking thread:
 
 .. code::
 
     def my_async_method(self):
         pool.submit(func, *args)
 
-    # In your controller you would then call
+    # In your controller you would then call using coroutines
 
-    my_async_method_f = my_async_method()
-    my_async_method_f.add_done_callback(self.handle_async_method)
-
-    def handle_async_method(self, future):
+    @coroutine
+    def do_async_action(self):
         try:
-            result = future.result()
-        except Exception as e:
-            raise Exception("Program in thread {}".format(e))
-
+            yield my_async_method()
+            # Move to next coroutine or return if finish
+            self.do_second_async_action()
+        except Exeception as e:
+            log.exception("Failed in our non-blocking code.")
 """
 
-from multiprocessing import cpu_count
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 
 class Async:
-    pool = ThreadPoolExecutor(10)
-    ppool = ProcessPoolExecutor(cpu_count())
+    pool = ThreadPoolExecutor(4)
