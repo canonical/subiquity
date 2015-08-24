@@ -39,7 +39,7 @@ STYLES = [
     ('frame_footer', '', '', '',
      Palette.white, Palette.orange),
     ('body', '', '', '',
-     Palette.white, Palette.black),
+     Palette.white, ''),
     ('button_primary', '', '',
      '', Palette.white, Palette.cool_grey),
     ('button_primary focus', '', '', '',
@@ -49,7 +49,7 @@ STYLES = [
     ('button_secondary focus', '', '', '',
      Palette.white, Palette.light_orange),
     ('info_minor', '', '', '',
-     Palette.warm_grey, Palette.black)
+     Palette.warm_grey, '')
 ]
 
 STYLES_MONO = [('frame_header', Palette.white, Palette.black,
