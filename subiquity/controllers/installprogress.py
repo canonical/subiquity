@@ -84,6 +84,5 @@ class InstallProgressController(ControllerPolicy):
             self.run_curtin()
 
     def install_progress_status(self, data):
-        log.debug("Running status output: {}".format(data))
         self.progress_output_w.set_text(data)
         self.signal.emit_signal('refresh')
