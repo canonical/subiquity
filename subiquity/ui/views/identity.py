@@ -73,7 +73,7 @@ class IdentityView(ViewPolicy):
             "confirm_password": self.confirm_password.value
         }
         log.debug("User input: {}".format(result))
-        # emit_signal(self.signal, 'installpath:show')
+        emit_signal(self.signal, 'installprogress:show')
 
     def cancel(self, button):
         self.signal.emit_signal("quit")

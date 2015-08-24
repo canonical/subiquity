@@ -13,8 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .filesystem import FilesystemModel
-from .installpath import InstallpathModel
-from .network import NetworkModel
-from .welcome import WelcomeModel
-from .identity import IdentityModel
+from .filesystem import FilesystemModel  # NOQA
+from .installpath import InstallpathModel  # NOQA
+from .network import NetworkModel  # NOQA
+from .welcome import WelcomeModel  # NOQA
+from .identity import IdentityModel  # NOQA
+from .installprogress import InstallProgressModel  # NOQA

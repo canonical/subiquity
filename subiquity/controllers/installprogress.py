@@ -14,7 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import subprocess
+from tornado.gen import coroutine
+import subiquity.utils as utils
+from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView, ProgressOutput
 from subiquity.controller import ControllerPolicy
 
@@ -22,9 +24,39 @@ log = logging.getLogger("subiquity.controller.installprogress")
 
 
 class InstallProgressController(ControllerPolicy):
-    def __init__(self, ui, signal):
+    def __init__(self, ui, signal, opts):
         self.ui = ui
         self.signal = signal
+        self.opts = opts
+        self.model = InstallProgressModel()
+        self.progress_output_w = ProgressOutput(
+            self.signal,
+            "Waiting...")
+
+    def exit_cb(self, ret):
+        log.debug("Exit: {}".format(ret))
+
+    @coroutine
+    def run_curtin(self):
+        try:
+            yield utils.run_command_async(
+                "/usr/local/bin/curtin_wrap.sh",
+                self.install_progress_status)
+        except Exception as e:
+            # TODO: Implement an Error View/Controller for displaying
+            # exceptions rather than kicking out of installer.
+            log.error("Problem running curtin_wrap: {}".format(e))
+
+    @coroutine
+    def run_test_curtin(self):
+        """ testing streaming output
+        """
+        self.install_progress_status("Starting run")
+        yield utils.run_command_async(
+            "cat /var/log/syslog",
+            self.install_progress_status)
+        log.debug("done")
+        return
 
     def install_progress(self):
         title = ("Installing system")
@@ -33,6 +65,7 @@ class InstallProgressController(ControllerPolicy):
         footer = ("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
+        self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
         if self.opts.dry_run:
             log.debug("Filesystem: this is a dry-run")
             banner = [
@@ -43,15 +76,14 @@ class InstallProgressController(ControllerPolicy):
                 "",
                 "Press (Q) to Quit."
             ]
-            self.progress_output_w = ProgressOutput("\n".join(banner))
+            self.install_progress_status("\n".join(banner))
+            # XXX: Test routine to verify the callback streaming
+            # self.run_test_curtin()
         else:
             log.debug("filesystem: this is the *real* thing")
-            subprocess.Popen(["/usr/local/bin/curtin_wrap.sh"],
-                             stdout=self.install_progress_fd,
-                             bufsize=1,
-                             universal_newlines=True)
-            self.progress_output_w = ProgressOutput("Wait for it...\n\n")
-        self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
+            self.run_curtin()
 
     def install_progress_status(self, data):
+        log.debug("Running status output: {}".format(data))
         self.progress_output_w.set_text(data)
+        self.signal.emit_signal('refresh')

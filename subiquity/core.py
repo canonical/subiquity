@@ -47,7 +47,8 @@ class Controller:
             "network": NetworkController(self.ui, self.signal),
             "filesystem": FilesystemController(self.ui, self.signal),
             "identity": IdentityController(self.ui, self.signal),
-            "progress": InstallProgressController(self.ui, self.signal),
+            "progress": InstallProgressController(self.ui, self.signal,
+                                                  self.opts)
         }
         self._connect_base_signals()
 
@@ -58,6 +59,7 @@ class Controller:
 
         # Add quit signal
         signals.append(('quit', self.exit))
+        signals.append(('refresh', self.redraw_screen))
         self.signal.connect_signals(signals)
 
         # Registers signals from each controller

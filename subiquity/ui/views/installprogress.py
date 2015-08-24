@@ -13,27 +13,25 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import (Text, Filler, WidgetWrap,
+import logging
+from urwid import (Text, Filler,
                    ListBox, BoxAdapter)
 from subiquity.view import ViewPolicy
 from subiquity.ui.utils import Color, Padding
 
+log = logging.getLogger("subiquity.ui.views.installprogress")
 
-class ProgressOutput(WidgetWrap):
-    def __init__(self, txt):
+
+class ProgressOutput(ViewPolicy):
+    def __init__(self, signal, txt):
+        self.signal = signal
         self.txt = Text(txt)
         flr = Filler(Color.info_minor(self.txt),
-                     valign="bottom")
+                     valign="top")
         super().__init__(BoxAdapter(flr, height=20))
 
-    def split_text(self):
-        return self.txt.text.splitlines()
-
     def set_text(self, data):
-        data = data.decode("utf8")
-        lines = self.split_text() + data.splitlines()
-        out = "\n".join(lines[-20:])
-        self.txt.set_text(out)
+        self.txt.set_text(data)
 
 
 class ProgressView(ViewPolicy):
@@ -41,6 +39,7 @@ class ProgressView(ViewPolicy):
         """
         :param output_w: Filler widget to display updated status text
         """
+        self.signal = signal
         self.body = [
             Padding.center_79(output_w)
         ]
