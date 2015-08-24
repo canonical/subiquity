@@ -33,9 +33,6 @@ class InstallProgressController(ControllerPolicy):
             self.signal,
             "Waiting...")
 
-    def exit_cb(self, ret):
-        log.debug("Exit: {}".format(ret))
-
     @coroutine
     def run_curtin(self):
         try:

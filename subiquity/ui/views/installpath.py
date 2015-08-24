@@ -21,7 +21,7 @@ Provides high level options for Ubuntu install
 import logging
 from urwid import (ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
-from subiquity.ui.buttons import confirm_btn, cancel_btn
+from subiquity.ui.buttons import menu_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
 
@@ -36,14 +36,14 @@ class InstallpathView(ViewPolicy):
         self.body = [
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
-            Padding.center_20(self._build_buttons()),
+            Padding.center_15(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button_secondary(cancel_btn(on_press=self.cancel),
-                                   focus_map='button_secondary focus'),
+            Color.button(cancel_btn(on_press=self.cancel),
+                         focus_map='button focus'),
         ]
         return Pile(self.buttons)
 
@@ -51,9 +51,10 @@ class InstallpathView(ViewPolicy):
         sl = []
         for ipath, sig, _ in self.model.get_menu():
             log.debug("Building inputs: {}".format(ipath))
-            sl.append(Color.button_primary(confirm_btn(label=ipath,
-                                                       on_press=self.confirm),
-                                           focus_map='button_primary focus'))
+            sl.append(Color.menu_button(
+                menu_btn(label=ipath,
+                         on_press=self.confirm),
+                focus_map='menu_button focus'))
 
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))

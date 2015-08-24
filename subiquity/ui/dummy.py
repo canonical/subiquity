@@ -35,9 +35,9 @@ class DummyView(WidgetWrap):
 
     def _build_buttons(self):
         buttons = [
-            Color.button_secondary(cancel_btn(label="Back to Start",
-                                              on_press=self.cancel),
-                                   focus_map='button_secondary focus'),
+            Color.button(cancel_btn(label="Back to Start",
+                                    on_press=self.cancel),
+                         focus_map='button focus'),
         ]
         return Pile(buttons)
 

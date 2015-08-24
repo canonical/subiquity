@@ -23,7 +23,7 @@ import logging
 from urwid import (ListBox, Pile, BoxAdapter,
                    Text, Columns)
 from subiquity.ui.lists import SimpleList
-from subiquity.ui.buttons import confirm_btn, cancel_btn
+from subiquity.ui.buttons import confirm_btn, cancel_btn, menu_btn
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
 
@@ -41,14 +41,14 @@ class NetworkView(ViewPolicy):
             Padding.line_break(""),
             Padding.center_79(self._build_additional_options()),
             Padding.line_break(""),
-            Padding.center_20(self._build_buttons()),
+            Padding.center_15(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
 
     def _build_buttons(self):
         buttons = [
-            Color.button_secondary(cancel_btn(on_press=self.cancel),
-                                   focus_map='button_secondary focus'),
+            Color.button(cancel_btn(on_press=self.cancel),
+                         focus_map='button focus'),
         ]
         return Pile(buttons)
 
@@ -60,10 +60,10 @@ class NetworkView(ViewPolicy):
         col_1 = []
         for iface in ifaces:
             col_1.append(
-                Color.button_primary(
-                    confirm_btn(label=iface,
-                                on_press=self.on_net_dev_press),
-                    focus_map='button_primary focus'))
+                Color.menu_button(
+                    menu_btn(label=iface,
+                             on_press=self.on_net_dev_press),
+                    focus_map='menu_button focus'))
         col_1 = BoxAdapter(SimpleList(col_1),
                            height=len(col_1))
 
@@ -84,10 +84,10 @@ class NetworkView(ViewPolicy):
         opts = []
         for opt, sig, _ in self.model.get_menu():
             opts.append(
-                Color.button_secondary(
+                Color.menu_button(
                     confirm_btn(label=opt,
                                 on_press=self.additional_menu_select),
-                    focus_map='button_secondary focus'))
+                    focus_map='menu_button focus'))
         return Pile(opts)
 
     def additional_menu_select(self, result):

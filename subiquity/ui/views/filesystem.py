@@ -23,7 +23,10 @@ import logging
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
                    Text, Columns)
 from subiquity.ui.lists import SimpleList
-from subiquity.ui.buttons import done_btn, reset_btn, cancel_btn
+from subiquity.ui.buttons import (done_btn,
+                                  reset_btn,
+                                  cancel_btn,
+                                  menu_btn)
 from subiquity.ui.widgets import Box
 from subiquity.ui.utils import Padding, Color
 from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector)
@@ -45,7 +48,7 @@ class AddPartitionView(WidgetWrap):
             default=self.selected_disk.lastpartnumber + 1)
         self.size_str = _humanize_size(self.selected_disk.freespace)
         self.size = StringEditor(
-                caption="Size (max {}): ".format(self.size_str))
+            caption="Size (max {}): ".format(self.size_str))
         self.mountpoint = StringEditor(caption="Mount: ", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
         body = [
@@ -55,7 +58,7 @@ class AddPartitionView(WidgetWrap):
             Padding.line_break(""),
             Padding.center_90(self._container()),
             Padding.line_break(""),
-            Padding.center_40(self._build_buttons())
+            Padding.center_15(self._build_buttons())
         ]
         partition_box = Padding.center_65(Box(body))
         super().__init__(partition_box)
@@ -65,8 +68,8 @@ class AddPartitionView(WidgetWrap):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button_secondary(cancel, focus_map='button_secondary focus'),
-            Color.button_secondary(done, focus_map='button_secondary focus')
+            Color.button(done, focus_map='button focus'),
+            Color.button(cancel, focus_map='button focus')
         ]
         return Pile(buttons)
 
@@ -148,8 +151,8 @@ class DiskPartitionView(WidgetWrap):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button_secondary(cancel, focus_map='button_secondary focus'),
-            Color.button_secondary(done, focus_map='button_secondary focus')
+            Color.button(done, focus_map='button focus'),
+            Color.button(cancel, focus_map='button focus')
         ]
         return Pile(buttons)
 
@@ -195,9 +198,9 @@ class DiskPartitionView(WidgetWrap):
         text = ("Format or create swap on entire "
                 "device (unusual, advanced)")
         if len(self.model.get_partitions()) == 0:
-            return Color.button_secondary(done_btn(label=text,
-                                                   on_press=self.create_swap),
-                                          focus_map='button_secondary focus')
+            return Color.menu_button(menu_btn(label=text,
+                                              on_press=self.create_swap),
+                                     focus_map='menu_button focus')
         return Color.info_minor(Text(text))
 
     def add_partition_w(self):
@@ -208,9 +211,9 @@ class DiskPartitionView(WidgetWrap):
         if len(self.model.get_partitions()) > 0:
             text = "Add partition (max size {})".format(
                 _humanize_size(self.disk_obj.freespace))
-        return Color.button_secondary(done_btn(label=text,
-                                               on_press=self.add_partition),
-                                      focus_map='button_secondary focus')
+        return Color.menu_button(menu_btn(label=text,
+                                          on_press=self.add_partition),
+                                 focus_map='menu_button focus')
 
     def add_partition(self, result):
         log.debug('add_partition: result={}'.format(result))
@@ -243,7 +246,7 @@ class FilesystemView(ViewPolicy):
             Padding.center_79(self._build_menu()),
             Padding.line_break(""),
             self._build_used_disks(),
-            Padding.center_20(self._build_buttons()),
+            Padding.center_15(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
 
@@ -280,11 +283,10 @@ class FilesystemView(ViewPolicy):
 
     def _build_buttons(self):
         buttons = [
-            Color.button_secondary(reset_btn(on_press=self.reset),
-                                   focus_map='button_secondary focus'),
-            Color.button_secondary(done_btn(on_press=self.done),
-                                   focus_map='button_secondary focus'),
-
+            Color.button(done_btn(on_press=self.done),
+                         focus_map='button focus'),
+            Color.button(reset_btn(on_press=self.reset),
+                         focus_map='button focus')
         ]
         return Pile(buttons)
 
@@ -296,7 +298,7 @@ class FilesystemView(ViewPolicy):
         free = _humanize_size(device.freespace)
         rounded = "{}{}".format(int(float(free[:-1])), free[-1])
         return (rounded, percent)
- 
+
     def _build_model_inputs(self):
         col_1 = []
         col_2 = []
@@ -308,7 +310,7 @@ class FilesystemView(ViewPolicy):
                            on_press=self.show_disk_partition_view)
 
             col_1.append(
-                Color.button_primary(btn, focus_map='button_primary focus'))
+                Color.menu_button(btn, focus_map='menu_button focus'))
             disk_sz = _humanize_size(disk.size)
             log.debug('device partitions: {}'.format(len(device.partitions)))
             # if we've consumed some of the device, show
@@ -328,10 +330,10 @@ class FilesystemView(ViewPolicy):
         opts = []
         for opt, sig, _ in self.model.get_menu():
             opts.append(
-                Color.button_secondary(
-                    done_btn(label=opt,
+                Color.menu_button(
+                    menu_btn(label=opt,
                              on_press=self.on_fs_menu_press),
-                    focus_map='button_secondary focus'))
+                    focus_map='menu_button focus'))
         return Pile(opts)
 
     def on_fs_menu_press(self, result):

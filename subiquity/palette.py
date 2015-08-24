@@ -17,13 +17,16 @@
 
 
 def apply_default_colors(cls):
-    color_map = {'orange': '#f30',
-                 'light_orange': '#f60',
+    color_map = {'dark_magenta': 'dark magenta',
+                 'light_magenta': 'light magenta',
+                 'light_green': 'light green',
+                 'dark_green': 'dark green',
                  'white': 'white',
                  'black': 'black',
-                 'warm_grey': '#999',
-                 'cool_grey': '#666',
-                 'text_grey': '#333'}
+                 'light_gray': 'light gray',
+                 'dark_gray': 'dark gray',
+                 'dark_red': 'dark red',
+                 'light_red': 'light red'}
     for k, v in color_map.items():
         setattr(cls, k, v)
     return cls
@@ -35,21 +38,21 @@ class Palette:
 
 STYLES = [
     ('frame_header', '', '', '',
-     Palette.white, Palette.orange),
+     Palette.white, ''),
     ('frame_footer', '', '', '',
-     Palette.white, Palette.orange),
+     Palette.white, ''),
     ('body', '', '', '',
      Palette.white, ''),
-    ('button_primary', '', '',
-     '', Palette.white, Palette.cool_grey),
-    ('button_primary focus', '', '', '',
-     Palette.white, Palette.light_orange),
-    ('button_secondary', '', '', '',
-     Palette.white, Palette.cool_grey),
-    ('button_secondary focus', '', '', '',
-     Palette.white, Palette.light_orange),
+    ('menu_button', '', '',
+     '', Palette.white, ''),
+    ('menu_button focus', '', '', '',
+     Palette.black, Palette.light_gray),
+    ('button', '', '',
+     '', Palette.white, ''),
+    ('button focus', '', '', '',
+     Palette.black, Palette.dark_green),
     ('info_minor', '', '', '',
-     Palette.warm_grey, '')
+     Palette.dark_gray, '')
 ]
 
 STYLES_MONO = [('frame_header', Palette.white, Palette.black,
@@ -60,11 +63,11 @@ STYLES_MONO = [('frame_header', Palette.white, Palette.black,
                 '', '', ''),
                ('info_minor', Palette.white, Palette.black,
                 '', '', ''),
-               ('button_primary', Palette.white, Palette.black,
+               ('menu_button', '', '',
+                '', Palette.white, ''),
+               ('menu_button focus', '', '', '',
+                Palette.white, ''),
+               ('button', Palette.white, Palette.black,
                 '', '', ''),
-               ('button_primary focus', Palette.white, Palette.black,
-                '', '', ''),
-               ('button_secondary', Palette.white, Palette.black,
-                '', '', ''),
-               ('button_secondary focus', Palette.white, Palette.black,
+               ('button focus', Palette.white, Palette.black,
                 '', '', '')]

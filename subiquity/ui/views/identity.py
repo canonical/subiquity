@@ -41,7 +41,7 @@ class IdentityView(ViewPolicy):
         body = [
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
-            Padding.center_20(self._build_buttons()),
+            Padding.center_15(self._build_buttons()),
         ]
         super().__init__(Box(body))
 
@@ -50,8 +50,8 @@ class IdentityView(ViewPolicy):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button_secondary(cancel, focus_map='button_secondary focus'),
-            Color.button_secondary(done, focus_map='button_secondary focus')
+            Color.button(done, focus_map='button focus'),
+            Color.button(cancel, focus_map='button focus')
         ]
         return Pile(buttons)
 

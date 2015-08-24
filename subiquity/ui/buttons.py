@@ -13,10 +13,22 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import Button
+from urwid import Button, Text
 from functools import partial
 
-confirm_btn = partial(Button, label="Confirm", on_press=None)
-cancel_btn = partial(Button, label="Cancel", on_press=None)
-done_btn = partial(Button, label="Done", on_press=None)
-reset_btn = partial(Button, label="Reset", on_press=None)
+
+class PlainButton(Button):
+    button_left = Text("[")
+    button_right = Text("]")
+
+
+class MenuSelectButton(Button):
+    button_left = Text("")
+    button_right = Text("")
+
+
+confirm_btn = partial(PlainButton, label="Confirm", on_press=None)
+cancel_btn = partial(PlainButton, label="Cancel", on_press=None)
+done_btn = partial(PlainButton, label="Done", on_press=None)
+reset_btn = partial(PlainButton, label="Reset", on_press=None)
+menu_btn = partial(MenuSelectButton, on_press=None)
