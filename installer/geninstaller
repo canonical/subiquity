@@ -40,6 +40,7 @@ INSTALLER_DEPS=(
   "python3-pyudev"
   "python3-netifaces"
   "python-urwid"
+  "python3-tornado"
 )
 CACHEDIR=""
 
@@ -81,7 +82,7 @@ userdata_write_file() {
     local owner=${1}; shift;
     local permissions=${1}; shift;
     local encoding=${1}; shift;
-    case $encoding in 
+    case $encoding in
         none)
             echo "-   content: |"
             for x in "$@"; do
