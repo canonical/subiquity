@@ -20,6 +20,7 @@ configuration.
 
 """
 import logging
+import re
 from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
                    Text, Columns)
 from subiquity.ui.lists import SimpleList
@@ -30,8 +31,12 @@ from subiquity.ui.buttons import (done_btn,
 from subiquity.ui.widgets import Box
 from subiquity.ui.utils import Padding, Color
 from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector)
-from subiquity.models.filesystem import _humanize_size, _dehumanize_size
+from subiquity.models.filesystem import (_humanize_size,
+                                         _dehumanize_size,
+                                         HUMAN_UNITS)
 from subiquity.view import ViewPolicy
+
+INVALID_PARTITION_SIZE = 'Invalid Partition Size'
 
 log = logging.getLogger('subiquity.filesystem')
 
@@ -98,32 +103,78 @@ class AddPartitionView(WidgetWrap):
           'mount_point': Str
         }
         """
+        def __get_valid_size(size_str):
+            r = '(\d*)(\d+[\.]?\d*)[BKMGTPEZY]*$'
+            match = re.match(r, size_str, re.IGNORECASE)
+            log.debug('valid_size: input:{} match:{}'.format(size_str, match))
+            if match:
+                return match.group(0)
+
+            return ''
+
+        def __append_unit(input_size):
+            ''' examine the input for a unit string.
+                if not present, use the unit string from
+                the displayed maximum size
+
+                returns: number string with unit size
+                '''
+            unit_regex = '[{}]$'.format(''.join(HUMAN_UNITS))
+            input_has_unit = re.findall(unit_regex, input_size, re.IGNORECASE)
+            log.debug('input:{} re:{}'.format(input_size, input_has_unit))
+            if len(input_has_unit) == 0:
+                # input does not have unit string
+                displayed_unit = re.search(unit_regex, self.size_str,
+                                           re.IGNORECASE)
+                log.debug('input:{} re:{}'.format(self.size_str,
+                                                  displayed_unit))
+                input_size += displayed_unit.group(0)
+
+            return input_size
+
+        def __get_size():
+            if self.size.value == '' or \
+               self.size.value == self.size_str:
+                log.debug('Using default value: {}'.format(
+                          self.selected_disk.freespace))
+                return int(self.selected_disk.freespace)
+            else:
+                # 120B 120
+                valid_size = __get_valid_size(self.size.value)
+                if len(valid_size) == 0:
+                    return INVALID_PARTITION_SIZE
+
+                self.size.value = __append_unit(valid_size)
+                log.debug('dehumanize_size({})'.format(self.size.value))
+                return _dehumanize_size(self.size.value)
+
         result = {
             "partnum": self.partnum.value,
             "raw_size": self.size.value,
-            "bytes": _dehumanize_size(self.size.value),
+            "bytes": __get_size(),
             "fstype": self.fstype.value,
             "mountpoint": self.mountpoint.value
         }
-        # Validate mountpoint input
-        if self.mountpoint.value in self.selected_disk.mounts:
-            log.error('provided mountpoint already allocated' +
-                      ' ({}'.format(self.mountpoint.value))
-            val = self.mountpoint.value
-            # FIXME: update the error message widget instead
-            self.mountpoint.value = 'ERROR: {} already mounted'.format(val)
+
+        # Validate size (bytes) input
+        if result['bytes'] == INVALID_PARTITION_SIZE:
+            errmsg = 'Invalid size input'
+            log.error(errmsg)
+            self.size.value = 'ERROR: ' + errmsg
             self.signal.emit_signal(
                 'filesystem:add-disk-partiion',
                 self.selected_disk)
             return
-        # Validate size (bytes) input
-        if self.size.value == self.size_str:
-            log.debug(
-                'User specified max value({}), fixing up: {} -> {}'.format(
-                    self.size.value,
-                    result['bytes'],
-                    int(self.selected_disk.freespace)))
-            result['bytes'] = int(self.selected_disk.freespace)
+        # Validate mountpoint input
+        if self.mountpoint.value in self.selected_disk.mounts:
+            log.error('provided mountpoint already allocated'
+                      ' ({}'.format(self.mountpoint.value))
+            # FIXME: update the error message widget instead
+            self.mountpoint.value = 'ERROR: already mounted'
+            self.signal.emit_signal(
+                'filesystem:add-disk-partiion',
+                self.selected_disk)
+            return
         log.debug("Add Partition Result: {}".format(result))
         self.signal.emit_signal(
             'filesystem:finish-add-disk-partition',
