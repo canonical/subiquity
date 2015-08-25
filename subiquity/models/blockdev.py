@@ -13,11 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from itertools import count
+import logging
 import os
 import parted
+import re
 import yaml
-import logging
-from itertools import count
 
 from .actions import (
     DiskAction,
@@ -226,7 +227,23 @@ class Blockdev():
         if mountpoint:
             self._mounts[partpath] = mountpoint
 
+    def is_mounted(self):
+        with open('/proc/mounts') as pm:
+            mounts = pm.read()
+
+        regexp = '{}.*'.format(self.disk.device.path)
+        matches = re.findall(regexp, mounts)
+        if len(matches) > 0:
+            log.debug('Device is mounted: {}'.format(matches))
+            return True
+
+        return False
+
     def get_actions(self):
+        if self.is_mounted():
+            log.debug('Emitting no actions, device is mounted')
+            return []
+
         actions = []
         baseaction = DiskAction(os.path.basename(self.disk.device.path),
                                 self.device.model, self.serial, self.parttype)
