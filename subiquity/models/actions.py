@@ -17,12 +17,13 @@ import yaml
 
 
 class DiskAction():
-    def __init__(self, action_id, model, serial, ptable='gpt'):
+    def __init__(self, action_id, model, serial, ptable='gpt', wipe=None):
         self._action_id = action_id
         self.parent = None
         self._ptable = ptable
         self._model = model
         self._serial = serial
+        self._wipe = wipe
 
     def get_parent(self):
         return self.parent
@@ -32,42 +33,55 @@ class DiskAction():
         return str(self._action_id)
 
     def get(self):
-        return {
+        action = {
             'id': self.action_id,
             'model': self._model,
             'ptable': self._ptable,
             'serial': self._serial,
             'type': 'disk',
         }
+        if self._wipe:
+            action.update({'wipe': self._wipe})
+        return action
 
     def dump(self):
         return yaml.dump(self.get(), default_flow_style=False)
 
 
 class PartitionAction(DiskAction):
-    def __init__(self, parent, partnumber, size, flags=None):
+    def __init__(self, parent, partnum, offset, size, flags=None):
         self.parent = parent
-        self.partnumber = int(partnumber)
+        self.partnum = int(partnum)
+        self._offset = int(offset)
         self._size = int(size)
         self.flags = flags
         self._action_id = "{}{}_part".format(self.parent.action_id,
-                                             self.partnumber)
+                                             self.partnum)
 
         ''' rename action_id for readability '''
         if self.flags in ['bios_grub']:
             self._action_id = 'bios_boot_partition'
 
     @property
+    def path(self):
+        return "{}{}".format(self.parent.action_id, self.partnum)
+
+    @property
     def size(self):
         return self._size
+
+    @property
+    def offset(self):
+        return self._offset
 
     def get(self):
         return {
             'device': self.parent.action_id,
             'flag': self.flags,
             'id': self.action_id,
-            'number': self.partnumber,
+            'number': self.partnum,
             'size': '{}B'.format(self.size),
+            'offset': '{}B'.format(self.offset),
             'type': 'partition',
         }
 

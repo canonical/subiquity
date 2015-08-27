@@ -134,13 +134,15 @@ class FilesystemModel(ModelPolicy):
 
     def get_disk(self, disk):
         if disk not in self.devices:
-            self.devices[disk] = Blockdev(disk, self.info[disk].serial)
+            self.devices[disk] = Blockdev(disk, self.info[disk].serial,
+                                          self.info[disk].model)
         return self.devices[disk]
 
     def get_partitions(self):
         partitions = []
         for dev in self.devices.values():
-            partnames = [part.path for part in dev.disk.partitions]
+            partnames = [part.path for (num, part) in
+                         dev.disk.partitions.items()]
             partitions += partnames
 
         sorted(partitions)

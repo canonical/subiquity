@@ -106,6 +106,7 @@ class FilesystemController(ControllerPolicy):
                 # adjust downward the partition size to accommodate
                 # the bios/grub partition
                 spec['bytes'] -= BIOS_GRUB_SIZE_BYTES
+                spec['partnum'] = 2
 
             if spec["fstype"] in ["swap"]:
                 current_disk.add_partition(partnum=spec["partnum"],
