@@ -19,8 +19,7 @@ Welcome provides user with language selection
 
 """
 import logging
-from urwid import (Pile, emit_signal)
-from subiquity.ui.widgets import Box
+from urwid import (Pile, emit_signal, Columns, Text, ListBox)
 from subiquity.ui.buttons import done_btn, cancel_btn
 from subiquity.ui.interactive import StringEditor, PasswordEditor
 from subiquity.ui.utils import Padding, Color
@@ -34,16 +33,16 @@ class IdentityView(ViewPolicy):
         self.model = model
         self.signal = signal
         self.items = []
-        self.username = StringEditor(caption="Username: ")
-        self.password = PasswordEditor(caption="Password: ")
-        self.confirm_password = PasswordEditor(caption="Confirm Password: ")
+        self.username = StringEditor(caption="")
+        self.password = PasswordEditor(caption="")
+        self.confirm_password = PasswordEditor(caption="")
 
         body = [
-            Padding.center_79(self._build_model_inputs()),
+            Padding.center_50(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.center_15(self._build_buttons()),
         ]
-        super().__init__(Box(body))
+        super().__init__(ListBox(body))
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
@@ -57,9 +56,33 @@ class IdentityView(ViewPolicy):
 
     def _build_model_inputs(self):
         sl = [
-            self.username,
-            self.password,
-            self.confirm_password
+            Columns(
+                [
+                    ("weight", 0.2, Text("Username", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.username,
+                                        focus_map="string_input focus"))
+                ],
+                dividechars=4
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("Password", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.password,
+                                        focus_map="string_input focus"))
+                ],
+                dividechars=4
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("Confirm Password", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.confirm_password,
+                                        focus_map="string_input focus"))
+                ],
+                dividechars=4
+            )
         ]
         return Pile(sl)
 

@@ -52,8 +52,13 @@ STYLES = [
     ('button focus', '', '', '',
      Palette.black, Palette.dark_green),
     ('info_minor', '', '', '',
-     Palette.dark_gray, '')
+     Palette.dark_gray, ''),
+    ('string_input', '', '', '',
+     Palette.black, Palette.light_gray),
+    ('string_input focus', '', '', '',
+     Palette.white, Palette.dark_gray)
 ]
+
 
 STYLES_MONO = [('frame_header', Palette.white, Palette.black,
                 '', '', ''),

@@ -39,7 +39,7 @@ class StringEditor(WidgetWrap):
     @value.setter  # NOQA
     def value(self, value):
         self._edit.set_edit_text(value)
- 
+
 
 class PasswordEditor(StringEditor):
     """ Password input prompt with masking

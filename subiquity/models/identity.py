@@ -24,7 +24,9 @@ class IdentityModel(ModelPolicy):
     """ Model representing user identity
     """
     # TODO: Set to installer progress output view
-    prev_signal = None
+    prev_signal = ('Back to filesystem view',
+                   'filesystem:show',
+                   'filesystem')
 
     signals = [
         ("Identity view",
