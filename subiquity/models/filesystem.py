@@ -24,6 +24,7 @@ import math
 from subiquity.model import ModelPolicy
 
 
+HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 log = logging.getLogger('subiquity.models.filesystem')
 
 
@@ -172,9 +173,8 @@ def _humanize_size(size):
     size = abs(size)
     if size == 0:
         return "0B"
-    units = ['B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
     p = math.floor(math.log(size, 2) / 10)
-    return "%.3f%s" % (size / math.pow(1024, p), units[int(p)])
+    return "%.3f%s" % (size / math.pow(1024, p), HUMAN_UNITS[int(p)])
 
 
 def _dehumanize_size(size):
