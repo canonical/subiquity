@@ -19,6 +19,7 @@ import urwid.curses_display
 from tornado.ioloop import IOLoop
 from subiquity.signals import Signal
 from subiquity.palette import STYLES, STYLES_MONO
+from subiquity.prober import Prober
 
 # Modes import ----------------------------------------------------------------
 from subiquity.controllers import (WelcomeController,
@@ -41,11 +42,13 @@ class Controller:
         self.ui = ui
         self.opts = opts
         self.signal = Signal()
+        self.prober = Prober(self.opts)
         self.controllers = {
             "welcome": WelcomeController(self.ui, self.signal),
             "installpath": InstallpathController(self.ui, self.signal),
-            "network": NetworkController(self.ui, self.signal),
-            "filesystem": FilesystemController(self.ui, self.signal),
+            "network": NetworkController(self.ui, self.signal, self.prober),
+            "filesystem": FilesystemController(self.ui, self.signal,
+                                               self.prober),
             "identity": IdentityController(self.ui, self.signal),
             "progress": InstallProgressController(self.ui, self.signal,
                                                   self.opts)

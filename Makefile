@@ -17,6 +17,11 @@ INSTALLIMG=ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img
 INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 GITDEBDIR=/tmp/subiquity-deb
 DEBDIR=./debian
+
+ifneq (,$(MACHINE))
+	MACHARGS=--machine=$(MACHINE)
+endif
+
 .PHONY: run clean
 
 all: dryrun
@@ -33,7 +38,7 @@ dryrun:
 	$(MAKE) ui-view DRYRUN="--dry-run"
 
 ui-view:
-	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) $(DRYRUN))
+	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) $(DRYRUN) $(MACHARGS))
 
 ui-view-serial:
 	(TERM=att4424 PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) $(DRYRUN) --serial)

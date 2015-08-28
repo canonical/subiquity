@@ -20,10 +20,11 @@ from subiquity.ui.dummy import DummyView
 
 
 class NetworkController(ControllerPolicy):
-    def __init__(self, ui, signal):
+    def __init__(self, ui, signal, prober):
         self.ui = ui
         self.signal = signal
-        self.model = NetworkModel()
+        self.prober = prober
+        self.model = NetworkModel(self.prober)
 
     def network(self):
         title = "Network connections"
