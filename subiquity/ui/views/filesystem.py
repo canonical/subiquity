@@ -49,12 +49,12 @@ class AddPartitionView(WidgetWrap):
         self.selected_disk = self.model.get_disk(selected_disk)
 
         self.partnum = IntegerEditor(
-            caption="Partition number: ",
+            caption="",
             default=self.selected_disk.lastpartnumber + 1)
         self.size_str = _humanize_size(self.selected_disk.freespace)
         self.size = StringEditor(
-            caption="Size (max {}): ".format(self.size_str))
-        self.mountpoint = StringEditor(caption="Mount: ", edit_text="/")
+            caption="".format(self.size_str))
+        self.mountpoint = StringEditor(caption="", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
         body = [
             Padding.center_95(
@@ -79,15 +79,44 @@ class AddPartitionView(WidgetWrap):
         return Pile(buttons)
 
     def _format_edit(self):
-        formats_list = Pile(self.fstype.group)
-        return Columns([(10, Text("Format: ")), formats_list], 2)
+        return Pile(self.fstype.group)
 
     def _container(self):
         total_items = [
-            self.partnum,
-            self.size,
-            self._format_edit(),
-            self.mountpoint
+            Columns(
+                [
+                    ("weight", 0.2, Text("Partition number", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.partnum,
+                                        focus_map="string_input focus"))
+                ], dividechars=4
+            ),
+            Columns(
+                [
+                    ("weight", 0.2,
+                     Text("Size (max {})".format(self.size_str),
+                          align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.size,
+                                        focus_map="string_input focus")),
+                ], dividechars=4
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("Format", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self._format_edit(),
+                                        focus_map="string_input focus"))
+                ], dividechars=4
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("Mount", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.mountpoint,
+                                        focus_map="string_input focs"))
+                ], dividechars=4
+            )
         ]
         return Pile(total_items)
 
