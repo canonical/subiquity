@@ -18,13 +18,11 @@ import subprocess
 import os
 import codecs
 import pty
-from tornado.process import Subprocess
 from subiquity.async import Async
 import shlex
 import logging
 
 log = logging.getLogger("subiquity.utils")
-STREAM = Subprocess.STREAM
 
 
 def run_command_async(cmd, streaming_callback=None):
