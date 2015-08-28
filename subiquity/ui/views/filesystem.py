@@ -353,10 +353,11 @@ class FilesystemView(ViewPolicy):
             log.debug('used disk: {}'.format(disk))
             pl.append(Text(disk))
         if len(pl):
-            return Pile([Text("USED DISKS"),
-                         Padding.line_break("")] + pl +
-                         [Padding.line_break("")]
-                         )
+            return Pile(
+                [Text("USED DISKS"),
+                 Padding.line_break("")] + pl +
+                [Padding.line_break("")]
+            )
 
         return Pile(pl)
 
