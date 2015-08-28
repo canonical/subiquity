@@ -36,6 +36,12 @@ from subiquity.models.filesystem import (_humanize_size,
 from subiquity.view import ViewPolicy
 
 INVALID_PARTITION_SIZE = 'Invalid Partition Size'
+PARTITION_SIZE_TOO_BIG = 'Requested size too big'
+PARTITION_ERRORS = [
+    INVALID_PARTITION_SIZE,
+    PARTITION_SIZE_TOO_BIG,
+]
+
 
 log = logging.getLogger('subiquity.filesystem')
 
@@ -136,8 +142,8 @@ class AddPartitionView(WidgetWrap):
         }
         """
         def __get_valid_size(size_str):
-            r = '(\d*)(\d+[\.]?\d*)[BKMGTPEZY]*$'
-            match = re.match(r, size_str, re.IGNORECASE)
+            r = '(\d*)(\d+[\.]?\d*)[{}]*$'.format(''.join(HUMAN_UNITS))
+            match = re.match(r, size_str)
             log.debug('valid_size: input:{} match:{}'.format(size_str, match))
             if match:
                 return match.group(0)
@@ -152,12 +158,11 @@ class AddPartitionView(WidgetWrap):
                 returns: number string with unit size
                 '''
             unit_regex = '[{}]$'.format(''.join(HUMAN_UNITS))
-            input_has_unit = re.findall(unit_regex, input_size, re.IGNORECASE)
+            input_has_unit = re.findall(unit_regex, input_size)
             log.debug('input:{} re:{}'.format(input_size, input_has_unit))
             if len(input_has_unit) == 0:
                 # input does not have unit string
-                displayed_unit = re.search(unit_regex, self.size_str,
-                                           re.IGNORECASE)
+                displayed_unit = re.search(unit_regex, self.size_str)
                 log.debug('input:{} re:{}'.format(self.size_str,
                                                   displayed_unit))
                 input_size += displayed_unit.group(0)
@@ -178,7 +183,13 @@ class AddPartitionView(WidgetWrap):
 
                 self.size.value = __append_unit(valid_size)
                 log.debug('dehumanize_size({})'.format(self.size.value))
-                return _dehumanize_size(self.size.value)
+                sz = _dehumanize_size(self.size.value)
+                if sz > self.selected_disk.freespace:
+                    log.debug(
+                        'Input size too big for device: ({} > {})'.format(
+                            sz, self.selected_disk.freespace))
+                    return PARTITION_SIZE_TOO_BIG
+                return sz
 
         result = {
             "partnum": self.partnum.value,
@@ -189,10 +200,9 @@ class AddPartitionView(WidgetWrap):
         }
 
         # Validate size (bytes) input
-        if result['bytes'] == INVALID_PARTITION_SIZE:
-            errmsg = 'Invalid size input'
-            log.error(errmsg)
-            self.size.set_error('ERROR: {}'.format(errmsg))
+        if result['bytes'] in PARTITION_ERRORS:
+            log.error(result['bytes'])
+            self.size.set_error('ERROR: {}'.format(result['bytes']))
             self.signal.emit_signal(
                 'filesystem:add-disk-partiion',
                 self.selected_disk)
