@@ -29,57 +29,44 @@ class InstallProgressController(ControllerPolicy):
         self.signal = signal
         self.opts = opts
         self.model = InstallProgressModel()
-        self.progress_output_w = ProgressOutput(
-            self.signal,
-            "Waiting...")
 
     @coroutine
-    def run_curtin(self):
-        try:
-            yield utils.run_command_async(
-                "/usr/local/bin/curtin_wrap.sh",
-                self.install_progress_status)
-        except Exception as e:
-            # TODO: Implement an Error View/Controller for displaying
-            # exceptions rather than kicking out of installer.
-            log.error("Problem running curtin_wrap: {}".format(e))
+    def curtin_dispatch(self):
+        if self.opts.dry_run:
+            log.debug("Install Progress: Curtin dispatch dry-run")
+            yield utils.run_command_async("cat /var/log/syslog",
+                                          log.debug)
+        else:
+            try:
+                yield utils.run_command_async("/usr/local/bin/curtin_wrap.sh",
+                                              log.debug)
+            except:
+                log.error("Problem with curtin dispatch run")
+                raise Exception("Problem with curtin dispatch run")
 
     @coroutine
-    def run_test_curtin(self):
-        """ testing streaming output
-        """
-        self.install_progress_status("Starting run")
-        yield utils.run_command_async(
-            "cat /var/log/syslog",
-            self.install_progress_status)
-        log.debug("done")
-        return
-
-    def install_progress(self):
-        title = ("Installing system")
-        excerpt = ("Please wait for the installation "
-                   "to finish before rebooting.")
-        footer = ("Thank you for using Ubuntu!")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
-        self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
+    def initial_install(self):
+        # title = ("Installing system")
+        # excerpt = ("Please wait for the installation "
+        #            "to finish before rebooting.")
+        # footer = ("Thank you for using Ubuntu!")
+        # self.ui.set_header(title, excerpt)
+        # self.ui.set_footer(footer)
+        # self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
         if self.opts.dry_run:
             log.debug("Filesystem: this is a dry-run")
-            banner = [
-                "**** DRY_RUN ****",
-                "NOT calling:"
-                "subprocess.check_call(/usr/local/bin/curtin_wrap.sh)"
-                "",
-                "",
-                "Press (Q) to Quit."
-            ]
-            self.install_progress_status("\n".join(banner))
-            # XXX: Test routine to verify the callback streaming
-            # self.run_test_curtin()
+            # banner = [
+            #     "**** DRY_RUN ****",
+            #     "NOT calling:"
+            #     "subprocess.check_call(/usr/local/bin/curtin_wrap.sh)"
+            #     "",
+            #     "",
+            #     "Press (Q) to Quit."
+            # ]
+            # self.install_progress_status("\n".join(banner))
+            yield utils.run_command_async("cat /var/log/syslog",
+                                          log.debug)
         else:
             log.debug("filesystem: this is the *real* thing")
-            self.run_curtin()
-
-    def install_progress_status(self, data):
-        self.progress_output_w.set_text(data)
-        self.signal.emit_signal('refresh')
+            yield utils.run_command_async(
+                "/usr/local/bin/curtin_wrap.sh", log.debug)

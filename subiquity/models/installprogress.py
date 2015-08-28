@@ -29,8 +29,11 @@ class InstallProgressModel(ModelPolicy):
 
     signals = [
         ("Installprogress view",
-         'installprogress:show',
-         'install_progress')
+         'installprogress:do-initial-install',
+         'initial_install'),
+        ("Run once curtin commands",
+         'installprogress:curtin-dispatch',
+         'curtin_dispatch')
     ]
 
     installprogress_menu = []
