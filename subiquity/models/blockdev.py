@@ -75,6 +75,11 @@ class Disk():
         sysblock = os.path.join('/sys/block', os.path.basename(devpath))
         nr_blocks_f = os.path.join(sysblock, 'size')
         block_sz_f = os.path.join(sysblock, 'queue', 'logical_block_size')
+
+        if not os.path.exists(sysblock):
+            log.warn('disk at devpath:{} not present'.format(devpath))
+            return 0
+
         with open(nr_blocks_f, 'r') as r:
             nr_blocks = int(r.read())
         with open(block_sz_f, 'r') as r:
@@ -162,7 +167,7 @@ class Blockdev():
     def available(self):
         ''' return True if has free space or partitions not
             assigned '''
-        if self.freespace > 0.0 or self.freepartition > 0.0:
+        if self.freespace > 0.0:
             return True
         return False
 

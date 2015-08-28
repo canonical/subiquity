@@ -14,12 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
-import argparse
 import logging
 
 from .blockdev import Blockdev
-from probert import prober
-from probert.storage import StorageInfo
 import math
 from subiquity.model import ModelPolicy
 
@@ -89,14 +86,11 @@ class FilesystemModel(ModelPolicy):
         'leave unformatted'
     ]
 
-    def __init__(self):
-        self.storage = {}
+    def __init__(self, prober):
+        self.prober = prober
         self.info = {}
         self.devices = {}
-        self.options = argparse.Namespace(probe_storage=True,
-                                          probe_network=False)
-        self.prober = prober.Prober(self.options)
-        self.probe_storage()
+        self.storage = {}
 
     def reset(self):
         log.debug('FilesystemModel: resetting disks')
@@ -115,8 +109,9 @@ class FilesystemModel(ModelPolicy):
         return self.fs_menu
 
     def probe_storage(self):
-        self.prober.probe()
-        self.storage = self.prober.get_results().get('storage')
+        log.debug('model.probe_storage: probing storage')
+        self.storage = self.prober.get_storage()
+        log.debug('got storage:\n{}'.format(self.storage))
         # TODO: Put this into a logging namespace for probert
         #       since its quite a bit of log information.
         # log.debug('storage probe data:\n{}'.format(
@@ -131,15 +126,18 @@ class FilesystemModel(ModelPolicy):
                 log.debug('disk={}\n{}'.format(disk,
                           json.dumps(self.storage[disk], indent=4,
                                      sort_keys=True)))
-                self.info[disk] = StorageInfo({disk: self.storage[disk]})
+                self.info[disk] = self.prober.get_storage_info(disk)
 
     def get_disk(self, disk):
+        log.debug('probe_storage: get_disk()')
         if disk not in self.devices:
             self.devices[disk] = Blockdev(disk, self.info[disk].serial,
-                                          self.info[disk].model)
+                                          self.info[disk].model,
+                                          size=self.info[disk].size)
         return self.devices[disk]
 
     def get_partitions(self):
+        log.debug('probe_storage: get_partitions()')
         partitions = []
         for dev in self.devices.values():
             partnames = [part.path for (num, part) in
@@ -147,13 +145,14 @@ class FilesystemModel(ModelPolicy):
             partitions += partnames
 
         sorted(partitions)
+        log.debug('probe_storage: get_partitions() returns: {}'.format(partitions))
         return partitions
 
     def get_available_disks(self):
         return sorted(self.info.keys())
 
     def get_used_disks(self):
-        return [dev.disk.path for dev in self.devices.values()
+        return [dev.disk.devpath for dev in self.devices.values()
                 if dev.available is False]
 
     def get_disk_info(self, disk):

@@ -316,9 +316,11 @@ class DiskPartitionView(WidgetWrap):
 
 class FilesystemView(ViewPolicy):
     def __init__(self, model, signal):
+        log.debug('FileSystemView init start()')
         self.model = model
         self.signal = signal
         self.items = []
+        self.model.probe_storage()  # probe before we complete
         self.body = [
             Padding.center_79(Text("FILE SYSTEM")),
             Padding.center_79(self._build_partition_list()),
@@ -328,27 +330,35 @@ class FilesystemView(ViewPolicy):
             Padding.line_break(""),
             Padding.center_79(self._build_menu()),
             Padding.line_break(""),
-            self._build_used_disks(),
+            Padding.center_79(self._build_used_disks()),
             Padding.center_15(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
+        log.debug('FileSystemView init complete()')
 
     def _build_used_disks(self):
+        log.debug('FileSystemView: building used disks')
         pl = []
         for disk in self.model.get_used_disks():
-            pl.append(Text(disk.path))
+            log.debug('used disk: {}'.format(disk))
+            pl.append(Text(disk))
         if len(pl):
-            return Padding.center_79(Text("USED DISKS"),
-                                     Padding.line_break(""),
-                                     Pile(pl))
+            return Pile([Text("USED DISKS"),
+                         Padding.line_break("")] + pl +
+                         [Padding.line_break("")]
+                         )
+
         return Pile(pl)
 
     def _build_partition_list(self):
+        log.debug('FileSystemView: building part list')
         pl = []
         if len(self.model.get_partitions()) == 0:
             pl.append(Color.info_minor(
                 Text("No disks or partitions mounted")))
+            log.debug('FileSystemView: no partitions')
             return Pile(pl)
+        log.debug('FileSystemView: weve got partitions!')
         for dev in self.model.devices.values():
             for mnt, size, fstype, path in dev.get_fs_table():
                 mnt = Text(mnt)
@@ -362,9 +372,11 @@ class FilesystemView(ViewPolicy):
                     mnt
                 ], 4)
                 pl.append(partition_column)
+        log.debug('FileSystemView: build-part-list done')
         return Pile(pl)
 
     def _build_buttons(self):
+        log.debug('FileSystemView: building buttons')
         buttons = [
             Color.button(done_btn(on_press=self.done),
                          focus_map='button focus'),
@@ -383,6 +395,7 @@ class FilesystemView(ViewPolicy):
         return (rounded, percent)
 
     def _build_model_inputs(self):
+        log.debug('FileSystemView: building model inputs')
         col_1 = []
         col_2 = []
 
@@ -410,6 +423,7 @@ class FilesystemView(ViewPolicy):
         return Columns([(15, col_1), col_2], 2)
 
     def _build_menu(self):
+        log.debug('FileSystemView: building menu')
         opts = []
         for opt, sig, _ in self.model.get_menu():
             opts.append(

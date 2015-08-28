@@ -30,10 +30,11 @@ BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
 
 
 class FilesystemController(ControllerPolicy):
-    def __init__(self, ui, signal):
+    def __init__(self, ui, signal, prober):
         self.ui = ui
         self.signal = signal
-        self.model = FilesystemModel()
+        self.prober = prober
+        self.model = FilesystemModel(prober)
 
     def filesystem(self, reset=False):
         # FIXME: Is this the best way to zero out this list for a reset?

@@ -7,12 +7,11 @@
 # running installer
 `make run`
 
-# running the UI locally
-`make ui-view`
+# running the UI locally in dry-run mode
+`make`
 
-with `--dry-run`
-
-`make dryrun`
+# running the UI locally with a different machine profile (see examples/)
+`MACHINE=examples/desktop.json make`
 
 # overrides
 ```

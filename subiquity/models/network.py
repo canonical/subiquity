@@ -14,8 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import argparse
-from probert import prober
 from subiquity.model import ModelPolicy
 
 
@@ -61,11 +59,9 @@ class NetworkModel(ModelPolicy):
          'install_network_driver')
     ]
 
-    def __init__(self):
+    def __init__(self, prober):
+        self.prober = prober
         self.network = {}
-        self.options = argparse.Namespace(probe_storage=False,
-                                          probe_network=True)
-        self.prober = prober.Prober(self.options)
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -79,8 +75,8 @@ class NetworkModel(ModelPolicy):
         return self.additional_options
 
     def probe_network(self):
-        self.prober.probe()
-        self.network = self.prober.get_results().get('network')
+        log.debug('model calling prober.get_network()')
+        self.network = self.prober.get_network()
 
     def get_interfaces(self):
         VALID_NIC_TYPES = ['eth', 'wlan']
