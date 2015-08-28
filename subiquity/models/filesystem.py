@@ -21,7 +21,7 @@ import math
 from subiquity.model import ModelPolicy
 
 
-HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
+HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
 log = logging.getLogger('subiquity.models.filesystem')
 
 
@@ -182,7 +182,10 @@ def _dehumanize_size(size):
     if size.endswith("B"):
         size = size[:-1]
 
-    mpliers = {'B': 1, 'K': 2 ** 10, 'M': 2 ** 20, 'G': 2 ** 30, 'T': 2 ** 40}
+    # build mpliers based on HUMAN_UNITS
+    mpliers = {}
+    for (unit, exponent) in zip(HUMAN_UNITS, range(0, len(HUMAN_UNITS))):
+        mpliers.update({unit: 2 ** (exponent * 10)})
 
     num = size
     mplier = 'B'
