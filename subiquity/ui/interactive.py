@@ -30,7 +30,18 @@ class StringEditor(WidgetWrap):
     """
     def __init__(self, caption, **kwargs):
         self._edit = Edit(caption=caption, **kwargs)
+        self.error = None
         super().__init__(self._edit)
+
+    def keypress(self, size, key):
+        if self.error:
+            self._edit.set_edit_text("")
+            self.error = None
+        return super().keypress(size, key)
+
+    def set_error(self, msg):
+        self.error = msg
+        return self._edit.set_edit_text(msg)
 
     @property
     def value(self):

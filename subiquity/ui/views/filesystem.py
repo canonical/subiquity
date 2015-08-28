@@ -192,7 +192,7 @@ class AddPartitionView(WidgetWrap):
         if result['bytes'] == INVALID_PARTITION_SIZE:
             errmsg = 'Invalid size input'
             log.error(errmsg)
-            self.size.value = 'ERROR: ' + errmsg
+            self.size.set_error('ERROR: {}'.format(errmsg))
             self.signal.emit_signal(
                 'filesystem:add-disk-partiion',
                 self.selected_disk)
@@ -202,7 +202,7 @@ class AddPartitionView(WidgetWrap):
             log.error('provided mountpoint already allocated'
                       ' ({}'.format(self.mountpoint.value))
             # FIXME: update the error message widget instead
-            self.mountpoint.value = 'ERROR: already mounted'
+            self.mountpoint.set_error('ERROR: already mounted')
             self.signal.emit_signal(
                 'filesystem:add-disk-partiion',
                 self.selected_disk)
