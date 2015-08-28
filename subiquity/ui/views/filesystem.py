@@ -28,7 +28,6 @@ from subiquity.ui.buttons import (done_btn,
                                   reset_btn,
                                   cancel_btn,
                                   menu_btn)
-from subiquity.ui.widgets import Box
 from subiquity.ui.utils import Padding, Color
 from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector)
 from subiquity.models.filesystem import (_humanize_size,
@@ -57,15 +56,19 @@ class AddPartitionView(WidgetWrap):
         self.mountpoint = StringEditor(caption="", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
         body = [
-            Padding.center_95(
-                Text("Adding partition to {}".format(
-                    self.selected_disk.devpath))),
+            Columns(
+                [
+                    ("weight", 0.2, Text("Adding partition to {}".format(
+                        self.selected_disk.devpath), align="right")),
+                    ("weight", 0.3, Text(""))
+                ]
+            ),
             Padding.line_break(""),
-            Padding.center_90(self._container()),
+            self._container(),
             Padding.line_break(""),
-            Padding.center_15(self._build_buttons())
+            Padding.center_20(self._build_buttons())
         ]
-        partition_box = Padding.center_65(Box(body))
+        partition_box = Padding.center_50(ListBox(body))
         super().__init__(partition_box)
 
     def _build_buttons(self):
@@ -386,7 +389,7 @@ class FilesystemView(ViewPolicy):
         for dname in self.model.get_available_disks():
             disk = self.model.get_disk_info(dname)
             device = self.model.get_disk(dname)
-            btn = done_btn(label=disk.name,
+            btn = menu_btn(label=disk.name,
                            on_press=self.show_disk_partition_view)
 
             col_1.append(

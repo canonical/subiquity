@@ -85,8 +85,8 @@ class NetworkView(ViewPolicy):
         for opt, sig, _ in self.model.get_menu():
             opts.append(
                 Color.menu_button(
-                    confirm_btn(label=opt,
-                                on_press=self.additional_menu_select),
+                    menu_btn(label=opt,
+                             on_press=self.additional_menu_select),
                     focus_map='menu_button focus'))
         return Pile(opts)
 
