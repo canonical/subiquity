@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
 from itertools import count
 import logging
 import os
-import parted
 import re
 import yaml
 
@@ -57,45 +57,82 @@ class Bcachedev():
         return self._path
 
     def getSize(self, unit='MB'):
-        if type(self._backing) == parted.disk.Disk:
-            return self._backing.device.getSize(unit=unit)
-        else:
-            return self._backing.getSize(unit=unit)
+        pass
+
+
+class Disk():
+    def __init__(self, devpath, serial, model, parttype, size=0):
+        self._devpath = devpath
+        self._serial = serial
+        self._parttype = parttype
+        self._model = model
+        self._size = self._get_size(devpath, size)
+        self._partitions = OrderedDict()
+
+    def _get_size(self, devpath, size):
+        if size:
+            return size
+        sysblock = os.path.join('/sys/block', os.path.basename(devpath))
+        nr_blocks_f = os.path.join(sysblock, 'size')
+        block_sz_f = os.path.join(sysblock, 'queue', 'logical_block_size')
+        with open(nr_blocks_f, 'r') as r:
+            nr_blocks = int(r.read())
+        with open(block_sz_f, 'r') as r:
+            block_sz = int(r.read())
+
+        return nr_blocks * block_sz
+
+    @property
+    def devpath(self):
+        return self._devpath
+
+    @property
+    def serial(self):
+        return self._serial
+
+    @property
+    def model(self):
+        return self._model
+
+    @property
+    def parttype(self):
+        return self._parttype
+
+    @property
+    def size(self):
+        return self._size
+
+    @property
+    def partitions(self):
+        return self._partitions
+
+    def reset(self):
+        self._partitions = OrderedDict()
+        pass
 
 
 class Blockdev():
-    def __init__(self, devpath, serial, parttype='gpt'):
-        self.serial = serial
-        self.devpath = devpath
-        self._parttype = parttype
-        self.device = parted.getDevice(self.devpath)
-        self.disk = parted.freshDisk(self.device, self.parttype)
+    def __init__(self, devpath, serial, model, parttype='gpt', size=0):
+        self.disk = Disk(devpath, serial, model, parttype, size)
+        self._filesystems = {}
         self._mounts = {}
         self.bcache = []
         self.lvm = []
+        self.baseaction = DiskAction(os.path.basename(self.disk.devpath),
+                                     self.disk.model, self.disk.serial,
+                                     self.disk.parttype)
 
     def reset(self):
         ''' Wipe out any actions queued for this disk '''
-        self.disk = parted.freshDisk(self.device, self.parttype)
+        self.disk.reset()
+        self._filesystems = {}
         self._mounts = {}
         self.bcache = []
         self.lvm = []
 
-    def _get_largest_free_region(self):
-        """Finds largest free region on the disk"""
-        # There are better ways to do it, but let's be straightforward
-        max_size = -1
-        region = None
-
-        alignment = self.device.optimumAlignment
-
-        for r in self.disk.getFreeSpaceRegions():
-            # Heuristic: Ignore alignment gaps
-            if r.length > max_size and r.length > alignment.grainSize:
-                region = r
-                max_size = r.length
-
-        return region
+    @property
+    def devpath(self):
+        return self.disk.devpath
 
     @property
     def mounts(self):
@@ -103,7 +140,7 @@ class Blockdev():
 
     @property
     def parttype(self):
-        return self._parttype
+        return self.disk.parttype
 
     @parttype.setter  # NOQA
     def parttype(self, value):
@@ -111,11 +148,15 @@ class Blockdev():
 
     @property
     def size(self):
-        return self.disk.device.getLength(unit='B')
+        return self.disk.size
 
     @property
     def partitions(self):
         return self.disk.partitions
+
+    @property
+    def filesystems(self):
+        return self._filesystems
 
     @property
     def available(self):
@@ -128,27 +169,27 @@ class Blockdev():
     @property
     def usedspace(self, unit='b'):
         ''' return amount of used space'''
-        return sum([part.geometry.getSize(unit=unit) for part in
-                    self.disk.partitions])
+        space = 0
+        for (num, action) in self.disk.partitions.items():
+            space += int(action.offset)
+            space += int(action.size)
+
+        log.debug('{} usedspace: {}'.format(self.disk.devpath, space))
+        return space
 
     @property
     def freespace(self, unit='B'):
         ''' return amount of free space '''
-        geo = self._get_largest_free_region()
-        if geo:
-            return geo.getLength(unit=unit)
-        return 0
-
-    @property
-    def freepartition(self, unit='b'):
-        ''' return amount of partitionable space'''
-        return sum([part.geometry.getSize(unit=unit) for part in
-                    self.disk.getFreeSpacePartitions()])
+        used = self.usedspace
+        size = self.size
+        log.debug('{} freespace: {} - {} = {}'.format(self.disk.devpath,
+                                                      size, used,
+                                                      size - used))
+        return size - used
 
     @property
     def lastpartnumber(self):
-        return self.disk.lastPartitionNumber if \
-            self.disk.lastPartitionNumber > 0 else 0
+        return len(self.disk.partitions)
 
     def delete_partition(self, partnum=None, sector=None, mountpoint=None):
         # find part and then call deletePartition()
@@ -161,77 +202,53 @@ class Blockdev():
                   ' partnum:%s size:%s fstype:%s mountpoint:%s flag=%s' % (
                       partnum, size, fstype, mountpoint, flag))
 
-        if size > self.freepartition:
+        if size > self.freespace:
             raise Exception('Not enough space')
 
         if fstype in ["swap"]:
             fstype = "linux-swap(v1)"
 
-        geometry = self._get_largest_free_region()
-        if not geometry:
-            raise Exception('No free sectors available')
-        log.debug('largest free region:\n{}'.format(geometry))
-
-        # convert size into a geometry based on existing partitions
-        try:
-            start = self.disk.partitions[-1].geometry.end + 1
-        except IndexError:
-            start = 0
-        length = parted.sizeToSectors(size, 'B', self.device.sectorSize)
-        log.debug('requested start: {} length: {}'.format(start, length))
-        req_geo = parted.Geometry(self.device, start=start, length=length)
-
-        # find common area
-        parttype = parted.PARTITION_NORMAL
-        alignment = self.device.optimalAlignedConstraint
-        geometry = geometry.intersect(req_geo)
-        # update geometry with alignment
-        constraint = parted.Constraint(maxGeom=geometry).intersect(alignment)
-        data = {
-            'start': constraint.startAlign.alignUp(geometry, geometry.start),
-            'end': constraint.endAlign.alignDown(geometry, geometry.end),
-        }
-        geometry = parted.Geometry(device=self.device,
-                                   start=data['start'],
-                                   end=data['end'])
-        # create partition
-        if fstype not in [None, 'bcache cache', 'bcache store']:
-            fs = parted.FileSystem(type=fstype, geometry=geometry)
+        if len(self.disk.partitions) == 0:
+            offset = 1 << 20  # 1K offset/aligned
+            size += offset
         else:
-            fs = None
-        partition = parted.Partition(disk=self.disk, type=parttype,
-                                     fs=fs, geometry=geometry)
+            offset = 0
 
-        # add flags
-        flags = {
-            "boot": parted.PARTITION_BOOT,
-            "lvm": parted.PARTITION_LVM,
-            "raid": parted.PARTITION_RAID,
-            "bios_grub": parted.PARTITION_BIOS_GRUB
-        }
-        if flag in flags:
-            partition.setFlag(flags[flag])
+        log.debug('requested start: {} length: {}'.format(offset, size))
+        valid_flags = [
+            "boot",
+            "lvm",
+            "raid",
+            "bios_grub",
+        ]
+        if flag and flag not in valid_flags:
+            raise Exception('Flag: {} is not valid.'.format(flag))
 
-        self.disk.addPartition(partition=partition, constraint=constraint)
+        # create partition and add
+        part_action = PartitionAction(self.baseaction, partnum,
+                                      offset, size, flag)
+        log.debug('PartitionAction:\n{}'.format(part_action))
 
-        # fetch the newly created partition
-        partpath = "{}{}".format(self.disk.device.path, partition.number)
-        newpart = self.disk.getPartitionByPath(partpath)
+        self.disk.partitions.update({partnum: part_action})
 
-        # create bcachedev if neded
-        if fstype and fstype.startswith('bcache'):
-            mode = fstype.split()[-1]
-            self.bcache.append(Bcachedev(backing=newpart, mode=mode))
+        # record filesystem formating
+        if fstype:
+            partpath = "{}{}".format(self.disk.devpath, partnum)
+            fs_action = FormatAction(part_action, fstype)
+            log.debug('Adding filesystem: {}:{}'.format(partpath, fs_action))
+            self.filesystems.update({partpath: fs_action})
 
         # associate partition devpath with mountpoint
         if mountpoint:
             self._mounts[partpath] = mountpoint
 
+        log.debug('Partition Added')
+
     def is_mounted(self):
         with open('/proc/mounts') as pm:
             mounts = pm.read()
 
-        regexp = '{}.*'.format(self.disk.device.path)
+        regexp = '{}.*'.format(self.disk.devpath)
         matches = re.findall(regexp, mounts)
         if len(matches) > 0:
             log.debug('Device is mounted: {}'.format(matches))
@@ -245,43 +262,31 @@ class Blockdev():
             return []
 
         actions = []
-        baseaction = DiskAction(os.path.basename(self.disk.device.path),
-                                self.device.model, self.serial, self.parttype)
-        action = baseaction.get()
-        for part in self.disk.partitions:
-            fs_size = int(part.getSize(unit='B'))
-            if part.fileSystem:
-                fs_type = part.fileSystem.type
-            else:
-                fs_type = None
-            flags = part.getFlagsAsString()
-
-            partition_action = PartitionAction(baseaction,
-                                               part.number,
-                                               fs_size, flags)
-            actions.append(partition_action)
-            if fs_type:
-                format_action = FormatAction(partition_action,
-                                             fs_type)
+        action = self.baseaction.get()
+        for (num, part) in self.disk.partitions.items():
+            partpath = "{}{}".format(self.disk.devpath, part.partnum)
+            actions.append(part)
+            if partpath in self.filesystems:
+                format_action = self.filesystems[partpath]
                 actions.append(format_action)
-                mountpoint = self._mounts.get(part.path)
-                if mountpoint:
-                    mount_action = MountAction(format_action, mountpoint)
-                    actions.append(mount_action)
+
+            if partpath in self._mounts:
+                mount_action = MountAction(format_action,
+                                           self._mounts[partpath])
+                actions.append(mount_action)
 
         return [action] + [a.get() for a in actions]
 
     def get_fs_table(self):
         ''' list(mountpoint, humansize, fstype, partition_path) '''
         fs_table = []
-        for part in self.disk.partitions:
-            if part.fileSystem:
-                mntpoint = self._mounts.get(part.path, part.fileSystem.type)
-                fs_size = part.getSize(unit='B')
-                fs_type = part.fileSystem.type
-                devpath = part.path
+        for (num, part) in self.disk.partitions.items():
+            partpath = "{}{}".format(self.disk.devpath, part.partnum)
+            if partpath in self.filesystems:
+                fs = self.filesystems[partpath]
+                mntpoint = self._mounts.get(partpath, fs.fstype)
                 fs_table.append(
-                    (mntpoint, fs_size, fs_type, devpath))
+                    (mntpoint, part.size, fs.fstype, partpath))
 
         return fs_table
 
@@ -297,11 +302,17 @@ if __name__ == '__main__':
         print("USED DISKS")
 
     devices = []
-    sda = Blockdev('/dev/sda', 'QM_TARGET_01', parttype='gpt')
-    sdb = Blockdev('/dev/sdb', 'dafunk')
+    #Blockdev(devpath, serial, model, parttype='gpt'):
+    GB = 1 << 30
+    sda = Blockdev('/dev/sda', 'QM_TARGET_01', 'QEMU SSD DISK',
+                   parttype='gpt', size=128 * GB)
+    sdb = Blockdev('/dev/sdb', 'dafunk', 'QEMU SPINNER', size=500 * GB)
 
+    print(sda.freespace)
     sda.add_partition(1, 8 * 1024 * 1024 * 1024, 'ext4', '/', 'bios_grub')
+    print(sda.freespace)
     sda.add_partition(2, 2 * 1024 * 1024 * 1024, 'ext4', '/home')
+    print(sda.freespace)
     sdb.add_partition(1, 50 * 1024 * 1024 * 1024, 'btrfs', '/opt')
 
     get_filesystems([sda, sdb])

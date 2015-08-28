@@ -35,7 +35,6 @@ SRC_DEPS=(
 )
 INSTALLER_DEPS=(
   "petname"
-  "python3-parted"
   "python3-urwid"
   "python3-pyudev"
   "python3-netifaces"

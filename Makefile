@@ -27,7 +27,7 @@ $(NAME)_$(VERSION).orig.tar.gz: clean
 tarball: $(NAME)_$(VERSION).orig.tar.gz
 
 install_deps:
-	sudo apt-get install python3-urwid python3-pyudev python3-netifaces python3-nose python3-flake8 python3-parted python3-yaml git bzr ubuntu-cloudimage-keyring python3-jinja2 python3-coverage
+	sudo apt-get install python3-urwid python3-pyudev python3-netifaces python3-nose python3-flake8 python3-yaml git bzr ubuntu-cloudimage-keyring python3-jinja2 python3-coverage
 
 dryrun:
 	$(MAKE) ui-view DRYRUN="--dry-run"
