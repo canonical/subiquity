@@ -29,44 +29,55 @@ class InstallProgressController(ControllerPolicy):
         self.signal = signal
         self.opts = opts
         self.model = InstallProgressModel()
+        self.progress_output_w = ProgressOutput(self.signal, "Waiting...")
+
+    def install_progress_status(self, data):
+        self.progress_output_w.set_text(data)
+        self.signal.emit_signal('refresh')
 
     @coroutine
     def curtin_dispatch(self):
         if self.opts.dry_run:
             log.debug("Install Progress: Curtin dispatch dry-run")
             yield utils.run_command_async("cat /var/log/syslog",
-                                          log.debug)
+                                          self.install_progress_status)
         else:
             try:
                 yield utils.run_command_async("/usr/local/bin/curtin_wrap.sh",
-                                              log.debug)
+                                              self.install_progress_status)
             except:
                 log.error("Problem with curtin dispatch run")
                 raise Exception("Problem with curtin dispatch run")
 
     @coroutine
     def initial_install(self):
-        # title = ("Installing system")
-        # excerpt = ("Please wait for the installation "
-        #            "to finish before rebooting.")
-        # footer = ("Thank you for using Ubuntu!")
-        # self.ui.set_header(title, excerpt)
-        # self.ui.set_footer(footer)
-        # self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
         if self.opts.dry_run:
             log.debug("Filesystem: this is a dry-run")
-            # banner = [
-            #     "**** DRY_RUN ****",
-            #     "NOT calling:"
-            #     "subprocess.check_call(/usr/local/bin/curtin_wrap.sh)"
-            #     "",
-            #     "",
-            #     "Press (Q) to Quit."
-            # ]
-            # self.install_progress_status("\n".join(banner))
             yield utils.run_command_async("cat /var/log/syslog",
                                           log.debug)
         else:
             log.debug("filesystem: this is the *real* thing")
             yield utils.run_command_async(
-                "/usr/local/bin/curtin_wrap.sh", log.debug)
+                "/usr/local/bin/curtin_wrap.sh",
+                log.debug)
+
+    @coroutine
+    def show_progress(self):
+        title = ("Installing system")
+        excerpt = ("Please wait for the installation "
+                   "to finish before rebooting.")
+        footer = ("Thank you for using Ubuntu!")
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer)
+        self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
+
+        if self.opts.dry_run:
+            banner = [
+                "**** DRY_RUN ****",
+                "NOT calling:"
+                "subprocess.check_call(/usr/local/bin/curtin_wrap.sh)"
+                "",
+                "",
+                "Press (Q) to Quit."
+            ]
+            self.install_progress_status("\n".join(banner))
