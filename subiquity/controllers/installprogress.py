@@ -68,16 +68,17 @@ class InstallProgressController(ControllerPolicy):
                    "to finish before rebooting.")
         footer = ("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
+        self.ui.set_footer(footer, 90)
         self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
 
-        # if self.opts.dry_run:
-        #     banner = [
-        #         "**** DRY_RUN ****",
-        #         "NOT calling:"
-        #         "subprocess.check_call(/usr/local/bin/curtin_wrap.sh)"
-        #         "",
-        #         "",
-        #         "Press (Q) to Quit."
-        #     ]
-        #     self.install_progress_status("\n".join(banner))
+        if self.opts.dry_run:
+            banner = [
+                "**** DRY_RUN ****",
+                "NOT calling:"
+                "subprocess.check_call(/usr/local/bin/curtin_wrap.sh)"
+                "",
+                "",
+                "Press (Q) to Quit."
+            ]
+            self.install_progress_status("\n".join(banner))
+            self.ui.set_footer(footer, 100)
