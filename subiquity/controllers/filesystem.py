@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import urwid
 from subiquity.controller import ControllerPolicy
 from subiquity.models import FilesystemModel
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
@@ -30,11 +29,9 @@ BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
 
 
 class FilesystemController(ControllerPolicy):
-    def __init__(self, ui, signal, prober):
-        self.ui = ui
-        self.signal = signal
-        self.prober = prober
-        self.model = FilesystemModel(prober)
+    def __init__(self, common):
+        super().__init__(common)
+        self.model = FilesystemModel(self.prober)
 
     def filesystem(self, reset=False):
         # FIXME: Is this the best way to zero out this list for a reset?
@@ -45,7 +42,7 @@ class FilesystemController(ControllerPolicy):
         title = "Filesystem setup"
         footer = ("Select available disks to format and mount")
         self.ui.set_header(title)
-        self.ui.set_footer(footer)
+        self.ui.set_footer(footer, 30)
         self.ui.set_body(FilesystemView(self.model,
                                         self.signal))
 

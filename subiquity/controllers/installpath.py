@@ -23,9 +23,8 @@ log = logging.getLogger('subiquity.controller.installpath')
 
 
 class InstallpathController(ControllerPolicy):
-    def __init__(self, ui, signal):
-        self.ui = ui
-        self.signal = signal
+    def __init__(self, common):
+        super().__init__(common)
         self.model = InstallpathModel()
 
     def installpath(self):
@@ -38,7 +37,7 @@ class InstallpathController(ControllerPolicy):
                   "navigate options")
 
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
+        self.ui.set_footer(footer, 10)
         self.ui.set_body(InstallpathView(self.model, self.signal))
 
     def install_ubuntu(self):

@@ -56,7 +56,11 @@ STYLES = [
     ('string_input', '', '', '',
      Palette.black, Palette.light_gray),
     ('string_input focus', '', '', '',
-     Palette.white, Palette.dark_gray)
+     Palette.white, Palette.dark_gray),
+    ('progress_incomplete', '', '', '',
+     Palette.white, Palette.dark_magenta),
+    ('progress_complete', '', '', '',
+     Palette.white, Palette.light_magenta)
 ]
 
 
@@ -75,4 +79,12 @@ STYLES_MONO = [('frame_header', Palette.white, Palette.black,
                ('button', Palette.white, Palette.black,
                 '', '', ''),
                ('button focus', Palette.white, Palette.black,
-                '', '', '')]
+                '', '', ''),
+               ('string_input', '', '', '',
+                Palette.white, ''),
+               ('string_input focus', '', '', '',
+                Palette.white, ''),
+               ('progress_incomplete', '', '', '',
+                '', Palette.black),
+               ('progress_complete', '', '', '',
+                '', Palette.white)]

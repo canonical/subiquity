@@ -17,17 +17,10 @@ import logging
 import urwid
 import urwid.curses_display
 from tornado.ioloop import IOLoop
+from tornado.util import import_object
 from subiquity.signals import Signal
 from subiquity.palette import STYLES, STYLES_MONO
 from subiquity.prober import Prober
-
-# Modes import ----------------------------------------------------------------
-from subiquity.controllers import (WelcomeController,
-                                   InstallpathController,
-                                   NetworkController,
-                                   FilesystemController,
-                                   IdentityController,
-                                   InstallProgressController)
 
 log = logging.getLogger('subiquity.core')
 
@@ -39,21 +32,21 @@ class CoreControllerError(Exception):
 
 class Controller:
     def __init__(self, ui, opts):
-        self.ui = ui
-        self.opts = opts
-        self.signal = Signal()
-        self.prober = Prober(self.opts)
-        self.controllers = {
-            "welcome": WelcomeController(self.ui, self.signal),
-            "installpath": InstallpathController(self.ui, self.signal),
-            "network": NetworkController(self.ui, self.signal, self.prober),
-            "filesystem": FilesystemController(self.ui, self.signal,
-                                               self.prober),
-            "identity": IdentityController(self.ui, self.signal),
-            "progress": InstallProgressController(self.ui, self.signal,
-                                                  self.opts)
+        self.common = {
+            "ui": ui,
+            "opts": opts,
+            "signal": Signal(),
+            "prober": Prober(opts),
+            "loop": None
         }
-        self._connect_base_signals()
+        self.controllers = {
+            "Welcome": None,
+            "Installpath": None,
+            "Network": None,
+            "Filesystem": None,
+            "Identity": None,
+            "InstallProgress": None,
+        }
 
     def _connect_base_signals(self):
         """ Connect signals used in the core controller
@@ -63,23 +56,23 @@ class Controller:
         # Add quit signal
         signals.append(('quit', self.exit))
         signals.append(('refresh', self.redraw_screen))
-        self.signal.connect_signals(signals)
+        self.common['signal'].connect_signals(signals)
 
         # Registers signals from each controller
         for controller, controller_class in self.controllers.items():
             controller_class.register_signals()
-        log.debug(self.signal)
+        log.debug(self.common['signal'])
 
 # EventLoop -------------------------------------------------------------------
     def redraw_screen(self):
         if hasattr(self, 'loop'):
             try:
-                self.loop.draw_screen()
+                self.common['loop'].draw_screen()
             except AssertionError as e:
                 log.critical("Redraw screen error: {}".format(e))
 
     def set_alarm_in(self, interval, cb):
-        self.loop.set_alarm_in(interval, cb)
+        self.common['loop'].set_alarm_in(interval, cb)
         return
 
     def update(self, *args, **kwds):
@@ -101,7 +94,7 @@ class Controller:
                 'unhandled_input': self.header_hotkeys,
                 'handle_mouse': False
             }
-            if self.opts.run_on_serial:
+            if self.common['opts'].run_on_serial:
                 palette = STYLES_MONO
                 additional_opts['screen'] = urwid.curses_display.Screen()
             else:
@@ -109,15 +102,22 @@ class Controller:
                 additional_opts['screen'].reset_default_terminal_palette()
 
             evl = urwid.TornadoEventLoop(IOLoop())
-            self.loop = urwid.MainLoop(
-                self.ui, palette, event_loop=evl, **additional_opts)
-            log.debug("Running event loop: {}".format(self.loop.event_loop))
+            self.common['loop'] = urwid.MainLoop(
+                self.common['ui'], palette, event_loop=evl, **additional_opts)
+            log.debug("Running event loop: {}".format(
+                self.common['loop'].event_loop))
 
         try:
             self.set_alarm_in(0.05, self.welcome)
-            # self.install_progress_fd = self.loop.watch_pipe(
-            #     self.install_progress_status)
-            self.loop.run()
+            for k in self.controllers.keys():
+                log.debug("Importing controller: {}".format(k))
+                klass = import_object(
+                    "subiquity.controllers.{}Controller".format(
+                        k))
+                self.controllers[k] = klass(self.common)
+
+            self._connect_base_signals()
+            self.common['loop'].run()
         except:
             log.exception("Exception in controller.run():")
             raise
@@ -126,4 +126,4 @@ class Controller:
     #
     # Starts the initial UI view.
     def welcome(self, *args, **kwargs):
-        self.controllers['welcome'].welcome()
+        self.controllers['Welcome'].welcome()

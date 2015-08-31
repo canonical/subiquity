@@ -20,10 +20,8 @@ from subiquity.ui.dummy import DummyView
 
 
 class NetworkController(ControllerPolicy):
-    def __init__(self, ui, signal, prober):
-        self.ui = ui
-        self.signal = signal
-        self.prober = prober
+    def __init__(self, common):
+        super().__init__(common)
         self.model = NetworkModel(self.prober)
 
     def network(self):
@@ -33,7 +31,7 @@ class NetworkController(ControllerPolicy):
                    "sufficient access for updates.")
         footer = ("Additional networking info here")
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
+        self.ui.set_footer(footer, 20)
         self.ui.set_body(NetworkView(self.model, self.signal))
 
     def set_default_route(self):

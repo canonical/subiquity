@@ -13,11 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import errno
 import subprocess
-import os
-import codecs
-import pty
 from subiquity.async import Async
 import shlex
 import logging
@@ -35,60 +31,7 @@ def run_command(cmd, streaming_callback=None):
     if isinstance(cmd, str):
         cmd = shlex.split(cmd)
     log.debug("Running command: {}".format(cmd))
-    stdoutm, stdouts = pty.openpty()
-    proc = subprocess.Popen(cmd,
-                            stdout=stdouts,
-                            stderr=subprocess.PIPE)
-    os.close(stdouts)
-    decoder = codecs.getincrementaldecoder('utf-8')()
-
-    def last_ten_lines(s):
-            chunk = s[-1500:]
-            lines = chunk.splitlines(True)
-            return ''.join(lines[-10:]).replace('\r', '')
-
-    decoded_output = ""
-    try:
-        while proc.poll() is None:
-            try:
-                b = os.read(stdoutm, 512)
-            except OSError as e:
-                if e.errno != errno.EIO:
-                    raise
-                break
-            else:
-                final = False
-                if not b:
-                    final = True
-                decoded_chars = decoder.decode(b, final)
-                if decoded_chars is None:
-                    continue
-
-                decoded_output += decoded_chars
-                if streaming_callback:
-                    ls = last_ten_lines(decoded_output)
-
-                    streaming_callback(ls)
-                if final:
-                    break
-    finally:
-        os.close(stdoutm)
-        if proc.poll() is None:
-            proc.kill()
-        proc.wait()
-
-    errors = [l.decode('utf-8') for l in proc.stderr.readlines()]
-    if streaming_callback:
-        streaming_callback(last_ten_lines(decoded_output))
-
-    errors = ''.join(errors)
-
-    if proc.returncode == 0:
-        return decoded_output.strip()
-    else:
-        log.debug("Error with command: "
-                  "[Output] '{}' [Error] '{}'".format(
-                      decoded_output.strip(),
-                      errors.strip()))
-        raise Exception("Problem running command: [Error] '{}'".format(
-            errors.strip()))
+    proc = subprocess.Popen(cmd, close_fds=True,
+                            stdout=streaming_callback)
+    proc.kill()
+    # streaming_callback.close()

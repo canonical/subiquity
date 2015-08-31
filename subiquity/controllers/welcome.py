@@ -20,10 +20,9 @@ from subiquity.controller import ControllerPolicy
 
 
 class WelcomeController(ControllerPolicy):
-    def __init__(self, ui, signal):
-        self.ui = ui
+    def __init__(self, common):
+        super().__init__(common)
         self.model = WelcomeModel()
-        self.signal = signal
 
     def welcome(self):
         title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"

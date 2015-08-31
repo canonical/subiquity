@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import WidgetWrap, Pile, Text
+from urwid import WidgetWrap, Pile, Text, ProgressBar
+from collections import deque
 from subiquity.ui.utils import Padding, Color
 from subiquity.ui.lists import SimpleList
 
@@ -47,10 +48,19 @@ class Footer(WidgetWrap):
 
     """
 
-    def __init__(self, message=""):
+    def __init__(self, message="", completion=0):
         message_widget = Padding.center_79(Color.body(Text(message)))
-        status = Pile([Padding.line_break(""), message_widget])
-        super().__init__(status)
+        progress_bar = Padding.center_60(
+            ProgressBar(normal='progress_incomplete',
+                        complete='progress_complete',
+                        current=completion, done=100))
+        status = deque([
+            Padding.line_break(""),
+            message_widget
+        ])
+        if completion > 0:
+            status.appendleft(progress_bar)
+        super().__init__(Pile(status))
 
 
 class Body(WidgetWrap):

@@ -19,9 +19,8 @@ from subiquity.ui.views import IdentityView
 
 
 class IdentityController(ControllerPolicy):
-    def __init__(self, ui, signal):
-        self.ui = ui
-        self.signal = signal
+    def __init__(self, common):
+        super().__init__(common)
         self.model = IdentityModel()
 
     def identity(self):

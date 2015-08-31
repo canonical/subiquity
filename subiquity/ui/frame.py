@@ -40,8 +40,8 @@ class SubiquityUI(WidgetWrap):
     def set_header(self, title=None, excerpt=None):
         self.frame.header = Header(title, excerpt)
 
-    def set_footer(self, message):
-        self.frame.footer = Footer(message)
+    def set_footer(self, message, completion=0):
+        self.frame.footer = Footer(message, completion)
 
     def set_body(self, widget):
         self.frame.body = widget

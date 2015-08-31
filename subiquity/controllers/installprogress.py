@@ -24,10 +24,8 @@ log = logging.getLogger("subiquity.controller.installprogress")
 
 
 class InstallProgressController(ControllerPolicy):
-    def __init__(self, ui, signal, opts):
-        self.ui = ui
-        self.signal = signal
-        self.opts = opts
+    def __init__(self, common):
+        super().__init__(common)
         self.model = InstallProgressModel()
         self.progress_output_w = ProgressOutput(self.signal, "Waiting...")
 
@@ -37,29 +35,31 @@ class InstallProgressController(ControllerPolicy):
 
     @coroutine
     def curtin_dispatch(self):
+        write_fd = self.loop.watch_pipe(self.install_progress_status)
         if self.opts.dry_run:
             log.debug("Install Progress: Curtin dispatch dry-run")
             yield utils.run_command_async("cat /var/log/syslog",
-                                          self.install_progress_status)
+                                          write_fd)
         else:
             try:
                 yield utils.run_command_async("/usr/local/bin/curtin_wrap.sh",
-                                              self.install_progress_status)
+                                              write_fd)
             except:
                 log.error("Problem with curtin dispatch run")
                 raise Exception("Problem with curtin dispatch run")
 
     @coroutine
     def initial_install(self):
+        write_fd = self.loop.watch_pipe(self.install_progress_status)
         if self.opts.dry_run:
             log.debug("Filesystem: this is a dry-run")
             yield utils.run_command_async("cat /var/log/syslog",
-                                          log.debug)
+                                          write_fd)
         else:
             log.debug("filesystem: this is the *real* thing")
             yield utils.run_command_async(
                 "/usr/local/bin/curtin_wrap.sh",
-                log.debug)
+                write_fd)
 
     @coroutine
     def show_progress(self):
@@ -71,13 +71,13 @@ class InstallProgressController(ControllerPolicy):
         self.ui.set_footer(footer)
         self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
 
-        if self.opts.dry_run:
-            banner = [
-                "**** DRY_RUN ****",
-                "NOT calling:"
-                "subprocess.check_call(/usr/local/bin/curtin_wrap.sh)"
-                "",
-                "",
-                "Press (Q) to Quit."
-            ]
-            self.install_progress_status("\n".join(banner))
+        # if self.opts.dry_run:
+        #     banner = [
+        #         "**** DRY_RUN ****",
+        #         "NOT calling:"
+        #         "subprocess.check_call(/usr/local/bin/curtin_wrap.sh)"
+        #         "",
+        #         "",
+        #         "Press (Q) to Quit."
+        #     ]
+        #     self.install_progress_status("\n".join(banner))

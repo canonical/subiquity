@@ -28,6 +28,12 @@ class ControllerPolicyException(Exception):
 class ControllerPolicy:
     """ Expected contract for defining controllers
     """
+    def __init__(self, common):
+        self.ui = common['ui']
+        self.signal = common['signal']
+        self.opts = common['opts']
+        self.loop = common['loop']
+        self.prober = common['prober']
 
     def register_signals(self):
         """ Defines signals associated with controller from model """
