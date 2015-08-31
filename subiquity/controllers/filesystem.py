@@ -51,14 +51,14 @@ class FilesystemController(ControllerPolicy):
 
     def filesystem_handler(self, reset=False, actions=None):
         if actions is None and reset is False:
-            urwid.emit_signal(self.signal, 'network:show')
+            self.signal.emit_signal('network:show')
 
         log.info("Rendering curtin config from user choices")
         curtin_write_storage_actions(actions=actions)
         log.info("Generating post-install config")
         curtin_write_postinst_config()
-        urwid.emit_signal(self.signal, 'installprogress:do-initial-install')
-        urwid.emit_signal(self.signal, 'identity:show')
+        self.signal.emit_signal('installprogress:do-initial-install')
+        self.signal.emit_signal('identity:show')
 
     # Filesystem/Disk partition -----------------------------------------------
     def disk_partition(self, disk):
@@ -77,8 +77,8 @@ class FilesystemController(ControllerPolicy):
     def disk_partition_handler(self, spec=None):
         log.debug("Disk partition: {}".format(spec))
         if spec is None:
-            urwid.emit_signal(self.signal, 'filesystem:show', [])
-        urwid.emit_signal(self.signal, 'filesystem:show-disk-partition', [])
+            self.signal.emit_signal('filesystem:show', [])
+        self.signal.emit_signal('filesystem:show-disk-partition', [])
 
     def add_disk_partition(self, disk):
         log.debug("Adding partition to {}".format(disk))
