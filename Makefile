@@ -4,7 +4,7 @@
 NAME=subiquity
 VERSION=0.0.1
 PYTHONSRC=$(NAME)
-PYTHONPATH=$(shell pwd):$(HOME)/download/probert:
+PYTHONPATH=$(shell pwd):$(shell pwd)/probert
 VENVPATH=$(shell pwd)/venv
 VENVACTIVATE=$(VENVPATH)/bin/activate
 TOPDIR=$(shell pwd)

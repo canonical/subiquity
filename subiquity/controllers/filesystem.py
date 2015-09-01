@@ -96,14 +96,18 @@ class FilesystemController(ControllerPolicy):
             if current_disk.parttype == 'gpt' and \
                len(current_disk.disk.partitions) == 0:
                 log.debug('Adding grub_bios gpt partition first')
-                current_disk.add_partition(partnum=1,
-                                           size=BIOS_GRUB_SIZE_BYTES,
-                                           fstype=None,
-                                           flag='bios_grub')
+                size_added = \
+                    current_disk.add_partition(partnum=1,
+                                               size=BIOS_GRUB_SIZE_BYTES,
+                                               fstype=None,
+                                               flag='bios_grub')
 
                 # adjust downward the partition size to accommodate
-                # the bios/grub partition
-                spec['bytes'] -= BIOS_GRUB_SIZE_BYTES
+                # the offset and bios/grub partition
+                log.debug("Adjusting request down:" +
+                          "{} - {} = {}".format(spec['bytes'], size_added,
+                                                spec['bytes'] - size_added))
+                spec['bytes'] -= size_added
                 spec['partnum'] = 2
 
             if spec["fstype"] in ["swap"]:

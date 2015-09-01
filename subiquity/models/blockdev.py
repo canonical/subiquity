@@ -28,6 +28,8 @@ from .actions import (
 )
 
 log = logging.getLogger("subiquity.filesystem.blockdev")
+FIRST_PARTITION_OFFSET = 1 << 20  # 1K offset/aligned
+GPT_END_RESERVE = 1 << 20  # save room at the end for GPT
 
 
 # TODO: Bcachepart class
@@ -208,18 +210,29 @@ class Blockdev():
                       partnum, size, fstype, mountpoint, flag))
 
         if size > self.freespace:
-            raise Exception('Not enough space')
+            raise Exception('Not enough space (requested:{} free:{}'.format(
+                            size, self.freespace))
 
         if fstype in ["swap"]:
             fstype = "linux-swap(v1)"
 
+        # round up length by 1M
+        def _align_up(size, block_size=1 << 30):
+            return size + (block_size - (size % block_size))
+
         if len(self.disk.partitions) == 0:
-            offset = 1 << 20  # 1K offset/aligned
-            size += offset
+            offset = FIRST_PARTITION_OFFSET
         else:
             offset = 0
 
-        log.debug('requested start: {} length: {}'.format(offset, size))
+        log.debug('Aligning start and length on 1M boundaries')
+        new_size = _align_up(size + offset)
+        if new_size > self.freespace - GPT_END_RESERVE:
+            new_size = self.freespace - GPT_END_RESERVE
+        log.debug('Old size: {} New size: {}'.format(size, new_size))
+
+        log.debug('requested start: {} length: {}'.format(offset,
+                                                          new_size - offset))
         valid_flags = [
             "boot",
             "lvm",
@@ -231,8 +244,9 @@ class Blockdev():
 
         # create partition and add
         part_action = PartitionAction(self.baseaction, partnum,
-                                      offset, size, flag)
-        log.debug('PartitionAction:\n{}'.format(part_action))
+                                      offset, new_size - offset, flag)
+
+        log.debug('PartitionAction:\n{}'.format(part_action.get()))
 
         self.disk.partitions.update({partnum: part_action})
 
@@ -240,7 +254,8 @@ class Blockdev():
         if fstype:
             partpath = "{}{}".format(self.disk.devpath, partnum)
             fs_action = FormatAction(part_action, fstype)
-            log.debug('Adding filesystem: {}:{}'.format(partpath, fs_action))
+            log.debug('Adding filesystem on {}'.format(partpath))
+            log.debug('FormatAction:\n{}'.format(fs_action.get()))
             self.filesystems.update({partpath: fs_action})
 
         # associate partition devpath with mountpoint
@@ -248,6 +263,7 @@ class Blockdev():
             self._mounts[partpath] = mountpoint
 
         log.debug('Partition Added')
+        return new_size
 
     def is_mounted(self):
         with open('/proc/mounts') as pm:

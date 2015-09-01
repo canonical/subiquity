@@ -170,6 +170,10 @@ class AddPartitionView(WidgetWrap):
             return input_size
 
         def __get_size():
+            log.debug('Getting partition size')
+            log.debug('size.value={} size_str={} freespace={}'.format(
+                      self.size.value, self.size_str,
+                      self.selected_disk.freespace))
             if self.size.value == '' or \
                self.size.value == self.size_str:
                 log.debug('Using default value: {}'.format(
@@ -188,7 +192,9 @@ class AddPartitionView(WidgetWrap):
                     log.debug(
                         'Input size too big for device: ({} > {})'.format(
                             sz, self.selected_disk.freespace))
-                    return PARTITION_SIZE_TOO_BIG
+                    log.warn('Capping size @ max freespace: {}'.format(
+                        self.selected_disk.freespace))
+                    sz = self.selected_disk.freespace
                 return sz
 
         result = {
