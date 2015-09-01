@@ -145,7 +145,8 @@ class FilesystemModel(ModelPolicy):
             partitions += partnames
 
         sorted(partitions)
-        log.debug('probe_storage: get_partitions() returns: {}'.format(partitions))
+        log.debug('probe_storage: get_partitions() returns: {}'.format(
+                  partitions))
         return partitions
 
     def get_available_disks(self):

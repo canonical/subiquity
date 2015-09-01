@@ -16,6 +16,7 @@
 import logging
 from subiquity.controller import ControllerPolicy
 from subiquity.models import FilesystemModel
+from subiquity.models.blockdev import FIRST_PARTITION_OFFSET
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
                                 FilesystemView)
 from subiquity.ui.dummy import DummyView
@@ -102,8 +103,8 @@ class FilesystemController(ControllerPolicy):
                                            flag='bios_grub')
 
                 # adjust downward the partition size to accommodate
-                # the bios/grub partition
-                spec['bytes'] -= BIOS_GRUB_SIZE_BYTES
+                # the offset and bios/grub partition
+                spec['bytes'] -= FIRST_PARTITION_OFFSET + BIOS_GRUB_SIZE_BYTES
                 spec['partnum'] = 2
 
             if spec["fstype"] in ["swap"]:

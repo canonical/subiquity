@@ -28,6 +28,7 @@ from .actions import (
 )
 
 log = logging.getLogger("subiquity.filesystem.blockdev")
+FIRST_PARTITION_OFFSET = 1 << 20  # 1K offset/aligned
 
 
 # TODO: Bcachepart class
@@ -208,14 +209,14 @@ class Blockdev():
                       partnum, size, fstype, mountpoint, flag))
 
         if size > self.freespace:
-            raise Exception('Not enough space')
+            raise Exception('Not enough space (requested:{} free:{}'.format(
+                            size, self.freespace))
 
         if fstype in ["swap"]:
             fstype = "linux-swap(v1)"
 
         if len(self.disk.partitions) == 0:
-            offset = 1 << 20  # 1K offset/aligned
-            size += offset
+            offset = FIRST_PARTITION_OFFSET
         else:
             offset = 0
 
@@ -232,7 +233,7 @@ class Blockdev():
         # create partition and add
         part_action = PartitionAction(self.baseaction, partnum,
                                       offset, size, flag)
-        log.debug('PartitionAction:\n{}'.format(part_action))
+        log.debug('PartitionAction:\n{}'.format(part_action.get()))
 
         self.disk.partitions.update({partnum: part_action})
 
@@ -240,7 +241,8 @@ class Blockdev():
         if fstype:
             partpath = "{}{}".format(self.disk.devpath, partnum)
             fs_action = FormatAction(part_action, fstype)
-            log.debug('Adding filesystem: {}:{}'.format(partpath, fs_action))
+            log.debug('Adding filesystem on {}'.format(partpath))
+            log.debug('FormatAction:\n{}'.format(fs_action.get()))
             self.filesystems.update({partpath: fs_action})
 
         # associate partition devpath with mountpoint
