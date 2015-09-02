@@ -62,3 +62,6 @@ logs/*
 venv
 debian
 .pybuild
+
+# probert as its pulled externally
+probert
