@@ -17,7 +17,8 @@ import logging
 from subiquity.controller import ControllerPolicy
 from subiquity.models import FilesystemModel
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
-                                FilesystemView)
+                                FilesystemView, DiskInfoView)
+import subiquity.utils as utils
 from subiquity.ui.dummy import DummyView
 from subiquity.curtin import (curtin_write_storage_actions,
                               curtin_write_postinst_config)
@@ -150,3 +151,17 @@ class FilesystemController(ControllerPolicy):
 
     def create_swap_entire_device(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
+
+    def show_disk_information(self, device):
+        """ Show disk information, requires sudo/root
+        """
+        out = utils.run_command("hdparm -i {}".format(device))
+        log.debug(out)
+        if out['status'] != 0:
+            result = out['err']
+        else:
+            result = out['output']
+        disk_info_view = DiskInfoView(self.model,
+                                      self.signal,
+                                      result)
+        self.ui.set_body(disk_info_view)

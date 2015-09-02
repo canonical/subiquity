@@ -55,7 +55,10 @@ class FilesystemModel(ModelPolicy):
          'add_disk_partition_handler'),
         ('Format or create swap on entire device (unusual, advanced)',
          'filesystem:create-swap-entire-device',
-         'create_swap_entire_device')
+         'create_swap_entire_device'),
+        ('Show disk information',
+         'filesystem:show-disk-information',
+         'show_disk_information')
     ]
 
     fs_menu = [

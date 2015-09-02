@@ -19,7 +19,7 @@ Welcome provides user with language selection
 
 """
 import logging
-from urwid import (Pile, emit_signal, Columns, Text, ListBox)
+from urwid import (Pile, Columns, Text, ListBox)
 from subiquity.ui.buttons import done_btn, cancel_btn
 from subiquity.ui.interactive import StringEditor, PasswordEditor
 from subiquity.ui.utils import Padding, Color

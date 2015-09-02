@@ -46,6 +46,33 @@ PARTITION_ERRORS = [
 log = logging.getLogger('subiquity.filesystem')
 
 
+class DiskInfoView(WidgetWrap):
+    def __init__(self, model, signal, hdparm):
+        self.model = model
+        self.signal = signal
+        hdparm = hdparm.split("\n")
+        body = []
+        for h in hdparm:
+            body.append(Text(h))
+        body.append(Padding.center_20(self._build_buttons()))
+        super().__init__(Padding.center_79(SimpleList(body)))
+
+    def _build_buttons(self):
+        done = done_btn(on_press=self.done)
+
+        buttons = [
+            Color.button(done, focus_map='button focus'),
+        ]
+        return Pile(buttons)
+
+    def done(self, result):
+        ''' Return to FilesystemView '''
+        self.signal.emit_signal('filesystem:show')
+
+    def cancel(self, button):
+        self.signal.emit_signal('filesystem:show')
+
+
 class AddPartitionView(WidgetWrap):
 
     def __init__(self, model, signal, selected_disk):
@@ -287,7 +314,19 @@ class DiskPartitionView(WidgetWrap):
         changes to the button depending on if existing
         partitions exist or not.
         """
-        return Pile([self.add_partition_w(), self.create_swap_w()])
+        return Pile([self.add_partition_w(),
+                     self.create_swap_w(),
+                     self.show_disk_info_w()])
+
+    def show_disk_info_w(self):
+        """ Runs hdparm against device and displays its output
+        """
+        text = ("Show disk information")
+        return Color.menu_button(
+            menu_btn(
+                label=text,
+                on_press=self.show_disk_info
+            ), focus_map='menu_button focus')
 
     def create_swap_w(self):
         """ Handles presenting an enabled create swap on
@@ -313,6 +352,10 @@ class DiskPartitionView(WidgetWrap):
         return Color.menu_button(menu_btn(label=text,
                                           on_press=self.add_partition),
                                  focus_map='menu_button focus')
+
+    def show_disk_info(self, result):
+        self.signal.emit_signal('filesystem:show-disk-information',
+                                self.selected_disk)
 
     def add_partition(self, result):
         log.debug('add_partition: result={}'.format(result))

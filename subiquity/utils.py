@@ -13,25 +13,50 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import subprocess
+import os
+from subprocess import Popen, PIPE
 from subiquity.async import Async
-import shlex
+import errno
 import logging
 
 log = logging.getLogger("subiquity.utils")
 
 
-def run_command_async(cmd, streaming_callback=None):
-    return Async.pool.submit(run_command, cmd, streaming_callback)
+def run_command_async(cmd, timeout=None):
+    return Async.pool.submit(run_command, cmd, timeout)
 
 
-def run_command(cmd, streaming_callback=None):
-    """ Executes `cmd` sending its output to `streaming_callback`
+def run_command(command, timeout=None):
+    """ Execute command through system shell
+    :param command: command to run
+    :param timeout: (optional) use 'timeout' to limit time. default 300
+    :type command: str
+    :returns: {status: returncode, output: stdout, err: stderr}
+    :rtype: dict
+    .. code::
+        # Get output of juju status
+        cmd_dict = utils.get_command_output('juju status')
     """
-    if isinstance(cmd, str):
-        cmd = shlex.split(cmd)
-    log.debug("Running command: {}".format(cmd))
-    proc = subprocess.Popen(cmd, close_fds=True,
-                            stdout=streaming_callback)
-    proc.kill()
-    # streaming_callback.close()
+    cmd_env = os.environ.copy()
+    # set consistent locale
+    cmd_env['LC_ALL'] = 'C'
+    if timeout:
+        command = "timeout %ds %s" % (timeout, command)
+
+    try:
+        p = Popen(command, shell=True,
+                  stdout=PIPE, stderr=PIPE,
+                  bufsize=-1, env=cmd_env, close_fds=True)
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            return dict(ret=127, output="", err="")
+        else:
+            raise e
+    stdout, stderr = p.communicate()
+    if p.returncode == 126 or p.returncode == 127:
+        stdout = bytes()
+    if not stderr:
+        stderr = bytes()
+    return dict(status=p.returncode,
+                output=stdout.decode('utf-8'),
+                err=stderr.decode('utf-8'))
