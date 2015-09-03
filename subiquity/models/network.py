@@ -13,8 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import errno
 import logging
 import json
+import os
 from subiquity.model import ModelPolicy
 from subiquity.utils import (read_sys_net,
                              sys_dev_path)
@@ -160,13 +162,14 @@ class NetworkModel(ModelPolicy):
             return True
 
         # is_connected isn't really as simple as that.  2 is
-        # 'physically connected'. 3 is 'not connected'. but a wlan interface will
+        # 'physically connected'. 3 is 'not connected'.
+        # but a wlan interface will
         # always show 3.
         try:
             iflink = read_sys_net(iface, "iflink", enoent=False)
             if iflink == "2":
                 return True
-            if not is_wireless(iface):
+            if not self.iface_is_wireless(iface):
                 return False
             log.debug("'%s' is wireless, basing 'connected' on carrier", iface)
 

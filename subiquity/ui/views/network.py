@@ -23,7 +23,7 @@ import logging
 from urwid import (ListBox, Pile, BoxAdapter,
                    Text, Columns)
 from subiquity.ui.lists import SimpleList
-from subiquity.ui.buttons import confirm_btn, cancel_btn, menu_btn
+from subiquity.ui.buttons import cancel_btn, menu_btn
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
 
@@ -64,8 +64,8 @@ class NetworkView(ViewPolicy):
                     menu_btn(label=iface,
                              on_press=self.on_net_dev_press),
                     focus_map='menu_button focus'))
-            col_1.append(Text("")) # vertical holder for ipv6 status
-            col_1.append(Text("")) # vertical holder for ipv4 status
+            col_1.append(Text(""))  # vertical holder for ipv6 status
+            col_1.append(Text(""))  # vertical holder for ipv4 status
         col_1 = BoxAdapter(SimpleList(col_1),
                            height=len(col_1))
 
@@ -83,7 +83,6 @@ class NetworkView(ViewPolicy):
                 'vendor': iface_vendor,
                 'model': iface_model,
             }
-            #template = "{bonded}{bridged} {speed} {vendor} {model}".format(**info)
             template = ''
             if info['bonded']:
                 template += '(Bonded) '
@@ -111,7 +110,7 @@ class NetworkView(ViewPolicy):
             if ipv4_status['provider']:
                 ipv4_template += 'from {provider} '.format(**ipv4_status)
             col_2.append(Text(ipv4_template))
-            col_2.append(Text("Checking IPv6..."))  # vertical holder for ipv6 status
+            col_2.append(Text("Checking IPv6..."))  # vertical holder for ipv6
         col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                            height=len(col_2))
 

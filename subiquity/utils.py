@@ -20,6 +20,7 @@ import errno
 import logging
 
 log = logging.getLogger("subiquity.utils")
+SYS_CLASS_NET = "/sys/class/net/"
 
 
 def run_command_async(cmd, timeout=None):
@@ -77,7 +78,7 @@ def read_sys_net(devname, path, translate=None, enoent=None, keyerror=None):
         try:
             return translate.get(contents)
         except KeyError:
-            LOG.debug("found unexpected value '%s' in '%s/%s'", contents,
+            log.debug("found unexpected value '%s' in '%s/%s'", contents,
                       devname, path)
             if keyerror is not None:
                 return keyerror

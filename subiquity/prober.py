@@ -23,6 +23,7 @@ from probert.network import (Network,
 
 log = logging.getLogger('subiquity.prober')
 
+
 class Prober():
     def __init__(self, opts):
         self.opts = opts
@@ -30,7 +31,7 @@ class Prober():
 
         if self.opts.machine_config:
             log.debug('User specified machine_config: {}'.format(
-                        self.opts.machine_config))
+                      self.opts.machine_config))
             if os.path.exists(self.opts.machine_config):
                 with open(self.opts.machine_config) as mc:
                     self.probe_data = json.load(mc)
