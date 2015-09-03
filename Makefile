@@ -17,7 +17,7 @@ INSTALLIMG=ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img
 INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 PROBERTDIR=./probert
 PROBERT_REPO=https://github.com/CanonicalLtd/probert.git
-PROBERT_REVNO=cf19028b1061a2b8fe2662a45669243d26324f65
+PROBERT_REVNO=e7fa0c6bfb35f00efc68962777db6bb73217231f
 GITDEBDIR=./debian.git
 DEBDIR=./debian
 
