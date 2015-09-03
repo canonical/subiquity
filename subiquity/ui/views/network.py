@@ -108,7 +108,7 @@ class NetworkView(ViewPolicy):
                 ipv4_template += '{ip} '.format(**ipv4_status)
             if ipv4_status['method']:
                 ipv4_template += 'provided by {method} '.format(**ipv4_status)
-            if ipv4_status['method']:
+            if ipv4_status['provider']:
                 ipv4_template += 'from {provider} '.format(**ipv4_status)
             col_2.append(Text(ipv4_template))
             col_2.append(Text("Checking IPv6..."))  # vertical holder for ipv6 status
