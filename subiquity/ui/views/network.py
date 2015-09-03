@@ -64,6 +64,8 @@ class NetworkView(ViewPolicy):
                     menu_btn(label=iface,
                              on_press=self.on_net_dev_press),
                     focus_map='menu_button focus'))
+            col_1.append(Text("")) # vertical holder for ipv6 status
+            col_1.append(Text("")) # vertical holder for ipv4 status
         col_1 = BoxAdapter(SimpleList(col_1),
                            height=len(col_1))
 
@@ -71,10 +73,45 @@ class NetworkView(ViewPolicy):
         for iface in ifaces:
             ifinfo, iface_vendor, iface_model = self.model.get_iface_info(
                 iface)
-            col_2.append(Text("Address: {}".format(ifinfo.addr)))
-            col_2.append(
-                Text("{} - {}".format(iface_vendor,
-                                      iface_model)))
+            bonded = self.model.iface_is_bonded(iface)
+            bridged = self.model.iface_is_bridge_member(iface)
+            speed = self.model.iface_get_speed(iface)
+            info = {
+                'bonded': bonded,
+                'bridged': bridged,
+                'speed': speed,
+                'vendor': iface_vendor,
+                'model': iface_model,
+            }
+            #template = "{bonded}{bridged} {speed} {vendor} {model}".format(**info)
+            template = ''
+            if info['bonded']:
+                template += '(Bonded) '
+            if info['speed']:
+                template += '{speed} '.format(**info)
+            if not info['vendor'].lower().startswith('unknown'):
+                template += '{vendor} '.format(**info)
+            if not info['model'].lower().startswith('unknown'):
+                template += '{model} '.format(**info)
+            col_2.append(Text(template))
+
+            ip = ifinfo.addr
+            method = self.model.iface_get_ip_method(iface)
+            provider = self.model.iface_get_ip_provider(iface)
+            ipv4_status = {
+                'ip': ip,
+                'method': method,
+                'provider': provider,
+            }
+            ipv4_template = ''
+            if ipv4_status['ip']:
+                ipv4_template += '{ip} '.format(**ipv4_status)
+            if ipv4_status['method']:
+                ipv4_template += 'provided by {method} '.format(**ipv4_status)
+            if ipv4_status['method']:
+                ipv4_template += 'from {provider} '.format(**ipv4_status)
+            col_2.append(Text(ipv4_template))
+            col_2.append(Text("Checking IPv6..."))  # vertical holder for ipv6 status
         col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                            height=len(col_2))
 

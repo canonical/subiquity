@@ -14,7 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import json
 from subiquity.model import ModelPolicy
+from subiquity.utils import (read_sys_net,
+                             sys_dev_path)
 
 
 log = logging.getLogger('subiquity.models.network')
@@ -59,7 +62,8 @@ class NetworkModel(ModelPolicy):
          'install_network_driver')
     ]
 
-    def __init__(self, prober):
+    def __init__(self, prober, opts):
+        self.opts = opts
         self.prober = prober
         self.network = {}
 
@@ -77,13 +81,112 @@ class NetworkModel(ModelPolicy):
     def probe_network(self):
         log.debug('model calling prober.get_network()')
         self.network = self.prober.get_network()
+        log.debug('network:\n{}'.format(json.dumps(self.network, indent=4)))
+
+    def iface_is_up(self, iface):
+        # don't attempt to read/open files on dry-run
+        if self.opts.dry_run:
+            return True
+
+        # The linux kernel says to consider devices in 'unknown'
+        # operstate as up for the purposes of network configuration. See
+        # Documentation/networking/operstates.txt in the kernel source.
+        translate = {'up': True, 'unknown': True, 'down': False}
+        return read_sys_net(iface, "operstate", enoent=False, keyerror=False,
+                            translate=translate)
+
+    def iface_is_wireless(self, iface):
+        # don't attempt to read/open files on dry-run
+        if self.opts.dry_run:
+            return True
+
+        return os.path.exists(sys_dev_path(iface, "wireless"))
+
+    def iface_is_bonded(self, iface):
+        bondinfo = self.network[iface].get('bond', {})
+        if bondinfo:
+            if bondinfo['is_master'] is True or bondinfo['is_slave'] is True:
+                return True
+        return False
+
+    def iface_is_bridge(self, iface):
+        return self.network[iface]['type'] == 'bridge'
+
+    def iface_is_bridge_member(self, iface):
+        ''' scan through all of the bridges
+            and see if iface is included in a bridge '''
+        bridges = self.get_bridges()
+        for bridge in bridges:
+            brinfo = self.network[bridge].get('bridge', {})
+            if brinfo:
+                if iface in brinfo['interfaces']:
+                    return True
+
+        return False
+
+    def iface_get_speed(self, iface):
+        hwattr = self.network[iface]['hardware']['attrs']
+        speed = hwattr.get('speed', 0)
+        log.debug('speed: {}'.format(speed))
+
+        if not speed:
+            return None
+
+        speed = int(speed)
+        if speed < 1000:
+            return "{}M".format(speed)
+        else:
+            return "{}G".format(speed / 1000)
+
+    def iface_get_ip_provider(self, iface):
+        source = self.network[iface]['ip'].get('source')
+        log.debug('source: {}'.format(source))
+        if not source:
+            return None
+
+        return source['provider']
+
+    def iface_get_ip_method(self, iface):
+        source = self.network[iface]['ip'].get('source')
+        log.debug('source: {}'.format(source))
+        if not source:
+            return None
+
+        return source['method']
+
+    def iface_is_connected(self, iface):
+        # don't attempt to read/open files on dry-run
+        if self.opts.dry_run:
+            return True
+
+        # is_connected isn't really as simple as that.  2 is
+        # 'physically connected'. 3 is 'not connected'. but a wlan interface will
+        # always show 3.
+        try:
+            iflink = read_sys_net(iface, "iflink", enoent=False)
+            if iflink == "2":
+                return True
+            if not is_wireless(iface):
+                return False
+            log.debug("'%s' is wireless, basing 'connected' on carrier", iface)
+
+            return read_sys_net(iface, "carrier", enoent=False, keyerror=False,
+                                translate={'0': False, '1': True})
+
+        except IOError as e:
+            if e.errno == errno.EINVAL:
+                return False
+            raise
 
     def get_interfaces(self):
-        VALID_NIC_TYPES = ['eth', 'wlan']
+        ignored = ['lo', 'bridge', 'tun', 'tap']
         return [iface for iface in self.network.keys()
-                if self.network[iface]['type'] in VALID_NIC_TYPES and
-                not self.network[iface]['hardware']['DEVPATH'].startswith(
-                    '/devices/virtual/net')]
+                if self.network[iface]['type'] not in ignored and
+                self.iface_is_up(iface)]
+
+    def get_bridges(self):
+        return [iface for iface in self.network.keys()
+                if self.iface_is_bridge(iface)]
 
     def get_vendor(self, iface):
         hwinfo = self.network[iface]['hardware']

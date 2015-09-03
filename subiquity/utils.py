@@ -60,3 +60,29 @@ def run_command(command, timeout=None):
     return dict(status=p.returncode,
                 output=stdout.decode('utf-8'),
                 err=stderr.decode('utf-8'))
+
+
+def sys_dev_path(devname, path=""):
+    return SYS_CLASS_NET + devname + "/" + path
+
+
+def read_sys_net(devname, path, translate=None, enoent=None, keyerror=None):
+    try:
+        contents = ""
+        with open(sys_dev_path(devname, path), "r") as fp:
+            contents = fp.read().strip()
+        if translate is None:
+            return contents
+
+        try:
+            return translate.get(contents)
+        except KeyError:
+            LOG.debug("found unexpected value '%s' in '%s/%s'", contents,
+                      devname, path)
+            if keyerror is not None:
+                return keyerror
+            raise
+    except OSError as e:
+        if e.errno == errno.ENOENT and enoent is not None:
+            return enoent
+        raise

@@ -22,7 +22,7 @@ from subiquity.ui.dummy import DummyView
 class NetworkController(ControllerPolicy):
     def __init__(self, common):
         super().__init__(common)
-        self.model = NetworkModel(self.prober)
+        self.model = NetworkModel(self.prober, self.opts)
 
     def network(self):
         title = "Network connections"
