@@ -136,7 +136,7 @@ class NetworkModel(ModelPolicy):
         if speed < 1000:
             return "{}M".format(speed)
         else:
-            return "{}G".format(speed / 1000)
+            return "{}G".format(int(speed / 1000))
 
     def iface_get_ip_provider(self, iface):
         source = self.network[iface]['ip'].get('source')
