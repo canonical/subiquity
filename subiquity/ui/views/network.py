@@ -83,6 +83,7 @@ class NetworkView(ViewPolicy):
                 'vendor': iface_vendor,
                 'model': iface_model,
             }
+            log.debug('iface info:{}'.format(info))
             template = ''
             if info['bonded']:
                 template += '(Bonded) '
@@ -94,7 +95,10 @@ class NetworkView(ViewPolicy):
                 template += '{model} '.format(**info)
             col_2.append(Text(template))
 
-            ip = ifinfo.addr
+            if not ifinfo.addr.lower().startswith('unknown'):
+                ip = ifinfo.addr
+            else:
+                ip = 'No IPv4 connection'
             method = self.model.iface_get_ip_method(iface)
             provider = self.model.iface_get_ip_provider(iface)
             ipv4_status = {
@@ -102,6 +106,7 @@ class NetworkView(ViewPolicy):
                 'method': method,
                 'provider': provider,
             }
+            log.debug('ipv4_status: {}'.format(ipv4_status))
             ipv4_template = ''
             if ipv4_status['ip']:
                 ipv4_template += '{ip} '.format(**ipv4_status)
@@ -110,14 +115,18 @@ class NetworkView(ViewPolicy):
             if ipv4_status['provider']:
                 ipv4_template += 'from {provider} '.format(**ipv4_status)
             col_2.append(Text(ipv4_template))
-            col_2.append(Text("Checking IPv6..."))  # vertical holder for ipv6
+            col_2.append(Text("No IPv6 connection"))  # vertical holder for ipv6
         if len(col_2):
             col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                                height=len(col_2))
         else:
             col_2 = Pile([Text("No network interfaces detected.")])
 
-        return Columns([(10, col_1), col_2], 2)
+        ifname_width = len(max(ifaces, key=len)) + 4
+        if ifname_width > 14:
+            ifname_width = 14
+
+        return Columns([(ifname_width, col_1), col_2], 2)
 
     def _build_additional_options(self):
         opts = []
