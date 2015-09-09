@@ -15,9 +15,11 @@
 
 import logging
 from subiquity.controller import ControllerPolicy
-from subiquity.models import FilesystemModel
+from subiquity.models import (FilesystemModel, IscsiDiskModel, RaidModel,
+                              CephDiskModel)
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
-                                FilesystemView, DiskInfoView)
+                                FilesystemView, DiskInfoView,
+                                RaidView, CephDiskView, IscsiDiskView)
 import subiquity.utils as utils
 from subiquity.ui.dummy import DummyView
 from subiquity.curtin import (curtin_write_storage_actions,
@@ -33,6 +35,9 @@ class FilesystemController(ControllerPolicy):
     def __init__(self, common):
         super().__init__(common)
         self.model = FilesystemModel(self.prober)
+        self.iscsi_model = IscsiDiskModel()
+        self.ceph_model = CephDiskModel()
+        self.raid_model = RaidModel()
 
     def filesystem(self, reset=False):
         # FIXME: Is this the best way to zero out this list for a reset?
@@ -132,16 +137,37 @@ class FilesystemController(ControllerPolicy):
         self.signal.emit_signal('filesystem:show-disk-partition', disk)
 
     def connect_iscsi_disk(self, *args, **kwargs):
-        self.ui.set_body(DummyView(self.signal))
+        title = ("Disk and filesystem setup")
+        excerpt = ("Connect to iSCSI cluster")
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer("")
+        self.ui.set_body(IscsiDiskView(self.iscsi_model,
+                                       self.signal))
 
     def connect_ceph_disk(self, *args, **kwargs):
-        self.ui.set_body(DummyView(self.signal))
+        title = ("Disk and filesystem setup")
+        footer = ("Select available disks to format and mount")
+        excerpt = ("Connect to Ceph storage cluster")
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer)
+        self.ui.set_body(CephDiskView(self.ceph_model,
+                                      self.signal))
 
     def create_volume_group(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
 
     def create_raid(self, *args, **kwargs):
-        self.ui.set_body(DummyView(self.signal))
+        title = ("Disk and filesystem setup")
+        footer = ("ENTER on a disk will show detailed "
+                  "information for that disk")
+        excerpt = ("Use SPACE to select disks to form your RAID array, "
+                   "and then specify the RAID parameters. Multiple-disk "
+                   "arrays work best when all the disks in an array are "
+                   "the same size and speed.")
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer)
+        self.ui.set_body(RaidView(self.raid_model,
+                                  self.signal))
 
     def setup_bcache(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))

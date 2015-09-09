@@ -13,15 +13,26 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .filesystem import (FilesystemView,  # NOQA
-                         AddPartitionView,
-                         DiskPartitionView,
-                         DiskInfoView)
-from .raid import RaidView  # NOQA
-from .ceph import CephDiskView  # NOQA
-from .iscsi import IscsiDiskView  # NOQA
-from .network import NetworkView  # NOQA
-from .installpath import InstallpathView  # NOQA
-from .installprogress import ProgressOutput, ProgressView  # NOQA
-from .welcome import WelcomeView  # NOQA
-from .identity import IdentityView  # NOQA
+import logging
+from subiquity.models import CephDiskModel
+from subiquity.controller import ControllerPolicy
+
+log = logging.getLogger("subiquity.controller.ceph")
+
+
+class CephDiskController(ControllerPolicy):
+    def __init__(self, common):
+        super().__init__(common)
+        self.model = CephDiskModel()
+
+    def ceph(self):
+        pass
+
+    def ceph_handler(self):
+        pass
+
+    def fetch_key_usb(self):
+        pass
+
+    def fetch_key_ssh(self):
+        pass

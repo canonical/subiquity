@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-
+from collections import OrderedDict
 from subiquity.model import ModelPolicy
 
 
@@ -51,7 +51,9 @@ class RaidModel(ModelPolicy):
          'set_chunk_size')
     ]
 
-    raid_levels = {
+    raid_levels = ['0', '1', '5', '6', '10', 'linear']
+
+    raid_levels_map = {
         'linear': {'min_disks': 0},
         '0': {'min_disks': 0},
         '1': {'min_disks': 0},

@@ -13,15 +13,29 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .filesystem import (FilesystemView,  # NOQA
-                         AddPartitionView,
-                         DiskPartitionView,
-                         DiskInfoView)
-from .raid import RaidView  # NOQA
-from .ceph import CephDiskView  # NOQA
-from .iscsi import IscsiDiskView  # NOQA
-from .network import NetworkView  # NOQA
-from .installpath import InstallpathView  # NOQA
-from .installprogress import ProgressOutput, ProgressView  # NOQA
-from .welcome import WelcomeView  # NOQA
-from .identity import IdentityView  # NOQA
+import logging
+from subiquity.models import IscsiDiskModel
+from subiquity.controller import ControllerPolicy
+
+log = logging.getLogger("subiquity.controller.iscsi")
+
+
+class IscsiDiskController(ControllerPolicy):
+    def __init__(self, common):
+        super().__init__(common)
+        self.model = IscsiDiskModel()
+
+    def iscsi(self):
+        pass
+
+    def iscsi_handler(self):
+        pass
+
+    def discover_volumes(self):
+        pass
+
+    def custom_discovery_credentials(self):
+        pass
+
+    def manual_volume_details(self):
+        pass

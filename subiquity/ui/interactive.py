@@ -93,3 +93,11 @@ class Selector(WidgetWrap):
             if item.get_state():
                 return item.label
         return "Unknown option"
+
+
+class YesNo(Selector):
+    """ Yes/No selector
+    """
+    def __init__(self):
+        opts = ['Yes', 'No']
+        super().__init__(opts)

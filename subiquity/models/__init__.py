@@ -19,3 +19,6 @@ from .network import NetworkModel  # NOQA
 from .welcome import WelcomeModel  # NOQA
 from .identity import IdentityModel  # NOQA
 from .installprogress import InstallProgressModel  # NOQA
+from .iscsi_disk import IscsiDiskModel  # NOQA
+from .raid import RaidModel  # NOQA
+from .ceph_disk import CephDiskModel  # NOQA
