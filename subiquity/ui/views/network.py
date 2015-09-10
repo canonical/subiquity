@@ -22,6 +22,7 @@ Provides network device listings and extended network information
 import logging
 from urwid import (ListBox, Pile, BoxAdapter,
                    Text, Columns)
+import yaml
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import cancel_btn, menu_btn
 from subiquity.ui.utils import Padding, Color
@@ -115,7 +116,7 @@ class NetworkView(ViewPolicy):
             if ipv4_status['provider']:
                 ipv4_template += 'from {provider} '.format(**ipv4_status)
             col_2.append(Text(ipv4_template))
-            col_2.append(Text("No IPv6 connection"))  # vertical holder for ipv6
+            col_2.append(Text("No IPv6 connection"))  # vert. holder for ipv6
         if len(col_2):
             col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                                height=len(col_2))
@@ -143,7 +144,13 @@ class NetworkView(ViewPolicy):
 
     def on_net_dev_press(self, result):
         log.debug("Selected network dev: {}".format(result.label))
-        self.signal.emit_signal('filesystem:show')
+        actions = [action.get() for _, action in
+                   self.model.configured_interfaces.items()]
+        log.debug('Configured Network Actions:\n{}'.format(
+            yaml.dump(actions, default_flow_style=False)))
+
+        self.signal.emit_signal('network:finish', actions)
 
     def cancel(self, button):
+        self.model.reset()
         self.signal.emit_signal(self.model.get_previous_signal)

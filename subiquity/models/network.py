@@ -14,12 +14,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import errno
+import ipaddress
 import logging
 import json
 import os
 from subiquity.model import ModelPolicy
 from subiquity.utils import (read_sys_net,
                              sys_dev_path)
+
+from .actions import (
+    BondAction,
+    PhysicalAction,
+)
 
 
 log = logging.getLogger('subiquity.models.network')
@@ -49,7 +55,10 @@ class NetworkModel(ModelPolicy):
     signals = [
         ('Network main view',
          'network:show',
-         'network')
+         'network'),
+        ('Network finish',
+         'network:finish',
+         'network_finish')
     ]
 
     additional_options = [
@@ -67,6 +76,12 @@ class NetworkModel(ModelPolicy):
     def __init__(self, prober, opts):
         self.opts = opts
         self.prober = prober
+        self.network = {}
+        self.configured_interfaces = {}
+
+    def reset(self):
+        log.debug('resetting network model')
+        self.configured_interfaces = {}
         self.network = {}
 
     def get_signal_by_name(self, selection):
@@ -181,11 +196,67 @@ class NetworkModel(ModelPolicy):
                 return False
             raise
 
+    def configure_iface(self, ifname):
+        iface_info = self.network[ifname]
+        log.debug('iface_info of {}:\n{}'.format(ifname, iface_info))
+        mac_address = iface_info['hardware']['attrs'].get('address')
+
+        action = {
+            'type': 'physical',
+            'name': ifname,
+            'mac_address': mac_address,
+            'subnets': [],
+        }
+        ip_info = self.network[ifname]['ip']
+        log.debug('iface {} ip info:\n{}'.format(ifname, ip_info))
+        source = ip_info.get('source', None)
+        if source and source['method'] is 'dhcp':
+            action['subnets'].extend([{'type': 'dhcp'}])
+        elif ip_info['addr'] is not None:
+            # FIXME:
+            #  - ipv6
+            #  - read/fine default dns and route info
+            ip_network = \
+                ipaddress.IPv4Interface("{addr}/{netmask}".format(**ip_info))
+            action['subnets'].extend([{
+                'type': 'static',
+                'address': ip_network.with_prefixlen}])
+        log.debug("Configuring iface: {} as PhysicalAction({})".format(
+                  ifname, action))
+        self.configured_interfaces.update({ifname: PhysicalAction(**action)})
+
     def get_interfaces(self):
-        ignored = ['lo', 'bridge', 'tun', 'tap']
-        return [iface for iface in self.network.keys()
-                if self.network[iface]['type'] not in ignored and
-                self.iface_is_up(iface)]
+        if len(self.configured_interfaces) == 0:
+            ignored = ['lo', 'bridge', 'tun', 'tap']
+            for ifname in self.network.keys():
+                if self.network[ifname]['type'] not in ignored and \
+                   self.iface_is_up(ifname):
+                    self.configure_iface(ifname)
+
+        return self.configured_interfaces
+
+    def add_bond(self, ifname, interfaces, params=[], subnets=[]):
+        ''' take bondname and then a set of options '''
+        action = {
+            'type': 'bond',
+            'name': ifname,
+            'bond_interfaces': interfaces,
+            'params': params,
+            'subnets': subnets,
+        }
+        self.configured_interfaces.update({ifname: BondAction(**action)})
+        log.debug("add_bond: {} as BondAction({})".format(
+                  ifname, action))
+
+    def add_subnet(self, ifname, subnet):
+        if ifname not in self.configured_interfaces:
+            raise Exception('No such configured interface: {}'.format(ifname))
+
+        action = self.configured_interfaces[ifname]
+        if 'subnets' in action:
+            action['subnets'].extend([subnet])
+        else:
+            action['subnets'] = [subnet]
 
     def get_bridges(self):
         return [iface for iface in self.network.keys()
