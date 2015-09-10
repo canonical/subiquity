@@ -18,6 +18,8 @@ from subiquity.models import NetworkModel
 from subiquity.ui.views import NetworkView
 from subiquity.ui.dummy import DummyView
 
+from subiquity.curtin import curtin_write_network_actions
+
 
 class NetworkController(ControllerPolicy):
     def __init__(self, common):
@@ -33,6 +35,10 @@ class NetworkController(ControllerPolicy):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 20)
         self.ui.set_body(NetworkView(self.model, self.signal))
+
+    def network_finish(self, actions):
+        curtin_write_network_actions(actions)
+        self.signal.emit_signal('filesystem:show')
 
     def set_default_route(self):
         self.ui.set_body(DummyView(self.signal))

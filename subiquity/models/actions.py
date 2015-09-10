@@ -16,6 +16,78 @@
 import yaml
 
 
+class NetAction():
+    def __init__(self, **options):
+        for k, v in options.items():
+            setattr(self, k, v)
+        self._action_keys = ['type', 'name', 'params', 'subnets']
+
+    def get(self):
+        action = {k: v for k, v in self.__dict__.items()
+                  if k in self._action_keys}
+        return action
+
+
+class PhysicalAction(NetAction):
+    def __init__(self, **options):
+        if 'type' not in options or options['type'] != 'physical':
+            raise Exception('Invalid type for {}'.format(
+                self.__class__.__name__))
+        if 'name' not in options or len(options['name']) == 0:
+            raise Exception('Invalid name for {}'.format(
+                self.__class__.__name__))
+        if 'mac_address' not in options:
+            raise Exception('{} requires a valid mac_address attr'.format(
+                self.__class__.__name__))
+        super().__init__(**options)
+        self._action_keys.extend(['mac_address'])
+
+
+class BridgeAction(NetAction):
+    def __init__(self, **options):
+        if 'type' not in options or options['type'] != 'bridge':
+            raise Exception('Invalid type for {}'.format(
+                self.__class__.__name__))
+        if 'name' not in options or len(options['name']) == 0:
+            raise Exception('Invalid name for {}'.format(
+                self.__class__.__name__))
+        if 'bridge_interfaces' not in options:
+            raise Exception('{} requires bridge_interfaces attr'.format(
+                self.__class__.__name__))
+        super().__init__(**options)
+        self._action_keys.extend(['bridge_interfaces'])
+
+
+class VlanAction(NetAction):
+    def __init__(self, **options):
+        if 'type' not in options or options['type'] != 'vlan':
+            raise Exception('Invalid type for {}'.format(
+                self.__class__.__name__))
+        if 'name' not in options or len(options['name']) == 0:
+            raise Exception('Invalid name for {}'.format(
+                self.__class__.__name__))
+        if 'vlan_id' not in options or 'vlan_link' not in options:
+            raise Exception('{} requires vlan_id and vlan_link attr'.format(
+                self.__class__.__name__))
+        super().__init__(**options)
+        self._action_keys.extend(['vlan_id', 'vlan_link'])
+
+
+class BondAction(NetAction):
+    def __init__(self, **options):
+        if 'type' not in options or options['type'] != 'bond':
+            raise Exception('Invalid type for {}'.format(
+                self.__class__.__name__))
+        if 'name' not in options or len(options['name']) == 0:
+            raise Exception('Invalid name for {}'.format(
+                self.__class__.__name__))
+        if 'bond_interfaces' not in options:
+            raise Exception('{} requires bond_interfaces attr'.format(
+                self.__class__.__name__))
+        super().__init__(**options)
+        self._action_keys.extend(['bond_interfaces'])
+
+
 class DiskAction():
     def __init__(self, action_id, model, serial, ptable='gpt', wipe=None):
         self._action_id = action_id
