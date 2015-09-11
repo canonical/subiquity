@@ -43,5 +43,5 @@ log = logging.getLogger("subiquity.async")
 
 class Async:
     log.debug('instantiating ThreadPoolExector')
-    pool = ThreadPoolExecutor(4)
+    pool = ThreadPoolExecutor(1)
     log.debug('pool={}'.format(pool))

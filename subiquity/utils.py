@@ -25,14 +25,15 @@ log = logging.getLogger("subiquity.utils")
 SYS_CLASS_NET = "/sys/class/net/"
 
 
-def run_command_async(cmd, timeout=None):
+def run_command_async(cmd, write_fd, timeout=None):
     log.debug('calling Async command: {}'.format(cmd))
-    return Async.pool.submit(run_command, cmd, timeout)
+    return Async.pool.submit(run_command, cmd, write_fd, timeout)
 
 
-def run_command(command, timeout=None):
+def run_command(command, write_fd, timeout=None):
     """ Execute command through system shell
     :param command: command to run
+    :param write_fd:  writable_fd for output updates
     :param timeout: (optional) use 'timeout' to limit time. default 300
     :type command: str
     :returns: {status: returncode, output: stdout, err: stderr}
@@ -49,22 +50,28 @@ def run_command(command, timeout=None):
         command = "timeout %ds %s" % (timeout, command)
 
     try:
+        log.debug('trying Popen...')
         p = Popen(command, shell=True,
-                  stdout=PIPE, stderr=PIPE,
+                  stdout=write_fd, stderr=PIPE,
                   bufsize=-1, env=cmd_env, close_fds=True)
     except OSError as e:
         if e.errno == errno.ENOENT:
+            log.debug('error!')
             return dict(ret=127, output="", err="")
         else:
+            log.debug('error raise!')
             raise e
+    log.debug('calling communicate()')
     stdout, stderr = p.communicate()
     if p.returncode == 126 or p.returncode == 127:
         stdout = bytes()
     if not stderr:
         stderr = bytes()
-    return dict(status=p.returncode,
-                output=stdout.decode('utf-8'),
-                err=stderr.decode('utf-8'))
+    rv = dict(status=p.returncode,
+              output=stdout.decode('utf-8'),
+              err=stderr.decode('utf-8'))
+    log.debug('run_command returning: {}'.format(rv))
+    return rv
 
 
 def sys_dev_path(devname, path=""):

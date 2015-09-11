@@ -209,7 +209,7 @@ def curtin_install_cmd(configs):
     install_cmd = [CURTIN, '-v', '--showtrace']
     if configs:
         install_cmd += ['-c {}'.format(c) for c in configs]
-    install_cmd += ['install', 'cp:///']
+    install_cmd += ['install', 'cp:///media/root-ro']
     log.info('curtin install command: {}'.format(" ".join(install_cmd)))
 
     return install_cmd
