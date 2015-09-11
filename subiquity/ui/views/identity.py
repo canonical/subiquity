@@ -87,16 +87,17 @@ class IdentityView(ViewPolicy):
         return Pile(sl)
 
     def done(self, result):
-        log.debug("User input: {} {} {}".format(self.username.value,
-                                                self.password.value,
-                                                self.confirm_password.value))
+        cpassword = self.model.encrypt_password(self.password.value)
+        log.debug("*crypted* User input: {} {} {}".format(
+            self.username.value, cpassword, cpassword))
         result = {
             "username": self.username.value,
-            "password": self.password.value,
-            "confirm_password": self.confirm_password.value
+            "password": cpassword,
+            "confirm_password": cpassword,
         }
+
         log.debug("User input: {}".format(result))
-        self.signal.emit_signal('installprogress:curtin-dispatch')
+        self.signal.emit_signal('installprogress:curtin-dispatch', result)
         self.signal.emit_signal('installprogress:show')
 
     def cancel(self, button):

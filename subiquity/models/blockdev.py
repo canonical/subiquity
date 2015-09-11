@@ -249,10 +249,10 @@ class Blockdev():
         log.debug('PartitionAction:\n{}'.format(part_action.get()))
 
         self.disk.partitions.update({partnum: part_action})
+        partpath = "{}{}".format(self.disk.devpath, partnum)
 
         # record filesystem formating
         if fstype:
-            partpath = "{}{}".format(self.disk.devpath, partnum)
             fs_action = FormatAction(part_action, fstype)
             log.debug('Adding filesystem on {}'.format(partpath))
             log.debug('FormatAction:\n{}'.format(fs_action.get()))
