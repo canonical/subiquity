@@ -33,6 +33,7 @@ class IdentityView(ViewPolicy):
         self.model = model
         self.signal = signal
         self.items = []
+        self.realname = StringEditor(caption="")
         self.username = StringEditor(caption="")
         self.password = PasswordEditor(caption="")
         self.confirm_password = PasswordEditor(caption="")
@@ -56,6 +57,15 @@ class IdentityView(ViewPolicy):
 
     def _build_model_inputs(self):
         sl = [
+            Columns(
+                [
+                    ("weight", 0.2, Text("Real Name", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.realname,
+                                        focus_map="string_input focus"))
+                ],
+                dividechars=4
+            ),
             Columns(
                 [
                     ("weight", 0.2, Text("Username", align="right")),
@@ -91,6 +101,7 @@ class IdentityView(ViewPolicy):
         log.debug("*crypted* User input: {} {} {}".format(
             self.username.value, cpassword, cpassword))
         result = {
+            "realname": self.realname.value,
             "username": self.username.value,
             "password": cpassword,
             "confirm_password": cpassword,
