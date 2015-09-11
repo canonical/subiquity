@@ -26,6 +26,7 @@ SYS_CLASS_NET = "/sys/class/net/"
 
 
 def run_command_async(cmd, timeout=None):
+    log.debug('calling Async command: {}'.format(cmd))
     return Async.pool.submit(run_command, cmd, timeout)
 
 
@@ -40,6 +41,7 @@ def run_command(command, timeout=None):
         # Get output of juju status
         cmd_dict = utils.get_command_output('juju status')
     """
+    log.debug('run_command called: {}'.format(command))
     cmd_env = os.environ.copy()
     # set consistent locale
     cmd_env['LC_ALL'] = 'C'
