@@ -137,21 +137,23 @@ class FilesystemController(ControllerPolicy):
         self.signal.emit_signal('filesystem:show-disk-partition', disk)
 
     def connect_iscsi_disk(self, *args, **kwargs):
-        title = ("Disk and filesystem setup")
-        excerpt = ("Connect to iSCSI cluster")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer("")
-        self.ui.set_body(IscsiDiskView(self.iscsi_model,
-                                       self.signal))
+        # title = ("Disk and filesystem setup")
+        # excerpt = ("Connect to iSCSI cluster")
+        # self.ui.set_header(title, excerpt)
+        # self.ui.set_footer("")
+        # self.ui.set_body(IscsiDiskView(self.iscsi_model,
+        #                                self.signal))
+        self.ui.set_body(DummyView(self.signal))
 
     def connect_ceph_disk(self, *args, **kwargs):
-        title = ("Disk and filesystem setup")
-        footer = ("Select available disks to format and mount")
-        excerpt = ("Connect to Ceph storage cluster")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
-        self.ui.set_body(CephDiskView(self.ceph_model,
-                                      self.signal))
+        # title = ("Disk and filesystem setup")
+        # footer = ("Select available disks to format and mount")
+        # excerpt = ("Connect to Ceph storage cluster")
+        # self.ui.set_header(title, excerpt)
+        # self.ui.set_footer(footer)
+        # self.ui.set_body(CephDiskView(self.ceph_model,
+        #                               self.signal))
+        self.ui.set_body(DummyView(self.signal))
 
     def create_volume_group(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
