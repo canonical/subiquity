@@ -15,7 +15,6 @@
 
 import logging
 import urwid
-import urwid.curses_display
 from tornado.ioloop import IOLoop
 from tornado.util import import_object
 from subiquity.signals import Signal
@@ -96,7 +95,6 @@ class Controller:
             }
             if self.common['opts'].run_on_serial:
                 palette = STYLES_MONO
-                additional_opts['screen'] = urwid.curses_display.Screen()
             else:
                 additional_opts['screen'].set_terminal_properties(colors=256)
                 additional_opts['screen'].reset_default_terminal_palette()
