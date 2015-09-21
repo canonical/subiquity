@@ -124,7 +124,10 @@ late_commands:
 def curtin_userinfo_to_config(userinfo):
     user_template = '  - name: {username}\\n' + \
         '    gecos: {realname}\\n' + \
-        '    passwd: {password}\\n'
+        '    passwd: {password}\\n' + \
+        '    shell: /bin/bash\\n' + \
+        '    groups: admin\\n' + \
+        '    lock-passwd: false\\n'
     return user_template.format(**userinfo)
 
 
