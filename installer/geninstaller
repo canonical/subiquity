@@ -383,6 +383,7 @@ generate_img() {
     local cachedir=${2};
     local bootloader=${3};
     local extlinux_conf=${TOPDIR}/resources/menu/extlinux-menu.conf
+    local apparmor_path=${TOPDIR}/resources/apparmor
     local grub_conf=${TOPDIR}/resources/grub/grub.cfg
     local gptmbr=$(dpkg -L syslinux-common | grep \/gptmbr.bin | grep -v efi)
     local installimg=${cachedir}/installer.img
@@ -475,7 +476,7 @@ generate_img() {
         sudo cp /etc/resolv.conf ${resolvconf} &&
         log "Installing on rootfs: $packages"
         sudo chroot ${mnt} apt-get update &&
-        sudo chroot ${mnt} apt-get install $packages || {
+        sudo chroot ${mnt} apt-get -y install $packages || {
             log "Failed to install packages on rootfs";
             return 1;
         }
@@ -498,6 +499,14 @@ generate_img() {
         cat ${grub_conf} | sudo tee ${mnt}/boot/grub/grub.cfg
     fi
 
+    # update apparmor policy for dhclient
+    log "Updating apparmor policies"
+    sudo rsync -avP ${apparmor_path}/apparmor.d/ ${mnt}/etc/apparmor.d/ || {
+        log "Failed to sync local apparmor updates";
+        return 1;
+    }
+
+    log "Installing cloud seed"
     sudo mkdir -p ${mnt}/var/lib/cloud/seed &&
     sudo cp -a ${seed} ${mnt}/var/lib/cloud/seed && sync || {
         log "Failed to install bootloader and configuration";
