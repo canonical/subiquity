@@ -14,11 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from tornado.gen import coroutine
+from tornado.gen import coroutine, Return
 import subiquity.utils as utils
 from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView, ProgressOutput
 from subiquity.controller import ControllerPolicy
+from subiquity.curtin import (CURTIN_CONFIGS,
+                              curtin_install_cmd,
+                              curtin_write_postinst_config)
 
 log = logging.getLogger("subiquity.controller.installprogress")
 
@@ -34,35 +37,58 @@ class InstallProgressController(ControllerPolicy):
         self.signal.emit_signal('refresh')
 
     @coroutine
-    def curtin_dispatch(self):
+    def curtin_dispatch(self, postconfig):
+        ''' one time curtin dispatch requires the use of
+            the preserved storage config which allows executing
+            in-target commands by remounting up the configured
+            storage.
+        '''
         write_fd = self.loop.watch_pipe(self.install_progress_status)
+
+        log.debug('writing out postinst config')
+        curtin_write_postinst_config(postconfig)
+        configs = [CURTIN_CONFIGS['preserved'], CURTIN_CONFIGS['postinstall']]
+        curtin_cmd = curtin_install_cmd(configs)
+        log.debug('Curtin postinstall install cmd: {}'.format(curtin_cmd))
         if self.opts.dry_run:
             log.debug("Install Progress: Curtin dispatch dry-run")
-            yield utils.run_command_async("cat /var/log/syslog",
-                                          write_fd)
+            result = yield utils.run_command_async('cat /var/log/syslog',
+                                                   write_fd)
         else:
             try:
-                yield utils.run_command_async("/usr/local/bin/curtin_wrap.sh",
-                                              write_fd)
+                result = yield utils.run_command_async(" ".join(curtin_cmd),
+                                                       write_fd)
             except:
                 log.error("Problem with curtin dispatch run")
                 raise Exception("Problem with curtin dispatch run")
 
+        raise Return(result)
+
     @coroutine
     def initial_install(self):
+        log.debug('Initial Install: calling curtin with storage/net config')
         write_fd = self.loop.watch_pipe(self.install_progress_status)
+
+        configs = [CURTIN_CONFIGS['network'], CURTIN_CONFIGS['storage']]
+        curtin_cmd = curtin_install_cmd(configs)
+
+        log.debug('Curtin install cmd: {}'.format(curtin_cmd))
         if self.opts.dry_run:
             log.debug("Filesystem: this is a dry-run")
-            yield utils.run_command_async("cat /var/log/syslog",
+            yield utils.run_command_async('cat /var/log/syslog',
                                           write_fd)
         else:
-            log.debug("filesystem: this is the *real* thing")
-            yield utils.run_command_async(
-                "/usr/local/bin/curtin_wrap.sh",
-                write_fd)
+            try:
+                log.debug("filesystem: this is the *real* thing")
+                yield utils.run_command_async(" ".join(curtin_cmd),
+                                              write_fd)
+            except:
+                log.error("Problem with initial curtin install")
+                raise Exception("Problem with initial curtin install")
 
     @coroutine
     def show_progress(self):
+        log.debug('show_progress called')
         title = ("Installing system")
         excerpt = ("Please wait for the installation "
                    "to finish before rebooting.")
@@ -74,8 +100,8 @@ class InstallProgressController(ControllerPolicy):
         if self.opts.dry_run:
             banner = [
                 "**** DRY_RUN ****",
-                "NOT calling:"
-                "subprocess.check_call(/usr/local/bin/curtin_wrap.sh)"
+                ""
+                "",
                 "",
                 "",
                 "Press (Q) to Quit."

@@ -15,6 +15,7 @@
 
 import logging
 from subiquity.model import ModelPolicy
+from subiquity.utils import crypt_password
 
 
 log = logging.getLogger('subiquity.models.identity')
@@ -57,9 +58,8 @@ class IdentityModel(ModelPolicy):
             if x == selection:
                 return y
 
-    def encrypt_password(self):
-        # TODO: implement
-        pass
+    def encrypt_password(self, passinput):
+        return crypt_password(passinput)
 
     def __repr__(self):
         return "<Username: {}>".format(self.username)

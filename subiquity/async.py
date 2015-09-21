@@ -36,8 +36,12 @@ The way this works is you create your non-blocking thread:
             log.exception("Failed in our non-blocking code.")
 """
 
+import logging
 from concurrent.futures import ThreadPoolExecutor
+log = logging.getLogger("subiquity.async")
 
 
 class Async:
-    pool = ThreadPoolExecutor(4)
+    log.debug('instantiating ThreadPoolExector')
+    pool = ThreadPoolExecutor(1)
+    log.debug('pool={}'.format(pool))

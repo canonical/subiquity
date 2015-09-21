@@ -15,6 +15,7 @@
 
 import logging
 from subiquity.controller import ControllerPolicy
+from subiquity.models.actions import preserve_action
 from subiquity.models import (FilesystemModel, IscsiDiskModel, RaidModel,
                               CephDiskModel)
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
@@ -23,7 +24,7 @@ from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
 import subiquity.utils as utils
 from subiquity.ui.dummy import DummyView
 from subiquity.curtin import (curtin_write_storage_actions,
-                              curtin_write_postinst_config)
+                              curtin_write_preserved_actions)
 
 
 log = logging.getLogger("subiquity.controller.filesystem")
@@ -58,8 +59,11 @@ class FilesystemController(ControllerPolicy):
 
         log.info("Rendering curtin config from user choices")
         curtin_write_storage_actions(actions=actions)
-        log.info("Generating post-install config")
-        curtin_write_postinst_config()
+
+        log.info("Rendering preserved config for post install")
+        preserved_actions = [preserve_action(a) for a in actions]
+        curtin_write_preserved_actions(actions=preserved_actions)
+
         self.signal.emit_signal('installprogress:do-initial-install')
         self.signal.emit_signal('identity:show')
 
