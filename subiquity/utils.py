@@ -13,11 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-from subprocess import Popen, PIPE
-from subiquity.async import Async
+import crypt
 import errno
 import logging
+import os
+import random
+from subprocess import Popen, PIPE
+from subiquity.async import Async
 
 log = logging.getLogger("subiquity.utils")
 SYS_CLASS_NET = "/sys/class/net/"
@@ -87,3 +89,19 @@ def read_sys_net(devname, path, translate=None, enoent=None, keyerror=None):
         if e.errno == errno.ENOENT and enoent is not None:
             return enoent
         raise
+
+
+## FIXME: replace with passlib and update package deps
+def crypt_password(passwd, algo='SHA-512'):
+    # encryption algo - id pairs for crypt()
+    algos = {'SHA-512': '$6$', 'SHA-256': '$5$', 'MD5': '$1$', 'DES': ''}
+    if algo not in algos:
+        raise Exception('Invalid algo({}), must be one of: {}. '.format(
+            algo, ','.join(algos.keys())))
+
+    salt_set = ('abcdefghijklmnopqrstuvwxyz'
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                '0123456789./')
+    salt = 16 * ' '
+    salt = ''.join([random.choice(salt_set) for c in salt])
+    return crypt.crypt(passwd, algos[algo] + salt)

@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import yaml
 
 
@@ -217,3 +218,16 @@ class MountAction(DiskAction):
             'path': self.path,
             'type': 'mount',
         }
+
+
+def preserve_action(action):
+    a = copy.deepcopy(action)
+    a.update({'preserve': True})
+    return a
+
+
+def release_action(action):
+    a = copy.deepcopy(action)
+    if 'preserve' in action:
+        del a['preserve']
+    return a
