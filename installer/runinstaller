@@ -17,6 +17,7 @@
 ARCH=${ARCH-"`uname -m`"}
 MEM=${MEM-"1024"}
 INSTALLER=${INSTALLER-"installer.img"}
+UEFI=${UEFI-"1"}
 TARGET=${TARGET-"target.img"}
 SPORT=2445
 
@@ -37,13 +38,19 @@ if [ -z $QEMU ]; then
     }
 fi
 
+if [ "${UEFI}" == "1" ]; then
+    UEFI=" -bios /usr/share/ovmf/OVMF.fd"
+else
+    UEFI=""
+fi
+
 # always recreate the target image
 qemu-img create -f raw ${TARGET} 10G
 
 # TODO, curses should work, but my xmonad setup blocks using it
-sudo qemu-system-$ARCH -smp 2 -m $MEM -enable-kvm \
-                       -drive cache=unsafe,if=virtio,file=$INSTALLER,serial=QM_INSTALL_01 \
-                       -drive cache=unsafe,if=virtio,file=$TARGET,serial=QM_TARGET_01 \
+sudo qemu-system-$ARCH -smp 2 -m $MEM -enable-kvm $UEFI\
+                       -drive cache=unsafe,if=ide,file=$INSTALLER,serial=QM_INSTALL_01 \
+                       -drive cache=unsafe,if=ide,file=$TARGET,serial=QM_TARGET_01 \
                        -global isa-fdc.driveA= -net user \
                        -net nic,model=e1000 \
                        -net nic,model=virtio \
