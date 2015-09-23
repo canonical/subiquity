@@ -37,11 +37,11 @@ tarball: $(NAME)_$(VERSION).orig.tar.gz
 install_deps_amd64:
 	sudo apt-get install grub-efi-amd64-signed
 
-install_deps_$(ARCH):
+install_deps: install_deps_$(ARCH)
 	sudo apt-get install python3-urwid python3-pyudev python3-netifaces python3-nose python3-flake8 python3-yaml git bzr ubuntu-cloudimage-keyring python3-jinja2 python3-coverage ovfm shim shim-signed
 
 dryrun: probert
-	$(MAKE) ui-view DRYRUN="--dry-run"
+	$(MAKE) ui-view DRYRUN="--dry-run --uefi"
 
 ui-view:
 	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) $(DRYRUN) $(MACHARGS))

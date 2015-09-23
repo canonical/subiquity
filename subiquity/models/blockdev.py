@@ -296,7 +296,27 @@ class Blockdev():
                                            self._mounts[partpath])
                 actions.append(mount_action)
 
-        return [action] + [a.get() for a in actions]
+        return self.sort_actions([action] + [a.get() for a in actions])
+
+    def sort_actions(self, actions):
+        def type_index(t):
+            order = ['disk', 'partition', 'format', 'mount']
+            return order.index(t.get('type'))
+
+        def path_count(p):
+            return p.get('path').count('/')
+
+        def order_sort(a):
+            # sort by type first
+            score = type_index(a)
+            # for type==mount, count the number of dirs
+            if a.get('type') == 'mount':
+                score += path_count(a)
+            return score
+
+        actions = sorted(actions, key=order_sort)
+
+        return actions
 
     def get_fs_table(self):
         ''' list(mountpoint, humansize, fstype, partition_path) '''
