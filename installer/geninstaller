@@ -29,7 +29,11 @@ gdisk
 extlinux
 simplestreams
 syslinux-common
-grub2-common"
+grub2-common
+shim
+shim-signed
+grub-efi-amd64-signed
+"
 SRC_DEPS=(
   "bzr" "lp:curtin" "curtin"
   "git" "git@github.com:CanonicalLtd/probert.git" "probert"
