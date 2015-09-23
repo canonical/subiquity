@@ -28,7 +28,11 @@ gdisk
 extlinux
 simplestreams
 syslinux-common
-grub2-common"
+grub2-common
+shim
+shim-signed
+grub-efi-amd64-signed
+"
 SRC_DEPS=(
   "bzr" "lp:curtin" "curtin"
   "git" "git@github.com:CanonicalLtd/probert.git" "probert"
@@ -42,19 +46,24 @@ INSTALLER_DEPS=(
   "python3-tornado"
 )
 CACHEDIR=""
+GRUB_MODS="configfile fat part_gpt part_msdos cat echo test search search_label search_fs_uuid boot chain linux reboot halt normal efi_gop efi_uga font gfxterm gfxterm_menu gfxterm_background gfxmenu serial"
+
 
 cleanup_noexit() {
     [ -n "${CACHEDIR}" ] && {
         sync
-        sudo umount ${CACHEDIR}/mnt/{dev,proc,sys} || exit
-        sudo umount ${CACHEDIR}/mnt  || exit
+        sudo umount -l ${CACHEDIR}/mnt/{dev,proc,sys}
+        sudo umount -l ${CACHEDIR}/mnt
+        sudo umount -l ${CACHEDIR}/lower
+        sudo umount -l ${CACHEDIR}/upper
+        sudo umount -l ${CACHEDIR}/efimnt
         sudo kpartx -v -d ${CACHEDIR}/installer.img || exit
-        [ -e "/dev/mapper/`basename $DEV`" ] && {
-            sudo dmsetup remove $DEV || exit
-        }
-        if sudo losetup -a | grep -q $LOOPDEV; then
-            sudo losetup -d $LOOPDEV || exit
-        fi
+        for DEV in $EFI_DEV $ROOTFS_DEV $OVERLAY_DEV; do
+            [ -e "/dev/mapper/`basename $DEV`" ] && {
+                sudo dmsetup remove $DEV || exit
+            }
+        done
+        sudo losetup -d $LOOPDEV 
     }
 }
 
@@ -382,13 +391,21 @@ generate_img() {
     local dldir=${1};
     local cachedir=${2};
     local bootloader=${3};
+    local offline=${4};
     local extlinux_conf=${TOPDIR}/resources/menu/extlinux-menu.conf
     local apparmor_path=${TOPDIR}/resources/apparmor
+    local grub_efi_core=${TOPDIR}/resources/grub/bootx64.efi  # FIXME, ARCH
     local grub_conf=${TOPDIR}/resources/grub/grub.cfg
+    local embed_conf=${TOPDIR}/resources/grub/embed_efi.cfg
+    local efi_grub_conf=${TOPDIR}/resources/grub/efi_grub.cfg
     local gptmbr=$(dpkg -L syslinux-common | grep \/gptmbr.bin | grep -v efi)
     local installimg=${cachedir}/installer.img
     local mnt=${cachedir}/mnt
     local rootfs=${cachedir}/rootfs
+    local efimnt=${cachedir}/efimnt
+    local lower=${cachedir}/lower
+    local upper=${cachedir}/upper
+    local work=${cachedir}/upper/overlay-work
     local seed=$cachedir/seed/nocloud-net
     local splash=${TOPDIR}/resources/images/splash.png
     local syslinux_path=$(dpkg -L syslinux-common | grep \/vesamenu.c32 |
@@ -401,24 +418,17 @@ generate_img() {
         return 1;
     }
 
-    log "Partitioning Installer image"
-    parted -s $installimg mklabel gpt &&
-    parted -s $installimg mkpart primary 2048s 100% || {
+    log "Partitioning Installer image (UEFI)"
+    parted -s $installimg mklabel msdos &&
+    parted -s $installimg mkpart primary fat32 0% 200M &&
+    parted -s $installimg mkpart primary ext3 200M 1700M &&
+    parted -s $installimg mkpart primary ext3 1700M 2147M &&
+    parted -s $installimg set 1 boot on || {
         log "Failed to partition image: $installimg"
-        return 1;
+     return 1;
     }
 
-    if [ "${bootloader}" == "syslinux" ]; then
-        [ -z "$gptmbr" ] && {
-            log "ERROR: failed to find GPT MBR record on host";
-            return 1;
-        }
-        log "Embedding bootloader"
-        dd bs=440 conv=notrunc count=1 if=$gptmbr of=$installimg || {
-            log "Failed to embed bootloader into $installimg";
-            return 1;
-        }
-    elif [ "${bootloader}" != "grub2" ]; then
+    if [ "${bootloader}" != "grub2" ]; then
         log "Bootloader ${bootloader} not supported, cannot install"
         usage;
         return 1;
@@ -430,30 +440,72 @@ generate_img() {
         log "Failed to map image partitions into LVM"
         return 1;
     }
+    sudo udevadm settle
 
-    local looppart=`echo ${kpartx_ret} | fmt -w 1 | grep ^loop`
-    DEV="/dev/mapper/${looppart}"
+    local loopparts=( `echo ${kpartx_ret} | fmt -w 1 | grep ^loop` )
+    EFI_DEV="/dev/mapper/${loopparts[0]}"
+    ROOTFS_DEV="/dev/mapper/${loopparts[1]}"
+    OVERLAY_DEV="/dev/mapper/${loopparts[2]}"
+    LOOPDEV="`echo ${kpartx_ret} | fmt -w 1 | grep ^/dev | head -n1`"
 
-    # frob the bits for gpt boot?
-    # http://www.funtoo.org/Extlinux
-    # /dev/loopX is what we want
-    LOOPDEV="`echo ${kpartx_ret} | fmt -w 1 | grep ^/dev`"
-    log "Marking partitions bootable on $installimg ($LOOPDEV)"
-    sudo sgdisk $LOOPDEV --attributes=1:set:2 &&
-    sudo sgdisk $LOOPDEV --attributes=1:show || {
-        log "ERROR: failed to set bootable partition in $installimg";
-        return 1
-    }
+    log "Building Grub (EFI and BIOS) boot partition"
+    (sudo mkfs.vfat -F32 -n GRUB2EFI ${EFI_DEV} &&
+     mkdir -p ${efimnt} &&
+     sudo mount $EFI_DEV ${efimnt} &&
+     sudo mkdir -p ${efimnt}/EFI/BOOT &&
+     sudo mkdir -p ${efimnt}/boot/grub &&
+     sudo mkdir -p ${efimnt}/grub/fonts &&
+     sudo mkdir -p ${efimnt}/grub/x86_64-efi &&
+     sudo cp -a /usr/lib/shim/MokManager.efi.signed ${efimnt}/EFI/BOOT/MokManager.efi &&
+     sudo cp -a /usr/lib/shim/shim.efi.signed ${efimnt}/EFI/BOOT/shimx64.efi &&
+     sudo cp -a /usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed ${efimnt}/EFI/BOOT/grubx64.efi &&
+     sudo cp -a /usr/share/grub/unicode.pf2 ${efimnt}/grub/fonts/ &&
+     sudo cp -a /usr/share/grub/unicode.pf2 ${efimnt}/boot/grub &&
+     cat ${efi_grub_conf} | sudo tee ${efimnt}/EFI/BOOT/grub.cfg &&
+     cat ${embed_conf} | sudo tee ${efimnt}/grub/embed_efi.cfg &&
+     cat ${grub_conf} | sudo tee ${efimnt}/grub/grub.cfg &&
+     sudo rsync -a /usr/lib/grub/x86_64-efi/ ${efimnt}/grub/x86_64-efi/ &&
+     sudo grub-mkimage -O x86_64-efi -p /grub -c ${efimnt}/grub/embed_efi.cfg -o ${efimnt}/EFI/BOOT/bootx64.efi ${GRUB_MODS} &&
+     sudo grub-install --force --removable --no-floppy \
+                      --boot-directory=${efimnt}/boot $LOOPDEV &&
+     sudo cp -v ${splash} ${efimnt}/boot/grub) || {
+        log "ERROR: failed to create multiboot partition"
+         return 1
+     }
 
-    log "Creating and syncing filesystem for install image rootfs"
-    sudo mkfs.ext3 -L cloudimg-rootfs $DEV &&
-    mkdir -p ${mnt} &&
-    sudo mount $DEV ${mnt} &&
-    sudo rsync -a ${rootfs}/ ${mnt}/ || {
+    log "Creating and syncing filesystem (original cloudimg rootfs)"
+    sudo mkfs.ext3 -L cloudimg-rootfs $ROOTFS_DEV &&
+    mkdir -p ${lower} &&
+    sudo mount $ROOTFS_DEV ${lower} &&
+    sudo rsync -a ${rootfs}/ ${lower}/ || {
         log "ERROR: failed to sync rootfs into install image";
         return 1
     }
 
+    log "Creating and syncing filesystem (installer overlay)"
+    sudo mkfs.ext3 -L overlay-rootfs $OVERLAY_DEV
+    # mount -t overlay overlay -olowerdir=/lower,upperdir=/upper,\
+    #                            workdir=/work /merged
+    OVERLAY_VERSION=( `modinfo -V overlayfs` )  # returns: kmod version XX 
+    if [ ${OVERLAY_VERSION[2]} -le 15 ]; then
+        # trusty 3.13 overlayfs version 15 or older doesn't use workdir
+        FS=overlayfs
+        OPTS="-olowerdir=$lower,upperdir=$upper/overlay"
+    else
+        # newer kernels than trusty 3.13 have workdir
+        FS=overlay
+        OPTS="-olowerdir=$lower,upperdir=$upper/overlay,workdir=$work"
+    fi    
+    # load the right overlay module
+    if ! lsmod | grep -q ${FS}; then sudo modprobe -v $FS; fi
+
+    sudo mkdir -p ${work} ${upper} ${mnt} &&
+    sudo mount $OVERLAY_DEV ${upper} &&
+    sudo mkdir -p ${upper}/overlay ${work} &&
+    sudo mount -t $FS $FS $OPTS ${mnt} || {
+            log "ERROR: failed to overlay mount installer";
+            return 1
+    }
 
     log "Installing bootloader configuration"
     set +x
@@ -464,7 +516,7 @@ generate_img() {
     sudo mount none -t sysfs ${mnt}/sys &&
     sudo mount -o bind /dev ${mnt}/dev &&
 
-    if [ "${OFFLINE}" == "yes" ]; then
+    if [ "${offline}" == "yes" ]; then
         set -x
         log "Setting up for offline use"
         local resolvconf=${mnt}/etc/resolv.conf
@@ -493,10 +545,7 @@ generate_img() {
         cat ${extlinux_conf} | sudo tee ${mnt}/boot/extlinux/extlinux.conf
     else
         log "Installing grub2"
-        sudo mkdir -p ${mnt}/boot/grub &&
-        sudo grub-install --boot-directory=${mnt}/boot $LOOPDEV --force &&
-        sudo cp -av ${splash} ${mnt}/boot/grub &&
-        cat ${grub_conf} | sudo tee ${mnt}/boot/grub/grub.cfg
+        cat ${grub_conf} | sudo tee ${efimnt}/boot/grub/grub.cfg && true
     fi
 
     # update apparmor policy for dhclient
@@ -513,7 +562,6 @@ generate_img() {
         return 1;
     }
     set -x
-
 
     _RETVAL="$installimg";
     return 0;

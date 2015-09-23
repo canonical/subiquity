@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 from subiquity.controller import ControllerPolicy
 from subiquity.models.actions import preserve_action
 from subiquity.models import (FilesystemModel, IscsiDiskModel, RaidModel,
@@ -30,6 +31,7 @@ from subiquity.curtin import (curtin_write_storage_actions,
 log = logging.getLogger("subiquity.controller.filesystem")
 
 BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
+UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 
 class FilesystemController(ControllerPolicy):
@@ -105,12 +107,21 @@ class FilesystemController(ControllerPolicy):
             ''' create a gpt boot partition if one doesn't exist '''
             if current_disk.parttype == 'gpt' and \
                len(current_disk.disk.partitions) == 0:
-                log.debug('Adding grub_bios gpt partition first')
-                size_added = \
-                    current_disk.add_partition(partnum=1,
-                                               size=BIOS_GRUB_SIZE_BYTES,
-                                               fstype=None,
-                                               flag='bios_grub')
+                if self.is_uefi():
+                    log.debug('Adding EFI partition first')
+                    size_added = \
+                        current_disk.add_partition(partnum=1,
+                                                   size=UEFI_GRUB_SIZE_BYTES,
+                                                   flag='bios_grub',
+                                                   fstype='fat32',
+                                                   mountpoint='/boot/efi')
+                else:
+                    log.debug('Adding grub_bios gpt partition first')
+                    size_added = \
+                        current_disk.add_partition(partnum=1,
+                                                   size=BIOS_GRUB_SIZE_BYTES,
+                                                   fstype=None,
+                                                   flag='bios_grub')
 
                 # adjust downward the partition size to accommodate
                 # the offset and bios/grub partition
@@ -197,3 +208,10 @@ class FilesystemController(ControllerPolicy):
                                       self.signal,
                                       result)
         self.ui.set_body(disk_info_view)
+
+    def is_uefi(self):
+        if self.opts.dry_run and self.opts.uefi:
+            log.debug('forcing is_uefi True beacuse of options')
+            return True
+        return os.path.exists('/sys/firmware/efi')
+

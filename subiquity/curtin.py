@@ -113,11 +113,9 @@ storage:
 #    12_ds_to_none: [curtin, in-target, --, sh, '-c', "echo 'datasource_list: [ None ]' > /etc/cloud/cloud.cfg.d/
 POST_INSTALL = '''
 late_commands:
-    10_set_hostname: curtin in-target -- sh -c 'echo $(petname) > /etc/hostname'
-    11_postinst_seed: [curtin, in-target, --, sh, '-c',"/bin/echo -e '#cloud-config\\npassword: passw0rd\\nchpasswd: {{ expire: False }}\\nusers:\\n{users}' > /var/lib/cloud/seed/nocloud-net/user-data"]
-    12_disable_subiquity: curtin in-target -- systemctl disable subiquity.service
-    13_delete_subiquity: curtin in-target -- rm -f /lib/systemd/system/subiquity.service
-    14_remove_subiquity: curtin in-target -- sh -c 'for d in probert curtin subiquity; do rm -rf /usr/local/${{d}}; rm -rf /usr/local/bin/${{d}}*; done'
+    10_mkdir_seed: curtin in-target -- mkdir -p /var/lib/cloud/seed/nocloud-net
+    11_postinst_metadata: [curtin, in-target, --, sh, '-c',"/bin/echo -e instance-id: inst-3011 > /var/lib/cloud/seed/nocloud-net/meta-data"]
+    12_postinst_userdata: [curtin, in-target, --, sh, '-c',"/bin/echo -e '#cloud-config\\npassword: passw0rd\\nchpasswd: {{ expire: False }}\\nusers:\\n{users}' > /var/lib/cloud/seed/nocloud-net/user-data"]
 '''
 
 
