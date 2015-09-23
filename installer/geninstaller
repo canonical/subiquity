@@ -486,9 +486,9 @@ generate_img() {
     sudo mkfs.ext3 -L overlay-rootfs $OVERLAY_DEV
     # mount -t overlay overlay -olowerdir=/lower,upperdir=/upper,\
     #                            workdir=/work /merged
-    OVERLAY_VERSION=( `modinfo -V overlayfs` )  #kmod version 15
+    OVERLAY_VERSION=( `modinfo -V overlayfs` )  # returns: kmod version XX 
     if [ ${OVERLAY_VERSION[2]} -le 15 ]; then
-        # trusty 3.13 overlayfs version 15 has no workdir
+        # trusty 3.13 overlayfs version 15 or older doesn't use workdir
         FS=overlayfs
         OPTS="-olowerdir=$lower,upperdir=$upper/overlay"
     else
