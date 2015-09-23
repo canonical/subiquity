@@ -20,7 +20,6 @@ USQUERY=${TOPDIR}/usquery
 LOGFILE="geninstaller.log"
 PREFIX="${PROG}"
 RESOURCES=`pwd`/resources
-UBUNTU_RELEASE=$(lsb_release -c -s)
 PKG_DEPS="
 qemu-utils
 kpartx
@@ -487,18 +486,18 @@ generate_img() {
     sudo mkfs.ext3 -L overlay-rootfs $OVERLAY_DEV
     # mount -t overlay overlay -olowerdir=/lower,upperdir=/upper,\
     #                            workdir=/work /merged
-    case $UBUNTU_RELEASE in
-        precise|trusty)  # precise/trusty use overlayfs (older)
+    OVERLAY_VERSION=( `modinfo -V overlayfs` )  #kmod version 15
+    if [ ${OVERLAY_VERSION[2]} -le 15 ]; then
+        # trusty 3.13 overlayfs version 15 has no workdir
         FS=overlayfs
         OPTS="-olowerdir=$lower,upperdir=$upper/overlay"
-        ;;
-        *)
+    else
+        # newer kernels than trusty 3.13 have workdir
         FS=overlay
         OPTS="-olowerdir=$lower,upperdir=$upper/overlay,workdir=$work"
-        ;;
-    esac
+    fi    
     # load the right overlay module
-    if ! lsmod | grep -q ${FS}; then sudo modprobe $FS; fi
+    if ! lsmod | grep -q ${FS}; then sudo modprobe -v $FS; fi
 
     sudo mkdir -p ${work} ${upper} ${mnt} &&
     sudo mount $OVERLAY_DEV ${upper} &&
