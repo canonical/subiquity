@@ -68,9 +68,9 @@ class NetworkModel(ModelPolicy):
         ('Bond interfaces',
          'network:bond-interfaces',
          'bond_interfaces'),
-        ('Install network driver',
-         'network:install-network-driver',
-         'install_network_driver')
+        # ('Install network driver',
+        #  'network:install-network-driver',
+        #  'install_network_driver')
     ]
 
     def __init__(self, prober, opts):

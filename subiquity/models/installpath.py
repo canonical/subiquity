@@ -36,21 +36,24 @@ class InstallpathModel(ModelPolicy):
          'installpath')
     ]
 
-    install_paths = [('Install Ubuntu',
-                      'installpath:ubuntu',
-                      'install_ubuntu'),
-                     ('Install MAAS Region Server',
-                      'installpath:maas-region-server',
-                      'install_maas_region_server'),
-                     ('Install MAAS Cluster Server',
-                      'installpath:maas-cluster-server',
-                      'install_maas_cluster_server'),
-                     ('Test installation media',
-                      'installpath:test-media',
-                      'test_media'),
-                     ('Test machine memory',
-                      'installpath:test-memory',
-                      'test_memory')]
+    # TODO: Re-enable once available
+    install_paths = [
+        ('Install Ubuntu',
+         'installpath:ubuntu',
+         'install_ubuntu'),
+        # ('Install MAAS Region Server',
+        #  'installpath:maas-region-server',
+        #  'install_maas_region_server'),
+        # ('Install MAAS Cluster Server',
+        #  'installpath:maas-cluster-server',
+        #  'install_maas_cluster_server'),
+        # ('Test installation media',
+        #  'installpath:test-media',
+        #  'test_media'),
+        # ('Test machine memory',
+        #  'installpath:test-memory',
+        #  'test_memory')
+    ]
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():

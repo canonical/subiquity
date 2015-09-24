@@ -61,22 +61,23 @@ class FilesystemModel(ModelPolicy):
          'show_disk_information')
     ]
 
+    # TODO: Re-add once curtin supports this.
     fs_menu = [
-        ('Connect iSCSI network disk',
-         'filesystem:connect-iscsi-disk',
-         'connect_iscsi_disk'),
-        ('Connect Ceph network disk',
-         'filesystem:connect-ceph-disk',
-         'connect_ceph_disk'),
-        ('Create volume group (LVM2)',
-         'filesystem:create-volume-group',
-         'create_volume_group'),
-        ('Create software RAID (MD)',
-         'filesystem:create-raid',
-         'create_raid'),
-        ('Setup hierarchichal storage (bcache)',
-         'filesystem:setup-bcache',
-         'setup_bcache')
+        # ('Connect iSCSI network disk',
+        #  'filesystem:connect-iscsi-disk',
+        #  'connect_iscsi_disk'),
+        # ('Connect Ceph network disk',
+        #  'filesystem:connect-ceph-disk',
+        #  'connect_ceph_disk'),
+        # ('Create volume group (LVM2)',
+        #  'filesystem:create-volume-group',
+        #  'create_volume_group'),
+        # ('Create software RAID (MD)',
+        #  'filesystem:create-raid',
+        #  'create_raid'),
+        # ('Setup hierarchichal storage (bcache)',
+        #  'filesystem:setup-bcache',
+        #  'setup_bcache')
     ]
 
     supported_filesystems = [
