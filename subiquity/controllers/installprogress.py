@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from tornado.gen import coroutine, Return
+from tornado.gen import coroutine
 import subiquity.utils as utils
 from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView, ProgressOutput
