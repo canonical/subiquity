@@ -62,7 +62,7 @@ class InstallProgressController(ControllerPolicy):
                 log.error("Problem with curtin dispatch run")
                 raise Exception("Problem with curtin dispatch run")
 
-        raise Return(result)
+        return result
 
     @coroutine
     def initial_install(self):
@@ -75,16 +75,17 @@ class InstallProgressController(ControllerPolicy):
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
         if self.opts.dry_run:
             log.debug("Filesystem: this is a dry-run")
-            yield utils.run_command_async('cat /var/log/syslog',
-                                          write_fd)
+            result = yield utils.run_command_async('cat /var/log/syslog',
+                                                   write_fd)
         else:
             try:
                 log.debug("filesystem: this is the *real* thing")
-                yield utils.run_command_async(" ".join(curtin_cmd),
-                                              write_fd)
+                result = yield utils.run_command_async(" ".join(curtin_cmd),
+                                                       write_fd)
             except:
                 log.error("Problem with initial curtin install")
                 raise Exception("Problem with initial curtin install")
+        return result
 
     @coroutine
     def show_progress(self):
