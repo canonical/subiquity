@@ -15,32 +15,40 @@
 
 import logging
 from urwid import (Text, Filler,
-                   ListBox, BoxAdapter)
+                   Pile)
 from subiquity.view import ViewPolicy
-from subiquity.ui.utils import Color, Padding
+from subiquity.ui.buttons import confirm_btn
+from subiquity.ui.utils import Padding, Color
 
 log = logging.getLogger("subiquity.ui.views.installprogress")
 
 
-class ProgressOutput(ViewPolicy):
-    def __init__(self, signal, txt):
-        self.signal = signal
-        self.txt = Text(txt)
-        flr = Filler(Color.info_minor(self.txt),
-                     valign="top")
-        super().__init__(BoxAdapter(flr, height=20))
-
-    def set_text(self, data):
-        self.txt.set_text(data)
-
-
 class ProgressView(ViewPolicy):
-    def __init__(self, signal, output_w):
+    def __init__(self, signal):
         """
         :param output_w: Filler widget to display updated status text
         """
         self.signal = signal
+        self.text = Text("Wait for it ...", align="center")
         self.body = [
-            Padding.center_79(output_w)
+            Padding.center_79(self.text)
         ]
-        super().__init__(ListBox(self.body))
+        self.pile = Pile(self.body)
+        super().__init__(Filler(self.pile, valign="middle"))
+
+    def show_finished_button(self):
+        w = Padding.center_20(
+            Color.button(confirm_btn(label="Reboot now",
+                                     on_press=self.reboot),
+                         focus_map='button focus'))
+
+        self.pile.contents.append((w, self.pile.options()))
+        self.pile.focus_position = 1
+
+    def keypress(self, size, key):
+        super().keypress(size, key)
+        if key in ['q', 'Q']:
+            self.signal.emit_signal('installprogress:curtin-reboot')
+
+    def reboot(self, btn):
+        self.signal.emit_signal('installprogress:curtin-reboot')

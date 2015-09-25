@@ -65,8 +65,6 @@ class FilesystemController(ControllerPolicy):
         log.info("Rendering preserved config for post install")
         preserved_actions = [preserve_action(a) for a in actions]
         curtin_write_preserved_actions(actions=preserved_actions)
-
-        self.signal.emit_signal('installprogress:do-initial-install')
         self.signal.emit_signal('identity:show')
 
     # Filesystem/Disk partition -----------------------------------------------

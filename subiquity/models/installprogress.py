@@ -28,15 +28,15 @@ class InstallProgressModel(ModelPolicy):
     prev_signal = None
 
     signals = [
-        ("Initial install routine",
-         'installprogress:do-initial-install',
-         'initial_install'),
-        ("Run once curtin commands",
-         'installprogress:curtin-dispatch',
-         'curtin_dispatch'),
+        ("Run curtin",
+         'installprogress:curtin-install',
+         'curtin_install'),
         ("Install progress final view",
          'installprogress:show',
-         'show_progress')
+         'show_progress'),
+        ("Reboot curtin",
+         "installprogress:curtin-reboot",
+         "reboot")
     ]
 
     installprogress_menu = []
