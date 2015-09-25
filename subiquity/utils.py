@@ -25,15 +25,14 @@ log = logging.getLogger("subiquity.utils")
 SYS_CLASS_NET = "/sys/class/net/"
 
 
-def run_command_async(cmd, write_fd, timeout=None):
+def run_command_async(cmd, timeout=None):
     log.debug('calling Async command: {}'.format(cmd))
-    return Async.pool.submit(run_command, cmd, write_fd, timeout)
+    return Async.pool.submit(run_command, cmd, timeout)
 
 
-def run_command(command, write_fd, timeout=None):
+def run_command(command, timeout=None):
     """ Execute command through system shell
     :param command: command to run
-    :param write_fd:  writable_fd for output updates
     :param timeout: (optional) use 'timeout' to limit time. default 300
     :type command: str
     :returns: {status: returncode, output: stdout, err: stderr}
@@ -52,7 +51,7 @@ def run_command(command, write_fd, timeout=None):
     try:
         log.debug('trying Popen...')
         p = Popen(command, shell=True,
-                  stdout=write_fd, stderr=PIPE,
+                  stdout=PIPE, stderr=PIPE,
                   bufsize=-1, env=cmd_env, close_fds=True)
     except OSError as e:
         if e.errno == errno.ENOENT:

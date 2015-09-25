@@ -108,8 +108,7 @@ class IdentityView(ViewPolicy):
         }
 
         log.debug("User input: {}".format(result))
-        self.signal.emit_signal('installprogress:curtin-dispatch', result)
-        self.signal.emit_signal('installprogress:show')
+        self.signal.emit_signal('installprogress:curtin-install', result)
 
     def cancel(self, button):
         self.signal.emit_signal("quit")

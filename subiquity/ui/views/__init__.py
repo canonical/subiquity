@@ -22,6 +22,6 @@ from .ceph import CephDiskView  # NOQA
 from .iscsi import IscsiDiskView  # NOQA
 from .network import NetworkView  # NOQA
 from .installpath import InstallpathView  # NOQA
-from .installprogress import ProgressOutput, ProgressView  # NOQA
+from .installprogress import ProgressView  # NOQA
 from .welcome import WelcomeView  # NOQA
 from .identity import IdentityView  # NOQA

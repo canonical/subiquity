@@ -14,10 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import random
 from tornado.gen import coroutine
 import subiquity.utils as utils
 from subiquity.models import InstallProgressModel
-from subiquity.ui.views import ProgressView, ProgressOutput
+from subiquity.ui.views import ProgressView
 from subiquity.controller import ControllerPolicy
 from subiquity.curtin import (CURTIN_CONFIGS,
                               curtin_install_cmd,
@@ -27,65 +28,64 @@ log = logging.getLogger("subiquity.controller.installprogress")
 
 
 class InstallProgressController(ControllerPolicy):
+    KIRBY = ["(>'-')>",
+             "<('-'<)",
+             "<('-')>",
+             "(>'-')>",
+             "<('-'<)",
+             "<('-')>",
+             "(>'-')>",
+             "<('-'<)",
+             "<('-')>",
+             "(>'-')>",
+             "<('-'<)"]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = InstallProgressModel()
-        self.progress_output_w = ProgressOutput(self.signal, "Waiting...")
-
-    def install_progress_status(self, data):
-        self.progress_output_w.set_text(data)
-        self.signal.emit_signal('refresh')
+        self.progress_view = None
+        self.is_complete = False
+        self.alarm = None
 
     @coroutine
-    def curtin_dispatch(self, postconfig):
-        ''' one time curtin dispatch requires the use of
-            the preserved storage config which allows executing
-            in-target commands by remounting up the configured
-            storage.
-        '''
-        write_fd = self.loop.watch_pipe(self.install_progress_status)
+    def curtin_install(self, postconfig):
+        self.signal.emit_signal('installprogress:show')
 
-        log.debug('writing out postinst config')
+        log.debug('Curtin Install: calling curtin with '
+                  'storage/net/postinstall config')
+
         curtin_write_postinst_config(postconfig)
-        configs = [CURTIN_CONFIGS['preserved'], CURTIN_CONFIGS['postinstall']]
-        curtin_cmd = curtin_install_cmd(configs)
-        log.debug('Curtin postinstall install cmd: {}'.format(curtin_cmd))
-        if self.opts.dry_run:
-            log.debug("Install Progress: Curtin dispatch dry-run")
-            result = yield utils.run_command_async('cat /var/log/syslog',
-                                                   write_fd)
-        else:
-            try:
-                result = yield utils.run_command_async(" ".join(curtin_cmd),
-                                                       write_fd)
-            except:
-                log.error("Problem with curtin dispatch run")
-                raise Exception("Problem with curtin dispatch run")
 
-        return result
-
-    @coroutine
-    def initial_install(self):
-        log.debug('Initial Install: calling curtin with storage/net config')
-        write_fd = self.loop.watch_pipe(self.install_progress_status)
-
-        configs = [CURTIN_CONFIGS['network'], CURTIN_CONFIGS['storage']]
+        configs = [CURTIN_CONFIGS['network'],
+                   CURTIN_CONFIGS['storage'],
+                   CURTIN_CONFIGS['postinstall']]
         curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
         if self.opts.dry_run:
             log.debug("Filesystem: this is a dry-run")
-            result = yield utils.run_command_async('cat /var/log/syslog',
-                                                   write_fd)
+            result = yield utils.run_command_async('cat /var/log/syslog')
+            self.is_complete = True
         else:
-            try:
-                log.debug("filesystem: this is the *real* thing")
-                result = yield utils.run_command_async(" ".join(curtin_cmd),
-                                                       write_fd)
-            except:
-                log.error("Problem with initial curtin install")
-                raise Exception("Problem with initial curtin install")
-        return result
+            log.debug("filesystem: this is the *real* thing")
+            result = yield utils.run_command_async(" ".join(curtin_cmd))
+            if result['status'] > 0:
+                log.error("Problem with curtin "
+                          "install: {}".format(result))
+                raise Exception("Problem with curtin install")
+            self.is_complete = True
+
+    def progress_indicator(self, *args, **kwargs):
+        if self.is_complete:
+            self.progress_view.text.set_text(
+                "Finished install, press (Q) to reboot.")
+            self.loop.remove_alarm(self.alarm)
+        else:
+            random.shuffle(self.KIRBY)
+            self.progress_view.text.set_text(
+                "Still installing, watch kirby dance, {}".format(
+                    self.KIRBY[random.randrange(len(self.KIRBY))]))
+            self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
 
     @coroutine
     def show_progress(self):
@@ -96,7 +96,8 @@ class InstallProgressController(ControllerPolicy):
         footer = ("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 90)
-        self.ui.set_body(ProgressView(self.signal, self.progress_output_w))
+        self.progress_view = ProgressView(self.signal)
+        self.ui.set_body(self.progress_view)
 
         if self.opts.dry_run:
             banner = [
@@ -107,5 +108,8 @@ class InstallProgressController(ControllerPolicy):
                 "",
                 "Press (Q) to Quit."
             ]
-            self.install_progress_status("\n".join(banner))
-            self.ui.set_footer(footer, 100)
+            self.progress_view.text.set_text("\n".join(banner))
+        else:
+            self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
+
+        self.ui.set_footer(footer, 100)
