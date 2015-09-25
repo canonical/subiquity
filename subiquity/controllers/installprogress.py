@@ -14,13 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import random
 from tornado.gen import coroutine
 import subiquity.utils as utils
 from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView
 from subiquity.controller import ControllerPolicy
 from subiquity.curtin import (CURTIN_CONFIGS,
+                              curtin_reboot,
                               curtin_install_cmd,
                               curtin_write_postinst_config)
 
@@ -46,6 +46,7 @@ class InstallProgressController(ControllerPolicy):
         self.progress_view = None
         self.is_complete = False
         self.alarm = None
+        self.kirby_pos = 0
 
     @coroutine
     def curtin_install(self, postconfig):
@@ -78,14 +79,24 @@ class InstallProgressController(ControllerPolicy):
     def progress_indicator(self, *args, **kwargs):
         if self.is_complete:
             self.progress_view.text.set_text(
-                "Finished install, press (Q) to reboot.")
+                "Finished install!")
+            self.ui.set_footer("", 100)
+            self.progress_view.show_finished_button()
             self.loop.remove_alarm(self.alarm)
         else:
-            random.shuffle(self.KIRBY)
+            try:
+                cur_kirby = self.KIRBY[self.kirby_pos]
+            except IndexError:
+                self.kirby_pos = 0
+                cur_kirby = self.KIRBY[self.kirby_pos]
             self.progress_view.text.set_text(
                 "Still installing, watch kirby dance, {}".format(
-                    self.KIRBY[random.randrange(len(self.KIRBY))]))
+                    cur_kirby))
             self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
+            self.kirby_pos += 1
+
+    def reboot(self):
+        curtin_reboot()
 
     @coroutine
     def show_progress(self):
@@ -112,4 +123,4 @@ class InstallProgressController(ControllerPolicy):
         else:
             self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
 
-        self.ui.set_footer(footer, 100)
+        self.ui.set_footer(footer, 90)

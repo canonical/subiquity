@@ -17,7 +17,8 @@ import logging
 from urwid import (Text, Filler,
                    Pile)
 from subiquity.view import ViewPolicy
-from subiquity.ui.utils import Padding
+from subiquity.ui.buttons import confirm_btn
+from subiquity.ui.utils import Padding, Color
 
 log = logging.getLogger("subiquity.ui.views.installprogress")
 
@@ -28,8 +29,26 @@ class ProgressView(ViewPolicy):
         :param output_w: Filler widget to display updated status text
         """
         self.signal = signal
-        self.text = Text("Wait for it ...")
+        self.text = Text("Wait for it ...", align="center")
         self.body = [
             Padding.center_79(self.text)
         ]
-        super().__init__(Filler(Pile(self.body), valign="middle"))
+        self.pile = Pile(self.body)
+        super().__init__(Filler(self.pile, valign="middle"))
+
+    def show_finished_button(self):
+        w = Padding.center_20(
+            Color.button(confirm_btn(label="Reboot now",
+                                     on_press=self.reboot),
+                         focus_map='button focus'))
+
+        self.pile.contents.append((w, self.pile.options()))
+        self.pile.focus_position = 1
+
+    def keypress(self, size, key):
+        super().keypress(size, key)
+        if key in ['q', 'Q']:
+            self.signal.emit_signal('installprogress:curtin-reboot')
+
+    def reboot(self, btn):
+        self.signal.emit_signal('installprogress:curtin-reboot')

@@ -33,7 +33,10 @@ class InstallProgressModel(ModelPolicy):
          'curtin_install'),
         ("Install progress final view",
          'installprogress:show',
-         'show_progress')
+         'show_progress'),
+        ("Reboot curtin",
+         "installprogress:curtin-reboot",
+         "reboot")
     ]
 
     installprogress_menu = []
