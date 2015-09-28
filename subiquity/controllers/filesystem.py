@@ -37,7 +37,7 @@ UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 class FilesystemController(ControllerPolicy):
     def __init__(self, common):
         super().__init__(common)
-        self.model = FilesystemModel(self.prober)
+        self.model = FilesystemModel(self.prober, self.opts)
         self.iscsi_model = IscsiDiskModel()
         self.ceph_model = CephDiskModel()
         self.raid_model = RaidModel()

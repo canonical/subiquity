@@ -169,9 +169,13 @@ class Blockdev():
     def available(self):
         ''' return True if has free space or partitions not
             assigned '''
-        if self.freespace > 0.0:
+        if not self.is_mounted() and self.freespace > 0.0:
             return True
         return False
+
+    @property
+    def mounted(self):
+        return self.is_mounted()
 
     @property
     def usedspace(self, unit='b'):
@@ -269,8 +273,21 @@ class Blockdev():
         with open('/proc/mounts') as pm:
             mounts = pm.read()
 
-        regexp = '{}.*'.format(self.disk.devpath)
-        matches = re.findall(regexp, mounts)
+        # collect any /dev/* device and use
+        # dict to uniq the list of devices mounted
+        mounted_devs = {}
+        for mnt in re.findall('/dev/.*', mounts):
+            log.debug('mnt={}'.format(mnt))
+            (devpath, mount, *_) = mnt.split()
+            # resolve any symlinks
+            mounted_devs.update(
+                {os.path.realpath(devpath): mount})
+
+        log.debug('mounted_devs: {}'.format(mounted_devs))
+        matches = [dev for dev in mounted_devs.keys()
+                   if dev.startswith(self.disk.devpath)]
+        log.debug('Checking if {} is in {}'.format(
+                  self.disk.devpath, matches))
         if len(matches) > 0:
             log.debug('Device is mounted: {}'.format(matches))
             return True

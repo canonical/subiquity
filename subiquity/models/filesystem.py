@@ -90,7 +90,8 @@ class FilesystemModel(ModelPolicy):
         'leave unformatted'
     ]
 
-    def __init__(self, prober):
+    def __init__(self, prober, opts):
+        self.opts = opts
         self.prober = prober
         self.info = {}
         self.devices = {}
@@ -140,6 +141,10 @@ class FilesystemModel(ModelPolicy):
                                           size=self.info[disk].size)
         return self.devices[disk]
 
+    def get_disks(self):
+        return [self.get_disk(d) for d in sorted(self.info.keys())
+                if len(d) > 0]
+
     def get_partitions(self):
         log.debug('probe_storage: get_partitions()')
         partitions = []
@@ -154,7 +159,8 @@ class FilesystemModel(ModelPolicy):
         return partitions
 
     def get_available_disks(self):
-        return sorted(self.info.keys())
+        return [dev.disk.devpath for dev in self.get_disks()
+                if self.opts.dry_run is True or dev.mounted is False]
 
     def get_used_disks(self):
         return [dev.disk.devpath for dev in self.devices.values()
