@@ -32,10 +32,15 @@ grub2-common
 shim
 shim-signed
 grub-efi-amd64-signed
+probert
 "
+# "URL" "GPGKEY"
+# ppa:foo/bar ""
+PPAS=(
+  "https://raharper:Q9F9bRlSxg70BGv8m6dc@private-ppa.launchpad.net/subiquity/subiquity-dev/ubuntu" "3D2F6C3B"
+)
 SRC_DEPS=(
   "bzr" "lp:curtin" "curtin"
-  "git" "git@github.com:CanonicalLtd/probert.git" "probert"
 )
 INSTALLER_DEPS=(
   "petname"
@@ -44,6 +49,7 @@ INSTALLER_DEPS=(
   "python3-netifaces"
   "python-urwid"
   "python3-tornado"
+  "probert"
 )
 CACHEDIR=""
 GRUB_MODS="configfile fat part_gpt part_msdos cat echo test search search_label search_fs_uuid boot chain linux reboot halt normal efi_gop efi_uga font gfxterm gfxterm_menu gfxterm_background gfxmenu serial"
@@ -131,6 +137,31 @@ Example usage:
   $PROG --arch=amd64 --release=wily --bootloader=grub2
 
 EOF
+}
+
+install_ppas() {
+    while [ $# -gt 0 ]; do
+        local url=${1}; shift
+        local gpgkey=${1}; shift;
+        if [ -n ${gpgkey} ]; then
+            echo sudo apt-key adv --keyserver keyserver.ubuntu.com --recv ${gpgkey}
+        fi
+        echo sudo apt-add-repository -y ${url}
+    done
+    return 0
+}
+
+remove_ppas() {
+    while [ $# -gt 0 ]; do
+        local url=${1}; shift
+        local gpgkey=${1}; shift;
+
+        if [ -n ${gpgkey} ]; then
+            echo sudo apt-key del ${gpgkey}
+        fi
+        echo sudo apt-add-repository --remove ${url}
+    done
+    return 0
 }
 
 install_deps() {
@@ -365,19 +396,6 @@ generate_seed() {
         log "Failed to subiquity into $seed";
         return 1;
     }
-    log "Writing seed user-data (probert)"
-    local probert_tar=$dldir/probert.tar
-    (cd ${dldir}/probert &&
-     tar -cpf $probert_tar bin probert) || {
-        log "ERROR: Failed to package probert installer";
-        return 1;
-    }
-    userdata_write_file "/tmp/probert.tar" \
-                        "root:root" "0644" "b64" \
-                        "$probert_tar" >> $seed/user-data || {
-        log "Failed to subiquity into $seed";
-        return 1;
-    }
     return 0
 }
 
@@ -393,7 +411,7 @@ generate_img() {
     local bootloader=${3};
     local offline=${4};
     local extlinux_conf=${TOPDIR}/resources/menu/extlinux-menu.conf
-    local apparmor_path=${TOPDIR}/resources/apparmor
+    local overlay_path=${TOPDIR}/resources/overlay
     local grub_efi_core=${TOPDIR}/resources/grub/bootx64.efi  # FIXME, ARCH
     local grub_conf=${TOPDIR}/resources/grub/grub.cfg
     local embed_conf=${TOPDIR}/resources/grub/embed_efi.cfg
@@ -526,12 +544,29 @@ generate_img() {
         done
         sudo mv ${resolvconf} ${resolvconf}.old &&
         sudo cp /etc/resolv.conf ${resolvconf} &&
+
+        log "Installing ppas in rootfs"
+        # export existing install_ppa and run it in the chroot
+        install_ppas_cmds="$(install_ppas ${PPAS[@]})"
+        sudo chroot ${mnt} /bin/bash -c "${install_ppas_cmds}" || {
+            log "Failed to add installer ppas to chroot";
+            return 1;
+        }
+
         log "Installing on rootfs: $packages"
         sudo chroot ${mnt} apt-get update &&
         sudo chroot ${mnt} apt-get -y install $packages || {
             log "Failed to install packages on rootfs";
             return 1;
         }
+
+        log "Removing ppas in rootfs"
+        remove_ppas_cmds="$(remove_ppas ${PPAS[@]})"
+        sudo chroot ${mnt} /bin/bash -c "${remove_ppas_cmds}" || {
+            log "Failed to remove installer ppas from chroot";
+            return 1;
+        }
+
         sudo rm ${resolvconf}
         sudo mv ${resolvconf}.old ${resolvconf}
         set +x
@@ -548,10 +583,10 @@ generate_img() {
         cat ${grub_conf} | sudo tee ${efimnt}/boot/grub/grub.cfg && true
     fi
 
-    # update apparmor policy for dhclient
-    log "Updating apparmor policies"
-    sudo rsync -avP ${apparmor_path}/apparmor.d/ ${mnt}/etc/apparmor.d/ || {
-        log "Failed to sync local apparmor updates";
+    # syncing overlay
+    log "Injecting installer configuration/scripts"
+    sudo rsync -avP ${overlay_path}/ ${mnt}/ || {
+        log "Failed to sync local installer configuration/scripts";
         return 1;
     }
 

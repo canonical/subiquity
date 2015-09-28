@@ -1,61 +1,13 @@
 #cloud-config
 #http_proxy: http://my-proxy:3129/
 bootcmd:
-    - rm -f /etc/network/interfaces
-    - echo -e "auto lo\niface lo inet loopback\n" > /etc/network/interfaces
-    - /bin/ls -1 /sys/class/net | grep -v ^lo$ | xargs -i bash -c 'D={}; echo -e "auto $D\niface $D inet dhcp"' | tee /etc/network/interfaces
-    - /bin/ls -1 /sys/class/net | grep -v ^lo$ | xargs -i ifup {}
-    - tee -a /etc/modprobe.d/blacklist.conf <<<"blacklist floppy"
+    - /subiquity/network_up.sh
 password: passw0rd
 chpasswd: { expire: False }
 output: {all: '| tee -a /var/log/cloud-init-output.log'}
 #packages
 runcmd:
     - tar -C /usr/local -xf /tmp/subiquity.tar
-    - tar -C /usr/local -xf /tmp/probert.tar
     - (cd /usr/local && bin/curtin-archive extract --no-execute)
-    - /tmp/installer.sh
+    - /subiquity/installer.sh
 write_files:
--   content: |
-        #!/bin/bash
-        LASTCON=$(cat /proc/cmdline | fmt -w 1 | grep ^console= | tail -n 1)
-        case $LASTCON in
-            console=ttyS[0-9])
-                SERIAL="-o --serial"
-                systemctl stop serial-getty@ttyS0.service
-                ;;
-            console=tty[0-9])
-                SERIAL=""
-                chvt 1
-                systemctl stop getty@tty1.service;
-                ;;
-        esac
-        # generate service file
-        cat <<EOF >/lib/systemd/system/subiquity.service
-        [Unit]
-        Description=Ubuntu Servier Installer Service
-        After=getty@tty1.service
-
-        [Service]
-        Environment=PYTHONPATH=/usr/local
-        ExecStart=-/sbin/agetty -n --noclear -l /usr/local/bin/subiquity ${SERIAL} console vt100
-        TTYReset=yes
-        TTYVHangup=yes
-        TTYVTDisallocate=yes
-        KillMode=process
-        Type=idle
-        Restart=always
-        StandardInput=tty-force
-        StandardOutput=tty
-        StandardError=tty
-        TTYPath=/dev/console
-
-        [Install]
-        WantedBy=default.target
-        EOF
-
-        systemctl enable subiquity.service
-        systemctl start subiquity
-    path: /tmp/installer.sh
-    owner: root:root
-    permissions: '0755'
