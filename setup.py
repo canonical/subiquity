@@ -42,7 +42,5 @@ setup(name='subiquity',
       author_email='ubuntu-dev@lists.ubuntu.com',
       url='https://github.com/CanonicalLtd/subiquity',
       license="AGPLv3+",
-      scripts=['bin/subiquity-tui',
-               'bin/curtin_wrap.sh'],
       packages=find_packages(exclude=["tests"]),
       data_files=[])
