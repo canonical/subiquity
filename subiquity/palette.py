@@ -53,6 +53,8 @@ STYLES = [
      Palette.black, Palette.dark_green),
     ('info_minor', '', '', '',
      Palette.dark_gray, ''),
+    ('info_error', '', '', '',
+     Palette.dark_red, ''),
     ('string_input', '', '', '',
      Palette.black, Palette.light_gray),
     ('string_input focus', '', '', '',

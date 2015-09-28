@@ -36,10 +36,13 @@ class IdentityView(ViewPolicy):
         self.realname = StringEditor(caption="")
         self.username = StringEditor(caption="")
         self.password = PasswordEditor(caption="")
+        self.error = Text("", align="center")
         self.confirm_password = PasswordEditor(caption="")
 
         body = [
             Padding.center_50(self._build_model_inputs()),
+            Padding.line_break(""),
+            Padding.center_50(Color.info_error(self.error)),
             Padding.line_break(""),
             Padding.center_15(self._build_buttons()),
         ]
@@ -97,6 +100,11 @@ class IdentityView(ViewPolicy):
         return Pile(sl)
 
     def done(self, result):
+        if self.password.value != self.confirm_password.value:
+            self.error.set_text("Passwords do not match.")
+            self.password.value = ""
+            self.confirm_password.value = ""
+            return
         cpassword = self.model.encrypt_password(self.password.value)
         log.debug("*crypted* User input: {} {} {}".format(
             self.username.value, cpassword, cpassword))
