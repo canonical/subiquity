@@ -196,12 +196,15 @@ class FilesystemController(ControllerPolicy):
     def show_disk_information(self, device):
         """ Show disk information, requires sudo/root
         """
-        out = utils.run_command("hdparm -i {}".format(device))
-        log.debug(out)
-        if out['status'] != 0:
-            result = out['err']
+        if not utils.is_root():
+            result = "hdparm requires root permission."
         else:
-            result = out['output']
+            out = utils.run_command("hdparm -i {}".format(device))
+            log.debug(out)
+            if out['status'] != 0:
+                result = out['err']
+            else:
+                result = out['output']
         disk_info_view = DiskInfoView(self.model,
                                       self.signal,
                                       result)
@@ -212,4 +215,3 @@ class FilesystemController(ControllerPolicy):
             log.debug('forcing is_uefi True beacuse of options')
             return True
         return os.path.exists('/sys/firmware/efi')
-
