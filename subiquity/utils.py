@@ -113,3 +113,13 @@ def crypt_password(passwd, algo='SHA-512'):
     salt = 16 * ' '
     salt = ''.join([random.choice(salt_set) for c in salt])
     return crypt.crypt(passwd, algos[algo] + salt)
+
+
+def is_root():
+    """ Returns root or if sudo user exists
+    """
+    sudo_user = os.getenv('SUDO_USER', None)
+
+    if os.geteuid() != 0 or not sudo_user:
+        return False
+    return True
