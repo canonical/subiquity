@@ -380,6 +380,7 @@ class FilesystemView(ViewPolicy):
         self.signal = signal
         self.items = []
         self.model.probe_storage()  # probe before we complete
+        self.installable = True
         self.body = [
             Padding.center_79(Text("FILE SYSTEM")),
             Padding.center_79(self._build_partition_list()),
@@ -437,12 +438,17 @@ class FilesystemView(ViewPolicy):
 
     def _build_buttons(self):
         log.debug('FileSystemView: building buttons')
-        buttons = [
-            Color.button(done_btn(on_press=self.done),
-                         focus_map='button focus'),
-            Color.button(reset_btn(on_press=self.reset),
-                         focus_map='button focus')
-        ]
+        buttons = []
+
+        # don't enable done botton if we can't install
+        if self.installable:
+            buttons.append(
+                Color.button(done_btn(on_press=self.done),
+                             focus_map='button focus'))
+
+        buttons.append(Color.button(reset_btn(on_press=self.reset),
+                                    focus_map='button focus'))
+
         return Pile(buttons)
 
     def _get_percent_free(self, device):
@@ -459,7 +465,12 @@ class FilesystemView(ViewPolicy):
         col_1 = []
         col_2 = []
 
-        for dname in self.model.get_available_disks():
+        avail_disks = self.model.get_available_disks()
+        if len(avail_disks) == 0:
+            self.installable = False
+            return Pile([Color.info_minor(Text("No available disks."))])
+
+        for dname in avail_disks:
             disk = self.model.get_disk_info(dname)
             device = self.model.get_disk(dname)
             btn = menu_btn(label=disk.name,
