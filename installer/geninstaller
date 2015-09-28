@@ -411,7 +411,7 @@ generate_img() {
     local bootloader=${3};
     local offline=${4};
     local extlinux_conf=${TOPDIR}/resources/menu/extlinux-menu.conf
-    local apparmor_path=${TOPDIR}/resources/apparmor
+    local overlay_path=${TOPDIR}/resources/overlay
     local grub_efi_core=${TOPDIR}/resources/grub/bootx64.efi  # FIXME, ARCH
     local grub_conf=${TOPDIR}/resources/grub/grub.cfg
     local embed_conf=${TOPDIR}/resources/grub/embed_efi.cfg
@@ -583,10 +583,10 @@ generate_img() {
         cat ${grub_conf} | sudo tee ${efimnt}/boot/grub/grub.cfg && true
     fi
 
-    # update apparmor policy for dhclient
-    log "Updating apparmor policies"
-    sudo rsync -avP ${apparmor_path}/apparmor.d/ ${mnt}/etc/apparmor.d/ || {
-        log "Failed to sync local apparmor updates";
+    # syncing overlay
+    log "Injecting installer configuration/scripts"
+    sudo rsync -avP ${overlay_path}/ ${mnt}/ || {
+        log "Failed to sync local installer configuration/scripts";
         return 1;
     }
 
