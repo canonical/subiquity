@@ -119,7 +119,10 @@ def is_root():
     """ Returns root or if sudo user exists
     """
     sudo_user = os.getenv('SUDO_USER', None)
+    euid = os.geteuid()
 
-    if os.geteuid() != 0 or not sudo_user:
+    log.debug('is_root: euid={} sudo_user={}'.format(
+        euid, sudo_user))
+    if euid != 0 or sudo_user is not None:
         return False
     return True
