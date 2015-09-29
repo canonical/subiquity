@@ -15,11 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 PROG=`basename $0`
-TOPDIR=`pwd`
-USQUERY=${TOPDIR}/usquery
-LOGFILE="geninstaller.log"
 PREFIX="${PROG}"
-RESOURCES=`pwd`/resources
+LOGFILE="geninstaller.log"
+TOPDIR=${TOPDIR-/usr/share/subiquity/installer}
+USQUERY=${TOPDIR}/usquery
+RESOURCES=${TOPDIR}/resources
 PKG_DEPS="
 qemu-utils
 kpartx
@@ -63,18 +63,19 @@ cleanup_noexit() {
         sudo umount -l ${CACHEDIR}/lower
         sudo umount -l ${CACHEDIR}/upper
         sudo umount -l ${CACHEDIR}/efimnt
-        sudo kpartx -v -d ${CACHEDIR}/installer.img || exit
+        sudo kpartx -d ${CACHEDIR}/installer.img &>/dev/null || exit
         for DEV in $EFI_DEV $ROOTFS_DEV $OVERLAY_DEV; do
             [ -e "/dev/mapper/`basename $DEV`" ] && {
-                sudo dmsetup remove $DEV || exit
+                sudo dmsetup remove $DEV &>/dev/null || exit
             }
         done
-        sudo losetup -d $LOOPDEV 
+        # it's ok to fail here, it means kpartx did it for us
+        sudo losetup -d $LOOPDEV &>/dev/null | :
     }
 }
 
 cleanup() {
-    cleanup_noexit
+    cleanup_noexit &>/dev/null
     exit
 }
 
@@ -431,17 +432,17 @@ generate_img() {
 
     # prep image
     log "Generating Installer image file"
-    qemu-img create -f raw $installimg 2G || {
+    qemu-img create -f raw $installimg 2G 2>&1 >> ${LOGFILE} || {
         log "Failed to create empty file: $installimg"
         return 1;
     }
 
     log "Partitioning Installer image (UEFI)"
-    parted -s $installimg mklabel msdos &&
+    (parted -s $installimg mklabel msdos &&
     parted -s $installimg mkpart primary fat32 0% 200M &&
     parted -s $installimg mkpart primary ext3 200M 1700M &&
     parted -s $installimg mkpart primary ext3 1700M 2147M &&
-    parted -s $installimg set 1 boot on || {
+    parted -s $installimg set 1 boot on) 2>&1 >> ${LOGFILE}  || {
         log "Failed to partition image: $installimg"
      return 1;
     }
@@ -467,7 +468,7 @@ generate_img() {
     LOOPDEV="`echo ${kpartx_ret} | fmt -w 1 | grep ^/dev | head -n1`"
 
     log "Building Grub (EFI and BIOS) boot partition"
-    (sudo mkfs.vfat -F32 -n GRUB2EFI ${EFI_DEV} &&
+    (sudo mkfs.vfat -F32 -n GRUB2EFI ${EFI_DEV} 2>/dev/null &&
      mkdir -p ${efimnt} &&
      sudo mount $EFI_DEV ${efimnt} &&
      sudo mkdir -p ${efimnt}/EFI/BOOT &&
@@ -485,23 +486,22 @@ generate_img() {
      sudo rsync -a /usr/lib/grub/x86_64-efi/ ${efimnt}/grub/x86_64-efi/ &&
      sudo grub-mkimage -O x86_64-efi -p /grub -c ${efimnt}/grub/embed_efi.cfg -o ${efimnt}/EFI/BOOT/bootx64.efi ${GRUB_MODS} &&
      sudo grub-install --force --removable --no-floppy \
-                      --boot-directory=${efimnt}/boot $LOOPDEV &&
-     sudo cp -v ${splash} ${efimnt}/boot/grub) || {
+                      --boot-directory=${efimnt}/boot $LOOPDEV &>/dev/null &&
+     sudo cp -v ${splash} ${efimnt}/boot/grub) 2>&1 >> ${LOGFILE} || {
         log "ERROR: failed to create multiboot partition"
          return 1
      }
 
     log "Creating and syncing filesystem (original cloudimg rootfs)"
-    sudo mkfs.ext3 -L cloudimg-rootfs $ROOTFS_DEV &&
+    (sudo mkfs.ext3 -q -L cloudimg-rootfs $ROOTFS_DEV &&
     mkdir -p ${lower} &&
     sudo mount $ROOTFS_DEV ${lower} &&
-    sudo rsync -a ${rootfs}/ ${lower}/ || {
+    sudo rsync -a ${rootfs}/ ${lower}/) 2>&1 >> ${LOGFILE} || {
         log "ERROR: failed to sync rootfs into install image";
         return 1
     }
 
     log "Creating and syncing filesystem (installer overlay)"
-    sudo mkfs.ext3 -L overlay-rootfs $OVERLAY_DEV
     # mount -t overlay overlay -olowerdir=/lower,upperdir=/upper,\
     #                            workdir=/work /merged
     OVERLAY_VERSION=( `modinfo -V overlayfs` )  # returns: kmod version XX 
@@ -517,25 +517,27 @@ generate_img() {
     # load the right overlay module
     if ! lsmod | grep -q ${FS}; then sudo modprobe -v $FS; fi
 
+    (sudo mkfs.ext3 -q -L overlay-rootfs $OVERLAY_DEV
     sudo mkdir -p ${work} ${upper} ${mnt} &&
     sudo mount $OVERLAY_DEV ${upper} &&
     sudo mkdir -p ${upper}/overlay ${work} &&
-    sudo mount -t $FS $FS $OPTS ${mnt} || {
+    sudo mount -t $FS $FS $OPTS ${mnt}) 2>&1 >> ${LOGFILE} || {
             log "ERROR: failed to overlay mount installer";
             return 1
     }
 
     log "Installing bootloader configuration"
-    set +x
-    sudo mkdir ${mnt}/proc
-    sudo mkdir ${mnt}/sys
-    sudo mkdir ${mnt}/dev
+    (sudo mkdir -p ${mnt}/proc
+    sudo mkdir -p ${mnt}/sys
+    sudo mkdir -p ${mnt}/dev
     sudo mount none -t proc ${mnt}/proc &&
     sudo mount none -t sysfs ${mnt}/sys &&
-    sudo mount -o bind /dev ${mnt}/dev &&
+    sudo mount -o bind /dev ${mnt}/dev) 2>&1 >> ${LOGFILE} || {
+      log "ERROR: failed to prepare target mounts for sync";
+      return 1;
+    }
 
     if [ "${offline}" == "yes" ]; then
-        set -x
         log "Setting up for offline use"
         local resolvconf=${mnt}/etc/resolv.conf
         local packages=""
@@ -569,7 +571,6 @@ generate_img() {
 
         sudo rm ${resolvconf}
         sudo mv ${resolvconf}.old ${resolvconf}
-        set +x
     fi
 
     if [ "${bootloader}" == "syslinux" ]; then
@@ -580,12 +581,12 @@ generate_img() {
         cat ${extlinux_conf} | sudo tee ${mnt}/boot/extlinux/extlinux.conf
     else
         log "Installing grub2"
-        cat ${grub_conf} | sudo tee ${efimnt}/boot/grub/grub.cfg && true
+        cat ${grub_conf} | sudo tee ${efimnt}/boot/grub/grub.cfg 2>&1 >> ${LOGFILE} && true
     fi
 
     # syncing overlay
     log "Injecting installer configuration/scripts"
-    sudo rsync -avP ${overlay_path}/ ${mnt}/ || {
+    sudo rsync -a ${overlay_path}/ ${mnt}/ || {
         log "Failed to sync local installer configuration/scripts";
         return 1;
     }
@@ -596,7 +597,6 @@ generate_img() {
         log "Failed to install bootloader and configuration";
         return 1;
     }
-    set -x
 
     _RETVAL="$installimg";
     return 0;
@@ -680,6 +680,7 @@ main() {
         return 1;
     }
     INSTALLIMG=${_RETVAL}
+    log "Cleaning up ..."
     cleanup_noexit &&
     mv $INSTALLIMG ${OUTPUT} &&
     ln -fs ${OUTPUT} installer.img || {
