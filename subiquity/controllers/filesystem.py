@@ -196,7 +196,9 @@ class FilesystemController(ControllerPolicy):
     def show_disk_information(self, device):
         """ Show disk information, requires sudo/root
         """
-        if not utils.is_root():
+        root = utils.is_root()
+        log.debug('show_disk_info is_root ? {}'.format(root))
+        if not root:
             result = "hdparm requires root permission."
         else:
             out = utils.run_command("hdparm -i {}".format(device))
