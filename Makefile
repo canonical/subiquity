@@ -44,14 +44,14 @@ dryrun: probert
 	$(MAKE) ui-view DRYRUN="--dry-run --uefi"
 
 ui-view:
-	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) $(DRYRUN) $(MACHARGS))
+	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC)-tui $(DRYRUN) $(MACHARGS))
 
 ui-view-serial:
-	(TERM=att4424 PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC) $(DRYRUN) --serial)
+	(TERM=att4424 PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC)-tui $(DRYRUN) --serial)
 
 lint:
 	echo "Running flake8 lint tests..."
-	flake8 bin/$(PYTHONSRC) --ignore=F403
+	flake8 bin/$(PYTHONSRC)-tui --ignore=F403
 	flake8 --exclude $(PYTHONSRC)/tests/ $(PYTHONSRC) --ignore=F403
 
 unit:

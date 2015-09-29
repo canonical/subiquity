@@ -19,7 +19,7 @@ After=getty@tty1.service
 
 [Service]
 Environment=PYTHONPATH=/usr/local
-ExecStart=-/sbin/agetty -n --noclear -l /usr/local/bin/subiquity ${SERIAL} console vt100
+ExecStart=-/sbin/agetty -n --noclear -l /usr/local/bin/subiquity-tui ${SERIAL} console vt100
 TTYReset=yes
 TTYVHangup=yes
 TTYVTDisallocate=yes
