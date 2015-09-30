@@ -386,8 +386,13 @@ generate_seed() {
 
     log "Writing seed user-data (subiquity)"
     local subiquity_tar=$dldir/subiquity.tar
-    (cd ${TOPDIR}/.. &&
-     tar -cpf $subiquity_tar bin subiquity) || {
+    local tar_cmd="tar -cpf $subiquity_tar subiquity bin"
+    if [[ ${TOPDIR} = /usr/share/subiquity* ]]; then
+        log "Using installed subiquity paths"
+        tar_cmd="$tar_cmd subiquity-tui"
+    fi
+    log "subiquity_tar cmd: cd ${TOPDIR}/.. && ${tar_cmd}"
+    (cd ${TOPDIR}/.. && $tarcmd) || {
         log "ERROR: Failed to package subiquity installer";
         return 1;
     }
