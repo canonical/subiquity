@@ -16,6 +16,9 @@
 
 `sudo apt-get update && sudo apt-get install subiquity`
 
+ - Enable multiverse for UEFI testing in VM
+
+`sudo apt-add-repository multiverse`
 
 # Testing out the Text-UI (TUI)
 SUbiquity's text UI is is available for testing without actually installing

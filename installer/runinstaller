@@ -25,7 +25,7 @@ SPORT=2445
 QEMU=`which qemu-system-$ARCH`;
 case $ARCH in
     i386|x86_64)
-        PKG=ovmf qemu-system-x86
+        PKG="ovmf qemu-system-x86"
         if [ "${UEFI}" == "1" ]; then
             UEFI=" -bios /usr/share/ovmf/OVMF.fd"
         else
@@ -63,8 +63,8 @@ qemu-img create -f raw ${TARGET} 10G
 # TODO, curses should work, make serial|nographic optional
 echo "Launching Installer VM"
 sudo qemu-system-$ARCH -smp 2 -m $MEM -enable-kvm $UEFI\
-                       -drive cache=unsafe,if=ide,file=$INSTALLER,serial=QM_INSTALL_01 \
-                       -drive cache=unsafe,if=ide,file=$TARGET,serial=QM_TARGET_01 \
+                       -drive format=raw,cache=unsafe,if=ide,file=$INSTALLER,serial=QM_INSTALL_01 \
+                       -drive format=raw,cache=unsafe,if=ide,file=$TARGET,serial=QM_TARGET_01 \
                        -global isa-fdc.driveA= -net user \
                        -net nic,model=e1000 \
                        -net nic,model=virtio \

@@ -8,6 +8,7 @@ output: {all: '| tee -a /var/log/cloud-init-output.log'}
 #packages
 runcmd:
     - tar -C /usr/local -xf /tmp/subiquity.tar
+    - cp /usr/local/subiquity-tui /usr/local/bin
     - (cd /usr/local && bin/curtin-archive extract --no-execute)
     - /subiquity/installer.sh
 write_files:
