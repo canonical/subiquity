@@ -80,7 +80,7 @@ git-checkout-deb:
         rm -fr $(GITDEBDIR); \
     fi
 
-DPKGBUILDARGS = -us -uc -i'.git.*|.tox|.bzr.*|.editorconfig|.travis-yaml'
+DPKGBUILDARGS = -i'.git.*|.tox|.bzr.*|.editorconfig|.travis-yaml'
 deb-src: git-checkout-deb clean tarball
 	@dpkg-buildpackage -S -sa $(DPKGBUILDARGS)
 
@@ -88,7 +88,7 @@ deb-release: git-checkout-deb tarball
 	@dpkg-buildpackage -S -sd $(DPKGBUILDARGS)
 
 deb: git-checkout-deb
-	@dpkg-buildpackage -b $(DPKGBUILDARGS)
+	@dpkg-buildpackage -us -uc -b $(DPKGBUILDARGS)
 
 clean:
 	@if [ -d "$(DEBDIR)" ]; then \
