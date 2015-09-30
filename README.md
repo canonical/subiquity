@@ -41,7 +41,7 @@ also available in the Subiquity PPA.  To collect a machine profile:
 
 `probert --all > mymachine.json`
 
-# Acuquire subiquity from source
+# Acquire subiquity from source
 
 `git clone https://github.com/CanonicalLtd/subiquity`
 
