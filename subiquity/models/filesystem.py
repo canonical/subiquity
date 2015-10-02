@@ -25,9 +25,10 @@ HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
 log = logging.getLogger('subiquity.models.filesystem')
 
 
-class AttrDict(dict): 
+class AttrDict(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
+
 
 class FilesystemModel(ModelPolicy):
     """ Model representing storage options
@@ -151,18 +152,27 @@ class FilesystemModel(ModelPolicy):
                 self.info[disk] = self.prober.get_storage_info(disk)
 
     def get_disk(self, disk):
-        log.debug('probe_storage: get_disk()')
+        log.debug('probe_storage: get_disk({})'.format(disk))
         if disk not in self.devices:
             self.devices[disk] = Blockdev(disk, self.info[disk].serial,
                                           self.info[disk].model,
                                           size=self.info[disk].size)
         return self.devices[disk]
 
-    def get_disks(self):
+    def get_available_disks(self):
+        ''' currently only returns available disks '''
+        disks = [d for d in self.get_all_disks() if d.available]
+        log.debug('get_available_disks -> {}'.format(
+                  ",".join([d.devpath for d in disks])))
+        return disks
+
+    def get_all_disks(self):
         possible_devices = list(set(list(self.devices.keys()) +
                                     list(self.info.keys())))
         possible_disks = [self.get_disk(d) for d in sorted(possible_devices)]
-        return [d for d in possible_disks if d.available]
+        log.debug('get_all_disks -> {}'.format(",".join([d.devpath for d in
+                                                         possible_disks])))
+        return possible_disks
 
     def calculate_raid_size(self, raid_level, raid_devices, spare_devices):
         '''
@@ -290,19 +300,38 @@ class FilesystemModel(ModelPolicy):
         ''' one or more disks has used space
             and has "/" as a mount
         '''
-        for disk in self.get_disks():
+        for disk in self.get_all_disks():
             if disk.usedspace > 0 and "/" in disk.mounts:
                 return True
 
-    def get_available_disks(self):
-        return [dev.disk.devpath for dev in self.get_disks()]
+    def bootable(self):
+        ''' true if one disk has a boot partition '''
+        log.debug('bootable check')
+        for disk in self.get_all_disks():
+            for (num, action) in disk.partitions.items():
+                if action.flags in ['bios_grub']:
+                    log.debug('bootable check: we\'ve got boot!')
+                    return True
 
-    def get_used_disks(self):
-        return [dev.disk.devpath for dev in self.devices.values()
+        log.debug('bootable check: no disks have been marked bootable')
+        return False
+
+    def get_available_disk_names(self):
+        return [dev.disk.devpath for dev in self.get_available_disks()]
+
+    def get_used_disk_names(self):
+        return [dev.disk.devpath for dev in self.get_all_disks()
                 if dev.available is False]
 
     def get_disk_info(self, disk):
         return self.info.get(disk, {})
+
+    def get_mounts(self):
+        mounts = []
+        for dev in self.get_all_disks():
+            mounts += dev.mounts
+
+        return mounts
 
     def get_disk_action(self, disk):
         return self.devices[disk].get_actions()
