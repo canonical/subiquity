@@ -47,9 +47,8 @@ class RaidView(ViewPolicy):
         items = [
             Text("DISK SELECTION")
         ]
-        avail_disks = self.model.get_available_disks()
+        avail_disks = self.model.get_available_disk_names()
         if len(avail_disks) == 0:
-            self.installable = False
             return items.append(
                 [Color.info_minor(Text("No available disks."))])
 

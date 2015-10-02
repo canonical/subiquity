@@ -102,8 +102,13 @@ class FilesystemController(ControllerPolicy):
         log.debug('disk.freespace: {}'.format(current_disk.freespace))
 
         try:
-            ''' create a gpt boot partition if one doesn't exist '''
-            if current_disk.parttype == 'gpt' and \
+            ''' create a gpt boot partition if one doesn't exist, only
+                one one disk'''
+
+            system_bootable = self.model.bootable()
+            log.debug('model has bootable device? {}'.format(system_bootable))
+            if system_bootable is False and \
+               current_disk.parttype == 'gpt' and \
                len(current_disk.disk.partitions) == 0:
                 if self.is_uefi():
                     log.debug('Adding EFI partition first')
