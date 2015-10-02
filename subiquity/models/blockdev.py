@@ -171,7 +171,7 @@ class Blockdev():
     @property
     def percent_free(self):
         ''' return the device free percentage of the whole device'''
-        percent = ( int((1.0 - (self.usedspace / self.size)) * 100))
+        percent = (int((1.0 - (self.usedspace / self.size)) * 100))
         return percent
 
     @property
@@ -194,18 +194,12 @@ class Blockdev():
             space += int(action.offset)
             space += int(action.size)
 
-        log.debug('{} usedspace: {}'.format(self.disk.devpath, space))
         return space
 
     @property
     def freespace(self, unit='B'):
         ''' return amount of free space '''
-        used = self.usedspace
-        size = self.size
-        log.debug('{} freespace: {} - {} = {}'.format(self.disk.devpath,
-                                                      size, used,
-                                                      size - used))
-        return size - used
+        return self.size - self.usedspace
 
     @property
     def lastpartnumber(self):
@@ -289,19 +283,14 @@ class Blockdev():
         # dict to uniq the list of devices mounted
         mounted_devs = {}
         for mnt in re.findall('/dev/.*', mounts):
-            log.debug('mnt={}'.format(mnt))
             (devpath, mount, *_) = mnt.split()
             # resolve any symlinks
             mounted_devs.update(
                 {os.path.realpath(devpath): mount})
 
-        log.debug('mounted_devs: {}'.format(mounted_devs))
         matches = [dev for dev in mounted_devs.keys()
                    if dev.startswith(self.disk.devpath)]
-        log.debug('Checking if {} is in {}'.format(
-                  self.disk.devpath, matches))
         if len(matches) > 0:
-            log.debug('Device is mounted: {}'.format(matches))
             return True
 
         return False

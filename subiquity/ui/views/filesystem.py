@@ -241,9 +241,10 @@ class AddPartitionView(WidgetWrap):
                 self.selected_disk)
             return
         # Validate mountpoint input
-        if self.mountpoint.value in self.selected_disk.mounts:
+        all_mounts = self.model.get_mounts()
+        if self.mountpoint.value in all_mounts:
             log.error('provided mountpoint already allocated'
-                      ' ({}'.format(self.mountpoint.value))
+                      ' ({})'.format(self.mountpoint.value))
             # FIXME: update the error message widget instead
             self.mountpoint.set_error('ERROR: already mounted')
             self.signal.emit_signal(
@@ -398,7 +399,7 @@ class FilesystemView(ViewPolicy):
     def _build_used_disks(self):
         log.debug('FileSystemView: building used disks')
         pl = []
-        for disk in self.model.get_used_disks():
+        for disk in self.model.get_used_disk_names():
             log.debug('used disk: {}'.format(disk))
             pl.append(Text(disk))
         if len(pl):
@@ -440,7 +441,7 @@ class FilesystemView(ViewPolicy):
         buttons = []
 
         # don't enable done botton if we can't install
-        if self.model.installable:
+        if self.model.installable():
             buttons.append(
                 Color.button(done_btn(on_press=self.done),
                              focus_map='button focus'))
@@ -464,7 +465,7 @@ class FilesystemView(ViewPolicy):
         col_1 = []
         col_2 = []
 
-        avail_disks = self.model.get_available_disks()
+        avail_disks = self.model.get_available_disk_names()
         if len(avail_disks) == 0:
             return Pile([Color.info_minor(Text("No available disks."))])
 
