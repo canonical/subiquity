@@ -380,7 +380,6 @@ class FilesystemView(ViewPolicy):
         self.signal = signal
         self.items = []
         self.model.probe_storage()  # probe before we complete
-        self.installable = True
         self.body = [
             Padding.center_79(Text("FILE SYSTEM")),
             Padding.center_79(self._build_partition_list()),
@@ -441,7 +440,7 @@ class FilesystemView(ViewPolicy):
         buttons = []
 
         # don't enable done botton if we can't install
-        if self.installable:
+        if self.model.installable:
             buttons.append(
                 Color.button(done_btn(on_press=self.done),
                              focus_map='button focus'))
@@ -467,7 +466,6 @@ class FilesystemView(ViewPolicy):
 
         avail_disks = self.model.get_available_disks()
         if len(avail_disks) == 0:
-            self.installable = False
             return Pile([Color.info_minor(Text("No available disks."))])
 
         for dname in avail_disks:
