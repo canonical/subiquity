@@ -133,6 +133,26 @@ class DiskAction():
         return yaml.dump(self.get(), default_flow_style=False)
 
 
+class RaidAction(DiskAction):
+    def __init__(self, action_id, raidlevel, dev_ids, spare_ids):
+        self._action_id = action_id
+        self.parent = None
+        self._raidlevel = raidlevel
+        self._devices = dev_ids
+        self._spares = spare_ids
+
+    def get(self):
+        action = {
+            'id': self.action_id,
+            'name': self.action_id,
+            'raidlevel': self._raidlevel,
+            'devices': self._devices,
+            'spare_devices': self._spares,
+            'type': 'raid',
+        }
+        return action
+
+
 class PartitionAction(DiskAction):
     def __init__(self, parent, partnum, offset, size, flags=None):
         self.parent = parent

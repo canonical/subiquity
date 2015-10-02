@@ -24,7 +24,8 @@ from .actions import (
     DiskAction,
     PartitionAction,
     FormatAction,
-    MountAction
+    MountAction,
+    RaidAction,
 )
 
 log = logging.getLogger("subiquity.filesystem.blockdev")
@@ -125,6 +126,7 @@ class Blockdev():
         self._mounts = {}
         self.bcache = []
         self.lvm = []
+        self.holder = {}
         self.baseaction = DiskAction(os.path.basename(self.disk.devpath),
                                      self.disk.model, self.disk.serial,
                                      self.disk.parttype)
@@ -136,6 +138,7 @@ class Blockdev():
         self._mounts = {}
         self.bcache = []
         self.lvm = []
+        self.holder = {}
 
     @property
     def devpath(self):
@@ -166,10 +169,16 @@ class Blockdev():
         return self._filesystems
 
     @property
+    def percent_free(self):
+        ''' return the device free percentage of the whole device'''
+        percent = ( int((1.0 - (self.usedspace / self.size)) * 100))
+        return percent
+
+    @property
     def available(self):
         ''' return True if has free space or partitions not
             assigned '''
-        if not self.is_mounted() and self.freespace > 0.0:
+        if not self.is_mounted() and self.percent_free > 0:
             return True
         return False
 
@@ -269,6 +278,9 @@ class Blockdev():
         log.debug('Partition Added')
         return new_size
 
+    def set_holder(self, devpath, holdtype):
+        self.holder[holdtype] = devpath
+
     def is_mounted(self):
         with open('/proc/mounts') as pm:
             mounts = pm.read()
@@ -317,7 +329,7 @@ class Blockdev():
 
     def sort_actions(self, actions):
         def type_index(t):
-            order = ['disk', 'partition', 'format', 'mount']
+            order = ['disk', 'partition', 'raid', 'format', 'mount']
             return order.index(t.get('type'))
 
         def path_count(p):
@@ -347,6 +359,19 @@ class Blockdev():
                     (mntpoint, part.size, fs.fstype, partpath))
 
         return fs_table
+
+
+class Raiddev(Blockdev):
+    def __init__(self, devpath, serial, model, parttype, size,
+                 raid_level, raid_devices, spare_devices):
+        super().__init__(devpath, serial, model, parttype, size)
+        self._raid_devices = raid_devices
+        self._raid_level = raid_level
+        self._spare_devices = spare_devices
+        self.baseaction = RaidAction(os.path.basename(self.disk.devpath),
+                                     self._raid_devices,
+                                     self._raid_level,
+                                     self._spare_devices)
 
 
 if __name__ == '__main__':
