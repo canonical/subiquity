@@ -16,7 +16,7 @@
 import json
 import logging
 
-from .blockdev import Blockdev
+from .blockdev import Blockdev, Raiddev
 import math
 from subiquity.model import ModelPolicy
 
@@ -24,6 +24,10 @@ from subiquity.model import ModelPolicy
 HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
 log = logging.getLogger('subiquity.models.filesystem')
 
+
+class AttrDict(dict): 
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
 
 class FilesystemModel(ModelPolicy):
     """ Model representing storage options
@@ -58,7 +62,10 @@ class FilesystemModel(ModelPolicy):
          'create_swap_entire_device'),
         ('Show disk information',
          'filesystem:show-disk-information',
-         'show_disk_information')
+         'show_disk_information'),
+        ('Add Raid Device',
+         'filesystem:add-raid-dev',
+         'add_raid_dev'),
     ]
 
     # TODO: Re-add once curtin supports this.
@@ -72,9 +79,9 @@ class FilesystemModel(ModelPolicy):
         # ('Create volume group (LVM2)',
         #  'filesystem:create-volume-group',
         #  'create_volume_group'),
-        # ('Create software RAID (MD)',
-        #  'filesystem:create-raid',
-        #  'create_raid'),
+        ('Create software RAID (MD)',
+         'filesystem:create-raid',
+         'create_raid'),
         # ('Setup hierarchichal storage (bcache)',
         #  'filesystem:setup-bcache',
         #  'setup_bcache')
@@ -90,11 +97,21 @@ class FilesystemModel(ModelPolicy):
         'leave unformatted'
     ]
 
+    # TODO: what is "linear" level?
+    raid_levels = [
+        "0",
+        "1",
+        "5",
+        "6",
+        "10",
+    ]
+
     def __init__(self, prober, opts):
         self.opts = opts
         self.prober = prober
         self.info = {}
         self.devices = {}
+        self.raid_devices = {}
         self.storage = {}
 
     def reset(self):
@@ -142,8 +159,119 @@ class FilesystemModel(ModelPolicy):
         return self.devices[disk]
 
     def get_disks(self):
-        return [self.get_disk(d) for d in sorted(self.info.keys())
-                if len(d) > 0]
+        possible_devices = list(set(list(self.devices.keys()) +
+                                    list(self.info.keys())))
+        possible_disks = [self.get_disk(d) for d in sorted(possible_devices)]
+        return [d for d in possible_disks if d.available]
+
+    def calculate_raid_size(self, raid_level, raid_devices, spare_devices):
+        '''
+            0: array size is the size of the smallest component partition times
+               the number of component partitions
+            1: array size is the size of the smallest component partition
+            5: array size is the size of the smallest component partition times
+               the number of component partitions munus 1
+            6: array size is the size of the smallest component partition times
+               the number of component partitions munus 2
+        '''
+        # https://raid.wiki.kernel.org/ \
+        #       index.php/RAID_superblock_formats#Total_Size_of_superblock
+        # Version-1 superblock format on-disk layout:
+        # Total size of superblock: 256 Bytes plus 2 bytes per device in the
+        # array
+        log.debug('calc_raid_size: level={} rd={} sd={}'.format(raid_level,
+                                                                raid_devices,
+                                                                spare_devices))
+        overhead_bytes = 256 + (2 * (len(raid_devices) + len(spare_devices)))
+        log.debug('calc_raid_size: overhead_bytes={}'.format(overhead_bytes))
+
+        # find the smallest device
+        min_dev_size = min([d.size for d in raid_devices])
+        log.debug('calc_raid_size: min_dev_size={}'.format(min_dev_size))
+
+        if raid_level == 0:
+            array_size = min_dev_size * len(raid_devices)
+        elif raid_level == 1:
+            array_size = min_dev_size
+        elif raid_level == 5:
+            array_size = min_dev_size * (len(raid_devices) - 1)
+        elif raid_level == 10:
+            array_size = min_dev_size * int((len(raid_devices) /
+                                             len(spare_devices)))
+        total_size = array_size - overhead_bytes
+        log.debug('calc_raid_size: array_size:{} - overhead:{} = {}'.format(
+                  array_size, overhead_bytes, total_size))
+        return total_size
+
+    def add_raid_device(self, raidspec):
+        # assume raidspec has already been valided in view/controller
+        log.debug('Attempting to create a raid device')
+        '''
+        raidspec = {
+            'devices': ['/dev/sdb     1.819T, HDS5C3020ALA632',
+                        '/dev/sdc     1.819T, 001-9YN164',
+                        '/dev/sdf     1.819T, 001-9YN164',
+                        '/dev/sdg     1.819T, 001-9YN164',
+                        '/dev/sdh     1.819T, HDS5C3020ALA632',
+                        '/dev/sdi     1.819T, 001-9YN164'],
+            'raid_level': '0',
+            'hot_spares': '0',
+            'chunk_size': '4K',
+        }
+        '''
+        raid_devices = []
+        spare_devices = []
+        all_devices = [r.split() for r in raidspec.get('devices', [])]
+        nr_spares = int(raidspec.get('hot_spares'))
+
+        # XXX: curtin requires a partition table on the base devices
+        # and then one partition of type raid
+        for (devpath, _, _) in all_devices:
+            disk = self.get_disk(devpath)
+            disk.add_partition(1, disk.freespace, None, None, flag='raid')
+            if len(raid_devices) + nr_spares < len(all_devices):
+                raid_devices.append(disk)
+            else:
+                spare_devices.append(disk)
+
+        # auto increment md number based in registered devices
+        raid_dev_name = '/dev/md{}'.format(len(self.raid_devices))
+        raid_serial = '{}_serial'.format(raid_dev_name)
+        raid_model = '{}_model'.format(raid_dev_name)
+        raid_parttype = 'gpt'
+        raid_level = int(raidspec.get('raid_level'))
+        raid_size = self.calculate_raid_size(raid_level, raid_devices,
+                                             spare_devices)
+        # create a Raiddev (pass in only the names)
+        raid_dev = Raiddev(raid_dev_name, raid_serial, raid_model,
+                           raid_parttype, raid_size,
+                           [d.devpath for d in raid_devices],
+                           raid_level,
+                           [d.devpath for d in spare_devices])
+
+        # add it to the model's info dict
+        raid_dev_info = {
+            'type': 'disk',
+            'name': raid_dev_name,
+            'size': raid_size,
+            'serial': raid_serial,
+            'vendor': 'Linux Software RAID',
+            'model': raid_model,
+            'is_virtual': True,
+            'raw': {},
+        }
+        self.info[raid_dev_name] = AttrDict(raid_dev_info)
+
+        # add it to the model's raid devices
+        self.raid_devices[raid_dev_name] = raid_dev
+        # add it to the model's devices
+        self.add_device(raid_dev_name, raid_dev)
+
+        log.debug('Successfully added raid_dev: {}'.format(raid_dev))
+
+    def add_device(self, devpath, device):
+        log.debug("adding device: {} = {}".format(devpath, device))
+        self.devices[devpath] = device
 
     def get_partitions(self):
         log.debug('probe_storage: get_partitions()')
@@ -158,16 +286,23 @@ class FilesystemModel(ModelPolicy):
                   partitions))
         return partitions
 
+    def installable(self):
+        ''' one or more disks has used space
+            and has "/" as a mount
+        '''
+        for disk in self.get_disks():
+            if disk.usedspace > 0 and "/" in disk.mounts:
+                return True
+
     def get_available_disks(self):
-        return [dev.disk.devpath for dev in self.get_disks()
-                if self.opts.dry_run is True or dev.mounted is False]
+        return [dev.disk.devpath for dev in self.get_disks()]
 
     def get_used_disks(self):
         return [dev.disk.devpath for dev in self.devices.values()
                 if dev.available is False]
 
     def get_disk_info(self, disk):
-        return self.info[disk]
+        return self.info.get(disk, {})
 
     def get_disk_action(self, disk):
         return self.devices[disk].get_actions()
