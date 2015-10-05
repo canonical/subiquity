@@ -15,6 +15,7 @@
 
 import json
 import logging
+import re
 
 from .blockdev import Blockdev, Raiddev
 import math
@@ -117,8 +118,7 @@ class FilesystemModel(ModelPolicy):
 
     def reset(self):
         log.debug('FilesystemModel: resetting disks')
-        for disk in self.devices.values():
-            disk.reset()
+        self.devices = {}
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -152,11 +152,21 @@ class FilesystemModel(ModelPolicy):
                 self.info[disk] = self.prober.get_storage_info(disk)
 
     def get_disk(self, disk):
+        '''get disk object given path.  If provided a partition, then
+         return the parent disk.  /dev/sda2 --> /dev/sda obj'''
         log.debug('probe_storage: get_disk({})'.format(disk))
+
         if disk not in self.devices:
-            self.devices[disk] = Blockdev(disk, self.info[disk].serial,
-                                          self.info[disk].model,
-                                          size=self.info[disk].size)
+            try:
+                self.devices[disk] = Blockdev(disk, self.info[disk].serial,
+                                              self.info[disk].model,
+                                              size=self.info[disk].size)
+            except KeyError:
+                ''' if it looks like a partition, try again with
+                    parent device '''
+                if disk[-1].isdigit():
+                    return self.get_disk(re.split('[\d+]', disk)[0])
+
         return self.devices[disk]
 
     def get_available_disks(self):
@@ -228,6 +238,7 @@ class FilesystemModel(ModelPolicy):
             'hot_spares': '0',
             'chunk_size': '4K',
         }
+        could be /dev/sda1, /dev/md0, /dev/bcache1, /dev/vg_foo/foobar2?
         '''
         raid_devices = []
         spare_devices = []
@@ -238,11 +249,19 @@ class FilesystemModel(ModelPolicy):
         # and then one partition of type raid
         for (devpath, _, _) in all_devices:
             disk = self.get_disk(devpath)
-            disk.add_partition(1, disk.freespace, None, None, flag='raid')
-            if len(raid_devices) + nr_spares < len(all_devices):
-                raid_devices.append(disk)
+
+            # add or update a partition to be raid type
+            if disk.path != devpath:  # we must have got a partition
+                raiddev = disk.get_partition(devpath)
+                raiddev.flags = 'raid'
             else:
-                spare_devices.append(disk)
+                disk.add_partition(1, disk.freespace, None, None, flag='raid')
+                raiddev = disk
+
+            if len(raid_devices) + nr_spares < len(all_devices):
+                raid_devices.append(raiddev)
+            else:
+                spare_devices.append(raiddev)
 
         # auto increment md number based in registered devices
         raid_dev_name = '/dev/md{}'.format(len(self.raid_devices))
@@ -252,12 +271,13 @@ class FilesystemModel(ModelPolicy):
         raid_level = int(raidspec.get('raid_level'))
         raid_size = self.calculate_raid_size(raid_level, raid_devices,
                                              spare_devices)
+
         # create a Raiddev (pass in only the names)
         raid_dev = Raiddev(raid_dev_name, raid_serial, raid_model,
                            raid_parttype, raid_size,
-                           [d.devpath for d in raid_devices],
+                           [d.path for d in raid_devices],
                            raid_level,
-                           [d.devpath for d in spare_devices])
+                           [d.path for d in spare_devices])
 
         # add it to the model's info dict
         raid_dev_info = {
@@ -315,6 +335,31 @@ class FilesystemModel(ModelPolicy):
 
         log.debug('bootable check: no disks have been marked bootable')
         return False
+
+    def get_empty_disks(self):
+        ''' empty disk is one that does not have any
+            partitions, filesystems or mounts, and is non-zero size '''
+        empty = []
+        for dev in self.get_available_disks():
+            if len(dev.partitions) == 0 and \
+               len(dev.mounts) == 0 and \
+               len(dev.filesystems) == 0:
+                empty.append(dev)
+        log.debug('empty_disks: {}'.format(", ".join([dev.path for dev in empty])))
+        return empty
+
+    def get_empty_disk_names(self):
+        return [dev.disk.devpath for dev in self.get_empty_disks()]
+
+    def get_empty_partition_names(self):
+        ''' empty partitions have non-zero size, but are not part
+            of a filesystem or mount point or other raid '''
+        empty = []
+        for dev in self.get_available_disks():
+            empty += dev.available_partitions
+
+        log.debug('empty_partitions: {}'.format(", ".join(empty)))
+        return empty
 
     def get_available_disk_names(self):
         return [dev.disk.devpath for dev in self.get_available_disks()]
