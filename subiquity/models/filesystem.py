@@ -99,6 +99,13 @@ class FilesystemModel(ModelPolicy):
         'leave unformatted'
     ]
 
+    partition_flags = [
+        'boot',
+        'lvm',
+        'raid',
+        'bios_grub',
+    ]
+
     # TODO: what is "linear" level?
     raid_levels = [
         "0",

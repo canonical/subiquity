@@ -109,6 +109,7 @@ class DiskAction():
         self._model = model
         self._serial = serial
         self._wipe = wipe
+        self._type = 'disk'
 
     def get_parent(self):
         return self.parent
@@ -117,13 +118,17 @@ class DiskAction():
     def action_id(self):
         return str(self._action_id)
 
+    @property
+    def type(self):
+        return self._type
+
     def get(self):
         action = {
             'id': self.action_id,
             'model': self._model,
             'ptable': self._ptable,
             'serial': self._serial,
-            'type': 'disk',
+            'type': self._type,
         }
         if self._wipe:
             action.update({'wipe': self._wipe})

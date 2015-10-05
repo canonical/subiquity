@@ -33,6 +33,11 @@ FIRST_PARTITION_OFFSET = 1 << 20  # 1K offset/aligned
 GPT_END_RESERVE = 1 << 20  # save room at the end for GPT
 
 
+# round up length by 1M
+def blockdev_align_up(size, block_size=1 << 30):
+    return size + (block_size - (size % block_size))
+
+
 # TODO: Bcachepart class
 class Bcachedev():
     # XXX: wanted a per instance counter to track /dev/bcacheX device
@@ -248,12 +253,9 @@ class Blockdev():
             raise Exception('Not enough space (requested:{} free:{}'.format(
                             size, self.freespace))
 
+        # curtin requires parted name for swap
         if fstype in ["swap"]:
             fstype = "linux-swap(v1)"
-
-        # round up length by 1M
-        def _align_up(size, block_size=1 << 30):
-            return size + (block_size - (size % block_size))
 
         if len(self.disk.partitions) == 0:
             offset = FIRST_PARTITION_OFFSET
@@ -261,22 +263,13 @@ class Blockdev():
             offset = 0
 
         log.debug('Aligning start and length on 1M boundaries')
-        new_size = _align_up(size + offset)
+        new_size = blockdev_align_up(size + offset)
         if new_size > self.freespace - GPT_END_RESERVE:
             new_size = self.freespace - GPT_END_RESERVE
         log.debug('Old size: {} New size: {}'.format(size, new_size))
 
         log.debug('requested start: {} length: {}'.format(offset,
                                                           new_size - offset))
-        valid_flags = [
-            "boot",
-            "lvm",
-            "raid",
-            "bios_grub",
-        ]
-        if flag and flag not in valid_flags:
-            raise Exception('Flag: {} is not valid.'.format(flag))
-
         # create partition and add
         part_action = PartitionAction(self.baseaction, partnum,
                                       offset, new_size - offset, flag)
