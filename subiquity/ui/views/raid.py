@@ -47,18 +47,27 @@ class RaidView(ViewPolicy):
         items = [
             Text("DISK SELECTION")
         ]
-        avail_disks = self.model.get_available_disk_names()
-        if len(avail_disks) == 0:
+
+        # raid can use empty whole disks, or empty partitions
+        avail_disks = self.model.get_empty_disk_names()
+        avail_parts = self.model.get_empty_partition_names()
+        avail_devs = sorted(avail_disks + avail_parts)
+        if len(avail_devs) == 0:
             return items.append(
                 [Color.info_minor(Text("No available disks."))])
 
-        for dname in avail_disks:
-            disk = self.model.get_disk_info(dname)
-            #device = self.model.get_disk(dname)
-            disk_sz = _humanize_size(disk.size)
-            disk_string = "{}     {},     {}".format(disk.name,
+        for dname in avail_devs:
+            device = self.model.get_disk(dname)
+            if device.path != dname:
+                # we've got a partition
+                raiddev = device.get_partition(dname)
+            else:
+                raiddev = device
+
+            disk_sz = _humanize_size(raiddev.size)
+            disk_string = "{}     {},     {}".format(dname,
                                                      disk_sz,
-                                                     disk.model)
+                                                     device.model)
             log.debug('raid: disk_string={}'.format(disk_string))
             self.selected_disks.append(CheckBox(disk_string))
 

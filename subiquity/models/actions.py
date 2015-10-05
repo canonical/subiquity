@@ -160,6 +160,10 @@ class PartitionAction(DiskAction):
         return "{}{}".format(self.parent.action_id, self.partnum)
 
     @property
+    def devpath(self):
+        return "/dev/{}".format(self.path)
+
+    @property
     def size(self):
         return self._size
 
