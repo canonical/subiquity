@@ -124,4 +124,4 @@ class RaidView(ViewPolicy):
 
     def cancel(self, button):
         log.debug('raid: button_cancel')
-        self.signal.emit_signal("quit")
+        self.signal.emit_signal('filesystem:show')
