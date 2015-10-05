@@ -141,8 +141,20 @@ class Blockdev():
         self.holder = {}
 
     @property
+    def blocktype(self):
+        return self.baseaction.type
+
+    @property
     def devpath(self):
         return self.disk.devpath
+
+    @property
+    def path(self):
+        return self.disk.devpath
+
+    @property
+    def model(self):
+        return self.disk.model
 
     @property
     def mounts(self):
@@ -165,6 +177,11 @@ class Blockdev():
         return self.disk.partitions
 
     @property
+    def partnames(self):
+        return ['{}{}'.format(self.devpath, num) for (num, _) in
+                self.partitions.items()]
+
+    @property
     def filesystems(self):
         return self._filesystems
 
@@ -181,6 +198,17 @@ class Blockdev():
         if not self.is_mounted() and self.percent_free > 0:
             return True
         return False
+
+    @property
+    def available_partitions(self):
+        ''' return list of non-zero sized partitions
+            defined but not mounted or formatted or used in
+            raid, lvm, bcache'''
+        return [part.devpath for (num, part) in self.partitions.items()
+                if part.size > 0 and
+                   part.flags not in ['raid', 'lvm', 'bcache'] and
+                   (part.devpath not in self._mounts.keys() or
+                    part.devpath not in self._filesystems.keys())]
 
     @property
     def mounted(self):
@@ -271,6 +299,10 @@ class Blockdev():
 
         log.debug('Partition Added')
         return new_size
+
+    def get_partition(self, devpath):
+        [partnum] = re.findall('\d+$', devpath)
+        return self.partitions[partnum]
 
     def set_holder(self, devpath, holdtype):
         self.holder[holdtype] = devpath
