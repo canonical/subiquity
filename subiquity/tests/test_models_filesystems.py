@@ -1,14 +1,47 @@
 import testtools
 import random
+import argparse
 
 from subiquity.models.blockdev import (Blockdev,
                                        blockdev_align_up,
                                        FIRST_PARTITION_OFFSET,
                                        GPT_END_RESERVE)
 from subiquity.models.filesystem import FilesystemModel
+from subiquity.prober import Prober
+from subiquity.tests import fakes
 
 
 GB = 1 << 40
+
+class TestFilesystemModel(testtools.TestCase):
+    def setUp(self):
+        super(TestFilesystemModel, self).setUp()
+        self.opts = argparse.Namespace()
+        self.opts.machine_config = fakes.FAKE_MACHINE_JSON
+        self.opts.dry_run = True
+        self.prober = Prober(self.opts)
+        self.fsm = FilesystemModel(self.prober, self.opts)
+
+
+    def test_filesystemmodel_init(self):
+        self.assertNotEqual(self.fsm, None)
+        self.assertEqual(self.fsm.info, {})
+        self.assertEqual(self.fsm.devices, {})
+        self.assertEqual(self.fsm.raid_devices, {})
+        self.assertEqual(self.fsm.storage, {})
+
+    def test_filesystemmodel_get_signals(self):
+        self.assertEqual(sorted(self.fsm.get_signals()),
+                         sorted(self.fsm.signals + self.fsm.fs_menu))
+
+    def test_filesystemmodel_get_signal_by_name(self):
+        for (name, signal, method) in self.fsm.get_signals():
+            self.assertEqual(signal,
+                             self.fsm.get_signal_by_name(name))
+
+    def test_filesystemmodel_get_menu(self):
+        self.assertEqual(sorted(self.fsm.fs_menu),
+                         sorted(self.fsm.get_menu()))
 
 
 class TestBlockdev(testtools.TestCase):
