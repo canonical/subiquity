@@ -110,6 +110,17 @@ class TestFilesystemModel(testtools.TestCase):
         self.assertLess(len(avail_disks), len(self.fsm.devices.values()))
         self.assertTrue(disk not in avail_disks)
 
+    def test_filesystemmodel_add_device(self):
+        self.fsm.probe_storage()
+        diskname = random.choice(list(self.fsm.info.keys()))
+        disk = Blockdev(diskname,
+                        self.fsm.info[diskname].serial,
+                        self.fsm.info[diskname].model,
+                        size=self.fsm.info[diskname].size)
+
+        devname = '/dev/md0'
+        self.fsm.add_device(devname, disk)
+        self.assertTrue(devname in self.fsm.devices)
 
 class TestBlockdev(testtools.TestCase):
     def setUp(self):
