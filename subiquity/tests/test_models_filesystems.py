@@ -21,7 +21,6 @@ class TestBlockdev(testtools.TestCase):
         self.size = 128 * GB
         self.bd = Blockdev(self.devpath, self.serial, self.model,
                            self.parttype, self.size)
- 
 
     def test_blockdev_init(self):
         # verify
@@ -77,7 +76,8 @@ class TestBlockdev(testtools.TestCase):
 
     def test_blockdev_add_additional_partition(self):
         self.add_partition()
-        new_size = self.add_partition(partnum=2, partsize=1 * GB, fstype='ext4',
+        partsize = 2 * GB
+        new_size = self.add_partition(partnum=2, partsize=partsize, fstype='ext4',
                                       mountpoint='/foo', flag='boot')
 
         self.assertEqual(len(list(self.bd.partitions)), 2)
@@ -85,10 +85,102 @@ class TestBlockdev(testtools.TestCase):
 
         # additional partitions don't have an offset, just alignment
         new_part = self.bd.partitions[2]
-        offset_aligned = blockdev_align_up(1 * GB)
+        offset_aligned = blockdev_align_up(partsize)
         self.assertEqual(offset_aligned, new_part.size)
         self.assertEqual(new_size, new_part.size)
         self.assertEqual(offset_aligned, new_size)
 
-#    def test_blockdev_add_partition_no_format_no_mount(self):
-#        pass
+    def test_blockdev_add_partition_no_format_no_mount(self):
+        self.add_partition()
+        partnum=2
+        new_size = self.add_partition(partnum=partnum, partsize=1 * GB, fstype=None,
+                                      mountpoint=None, flag='raid')
+
+        partpath='{}{}'.format(self.devpath, partnum)
+
+        self.assertEqual(len(list(self.bd.partitions)), 2)
+        print([action.get() for (num, action) in self.bd.partitions.items()])
+
+        # format check
+        self.assertTrue(partpath not in self.bd.filesystems)
+
+        # mount check
+        self.assertTrue(partpath not in self.bd._mounts)
+
+    def test_blockdev_lastpartnumber(self):
+        self.add_partition()
+        self.assertEqual(self.bd.lastpartnumber, 1)
+
+    def test_blockdev_get_partition(self):
+        partpath='{}{}'.format(self.devpath, '1')
+        self.add_partition()
+        new_part = self.bd.partitions[1]
+        part2 = self.bd.get_partition(partpath)
+        self.assertEqual(new_part, part2)
+
+    def test_blockdev_get_actions(self):
+        self.add_partition()
+        actions = self.bd.get_actions()
+
+        # actions: disk, partition, format, mount
+        self.assertEqual(len(actions), 4)
+        action_types = [a.get('type') for a in actions]
+        for a in ['disk', 'partition', 'format', 'mount']:
+            self.assertTrue(a in action_types)
+
+    def test_blockdev_sort_actions(self):
+        self.add_partition()
+        actions = self.bd.sort_actions(self.bd.get_actions())
+        # self.bd has a partition, add_partition method adds a
+        # disk action, partition action, a format, and a mount point action.
+        # We should have a sorted order of actions  which define disk,
+        # partition it, format and then mount confirm this by walking up
+        # the order and comparing action type
+        for (idx, a) in enumerate(actions):
+            print(idx, a)
+
+        order = ['disk', 'partition', 'format', 'mount']
+        for (idx, type) in enumerate(order):
+            print(idx, type)
+            self.assertEqual(order[idx], actions[idx].get('type'))
+
+    def test_blockdev_get_fs_table(self):
+        self.add_partition()
+        partnum = 1
+        partsize = self.bd.partitions[partnum].size
+
+        partpath = '{}{}'.format(self.devpath, partnum)
+        mount = self.bd._mounts[partpath]
+        fstype = self.bd.filesystems[partpath].fstype
+
+        # test
+        fs_table = self.bd.get_fs_table()
+
+        # verify
+        self.assertEqual(len(fs_table), len(self.bd.partitions))
+        self.assertEqual(mount, fs_table[0][0])
+        self.assertEqual(partsize, fs_table[0][1])
+        self.assertEqual(fstype, fs_table[0][2])
+        self.assertEqual(partpath, fs_table[0][3])
+
+    def test_blockdev_get_fs_table_swap(self):
+        self.add_partition()
+        partnum=2
+        self.add_partition(partnum=partnum, partsize=1 * GB, fstype='swap',
+                           mountpoint=None, flag=None)
+
+        partsize = self.bd.partitions[partnum].size
+
+        partpath = '{}{}'.format(self.devpath, partnum)
+        fstype = 'swap'
+        mount = fstype
+
+        # test
+        fs_table = self.bd.get_fs_table()
+
+        # verify
+        self.assertEqual(len(fs_table), len(self.bd.partitions))
+        self.assertEqual(mount, fs_table[1][0])
+        self.assertEqual(partsize, fs_table[1][1])
+        self.assertEqual(fstype, fs_table[1][2])
+        self.assertEqual(partpath, fs_table[1][3])
