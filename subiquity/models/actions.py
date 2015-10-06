@@ -145,6 +145,7 @@ class RaidAction(DiskAction):
         self._raidlevel = raidlevel
         self._devices = dev_ids
         self._spares = spare_ids
+        self._type = 'raid'
 
     def get(self):
         action = {
@@ -153,7 +154,7 @@ class RaidAction(DiskAction):
             'raidlevel': self._raidlevel,
             'devices': self._devices,
             'spare_devices': self._spares,
-            'type': 'raid',
+            'type': self._type,
         }
         return action
 
@@ -165,6 +166,7 @@ class PartitionAction(DiskAction):
         self._offset = int(offset)
         self._size = int(size)
         self.flags = flags
+        self._type = 'partition'
         self._action_id = "{}{}_part".format(self.parent.action_id,
                                              self.partnum)
 
@@ -196,7 +198,7 @@ class PartitionAction(DiskAction):
             'number': self.partnum,
             'size': '{}B'.format(self.size),
             'offset': '{}B'.format(self.offset),
-            'type': 'partition',
+            'type': self._type,
         }
 
 
@@ -207,13 +209,14 @@ class BcacheAction(DiskAction):
         self.backing_device = backing_id.parent.action_id
         self.cache_device = cache_id.parent.action_id
         self._action_id = "bcache" + str(bcache_num)
+        self._type = 'bcache'
 
     def get(self):
         return {
             'backing_device': self.backing_device,
             'cache_device': self.cache_device,
             'id': self.action_id,
-            'type': 'bcache',
+            'type': self._type,
         }
 
 
@@ -222,12 +225,10 @@ class FormatAction(DiskAction):
         self.parent = parent
         self._fstype = fstype
         self._action_id = "{}_fmt".format(self.parent.action_id)
+        self._type = 'format'
         # fat filesystem require an id of <= 11 chars
         if fstype.startswith('fat'):
             self._action_id = self._action_id[:11]
-        # curtin detects fstype as 'swap'
-        elif fstype.startswith('linux-swap'):
-            self._fstype = 'swap'
 
     @property
     def fstype(self):
@@ -238,7 +239,7 @@ class FormatAction(DiskAction):
             'volume': self.parent.action_id,
             'id': self.action_id,
             'fstype': self.fstype,
-            'type': 'format',
+            'type': self._type,
         }
 
 
@@ -247,6 +248,7 @@ class MountAction(DiskAction):
         self.parent = parent
         self._path = path
         self._action_id = "{}_mnt".format(self.parent.action_id)
+        self._type = 'mount'
 
     @property
     def path(self):
@@ -257,7 +259,7 @@ class MountAction(DiskAction):
             'device': self.parent.action_id,
             'id': self.action_id,
             'path': self.path,
-            'type': 'mount',
+            'type': self._type,
         }
 
 

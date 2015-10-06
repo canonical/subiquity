@@ -253,10 +253,6 @@ class Blockdev():
             raise Exception('Not enough space (requested:{} free:{}'.format(
                             size, self.freespace))
 
-        # curtin requires parted name for swap
-        if fstype in ["swap"]:
-            fstype = "linux-swap(v1)"
-
         if len(self.disk.partitions) == 0:
             offset = FIRST_PARTITION_OFFSET
         else:
@@ -295,7 +291,7 @@ class Blockdev():
 
     def get_partition(self, devpath):
         [partnum] = re.findall('\d+$', devpath)
-        return self.partitions[partnum]
+        return self.disk.partitions[int(partnum)]
 
     def set_holder(self, devpath, holdtype):
         self.holder[holdtype] = devpath
@@ -362,7 +358,7 @@ class Blockdev():
         return actions
 
     def get_fs_table(self):
-        ''' list(mountpoint, humansize, fstype, partition_path) '''
+        ''' list(mountpoint, size, fstype, partition_path) '''
         fs_table = []
         for (num, part) in self.disk.partitions.items():
             partpath = "{}{}".format(self.disk.devpath, part.partnum)

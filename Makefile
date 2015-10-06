@@ -55,7 +55,7 @@ lint:
 
 unit:
 	echo "Running unit tests..."
-	python3 -m "nose" -v --nologcapture --with-coverage ${TOPDIR}/tests/
+	nosetests3 $(PYTHONSRC)/tests
 
 installer/$(INSTALLIMG): installer/geninstaller installer/runinstaller $(INSTALLER_RESOURCES) probert
 	(cd installer && TOPDIR=$(TOPDIR)/installer ./geninstaller -v -r $(RELEASE) -a $(ARCH) -s $(STREAM) -b $(BOOTLOADER)) 
