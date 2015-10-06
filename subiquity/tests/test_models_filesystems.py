@@ -1,7 +1,10 @@
-import testtools
-import random
 import argparse
+import logging
+import random
+import testtools
+import yaml
 
+from mock import patch
 from subiquity.models.blockdev import (Blockdev,
                                        blockdev_align_up,
                                        FIRST_PARTITION_OFFSET,
@@ -16,12 +19,20 @@ GB = 1 << 40
 class TestFilesystemModel(testtools.TestCase):
     def setUp(self):
         super(TestFilesystemModel, self).setUp()
+        # don't show logging messages while testing
+        logging.disable(logging.CRITICAL)
+        self.make_fsm()
+
+    # mocking the reading of the fake data saves on IO 
+    @patch.object(Prober, 'get_storage')
+    def make_fsm(self, _get_storage):
+        _get_storage.return_value = fakes.FAKE_MACHINE_STORAGE_DATA 
         self.opts = argparse.Namespace()
         self.opts.machine_config = fakes.FAKE_MACHINE_JSON
         self.opts.dry_run = True
         self.prober = Prober(self.opts)
+        self.storage = fakes.FAKE_MACHINE_STORAGE_DATA
         self.fsm = FilesystemModel(self.prober, self.opts)
-
 
     def test_filesystemmodel_init(self):
         self.assertNotEqual(self.fsm, None)
@@ -36,12 +47,34 @@ class TestFilesystemModel(testtools.TestCase):
 
     def test_filesystemmodel_get_signal_by_name(self):
         for (name, signal, method) in self.fsm.get_signals():
-            self.assertEqual(signal,
-                             self.fsm.get_signal_by_name(name))
+            self.assertEqual(self.fsm.get_signal_by_name(name), signal)
 
     def test_filesystemmodel_get_menu(self):
-        self.assertEqual(sorted(self.fsm.fs_menu),
-                         sorted(self.fsm.get_menu()))
+        self.assertEqual(sorted(self.fsm.get_menu()),
+                         sorted(self.fsm.fs_menu))
+
+    def test_filesystemmodel_probe_storage(self):
+        '''sd[b..i]'''
+        disks = [d for d in self.storage.keys()
+                 if self.storage[d]['DEVTYPE'] == 'disk' and 
+                    self.storage[d]['MAJOR'] in ['8', '253']]
+        self.fsm.probe_storage()
+        self.assertNotEqual(self.fsm.storage, {})
+        self.assertEqual(sorted(self.fsm.info.keys()),
+                         sorted(disks))
+
+    def test_filesystemmodel_get_disk(self):
+        self.fsm.probe_storage()
+        diskname = random.choice(list(self.fsm.info.keys()))
+        disk = Blockdev(diskname,
+                        self.fsm.info[diskname].serial,
+                        self.fsm.info[diskname].model,
+                        size=self.fsm.info[diskname].size)
+
+        test_disk = self.fsm.get_disk(diskname)
+        print(disk)
+        print(test_disk)
+        self.assertEqual(test_disk, disk)
 
 
 class TestBlockdev(testtools.TestCase):
