@@ -76,6 +76,40 @@ class TestFilesystemModel(testtools.TestCase):
         print(test_disk)
         self.assertEqual(test_disk, disk)
 
+    def test_filesystemmodel_get_disk_from_partition(self):
+        self.fsm.probe_storage()
+        diskname = random.choice(list(self.fsm.info.keys()))
+        disk = self.fsm.get_disk(diskname)
+        disk.add_partition(1, disk.freespace, None, None, flag='raid')
+
+        partpath = '{}{}'.format(disk.path, 1)
+        print(partpath)
+        self.assertTrue(partpath[-1], 1)
+        test_disk = self.fsm.get_disk(partpath)
+        print(disk)
+        print(test_disk)
+        self.assertEqual(test_disk, disk)
+
+    def test_filesystemmodel_get_all_disks(self):
+        self.fsm.probe_storage()
+        all_disks = self.fsm.get_all_disks()
+        for disk in all_disks:
+            self.assertTrue(disk in self.fsm.devices.values())
+
+    def test_filesystemmodel_get_available_disks(self):
+        ''' occupy one of the probed disks and ensure
+            that it's not included in the available disks
+            result since it's not actually avaialable
+        '''
+        self.fsm.probe_storage()
+        diskname = random.choice(list(self.fsm.info.keys()))
+        disk = self.fsm.get_disk(diskname)
+        disk.add_partition(1, disk.freespace, None, None, flag='raid')
+
+        avail_disks = self.fsm.get_available_disks()
+        self.assertLess(len(avail_disks), len(self.fsm.devices.values()))
+        self.assertTrue(disk not in avail_disks)
+
 
 class TestBlockdev(testtools.TestCase):
     def setUp(self):
