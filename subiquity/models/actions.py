@@ -99,6 +99,19 @@ class DiskAction():
         self._wipe = wipe
         self._type = 'disk'
 
+    __hash__ = None
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self._ptable == other._ptable and
+                    self._model == other._model and
+                    self._serial == other._serial and
+                    self._wipe == other._wipe and
+                    self._type == other._type)
+        else:
+            return False
+
     def get_parent(self):
         return self.parent
 
@@ -135,6 +148,18 @@ class RaidAction(DiskAction):
         self._spares = spare_ids
         self._type = 'raid'
 
+    __hash__ = None
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self._raidlevel == other._raidlevel and
+                    self._devices == other._devices and
+                    self._spares == other._spares and
+                    self._type == other._type)
+        else:
+            return False
+
     def get(self):
         action = {
             'id': self.action_id,
@@ -161,6 +186,20 @@ class PartitionAction(DiskAction):
         ''' rename action_id for readability '''
         if self.flags in ['bios_grub']:
             self._action_id = 'bios_boot_partition'
+
+    __hash__ = None
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self.partnum == other.partnum and
+                    self._offset == other._offset and
+                    self._size == other._size and
+                    self.flags == other.flags and
+                    self._type == other._type)
+        else:
+            return False
+
 
     @property
     def path(self):
@@ -218,6 +257,17 @@ class FormatAction(DiskAction):
         if fstype.startswith('fat'):
             self._action_id = self._action_id[:11]
 
+    __hash__ = None
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self._fstype == other._fstype and
+                    self._type == other._type)
+        else:
+            return False
+
+
     @property
     def fstype(self):
         return self._fstype
@@ -237,6 +287,16 @@ class MountAction(DiskAction):
         self._path = path
         self._action_id = "{}_mnt".format(self.parent.action_id)
         self._type = 'mount'
+
+    __hash__ = None
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self._path == other._path and
+                    self._type == other._type)
+        else:
+            return False
 
     @property
     def path(self):

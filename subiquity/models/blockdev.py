@@ -77,6 +77,21 @@ class Disk():
         self._size = self._get_size(devpath, size)
         self._partitions = OrderedDict()
 
+    def __eq__(self, other):
+        if isinstance(other,  self.__class__):
+            print('disk same class, checking members')
+            return (self._devpath == other._devpath and
+                    self._serial == other._serial and
+                    self._parttype == other._parttype and
+                    self._model == other._model and
+                    self._size == other._size and
+                    self._partitions == other._partitions)
+        else:
+            return False
+    __hash__ = None
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def _get_size(self, devpath, size):
         if size:
             return size
@@ -94,6 +109,17 @@ class Disk():
             block_sz = int(r.read())
 
         return nr_blocks * block_sz
+
+    def __repr__(self):
+        o = {
+           'devpath': self.devpath,
+           'serial': self.serial,
+           'model': self.model,
+           'parttype': self.parttype,
+           'size': self.size,
+           'partitions': self.partitions
+        }
+        return yaml.dump(o, default_flow_format=False)
 
     @property
     def devpath(self):
@@ -135,6 +161,25 @@ class Blockdev():
         self.baseaction = DiskAction(os.path.basename(self.disk.devpath),
                                      self.disk.model, self.disk.serial,
                                      self.disk.parttype)
+
+    def __eq__(self, other):
+        if isinstance(other,  self.__class__):
+            return (self.disk == other.disk and
+                    self._filesystems == other._filesystems and
+                    self._mounts == other._mounts and
+                    self.bcache == other.bcache and
+                    self.lvm == other.lvm  and
+                    self.holder == other.holder and
+                    self.baseaction == other.baseaction)
+        else:
+            return False
+
+    __hash__ = None
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return str(self.get_actions())
 
     def reset(self):
         ''' Wipe out any actions queued for this disk '''
