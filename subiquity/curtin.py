@@ -24,7 +24,8 @@ import yaml
 log = logging.getLogger("subiquity.curtin")
 
 TMPDIR = '/tmp'
-CURTIN = '/usr/local/curtin/bin/curtin'
+CURTIN_SEARCH_PATH = ['/usr/local/curtin/bin', '/usr/bin']
+CURTIN_INSTALL_PATH = ['/media/root-ro', '/']
 CONF_PREFIX = os.path.join(TMPDIR, 'subiquity-config-')
 CURTIN_NETWORK_CONFIG_FILE = CONF_PREFIX + 'network.yaml'
 CURTIN_STORAGE_CONFIG_FILE = CONF_PREFIX + 'storage.yaml'
@@ -203,14 +204,32 @@ def curtin_write_preserved_actions(actions):
         conf.close()
 
 
+def curtin_find_curtin():
+    for p in CURTIN_SEARCH_PATH:
+        curtin = os.path.join(p, 'curtin')
+        if os.path.exists(curtin):
+            log.debug('curtin found at: {}'.format(curtin))
+            return curtin
+
+
+def curtin_find_install_path():
+    for p in CURTIN_INSTALL_PATH:
+        if os.path.exists(p):
+            log.debug('install path set: {}'.format(p))
+            return p
+
+
 def curtin_install_cmd(configs):
     '''
     curtin -v --showtrace install -c $CONFIGS cp:///
     '''
-    install_cmd = [CURTIN, '-v', '--showtrace']
+    curtin = curtin_find_curtin()
+    install_path = curtin_find_install_path()
+
+    install_cmd = [curtin, '-v', '--showtrace']
     if configs:
         install_cmd += ['-c {}'.format(c) for c in configs]
-    install_cmd += ['install', 'cp:///media/root-ro']
+    install_cmd += ['install', 'cp://{}'.format(install_path)]
     log.info('curtin install command: {}'.format(" ".join(install_cmd)))
 
     return install_cmd
