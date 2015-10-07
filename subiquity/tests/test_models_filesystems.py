@@ -142,6 +142,41 @@ class TestFilesystemModel(testtools.TestCase):
         print(partitions, diskname)
         self.assertTrue(partitions[0].startswith(diskname))
 
+    def test_filesystemmodel_installable(self):
+        self.fsm.probe_storage()
+        self.assertEqual(self.fsm.installable(), False)
+
+        # create a partition that installs to root(/)
+        diskname = random.choice(list(self.fsm.info.keys()))
+        disk = self.fsm.get_disk(diskname)
+        disk.add_partition(1, disk.freespace, 'ext4', '/', flag='bios_grub')
+
+        # now we should be installable
+        self.assertEqual(self.fsm.installable(), True)
+
+    def test_filesystemmodel_not_installable(self):
+        self.fsm.probe_storage()
+
+        # create a partition that installs to not root(/)
+        diskname = random.choice(list(self.fsm.info.keys()))
+        disk = self.fsm.get_disk(diskname)
+        disk.add_partition(1, disk.freespace, 'ext4', '/opt', flag='bios_grub')
+
+        # we should not be installable
+        self.assertEqual(self.fsm.installable(), False)
+
+    def test_filesystemmodel_bootable(self):
+        self.fsm.probe_storage()
+        self.assertEqual(self.fsm.bootable(), False)
+
+        # create a partition that installs to root(/)
+        diskname = random.choice(list(self.fsm.info.keys()))
+        disk = self.fsm.get_disk(diskname)
+        disk.add_partition(1, disk.freespace, 'ext4', '/', flag='bios_grub')
+
+        # now we should be installable
+        self.assertEqual(self.fsm.bootable(), True)
+
 
 class TestBlockdev(testtools.TestCase):
     def setUp(self):
