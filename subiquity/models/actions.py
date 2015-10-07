@@ -135,6 +135,9 @@ class DiskAction():
             action.update({'wipe': self._wipe})
         return action
 
+    def __repr__(self):
+        return str(self.get())
+
     def dump(self):
         return yaml.dump(self.get(), default_flow_style=False)
 
