@@ -318,7 +318,7 @@ class FilesystemModel(ModelPolicy):
                          dev.disk.partitions.items()]
             partitions += partnames
 
-        sorted(partitions)
+        partitions = sorted(partitions)
         log.debug('probe_storage: get_partitions() returns: {}'.format(
                   partitions))
         return partitions
