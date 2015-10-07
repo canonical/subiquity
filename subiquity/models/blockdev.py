@@ -119,7 +119,7 @@ class Disk():
            'size': self.size,
            'partitions': self.partitions
         }
-        return yaml.dump(o, default_flow_format=False)
+        return yaml.dump(o, default_flow_style=False)
 
     @property
     def devpath(self):
@@ -251,13 +251,13 @@ class Blockdev():
 
     @property
     def available_partitions(self):
-        ''' return list of non-zero sized partitions
-            defined but not mounted or formatted or used in
+        ''' return list of non-zero sized partitions that are 
+            defined but not mounted, not formatted, and not used in
             raid, lvm, bcache'''
         return [part.devpath for (num, part) in self.partitions.items()
                 if part.size > 0 and
                    part.flags not in ['raid', 'lvm', 'bcache'] and
-                   (part.devpath not in self._mounts.keys() or
+                   (part.devpath not in self._mounts.keys() and 
                     part.devpath not in self._filesystems.keys())]
 
     @property
@@ -298,6 +298,9 @@ class Blockdev():
             raise Exception('Not enough space (requested:{} free:{}'.format(
                             size, self.freespace))
 
+        # ensure we always use integers for partitions
+        partnum = int(partnum)
+
         if len(self.disk.partitions) == 0:
             offset = FIRST_PARTITION_OFFSET
         else:
@@ -321,7 +324,7 @@ class Blockdev():
         partpath = "{}{}".format(self.disk.devpath, partnum)
 
         # record filesystem formating
-        if fstype:
+        if fstype and fstype not in ['leave unformatted']:
             fs_action = FormatAction(part_action, fstype)
             log.debug('Adding filesystem on {}'.format(partpath))
             log.debug('FormatAction:\n{}'.format(fs_action.get()))

@@ -314,7 +314,7 @@ class FilesystemModel(ModelPolicy):
         log.debug('probe_storage: get_partitions()')
         partitions = []
         for dev in self.devices.values():
-            partnames = [part.path for (num, part) in
+            partnames = [part.devpath for (num, part) in
                          dev.disk.partitions.items()]
             partitions += partnames
 

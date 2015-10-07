@@ -23,10 +23,10 @@ class TestFilesystemModel(testtools.TestCase):
         logging.disable(logging.CRITICAL)
         self.make_fsm()
 
-    # mocking the reading of the fake data saves on IO 
+    # mocking the reading of the fake data saves on IO
     @patch.object(Prober, 'get_storage')
     def make_fsm(self, _get_storage):
-        _get_storage.return_value = fakes.FAKE_MACHINE_STORAGE_DATA 
+        _get_storage.return_value = fakes.FAKE_MACHINE_STORAGE_DATA
         self.opts = argparse.Namespace()
         self.opts.machine_config = fakes.FAKE_MACHINE_JSON
         self.opts.dry_run = True
@@ -56,7 +56,7 @@ class TestFilesystemModel(testtools.TestCase):
     def test_filesystemmodel_probe_storage(self):
         '''sd[b..i]'''
         disks = [d for d in self.storage.keys()
-                 if self.storage[d]['DEVTYPE'] == 'disk' and 
+                 if self.storage[d]['DEVTYPE'] == 'disk' and
                     self.storage[d]['MAJOR'] in ['8', '253']]
         self.fsm.probe_storage()
         self.assertNotEqual(self.fsm.storage, {})
@@ -121,6 +121,27 @@ class TestFilesystemModel(testtools.TestCase):
         devname = '/dev/md0'
         self.fsm.add_device(devname, disk)
         self.assertTrue(devname in self.fsm.devices)
+
+    def test_filesystemmodel_get_partitions(self):
+        self.fsm.probe_storage()
+
+        # no partitions
+        partitions = self.fsm.get_partitions()
+        self.assertEqual(len(partitions), 0)
+
+        # add one to a random disk
+        diskname = random.choice(list(self.fsm.info.keys()))
+        disk = self.fsm.get_disk(diskname)
+        disk.add_partition(1, disk.freespace, None, None, flag='raid')
+
+        # we added one, we should get one
+        partitions = self.fsm.get_partitions()
+        self.assertEqual(len(partitions), 1)
+
+        # it should have the same base device name
+        print(partitions, diskname)
+        self.assertTrue(partitions[0].startswith(diskname))
+
 
 class TestBlockdev(testtools.TestCase):
     def setUp(self):
@@ -229,6 +250,23 @@ class TestBlockdev(testtools.TestCase):
         part2 = self.bd.get_partition(partpath)
         self.assertEqual(new_part, part2)
 
+    def test_blockdev_get_partition_with_string(self):
+        ''' attempt to add a partition with number as a string type '''
+        partnum = '1'
+        self.add_partition(partnum=partnum)
+
+        # format the partpath with devpath and partnum
+        partpath='{}{}'.format(self.devpath, partnum)
+
+        # we shouldn't be able to get it via a string index
+        self.assertRaises(KeyError, lambda x: self.bd.partitions[x], partnum)
+
+        # check that we did create the partition and store it
+        # with an integer as the key in the partitions dictionary
+        new_part = self.bd.partitions[int(partnum)]
+        part2 = self.bd.get_partition(partpath)
+        self.assertEqual(new_part, part2)
+
     def test_blockdev_get_actions(self):
         self.add_partition()
         actions = self.bd.get_actions()
@@ -295,3 +333,22 @@ class TestBlockdev(testtools.TestCase):
         self.assertEqual(partsize, fs_table[1][1])
         self.assertEqual(fstype, fs_table[1][2])
         self.assertEqual(partpath, fs_table[1][3])
+
+    def test_blockdev_available_partitions(self):
+        # add a non-empty partition
+        self.add_partition()
+
+        # we shouldn't have any empty partitions
+        empty = self.bd.available_partitions
+        self.assertEqual(empty, [])
+
+
+        partnum=2
+        self.add_partition(partnum=partnum, partsize=1 * GB,
+                           fstype='leave unformatted',
+                           mountpoint=None, flag=None)
+
+        # we should have one empty partition
+        empty = self.bd.available_partitions
+        print(empty)
+        self.assertEqual(len(empty), 1)
