@@ -331,6 +331,8 @@ class FilesystemModel(ModelPolicy):
             if disk.usedspace > 0 and "/" in disk.mounts:
                 return True
 
+        return False
+
     def bootable(self):
         ''' true if one disk has a boot partition '''
         log.debug('bootable check')
