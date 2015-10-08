@@ -59,16 +59,22 @@ class NetworkModel(ModelPolicy):
          'network'),
         ('Network finish',
          'network:finish',
-         'network_finish')
+         'network_finish'),
+        ('Network configure interface',
+         'network:configure-interface-menu',
+         'network_configure_interface'),
+        ('Network configure ipv4 interface',
+         'network:configure-ipv4-interface',
+         'network_configure_ipv4_interface')
     ]
 
     additional_options = [
         ('Set default route',
          'network:set-default-route',
          'set_default_route'),
-        ('Bond interfaces',
-         'network:bond-interfaces',
-         'bond_interfaces'),
+        # ('Bond interfaces',
+        #  'network:bond-interfaces',
+        #  'bond_interfaces'),
         # ('Install network driver',
         #  'network:install-network-driver',
         #  'install_network_driver')
