@@ -29,23 +29,30 @@ class NetworkSetDefaultRouteView(ViewPolicy):
         self.signal = signal
         self.default_gateway_w = None
         body = [
-            Padding.center_50(self._build_default_routes()),
+            Padding.center_79(Text("Please set the default gateway:")),
+            Padding.line_break(""),
+            Padding.center_79(self._build_default_routes()),
             Padding.line_break(""),
             Padding.center_20(self._build_buttons())
         ]
         super().__init__(ListBox(body))
 
     def _build_default_routes(self):
-        items = [
-            Text("Please set the default gateway:"),
-            Color.menu_button(done_btn(label="192.168.9.1 (em1, em2)",
-                                       on_press=self.done),
-                              focus_map="menu_button focus"),
+        ifaces = self.model.get_interfaces()
+        items = []
+        for iface in ifaces:
+            items.append(Padding.center_50(
+                Color.menu_button(done_btn(
+                    label="{ip} ({iface})".format(
+                        ip="FIXME: needs default gateway",
+                        iface=iface),
+                    on_press=self.done),
+                    focus_map="menu_button focus")))
+        items.append(Padding.center_50(
             Color.menu_button(
                 done_btn(label="Specify the default route manually",
                          on_press=self.show_edit_default_route),
-                focus_map="menu_button focus")
-        ]
+                focus_map="menu_button focus")))
         self.pile = Pile(items)
         return self.pile
 
@@ -63,14 +70,17 @@ class NetworkSetDefaultRouteView(ViewPolicy):
         log.debug("Re-rendering specify default route")
         self.default_gateway_w = StringEditor(
             caption="Default gateway will be ")
-        self.pile.contents[-1] = (Color.string_input(
-            self.default_gateway_w,
-            focus_map="string_input focus"), self.pile.options())
+        self.pile.contents[-1] = (Padding.center_50(
+            Color.string_input(
+                self.default_gateway_w,
+                focus_map="string_input focus")), self.pile.options())
         # self.signal.emit_signal('refresh')
 
     def done(self, result):
-        if self.default_gateway_w.value:
+        if self.default_gateway_w and self.default_gateway_w.value:
             self.model.default_gateway = self.default_gateway_w.value
+        else:
+            self.model.default_gateway = result.label
         self.signal.emit_signal('network:show')
 
     def cancel(self, button):

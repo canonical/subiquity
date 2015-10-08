@@ -16,7 +16,9 @@
 from subiquity.controller import ControllerPolicy
 from subiquity.models import NetworkModel
 from subiquity.ui.views import (NetworkView,
-                                NetworkSetDefaultRouteView)
+                                NetworkSetDefaultRouteView,
+                                NetworkConfigureInterfaceView,
+                                NetworkConfigureIPv4InterfaceView)
 from subiquity.ui.dummy import DummyView
 
 from subiquity.curtin import curtin_write_network_actions
@@ -42,8 +44,37 @@ class NetworkController(ControllerPolicy):
         self.signal.emit_signal('filesystem:show')
 
     def set_default_route(self):
+        self.model.prev_signal = ('Back to network view',
+                                  'network:show',
+                                  'network')
+        self.ui.set_header("Default route")
         self.ui.set_body(NetworkSetDefaultRouteView(self.model,
                                                     self.signal))
+
+    def network_configure_interface(self, iface):
+        self.model.prev_signal = ('Back to network view',
+                                  'network:show',
+                                  'network')
+        self.ui.set_header("Network interface {}".format(iface))
+        self.ui.set_body(NetworkConfigureInterfaceView(self.model,
+                                                       self.signal,
+                                                       iface))
+
+    def network_configure_ipv4_interface(self, iface):
+        self.model.prev_signal = ('Back to configure interface menu',
+                                  'network:configure-interface-menu',
+                                  'network_configure_interface')
+        self.ui.set_header("Network interface {} manual IPv4 "
+                           "configuration".format(iface))
+        self.ui.set_body(NetworkConfigureIPv4InterfaceView(self.model,
+                                                           self.signal,
+                                                           iface))
+
+    def network_configure_ipv6_interface(self, iface):
+        self.model.prev_signal = ('Back to configure interface menu',
+                                  'network:configure-interface-menu',
+                                  'network_configure_interface')
+        self.ui.set_body(DummyView(self.signal))
 
     def bond_interfaces(self):
         self.ui.set_body(DummyView(self.signal))

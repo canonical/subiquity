@@ -24,7 +24,7 @@ from urwid import (ListBox, Pile, BoxAdapter,
                    Text, Columns)
 import yaml
 from subiquity.ui.lists import SimpleList
-from subiquity.ui.buttons import cancel_btn, menu_btn
+from subiquity.ui.buttons import cancel_btn, menu_btn, done_btn
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
 from subiquity.models.actions import RouteAction
@@ -48,9 +48,12 @@ class NetworkView(ViewPolicy):
         super().__init__(ListBox(self.body))
 
     def _build_buttons(self):
+        cancel = cancel_btn(on_press=self.cancel)
+        done = done_btn(on_press=self.done)
+
         buttons = [
-            Color.button(cancel_btn(on_press=self.cancel),
-                         focus_map='button focus'),
+            Color.button(done, focus_map='button focus'),
+            Color.button(cancel, focus_map='button focus')
         ]
         return Pile(buttons)
 
@@ -145,6 +148,10 @@ class NetworkView(ViewPolicy):
 
     def on_net_dev_press(self, result):
         log.debug("Selected network dev: {}".format(result.label))
+        self.signal.emit_signal('network:configure-interface-menu',
+                                result.label)
+
+    def done(self, result):
         actions = [action.get() for _, action in
                    self.model.configured_interfaces.items()]
         actions += self.model.get_default_route()
