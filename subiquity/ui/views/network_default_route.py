@@ -17,6 +17,7 @@ from urwid import Text, Pile, ListBox
 from subiquity.view import ViewPolicy
 from subiquity.ui.buttons import cancel_btn, done_btn
 from subiquity.ui.utils import Color, Padding
+from subiquity.ui.interactive import StringEditor
 import logging
 
 log = logging.getLogger('subiquity.network.set_default_route')
@@ -26,11 +27,8 @@ class NetworkSetDefaultRouteView(ViewPolicy):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal
-        self.is_manual = False
         body = [
-            Padding.center_50(self._build_disk_selection()),
-            Padding.line_break(""),
-            Padding.center_50(self._build_raid_configuration()),
+            Padding.center_50(self._build_default_routes()),
             Padding.line_break(""),
             Padding.center_20(self._build_buttons())
         ]
@@ -44,10 +42,11 @@ class NetworkSetDefaultRouteView(ViewPolicy):
                               focus_map="menu_button focus"),
             Color.menu_button(
                 done_btn(label="Specify the default route manually",
-                         on_press=self.set_manually),
+                         on_press=self.show_edit_default_route),
                 focus_map="menu_button focus")
         ]
-        return Pile(items)
+        self.pile = Pile(items)
+        return self.pile
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
@@ -59,12 +58,18 @@ class NetworkSetDefaultRouteView(ViewPolicy):
         ]
         return Pile(buttons)
 
-    def set_manually(self, result):
-        self.is_manual = True
-        self.signal.emit_signal('refresh')
+    def show_edit_default_route(self, btn):
+        log.debug("Re-rendering specify default route")
+        self.manual_route_edit = StringEditor(
+            caption="Default gateway will be ")
+        self.manual_route_edit = Color.string_input(
+            self.manual_route_edit,
+            focus_map="string_input focus")
+        self.pile.contents[-1] = (self.manual_route_edit, self.pile.options())
+        # self.signal.emit_signal('refresh')
 
     def done(self, result):
         self.signal.emit_signal('network:show')
 
     def cancel(self, button):
-        self.signal.emit_signal(self.model.get_previous_signal)
+        self.signal.emit_signal('network:show')

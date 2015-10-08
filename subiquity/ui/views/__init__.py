@@ -21,6 +21,7 @@ from .raid import RaidView  # NOQA
 from .ceph import CephDiskView  # NOQA
 from .iscsi import IscsiDiskView  # NOQA
 from .network import NetworkView  # NOQA
+from .network_default_route import NetworkSetDefaultRouteView  # NOQA
 from .installpath import InstallpathView  # NOQA
 from .installprogress import ProgressView  # NOQA
 from .welcome import WelcomeView  # NOQA

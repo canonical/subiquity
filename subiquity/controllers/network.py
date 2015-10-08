@@ -15,7 +15,8 @@
 
 from subiquity.controller import ControllerPolicy
 from subiquity.models import NetworkModel
-from subiquity.ui.views import NetworkView
+from subiquity.ui.views import (NetworkView,
+                                NetworkSetDefaultRouteView)
 from subiquity.ui.dummy import DummyView
 
 from subiquity.curtin import curtin_write_network_actions
@@ -41,7 +42,8 @@ class NetworkController(ControllerPolicy):
         self.signal.emit_signal('filesystem:show')
 
     def set_default_route(self):
-        self.ui.set_body(DummyView(self.signal))
+        self.ui.set_body(NetworkSetDefaultRouteView(self.model,
+                                                    self.signal))
 
     def bond_interfaces(self):
         self.ui.set_body(DummyView(self.signal))
