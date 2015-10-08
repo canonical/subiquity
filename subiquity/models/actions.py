@@ -89,6 +89,18 @@ class BondAction(NetAction):
         self._action_keys.extend(['bond_interfaces'])
 
 
+class RouteAction(NetAction):
+    def __init__(self, **options):
+        if 'type' not in options or options['type'] != 'route':
+            raise Exception('Invalid type for {}'.format(
+                self.__class__.__name__))
+        if 'gateway' not in options:
+            raise Exception('{} requires a valid gateway attr'.format(
+                self.__class__.__name__))
+        super().__init__(**options)
+        self._action_keys.extend(['gateway'])
+
+
 class DiskAction():
     def __init__(self, action_id, model, serial, ptable='gpt', wipe=None):
         self._action_id = action_id

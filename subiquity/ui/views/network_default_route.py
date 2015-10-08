@@ -27,6 +27,7 @@ class NetworkSetDefaultRouteView(ViewPolicy):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal
+        self.default_gateway_w = None
         body = [
             Padding.center_50(self._build_default_routes()),
             Padding.line_break(""),
@@ -60,15 +61,16 @@ class NetworkSetDefaultRouteView(ViewPolicy):
 
     def show_edit_default_route(self, btn):
         log.debug("Re-rendering specify default route")
-        self.manual_route_edit = StringEditor(
+        self.default_gateway_w = StringEditor(
             caption="Default gateway will be ")
-        self.manual_route_edit = Color.string_input(
-            self.manual_route_edit,
-            focus_map="string_input focus")
-        self.pile.contents[-1] = (self.manual_route_edit, self.pile.options())
+        self.pile.contents[-1] = (Color.string_input(
+            self.default_gateway_w,
+            focus_map="string_input focus"), self.pile.options())
         # self.signal.emit_signal('refresh')
 
     def done(self, result):
+        if self.default_gateway_w.value:
+            self.model.default_gateway = self.default_gateway_w.value
         self.signal.emit_signal('network:show')
 
     def cancel(self, button):

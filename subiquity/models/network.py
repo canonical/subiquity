@@ -24,6 +24,7 @@ from subiquity.utils import (read_sys_net,
 
 from .actions import (
     BondAction,
+    RouteAction,
     PhysicalAction,
 )
 
@@ -78,6 +79,7 @@ class NetworkModel(ModelPolicy):
         self.prober = prober
         self.network = {}
         self.configured_interfaces = {}
+        self.default_gateway = None
 
     def reset(self):
         log.debug('resetting network model')
@@ -257,6 +259,15 @@ class NetworkModel(ModelPolicy):
             action['subnets'].extend([subnet])
         else:
             action['subnets'] = [subnet]
+
+    def get_default_route(self):
+        if self.default_gateway:
+            action = {
+                'type': 'route',
+                'gateway': self.default_gateway
+            }
+            return [RouteAction(**action)]
+        return []
 
     def get_bridges(self):
         return [iface for iface in self.network.keys()

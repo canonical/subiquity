@@ -27,6 +27,7 @@ from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import cancel_btn, menu_btn
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
+from subiquity.models.actions import RouteAction
 
 
 log = logging.getLogger('subiquity.network')
@@ -146,9 +147,9 @@ class NetworkView(ViewPolicy):
         log.debug("Selected network dev: {}".format(result.label))
         actions = [action.get() for _, action in
                    self.model.configured_interfaces.items()]
+        actions += self.model.get_default_route()
         log.debug('Configured Network Actions:\n{}'.format(
             yaml.dump(actions, default_flow_style=False)))
-
         self.signal.emit_signal('network:finish', actions)
 
     def cancel(self, button):
