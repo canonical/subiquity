@@ -109,6 +109,20 @@ class DiskAction():
         self._model = model
         self._serial = serial
         self._wipe = wipe
+        self._type = 'disk'
+
+    __hash__ = None
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self._ptable == other._ptable and
+                    self._model == other._model and
+                    self._serial == other._serial and
+                    self._wipe == other._wipe and
+                    self._type == other._type)
+        else:
+            return False
 
     def get_parent(self):
         return self.parent
@@ -117,20 +131,60 @@ class DiskAction():
     def action_id(self):
         return str(self._action_id)
 
+    @property
+    def type(self):
+        return self._type
+
     def get(self):
         action = {
             'id': self.action_id,
             'model': self._model,
             'ptable': self._ptable,
             'serial': self._serial,
-            'type': 'disk',
+            'type': self._type,
         }
         if self._wipe:
             action.update({'wipe': self._wipe})
         return action
 
+    def __repr__(self):
+        return str(self.get())
+
     def dump(self):
         return yaml.dump(self.get(), default_flow_style=False)
+
+
+class RaidAction(DiskAction):
+    def __init__(self, action_id, raidlevel, dev_ids, spare_ids):
+        self._action_id = action_id
+        self.parent = None
+        self._raidlevel = raidlevel
+        self._devices = dev_ids
+        self._spares = spare_ids
+        self._type = 'raid'
+
+    __hash__ = None
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self._raidlevel == other._raidlevel and
+                    self._devices == other._devices and
+                    self._spares == other._spares and
+                    self._type == other._type)
+        else:
+            return False
+
+    def get(self):
+        action = {
+            'id': self.action_id,
+            'name': self.action_id,
+            'raidlevel': self._raidlevel,
+            'devices': self._devices,
+            'spare_devices': self._spares,
+            'type': self._type,
+        }
+        return action
 
 
 class PartitionAction(DiskAction):
@@ -140,6 +194,7 @@ class PartitionAction(DiskAction):
         self._offset = int(offset)
         self._size = int(size)
         self.flags = flags
+        self._type = 'partition'
         self._action_id = "{}{}_part".format(self.parent.action_id,
                                              self.partnum)
 
@@ -147,9 +202,27 @@ class PartitionAction(DiskAction):
         if self.flags in ['bios_grub']:
             self._action_id = 'bios_boot_partition'
 
+    __hash__ = None
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self.partnum == other.partnum and
+                    self._offset == other._offset and
+                    self._size == other._size and
+                    self.flags == other.flags and
+                    self._type == other._type)
+        else:
+            return False
+
+
     @property
     def path(self):
         return "{}{}".format(self.parent.action_id, self.partnum)
+
+    @property
+    def devpath(self):
+        return "/dev/{}".format(self.path)
 
     @property
     def size(self):
@@ -167,7 +240,7 @@ class PartitionAction(DiskAction):
             'number': self.partnum,
             'size': '{}B'.format(self.size),
             'offset': '{}B'.format(self.offset),
-            'type': 'partition',
+            'type': self._type,
         }
 
 
@@ -178,13 +251,14 @@ class BcacheAction(DiskAction):
         self.backing_device = backing_id.parent.action_id
         self.cache_device = cache_id.parent.action_id
         self._action_id = "bcache" + str(bcache_num)
+        self._type = 'bcache'
 
     def get(self):
         return {
             'backing_device': self.backing_device,
             'cache_device': self.cache_device,
             'id': self.action_id,
-            'type': 'bcache',
+            'type': self._type,
         }
 
 
@@ -193,12 +267,21 @@ class FormatAction(DiskAction):
         self.parent = parent
         self._fstype = fstype
         self._action_id = "{}_fmt".format(self.parent.action_id)
+        self._type = 'format'
         # fat filesystem require an id of <= 11 chars
         if fstype.startswith('fat'):
             self._action_id = self._action_id[:11]
-        # curtin detects fstype as 'swap'
-        elif fstype.startswith('linux-swap'):
-            self._fstype = 'swap'
+
+    __hash__ = None
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self._fstype == other._fstype and
+                    self._type == other._type)
+        else:
+            return False
+
 
     @property
     def fstype(self):
@@ -209,7 +292,7 @@ class FormatAction(DiskAction):
             'volume': self.parent.action_id,
             'id': self.action_id,
             'fstype': self.fstype,
-            'type': 'format',
+            'type': self._type,
         }
 
 
@@ -218,6 +301,17 @@ class MountAction(DiskAction):
         self.parent = parent
         self._path = path
         self._action_id = "{}_mnt".format(self.parent.action_id)
+        self._type = 'mount'
+
+    __hash__ = None
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self._path == other._path and
+                    self._type == other._type)
+        else:
+            return False
 
     @property
     def path(self):
@@ -228,7 +322,7 @@ class MountAction(DiskAction):
             'device': self.parent.action_id,
             'id': self.action_id,
             'path': self.path,
-            'type': 'mount',
+            'type': self._type,
         }
 
 

@@ -17,11 +17,11 @@ import logging
 import os
 from subiquity.controller import ControllerPolicy
 from subiquity.models.actions import preserve_action
-from subiquity.models import (FilesystemModel, IscsiDiskModel, RaidModel,
-                              CephDiskModel)
+from subiquity.models import (FilesystemModel,
+                              RaidModel)
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
                                 FilesystemView, DiskInfoView,
-                                RaidView, CephDiskView, IscsiDiskView)
+                                RaidView)
 import subiquity.utils as utils
 from subiquity.ui.dummy import DummyView
 from subiquity.curtin import (curtin_write_storage_actions,
@@ -38,8 +38,8 @@ class FilesystemController(ControllerPolicy):
     def __init__(self, common):
         super().__init__(common)
         self.model = FilesystemModel(self.prober, self.opts)
-        self.iscsi_model = IscsiDiskModel()
-        self.ceph_model = CephDiskModel()
+        #self.iscsi_model = IscsiDiskModel()
+        #self.ceph_model = CephDiskModel()
         self.raid_model = RaidModel()
 
     def filesystem(self, reset=False):
@@ -102,8 +102,13 @@ class FilesystemController(ControllerPolicy):
         log.debug('disk.freespace: {}'.format(current_disk.freespace))
 
         try:
-            ''' create a gpt boot partition if one doesn't exist '''
-            if current_disk.parttype == 'gpt' and \
+            ''' create a gpt boot partition if one doesn't exist, only
+                one one disk'''
+
+            system_bootable = self.model.bootable()
+            log.debug('model has bootable device? {}'.format(system_bootable))
+            if system_bootable is False and \
+               current_disk.parttype == 'gpt' and \
                len(current_disk.disk.partitions) == 0:
                 if self.is_uefi():
                     log.debug('Adding EFI partition first')
@@ -172,7 +177,7 @@ class FilesystemController(ControllerPolicy):
         self.ui.set_body(DummyView(self.signal))
 
     def create_raid(self, *args, **kwargs):
-        title = ("Disk and filesystem setup")
+        title = ("Create software RAID (\"MD\") disk")
         footer = ("ENTER on a disk will show detailed "
                   "information for that disk")
         excerpt = ("Use SPACE to select disks to form your RAID array, "
@@ -181,8 +186,13 @@ class FilesystemController(ControllerPolicy):
                    "the same size and speed.")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
-        self.ui.set_body(RaidView(self.raid_model,
+        self.ui.set_body(RaidView(self.model,
                                   self.signal))
+
+    def add_raid_dev(self, result):
+        log.debug('add_raid_dev: result={}'.format(result))
+        self.model.add_raid_device(result)
+        self.signal.emit_signal('filesystem:show')
 
     def setup_bcache(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
@@ -216,4 +226,5 @@ class FilesystemController(ControllerPolicy):
         if self.opts.dry_run and self.opts.uefi:
             log.debug('forcing is_uefi True beacuse of options')
             return True
+
         return os.path.exists('/sys/firmware/efi')

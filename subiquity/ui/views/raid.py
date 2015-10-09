@@ -13,10 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import Text, Columns, Pile, ListBox
+from urwid import Text, Columns, Pile, ListBox, CheckBox
+from subiquity.models.filesystem import _humanize_size
 from subiquity.view import ViewPolicy
 from subiquity.ui.buttons import cancel_btn, done_btn
-from subiquity.ui.interactive import StringEditor, IntegerEditor, Selector
+from subiquity.ui.interactive import (StringEditor, IntegerEditor,
+                                      Selector)
 from subiquity.ui.utils import Color, Padding
 import logging
 
@@ -29,7 +31,8 @@ class RaidView(ViewPolicy):
         self.signal = signal
         self.raid_level = Selector(self.model.raid_levels)
         self.hot_spares = IntegerEditor(caption="")
-        self.chunk_size = StringEditor(caption="")
+        self.chunk_size = StringEditor(edit_text="4K", caption="")
+        self.selected_disks = []
         body = [
             Padding.center_50(self._build_disk_selection()),
             Padding.line_break(""),
@@ -40,12 +43,40 @@ class RaidView(ViewPolicy):
         super().__init__(ListBox(body))
 
     def _build_disk_selection(self):
+        log.debug('raid: _build_disk_selection')
         items = [
             Text("DISK SELECTION")
         ]
+
+        # raid can use empty whole disks, or empty partitions
+        avail_disks = self.model.get_empty_disk_names()
+        avail_parts = self.model.get_empty_partition_names()
+        avail_devs = sorted(avail_disks + avail_parts)
+        if len(avail_devs) == 0:
+            return items.append(
+                [Color.info_minor(Text("No available disks."))])
+
+        for dname in avail_devs:
+            device = self.model.get_disk(dname)
+            if device.path != dname:
+                # we've got a partition
+                raiddev = device.get_partition(dname)
+            else:
+                raiddev = device
+
+            disk_sz = _humanize_size(raiddev.size)
+            disk_string = "{}     {},     {}".format(dname,
+                                                     disk_sz,
+                                                     device.model)
+            log.debug('raid: disk_string={}'.format(disk_string))
+            self.selected_disks.append(CheckBox(disk_string))
+
+        items += self.selected_disks
+
         return Pile(items)
 
     def _build_raid_configuration(self):
+        log.debug('raid: _build_raid_config')
         items = [
             Text("RAID CONFIGURATION"),
             Columns(
@@ -80,6 +111,7 @@ class RaidView(ViewPolicy):
         return Pile(items)
 
     def _build_buttons(self):
+        log.debug('raid: _build_buttons')
         cancel = cancel_btn(on_press=self.cancel)
         done = done_btn(on_press=self.done)
 
@@ -90,7 +122,15 @@ class RaidView(ViewPolicy):
         return Pile(buttons)
 
     def done(self, result):
-        self.signal.emit_signal('filesystem:show')
+        result = {
+            'devices': [x.get_label() for x in self.selected_disks if x.state],
+            'raid_level': self.raid_level.value,
+            'hot_spares': self.hot_spares.value,
+            'chunk_size': self.chunk_size.value,
+        }
+        log.debug('raid_done: result = {}'.format(result))
+        self.signal.emit_signal('filesystem:add-raid-dev', result)
 
     def cancel(self, button):
-        self.signal.emit_signal("quit")
+        log.debug('raid: button_cancel')
+        self.signal.emit_signal('filesystem:show')

@@ -24,12 +24,18 @@ from .actions import (
     DiskAction,
     PartitionAction,
     FormatAction,
-    MountAction
+    MountAction,
+    RaidAction,
 )
 
 log = logging.getLogger("subiquity.filesystem.blockdev")
 FIRST_PARTITION_OFFSET = 1 << 20  # 1K offset/aligned
 GPT_END_RESERVE = 1 << 20  # save room at the end for GPT
+
+
+# round up length by 1M
+def blockdev_align_up(size, block_size=1 << 30):
+    return size + (block_size - (size % block_size))
 
 
 # TODO: Bcachepart class
@@ -71,6 +77,21 @@ class Disk():
         self._size = self._get_size(devpath, size)
         self._partitions = OrderedDict()
 
+    def __eq__(self, other):
+        if isinstance(other,  self.__class__):
+            print('disk same class, checking members')
+            return (self._devpath == other._devpath and
+                    self._serial == other._serial and
+                    self._parttype == other._parttype and
+                    self._model == other._model and
+                    self._size == other._size and
+                    self._partitions == other._partitions)
+        else:
+            return False
+    __hash__ = None
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def _get_size(self, devpath, size):
         if size:
             return size
@@ -88,6 +109,17 @@ class Disk():
             block_sz = int(r.read())
 
         return nr_blocks * block_sz
+
+    def __repr__(self):
+        o = {
+           'devpath': self.devpath,
+           'serial': self.serial,
+           'model': self.model,
+           'parttype': self.parttype,
+           'size': self.size,
+           'partitions': self.partitions
+        }
+        return yaml.dump(o, default_flow_style=False)
 
     @property
     def devpath(self):
@@ -125,9 +157,29 @@ class Blockdev():
         self._mounts = {}
         self.bcache = []
         self.lvm = []
+        self.holder = {}
         self.baseaction = DiskAction(os.path.basename(self.disk.devpath),
                                      self.disk.model, self.disk.serial,
                                      self.disk.parttype)
+
+    def __eq__(self, other):
+        if isinstance(other,  self.__class__):
+            return (self.disk == other.disk and
+                    self._filesystems == other._filesystems and
+                    self._mounts == other._mounts and
+                    self.bcache == other.bcache and
+                    self.lvm == other.lvm  and
+                    self.holder == other.holder and
+                    self.baseaction == other.baseaction)
+        else:
+            return False
+
+    __hash__ = None
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return str(self.get_actions())
 
     def reset(self):
         ''' Wipe out any actions queued for this disk '''
@@ -136,10 +188,23 @@ class Blockdev():
         self._mounts = {}
         self.bcache = []
         self.lvm = []
+        self.holder = {}
+
+    @property
+    def blocktype(self):
+        return self.baseaction.type
 
     @property
     def devpath(self):
         return self.disk.devpath
+
+    @property
+    def path(self):
+        return self.disk.devpath
+
+    @property
+    def model(self):
+        return self.disk.model
 
     @property
     def mounts(self):
@@ -162,16 +227,38 @@ class Blockdev():
         return self.disk.partitions
 
     @property
+    def partnames(self):
+        return ['{}{}'.format(self.devpath, num) for (num, _) in
+                self.partitions.items()]
+
+    @property
     def filesystems(self):
         return self._filesystems
+
+    @property
+    def percent_free(self):
+        ''' return the device free percentage of the whole device'''
+        percent = (int((1.0 - (self.usedspace / self.size)) * 100))
+        return percent
 
     @property
     def available(self):
         ''' return True if has free space or partitions not
             assigned '''
-        if not self.is_mounted() and self.freespace > 0.0:
+        if not self.is_mounted() and self.percent_free > 0:
             return True
         return False
+
+    @property
+    def available_partitions(self):
+        ''' return list of non-zero sized partitions that are 
+            defined but not mounted, not formatted, and not used in
+            raid, lvm, bcache'''
+        return [part.devpath for (num, part) in self.partitions.items()
+                if part.size > 0 and
+                   part.flags not in ['raid', 'lvm', 'bcache'] and
+                   (part.devpath not in self._mounts.keys() and 
+                    part.devpath not in self._filesystems.keys())]
 
     @property
     def mounted(self):
@@ -185,18 +272,12 @@ class Blockdev():
             space += int(action.offset)
             space += int(action.size)
 
-        log.debug('{} usedspace: {}'.format(self.disk.devpath, space))
         return space
 
     @property
     def freespace(self, unit='B'):
         ''' return amount of free space '''
-        used = self.usedspace
-        size = self.size
-        log.debug('{} freespace: {} - {} = {}'.format(self.disk.devpath,
-                                                      size, used,
-                                                      size - used))
-        return size - used
+        return self.size - self.usedspace
 
     @property
     def lastpartnumber(self):
@@ -217,12 +298,8 @@ class Blockdev():
             raise Exception('Not enough space (requested:{} free:{}'.format(
                             size, self.freespace))
 
-        if fstype in ["swap"]:
-            fstype = "linux-swap(v1)"
-
-        # round up length by 1M
-        def _align_up(size, block_size=1 << 30):
-            return size + (block_size - (size % block_size))
+        # ensure we always use integers for partitions
+        partnum = int(partnum)
 
         if len(self.disk.partitions) == 0:
             offset = FIRST_PARTITION_OFFSET
@@ -230,22 +307,13 @@ class Blockdev():
             offset = 0
 
         log.debug('Aligning start and length on 1M boundaries')
-        new_size = _align_up(size + offset)
+        new_size = blockdev_align_up(size + offset)
         if new_size > self.freespace - GPT_END_RESERVE:
             new_size = self.freespace - GPT_END_RESERVE
         log.debug('Old size: {} New size: {}'.format(size, new_size))
 
         log.debug('requested start: {} length: {}'.format(offset,
                                                           new_size - offset))
-        valid_flags = [
-            "boot",
-            "lvm",
-            "raid",
-            "bios_grub",
-        ]
-        if flag and flag not in valid_flags:
-            raise Exception('Flag: {} is not valid.'.format(flag))
-
         # create partition and add
         part_action = PartitionAction(self.baseaction, partnum,
                                       offset, new_size - offset, flag)
@@ -256,7 +324,7 @@ class Blockdev():
         partpath = "{}{}".format(self.disk.devpath, partnum)
 
         # record filesystem formating
-        if fstype:
+        if fstype and fstype not in ['leave unformatted']:
             fs_action = FormatAction(part_action, fstype)
             log.debug('Adding filesystem on {}'.format(partpath))
             log.debug('FormatAction:\n{}'.format(fs_action.get()))
@@ -269,6 +337,13 @@ class Blockdev():
         log.debug('Partition Added')
         return new_size
 
+    def get_partition(self, devpath):
+        [partnum] = re.findall('\d+$', devpath)
+        return self.disk.partitions[int(partnum)]
+
+    def set_holder(self, devpath, holdtype):
+        self.holder[holdtype] = devpath
+
     def is_mounted(self):
         with open('/proc/mounts') as pm:
             mounts = pm.read()
@@ -277,19 +352,14 @@ class Blockdev():
         # dict to uniq the list of devices mounted
         mounted_devs = {}
         for mnt in re.findall('/dev/.*', mounts):
-            log.debug('mnt={}'.format(mnt))
             (devpath, mount, *_) = mnt.split()
             # resolve any symlinks
             mounted_devs.update(
                 {os.path.realpath(devpath): mount})
 
-        log.debug('mounted_devs: {}'.format(mounted_devs))
         matches = [dev for dev in mounted_devs.keys()
                    if dev.startswith(self.disk.devpath)]
-        log.debug('Checking if {} is in {}'.format(
-                  self.disk.devpath, matches))
         if len(matches) > 0:
-            log.debug('Device is mounted: {}'.format(matches))
             return True
 
         return False
@@ -317,7 +387,7 @@ class Blockdev():
 
     def sort_actions(self, actions):
         def type_index(t):
-            order = ['disk', 'partition', 'format', 'mount']
+            order = ['disk', 'partition', 'raid', 'format', 'mount']
             return order.index(t.get('type'))
 
         def path_count(p):
@@ -336,7 +406,7 @@ class Blockdev():
         return actions
 
     def get_fs_table(self):
-        ''' list(mountpoint, humansize, fstype, partition_path) '''
+        ''' list(mountpoint, size, fstype, partition_path) '''
         fs_table = []
         for (num, part) in self.disk.partitions.items():
             partpath = "{}{}".format(self.disk.devpath, part.partnum)
@@ -347,6 +417,19 @@ class Blockdev():
                     (mntpoint, part.size, fs.fstype, partpath))
 
         return fs_table
+
+
+class Raiddev(Blockdev):
+    def __init__(self, devpath, serial, model, parttype, size,
+                 raid_level, raid_devices, spare_devices):
+        super().__init__(devpath, serial, model, parttype, size)
+        self._raid_devices = raid_devices
+        self._raid_level = raid_level
+        self._spare_devices = spare_devices
+        self.baseaction = RaidAction(os.path.basename(self.disk.devpath),
+                                     self._raid_devices,
+                                     self._raid_level,
+                                     self._spare_devices)
 
 
 if __name__ == '__main__':
