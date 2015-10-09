@@ -272,7 +272,7 @@ class NetworkModel(ModelPolicy):
                 'type': 'route',
                 'gateway': self.default_gateway
             }
-            return [RouteAction(**action)]
+            return [RouteAction(**action).get()]
         return []
 
     def get_bridges(self):
