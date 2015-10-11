@@ -37,26 +37,26 @@ class TestFilesystemModel(testtools.TestCase):
         self.storage = fakes.FAKE_MACHINE_STORAGE_DATA
         self.fsm = FilesystemModel(self.prober, self.opts)
 
-    def test_filesystemmodel_init(self):
+    def test_init(self):
         self.assertNotEqual(self.fsm, None)
         self.assertEqual(self.fsm.info, {})
         self.assertEqual(self.fsm.devices, {})
         self.assertEqual(self.fsm.raid_devices, {})
         self.assertEqual(self.fsm.storage, {})
 
-    def test_filesystemmodel_get_signals(self):
+    def test_get_signals(self):
         self.assertEqual(sorted(self.fsm.get_signals()),
                          sorted(self.fsm.signals + self.fsm.fs_menu))
 
-    def test_filesystemmodel_get_signal_by_name(self):
+    def test_get_signal_by_name(self):
         for (name, signal, method) in self.fsm.get_signals():
             self.assertEqual(self.fsm.get_signal_by_name(name), signal)
 
-    def test_filesystemmodel_get_menu(self):
+    def test_get_menu(self):
         self.assertEqual(sorted(self.fsm.get_menu()),
                          sorted(self.fsm.fs_menu))
 
-    def test_filesystemmodel_probe_storage(self):
+    def test_probe_storage(self):
         '''sd[b..i]'''
         disks = [d for d in self.storage.keys()
                  if self.storage[d]['DEVTYPE'] == 'disk' and
@@ -66,7 +66,7 @@ class TestFilesystemModel(testtools.TestCase):
         self.assertEqual(sorted(self.fsm.info.keys()),
                          sorted(disks))
 
-    def test_filesystemmodel_get_disk(self):
+    def test_get_disk(self):
         self.fsm.probe_storage()
         diskname = random.choice(list(self.fsm.info.keys()))
         disk = Blockdev(diskname,
@@ -79,7 +79,7 @@ class TestFilesystemModel(testtools.TestCase):
         print(test_disk)
         self.assertEqual(test_disk, disk)
 
-    def test_filesystemmodel_get_disk_from_partition(self):
+    def test_get_disk_from_partition(self):
         self.fsm.probe_storage()
         diskname = random.choice(list(self.fsm.info.keys()))
         disk = self.fsm.get_disk(diskname)
@@ -93,13 +93,13 @@ class TestFilesystemModel(testtools.TestCase):
         print(test_disk)
         self.assertEqual(test_disk, disk)
 
-    def test_filesystemmodel_get_all_disks(self):
+    def test_get_all_disks(self):
         self.fsm.probe_storage()
         all_disks = self.fsm.get_all_disks()
         for disk in all_disks:
             self.assertTrue(disk in self.fsm.devices.values())
 
-    def test_filesystemmodel_get_available_disks(self):
+    def test_get_available_disks(self):
         ''' occupy one of the probed disks and ensure
             that it's not included in the available disks
             result since it's not actually avaialable
@@ -113,7 +113,7 @@ class TestFilesystemModel(testtools.TestCase):
         self.assertLess(len(avail_disks), len(self.fsm.devices.values()))
         self.assertTrue(disk not in avail_disks)
 
-    def test_filesystemmodel_add_device(self):
+    def test_add_device(self):
         self.fsm.probe_storage()
         diskname = random.choice(list(self.fsm.info.keys()))
         disk = Blockdev(diskname,
@@ -125,7 +125,7 @@ class TestFilesystemModel(testtools.TestCase):
         self.fsm.add_device(devname, disk)
         self.assertTrue(devname in self.fsm.devices)
 
-    def test_filesystemmodel_get_partitions(self):
+    def test_get_partitions(self):
         self.fsm.probe_storage()
 
         # no partitions
@@ -145,7 +145,7 @@ class TestFilesystemModel(testtools.TestCase):
         print(partitions, diskname)
         self.assertTrue(partitions[0].startswith(diskname))
 
-    def test_filesystemmodel_installable(self):
+    def test_installable(self):
         self.fsm.probe_storage()
         self.assertEqual(self.fsm.installable(), False)
 
@@ -157,7 +157,7 @@ class TestFilesystemModel(testtools.TestCase):
         # now we should be installable
         self.assertEqual(self.fsm.installable(), True)
 
-    def test_filesystemmodel_not_installable(self):
+    def test_not_installable(self):
         self.fsm.probe_storage()
 
         # create a partition that installs to not root(/)
@@ -168,7 +168,7 @@ class TestFilesystemModel(testtools.TestCase):
         # we should not be installable
         self.assertEqual(self.fsm.installable(), False)
 
-    def test_filesystemmodel_bootable(self):
+    def test_bootable(self):
         self.fsm.probe_storage()
         self.assertEqual(self.fsm.bootable(), False)
 
