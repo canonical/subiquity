@@ -180,6 +180,75 @@ class TestFilesystemModel(testtools.TestCase):
         # now we should be installable
         self.assertEqual(self.fsm.bootable(), True)
 
+    def test_get_empty_disks(self):
+        self.fsm.probe_storage()
+
+        empty = self.fsm.get_empty_disks()
+        avail_disks = self.fsm.get_available_disks()
+        self.assertEqual(len(empty), len(avail_disks))
+
+         # create a partition but not FS or Mount
+        diskname = random.choice(self.fsm.get_available_disk_names())
+        disk = self.fsm.get_disk(diskname)
+        disk.add_partition(1, int(disk.freespace / 2), None, None, flag='raid')
+        self.assertEqual(len(disk.partitions), 1)
+        print('disk: {}'.format(disk))
+        print('disk avail: {} is_mounted={} percent_free={}'.format(
+                        disk.devpath, disk.is_mounted(), disk.percent_free,
+                        len(disk.partitions)))
+
+        # we should have one less empty disk than available
+        empty = self.fsm.get_empty_disks()
+        avail_disks = self.fsm.get_available_disks()
+        print('empty')
+        for d in empty:
+            print('empty: {} is_mounted={} percent_free={}'.format(
+                        d.devpath, d.is_mounted(), d.percent_free,
+                        len(d.partitions)))
+        print('avail')
+        for d in avail_disks:
+            print('avail: {} is_mounted={} percent_free={}'.format(
+                        d.devpath, d.is_mounted(), d.percent_free,
+                        len(d.partitions)))
+        self.assertLess(len(empty), len(avail_disks))
+
+    def test_get_empty_disks_names(self):
+        self.fsm.probe_storage()
+        empty_names = self.fsm.get_empty_disk_names()
+        for name in empty_names:
+            print(name)
+            self.assertTrue(name in self.fsm.devices)
+
+    def test_get_empty_partition_names(self):
+        self.fsm.probe_storage()
+
+        empty = self.fsm.get_empty_partition_names()
+        self.assertEqual(empty, [])
+
+         # create a partition (not full sized) but not FS or Mount
+        diskname = random.choice(self.fsm.get_available_disk_names())
+        disk = self.fsm.get_disk(diskname)
+        disk.add_partition(1, int(disk.freespace / 2), None, None, flag=None)
+
+        # one empty partition
+        [empty] = self.fsm.get_empty_partition_names()
+
+        print('empty={}'.format(empty))
+        print('diskane={}'.format(diskname))
+        self.assertTrue(diskname in empty)
+
+    def test_get_empty_partition_names(self):
+        self.fsm.probe_storage()
+        diskname = random.choice(self.fsm.get_available_disk_names())
+        disk = self.fsm.get_disk(diskname)
+        # create a partition (not full sized) but not FS or Mount
+        disk.add_partition(1, int(disk.freespace / 2), None, None, flag='raid')
+
+        avail_disk_names = self.fsm.get_available_disk_names()
+        print(disk.devpath)
+        print(avail_disk_names)
+        self.assertTrue(disk.devpath in avail_disk_names)
+
 
 class TestBlockdev(testtools.TestCase):
     def setUp(self):
