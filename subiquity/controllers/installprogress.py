@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import unicode_literals
+
 import logging
 from tornado.gen import coroutine
 import subiquity.utils as utils
@@ -28,17 +30,22 @@ log = logging.getLogger("subiquity.controller.installprogress")
 
 
 class InstallProgressController(ControllerPolicy):
-    KIRBY = ["(>'-')>",
-             "<('-'<)",
-             "<('-')>",
-             "(>'-')>",
-             "<('-'<)",
-             "<('-')>",
-             "(>'-')>",
-             "<('-'<)",
-             "<('-')>",
-             "(>'-')>",
-             "<('-'<)"]
+    KITT = [
+        "\u2581",
+        "\u2582",
+        "\u2583",
+        "\u2584",
+        "\u2585",
+        "\u2586",
+        "\u2587",
+        "\u2588",
+        "\u2587",
+        "\u2586",
+        "\u2585",
+        "\u2584",
+        "\u2583",
+        "\u2582",
+    ]
 
     def __init__(self, common):
         super().__init__(common)
@@ -46,7 +53,7 @@ class InstallProgressController(ControllerPolicy):
         self.progress_view = None
         self.is_complete = False
         self.alarm = None
-        self.kirby_pos = 0
+        self.kitt_pos = 0
 
     @coroutine
     def curtin_install(self, postconfig):
@@ -85,15 +92,15 @@ class InstallProgressController(ControllerPolicy):
             self.loop.remove_alarm(self.alarm)
         else:
             try:
-                cur_kirby = self.KIRBY[self.kirby_pos]
+                cur_kitt = self.KITT[self.kitt_pos]
             except IndexError:
-                self.kirby_pos = 0
-                cur_kirby = self.KIRBY[self.kirby_pos]
+                self.kitt_pos = 0
+                cur_kitt = self.KITT[self.kitt_pos]
             self.progress_view.text.set_text(
-                "Still installing, watch kirby dance, {}".format(
-                    cur_kirby))
+                "Still installing, {}".format(
+                    cur_kitt))
             self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
-            self.kirby_pos += 1
+            self.kitt_pos += 1
 
     def reboot(self):
         curtin_reboot()
