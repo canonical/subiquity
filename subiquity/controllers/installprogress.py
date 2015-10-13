@@ -78,9 +78,11 @@ class InstallProgressController(ControllerPolicy):
             log.debug("filesystem: this is the *real* thing")
             result = yield utils.run_command_async(" ".join(curtin_cmd))
             if result['status'] > 0:
-                log.error("Problem with curtin "
-                          "install: {}".format(result))
-                raise Exception("Problem with curtin install")
+                msg = ("Problem with curtin "
+                       "install: {}".format(result))
+                log.error(msg)
+                self.progress_view.text.set_text(msg)
+                self.loop.remove_alarm(self.alarm)
             self.is_complete = True
 
     def progress_indicator(self, *args, **kwargs):
