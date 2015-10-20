@@ -139,6 +139,9 @@ def curtin_find_curtin():
         if os.path.exists(curtin):
             log.debug('curtin found at: {}'.format(curtin))
             return curtin
+    # This ensures we fail when we attempt to run curtin
+    # but it's not present
+    return '/bin/false'
 
 
 def curtin_find_install_path():
