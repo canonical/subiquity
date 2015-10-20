@@ -385,7 +385,7 @@ generate_seed() {
 
     log "Writing seed user-data (subiquity)"
     local subiquity_tar=$dldir/subiquity.tar
-    local tar_cmd="tar -C ${TOPDIR}/.. -cpf $subiquity_tar subiquity bin"
+    local tar_cmd="tar -C ${TOPDIR}/.. -cpf $subiquity_tar subiquity"
     if [[ ${TOPDIR} = /usr/share/subiquity* ]]; then
         log "Using installed subiquity paths"
         tar_cmd="$tar_cmd subiquity-tui"
