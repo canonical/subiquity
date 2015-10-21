@@ -20,12 +20,14 @@ Contains some default key navigations
 
 from urwid import WidgetWrap
 
-
 class ViewPolicy(WidgetWrap):
     def keypress(self, size, key):
         if key == 'esc':
             self.signal.emit_signal(self.model.get_previous_signal)
-        if key == 'Q' or key == 'q' or key == 'ctrl c':
+            return None
+        if key in ['ctrl x']:
             self.signal.register_signals('quit')
             self.signal.emit_signal('quit')
-        super().keypress(size, key)
+            return None
+
+        return super().keypress(size, key)

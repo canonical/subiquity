@@ -82,8 +82,7 @@ class Controller:
         raise urwid.ExitMainLoop()
 
     def header_hotkeys(self, key):
-        if key in ['q', 'Q', 'ctrl c']:
-            self.exit()
+        return False
 
     def run(self):
         if not hasattr(self, 'loop'):
