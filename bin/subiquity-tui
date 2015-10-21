@@ -17,6 +17,7 @@
 import argparse
 import sys
 import logging
+import signal
 from subiquity.log import setup_logger
 from subiquity import __version__ as VERSION
 from subiquity.core import Controller as Subiquity
@@ -42,12 +43,17 @@ def parse_options(argv):
     return parser.parse_args(argv)
 
 
+def control_c_handler(signum, frame):
+    sys.exit(1)
+
 def main():
     opts = parse_options(sys.argv[1:])
     setup_logger()
     logger = logging.getLogger('subiquity')
     logger.info("Starting SUbiquity v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
+
+    signal.signal(signal.SIGINT, control_c_handler)
 
     ui = SubiquityUI()
 
