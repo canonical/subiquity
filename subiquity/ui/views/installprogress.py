@@ -45,10 +45,5 @@ class ProgressView(ViewPolicy):
         self.pile.contents.append((w, self.pile.options()))
         self.pile.focus_position = 1
 
-    def keypress(self, size, key):
-        super().keypress(size, key)
-        if key in ['q', 'Q']:
-            self.signal.emit_signal('installprogress:curtin-reboot')
-
     def reboot(self, btn):
         self.signal.emit_signal('installprogress:curtin-reboot')
