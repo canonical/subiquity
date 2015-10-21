@@ -145,6 +145,12 @@ class DiskAction():
         }
         if self._wipe:
             action.update({'wipe': self._wipe})
+        # if we don't have a valid serial, then we must use
+        # device path, which is stored in action_id
+        if self._serial in ['Unknown Serial']:
+            del action['serial']
+            action.update({'path': '/dev/{}'.format(self.action_id)})
+
         return action
 
     def __repr__(self):
