@@ -19,6 +19,7 @@ from subiquity.controller import ControllerPolicy
 from subiquity.models.actions import preserve_action
 from subiquity.models import (FilesystemModel,
                               RaidModel)
+from subiquity.models.filesystem import (_humanize_size)
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
                                 FilesystemView, DiskInfoView,
                                 RaidView)
@@ -203,23 +204,70 @@ class FilesystemController(ControllerPolicy):
     def create_swap_entire_device(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
 
+    def show_disk_information_next(self, curr_device):
+        log.debug('show_disk_info_next: curr_device={}'.format(curr_device))
+        available = self.model.get_available_disk_names()
+        idx = available.index(curr_device)
+        next_idx = (idx + 1) % len(available)
+        next_device = available[next_idx]
+        self.show_disk_information(next_device)
+
+    def show_disk_information_prev(self, curr_device):
+        log.debug('show_disk_info_prev: curr_device={}'.format(curr_device))
+        available = self.model.get_available_disk_names()
+        idx = available.index(curr_device)
+        next_idx = (idx - 1) % len(available)
+        next_device = available[next_idx]
+        self.show_disk_information(next_device)
+
     def show_disk_information(self, device):
         """ Show disk information, requires sudo/root
         """
-        root = utils.is_root()
-        log.debug('show_disk_info is_root ? {}'.format(root))
-        if not root:
-            result = "hdparm requires root permission."
-        else:
-            out = utils.run_command("hdparm -i {}".format(device))
-            log.debug(out)
-            if out['status'] != 0:
-                result = out['err']
-            else:
-                result = out['output']
-        disk_info_view = DiskInfoView(self.model,
-                                      self.signal,
-                                      result)
+        disk_info = self.model.get_disk_info(device)
+        disk = self.model.get_disk(device)
+
+        bus = disk_info.raw.get('ID_BUS', None)
+        if bus is None and disk_info['MAJOR'] == '253':
+            bus = 'virtio'
+
+        devpath = disk_info.raw.get('DEVPATH', disk.devpath)
+        rotational = '1'
+        try:
+            dev = os.path.basename(devpath)
+            rfile = '/sys/class/block/{}/queue/rotational'.format(dev)
+            rotational = open(rfile, 'r').read().strip()
+        except (PermissionError, FileNotFoundError, IOError):
+            log.exception('WARNING: Failed to read file {}'.format(rfile))
+            pass
+
+        dinfo = {
+            'bus': bus,
+            'devname': disk.devpath,
+            'devpath': devpath,
+            'model': disk.model,
+            'serial': disk.serial,
+            'size': disk.size,
+            'humansize': _humanize_size(disk.size),
+            'vendor': disk_info.vendor,
+            'rotational': 'true' if rotational == '1' else 'false',
+        }
+
+        template = """\n
+{devname}:\n
+ Vendor: {vendor}
+ Model: {model}
+ SerialNo: {serial}
+ Size: {humansize} ({size}B)
+ Bus: {bus}
+ Rotational: {rotational}
+ Path: {devpath}
+"""
+        result = template.format(**dinfo)
+        log.debug('calling DiskInfoView()')
+        disk_info_view = DiskInfoView(self.model, self.signal,
+                                      device, result)
+        footer = ('Select next or previous disks with n and p')
+        self.ui.set_footer(footer, 30)
         self.ui.set_body(disk_info_view)
 
     def is_uefi(self):

@@ -46,13 +46,15 @@ PARTITION_ERRORS = [
 log = logging.getLogger('subiquity.filesystem')
 
 
-class DiskInfoView(WidgetWrap):
-    def __init__(self, model, signal, hdparm):
+class DiskInfoView(ViewPolicy):
+    def __init__(self, model, signal, selected_device, hdinfo):
+        log.debug('DiskInfoView: {}'.format(selected_device))
         self.model = model
         self.signal = signal
-        hdparm = hdparm.split("\n")
+        self.selected_device = selected_device
+        hdinfo = hdinfo.split("\n")
         body = []
-        for h in hdparm:
+        for h in hdinfo:
             body.append(Text(h))
         body.append(Padding.center_20(self._build_buttons()))
         super().__init__(Padding.center_79(SimpleList(body)))
@@ -64,6 +66,20 @@ class DiskInfoView(WidgetWrap):
             Color.button(done, focus_map='button focus'),
         ]
         return Pile(buttons)
+
+    def keypress(self, size, key):
+        if key in ['tab', 'n', 'N', 'j', 'J']:
+            log.debug('keypress: [{}]'.format(key))
+            self.signal.emit_signal('filesystem:show-disk-info-next',
+                                    self.selected_device)
+            return None
+        if key in ['shift tab', 'p', 'P', 'k', 'K']:
+            log.debug('keypress: [{}]'.format(key))
+            self.signal.emit_signal('filesystem:show-disk-info-prev',
+                                    self.selected_device)
+            return None
+
+        return super().keypress(size, key)
 
     def done(self, result):
         ''' Return to FilesystemView '''
