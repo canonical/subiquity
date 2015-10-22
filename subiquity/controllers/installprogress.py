@@ -59,7 +59,13 @@ class InstallProgressController(ControllerPolicy):
         log.debug('Curtin Install: calling curtin with '
                   'storage/net/postinstall config')
 
-        curtin_write_postinst_config(postconfig)
+        try:
+            curtin_write_postinst_config(postconfig)
+        except PermissionError:
+            log.exception('Failed to write curtin post-install config')
+            self.signal.emit_signal('filesystem:error',
+                                    'curtin_write_postinst_config')
+            return None
 
         configs = [CURTIN_CONFIGS['network'],
                    CURTIN_CONFIGS['storage'],

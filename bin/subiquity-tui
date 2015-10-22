@@ -18,10 +18,11 @@ import argparse
 import sys
 import logging
 import signal
-from subiquity.log import setup_logger
+from subiquity.log import setup_logger, LOGFILE
 from subiquity import __version__ as VERSION
 from subiquity.core import Controller as Subiquity
 from subiquity.ui.frame import SubiquityUI
+from subiquity.utils import environment_check
 
 
 def parse_options(argv):
@@ -55,10 +56,15 @@ def main():
 
     signal.signal(signal.SIGINT, control_c_handler)
 
+    env_ok = environment_check()
+    if env_ok is False:
+        print('Failed environment check.  Check {} for errors.'.format(LOGFILE))
+        return 1
+
     ui = SubiquityUI()
 
     subiquity_interface = Subiquity(ui, opts)
     subiquity_interface.run()
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

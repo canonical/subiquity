@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from subiquity.controller import ControllerPolicy
 from subiquity.models import NetworkModel
 from subiquity.ui.views import (NetworkView,
@@ -23,6 +24,7 @@ from subiquity.ui.dummy import DummyView
 
 from subiquity.curtin import curtin_write_network_actions
 
+log = logging.getLogger("subiquity.controller.network")
 
 class NetworkController(ControllerPolicy):
     def __init__(self, common):
@@ -40,7 +42,14 @@ class NetworkController(ControllerPolicy):
         self.ui.set_body(NetworkView(self.model, self.signal))
 
     def network_finish(self, actions):
-        curtin_write_network_actions(actions)
+        try:
+            curtin_write_network_actions(actions)
+        except (PermissionError, FileNotFoundError):
+            log.exception('Failed to obtain write permission')
+            self.signal.emit_signal('filesystem:error',
+                                    'curtin_write_network_actions')
+            return None
+
         self.signal.emit_signal('filesystem:show')
 
     def set_default_route(self):
