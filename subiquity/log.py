@@ -17,10 +17,10 @@ import logging
 import os
 from logging.handlers import TimedRotatingFileHandler
 
+LOGDIR = "logs"
+LOGFILE = os.path.join(LOGDIR, "debug.log")
 
 def setup_logger(name=__name__):
-    LOGDIR = "logs"
-    LOGFILE = os.path.join(LOGDIR, "debug.log")
     if not os.path.isdir(LOGDIR):
         os.makedirs(LOGDIR)
     log = TimedRotatingFileHandler(LOGFILE,

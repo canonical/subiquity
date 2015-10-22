@@ -18,11 +18,85 @@ import errno
 import logging
 import os
 import random
+import yaml
 from subprocess import Popen, PIPE
 from subiquity.async import Async
 
 log = logging.getLogger("subiquity.utils")
 SYS_CLASS_NET = "/sys/class/net/"
+ENVIRONMENT_CHECK = '''
+checks:
+    read:
+        file:
+            - /var/log/syslog
+    write:
+        directory:
+            - /tmp
+    mount:
+        directory:
+            - /proc
+            - /sys
+    exec:
+        file:
+            - /sbin/hdparm
+            - /usr/bin/curtin
+'''
+
+def environment_check(check=ENVIRONMENT_CHECK):
+    ''' Check the environment to ensure subiquity can run without issues.
+    '''
+    log.info('Checking environment for installer requirements...')
+    def is_file(x):
+        return os.path.isfile(x)
+
+    def is_directory(x):
+        return os.path.isdir(x)
+
+    def is_mount(x):
+        return os.path.ismount(x)
+
+    def is_writable(x):
+        return os.access(x, os.W_OK)
+
+    def is_readable(x):
+        return os.access(x, os.R_OK)
+
+    def is_executable(x):
+        return os.access(x, os.X_OK)
+
+    check_map = {
+        'read': is_readable,
+        'write': is_writable,
+        'exec': is_executable,
+        'file': is_file,
+        'directory': is_directory,
+        'mount': is_mount,
+    }
+
+    checks = yaml.safe_load(check).get('checks', None)
+    if not checks:
+        log.error('Invalid environment check configuration')
+        return False
+
+    env_ok = True
+    for check_type in [c for c in checks
+                       if c in ['read', 'write', 'mount', 'exec']]:
+        for ftype, items in checks[check_type].items():
+            for i in items:
+                if not os.path.exists(i):
+                    log.error('FAIL: {} is not found on the filesystem'.format(i))
+                    env_ok = False
+                    continue
+                if check_map[ftype](i) is False:
+                    log.error('FAIL: {} is NOT of type: {}'.format(i, ftype))
+                    env_ok = False
+                    continue
+                if check_map[check_type](i) is False:
+                    log.error('FAIL: {} does NOT have required attr: {}'.format(i,
+                              check_type))
+                    env_ok = False
+
+    return env_ok
 
 
 def run_command_async(cmd, timeout=None):
