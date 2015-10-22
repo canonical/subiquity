@@ -24,6 +24,7 @@ from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
                                 RaidView)
 import subiquity.utils as utils
 from subiquity.ui.dummy import DummyView
+from subiquity.ui.error import ErrorView
 from subiquity.curtin import (curtin_write_storage_actions,
                               curtin_write_preserved_actions)
 
@@ -55,16 +56,37 @@ class FilesystemController(ControllerPolicy):
         self.ui.set_body(FilesystemView(self.model,
                                         self.signal))
 
+    def filesystem_error(self, error_fname):
+        title = "Filesystem error"
+        footer = ("Error while installing Ubuntu")
+        error_msg = "Failed to obtain write permissions to /tmp"
+        self.ui.set_header(title)
+        self.ui.set_footer(footer, 30)
+        self.ui.set_body(ErrorView(self.signal, error_msg))
+
     def filesystem_handler(self, reset=False, actions=None):
         if actions is None and reset is False:
             self.signal.emit_signal('network:show')
 
         log.info("Rendering curtin config from user choices")
-        curtin_write_storage_actions(actions=actions)
+        try:
+            curtin_write_storage_actions(actions=actions)
+        except PermissionError:
+            log.exception('Failed to write storage actions')
+            self.signal.emit_signal('filesystem:error',
+                                    'curtin_write_storage_actions')
+            return None
 
         log.info("Rendering preserved config for post install")
         preserved_actions = [preserve_action(a) for a in actions]
-        curtin_write_preserved_actions(actions=preserved_actions)
+        try:
+            curtin_write_preserved_actions(actions=preserved_actions)
+        except PermissionError:
+            log.exception('Failed to write preserved actions')
+            self.signal.emit_signal('filesystem:error',
+                                    'curtin_write_preserved_actions')
+            return None
+
         self.signal.emit_signal('identity:show')
 
     # Filesystem/Disk partition -----------------------------------------------
