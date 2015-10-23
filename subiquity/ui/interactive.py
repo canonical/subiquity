@@ -18,6 +18,7 @@
 
 from urwid import (Edit, IntEdit, RadioButton, WidgetWrap)
 import logging
+import re
 
 log = logging.getLogger("subiquity.ui.input")
 
@@ -57,6 +58,26 @@ class PasswordEditor(StringEditor):
     """
     def __init__(self, caption, mask="*"):
         super().__init__(caption, mask=mask)
+
+
+class UsernameEditor(StringEditor):
+    """ Username input prompt with input rules
+    """
+
+    def keypress(self, size, key):
+        ''' restrict what chars we allow for username '''
+
+        userlen = len(self.value)
+        if userlen == 0:
+            username = r'[a-z_]'
+        else:
+            username = r'[a-z0-9_-]'
+
+        # don't allow non username chars
+        if re.match(username, key) is None:
+            return False
+
+        return super().keypress(size, key)
 
 
 class IntegerEditor(WidgetWrap):
