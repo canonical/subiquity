@@ -21,7 +21,9 @@ Welcome provides user with language selection
 import logging
 from urwid import (Pile, Columns, Text, ListBox)
 from subiquity.ui.buttons import done_btn, cancel_btn
-from subiquity.ui.interactive import StringEditor, PasswordEditor
+from subiquity.ui.interactive import (PasswordEditor,
+                                      StringEditor,
+                                      UsernameEditor)
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
 
@@ -34,7 +36,7 @@ class IdentityView(ViewPolicy):
         self.signal = signal
         self.items = []
         self.realname = StringEditor(caption="")
-        self.username = StringEditor(caption="")
+        self.username = UsernameEditor(caption="")
         self.password = PasswordEditor(caption="")
         self.error = Text("", align="center")
         self.confirm_password = PasswordEditor(caption="")
@@ -105,6 +107,12 @@ class IdentityView(ViewPolicy):
             self.password.value = ""
             self.confirm_password.value = ""
             return
+
+        if len(self.username.value) > 32:
+            self.error.set_text("Username too long, must be < 32")
+            self.username.value = ""
+            return
+
         cpassword = self.model.encrypt_password(self.password.value)
         log.debug("*crypted* User input: {} {} {}".format(
             self.username.value, cpassword, cpassword))
