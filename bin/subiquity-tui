@@ -21,6 +21,7 @@ import signal
 from subiquity.log import setup_logger, LOGFILE
 from subiquity import __version__ as VERSION
 from subiquity.core import Controller as Subiquity
+from subiquity.core import CoreControllerError
 from subiquity.ui.frame import SubiquityUI
 from subiquity.utils import environment_check
 
@@ -63,7 +64,13 @@ def main():
 
     ui = SubiquityUI()
 
-    subiquity_interface = Subiquity(ui, opts)
+    try:
+        subiquity_interface = Subiquity(ui, opts)
+    except CoreControllerError as e:
+        logger.exception('Failed to load Subiquity interface')
+        print(e)
+        return 1
+
     subiquity_interface.run()
 
 if __name__ == '__main__':

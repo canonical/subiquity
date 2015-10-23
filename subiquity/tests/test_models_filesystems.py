@@ -24,9 +24,11 @@ class TestFilesystemModel(testtools.TestCase):
         self.make_fsm()
 
     # mocking the reading of the fake data saves on IO
+    @patch.object(Prober, '_load_machine_config')
     @patch.object(Prober, 'get_storage')
-    def make_fsm(self, _get_storage):
+    def make_fsm(self, _get_storage, _load_machine_config):
         _get_storage.return_value = fakes.FAKE_MACHINE_STORAGE_DATA
+        _load_machine_config.return_value = fakes.FAKE_MACHINE_JSON_DATA
         self.opts = argparse.Namespace()
         self.opts.machine_config = fakes.FAKE_MACHINE_JSON
         self.opts.dry_run = True

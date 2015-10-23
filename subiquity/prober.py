@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import json
+import yaml
 import os
 from probert.storage import (Storage,
                              StorageInfo)
@@ -23,6 +23,9 @@ from probert.network import (Network,
 
 log = logging.getLogger('subiquity.prober')
 
+class ProberException(Exception):
+    '''Base Prober Exception'''
+    pass
 
 class Prober():
     def __init__(self, opts):
@@ -33,9 +36,20 @@ class Prober():
             log.debug('User specified machine_config: {}'.format(
                       self.opts.machine_config))
             if os.path.exists(self.opts.machine_config):
-                with open(self.opts.machine_config) as mc:
-                    self.probe_data = json.load(mc)
+                self.probe_data = \
+                    self._load_machine_config(self.opts.machine_config)
         log.debug('Prober() init finished, data:{}'.format(self.probe_data))
+
+    def _load_machine_config(self, machine_config):
+        with open(machine_config) as mc:
+            try:
+                data = yaml.safe_load(mc)
+            except (UnicodeDecodeError, yaml.reader.ReaderError):
+                err = 'Failed to parse machine config'
+                log.exception(err)
+                raise ProberException(err)
+
+        return data
 
     def get_network(self):
         if 'network' not in self.probe_data:

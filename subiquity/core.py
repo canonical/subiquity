@@ -19,7 +19,7 @@ from tornado.ioloop import IOLoop
 from tornado.util import import_object
 from subiquity.signals import Signal
 from subiquity.palette import STYLES, STYLES_MONO
-from subiquity.prober import Prober
+from subiquity.prober import Prober, ProberException
 
 log = logging.getLogger('subiquity.core')
 
@@ -31,11 +31,18 @@ class CoreControllerError(Exception):
 
 class Controller:
     def __init__(self, ui, opts):
+        try:
+            prober = Prober(opts)
+        except ProberException as e:
+            err = "Prober init failed: {}".format(e)
+            log.exception(err)
+            raise CoreControllerError(err)
+
         self.common = {
             "ui": ui,
             "opts": opts,
             "signal": Signal(),
-            "prober": Prober(opts),
+            "prober": prober,
             "loop": None
         }
         self.controllers = {
