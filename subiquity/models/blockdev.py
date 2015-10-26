@@ -456,7 +456,10 @@ def sort_actions(actions):
         return order.index(t.get('type'))
 
     def path_count(p):
-        return p.get('path').count('/')
+        if p.get('path') == "/":
+            return 0
+        else:
+            return p.get('path').count('/')
 
     def order_sort(a):
         # sort by type first
