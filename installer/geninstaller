@@ -389,6 +389,9 @@ generate_seed() {
     if [[ ${TOPDIR} = /usr/share/subiquity* ]]; then
         log "Using installed subiquity paths"
         tar_cmd="$tar_cmd subiquity-tui"
+    else
+        log "Using source subiquity paths"
+        tar_cmd="$tar_cmd bin"
     fi
     log "subiquity_tar cmd: ${tar_cmd}"
     $tar_cmd || {

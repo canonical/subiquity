@@ -8,7 +8,8 @@ from mock import patch
 from subiquity.models.blockdev import (Blockdev,
                                        blockdev_align_up,
                                        FIRST_PARTITION_OFFSET,
-                                       GPT_END_RESERVE)
+                                       GPT_END_RESERVE,
+                                       sort_actions)
 from subiquity.models.filesystem import FilesystemModel
 from subiquity.prober import Prober
 from subiquity.tests import fakes
@@ -316,7 +317,7 @@ class TestBlockdev(testtools.TestCase):
 
     def test_blockdev_sort_actions(self):
         self.add_partition()
-        actions = self.bd.sort_actions(self.bd.get_actions())
+        actions = sort_actions(self.bd.get_actions())
         # self.bd has a partition, add_partition method adds a
         # disk action, partition action, a format, and a mount point action.
         # We should have a sorted order of actions  which define disk,

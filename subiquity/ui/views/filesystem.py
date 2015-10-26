@@ -88,6 +88,91 @@ class DiskInfoView(ViewPolicy):
     def cancel(self, button):
         self.signal.emit_signal('filesystem:show')
 
+class AddFormatView(WidgetWrap):
+
+    def __init__(self, model, signal, selected_disk):
+        self.model = model
+        self.signal = signal
+        self.selected_disk = self.model.get_disk(selected_disk)
+
+        self.mountpoint = StringEditor(caption="", edit_text="/")
+        self.fstype = Selector(opts=self.model.supported_filesystems)
+        body = [
+            Padding.line_break(""),
+            self._container(),
+            Padding.line_break(""),
+            Padding.center_20(self._build_buttons())
+        ]
+        format_box = Padding.center_50(ListBox(body))
+        super().__init__(format_box)
+
+    def _build_buttons(self):
+        cancel = cancel_btn(on_press=self.cancel)
+        done = done_btn(on_press=self.done)
+
+        buttons = [
+            Color.button(done, focus_map='button focus'),
+            Color.button(cancel, focus_map='button focus')
+        ]
+        return Pile(buttons)
+
+    def _format_edit(self):
+        return Pile(self.fstype.group)
+
+    def _container(self):
+        total_items = [
+            Columns(
+                [
+                    ("weight", 0.2, Text("Format", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self._format_edit(),
+                                        focus_map="string_input focus"))
+                ], dividechars=4
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("Mount", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.mountpoint,
+                                        focus_map="string_input focs"))
+                ], dividechars=4
+            )
+        ]
+        return Pile(total_items)
+
+    def cancel(self, button):
+        self.signal.emit_signal('filesystem:show')
+
+    def done(self, result):
+        """ format spec
+
+        { 
+          'format' Str(ext4|btrfs..,
+          'mount_point': Str
+        }
+        """
+
+        result = {
+            "fstype": self.fstype.value,
+            "mountpoint": self.mountpoint.value
+        }
+
+        # Validate mountpoint input
+        all_mounts = self.model.get_mounts()
+        if self.mountpoint.value in all_mounts:
+            log.error('provided mountpoint already allocated'
+                      ' ({})'.format(self.mountpoint.value))
+            # FIXME: update the error message widget instead
+            self.mountpoint.set_error('ERROR: already mounted')
+            self.signal.emit_signal(
+                'filesystem:add-disk-partiion',
+                self.selected_disk)
+            return
+        log.debug("Add Format Result: {}".format(result))
+        self.signal.emit_signal(
+            'filesystem:finish-add-disk-format',
+            self.selected_disk.devpath, result)
+
 
 class AddPartitionView(WidgetWrap):
 
@@ -352,7 +437,7 @@ class DiskPartitionView(WidgetWrap):
         """
         text = ("Format or create swap on entire "
                 "device (unusual, advanced)")
-        if len(self.model.get_partitions()) == 0:
+        if len(self.disk_obj.partitions) == 0:
             return Color.menu_button(menu_btn(label=text,
                                               on_press=self.create_swap),
                                      focus_map='menu_button focus')
@@ -363,7 +448,7 @@ class DiskPartitionView(WidgetWrap):
         depending on if partitions exist already or not.
         """
         text = "Add first GPT partition"
-        if len(self.model.get_partitions()) > 0:
+        if len(self.disk_obj.partitions) > 0:
             text = "Add partition (max size {})".format(
                 _humanize_size(self.disk_obj.freespace))
         return Color.menu_button(menu_btn(label=text,
@@ -380,7 +465,9 @@ class DiskPartitionView(WidgetWrap):
                                 self.selected_disk)
 
     def create_swap(self, result):
-        self.signal.emit_signal('filesystem:create-swap-entire-device')
+        log.debug('create_swap: result={}'.format(result))
+        self.signal.emit_signal('filesystem:create-swap-entire-device',
+                                self.selected_disk)
 
     def done(self, result):
         ''' Return to FilesystemView '''
@@ -430,7 +517,8 @@ class FilesystemView(ViewPolicy):
     def _build_partition_list(self):
         log.debug('FileSystemView: building part list')
         pl = []
-        if len(self.model.get_partitions()) == 0:
+        if (len(self.model.get_partitions()) == 0 and 
+            len(self.model.get_filesystems()) == 0):
             pl.append(Color.info_minor(
                 Text("No disks or partitions mounted")))
             log.debug('FileSystemView: no partitions')

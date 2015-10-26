@@ -17,7 +17,7 @@ import json
 import logging
 import re
 
-from .blockdev import Blockdev, Raiddev
+from .blockdev import Blockdev, Raiddev, sort_actions
 import math
 from subiquity.model import ModelPolicy
 
@@ -62,6 +62,9 @@ class FilesystemModel(ModelPolicy):
         ('Finish add disk partition',
          'filesystem:finish-add-disk-partition',
          'add_disk_partition_handler'),
+        ('Finish whole disk format/mount',
+         'filesystem:finish-add-disk-format',
+         'add_disk_format_handler'),
         ('Format or create swap on entire device (unusual, advanced)',
          'filesystem:create-swap-entire-device',
          'create_swap_entire_device'),
@@ -250,6 +253,7 @@ class FilesystemModel(ModelPolicy):
                         '/dev/sdg     1.819T, 001-9YN164',
                         '/dev/sdh     1.819T, HDS5C3020ALA632',
                         '/dev/sdi     1.819T, 001-9YN164'],
+                        '/dev/sdj     1.819T, Unknown Model'],
             'raid_level': '0',
             'hot_spares': '0',
             'chunk_size': '4K',
@@ -263,7 +267,7 @@ class FilesystemModel(ModelPolicy):
 
         # XXX: curtin requires a partition table on the base devices
         # and then one partition of type raid
-        for (devpath, _, _) in all_devices:
+        for (devpath, *_) in all_devices:
             disk = self.get_disk(devpath)
 
             # add or update a partition to be raid type
@@ -289,11 +293,20 @@ class FilesystemModel(ModelPolicy):
                                              spare_devices)
 
         # create a Raiddev (pass in only the names)
+        raid_parts = []
+        for dev in raid_devices:
+            for num, action in dev.partitions.items():
+                raid_parts.append(action.action_id)
+        spare_parts = []
+        for dev in spare_devices:
+            for num, action in dev.partitions.items():
+                spare_parts.append(action.action_id)
+
         raid_dev = Raiddev(raid_dev_name, raid_serial, raid_model,
                            raid_parttype, raid_size,
-                           [d.path for d in raid_devices],
+                           raid_parts,
                            raid_level,
-                           [d.path for d in spare_devices])
+                           spare_parts)
 
         # add it to the model's info dict
         raid_dev_info = {
@@ -331,6 +344,14 @@ class FilesystemModel(ModelPolicy):
         log.debug('probe_storage: get_partitions() returns: {}'.format(
                   partitions))
         return partitions
+
+    def get_filesystems(self):
+        log.debug('get_fs')
+        fs = []
+        for dev in self.devices.values():
+            fs += dev.filesystems
+
+        return fs
 
     def installable(self):
         ''' one or more disks has used space
@@ -403,7 +424,11 @@ class FilesystemModel(ModelPolicy):
         actions = []
         for dev in self.devices.values():
             actions += dev.get_actions()
-        return actions
+
+        log.debug('****')
+        log.debug('all actions:{}'.format(actions))
+        log.debug('****')
+        return sort_actions(actions)
 
 
 def _humanize_size(size):

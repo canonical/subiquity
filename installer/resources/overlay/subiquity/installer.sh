@@ -36,4 +36,4 @@ WantedBy=default.target
 EOF
 
 systemctl enable subiquity.service
-systemctl start subiquity
+systemctl restart subiquity

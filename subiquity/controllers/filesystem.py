@@ -21,8 +21,8 @@ from subiquity.models import (FilesystemModel,
                               RaidModel)
 from subiquity.models.filesystem import (_humanize_size)
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
-                                FilesystemView, DiskInfoView,
-                                RaidView)
+                                AddFormatView, FilesystemView,
+                                DiskInfoView, RaidView)
 import subiquity.utils as utils
 from subiquity.ui.dummy import DummyView
 from subiquity.ui.error import ErrorView
@@ -177,6 +177,15 @@ class FilesystemController(ControllerPolicy):
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
         self.signal.emit_signal('filesystem:show-disk-partition', disk)
 
+    def add_disk_format_handler(self, disk, spec):
+        log.debug('add_disk_format_handler')
+        current_disk = self.model.get_disk(disk)
+        log.debug('format spec: {}'.format(spec))
+        log.debug('disk.freespace: {}'.format(current_disk.freespace))
+        current_disk.format_device(spec['fstype'], spec['mountpoint'])
+        log.debug("FS Table: {}".format(current_disk.get_fs_table()))
+        self.signal.emit_signal('filesystem:show-disk-partition', disk)
+
     def connect_iscsi_disk(self, *args, **kwargs):
         # title = ("Disk and filesystem setup")
         # excerpt = ("Connect to iSCSI cluster")
@@ -223,8 +232,15 @@ class FilesystemController(ControllerPolicy):
     def add_first_gpt_partition(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
 
-    def create_swap_entire_device(self, *args, **kwargs):
-        self.ui.set_body(DummyView(self.signal))
+    def create_swap_entire_device(self, disk):
+        log.debug('create_swap_entire_device')
+        log.debug("formatting whole {}".format(disk))
+        footer = ("Format or mount whole disk.")
+        self.ui.set_footer(footer)
+        afv_view = AddFormatView(self.model,
+                                 self.signal,
+                                 disk)
+        self.ui.set_body(afv_view)
 
     def show_disk_information_next(self, curr_device):
         log.debug('show_disk_info_next: curr_device={}'.format(curr_device))
