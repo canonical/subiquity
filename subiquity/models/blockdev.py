@@ -207,6 +207,10 @@ class Blockdev():
         return self.disk.model
 
     @property
+    def serial(self):
+        return self.disk.serial
+
+    @property
     def mounts(self):
         return self._mounts.values()
 

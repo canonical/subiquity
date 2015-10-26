@@ -192,11 +192,16 @@ def crypt_password(passwd, algo='SHA-512'):
 def is_root():
     """ Returns root or if sudo user exists
     """
-    sudo_user = os.getenv('SUDO_USER', None)
     euid = os.geteuid()
 
-    log.debug('is_root: euid={} sudo_user={}'.format(
-        euid, sudo_user))
-    if euid != 0 or sudo_user is not None:
+    log.debug('is_root: euid={}'.format(euid))
+    if euid != 0:
         return False
     return True
+
+
+def sudo_user():
+    """ Returns the value of env['SUDO_USER']
+    """
+    sudo_user = os.getenv('SUDO_USER', None)
+    return sudo_user
