@@ -43,6 +43,9 @@ SRC_DEPS=(
   "bzr" "lp:curtin" "curtin"
 )
 INSTALLER_DEPS=(
+  "bcache-tools"
+  "lvm2"
+  "mdadm"
   "petname"
   "python3-urwid"
   "python3-pyudev"
@@ -50,6 +53,7 @@ INSTALLER_DEPS=(
   "python-urwid"
   "python3-tornado"
   "probert"
+  "xfsprogs"
 )
 CACHEDIR=""
 GRUB_MODS="configfile fat part_gpt part_msdos cat echo test search search_label search_fs_uuid boot chain linux reboot halt normal efi_gop efi_uga font gfxterm gfxterm_menu gfxterm_background gfxmenu serial"
@@ -431,8 +435,8 @@ generate_img() {
     log "Partitioning Installer image (UEFI)"
     (parted -s $installimg mklabel msdos &&
     parted -s $installimg mkpart primary fat32 0% 200M &&
-    parted -s $installimg mkpart primary ext3 200M 1700M &&
-    parted -s $installimg mkpart primary ext3 1700M 2147M &&
+    parted -s $installimg mkpart primary ext3 200M 1400M &&
+    parted -s $installimg mkpart primary ext3 1400M 2147M &&
     parted -s $installimg set 1 boot on) 2>&1 >> ${LOGFILE}  || {
         log "Failed to partition image: $installimg"
      return 1;
@@ -570,11 +574,36 @@ generate_img() {
     }
 
     log "Installing on rootfs: $packages"
-    sudo chroot ${mnt} apt-get update &&
-    sudo chroot ${mnt} apt-get -y install $packages || {
-        log "Failed to install packages on rootfs";
+    # use curtin's system-install if available
+    if echo ${CURTIN_FEATURES} | grep -q SUBCOMMAND_SYSTEM_INSTALL; then
+        log "Using curtin to install packages in-target"
+        (cd $dldir/curtin &&
+         sudo ./bin/curtin system-install -t $mnt -- $packages) || {
+            log "Failed to install packages on rootfs";
+            return 1;
+        }
+    else
+        log "WARNING: skipping preinstallation of mdadm, lvm2"
+        log "WARNING: will install packages during runtime"
+        # if we don't have the right curtin features, we can't easily
+        # install mdadm/lvm2 into the target as it will start up system
+        # daemons and prevent us from unmounting the target
+        packages=$(echo $packages | fmt -w1 | egrep -v "(mdadm|lvm2)")
+        sudo chroot ${mnt} apt-get -y install $packages || {
+            log "Failed to install packages on rootfs";
+            return 1;
+        }
+    fi
+
+    log "Cleaning up overlay apt cache"
+    local before=( `sudo du -sk ${upper}` )
+    sudo chroot ${mnt} apt-get clean || {
+        log "ERROR: failed to run apt-get clean in ${mnt}";
         return 1;
     }
+    local after=( `sudo du -sk ${upper}` )
+    local delta=$((($before - $after) / 1024))
+    log "Saved ${delta} MiB"
 
     log "Removing ppas in rootfs"
     remove_ppas_cmds="$(remove_ppas ${PPAS[@]})"
@@ -677,6 +706,14 @@ main() {
         return 1;
     }
 
+    export CURTIN_FEATURES="$(cd ${DLDIR}/curtin;
+                      python3 -c \
+                      'import curtin; [print(x) for x in curtin.FEATURES]')"
+    log "Detected curtin features: $CURTIN_FEATURES"
+    [ -n "${CURTIN_FEATURES}" ] || {
+        return 1;
+    }
+ 
     acquire_image ${DLDIR} "$STREAM" "$RELEASE" "$ARCH" "$VERSION" || {
         return 1;
     }
