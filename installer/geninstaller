@@ -343,18 +343,6 @@ generate_seed() {
     local seed=$cachedir/seed/nocloud-net
     local installer_user_data=${TOPDIR}/resources/user-data/installer-user-data
 
-    # create curtin payload
-    log "Generating curtin payload file"
-    local curtin_cmd=$dldir/curtin-cmd
-    (
-        instcmd="curtin install cp:///"
-        cd $dldir/curtin
-        PYTHONPATH=`pwd` ./bin/curtin pack -- $instcmd > $curtin_cmd
-    ) || {
-            log "ERROR: failed to pack curtin installer";
-            return 1;
-    }
-
     # inject user-data/meta-data into seed
     log "Writing seed meta-data"
     mkdir -p ${seed} && write_metadata > $seed/meta-data || {
@@ -375,13 +363,6 @@ generate_seed() {
         done
         sed -i "s/#packages/packages:\n$packages/" ${seed}/user-data
     fi
-
-    userdata_write_file "/usr/local/bin/curtin-archive" \
-                         "root:root" "0755" "none" \
-                         "$curtin_cmd" >> $seed/user-data || {
-        log "Failed to embed curtin into $seed";
-        return 1;
-    }
 
     log "Writing seed user-data (subiquity)"
     local subiquity_tar=$dldir/subiquity.tar
@@ -559,8 +540,32 @@ generate_img() {
     log "Installing ppas in rootfs"
     # export existing install_ppa and run it in the chroot
     install_ppas_cmds="$(install_ppas ${PPAS[@]})"
-    sudo chroot ${mnt} /bin/bash -c "${install_ppas_cmds}" || {
+    sudo chroot ${mnt} /bin/bash -c "${install_ppas_cmds}; apt-get update" || {
         log "Failed to add installer ppas to chroot";
+        return 1;
+    }
+
+    log "Installing curtin in rootfs"
+    local curtin_debbuild="$(cd $dldir/curtin &&
+                             ./tools/build-deb -us -uc || return 1)"
+    local curtin_ver=$(echo $curtin_debbuild | 
+                       awk '/building upstream version/ {print $4}' |
+                       sed 's|,||g')
+    # no python2 curtin
+    local curtin_debs="$(ls $dldir/curtin/*${curtin_ver}*.deb | grep -v 'python-curtin')"
+    if [ -z "$curtin_ver" -o -z "$curtin_debs" ]; then
+        log "ERROR: failed to build curtin debs and get version";
+        return 1;
+    fi
+    for deb in ${curtin_debs}; do
+        cp ${deb} ${mnt}/tmp || {
+           log "ERROR: failed copyin ${deb} into ${mnt}/tmp";
+           return 1;
+        }
+    done
+    sudo chroot ${mnt} /bin/bash -c \
+        "dpkg --install /tmp/*${curtin_ver}*.deb; apt-get -y -f install" || {
+        log "ERROR: Failed to install curtin in target";
         return 1;
     }
 
