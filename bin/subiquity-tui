@@ -48,6 +48,7 @@ def parse_options(argv):
 def control_c_handler(signum, frame):
     sys.exit(1)
 
+
 def main():
     opts = parse_options(sys.argv[1:])
     setup_logger()
@@ -58,8 +59,9 @@ def main():
     signal.signal(signal.SIGINT, control_c_handler)
 
     env_ok = environment_check()
-    if env_ok is False:
-        print('Failed environment check.  Check {} for errors.'.format(LOGFILE))
+    if env_ok is False and not opts.dry_run:
+        print('Failed environment check.  '
+              'Check {} for errors.'.format(LOGFILE))
         return 1
 
     ui = SubiquityUI()
