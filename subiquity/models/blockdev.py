@@ -242,6 +242,9 @@ class Blockdev():
     @property
     def percent_free(self):
         ''' return the device free percentage of the whole device'''
+        if self.size == 0:
+            return 0
+
         percent = (int((1.0 - (self.usedspace / self.size)) * 100))
         return percent
 
