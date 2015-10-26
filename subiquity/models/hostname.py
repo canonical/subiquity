@@ -15,50 +15,36 @@
 
 import logging
 from subiquity.model import ModelPolicy
-from subiquity.utils import crypt_password
 
 
-log = logging.getLogger('subiquity.models.identity')
+log = logging.getLogger('subiquity.models.hostname')
 
 
-class IdentityModel(ModelPolicy):
-    """ Model representing user identity
+class HostnameModel(ModelPolicy):
+    """ Model representing system hostname
     """
-    prev_signal = ('Back to hostname view',
-                   'hostname:show',
-                   'hostname')
+    prev_signal = ('Back to filesystem view',
+                   'filesystem:show',
+                   'filesystem')
 
     signals = [
-        ("Identity view",
-         'identity:show',
-         'identity')
+        ("Hostname View",
+         'hostname:show',
+         'hostname')
     ]
 
-    identity_menu = [
-        ("Username",
-         "identity:username",
-         "validate_username"),
-        ("Password",
-         "identity:password",
-         "validate_password"),
-        ("Confirm Password",
-         "identity:confirm-password",
-         "validate_confirm_password")
-    ]
+    hostname_menu = []
 
     def get_signals(self):
         return self.signals
 
     def get_menu(self):
-        return self.identity_menu
+        return self.hostname_menu
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_menu():
             if x == selection:
                 return y
 
-    def encrypt_password(self, passinput):
-        return crypt_password(passinput)
-
     def __repr__(self):
-        return "<Username: {}>".format(self.username)
+        return "<Hostname: {}>".format(self.hostname)

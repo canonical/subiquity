@@ -88,7 +88,7 @@ class FilesystemController(ControllerPolicy):
                                     'curtin_write_preserved_actions')
             return None
 
-        self.signal.emit_signal('identity:show')
+        self.signal.emit_signal('hostname:show')
 
     # Filesystem/Disk partition -----------------------------------------------
     def disk_partition(self, disk):
