@@ -8,7 +8,8 @@ from mock import patch
 from subiquity.models.blockdev import (Blockdev,
                                        blockdev_align_up,
                                        FIRST_PARTITION_OFFSET,
-                                       GPT_END_RESERVE)
+                                       GPT_END_RESERVE,
+                                       sort_actions)
 from subiquity.models.filesystem import FilesystemModel
 from subiquity.prober import Prober
 from subiquity.tests import fakes
@@ -36,26 +37,26 @@ class TestFilesystemModel(testtools.TestCase):
         self.storage = fakes.FAKE_MACHINE_STORAGE_DATA
         self.fsm = FilesystemModel(self.prober, self.opts)
 
-    def test_filesystemmodel_init(self):
+    def test_init(self):
         self.assertNotEqual(self.fsm, None)
         self.assertEqual(self.fsm.info, {})
         self.assertEqual(self.fsm.devices, {})
         self.assertEqual(self.fsm.raid_devices, {})
         self.assertEqual(self.fsm.storage, {})
 
-    def test_filesystemmodel_get_signals(self):
+    def test_get_signals(self):
         self.assertEqual(sorted(self.fsm.get_signals()),
                          sorted(self.fsm.signals + self.fsm.fs_menu))
 
-    def test_filesystemmodel_get_signal_by_name(self):
+    def test_get_signal_by_name(self):
         for (name, signal, method) in self.fsm.get_signals():
             self.assertEqual(self.fsm.get_signal_by_name(name), signal)
 
-    def test_filesystemmodel_get_menu(self):
+    def test_get_menu(self):
         self.assertEqual(sorted(self.fsm.get_menu()),
                          sorted(self.fsm.fs_menu))
 
-    def test_filesystemmodel_probe_storage(self):
+    def test_probe_storage(self):
         '''sd[b..i]'''
         disks = [d for d in self.storage.keys()
                  if self.storage[d]['DEVTYPE'] == 'disk' and
@@ -65,7 +66,7 @@ class TestFilesystemModel(testtools.TestCase):
         self.assertEqual(sorted(self.fsm.info.keys()),
                          sorted(disks))
 
-    def test_filesystemmodel_get_disk(self):
+    def test_get_disk(self):
         self.fsm.probe_storage()
         diskname = random.choice(list(self.fsm.info.keys()))
         disk = Blockdev(diskname,
@@ -78,7 +79,7 @@ class TestFilesystemModel(testtools.TestCase):
         print(test_disk)
         self.assertEqual(test_disk, disk)
 
-    def test_filesystemmodel_get_disk_from_partition(self):
+    def test_get_disk_from_partition(self):
         self.fsm.probe_storage()
         diskname = random.choice(list(self.fsm.info.keys()))
         disk = self.fsm.get_disk(diskname)
@@ -92,13 +93,13 @@ class TestFilesystemModel(testtools.TestCase):
         print(test_disk)
         self.assertEqual(test_disk, disk)
 
-    def test_filesystemmodel_get_all_disks(self):
+    def test_get_all_disks(self):
         self.fsm.probe_storage()
         all_disks = self.fsm.get_all_disks()
         for disk in all_disks:
             self.assertTrue(disk in self.fsm.devices.values())
 
-    def test_filesystemmodel_get_available_disks(self):
+    def test_get_available_disks(self):
         ''' occupy one of the probed disks and ensure
             that it's not included in the available disks
             result since it's not actually avaialable
@@ -112,7 +113,7 @@ class TestFilesystemModel(testtools.TestCase):
         self.assertLess(len(avail_disks), len(self.fsm.devices.values()))
         self.assertTrue(disk not in avail_disks)
 
-    def test_filesystemmodel_add_device(self):
+    def test_add_device(self):
         self.fsm.probe_storage()
         diskname = random.choice(list(self.fsm.info.keys()))
         disk = Blockdev(diskname,
@@ -124,7 +125,7 @@ class TestFilesystemModel(testtools.TestCase):
         self.fsm.add_device(devname, disk)
         self.assertTrue(devname in self.fsm.devices)
 
-    def test_filesystemmodel_get_partitions(self):
+    def test_get_partitions(self):
         self.fsm.probe_storage()
 
         # no partitions
@@ -144,7 +145,7 @@ class TestFilesystemModel(testtools.TestCase):
         print(partitions, diskname)
         self.assertTrue(partitions[0].startswith(diskname))
 
-    def test_filesystemmodel_installable(self):
+    def test_installable(self):
         self.fsm.probe_storage()
         self.assertEqual(self.fsm.installable(), False)
 
@@ -156,7 +157,7 @@ class TestFilesystemModel(testtools.TestCase):
         # now we should be installable
         self.assertEqual(self.fsm.installable(), True)
 
-    def test_filesystemmodel_not_installable(self):
+    def test_not_installable(self):
         self.fsm.probe_storage()
 
         # create a partition that installs to not root(/)
@@ -167,7 +168,7 @@ class TestFilesystemModel(testtools.TestCase):
         # we should not be installable
         self.assertEqual(self.fsm.installable(), False)
 
-    def test_filesystemmodel_bootable(self):
+    def test_bootable(self):
         self.fsm.probe_storage()
         self.assertEqual(self.fsm.bootable(), False)
 
@@ -178,6 +179,75 @@ class TestFilesystemModel(testtools.TestCase):
 
         # now we should be installable
         self.assertEqual(self.fsm.bootable(), True)
+
+    def test_get_empty_disks(self):
+        self.fsm.probe_storage()
+
+        empty = self.fsm.get_empty_disks()
+        avail_disks = self.fsm.get_available_disks()
+        self.assertEqual(len(empty), len(avail_disks))
+
+         # create a partition but not FS or Mount
+        diskname = random.choice(self.fsm.get_available_disk_names())
+        disk = self.fsm.get_disk(diskname)
+        disk.add_partition(1, int(disk.freespace / 2), None, None, flag='raid')
+        self.assertEqual(len(disk.partitions), 1)
+        print('disk: {}'.format(disk))
+        print('disk avail: {} is_mounted={} percent_free={}'.format(
+                        disk.devpath, disk.is_mounted(), disk.percent_free,
+                        len(disk.partitions)))
+
+        # we should have one less empty disk than available
+        empty = self.fsm.get_empty_disks()
+        avail_disks = self.fsm.get_available_disks()
+        print('empty')
+        for d in empty:
+            print('empty: {} is_mounted={} percent_free={}'.format(
+                        d.devpath, d.is_mounted(), d.percent_free,
+                        len(d.partitions)))
+        print('avail')
+        for d in avail_disks:
+            print('avail: {} is_mounted={} percent_free={}'.format(
+                        d.devpath, d.is_mounted(), d.percent_free,
+                        len(d.partitions)))
+        self.assertLess(len(empty), len(avail_disks))
+
+    def test_get_empty_disks_names(self):
+        self.fsm.probe_storage()
+        empty_names = self.fsm.get_empty_disk_names()
+        for name in empty_names:
+            print(name)
+            self.assertTrue(name in self.fsm.devices)
+
+    def test_get_empty_partition_names(self):
+        self.fsm.probe_storage()
+
+        empty = self.fsm.get_empty_partition_names()
+        self.assertEqual(empty, [])
+
+         # create a partition (not full sized) but not FS or Mount
+        diskname = random.choice(self.fsm.get_available_disk_names())
+        disk = self.fsm.get_disk(diskname)
+        disk.add_partition(1, int(disk.freespace / 2), None, None, flag=None)
+
+        # one empty partition
+        [empty] = self.fsm.get_empty_partition_names()
+
+        print('empty={}'.format(empty))
+        print('diskane={}'.format(diskname))
+        self.assertTrue(diskname in empty)
+
+    def test_get_empty_partition_names(self):
+        self.fsm.probe_storage()
+        diskname = random.choice(self.fsm.get_available_disk_names())
+        disk = self.fsm.get_disk(diskname)
+        # create a partition (not full sized) but not FS or Mount
+        disk.add_partition(1, int(disk.freespace / 2), None, None, flag='raid')
+
+        avail_disk_names = self.fsm.get_available_disk_names()
+        print(disk.devpath)
+        print(avail_disk_names)
+        self.assertTrue(disk.devpath in avail_disk_names)
 
 
 class TestBlockdev(testtools.TestCase):
@@ -316,7 +386,7 @@ class TestBlockdev(testtools.TestCase):
 
     def test_blockdev_sort_actions(self):
         self.add_partition()
-        actions = self.bd.sort_actions(self.bd.get_actions())
+        actions = sort_actions(self.bd.get_actions())
         # self.bd has a partition, add_partition method adds a
         # disk action, partition action, a format, and a mount point action.
         # We should have a sorted order of actions  which define disk,

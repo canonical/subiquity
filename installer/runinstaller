@@ -58,13 +58,17 @@ fi
 
 # always recreate the target image
 echo "Creating dummy target image: ${TARGET}"
-qemu-img create -f raw ${TARGET} 10G
+qemu-img create -f raw ${TARGET}_1 5G
+qemu-img create -f raw ${TARGET}_2 1G
+qemu-img create -f raw ${TARGET}_3 1G
 
 # TODO, curses should work, make serial|nographic optional
 echo "Launching Installer VM"
 sudo qemu-system-$ARCH -smp 2 -m $MEM -enable-kvm $UEFI\
-                       -drive format=raw,cache=unsafe,if=ide,file=$INSTALLER,serial=QM_INSTALL_01 \
-                       -drive format=raw,cache=unsafe,if=ide,file=$TARGET,serial=QM_TARGET_01 \
+                       -drive snapshot=on,format=raw,cache=unsafe,if=ide,file=$INSTALLER,serial=QM_INSTALL_01 \
+                       -drive format=raw,cache=unsafe,if=ide,file=${TARGET}_1,serial=QM_TARGET_01 \
+                       -drive format=raw,cache=unsafe,if=ide,file=${TARGET}_2,serial=QM_TARGET_02 \
+                       -drive format=raw,cache=unsafe,if=ide,file=${TARGET}_3,serial=QM_TARGET_03 \
                        -global isa-fdc.driveA= -net user \
                        -net nic,model=e1000 \
                        -net nic,model=virtio \

@@ -98,6 +98,7 @@ clean:
 	    wrap-and-sort; \
     fi
 	rm -f installer/target.img
+	rm -f installer/target.img_*
 	rm -f installer/installer.img
 	rm -f installer/geninstaller.log
 	find installer -type f -name *-installer.img | xargs -i rm {}

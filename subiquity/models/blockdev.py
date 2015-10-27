@@ -155,6 +155,7 @@ class Blockdev():
         self.disk = Disk(devpath, serial, model, parttype, size)
         self._filesystems = {}
         self._mounts = {}
+        self._mountactions = {}
         self.bcache = []
         self.lvm = []
         self.holder = {}
@@ -167,6 +168,7 @@ class Blockdev():
             return (self.disk == other.disk and
                     self._filesystems == other._filesystems and
                     self._mounts == other._mounts and
+                    self._mountactions == other._mountactions and
                     self.bcache == other.bcache and
                     self.lvm == other.lvm  and
                     self.holder == other.holder and
@@ -186,9 +188,14 @@ class Blockdev():
         self.disk.reset()
         self._filesystems = {}
         self._mounts = {}
+        self._mountactions = {}
         self.bcache = []
         self.lvm = []
         self.holder = {}
+
+    @property
+    def id(self):
+        return self.baseaction.action_id
 
     @property
     def blocktype(self):
@@ -275,9 +282,12 @@ class Blockdev():
     def usedspace(self, unit='b'):
         ''' return amount of used space'''
         space = 0
-        for (num, action) in self.disk.partitions.items():
-            space += int(action.offset)
-            space += int(action.size)
+        if self.devpath in self.filesystems:
+            space = self.size
+        else:
+            for (num, action) in self.disk.partitions.items():
+                space += int(action.offset)
+                space += int(action.size)
 
         return space
 
@@ -340,9 +350,28 @@ class Blockdev():
         # associate partition devpath with mountpoint
         if mountpoint:
             self._mounts[partpath] = mountpoint
+            self._mountactions[partpath] = MountAction(fs_action, mountpoint)
 
         log.debug('Partition Added')
         return new_size
+
+    def format_device(self, fstype, mountpoint):
+        log.debug('format:' ' fstype:%s mountpoint:%s' % (
+                  fstype, mountpoint))
+
+        mntdev = self.devpath
+
+        # create partition and add
+        fs_action = FormatAction(self.baseaction, fstype)
+        log.debug('Adding filesystem on {}'.format(mntdev))
+        log.debug('FormatAction:\n{}'.format(fs_action.get()))
+        self.filesystems.update({mntdev: fs_action})
+
+        # associate partition devpath with mountpoint
+        if mountpoint:
+            self._mounts[mntdev] = mountpoint
+            self._mountactions[mntdev] = MountAction(fs_action, mountpoint)
+            log.debug('Mounting {} at {}'.format(mntdev, mountpoint))
 
     def get_partition(self, devpath):
         [partnum] = re.findall('\d+$', devpath)
@@ -373,42 +402,17 @@ class Blockdev():
 
     def get_actions(self):
         if self.is_mounted():
-            log.debug('Emitting no actions, device is mounted')
+            log.debug(
+                'Emitting no actions, device ({}) is mounted'.format(self.devpath))
             return []
 
         actions = []
         action = self.baseaction.get()
-        for (num, part) in self.disk.partitions.items():
-            partpath = "{}{}".format(self.disk.devpath, part.partnum)
-            actions.append(part)
-            if partpath in self.filesystems:
-                format_action = self.filesystems[partpath]
-                actions.append(format_action)
-
-            if partpath in self._mounts:
-                mount_action = MountAction(format_action,
-                                           self._mounts[partpath])
-                actions.append(mount_action)
-
-        return self.sort_actions([action] + [a.get() for a in actions])
-
-    def sort_actions(self, actions):
-        def type_index(t):
-            order = ['disk', 'partition', 'raid', 'format', 'mount']
-            return order.index(t.get('type'))
-
-        def path_count(p):
-            return p.get('path').count('/')
-
-        def order_sort(a):
-            # sort by type first
-            score = type_index(a)
-            # for type==mount, count the number of dirs
-            if a.get('type') == 'mount':
-                score += path_count(a)
-            return score
-
-        actions = sorted(actions, key=order_sort)
+        part_actions = [part.get() for (num, part) in self.disk.partitions.items()]
+        fs_actions = [fs.get() for fs in self.filesystems.values()]
+        mount_actions = [m.get() for m in self._mountactions.values()]
+        actions = [action] + part_actions + fs_actions +  mount_actions
+        log.debug('actions ({}):\n{}'.format(len(actions), actions))
 
         return actions
 
@@ -422,6 +426,14 @@ class Blockdev():
                 mntpoint = self._mounts.get(partpath, fs.fstype)
                 fs_table.append(
                     (mntpoint, part.size, fs.fstype, partpath))
+
+        # /dev/md0 as ext4 mounted at /storage
+        # /dev/md1 as xfs not mounted ?
+        for (dev, fs) in self.filesystems.items():
+            if dev not in self.partnames:
+                mntpoint = self._mounts.get(dev, fs.fstype)
+                fs_table.append(
+                    (mntpoint, self.size, fs.fstype, dev))
 
         return fs_table
 
@@ -437,6 +449,37 @@ class Raiddev(Blockdev):
                                      self._raid_devices,
                                      self._raid_level,
                                      self._spare_devices)
+
+def sort_actions(actions):
+    def type_index(t):
+        order = ['disk', 'partition', 'raid', 'format', 'mount']
+        return order.index(t.get('type'))
+
+    def path_count(p):
+        if p.get('path') == "/":
+            return 0
+        else:
+            return p.get('path').count('/')
+
+    def order_sort(a):
+        # sort by type first
+        score = type_index(a)
+        # for type==mount, count the number of dirs
+        if a.get('type') == 'mount':
+            score += path_count(a)
+        elif a.get('type') == 'partition' and \
+             a.get('id').startswith('md'):
+            score += 2
+        log.debug('a={} score={}'.format(a, score))
+        return score
+
+    log.debug(actions)
+    actions = sorted(actions, key=order_sort)
+    log.debug('sorted')
+    log.debug(actions)
+
+    return actions
+
 
 
 if __name__ == '__main__':

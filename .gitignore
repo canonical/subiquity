@@ -58,6 +58,7 @@ target/
 
 # subiquity installer images
 installer/*.img
+installer/*.img_*
 logs/*
 venv
 debian

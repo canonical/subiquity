@@ -16,6 +16,7 @@
 
 PROG=`basename $0`
 PREFIX="${PROG}"
+INSTALLER_IMAGE_SIZE_K=$((2 * 1024 * 1024)) # 2G, 2097152K, 2147483648B
 LOGFILE="geninstaller.log"
 TOPDIR=${TOPDIR-/usr/share/subiquity/installer}
 USQUERY=${TOPDIR}/usquery
@@ -43,6 +44,9 @@ SRC_DEPS=(
   "bzr" "lp:curtin" "curtin"
 )
 INSTALLER_DEPS=(
+  "bcache-tools"
+  "lvm2"
+  "mdadm"
   "petname"
   "python3-urwid"
   "python3-pyudev"
@@ -50,6 +54,7 @@ INSTALLER_DEPS=(
   "python-urwid"
   "python3-tornado"
   "probert"
+  "xfsprogs"
 )
 CACHEDIR=""
 GRUB_MODS="configfile fat part_gpt part_msdos cat echo test search search_label search_fs_uuid boot chain linux reboot halt normal efi_gop efi_uga font gfxterm gfxterm_menu gfxterm_background gfxmenu serial"
@@ -343,18 +348,6 @@ generate_seed() {
     local seed=$cachedir/seed/nocloud-net
     local installer_user_data=${TOPDIR}/resources/user-data/installer-user-data
 
-    # create curtin payload
-    log "Generating curtin payload file"
-    local curtin_cmd=$dldir/curtin-cmd
-    (
-        instcmd="curtin install cp:///"
-        cd $dldir/curtin
-        PYTHONPATH=`pwd` ./bin/curtin pack -- $instcmd > $curtin_cmd
-    ) || {
-            log "ERROR: failed to pack curtin installer";
-            return 1;
-    }
-
     # inject user-data/meta-data into seed
     log "Writing seed meta-data"
     mkdir -p ${seed} && write_metadata > $seed/meta-data || {
@@ -376,19 +369,15 @@ generate_seed() {
         sed -i "s/#packages/packages:\n$packages/" ${seed}/user-data
     fi
 
-    userdata_write_file "/usr/local/bin/curtin-archive" \
-                         "root:root" "0755" "none" \
-                         "$curtin_cmd" >> $seed/user-data || {
-        log "Failed to embed curtin into $seed";
-        return 1;
-    }
-
     log "Writing seed user-data (subiquity)"
     local subiquity_tar=$dldir/subiquity.tar
     local tar_cmd="tar -C ${TOPDIR}/.. -cpf $subiquity_tar subiquity"
     if [[ ${TOPDIR} = /usr/share/subiquity* ]]; then
         log "Using installed subiquity paths"
         tar_cmd="$tar_cmd subiquity-tui"
+    else
+        log "Using source subiquity paths"
+        tar_cmd="$tar_cmd bin"
     fi
     log "subiquity_tar cmd: ${tar_cmd}"
     $tar_cmd || {
@@ -439,20 +428,32 @@ generate_img() {
 
     # prep image
     log "Generating Installer image file"
-    qemu-img create -f raw $installimg 2G 2>&1 >> ${LOGFILE} || {
+    local image_size=${INSTALLER_IMAGE_SIZE_K}
+    qemu-img create -f raw $installimg ${image_size}K 2>&1 >> ${LOGFILE} || {
         log "Failed to create empty file: $installimg"
         return 1;
     }
 
+    # Calculate the partition sizes and offsets.  Rootfs size can change
+    # from build to build and the total size of the image is no longer
+    # encoded here, but set globally.
+    local efi_start="0%"
+    local efi_end=$((200 * 1024))  # 200M efi partition
+    local rootfs_size=( `sudo du -sk $rootfs` )
+    local rootfs_start=$efi_end
+    local rootfs_end=$(($rootfs_start + $rootfs_size + (100 * 1024))) 
+    local overlay_start=$rootfs_end
+    local overlay_end=$((image_size - (1 * 1024)))
     log "Partitioning Installer image (UEFI)"
     (parted -s $installimg mklabel msdos &&
-    parted -s $installimg mkpart primary fat32 0% 200M &&
-    parted -s $installimg mkpart primary ext3 200M 1700M &&
-    parted -s $installimg mkpart primary ext3 1700M 2147M &&
+    parted -s $installimg mkpart primary fat32 ${efi_start}K ${efi_end}K
+    parted -s $installimg mkpart primary ext3 ${rootfs_start}K ${rootfs_end}K &&
+    parted -s $installimg mkpart primary ext3 ${overlay_start}K ${overlay_end}K &&
     parted -s $installimg set 1 boot on) 2>&1 >> ${LOGFILE}  || {
         log "Failed to partition image: $installimg"
      return 1;
     }
+    log "$(parted -s $installimg print)"
 
     if [ "${bootloader}" != "grub2" ]; then
         log "Bootloader ${bootloader} not supported, cannot install"
@@ -556,17 +557,66 @@ generate_img() {
     log "Installing ppas in rootfs"
     # export existing install_ppa and run it in the chroot
     install_ppas_cmds="$(install_ppas ${PPAS[@]})"
-    sudo chroot ${mnt} /bin/bash -c "${install_ppas_cmds}" || {
+    sudo chroot ${mnt} /bin/bash -c "${install_ppas_cmds}; apt-get update" || {
         log "Failed to add installer ppas to chroot";
         return 1;
     }
 
-    log "Installing on rootfs: $packages"
-    sudo chroot ${mnt} apt-get update &&
-    sudo chroot ${mnt} apt-get -y install $packages || {
-        log "Failed to install packages on rootfs";
+    log "Installing curtin in rootfs"
+    local curtin_debbuild="$(cd $dldir/curtin &&
+                             ./tools/build-deb -us -uc || return 1)"
+    local curtin_ver=$(echo $curtin_debbuild | 
+                       awk '/building upstream version/ {print $4}' |
+                       sed 's|,||g')
+    # no python2 curtin
+    local curtin_debs="$(ls $dldir/curtin/*${curtin_ver}*.deb | grep -v 'python-curtin')"
+    if [ -z "$curtin_ver" -o -z "$curtin_debs" ]; then
+        log "ERROR: failed to build curtin debs and get version";
+        return 1;
+    fi
+    for deb in ${curtin_debs}; do
+        cp ${deb} ${mnt}/tmp || {
+           log "ERROR: failed copyin ${deb} into ${mnt}/tmp";
+           return 1;
+        }
+    done
+    sudo chroot ${mnt} /bin/bash -c \
+        "dpkg --install /tmp/*${curtin_ver}*.deb; apt-get -y -f install" || {
+        log "ERROR: Failed to install curtin in target";
         return 1;
     }
+
+    log "Installing on rootfs: $packages"
+    # use curtin's system-install if available
+    if echo ${CURTIN_FEATURES} | grep -q SUBCOMMAND_SYSTEM_INSTALL; then
+        log "Using curtin to install packages in-target"
+        (cd $dldir/curtin &&
+         sudo ./bin/curtin system-install -t $mnt -- $packages) || {
+            log "Failed to install packages on rootfs";
+            return 1;
+        }
+    else
+        log "WARNING: skipping preinstallation of mdadm, lvm2"
+        log "WARNING: will install packages during runtime"
+        # if we don't have the right curtin features, we can't easily
+        # install mdadm/lvm2 into the target as it will start up system
+        # daemons and prevent us from unmounting the target
+        packages=$(echo $packages | fmt -w1 | egrep -v "(mdadm|lvm2)")
+        sudo chroot ${mnt} apt-get -y install $packages || {
+            log "Failed to install packages on rootfs";
+            return 1;
+        }
+    fi
+
+    log "Cleaning up overlay apt cache"
+    local before=( `sudo du -sk ${upper}` )
+    sudo chroot ${mnt} apt-get clean || {
+        log "ERROR: failed to run apt-get clean in ${mnt}";
+        return 1;
+    }
+    local after=( `sudo du -sk ${upper}` )
+    local delta=$((($before - $after) / 1024))
+    log "Saved ${delta} MiB"
 
     log "Removing ppas in rootfs"
     remove_ppas_cmds="$(remove_ppas ${PPAS[@]})"
@@ -669,6 +719,14 @@ main() {
         return 1;
     }
 
+    export CURTIN_FEATURES="$(cd ${DLDIR}/curtin;
+                      python3 -c \
+                      'import curtin; [print(x) for x in curtin.FEATURES]')"
+    log "Detected curtin features: $CURTIN_FEATURES"
+    [ -n "${CURTIN_FEATURES}" ] || {
+        return 1;
+    }
+ 
     acquire_image ${DLDIR} "$STREAM" "$RELEASE" "$ARCH" "$VERSION" || {
         return 1;
     }

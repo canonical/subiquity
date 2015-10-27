@@ -15,6 +15,7 @@
 
 from .filesystem import (FilesystemView,  # NOQA
                          AddPartitionView,
+                         AddFormatView,
                          DiskPartitionView,
                          DiskInfoView)
 from .raid import RaidView  # NOQA
