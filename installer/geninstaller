@@ -16,6 +16,7 @@
 
 PROG=`basename $0`
 PREFIX="${PROG}"
+INSTALLER_IMAGE_SIZE_K=$((2 * 1024 * 1024)) # 2G, 2097152K, 2147483648B
 LOGFILE="geninstaller.log"
 TOPDIR=${TOPDIR-/usr/share/subiquity/installer}
 USQUERY=${TOPDIR}/usquery
@@ -427,20 +428,32 @@ generate_img() {
 
     # prep image
     log "Generating Installer image file"
-    qemu-img create -f raw $installimg 2G 2>&1 >> ${LOGFILE} || {
+    local image_size=${INSTALLER_IMAGE_SIZE_K}
+    qemu-img create -f raw $installimg ${image_size}K 2>&1 >> ${LOGFILE} || {
         log "Failed to create empty file: $installimg"
         return 1;
     }
 
+    # Calculate the partition sizes and offsets.  Rootfs size can change
+    # from build to build and the total size of the image is no longer
+    # encoded here, but set globally.
+    local efi_start="0%"
+    local efi_end=$((200 * 1024))  # 200M efi partition
+    local rootfs_size=( `sudo du -sk $rootfs` )
+    local rootfs_start=$efi_end
+    local rootfs_end=$(($rootfs_start + $rootfs_size + (100 * 1024))) 
+    local overlay_start=$rootfs_end
+    local overlay_end=$((image_size - (1 * 1024)))
     log "Partitioning Installer image (UEFI)"
     (parted -s $installimg mklabel msdos &&
-    parted -s $installimg mkpart primary fat32 0% 200M &&
-    parted -s $installimg mkpart primary ext3 200M 1400M &&
-    parted -s $installimg mkpart primary ext3 1400M 2147M &&
+    parted -s $installimg mkpart primary fat32 ${efi_start}K ${efi_end}K
+    parted -s $installimg mkpart primary ext3 ${rootfs_start}K ${rootfs_end}K &&
+    parted -s $installimg mkpart primary ext3 ${overlay_start}K ${overlay_end}K &&
     parted -s $installimg set 1 boot on) 2>&1 >> ${LOGFILE}  || {
         log "Failed to partition image: $installimg"
      return 1;
     }
+    log "$(parted -s $installimg print)"
 
     if [ "${bootloader}" != "grub2" ]; then
         log "Bootloader ${bootloader} not supported, cannot install"
