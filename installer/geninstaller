@@ -16,7 +16,7 @@
 
 PROG=`basename $0`
 PREFIX="${PROG}"
-INSTALLER_IMAGE_SIZE_K=$((2 * 1024 * 1024)) # 2G, 2097152K, 2147483648B
+INSTALLER_IMAGE_SIZE_M=2048  # 2G image
 LOGFILE="geninstaller.log"
 TOPDIR=${TOPDIR-/usr/share/subiquity/installer}
 USQUERY=${TOPDIR}/usquery
@@ -88,6 +88,12 @@ trap cleanup EXIT HUP INT TERM
 
 log() {
     echo "`date +%s`: $@" | tee -a ${LOGFILE}
+}
+
+blockalign_up() {
+    local block_size=$((1 << 20))  # 1M
+    local new_size=$(($1 + ($block_size - ($1 % $block_size))))
+    echo $(($new_size >> 20))  # return in MB
 }
 
 write_metadata() {
@@ -428,8 +434,8 @@ generate_img() {
 
     # prep image
     log "Generating Installer image file"
-    local image_size=${INSTALLER_IMAGE_SIZE_K}
-    qemu-img create -f raw $installimg ${image_size}K 2>&1 >> ${LOGFILE} || {
+    local image_size=${INSTALLER_IMAGE_SIZE_M}
+    qemu-img create -f raw $installimg ${image_size}M 2>&1 >> ${LOGFILE} || {
         log "Failed to create empty file: $installimg"
         return 1;
     }
@@ -438,17 +444,17 @@ generate_img() {
     # from build to build and the total size of the image is no longer
     # encoded here, but set globally.
     local efi_start="0%"
-    local efi_end=$((200 * 1024))  # 200M efi partition
-    local rootfs_size=( `sudo du -sk $rootfs` )
+    local efi_end=200  # 200M efi partition
+    local rootfs_size=$(blockalign_up `sudo du -s -B1 $rootfs`)
     local rootfs_start=$efi_end
-    local rootfs_end=$(($rootfs_start + $rootfs_size + (100 * 1024))) 
+    local rootfs_end=$(($rootfs_start + $rootfs_size + 130))
     local overlay_start=$rootfs_end
-    local overlay_end=$((image_size - (1 * 1024)))
+    local overlay_end=$(($image_size - 1))  # save last 1M for GPT
     log "Partitioning Installer image (UEFI)"
     (parted -s $installimg mklabel msdos &&
-    parted -s $installimg mkpart primary fat32 ${efi_start}K ${efi_end}K
-    parted -s $installimg mkpart primary ext3 ${rootfs_start}K ${rootfs_end}K &&
-    parted -s $installimg mkpart primary ext3 ${overlay_start}K ${overlay_end}K &&
+    parted -s $installimg mkpart primary fat32 ${efi_start} ${efi_end}M &&
+    parted -s $installimg mkpart primary ext3 ${efi_end}M ${rootfs_end}M &&
+    parted -s $installimg mkpart primary ext3 ${overlay_start}M ${overlay_end}M &&
     parted -s $installimg set 1 boot on) 2>&1 >> ${LOGFILE}  || {
         log "Failed to partition image: $installimg"
      return 1;
@@ -501,7 +507,7 @@ generate_img() {
      }
 
     log "Creating and syncing filesystem (original cloudimg rootfs)"
-    (sudo mkfs.ext3 -q -L cloudimg-rootfs $ROOTFS_DEV &&
+    (sudo mkfs.ext3 -m 0 -q -L cloudimg-rootfs $ROOTFS_DEV &&
     mkdir -p ${lower} &&
     sudo mount $ROOTFS_DEV ${lower} &&
     sudo rsync -a ${rootfs}/ ${lower}/) 2>&1 >> ${LOGFILE} || {
@@ -525,7 +531,7 @@ generate_img() {
     # load the right overlay module
     if ! lsmod | grep -q ${FS}; then sudo modprobe -v $FS; fi
 
-    (sudo mkfs.ext3 -q -L overlay-rootfs $OVERLAY_DEV
+    (sudo mkfs.ext3 -m 0 -q -L overlay-rootfs $OVERLAY_DEV
     sudo mkdir -p ${work} ${upper} ${mnt} &&
     sudo mount $OVERLAY_DEV ${upper} &&
     sudo mkdir -p ${upper}/overlay ${work} &&
