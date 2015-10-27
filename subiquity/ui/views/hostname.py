@@ -28,7 +28,7 @@ from subiquity.view import ViewPolicy
 log = logging.getLogger("subiquity.views.hostname")
 
 
-class IdentityView(ViewPolicy):
+class HostnameView(ViewPolicy):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal
