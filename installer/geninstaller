@@ -17,6 +17,8 @@
 PROG=`basename $0`
 PREFIX="${PROG}"
 INSTALLER_IMAGE_SIZE_M=2048  # 2G image
+RSYNC_OPTS="-aXHAS --one-file-system"
+MKFS_OPTS="-E packed_meta_blocks=1 -J size=4 -m 0 -q"
 LOGFILE="geninstaller.log"
 TOPDIR=${TOPDIR-/usr/share/subiquity/installer}
 USQUERY=${TOPDIR}/usquery
@@ -447,7 +449,8 @@ generate_img() {
     local efi_end=200  # 200M efi partition
     local rootfs_size=$(blockalign_up `sudo du -s -B1 $rootfs`)
     local rootfs_start=$efi_end
-    local rootfs_end=$(($rootfs_start + $rootfs_size + 130))
+    local fs_overhead=130  # best guess fs metadata and other overhead
+    local rootfs_end=$(($rootfs_start + $rootfs_size + $fs_overhead))
     local overlay_start=$rootfs_end
     local overlay_end=$(($image_size - 1))  # save last 1M for GPT
     log "Partitioning Installer image (UEFI)"
@@ -497,7 +500,7 @@ generate_img() {
      cat ${efi_grub_conf} | sudo tee ${efimnt}/EFI/BOOT/grub.cfg &&
      cat ${embed_conf} | sudo tee ${efimnt}/grub/embed_efi.cfg &&
      cat ${grub_conf} | sudo tee ${efimnt}/grub/grub.cfg &&
-     sudo rsync -a /usr/lib/grub/x86_64-efi/ ${efimnt}/grub/x86_64-efi/ &&
+     sudo rsync ${RSYNC_OPTS} /usr/lib/grub/x86_64-efi/ ${efimnt}/grub/x86_64-efi/ &&
      sudo grub-mkimage -O x86_64-efi -p /grub -c ${efimnt}/grub/embed_efi.cfg -o ${efimnt}/EFI/BOOT/bootx64.efi ${GRUB_MODS} &&
      sudo grub-install --force --removable --no-floppy \
                       --boot-directory=${efimnt}/boot $LOOPDEV &>/dev/null &&
@@ -507,10 +510,11 @@ generate_img() {
      }
 
     log "Creating and syncing filesystem (original cloudimg rootfs)"
-    (sudo mkfs.ext3 -m 0 -q -L cloudimg-rootfs $ROOTFS_DEV &&
+    (sudo mkfs.ext4 ${MKFS_OPTS} -L cloudimg-rootfs $ROOTFS_DEV &&
+    tune2fs -r 0 $ROOTFS_DEV &&
     mkdir -p ${lower} &&
     sudo mount $ROOTFS_DEV ${lower} &&
-    sudo rsync -a ${rootfs}/ ${lower}/) 2>&1 >> ${LOGFILE} || {
+    sudo rsync ${RSYNC_OPTS} ${rootfs}/ ${lower}/) 2>&1 >> ${LOGFILE} || {
         log "ERROR: failed to sync rootfs into install image";
         return 1
     }
@@ -531,7 +535,8 @@ generate_img() {
     # load the right overlay module
     if ! lsmod | grep -q ${FS}; then sudo modprobe -v $FS; fi
 
-    (sudo mkfs.ext3 -m 0 -q -L overlay-rootfs $OVERLAY_DEV
+    (sudo mkfs.ext3 ${MKFS_OPTS} -L overlay-rootfs $OVERLAY_DEV
+    tune2fs -r 0 $OVERLAY_DEV &&
     sudo mkdir -p ${work} ${upper} ${mnt} &&
     sudo mount $OVERLAY_DEV ${upper} &&
     sudo mkdir -p ${upper}/overlay ${work} &&
@@ -647,7 +652,7 @@ generate_img() {
 
     # syncing overlay
     log "Injecting installer configuration/scripts"
-    sudo rsync -a ${overlay_path}/ ${mnt}/ || {
+    sudo rsync ${RSYNC_OPTS} ${overlay_path}/ ${mnt}/ || {
         log "Failed to sync local installer configuration/scripts";
         return 1;
     }
