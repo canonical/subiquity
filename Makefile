@@ -2,7 +2,7 @@
 # Makefile for subiquity
 #
 NAME=subiquity
-VERSION=0.0.1
+VERSION=$(shell python3 -c "import subiquity; print(subiquity.__version__)")
 PYTHONSRC=$(NAME)
 PYTHONPATH=$(shell pwd):$(shell pwd)/probert
 VENVPATH=$(shell pwd)/venv
