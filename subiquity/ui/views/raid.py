@@ -22,7 +22,7 @@ from subiquity.ui.interactive import (StringEditor, IntegerEditor,
 from subiquity.ui.utils import Color, Padding
 import logging
 
-log = logging.getLogger('subiquity.raid')
+log = logging.getLogger('subiquity.ui.raid')
 
 
 class RaidView(ViewPolicy):
@@ -133,4 +133,4 @@ class RaidView(ViewPolicy):
 
     def cancel(self, button):
         log.debug('raid: button_cancel')
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()

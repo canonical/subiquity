@@ -27,7 +27,7 @@ class WelcomeModel(ModelPolicy):
 
     signals = [
         ("Welcome view",
-         'welcome:show',
+         'menu:welcome:main',
          'welcome')
     ]
 

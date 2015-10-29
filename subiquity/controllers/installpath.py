@@ -42,7 +42,7 @@ class InstallpathController(ControllerPolicy):
 
     def install_ubuntu(self):
         log.debug("Installing Ubuntu path chosen.")
-        self.signal.emit_signal('network:show')
+        self.signal.emit_signal('menu:network:main')
 
     def install_maas_region_server(self):
         self.ui.set_body(DummyView(self.signal))

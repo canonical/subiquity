@@ -47,4 +47,4 @@ class ErrorView(WidgetWrap):
         return Pile(buttons)
 
     def cancel(self, result):
-        self.signal.emit_signal('welcome:show')
+        self.signal.emit_signal('menu:welcome:main')
