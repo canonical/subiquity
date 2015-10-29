@@ -127,4 +127,4 @@ class IdentityView(ViewPolicy):
         self.signal.emit_signal('installprogress:curtin-install', result)
 
     def cancel(self, button):
-        self.signal.emit_signal("quit")
+        self.signal.prev_signal()

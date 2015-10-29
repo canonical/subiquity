@@ -30,7 +30,7 @@ from subiquity.view import ViewPolicy
 from subiquity.models.actions import RouteAction
 
 
-log = logging.getLogger('subiquity.network')
+log = logging.getLogger('subiquity.views.network')
 
 
 class NetworkView(ViewPolicy):
@@ -148,7 +148,7 @@ class NetworkView(ViewPolicy):
 
     def on_net_dev_press(self, result):
         log.debug("Selected network dev: {}".format(result.label))
-        self.signal.emit_signal('network:configure-interface-menu',
+        self.signal.emit_signal('menu:network:main:configure-interface',
                                 result.label)
 
     def done(self, result):
@@ -161,4 +161,4 @@ class NetworkView(ViewPolicy):
 
     def cancel(self, button):
         self.model.reset()
-        self.signal.emit_signal(self.model.get_previous_signal)
+        self.signal.prev_signal()

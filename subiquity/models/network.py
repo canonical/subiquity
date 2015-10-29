@@ -48,29 +48,25 @@ class SimpleInterface:
 class NetworkModel(ModelPolicy):
     """ Model representing network interfaces
     """
-
-    prev_signal = ('Back to install path',
-                   'installpath:show',
-                   'installpath')
-
+    base_signal = 'menu:network:main'
     signals = [
         ('Network main view',
-         'network:show',
+         base_signal,
          'network'),
         ('Network finish',
          'network:finish',
          'network_finish'),
         ('Network configure interface',
-         'network:configure-interface-menu',
+         base_signal + ':configure-interface',
          'network_configure_interface'),
         ('Network configure ipv4 interface',
-         'network:configure-ipv4-interface',
+         base_signal + ':configure-ipv4-interface',
          'network_configure_ipv4_interface')
     ]
 
     additional_options = [
         ('Set default route',
-         'network:set-default-route',
+         base_signal + ':set-default-route',
          'set_default_route'),
         # ('Bond interfaces',
         #  'network:bond-interfaces',

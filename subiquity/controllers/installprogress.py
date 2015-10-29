@@ -54,7 +54,7 @@ class InstallProgressController(ControllerPolicy):
 
     @coroutine
     def curtin_install(self, postconfig):
-        self.signal.emit_signal('installprogress:show')
+        self.signal.emit_signal('menu:installprogress:main')
 
         log.debug('Curtin Install: calling curtin with '
                   'storage/net/postinstall config')
@@ -115,7 +115,7 @@ class InstallProgressController(ControllerPolicy):
         footer = ("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 90)
-        self.progress_view = ProgressView(self.signal)
+        self.progress_view = ProgressView(self.model, self.signal)
         self.ui.set_body(self.progress_view)
 
         if self.opts.dry_run:
@@ -125,10 +125,10 @@ class InstallProgressController(ControllerPolicy):
                 "",
                 "",
                 "",
-                "Press (Q) to Quit."
+                "Press (Control-x) to Quit."
             ]
             self.progress_view.text.set_text("\n".join(banner))
-        else:
-            self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
+
+        self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
 
         self.ui.set_footer(footer, 90)

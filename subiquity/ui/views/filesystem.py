@@ -43,7 +43,7 @@ PARTITION_ERRORS = [
 ]
 
 
-log = logging.getLogger('subiquity.filesystem')
+log = logging.getLogger('subiquity.views.filesystem')
 
 
 class DiskInfoView(ViewPolicy):
@@ -80,15 +80,15 @@ class DiskInfoView(ViewPolicy):
             return None
 
         return super().keypress(size, key)
-
+ 
     def done(self, result):
         ''' Return to FilesystemView '''
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
-class AddFormatView(WidgetWrap):
+class AddFormatView(ViewPolicy):
 
     def __init__(self, model, signal, selected_disk):
         self.model = model
@@ -141,7 +141,7 @@ class AddFormatView(WidgetWrap):
         return Pile(total_items)
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
     def done(self, result):
         """ format spec
@@ -165,7 +165,7 @@ class AddFormatView(WidgetWrap):
             # FIXME: update the error message widget instead
             self.mountpoint.set_error('ERROR: already mounted')
             self.signal.emit_signal(
-                'filesystem:add-disk-partiion',
+                'menu:filesystem:main:add-disk-partition',
                 self.selected_disk)
             return
         log.debug("Add Format Result: {}".format(result))
@@ -174,17 +174,19 @@ class AddFormatView(WidgetWrap):
             self.selected_disk.devpath, result)
 
 
-class AddPartitionView(WidgetWrap):
+class AddPartitionView(ViewPolicy):
 
     def __init__(self, model, signal, selected_disk):
+        log.debug('AddPartitionView: selected_disk=[{}]'.format(selected_disk))
         self.model = model
         self.signal = signal
-        self.selected_disk = self.model.get_disk(selected_disk)
+        self.selected_disk = selected_disk
+        self.disk_obj = self.model.get_disk(selected_disk)
 
         self.partnum = IntegerEditor(
             caption="",
-            default=self.selected_disk.lastpartnumber + 1)
-        self.size_str = _humanize_size(self.selected_disk.freespace)
+            default=self.disk_obj.lastpartnumber + 1)
+        self.size_str = _humanize_size(self.disk_obj.freespace)
         self.size = StringEditor(
             caption="".format(self.size_str))
         self.mountpoint = StringEditor(caption="", edit_text="/")
@@ -193,7 +195,7 @@ class AddPartitionView(WidgetWrap):
             Columns(
                 [
                     ("weight", 0.2, Text("Adding partition to {}".format(
-                        self.selected_disk.devpath), align="right")),
+                        self.disk_obj.devpath), align="right")),
                     ("weight", 0.3, Text(""))
                 ]
             ),
@@ -258,7 +260,7 @@ class AddPartitionView(WidgetWrap):
         return Pile(total_items)
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
     def done(self, result):
         """ partition spec
@@ -301,12 +303,12 @@ class AddPartitionView(WidgetWrap):
             log.debug('Getting partition size')
             log.debug('size.value={} size_str={} freespace={}'.format(
                       self.size.value, self.size_str,
-                      self.selected_disk.freespace))
+                      self.disk_obj.freespace))
             if self.size.value == '' or \
                self.size.value == self.size_str:
                 log.debug('Using default value: {}'.format(
-                          self.selected_disk.freespace))
-                return int(self.selected_disk.freespace)
+                          self.disk_obj.freespace))
+                return int(self.disk_obj.freespace)
             else:
                 # 120B 120
                 valid_size = __get_valid_size(self.size.value)
@@ -316,13 +318,13 @@ class AddPartitionView(WidgetWrap):
                 self.size.value = __append_unit(valid_size)
                 log.debug('dehumanize_size({})'.format(self.size.value))
                 sz = _dehumanize_size(self.size.value)
-                if sz > self.selected_disk.freespace:
+                if sz > self.disk_obj.freespace:
                     log.debug(
                         'Input size too big for device: ({} > {})'.format(
-                            sz, self.selected_disk.freespace))
+                            sz, self.disk_obj.freespace))
                     log.warn('Capping size @ max freespace: {}'.format(
-                        self.selected_disk.freespace))
-                    sz = self.selected_disk.freespace
+                        self.disk_obj.freespace))
+                    sz = self.disk_obj.freespace
                 return sz
 
         result = {
@@ -338,27 +340,32 @@ class AddPartitionView(WidgetWrap):
             log.error(result['bytes'])
             self.size.set_error('ERROR: {}'.format(result['bytes']))
             self.signal.emit_signal(
-                'filesystem:add-disk-partiion',
+                'menu:filesystem:main:add-disk-partition',
                 self.selected_disk)
             return
         # Validate mountpoint input
+        if not self.mountpoint.value.startswith("/"):
+            log.error('provided mountpoint must start with /'
+                      ' ({})'.format(self.mountpoint.value))
+            # FIXME: update the error message widget instead
+            self.mountpoint.set_error('ERROR: invalid mount path')
+            self.signal.emit_signal('refresh')
+            return
         all_mounts = self.model.get_mounts()
         if self.mountpoint.value in all_mounts:
             log.error('provided mountpoint already allocated'
                       ' ({})'.format(self.mountpoint.value))
             # FIXME: update the error message widget instead
             self.mountpoint.set_error('ERROR: already mounted')
-            self.signal.emit_signal(
-                'filesystem:add-disk-partiion',
-                self.selected_disk)
+            self.signal.emit_signal('refresh')
             return
         log.debug("Add Partition Result: {}".format(result))
         self.signal.emit_signal(
             'filesystem:finish-add-disk-partition',
-            self.selected_disk.devpath, result)
+            self.disk_obj.devpath, result)
 
 
-class DiskPartitionView(WidgetWrap):
+class DiskPartitionView(ViewPolicy):
     def __init__(self, model, signal, selected_disk):
         self.model = model
         self.signal = signal
@@ -456,25 +463,25 @@ class DiskPartitionView(WidgetWrap):
                                  focus_map='menu_button focus')
 
     def show_disk_info(self, result):
-        self.signal.emit_signal('filesystem:show-disk-information',
+        self.signal.emit_signal('menu:filesystem:main:show-disk-information',
                                 self.selected_disk)
 
     def add_partition(self, result):
         log.debug('add_partition: result={}'.format(result))
-        self.signal.emit_signal('filesystem:add-disk-partition',
+        self.signal.emit_signal('menu:filesystem:main:add-disk-partition',
                                 self.selected_disk)
 
     def create_swap(self, result):
         log.debug('create_swap: result={}'.format(result))
-        self.signal.emit_signal('filesystem:create-swap-entire-device',
+        self.signal.emit_signal('menu:filesystem:main:create-swap-entire-device',
                                 self.selected_disk)
 
     def done(self, result):
         ''' Return to FilesystemView '''
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
 
 class FilesystemView(ViewPolicy):
@@ -612,15 +619,15 @@ class FilesystemView(ViewPolicy):
             self.model.get_signal_by_name(result.label))
 
     def cancel(self, button):
-        self.signal.emit_signal(self.model.get_previous_signal)
+        self.signal.prev_signal()
 
     def reset(self, button):
-        self.signal.emit_signal('filesystem:show', True)
+        self.signal.emit_signal('menu:filesystem:main', True)
 
     def done(self, button):
         actions = self.model.get_actions()
         self.signal.emit_signal('filesystem:finish', False, actions)
 
     def show_disk_partition_view(self, partition):
-        self.signal.emit_signal('filesystem:show-disk-partition',
+        self.signal.emit_signal('menu:filesystem:main:show-disk-partition',
                                 partition.label)

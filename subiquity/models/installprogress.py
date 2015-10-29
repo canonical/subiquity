@@ -25,14 +25,13 @@ class InstallProgressModel(ModelPolicy):
     """
     # FIXME: Decide what to do here if ESC is pressed, it's probably in
     # a state of no return so may be better to just exit with error.
-    prev_signal = None
 
     signals = [
         ("Run curtin",
          'installprogress:curtin-install',
          'curtin_install'),
         ("Install progress final view",
-         'installprogress:show',
+         'menu:installprogress:main',
          'show_progress'),
         ("Reboot curtin",
          "installprogress:curtin-reboot",

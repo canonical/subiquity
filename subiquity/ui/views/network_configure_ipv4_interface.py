@@ -80,7 +80,7 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
             btn = Text("This will be your default gateway")
         return Pile([btn])
 
-    def set_default_gateway(self):
+    def set_default_gateway(self, button):
         if self.gateway_input.value:
             self.model.default_gateway = self.gateway_input.value
 
@@ -95,8 +95,8 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
         return Pile(buttons)
 
     def done(self, result):
-        self.signal.emit_signal('network:show')
+        self.signal.emit_signal('menu:network:main')
 
     def cancel(self, button):
         self.model.default_gateway = None
-        self.signal.emit_signal('network:show')
+        self.signal.prev_signal()

@@ -23,7 +23,7 @@ from urwid import WidgetWrap
 class ViewPolicy(WidgetWrap):
     def keypress(self, size, key):
         if key == 'esc':
-            self.signal.emit_signal(self.model.get_previous_signal)
+            self.signal.prev_signal()
             return None
         if key in ['ctrl x']:
             self.signal.register_signals('quit')

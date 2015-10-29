@@ -34,15 +34,10 @@ class AttrDict(dict):
 class FilesystemModel(ModelPolicy):
     """ Model representing storage options
     """
-    prev_signal = (
-        'Back to network path',
-        'network:show',
-        'network'
-    )
-
+    base_signal = 'menu:filesystem:main'
     signals = [
         ('Filesystem view',
-         'filesystem:show',
+         base_signal,
          'filesystem'),
         ('Filesystem error',
          'filesystem:error',
@@ -51,13 +46,13 @@ class FilesystemModel(ModelPolicy):
          'filesystem:finish',
          'filesystem_handler'),
         ('Show disk partition view',
-         'filesystem:show-disk-partition',
+         base_signal + ':show-disk-partition',
          'disk_partition'),
         ('Finish disk partition',
          'filesystem:finish-disk-partition',
          'disk_partition_handler'),
         ('Add disk partition',
-         'filesystem:add-disk-partition',
+         base_signal + ':add-disk-partition',
          'add_disk_partition'),
         ('Finish add disk partition',
          'filesystem:finish-add-disk-partition',
@@ -66,10 +61,10 @@ class FilesystemModel(ModelPolicy):
          'filesystem:finish-add-disk-format',
          'add_disk_format_handler'),
         ('Format or create swap on entire device (unusual, advanced)',
-         'filesystem:create-swap-entire-device',
+         base_signal + ':create-swap-entire-device',
          'create_swap_entire_device'),
         ('Show disk information',
-         'filesystem:show-disk-information',
+         base_signal + ':show-disk-information',
          'show_disk_information'),
         ('Show next disk information',
          'filesystem:show-disk-info-next',
@@ -78,7 +73,7 @@ class FilesystemModel(ModelPolicy):
          'filesystem:show-disk-info-prev',
          'show_disk_information_prev'),
         ('Add Raid Device',
-         'filesystem:add-raid-dev',
+         base_signal + ':add-raid-dev',
          'add_raid_dev'),
     ]
 

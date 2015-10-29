@@ -23,15 +23,10 @@ log = logging.getLogger('subiquity.models.raid')
 class RaidModel(ModelPolicy):
     """ Model representing software raid
     """
-    prev_signal = (
-        'Back to filesystem view',
-        'filesystem:show',
-        'filesystem'
-    )
-
+    base_signal = 'menu:raid:main'
     signals = [
         ('Create software RAID',
-         'raid:show',
+         base_signal,
          'raid'),
         ('Finish software RAID',
          'raid:finish',
