@@ -317,7 +317,9 @@ class FilesystemModel(ModelPolicy):
             'vendor': 'Linux Software RAID',
             'model': raid_model,
             'is_virtual': True,
-            'raw': {},
+            'raw': {
+                'MAJOR': '9',
+            },
         }
         self.info[raid_dev_name] = AttrDict(raid_dev_info)
 
