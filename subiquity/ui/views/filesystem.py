@@ -29,7 +29,8 @@ from subiquity.ui.buttons import (done_btn,
                                   cancel_btn,
                                   menu_btn)
 from subiquity.ui.utils import Padding, Color
-from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector)
+from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector,
+                                      MountEditor)
 from subiquity.models.filesystem import (_humanize_size,
                                          _dehumanize_size,
                                          HUMAN_UNITS)
@@ -43,7 +44,7 @@ PARTITION_ERRORS = [
 ]
 
 
-log = logging.getLogger('subiquity.filesystem')
+log = logging.getLogger('subiquity.ui.filesystem')
 
 
 class DiskInfoView(ViewPolicy):
@@ -93,9 +94,10 @@ class AddFormatView(WidgetWrap):
     def __init__(self, model, signal, selected_disk):
         self.model = model
         self.signal = signal
-        self.selected_disk = self.model.get_disk(selected_disk)
+        self.selected_disk = selected_disk
+        self.disk_obj = self.model.get_disk(selected_disk)
 
-        self.mountpoint = StringEditor(caption="", edit_text="/")
+        self.mountpoint = MountEditor(caption="", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
         body = [
             Padding.line_break(""),
@@ -148,7 +150,7 @@ class AddFormatView(WidgetWrap):
 
         { 
           'format' Str(ext4|btrfs..,
-          'mount_point': Str
+          'mountpoint': Str
         }
         """
 
@@ -157,21 +159,17 @@ class AddFormatView(WidgetWrap):
             "mountpoint": self.mountpoint.value
         }
 
-        # Validate mountpoint input
-        all_mounts = self.model.get_mounts()
-        if self.mountpoint.value in all_mounts:
-            log.error('provided mountpoint already allocated'
-                      ' ({})'.format(self.mountpoint.value))
-            # FIXME: update the error message widget instead
-            self.mountpoint.set_error('ERROR: already mounted')
-            self.signal.emit_signal(
-                'filesystem:add-disk-partiion',
-                self.selected_disk)
+        try:
+            valid = self.model.valid_mount(result)
+        except ValueError as e:
+            log.exception('Invalid mount point')
+            self.mountpoint.set_error('Error: {}'.format(str(e)))
+            log.debug('Invalid mountpoint, try again')
             return
+
         log.debug("Add Format Result: {}".format(result))
-        self.signal.emit_signal(
-            'filesystem:finish-add-disk-format',
-            self.selected_disk.devpath, result)
+        self.signal.emit_signal('filesystem:finish-add-disk-format',
+                                self.disk_obj.devpath, result)
 
 
 class AddPartitionView(WidgetWrap):
@@ -179,21 +177,22 @@ class AddPartitionView(WidgetWrap):
     def __init__(self, model, signal, selected_disk):
         self.model = model
         self.signal = signal
-        self.selected_disk = self.model.get_disk(selected_disk)
+        self.selected_disk = selected_disk
+        self.disk_obj = self.model.get_disk(selected_disk)
 
         self.partnum = IntegerEditor(
             caption="",
-            default=self.selected_disk.lastpartnumber + 1)
-        self.size_str = _humanize_size(self.selected_disk.freespace)
+            default=self.disk_obj.lastpartnumber + 1)
+        self.size_str = _humanize_size(self.disk_obj.freespace)
         self.size = StringEditor(
             caption="".format(self.size_str))
-        self.mountpoint = StringEditor(caption="", edit_text="/")
+        self.mountpoint = MountEditor(caption="", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
         body = [
             Columns(
                 [
                     ("weight", 0.2, Text("Adding partition to {}".format(
-                        self.selected_disk.devpath), align="right")),
+                        self.disk_obj.devpath), align="right")),
                     ("weight", 0.3, Text(""))
                 ]
             ),
@@ -266,7 +265,7 @@ class AddPartitionView(WidgetWrap):
         { 'partition_number': Int,
           'size': Int(M|G),
           'format' Str(ext4|btrfs..,
-          'mount_point': Str
+          'mountpoint': Str
         }
         """
         def __get_valid_size(size_str):
@@ -301,12 +300,12 @@ class AddPartitionView(WidgetWrap):
             log.debug('Getting partition size')
             log.debug('size.value={} size_str={} freespace={}'.format(
                       self.size.value, self.size_str,
-                      self.selected_disk.freespace))
+                      self.disk_obj.freespace))
             if self.size.value == '' or \
                self.size.value == self.size_str:
                 log.debug('Using default value: {}'.format(
-                          self.selected_disk.freespace))
-                return int(self.selected_disk.freespace)
+                          self.disk_obj.freespace))
+                return int(self.disk_obj.freespace)
             else:
                 # 120B 120
                 valid_size = __get_valid_size(self.size.value)
@@ -316,13 +315,13 @@ class AddPartitionView(WidgetWrap):
                 self.size.value = __append_unit(valid_size)
                 log.debug('dehumanize_size({})'.format(self.size.value))
                 sz = _dehumanize_size(self.size.value)
-                if sz > self.selected_disk.freespace:
+                if sz > self.disk_obj.freespace:
                     log.debug(
                         'Input size too big for device: ({} > {})'.format(
-                            sz, self.selected_disk.freespace))
+                            sz, self.disk_obj.freespace))
                     log.warn('Capping size @ max freespace: {}'.format(
-                        self.selected_disk.freespace))
-                    sz = self.selected_disk.freespace
+                        self.disk_obj.freespace))
+                    sz = self.disk_obj.freespace
                 return sz
 
         result = {
@@ -337,25 +336,20 @@ class AddPartitionView(WidgetWrap):
         if result['bytes'] in PARTITION_ERRORS:
             log.error(result['bytes'])
             self.size.set_error('ERROR: {}'.format(result['bytes']))
-            self.signal.emit_signal(
-                'filesystem:add-disk-partiion',
-                self.selected_disk)
             return
         # Validate mountpoint input
-        all_mounts = self.model.get_mounts()
-        if self.mountpoint.value in all_mounts:
-            log.error('provided mountpoint already allocated'
-                      ' ({})'.format(self.mountpoint.value))
-            # FIXME: update the error message widget instead
-            self.mountpoint.set_error('ERROR: already mounted')
-            self.signal.emit_signal(
-                'filesystem:add-disk-partiion',
-                self.selected_disk)
+        valid = False
+        try:
+            valid = self.model.valid_mount(result)
+        except ValueError as e:
+            log.exception('Invalid mount point')
+            self.mountpoint.set_error('Error: {}'.format(str(e)))
+            log.debug("Invalid mountpoint, try again")
             return
+
         log.debug("Add Partition Result: {}".format(result))
-        self.signal.emit_signal(
-            'filesystem:finish-add-disk-partition',
-            self.selected_disk.devpath, result)
+        self.signal.emit_signal('filesystem:finish-add-disk-partition',
+                                self.disk_obj.devpath, result)
 
 
 class DiskPartitionView(WidgetWrap):

@@ -375,6 +375,38 @@ class FilesystemModel(ModelPolicy):
         log.debug('bootable check: no disks have been marked bootable')
         return False
 
+    def valid_mount(self, format_spec):
+        """ format spec
+
+        {
+          'format' Str(ext4|btrfs..,
+          'mountpoint': Str
+        }
+        """
+        mountpoint = format_spec.get('mountpoint')
+        if not mountpoint:
+            raise ValueError('Is None')
+
+        # If the value is in error state, return the
+        # the same error
+        err_prefix = 'error: '
+        if mountpoint.lower().startswith(err_prefix):
+            mountpoint = mountpoint[len(err_prefix):]
+            raise ValueError(mountpoint)
+
+        if not mountpoint.startswith('/'):
+            raise ValueError('Does not start with /')
+
+        # /usr/include/linux/limits.h:PATH_MAX
+        if len(mountpoint) > 4095:
+            raise ValueError('Path exceeds PATH_MAX')
+
+        all_mounts = self.get_mounts()
+        if mountpoint in all_mounts:
+            raise ValueError('Already mounted')
+
+        return True
+
     def get_empty_disks(self):
         ''' empty disk is one that does not have any
             partitions, filesystems or mounts, and is non-zero size '''
