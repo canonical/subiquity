@@ -29,7 +29,8 @@ from subiquity.ui.buttons import (done_btn,
                                   cancel_btn,
                                   menu_btn)
 from subiquity.ui.utils import Padding, Color
-from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector)
+from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector,
+                                      MountEditor)
 from subiquity.models.filesystem import (_humanize_size,
                                          _dehumanize_size,
                                          HUMAN_UNITS)
@@ -96,7 +97,7 @@ class AddFormatView(WidgetWrap):
         self.selected_disk = selected_disk
         self.disk_obj = self.model.get_disk(selected_disk)
 
-        self.mountpoint = StringEditor(caption="", edit_text="/")
+        self.mountpoint = MountEditor(caption="", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
         body = [
             Padding.line_break(""),
@@ -185,7 +186,7 @@ class AddPartitionView(WidgetWrap):
         self.size_str = _humanize_size(self.disk_obj.freespace)
         self.size = StringEditor(
             caption="".format(self.size_str))
-        self.mountpoint = StringEditor(caption="", edit_text="/")
+        self.mountpoint = MountEditor(caption="", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
         body = [
             Columns(
