@@ -24,7 +24,7 @@ ifneq (,$(MACHINE))
 	MACHARGS=--machine=$(MACHINE)
 endif
 
-.PHONY: run clean
+.PHONY: run clean check
 
 all: dryrun
 
@@ -56,6 +56,8 @@ lint:
 unit:
 	echo "Running unit tests..."
 	nosetests3 $(PYTHONSRC)/tests
+
+check: lint unit
 
 installer/$(INSTALLIMG): installer/geninstaller installer/runinstaller $(INSTALLER_RESOURCES) probert
 	(cd installer && TOPDIR=$(TOPDIR)/installer ./geninstaller -v -r $(RELEASE) -a $(ARCH) -s $(STREAM) -b $(BOOTLOADER)) 
