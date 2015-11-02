@@ -149,7 +149,7 @@ class AddFormatView(WidgetWrap):
 
         { 
           'format' Str(ext4|btrfs..,
-          'mount_point': Str
+          'mountpoint': Str
         }
         """
 
@@ -158,21 +158,17 @@ class AddFormatView(WidgetWrap):
             "mountpoint": self.mountpoint.value
         }
 
-        # Validate mountpoint input
-        all_mounts = self.model.get_mounts()
-        if self.mountpoint.value in all_mounts:
-            log.error('provided mountpoint already allocated'
-                      ' ({})'.format(self.mountpoint.value))
-            # FIXME: update the error message widget instead
-            self.mountpoint.set_error('ERROR: already mounted')
-            self.signal.emit_signal(
-                'filesystem:add-disk-partiion',
-                self.selected_disk)
+        try:
+            valid = self.model.valid_mount(result)
+        except ValueError as e:
+            log.exception('Invalid mount point')
+            self.mountpoint.set_error('Error: {}'.format(str(e)))
+            log.debug('Invalid mountpoint, try again')
             return
+
         log.debug("Add Format Result: {}".format(result))
-        self.signal.emit_signal(
-            'filesystem:finish-add-disk-format',
-            self.disk_obj.devpath, result)
+        self.signal.emit_signal('filesystem:finish-add-disk-format',
+                                self.disk_obj.devpath, result)
 
 
 class AddPartitionView(WidgetWrap):
@@ -268,7 +264,7 @@ class AddPartitionView(WidgetWrap):
         { 'partition_number': Int,
           'size': Int(M|G),
           'format' Str(ext4|btrfs..,
-          'mount_point': Str
+          'mountpoint': Str
         }
         """
         def __get_valid_size(size_str):
@@ -339,25 +335,20 @@ class AddPartitionView(WidgetWrap):
         if result['bytes'] in PARTITION_ERRORS:
             log.error(result['bytes'])
             self.size.set_error('ERROR: {}'.format(result['bytes']))
-            self.signal.emit_signal(
-                'filesystem:add-disk-partiion',
-                self.selected_disk)
             return
         # Validate mountpoint input
-        all_mounts = self.model.get_mounts()
-        if self.mountpoint.value in all_mounts:
-            log.error('provided mountpoint already allocated'
-                      ' ({})'.format(self.mountpoint.value))
-            # FIXME: update the error message widget instead
-            self.mountpoint.set_error('ERROR: already mounted')
-            self.signal.emit_signal(
-                'filesystem:add-disk-partiion',
-                self.selected_disk)
+        valid = False
+        try:
+            valid = self.model.valid_mount(result)
+        except ValueError as e:
+            log.exception('Invalid mount point')
+            self.mountpoint.set_error('Error: {}'.format(str(e)))
+            log.debug("Invalid mountpoint, try again")
             return
+
         log.debug("Add Partition Result: {}".format(result))
-        self.signal.emit_signal(
-            'filesystem:finish-add-disk-partition',
-            self.disk_obj.devpath, result)
+        self.signal.emit_signal('filesystem:finish-add-disk-partition',
+                                self.disk_obj.devpath, result)
 
 
 class DiskPartitionView(WidgetWrap):
