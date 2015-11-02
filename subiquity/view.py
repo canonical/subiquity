@@ -20,6 +20,7 @@ Contains some default key navigations
 
 from urwid import WidgetWrap
 
+
 class ViewPolicy(WidgetWrap):
     def keypress(self, size, key):
         if key == 'esc':

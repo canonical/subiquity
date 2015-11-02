@@ -23,8 +23,8 @@ from .ceph import CephDiskView  # NOQA
 from .iscsi import IscsiDiskView  # NOQA
 from .network import NetworkView  # NOQA
 from .network_default_route import NetworkSetDefaultRouteView  # NOQA
-from .network_configure_interface import NetworkConfigureInterfaceView  #NOQA
-from .network_configure_ipv4_interface import NetworkConfigureIPv4InterfaceView  #NOQA
+from .network_configure_interface import NetworkConfigureInterfaceView  # NOQA
+from .network_configure_ipv4_interface import NetworkConfigureIPv4InterfaceView  # NOQA
 from .installpath import InstallpathView  # NOQA
 from .installprogress import ProgressView  # NOQA
 from .welcome import WelcomeView  # NOQA

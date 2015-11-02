@@ -78,7 +78,7 @@ class Disk():
         self._partitions = OrderedDict()
 
     def __eq__(self, other):
-        if isinstance(other,  self.__class__):
+        if isinstance(other, self.__class__):
             print('disk same class, checking members')
             return (self._devpath == other._devpath and
                     self._serial == other._serial and
@@ -88,7 +88,9 @@ class Disk():
                     self._partitions == other._partitions)
         else:
             return False
-    __hash__ = None
+
+    __hash__ = None  # declare we don't supply a hash
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -112,12 +114,12 @@ class Disk():
 
     def __repr__(self):
         o = {
-           'devpath': self.devpath,
-           'serial': self.serial,
-           'model': self.model,
-           'parttype': self.parttype,
-           'size': self.size,
-           'partitions': self.partitions
+            'devpath': self.devpath,
+            'serial': self.serial,
+            'model': self.model,
+            'parttype': self.parttype,
+            'size': self.size,
+            'partitions': self.partitions
         }
         return yaml.dump(o, default_flow_style=False)
 
@@ -164,19 +166,20 @@ class Blockdev():
                                      self.disk.parttype)
 
     def __eq__(self, other):
-        if isinstance(other,  self.__class__):
+        if isinstance(other, self.__class__):
             return (self.disk == other.disk and
                     self._filesystems == other._filesystems and
                     self._mounts == other._mounts and
                     self._mountactions == other._mountactions and
                     self.bcache == other.bcache and
-                    self.lvm == other.lvm  and
+                    self.lvm == other.lvm and
                     self.holder == other.holder and
                     self.baseaction == other.baseaction)
         else:
             return False
 
-    __hash__ = None
+    __hash__ = None  # declare we don't supply a hash
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -265,14 +268,14 @@ class Blockdev():
 
     @property
     def available_partitions(self):
-        ''' return list of non-zero sized partitions that are 
+        ''' return list of non-zero sized partitions that are
             defined but not mounted, not formatted, and not used in
             raid, lvm, bcache'''
         return [part.devpath for (num, part) in self.partitions.items()
-                if part.size > 0 and
-                   part.flags not in ['raid', 'lvm', 'bcache'] and
-                   (part.devpath not in self._mounts.keys() and 
-                    part.devpath not in self._filesystems.keys())]
+                if (part.size > 0 and
+                    part.flags not in ['raid', 'lvm', 'bcache'] and
+                    (part.devpath not in self._mounts.keys() and
+                     part.devpath not in self._filesystems.keys()))]
 
     @property
     def mounted(self):
@@ -402,16 +405,17 @@ class Blockdev():
 
     def get_actions(self):
         if self.is_mounted():
-            log.debug(
-                'Emitting no actions, device ({}) is mounted'.format(self.devpath))
+            log.debug('Emitting no actions, device '
+                      '({}) is mounted'.format(self.devpath))
             return []
 
         actions = []
         action = self.baseaction.get()
-        part_actions = [part.get() for (num, part) in self.disk.partitions.items()]
+        part_actions = [part.get() for (num, part) in
+                        self.disk.partitions.items()]
         fs_actions = [fs.get() for fs in self.filesystems.values()]
         mount_actions = [m.get() for m in self._mountactions.values()]
-        actions = [action] + part_actions + fs_actions +  mount_actions
+        actions = [action] + part_actions + fs_actions + mount_actions
         log.debug('actions ({}):\n{}'.format(len(actions), actions))
 
         return actions
@@ -450,6 +454,7 @@ class Raiddev(Blockdev):
                                      self._raid_level,
                                      self._spare_devices)
 
+
 def sort_actions(actions):
     def type_index(t):
         order = ['disk', 'partition', 'raid', 'format', 'mount']
@@ -467,8 +472,8 @@ def sort_actions(actions):
         # for type==mount, count the number of dirs
         if a.get('type') == 'mount':
             score += path_count(a)
-        elif a.get('type') == 'partition' and \
-             a.get('id').startswith('md'):
+        elif (a.get('type') == 'partition' and
+              a.get('id').startswith('md')):
             score += 2
         log.debug('a={} score={}'.format(a, score))
         return score
@@ -479,7 +484,6 @@ def sort_actions(actions):
     log.debug(actions)
 
     return actions
-
 
 
 if __name__ == '__main__':

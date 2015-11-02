@@ -23,7 +23,6 @@ from subiquity.models.filesystem import (_humanize_size)
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
                                 AddFormatView, FilesystemView,
                                 DiskInfoView, RaidView)
-import subiquity.utils as utils
 from subiquity.ui.dummy import DummyView
 from subiquity.ui.error import ErrorView
 from subiquity.curtin import (curtin_write_storage_actions,
