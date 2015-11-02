@@ -43,7 +43,7 @@ PARTITION_ERRORS = [
 ]
 
 
-log = logging.getLogger('subiquity.filesystem')
+log = logging.getLogger('subiquity.ui.filesystem')
 
 
 class DiskInfoView(ViewPolicy):
