@@ -138,6 +138,7 @@ class FilesystemModel(ModelPolicy):
     def reset(self):
         log.debug('FilesystemModel: resetting disks')
         self.devices = {}
+        self.info = {}
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
