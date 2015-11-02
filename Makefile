@@ -50,8 +50,8 @@ ui-view-serial:
 
 lint:
 	echo "Running flake8 lint tests..."
-	flake8 bin/$(PYTHONSRC)-tui --ignore=F403
-	flake8 --exclude $(PYTHONSRC)/tests/ $(PYTHONSRC) --ignore=F403
+	python3 /usr/bin/flake8 bin/$(PYTHONSRC)-tui --ignore=F403
+	python3 /usr/bin/flake8 --exclude $(PYTHONSRC)/tests/ $(PYTHONSRC) --ignore=F403
 
 unit:
 	echo "Running unit tests..."
