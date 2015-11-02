@@ -265,7 +265,8 @@ class FilesystemController(ControllerPolicy):
         disk = self.model.get_disk(device)
 
         bus = disk_info.raw.get('ID_BUS', None)
-        if bus is None and disk_info['MAJOR'] == '253':
+        major = disk_info.raw.get('MAJOR', None)
+        if bus is None and major == '253':
             bus = 'virtio'
 
         devpath = disk_info.raw.get('DEVPATH', disk.devpath)
