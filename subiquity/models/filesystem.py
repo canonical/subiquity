@@ -397,6 +397,10 @@ class FilesystemModel(ModelPolicy):
         if not mountpoint.startswith('/'):
             raise ValueError('Does not start with /')
 
+        # /usr/include/linux/limits.h:PATH_MAX
+        if len(mountpoint) > 4095:
+            raise ValueError('Path exceeds PATH_MAX')
+
         all_mounts = self.get_mounts()
         if mountpoint in all_mounts:
             raise ValueError('Already mounted')
