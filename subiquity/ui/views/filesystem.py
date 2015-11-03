@@ -547,6 +547,8 @@ class FilesystemView(ViewPolicy):
 
         buttons.append(Color.button(reset_btn(on_press=self.reset),
                                     focus_map='button focus'))
+        buttons.append(Color.button(cancel_btn(on_press=self.cancel),
+                                    focus_map='button focus'))
 
         return Pile(buttons)
 
@@ -594,12 +596,13 @@ class FilesystemView(ViewPolicy):
     def _build_menu(self):
         log.debug('FileSystemView: building menu')
         opts = []
+        avail_disks = self.model.get_available_disk_names()
         for opt, sig, _ in self.model.get_menu():
-            opts.append(
-                Color.menu_button(
-                    menu_btn(label=opt,
-                             on_press=self.on_fs_menu_press),
-                    focus_map='menu_button focus'))
+            if len(avail_disks) > 1:
+                opts.append(Color.menu_button(
+                                menu_btn(label=opt,
+                                         on_press=self.on_fs_menu_press),
+                                focus_map='menu_button focus'))
         return Pile(opts)
 
     def on_fs_menu_press(self, result):
