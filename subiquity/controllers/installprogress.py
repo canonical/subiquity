@@ -104,6 +104,10 @@ class InstallProgressController(ControllerPolicy):
             self.kitt_pos += 1
 
     def reboot(self):
+        if self.opts.dry_run:
+            log.debug('dry-run enabled, skipping reboot, quiting instead')
+            self.signal.emit_signal('quit')
+
         curtin_reboot()
 
     @coroutine
