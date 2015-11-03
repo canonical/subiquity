@@ -23,9 +23,11 @@ from probert.network import (Network,
 
 log = logging.getLogger('subiquity.prober')
 
+
 class ProberException(Exception):
     '''Base Prober Exception'''
     pass
+
 
 class Prober():
     def __init__(self, opts):

@@ -26,6 +26,7 @@ from subiquity.curtin import curtin_write_network_actions
 
 log = logging.getLogger("subiquity.controller.network")
 
+
 class NetworkController(ControllerPolicy):
     def __init__(self, common):
         super().__init__(common)

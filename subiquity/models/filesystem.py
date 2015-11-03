@@ -418,7 +418,8 @@ class FilesystemModel(ModelPolicy):
                len(dev.mounts) == 0 and \
                len(dev.filesystems) == 0:
                 empty.append(dev)
-        log.debug('empty_disks: {}'.format(", ".join([dev.path for dev in empty])))
+        log.debug('empty_disks: {}'.format(
+                  ", ".join([dev.path for dev in empty])))
         return empty
 
     def get_empty_disk_names(self):

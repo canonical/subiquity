@@ -27,7 +27,6 @@ from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import cancel_btn, menu_btn, done_btn
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
-from subiquity.models.actions import RouteAction
 
 
 log = logging.getLogger('subiquity.network')

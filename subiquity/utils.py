@@ -42,10 +42,12 @@ checks:
             - /usr/bin/curtin
 '''
 
+
 def environment_check(check=ENVIRONMENT_CHECK):
     ''' Check the environment to ensure subiquity can run without issues.
     '''
     log.info('Checking environment for installer requirements...')
+
     def is_file(x):
         return os.path.isfile(x)
 
@@ -84,7 +86,8 @@ def environment_check(check=ENVIRONMENT_CHECK):
         for ftype, items in checks[check_type].items():
             for i in items:
                 if not os.path.exists(i):
-                    log.error('FAIL: {} is not found on the filesystem'.format(i))
+                    log.error('FAIL: {} is not found on the'
+                              ' filesystem'.format(i))
                     env_ok = False
                     continue
                 if check_map[ftype](i) is False:
@@ -92,8 +95,8 @@ def environment_check(check=ENVIRONMENT_CHECK):
                     env_ok = False
                     continue
                 if check_map[check_type](i) is False:
-                    log.error('FAIL: {} does NOT have required attr: {}'.format(i,
-                              check_type))
+                    log.error('FAIL: {} does NOT have required attr:'
+                              ' {}'.format(i, check_type))
                     env_ok = False
 
     return env_ok

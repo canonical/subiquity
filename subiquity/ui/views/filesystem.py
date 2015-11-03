@@ -89,6 +89,7 @@ class DiskInfoView(ViewPolicy):
     def cancel(self, button):
         self.signal.emit_signal('filesystem:show')
 
+
 class AddFormatView(WidgetWrap):
 
     def __init__(self, model, signal, selected_disk):
@@ -148,7 +149,7 @@ class AddFormatView(WidgetWrap):
     def done(self, result):
         """ format spec
 
-        { 
+        {
           'format' Str(ext4|btrfs..,
           'mountpoint': Str
         }
@@ -160,7 +161,7 @@ class AddFormatView(WidgetWrap):
         }
 
         try:
-            valid = self.model.valid_mount(result)
+            self.model.valid_mount(result)
         except ValueError as e:
             log.exception('Invalid mount point')
             self.mountpoint.set_error('Error: {}'.format(str(e)))
@@ -338,9 +339,8 @@ class AddPartitionView(WidgetWrap):
             self.size.set_error('ERROR: {}'.format(result['bytes']))
             return
         # Validate mountpoint input
-        valid = False
         try:
-            valid = self.model.valid_mount(result)
+            self.model.valid_mount(result)
         except ValueError as e:
             log.exception('Invalid mount point')
             self.mountpoint.set_error('Error: {}'.format(str(e)))
@@ -511,8 +511,9 @@ class FilesystemView(ViewPolicy):
     def _build_partition_list(self):
         log.debug('FileSystemView: building part list')
         pl = []
-        if (len(self.model.get_partitions()) == 0 and 
-            len(self.model.get_filesystems()) == 0):
+        nr_parts = len(self.model.get_partitions())
+        nr_fs = len(self.model.get_filesystems())
+        if nr_parts == 0 and nr_fs == 0:
             pl.append(Color.info_minor(
                 Text("No disks or partitions mounted")))
             log.debug('FileSystemView: no partitions')

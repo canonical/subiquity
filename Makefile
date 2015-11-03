@@ -24,7 +24,7 @@ ifneq (,$(MACHINE))
 	MACHARGS=--machine=$(MACHINE)
 endif
 
-.PHONY: run clean
+.PHONY: run clean check
 
 all: dryrun
 
@@ -50,12 +50,14 @@ ui-view-serial:
 
 lint:
 	echo "Running flake8 lint tests..."
-	flake8 bin/$(PYTHONSRC)-tui --ignore=F403
-	flake8 --exclude $(PYTHONSRC)/tests/ $(PYTHONSRC) --ignore=F403
+	python3 /usr/bin/flake8 bin/$(PYTHONSRC)-tui --ignore=F403
+	python3 /usr/bin/flake8 --exclude $(PYTHONSRC)/tests/ $(PYTHONSRC) --ignore=F403
 
 unit:
 	echo "Running unit tests..."
 	nosetests3 $(PYTHONSRC)/tests
+
+check: lint unit
 
 installer/$(INSTALLIMG): installer/geninstaller installer/runinstaller $(INSTALLER_RESOURCES) probert
 	(cd installer && TOPDIR=$(TOPDIR)/installer ./geninstaller -v -r $(RELEASE) -a $(ARCH) -s $(STREAM) -b $(BOOTLOADER)) 

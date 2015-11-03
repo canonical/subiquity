@@ -112,6 +112,7 @@ class DiskAction():
         self._type = 'disk'
 
     __hash__ = None
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return (self._action_id == other._action_id and
@@ -170,6 +171,7 @@ class RaidAction(DiskAction):
         self._type = 'raid'
 
     __hash__ = None
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return (self._action_id == other._action_id and
@@ -209,6 +211,7 @@ class PartitionAction(DiskAction):
             self._action_id = 'bios_boot_partition'
 
     __hash__ = None
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return (self._action_id == other._action_id and
@@ -220,7 +223,6 @@ class PartitionAction(DiskAction):
                     self._type == other._type)
         else:
             return False
-
 
     @property
     def path(self):
@@ -279,6 +281,7 @@ class FormatAction(DiskAction):
             self._action_id = self._action_id[:11]
 
     __hash__ = None
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return (self._action_id == other._action_id and
@@ -287,7 +290,6 @@ class FormatAction(DiskAction):
                     self._type == other._type)
         else:
             return False
-
 
     @property
     def fstype(self):
@@ -310,6 +312,7 @@ class MountAction(DiskAction):
         self._type = 'mount'
 
     __hash__ = None
+
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return (self._action_id == other._action_id and

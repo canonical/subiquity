@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .welcome import WelcomeController
-from .installpath import InstallpathController
-from .network import NetworkController
-from .filesystem import FilesystemController
-from .installprogress import InstallProgressController
-from .identity import IdentityController
+from .welcome import WelcomeController  # NOQA
+from .installpath import InstallpathController  # NOQA
+from .network import NetworkController  # NOQA
+from .filesystem import FilesystemController  # NOQA
+from .installprogress import InstallProgressController  # NOQA
+from .identity import IdentityController  # NOQA
