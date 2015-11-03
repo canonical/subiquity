@@ -39,10 +39,10 @@ class Signal:
         urwid.register_signal(Signal, signals)
 
     def prev_signal(self):
-        log.debug('prev_signal: Signal Stack size: {}'.format(len(self.signal_stack)))
+        log.debug('prev_signal: before: '
+                  'size={} stack={}'.format(len(self.signal_stack),
+                                            self.signal_stack))
         if len(self.signal_stack) > 1:
-            log.debug("prev_signal: before: size={} stack={}".format(len(self.signal_stack),
-                                                                     self.signal_stack))
             (current_name, *_) = self.signal_stack.pop()
             (prev_name, args, kwargs) = self.signal_stack.pop()
             log.debug('current_name={}'.format(current_name))
@@ -53,33 +53,37 @@ class Signal:
                 (prev_name, args, kwargs) = self.signal_stack.pop()
                 log.debug('previous={}'.format(prev_name))
 
-            log.debug("prev_signal: after: size={} stack={}".format(len(self.signal_stack),
-                                                                    self.signal_stack))
+            log.debug('prev_signal: after: '
+                      'size={} stack={}'.format(len(self.signal_stack),
+                                                self.signal_stack))
 
-            log.debug("PrevEmitter: {}, {}, {}".format(prev_name, args, kwargs))
+            log.debug("PrevEmitter: {}, {}, {}".format(prev_name, args,
+                                                       kwargs))
             self.emit_signal(prev_name, *args, **kwargs)
         else:
+            log.debug('stack empty: emitting menu:welcome:main')
             # FIXME: this should be set by common
-            log.debug('WARK: nothing left')
             urwid.emit_signal(self, 'menu:welcome:main')
 
     def emit_signal(self, name, *args, **kwargs):
         log.debug("Emitter: {}, {}, {}".format(name, args, kwargs))
         if name.startswith("menu:"):
-            log.debug(" emit: before: size={} stack={}".format(len(self.signal_stack),
-                                                 self.signal_stack))
-            # only stack *menu* signals, drop signals if we've already visited
-            # this level
+            log.debug(" emit: before: "
+                      "size={} stack={}".format(len(self.signal_stack),
+                                                self.signal_stack))
+            # only stack *menu* signals, drop signals if we've already
+            # visited this level
             match = [s for s in self.signal_stack if s[0] == name]
             if len(match) > 0:
                 index = self.signal_stack.index(match.pop())
                 log.debug('Already visited {}, trimming stack'.format(name))
-                self.signal_stack = self.signal_stack[0:index+1]
+                self.signal_stack = self.signal_stack[0:index + 1]
             else:
                 log.debug('New menu for stack: {}'.format(name))
                 self.signal_stack.append((name, args, kwargs))
 
-            log.debug(" emit: after: size={} stack={}".format(len(self.signal_stack),
+            log.debug(" emit: after: "
+                      "size={} stack={}".format(len(self.signal_stack),
                                                 self.signal_stack))
         urwid.emit_signal(self, name, *args, **kwargs)
 

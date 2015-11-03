@@ -21,16 +21,15 @@ configuration.
 """
 import logging
 import re
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
-                   Text, Columns)
+from urwid import (ListBox, Pile, BoxAdapter, Text, Columns)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import (done_btn,
                                   reset_btn,
                                   cancel_btn,
                                   menu_btn)
 from subiquity.ui.utils import Padding, Color
-from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector,
-                                      MountEditor)
+from subiquity.ui.interactive import (StringEditor, IntegerEditor,
+                                      Selector, MountEditor)
 from subiquity.models.filesystem import (_humanize_size,
                                          _dehumanize_size,
                                          HUMAN_UNITS)
@@ -81,7 +80,7 @@ class DiskInfoView(ViewPolicy):
             return None
 
         return super().keypress(size, key)
- 
+
     def done(self, result):
         ''' Return to FilesystemView '''
         self.signal.prev_signal()
@@ -460,8 +459,9 @@ class DiskPartitionView(ViewPolicy):
 
     def create_swap(self, result):
         log.debug('create_swap: result={}'.format(result))
-        self.signal.emit_signal('menu:filesystem:main:create-swap-entire-device',
-                                self.selected_disk)
+        self.signal.emit_signal(
+            'menu:filesystem:main:create-swap-entire-device',
+            self.selected_disk)
 
     def done(self, result):
         ''' Return to FilesystemView '''
@@ -600,9 +600,9 @@ class FilesystemView(ViewPolicy):
         for opt, sig, _ in self.model.get_menu():
             if len(avail_disks) > 1:
                 opts.append(Color.menu_button(
-                                menu_btn(label=opt,
-                                         on_press=self.on_fs_menu_press),
-                                focus_map='menu_button focus'))
+                            menu_btn(label=opt,
+                                     on_press=self.on_fs_menu_press),
+                            focus_map='menu_button focus'))
         return Pile(opts)
 
     def on_fs_menu_press(self, result):

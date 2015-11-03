@@ -174,7 +174,8 @@ class FilesystemController(ControllerPolicy):
         log.info("Successfully added partition")
 
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
-        self.signal.emit_signal('menu:filesystem:main:show-disk-partition', disk)
+        self.signal.emit_signal('menu:filesystem:main:show-disk-partition',
+                                disk)
 
     def add_disk_format_handler(self, disk, spec):
         log.debug('add_disk_format_handler')
@@ -183,7 +184,8 @@ class FilesystemController(ControllerPolicy):
         log.debug('disk.freespace: {}'.format(current_disk.freespace))
         current_disk.format_device(spec['fstype'], spec['mountpoint'])
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
-        self.signal.emit_signal('menu:filesystem:main:show-disk-partition', disk)
+        self.signal.emit_signal('menu:filesystem:main:show-disk-partition',
+                                disk)
 
     def connect_iscsi_disk(self, *args, **kwargs):
         # title = ("Disk and filesystem setup")

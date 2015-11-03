@@ -62,7 +62,6 @@ class WelcomeView(ViewPolicy):
         log.debug('calling installpath')
         self.signal.emit_signal('menu:installpath:main')
 
-
     def cancel(self, button):
         raise SystemExit("No language selected, exiting as there are no "
                          "more previous controllers to render.")
