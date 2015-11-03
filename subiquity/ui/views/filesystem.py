@@ -21,16 +21,15 @@ configuration.
 """
 import logging
 import re
-from urwid import (WidgetWrap, ListBox, Pile, BoxAdapter,
-                   Text, Columns)
+from urwid import (ListBox, Pile, BoxAdapter, Text, Columns)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import (done_btn,
                                   reset_btn,
                                   cancel_btn,
                                   menu_btn)
 from subiquity.ui.utils import Padding, Color
-from subiquity.ui.interactive import (StringEditor, IntegerEditor, Selector,
-                                      MountEditor)
+from subiquity.ui.interactive import (StringEditor, IntegerEditor,
+                                      Selector, MountEditor)
 from subiquity.models.filesystem import (_humanize_size,
                                          _dehumanize_size,
                                          HUMAN_UNITS)
@@ -84,14 +83,13 @@ class DiskInfoView(ViewPolicy):
 
     def done(self, result):
         ''' Return to FilesystemView '''
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
 
-class AddFormatView(WidgetWrap):
-
+class AddFormatView(ViewPolicy):
     def __init__(self, model, signal, selected_disk):
         self.model = model
         self.signal = signal
@@ -144,7 +142,7 @@ class AddFormatView(WidgetWrap):
         return Pile(total_items)
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
     def done(self, result):
         """ format spec
@@ -160,6 +158,7 @@ class AddFormatView(WidgetWrap):
             "mountpoint": self.mountpoint.value
         }
 
+        # Validate mountpoint input
         try:
             self.model.valid_mount(result)
         except ValueError as e:
@@ -173,9 +172,10 @@ class AddFormatView(WidgetWrap):
                                 self.disk_obj.devpath, result)
 
 
-class AddPartitionView(WidgetWrap):
+class AddPartitionView(ViewPolicy):
 
     def __init__(self, model, signal, selected_disk):
+        log.debug('AddPartitionView: selected_disk=[{}]'.format(selected_disk))
         self.model = model
         self.signal = signal
         self.selected_disk = selected_disk
@@ -258,7 +258,7 @@ class AddPartitionView(WidgetWrap):
         return Pile(total_items)
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
     def done(self, result):
         """ partition spec
@@ -345,14 +345,13 @@ class AddPartitionView(WidgetWrap):
             log.exception('Invalid mount point')
             self.mountpoint.set_error('Error: {}'.format(str(e)))
             log.debug("Invalid mountpoint, try again")
-            return
 
         log.debug("Add Partition Result: {}".format(result))
         self.signal.emit_signal('filesystem:finish-add-disk-partition',
                                 self.disk_obj.devpath, result)
 
 
-class DiskPartitionView(WidgetWrap):
+class DiskPartitionView(ViewPolicy):
     def __init__(self, model, signal, selected_disk):
         self.model = model
         self.signal = signal
@@ -450,25 +449,26 @@ class DiskPartitionView(WidgetWrap):
                                  focus_map='menu_button focus')
 
     def show_disk_info(self, result):
-        self.signal.emit_signal('filesystem:show-disk-information',
+        self.signal.emit_signal('menu:filesystem:main:show-disk-information',
                                 self.selected_disk)
 
     def add_partition(self, result):
         log.debug('add_partition: result={}'.format(result))
-        self.signal.emit_signal('filesystem:add-disk-partition',
+        self.signal.emit_signal('menu:filesystem:main:add-disk-partition',
                                 self.selected_disk)
 
     def create_swap(self, result):
         log.debug('create_swap: result={}'.format(result))
-        self.signal.emit_signal('filesystem:create-swap-entire-device',
-                                self.selected_disk)
+        self.signal.emit_signal(
+            'menu:filesystem:main:create-swap-entire-device',
+            self.selected_disk)
 
     def done(self, result):
         ''' Return to FilesystemView '''
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
     def cancel(self, button):
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
 
 class FilesystemView(ViewPolicy):
@@ -600,9 +600,9 @@ class FilesystemView(ViewPolicy):
         for opt, sig, _ in self.model.get_menu():
             if len(avail_disks) > 1:
                 opts.append(Color.menu_button(
-                                menu_btn(label=opt,
-                                         on_press=self.on_fs_menu_press),
-                                focus_map='menu_button focus'))
+                            menu_btn(label=opt,
+                                     on_press=self.on_fs_menu_press),
+                            focus_map='menu_button focus'))
         return Pile(opts)
 
     def on_fs_menu_press(self, result):
@@ -610,15 +610,15 @@ class FilesystemView(ViewPolicy):
             self.model.get_signal_by_name(result.label))
 
     def cancel(self, button):
-        self.signal.emit_signal(self.model.get_previous_signal)
+        self.signal.prev_signal()
 
     def reset(self, button):
-        self.signal.emit_signal('filesystem:show', True)
+        self.signal.emit_signal('menu:filesystem:main', True)
 
     def done(self, button):
         actions = self.model.get_actions()
         self.signal.emit_signal('filesystem:finish', False, actions)
 
     def show_disk_partition_view(self, partition):
-        self.signal.emit_signal('filesystem:show-disk-partition',
+        self.signal.emit_signal('menu:filesystem:main:show-disk-partition',
                                 partition.label)

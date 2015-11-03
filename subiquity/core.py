@@ -130,4 +130,4 @@ class Controller:
     #
     # Starts the initial UI view.
     def welcome(self, *args, **kwargs):
-        self.controllers['Welcome'].welcome()
+        self.controllers['Welcome'].signal.emit_signal('menu:welcome:main')

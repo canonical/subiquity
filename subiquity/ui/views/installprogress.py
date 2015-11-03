@@ -20,14 +20,15 @@ from subiquity.view import ViewPolicy
 from subiquity.ui.buttons import confirm_btn
 from subiquity.ui.utils import Padding, Color
 
-log = logging.getLogger("subiquity.ui.views.installprogress")
+log = logging.getLogger("subiquity.views.installprogress")
 
 
 class ProgressView(ViewPolicy):
-    def __init__(self, signal):
+    def __init__(self, model, signal):
         """
         :param output_w: Filler widget to display updated status text
         """
+        self.model = model
         self.signal = signal
         self.text = Text("Wait for it ...", align="center")
         self.body = [

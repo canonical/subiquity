@@ -26,20 +26,16 @@ class InstallpathModel(ModelPolicy):
     List of install paths in the form of:
     ('UI Text seen by user', <signal name>, <callback function string>)
     """
-    prev_signal = ('Back to welcome screen',
-                   'welcome:show',
-                   'welcome')
-
     signals = [
         ('Install Path View',
-         'installpath:show',
+         'menu:installpath:main',
          'installpath')
     ]
 
     # TODO: Re-enable once available
     install_paths = [
         ('Install Ubuntu',
-         'installpath:ubuntu',
+         'installpath:install-ubuntu',
          'install_ubuntu'),
         # ('Install MAAS Region Server',
         #  'installpath:maas-region-server',

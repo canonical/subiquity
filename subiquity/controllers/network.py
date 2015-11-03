@@ -51,20 +51,14 @@ class NetworkController(ControllerPolicy):
                                     'curtin_write_network_actions')
             return None
 
-        self.signal.emit_signal('filesystem:show')
+        self.signal.emit_signal('menu:filesystem:main')
 
     def set_default_route(self):
-        self.model.prev_signal = ('Back to network view',
-                                  'network:show',
-                                  'network')
         self.ui.set_header("Default route")
         self.ui.set_body(NetworkSetDefaultRouteView(self.model,
                                                     self.signal))
 
     def network_configure_interface(self, iface):
-        self.model.prev_signal = ('Back to network view',
-                                  'network:show',
-                                  'network')
         self.ui.set_header("Network interface {}".format(iface))
         self.ui.set_body(NetworkConfigureInterfaceView(self.model,
                                                        self.signal,

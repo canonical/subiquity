@@ -59,7 +59,8 @@ class NetworkConfigureInterfaceView(ViewPolicy):
         return Pile(buttons)
 
     def show_ipv4_configuration(self, btn):
-        self.signal.emit_signal('network:configure-ipv4-interface', self.iface)
+        self.signal.emit_signal(
+            'menu:network:main:configure-ipv4-interface', self.iface)
 
     def done(self, result):
-        self.signal.emit_signal('network:show')
+        self.signal.prev_signal()

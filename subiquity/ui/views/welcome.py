@@ -19,7 +19,7 @@ Welcome provides user with language selection
 
 """
 import logging
-from urwid import (ListBox, Pile, BoxAdapter, emit_signal)
+from urwid import (ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import menu_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
@@ -59,7 +59,8 @@ class WelcomeView(ViewPolicy):
 
     def confirm(self, result):
         self.model.selected_language = result.label
-        emit_signal(self.signal, 'installpath:show')
+        log.debug('calling installpath')
+        self.signal.emit_signal('menu:installpath:main')
 
     def cancel(self, button):
         raise SystemExit("No language selected, exiting as there are no "

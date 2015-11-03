@@ -24,13 +24,9 @@ log = logging.getLogger('subiquity.models.identity')
 class IdentityModel(ModelPolicy):
     """ Model representing user identity
     """
-    prev_signal = ('Back to hostname view',
-                   'hostname:show',
-                   'hostname')
-
     signals = [
         ("Identity view",
-         'identity:show',
+         'menu:identity:main',
          'identity')
     ]
 

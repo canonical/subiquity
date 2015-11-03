@@ -64,4 +64,4 @@ class InstallpathView(ViewPolicy):
             self.model.get_signal_by_name(result.label))
 
     def cancel(self, button):
-        self.signal.emit_signal(self.model.get_previous_signal)
+        self.signal.prev_signal()

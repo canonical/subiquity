@@ -81,7 +81,7 @@ class NetworkSetDefaultRouteView(ViewPolicy):
             self.model.default_gateway = self.default_gateway_w.value
         else:
             self.model.default_gateway = result.label
-        self.signal.emit_signal('network:show')
+        self.signal.prev_signal()
 
     def cancel(self, button):
-        self.signal.emit_signal('network:show')
+        self.signal.prev_signal()

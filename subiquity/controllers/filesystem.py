@@ -87,7 +87,7 @@ class FilesystemController(ControllerPolicy):
                                     'curtin_write_preserved_actions')
             return None
 
-        self.signal.emit_signal('identity:show')
+        self.signal.emit_signal('menu:identity:main')
 
     # Filesystem/Disk partition -----------------------------------------------
     def disk_partition(self, disk):
@@ -106,8 +106,8 @@ class FilesystemController(ControllerPolicy):
     def disk_partition_handler(self, spec=None):
         log.debug("Disk partition: {}".format(spec))
         if spec is None:
-            self.signal.emit_signal('filesystem:show', [])
-        self.signal.emit_signal('filesystem:show-disk-partition', [])
+            self.signal.prev_signal()
+        self.signal.emit_signal('menu:filesystem:main:show-disk-partition', [])
 
     def add_disk_partition(self, disk):
         log.debug("Adding partition to {}".format(disk))
@@ -174,7 +174,8 @@ class FilesystemController(ControllerPolicy):
         log.info("Successfully added partition")
 
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
-        self.signal.emit_signal('filesystem:show-disk-partition', disk)
+        self.signal.emit_signal('menu:filesystem:main:show-disk-partition',
+                                disk)
 
     def add_disk_format_handler(self, disk, spec):
         log.debug('add_disk_format_handler')
@@ -183,7 +184,8 @@ class FilesystemController(ControllerPolicy):
         log.debug('disk.freespace: {}'.format(current_disk.freespace))
         current_disk.format_device(spec['fstype'], spec['mountpoint'])
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
-        self.signal.emit_signal('filesystem:show-disk-partition', disk)
+        self.signal.emit_signal('menu:filesystem:main:show-disk-partition',
+                                disk)
 
     def connect_iscsi_disk(self, *args, **kwargs):
         # title = ("Disk and filesystem setup")
@@ -223,7 +225,7 @@ class FilesystemController(ControllerPolicy):
     def add_raid_dev(self, result):
         log.debug('add_raid_dev: result={}'.format(result))
         self.model.add_raid_device(result)
-        self.signal.emit_signal('filesystem:show')
+        self.signal.prev_signal()
 
     def setup_bcache(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
