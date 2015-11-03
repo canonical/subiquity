@@ -32,7 +32,8 @@ class ProgressView(ViewPolicy):
         self.signal = signal
         self.text = Text("Wait for it ...", align="center")
         self.body = [
-            Padding.center_79(self.text)
+            Padding.center_79(self.text),
+            Padding.line_break(""),
         ]
         self.pile = Pile(self.body)
         super().__init__(Filler(self.pile, valign="middle"))
@@ -43,8 +44,17 @@ class ProgressView(ViewPolicy):
                                      on_press=self.reboot),
                          focus_map='button focus'))
 
+        z = Padding.center_20(
+            Color.button(confirm_btn(label="Quit Installer",
+                                     on_press=self.quit),
+                         focus_map='button focus'))
+
         self.pile.contents.append((w, self.pile.options()))
-        self.pile.focus_position = 1
+        self.pile.contents.append((z, self.pile.options()))
+        self.pile.focus_position = 2
 
     def reboot(self, btn):
         self.signal.emit_signal('installprogress:curtin-reboot')
+
+    def quit(self, btn):
+        self.signal.emit_signal('quit')
