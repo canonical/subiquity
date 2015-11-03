@@ -145,6 +145,14 @@ class NetworkModel(ModelPolicy):
 
         return False
 
+    def iface_get_ip(self, iface):
+        ip = 'No IPv4 connection'
+        ifinfo, *_ = self.get_iface_info(iface)
+        if not ifinfo.addr.lower().startswith('unknown'):
+            ip = ifinfo.addr
+
+        return ip
+
     def iface_get_speed(self, iface):
         hwattr = self.network[iface]['hardware']['attrs']
         speed = hwattr.get('speed', 0)
