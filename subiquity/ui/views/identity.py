@@ -22,12 +22,15 @@ import logging
 from urwid import (Pile, Columns, Text, ListBox)
 from subiquity.ui.buttons import done_btn, cancel_btn
 from subiquity.ui.interactive import (PasswordEditor,
-                                      StringEditor,
+                                      RealnameEditor,
                                       UsernameEditor)
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
 
 log = logging.getLogger("subiquity.views.identity")
+
+USERNAME_MAXLEN = 32
+REALNAME_MAXLEN = 160
 
 
 class IdentityView(ViewPolicy):
@@ -35,7 +38,7 @@ class IdentityView(ViewPolicy):
         self.model = model
         self.signal = signal
         self.items = []
-        self.realname = StringEditor(caption="")
+        self.realname = RealnameEditor(caption="")
         self.username = UsernameEditor(caption="")
         self.password = PasswordEditor(caption="")
         self.error = Text("", align="center")
@@ -102,14 +105,37 @@ class IdentityView(ViewPolicy):
         return Pile(sl)
 
     def done(self, result):
+        if len(self.password.value) < 1:
+            self.error.set_text("Password must be set")
+            self.password.value = ""
+            self.confirm_password.value = ""
+            return
+
         if self.password.value != self.confirm_password.value:
             self.error.set_text("Passwords do not match.")
             self.password.value = ""
             self.confirm_password.value = ""
             return
 
-        if len(self.username.value) > 32:
-            self.error.set_text("Username too long, must be < 32")
+        if len(self.realname.value) < 1:
+            self.error.set_text("Realname missing.")
+            self.realname.value = ""
+            return
+
+        if len(self.realname.value) > REALNAME_MAXLEN:
+            self.error.set_text("Realname too long, must be < " +
+                                str(REALNAME_MAXLEN))
+            self.realname.value = ""
+            return
+
+        if len(self.username.value) < 1:
+            self.error.set_text("Username missing.")
+            self.username.value = ""
+            return
+
+        if len(self.username.value) > USERNAME_MAXLEN:
+            self.error.set_text("Username too long, must be < " +
+                                str(USERNAME_MAXLEN))
             self.username.value = ""
             return
 
