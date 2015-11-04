@@ -75,18 +75,7 @@ class NetworkView(ViewPolicy):
 
         col_2 = []
         for iface in ifaces:
-            ifinfo, iface_vendor, iface_model = self.model.get_iface_info(
-                iface)
-            bonded = self.model.iface_is_bonded(iface)
-            bridged = self.model.iface_is_bridge_member(iface)
-            speed = self.model.iface_get_speed(iface)
-            info = {
-                'bonded': bonded,
-                'bridged': bridged,
-                'speed': speed,
-                'vendor': iface_vendor,
-                'model': iface_model,
-            }
+            info = self.model.get_iface_info(iface)
             log.debug('iface info:{}'.format(info))
             template = ''
             if info['bonded']:

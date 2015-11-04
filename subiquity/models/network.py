@@ -208,7 +208,7 @@ class NetworkModel(ModelPolicy):
                 return False
             raise
 
-    def configure_iface(self, ifname):
+    def configure_iface_from_info(self, ifname):
         iface_info = self.network[ifname]
         log.debug('iface_info of {}:\n{}'.format(ifname, iface_info))
         mac_address = iface_info['hardware']['attrs'].get('address')
@@ -243,7 +243,7 @@ class NetworkModel(ModelPolicy):
             for ifname in self.network.keys():
                 if self.network[ifname]['type'] not in ignored and \
                    self.iface_is_up(ifname):
-                    self.configure_iface(ifname)
+                    self.configure_iface_from_info(ifname)
 
         return self.configured_interfaces
 
@@ -260,15 +260,73 @@ class NetworkModel(ModelPolicy):
         log.debug("add_bond: {} as BondAction({})".format(
                   ifname, action))
 
-    def add_subnet(self, ifname, subnet):
-        if ifname not in self.configured_interfaces:
-            raise Exception('No such configured interface: {}'.format(ifname))
+    def valid_ipv4_address(self, addr):
+        try:
+            ip = ipaddress.IPv4Address(addr)
+        except ipaddress.AddressValueError:
+            return False
 
+        return ip
+
+    def valid_ipv4_network(self, subnet):
+        try:
+            nw = ipaddress.IPv4Network(subnet)
+        except (ipaddress.AddressValueError,
+                ipaddress.NetmaskValueError):
+            return False
+
+        return nw
+
+    def add_subnet(self, ifname, subnet_type, network=None, address=None,
+                   gateway=None, nameserver=None, searchpath=None):
+        if ifname not in self.configured_interfaces:
+            raise ValueError('No such configured interface: {}'.format(ifname))
+
+        if subnet_type not in ['static', 'dhcp', 'dhcp6']:
+            raise ValueError(('Invalid subnet type ') + subnet_type)
+
+        # network = 192.168.9.0/24
+        # address = 192.168.9.212
+        subnet = {
+            'type': subnet_type,
+        }
+
+        if subnet_type == 'static':
+            ipaddr = self.valid_ipv4_address(address)
+            if ipaddr is False:
+                raise ValueError(('Invalid IP address ') + address)
+
+            ipnet = self.valid_ipv4_network(network)
+            if ipnet is False:
+                raise ValueError(('Invalid IP network ') + network)
+
+            ip_network = ipaddress.IPv4Interface("{}/{}".format(
+                ipaddr.compressed, ipnet.prefixlen))
+            subnet.update({'address': ip_network.with_prefixlen})
+
+        if gateway:
+            gw = self.valid_ipv4_address(gateway)
+            if gw is False:
+                raise ValueError(('Invalid gateway IP ') + gateway)
+            subnet.update({'gateway': gw.compressed})
+
+        if nameserver:
+            subnet.update({'dns_nameserver': nameserver})
+
+        if searchpath:
+            subnet.update({'dns_search': searchpath})
+
+        log.debug('Adding subnet:{}'.format(subnet))
         action = self.configured_interfaces[ifname]
-        if 'subnets' in action:
-            action['subnets'].extend([subnet])
-        else:
-            action['subnets'] = [subnet]
+        action.subnets.extend([subnet])
+
+    def remove_subnets(self, ifname):
+        if ifname not in self.configured_interfaces:
+            raise ValueError('No such configured interface: {}'.format(ifname))
+
+        log.debug('Removing subnets on iface: {}'.format(ifname))
+        action = self.configured_interfaces[ifname]
+        action.subnets = []
 
     def get_default_route(self):
         if self.default_gateway:
@@ -318,5 +376,13 @@ class NetworkModel(ModelPolicy):
         return 'Unknown Model'
 
     def get_iface_info(self, iface):
-        ipinfo = SimpleInterface(self.network[iface]['ip'])
-        return (ipinfo, self.get_vendor(iface), self.get_model(iface))
+        info = {
+            'bonded': self.iface_is_bonded(iface),
+            'bridged': self.iface_is_bridge_member(iface),
+            'speed': self.iface_get_speed(iface),
+            'vendor': self.get_vendor(iface),
+            'model': self.get_mode(iface),
+            'ip': SimpleInterface(self.network[iface]['ip'])
+        }
+        return info
+
