@@ -138,8 +138,8 @@ class NetworkView(ViewPolicy):
                                 result.label)
 
     def done(self, result):
-        actions = [action.get() for _, action in
-                   self.model.configured_interfaces.items()]
+        actions = [iface.action.get() for iface in
+                   self.model.get_configured_interfaces()]
         actions += self.model.get_default_route()
         log.debug('Configured Network Actions:\n{}'.format(
             yaml.dump(actions, default_flow_style=False)))
