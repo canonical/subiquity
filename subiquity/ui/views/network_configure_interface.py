@@ -52,8 +52,8 @@ class NetworkConfigureInterfaceView(ViewPolicy):
                 header = ("Will use DHCP for IPv4:")
             else:
                 header = ("Will use static for IPv4:")
-            gw_info = (str(ip) + (" offered by ") + method +
-                       (" server ") + provider)
+            gw_info = (str(ip) + (" provided by ") + method +
+                       (" from ") + provider)
 
         p = [Text(header)]
         if gw_info:
