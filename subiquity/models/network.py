@@ -46,9 +46,9 @@ class Networkdev():
         log.debug('Info: {}'.format(probe_info))
         self.action = action
         self.probe_info = probe_info
-        self._configure_from_info()
+        self.configure_from_info()
 
-    def _configure_from_info(self):
+    def configure_from_info(self):
         log.debug('configuring netdev from info source')
 
         ip_info = self.probe_info.ip
@@ -170,7 +170,7 @@ class Networkdev():
             if ipaddr is False:
                 raise ValueError(('Invalid IP address ') + address)
 
-            ipnet = self.valid_ipv4_network(network)
+            ipnet = valid_ipv4_network(network)
             if ipnet is False:
                 raise ValueError(('Invalid IP network ') + network)
 
@@ -478,3 +478,10 @@ class NetworkModel(ModelPolicy):
         self.configured_interfaces.update({ifname: BondAction(**action)})
         log.debug("add_bond: {} as BondAction({})".format(
                   ifname, action))
+
+    def set_default_gateway(self, gateway_input):
+        addr = valid_ipv4_address(gateway_input)
+        if addr is False:
+            raise ValueError(('Invalid gateway IP ') + gateway_input)
+
+        self.default_gateway = addr.compressed

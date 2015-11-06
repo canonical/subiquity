@@ -27,7 +27,8 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
     def __init__(self, model, signal, iface):
         self.model = model
         self.signal = signal
-        self.iface = iface
+        self.ifname = iface
+        self.iface = self.model.get_interface(self.ifname)
         self.gateway_input = StringEditor(caption="")  # FIXME: ipaddr_editor
         self.address_input = StringEditor(caption="")  # FIXME: ipaddr_editor
         self.subnet_input = StringEditor(caption="")  # FIXME: ipaddr_editor
@@ -76,7 +77,7 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
         return Pile(col1)
 
     def _build_set_as_default_gw_button(self):
-        ifaces = self.model.get_interfaces()
+        ifaces = self.model.get_all_interface_names()
         if len(ifaces) > 1:
             btn = menu_btn(label="Set this as default gateway",
                            on_press=self.set_default_gateway)
@@ -86,7 +87,11 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
 
     def set_default_gateway(self, button):
         if self.gateway_input.value:
-            self.model.default_gateway = self.gateway_input.value
+            try:
+                self.model.set_default_gateway(self.gateway_input.value)
+            except ValueError:
+                # FIXME: set error message UX ala identity
+                pass
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
@@ -108,11 +113,11 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
             'searchpath': self.searchpath_input.value,
         }
         try:
-            self.model.remove_subnets(self.iface)
-            self.model.add_subnet(self.iface, **result)
+            self.iface.remove_subnets()
+            self.iface.add_subnet(**result)
         except ValueError:
             log.exception('Failed to manually configure interface')
-            self.model.configure_iface_from_info(self.iface)
+            self.iface.configure_from_info()
             # FIXME: set error message in UX ala identity
             return
 
