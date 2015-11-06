@@ -19,9 +19,12 @@ import yaml
 
 class NetAction():
     def __init__(self, **options):
+        self._action_keys = ['type', 'name', 'params', 'subnets']
+        for ak in self._action_keys:
+            if ak not in options:
+                setattr(self, ak, [])
         for k, v in options.items():
             setattr(self, k, v)
-        self._action_keys = ['type', 'name', 'params', 'subnets']
 
     def get(self):
         action = {k: v for k, v in self.__dict__.items()
@@ -31,9 +34,7 @@ class NetAction():
 
 class PhysicalAction(NetAction):
     def __init__(self, **options):
-        if 'type' not in options or options['type'] != 'physical':
-            raise Exception('Invalid type for {}'.format(
-                self.__class__.__name__))
+        options['type'] = 'physical'
         if 'name' not in options or len(options['name']) == 0:
             raise Exception('Invalid name for {}'.format(
                 self.__class__.__name__))
@@ -46,9 +47,7 @@ class PhysicalAction(NetAction):
 
 class BridgeAction(NetAction):
     def __init__(self, **options):
-        if 'type' not in options or options['type'] != 'bridge':
-            raise Exception('Invalid type for {}'.format(
-                self.__class__.__name__))
+        options['type'] = 'bridge'
         if 'name' not in options or len(options['name']) == 0:
             raise Exception('Invalid name for {}'.format(
                 self.__class__.__name__))
@@ -61,9 +60,7 @@ class BridgeAction(NetAction):
 
 class VlanAction(NetAction):
     def __init__(self, **options):
-        if 'type' not in options or options['type'] != 'vlan':
-            raise Exception('Invalid type for {}'.format(
-                self.__class__.__name__))
+        options['type'] = 'vlan'
         if 'name' not in options or len(options['name']) == 0:
             raise Exception('Invalid name for {}'.format(
                 self.__class__.__name__))
@@ -76,9 +73,7 @@ class VlanAction(NetAction):
 
 class BondAction(NetAction):
     def __init__(self, **options):
-        if 'type' not in options or options['type'] != 'bond':
-            raise Exception('Invalid type for {}'.format(
-                self.__class__.__name__))
+        options['type'] = 'bond'
         if 'name' not in options or len(options['name']) == 0:
             raise Exception('Invalid name for {}'.format(
                 self.__class__.__name__))
@@ -91,9 +86,7 @@ class BondAction(NetAction):
 
 class RouteAction(NetAction):
     def __init__(self, **options):
-        if 'type' not in options or options['type'] != 'route':
-            raise Exception('Invalid type for {}'.format(
-                self.__class__.__name__))
+        options['type'] = 'route'
         if 'gateway' not in options:
             raise Exception('{} requires a valid gateway attr'.format(
                 self.__class__.__name__))

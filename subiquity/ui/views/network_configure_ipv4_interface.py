@@ -15,7 +15,7 @@
 
 from urwid import Text, Pile, ListBox, Columns
 from subiquity.view import ViewPolicy
-from subiquity.ui.buttons import done_btn, confirm_btn, cancel_btn
+from subiquity.ui.buttons import done_btn, menu_btn, cancel_btn
 from subiquity.ui.utils import Color, Padding
 from subiquity.ui.interactive import StringEditor
 import logging
@@ -27,10 +27,15 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
     def __init__(self, model, signal, iface):
         self.model = model
         self.signal = signal
-        self.iface = iface
-        self.gateway_input = StringEditor(caption="")
-        self.address_input = StringEditor(caption="")
-        self.subnet_input = StringEditor(caption="")
+        self.ifname = iface
+        self.iface = self.model.get_interface(self.ifname)
+        self.gateway_input = StringEditor(caption="")  # FIXME: ipaddr_editor
+        self.address_input = StringEditor(caption="")  # FIXME: ipaddr_editor
+        self.subnet_input = StringEditor(caption="")  # FIXME: ipaddr_editor
+        self.nameserver_input = \
+            StringEditor(caption="")  # FIXME: ipaddr_editor
+        self.searchpath_input = \
+            StringEditor(caption="")  # FIXME: ipaddr_editor
         body = [
             Padding.center_79(self._build_iface_inputs()),
             Padding.line_break(""),
@@ -72,17 +77,21 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
         return Pile(col1)
 
     def _build_set_as_default_gw_button(self):
-        ifaces = self.model.get_interfaces()
+        ifaces = self.model.get_all_interface_names()
         if len(ifaces) > 1:
-            btn = confirm_btn(label="Set this as default gateway",
-                              on_press=self.set_default_gateway)
+            btn = menu_btn(label="Set this as default gateway",
+                           on_press=self.set_default_gateway)
         else:
             btn = Text("This will be your default gateway")
         return Pile([btn])
 
     def set_default_gateway(self, button):
         if self.gateway_input.value:
-            self.model.default_gateway = self.gateway_input.value
+            try:
+                self.model.set_default_gateway(self.gateway_input.value)
+            except ValueError:
+                # FIXME: set error message UX ala identity
+                pass
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
@@ -94,8 +103,26 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
         ]
         return Pile(buttons)
 
-    def done(self, result):
-        self.signal.emit_signal('menu:network:main')
+    def done(self, btn):
+        result = {
+            'subnet_type': 'static',
+            'network': self.subnet_input.value,
+            'address': self.address_input.value,
+            'gateway': self.gateway_input.value,
+            'nameserver': self.nameserver_input.value,
+            'searchpath': self.searchpath_input.value,
+        }
+        try:
+            self.iface.remove_subnets()
+            self.iface.add_subnet(**result)
+        except ValueError:
+            log.exception('Failed to manually configure interface')
+            self.iface.configure_from_info()
+            # FIXME: set error message in UX ala identity
+            return
+
+        # return
+        self.signal.prev_signal()
 
     def cancel(self, button):
         self.model.default_gateway = None

@@ -20,6 +20,7 @@ Provides network device listings and extended network information
 """
 
 import logging
+import textwrap
 from urwid import (ListBox, Pile, BoxAdapter,
                    Text, Columns)
 import yaml
@@ -44,6 +45,7 @@ class NetworkView(ViewPolicy):
             Padding.line_break(""),
             Padding.center_15(self._build_buttons()),
         ]
+        # FIXME determine which UX widget should have focus
         super().__init__(ListBox(self.body))
 
     def _build_buttons(self):
@@ -59,7 +61,8 @@ class NetworkView(ViewPolicy):
     def _build_model_inputs(self):
         log.info("probing for network devices")
         self.model.probe_network()
-        ifaces = self.model.get_interfaces()
+        ifaces = self.model.get_all_interface_names()
+        ifname_width = 4  # default padding
 
         col_1 = []
         for iface in ifaces:
@@ -75,18 +78,7 @@ class NetworkView(ViewPolicy):
 
         col_2 = []
         for iface in ifaces:
-            ifinfo, iface_vendor, iface_model = self.model.get_iface_info(
-                iface)
-            bonded = self.model.iface_is_bonded(iface)
-            bridged = self.model.iface_is_bridge_member(iface)
-            speed = self.model.iface_get_speed(iface)
-            info = {
-                'bonded': bonded,
-                'bridged': bridged,
-                'speed': speed,
-                'vendor': iface_vendor,
-                'model': iface_model,
-            }
+            info = self.model.get_iface_info(iface)
             log.debug('iface info:{}'.format(info))
             template = ''
             if info['bonded']:
@@ -94,21 +86,18 @@ class NetworkView(ViewPolicy):
             if info['speed']:
                 template += '{speed} '.format(**info)
             if not info['vendor'].lower().startswith('unknown'):
-                template += '{vendor} '.format(**info)
+                vendor = textwrap.wrap(info['vendor'], 15)[0]
+                template += '{} '.format(vendor)
             if not info['model'].lower().startswith('unknown'):
-                template += '{model} '.format(**info)
+                model = textwrap.wrap(info['model'], 20)[0]
+                template += '{} '.format(model)
             col_2.append(Text(template))
 
-            if not ifinfo.addr.lower().startswith('unknown'):
-                ip = ifinfo.addr
-            else:
-                ip = 'No IPv4 connection'
-            method = self.model.iface_get_ip_method(iface)
-            provider = self.model.iface_get_ip_provider(iface)
+            interface = self.model.get_interface(iface)
             ipv4_status = {
-                'ip': ip,
-                'method': method,
-                'provider': provider,
+                'ip': interface.ip,
+                'method': interface.ip_method,
+                'provider': interface.ip_provider,
             }
             log.debug('ipv4_status: {}'.format(ipv4_status))
             ipv4_template = ''
@@ -120,21 +109,38 @@ class NetworkView(ViewPolicy):
                 ipv4_template += 'from {provider} '.format(**ipv4_status)
             col_2.append(Text(ipv4_template))
             col_2.append(Text("No IPv6 connection"))  # vert. holder for ipv6
+
         if len(col_2):
             col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                                height=len(col_2))
+            ifname_width += len(max(ifaces, key=len))
+            if ifname_width > 14:
+                ifname_width = 14
         else:
             col_2 = Pile([Text("No network interfaces detected.")])
-
-        ifname_width = len(max(ifaces, key=len)) + 4
-        if ifname_width > 14:
-            ifname_width = 14
 
         return Columns([(ifname_width, col_1), col_2], 2)
 
     def _build_additional_options(self):
         opts = []
+        ifaces = self.model.get_all_interface_names()
+
+        # Display default route status
+        if len(ifaces) > 0:
+            default_route = ("Default route is ")
+            route_source = ("whatever DHCP provides on any interface")
+            if self.model.default_gateway is not None:
+                route_source = self.model.default_gateway
+            default_route_w = Color.info_minor(
+                Text("  " + default_route + route_source))
+            opts.append(default_route_w)
+
         for opt, sig, _ in self.model.get_menu():
+            if ':set-default-route' in sig:
+                if len(ifaces) < 2:
+                    log.debug('Skipping default route menu option'
+                              ' (only one nic)')
+                    continue
             opts.append(
                 Color.menu_button(
                     menu_btn(label=opt,
@@ -151,8 +157,8 @@ class NetworkView(ViewPolicy):
                                 result.label)
 
     def done(self, result):
-        actions = [action.get() for _, action in
-                   self.model.configured_interfaces.items()]
+        actions = [iface.action.get() for iface in
+                   self.model.get_configured_interfaces()]
         actions += self.model.get_default_route()
         log.debug('Configured Network Actions:\n{}'.format(
             yaml.dump(actions, default_flow_style=False)))
