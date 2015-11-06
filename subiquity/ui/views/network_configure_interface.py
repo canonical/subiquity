@@ -27,6 +27,7 @@ class NetworkConfigureInterfaceView(ViewPolicy):
         self.model = model
         self.signal = signal
         self.iface = iface
+        self.iface_obj = self.model.get_interface(iface)
         body = [
             Padding.center_79(self._build_gateway_ipv4_info()),
             Padding.center_79(self._build_manual_ipv4_button()),
@@ -42,9 +43,9 @@ class NetworkConfigureInterfaceView(ViewPolicy):
     def _build_gateway_ipv4_info(self):
         header = ("IPv4 not configured")
         gw_info = None
-        ip = self.model.iface_get_ip(self.iface)
-        provider = self.model.iface_get_ip_provider(self.iface)
-        method = self.model.iface_get_ip_method(self.iface)
+        ip = self.iface_obj.ip
+        method = self.iface_obj.ip_method
+        provider = self.iface_obj.ip_provider
 
         if not (None in [ip, provider, method]):
             if method in ['dhcp']:
