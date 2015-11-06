@@ -61,6 +61,7 @@ class NetworkView(ViewPolicy):
         log.info("probing for network devices")
         self.model.probe_network()
         ifaces = self.model.get_all_interface_names()
+        ifname_width = 4  # default padding
 
         col_1 = []
         for iface in ifaces:
@@ -107,15 +108,15 @@ class NetworkView(ViewPolicy):
                 ipv4_template += 'from {provider} '.format(**ipv4_status)
             col_2.append(Text(ipv4_template))
             col_2.append(Text("No IPv6 connection"))  # vert. holder for ipv6
+
         if len(col_2):
             col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                                height=len(col_2))
+            ifname_width += len(max(ifaces, key=len))
+            if ifname_width > 14:
+                ifname_width = 14
         else:
             col_2 = Pile([Text("No network interfaces detected.")])
-
-        ifname_width = len(max(ifaces, key=len)) + 4
-        if ifname_width > 14:
-            ifname_width = 14
 
         return Columns([(ifname_width, col_1), col_2], 2)
 
