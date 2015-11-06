@@ -15,7 +15,7 @@
 
 from urwid import Text, Pile, ListBox
 from subiquity.view import ViewPolicy
-from subiquity.ui.buttons import cancel_btn, done_btn
+from subiquity.ui.buttons import cancel_btn, done_btn, menu_btn
 from subiquity.ui.utils import Color, Padding
 from subiquity.ui.interactive import StringEditor
 import logging
@@ -38,19 +38,43 @@ class NetworkSetDefaultRouteView(ViewPolicy):
         super().__init__(ListBox(body))
 
     def _build_default_routes(self):
-        ifaces = self.model.get_interfaces()
+        ''' iterate through interfaces collecting
+            any uniq provider (aka, gateway) and
+            associate the interface name with the gateway
+
+            then generate a line per key in the gateway
+            dict and display the keys.
+
+            Upon selection of the gateway entry (ip)
+            then we set model.set_default_gateway(ip)
+
+            if manual is selected, then we update
+            the second entry into a IPAddressEditor
+            and accept the value, submitting it to
+            the model.
+        '''
+        providers = {}
+        for iface in self.model.get_all_interfaces():
+            gw = iface.ip_provider
+            if gw in providers:
+                providers[gw].append(iface.ifname)
+            else:
+                providers[gw] = [iface.ifname]
+
+        log.debug('gateway providers: {}'.format(providers))
         items = []
-        for iface in ifaces:
-            items.append(Padding.center_50(
-                Color.menu_button(done_btn(
-                    label="{ip} ({iface})".format(
-                        ip="FIXME: needs default gateway",
-                        iface=iface),
+        for (gw, ifaces) in providers.items():
+            items.append(Padding.center_79(
+                Color.menu_button(menu_btn(
+                    label="{gw} ({ifaces})".format(
+                        gw=gw,
+                        ifaces=(",".join(ifaces))),
                     on_press=self.done),
                     focus_map="menu_button focus")))
-        items.append(Padding.center_50(
+
+        items.append(Padding.center_79(
             Color.menu_button(
-                done_btn(label="Specify the default route manually",
+                menu_btn(label="Specify the default route manually",
                          on_press=self.show_edit_default_route),
                 focus_map="menu_button focus")))
         self.pile = Pile(items)
@@ -78,9 +102,18 @@ class NetworkSetDefaultRouteView(ViewPolicy):
 
     def done(self, result):
         if self.default_gateway_w and self.default_gateway_w.value:
-            self.model.default_gateway = self.default_gateway_w.value
+            try:
+                self.model.set_default_gateway(self.default_gateway_w.value)
+            except ValueError:
+                # FIXME: raise UX error message
+                self.default_gateway_w.edit_text = ""
         else:
-            self.model.default_gateway = result.label
+            gw_ip_from_label = result.label.split(" ")[0]
+            try:
+                self.model.set_default_gateway(gw_ip_from_label)
+            except ValueError:
+                # FIXME: raise UX error message
+                pass
         self.signal.prev_signal()
 
     def cancel(self, button):

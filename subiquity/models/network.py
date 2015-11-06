@@ -127,7 +127,7 @@ class Networkdev():
                     [static_sn] = static_sn
                     ip = static_sn.get('address')
                     ip_method = 'manual'
-                    ip_provider = 'local config'
+                    ip_provider = static_sn.get('gateway', 'local config')
                 else:
                     log.debug('no subnet entry')
 

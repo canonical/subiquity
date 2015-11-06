@@ -45,6 +45,7 @@ class NetworkView(ViewPolicy):
             Padding.line_break(""),
             Padding.center_15(self._build_buttons()),
         ]
+        # FIXME determine which UX widget should have focus
         super().__init__(ListBox(self.body))
 
     def _build_buttons(self):
@@ -122,7 +123,24 @@ class NetworkView(ViewPolicy):
 
     def _build_additional_options(self):
         opts = []
+        ifaces = self.model.get_all_interface_names()
+
+        # Display default route status
+        if len(ifaces) > 0:
+            default_route = ("Default route is ")
+            route_source = ("whatever DHCP provides on any interface")
+            if self.model.default_gateway is not None:
+                route_source = self.model.default_gateway
+            default_route_w = Color.info_minor(
+                Text("  " + default_route + route_source))
+            opts.append(default_route_w)
+
         for opt, sig, _ in self.model.get_menu():
+            if ':set-default-route' in sig:
+                if len(ifaces) < 2:
+                    log.debug('Skipping default route menu option'
+                              ' (only one nic)')
+                    continue
             opts.append(
                 Color.menu_button(
                     menu_btn(label=opt,
