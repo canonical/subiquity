@@ -31,8 +31,10 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
         self.gateway_input = StringEditor(caption="")  # FIXME: ipaddr_editor
         self.address_input = StringEditor(caption="")  # FIXME: ipaddr_editor
         self.subnet_input = StringEditor(caption="")  # FIXME: ipaddr_editor
-        self.nameserver_input = StringEditor(caption="")  # FIXME: ipaddr_editor
-        self.searchpath_input = StringEditor(caption="")  # FIXME: ipaddr_editor
+        self.nameserver_input = \
+            StringEditor(caption="")  # FIXME: ipaddr_editor
+        self.searchpath_input = \
+            StringEditor(caption="")  # FIXME: ipaddr_editor
         body = [
             Padding.center_79(self._build_iface_inputs()),
             Padding.line_break(""),

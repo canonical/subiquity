@@ -20,6 +20,7 @@ Provides network device listings and extended network information
 """
 
 import logging
+import textwrap
 from urwid import (ListBox, Pile, BoxAdapter,
                    Text, Columns)
 import yaml
@@ -59,7 +60,7 @@ class NetworkView(ViewPolicy):
     def _build_model_inputs(self):
         log.info("probing for network devices")
         self.model.probe_network()
-        ifaces = self.model.get_interfaces()
+        ifaces = self.model.get_all_interface_names()
 
         col_1 = []
         for iface in ifaces:
@@ -83,21 +84,18 @@ class NetworkView(ViewPolicy):
             if info['speed']:
                 template += '{speed} '.format(**info)
             if not info['vendor'].lower().startswith('unknown'):
-                template += '{vendor} '.format(**info)
+                vendor = textwrap.wrap(info['vendor'], 15)[0]
+                template += '{} '.format(vendor)
             if not info['model'].lower().startswith('unknown'):
-                template += '{model} '.format(**info)
+                model = textwrap.wrap(info['model'], 20)[0]
+                template += '{} '.format(model)
             col_2.append(Text(template))
 
-            if not ifinfo.addr.lower().startswith('unknown'):
-                ip = ifinfo.addr
-            else:
-                ip = 'No IPv4 connection'
-            method = self.model.iface_get_ip_method(iface)
-            provider = self.model.iface_get_ip_provider(iface)
+            interface = self.model.get_interface(iface)
             ipv4_status = {
-                'ip': ip,
-                'method': method,
-                'provider': provider,
+                'ip': interface.ip,
+                'method': interface.ip_method,
+                'provider': interface.ip_provider,
             }
             log.debug('ipv4_status: {}'.format(ipv4_status))
             ipv4_template = ''
