@@ -81,7 +81,7 @@ class NetworkView(ViewPolicy):
             info = self.model.get_iface_info(iface)
             log.debug('iface info:{}'.format(info))
             template = ''
-            if info['bonded']:
+            if info['bond_slave']:
                 template += '(Bonded) '
             if info['speed']:
                 template += '{speed} '.format(**info)
@@ -140,6 +140,13 @@ class NetworkView(ViewPolicy):
                 if len(ifaces) < 2:
                     log.debug('Skipping default route menu option'
                               ' (only one nic)')
+                    continue
+            if ':bond-interfaces' in sig:
+                not_bonded = [iface for iface in ifaces
+                              if not self.model.iface_is_bonded(iface)]
+                if len(not_bonded) < 2:
+                    log.debug('Skipping bonding menu option'
+                              ' (not enough available nics)')
                     continue
             opts.append(
                 Color.menu_button(

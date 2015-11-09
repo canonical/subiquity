@@ -79,3 +79,8 @@ class Prober():
     def get_storage_info(self, device):
         ''' Load a StorageInfo class for specified device '''
         return StorageInfo({device: self.get_storage().get(device)})
+
+
+def make_network_info(device, info):
+    ''' Create a NetworkInfo class for specified device from info'''
+    return NetworkInfo({device: info})
