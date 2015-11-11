@@ -20,9 +20,8 @@ import yaml
 class NetAction():
     def __init__(self, **options):
         self._action_keys = ['type', 'name', 'params', 'subnets']
-        for ak in self._action_keys:
-            if ak not in options:
-                setattr(self, ak, [])
+        self.params = {}
+        self.subnets = []
         for k, v in options.items():
             setattr(self, k, v)
 
