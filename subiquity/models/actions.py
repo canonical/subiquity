@@ -94,7 +94,8 @@ class RouteAction(NetAction):
 
 
 class DiskAction():
-    def __init__(self, action_id, model, serial, ptable='gpt', wipe='superblock'):
+    def __init__(self, action_id, model, serial, ptable='gpt',
+                 wipe='superblock'):
         self._action_id = action_id
         self.parent = None
         self._ptable = ptable
