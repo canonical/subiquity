@@ -17,6 +17,7 @@ import errno
 import ipaddress
 import logging
 import os
+from subiquity.prober import make_network_info
 from subiquity.model import ModelPolicy
 from subiquity.utils import (read_sys_net,
                              sys_dev_path)
@@ -236,13 +237,24 @@ class NetworkModel(ModelPolicy):
         ('Set default route',
          base_signal + ':set-default-route',
          'set_default_route'),
-        # ('Bond interfaces',
-        #  'network:bond-interfaces',
-        #  'bond_interfaces'),
+        ('Bond interfaces',
+         base_signal + ':bond-interfaces',
+         'bond_interfaces'),
         # ('Install network driver',
         #  'network:install-network-driver',
         #  'install_network_driver')
     ]
+
+    # TODO: what is "linear" level?
+    bonding_modes = {
+        0: 'balance-rr',
+        1: 'active-backup',
+        2: 'balance-xor',
+        3: 'broadcast',
+        4: '802.3ad',
+        5: 'balance-tlb',
+        6: 'balance-alb',
+    }
 
     def __init__(self, prober, opts):
         self.opts = opts
@@ -437,11 +449,30 @@ class NetworkModel(ModelPolicy):
         return 'Unknown Model'
 
     def iface_is_bonded(self, iface):
+        log.debug('checking {} is bonded'.format(iface))
         bondinfo = self.devices[iface].info.bond
+        log.debug('bondinfo: {}'.format(bondinfo))
         if bondinfo:
             if bondinfo['is_master'] is True or bondinfo['is_slave'] is True:
                 return True
         return False
+
+    def iface_is_bond_slave(self, iface):
+        bondinfo = self.devices[iface].info.bond
+        log.debug('bondinfo: {}'.format(bondinfo))
+        if bondinfo:
+            if bondinfo['is_slave'] is True:
+                return True
+        return False
+
+    def get_bond_masters(self):
+        bond_masters = []
+        for iface in self.get_all_interface_names():
+            bondinfo = self.devices[iface].info.bond
+            if bondinfo['is_master'] is True:
+                bond_masters.append(iface)
+
+        return bond_masters
 
     def iface_is_bridge(self, iface):
         return self.devices[iface].type == 'bridge'
@@ -458,6 +489,8 @@ class NetworkModel(ModelPolicy):
     def get_iface_info(self, iface):
         info = {
             'bonded': self.iface_is_bonded(iface),
+            'bond_slave': self.iface_is_bond_slave(iface),
+            'bond_master': iface in self.get_bond_masters(),
             'speed': self.iface_get_speed(iface),
             'vendor': self.get_vendor(iface),
             'model': self.get_model(iface),
@@ -467,17 +500,53 @@ class NetworkModel(ModelPolicy):
 
     # update or change devices
     def add_bond(self, ifname, interfaces, params=[], subnets=[]):
-        ''' take bondname and then a set of options '''
-        action = {
-            'type': 'bond',
-            'name': ifname,
-            'bond_interfaces': interfaces,
-            'params': params,
-            'subnets': subnets,
+        ''' create a bond action and info dict from parameters '''
+        action = BondAction(name=ifname,
+                            bond_interfaces=interfaces,
+                            params=params)
+        info = {
+            "bond": {
+                "is_master": True,
+                "is_slave": False,
+                "mode": params['bond-mode'],
+                "slaves": interfaces,
+            },
+            "bridge": {
+                "interfaces": [],
+                "is_bridge": False,
+                "is_port": False,
+                "options": {}
+            },
+            "hardware": {
+                "INTERFACE": ifname,
+                'ID_MODEL_FROM_DATABASE': " + ".join(interfaces),
+                'attrs': {
+                    'address': "00:00:00:00:00:00",
+                    'speed': None,
+                },
+            },
+            "ip": {
+                "addr": "0.0.0.0",
+                "netmask": "0.0.0.0",
+                "source": None
+            },
+            "type": "bond"
         }
-        self.configured_interfaces.update({ifname: BondAction(**action)})
-        log.debug("add_bond: {} as BondAction({})".format(
-                  ifname, action))
+        bondinfo = make_network_info(ifname, info)
+        bonddev = Networkdev(ifname, 'bond')
+        bonddev.configure(action, probe_info=bondinfo)
+
+        # update slave interface info
+        for bondifname in interfaces:
+            bondif = self.get_interface(bondifname)
+            bondif.info.bond['is_slave'] = True
+            log.debug('Marking {} as bond slave'.format(bondifname))
+
+        log.debug("add_bond: {} as netdev({})".format(
+                  ifname, bonddev))
+
+        self.devices[ifname] = bonddev
+        self.info[ifname] = bondinfo
 
     def set_default_gateway(self, gateway_input):
         addr = valid_ipv4_address(gateway_input)

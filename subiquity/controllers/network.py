@@ -18,6 +18,7 @@ from subiquity.controller import ControllerPolicy
 from subiquity.models import NetworkModel
 from subiquity.ui.views import (NetworkView,
                                 NetworkSetDefaultRouteView,
+                                NetworkBondInterfacesView,
                                 NetworkConfigureInterfaceView,
                                 NetworkConfigureIPv4InterfaceView)
 from subiquity.ui.dummy import DummyView
@@ -58,6 +59,11 @@ class NetworkController(ControllerPolicy):
         self.ui.set_body(NetworkSetDefaultRouteView(self.model,
                                                     self.signal))
 
+    def bond_interfaces(self):
+        self.ui.set_header("Bond interfaces")
+        self.ui.set_body(NetworkBondInterfacesView(self.model,
+                                                   self.signal))
+
     def network_configure_interface(self, iface):
         self.ui.set_header("Network interface {}".format(iface))
         self.ui.set_body(NetworkConfigureInterfaceView(self.model,
@@ -78,9 +84,6 @@ class NetworkController(ControllerPolicy):
         self.model.prev_signal = ('Back to configure interface menu',
                                   'network:configure-interface-menu',
                                   'network_configure_interface')
-        self.ui.set_body(DummyView(self.signal))
-
-    def bond_interfaces(self):
         self.ui.set_body(DummyView(self.signal))
 
     def install_network_driver(self):
