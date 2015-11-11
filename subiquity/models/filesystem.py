@@ -73,7 +73,7 @@ class FilesystemModel(ModelPolicy):
          'filesystem:show-disk-info-prev',
          'show_disk_information_prev'),
         ('Add Raid Device',
-         base_signal + ':add-raid-dev',
+         'filesystem:add-raid-dev',
          'add_raid_dev'),
     ]
 
