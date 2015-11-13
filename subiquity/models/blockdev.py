@@ -14,13 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from collections import OrderedDict
-from itertools import count
 import logging
 import os
 import re
 import yaml
 
 from .actions import (
+    BcacheAction,
     DiskAction,
     PartitionAction,
     FormatAction,
@@ -36,36 +36,6 @@ GPT_END_RESERVE = 1 << 20  # save room at the end for GPT
 # round up length by 1M
 def blockdev_align_up(size, block_size=1 << 30):
     return size + (block_size - (size % block_size))
-
-
-# TODO: Bcachepart class
-class Bcachedev():
-    # XXX: wanted a per instance counter to track /dev/bcacheX device
-    # but not sure how to handle associating multiple backing devices
-    # to a cache device, or updated a bcache dev with a cache dev or
-    # additional backing devs.
-    _ids = count(0)
-
-    def __init__(self, backing, mode):
-        self.id = self._ids.next()
-        self._path = '/dev/bcache' + int(self.id)
-        self._mode = mode  # cache | store
-        self._backing = backing
-
-    @property
-    def backing(self):
-        return self._backing
-
-    @property
-    def mode(self):
-        return self._mode
-
-    @property
-    def path(self):
-        return self._path
-
-    def getSize(self, unit='MB'):
-        pass
 
 
 class Disk():
@@ -453,6 +423,17 @@ class Raiddev(Blockdev):
                                      self._raid_devices,
                                      self._raid_level,
                                      self._spare_devices)
+
+
+class Bcachedev(Blockdev):
+    def __init__(self, devpath, serial, model, parttype, size,
+                 backing_device, cache_device):
+        super().__init__(devpath, serial, model, parttype, size)
+        self._backing_device = backing_device
+        self._cache_device = cache_device
+        self.baseaction = BcacheAction(os.path.basename(self.disk.devpath),
+                                       self._backing_device,
+                                       self._cache_device)
 
 
 def sort_actions(actions):

@@ -333,13 +333,13 @@ class FilesystemModel(ModelPolicy):
         log.debug('Attempting to create a bcache device')
         '''
         bcachespec = {
-            'cache_device': '/dev/sdb     1.819T, HDS5C3020ALA632',
             'backing_device': '/dev/sdc     1.819T, 001-9YN164',
+            'cache_device': '/dev/sdb     1.819T, HDS5C3020ALA632',
         }
         could be /dev/sda1, /dev/md0, /dev/vg_foo/foobar2?
         '''
-        cache_device = self.get_disk(bcachespec['cache_device'].split()[0])
         backing_device = self.get_disk(bcachespec['backing_device'].split()[0])
+        cache_device = self.get_disk(bcachespec['cache_device'].split()[0])
 
         # auto increment md number based in registered devices
         bcache_dev_name = '/dev/bcache{}'.format(len(self.bcache_devices))
@@ -351,7 +351,7 @@ class FilesystemModel(ModelPolicy):
         # create a Bcachedev (pass in only the names)
         bcache_dev = Bcachedev(bcache_dev_name, bcache_serial, bcache_model,
                                bcache_parttype, bcache_size,
-                               cache_device, backing_device)
+                               backing_device, cache_device)
 
         # add it to the model's info dict
         bcache_dev_info = {
