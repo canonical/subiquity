@@ -17,7 +17,7 @@ import json
 import logging
 import re
 
-from .blockdev import Blockdev, Raiddev, sort_actions
+from .blockdev import Blockdev, Raiddev, Bcachedev, sort_actions
 import math
 from subiquity.model import ModelPolicy
 
@@ -77,7 +77,6 @@ class FilesystemModel(ModelPolicy):
          'add_raid_dev'),
     ]
 
-    # TODO: Re-add once curtin supports this.
     fs_menu = [
         # ('Connect iSCSI network disk',
         #  'filesystem:connect-iscsi-disk',
@@ -91,9 +90,9 @@ class FilesystemModel(ModelPolicy):
         ('Create software RAID (MD)',
          base_signal + ':create-raid',
          'create_raid'),
-        # ('Setup hierarchichal storage (bcache)',
-        #  'filesystem:setup-bcache',
-        #  'setup_bcache')
+        ('Setup hierarchichal storage (bcache)',
+         base_signal + ':setup-bcache',
+         'create_bcache'),
     ]
 
     supported_filesystems = [
@@ -128,12 +127,15 @@ class FilesystemModel(ModelPolicy):
         self.info = {}
         self.devices = {}
         self.raid_devices = {}
+        self.bcache_devices = {}
         self.storage = {}
 
     def reset(self):
         log.debug('FilesystemModel: resetting disks')
         self.devices = {}
         self.info = {}
+        self.raid_devices = {}
+        self.bcache_devices = {}
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -325,6 +327,53 @@ class FilesystemModel(ModelPolicy):
         self.add_device(raid_dev_name, raid_dev)
 
         log.debug('Successfully added raid_dev: {}'.format(raid_dev))
+
+    def add_bcache_device(self, bcachespec):
+        # assume bcachespec has already been valided in view/controller
+        log.debug('Attempting to create a bcache device')
+        '''
+        bcachespec = {
+            'cache_device': '/dev/sdb     1.819T, HDS5C3020ALA632',
+            'backing_device': '/dev/sdc     1.819T, 001-9YN164',
+        }
+        could be /dev/sda1, /dev/md0, /dev/vg_foo/foobar2?
+        '''
+        cache_device = self.get_disk(bcachespec['cache_device'].split()[0])
+        backing_device = self.get_disk(bcachespec['backing_device'].split()[0])
+
+        # auto increment md number based in registered devices
+        bcache_dev_name = '/dev/bcache{}'.format(len(self.bcache_devices))
+        bcache_serial = '{}_serial'.format(bcache_dev_name)
+        bcache_model = '{}_model'.format(bcache_dev_name)
+        bcache_parttype = 'gpt'
+        bcache_size = backing_device.size
+
+        # create a Bcachedev (pass in only the names)
+        bcache_dev = Bcachedev(bcache_dev_name, bcache_serial, bcache_model,
+                               bcache_parttype, bcache_size,
+                               cache_device, backing_device)
+
+        # add it to the model's info dict
+        bcache_dev_info = {
+            'type': 'disk',
+            'name': bcache_dev_name,
+            'size': bcache_size,
+            'serial': bcache_serial,
+            'vendor': 'Linux bcache',
+            'model': bcache_model,
+            'is_virtual': True,
+            'raw': {
+                'MAJOR': '9',
+            },
+        }
+        self.info[bcache_dev_name] = AttrDict(bcache_dev_info)
+
+        # add it to the model's bcache devices
+        self.bcache_devices[bcache_dev_name] = bcache_dev
+        # add it to the model's devices
+        self.add_device(bcache_dev_name, bcache_dev)
+
+        log.debug('Successfully added bcache_dev: {}'.format(bcache_dev))
 
     def add_device(self, devpath, device):
         log.debug("adding device: {} = {}".format(devpath, device))
