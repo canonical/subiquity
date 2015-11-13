@@ -18,8 +18,8 @@ import os
 import sys
 from logging.handlers import TimedRotatingFileHandler
 
-LOGDIR = "logs"
-LOGFILE = os.path.join(LOGDIR, "debug.log")
+LOGDIR = ".subiquity"
+LOGFILE = os.path.join(LOGDIR, "subiquity-debug.log")
 
 
 def setup_logger(name=__name__):
