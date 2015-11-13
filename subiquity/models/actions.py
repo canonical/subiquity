@@ -246,13 +246,32 @@ class PartitionAction(DiskAction):
 
 
 class BcacheAction(DiskAction):
-    def __init__(self, backing_id, cache_id, bcache_num):
+    def __init__(self, action_id, backing_id, cache_id):
         self.parent = None
-        self.bcachenum = int(bcache_num)
-        self.backing_device = backing_id.parent.action_id
-        self.cache_device = cache_id.parent.action_id
-        self._action_id = "bcache" + str(bcache_num)
+        self._backing_device = backing_id
+        self._cache_device = cache_id
+        self._action_id = action_id
         self._type = 'bcache'
+
+    __hash__ = None
+
+    @property
+    def backing_device(self):
+        return self._backing_device
+
+    @property
+    def cache_device(self):
+        return self._cache_device
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self.backing_device == other.backing_device and
+                    self.cache_device == other.cache_device and
+                    self._type == other._type)
+        else:
+            return False
 
     def get(self):
         return {

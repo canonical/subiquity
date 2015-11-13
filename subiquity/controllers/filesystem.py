@@ -17,12 +17,11 @@ import logging
 import os
 from subiquity.controller import ControllerPolicy
 from subiquity.models.actions import preserve_action
-from subiquity.models import (FilesystemModel,
-                              RaidModel)
+from subiquity.models import (FilesystemModel, RaidModel)
 from subiquity.models.filesystem import (_humanize_size)
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
                                 AddFormatView, FilesystemView,
-                                DiskInfoView, RaidView)
+                                DiskInfoView, RaidView, BcacheView)
 from subiquity.ui.dummy import DummyView
 from subiquity.ui.error import ErrorView
 from subiquity.curtin import (curtin_write_storage_actions,
@@ -222,13 +221,22 @@ class FilesystemController(ControllerPolicy):
         self.ui.set_body(RaidView(self.model,
                                   self.signal))
 
+    def create_bcache(self, *args, **kwargs):
+        title = ("Create hierarchical storage (\"bcache\") disk")
+        footer = ("ENTER on a disk will show detailed "
+                  "information for that disk")
+        excerpt = ("Use SPACE to select a cache disk and a backing disk"
+                   " to form your bcache device.")
+
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer)
+        self.ui.set_body(BcacheView(self.model,
+                                    self.signal))
+
     def add_raid_dev(self, result):
         log.debug('add_raid_dev: result={}'.format(result))
         self.model.add_raid_device(result)
         self.signal.prev_signal()
-
-    def setup_bcache(self, *args, **kwargs):
-        self.ui.set_body(DummyView(self.signal))
 
     def add_first_gpt_partition(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
