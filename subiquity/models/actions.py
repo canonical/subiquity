@@ -248,8 +248,8 @@ class PartitionAction(DiskAction):
 class BcacheAction(DiskAction):
     def __init__(self, action_id, backing_id, cache_id):
         self.parent = None
-        self._backing_device = backing_id.parent.action_id
-        self._cache_device = cache_id.parent.action_id
+        self._backing_device = backing_id
+        self._cache_device = cache_id
         self._action_id = action_id
         self._type = 'bcache'
 
