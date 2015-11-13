@@ -293,10 +293,12 @@ class FilesystemModel(ModelPolicy):
         # create a Raiddev (pass in only the names)
         raid_parts = []
         for dev in raid_devices:
+            dev.set_holder(raid_dev_name)
             for num, action in dev.partitions.items():
                 raid_parts.append(action.action_id)
         spare_parts = []
         for dev in spare_devices:
+            dev.set_holder(raid_dev_name)
             for num, action in dev.partitions.items():
                 spare_parts.append(action.action_id)
 
@@ -351,7 +353,11 @@ class FilesystemModel(ModelPolicy):
         # create a Bcachedev (pass in only the names)
         bcache_dev = Bcachedev(bcache_dev_name, bcache_serial, bcache_model,
                                bcache_parttype, bcache_size,
-                               backing_device, cache_device)
+                               backing_device.devpath, cache_device.devpath)
+
+        # mark bcache holders
+        backing_device.set_holder(bcache_dev_name)
+        cache_device.set_holder(bcache_dev_name)
 
         # add it to the model's info dict
         bcache_dev_info = {

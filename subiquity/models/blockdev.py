@@ -130,7 +130,7 @@ class Blockdev():
         self._mountactions = {}
         self.bcache = []
         self.lvm = []
-        self.holder = {}
+        self.holders = []
         self.baseaction = DiskAction(os.path.basename(self.disk.devpath),
                                      self.disk.model, self.disk.serial,
                                      self.disk.parttype)
@@ -143,7 +143,7 @@ class Blockdev():
                     self._mountactions == other._mountactions and
                     self.bcache == other.bcache and
                     self.lvm == other.lvm and
-                    self.holder == other.holder and
+                    self.holders == other.holders and
                     self.baseaction == other.baseaction)
         else:
             return False
@@ -164,7 +164,7 @@ class Blockdev():
         self._mountactions = {}
         self.bcache = []
         self.lvm = []
-        self.holder = {}
+        self.holders = []
 
     @property
     def id(self):
@@ -231,8 +231,9 @@ class Blockdev():
     @property
     def available(self):
         ''' return True if has free space or partitions not
-            assigned '''
-        if not self.is_mounted() and self.percent_free > 0:
+            assigned, and no holders '''
+        if not self.is_mounted() and self.percent_free > 0 \
+           and len(self.holders) == 0:
             return True
         return False
 
@@ -350,8 +351,13 @@ class Blockdev():
         [partnum] = re.findall('\d+$', devpath)
         return self.disk.partitions[int(partnum)]
 
-    def set_holder(self, devpath, holdtype):
-        self.holder[holdtype] = devpath
+    def set_holder(self, devpath):
+        if devpath not in self.holders:
+            self.holders.append(devpath)
+
+    def clear_holder(self, devpath):
+        if devpath in self.holder:
+            self.holders.remove(devpath)
 
     def is_mounted(self):
         with open('/proc/mounts') as pm:
@@ -438,7 +444,7 @@ class Bcachedev(Blockdev):
 
 def sort_actions(actions):
     def type_index(t):
-        order = ['disk', 'partition', 'raid', 'format', 'mount']
+        order = ['disk', 'partition', 'raid', 'bcache', 'format', 'mount']
         return order.index(t.get('type'))
 
     def path_count(p):
