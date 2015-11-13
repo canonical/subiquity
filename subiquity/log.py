@@ -15,6 +15,7 @@
 
 import logging
 import os
+import sys
 from logging.handlers import TimedRotatingFileHandler
 
 LOGDIR = "logs"
@@ -22,12 +23,18 @@ LOGFILE = os.path.join(LOGDIR, "debug.log")
 
 
 def setup_logger(name=__name__):
-    if not os.path.isdir(LOGDIR):
-        os.makedirs(LOGDIR)
-    log = TimedRotatingFileHandler(LOGFILE,
-                                   when='D',
-                                   interval=1,
-                                   backupCount=7)
+    try:
+        if not os.path.isdir(LOGDIR):
+            os.makedirs(LOGDIR)
+        log = TimedRotatingFileHandler(LOGFILE,
+                                       when='D',
+                                       interval=1,
+                                       backupCount=7)
+    except PermissionError:
+        err = ("Failed to open logfile: ") + LOGFILE
+        sys.stderr.write(err + '\n')
+        sys.exit(1)
+
     log.setLevel('DEBUG')
     log.setFormatter(logging.Formatter(
         "%(asctime)s "
