@@ -109,7 +109,10 @@ class InstallProgressController(ControllerPolicy):
                           str(os.getpid()), ">", self.install_log]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
-            configs = [CURTIN_CONFIGS['postinstall']]
+            configs = [
+                 CURTIN_CONFIGS['postinstall'],
+                 CURTIN_CONFIGS['preserved'],
+            ]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
@@ -135,10 +138,14 @@ class InstallProgressController(ControllerPolicy):
             # kick off postinstall
             self.signal.emit_signal('installprogress:curtin-postinstall')
         else:
-            tail_cmd = ['tail', '-n', '10', self.install_log]
-            log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
-            install_tail = subprocess.check_output(tail_cmd)
-            self.progress_view.text.set_text(install_tail)
+            if os.path.exists(self.install_log):
+                tail_cmd = ['tail', '-n', '10', self.install_log]
+                log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
+                install_tail = subprocess.check_output(tail_cmd)
+                self.progress_view.text.set_text(install_tail)
+            else:
+                log.debug(('Install log not yet present:') +
+                          '{}'.format(self.install_log))
 
         self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
 
