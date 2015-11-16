@@ -25,6 +25,8 @@ log = logging.getLogger("subiquity.curtin")
 TMPDIR = '/tmp'
 CURTIN_SEARCH_PATH = ['/usr/local/curtin/bin', '/usr/bin']
 CURTIN_INSTALL_PATH = ['/media/root-ro', '/']
+CURTIN_INSTALL_LOG = '/tmp/subiquity-curtin-install.log'
+CURTIN_POSTINSTALL_LOG = '/tmp/subiquity-curtin-postinstall.log'
 CONF_PREFIX = os.path.join(TMPDIR, 'subiquity-config-')
 CURTIN_NETWORK_CONFIG_FILE = CONF_PREFIX + 'network.yaml'
 CURTIN_STORAGE_CONFIG_FILE = CONF_PREFIX + 'storage.yaml'
@@ -37,15 +39,20 @@ CURTIN_CONFIGS = {
     'preserved': CURTIN_PRESERVED_CONFIG_FILE,
 }
 CURTIN_CONFIG_HEADER = """
-reporter:
+reporting:
  subiquity:
-  path: /tmp/curtin_progress_subiquity
-  progress: True
+  type: print
 
 partitioning_commands:
  builtin: curtin block-meta custom
 
 """
+
+CURTIN_LOG_HEADER = """
+install:
+  log_file: {}
+"""
+
 CURTIN_CONFIG_REBOOT = """
 power_state:
   message: s-Ubiquity install complete. Rebooting
@@ -103,6 +110,10 @@ def curtin_write_postinst_config(userinfo):
         conf.close()
 
 
+def curtin_log_header(logfile=CURTIN_INSTALL_LOG):
+    return CURTIN_LOG_HEADER.format(logfile)
+
+
 def curtin_write_storage_actions(actions):
     curtin_config = yaml.dump(actions, default_flow_style=False)
     curtin_config = "    " + "\n    ".join(curtin_config.splitlines())
@@ -110,7 +121,9 @@ def curtin_write_storage_actions(actions):
         str(datetime.datetime.utcnow()))
     with open(CURTIN_STORAGE_CONFIG_FILE, 'w') as conf:
         conf.write(datestr)
-        conf.write(CURTIN_CONFIG_HEADER + CURTIN_STORAGE_CONFIG_HEADER)
+        conf.write(CURTIN_CONFIG_HEADER)
+        conf.write(curtin_log_header(logfile=CURTIN_INSTALL_LOG))
+        conf.write(CURTIN_STORAGE_CONFIG_HEADER)
         conf.write(curtin_config)
         conf.close()
 
@@ -136,7 +149,9 @@ def curtin_write_preserved_actions(actions):
         str(datetime.datetime.utcnow()))
     with open(CURTIN_PRESERVED_CONFIG_FILE, 'w') as conf:
         conf.write(datestr)
-        conf.write(CURTIN_CONFIG_HEADER + CURTIN_STORAGE_CONFIG_HEADER)
+        conf.write(CURTIN_CONFIG_HEADER)
+        conf.write(curtin_log_header(logfile=CURTIN_POSTINSTALL_LOG))
+        conf.write(CURTIN_STORAGE_CONFIG_HEADER)
         conf.write(curtin_config)
         conf.close()
 
@@ -161,12 +176,12 @@ def curtin_find_install_path():
 
 def curtin_install_cmd(configs):
     '''
-    curtin -v --showtrace install -c $CONFIGS cp:///
+    curtin -vvv --showtrace install -c $CONFIGS cp:///
     '''
     curtin = curtin_find_curtin()
     install_path = curtin_find_install_path()
 
-    install_cmd = [curtin, '-v', '--showtrace']
+    install_cmd = [curtin, '-vvv', '--showtrace']
     if configs:
         install_cmd += ['-c {}'.format(c) for c in configs]
     install_cmd += ['install', 'cp://{}'.format(install_path)]
