@@ -282,7 +282,8 @@ class FilesystemModel(ModelPolicy):
                 spare_devices.append(raiddev)
 
         # auto increment md number based in registered devices
-        raid_dev_name = '/dev/md{}'.format(len(self.raid_devices))
+        raid_shortname = 'md{}'.format(len(self.raid_devices))
+        raid_dev_name = '/dev/' + raid_shortname
         raid_serial = '{}_serial'.format(raid_dev_name)
         raid_model = '{}_model'.format(raid_dev_name)
         raid_parttype = 'gpt'
@@ -294,11 +295,13 @@ class FilesystemModel(ModelPolicy):
         raid_parts = []
         for dev in raid_devices:
             dev.set_holder(raid_dev_name)
+            dev.set_tag('member of MD ' + raid_shortname)
             for num, action in dev.partitions.items():
                 raid_parts.append(action.action_id)
         spare_parts = []
         for dev in spare_devices:
             dev.set_holder(raid_dev_name)
+            dev.set_tag('member of MD ' + raid_shortname)
             for num, action in dev.partitions.items():
                 spare_parts.append(action.action_id)
 
@@ -344,7 +347,8 @@ class FilesystemModel(ModelPolicy):
         cache_device = self.get_disk(bcachespec['cache_device'].split()[0])
 
         # auto increment md number based in registered devices
-        bcache_dev_name = '/dev/bcache{}'.format(len(self.bcache_devices))
+        bcache_shortname = 'bcache{}'.format(len(self.bcache_devices))
+        bcache_dev_name = '/dev/' + bcache_shortname
         bcache_serial = '{}_serial'.format(bcache_dev_name)
         bcache_model = '{}_model'.format(bcache_dev_name)
         bcache_parttype = 'gpt'
@@ -358,6 +362,15 @@ class FilesystemModel(ModelPolicy):
         # mark bcache holders
         backing_device.set_holder(bcache_dev_name)
         cache_device.set_holder(bcache_dev_name)
+
+        # tag device use
+        backing_device.set_tag('backing store for ' + bcache_shortname)
+        cache_tag = cache_device.tag
+        if len(cache_tag) > 0:
+            cache_tag += ", " + bcache_shortname
+        else:
+            cache_tag = "cache for " + bcache_shortname
+        cache_device.set_tag(cache_tag)
 
         # add it to the model's info dict
         bcache_dev_info = {
@@ -384,7 +397,7 @@ class FilesystemModel(ModelPolicy):
     def get_bcache_cachedevs(self):
         ''' return uniq list of bcache cache devices '''
         cachedevs = list(set([bcache_dev.cache_device for bcache_dev in
-                     self.bcache_devices.values()]))
+                              self.bcache_devices.values()]))
         log.debug('bcache cache devs: {}'.format(cachedevs))
         return cachedevs
 

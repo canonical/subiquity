@@ -497,8 +497,12 @@ class FilesystemView(ViewPolicy):
         log.debug('FileSystemView: building used disks')
         pl = []
         for disk in self.model.get_used_disk_names():
+            disk_obj = self.model.get_disk(disk)
             log.debug('used disk: {}'.format(disk))
-            pl.append(Text(disk))
+            disk_string = disk
+            if len(disk_obj.tag):
+                disk_string += " {}".format(disk_obj.tag)
+            pl.append(Color.info_minor(Text(disk_string)))
         if len(pl):
             return Pile(
                 [Text("USED DISKS"),
