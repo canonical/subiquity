@@ -128,6 +128,7 @@ class Blockdev():
         self._filesystems = {}
         self._mounts = {}
         self._mountactions = {}
+        self._tag = ''
         self.bcache = []
         self.lvm = []
         self.holders = []
@@ -165,6 +166,7 @@ class Blockdev():
         self.bcache = []
         self.lvm = []
         self.holders = []
+        self.tag = ''
 
     @property
     def id(self):
@@ -273,6 +275,13 @@ class Blockdev():
     @property
     def lastpartnumber(self):
         return len(self.disk.partitions)
+
+    @property
+    def tag(self):
+        return self._tag
+
+    def set_tag(self, tag):
+        self._tag = tag
 
     def delete_partition(self, partnum=None, sector=None, mountpoint=None):
         # find part and then call deletePartition()
@@ -440,6 +449,14 @@ class Bcachedev(Blockdev):
         self.baseaction = BcacheAction(os.path.basename(self.disk.devpath),
                                        self._backing_device,
                                        self._cache_device)
+
+    @property
+    def cache_device(self):
+        return self.baseaction.cache_device
+
+    @property
+    def backing_device(self):
+        return self.baseaction.backing_device
 
 
 def sort_actions(actions):

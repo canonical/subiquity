@@ -153,6 +153,7 @@ class FilesystemController(ControllerPolicy):
                                                    size=BIOS_GRUB_SIZE_BYTES,
                                                    fstype=None,
                                                    flag='bios_grub')
+                current_disk.set_tag('(boot)')
 
                 # adjust downward the partition size to accommodate
                 # the offset and bios/grub partition
