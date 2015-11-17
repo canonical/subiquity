@@ -61,7 +61,7 @@ class BcacheView(ViewPolicy):
             Text(section + " DISK SELECTION")
         ]
 
-        avail_devs = self._get_available_devs()
+        avail_devs = self._get_available_devs(section)
         if len(avail_devs) == 0:
             return items.append(
                 [Color.info_minor(Text("No available disks."))])
@@ -73,17 +73,25 @@ class BcacheView(ViewPolicy):
 
         return Pile(items)
 
-    def _get_available_devs(self):
+    def _get_available_devs(self, section):
         devs = []
 
         # bcache can use empty whole disks, or empty partitions
         avail_disks = self.model.get_empty_disk_names()
         avail_parts = self.model.get_empty_partition_names()
+        input_disks = avail_disks + avail_parts
+        if section == 'CACHE':
+            input_disks += self.model.get_bcache_cachedevs()
 
-        # filter out currently selected cache or backing disk
+        # filter out:
+        #  currently selected cache or backing disk
+        #  any bcache devices
+        bcache_names = list(self.model.bcache_devices.keys())
         selected_disks = [self.backing_disk, self.cache_disk]
-        avail_devs = sorted([dev for dev in (avail_disks + avail_parts)
-                             if dev not in selected_disks])
+        filter_disks = bcache_names + selected_disks
+
+        avail_devs = sorted([dev for dev in input_disks
+                             if dev not in filter_disks])
 
         for dname in avail_devs:
             device = self.model.get_disk(dname)

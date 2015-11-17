@@ -441,6 +441,14 @@ class Bcachedev(Blockdev):
                                        self._backing_device,
                                        self._cache_device)
 
+    @property
+    def cache_device(self):
+        return self.baseaction.cache_device
+
+    @property
+    def backing_device(self):
+        return self.baseaction.backing_device
+
 
 def sort_actions(actions):
     def type_index(t):

@@ -381,6 +381,13 @@ class FilesystemModel(ModelPolicy):
 
         log.debug('Successfully added bcache_dev: {}'.format(bcache_dev))
 
+    def get_bcache_cachedevs(self):
+        ''' return uniq list of bcache cache devices '''
+        cachedevs = list(set([bcache_dev.cache_device for bcache_dev in
+                     self.bcache_devices.values()]))
+        log.debug('bcache cache devs: {}'.format(cachedevs))
+        return cachedevs
+
     def add_device(self, devpath, device):
         log.debug("adding device: {} = {}".format(devpath, device))
         self.devices[devpath] = device
