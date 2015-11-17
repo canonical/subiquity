@@ -26,6 +26,8 @@ from subiquity.ui.interactive import (PasswordEditor,
                                       UsernameEditor)
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
+from subiquity.curtin import curtin_write_postinst_config
+
 
 log = logging.getLogger("subiquity.views.identity")
 
@@ -148,9 +150,18 @@ class IdentityView(ViewPolicy):
             "password": cpassword,
             "confirm_password": cpassword,
         }
-
         log.debug("User input: {}".format(result))
-        self.signal.emit_signal('installprogress:curtin-install', result)
+        try:
+            curtin_write_postinst_config(result)
+        except PermissionError:
+            log.exception('Failed to write curtin post-install config')
+            self.signal.emit_signal('filesystem:error',
+                                    'curtin_write_postinst_config')
+            return None
+
+        self.signal.emit_signal('installprogress:wrote-postinstall')
+        # show progress view
+        self.signal.emit_signal('menu:installprogress:main')
 
     def cancel(self, button):
         self.signal.prev_signal()

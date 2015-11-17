@@ -127,9 +127,14 @@ def run_command(command, timeout=None):
 
     try:
         log.debug('trying Popen...')
+        # dummy stdin fd as per:
+        # http://stackoverflow.com/ +
+        # questions/27022810/urwid-watch-file-blocks-keypress
+        r, w = os.pipe()
         p = Popen(command, shell=True,
-                  stdout=PIPE, stderr=PIPE,
+                  stdin=r, stdout=PIPE, stderr=PIPE,
                   bufsize=-1, env=cmd_env, close_fds=True)
+        os.close(w)
     except OSError as e:
         if e.errno == errno.ENOENT:
             log.debug('error!')

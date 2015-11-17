@@ -86,6 +86,13 @@ class FilesystemController(ControllerPolicy):
                                     'curtin_write_preserved_actions')
             return None
 
+        # mark that we've writting out curtin config
+        self.signal.emit_signal('installprogress:wrote-install')
+
+        # start curtin install in background
+        self.signal.emit_signal('installprogress:curtin-install')
+
+        # switch to identity view
         self.signal.emit_signal('menu:identity:main')
 
     # Filesystem/Disk partition -----------------------------------------------
