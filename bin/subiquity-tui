@@ -18,6 +18,8 @@ import argparse
 import sys
 import logging
 import signal
+import gettext
+import os
 from subiquity.log import setup_logger, LOGFILE
 from subiquity import __version__ as VERSION
 from subiquity.core import Controller as Subiquity
@@ -25,23 +27,26 @@ from subiquity.core import CoreControllerError
 from subiquity.ui.frame import SubiquityUI
 from subiquity.utils import environment_check
 
+language = gettext.translation(domain='subiquity', localedir='/home/kick/work/subiquity/locale', 
+                                languages=[os.environ['LANGUAGE']],fallback=True)
+language.install()
 
 def parse_options(argv):
     parser = argparse.ArgumentParser(
-        description='SUbiquity - Ubiquity for Servers',
-        prog='subiquity')
+    description=_('SUbiquity - Ubiquity for Servers'),
+    prog='subiquity')
     parser.add_argument('--dry-run', action='store_true',
                         dest='dry_run',
-                        help='menu-only, do not call installer function')
+                        help=_('menu-only, do not call installer function'))
     parser.add_argument('--serial', action='store_true',
                         dest='run_on_serial',
-                        help='Run the installer over serial console.')
+                        help=_('Run the installer over serial console.'))
     parser.add_argument('--machine-config', metavar='CONFIG',
                         dest='machine_config',
-                        help="Don't Probe. Use probe data file")
+                        help=_("Don't Probe. Use probe data file"))
     parser.add_argument('--uefi', action='store_true',
                         dest='uefi',
-                        help='run in uefi support mode')
+                        help=_('run in uefi support mode'))
     return parser.parse_args(argv)
 
 

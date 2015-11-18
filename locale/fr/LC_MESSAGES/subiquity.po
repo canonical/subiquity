@@ -1,0 +1,50 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-11-18 14:21+0100\n"
+"PO-Revision-Date: 2015-11-18 14:25+0100\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.4\n"
+
+#: bin/subiquity-tui:36
+msgid "SUbiquity - Ubiquity for Servers"
+msgstr "SUbiquity - Ubiquity pour les Servers"
+
+#: bin/subiquity-tui:40
+msgid "menu-only, do not call installer function"
+msgstr "Afficher uniquement le menu, ne pas utiliser la fonction d'installation"
+
+#: bin/subiquity-tui:43
+msgid "Run the installer over serial console."
+msgstr "Utiliser l'installateur via la console serie."
+
+#: bin/subiquity-tui:46
+msgid "Don't Probe. Use probe data file"
+msgstr "Ne pas sonder. Utiliser un fichier de données de sondage"
+
+#: bin/subiquity-tui:49
+msgid "run in uefi support mode"
+msgstr "Activer le support du mode UEFI"
+
+#: subiquity/controllers/welcome.py:28
+msgid "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
+msgstr "Bienvenue! Wilkommen! Welcome! Zdrastvutie! Welkom!"
+
+#: subiquity/controllers/welcome.py:29
+msgid "Please choose your preferred language"
+msgstr "Choisissez votre langue"
+
+#: subiquity/controllers/welcome.py:30
+msgid "Use UP, DOWN arrow keys, and ENTER, to select your language."
+msgstr "Utilisez les touches HAUT, BAS et ENTREE pour sélectionner votre langue."

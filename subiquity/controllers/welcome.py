@@ -25,9 +25,9 @@ class WelcomeController(ControllerPolicy):
         self.model = WelcomeModel()
 
     def welcome(self):
-        title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
-        excerpt = "Please choose your preferred language"
-        footer = ("Use UP, DOWN arrow keys, and ENTER, to "
+        title = _("Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!")
+        excerpt = _("Please choose your preferred language")
+        footer = _("Use UP, DOWN arrow keys, and ENTER, to "
                   "select your language.")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)

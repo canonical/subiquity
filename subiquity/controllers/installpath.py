@@ -29,12 +29,12 @@ class InstallpathController(ControllerPolicy):
 
     def installpath(self):
         title = "15.10"
-        excerpt = ("Welcome to Ubuntu! The world's favourite platform "
+        excerpt = (_("Welcome to Ubuntu! The world's favourite platform "
                    "for clouds, clusters and amazing internet things. "
                    "This is the installer for Ubuntu on servers and "
-                   "internet devices.")
-        footer = ("Use UP, DOWN arrow keys, and ENTER, to "
-                  "navigate options")
+                   "internet devices."))
+        footer = (_("Use UP, DOWN arrow keys, and ENTER, to "
+                  "navigate options"))
 
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 10)
