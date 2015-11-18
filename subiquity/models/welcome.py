@@ -50,12 +50,4 @@ class WelcomeModel(ModelPolicy):
                 return y
 
     def __repr__(self):
-        if self.selected_language is 'French':
-            language = gettext.translation(domain='subiquity', localedir='/home/kick/work/subiquity/locale',
-                                           languages=[os.environ['fr']],fallback=True)
-            language.install()
-        else:
-            language = gettext.translation(domain='subiquity', localedir='/home/kick/work/subiquity/locale',
-                                           languages=[os.environ['en']],fallback=True)
-            language.install()
         return "<Selected: {}>".format(self.selected_language)

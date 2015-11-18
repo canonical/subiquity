@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-11-18 14:21+0100\n"
-"PO-Revision-Date: 2015-11-18 14:25+0100\n"
+"POT-Creation-Date: 2015-11-18 14:35+0100\n"
+"PO-Revision-Date: 2015-11-18 14:38+0100\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -23,7 +23,8 @@ msgstr "SUbiquity - Ubiquity pour les Servers"
 
 #: bin/subiquity-tui:40
 msgid "menu-only, do not call installer function"
-msgstr "Afficher uniquement le menu, ne pas utiliser la fonction d'installation"
+msgstr ""
+"Afficher uniquement le menu, ne pas utiliser la fonction d'installation"
 
 #: bin/subiquity-tui:43
 msgid "Run the installer over serial console."
@@ -47,4 +48,20 @@ msgstr "Choisissez votre langue"
 
 #: subiquity/controllers/welcome.py:30
 msgid "Use UP, DOWN arrow keys, and ENTER, to select your language."
-msgstr "Utilisez les touches HAUT, BAS et ENTREE pour sélectionner votre langue."
+msgstr ""
+"Utilisez les touches HAUT, BAS et ENTREE pour sélectionner votre langue."
+
+#: subiquity/controllers/installpath.py:32
+msgid ""
+"Welcome to Ubuntu! The world's favourite platform for clouds, clusters and "
+"amazing internet things. This is the installer for Ubuntu on servers and "
+"internet devices."
+msgstr ""
+"Bienvenue sur Ubuntu! La plateforme préférée pour l'informatique en nuage "
+"(clouds), les aggrégats (clusters) et l'internet des objets. Ceci est "
+"l'installateur Ubuntu pour les serveurs."
+
+#: subiquity/controllers/installpath.py:36
+msgid "Use UP, DOWN arrow keys, and ENTER, to navigate options"
+msgstr ""
+"Utiliser les touches HAUT, BAS, et ENTREE pour naviguer dans les options"

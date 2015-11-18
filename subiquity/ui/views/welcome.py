@@ -19,6 +19,7 @@ Welcome provides user with language selection
 
 """
 import logging
+import gettext
 from urwid import (ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
 from subiquity.ui.buttons import menu_btn, cancel_btn
@@ -59,6 +60,14 @@ class WelcomeView(ViewPolicy):
 
     def confirm(self, result):
         self.model.selected_language = result.label
+        if result.label is 'French':
+            language = gettext.translation(domain='subiquity', localedir='/home/kick/work/subiquity/locale',
+                                           languages=['fr'],fallback=True)
+            language.install()
+        else:
+            language = gettext.translation(domain='subiquity', localedir='/home/kick/work/subiquity/locale',
+                                           languages=['en'],fallback=True)
+            language.install()
         log.debug('calling installpath')
         self.signal.emit_signal('menu:installpath:main')
 
