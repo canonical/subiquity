@@ -345,6 +345,7 @@ class AddPartitionView(ViewPolicy):
             log.exception('Invalid mount point')
             self.mountpoint.set_error('Error: {}'.format(str(e)))
             log.debug("Invalid mountpoint, try again")
+            return
 
         log.debug("Add Partition Result: {}".format(result))
         self.signal.emit_signal('filesystem:finish-add-disk-partition',
