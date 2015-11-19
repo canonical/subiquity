@@ -37,7 +37,7 @@ class BcacheView(ViewPolicy):
             Padding.line_break(""),
             Padding.center_50(self._build_disk_selection(section='BACKING')),
             Padding.line_break(""),
-            Padding.center_20(self._build_buttons())
+            Padding.fixed_10(self._build_buttons())
         ]
         super().__init__(ListBox(body))
 

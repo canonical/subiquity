@@ -36,7 +36,7 @@ class InstallpathView(ViewPolicy):
         self.body = [
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
-            Padding.center_15(self._build_buttons()),
+            Padding.fixed_10(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
 

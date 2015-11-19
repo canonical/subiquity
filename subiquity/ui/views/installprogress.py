@@ -39,12 +39,12 @@ class ProgressView(ViewPolicy):
         super().__init__(Filler(self.pile, valign="middle"))
 
     def show_finished_button(self):
-        w = Padding.center_20(
+        w = Padding.fixed_15(
             Color.button(confirm_btn(label="Reboot now",
                                      on_press=self.reboot),
                          focus_map='button focus'))
 
-        z = Padding.center_20(
+        z = Padding.fixed_15(
             Color.button(confirm_btn(label="Quit Installer",
                                      on_press=self.quit),
                          focus_map='button focus'))

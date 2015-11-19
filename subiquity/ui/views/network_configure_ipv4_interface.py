@@ -40,7 +40,7 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
             Padding.center_79(self._build_iface_inputs()),
             Padding.line_break(""),
             Padding.center_79(self._build_set_as_default_gw_button()),
-            Padding.center_20(self._build_buttons())
+            Padding.fixed_10(self._build_buttons())
         ]
         super().__init__(ListBox(body))
 
