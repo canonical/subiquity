@@ -51,7 +51,7 @@ class IdentityView(ViewPolicy):
             Padding.line_break(""),
             Padding.center_50(Color.info_error(self.error)),
             Padding.line_break(""),
-            Padding.center_15(self._build_buttons()),
+            Padding.fixed_10(self._build_buttons()),
         ]
         super().__init__(ListBox(body))
 

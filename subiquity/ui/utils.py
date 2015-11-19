@@ -43,6 +43,9 @@ def apply_padders(cls):
     for i in range(1, padding_count):
         setattr(cls, 'push_{}'.format(i), partialmethod(_Padding, left=i))
         setattr(cls, 'pull_{}'.format(i), partialmethod(_Padding, right=i))
+        setattr(cls, 'fixed_{}'.format(i),
+                partialmethod(_Padding, align='center',
+                              width=i, min_width=i))
         setattr(cls, 'center_{}'.format(i),
                 partialmethod(_Padding, align='center',
                               width=('relative', i)))
@@ -76,6 +79,17 @@ class Padding:
        .. code::
 
           Padding.pull_20(Text("This will be right indented 20 columns")
+
+    .. py:meth:: fixed_X(:class:`urwid.Widget`)
+
+       This method supports padding the widget to a fixed size and
+       centering it.
+       from 1-99, for example:
+
+       .. code::
+
+          Padding.fixed_20(Text("This will be centered and fixed sized
+                                 of 20 columns"))
 
     .. py:meth:: center_X(:class:`urwid.Widget`)
 

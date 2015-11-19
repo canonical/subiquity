@@ -43,7 +43,7 @@ class NetworkView(ViewPolicy):
             Padding.line_break(""),
             Padding.center_79(self._build_additional_options()),
             Padding.line_break(""),
-            Padding.center_15(self._build_buttons()),
+            Padding.fixed_10(self._build_buttons()),
         ]
         # FIXME determine which UX widget should have focus
         super().__init__(ListBox(self.body))

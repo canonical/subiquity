@@ -34,7 +34,7 @@ class CephDiskView(ViewPolicy):
         body = [
             Padding.center_50(self._build_model_inputs()),
             Padding.line_break(""),
-            Padding.center_20(self._build_buttons())
+            Padding.fixed_10(self._build_buttons())
         ]
         super().__init__(ListBox(body))
 

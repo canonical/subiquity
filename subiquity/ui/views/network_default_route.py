@@ -33,7 +33,7 @@ class NetworkSetDefaultRouteView(ViewPolicy):
             Padding.line_break(""),
             Padding.center_79(self._build_default_routes()),
             Padding.line_break(""),
-            Padding.center_20(self._build_buttons())
+            Padding.fixed_10(self._build_buttons())
         ]
         super().__init__(ListBox(body))
 

@@ -56,7 +56,7 @@ class DiskInfoView(ViewPolicy):
         body = []
         for h in hdinfo:
             body.append(Text(h))
-        body.append(Padding.center_20(self._build_buttons()))
+        body.append(Padding.fixed_10(self._build_buttons()))
         super().__init__(Padding.center_79(SimpleList(body)))
 
     def _build_buttons(self):
@@ -102,7 +102,7 @@ class AddFormatView(ViewPolicy):
             Padding.line_break(""),
             self._container(),
             Padding.line_break(""),
-            Padding.center_20(self._build_buttons())
+            Padding.fixed_10(self._build_buttons())
         ]
         format_box = Padding.center_50(ListBox(body))
         super().__init__(format_box)
@@ -200,7 +200,7 @@ class AddPartitionView(ViewPolicy):
             Padding.line_break(""),
             self._container(),
             Padding.line_break(""),
-            Padding.center_20(self._build_buttons())
+            Padding.fixed_10(self._build_buttons())
         ]
         partition_box = Padding.center_50(ListBox(body))
         super().__init__(partition_box)
@@ -363,7 +363,7 @@ class DiskPartitionView(ViewPolicy):
             Padding.line_break(""),
             Padding.center_79(self._build_menu()),
             Padding.line_break(""),
-            Padding.center_20(self._build_buttons()),
+            Padding.fixed_10(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
 
@@ -488,7 +488,7 @@ class FilesystemView(ViewPolicy):
             Padding.center_79(self._build_menu()),
             Padding.line_break(""),
             Padding.center_79(self._build_used_disks()),
-            Padding.center_15(self._build_buttons()),
+            Padding.fixed_10(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
         log.debug('FileSystemView init complete()')
