@@ -23,6 +23,7 @@ from urwid import (Pile, Columns, Text, ListBox)
 from subiquity.ui.buttons import done_btn, cancel_btn
 from subiquity.ui.interactive import (PasswordEditor,
                                       RealnameEditor,
+                                      StringEditor,
                                       UsernameEditor)
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
@@ -31,8 +32,10 @@ from subiquity.curtin import curtin_write_postinst_config
 
 log = logging.getLogger("subiquity.views.identity")
 
-USERNAME_MAXLEN = 32
+HOSTNAME_MAXLEN = 64
 REALNAME_MAXLEN = 160
+SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
+USERNAME_MAXLEN = 32
 
 
 class IdentityView(ViewPolicy):
@@ -41,15 +44,18 @@ class IdentityView(ViewPolicy):
         self.signal = signal
         self.items = []
         self.realname = RealnameEditor(caption="")
+        self.hostname = UsernameEditor(caption="")
         self.username = UsernameEditor(caption="")
         self.password = PasswordEditor(caption="")
+        self.ssh_import_id = StringEditor(caption="")
+        self.ssh_import_confirmed = True
         self.error = Text("", align="center")
         self.confirm_password = PasswordEditor(caption="")
 
         body = [
-            Padding.center_50(self._build_model_inputs()),
+            Padding.center_90(self._build_model_inputs()),
             Padding.line_break(""),
-            Padding.center_50(Color.info_error(self.error)),
+            Padding.center_90(Color.info_error(self.error)),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons()),
         ]
@@ -69,7 +75,7 @@ class IdentityView(ViewPolicy):
         sl = [
             Columns(
                 [
-                    ("weight", 0.2, Text("Real Name", align="right")),
+                    ("weight", 0.2, Text("Your name:", align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.realname,
                                         focus_map="string_input focus"))
@@ -78,7 +84,26 @@ class IdentityView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Username", align="right")),
+                    ("weight", 0.2, Text("Your server's name:",
+                                         align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.hostname,
+                                        focus_map="string_input focus"))
+                ],
+                dividechars=4
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("", align="right")),
+                    ("weight", 0.3, Color.info_minor(
+                        Text("The name it uses when it talks to "
+                             "other computers", align="left"))),
+                ],
+                dividechars=4
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("Pick a username:", align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.username,
                                         focus_map="string_input focus"))
@@ -87,7 +112,7 @@ class IdentityView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Password", align="right")),
+                    ("weight", 0.2, Text("Choose a password:", align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.password,
                                         focus_map="string_input focus"))
@@ -96,29 +121,42 @@ class IdentityView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Confirm Password", align="right")),
+                    ("weight", 0.2, Text("Confirm your password:",
+                                         align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.confirm_password,
                                         focus_map="string_input focus"))
                 ],
                 dividechars=4
-            )
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("Import SSH identity:",
+                                         align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.ssh_import_id,
+                                        focus_map="string_input focus"))
+                ],
+                dividechars=4
+            ),
+
+            Columns(
+                [
+                    ("weight", 0.2, Text("", align="right")),
+                    ("weight", 0.3, Color.info_minor(
+                        Text("Input your SSH user id from "
+                             "Launchpad (lp:username) or "
+                             "Github (gh:username).",
+                             align="left"))),
+                ],
+                dividechars=4
+            ),
         ]
         return Pile(sl)
 
     def done(self, result):
-        if len(self.password.value) < 1:
-            self.error.set_text("Password must be set")
-            self.password.value = ""
-            self.confirm_password.value = ""
-            return
-
-        if self.password.value != self.confirm_password.value:
-            self.error.set_text("Passwords do not match.")
-            self.password.value = ""
-            self.confirm_password.value = ""
-            return
-
+        # check in display order:
+        #   realname, hostname, username, password, ssh
         if len(self.realname.value) < 1:
             self.error.set_text("Realname missing.")
             self.realname.value = ""
@@ -128,6 +166,17 @@ class IdentityView(ViewPolicy):
             self.error.set_text("Realname too long, must be < " +
                                 str(REALNAME_MAXLEN))
             self.realname.value = ""
+            return
+
+        if len(self.hostname.value) < 1:
+            self.error.set_text("Server name missing.")
+            self.hostname.value = ""
+            return
+
+        if len(self.hostname.value) > HOSTNAME_MAXLEN:
+            self.error.set_text("Server name too long, must be < " +
+                                str(HOSTNAME_MAXLEN))
+            self.hostname.value = ""
             return
 
         if len(self.username.value) < 1:
@@ -141,15 +190,45 @@ class IdentityView(ViewPolicy):
             self.username.value = ""
             return
 
+        if len(self.password.value) < 1:
+            self.error.set_text("Password must be set")
+            self.password.value = ""
+            self.confirm_password.value = ""
+            return
+
+        if self.password.value != self.confirm_password.value:
+            self.error.set_text("Passwords do not match.")
+            self.password.value = ""
+            self.confirm_password.value = ""
+            return
+
+        # ssh_id is optional
+        if len(self.ssh_import_id.value) > SSH_IMPORT_MAXLEN:
+            self.error.set_text("SSH id too long, must be < " +
+                                str(SSH_IMPORT_MAXLEN))
+            self.ssh_import_id.value = ""
+            return
+
         cpassword = self.model.encrypt_password(self.password.value)
         log.debug("*crypted* User input: {} {} {}".format(
             self.username.value, cpassword, cpassword))
         result = {
+            "hostname": self.hostname.value,
             "realname": self.realname.value,
             "username": self.username.value,
             "password": cpassword,
             "confirm_password": cpassword,
         }
+
+        # if user specifed a value, allow user to validate fingerprint
+        if self.ssh_import_id.value:
+            if self.ssh_import_confirmed is True:
+                result.update({'ssh_import_id': self.ssh_import_id.value})
+            else:
+                self.emit_signal('identity:confirm-ssh-id',
+                                 self.ssh_import_id.value)
+                return
+
         log.debug("User input: {}".format(result))
         try:
             curtin_write_postinst_config(result)
