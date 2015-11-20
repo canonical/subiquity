@@ -110,8 +110,8 @@ class InstallProgressController(ControllerPolicy):
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [
-                 CURTIN_CONFIGS['postinstall'],
-                 CURTIN_CONFIGS['preserved'],
+                CURTIN_CONFIGS['postinstall'],
+                CURTIN_CONFIGS['preserved'],
             ]
             curtin_cmd = curtin_install_cmd(configs)
 
