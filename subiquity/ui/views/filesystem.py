@@ -345,6 +345,7 @@ class AddPartitionView(ViewPolicy):
             log.exception('Invalid mount point')
             self.mountpoint.set_error('Error: {}'.format(str(e)))
             log.debug("Invalid mountpoint, try again")
+            return
 
         log.debug("Add Partition Result: {}".format(result))
         self.signal.emit_signal('filesystem:finish-add-disk-partition',
@@ -409,9 +410,12 @@ class DiskPartitionView(ViewPolicy):
         changes to the button depending on if existing
         partitions exist or not.
         """
-        return Pile([self.add_partition_w(),
-                     self.create_swap_w(),
-                     self.show_disk_info_w()])
+        menus = [
+            self.add_partition_w(),
+            self.create_swap_w(),
+            self.show_disk_info_w(),
+        ]
+        return Pile([m for m in menus if m])
 
     def show_disk_info_w(self):
         """ Runs hdparm against device and displays its output
@@ -430,11 +434,11 @@ class DiskPartitionView(ViewPolicy):
         """
         text = ("Format or create swap on entire "
                 "device (unusual, advanced)")
-        if len(self.disk_obj.partitions) == 0:
+        if len(self.disk_obj.partitions) == 0 and \
+           self.disk_obj.available:
             return Color.menu_button(menu_btn(label=text,
                                               on_press=self.create_swap),
                                      focus_map='menu_button focus')
-        return Color.info_minor(Text(text))
 
     def add_partition_w(self):
         """ Handles presenting the add partition widget button
@@ -444,9 +448,12 @@ class DiskPartitionView(ViewPolicy):
         if len(self.disk_obj.partitions) > 0:
             text = "Add partition (max size {})".format(
                 _humanize_size(self.disk_obj.freespace))
-        return Color.menu_button(menu_btn(label=text,
-                                          on_press=self.add_partition),
-                                 focus_map='menu_button focus')
+
+        if self.disk_obj.available and \
+           self.disk_obj.blocktype not in self.model.no_partition_blocktypes:
+            return Color.menu_button(menu_btn(label=text,
+                                              on_press=self.add_partition),
+                                     focus_map='menu_button focus')
 
     def show_disk_info(self, result):
         self.signal.emit_signal('menu:filesystem:main:show-disk-information',

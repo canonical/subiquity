@@ -16,6 +16,7 @@
 import json
 import logging
 import re
+from os.path import realpath
 
 from .blockdev import Blockdev, Raiddev, Bcachedev, sort_actions
 import math
@@ -119,6 +120,14 @@ class FilesystemModel(ModelPolicy):
         "5",
         "6",
         "10",
+    ]
+
+    # th following blocktypes cannot be partitioned
+    no_partition_blocktypes = [
+        "bcache",
+        "lvm_partition",
+        "lvm_volgroup",
+        "raid",
     ]
 
     def __init__(self, prober, opts):
@@ -469,6 +478,9 @@ class FilesystemModel(ModelPolicy):
 
         if not mountpoint.startswith('/'):
             raise ValueError('Does not start with /')
+
+        # remove redundent // and ..
+        mountpoint = realpath(mountpoint)
 
         # /usr/include/linux/limits.h:PATH_MAX
         if len(mountpoint) > 4095:
