@@ -94,6 +94,8 @@ def curtin_userinfo_to_config(userinfo):
         '    passwd: {password}\\n' + \
         '    shell: /bin/bash\\n' + \
         '    groups: admin\\n' + \
+        '    ssh_import_id: [{ssh_import_id}]\\n' + \
+        '    hostname: {hostname}\\n' + \
         '    lock-passwd: false\\n'
     return user_template.format(**userinfo)
 
