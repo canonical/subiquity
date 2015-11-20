@@ -122,6 +122,14 @@ class FilesystemModel(ModelPolicy):
         "10",
     ]
 
+    # th following blocktypes cannot be partitioned
+    no_partition_blocktypes = [
+        "bcache",
+        "lvm_partition",
+        "lvm_volgroup",
+        "raid",
+    ]
+
     def __init__(self, prober, opts):
         self.opts = opts
         self.prober = prober
