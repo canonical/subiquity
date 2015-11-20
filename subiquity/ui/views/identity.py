@@ -44,11 +44,11 @@ class IdentityView(ViewPolicy):
         self.signal = signal
         self.items = []
         self.realname = RealnameEditor(caption="")
-        self.hostname = UsernameEditor(caption="")  # no spaces or special chars
+        self.hostname = UsernameEditor(caption="")
         self.username = UsernameEditor(caption="")
         self.password = PasswordEditor(caption="")
         self.ssh_import_id = StringEditor(caption="")
-        self.ssh_import_confirmed = True   # set to false require user validation
+        self.ssh_import_confirmed = True
         self.error = Text("", align="center")
         self.confirm_password = PasswordEditor(caption="")
 
@@ -121,7 +121,7 @@ class IdentityView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Confirm your password",
+                    ("weight", 0.2, Text("Confirm your password:",
                                          align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.confirm_password,
