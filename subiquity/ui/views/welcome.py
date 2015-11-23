@@ -54,20 +54,11 @@ class WelcomeView(ViewPolicy):
             sl.append(Color.menu_button(
                 menu_btn(label=lang, on_press=self.confirm),
                 focus_map="menu_button focus"))
-
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))
 
     def confirm(self, result):
-        self.model.selected_language = result.label
-        if result.label is 'French':
-            language = gettext.translation(domain='subiquity', localedir='/home/kick/work/subiquity/locale',
-                                           languages=['fr'],fallback=True)
-            language.install()
-        else:
-            language = gettext.translation(domain='subiquity', localedir='/home/kick/work/subiquity/locale',
-                                           languages=['en'],fallback=True)
-            language.install()
+        self.model.set_language(result.label)
         log.debug('calling installpath')
         self.signal.emit_signal('menu:installpath:main')
 

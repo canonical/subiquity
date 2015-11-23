@@ -27,9 +27,6 @@ from subiquity.core import CoreControllerError
 from subiquity.ui.frame import SubiquityUI
 from subiquity.utils import environment_check
 
-language = gettext.translation(domain='subiquity', localedir='/home/kick/work/subiquity/locale', 
-                                languages=[os.environ['LANGUAGE']],fallback=True)
-language.install()
 
 def parse_options(argv):
     parser = argparse.ArgumentParser(
@@ -55,18 +52,21 @@ def control_c_handler(signum, frame):
 
 
 def main():
+    language = gettext.translation(domain='subiquity', localedir='/home/kick/work/subiquity/locale', 
+                                   languages=[os.environ['LANGUAGE']],fallback=True)
+    language.install()
     opts = parse_options(sys.argv[1:])
     setup_logger()
     logger = logging.getLogger('subiquity')
-    logger.info("Starting SUbiquity v{}".format(VERSION))
-    logger.info("Arguments passed: {}".format(sys.argv))
+    logger.info(_("Starting SUbiquity v{}").format(VERSION))
+    logger.info(_("Arguments passed: {}").format(sys.argv))
 
     signal.signal(signal.SIGINT, control_c_handler)
 
     env_ok = environment_check()
     if env_ok is False and not opts.dry_run:
-        print('Failed environment check.  '
-              'Check {} for errors.'.format(LOGFILE))
+        print(_('Failed environment check.  ')+
+              _('Check {} for errors.').format(LOGFILE))
         return 1
 
     ui = SubiquityUI()
@@ -74,7 +74,7 @@ def main():
     try:
         subiquity_interface = Subiquity(ui, opts)
     except CoreControllerError as e:
-        logger.exception('Failed to load Subiquity interface')
+        logger.exception(_('Failed to load Subiquity interface'))
         print(e)
         return 1
 

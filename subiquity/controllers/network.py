@@ -27,18 +27,17 @@ from subiquity.curtin import curtin_write_network_actions
 
 log = logging.getLogger("subiquity.controller.network")
 
-
 class NetworkController(ControllerPolicy):
     def __init__(self, common):
         super().__init__(common)
         self.model = NetworkModel(self.prober, self.opts)
 
     def network(self):
-        title = "Network connections"
-        excerpt = ("Configure at least the main interface this server will "
+        title = _("Network connections")
+        excerpt = _("Configure at least the main interface this server will "
                    "use to talk to other machines, and preferably provide "
                    "sufficient access for updates.")
-        footer = ("Additional networking info here")
+        footer = _("Additional networking info here")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 20)
         self.ui.set_body(NetworkView(self.model, self.signal))

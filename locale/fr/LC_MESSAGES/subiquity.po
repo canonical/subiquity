@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-11-18 14:35+0100\n"
-"PO-Revision-Date: 2015-11-18 14:38+0100\n"
+"POT-Creation-Date: 2015-11-19 14:44+0100\n"
+"PO-Revision-Date: 2015-11-23 14:27+0100\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -17,24 +17,24 @@ msgstr ""
 "Language-Team: \n"
 "X-Generator: Poedit 1.8.4\n"
 
-#: bin/subiquity-tui:36
+#: bin/subiquity-tui:36 bin/subiquity-tui:33
 msgid "SUbiquity - Ubiquity for Servers"
 msgstr "SUbiquity - Ubiquity pour les Servers"
 
-#: bin/subiquity-tui:40
+#: bin/subiquity-tui:40 bin/subiquity-tui:37
 msgid "menu-only, do not call installer function"
 msgstr ""
 "Afficher uniquement le menu, ne pas utiliser la fonction d'installation"
 
-#: bin/subiquity-tui:43
+#: bin/subiquity-tui:43 bin/subiquity-tui:40
 msgid "Run the installer over serial console."
-msgstr "Utiliser l'installateur via la console serie."
+msgstr "Utiliser l'installateur via la console série."
 
-#: bin/subiquity-tui:46
+#: bin/subiquity-tui:46 bin/subiquity-tui:43
 msgid "Don't Probe. Use probe data file"
-msgstr "Ne pas sonder. Utiliser un fichier de données de sondage"
+msgstr "Ne pas analyser la machine. Utiliser un fichier de données d'analyse"
 
-#: bin/subiquity-tui:49
+#: bin/subiquity-tui:49 bin/subiquity-tui:46
 msgid "run in uefi support mode"
 msgstr "Activer le support du mode UEFI"
 
@@ -65,3 +65,40 @@ msgstr ""
 msgid "Use UP, DOWN arrow keys, and ENTER, to navigate options"
 msgstr ""
 "Utiliser les touches HAUT, BAS, et ENTREE pour naviguer dans les options"
+
+#: subiquity/controllers/network.py:37
+msgid "Network connections"
+msgstr "Connections Réseaux"
+
+#: subiquity/controllers/network.py:38
+msgid ""
+"Configure at least the main interface this server will use to talk to other "
+"machines, and preferably provide sufficient access for updates."
+msgstr ""
+"Configurez au moins l'interface réseau principale que ce serveur va utiliser "
+"pour communiquer avec les autres machines, et aussi fournir un accès aux "
+"mise-à-jour."
+
+#: subiquity/controllers/network.py:41
+msgid "Additional networking info here"
+msgstr "Informations additionnelles sur le réseau ici"
+
+#: bin/subiquity-tui:61
+msgid "Starting SUbiquity v{}"
+msgstr "Démarrage de SUbiquity v{}"
+
+#: bin/subiquity-tui:62
+msgid "Arguments passed: {}"
+msgstr "Arguments passés: {}"
+
+#: bin/subiquity-tui:68
+msgid "Failed environment check.  "
+msgstr "Echec de la vérification de l'environnement. "
+
+#: bin/subiquity-tui:69
+msgid "Check {} for errors."
+msgstr "Vérifier la présence d'erreurs dans {}."
+
+#: bin/subiquity-tui:77
+msgid "Failed to load Subiquity interface"
+msgstr "Echec du chargement de l'interface Subiquity"
