@@ -34,19 +34,19 @@ class InstallpathModel(ModelPolicy):
 
     # TODO: Re-enable once available
     install_paths = [
-        ('Install Ubuntu',
+        (_("Install Ubuntu"),
          'installpath:install-ubuntu',
          'install_ubuntu'),
-        # ('Install MAAS Region Server',
+        # (_("Install MAAS Region Server"),
         #  'installpath:maas-region-server',
         #  'install_maas_region_server'),
-        # ('Install MAAS Cluster Server',
+        # _("Install MAAS Cluster Server"),
         #  'installpath:maas-cluster-server',
         #  'install_maas_cluster_server'),
-        # ('Test installation media',
+        # _("Test installation media"),
         #  'installpath:test-media',
         #  'test_media'),
-        # ('Test machine memory',
+        # _("Test machine memory"),
         #  'installpath:test-memory',
         #  'test_memory')
     ]

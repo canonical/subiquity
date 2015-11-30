@@ -48,16 +48,16 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
         col1 = [
             Columns(
                 [
-                    ("weight", 0.2, Text("Subnet")),
+                    ("weight", 0.2, Text(_("Subnet"))),
                     ("weight", 0.3,
                      Color.string_input(self.subnet_input,
                                         focus_map="string_input focus")),
-                    ("weight", 0.5, Text("CIDR e.g. 192.168.9.0/24"))
+                    ("weight", 0.5, Text(_("CIDR e.g. 192.168.9.0/24")))
                 ], dividechars=2
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Address")),
+                    ("weight", 0.2, Text(_("Address"))),
                     ("weight", 0.3,
                      Color.string_input(self.address_input,
                                         focus_map="string_input focus")),
@@ -66,7 +66,7 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Gateway")),
+                    ("weight", 0.2, Text(_("Gateway"))),
                     ("weight", 0.3,
                      Color.string_input(self.gateway_input,
                                         focus_map="string_input focus")),
@@ -82,7 +82,7 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
             btn = menu_btn(label="Set this as default gateway",
                            on_press=self.set_default_gateway)
         else:
-            btn = Text("This will be your default gateway")
+            btn = Text(_("This will be your default gateway"))
         return Pile([btn])
 
     def set_default_gateway(self, button):
@@ -94,8 +94,8 @@ class NetworkConfigureIPv4InterfaceView(ViewPolicy):
                 pass
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),

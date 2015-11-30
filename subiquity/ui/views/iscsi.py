@@ -48,7 +48,7 @@ class IscsiDiskView(ViewPolicy):
         items = [
             Columns(
                 [
-                    ("weight", 0.2, Text("iSCSI Server Host", align="right")),
+                    ("weight", 0.2, Text(_("iSCSI Server Host"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.iscsi_host,
                                         focus_map="string_input focus"))
@@ -57,7 +57,7 @@ class IscsiDiskView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Connect anonymously",
+                    ("weight", 0.2, Text(_("Connect anonymously"),
                                          align="right")),
                     ("weight", 0.3,
                      Color.string_input(Pile(self.connect_anon.group),
@@ -67,7 +67,7 @@ class IscsiDiskView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Connect as user", align="right")),
+                    ("weight", 0.2, Text(_("Connect as user"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.connect_username,
                                         focus_map="string_input focus"))
@@ -76,7 +76,7 @@ class IscsiDiskView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Password", align="right")),
+                    ("weight", 0.2, Text(_("Password"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.connect_password,
                                         focus_map="string_input focus"))
@@ -85,7 +85,7 @@ class IscsiDiskView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Require server auth",
+                    ("weight", 0.2, Text(_("Require server auth"),
                                          align="right")),
                     ("weight", 0.3,
                      Color.string_input(Pile(self.server_auth.group),
@@ -95,7 +95,7 @@ class IscsiDiskView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Server identity", align="right")),
+                    ("weight", 0.2, Text(_("Server identity"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.server_username,
                                         focus_map="string_input focus"))
@@ -104,7 +104,7 @@ class IscsiDiskView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Server password", align="right")),
+                    ("weight", 0.2, Text(_("Server password"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.server_password,
                                         focus_map="string_input focus"))
@@ -130,7 +130,7 @@ class IscsiDiskView(ViewPolicy):
         return Pile(items)
 
     def _build_volume_mount_selector(self):
-        items = [Text("SELECT VOLUME TO MOUNT")]
+        items = [Text(_("SELECT VOLUME TO MOUNT"))]
         # TODO: List found volumes
         return Pile(items)
 

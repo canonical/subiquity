@@ -42,7 +42,7 @@ class NetworkBondInterfacesView(ViewPolicy):
     def _build_iface_selection(self):
         log.debug('bond: _build_iface_selection')
         items = [
-            Text("INTERFACE SELECTION")
+            Text(_("INTERFACE SELECTION"))
         ]
         all_iface_names = self.model.get_all_interface_names()
         avail_ifnames = [iface for iface in all_iface_names
@@ -51,7 +51,7 @@ class NetworkBondInterfacesView(ViewPolicy):
 
         if len(avail_ifnames) == 0:
             log.debug('Nothing available...')
-            return Pile([Color.info_minor(Text("No available interfaces."))])
+            return Pile([Color.info_minor(Text(_("No available interfaces.")))])
 
         for ifname in avail_ifnames:
             device = self.model.get_interface(ifname)
@@ -69,10 +69,10 @@ class NetworkBondInterfacesView(ViewPolicy):
     def _build_bondmode_configuration(self):
         log.debug('bond: _build_bondmode_configuration')
         items = [
-            Text("BOND CONFIGURATION"),
+            Text(_("BOND CONFIGURATION")),
             Columns(
                 [
-                    ("weight", 0.2, Text("Bonding Mode", align="right")),
+                    ("weight", 0.2, Text(_("Bonding Mode"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(Pile(self.bond_mode.group),
                                         focus_map="string_input focus"))
@@ -85,8 +85,8 @@ class NetworkBondInterfacesView(ViewPolicy):
 
     def _build_buttons(self):
         log.debug('bond: _build_buttons')
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         items = [
             Color.button(done, focus_map='button focus'),

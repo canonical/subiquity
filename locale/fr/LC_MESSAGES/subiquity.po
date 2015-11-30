@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-11-19 14:44+0100\n"
-"PO-Revision-Date: 2015-11-23 14:27+0100\n"
+"POT-Creation-Date: 2015-11-30 13:19+0100\n"
+"PO-Revision-Date: 2015-11-30 13:21+0100\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -44,7 +44,7 @@ msgstr "Bienvenue! Wilkommen! Welcome! Zdrastvutie! Welkom!"
 
 #: subiquity/controllers/welcome.py:29
 msgid "Please choose your preferred language"
-msgstr "Choisissez votre langue"
+msgstr "Veuillez choisir votre langue"
 
 #: subiquity/controllers/welcome.py:30
 msgid "Use UP, DOWN arrow keys, and ENTER, to select your language."
@@ -102,3 +102,240 @@ msgstr "Vérifier la présence d'erreurs dans {}."
 #: bin/subiquity-tui:77
 msgid "Failed to load Subiquity interface"
 msgstr "Echec du chargement de l'interface Subiquity"
+
+#: subiquity/ui/buttons.py:30
+msgid "Confirm"
+msgstr "Valider"
+
+#: subiquity/ui/buttons.py:31
+msgid "Cancel"
+msgstr "Annuler"
+
+#: subiquity/ui/buttons.py:32
+msgid "Done"
+msgstr "Fin"
+
+#: subiquity/ui/buttons.py:33
+msgid "Reset"
+msgstr "Ré-initialiser"
+
+#: subiquity/ui/views/ceph.py:45
+msgid "Ceph MON"
+msgstr "Ceph Mon"
+
+#: subiquity/ui/views/ceph.py:54 subiquity/ui/views/identity.py:79
+msgid "Username"
+msgstr "Nom d'utilisateur"
+
+#: subiquity/ui/views/ceph.py:64
+msgid "Key"
+msgstr "Clef"
+
+#: subiquity/ui/views/filesystem.py:127 subiquity/ui/views/filesystem.py:243
+msgid "Format"
+msgstr "Formater"
+
+#: subiquity/ui/views/filesystem.py:135 subiquity/ui/views/filesystem.py:251
+msgid "Mount"
+msgstr "Montage"
+
+#: subiquity/ui/views/filesystem.py:195
+msgid "Adding partition to {}"
+msgstr "Ajouter des partition à"
+
+#: subiquity/ui/views/filesystem.py:225
+msgid "Partition number"
+msgstr "Numéro de partition"
+
+#: subiquity/ui/views/filesystem.py:234
+msgid "Size (max {})"
+msgstr "Taille (max {})"
+
+#: subiquity/ui/views/filesystem.py:385 subiquity/ui/views/filesystem.py:525
+msgid "{}"
+msgstr "{}"
+
+#: subiquity/ui/views/filesystem.py:397
+msgid "FREE SPACE"
+msgstr "Esapce libre"
+
+#: subiquity/ui/views/filesystem.py:482
+msgid "FILE SYSTEM"
+msgstr "Systeème de fichier"
+
+#: subiquity/ui/views/filesystem.py:485
+msgid "AVAILABLE DISKS"
+msgstr "Disques disponibles"
+
+#: subiquity/ui/views/filesystem.py:504
+msgid "USED DISKS"
+msgstr "Disques utilisés"
+
+#: subiquity/ui/views/filesystem.py:518
+msgid "No disks or partitions mounted"
+msgstr "Pas de disque ou de partition monté(e)"
+
+#: subiquity/ui/views/filesystem.py:571 subiquity/ui/views/raid.py:57
+msgid "No available disks."
+msgstr "Pas de disque disponible."
+
+#: subiquity/ui/views/hostname.py:58
+msgid "Hostname"
+msgstr "Nom d'hôte"
+
+#: subiquity/ui/views/identity.py:70
+msgid "Real Name"
+msgstr "Nom réel"
+
+#: subiquity/ui/views/identity.py:88 subiquity/ui/views/iscsi.py:79
+msgid "Password"
+msgstr "Mot de passe"
+
+#: subiquity/ui/views/identity.py:97
+msgid "Confirm Password"
+msgstr "Confirmer le mot de passe"
+
+#: subiquity/ui/views/installprogress.py:33
+msgid "Wait for it ..."
+msgstr "Veuillez patienter..."
+
+#: subiquity/ui/views/iscsi.py:51
+msgid "iSCSI Server Host"
+msgstr "Serveur hôte iscsi"
+
+#: subiquity/ui/views/iscsi.py:60
+msgid "Connect anonymously"
+msgstr "Se connecter de manière anonyme"
+
+#: subiquity/ui/views/iscsi.py:70
+msgid "Connect as user"
+msgstr "Se connecter en tant qu'utilisateur"
+
+#: subiquity/ui/views/iscsi.py:88
+msgid "Require server auth"
+msgstr "Nécessite une authentification sur le serveur"
+
+#: subiquity/ui/views/iscsi.py:98
+msgid "Server identity"
+msgstr "Identité du serveur"
+
+#: subiquity/ui/views/iscsi.py:107
+msgid "Server password"
+msgstr "Mot de passe su serveur"
+
+#: subiquity/ui/views/iscsi.py:133
+msgid "SELECT VOLUME TO MOUNT"
+msgstr "CHOISIR LE VOLUME À MONTER"
+
+#: subiquity/ui/views/network_bond_interfaces.py:45
+msgid "INTERFACE SELECTION"
+msgstr "SELECTION L'INTERFACE"
+
+#: subiquity/ui/views/network_bond_interfaces.py:54
+msgid "No available interfaces."
+msgstr "Pas d'interface disponible."
+
+#: subiquity/ui/views/network_bond_interfaces.py:72
+msgid "BOND CONFIGURATION"
+msgstr "CONFIGURATION D'AGGRÉGAT"
+
+#: subiquity/ui/views/network_bond_interfaces.py:75
+msgid "Bonding Mode"
+msgstr "Mode d'aggrégation"
+
+#: subiquity/ui/views/network_configure_interface.py:85
+#: subiquity/ui/views/network.py:135
+msgid "  "
+msgstr "  "
+
+#: subiquity/ui/views/network_configure_ipv4_interface.py:51
+msgid "Subnet"
+msgstr "Sous-réseau"
+
+#: subiquity/ui/views/network_configure_ipv4_interface.py:55
+msgid "CIDR e.g. 192.168.9.0/24"
+msgstr "CIDR par exemple 192.168.9.0/24"
+
+#: subiquity/ui/views/network_configure_ipv4_interface.py:60
+msgid "Address"
+msgstr "Adresse"
+
+#: subiquity/ui/views/network_configure_ipv4_interface.py:69
+msgid "Gateway"
+msgstr "Passerelle"
+
+#: subiquity/ui/views/network_configure_ipv4_interface.py:85
+msgid "This will be your default gateway"
+msgstr "Ce sera votre passerelle par défaut"
+
+#: subiquity/ui/views/network_default_route.py:32
+msgid "Please set the default gateway:"
+msgstr "Veuillez définir la passerelle par défaut"
+
+#: subiquity/ui/views/network.py:111
+msgid "No IPv6 connection"
+msgstr "Pas de connectivité en IPV6"
+
+#: subiquity/ui/views/network.py:120
+msgid "No network interfaces detected."
+msgstr "Pas d'interface réseau détectée."
+
+#: subiquity/ui/views/raid.py:48
+msgid "DISK SELECTION"
+msgstr "Sélection du disque"
+
+#: subiquity/ui/views/raid.py:81
+msgid "RAID CONFIGURATION"
+msgstr "Configuration RAID"
+
+#: subiquity/ui/views/raid.py:84
+msgid "RAID Level"
+msgstr "Niveau de RAID"
+
+#: subiquity/ui/views/raid.py:93
+msgid "Hot spares"
+msgstr "Disque de rechanges à chaud (hot spares)"
+
+#: subiquity/ui/views/raid.py:103
+msgid "Chunk size"
+msgstr "Taille des blocs"
+
+#: subiquity/models/network.py:104
+msgid "No IPv4 configuration"
+msgstr "Pas de configuration IPv4"
+
+#: subiquity/models/installpath.py:37
+msgid "Install Ubuntu"
+msgstr "Installer Ubuntu"
+
+#: subiquity/models/network.py:222
+msgid "Network main view"
+msgstr "Page principale du réseau"
+
+#: subiquity/models/network.py:225
+msgid "Network finish"
+msgstr "Fin de la configuration réseau"
+
+#: subiquity/models/network.py:228
+msgid "Network configure interface"
+msgstr "Configurer l'interface réseau"
+
+#: subiquity/models/network.py:231
+msgid "Network configure ipv4 interface"
+msgstr "Configurer l'interface réseau en IPv4"
+
+#: subiquity/models/network.py:237
+msgid "Set default route"
+msgstr "Définir la route par défaut"
+
+#: subiquity/models/network.py:240
+msgid "Bond interfaces"
+msgstr "Agrégation d'interfaces"
+
+#: subiquity/ui/views/network.py:130
+msgid "Default route is "
+msgstr "La route par défaut est "
+
+#: subiquity/ui/views/network.py:131
+msgid "whatever DHCP provides on any interface"
+msgstr "ce que le DHCP a indiqué sur une quelconque interface"

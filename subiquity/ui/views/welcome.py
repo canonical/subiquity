@@ -43,7 +43,7 @@ class WelcomeView(ViewPolicy):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button(cancel_btn(on_press=self.cancel),
+            Color.button(cancel_btn(label=_("Cancel"),on_press=self.cancel),
                          focus_map='button focus'),
         ]
         return Pile(self.buttons)

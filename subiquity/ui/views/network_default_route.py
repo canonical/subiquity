@@ -29,7 +29,7 @@ class NetworkSetDefaultRouteView(ViewPolicy):
         self.signal = signal
         self.default_gateway_w = None
         body = [
-            Padding.center_79(Text("Please set the default gateway:")),
+            Padding.center_79(Text(_("Please set the default gateway:"))),
             Padding.line_break(""),
             Padding.center_79(self._build_default_routes()),
             Padding.line_break(""),
@@ -81,8 +81,8 @@ class NetworkSetDefaultRouteView(ViewPolicy):
         return self.pile
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),

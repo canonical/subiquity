@@ -42,7 +42,7 @@ class CephDiskView(ViewPolicy):
         items = [
             Columns(
                 [
-                    ("weight", 0.2, Text("Ceph MON", align="right")),
+                    ("weight", 0.2, Text(_("Ceph MON"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.ceph_mon,
                                         focus_map="string_input focus"))
@@ -51,7 +51,7 @@ class CephDiskView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Username",
+                    ("weight", 0.2, Text(_("Username"),
                                          align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.username,
@@ -61,7 +61,7 @@ class CephDiskView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Key", align="right")),
+                    ("weight", 0.2, Text(_("Key"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.ceph_key,
                                         focus_map="string_input focus"))
@@ -72,8 +72,8 @@ class CephDiskView(ViewPolicy):
         return Pile(items)
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),

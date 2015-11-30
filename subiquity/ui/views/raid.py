@@ -45,7 +45,7 @@ class RaidView(ViewPolicy):
     def _build_disk_selection(self):
         log.debug('raid: _build_disk_selection')
         items = [
-            Text("DISK SELECTION")
+            Text(_("DISK SELECTION"))
         ]
 
         # raid can use empty whole disks, or empty partitions
@@ -54,7 +54,7 @@ class RaidView(ViewPolicy):
         avail_devs = sorted(avail_disks + avail_parts)
         if len(avail_devs) == 0:
             return items.append(
-                [Color.info_minor(Text("No available disks."))])
+                [Color.info_minor(Text(_("No available disks.")))])
 
         for dname in avail_devs:
             device = self.model.get_disk(dname)
@@ -78,10 +78,10 @@ class RaidView(ViewPolicy):
     def _build_raid_configuration(self):
         log.debug('raid: _build_raid_config')
         items = [
-            Text("RAID CONFIGURATION"),
+            Text(_("RAID CONFIGURATION")),
             Columns(
                 [
-                    ("weight", 0.2, Text("RAID Level", align="right")),
+                    ("weight", 0.2, Text(_("RAID Level"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(Pile(self.raid_level.group),
                                         focus_map="string_input focus"))
@@ -90,7 +90,7 @@ class RaidView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Hot spares",
+                    ("weight", 0.2, Text(_("Hot spares"),
                                          align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.hot_spares,
@@ -100,7 +100,7 @@ class RaidView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Chunk size", align="right")),
+                    ("weight", 0.2, Text(_("Chunk size"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.chunk_size,
                                         focus_map="string_input focus"))
@@ -112,8 +112,8 @@ class RaidView(ViewPolicy):
 
     def _build_buttons(self):
         log.debug('raid: _build_buttons')
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),

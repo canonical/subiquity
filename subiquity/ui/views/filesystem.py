@@ -35,8 +35,8 @@ from subiquity.models.filesystem import (_humanize_size,
                                          HUMAN_UNITS)
 from subiquity.view import ViewPolicy
 
-INVALID_PARTITION_SIZE = 'Invalid Partition Size'
-PARTITION_SIZE_TOO_BIG = 'Requested size too big'
+INVALID_PARTITION_SIZE = _('Invalid Partition Size')
+PARTITION_SIZE_TOO_BIG = _('Requested size too big')
 PARTITION_ERRORS = [
     INVALID_PARTITION_SIZE,
     PARTITION_SIZE_TOO_BIG,
@@ -60,7 +60,7 @@ class DiskInfoView(ViewPolicy):
         super().__init__(Padding.center_79(SimpleList(body)))
 
     def _build_buttons(self):
-        done = done_btn(on_press=self.done)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),
@@ -108,8 +108,8 @@ class AddFormatView(ViewPolicy):
         super().__init__(format_box)
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),
@@ -124,7 +124,7 @@ class AddFormatView(ViewPolicy):
         total_items = [
             Columns(
                 [
-                    ("weight", 0.2, Text("Format", align="right")),
+                    ("weight", 0.2, Text(_("Format"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self._format_edit(),
                                         focus_map="string_input focus"))
@@ -132,7 +132,7 @@ class AddFormatView(ViewPolicy):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Mount", align="right")),
+                    ("weight", 0.2, Text(_("Mount"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.mountpoint,
                                         focus_map="string_input focs"))
@@ -192,7 +192,7 @@ class AddPartitionView(ViewPolicy):
         body = [
             Columns(
                 [
-                    ("weight", 0.2, Text("Adding partition to {}".format(
+                    ("weight", 0.2, Text(_("Adding partition to {}").format(
                         self.disk_obj.devpath), align="right")),
                     ("weight", 0.3, Text(""))
                 ]
@@ -206,8 +206,8 @@ class AddPartitionView(ViewPolicy):
         super().__init__(partition_box)
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),
@@ -222,7 +222,7 @@ class AddPartitionView(ViewPolicy):
         total_items = [
             Columns(
                 [
-                    ("weight", 0.2, Text("Partition number", align="right")),
+                    ("weight", 0.2, Text(_("Partition number"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.partnum,
                                         focus_map="string_input focus"))
@@ -231,7 +231,7 @@ class AddPartitionView(ViewPolicy):
             Columns(
                 [
                     ("weight", 0.2,
-                     Text("Size (max {})".format(self.size_str),
+                     Text(_("Size (max {})").format(self.size_str),
                           align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.size,
@@ -368,8 +368,8 @@ class DiskPartitionView(ViewPolicy):
         super().__init__(ListBox(self.body))
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),
@@ -382,7 +382,7 @@ class DiskPartitionView(ViewPolicy):
 
         for mnt, size, fstype, path in self.disk_obj.get_fs_table():
             mnt = Text(mnt)
-            size = Text("{}".format(_humanize_size(size)))
+            size = Text(_("{}").format(_humanize_size(size)))
             fstype = Text(fstype) if fstype else '-'
             path = Text(path) if path else '-'
             partition_column = Columns([
@@ -479,10 +479,10 @@ class FilesystemView(ViewPolicy):
         self.items = []
         self.model.probe_storage()  # probe before we complete
         self.body = [
-            Padding.center_79(Text("FILE SYSTEM")),
+            Padding.center_79(Text(_("FILE SYSTEM"))),
             Padding.center_79(self._build_partition_list()),
             Padding.line_break(""),
-            Padding.center_79(Text("AVAILABLE DISKS")),
+            Padding.center_79(Text(_("AVAILABLE DISKS"))),
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.center_79(self._build_menu()),
@@ -501,7 +501,7 @@ class FilesystemView(ViewPolicy):
             pl.append(Text(disk))
         if len(pl):
             return Pile(
-                [Text("USED DISKS"),
+                [Text(_("USED DISKS")),
                  Padding.line_break("")] + pl +
                 [Padding.line_break("")]
             )
@@ -515,14 +515,14 @@ class FilesystemView(ViewPolicy):
         nr_fs = len(self.model.get_filesystems())
         if nr_parts == 0 and nr_fs == 0:
             pl.append(Color.info_minor(
-                Text("No disks or partitions mounted")))
+                Text(_("No disks or partitions mounted"))))
             log.debug('FileSystemView: no partitions')
             return Pile(pl)
         log.debug('FileSystemView: weve got partitions!')
         for dev in self.model.devices.values():
             for mnt, size, fstype, path in dev.get_fs_table():
                 mnt = Text(mnt)
-                size = Text("{}".format(_humanize_size(size)))
+                size = Text(_("{}").format(_humanize_size(size)))
                 fstype = Text(fstype) if fstype else '-'
                 path = Text(path) if path else '-'
                 partition_column = Columns([
@@ -542,12 +542,12 @@ class FilesystemView(ViewPolicy):
         # don't enable done botton if we can't install
         if self.model.installable():
             buttons.append(
-                Color.button(done_btn(on_press=self.done),
+                Color.button(done_btn(label=_("Done"), on_press=self.done),
                              focus_map='button focus'))
 
-        buttons.append(Color.button(reset_btn(on_press=self.reset),
+        buttons.append(Color.button(reset_btn(label=_("Reset"), on_press=self.reset),
                                     focus_map='button focus'))
-        buttons.append(Color.button(cancel_btn(on_press=self.cancel),
+        buttons.append(Color.button(cancel_btn(label=_("Cancel"), on_press=self.cancel),
                                     focus_map='button focus'))
 
         return Pile(buttons)
@@ -568,7 +568,7 @@ class FilesystemView(ViewPolicy):
 
         avail_disks = self.model.get_available_disk_names()
         if len(avail_disks) == 0:
-            return Pile([Color.info_minor(Text("No available disks."))])
+            return Pile([Color.info_minor(Text(_("No available disks.")))])
 
         for dname in avail_disks:
             disk = self.model.get_disk_info(dname)

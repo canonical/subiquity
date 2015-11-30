@@ -82,11 +82,11 @@ class NetworkConfigureInterfaceView(ViewPolicy):
         #btn = menu_btn(label=text,
         #                  on_press=self.show_ipv6_configuration)
         #mb = Color.menu_button(btn, focus_map="menu_button focus")
-        mb = Color.info_minor(Text("  " + text))
+        mb = Color.info_minor(Text(_("  ") + text))
         return Pile([mb])
 
     def _build_buttons(self):
-        done = done_btn(on_press=self.done)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),

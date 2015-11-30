@@ -49,8 +49,8 @@ class NetworkView(ViewPolicy):
         super().__init__(ListBox(self.body))
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),
@@ -108,7 +108,7 @@ class NetworkView(ViewPolicy):
             if ipv4_status['provider']:
                 ipv4_template += 'from {provider} '.format(**ipv4_status)
             col_2.append(Text(ipv4_template))
-            col_2.append(Text("No IPv6 connection"))  # vert. holder for ipv6
+            col_2.append(Text(_("No IPv6 connection")))  # vert. holder for ipv6
 
         if len(col_2):
             col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
@@ -117,7 +117,7 @@ class NetworkView(ViewPolicy):
             if ifname_width > 14:
                 ifname_width = 14
         else:
-            col_2 = Pile([Text("No network interfaces detected.")])
+            col_2 = Pile([Text(_("No network interfaces detected."))])
 
         return Columns([(ifname_width, col_1), col_2], 2)
 

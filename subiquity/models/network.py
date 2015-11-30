@@ -101,7 +101,7 @@ class Networkdev():
             ip from the static element of the subnets attribute.
         '''
         log.debug('getting ip info on {}'.format(self.ifname))
-        ip = 'No IPv4 configuration'
+        ip = _("No IPv4 configuration")
         ip_method = None
         ip_provider = None
 
@@ -219,28 +219,28 @@ class NetworkModel(ModelPolicy):
     """
     base_signal = 'menu:network:main'
     signals = [
-        ('Network main view',
+        (_('Network main view'),
          base_signal,
          'network'),
-        ('Network finish',
+        (_('Network finish'),
          'network:finish',
          'network_finish'),
-        ('Network configure interface',
+        (_('Network configure interface'),
          base_signal + ':configure-interface',
          'network_configure_interface'),
-        ('Network configure ipv4 interface',
+        (_('Network configure ipv4 interface'),
          base_signal + ':configure-ipv4-interface',
          'network_configure_ipv4_interface')
     ]
 
     additional_options = [
-        ('Set default route',
+        (_('Set default route'),
          base_signal + ':set-default-route',
          'set_default_route'),
-        ('Bond interfaces',
+        (_('Bond interfaces'),
          base_signal + ':bond-interfaces',
          'bond_interfaces'),
-        # ('Install network driver',
+        # (_('Install network driver'),
         #  'network:install-network-driver',
         #  'install_network_driver')
     ]

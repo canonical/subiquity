@@ -42,8 +42,8 @@ class HostnameView(ViewPolicy):
         super().__init__(ListBox(body))
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        done = done_btn(label=_("Done"), on_press=self.done)
 
         buttons = [
             Color.button(done, focus_map='button focus'),
@@ -55,7 +55,7 @@ class HostnameView(ViewPolicy):
         sl = [
             Columns(
                 [
-                    ("weight", 0.2, Text("Hostname", align="right")),
+                    ("weight", 0.2, Text(_("Hostname"), align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.hostname,
                                         focus_map="string_input focus"))

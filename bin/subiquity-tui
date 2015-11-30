@@ -27,7 +27,6 @@ from subiquity.core import CoreControllerError
 from subiquity.ui.frame import SubiquityUI
 from subiquity.utils import environment_check
 
-
 def parse_options(argv):
     parser = argparse.ArgumentParser(
     description=_('SUbiquity - Ubiquity for Servers'),

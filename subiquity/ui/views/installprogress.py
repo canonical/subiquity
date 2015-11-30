@@ -30,7 +30,7 @@ class ProgressView(ViewPolicy):
         """
         self.model = model
         self.signal = signal
-        self.text = Text("Wait for it ...", align="center")
+        self.text = Text(_("Wait for it ..."), align="center")
         self.body = [
             Padding.center_79(self.text),
             Padding.line_break(""),
