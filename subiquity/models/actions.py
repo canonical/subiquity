@@ -188,6 +188,79 @@ class RaidAction(DiskAction):
         return action
 
 
+class LVMVolGroupAction(DiskAction):
+    def __init__(self, action_id, volgroup, dev_ids):
+        self._action_id = action_id
+        self.parent = None
+        self._volgroup = volgroup
+        self._devices = dev_ids
+        self._type = 'lvm_volgroup'
+
+    __hash__ = None
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self._volgroup == other._volgroup and
+                    self._devices == other._devices and
+                    self._type == other._type)
+        else:
+            return False
+
+    def get(self):
+        action = {
+            'devices': self._devices,
+            'id': self.action_id,
+            'name': self._volgroup,
+            'type': self._type,
+        }
+        return action
+
+    @property
+    def volgroup(self):
+        return self._volgroup
+
+
+class LVMPartitionAction(DiskAction):
+    def __init__(self, parent, lvpartition, size):
+        self.parent = parent,
+        self._lvpartition = lvpartition
+        self._size = size
+        self._type = 'lvm_partition'
+        self._action_id = "{}_{}_part".format(self.parent.action_id,
+                                              self._lvpartition)
+
+    __hash__ = None
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return (self._action_id == other._action_id and
+                    self.parent == other.parent and
+                    self._lvmpartition == other._lvmpartition and
+                    self._devices == other._devices and
+                    self._type == other._type)
+        else:
+            return False
+
+    def get(self):
+        action = {
+            'id': self.action_id,
+            'name': self._lvpartition,
+            'type': self._type,
+            'volgroup': self.parent.action_id,
+        }
+        return action
+
+    @property
+    def lvpartition(self):
+        return self._lvpartition
+
+    @property
+    def size(self):
+        return self._size
+
+
 class PartitionAction(DiskAction):
     def __init__(self, parent, partnum, offset, size, flags=None):
         self.parent = parent
