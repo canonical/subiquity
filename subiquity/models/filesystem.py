@@ -540,15 +540,16 @@ class FilesystemModel(ModelPolicy):
         """ format spec
 
         {
-          'format' Str(ext4|btrfs..,
+          'fstype' Str(ext4|btrfs..,
           'mountpoint': Str
         }
         """
+        log.debug('valid_mount: spec: {}'.format(format_spec))
         # if user is not formatting, ignore mountpoint
-        fmt = format_spec.get('format')
+        fmt = format_spec.get('fstype')
         if fmt in ['leave unformatted']:
             format_spec['mountpoint'] = None
-            return
+            return True
 
         mountpoint = format_spec.get('mountpoint')
         if not mountpoint:
