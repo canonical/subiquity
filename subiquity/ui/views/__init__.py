@@ -22,6 +22,7 @@ from .bcache import BcacheView  # NOQA
 from .raid import RaidView  # NOQA
 from .ceph import CephDiskView  # NOQA
 from .iscsi import IscsiDiskView  # NOQA
+from .lvm import LVMVolumeGroupView  # NOQA
 from .network import NetworkView  # NOQA
 from .network_default_route import NetworkSetDefaultRouteView  # NOQA
 from .network_configure_interface import NetworkConfigureInterfaceView  # NOQA

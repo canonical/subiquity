@@ -18,7 +18,11 @@ import logging
 import re
 from os.path import realpath
 
-from .blockdev import Blockdev, Raiddev, Bcachedev, sort_actions
+from .blockdev import (Bcachedev,
+                       Blockdev,
+                       LVMDev,
+                       Raiddev,
+                       sort_actions)
 import math
 from subiquity.model import ModelPolicy
 
@@ -85,9 +89,9 @@ class FilesystemModel(ModelPolicy):
         # ('Connect Ceph network disk',
         #  'filesystem:connect-ceph-disk',
         #  'connect_ceph_disk'),
-        # ('Create volume group (LVM2)',
-        #  'filesystem:create-volume-group',
-        #  'create_volume_group'),
+        ('Create volume group (LVM2)',
+         base_signal + ':create-volume-group',
+         'create_volume_group'),
         ('Create software RAID (MD)',
          base_signal + ':create-raid',
          'create_raid'),
@@ -137,6 +141,7 @@ class FilesystemModel(ModelPolicy):
         self.devices = {}
         self.raid_devices = {}
         self.bcache_devices = {}
+        self.lvm_devices = {}
         self.storage = {}
 
     def reset(self):
@@ -145,6 +150,7 @@ class FilesystemModel(ModelPolicy):
         self.info = {}
         self.raid_devices = {}
         self.bcache_devices = {}
+        self.lvm_devices = {}
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -342,6 +348,79 @@ class FilesystemModel(ModelPolicy):
 
         log.debug('Successfully added raid_dev: {}'.format(raid_dev))
 
+    def add_lvm_volgroup(self, lvmspec):
+        log.debug('Attempting to create an LVM volgroup device')
+        '''
+        lvm_volgroup_spec = {
+            'volgroup': 'my_volgroup_name',
+            'devices': ['/dev/sdb     1.819T, HDS5C3020ALA632']
+        }
+        '''
+        lvm_devices = []
+        # extract just the device name for disks in this volgroup
+        all_devices = [r.split() for r in lvmspec.get('devices', [])]
+
+        # XXX: curtin requires a partition table on the base devices
+        # and then one partition of type lvm
+        for (devpath, *_) in all_devices:
+            disk = self.get_disk(devpath)
+
+            # add or update a partition to be raid type
+            if disk.path != devpath:  # we must have got a partition
+                pv_dev = disk.get_partition(devpath)
+                pv_dev.flags = 'lvm'
+            else:
+                disk.add_partition(1, disk.freespace, None, None, flag='lvm')
+                pv_dev = disk
+
+            lvm_devices.append(pv_dev)
+
+        # auto increment md number based in registered devices
+        lvm_shortname = lvmspec.get('volgroup')
+        lvm_dev_name = '/dev/' + lvm_shortname
+        lvm_serial = '{}_serial'.format(lvm_dev_name)
+        lvm_model = '{}_model'.format(lvm_dev_name)
+        lvm_parttype = 'gpt'
+        lvm_size = sum([pv.size for pv in lvm_devices])
+
+        # create a LVMDev (pass in only the names)
+        lvm_parts = []
+        for dev in lvm_devices:
+            dev.set_holder(lvm_dev_name)
+            dev.set_tag('member of LVM ' + lvm_shortname)
+            for num, action in dev.partitions.items():
+                lvm_parts.append(action.action_id)
+
+        log.debug('lvm_parts: {}'.format(lvm_parts))
+        lvm_dev = LVMDev(lvm_dev_name, lvm_serial, lvm_model,
+                         lvm_parttype, lvm_size,
+                         lvm_shortname, lvm_parts)
+        log.debug('{} volgroup: {} devices: {}'.format(lvm_dev.id,
+                                                       lvm_dev.volgroup,
+                                                       lvm_dev.devices))
+
+        # add it to the model's info dict
+        lvm_dev_info = {
+            'type': 'disk',
+            'name': lvm_dev_name,
+            'size': lvm_size,
+            'serial': lvm_serial,
+            'vendor': 'Linux Volume Group (LVM2)',
+            'model': lvm_model,
+            'is_virtual': True,
+            'raw': {
+                'MAJOR': '9',
+            },
+        }
+        self.info[lvm_dev_name] = AttrDict(lvm_dev_info)
+
+        # add it to the model's lvm devices
+        self.lvm_devices[lvm_dev_name] = lvm_dev
+        # add it to the model's devices
+        self.add_device(lvm_dev_name, lvm_dev)
+
+        log.debug('Successfully added lvm_dev: {}'.format(lvm_dev))
+
     def add_bcache_device(self, bcachespec):
         # assume bcachespec has already been valided in view/controller
         log.debug('Attempting to create a bcache device')
@@ -465,6 +544,12 @@ class FilesystemModel(ModelPolicy):
           'mountpoint': Str
         }
         """
+        # if user is not formatting, ignore mountpoint
+        fmt = format_spec.get('format')
+        if fmt in ['leave unformatted']:
+            format_spec['mountpoint'] = None
+            return
+
         mountpoint = format_spec.get('mountpoint')
         if not mountpoint:
             raise ValueError('Is None')

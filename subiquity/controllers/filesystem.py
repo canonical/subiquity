@@ -21,7 +21,8 @@ from subiquity.models import (FilesystemModel, RaidModel)
 from subiquity.models.filesystem import (_humanize_size)
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
                                 AddFormatView, FilesystemView,
-                                DiskInfoView, RaidView, BcacheView)
+                                DiskInfoView, RaidView, BcacheView,
+                                LVMVolumeGroupView)
 from subiquity.ui.dummy import DummyView
 from subiquity.ui.error import ErrorView
 from subiquity.curtin import (curtin_write_storage_actions,
@@ -214,7 +215,14 @@ class FilesystemController(ControllerPolicy):
         self.ui.set_body(DummyView(self.signal))
 
     def create_volume_group(self, *args, **kwargs):
-        self.ui.set_body(DummyView(self.signal))
+        title = ("Create Logical Volume Group (\"LVM2\") disk")
+        footer = ("ENTER on a disk will show detailed "
+                  "information for that disk")
+        excerpt = ("Use SPACE to select disks to form your LVM2 volume group, "
+                   "and then specify the Volume Group name. ")
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer)
+        self.ui.set_body(LVMVolumeGroupView(self.model, self.signal))
 
     def create_raid(self, *args, **kwargs):
         title = ("Create software RAID (\"MD\") disk")

@@ -24,6 +24,7 @@ from .actions import (
     DiskAction,
     PartitionAction,
     FormatAction,
+    LVMVolGroupAction,
     MountAction,
     RaidAction,
 )
@@ -440,6 +441,25 @@ class Raiddev(Blockdev):
                                      self._spare_devices)
 
 
+class LVMDev(Blockdev):
+    def __init__(self, devpath, serial, model, parttype, size,
+                 volgroup, devices):
+        super().__init__(devpath, serial, model, parttype, size)
+        self._volgroup = volgroup
+        self._devices = devices
+        self.baseaction = (
+            LVMVolGroupAction(os.path.basename(self.disk.devpath),
+                              self._volgroup, self._devices))
+
+    @property
+    def volgroup(self):
+        return self.baseaction.volgroup
+
+    @property
+    def devices(self):
+        return self.baseaction.devices
+
+
 class Bcachedev(Blockdev):
     def __init__(self, devpath, serial, model, parttype, size,
                  backing_device, cache_device):
@@ -461,7 +481,8 @@ class Bcachedev(Blockdev):
 
 def sort_actions(actions):
     def type_index(t):
-        order = ['disk', 'partition', 'raid', 'bcache', 'format', 'mount']
+        order = ['disk', 'partition', 'raid', 'bcache', 'lvm_volgroup',
+                 'lvm_partition', 'format', 'mount']
         return order.index(t.get('type'))
 
     def path_count(p):

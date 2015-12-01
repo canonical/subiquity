@@ -221,6 +221,10 @@ class LVMVolGroupAction(DiskAction):
     def volgroup(self):
         return self._volgroup
 
+    @property
+    def devices(self):
+        return self._devices
+
 
 class LVMPartitionAction(DiskAction):
     def __init__(self, parent, lvpartition, size):
