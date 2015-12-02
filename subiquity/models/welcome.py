@@ -33,22 +33,39 @@ class WelcomeModel(ModelPolicy):
          'welcome')
     ]
 
-    supported_languages = []
+    supported_languages = { 
+                            'French': ('fr','Français'),
+                            'English': ('en','English'),
+                            'Spanish': ('es','Español'),
+                            'Chinese (Simplified)': ('zh','中文(简体)'),
+                            'Portuguese': ('pt','Português'),
+                            'German': ('de','Deutsch'),
+                            'Italian': ('it','Italiano'),
+                            'Russian': ('ru','Русский'),
+                            'Additional': ('other','languages'),
+    }
 
     selected_language = None
+
+#    def __init__(self):
+#        self._build_language_list()
+
+    def _read_language_datafile(self):
+       return [l.strip('\n') for l in gzip.open('locale/languagelist.data.gz', 'rt')]
+
+    def full_language_list(self):
+        for lang in self._read_language_datafile():
+            num, shortname, langname, displayname = lang.split(':') 
+            self.supported_languages[langname] = (shortname, displayname)
+#        self.supported_languages = [ "{} [{}]".format(l.split(":")[2],l.split(":")[3]) 
+#                                     for l in self._read_language_datafile()]
 
     def get_signals(self):
         return self.signals
 
     def get_menu(self):
-        filelist = gzip.open('locale/languagelist.data.gz','rt')
-        languageList = []
-        for lang in filelist:
-            lang = lang.strip('\n')
-            self.supported_languages.append(lang)
-            lang = lang.split(':')
-            languageList.append(lang[2] + ' [' + lang[3] + ']')
-        return languageList
+        return [ "{}-[{}]".format(key, value[1]) 
+                 for key, value in sorted(self.supported_languages.items()) ]
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_menu():
@@ -56,20 +73,20 @@ class WelcomeModel(ModelPolicy):
                 return y
 
     def set_language(self, language):
-        shortLanguage = language.split(' ')[0]
-        self.selected_lanquage = shortLanguage
-        log.info("Selected language: {}".format(shortLanguage))
+        shortLanguage = language.split('-')[0]
+        self.selected_language = { shortLanguage: self.supported_languages[shortLanguage] }
         if shortLanguage is "C":
             language = gettext.translation(domain='subiquity', languages=['en'], 
                                            fallback=True)
             language.install()
+            log.info('welcome: No localization')
         else:
-            for trans in self.supported_languages:
-                trans = trans.split(":")
-                if trans[2] == shortLanguage:
-                    language = gettext.translation(domain='subiquity', languages=[trans[1]], 
+            for trans, value in self.supported_languages.items():
+                if trans == shortLanguage:
+                    language = gettext.translation(domain='subiquity', languages=[value[0]], 
                                                    fallback=True)
                     language.install()
+                    log.info('welcome: chosen loacalization: {}'.format(self.selected_language))
                     break
 
     def get_language(self):

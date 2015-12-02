@@ -32,24 +32,30 @@ class InstallpathModel(ModelPolicy):
          'installpath')
     ]
 
-    # TODO: Re-enable once available
-    install_paths = [
-        (_("Install Ubuntu"),
-         'installpath:install-ubuntu',
-         'install_ubuntu'),
-        # (_("Install MAAS Region Server"),
-        #  'installpath:maas-region-server',
-        #  'install_maas_region_server'),
-        # _("Install MAAS Cluster Server"),
-        #  'installpath:maas-cluster-server',
-        #  'install_maas_cluster_server'),
-        # _("Test installation media"),
-        #  'installpath:test-media',
-        #  'test_media'),
-        # _("Test machine memory"),
-        #  'installpath:test-memory',
-        #  'test_memory')
-    ]
+    install_paths = []
+
+    def __init__(self):
+        self._refresh_install_path()
+
+    def _refresh_install_path(self):
+        # TODO: Re-enable once available
+        self.install_paths = [
+            (_("Install Ubuntu"),
+             'installpath:install-ubuntu',
+             'install_ubuntu'),
+            # (_("Install MAAS Region Server"),
+            #  'installpath:maas-region-server',
+            #  'install_maas_region_server'),
+            # _("Install MAAS Cluster Server"),
+            #  'installpath:maas-cluster-server',
+            #  'install_maas_cluster_server'),
+            # _("Test installation media"),
+            #  'installpath:test-media',
+            #  'test_media'),
+            # _("Test machine memory"),
+            #  'installpath:test-memory',
+            #  'test_memory')
+        ]
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -60,4 +66,5 @@ class InstallpathModel(ModelPolicy):
         return self.signals + self.install_paths
 
     def get_menu(self):
+        self._refresh_install_path()
         return self.install_paths

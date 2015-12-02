@@ -58,9 +58,14 @@ class WelcomeView(ViewPolicy):
                           height=len(sl))
 
     def confirm(self, result):
-        self.model.set_language(result.label)
-        log.debug('calling installpath')
-        self.signal.emit_signal('menu:installpath:main')
+        if result.label.split('-')[0] == 'Additional':
+            self.model.full_language_list()
+            log.debug('refreshing with full list')
+            self.signal.emit_signal('menu:welcome:main')
+        else:
+            self.model.set_language(result.label)
+            log.debug('calling installpath')
+            self.signal.emit_signal('menu:installpath:main')
 
     def cancel(self, button):
         raise SystemExit("No language selected, exiting as there are no "

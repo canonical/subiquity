@@ -218,32 +218,7 @@ class NetworkModel(ModelPolicy):
     """ Model representing network interfaces
     """
     base_signal = 'menu:network:main'
-    signals = [
-        (_('Network main view'),
-         base_signal,
-         'network'),
-        (_('Network finish'),
-         'network:finish',
-         'network_finish'),
-        (_('Network configure interface'),
-         base_signal + ':configure-interface',
-         'network_configure_interface'),
-        (_('Network configure ipv4 interface'),
-         base_signal + ':configure-ipv4-interface',
-         'network_configure_ipv4_interface')
-    ]
 
-    additional_options = [
-        (_('Set default route'),
-         base_signal + ':set-default-route',
-         'set_default_route'),
-        (_('Bond interfaces'),
-         base_signal + ':bond-interfaces',
-         'bond_interfaces'),
-        # (_('Install network driver'),
-        #  'network:install-network-driver',
-        #  'install_network_driver')
-    ]
 
     # TODO: what is "linear" level?
     bonding_modes = {
@@ -256,6 +231,9 @@ class NetworkModel(ModelPolicy):
         6: 'balance-alb',
     }
 
+    signals = []
+    additional_options = []
+
     def __init__(self, prober, opts):
         self.opts = opts
         self.prober = prober
@@ -263,6 +241,34 @@ class NetworkModel(ModelPolicy):
         self.devices = {}
         self.network = {}
         self.default_gateway = None
+        self._refresh_labels()
+
+    def _refresh_labels(self):
+        self.signals = [
+            (_('Network main view'),
+             self.base_signal,
+             'network'),
+            (_('Network finish'),
+             'network:finish',
+             'network_finish'),
+            (_('Network configure interface'),
+             self.base_signal + ':configure-interface',
+             'network_configure_interface'),
+            (_('Network configure ipv4 interface'),
+             self.base_signal + ':configure-ipv4-interface',
+             'network_configure_ipv4_interface')
+        ]
+        self.additional_options = [
+            (_('Set default route'),
+             self.base_signal + ':set-default-route',
+             'set_default_route'),
+            (_('Bond interfaces'),
+             self.base_signal + ':bond-interfaces',
+             'bond_interfaces'),
+            # (_('Install network driver'),
+            #  'network:install-network-driver',
+            #  'install_network_driver')
+        ]
 
     def reset(self):
         log.debug('resetting network model')
@@ -279,6 +285,7 @@ class NetworkModel(ModelPolicy):
         return self.signals + self.additional_options
 
     def get_menu(self):
+        self._refresh_labels()
         return self.additional_options
 
     # --- Model Methods ----

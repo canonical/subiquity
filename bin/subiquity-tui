@@ -51,7 +51,7 @@ def control_c_handler(signum, frame):
 
 
 def main():
-    language = gettext.translation(domain='subiquity', localedir='/home/kick/work/subiquity/locale', 
+    language = gettext.translation(domain='subiquity', 
                                    languages=[os.environ['LANGUAGE']],fallback=True)
     language.install()
     opts = parse_options(sys.argv[1:])
