@@ -143,6 +143,8 @@ class FilesystemModel(ModelPolicy):
         self.bcache_devices = {}
         self.lvm_devices = {}
         self.storage = {}
+        self.holders = {}
+        self.tags = {}
 
     def reset(self):
         log.debug('FilesystemModel: resetting disks')
@@ -151,6 +153,8 @@ class FilesystemModel(ModelPolicy):
         self.raid_devices = {}
         self.bcache_devices = {}
         self.lvm_devices = {}
+        self.holders = {}
+        self.tags = {}
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -203,7 +207,9 @@ class FilesystemModel(ModelPolicy):
 
     def get_available_disks(self):
         ''' currently only returns available disks '''
-        disks = [d for d in self.get_all_disks() if d.available]
+        disks = [d for d in self.get_all_disks()
+                 if (d.available and
+                     len(self.get_holders(d.devpath)) == 0)]
         log.debug('get_available_disks -> {}'.format(
                   ",".join([d.devpath for d in disks])))
         return disks
@@ -309,14 +315,14 @@ class FilesystemModel(ModelPolicy):
         # create a Raiddev (pass in only the names)
         raid_parts = []
         for dev in raid_devices:
-            dev.set_holder(raid_dev_name)
-            dev.set_tag('member of MD ' + raid_shortname)
+            self.set_holder(dev.devpath, raid_dev_name)
+            self.set_tag(dev.devpath, 'member of MD ' + raid_shortname)
             for num, action in dev.partitions.items():
                 raid_parts.append(action.action_id)
         spare_parts = []
         for dev in spare_devices:
-            dev.set_holder(raid_dev_name)
-            dev.set_tag('member of MD ' + raid_shortname)
+            self.set_holder(dev.devpath, raid_dev_name)
+            self.set_tag(dev.devpath, 'member of MD ' + raid_shortname)
             for num, action in dev.partitions.items():
                 spare_parts.append(action.action_id)
 
@@ -356,7 +362,13 @@ class FilesystemModel(ModelPolicy):
             'devices': ['/dev/sdb     1.819T, HDS5C3020ALA632']
         }
         '''
+        lvm_shortname = lvmspec.get('volgroup')
+        lvm_dev_name = '/dev/' + lvm_shortname
+        lvm_serial = '{}_serial'.format(lvm_dev_name)
+        lvm_model = '{}_model'.format(lvm_dev_name)
+        lvm_parttype = 'gpt'
         lvm_devices = []
+
         # extract just the device name for disks in this volgroup
         all_devices = [r.split() for r in lvmspec.get('devices', [])]
 
@@ -364,6 +376,9 @@ class FilesystemModel(ModelPolicy):
         # and then one partition of type lvm
         for (devpath, *_) in all_devices:
             disk = self.get_disk(devpath)
+
+            self.set_holder(devpath, lvm_dev_name)
+            self.set_tag(devpath, 'member of LVM ' + lvm_shortname)
 
             # add or update a partition to be raid type
             if disk.path != devpath:  # we must have got a partition
@@ -375,26 +390,13 @@ class FilesystemModel(ModelPolicy):
 
             lvm_devices.append(pv_dev)
 
-        # auto increment md number based in registered devices
-        lvm_shortname = lvmspec.get('volgroup')
-        lvm_dev_name = '/dev/' + lvm_shortname
-        lvm_serial = '{}_serial'.format(lvm_dev_name)
-        lvm_model = '{}_model'.format(lvm_dev_name)
-        lvm_parttype = 'gpt'
         lvm_size = sum([pv.size for pv in lvm_devices])
+        lvm_device_names = [pv.id for pv in lvm_devices]
 
-        # create a LVMDev (pass in only the names)
-        lvm_parts = []
-        for dev in lvm_devices:
-            dev.set_holder(lvm_dev_name)
-            dev.set_tag('member of LVM ' + lvm_shortname)
-            for num, action in dev.partitions.items():
-                lvm_parts.append(action.action_id)
-
-        log.debug('lvm_parts: {}'.format(lvm_parts))
+        log.debug('lvm_devices: {}'.format(lvm_device_names))
         lvm_dev = LVMDev(lvm_dev_name, lvm_serial, lvm_model,
                          lvm_parttype, lvm_size,
-                         lvm_shortname, lvm_parts)
+                         lvm_shortname, lvm_device_names)
         log.debug('{} volgroup: {} devices: {}'.format(lvm_dev.id,
                                                        lvm_dev.volgroup,
                                                        lvm_dev.devices))
@@ -448,17 +450,18 @@ class FilesystemModel(ModelPolicy):
                                backing_device.devpath, cache_device.devpath)
 
         # mark bcache holders
-        backing_device.set_holder(bcache_dev_name)
-        cache_device.set_holder(bcache_dev_name)
+        self.set_holder(backing_device.devpath, bcache_dev_name)
+        self.set_holder(cache_device.devpath, bcache_dev_name)
 
         # tag device use
-        backing_device.set_tag('backing store for ' + bcache_shortname)
-        cache_tag = cache_device.tag
+        self.set_tag(backing_device.devpath,
+                     'backing store for ' + bcache_shortname)
+        cache_tag = self.get_tag(cache_device.devpath)
         if len(cache_tag) > 0:
             cache_tag += ", " + bcache_shortname
         else:
             cache_tag = "cache for " + bcache_shortname
-        cache_device.set_tag(cache_tag)
+        self.set_tag(cache_device.devpath, cache_tag)
 
         # add it to the model's info dict
         bcache_dev_info = {
@@ -535,6 +538,28 @@ class FilesystemModel(ModelPolicy):
 
         log.debug('bootable check: no disks have been marked bootable')
         return False
+
+    def set_holder(self, held_device, holder_devpath):
+        ''' insert a hold on `held_device' by adding `holder_devpath' to
+            a list at self.holders[`held_device']
+        '''
+        if held_device not in self.holders:
+            self.holders[held_device] = [holder_devpath]
+        else:
+            self.holders[held_device].append(holder_devpath)
+
+    def clear_holder(self, held_device, holder_devpath):
+        if held_device in self.holders:
+            self.holders[held_device].remove(holder_devpath)
+
+    def get_holders(self, held_device):
+        return self.holders.get(held_device, [])
+
+    def set_tag(self, device, tag):
+        self.tags[device] = tag
+
+    def get_tag(self, device):
+        return self.tags.get(device, '')
 
     def valid_mount(self, format_spec):
         """ format spec

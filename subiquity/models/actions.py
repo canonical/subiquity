@@ -126,6 +126,10 @@ class DiskAction():
         return str(self._action_id)
 
     @property
+    def id(self):
+        return self.action_id
+
+    @property
     def type(self):
         return self._type
 
