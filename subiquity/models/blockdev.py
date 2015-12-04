@@ -510,7 +510,7 @@ if __name__ == '__main__':
         print("USED DISKS")
 
     devices = []
-    #Blockdev(devpath, serial, model, parttype='gpt'):
+    # Blockdev(devpath, serial, model, parttype='gpt'):
     GB = 1 << 30
     sda = Blockdev('/dev/sda', 'QM_TARGET_01', 'QEMU SSD DISK',
                    parttype='gpt', size=128 * GB)

@@ -405,6 +405,43 @@ generate_seed() {
     return 0
 }
 
+disable_daemons_in_root() {
+    local target=${1};
+    [ -z "${target}" ] && {
+        log "ERROR: $FUNCNAME was not passed a target"
+        return 1;
+    }
+
+    log "Disabling deamons in target"
+    fpath="${target}/usr/sbin/policy-rc.d"
+    sudo tee $fpath << EOF
+#!/bin/sh
+# see invoke-rc.d for exit codes. 101 is "do not run"
+while true; do
+   case "\$1" in
+      -*) shift;;
+      makedev|x11-common) exit 0;;
+      *) exit 101;;
+   esac
+done
+EOF
+    sudo chmod 0755 $fpath
+    return 0
+}
+
+undisable_daemons_in_root() {
+    local target=${1};
+    [ -z "${target}" ] && {
+        log "ERROR: $FUNCNAME was not passed a target"
+        return 1;
+    }
+
+    log "Enabling daemons in target"
+    fpath="${target}/usr/sbin/policy-rc.d"
+    sudo rm -f $fpath
+    return 0
+}
+
 generate_img() {
     _RETVAL=""
     [ $# -lt 3 ] && {
@@ -503,7 +540,7 @@ generate_img() {
      sudo rsync ${RSYNC_OPTS} /usr/lib/grub/x86_64-efi/ ${efimnt}/grub/x86_64-efi/ &&
      sudo grub-mkimage -O x86_64-efi -p /grub -c ${efimnt}/grub/embed_efi.cfg -o ${efimnt}/EFI/BOOT/bootx64.efi ${GRUB_MODS} &&
      sudo grub-install --force --removable --no-floppy \
-                      --boot-directory=${efimnt}/boot $LOOPDEV &>/dev/null &&
+                      --boot-directory=${efimnt}/boot $LOOPDEV &&
      sudo cp -v ${splash} ${efimnt}/boot/grub) 2>&1 >> ${LOGFILE} || {
         log "ERROR: failed to create multiboot partition"
          return 1
@@ -511,7 +548,7 @@ generate_img() {
 
     log "Creating and syncing filesystem (original cloudimg rootfs)"
     (sudo mkfs.ext4 ${MKFS_OPTS} -L cloudimg-rootfs $ROOTFS_DEV &&
-    tune2fs -r 0 $ROOTFS_DEV &&
+    sudo tune2fs -r 0 $ROOTFS_DEV &&
     mkdir -p ${lower} &&
     sudo mount $ROOTFS_DEV ${lower} &&
     sudo rsync ${RSYNC_OPTS} ${rootfs}/ ${lower}/) 2>&1 >> ${LOGFILE} || {
@@ -522,7 +559,7 @@ generate_img() {
     log "Creating and syncing filesystem (installer overlay)"
     # mount -t overlay overlay -olowerdir=/lower,upperdir=/upper,\
     #                            workdir=/work /merged
-    OVERLAY_VERSION=( `modinfo -V overlayfs` )  # returns: kmod version XX 
+    OVERLAY_VERSION=( `modinfo -V overlayfs` )  # returns: kmod version XX
     if [ ${OVERLAY_VERSION[2]} -le 15 ]; then
         # trusty 3.13 overlayfs version 15 or older doesn't use workdir
         FS=overlayfs
@@ -531,12 +568,12 @@ generate_img() {
         # newer kernels than trusty 3.13 have workdir
         FS=overlay
         OPTS="-olowerdir=$lower,upperdir=$upper/overlay,workdir=$work"
-    fi    
+    fi
     # load the right overlay module
     if ! lsmod | grep -q ${FS}; then sudo modprobe -v $FS; fi
 
     (sudo mkfs.ext3 ${MKFS_OPTS} -L overlay-rootfs $OVERLAY_DEV
-    tune2fs -r 0 $OVERLAY_DEV &&
+    sudo tune2fs -r 0 $OVERLAY_DEV &&
     sudo mkdir -p ${work} ${upper} ${mnt} &&
     sudo mount $OVERLAY_DEV ${upper} &&
     sudo mkdir -p ${upper}/overlay ${work} &&
@@ -576,7 +613,7 @@ generate_img() {
     log "Installing curtin in rootfs"
     local curtin_debbuild="$(cd $dldir/curtin &&
                              ./tools/build-deb -us -uc || return 1)"
-    local curtin_ver=$(echo $curtin_debbuild | 
+    local curtin_ver=$(echo $curtin_debbuild |
                        awk '/building upstream version/ {print $4}' |
                        sed 's|,||g')
     # no python2 curtin
@@ -591,11 +628,23 @@ generate_img() {
            return 1;
         }
     done
+
+    # disable daemons in target
+    disable_daemons_in_root $mnt
+
+    apt_opts=" --quiet --assume-yes"
+    apt_opts="$apt_opts --option=Dpkg::Options::=--force-unsafe-io"
+    apt_opts="$apt_opts --option=Dpkg::Options::=--force-confold"
     sudo chroot ${mnt} /bin/bash -c \
-        "dpkg --install /tmp/*${curtin_ver}*.deb; apt-get -y -f install" || {
+        "dpkg --install /tmp/*${curtin_ver}*.deb;
+         export DEBIAN_FRONTEND=noninteractive;
+         apt-get ${apt_opts} -y -f install" || {
         log "ERROR: Failed to install curtin in target";
         return 1;
     }
+
+    # restore daemons in target
+    undisable_daemons_in_root $mnt
 
     log "Installing on rootfs: $packages"
     # use curtin's system-install if available
@@ -737,7 +786,7 @@ main() {
     [ -n "${CURTIN_FEATURES}" ] || {
         return 1;
     }
- 
+
     acquire_image ${DLDIR} "$STREAM" "$RELEASE" "$ARCH" "$VERSION" || {
         return 1;
     }

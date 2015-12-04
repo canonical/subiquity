@@ -40,6 +40,7 @@ class InstallProgressController(ControllerPolicy):
         self.install_log = None
 
         # state flags
+        self.install_error = False
         self.install_config = False
         self.install_spawned = False
         self.install_complete = False
@@ -59,6 +60,36 @@ class InstallProgressController(ControllerPolicy):
                   self.install_complete,
                   self.postinstall_complete))
         return (self.install_complete and self.postinstall_complete)
+
+    def curtin_tail_install_log(self):
+        if os.path.exists(self.install_log):
+            tail_cmd = ['tail', '-n', '10', self.install_log]
+            log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
+            install_tail = subprocess.check_output(tail_cmd)
+            return install_tail
+        else:
+            log.debug(('Install log not yet present:') +
+                      '{}'.format(self.install_log))
+
+        return ''
+
+    def curtin_error(self):
+        log.debug('curtin_error')
+        # just the last ten lines
+        errmsg = self.curtin_tail_install_log()[-800:].decode('utf-8')
+        # Holy Unescaping Batman!
+        errmsg = errmsg.replace("\\\'", "")
+        errmsg = errmsg.replace("\'\'", "")
+        errmsg = errmsg.replace("\\n\'\n", "\n")
+        errmsg = errmsg.replace('\\n', '\n')
+        log.error(errmsg)
+        title = ('An error occurred during installation')
+        self.ui.set_header(title, 'Please report this error in Launchpad')
+        self.progress_view.text.set_text(errmsg)
+        self.ui.set_footer("An error as occurred.", 100)
+        self.progress_view.show_finished_button()
+        log.debug('curtin_error: refreshing final error screen')
+        self.signal.emit_signal('refresh')
 
     @coroutine
     def curtin_install(self):
@@ -83,12 +114,17 @@ class InstallProgressController(ControllerPolicy):
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
         result = yield utils.run_command_async(" ".join(curtin_cmd))
+        log.debug('curtin_install: result: {}'.format(result))
         if result['status'] > 0:
             msg = ("Problem with curtin "
                    "install: {}".format(result))
             log.error(msg)
-            self.progress_view.text.set_text(msg)
-            self.loop.remove_alarm(self.alarm)
+            # stop the update and clear the screen
+            self.install_error = True
+            log.debug('curtin_install: clearing screen')
+            self.progress_view.text.set_text('')
+            self.signal.emit_signal('refresh')
+            return
         log.debug('After curtin install OK')
         self.install_complete = True
 
@@ -119,14 +155,25 @@ class InstallProgressController(ControllerPolicy):
         result = yield utils.run_command_async(" ".join(curtin_cmd))
         if result['status'] > 0:
             msg = ("Problem with curtin "
-                   "install: {}".format(result))
+                   "post-install: {}".format(result))
             log.error(msg)
-            self.progress_view.text.set_text(msg)
-            self.loop.remove_alarm(self.alarm)
+            # stop the update and clear the screen
+            self.install_error = True
+            log.debug('curtin_postinstall: clearing screen')
+            self.progress_view.text.set_text('')
+            self.signal.emit_signal('refresh')
+            return
+        log.debug('After curtin postinstall OK')
         self.postinstall_complete = True
 
     def progress_indicator(self, *args, **kwargs):
+        log.debug('progress_indicator')
+        if self.install_error:
+            log.debug('progress_indicator: error detected')
+            self.curtin_error()
+            return
         if self.is_complete:
+            log.debug('progress_indicator: complete!')
             self.progress_view.text.set_text("Finished install!")
             self.ui.set_footer("", 100)
             self.progress_view.show_finished_button()
@@ -138,16 +185,13 @@ class InstallProgressController(ControllerPolicy):
             # kick off postinstall
             self.signal.emit_signal('installprogress:curtin-postinstall')
         else:
-            if os.path.exists(self.install_log):
-                tail_cmd = ['tail', '-n', '10', self.install_log]
-                log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
-                install_tail = subprocess.check_output(tail_cmd)
-                self.progress_view.text.set_text(install_tail)
-            else:
-                log.debug(('Install log not yet present:') +
-                          '{}'.format(self.install_log))
+            log.debug('progress_indicator: looping')
+            install_tail = self.curtin_tail_install_log()
+            self.progress_view.text.set_text(install_tail)
 
-        self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
+        if not self.install_error:
+            log.debug('progress_indicator: setting alarm')
+            self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
 
     def reboot(self):
         if self.opts.dry_run:

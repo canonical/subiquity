@@ -39,8 +39,8 @@ class FilesystemController(ControllerPolicy):
     def __init__(self, common):
         super().__init__(common)
         self.model = FilesystemModel(self.prober, self.opts)
-        #self.iscsi_model = IscsiDiskModel()
-        #self.ceph_model = CephDiskModel()
+        # self.iscsi_model = IscsiDiskModel()
+        # self.ceph_model = CephDiskModel()
         self.raid_model = RaidModel()
 
     def filesystem(self, reset=False):
