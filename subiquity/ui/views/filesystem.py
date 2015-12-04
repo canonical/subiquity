@@ -504,11 +504,11 @@ class FilesystemView(ViewPolicy):
         log.debug('FileSystemView: building used disks')
         pl = []
         for disk in self.model.get_used_disk_names():
-            disk_obj = self.model.get_disk(disk)
             log.debug('used disk: {}'.format(disk))
             disk_string = disk
-            if len(disk_obj.tag):
-                disk_string += " {}".format(disk_obj.tag)
+            disk_tag = self.model.get_tag(disk)
+            if len(disk_tag):
+                disk_string += " {}".format(disk_tag)
             pl.append(Color.info_minor(Text(disk_string)))
         if len(pl):
             return Pile(
@@ -597,6 +597,13 @@ class FilesystemView(ViewPolicy):
                 free, percent = self._get_percent_free(device)
                 disk_sz = "{} ({}%) free".format(free, percent)
             col_2.append(Text(disk_sz))
+            for partname in device.available_partitions:
+                part = device.get_partition(partname)
+                btn = menu_btn(label=partname,
+                               on_press=self.show_disk_partition_view)
+                col_1.append(
+                    Color.menu_button(btn, focus_map='menu_button focus'))
+                col_2.append(Text(_humanize_size(part.size)))
 
         col_1 = BoxAdapter(SimpleList(col_1),
                            height=len(col_1))

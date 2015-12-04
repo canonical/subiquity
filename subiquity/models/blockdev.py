@@ -24,6 +24,7 @@ from .actions import (
     DiskAction,
     PartitionAction,
     FormatAction,
+    LVMVolGroupAction,
     MountAction,
     RaidAction,
 )
@@ -131,7 +132,6 @@ class Blockdev():
         self._tag = ''
         self.bcache = []
         self.lvm = []
-        self.holders = []
         self.baseaction = DiskAction(os.path.basename(self.disk.devpath),
                                      self.disk.model, self.disk.serial,
                                      self.disk.parttype)
@@ -144,7 +144,6 @@ class Blockdev():
                     self._mountactions == other._mountactions and
                     self.bcache == other.bcache and
                     self.lvm == other.lvm and
-                    self.holders == other.holders and
                     self.baseaction == other.baseaction)
         else:
             return False
@@ -165,7 +164,6 @@ class Blockdev():
         self._mountactions = {}
         self.bcache = []
         self.lvm = []
-        self.holders = []
         self.tag = ''
 
     @property
@@ -234,8 +232,7 @@ class Blockdev():
     def available(self):
         ''' return True if has free space or partitions not
             assigned, and no holders '''
-        if not self.is_mounted() and self.percent_free > 0 \
-           and len(self.holders) == 0:
+        if not self.is_mounted() and self.percent_free > 0:
             return True
         return False
 
@@ -360,14 +357,6 @@ class Blockdev():
         [partnum] = re.findall('\d+$', devpath)
         return self.disk.partitions[int(partnum)]
 
-    def set_holder(self, devpath):
-        if devpath not in self.holders:
-            self.holders.append(devpath)
-
-    def clear_holder(self, devpath):
-        if devpath in self.holder:
-            self.holders.remove(devpath)
-
     def is_mounted(self):
         with open('/proc/mounts') as pm:
             mounts = pm.read()
@@ -440,6 +429,25 @@ class Raiddev(Blockdev):
                                      self._spare_devices)
 
 
+class LVMDev(Blockdev):
+    def __init__(self, devpath, serial, model, parttype, size,
+                 volgroup, devices):
+        super().__init__(devpath, serial, model, parttype, size)
+        self._volgroup = volgroup
+        self._devices = devices
+        self.baseaction = (
+            LVMVolGroupAction(os.path.basename(self.disk.devpath),
+                              self._volgroup, self._devices))
+
+    @property
+    def volgroup(self):
+        return self.baseaction.volgroup
+
+    @property
+    def devices(self):
+        return self.baseaction.devices
+
+
 class Bcachedev(Blockdev):
     def __init__(self, devpath, serial, model, parttype, size,
                  backing_device, cache_device):
@@ -461,7 +469,8 @@ class Bcachedev(Blockdev):
 
 def sort_actions(actions):
     def type_index(t):
-        order = ['disk', 'partition', 'raid', 'bcache', 'format', 'mount']
+        order = ['disk', 'partition', 'raid', 'bcache', 'lvm_volgroup',
+                 'lvm_partition', 'format', 'mount']
         return order.index(t.get('type'))
 
     def path_count(p):
