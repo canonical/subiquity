@@ -181,7 +181,7 @@ def read_sys_net(devname, path, translate=None, enoent=None, keyerror=None):
         raise
 
 
-## FIXME: replace with passlib and update package deps
+# FIXME: replace with passlib and update package deps
 def crypt_password(passwd, algo='SHA-512'):
     # encryption algo - id pairs for crypt()
     algos = {'SHA-512': '$6$', 'SHA-256': '$5$', 'MD5': '$1$', 'DES': ''}

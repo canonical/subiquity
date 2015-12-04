@@ -79,9 +79,9 @@ class NetworkConfigureInterfaceView(ViewPolicy):
     def _build_manual_ipv6_button(self):
         text = ("Switch to manual IPv6 configuration")
         # FIXME: ipv6 testing
-        #btn = menu_btn(label=text,
+        # btn = menu_btn(label=text,
         #                  on_press=self.show_ipv6_configuration)
-        #mb = Color.menu_button(btn, focus_map="menu_button focus")
+        # mb = Color.menu_button(btn, focus_map="menu_button focus")
         mb = Color.info_minor(Text("  " + text))
         return Pile([mb])
 
