@@ -15,8 +15,8 @@
 
 import json
 import logging
+import os
 import re
-from os.path import realpath
 
 from .blockdev import (Bcachedev,
                        Blockdev,
@@ -191,6 +191,9 @@ class FilesystemModel(ModelPolicy):
         '''get disk object given path.  If provided a partition, then
          return the parent disk.  /dev/sda2 --> /dev/sda obj'''
         log.debug('probe_storage: get_disk({})'.format(disk))
+
+        if not disk.startswith('/dev/'):
+            disk = os.path.join('/dev', disk)
 
         if disk not in self.devices:
             try:
@@ -447,7 +450,7 @@ class FilesystemModel(ModelPolicy):
         # create a Bcachedev (pass in only the names)
         bcache_dev = Bcachedev(bcache_dev_name, bcache_serial, bcache_model,
                                bcache_parttype, bcache_size,
-                               backing_device.devpath, cache_device.devpath)
+                               backing_device, cache_device)
 
         # mark bcache holders
         self.set_holder(backing_device.devpath, bcache_dev_name)
@@ -591,7 +594,7 @@ class FilesystemModel(ModelPolicy):
             raise ValueError('Does not start with /')
 
         # remove redundent // and ..
-        mountpoint = realpath(mountpoint)
+        mountpoint = os.path.realpath(mountpoint)
 
         # /usr/include/linux/limits.h:PATH_MAX
         if len(mountpoint) > 4095:
@@ -652,7 +655,9 @@ class FilesystemModel(ModelPolicy):
     def get_actions(self):
         actions = []
         for dev in self.devices.values():
-            actions += dev.get_actions()
+            # don't write out actions for devices not in use
+            if not dev.available:
+                actions += dev.get_actions()
 
         log.debug('****')
         log.debug('all actions:{}'.format(actions))

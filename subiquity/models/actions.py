@@ -121,6 +121,9 @@ class DiskAction():
     def get_parent(self):
         return self.parent
 
+    def clear_ptable(self):
+        self._ptable = None
+
     @property
     def action_id(self):
         return str(self._action_id)
@@ -137,10 +140,11 @@ class DiskAction():
         action = {
             'id': self.action_id,
             'model': self._model,
-            'ptable': self._ptable,
             'serial': self._serial,
             'type': self._type,
         }
+        if self._ptable:
+            action.update({'ptable': self._ptable})
         if self._wipe:
             action.update({'wipe': self._wipe})
         # if we don't have a valid serial, then we must use

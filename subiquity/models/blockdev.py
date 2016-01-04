@@ -335,6 +335,11 @@ class Blockdev():
         log.debug('Partition Added')
         return new_size
 
+    def clear_ptable(self):
+        ''' clear any partition table setting on underlying device '''
+        if self.baseaction.type == 'disk':
+            self.baseaction.clear_ptable()
+
     def format_device(self, fstype, mountpoint):
         log.debug('format:' ' fstype:%s mountpoint:%s' % (
                   fstype, mountpoint))
@@ -352,6 +357,9 @@ class Blockdev():
             self._mounts[mntdev] = mountpoint
             self._mountactions[mntdev] = MountAction(fs_action, mountpoint)
             log.debug('Mounting {} at {}'.format(mntdev, mountpoint))
+
+        # remove any partition table
+        self.clear_ptable()
 
     def get_partition(self, devpath):
         [partnum] = re.findall('\d+$', devpath)
@@ -455,16 +463,16 @@ class Bcachedev(Blockdev):
         self._backing_device = backing_device
         self._cache_device = cache_device
         self.baseaction = BcacheAction(os.path.basename(self.disk.devpath),
-                                       self._backing_device,
-                                       self._cache_device)
+                                       self._backing_device.id,
+                                       self._cache_device.id)
 
     @property
     def cache_device(self):
-        return self.baseaction.cache_device
+        return self._cache_device.devpath
 
     @property
     def backing_device(self):
-        return self.baseaction.backing_device
+        return self._backing_device.devpath
 
 
 def sort_actions(actions):
