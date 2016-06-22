@@ -520,6 +520,10 @@ generate_img() {
     ROOTFS_DEV="/dev/mapper/${loopparts[1]}"
     OVERLAY_DEV="/dev/mapper/${loopparts[2]}"
     LOOPDEV="`echo ${kpartx_ret} | fmt -w 1 | grep ^/dev | head -n1`"
+    [ -z "${LOOPDEV}" ] && {
+        log "empty loopdev! aieeeeee!";
+        return 1;
+    }
 
     log "Building Grub (EFI and BIOS) boot partition"
     (sudo mkfs.vfat -F32 -n GRUB2EFI ${EFI_DEV} 2>/dev/null &&
