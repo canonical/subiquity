@@ -68,6 +68,9 @@ class Networkdev():
 
         log.debug('Post config action: {}'.format(self.action.get()))
 
+    def __repr__(self):
+        return "%s: %s" % (self.ifname, self.ip)
+
     @property
     def is_configured(self):
         return (self.action is not None and

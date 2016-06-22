@@ -13,13 +13,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .filesystem import FilesystemModel  # NOQA
-from .installpath import InstallpathModel  # NOQA
-from .network import NetworkModel  # NOQA
-from .welcome import WelcomeModel  # NOQA
-from .identity import IdentityModel  # NOQA
-from .installprogress import InstallProgressModel  # NOQA
-from .iscsi_disk import IscsiDiskModel  # NOQA
-from .login import LoginModel  # NOQA
-from .raid import RaidModel  # NOQA
-from .ceph_disk import CephDiskModel  # NOQA
+
+from subiquity.ui.views import LoginView
+from subiquity.models import LoginModel
+from subiquity.controller import ControllerPolicy
+
+
+class LoginController(ControllerPolicy):
+    def __init__(self, common):
+        super().__init__(common)
+        self.model = LoginModel()
+
+    def login(self):
+        title = "Snappy Ubuntu Core Pre-ownership Configuration Complete"
+        excerpt = "Your device is now configured.  Login details below."
+        self.ui.set_header(title, excerpt)
+        view = LoginView(self.model, self.signal, self.model.user)
+        self.ui.set_body(view)

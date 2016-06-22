@@ -17,7 +17,9 @@ import datetime
 import logging
 import os
 import subprocess
+import time
 import yaml
+import subiquity.utils as utils
 
 
 log = logging.getLogger("subiquity.curtin")
@@ -88,6 +90,46 @@ POST_INSTALL_LIST = [
 POST_INSTALL = '\n' + "\n".join(POST_INSTALL_LIST) + '\n'
 
 
+def curtin_configure_user(userinfo, dryrun=False):
+    usercmds = []
+    usercmds += ["useradd -m -p {confirm_password} {username}".format(**userinfo)]
+    if 'ssh_import_id' in userinfo:
+        target = "/home/{username}/.ssh/authorized_keys".format(**userinfo)
+        userinfo.update({'target': target})
+        ssh_id = userinfo.get('ssh_import_id')
+        if ssh_id.startswith('sso'):
+            log.info('call out to snappyd login')
+        else:
+            ssh_import_id = "ssh-import-id -o "
+            ssh_import_id += "{target} {ssh_import_id}".format(**userinfo)
+            usercmds += [ssh_import_id]
+
+    if not dryrun:
+        for cmd in usercmds:
+            utils.run_command(cmd.split(), shell=False)
+
+        # always run chown last
+        homedir = '/home/{username}'.format(**userinfo)
+        retries = 10
+        while not os.path.exists(homedir) and retries > 0:
+            log.debug('waiting on homedir')
+            retries -= 1
+            time.sleep(0.2)
+
+        if retries <= 0:
+            raise ValueError('Failed to create homedir')
+        
+        chown = "chown {username}.{username} -R /home/{username}".format(**userinfo)
+        utils.run_command(chown.split(), shell=False)
+
+        # add sudo rule
+        with open('/etc/sudoers.d/firstboot-user', 'w') as fh:
+            fh.write('# firstboot config added user\n\n')
+            fh.write('{username} ALL=(ALL) NOPASSWD:ALL\n'.format(**userinfo))
+    else:
+        log.info('dry-run, skiping user configuration')
+
+
 def curtin_userinfo_to_config(userinfo):
     user_template = '  - default\\n' + \
         '  - name: {username}\\n' + \
@@ -108,9 +150,10 @@ def curtin_hostinfo_to_config(hostinfo):
 
 
 def curtin_write_postinst_config(userinfo):
+    # firstboot doesn't get hostinfo; but it's still present in the template
     config = {
         'users': curtin_userinfo_to_config(userinfo),
-        'hostinfo': curtin_hostinfo_to_config(userinfo),
+        'hostinfo': '',
     }
 
     with open(POST_INSTALL_CONFIG_FILE, 'w') as conf:
@@ -150,6 +193,25 @@ def curtin_write_network_actions(actions):
         conf.write(curtin_config)
         conf.close()
 
+
+def curtin_apply_networking(actions, dryrun=True):
+    log.info('Applying network actions:\n%s', actions)
+    network_commands = []
+    for entry in actions:
+        if entry['type'] == 'physical':
+            for subnet in entry.get('subnets', []):
+                if subnet['type'] == 'static':
+                    cmd = "ifconfig %s %s" % (entry['name'], subnet['address'])
+                    if 'netmask' in subnet:
+                        cmd += " netmask %s" % subnet['netmask']
+                    cmd += " up"
+                    network_commands += [cmd]
+
+    for cmd in network_commands:
+        log.info('Running command: [%s]', cmd)
+        if not dryrun:
+            utils.run_command(cmd.split(), shell=False)
+        
 
 def curtin_write_preserved_actions(actions):
     ''' caller must use models.actions.preserve_action on

@@ -13,15 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from subiquity.controller import ControllerPolicy
 from subiquity.models import IdentityModel
-from subiquity.ui.views import IdentityView
+from subiquity.ui.views import IdentityView, LoginView
 
+log = logging.getLogger('subiquity.controllers.identity')
 
 class IdentityController(ControllerPolicy):
     def __init__(self, common):
         super().__init__(common)
-        self.model = IdentityModel()
+        self.model = IdentityModel(self.opts)
 
     def identity(self):
         title = "Profile setup"
@@ -29,4 +31,23 @@ class IdentityController(ControllerPolicy):
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
-        self.ui.set_body(IdentityView(self.model, self.signal))
+        self.ui.set_body(IdentityView(self.model, self.signal, self.opts))
+
+    
+    def login(self):
+        log.debug("Identity login view")
+        title = ("Snappy Ubuntu Core Pre-ownership Configuration Complete")
+        footer = ("View configured user and device access methods")
+        self.ui.set_header(title)
+        self.ui.set_footer(footer)
+
+        net_model = self.controllers['Network'].model
+        configured_ifaces = net_model.get_configured_interfaces()
+        login_view = LoginView(self.model,
+                               self.signal,
+                               self.model.user,
+                               configured_ifaces)
+
+        self.ui.set_body(login_view)
+
+

@@ -27,7 +27,8 @@ from subiquity.ui.interactive import (PasswordEditor,
                                       UsernameEditor)
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
-from subiquity.curtin import curtin_write_postinst_config
+from subiquity.curtin import (curtin_write_postinst_config,
+                              curtin_configure_user)
 
 
 log = logging.getLogger("subiquity.views.identity")
@@ -39,9 +40,10 @@ USERNAME_MAXLEN = 32
 
 
 class IdentityView(ViewPolicy):
-    def __init__(self, model, signal):
+    def __init__(self, model, signal, opts):
         self.model = model
         self.signal = signal
+        self.opts = opts
         self.items = []
         self.realname = RealnameEditor(caption="")
         self.hostname = UsernameEditor(caption="")
@@ -79,25 +81,6 @@ class IdentityView(ViewPolicy):
                     ("weight", 0.3,
                      Color.string_input(self.realname,
                                         focus_map="string_input focus"))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Your server's name:",
-                                         align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.hostname,
-                                        focus_map="string_input focus"))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("", align="right")),
-                    ("weight", 0.3, Color.info_minor(
-                        Text("The name it uses when it talks to "
-                             "other computers", align="left"))),
                 ],
                 dividechars=4
             ),
@@ -145,6 +128,7 @@ class IdentityView(ViewPolicy):
                     ("weight", 0.2, Text("", align="right")),
                     ("weight", 0.3, Color.info_minor(
                         Text("Input your SSH user id from "
+                             "Ubuntu SSO (sso:email), "
                              "Launchpad (lp:username) or "
                              "Github (gh:username).",
                              align="left"))),
@@ -166,17 +150,6 @@ class IdentityView(ViewPolicy):
             self.error.set_text("Realname too long, must be < " +
                                 str(REALNAME_MAXLEN))
             self.realname.value = ""
-            return
-
-        if len(self.hostname.value) < 1:
-            self.error.set_text("Server name missing.")
-            self.hostname.value = ""
-            return
-
-        if len(self.hostname.value) > HOSTNAME_MAXLEN:
-            self.error.set_text("Server name too long, must be < " +
-                                str(HOSTNAME_MAXLEN))
-            self.hostname.value = ""
             return
 
         if len(self.username.value) < 1:
@@ -213,7 +186,6 @@ class IdentityView(ViewPolicy):
         log.debug("*crypted* User input: {} {} {}".format(
             self.username.value, cpassword, cpassword))
         result = {
-            "hostname": self.hostname.value,
             "realname": self.realname.value,
             "username": self.username.value,
             "password": cpassword,
@@ -230,17 +202,20 @@ class IdentityView(ViewPolicy):
                 return
 
         log.debug("User input: {}".format(result))
+        self.model.add_user(result)
+
         try:
             curtin_write_postinst_config(result)
+            curtin_configure_user(result, dryrun=self.opts.dry_run)
         except PermissionError:
             log.exception('Failed to write curtin post-install config')
             self.signal.emit_signal('filesystem:error',
-                                    'curtin_write_postinst_config')
+                                    'curtin_write_postinst_config', result)
             return None
 
         self.signal.emit_signal('installprogress:wrote-postinstall')
-        # show progress view
-        self.signal.emit_signal('menu:installprogress:main')
+        # show login view
+        self.signal.emit_signal('menu:identity:login:main')
 
     def cancel(self, button):
         self.signal.prev_signal()

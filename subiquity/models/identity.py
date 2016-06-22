@@ -20,6 +20,39 @@ from subiquity.utils import crypt_password
 
 log = logging.getLogger('subiquity.models.identity')
 
+class LocalUser(object):
+    def __init__(self, result):
+        self._realname = result.get('realname')
+        self._username = result.get('username')
+        self._password = result.get('password')
+        self._cpassword = result.get('confirm_password')
+        self._ssh_import_id = None
+        if 'ssh_import_id' in result:
+            self._ssh_import_id = result.get('ssh_import_id')
+
+    @property
+    def realname(self):
+        return self._realname
+
+    @property
+    def username(self):
+        return self._username
+
+    @property
+    def password(self):
+        return self._password
+
+    @property
+    def cpassword(self):
+        return self._cpassword
+
+    @property
+    def ssh_import_id(self):
+        return self._ssh_import_id
+
+    def __repr__(self):
+        return "%s <%s>" % (self._realname, self._username)
+
 
 class IdentityModel(ModelPolicy):
     """ Model representing user identity
@@ -27,7 +60,10 @@ class IdentityModel(ModelPolicy):
     signals = [
         ("Identity view",
          'menu:identity:main',
-         'identity')
+         'identity'),
+        ("Login view",
+         'menu:identity:login:main',
+         'login')
     ]
 
     identity_menu = [
@@ -42,6 +78,9 @@ class IdentityModel(ModelPolicy):
          "validate_confirm_password")
     ]
 
+    def __init__(self, opts):
+        self.opts = opts
+
     def get_signals(self):
         return self.signals
 
@@ -53,8 +92,18 @@ class IdentityModel(ModelPolicy):
             if x == selection:
                 return y
 
+    def add_user(self, result):
+        if result:
+            self._user = LocalUser(result)
+        else:
+            self._user = None
+
+    @property
+    def user(self):
+        return self._user
+
     def encrypt_password(self, passinput):
         return crypt_password(passinput)
 
     def __repr__(self):
-        return "<Username: {}>".format(self.username)
+        return "<LocalUser: {}>".format(self.user)

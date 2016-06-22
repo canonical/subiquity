@@ -46,23 +46,26 @@ class NetworkView(ViewPolicy):
             Padding.fixed_10(self._build_buttons()),
         ]
         # FIXME determine which UX widget should have focus
-        super().__init__(ListBox(self.body))
+        self.lb = ListBox(self.body)
+        self.lb.set_focus(4)  # _build_buttons
+        super().__init__(self.lb)
+        
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = Color.button(cancel_btn(on_press=self.cancel),
+                              focus_map='button focus')
+        done = Color.button(done_btn(on_press=self.done),
+                            focus_map='button focus')
+        self.default_focus = done
 
-        buttons = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
-        ]
-        return Pile(buttons)
+        buttons = [done, cancel]
+        return Pile(buttons, focus_item=done)
 
     def _build_model_inputs(self):
         log.info("probing for network devices")
         self.model.probe_network()
         ifaces = self.model.get_all_interface_names()
-        ifname_width = 4  # default padding
+        ifname_width = 8  # default padding
 
         col_1 = []
         for iface in ifaces:
@@ -70,7 +73,7 @@ class NetworkView(ViewPolicy):
                 Color.menu_button(
                     menu_btn(label=iface,
                              on_press=self.on_net_dev_press),
-                    focus_map='menu_button focus'))
+                    focus_map='button focus'))
             col_1.append(Text(""))  # vertical holder for ipv6 status
             col_1.append(Text(""))  # vertical holder for ipv4 status
         col_1 = BoxAdapter(SimpleList(col_1),
@@ -114,8 +117,8 @@ class NetworkView(ViewPolicy):
             col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                                height=len(col_2))
             ifname_width += len(max(ifaces, key=len))
-            if ifname_width > 14:
-                ifname_width = 14
+            if ifname_width > 20:
+                ifname_width = 20 
         else:
             col_2 = Pile([Text("No network interfaces detected.")])
 
@@ -152,7 +155,7 @@ class NetworkView(ViewPolicy):
                 Color.menu_button(
                     menu_btn(label=opt,
                              on_press=self.additional_menu_select),
-                    focus_map='menu_button focus'))
+                    focus_map='button focus'))
         return Pile(opts)
 
     def additional_menu_select(self, result):

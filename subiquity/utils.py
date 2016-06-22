@@ -18,8 +18,9 @@ import errno
 import logging
 import os
 import random
+import sys
 import yaml
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, call
 from subiquity.async import Async
 
 log = logging.getLogger("subiquity.utils")
@@ -107,7 +108,7 @@ def run_command_async(cmd, timeout=None):
     return Async.pool.submit(run_command, cmd, timeout)
 
 
-def run_command(command, timeout=None):
+def run_command(command, timeout=None, shell=False):
     """ Execute command through system shell
     :param command: command to run
     :param timeout: (optional) use 'timeout' to limit time. default 300
@@ -131,7 +132,7 @@ def run_command(command, timeout=None):
         # http://stackoverflow.com/ +
         # questions/27022810/urwid-watch-file-blocks-keypress
         r, w = os.pipe()
-        p = Popen(command, shell=True,
+        p = Popen(command, shell=shell,
                   stdin=r, stdout=PIPE, stderr=PIPE,
                   bufsize=-1, env=cmd_env, close_fds=True)
         os.close(w)
@@ -213,3 +214,35 @@ def sudo_user():
     """
     sudo_user = os.getenv('SUDO_USER', None)
     return sudo_user
+
+
+def mark_firstboot_complete():
+    """ Touch our firstboot-complete eyecatcher """
+    log.info('marking firstboot service complete')
+    firstboot = '/var/lib/firstboot/firstboot-complete'
+    if not os.path.exists(os.path.dirname(firstboot)):
+        os.makedirs(os.path.dirname(firstboot))
+    with open(firstboot, 'w') as fp:
+        os.utime(fp.name, None)
+        fp.close()
+
+
+def disable_first_boot_service():
+    """ Stop firstboot service; which also restores getty service """
+    log.info('disabling first boot service')
+    tty = os.ttyname(sys.stdout.fileno()).split("/")[-1]
+    if not tty.startswith('tty'):
+        log.debug('tty is not tty: %s , skipping service shutdown', tty)
+        return
+
+    cmd = "systemctl stop firstboot@%s" % tty
+    log.info("disabling firstboot service with %s", cmd)
+    fid = os.fork()
+    if fid == 0:
+        try:
+            subprocess.call([cmd])
+            os._exit(0)
+        except:
+            log.warn("%s returned non-zero" % cmd)
+            os._exit(1)
+    return

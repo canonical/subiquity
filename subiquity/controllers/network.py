@@ -24,6 +24,7 @@ from subiquity.ui.views import (NetworkView,
 from subiquity.ui.dummy import DummyView
 
 from subiquity.curtin import curtin_write_network_actions
+from subiquity.curtin import curtin_apply_networking
 
 log = logging.getLogger("subiquity.controller.network")
 
@@ -52,7 +53,11 @@ class NetworkController(ControllerPolicy):
                                     'curtin_write_network_actions')
             return None
 
-        self.signal.emit_signal('menu:filesystem:main')
+        curtin_apply_networking(actions, dryrun=self.opts.dry_run)
+
+        #self.signal.emit_signal('menu:filesystem:main')
+        # switch to identity view
+        self.signal.emit_signal('menu:identity:main')
 
     def set_default_route(self):
         self.ui.set_header("Default route")

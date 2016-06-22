@@ -1,0 +1,32 @@
+[Unit]
+Description=Ubuntu Snappy Firstboot Configuration Getty %I
+BindsTo=dev-%i.device
+#After=getty@tty.service
+After=dev-%i.device systemd-user-sessions.service plymouth-quit-wait.service
+After=rc-local.service
+ConditionPathExists=!/var/lib/firstboot/firstboot-complete
+
+[Service]
+Environment=PYTHONPATH=/home/ubuntu/firstboot
+ExecStartPre=/sbin/systemctl stop serial-getty@%I
+ExecStart=-/sbin/agetty -n --noclear -l /home/ubuntu/firstboot/bin/subiquity-tui %I $TERM
+ExecStop=/sbin/systemctl start serial-getty@%I
+Type=idle
+Restart=always
+UtmpIdentifier=%I
+TTYPath=/dev/%I
+TTYReset=yes
+TTYVHangup=yes
+KillMode=process
+IgnoreSIGPIPE=no
+SendsSIGHUP=yes
+
+#TTYVTDisallocate=yes
+#KillMode=process
+#Restart=always
+#StandardInput=tty-force
+#StandardOutput=tty
+#StandardError=tty
+
+[Install]
+WantedBy=getty.target

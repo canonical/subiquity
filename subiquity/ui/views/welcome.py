@@ -21,7 +21,7 @@ Welcome provides user with language selection
 import logging
 from urwid import (ListBox, Pile, BoxAdapter)
 from subiquity.ui.lists import SimpleList
-from subiquity.ui.buttons import menu_btn, cancel_btn
+from subiquity.ui.buttons import menu_btn, ok_btn, cancel_btn
 from subiquity.ui.utils import Padding, Color
 from subiquity.view import ViewPolicy
 
@@ -33,8 +33,8 @@ class WelcomeView(ViewPolicy):
         self.model = model
         self.signal = signal
         self.items = []
+            #Padding.center_50(self._build_model_inputs()),
         self.body = [
-            Padding.center_50(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
         ]
@@ -42,7 +42,7 @@ class WelcomeView(ViewPolicy):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button(cancel_btn(on_press=self.cancel),
+            Color.button(ok_btn(on_press=self.confirm),
                          focus_map='button focus'),
         ]
         return Pile(self.buttons)
@@ -59,8 +59,8 @@ class WelcomeView(ViewPolicy):
 
     def confirm(self, result):
         self.model.selected_language = result.label
-        log.debug('calling installpath')
-        self.signal.emit_signal('menu:installpath:main')
+        log.debug('calling network')
+        self.signal.emit_signal('menu:network:main')
 
     def cancel(self, button):
         raise SystemExit("No language selected, exiting as there are no "

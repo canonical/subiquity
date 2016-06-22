@@ -19,3 +19,4 @@ from .network import NetworkController  # NOQA
 from .filesystem import FilesystemController  # NOQA
 from .installprogress import InstallProgressController  # NOQA
 from .identity import IdentityController  # NOQA
+from .login import LoginController  # NOQA

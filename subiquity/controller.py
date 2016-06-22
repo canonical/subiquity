@@ -34,6 +34,7 @@ class ControllerPolicy:
         self.opts = common['opts']
         self.loop = common['loop']
         self.prober = common['prober']
+        self.controllers = common['controllers']
 
     def register_signals(self):
         """ Defines signals associated with controller from model """

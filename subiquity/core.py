@@ -52,7 +52,9 @@ class Controller:
             "Filesystem": None,
             "Identity": None,
             "InstallProgress": None,
+            "Login": None,
         }
+        self.common['controllers'] = self.controllers
 
     def _connect_base_signals(self):
         """ Connect signals used in the core controller
