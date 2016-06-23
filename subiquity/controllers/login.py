@@ -25,7 +25,7 @@ class LoginController(ControllerPolicy):
         self.model = LoginModel()
 
     def login(self):
-        title = "Snappy Ubuntu Core Pre-ownership Configuration Complete"
+        title = "Configuration Complete"
         excerpt = "Your device is now configured.  Login details below."
         self.ui.set_header(title, excerpt)
         view = LoginView(self.model, self.signal, self.model.user)

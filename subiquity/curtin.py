@@ -98,7 +98,7 @@ def curtin_configure_user(userinfo, dryrun=False):
         userinfo.update({'target': target})
         ssh_id = userinfo.get('ssh_import_id')
         if ssh_id.startswith('sso'):
-            log.info('call out to snappyd login')
+            log.info('call out to SSO login')
         else:
             ssh_import_id = "ssh-import-id -o "
             ssh_import_id += "{target} {ssh_import_id}".format(**userinfo)
@@ -153,7 +153,7 @@ def curtin_write_postinst_config(userinfo):
     # firstboot doesn't get hostinfo; but it's still present in the template
     config = {
         'users': curtin_userinfo_to_config(userinfo),
-        'hostinfo': '',
+        'hostinfo': curtin_hostinfo_to_config(userinfo),
     }
 
     with open(POST_INSTALL_CONFIG_FILE, 'w') as conf:

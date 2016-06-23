@@ -59,8 +59,8 @@ class WelcomeView(ViewPolicy):
 
     def confirm(self, result):
         self.model.selected_language = result.label
-        log.debug('calling network')
-        self.signal.emit_signal('menu:network:main')
+        log.debug('calling installpath')
+        self.signal.emit_signal('menu:installpath:main')
 
     def cancel(self, button):
         raise SystemExit("No language selected, exiting as there are no "

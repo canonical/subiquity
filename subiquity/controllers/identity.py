@@ -36,7 +36,7 @@ class IdentityController(ControllerPolicy):
     
     def login(self):
         log.debug("Identity login view")
-        title = ("Snappy Ubuntu Core Pre-ownership Configuration Complete")
+        title = ("Configuration Complete")
         footer = ("View configured user and device access methods")
         self.ui.set_header(title)
         self.ui.set_footer(footer)

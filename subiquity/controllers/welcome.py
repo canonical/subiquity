@@ -25,10 +25,10 @@ class WelcomeController(ControllerPolicy):
         self.model = WelcomeModel()
 
     def welcome(self):
-        title = "Ubuntu Core - Firstboot Configuration"
-        excerpt = "Welcome to snappy Ubuntu Core, a transactionally updated Ubuntu.  It's a brave new world here in snappy Ubuntu Core! This machine has not been configured.  Please continue to configure this device for use."
+        title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
+        excerpt = "Please choose your preferred language"
         footer = ("Use UP, DOWN arrow keys, and ENTER, to "
-                  "configure your device.")
+                  "select your language.")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
         view = WelcomeView(self.model, self.signal)

@@ -86,6 +86,25 @@ class IdentityView(ViewPolicy):
             ),
             Columns(
                 [
+                    ("weight", 0.2, Text("Your server's name:",
+                                         align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(self.hostname,
+                                        focus_map="string_input focus"))
+                ],
+                dividechars=4
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("", align="right")),
+                    ("weight", 0.3, Color.info_minor(
+                        Text("The name it uses when it talks to "
+                             "other computers", align="left"))),
+                ],
+                dividechars=4
+            ),
+            Columns(
+                [
                     ("weight", 0.2, Text("Pick a username:", align="right")),
                     ("weight", 0.3,
                      Color.string_input(self.username,
@@ -152,6 +171,17 @@ class IdentityView(ViewPolicy):
             self.realname.value = ""
             return
 
+        if len(self.hostname.value) < 1:
+            self.error.set_text("Server name missing.")
+            self.hostname.value = ""
+            return
+
+        if len(self.hostname.value) > HOSTNAME_MAXLEN:
+            self.error.set_text("Server name too long, must be < " +
+                                str(HOSTNAME_MAXLEN))
+            self.hostname.value = ""
+            return
+
         if len(self.username.value) < 1:
             self.error.set_text("Username missing.")
             self.username.value = ""
@@ -186,6 +216,7 @@ class IdentityView(ViewPolicy):
         log.debug("*crypted* User input: {} {} {}".format(
             self.username.value, cpassword, cpassword))
         result = {
+            "hostname": self.hostname.value,
             "realname": self.realname.value,
             "username": self.username.value,
             "password": cpassword,

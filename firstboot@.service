@@ -1,5 +1,5 @@
 [Unit]
-Description=Ubuntu Snappy Firstboot Configuration Getty %I
+Description=Ubuntu Core Firstboot Configuration %I
 After=systemd-user-sessions.service plymouth-quit-wait.service
 ExecPreStart=systemctl stop getty@%I
 After=rc-local.service

@@ -1,5 +1,5 @@
 [Unit]
-Description=Ubuntu Snappy Firstboot Configuration Getty %I
+Description=Ubuntu Core Firstboot Configuration %I
 BindsTo=dev-%i.device
 #After=getty@tty.service
 After=dev-%i.device systemd-user-sessions.service plymouth-quit-wait.service
