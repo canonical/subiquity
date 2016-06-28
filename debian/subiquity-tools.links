@@ -1,0 +1,2 @@
+/usr/share/subiquity/installer/geninstaller   /usr/bin/subiquity-geninstaller
+/usr/share/subiquity/installer/runinstaller   /usr/bin/subiquity-runinstaller

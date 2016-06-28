@@ -1,0 +1,68 @@
+subiquity (0.0.5+1467127840.a721eba~cy1) yakkety; urgency=medium
+
+  * Release 0.0.6 snapshot: port for yakkety:
+    - Include firstboot support.
+
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Tue, 28 Jun 2016 11:32:03 -0400
+
+subiquity (0.0.5) wily; urgency=medium
+
+  * Release 0.0.5
+  * New UX/Models: bcache, lvm, identity
+  * Geninstaller updated to work with latest curtin
+  * Fix button movement when scaling UI
+  * Switch back to async curtin install (two stage)
+  * Fixed issues: #77, #88
+
+ -- Ryan Harper <ryan.harper@canonical.com>  Tue, 05 Jan 2016 20:30:11 -0600
+
+subiquity (0.0.4) wily; urgency=medium
+
+  * Release 0.0.4
+  * Refactor signals for improved navigation (escape always works)
+  * Updated Network model to support manual configuration
+  * Added Bonding UX panels
+  * Fixed issues: #71, #73, #99, #100, #101, #103, #105, #106, #107, #108,
+    #109, #111
+
+ -- Ryan Harper <ryan.harper@canonical.com>  Wed, 11 Nov 2015 09:14:21 -0600
+
+subiquity (0.0.3) wily; urgency=medium
+
+  * Release 0.0.3
+  * Fix RAID install
+  * geninstaller: install curtin as deb
+  * geninstaller: pre-install curtin deps in installer overlay
+  * geninstaller: shrink the size of the rootfs partition
+  * Fixed issues: #63, #64, #67, #69, #70, #72, #74, #75, #76, #77, #78
+
+ -- Ryan Harper <ryan.harper@canonical.com>  Wed, 28 Oct 2015 09:58:39 -0500
+
+subiquity (0.0.2) wily; urgency=medium
+
+  * Release 0.0.2
+  * Network Configuration UX
+  * RAID/mdadm UX
+  * Updated Installer spinner
+  * Detection on failure when running curtin
+
+ -- Ryan Harper <ryan.harper@canonical.com>  Tue, 20 Oct 2015 18:34:20 -0500
+
+subiquity (0.0.1-0ubuntu3) wily; urgency=medium
+
+  * Break subiquity-{gen|run}installer into -tools package (Closes: #80)
+
+ -- Ryan Harper <ryan.harper@canonical.com>  Tue, 20 Oct 2015 17:02:47 -0500
+
+subiquity (0.0.1-0ubuntu2) wily; urgency=medium
+
+  * Add curtin to package deps
+  * Find curtin and install source dynamically (Closes: #64)
+
+ -- Ryan Harper <ryan.harper@canonical.com>  Wed, 07 Oct 2015 08:49:39 -0500
+
+subiquity (0.0.1-0ubuntu1) wily; urgency=medium
+
+  * Initial build.
+
+ -- Adam Stokes <adam.stokes@ubuntu.com>  Mon, 17 Aug 2015 14:01:12 -0400

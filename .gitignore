@@ -61,7 +61,6 @@ installer/*.img
 installer/*.img_*
 logs/*
 venv
-debian
 .pybuild
 
 # probert as its pulled externally
