@@ -55,7 +55,6 @@ class NetworkController(ControllerPolicy):
 
         curtin_apply_networking(actions, dryrun=self.opts.dry_run)
 
-        #self.signal.emit_signal('menu:filesystem:main')
         # switch to identity view
         self.signal.emit_signal('menu:identity:main')
 

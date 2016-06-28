@@ -245,8 +245,12 @@ class IdentityView(ViewPolicy):
             return None
 
         self.signal.emit_signal('installprogress:wrote-postinstall')
-        # show login view
-        self.signal.emit_signal('menu:identity:login:main')
+        # show next view
+        if self.opts.firstboot:
+            self.signal.emit_signal('menu:identity:login:main')
+        else:
+            self.signal.emit_signal('menu:installprogress:main')
+
 
     def cancel(self, button):
         self.signal.prev_signal()
