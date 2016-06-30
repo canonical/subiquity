@@ -27,6 +27,7 @@ class MenuSelectButton(Button):
     button_right = Text("")
 
 
+start_btn = partial(PlainButton, label="Start", on_press=None)
 confirm_btn = partial(PlainButton, label="Confirm", on_press=None)
 cancel_btn = partial(PlainButton, label="Cancel", on_press=None)
 done_btn = partial(PlainButton, label="Done", on_press=None)
