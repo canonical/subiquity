@@ -30,6 +30,18 @@ class CoreControllerError(Exception):
 
 
 class Controller:
+
+    project = "subiquitycore"
+    controllers = {
+            "Welcome": None,
+            "Installpath": None,
+            "Network": None,
+            "Filesystem": None,
+            "Identity": None,
+            "InstallProgress": None,
+            "Login": None,
+    }
+
     def __init__(self, ui, opts):
         try:
             prober = Prober(opts)
@@ -44,15 +56,6 @@ class Controller:
             "signal": Signal(),
             "prober": prober,
             "loop": None
-        }
-        self.controllers = {
-            "Welcome": None,
-            "Installpath": None,
-            "Network": None,
-            "Filesystem": None,
-            "Identity": None,
-            "InstallProgress": None,
-            "Login": None,
         }
         self.common['controllers'] = self.controllers
 
@@ -118,7 +121,7 @@ class Controller:
             for k in self.controllers.keys():
                 log.debug("Importing controller: {}".format(k))
                 klass = import_object(
-                    "subiquitycore.controllers.{}Controller".format(
+                    ("%s.controllers.{}Controller" % self.project).format(
                         k))
                 self.controllers[k] = klass(self.common)
 

@@ -26,69 +26,13 @@ from subiquitycore.core import CoreControllerError, Controller as ControllerBase
 log = logging.getLogger('console_conf.core')
 
 
-class CoreControllerError(Exception):
-    """ Basecontroller exception """
-    pass
-
-
 class Controller(ControllerBase):
-    def __init__(self, ui, opts):
-        try:
-            prober = Prober(opts)
-        except ProberException as e:
-            err = "Prober init failed: {}".format(e)
-            log.exception(err)
-            raise CoreControllerError(err)
 
-        self.common = {
-            "ui": ui,
-            "opts": opts,
-            "signal": Signal(),
-            "prober": prober,
-            "loop": None
-        }
-        self.controllers = {
-            "Welcome": None,
-            "Network": None,
-            "Identity": None,
-            "Login": None,
-        }
-        self.common['controllers'] = self.controllers
+    project = "console_conf"
+    controllers = {
+        "Welcome": None,
+        "Network": None,
+        "Identity": None,
+        "Login": None,
+    }
 
-    def run(self):
-        if not hasattr(self, 'loop'):
-            palette = STYLES
-            additional_opts = {
-                'screen': urwid.raw_display.Screen(),
-                'unhandled_input': self.header_hotkeys,
-                'handle_mouse': False
-            }
-            if self.common['opts'].run_on_serial:
-                palette = STYLES_MONO
-            else:
-                additional_opts['screen'].set_terminal_properties(colors=256)
-                additional_opts['screen'].reset_default_terminal_palette()
-
-            evl = urwid.TornadoEventLoop(IOLoop())
-            self.common['loop'] = urwid.MainLoop(
-                self.common['ui'], palette, event_loop=evl, **additional_opts)
-            log.debug("Running event loop: {}".format(
-                self.common['loop'].event_loop))
-
-        try:
-            self.set_alarm_in(0.05, self.welcome)
-            for k in self.controllers.keys():
-                log.debug("Importing controller: {}".format(k))
-                klass = import_object(
-                    "subiquitycore.controllers.{}Controller".format(
-                        k))
-                klass = import_object(
-                    "console_conf.controllers.{}Controller".format(
-                        k))
-                self.controllers[k] = klass(self.common)
-
-            self._connect_base_signals()
-            self.common['loop'].run()
-        except:
-            log.exception("Exception in controller.run():")
-            raise
