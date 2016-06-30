@@ -70,7 +70,7 @@ class NetworkView(ViewPolicy):
         col_1 = []
         for iface in ifaces:
             col_1.append(
-                Color.menu_button(
+                Color.info_major(
                     menu_btn(label=iface,
                              on_press=self.on_net_dev_press),
                     focus_map='button focus'))
@@ -81,21 +81,6 @@ class NetworkView(ViewPolicy):
 
         col_2 = []
         for iface in ifaces:
-            info = self.model.get_iface_info(iface)
-            log.debug('iface info:{}'.format(info))
-            template = ''
-            if info['bond_slave']:
-                template += '(Bonded) '
-            if info['speed']:
-                template += '{speed} '.format(**info)
-            if not info['vendor'].lower().startswith('unknown'):
-                vendor = textwrap.wrap(info['vendor'], 15)[0]
-                template += '{} '.format(vendor)
-            if not info['model'].lower().startswith('unknown'):
-                model = textwrap.wrap(info['model'], 20)[0]
-                template += '{} '.format(model)
-            col_2.append(Text(template))
-
             interface = self.model.get_interface(iface)
             ipv4_status = {
                 'ip': interface.ip,
@@ -105,13 +90,33 @@ class NetworkView(ViewPolicy):
             log.debug('ipv4_status: {}'.format(ipv4_status))
             ipv4_template = ''
             if ipv4_status['ip']:
-                ipv4_template += '{ip} '.format(**ipv4_status)
+                # FIXME: should show netmask or CIDR too
+                ipv4_template += '{ip}'.format(**ipv4_status)
             if ipv4_status['method']:
-                ipv4_template += 'provided by {method} '.format(**ipv4_status)
-            if ipv4_status['provider']:
-                ipv4_template += 'from {provider} '.format(**ipv4_status)
-            col_2.append(Text(ipv4_template))
-            col_2.append(Text("No IPv6 connection"))  # vert. holder for ipv6
+                ipv4_template += ' ({method}) '.format(**ipv4_status)
+            #if ipv4_status['provider']:
+            #    ipv4_template += 'from {provider} '.format(**ipv4_status)
+            col_2.append(Color.info_primary(Text(ipv4_template)))
+            # TODO: add IPv6 address information retrieval.
+            col_2.append(Color.info_primary(Text("No IPv6 connection")))  # vert. holder for ipv6
+
+            info = self.model.get_iface_info(iface)
+            hwaddr = self.model.get_hw_addr(iface)
+            log.debug('iface info:{}'.format(info))
+            template = ''
+            if hwaddr:
+                template += '{} '.format(hwaddr)
+            if info['bond_slave']:
+                template += '(Bonded) '
+            if not info['vendor'].lower().startswith('unknown'):
+                vendor = textwrap.wrap(info['vendor'], 15)[0]
+                template += '{} '.format(vendor)
+            if not info['model'].lower().startswith('unknown'):
+                model = textwrap.wrap(info['model'], 20)[0]
+                template += '{} '.format(model)
+            if info['speed']:
+                template += '({speed})'.format(**info)
+            col_2.append(Color.info_minor(Text(template)))
 
         if len(col_2):
             col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
@@ -132,6 +137,7 @@ class NetworkView(ViewPolicy):
         if len(ifaces) > 0:
             default_route = ("Default route is ")
             route_source = ("whatever DHCP provides on any interface")
+            # FIXME: correctly get default gateway
             if self.model.default_gateway is not None:
                 route_source = self.model.default_gateway
             default_route_w = Color.info_minor(

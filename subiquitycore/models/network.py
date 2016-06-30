@@ -417,6 +417,10 @@ class NetworkModel(ModelPolicy):
         return [iface for iface in self.network.keys()
                 if self.iface_is_bridge(iface)]
 
+    def get_hw_addr(self, iface):
+        ifinfo = self.info[iface]
+        return ifinfo.hwaddr
+
     def get_vendor(self, iface):
         hwinfo = self.devices[iface].info.hwinfo
         vendor_keys = [
