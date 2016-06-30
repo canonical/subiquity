@@ -56,7 +56,7 @@ def control_c_handler(signum, frame):
 def main():
     opts = parse_options(sys.argv[1:])
     setup_logger()
-    logger = logging.getLogger('console-conf')
+    logger = logging.getLogger('console_conf')
     logger.info("Starting console-conf v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
 

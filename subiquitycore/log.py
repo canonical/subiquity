@@ -40,8 +40,8 @@ def setup_logger(name=__name__):
         "%(asctime)s "
         "%(name)s:%(lineno)d %(message)s",
         datefmt='%m/%d %H:%M'))
-    log_filter = logging.Filter(name='subiquity')
-    log.addFilter(log_filter)
+    #log_filter = logging.Filter(name='subiquity')
+    #log.addFilter(log_filter)
 
     logger = logging.getLogger('')
     logger.setLevel('DEBUG')
