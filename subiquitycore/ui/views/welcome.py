@@ -28,7 +28,7 @@ from subiquitycore.view import ViewPolicy
 log = logging.getLogger("subiquitycore.views.welcome")
 
 
-class WelcomeView(ViewPolicy):
+class CoreWelcomeView(ViewPolicy):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal
