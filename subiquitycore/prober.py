@@ -53,18 +53,26 @@ class Prober():
 
         return data
 
-    def get_network(self):
+    def _probe_network(self):
         if 'network' not in self.probe_data:
             log.debug('get_network: no network in probe_data, fetching')
             network = Network()
             results = network.probe()
-            self.probe_data['network'] = results
+            self.probe_data['network'] = {}
+            self.probe_data['network']['devices'] = results
+            self.probe_data['network']['routes'] = network.get_routes()
 
-        return self.probe_data['network']
+    def get_network_devices(self):
+        self._probe_network()
+        return self.probe_data['network']['devices']
+
+    def get_network_routes(self):
+        self._probe_network()
+        return self.probe_data['network']['routes']
 
     def get_network_info(self, device):
         ''' Load a NetworkInfo class for specified device '''
-        return NetworkInfo({device: self.get_network().get(device)})
+        return NetworkInfo({device: self.get_network_devices().get(device)})
 
     def get_storage(self):
         ''' Load a StorageInfo class.  Probe if it's not present '''

@@ -24,6 +24,7 @@ import textwrap
 from urwid import (ListBox, Pile, BoxAdapter,
                    Text, Columns)
 import yaml
+from netifaces import AF_INET, AF_INET6
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import cancel_btn, menu_btn, done_btn
 from subiquitycore.ui.utils import Padding, Color
@@ -86,6 +87,7 @@ class NetworkView(ViewPolicy):
                 'ip': interface.ip,
                 'method': interface.ip_method,
                 'provider': interface.ip_provider,
+                'subnets': interface.subnets,
             }
             log.debug('ipv4_status: {}'.format(ipv4_status))
             ipv4_template = ''
@@ -94,8 +96,8 @@ class NetworkView(ViewPolicy):
                 ipv4_template += '{ip}'.format(**ipv4_status)
             if ipv4_status['method']:
                 ipv4_template += ' ({method}) '.format(**ipv4_status)
-            #if ipv4_status['provider']:
-            #    ipv4_template += 'from {provider} '.format(**ipv4_status)
+            if ipv4_status['subnets']:
+                ipv4_template += 'from {subnets} '.format(**ipv4_status)
             col_2.append(Color.info_primary(Text(ipv4_template)))
             # TODO: add IPv6 address information retrieval.
             col_2.append(Color.info_primary(Text("No IPv6 connection")))  # vert. holder for ipv6
@@ -135,13 +137,34 @@ class NetworkView(ViewPolicy):
 
         # Display default route status
         if len(ifaces) > 0:
-            default_route = ("Default route is ")
-            route_source = ("whatever DHCP provides on any interface")
-            # FIXME: correctly get default gateway
+            gateways = self.model.get_routes()
+            ipv4_gateways = gateways['default'][AF_INET]
+            ipv6_gateways = gateways['default'][AF_INET6]
+            route_source = "is unset"
             if self.model.default_gateway is not None:
-                route_source = self.model.default_gateway
+                route_source = "via " + self.model.default_gateway
+            elif len(ipv4_gateways):
+                route_source = ""
+                if ipv4_gateways[0]:
+                    route_source += "via {}".format(ipv4_gateways[0])
+                elif ipv4_gateways[1]:
+                    route_source += "through interface {}".format(ipv4_gateways[1])
             default_route_w = Color.info_minor(
-                Text("  " + default_route + route_source))
+                Text("  IPv4 default route " + route_source + "."))
+            opts.append(default_route_w)
+
+            # FIXME: do ipv6 default gateway
+            # if ipv6:
+            # if self.model.default_gateway6 is not None:
+            route_source = "is unset"
+            if len(ipv6_gateways):
+                route_source = ""
+                if ipv6_gateways[0]:
+                    route_source += "via {}".format(ipv6_gateways[0])
+                elif ipv6_gateways[1]:
+                    route_source += "through interface {}".format(ipv6_gateways[1])
+            default_route_w = Color.info_minor(
+                Text("  IPv6 default route " + route_source + "."))
             opts.append(default_route_w)
 
         for opt, sig, _ in self.model.get_menu():

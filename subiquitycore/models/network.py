@@ -264,7 +264,8 @@ class NetworkModel(ModelPolicy):
         self.prober = prober
         self.info = {}
         self.devices = {}
-        self.network = {}
+        self.network_devices = {}
+        self.network_routes = {}
         self.default_gateway = None
 
     def reset(self):
@@ -287,14 +288,19 @@ class NetworkModel(ModelPolicy):
     # --- Model Methods ----
     def probe_network(self):
         log.debug('model calling prober.get_network()')
-        self.network = self.prober.get_network()
+        self.network_devices = self.prober.get_network_devices()
+        self.network_routes = self.prober.get_network_routes()
 
-        for iface in [iface for iface in self.network.keys()
+        for iface in [iface for iface in self.network_devices.keys()
                       if iface not in NETDEV_IGNORED_IFACES]:
             ifinfo = self.prober.get_network_info(iface)
             self.info[iface] = ifinfo
 
         log.debug('probing network complete!')
+
+    def get_routes(self):
+        ''' get collection of currently configured routes '''
+        return self.network_routes
 
     def get_interface(self, iface):
         '''get iface object given iface name '''
@@ -367,7 +373,7 @@ class NetworkModel(ModelPolicy):
             and see if iface is included in a bridge '''
         bridges = self.get_bridges()
         for bridge in bridges:
-            brinfo = self.network[bridge].get('bridge', {})
+            brinfo = self.network_devices[bridge].get('bridge', {})
             if brinfo:
                 if iface in brinfo['interfaces']:
                     return True
@@ -414,7 +420,7 @@ class NetworkModel(ModelPolicy):
             raise
 
     def get_bridges(self):
-        return [iface for iface in self.network.keys()
+        return [iface for iface in self.network_devices.keys()
                 if self.iface_is_bridge(iface)]
 
     def get_hw_addr(self, iface):
