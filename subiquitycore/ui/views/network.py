@@ -138,8 +138,9 @@ class NetworkView(ViewPolicy):
         # Display default route status
         if len(ifaces) > 0:
             gateways = self.model.get_routes()
-            ipv4_gateways = gateways['default'][AF_INET]
-            ipv6_gateways = gateways['default'][AF_INET6]
+            # FIXME: maybe deal with the case there are no routes at all?
+            ipv4_gateways = gateways['default'].get(AF_INET, [])
+            ipv6_gateways = gateways['default'].get(AF_INET6, [])
             route_source = "is unset"
             if self.model.default_gateway is not None:
                 route_source = "via " + self.model.default_gateway
