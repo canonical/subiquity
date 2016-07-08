@@ -27,7 +27,7 @@ from setuptools import setup, find_packages
 import os
 import sys
 
-import subiquity
+import subiquitycore
 
 if sys.argv[-1] == 'clean':
     print("Cleaning up ...")
@@ -35,7 +35,7 @@ if sys.argv[-1] == 'clean':
     sys.exit()
 
 setup(name='subiquity',
-      version=subiquity.__version__,
+      version=subiquitycore.__version__,
       description="Ubuntu Server Installer",
       long_description=__doc__,
       author='Canonical Engineering',
