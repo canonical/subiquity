@@ -1,0 +1,102 @@
+Source: subiquity
+Section: admin
+Priority: extra
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Build-Depends: bzr,
+               debhelper (>= 9),
+               dh-python,
+               git,
+               python3,
+               python3-setuptools,
+               python3-yaml
+Standards-Version: 3.9.5
+Homepage: https://github.com/CanonicalLtd/subiquity
+X-Python3-Version: >= 3.3
+Vcs-Browser: https://github.com/CanonicalLtd/subiquity
+Vcs-Git: https://github.com/CanonicalLtd/subiquity.git
+
+Package: subiquity
+Architecture: amd64
+Depends: curtin,
+         probert,
+         python3-tornado,
+         python3-urwid (>= 1.2.1),
+         python3-yaml,
+         ${misc:Depends},
+         ${python3:Depends}
+Description: Ubuntu Server Installer
+ SUbiquity is an installer system for servers, embedded devices and desktops
+ or laptops meant to build systems as quickly as possible for users to reach
+ a point where their system is usable.
+ .
+ By default, subiquity provides a "first boot" experience that allows users
+ to do initial system configuration such as adding users and login settings,
+ along with doing basic network configuration. It can also be used to build
+ a new system from the ground up, partitioning and copying a disk image to
+ the storage device selected by the user.
+ .
+ This package provides the installer routines for bootstrapping a system
+ with the Subiquity the server installer UI.
+
+Package: subiquity-installer
+Architecture: amd64
+Depends: subiquity,
+         ${misc:Depends}
+Description: Ubuntu Server Installer - new install mode
+ SUbiquity is an installer system for servers, embedded devices and desktops
+ or laptops meant to build systems as quickly as possible for users to reach
+ a point where their system is usable.
+ .
+ By default, subiquity provides a "first boot" experience that allows users
+ to do initial system configuration such as adding users and login settings,
+ along with doing basic network configuration. It can also be used to build
+ a new system from the ground up, partitioning and copying a disk image to
+ the storage device selected by the user.
+ .
+ This package provides the files and tools required to do an install of
+ Ubuntu Server on a new system.
+
+Package: subiquity-tools
+Architecture: amd64
+Depends: bzr,
+         ${misc:Depends},
+         cloud-image-utils,
+         devscripts,
+         extlinux,
+         gdisk,
+         git,
+         grub-efi-amd64-signed,
+         grub2-common,
+         kpartx,
+         parted,
+         pep8,
+         pyflakes,
+         python-all,
+         python-mock,
+         python-nose,
+         python-oauthlib,
+         python-yaml,
+         python3-mock,
+         python3-nose,
+         python3-setuptools,
+         qemu-utils,
+         shim,
+         shim-signed,
+         simplestreams,
+         subiquity,
+         syslinux-common,
+         ubuntu-cloudimage-keyring,
+         ${python3:Depends}
+Description: Ubuntu Server Installer
+ SUbiquity is an installer system for servers, embedded devices and desktops
+ or laptops meant to build systems as quickly as possible for users to reach
+ a point where their system is usable.
+ .
+ By default, subiquity provides a "first boot" experience that allows users
+ to do initial system configuration such as adding users and login settings,
+ along with doing basic network configuration. It can also be used to build
+ a new system from the ground up, partitioning and copying a disk image to
+ the storage device selected by the user.
+ .
+ This package provides the installer which all the necessary utilities to
+ complete a new installation.
