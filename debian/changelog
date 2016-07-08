@@ -1,9 +1,9 @@
-subiquity (0.0.5+1467127840.a721eba~cy1) yakkety; urgency=medium
+subiquity (0.0.6~cy1) UNRELEASED; urgency=medium
 
   * Release 0.0.6 snapshot: port for yakkety:
-    - Include firstboot support.
+    - Build separate subiquitycore, subiquity, and console-conf packages.
 
- -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Tue, 28 Jun 2016 11:32:03 -0400
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Fri, 08 Jul 2016 16:44:55 -0400
 
 subiquity (0.0.5) wily; urgency=medium
 
