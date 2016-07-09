@@ -92,7 +92,7 @@ POST_INSTALL = '\n' + "\n".join(POST_INSTALL_LIST) + '\n'
 
 def curtin_configure_user(userinfo, dryrun=False):
     usercmds = []
-    usercmds += ["useradd -m -p {confirm_password} {username}".format(**userinfo)]
+    usercmds += ["useradd --extrausers -m -p {confirm_password} {username}".format(**userinfo)]
     if 'ssh_import_id' in userinfo:
         target = "/home/{username}/.ssh/authorized_keys".format(**userinfo)
         userinfo.update({'target': target})
