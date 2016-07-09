@@ -9,7 +9,7 @@ export PYBUILD_DESTDIR=debian/tmp/
 export PYBUILD_OPTION="-v"
 
 %:
-	dh $@ --with python3 --buildsystem=pybuild
+	dh $@ --with python3,systemd --buildsystem=pybuild
 
 override_dh_auto_clean:
 	rm -f .subiquity/subiquity-debug.log installer/geninstaller.log
@@ -24,7 +24,8 @@ override_dh_python3:
 	dh_python3 --ignore-shebangs
 
 override_dh_installinit:
-	dh_installinit --no-start
+	dh_installinit --no-start --name=console-conf@
+	dh_installinit --no-start --name=serial-console-conf@
 
 override_dh_auto_test:
 	@echo "No tests."

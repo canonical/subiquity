@@ -10,9 +10,9 @@ ConditionPathExists=/dev/tty0
 ConditionPathExists=!/var/lib/firstboot/firstboot-complete
 
 [Service]
-Environment=PYTHONPATH=/home/ubuntu/firstboot
+Environment=PYTHONPATH=/usr/share/subiquity
 ExecStartPre=/bin/systemctl stop getty@%I
-ExecStart=-/sbin/agetty -n --noclear -l /home/ubuntu/firstboot/bin/subiquity-tui %I $TERM
+ExecStart=-/sbin/agetty -n --noclear -l /usr/bin/console-conf %I $TERM
 ExecStop=/bin/systemctl start getty@%I
 #ExecStopPost=/bin/echo "Post stop, starting getty@%I"
 #ExecStopPost=/bin/systemctl start getty@%I

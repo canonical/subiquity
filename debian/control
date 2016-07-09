@@ -5,6 +5,7 @@ Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 Build-Depends: bzr,
                debhelper (>= 9),
                dh-python,
+               dh-systemd,
                git,
                python3,
                python3-setuptools,

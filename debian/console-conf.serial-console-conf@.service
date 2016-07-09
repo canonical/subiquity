@@ -7,9 +7,9 @@ After=rc-local.service
 ConditionPathExists=!/var/lib/firstboot/firstboot-complete
 
 [Service]
-Environment=PYTHONPATH=/home/ubuntu/firstboot
+Environment=PYTHONPATH=/usr/share/subiquity
 ExecStartPre=/sbin/systemctl stop serial-getty@%I
-ExecStart=-/sbin/agetty -n --noclear -l /home/ubuntu/firstboot/bin/subiquity-tui %I $TERM
+ExecStart=-/sbin/agetty -n --noclear -l /usr/bin/console-conf %I $TERM
 ExecStop=/sbin/systemctl start serial-getty@%I
 Type=idle
 Restart=always
