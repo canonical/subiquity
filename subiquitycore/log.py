@@ -18,7 +18,7 @@ import os
 import sys
 from logging.handlers import TimedRotatingFileHandler
 
-LOGDIR = ".subiquity"
+LOGDIR = "/writable/.subiquity"
 LOGFILE = os.path.join(LOGDIR, "subiquity-debug.log")
 
 
