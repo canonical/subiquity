@@ -7,7 +7,7 @@ ExecStop=systemctl start getty@%I
 Before=getty.target
 IgnoreOnIsolate=yes
 ConditionPathExists=/dev/tty0
-ConditionPathExists=!/var/lib/firstboot/firstboot-complete
+ConditionPathExists=!/writable/firstboot-complete
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity

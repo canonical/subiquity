@@ -4,7 +4,7 @@ BindsTo=dev-%i.device
 #After=getty@tty.service
 After=dev-%i.device systemd-user-sessions.service plymouth-quit-wait.service
 After=rc-local.service
-ConditionPathExists=!/var/lib/firstboot/firstboot-complete
+ConditionPathExists=!/writable/firstboot-complete
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
