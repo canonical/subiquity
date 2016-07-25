@@ -18,12 +18,14 @@ import argparse
 import sys
 import logging
 import signal
+
 from subiquitycore.log import setup_logger, LOGFILE
 from subiquitycore import __version__ as VERSION
-from subiquitycore.core import Application as Subiquity
 from subiquitycore.core import ApplicationError
 from subiquitycore.ui.frame import SubiquityUI
 from subiquitycore.utils import environment_check
+
+from subiquity.core import Subiquity
 
 
 def parse_options(argv):

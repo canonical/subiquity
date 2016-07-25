@@ -31,21 +31,18 @@ class ApplicationError(Exception):
 
 class Application:
 
-    # TODO(mwhudson): This should be an abstract base class with one
-    # subclass for each of the installer and console-conf. Currently,
-    # this instance is the installer application and console-conf
-    # subclasses it.
-
-    project = "subiquitycore"
-    controllers = {
-            "Welcome": None,
-            "Installpath": None,
-            "Network": None,
-            "Filesystem": None,
-            "Identity": None,
-            "InstallProgress": None,
-            "Login": None,
-    }
+    # A concrete subclass must set project and controllers attributes, e.g.:
+    #
+    # project = "subiquity"
+    # controllers = {
+    #         "Welcome": None,
+    #         "Installpath": None,
+    #         "Network": None,
+    #         "Filesystem": None,
+    #         "Identity": None,
+    #         "InstallProgress": None,
+    #         "Login": None,
+    # }
 
     def __init__(self, ui, opts):
         try:

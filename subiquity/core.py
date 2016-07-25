@@ -12,3 +12,23 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import logging
+
+from subiquitycore.core import Application
+
+log = logging.getLogger('console_conf.core')
+
+
+class Subiquity(Application):
+
+    project = "subiquity"
+    controllers = {
+            "Welcome": None,
+            "Installpath": None,
+            "Network": None,
+            "Filesystem": None,
+            "Identity": None,
+            "InstallProgress": None,
+            "Login": None,
+    }
