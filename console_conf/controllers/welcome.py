@@ -15,17 +15,19 @@
 
 
 from console_conf.ui.views import WelcomeView
-from subiquitycore.models import WelcomeModel
-from subiquitycore.controllers.welcome import WelcomeController as WelcomeControllerBase
+
+from subiquitycore.controllers.welcome import (
+    WelcomeController as WelcomeControllerBase,
+    )
 
 
 class WelcomeController(WelcomeControllerBase):
     def welcome(self):
         title = "Ubuntu Core"
-        excerpt = ( "Configure the network and setup an administrator "
-                    "account on this all-snap Ubuntu Core system. After "
-                    "this setup process you will have secure web or command "
-                    "access to the system." )
+        excerpt = ("Configure the network and setup an administrator "
+                   "account on this all-snap Ubuntu Core system. After "
+                   "this setup process you will have secure web or command "
+                   "access to the system.")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer("")
         view = WelcomeView(self.model, self.signal)

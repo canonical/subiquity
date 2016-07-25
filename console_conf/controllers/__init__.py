@@ -15,7 +15,7 @@
 
 """ console-conf controllers """
 
-from .welcome import WelcomeController
-from subiquitycore.controllers.network import NetworkController
-from subiquitycore.controllers.login import LoginController
-from subiquitycore.controllers.identity import IdentityController
+from .welcome import WelcomeController  # NOQA
+from subiquitycore.controllers.network import NetworkController  # NOQA
+from subiquitycore.controllers.login import LoginController  # NOQA
+from subiquitycore.controllers.identity import IdentityController  # NOQA

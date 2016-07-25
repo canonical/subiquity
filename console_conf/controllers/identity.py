@@ -20,6 +20,7 @@ from subiquitycore.ui.views import IdentityView, LoginView
 
 log = logging.getLogger('subiquitycore.controllers.identity')
 
+
 class IdentityController(ControllerPolicy):
     def __init__(self, common):
         super().__init__(common)
@@ -33,7 +34,6 @@ class IdentityController(ControllerPolicy):
         self.ui.set_footer(footer, 40)
         self.ui.set_body(IdentityView(self.model, self.signal, self.opts))
 
-    
     def login(self):
         log.debug("Identity login view")
         title = ("Configuration Complete")
@@ -49,5 +49,3 @@ class IdentityController(ControllerPolicy):
                                configured_ifaces)
 
         self.ui.set_body(login_view)
-
-
