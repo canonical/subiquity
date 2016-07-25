@@ -20,6 +20,7 @@ from subiquitycore.utils import crypt_password
 
 log = logging.getLogger('subiquitycore.models.identity')
 
+
 class LocalUser(object):
     def __init__(self, result):
         self._realname = result.get('realname')

@@ -30,6 +30,6 @@ from .network_configure_ipv4_interface import NetworkConfigureIPv4InterfaceView 
 from .network_bond_interfaces import NetworkBondInterfacesView  # NOQA
 from .installpath import InstallpathView  # NOQA
 from .installprogress import ProgressView  # NOQA
-from .welcome import CoreWelcomeView as WelcomeView # NOQA
+from .welcome import CoreWelcomeView as WelcomeView  # NOQA
 from .identity import IdentityView  # NOQA
 from .login import LoginView  # NOQA

@@ -18,11 +18,8 @@
 Login provides user with language selection
 
 """
-import copy
 import logging
-import os
-from urwid import (ListBox, Pile, BoxAdapter, Text)
-from subiquitycore.ui.lists import SimpleList
+from urwid import (ListBox, Pile, Text)
 from subiquitycore.ui.buttons import finish_btn
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import ViewPolicy
@@ -71,7 +68,7 @@ class LoginView(ViewPolicy):
         """
         This device is registered to Ryan Harper.  Ryan Harper added
         a user, raharper, to the device for local access on the console.
-        
+
         Remote access was enabled via authentication with Launchpad as
         lp:raharper and public ssh keys were added to the system for
         remote access.
@@ -91,7 +88,7 @@ class LoginView(ViewPolicy):
             " <{ssh_import_id}>.\nPublic SSH keys were added to the device "
             "for remote access.\n\n{realname} can connect remotely to this "
             "device via SSH:")
-        
+
         sl = []
         ssh = []
         user = self.model.user
@@ -109,21 +106,20 @@ class LoginView(ViewPolicy):
                 ip = str(iface.ip).split("/")[0]
                 ssh_iface = "    ssh %s@%s" % (user.username, ip)
                 ssh += [Padding.center_50(Text(ssh_iface))]
-                                         
+
         sl += [Text(login_text),
                Padding.line_break("")] + ssh
 
         return Pile(sl)
-                          
 
     def confirm(self, result):
         self.done()
 
     def done(self, button):
-        # mark ourselves complete 
+        # mark ourselves complete
         utils.mark_firstboot_complete()
 
         # disable the UI service restoring getty service
         utils.disable_first_boot_service()
-    
+
         self.signal.emit_signal('quit')

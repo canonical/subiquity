@@ -120,7 +120,7 @@ def curtin_configure_user(userinfo, dryrun=False):
 
         if retries <= 0:
             raise ValueError('Failed to create homedir')
-        
+
         chown = "chown {username}.{username} -R /home/{username}".format(**userinfo)
         utils.run_command(chown.split(), shell=False)
 
@@ -213,7 +213,7 @@ def curtin_apply_networking(actions, dryrun=True):
         log.info('Running command: [%s]', cmd)
         if not dryrun:
             utils.run_command(cmd.split(), shell=False)
-        
+
 
 def curtin_write_preserved_actions(actions):
     ''' caller must use models.actions.preserve_action on
