@@ -24,12 +24,17 @@ from subiquitycore.prober import Prober, ProberException
 log = logging.getLogger('subiquitycore.core')
 
 
-class CoreControllerError(Exception):
+class ApplicationError(Exception):
     """ Basecontroller exception """
     pass
 
 
-class Controller:
+class Application:
+
+    # TODO(mwhudson): This should be an abstract base class with one
+    # subclass for each of the installer and console-conf. Currently,
+    # this instance is the installer application and console-conf
+    # subclasses it.
 
     project = "subiquitycore"
     controllers = {
@@ -48,7 +53,7 @@ class Controller:
         except ProberException as e:
             err = "Prober init failed: {}".format(e)
             log.exception(err)
-            raise CoreControllerError(err)
+            raise ApplicationError(err)
 
         self.common = {
             "ui": ui,

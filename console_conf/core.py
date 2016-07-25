@@ -21,12 +21,12 @@ from subiquitycore.signals import Signal
 from subiquitycore.palette import STYLES, STYLES_MONO
 from subiquitycore.prober import Prober, ProberException
 
-from subiquitycore.core import CoreControllerError, Controller as ControllerBase
+from subiquitycore.core import Application, ApplicationError
 
 log = logging.getLogger('console_conf.core')
 
 
-class Controller(ControllerBase):
+class ConsoleConf(Application):
 
     project = "console_conf"
     controllers = {
