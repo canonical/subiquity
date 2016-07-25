@@ -21,7 +21,7 @@ Welcome provides user with language selection
 import logging
 from urwid import (ListBox, Pile, BoxAdapter)
 from subiquitycore.ui.lists import SimpleList
-from subiquitycore.ui.buttons import menu_btn, ok_btn, cancel_btn
+from subiquitycore.ui.buttons import menu_btn, ok_btn
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import ViewPolicy
 
@@ -33,7 +33,7 @@ class CoreWelcomeView(ViewPolicy):
         self.model = model
         self.signal = signal
         self.items = []
-            #Padding.center_50(self._build_model_inputs()),
+        # Padding.center_50(self._build_model_inputs()),
         self.body = [
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())

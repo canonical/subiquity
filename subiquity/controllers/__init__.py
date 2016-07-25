@@ -13,22 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-from console_conf.ui.views import WelcomeView
-
-from subiquitycore.controllers.welcome import (
-    WelcomeController as WelcomeControllerBase,
-    )
-
-
-class WelcomeController(WelcomeControllerBase):
-    def welcome(self):
-        title = "Ubuntu Core"
-        excerpt = ("Configure the network and setup an administrator "
-                   "account on this all-snap Ubuntu Core system. After "
-                   "this setup process you will have secure web or command "
-                   "access to the system.")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer("")
-        view = WelcomeView(self.model, self.signal)
-        self.ui.set_body(view)
+from subiquitycore.controllers.welcome import WelcomeController  # NOQA
+from subiquitycore.controllers.installpath import InstallpathController  # NOQA
+from subiquitycore.controllers.network import NetworkController  # NOQA
+from subiquitycore.controllers.filesystem import FilesystemController  # NOQA
+from subiquitycore.controllers.installprogress import InstallProgressController  # NOQA
+from subiquitycore.controllers.identity import IdentityController  # NOQA
+from subiquitycore.controllers.login import LoginController  # NOQA

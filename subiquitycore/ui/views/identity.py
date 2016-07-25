@@ -251,6 +251,5 @@ class IdentityView(ViewPolicy):
         else:
             self.signal.emit_signal('menu:installprogress:main')
 
-
     def cancel(self, button):
         self.signal.prev_signal()

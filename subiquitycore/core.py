@@ -24,23 +24,25 @@ from subiquitycore.prober import Prober, ProberException
 log = logging.getLogger('subiquitycore.core')
 
 
-class CoreControllerError(Exception):
+class ApplicationError(Exception):
     """ Basecontroller exception """
     pass
 
 
-class Controller:
+class Application:
 
-    project = "subiquitycore"
-    controllers = {
-            "Welcome": None,
-            "Installpath": None,
-            "Network": None,
-            "Filesystem": None,
-            "Identity": None,
-            "InstallProgress": None,
-            "Login": None,
-    }
+    # A concrete subclass must set project and controllers attributes, e.g.:
+    #
+    # project = "subiquity"
+    # controllers = {
+    #         "Welcome": None,
+    #         "Installpath": None,
+    #         "Network": None,
+    #         "Filesystem": None,
+    #         "Identity": None,
+    #         "InstallProgress": None,
+    #         "Login": None,
+    # }
 
     def __init__(self, ui, opts):
         try:
@@ -48,7 +50,7 @@ class Controller:
         except ProberException as e:
             err = "Prober init failed: {}".format(e)
             log.exception(err)
-            raise CoreControllerError(err)
+            raise ApplicationError(err)
 
         self.common = {
             "ui": ui,

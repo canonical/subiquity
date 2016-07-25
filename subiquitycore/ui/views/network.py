@@ -50,7 +50,6 @@ class NetworkView(ViewPolicy):
         self.lb = ListBox(self.body)
         self.lb.set_focus(4)  # _build_buttons
         super().__init__(self.lb)
-        
 
     def _build_buttons(self):
         cancel = Color.button(cancel_btn(on_press=self.cancel),
@@ -125,7 +124,7 @@ class NetworkView(ViewPolicy):
                                height=len(col_2))
             ifname_width += len(max(ifaces, key=len))
             if ifname_width > 20:
-                ifname_width = 20 
+                ifname_width = 20
         else:
             col_2 = Pile([Text("No network interfaces detected.")])
 

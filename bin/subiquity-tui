@@ -18,12 +18,14 @@ import argparse
 import sys
 import logging
 import signal
+
 from subiquitycore.log import setup_logger, LOGFILE
 from subiquitycore import __version__ as VERSION
-from subiquitycore.core import Controller as Subiquity
-from subiquitycore.core import CoreControllerError
+from subiquitycore.core import ApplicationError
 from subiquitycore.ui.frame import SubiquityUI
 from subiquitycore.utils import environment_check
+
+from subiquity.core import Subiquity
 
 
 def parse_options(argv):
@@ -72,7 +74,7 @@ def main():
 
     try:
         subiquity_interface = Subiquity(ui, opts)
-    except CoreControllerError as e:
+    except ApplicationError as e:
         logger.exception('Failed to load Subiquity interface')
         print(e)
         return 1

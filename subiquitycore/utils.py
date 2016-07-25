@@ -240,7 +240,7 @@ def disable_first_boot_service():
     fid = os.fork()
     if fid == 0:
         try:
-            subprocess.call([cmd])
+            call([cmd])
             os._exit(0)
         except:
             log.warn("%s returned non-zero" % cmd)

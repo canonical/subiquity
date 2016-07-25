@@ -15,4 +15,4 @@
 
 """ ConsoleConf UI Views """
 
-from .welcome import WelcomeView
+from .welcome import WelcomeView  # NOQA
