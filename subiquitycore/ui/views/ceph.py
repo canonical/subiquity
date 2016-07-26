@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from urwid import Text, Columns, Pile, ListBox
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.utils import Color, Padding
@@ -23,7 +23,7 @@ import logging
 log = logging.getLogger('subiquitycore.ceph')
 
 
-class CephDiskView(ViewPolicy):
+class CephDiskView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

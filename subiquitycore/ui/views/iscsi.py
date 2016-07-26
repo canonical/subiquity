@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from urwid import Text, Columns, Pile, ListBox
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import menu_btn
 from subiquitycore.ui.interactive import (StringEditor, YesNo,
                                           PasswordEditor)
@@ -24,7 +24,7 @@ import logging
 log = logging.getLogger('subiquitycore.iscsi')
 
 
-class IscsiDiskView(ViewPolicy):
+class IscsiDiskView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

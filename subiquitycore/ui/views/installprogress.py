@@ -16,14 +16,14 @@
 import logging
 from urwid import (Text, Filler,
                    Pile)
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import confirm_btn
 from subiquitycore.ui.utils import Padding, Color
 
 log = logging.getLogger("subiquitycore.views.installprogress")
 
 
-class ProgressView(ViewPolicy):
+class ProgressView(BaseView):
     def __init__(self, model, signal):
         """
         :param output_w: Filler widget to display updated status text

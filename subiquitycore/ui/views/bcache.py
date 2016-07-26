@@ -15,7 +15,7 @@
 
 from urwid import Text, Pile, ListBox
 from subiquitycore.models.filesystem import _humanize_size
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.interactive import Selector
 from subiquitycore.ui.utils import Color, Padding
@@ -24,7 +24,7 @@ import logging
 log = logging.getLogger('subiquitycore.ui.bcache')
 
 
-class BcacheView(ViewPolicy):
+class BcacheView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

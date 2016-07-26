@@ -21,7 +21,7 @@ Contains some default key navigations
 from urwid import WidgetWrap
 
 
-class ViewPolicy(WidgetWrap):
+class BaseView(WidgetWrap):
     def keypress(self, size, key):
         if key == 'esc':
             self.signal.prev_signal()

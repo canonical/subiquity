@@ -33,7 +33,7 @@ from subiquitycore.ui.interactive import (StringEditor, IntegerEditor,
 from subiquitycore.models.filesystem import (_humanize_size,
                                              _dehumanize_size,
                                              HUMAN_UNITS)
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 
 INVALID_PARTITION_SIZE = 'Invalid Partition Size'
 PARTITION_SIZE_TOO_BIG = 'Requested size too big'
@@ -46,7 +46,7 @@ PARTITION_ERRORS = [
 log = logging.getLogger('subiquitycore.ui.filesystem')
 
 
-class DiskInfoView(ViewPolicy):
+class DiskInfoView(BaseView):
     def __init__(self, model, signal, selected_device, hdinfo):
         log.debug('DiskInfoView: {}'.format(selected_device))
         self.model = model
@@ -89,7 +89,7 @@ class DiskInfoView(ViewPolicy):
         self.signal.prev_signal()
 
 
-class AddFormatView(ViewPolicy):
+class AddFormatView(BaseView):
     def __init__(self, model, signal, selected_disk):
         self.model = model
         self.signal = signal
@@ -172,7 +172,7 @@ class AddFormatView(ViewPolicy):
                                 self.disk_obj.devpath, result)
 
 
-class AddPartitionView(ViewPolicy):
+class AddPartitionView(BaseView):
 
     def __init__(self, model, signal, selected_disk):
         log.debug('AddPartitionView: selected_disk=[{}]'.format(selected_disk))
@@ -352,7 +352,7 @@ class AddPartitionView(ViewPolicy):
                                 self.disk_obj.devpath, result)
 
 
-class DiskPartitionView(ViewPolicy):
+class DiskPartitionView(BaseView):
     def __init__(self, model, signal, selected_disk):
         self.model = model
         self.signal = signal
@@ -478,7 +478,7 @@ class DiskPartitionView(ViewPolicy):
         self.signal.prev_signal()
 
 
-class FilesystemView(ViewPolicy):
+class FilesystemView(BaseView):
     def __init__(self, model, signal):
         log.debug('FileSystemView init start()')
         self.model = model

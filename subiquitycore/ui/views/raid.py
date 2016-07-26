@@ -15,7 +15,7 @@
 
 from urwid import Text, Columns, Pile, ListBox, CheckBox
 from subiquitycore.models.filesystem import _humanize_size
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.interactive import (StringEditor, IntegerEditor,
                                           Selector)
@@ -25,7 +25,7 @@ import logging
 log = logging.getLogger('subiquitycore.ui.raid')
 
 
-class RaidView(ViewPolicy):
+class RaidView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

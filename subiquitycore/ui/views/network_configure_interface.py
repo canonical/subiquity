@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from urwid import Text, Pile, ListBox
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, menu_btn
 from subiquitycore.ui.utils import Color, Padding
 import logging
@@ -22,7 +22,7 @@ import logging
 log = logging.getLogger('subiquitycore.network.network_configure_interface')
 
 
-class NetworkConfigureInterfaceView(ViewPolicy):
+class NetworkConfigureInterfaceView(BaseView):
     def __init__(self, model, signal, iface):
         self.model = model
         self.signal = signal
