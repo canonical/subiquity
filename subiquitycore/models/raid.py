@@ -14,13 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from subiquitycore.model import ModelPolicy
+from subiquitycore.model import BaseModel
 
 
 log = logging.getLogger('subiquitycore.models.raid')
 
 
-class RaidModel(ModelPolicy):
+class RaidModel(BaseModel):
     """ Model representing software raid
     """
     base_signal = 'menu:raid:main'

@@ -15,13 +15,13 @@
 
 import logging
 
-from subiquitycore.model import ModelPolicy
+from subiquitycore.model import BaseModel
 
 
 log = logging.getLogger('subiquitycore.models.iscsi_disk')
 
 
-class IscsiDiskModel(ModelPolicy):
+class IscsiDiskModel(BaseModel):
     """ Model representing iscsi network disk
     """
     prev_signal = (

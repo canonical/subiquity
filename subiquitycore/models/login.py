@@ -14,13 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from subiquitycore.model import ModelPolicy
+from subiquitycore.model import BaseModel
 
 
 log = logging.getLogger('subiquitycore.login')
 
 
-class LoginModel(ModelPolicy):
+class LoginModel(BaseModel):
     """ Model representing Final login screen
     """
     prev_signal = 'menu:identity:main'

@@ -24,7 +24,7 @@ from .blockdev import (Bcachedev,
                        Raiddev,
                        sort_actions)
 import math
-from subiquitycore.model import ModelPolicy
+from subiquitycore.model import BaseModel
 
 
 HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
@@ -36,7 +36,7 @@ class AttrDict(dict):
     __setattr__ = dict.__setitem__
 
 
-class FilesystemModel(ModelPolicy):
+class FilesystemModel(BaseModel):
     """ Model representing storage options
     """
     base_signal = 'menu:filesystem:main'

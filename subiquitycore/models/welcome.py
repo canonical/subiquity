@@ -14,13 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from subiquitycore.model import ModelPolicy
+from subiquitycore.model import BaseModel
 
 
 log = logging.getLogger('subiquitycore.welcome')
 
 
-class WelcomeModel(ModelPolicy):
+class WelcomeModel(BaseModel):
     """ Model representing language selection
     """
     prev_signal = None
