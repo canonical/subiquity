@@ -15,16 +15,17 @@
 
 import json
 import logging
+import math
 import os
 import re
+
+from subiquitycore.model import BaseModel
 
 from .blockdev import (Bcachedev,
                        Blockdev,
                        LVMDev,
                        Raiddev,
                        sort_actions)
-import math
-from subiquitycore.model import BaseModel
 
 
 HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
