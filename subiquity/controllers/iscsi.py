@@ -13,11 +13,31 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.controllers.identity import IdentityController  # NOQA
-from subiquitycore.controllers.login import LoginController  # NOQA
-from subiquitycore.controllers.network import NetworkController  # NOQA
-from subiquitycore.controllers.welcome import WelcomeController  # NOQA
+import logging
 
-from .installpath import InstallpathController  # NOQA
-from .installprogress import InstallProgressController  # NOQA
-from .filesystem import FilesystemController  # NOQA
+from subiquitycore.controller import BaseController
+
+from subiquity.models import IscsiDiskModel
+
+log = logging.getLogger("subiquitycore.controller.iscsi")
+
+
+class IscsiDiskController(BaseController):
+    def __init__(self, common):
+        super().__init__(common)
+        self.model = IscsiDiskModel()
+
+    def iscsi(self):
+        pass
+
+    def iscsi_handler(self):
+        pass
+
+    def discover_volumes(self):
+        pass
+
+    def custom_discovery_credentials(self):
+        pass
+
+    def manual_volume_details(self):
+        pass

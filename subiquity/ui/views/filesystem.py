@@ -22,6 +22,7 @@ configuration.
 import logging
 import re
 from urwid import (ListBox, Pile, BoxAdapter, Text, Columns)
+
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import (done_btn,
                                       reset_btn,
@@ -30,10 +31,11 @@ from subiquitycore.ui.buttons import (done_btn,
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.ui.interactive import (StringEditor, IntegerEditor,
                                           Selector, MountEditor)
-from subiquitycore.models.filesystem import (_humanize_size,
-                                             _dehumanize_size,
-                                             HUMAN_UNITS)
 from subiquitycore.view import BaseView
+
+from subiquity.models.filesystem import (_humanize_size,
+                                         _dehumanize_size,
+                                         HUMAN_UNITS)
 
 INVALID_PARTITION_SIZE = 'Invalid Partition Size'
 PARTITION_SIZE_TOO_BIG = 'Requested size too big'
@@ -43,7 +45,7 @@ PARTITION_ERRORS = [
 ]
 
 
-log = logging.getLogger('subiquitycore.ui.filesystem')
+log = logging.getLogger('subiquity.ui.filesystem')
 
 
 class DiskInfoView(BaseView):

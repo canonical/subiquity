@@ -29,7 +29,7 @@ from .actions import (
     RaidAction,
 )
 
-log = logging.getLogger("subiquitycore.filesystem.blockdev")
+log = logging.getLogger("subiquity.filesystem.blockdev")
 FIRST_PARTITION_OFFSET = 1 << 20  # 1K offset/aligned
 GPT_END_RESERVE = 1 << 20  # save room at the end for GPT
 

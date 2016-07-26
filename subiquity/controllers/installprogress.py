@@ -17,15 +17,17 @@ import logging
 import os
 import subprocess
 from tornado.gen import coroutine
-import subiquitycore.utils as utils
-from subiquitycore.models import InstallProgressModel
-from subiquitycore.ui.views import ProgressView
+
+from subiquitycore import utils
 from subiquitycore.controller import BaseController
 from subiquitycore.curtin import (CURTIN_CONFIGS,
                                   CURTIN_INSTALL_LOG,
                                   CURTIN_POSTINSTALL_LOG,
                                   curtin_reboot,
                                   curtin_install_cmd)
+
+from subiquity.models import InstallProgressModel
+from subiquity.ui.views import ProgressView
 
 
 log = logging.getLogger("subiquitycore.controller.installprogress")

@@ -14,8 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from subiquitycore.models import RaidDiskModel
+
 from subiquitycore.controller import BaseController
+
+from subiquity.models import RaidDiskModel
 
 log = logging.getLogger("subiquitycore.controller.raid")
 

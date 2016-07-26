@@ -16,13 +16,13 @@
 import logging
 import os
 from subiquitycore.controller import BaseController
-from subiquitycore.models.actions import preserve_action
-from subiquitycore.models import (FilesystemModel, RaidModel)
-from subiquitycore.models.filesystem import (_humanize_size)
-from subiquitycore.ui.views import (DiskPartitionView, AddPartitionView,
-                                    AddFormatView, FilesystemView,
-                                    DiskInfoView, RaidView, BcacheView,
-                                    LVMVolumeGroupView)
+from subiquity.models.actions import preserve_action
+from subiquity.models import (FilesystemModel, RaidModel)
+from subiquity.models.filesystem import (_humanize_size)
+from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
+                                AddFormatView, FilesystemView,
+                                DiskInfoView, RaidView, BcacheView,
+                                LVMVolumeGroupView)
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.ui.error import ErrorView
 from subiquitycore.curtin import (curtin_write_storage_actions,

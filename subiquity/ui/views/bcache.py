@@ -13,15 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from urwid import Text, Pile, ListBox
-from subiquitycore.models.filesystem import _humanize_size
+
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.interactive import Selector
 from subiquitycore.ui.utils import Color, Padding
-import logging
 
-log = logging.getLogger('subiquitycore.ui.bcache')
+from subiquity.models.filesystem import _humanize_size
+
+log = logging.getLogger('subiquity.ui.bcache')
 
 
 class BcacheView(BaseView):

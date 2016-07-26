@@ -13,13 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .filesystem import FilesystemModel  # NOQA
-from .installpath import InstallpathModel  # NOQA
 from .network import NetworkModel  # NOQA
 from .welcome import WelcomeModel  # NOQA
 from .identity import IdentityModel  # NOQA
-from .installprogress import InstallProgressModel  # NOQA
-from .iscsi_disk import IscsiDiskModel  # NOQA
 from .login import LoginModel  # NOQA
-from .raid import RaidModel  # NOQA
-from .ceph_disk import CephDiskModel  # NOQA

@@ -17,7 +17,7 @@ import logging
 from subiquitycore.model import BaseModel
 
 
-log = logging.getLogger('subiquitycore.models.installprogress')
+log = logging.getLogger('subiquity.models.installprogress')
 
 
 class InstallProgressModel(BaseModel):

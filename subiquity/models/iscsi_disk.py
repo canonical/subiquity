@@ -18,11 +18,11 @@ import logging
 from subiquitycore.model import BaseModel
 
 
-log = logging.getLogger('subiquitycore.models.ceph_disk')
+log = logging.getLogger('subiquity.models.iscsi_disk')
 
 
-class CephDiskModel(BaseModel):
-    """ Model representing iscsi Ceph storage
+class IscsiDiskModel(BaseModel):
+    """ Model representing iscsi network disk
     """
     prev_signal = (
         'Back to filesystem view',
@@ -31,27 +31,34 @@ class CephDiskModel(BaseModel):
     )
 
     signals = [
-        ('Ceph view',
-         'ceph:show',
-         'ceph'),
-        ('Ceph finish',
-         'ceph:finish',
-         'ceph_handler')
+        ('iSCSI view',
+         'iscsi:show',
+         'iscsi'),
+        ('iSCSI finish',
+         'iscsi:finish',
+         'iscsi_handler')
     ]
 
     menu = [
-        ('Fetch key from USB',
-         'ceph:fetch-key-usb',
-         'fetch_key_usb'),
-        ('Fetch key by SSH (scp)',
-         'ceph:fetch-key-ssh',
-         'fetch_key_ssh')
+        ('Discover volumes now',
+         'iscsi:discover-volumes',
+         'discover_volumes'),
+        ('Use custom discovery credentials (advanced)',
+         'iscsi:custom-discovery-credentials',
+         'custom_discovery_credentials'),
+        ('Enter volume details manually',
+         'iscsi:manual-volume-details',
+         'manual_volume_details')
     ]
 
     server_authentication = {
-        'mon': None,
+        'server_host': None,
+        'anonymous': False,
         'username': None,
-        'key': None
+        'password': None,
+        'server_auth': False,
+        'server_username': None,
+        'server_password': None
     }
 
     def get_signal_by_name(self, selection):

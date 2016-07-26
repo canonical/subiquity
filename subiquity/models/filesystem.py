@@ -28,7 +28,7 @@ from subiquitycore.model import BaseModel
 
 
 HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
-log = logging.getLogger('subiquitycore.models.filesystem')
+log = logging.getLogger('subiquity.models.filesystem')
 
 
 class AttrDict(dict):

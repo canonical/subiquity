@@ -17,7 +17,7 @@ import logging
 from subiquitycore.model import BaseModel
 
 
-log = logging.getLogger('subiquitycore.models.raid')
+log = logging.getLogger('subiquity.models.raid')
 
 
 class RaidModel(BaseModel):

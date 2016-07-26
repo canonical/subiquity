@@ -17,7 +17,7 @@ import logging
 from subiquitycore.model import BaseModel
 
 
-log = logging.getLogger("subiquitycore.models.installpath")
+log = logging.getLogger("subiquity.models.installpath")
 
 
 class InstallpathModel(BaseModel):
