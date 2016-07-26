@@ -15,12 +15,12 @@
 
 import logging
 from subiquitycore.models import RaidDiskModel
-from subiquitycore.controller import ControllerPolicy
+from subiquitycore.controller import BaseController
 
 log = logging.getLogger("subiquitycore.controller.raid")
 
 
-class RaidDiskController(ControllerPolicy):
+class RaidDiskController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = RaidDiskModel()

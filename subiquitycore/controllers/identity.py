@@ -14,14 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from subiquitycore.controller import ControllerPolicy
+from subiquitycore.controller import BaseController
 from subiquitycore.models import IdentityModel
 from subiquitycore.ui.views import IdentityView, LoginView
 
 log = logging.getLogger('subiquitycore.controllers.identity')
 
 
-class IdentityController(ControllerPolicy):
+class IdentityController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = IdentityModel(self.opts)

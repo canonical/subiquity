@@ -13,21 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Controller Policy
-"""
 
 import logging
 
 log = logging.getLogger("subiquitycore.controller")
 
 
-class ControllerPolicyException(Exception):
-    "Problem in Controller policy"
+class BaseController:
+    """Base class for controllers."""
 
-
-class ControllerPolicy:
-    """ Expected contract for defining controllers
-    """
     def __init__(self, common):
         self.ui = common['ui']
         self.signal = common['signal']
@@ -37,7 +31,7 @@ class ControllerPolicy:
         self.controllers = common['controllers']
 
     def register_signals(self):
-        """ Defines signals associated with controller from model """
+        """Defines signals associated with controller from model."""
         if hasattr(self, 'model'):
             signals = []
             for name, sig, cb in self.model.get_signals():

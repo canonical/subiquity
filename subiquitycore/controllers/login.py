@@ -16,10 +16,10 @@
 
 from subiquitycore.ui.views import LoginView
 from subiquitycore.models import LoginModel
-from subiquitycore.controller import ControllerPolicy
+from subiquitycore.controller import BaseController
 
 
-class LoginController(ControllerPolicy):
+class LoginController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = LoginModel()

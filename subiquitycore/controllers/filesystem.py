@@ -15,7 +15,7 @@
 
 import logging
 import os
-from subiquitycore.controller import ControllerPolicy
+from subiquitycore.controller import BaseController
 from subiquitycore.models.actions import preserve_action
 from subiquitycore.models import (FilesystemModel, RaidModel)
 from subiquitycore.models.filesystem import (_humanize_size)
@@ -35,7 +35,7 @@ BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
 UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 
-class FilesystemController(ControllerPolicy):
+class FilesystemController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = FilesystemModel(self.prober, self.opts)

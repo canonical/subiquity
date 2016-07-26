@@ -15,12 +15,12 @@
 
 import logging
 from subiquitycore.models import CephDiskModel
-from subiquitycore.controller import ControllerPolicy
+from subiquitycore.controller import BaseController
 
 log = logging.getLogger("subiquitycore.controller.ceph")
 
 
-class CephDiskController(ControllerPolicy):
+class CephDiskController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = CephDiskModel()
