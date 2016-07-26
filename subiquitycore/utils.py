@@ -25,26 +25,9 @@ from subiquitycore.async import Async
 
 log = logging.getLogger("subiquitycore.utils")
 SYS_CLASS_NET = "/sys/class/net/"
-ENVIRONMENT_CHECK = '''
-checks:
-    read:
-        file:
-            - /var/log/syslog
-    write:
-        directory:
-            - /tmp
-    mount:
-        directory:
-            - /proc
-            - /sys
-    exec:
-        file:
-            - /sbin/hdparm
-            - /usr/bin/curtin
-'''
 
 
-def environment_check(check=ENVIRONMENT_CHECK):
+def environment_check(check):
     ''' Check the environment to ensure subiquity can run without issues.
     '''
     log.info('Checking environment for installer requirements...')
