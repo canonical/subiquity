@@ -22,13 +22,13 @@ import logging
 from urwid import (ListBox, Pile, Text)
 from subiquitycore.ui.buttons import finish_btn
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 from subiquitycore import utils
 
 log = logging.getLogger("subiquitycore.views.login")
 
 
-class LoginView(ViewPolicy):
+class LoginView(BaseView):
     def __init__(self, model, signal, user, ifaces):
         self.model = model
         self.signal = signal

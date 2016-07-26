@@ -14,13 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from subiquitycore.model import ModelPolicy
+from subiquitycore.model import BaseModel
 
 
-log = logging.getLogger('subiquitycore.models.installprogress')
+log = logging.getLogger('subiquity.models.installprogress')
 
 
-class InstallProgressModel(ModelPolicy):
+class InstallProgressModel(BaseModel):
     """ Model representing install progress
     """
     # FIXME: Decide what to do here if ESC is pressed, it's probably in

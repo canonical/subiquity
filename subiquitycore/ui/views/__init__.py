@@ -13,23 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .filesystem import (FilesystemView,  # NOQA
-                         AddPartitionView,
-                         AddFormatView,
-                         DiskPartitionView,
-                         DiskInfoView)
-from .bcache import BcacheView  # NOQA
-from .raid import RaidView  # NOQA
-from .ceph import CephDiskView  # NOQA
-from .iscsi import IscsiDiskView  # NOQA
-from .lvm import LVMVolumeGroupView  # NOQA
 from .network import NetworkView  # NOQA
 from .network_default_route import NetworkSetDefaultRouteView  # NOQA
 from .network_configure_interface import NetworkConfigureInterfaceView  # NOQA
 from .network_configure_ipv4_interface import NetworkConfigureIPv4InterfaceView  # NOQA
 from .network_bond_interfaces import NetworkBondInterfacesView  # NOQA
-from .installpath import InstallpathView  # NOQA
-from .installprogress import ProgressView  # NOQA
 from .welcome import CoreWelcomeView as WelcomeView  # NOQA
 from .identity import IdentityView  # NOQA
 from .login import LoginView  # NOQA

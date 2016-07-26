@@ -28,13 +28,13 @@ from netifaces import AF_INET, AF_INET6
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import cancel_btn, menu_btn, done_btn
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 
 
 log = logging.getLogger('subiquitycore.views.network')
 
 
-class NetworkView(ViewPolicy):
+class NetworkView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

@@ -16,10 +16,10 @@
 
 from subiquitycore.ui.views import WelcomeView
 from subiquitycore.models import WelcomeModel
-from subiquitycore.controller import ControllerPolicy
+from subiquitycore.controller import BaseController
 
 
-class WelcomeController(ControllerPolicy):
+class WelcomeController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = WelcomeModel()

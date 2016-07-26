@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2016 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -12,21 +12,3 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-from subiquitycore.ui.views import LoginView
-from subiquitycore.models import LoginModel
-from subiquitycore.controller import BaseController
-
-
-class LoginController(BaseController):
-    def __init__(self, common):
-        super().__init__(common)
-        self.model = LoginModel()
-
-    def login(self):
-        title = "Configuration Complete"
-        excerpt = "Your device is now configured.  Login details below."
-        self.ui.set_header(title, excerpt)
-        view = LoginView(self.model, self.signal, self.model.user)
-        self.ui.set_body(view)

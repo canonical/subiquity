@@ -19,13 +19,9 @@
 from abc import ABC, abstractmethod
 
 
-class ModelPolicyException(Exception):
-    "Problem in model policy"
+class BaseModel(ABC):
+    """Expected contract for defining models. """
 
-
-class ModelPolicy(ABC):
-    """ Expected contract for defining models
-    """
     # Exposed emitter signals
     signals = []
 
@@ -34,9 +30,7 @@ class ModelPolicy(ABC):
 
     @abstractmethod
     def get_signal_by_name(self, *args, **kwargs):
-        """ Implements a getter for retrieving
-        signals exposed by the model
-        """
+        """Implements a getter for retrieving signals exposed by the model."""
         pass
 
     @abstractmethod

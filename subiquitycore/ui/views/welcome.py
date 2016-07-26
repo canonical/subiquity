@@ -23,12 +23,12 @@ from urwid import (ListBox, Pile, BoxAdapter)
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import menu_btn, ok_btn
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquitycore.views.welcome")
 
 
-class CoreWelcomeView(ViewPolicy):
+class CoreWelcomeView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

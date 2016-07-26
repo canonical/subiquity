@@ -26,7 +26,7 @@ from subiquitycore.ui.interactive import (PasswordEditor,
                                           StringEditor,
                                           UsernameEditor)
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 from subiquitycore.curtin import (curtin_write_postinst_config,
                                   curtin_configure_user)
 
@@ -39,7 +39,7 @@ SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
 
 
-class IdentityView(ViewPolicy):
+class IdentityView(BaseView):
     def __init__(self, model, signal, opts):
         self.model = model
         self.signal = signal

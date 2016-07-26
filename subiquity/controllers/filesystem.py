@@ -15,18 +15,20 @@
 
 import logging
 import os
-from subiquitycore.controller import ControllerPolicy
-from subiquitycore.models.actions import preserve_action
-from subiquitycore.models import (FilesystemModel, RaidModel)
-from subiquitycore.models.filesystem import (_humanize_size)
-from subiquitycore.ui.views import (DiskPartitionView, AddPartitionView,
-                                    AddFormatView, FilesystemView,
-                                    DiskInfoView, RaidView, BcacheView,
-                                    LVMVolumeGroupView)
+
+from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.ui.error import ErrorView
 from subiquitycore.curtin import (curtin_write_storage_actions,
                                   curtin_write_preserved_actions)
+
+from subiquity.models.actions import preserve_action
+from subiquity.models import (FilesystemModel, RaidModel)
+from subiquity.models.filesystem import (_humanize_size)
+from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
+                                AddFormatView, FilesystemView,
+                                DiskInfoView, RaidView, BcacheView,
+                                LVMVolumeGroupView)
 
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
@@ -35,7 +37,7 @@ BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
 UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 
-class FilesystemController(ControllerPolicy):
+class FilesystemController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = FilesystemModel(self.prober, self.opts)

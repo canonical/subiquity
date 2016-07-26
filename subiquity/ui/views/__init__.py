@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2016 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,20 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-from subiquitycore.models import RaidDiskModel
-from subiquitycore.controller import ControllerPolicy
-
-log = logging.getLogger("subiquitycore.controller.raid")
-
-
-class RaidDiskController(ControllerPolicy):
-    def __init__(self, common):
-        super().__init__(common)
-        self.model = RaidDiskModel()
-
-    def raid(self):
-        pass
-
-    def raid_handler(self):
-        pass
+from .filesystem import (FilesystemView,  # NOQA
+                         AddPartitionView,
+                         AddFormatView,
+                         DiskPartitionView,
+                         DiskInfoView)
+from .bcache import BcacheView  # NOQA
+from .raid import RaidView  # NOQA
+from .ceph import CephDiskView  # NOQA
+from .iscsi import IscsiDiskView  # NOQA
+from .lvm import LVMVolumeGroupView  # NOQA
+from .installpath import InstallpathView  # NOQA
+from .installprogress import ProgressView  # NOQA

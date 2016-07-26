@@ -18,7 +18,7 @@ import ipaddress
 import logging
 import os
 from subiquitycore.prober import make_network_info
-from subiquitycore.model import ModelPolicy
+from subiquitycore.model import BaseModel
 from subiquitycore.utils import (read_sys_net,
                                  sys_dev_path)
 
@@ -217,7 +217,7 @@ def valid_ipv4_network(subnet):
     return nw
 
 
-class NetworkModel(ModelPolicy):
+class NetworkModel(BaseModel):
     """ Model representing network interfaces
     """
     base_signal = 'menu:network:main'

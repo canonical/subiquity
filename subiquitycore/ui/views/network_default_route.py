@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from urwid import Text, Pile, ListBox
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, done_btn, menu_btn
 from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.interactive import StringEditor
@@ -23,7 +23,7 @@ import logging
 log = logging.getLogger('subiquitycore.network.set_default_route')
 
 
-class NetworkSetDefaultRouteView(ViewPolicy):
+class NetworkSetDefaultRouteView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

@@ -20,15 +20,16 @@ Provides high level options for Ubuntu install
 """
 import logging
 from urwid import (ListBox, Pile, BoxAdapter)
+
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import menu_btn, cancel_btn
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.view import ViewPolicy
+from subiquitycore.view import BaseView
 
-log = logging.getLogger('subiquitycore.installpath')
+log = logging.getLogger('subiquity.installpath')
 
 
-class InstallpathView(ViewPolicy):
+class InstallpathView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal

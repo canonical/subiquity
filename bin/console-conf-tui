@@ -26,6 +26,24 @@ from subiquitycore.ui.frame import SubiquityUI
 from subiquitycore.utils import environment_check
 
 
+# Does console-conf actually need any of this?
+ENVIRONMENT = '''
+checks:
+    read:
+        file:
+            - /var/log/syslog
+    write:
+        directory:
+            - /tmp
+    mount:
+        directory:
+            - /proc
+            - /sys
+    exec:
+        file:
+            - /usr/bin/curtin
+'''
+
 def parse_options(argv):
     parser = argparse.ArgumentParser(
         description='console-conf - Pre-Ownership Configuration for Ubuntu Core',
@@ -62,7 +80,7 @@ def main():
 
     signal.signal(signal.SIGINT, control_c_handler)
 
-    env_ok = environment_check()
+    env_ok = environment_check(ENVIRONMENT)
     if env_ok is False and not opts.dry_run:
         print('Failed environment check.  '
               'Check {} for errors.'.format(LOGFILE))

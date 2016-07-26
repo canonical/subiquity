@@ -14,15 +14,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from subiquitycore.controller import ControllerPolicy
-from subiquitycore.models import InstallpathModel
-from subiquitycore.ui.views import InstallpathView
+
+from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
+
+from subiquity.models import InstallpathModel
+from subiquity.ui.views import InstallpathView
 
 log = logging.getLogger('subiquity.controller.installpath')
 
 
-class InstallpathController(ControllerPolicy):
+class InstallpathController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = InstallpathModel()

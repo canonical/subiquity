@@ -15,20 +15,21 @@
 
 import json
 import logging
+import math
 import os
 import re
+
+from subiquitycore.model import BaseModel
 
 from .blockdev import (Bcachedev,
                        Blockdev,
                        LVMDev,
                        Raiddev,
                        sort_actions)
-import math
-from subiquitycore.model import ModelPolicy
 
 
 HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
-log = logging.getLogger('subiquitycore.models.filesystem')
+log = logging.getLogger('subiquity.models.filesystem')
 
 
 class AttrDict(dict):
@@ -36,7 +37,7 @@ class AttrDict(dict):
     __setattr__ = dict.__setitem__
 
 
-class FilesystemModel(ModelPolicy):
+class FilesystemModel(BaseModel):
     """ Model representing storage options
     """
     base_signal = 'menu:filesystem:main'

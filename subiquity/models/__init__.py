@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2016 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,29 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-from subiquitycore.models import IscsiDiskModel
-from subiquitycore.controller import ControllerPolicy
-
-log = logging.getLogger("subiquitycore.controller.iscsi")
-
-
-class IscsiDiskController(ControllerPolicy):
-    def __init__(self, common):
-        super().__init__(common)
-        self.model = IscsiDiskModel()
-
-    def iscsi(self):
-        pass
-
-    def iscsi_handler(self):
-        pass
-
-    def discover_volumes(self):
-        pass
-
-    def custom_discovery_credentials(self):
-        pass
-
-    def manual_volume_details(self):
-        pass
+from .installpath import InstallpathModel  # NOQA
+from .installprogress import InstallProgressModel  # NOQA
+from .filesystem import FilesystemModel  # NOQA
+from .raid import RaidModel  # NOQA

@@ -14,44 +14,46 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-
-from subiquitycore.model import ModelPolicy
-
-
-log = logging.getLogger('subiquitycore.models.ceph_disk')
+from subiquitycore.model import BaseModel
 
 
-class CephDiskModel(ModelPolicy):
-    """ Model representing iscsi Ceph storage
+log = logging.getLogger('subiquity.models.raid')
+
+
+class RaidModel(BaseModel):
+    """ Model representing software raid
     """
-    prev_signal = (
-        'Back to filesystem view',
-        'filesystem:show',
-        'filesystem'
-    )
-
+    base_signal = 'menu:raid:main'
     signals = [
-        ('Ceph view',
-         'ceph:show',
-         'ceph'),
-        ('Ceph finish',
-         'ceph:finish',
-         'ceph_handler')
+        ('Create software RAID',
+         base_signal,
+         'raid'),
+        ('Finish software RAID',
+         'raid:finish',
+         'raid_handler')
     ]
 
     menu = [
-        ('Fetch key from USB',
-         'ceph:fetch-key-usb',
-         'fetch_key_usb'),
-        ('Fetch key by SSH (scp)',
-         'ceph:fetch-key-ssh',
-         'fetch_key_ssh')
+        ('RAID Level',
+         'raid:set-raid-level',
+         'set_raid_level'),
+        ('Hot spares',
+         'raid:set-hot-spares',
+         'set_hot_spares'),
+        ('Chunk size',
+         'raid:set-chunk-size',
+         'set_chunk_size')
     ]
 
-    server_authentication = {
-        'mon': None,
-        'username': None,
-        'key': None
+    raid_levels = ['0', '1', '5', '6', '10', 'linear']
+
+    raid_levels_map = {
+        'linear': {'min_disks': 0},
+        '0': {'min_disks': 0},
+        '1': {'min_disks': 0},
+        '5': {'min_disks': 0},
+        '6': {'min_disks': 0},
+        '10': {'min_disks': 0}
     }
 
     def get_signal_by_name(self, selection):
@@ -60,7 +62,7 @@ class CephDiskModel(ModelPolicy):
                 return y
 
     def get_signals(self):
-        return self.signals + self.menu
+        return self.signals
 
     def get_menu(self):
         return self.menu

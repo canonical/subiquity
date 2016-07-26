@@ -13,42 +13,42 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import Text, Columns, Pile, ListBox, CheckBox
-from subiquitycore.models.filesystem import _humanize_size
-from subiquitycore.view import ViewPolicy
-from subiquitycore.ui.buttons import cancel_btn, done_btn
-from subiquitycore.ui.interactive import (StringEditor, IntegerEditor,
-                                          Selector)
-from subiquitycore.ui.utils import Color, Padding
 import logging
+from urwid import Text, Columns, Pile, ListBox, CheckBox
 
-log = logging.getLogger('subiquitycore.ui.raid')
+from subiquitycore.view import BaseView
+from subiquitycore.ui.buttons import cancel_btn, done_btn
+from subiquitycore.ui.interactive import UsernameEditor
+from subiquitycore.ui.utils import Color, Padding
+
+from subiquity.models.filesystem import _humanize_size
 
 
-class RaidView(ViewPolicy):
+log = logging.getLogger('subiquitycore.ui.lvm')
+
+
+class LVMVolumeGroupView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal
-        self.raid_level = Selector(self.model.raid_levels)
-        self.hot_spares = IntegerEditor(caption="")
-        self.chunk_size = StringEditor(edit_text="4K", caption="")
+        self.volgroup = UsernameEditor(edit_text="", caption="")
         self.selected_disks = []
         body = [
             Padding.center_50(self._build_disk_selection()),
             Padding.line_break(""),
-            Padding.center_50(self._build_raid_configuration()),
+            Padding.center_50(self._build_lvm_configuration()),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
         ]
         super().__init__(ListBox(body))
 
     def _build_disk_selection(self):
-        log.debug('raid: _build_disk_selection')
+        log.debug('lvm: _build_disk_selection')
         items = [
             Text("DISK SELECTION")
         ]
 
-        # raid can use empty whole disks, or empty partitions
+        # lvm can use empty whole disks, or empty partitions
         avail_disks = self.model.get_empty_disk_names()
         avail_parts = self.model.get_empty_partition_names()
         avail_devs = sorted(avail_disks + avail_parts)
@@ -60,58 +60,40 @@ class RaidView(ViewPolicy):
             device = self.model.get_disk(dname)
             if device.path != dname:
                 # we've got a partition
-                raiddev = device.get_partition(dname)
+                lvmdev = device.get_partition(dname)
             else:
-                raiddev = device
+                lvmdev = device
 
-            disk_sz = _humanize_size(raiddev.size)
+            disk_sz = _humanize_size(lvmdev.size)
             disk_string = "{}     {},     {}".format(dname,
                                                      disk_sz,
                                                      device.model)
-            log.debug('raid: disk_string={}'.format(disk_string))
+            log.debug('lvm: disk_string={}'.format(disk_string))
             self.selected_disks.append(CheckBox(disk_string))
 
         items += self.selected_disks
 
         return Pile(items)
 
-    def _build_raid_configuration(self):
-        log.debug('raid: _build_raid_config')
+    def _build_lvm_configuration(self):
+        log.debug('lvm: _build_lvm_config')
         items = [
-            Text("RAID CONFIGURATION"),
+            Text("LVM VOLUMEGROUP CONFIGURATION"),
             Columns(
                 [
-                    ("weight", 0.2, Text("RAID Level", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(Pile(self.raid_level.group),
-                                        focus_map="string_input focus"))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Hot spares",
+                    ("weight", 0.2, Text("VolumeGroup Name",
                                          align="right")),
                     ("weight", 0.3,
-                     Color.string_input(self.hot_spares,
+                     Color.string_input(self.volgroup,
                                         focus_map="string_input focus"))
                 ],
                 dividechars=4
             ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Chunk size", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.chunk_size,
-                                        focus_map="string_input focus"))
-                ],
-                dividechars=4
-            )
         ]
         return Pile(items)
 
     def _build_buttons(self):
-        log.debug('raid: _build_buttons')
+        log.debug('lvm: _build_buttons')
         cancel = cancel_btn(on_press=self.cancel)
         done = done_btn(on_press=self.done)
 
@@ -124,13 +106,16 @@ class RaidView(ViewPolicy):
     def done(self, result):
         result = {
             'devices': [x.get_label() for x in self.selected_disks if x.state],
-            'raid_level': self.raid_level.value,
-            'hot_spares': self.hot_spares.value,
-            'chunk_size': self.chunk_size.value,
+            'volgroup': self.volgroup.value,
         }
-        log.debug('raid_done: result = {}'.format(result))
-        self.signal.emit_signal('filesystem:add-raid-dev', result)
+        log.debug('lvm_done: result = {}'.format(result))
+        self.model.add_lvm_volgroup(result)
+        self.signal.prev_signal()
 
     def cancel(self, button):
-        log.debug('raid: button_cancel')
+        log.debug('lvm: button_cancel')
         self.signal.prev_signal()
+
+
+class AddLVMPartitionView(BaseView):
+    pass
