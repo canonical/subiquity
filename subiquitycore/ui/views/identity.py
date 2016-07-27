@@ -27,8 +27,8 @@ from subiquitycore.ui.interactive import (PasswordEditor,
                                           UsernameEditor)
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
-from subiquitycore.curtin import (curtin_write_postinst_config,
-                                  curtin_configure_user)
+from subiquitycore.curtin import curtin_write_postinst_config
+from subiquitycore.user import create_user
 
 
 log = logging.getLogger("subiquitycore.views.identity")
@@ -237,7 +237,7 @@ class IdentityView(BaseView):
 
         try:
             curtin_write_postinst_config(result)
-            curtin_configure_user(result, dryrun=self.opts.dry_run)
+            create_user(result, dryrun=self.opts.dry_run)
         except PermissionError:
             log.exception('Failed to write curtin post-install config')
             self.signal.emit_signal('filesystem:error',

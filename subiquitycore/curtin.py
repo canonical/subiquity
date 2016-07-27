@@ -17,9 +17,9 @@ import datetime
 import logging
 import os
 import subprocess
-import time
 import yaml
-import subiquitycore.utils as utils
+
+from subiquitycore import utils
 
 
 log = logging.getLogger("subiquitycore.curtin")
@@ -88,48 +88,6 @@ POST_INSTALL_LIST = [
      "/var/lib/cloud/seed/nocloud-net/user-data\"]"),
 ]
 POST_INSTALL = '\n' + "\n".join(POST_INSTALL_LIST) + '\n'
-
-
-def curtin_configure_user(userinfo, dryrun=False):
-    usercmds = []
-    # FIXME: snappy needs --extrausers too; should factor out a way to pass
-    #        additional parameters.
-    usercmds += ["useradd -m -p {confirm_password} {username}".format(**userinfo)]
-    if 'ssh_import_id' in userinfo:
-        target = "/home/{username}/.ssh/authorized_keys".format(**userinfo)
-        userinfo.update({'target': target})
-        ssh_id = userinfo.get('ssh_import_id')
-        if ssh_id.startswith('sso'):
-            log.info('call out to SSO login')
-        else:
-            ssh_import_id = "ssh-import-id -o "
-            ssh_import_id += "{target} {ssh_import_id}".format(**userinfo)
-            usercmds += [ssh_import_id]
-
-    if not dryrun:
-        for cmd in usercmds:
-            utils.run_command(cmd.split(), shell=False)
-
-        # always run chown last
-        homedir = '/home/{username}'.format(**userinfo)
-        retries = 10
-        while not os.path.exists(homedir) and retries > 0:
-            log.debug('waiting on homedir')
-            retries -= 1
-            time.sleep(0.2)
-
-        if retries <= 0:
-            raise ValueError('Failed to create homedir')
-
-        chown = "chown {username}.{username} -R /home/{username}".format(**userinfo)
-        utils.run_command(chown.split(), shell=False)
-
-        # add sudo rule
-        with open('/etc/sudoers.d/firstboot-user', 'w') as fh:
-            fh.write('# firstboot config added user\n\n')
-            fh.write('{username} ALL=(ALL) NOPASSWD:ALL\n'.format(**userinfo))
-    else:
-        log.info('dry-run, skiping user configuration')
 
 
 def curtin_userinfo_to_config(userinfo):
