@@ -15,9 +15,8 @@
 
 
 from subiquitycore.controllers.identity import BaseIdentityController
-from subiquitycore.ui.views import LoginView
 
-from console_conf.ui.views import IdentityView
+from console_conf.ui.views import IdentityView, LoginView
 
 
 class IdentityController(BaseIdentityController):
@@ -39,7 +38,8 @@ class IdentityController(BaseIdentityController):
 
         net_model = self.controllers['Network'].model
         configured_ifaces = net_model.get_configured_interfaces()
-        login_view = LoginView(self.model,
+        login_view = LoginView(self.opts,
+                               self.model,
                                self.signal,
                                self.model.user,
                                configured_ifaces)

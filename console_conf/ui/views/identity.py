@@ -122,7 +122,7 @@ class IdentityView(BaseView):
                     'realname': self.email.value,
                     'username': self.email.value,
                     'passwod': '',
-                    'confirm_password': ''
+                    'confirm_password': '',
                     }
                 self.model.add_user(result)
         self.signal.emit_signal('menu:identity:login:main')
@@ -131,3 +131,4 @@ def users():
     r = set()
     for pw in pwd.getpwall():
         r.add(pw.pw_name)
+    return r

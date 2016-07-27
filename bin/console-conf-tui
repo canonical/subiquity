@@ -18,7 +18,7 @@ import argparse
 import sys
 import logging
 import signal
-from subiquitycore.log import setup_logger, LOGFILE
+from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION
 from console_conf.core import ConsoleConf
 from subiquitycore.core import ApplicationError
@@ -70,10 +70,14 @@ def parse_options(argv):
 def control_c_handler(signum, frame):
     sys.exit(1)
 
+LOGDIR = "/writable/.subiquity"
 
 def main():
     opts = parse_options(sys.argv[1:])
-    setup_logger()
+    global LOGDIR
+    if opts.dry_run:
+        LOGDIR = ".subiquity"
+    LOGFILE = setup_logger(dir=LOGDIR)
     logger = logging.getLogger('console_conf')
     logger.info("Starting console-conf v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
