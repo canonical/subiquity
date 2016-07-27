@@ -15,6 +15,7 @@
 
 
 from subiquitycore.controllers.identity import BaseIdentityController
+from subiquitycore.ui.views import LoginView
 
 from console_conf.ui.views import IdentityView
 
@@ -30,3 +31,17 @@ class IdentityController(BaseIdentityController):
         self.ui.set_footer(footer, 40)
         self.ui.set_body(self.identity_view(self.model, self.signal, self.opts))
 
+    def login(self):
+        title = "Configuration Complete"
+        footer = "View configured user and device access methods"
+        self.ui.set_header(title)
+        self.ui.set_footer(footer)
+
+        net_model = self.controllers['Network'].model
+        configured_ifaces = net_model.get_configured_interfaces()
+        login_view = LoginView(self.model,
+                               self.signal,
+                               self.model.user,
+                               configured_ifaces)
+
+        self.ui.set_body(login_view)

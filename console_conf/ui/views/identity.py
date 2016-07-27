@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import pwd
 import re
 
 from urwid import (Pile, Columns, Text, ListBox)
@@ -97,16 +98,36 @@ class IdentityView(BaseView):
             self.error.set_text("Please enter an email address.")
             return
         if not self.opts.dry_run:
+            users_before = users()
             result = run_command(["snap", "create-user", self.email.value])
             if result['status'] != 0:
                 self.error.set_text("Creating user failed:\n" + result['err'])
                 return
             else:
-                output = result['output']
-                match = re.match('Created user "([a-zA-Z0-9-_.]+)"', output)
-                if match:
-                    username = match.group(1)
-                    # Work around https://bugs.launchpad.net/snappy/+bug/1606815
-                    run_command(["chown", "{0}.{0}".format(username), "-R", "/home/"+username])
-        self.signal.emit_signal('menu:identity:done')
+                users_after = users()
+                new_users = users_after - users_before
+                if len(new_users) != 1:
+                    self.error.set_text("uhh")
+                    return
+                new_user = pwd.getpwnam(new_users.pop())
+                result = {
+                    'realname': new_user.pw_gecos.split(",")[0],
+                    'username': new_user.pw_name,
+                    'passwod': '',
+                    'confirm_password': ''
+                    }
+                self.model.add_user(result)
+        else:
+                result = {
+                    'realname': self.email.value,
+                    'username': self.email.value,
+                    'passwod': '',
+                    'confirm_password': ''
+                    }
+                self.model.add_user(result)
+        self.signal.emit_signal('menu:identity:login:main')
 
+def users():
+    r = set()
+    for pw in pwd.getpwall():
+        r.add(pw.pw_name)
