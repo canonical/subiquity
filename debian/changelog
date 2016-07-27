@@ -1,4 +1,10 @@
-subiquity (0.0.6~cy1) UNRELEASED; urgency=medium
+subiquity (0.0.6~mwhudson1) UNRELEASED; urgency=medium
+
+  * Demo-ware.
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Wed, 27 Jul 2016 22:19:52 +1200
+
+subiquity (0.0.6~cy1) yakkety; urgency=medium
 
   * Release 0.0.6 snapshot: port for yakkety:
     - Build separate subiquitycore, subiquity, and console-conf packages.
