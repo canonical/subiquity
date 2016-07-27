@@ -27,8 +27,6 @@ from subiquitycore.ui.interactive import (PasswordEditor,
                                           UsernameEditor)
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
-from subiquitycore.curtin import curtin_write_postinst_config
-from subiquitycore.user import create_user
 
 
 log = logging.getLogger("subiquitycore.views.identity")
@@ -39,7 +37,7 @@ SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
 
 
-class IdentityView(BaseView):
+class BaseIdentityView(BaseView):
     def __init__(self, model, signal, opts):
         self.model = model
         self.signal = signal
@@ -235,14 +233,7 @@ class IdentityView(BaseView):
         log.debug("User input: {}".format(result))
         self.model.add_user(result)
 
-        try:
-            curtin_write_postinst_config(result)
-            create_user(result, dryrun=self.opts.dry_run)
-        except PermissionError:
-            log.exception('Failed to write curtin post-install config')
-            self.signal.emit_signal('filesystem:error',
-                                    'curtin_write_postinst_config', result)
-            return None
+        self.create_user(result)
 
         self.signal.emit_signal('installprogress:wrote-postinstall')
         # show next view
@@ -250,6 +241,9 @@ class IdentityView(BaseView):
             self.signal.emit_signal('menu:identity:login:main')
         else:
             self.signal.emit_signal('menu:installprogress:main')
+
+    def create_user(self, result):
+        raise NotImplementedError
 
     def cancel(self, button):
         self.signal.prev_signal()

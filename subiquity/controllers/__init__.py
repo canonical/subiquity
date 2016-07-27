@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.controllers.identity import IdentityController  # NOQA
 from subiquitycore.controllers.login import LoginController  # NOQA
 from subiquitycore.controllers.network import NetworkController  # NOQA
 from subiquitycore.controllers.welcome import WelcomeController  # NOQA
 
+from .identity import IdentityController  # NOQA
 from .installpath import InstallpathController  # NOQA
 from .installprogress import InstallProgressController  # NOQA
 from .filesystem import FilesystemController  # NOQA

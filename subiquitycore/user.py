@@ -23,14 +23,12 @@ from subiquitycore.utils import run_command
 log = logging.getLogger("subiquitycore.user")
 
 
-def create_user(userinfo, dryrun=False):
+def create_user(userinfo, dryrun=False, extra_args=[]):
     """Create a user according to the information in userinfo."""
     usercmds = []
     username = userinfo['username']
 
-    # FIXME: snappy needs --extrausers too; should factor out a way to pass
-    #        additional parameters.
-    useradd = ["useradd", "-m", "-p", userinfo['confirm_password'], username]
+    useradd = ["useradd", "-m", "-p", userinfo['confirm_password'], username] + extra_args
     usercmds.append(useradd)
     if 'ssh_import_id' in userinfo:
         target = "/home/{}/.ssh/authorized_keys".format(username)
