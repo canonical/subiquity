@@ -17,7 +17,7 @@ import logging
 import os
 import time
 
-from subiquitycore import utils
+from subiquitycore.utils import run_command
 
 
 log = logging.getLogger("subiquitycore.user")
@@ -26,27 +26,28 @@ log = logging.getLogger("subiquitycore.user")
 def create_user(userinfo, dryrun=False):
     """Create a user according to the information in userinfo."""
     usercmds = []
+    username = userinfo['username']
+
     # FIXME: snappy needs --extrausers too; should factor out a way to pass
     #        additional parameters.
-    usercmds += ["useradd -m -p {confirm_password} {username}".format(**userinfo)]
+    useradd = ["useradd", "-m", "-p", userinfo['confirm_password'], username]
+    usercmds.append(useradd)
     if 'ssh_import_id' in userinfo:
-        target = "/home/{username}/.ssh/authorized_keys".format(**userinfo)
-        userinfo.update({'target': target})
-        ssh_id = userinfo.get('ssh_import_id')
+        target = "/home/{}/.ssh/authorized_keys".format(username)
+        ssh_id = userinfo['ssh_import_id']
         if ssh_id.startswith('sso'):
             log.info('call out to SSO login')
         else:
-            ssh_import_id = "ssh-import-id -o "
-            ssh_import_id += "{target} {ssh_import_id}".format(**userinfo)
-            usercmds += [ssh_import_id]
+            ssh_import_id = ["ssh-import-id", "-o", target, ssh_id]
+            usercmds.append(ssh_import_id)
 
     if not dryrun:
-        # TODO(mwhudson): cmd.split? really? what if the password contains a space?
         for cmd in usercmds:
-            utils.run_command(cmd.split(), shell=False)
+            # TODO(mwhudson): Check return value!
+            run_command(cmd, shell=False)
 
         # always run chown last
-        homedir = '/home/{username}'.format(**userinfo)
+        homedir = '/home/' + username
         retries = 10
         while not os.path.exists(homedir) and retries > 0:
             log.debug('waiting on homedir')
@@ -56,12 +57,13 @@ def create_user(userinfo, dryrun=False):
         if retries <= 0:
             raise ValueError('Failed to create homedir')
 
-        chown = "chown {username}.{username} -R /home/{username}".format(**userinfo)
-        utils.run_command(chown.split(), shell=False)
+        chown = ["chown", "{0}.{0}".format(username), "-R", homedir]
+        # TODO(mwhudson): Check return value!
+        run_command(chown, shell=False)
 
         # add sudo rule
         with open('/etc/sudoers.d/firstboot-user', 'w') as fh:
             fh.write('# firstboot config added user\n\n')
-            fh.write('{username} ALL=(ALL) NOPASSWD:ALL\n'.format(**userinfo))
+            fh.write('{} ALL=(ALL) NOPASSWD:ALL\n'.format(username))
     else:
         log.info('dry-run, skiping user configuration')
