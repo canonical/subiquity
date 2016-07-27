@@ -74,6 +74,20 @@ class RealnameEditor(StringEditor):
         return super().keypress(size, key)
 
 
+class EmailEditor(StringEditor):
+    """ Email input prompt with input rules
+    """
+
+    def keypress(self, size, key):
+        ''' restrict what chars we allow for username '''
+
+        realname = r'[a-zA-Z0-9_-.@]'
+        if re.match(realname, key) is None:
+            return False
+
+        return super().keypress(size, key)
+
+
 class UsernameEditor(StringEditor):
     """ Username input prompt with input rules
     """

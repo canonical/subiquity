@@ -21,3 +21,12 @@ from console_conf.ui.views import IdentityView
 
 class IdentityController(BaseIdentityController):
     identity_view = IdentityView
+
+    def identity(self):
+        title = "Profile setup"
+        excerpt = "Enter an email address from your account in the store."
+        footer = ""
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer, 40)
+        self.ui.set_body(self.identity_view(self.model, self.signal, self.opts))
+
