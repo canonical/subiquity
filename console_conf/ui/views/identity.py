@@ -15,7 +15,6 @@
 
 import logging
 import pwd
-import re
 
 from urwid import (Pile, Columns, Text, ListBox)
 from subiquitycore.ui.buttons import done_btn, cancel_btn
@@ -49,18 +48,21 @@ log = logging.getLogger("console_conf.views.identity")
 
 class IdentityView(BaseView):
 
-    def __init__(self, model, signal, opts):
+    def __init__(self, model, signal, opts, loop):
         self.model = model
         self.signal = signal
         self.opts = opts
+        self.loop = loop
         self.items = []
         self.email = EmailEditor(caption="")
         self.error = Text("", align="center")
+        self.progress = Text("", align="center")
 
         body = [
             Padding.center_90(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.center_90(Color.info_error(self.error)),
+            Padding.center_90(self.progress),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons()),
         ]
@@ -98,8 +100,11 @@ class IdentityView(BaseView):
             self.error.set_text("Please enter an email address.")
             return
         if not self.opts.dry_run:
+            self.progress.set_text("Contacting store...")
+            self.loop.draw_screen()
             users_before = users()
             result = run_command(["snap", "create-user", self.email.value])
+            self.progress.set_text("")
             if result['status'] != 0:
                 self.error.set_text("Creating user failed:\n" + result['err'])
                 return
@@ -110,12 +115,16 @@ class IdentityView(BaseView):
                     self.error.set_text("uhh")
                     return
                 new_user = pwd.getpwnam(new_users.pop())
+                # Use email for realname until
+                # https://bugs.launchpad.net/snappy/+bug/1607121 is resolved.
                 result = {
-                    'realname': new_user.pw_gecos.split(",")[0],
+                    'realname': self.email.value, #new_user.pw_gecos.split(",")[0]
                     'username': new_user.pw_name,
                     'passwod': '',
                     'confirm_password': ''
                     }
+                # Work around https://bugs.launchpad.net/snappy/+bug/1606815
+                run_command(["chown", "{}:{}".format(new_user.pw_uid, new_user.pw_gid), "-R", new_user.pw_dir])
                 self.model.add_user(result)
         else:
                 result = {

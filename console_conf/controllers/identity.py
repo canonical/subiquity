@@ -28,7 +28,7 @@ class IdentityController(BaseIdentityController):
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
-        self.ui.set_body(self.identity_view(self.model, self.signal, self.opts))
+        self.ui.set_body(self.identity_view(self.model, self.signal, self.opts, self.loop))
 
     def login(self):
         title = "Configuration Complete"
