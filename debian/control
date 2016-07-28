@@ -18,7 +18,8 @@ Vcs-Git: https://github.com/CanonicalLtd/subiquity.git
 
 Package: subiquity
 Architecture: amd64
-Depends: python3,
+Depends: curtin,
+         python3,
          subiquitycore,
          ${misc:Depends},
          ${python3:Depends}
@@ -38,8 +39,7 @@ Description: Ubuntu Server Installer
 
 Package: subiquitycore
 Architecture: amd64
-Depends: curtin,
-         probert,
+Depends: probert,
          python3-tornado,
          python3-urwid (>= 1.2.1),
          python3-yaml,
