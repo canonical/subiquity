@@ -16,12 +16,15 @@
 import logging
 from subiquitycore.controller import BaseController
 from subiquitycore.models import IdentityModel
-from subiquitycore.ui.views import IdentityView, LoginView
+from subiquitycore.ui.views import LoginView
 
 log = logging.getLogger('subiquitycore.controllers.identity')
 
 
-class IdentityController(BaseController):
+class BaseIdentityController(BaseController):
+
+    identity_view = None
+
     def __init__(self, common):
         super().__init__(common)
         self.model = IdentityModel(self.opts)
@@ -32,7 +35,7 @@ class IdentityController(BaseController):
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
-        self.ui.set_body(IdentityView(self.model, self.signal, self.opts))
+        self.ui.set_body(self.identity_view(self.model, self.signal, self.opts))
 
     def login(self):
         log.debug("Identity login view")

@@ -23,5 +23,6 @@ from .raid import RaidView  # NOQA
 from .ceph import CephDiskView  # NOQA
 from .iscsi import IscsiDiskView  # NOQA
 from .lvm import LVMVolumeGroupView  # NOQA
+from .identity import IdentityView  # NOQA
 from .installpath import InstallpathView  # NOQA
 from .installprogress import ProgressView  # NOQA
