@@ -16,3 +16,4 @@
 """ ConsoleConf UI Views """
 
 from .welcome import WelcomeView  # NOQA
+from .identity import IdentityView  # NOQA

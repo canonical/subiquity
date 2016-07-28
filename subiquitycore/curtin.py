@@ -90,11 +90,11 @@ POST_INSTALL_LIST = [
 POST_INSTALL = '\n' + "\n".join(POST_INSTALL_LIST) + '\n'
 
 
-def curtin_configure_user(userinfo, dryrun=False):
+def curtin_configure_user(userinfo, dryrun=False, options=None):
     usercmds = []
     # FIXME: snappy needs --extrausers too; should factor out a way to pass
     #        additional parameters.
-    usercmds += ["useradd -m -p {confirm_password} {username}".format(**userinfo)]
+    usercmds += ["useradd -m {options} -p {confirm_password} {username}".format(options=options, **userinfo)]
     if 'ssh_import_id' in userinfo:
         target = "/home/{username}/.ssh/authorized_keys".format(**userinfo)
         userinfo.update({'target': target})
