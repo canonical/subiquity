@@ -13,7 +13,22 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" ConsoleConf UI Views """
+import logging
 
-from .identity import IdentityView  # NOQA
-from .welcome import WelcomeView  # NOQA
+from subiquitycore.curtin import curtin_write_postinst_config
+from subiquitycore.ui.views.identity import BaseIdentityView
+from subiquitycore.user import create_user
+
+log = logging.getLogger("console_conf.views.identity")
+
+
+class IdentityView(BaseIdentityView):
+    def create_user(self, result):
+        try:
+            curtin_write_postinst_config(result)
+            create_user(result, dryrun=self.opts.dry_run)
+        except PermissionError:
+            log.exception('Failed to write curtin post-install config')
+            self.signal.emit_signal('filesystem:error',
+                                    'curtin_write_postinst_config', result)
+            return None

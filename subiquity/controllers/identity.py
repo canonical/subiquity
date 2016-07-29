@@ -13,9 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" console-conf controllers """
 
-from .welcome import WelcomeController  # NOQA
-from subiquitycore.controllers.network import NetworkController  # NOQA
-from subiquitycore.controllers.login import LoginController  # NOQA
-from .identity import IdentityController  # NOQA
+from subiquitycore.controllers.identity import BaseIdentityController
+
+from subiquity.ui.views import IdentityView
+
+
+class IdentityController(BaseIdentityController):
+    identity_view = IdentityView

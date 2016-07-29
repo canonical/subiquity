@@ -13,9 +13,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" console-conf controllers """
+import logging
 
-from .welcome import WelcomeController  # NOQA
-from subiquitycore.controllers.network import NetworkController  # NOQA
-from subiquitycore.controllers.login import LoginController  # NOQA
-from .identity import IdentityController  # NOQA
+from subiquitycore.ui.views.identity import BaseIdentityView
+from subiquitycore.user import create_user
+
+log = logging.getLogger("console_conf.views.identity")
+
+
+class IdentityView(BaseIdentityView):
+    def create_user(self, result):
+        try:
+            create_user(
+                result, dryrun=self.opts.dry_run, extra_args=['--extrausers'])
+        except PermissionError:
+            # XXX do something here
+            log.exception('Failed to create user.')
+            return None
