@@ -37,10 +37,9 @@ HOSTNAME_MAXLEN = 64
 REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
-USERADD_OPTIONS = ""
 
 
-class IdentityView(BaseView):
+class CoreIdentityView(BaseView):
     def __init__(self, model, signal, opts):
         self.model = model
         self.signal = signal
@@ -238,8 +237,9 @@ class IdentityView(BaseView):
 
         try:
             curtin_write_postinst_config(result)
-            curtin_configure_user(result, dryrun=self.opts.dry_run,
-                                  options=USERADD_OPTIONS)
+            curtin_configure_user(result,
+                                  dryrun=self.opts.dry_run,
+                                  options=self.model.useradd_options)
         except PermissionError:
             log.exception('Failed to write curtin post-install config')
             self.signal.emit_signal('filesystem:error',

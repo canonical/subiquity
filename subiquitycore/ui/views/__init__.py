@@ -19,5 +19,5 @@ from .network_configure_interface import NetworkConfigureInterfaceView  # NOQA
 from .network_configure_ipv4_interface import NetworkConfigureIPv4InterfaceView  # NOQA
 from .network_bond_interfaces import NetworkBondInterfacesView  # NOQA
 from .welcome import CoreWelcomeView as WelcomeView  # NOQA
-from .identity import IdentityView  # NOQA
+from .identity import CoreIdentityView as IdentityView  # NOQA
 from .login import LoginView  # NOQA

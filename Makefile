@@ -42,6 +42,9 @@ install_deps: install_deps_$(ARCH)
 dryrun: probert
 	$(MAKE) ui-view DRYRUN="--dry-run --uefi --install"
 
+console-conf-dryrun: probert
+	(DRYRUN="--dry-run --uefi" PYTHONPATH=$(PYTHONPATH) bin/console-conf-tui $(DRYRUN) $(MACHARGS))
+
 ui-view:
 	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC)-tui $(DRYRUN) $(MACHARGS))
 

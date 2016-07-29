@@ -79,6 +79,8 @@ class IdentityModel(BaseModel):
          "validate_confirm_password")
     ]
 
+    useradd_options = ""
+
     def __init__(self, opts):
         self.opts = opts
 

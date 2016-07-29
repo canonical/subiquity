@@ -15,7 +15,7 @@
 
 import logging
 from subiquitycore.controller import BaseController
-from subiquitycore.models import IdentityModel
+from console_conf.models import IdentityModel
 from subiquitycore.ui.views import IdentityView, LoginView
 
 log = logging.getLogger('subiquitycore.controllers.identity')
