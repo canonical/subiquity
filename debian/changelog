@@ -1,4 +1,4 @@
-subiquity (0.0.7~1) UNRELEASED; urgency=medium
+subiquity (0.0.7~3~xenial) xenial; urgency=medium
 
   [ Michael Hudson-Doyle ]
   * Demo-ware.
@@ -8,7 +8,7 @@ subiquity (0.0.7~1) UNRELEASED; urgency=medium
   * Release 0.0.7 snapshot
   * debian/control: move Depends on curtin from subiquitycore to subiquity.
 
- -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Fri, 08 Jul 2016 16:44:55 -0400
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Thu, 28 Jul 2016 21:03:59 -0400
 
 subiquity (0.0.5) wily; urgency=medium
 
