@@ -1,7 +1,11 @@
-subiquity (0.0.6~cy3) UNRELEASED; urgency=medium
+subiquity (0.0.7~1) UNRELEASED; urgency=medium
 
-  * Release 0.0.6 snapshot: port for yakkety:
-    - Build separate subiquitycore, subiquity, and console-conf packages.
+  [ Michael Hudson-Doyle ]
+  * Demo-ware.
+  * Install systemd units for console-conf.
+
+  [ Mathieu Trudel-Lapierre ]
+  * Release 0.0.7 snapshot
   * debian/control: move Depends on curtin from subiquitycore to subiquity.
 
  -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Fri, 08 Jul 2016 16:44:55 -0400

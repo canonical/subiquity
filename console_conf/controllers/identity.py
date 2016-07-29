@@ -16,8 +16,32 @@
 
 from subiquitycore.controllers.identity import BaseIdentityController
 
-from console_conf.ui.views import IdentityView
+from console_conf.ui.views import IdentityView, LoginView
 
 
 class IdentityController(BaseIdentityController):
     identity_view = IdentityView
+
+    def identity(self):
+        title = "Profile setup"
+        excerpt = "Enter an email address from your account in the store."
+        footer = ""
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer, 40)
+        self.ui.set_body(self.identity_view(self.model, self.signal, self.opts, self.loop))
+
+    def login(self):
+        title = "Configuration Complete"
+        footer = "View configured user and device access methods"
+        self.ui.set_header(title)
+        self.ui.set_footer(footer)
+
+        net_model = self.controllers['Network'].model
+        configured_ifaces = net_model.get_configured_interfaces()
+        login_view = LoginView(self.opts,
+                               self.model,
+                               self.signal,
+                               self.model.user,
+                               configured_ifaces)
+
+        self.ui.set_body(login_view)
