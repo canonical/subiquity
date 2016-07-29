@@ -39,9 +39,6 @@ checks:
         directory:
             - /proc
             - /sys
-    exec:
-        file:
-            - /usr/bin/curtin
 '''
 
 def parse_options(argv):
