@@ -96,9 +96,9 @@ class LoginView(BaseView):
             'realname': user.realname,
             'username': user.username,
         }
-        #login_info.update({'auth': self.auth_name(user.ssh_import_id),
-        #                   'ssh_import_id': user.ssh_import_id.split(":")[-1]})
-        #print(login_info)
+        login_info.update({'auth': self.auth_name(user.ssh_import_id),
+                           'ssh_import_id': user.ssh_import_id.split(":")[-1]})
+        print(login_info)
         login_text = local_tpl.format(**login_info)
         if user.ssh_import_id:
             login_text += remote_tpl.format(**login_info)
