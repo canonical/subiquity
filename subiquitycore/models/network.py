@@ -73,8 +73,7 @@ class Networkdev():
 
     @property
     def is_configured(self):
-        return (self.action is not None and
-                self.probe_info is not None)
+        return self.action is not None and self.probe_info is not None
 
     @property
     def type(self):
