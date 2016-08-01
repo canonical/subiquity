@@ -1,21 +1,14 @@
 [Unit]
 Description=Ubuntu Core Firstboot Configuration %I
 After=systemd-user-sessions.service plymouth-quit-wait.service
-ExecPreStart=systemctl stop getty@%I
 After=rc-local.service
-ExecStop=systemctl start getty@%I
 Before=getty.target
 IgnoreOnIsolate=yes
 ConditionPathExists=/dev/tty0
-ConditionPathExists=!/writable/firstboot-complete
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
-ExecStartPre=/bin/systemctl stop getty@%I
 ExecStart=-/sbin/agetty -n --noclear -l /usr/bin/console-conf %I $TERM
-ExecStop=/bin/systemctl start getty@%I
-#ExecStopPost=/bin/echo "Post stop, starting getty@%I"
-#ExecStopPost=/bin/systemctl start getty@%I
 Type=idle
 Restart=always
 RestartSec=0
@@ -27,12 +20,6 @@ TTYVTDisallocate=yes
 KillMode=process
 IgnoreSIGPIPE=no
 SendsSIGHUP=yes
-
-#KillMode=process
-#Restart=always
-#StandardInput=tty-force
-#StandardOutput=tty
-#StandardError=tty
 
 [Install]
 WantedBy=getty.target

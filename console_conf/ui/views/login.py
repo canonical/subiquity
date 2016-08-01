@@ -19,9 +19,12 @@ Login provides user with language selection
 
 """
 import logging
+import os
+
 from urwid import (ListBox, Pile, Text)
+
 from subiquitycore.ui.buttons import finish_btn
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.view import BaseView
 from subiquitycore import utils
 
@@ -87,10 +90,10 @@ class LoginView(BaseView):
 
     def done(self, button):
         if not self.opts.dry_run:
-            # mark ourselves complete
-            utils.mark_firstboot_complete()
-
-            # disable the UI service restoring getty service
-            utils.disable_first_boot_service()
+            os.unlink("/etc/systemd/getty@.service")
+            os.unlink("/etc/systemd/serial-getty@.service")
+            utils.run_command(["systemctl", "daemon-reload"])
+            # This will kill the running process.
+            utils.run_command(["systemctl", "try-restart", "getty@*.service", "serial-getty@*.service"])
 
         self.signal.emit_signal('quit')

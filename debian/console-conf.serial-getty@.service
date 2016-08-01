@@ -1,16 +1,12 @@
 [Unit]
 Description=Ubuntu Core Firstboot Configuration %I
 BindsTo=dev-%i.device
-#After=getty@tty.service
 After=dev-%i.device systemd-user-sessions.service plymouth-quit-wait.service
 After=rc-local.service
-ConditionPathExists=!/writable/firstboot-complete
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
-ExecStartPre=/sbin/systemctl stop serial-getty@%I
 ExecStart=-/sbin/agetty -n --noclear -l /usr/bin/console-conf %I $TERM
-ExecStop=/sbin/systemctl start serial-getty@%I
 Type=idle
 Restart=always
 UtmpIdentifier=%I
@@ -20,13 +16,6 @@ TTYVHangup=yes
 KillMode=process
 IgnoreSIGPIPE=no
 SendsSIGHUP=yes
-
-#TTYVTDisallocate=yes
-#KillMode=process
-#Restart=always
-#StandardInput=tty-force
-#StandardOutput=tty
-#StandardError=tty
 
 [Install]
 WantedBy=getty.target

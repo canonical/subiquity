@@ -1,6 +1,0 @@
-#!/bin/sh
-
-#DEBHELPER#
-
-systemctl enable console-conf@tty1.service
-systemctl enable serial-console-conf@ttyS1.service
