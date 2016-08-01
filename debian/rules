@@ -17,15 +17,16 @@ override_dh_auto_clean:
 	dh_auto_clean
 
 override_dh_install:
+	mkdir -p $(CURDIR)/debian/console-conf/etc/systemd/system
+	install -m 0644 $(CURDIR)/debian/console-conf.serial-getty@.service $(CURDIR)/debian/console-conf/etc/systemd/system/serial-getty@.service
+	install -m 0644 $(CURDIR)/debian/console-conf.getty@.service $(CURDIR)/debian/console-conf/etc/systemd/system/getty@.service
+	ln -s getty@.service $(CURDIR)/debian/console-conf/etc/systemd/system/autovt@.service
+	ln -s getty@.service $(CURDIR)/debian/console-conf/etc/systemd/system/getty@tty1.service
 	rm -rf $(PYBUILD_DESTDIR)usr/share/subiquity/subiquity-0.0.5.egg-info
 	dh_install --fail-missing
 
 override_dh_python3:
 	dh_python3 --ignore-shebangs
-
-override_dh_installinit:
-	dh_installinit --no-start --name=console-conf@
-	dh_installinit --no-start --name=serial-console-conf@
 
 override_dh_auto_test:
 	@echo "No tests."
