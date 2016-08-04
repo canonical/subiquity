@@ -55,9 +55,9 @@ class Device:
         addresses = []
         for address in self.addresses:
             if address.version == 4 and not self.dhcp4:
-                addresses.append(addresses.with_prefixlen)
+                addresses.append(address.with_prefixlen)
             if address.version == 6 and not self.dhcp6:
-                addresses.append(addresses.with_prefixlen)
+                addresses.append(address.with_prefixlen)
         data = {
             'dhcp4': str(self.dhcp4).lower(),
             'dhcp4': str(self.dhcp4).lower(),
