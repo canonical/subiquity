@@ -13,14 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import errno
-import ipaddress
 import logging
-import os
-from subiquitycore.prober import make_network_info
+
 from subiquitycore.model import BaseModel
-from subiquitycore.utils import (read_sys_net,
-                                 sys_dev_path)
+from console_conf.models import NetworkConfig
 
 
 NETDEV_IGNORED_IFACES = ['lo', 'bridge', 'tun', 'tap']
@@ -35,9 +31,9 @@ class NetworkModel(BaseModel):
         ('Network main view',
          base_signal,
          'network'),
-        ## ('Network finish',
-        ##  'network:finish',
-        ##  'network_finish'),
+        ('Network finish',
+         'network:finish',
+         'network_finish'),
         ## ('Network configure interface',
         ##  base_signal + ':configure-interface',
         ##  'network_configure_interface'),
@@ -58,9 +54,10 @@ class NetworkModel(BaseModel):
     ##     #  'install_network_driver')
     ]
 
-    def __init__(self, config, opts):
-        self.config = config
+    def __init__(self, probe_data, opts):
+        self._probe_data = probe_data
         self.opts = opts
+        self.reset()
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -70,3 +67,8 @@ class NetworkModel(BaseModel):
     def get_signals(self):
         return self.signals + self.additional_options
 
+    def get_menu(self):
+        return self.additional_options
+
+    def reset(self):
+        self.config = NetworkConfig.from_probe_data(self._probe_data)

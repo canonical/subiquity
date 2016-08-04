@@ -37,7 +37,7 @@ class IdentityController(BaseIdentityController):
         self.ui.set_footer(footer)
 
         net_model = self.controllers['Network'].model
-        configured_ifaces = net_model.get_configured_interfaces()
+        configured_ifaces = net_model.config.ethernets
         login_view = LoginView(self.opts,
                                self.model,
                                self.signal,

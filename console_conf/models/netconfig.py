@@ -36,7 +36,7 @@ class Device:
         device = cls(info.name, info.vendor)
         hasipv4, hasipv6 = False, False
         ip = network.get_ips(info.name)
-        if ip is not None:
+        if ip:
             addr = ip['addr']
             mask = ip['netmask']
             address = ipaddress.ip_interface(addr + '/' + mask)
@@ -100,8 +100,8 @@ class NetworkConfig:
     @classmethod
     def from_probe_data(cls, results):
         config = cls()
-        network = Network(results)
-        for name, data in network.results['network'].items():
+        network = Network(results['network']['devices'])
+        for name, data in network.results.items():
             type = data['type']
             if type in IGNORED_DEVICE_TYPES:
                 continue

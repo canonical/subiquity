@@ -20,11 +20,9 @@ Provides network device listings and extended network information
 """
 
 import logging
-import textwrap
 from urwid import (ListBox, Pile, BoxAdapter,
                    Text, Columns)
 import yaml
-from netifaces import AF_INET, AF_INET6
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import cancel_btn, menu_btn, done_btn
 from subiquitycore.ui.utils import Padding, Color
@@ -72,32 +70,38 @@ class NetworkView(BaseView):
                     menu_btn(label=iface.name,
                              on_press=self.on_net_dev_press),
                     focus_map='button focus'))
-            for addr in iface.addresses:
-                col_1.append(Text(""))  # space for address
+            if iface.addresses:
+                for addr in iface.addresses:
+                    col_1.append(Text(""))  # space for address
+            else:
+                col_1.append(Text(""))  # space for <no addresses>
         col_1 = BoxAdapter(SimpleList(col_1),
                            height=len(col_1))
 
         col_2 = []
         for iface in ifaces:
             col_2.append(Text(iface.vendor))
-            for addr in iface.addresses:
-                t = addr.with_prefixlen
-                if addr.version == 4:
-                    if iface.dhcp4:
-                        t += " (dhcp)"
-                    else:
-                        t += " (static)"
-                elif addr.version == 6:
-                    if iface.dhcp6:
-                        t += " (dhcp)"
-                    else:
-                        t += " (static)"
-                col_2.append(Text(t))
+            if iface.addresses:
+                for addr in iface.addresses:
+                    t = addr.with_prefixlen
+                    if addr.version == 4:
+                        if iface.dhcp4:
+                            t += " (dhcp)"
+                        else:
+                            t += " (static)"
+                    elif addr.version == 6:
+                        if iface.dhcp6:
+                            t += " (dhcp)"
+                        else:
+                            t += " (static)"
+                            col_2.append(Text(t))
+            else:
+                col_2.append(Text("<no addresses>"))
 
         if len(col_2):
             col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                                height=len(col_2))
-            ifname_width += len(max(ifaces, key=len))
+            ifname_width += len(max(ifaces, key=lambda x: len(x.name)).name)
             if ifname_width > 20:
                 ifname_width = 20
         else:
@@ -106,13 +110,11 @@ class NetworkView(BaseView):
         return Columns([(ifname_width, col_1), col_2], 2)
 
     def done(self, result):
-        actions = [iface.action.get() for iface in
-                   self.model.get_configured_interfaces()]
-        actions += self.model.get_default_route()
-        log.debug('Configured Network Actions:\n{}'.format(
-            yaml.dump(actions, default_flow_style=False)))
-        self.signal.emit_signal('network:finish', actions)
+        self.signal.emit_signal('network:finish', self.model.config.render())
 
     def cancel(self, button):
         self.model.reset()
         self.signal.prev_signal()
+
+    def on_net_dev_press(self, button):
+        pass

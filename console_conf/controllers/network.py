@@ -17,7 +17,7 @@ import logging
 
 from subiquitycore.controller import BaseController
 
-from console_conf.models import NetworkConfig, NetworkModel
+from console_conf.models import NetworkModel
 from console_conf.ui.views import NetworkView
 
 log = logging.getLogger("subiquitycore.controller.network")
@@ -27,8 +27,7 @@ class NetworkController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.prober._probe_network()
-        self.config = NetworkConfig.from_probe_data(self.prober.probe_data)
-        self.model = NetworkModel(self.config, self.model)
+        self.model = NetworkModel(self.prober.probe_data, self.opts)
 
     def network(self):
         title = "Network connections"
@@ -39,3 +38,5 @@ class NetworkController(BaseController):
         self.ui.set_footer(footer, 20)
         self.ui.set_body(NetworkView(self.model, self.signal))
 
+    def network_finish(self, config):
+        self.signal.emit_signal('menu:identity:main')

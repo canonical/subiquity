@@ -72,10 +72,11 @@ class LoginView(BaseView):
         }
         login_text = local_tpl.format(**login_info)
         login_text += remote_tpl.format(**login_info)
-        for iface in self.ifaces:
-            ip = str(iface.ip).split("/")[0]
-            ssh_iface = "    ssh %s@%s" % (user.username, ip)
-            ssh += [Padding.center_50(Text(ssh_iface))]
+        for iface in self.ifaces.values():
+            for addr in iface.addresses:
+                ip = str(iface.ip).split("/")[0]
+                ssh_iface = "    ssh %s@%s" % (user.username, ip)
+                ssh += [Padding.center_50(Text(ssh_iface))]
 
         sl += [Text(login_text),
                Padding.line_break("")] + ssh
