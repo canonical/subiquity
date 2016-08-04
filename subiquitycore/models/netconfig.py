@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from probert.network import NetworkInfo
+import ipaddress
+
+from probert.network import Network, NetworkInfo
 
 IGNORED_DEVICE_TYPES = ['lo', 'tun', 'tap']
 
@@ -28,13 +30,26 @@ class Device:
         self.dhcp4 = False
         self.dhcp6 = False
         self.addresses = []
-        self.ignored = False
 
     @classmethod
-    def from_probe_data(cls, data):
-        name = data['hardware']['INTERFACE']
-        info = NetworkInfo({name:data})
-        return cls(name, info.vendor)
+    def from_probe_data(cls, network, info):
+        device = cls(info.name, info.vendor)
+        hasipv4, hasipv6 = False, False
+        ip = network.get_ips(info.name)
+        if ip is not None:
+            addr = ip['addr']
+            mask = ip['netmask']
+            address = ipaddress.ip_interface(addr + '/' + mask)
+            if address.version == 4:
+                hasipv4 = True
+            if address.version == 6:
+                hasipv6 = True
+            device.addresses.append(address)
+        if hasipv4:
+            device.dhcp4 = True
+        if hasipv6:
+            device.dhcp6 = True
+        return device
 
     def render(self):
         addresses = []
@@ -73,26 +88,34 @@ class NetworkConfig:
 
     def render(self):
         ethernets = {}
-        for ethernet in ethernets:
-            if not ethernet.ignored:
-                ethernets[ethernet.name] = ethernet.render()
+        for ethernet in self.ethernets.values():
+            ethernets[ethernet.name] = ethernet.render()
         data = {
             'version': 2,
             }
         if ethernets:
             data['ethernets'] = ethernets
-        return data
+        return {'network': data}
 
     @classmethod
-    def from_probe_data(self, results):
-        network = results['network']
-        for name, data in network.items():
+    def from_probe_data(cls, results):
+        config = cls()
+        network = Network(results)
+        for name, data in network.results['network'].items():
             type = data['type']
             if type in IGNORED_DEVICE_TYPES:
                 continue
             if data['bridge']['is_bridge']:
                 pass ## bridges not yet supported
-            elif data['bridge']['bond']['is_master']:
+            elif data['bond']['is_master']:
                 pass ## bridges not yet supported
             if type == 'eth':
-                self.ethernets[name] = EthernetDevice.from_probe_data(data)
+                info = NetworkInfo({name:data})
+                config.ethernets[name] = EthernetDevice.from_probe_data(network, info)
+        return config
+
+if __name__ == "__main__":
+    import sys, json, yaml
+    data = json.load(open(sys.argv[1]))
+    config = NetworkConfig.from_probe_data(data)
+    print(yaml.dump(config.render()))
