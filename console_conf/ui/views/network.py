@@ -116,5 +116,5 @@ class NetworkView(BaseView):
         self.model.reset()
         self.signal.prev_signal()
 
-    def on_net_dev_press(self, button):
-        pass
+    def on_net_dev_press(self, result):
+        self.signal.emit_signal('menu:network:main:configure-interface', result.label)

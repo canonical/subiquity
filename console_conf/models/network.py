@@ -34,9 +34,9 @@ class NetworkModel(BaseModel):
         ('Network finish',
          'network:finish',
          'network_finish'),
-        ## ('Network configure interface',
-        ##  base_signal + ':configure-interface',
-        ##  'network_configure_interface'),
+        ('Network configure interface',
+          base_signal + ':configure-interface',
+         'network_configure_interface'),
         ## ('Network configure ipv4 interface',
         ##  base_signal + ':configure-ipv4-interface',
         ##  'network_configure_ipv4_interface')

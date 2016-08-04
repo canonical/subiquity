@@ -15,10 +15,12 @@
 
 import logging
 
+import yaml
+
 from subiquitycore.controller import BaseController
 
 from console_conf.models import NetworkModel
-from console_conf.ui.views import NetworkView
+from console_conf.ui.views import NetworkView, NetworkConfigureInterfaceView
 
 log = logging.getLogger("subiquitycore.controller.network")
 
@@ -39,4 +41,10 @@ class NetworkController(BaseController):
         self.ui.set_body(NetworkView(self.model, self.signal))
 
     def network_finish(self, config):
+        log.debug("network config: \n%s", yaml.dump(config))
         self.signal.emit_signal('menu:identity:main')
+
+    def network_configure_interface(self, interface):
+        self.ui.set_header("Network interface {}".format(interface))
+        self.ui.set_body(NetworkConfigureInterfaceView(
+            self.model, self.signal, interface))

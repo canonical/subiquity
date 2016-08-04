@@ -19,3 +19,4 @@ from .identity import IdentityView  # NOQA
 from .login import LoginView  # NOQA
 from .welcome import WelcomeView  # NOQA
 from .network import NetworkView  # NOQA
+from .network_configure_interface import NetworkConfigureInterfaceView  # NOQA
