@@ -1,6 +1,6 @@
 subiquity (0.0.7~4~xenial) UNRELEASED; urgency=medium
 
-  * Use a drop-in file to run console-conf before getty.
+  * Use a drop-in files to run console-conf before getty.
 
  -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Fri, 05 Aug 2016 13:53:29 +1200
 
