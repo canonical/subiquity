@@ -1,4 +1,4 @@
-subiquity (0.0.7~4~xenial) UNRELEASED; urgency=medium
+subiquity (0.0.7~4~xenial) xenial; urgency=medium
 
   * Use a drop-in files to run console-conf before getty.
   * Write stamp file and logs to somewhere more sensible.
