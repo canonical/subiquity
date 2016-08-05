@@ -202,7 +202,7 @@ def sudo_user():
 def mark_firstboot_complete():
     """ Touch our firstboot-complete eyecatcher """
     log.info('marking firstboot service complete')
-    firstboot = '/writable/firstboot-complete'
+    firstboot = '/var/lib/console-conf/complete'
     if not os.path.exists(os.path.dirname(firstboot)):
         os.makedirs(os.path.dirname(firstboot))
     with open(firstboot, 'w') as fp:

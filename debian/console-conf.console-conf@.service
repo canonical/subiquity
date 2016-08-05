@@ -6,7 +6,7 @@ After=rc-local.service
 ExecStop=systemctl start getty@%I
 IgnoreOnIsolate=yes
 ConditionPathExists=/dev/tty0
-ConditionPathExists=!/writable/firstboot-complete
+ConditionPathExists=!/var/lib/console-conf/complete
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity

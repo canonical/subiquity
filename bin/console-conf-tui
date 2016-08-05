@@ -67,7 +67,7 @@ def parse_options(argv):
 def control_c_handler(signum, frame):
     sys.exit(1)
 
-LOGDIR = "/writable/.subiquity"
+LOGDIR = "/var/log/console-conf/"
 
 def main():
     opts = parse_options(sys.argv[1:])
