@@ -1,7 +1,6 @@
 [Unit]
 Description=Ubuntu Core Firstboot Configuration %I
 BindsTo=dev-%i.device
-#After=getty@tty.service
 After=dev-%i.device systemd-user-sessions.service plymouth-quit-wait.service
 After=rc-local.service
 ConditionPathExists=!/writable/firstboot-complete
@@ -19,7 +18,7 @@ TTYReset=yes
 TTYVHangup=yes
 KillMode=process
 IgnoreSIGPIPE=no
-SendsSIGHUP=yes
+SendSIGHUP=yes
 
 #TTYVTDisallocate=yes
 #KillMode=process
@@ -27,6 +26,3 @@ SendsSIGHUP=yes
 #StandardInput=tty-force
 #StandardOutput=tty
 #StandardError=tty
-
-[Install]
-WantedBy=getty.target

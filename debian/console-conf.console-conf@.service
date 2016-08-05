@@ -4,7 +4,6 @@ After=systemd-user-sessions.service plymouth-quit-wait.service
 ExecPreStart=systemctl stop getty@%I
 After=rc-local.service
 ExecStop=systemctl start getty@%I
-Before=getty.target
 IgnoreOnIsolate=yes
 ConditionPathExists=/dev/tty0
 ConditionPathExists=!/writable/firstboot-complete
@@ -26,14 +25,10 @@ TTYVHangup=yes
 TTYVTDisallocate=yes
 KillMode=process
 IgnoreSIGPIPE=no
-SendsSIGHUP=yes
+SendSIGHUP=yes
 
 #KillMode=process
 #Restart=always
 #StandardInput=tty-force
 #StandardOutput=tty
 #StandardError=tty
-
-[Install]
-WantedBy=getty.target
-DefaultInstance=tty1
