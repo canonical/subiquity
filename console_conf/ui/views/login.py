@@ -90,7 +90,7 @@ class LoginView(BaseView):
             # mark ourselves complete
             utils.mark_firstboot_complete()
 
-            # disable the UI service restoring getty service
-            utils.disable_first_boot_service()
+            # stop the console-conf services (this will kill the current process).
+            utils.run_command(["systemctl", "stop", "console-conf@*.service", "serial-console-conf@*.service"])
 
         self.signal.emit_signal('quit')
