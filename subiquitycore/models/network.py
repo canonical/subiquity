@@ -30,7 +30,7 @@ from .actions import (
     VlanAction,
 )
 
-NETDEV_IGNORED_IFACES = ['lo', 'bridge', 'tun', 'tap']
+NETDEV_IGNORED_IFACES = ['lo', 'bridge', 'tun', 'tap', 'dummy']
 log = logging.getLogger('subiquitycore.models.network')
 
 
@@ -53,18 +53,19 @@ class Networkdev():
         log.debug('configuring netdev from info source')
 
         ip_info = self.probe_info.ip
-        source = ip_info.get('source', None)
-        if source and source['method'].startswith('dhcp'):
-            self.action.subnets.extend([{'type': 'dhcp'}])
-        elif ip_info['addr'] is not None:
-            # FIXME:
-            #  - ipv6
-            #  - read/fine default dns and route info
-            ip_network = \
-                ipaddress.IPv4Interface("{addr}/{netmask}".format(**ip_info))
-            self.action.subnets.extend([{
-                'type': 'static',
-                'address': ip_network.with_prefixlen}])
+        sources = ip_info.get('sources', None)
+        for idx in range(len(ip_info.get('af_inet', []))):
+            if sources[idx] and sources[idx]['method'].startswith('dhcp'):
+                self.action.subnets.extend([{'type': 'dhcp'}])
+            elif ip_info['af_inet'][idx]['addr'] is not None:
+                # FIXME:
+                #  - ipv6
+                #  - read/fine default dns and route info
+                ip_network = \
+                    ipaddress.IPv4Interface("{addr}/{netmask}".format(ip_info['af_inet'][idx]))
+                self.action.subnets.extend([{
+                    'type': 'static',
+                    'address': ip_network.with_prefixlen}])
 
         log.debug('Post config action: {}'.format(self.action.get()))
 
@@ -104,9 +105,9 @@ class Networkdev():
             ip from the static element of the subnets attribute.
         '''
         log.debug('getting ip info on {}'.format(self.ifname))
-        ip = 'No IPv4 configuration'
-        ip_method = None
-        ip_provider = None
+        ip4 = []
+        ip4_methods = []
+        ip4_providers = []
 
         if self.is_configured:
             log.debug('iface is configured, check action')
@@ -116,11 +117,11 @@ class Networkdev():
             if len(using_dhcp) > 0:
                 log.debug('iface is using dhcp, get details')
                 ipinfo = self.probe_info.ip
-                probed_ip = ipinfo.get('addr')
-                ip_method = ipinfo.get('source').get('method')
-                ip_provider = ipinfo.get('source').get('provider')
+                probed_ip = [ af_inet.get('addr') for af_inet in ipinfo.get('af_inet') ]
+                ip4_methods = [ source.get('method') for source in ipinfo.get('sources') ]
+                ip4_providers = [ source.get('provider') for source in ipinfo.get('sources') ]
                 if probed_ip:
-                    ip = probed_ip
+                    ip4 = probed_ip
 
             else:  # using static
                 log.debug('no dhcp, must be static')
@@ -129,30 +130,36 @@ class Networkdev():
                 if len(static_sn) > 0:
                     log.debug('found a subnet entry, use the first')
                     [static_sn] = static_sn
-                    ip = static_sn.get('address')
-                    ip_method = 'manual'
-                    ip_provider = static_sn.get('gateway', 'local config')
+                    ip4 = [static_sn.get('address')]
+                    ip4_methods = ['manual']
+                    ip4_providers = [static_sn.get('gateway', 'local config')]
                 else:
                     log.debug('no subnet entry')
 
-        log.debug('{} ipinfo: {},{},{}'.format(self.ifname, ip, ip_method,
-                                               ip_provider))
-        return (ip, ip_method, ip_provider)
+        log.debug('{} IPv4 info: {},{},{}'.format(self.ifname, ip4, ip4_methods,
+                                                  ip4_providers))
+
+        ip_info = { 'ip4': ip4,
+                    'ip4_methods': ip4_methods,
+                    'ip4_providers': ip4_providers,
+                  }
+
+        return ip_info
 
     @property
-    def ip(self):
-        ip, *_ = self._get_ip_info()
-        return ip
+    def ip4(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip4']
 
     @property
-    def ip_method(self):
-        _, ip_method, _ = self._get_ip_info()
-        return ip_method
+    def ip4_methods(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip4_methods']
 
     @property
-    def ip_provider(self):
-        _, _, ip_provider = self._get_ip_info()
-        return ip_provider
+    def ip4_providers(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip4_providers']
 
     def remove_subnets(self):
         log.debug('Removing subnets on iface: {}'.format(self.ifname))
@@ -325,7 +332,10 @@ class NetworkModel(BaseModel):
                 err = ('Unkown netdevice type: ') + netdev.type
                 log.error(err)
 
-            netdev.configure(action, probe_info=ifinfo)
+            try:
+                netdev.configure(action, probe_info=ifinfo)
+            except Exception as e:
+                log.error(e)
             self.devices[iface] = netdev
 
         return self.devices[iface]
@@ -384,7 +394,7 @@ class NetworkModel(BaseModel):
         '''string'ify and bucketize iface speed:
            1M, 10M, 1G, 10G, 40G, 100G
         '''
-        hwattr = self.devices[iface].info.hwinfo['attrs']
+        hwattr = self.info[iface].hwinfo['attrs']
         speed = hwattr.get('speed', 0)
         if not speed:
             return None
@@ -428,7 +438,7 @@ class NetworkModel(BaseModel):
         return ifinfo.hwaddr
 
     def get_vendor(self, iface):
-        hwinfo = self.devices[iface].info.hwinfo
+        hwinfo = self.info[iface].hwinfo
         vendor_keys = [
             'ID_VENDOR_FROM_DATABASE',
             'ID_VENDOR',
@@ -445,7 +455,7 @@ class NetworkModel(BaseModel):
         return 'Unknown Vendor'
 
     def get_model(self, iface):
-        hwinfo = self.devices[iface].info.hwinfo
+        hwinfo = self.info[iface].hwinfo
         model_keys = [
             'ID_MODEL_FROM_DATABASE',
             'ID_MODEL_ID'
@@ -463,7 +473,7 @@ class NetworkModel(BaseModel):
 
     def iface_is_bonded(self, iface):
         log.debug('checking {} is bonded'.format(iface))
-        bondinfo = self.devices[iface].info.bond
+        bondinfo = self.info[iface].bond
         log.debug('bondinfo: {}'.format(bondinfo))
         if bondinfo:
             if bondinfo['is_master'] is True or bondinfo['is_slave'] is True:
@@ -471,7 +481,7 @@ class NetworkModel(BaseModel):
         return False
 
     def iface_is_bond_slave(self, iface):
-        bondinfo = self.devices[iface].info.bond
+        bondinfo = self.info[iface].bond
         log.debug('bondinfo: {}'.format(bondinfo))
         if bondinfo:
             if bondinfo['is_slave'] is True:
@@ -481,7 +491,7 @@ class NetworkModel(BaseModel):
     def get_bond_masters(self):
         bond_masters = []
         for iface in self.get_all_interface_names():
-            bondinfo = self.devices[iface].info.bond
+            bondinfo = self.info[iface].bond
             if bondinfo['is_master'] is True:
                 bond_masters.append(iface)
 
@@ -507,7 +517,7 @@ class NetworkModel(BaseModel):
             'speed': self.iface_get_speed(iface),
             'vendor': self.get_vendor(iface),
             'model': self.get_model(iface),
-            'ip': self.devices[iface].ip,
+            'ip': self.devices[iface].ip4,
         }
         return info
 

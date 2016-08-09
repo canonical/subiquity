@@ -43,21 +43,22 @@ class NetworkConfigureInterfaceView(BaseView):
     def _build_gateway_ipv4_info(self):
         header = ("IPv4 not configured")
         gw_info = None
-        ip = self.iface_obj.ip
-        method = self.iface_obj.ip_method
-        provider = self.iface_obj.ip_provider
+        ips = self.iface_obj.ip4
+        methods = self.iface_obj.ip4_methods
+        providers = self.iface_obj.ip4_providers
 
-        if not (None in [ip, provider, method]):
-            if method in ['dhcp']:
-                header = ("Will use DHCP for IPv4:")
-            else:
-                header = ("Will use static for IPv4:")
-            gw_info = (str(ip) + (" provided by ") + method +
-                       (" from ") + provider)
+        for idx in range(len(ips)):
+            if not (None in [ips[idx], providers[idx], methods[idx]]):
+                if methods[idx] in ['dhcp']:
+                    header = ("Will use DHCP for IPv4:")
+                else:
+                    header = ("Will use static for IPv4:")
+                gw_info = (str(ips[idx]) + (" provided by ") + methods[idx] +
+                           (" from ") + providers[idx])
 
-        p = [Text(header)]
-        if gw_info:
-            p.append(Text(gw_info))
+            p = [Text(header)]
+            if gw_info:
+                p.append(Text(gw_info))
 
         return Pile(p)
 
