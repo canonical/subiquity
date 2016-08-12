@@ -86,12 +86,12 @@ class NetworkView(BaseView):
                     t = addr.with_prefixlen
                     if addr.version == 4:
                         if iface.dhcp4:
-                            t += " (dhcp)"
+                            t += " (from dhcp4)"
                         else:
                             t += " (static)"
                     elif addr.version == 6:
                         if iface.dhcp6:
-                            t += " (dhcp)"
+                            t += " (from dhcp6)"
                         else:
                             t += " (static)"
                     col_2.append(Text(t))

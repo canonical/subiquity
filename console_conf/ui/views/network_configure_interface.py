@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import Text, Pile, ListBox
+from urwid import Text, Pile, ListBox, CheckBox
 from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import done_btn, menu_btn
+from subiquitycore.ui.buttons import done_btn, menu_btn, cancel_btn
 from subiquitycore.ui.utils import Color, Padding
 import logging
 
@@ -27,7 +27,11 @@ class NetworkConfigureInterfaceView(BaseView):
         self.model = model
         self.signal = signal
         self.iface = iface
+        self.dhcp4_box = CheckBox("Use DHCP for IPv4", state=iface.dhcp4)
+        self.dhcp6_box = CheckBox("Use DHCP for IPv6", state=iface.dhcp6)
         body = [
+            Padding.center_79(self.dhcp4_box),
+            Padding.center_79(self.dhcp6_box),
             ## Padding.center_79(self._build_gateway_ipv4_info()),
             ## Padding.center_79(self._build_manual_ipv4_button()),
             ## Padding.line_break(""),
@@ -86,11 +90,18 @@ class NetworkConfigureInterfaceView(BaseView):
 
     def _build_buttons(self):
         done = done_btn(on_press=self.done)
+        cancel = cancel_btn(on_press=self.cancel)
 
         buttons = [
             Color.button(done, focus_map='button focus'),
+            Color.button(cancel),
         ]
         return Pile(buttons)
 
     def done(self, result):
+        self.iface.dhcp4 = self.dhcp4_box.get_state()
+        self.iface.dhcp6 = self.dhcp6_box.get_state()
+        self.signal.prev_signal()
+
+    def cancel(self, result):
         self.signal.prev_signal()

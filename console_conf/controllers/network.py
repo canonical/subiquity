@@ -14,10 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import time
 
+import netifaces
 import yaml
 
 from subiquitycore.controller import BaseController
+from subiquitycore.utils import run_command
 
 from console_conf.models import NetworkModel
 from console_conf.ui.views import NetworkView, NetworkConfigureInterfaceView
@@ -42,9 +45,18 @@ class NetworkController(BaseController):
 
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(config))
+        #self.ui.frame.body = 
+        if self.opts.dry_run:
+            pass
+        else:
+            with open('/etc/netplan/01-console-conf.yaml', 'w') as w:
+                w.write(yaml.dump(config))
+            run_command(['systemctl', 'restart', 'systemd-networkd'])
+            while 'default' not in netifaces.gateways():
+                time.sleep(0.1)
         self.signal.emit_signal('menu:identity:main')
 
     def network_configure_interface(self, interface):
         self.ui.set_header("Network interface {}".format(interface))
         self.ui.set_body(NetworkConfigureInterfaceView(
-            self.model, self.signal, interface))
+            self.model, self.signal, self.model.config.ethernets[interface]))
