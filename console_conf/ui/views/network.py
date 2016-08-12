@@ -94,7 +94,7 @@ class NetworkView(BaseView):
                             t += " (dhcp)"
                         else:
                             t += " (static)"
-                            col_2.append(Text(t))
+                    col_2.append(Text(t))
             else:
                 col_2.append(Text("<no addresses>"))
 

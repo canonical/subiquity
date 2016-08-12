@@ -14,6 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import ipaddress
+import socket
+
+import netifaces
 
 from probert.network import Network, NetworkInfo
 
@@ -34,20 +37,18 @@ class Device:
     @classmethod
     def from_probe_data(cls, network, info):
         device = cls(info.name, info.vendor)
-        hasipv4, hasipv6 = False, False
-        ip = network.get_ips(info.name)
-        if ip:
-            addr = ip['addr']
-            mask = ip['netmask']
-            address = ipaddress.ip_interface(addr + '/' + mask)
-            if address.version == 4:
-                hasipv4 = True
-            if address.version == 6:
-                hasipv6 = True
-            device.addresses.append(address)
-        if hasipv4:
+        hasipv = set()
+        for version, key in [(4, socket.AF_INET), (6, socket.AF_INET6)]:
+            addresses = netifaces.ifaddresses(info.name)
+            for address in addresses.get(key, []):
+                addr = address['addr'].split('%')[0]
+                mask = ipaddress.ip_network(address['netmask']).prefixlen
+                address = ipaddress.ip_interface(addr + '/' + str(mask))
+                hasipv.add(version)
+                device.addresses.append(address)
+        if 4 in hasipv:
             device.dhcp4 = True
-        if hasipv6:
+        if 6 in hasipv:
             device.dhcp6 = True
         return device
 
