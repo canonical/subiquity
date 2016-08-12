@@ -68,39 +68,82 @@ class NetworkView(BaseView):
         ifname_width = 8  # default padding
 
         col_1 = []
+        col_2 = []
+
+        # Display each interface -- name in first column, then configured IPs
+        # in the second.
+        log.debug('interfaces: {}'.format(ifaces))
         for iface in ifaces:
             col_1.append(
                 Color.info_major(
                     menu_btn(label=iface,
                              on_press=self.on_net_dev_press),
                     focus_map='button focus'))
-            col_1.append(Text(""))  # vertical holder for ipv6 status
-            col_1.append(Text(""))  # vertical holder for ipv4 status
-        col_1 = BoxAdapter(SimpleList(col_1),
-                           height=len(col_1))
 
-        col_2 = []
-        for iface in ifaces:
             interface = self.model.get_interface(iface)
-            ipv4_status = {
-                'ip': interface.ip,
-                'method': interface.ip_method,
-                'provider': interface.ip_provider,
+            ip_status = {
+                'ip4': interface.ip4,
+                'ip6': interface.ip6,
+                'ip4_methods': interface.ip4_methods,
+                'ip6_methods': interface.ip6_methods,
+                'ip4_providers': interface.ip4_providers,
+                'ip6_providers': interface.ip6_providers,
                 'subnets': interface.subnets,
             }
-            log.debug('ipv4_status: {}'.format(ipv4_status))
-            ipv4_template = ''
-            if ipv4_status['ip']:
-                # FIXME: should show netmask or CIDR too
-                ipv4_template += '{ip}'.format(**ipv4_status)
-            if ipv4_status['method']:
-                ipv4_template += ' ({method}) '.format(**ipv4_status)
-            if ipv4_status['subnets']:
-                ipv4_template += 'from {subnets} '.format(**ipv4_status)
-            col_2.append(Color.info_primary(Text(ipv4_template)))
-            # TODO: add IPv6 address information retrieval.
-            col_2.append(Color.info_primary(Text("No IPv6 connection")))  # vert. holder for ipv6
 
+            log.debug('{}: IPv4 addresses: {}'.format(iface, ip_status['ip4']))
+            log.debug('{}: IPv4 methods: {}'.format(iface, ip_status['ip4_methods']))
+            log.debug('{}: IPv4 providers: {}'.format(iface, ip_status['ip4_providers']))
+            log.debug('{}: subnets: {}'.format(iface, ip_status['subnets']))
+            #log.debug('{}: IPv6 subnets: {}'.format(iface, ip_status['ip6_subnets']))
+
+            # Show IPv4 configuration.
+            ipv4_template = ''
+            if len(ip_status['subnets']) > 1:
+                for subnet in ip_status['subnets']:
+                    ipv4_template += '\t{address} ({type})\n'.format(**subnet)
+                    col_1.append(Text(""))  # vertical holder for ipv4 status
+            else:
+                if len(ip_status['ip4']) == 0:
+                    ipv4_template += "No IPv4 configuration"
+                    col_1.append(Text(""))  # vertical holder for ipv4 status
+                for i in range(len(ip_status['ip4'])):
+                    col_1.append(Text(""))  # vertical holder for ipv4 status
+
+                    if i > 0:
+                        ipv4_template += '\n'
+
+                    ipv4_template += '{}'.format(ip_status['ip4'][i])
+                    try:
+                        ipv4_template += ' ({}) '.format(ip_status['ip4_methods'][i])
+                    except IndexError:
+                        pass
+            col_2.append(Color.info_primary(Text(ipv4_template)))
+
+            # TODO: complete IPv6 displaying.
+            ipv6_template = ''
+            if len(ip_status['subnets']) > 1:
+                for subnet in ip_status['subnets']:
+                    ipv6_template += '\t{address} ({type})\n'.format(**subnet)
+                    col_1.append(Text(""))  # vertical holder for ipv4 status
+            else:
+                if len(ip_status['ip6']) == 0:
+                    ipv6_template += "No IPv6 configuration"
+                    col_1.append(Text(""))  # vertical holder for ipv4 status
+                for i in range(len(ip_status['ip6'])):
+                    col_1.append(Text(""))  # vertical holder for ipv4 status
+
+                    if i > 0:
+                        ipv6_template += '\n'
+
+                    ipv6_template += '{}'.format(ip_status['ip6'][i])
+                    try:
+                        ipv6_template += ' ({}) '.format(ip_status['ip6_methods'][i])
+                    except IndexError:
+                        pass
+            col_2.append(Color.info_primary(Text(ipv6_template)))
+
+            # Other device info (MAC, vendor/model, speed)
             info = self.model.get_iface_info(iface)
             hwaddr = self.model.get_hw_addr(iface)
             log.debug('iface info:{}'.format(info))
@@ -117,8 +160,11 @@ class NetworkView(BaseView):
                 template += '{} '.format(model)
             if info['speed']:
                 template += '({speed})'.format(**info)
+
             col_2.append(Color.info_minor(Text(template)))
 
+        col_1 = BoxAdapter(SimpleList(col_1),
+                           height=len(col_1))
         if len(col_2):
             col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                                height=len(col_2))
