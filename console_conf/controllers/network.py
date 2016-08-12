@@ -51,6 +51,7 @@ class NetworkController(BaseController):
         else:
             with open('/etc/netplan/01-console-conf.yaml', 'w') as w:
                 w.write(yaml.dump(config))
+            run_command(['/lib/netplan/generate'])
             run_command(['systemctl', 'restart', 'systemd-networkd'])
             while 'default' not in netifaces.gateways():
                 time.sleep(0.1)
