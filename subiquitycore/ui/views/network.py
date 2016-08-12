@@ -83,8 +83,11 @@ class NetworkView(BaseView):
             interface = self.model.get_interface(iface)
             ip_status = {
                 'ip4': interface.ip4,
+                'ip6': interface.ip6,
                 'ip4_methods': interface.ip4_methods,
+                'ip6_methods': interface.ip6_methods,
                 'ip4_providers': interface.ip4_providers,
+                'ip6_providers': interface.ip6_providers,
                 'subnets': interface.subnets,
             }
 
@@ -118,8 +121,27 @@ class NetworkView(BaseView):
             col_2.append(Color.info_primary(Text(ipv4_template)))
 
             # TODO: complete IPv6 displaying.
-            col_1.append(Text(""))  # vertical holder for ipv6 status
-            col_2.append(Color.info_primary(Text("No IPv6 configuration")))  # vert. holder for ipv6
+            ipv6_template = ''
+            if len(ip_status['subnets']) > 1:
+                for subnet in ip_status['subnets']:
+                    ipv6_template += '\t{address} ({type})\n'.format(**subnet)
+                    col_1.append(Text(""))  # vertical holder for ipv4 status
+            else:
+                if len(ip_status['ip6']) == 0:
+                    ipv6_template += "No IPv6 configuration"
+                    col_1.append(Text(""))  # vertical holder for ipv4 status
+                for i in range(len(ip_status['ip6'])):
+                    col_1.append(Text(""))  # vertical holder for ipv4 status
+
+                    if i > 0:
+                        ipv6_template += '\n'
+
+                    ipv6_template += '{}'.format(ip_status['ip6'][i])
+                    try:
+                        ipv6_template += ' ({}) '.format(ip_status['ip6_methods'][i])
+                    except IndexError:
+                        pass
+            col_2.append(Color.info_primary(Text(ipv6_template)))
 
             # Other device info (MAC, vendor/model, speed)
             info = self.model.get_iface_info(iface)

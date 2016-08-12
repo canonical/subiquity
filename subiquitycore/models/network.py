@@ -17,6 +17,7 @@ import errno
 import ipaddress
 import logging
 import os
+import netifaces
 from subiquitycore.prober import make_network_info
 from subiquitycore.model import BaseModel
 from subiquitycore.utils import (read_sys_net,
@@ -54,15 +55,16 @@ class Networkdev():
 
         ip_info = self.probe_info.ip
         sources = ip_info.get('sources', None)
-        for idx in range(len(ip_info.get('af_inet', []))):
-            if sources[idx] and sources[idx]['method'].startswith('dhcp'):
+        for idx in range(len(ip_info.get(netifaces.AF_INET, []))):
+            if sources.get(netifaces.AF_INET)[idx] and sources.get(netifaces.AF_INET)[idx]['method'].startswith('dhcp'):
+                log.debug('one more dhcp: {}'.format(ip_info.get(netifaces.AF_INET)[idx]))
                 self.action.subnets.extend([{'type': 'dhcp'}])
-            elif ip_info['af_inet'][idx]['addr'] is not None:
+            elif ip_info[netifaces.AF_INET][idx]['addr'] is not None:
                 # FIXME:
                 #  - ipv6
                 #  - read/fine default dns and route info
                 ip_network = \
-                    ipaddress.IPv4Interface("{addr}/{netmask}".format(ip_info['af_inet'][idx]))
+                    ipaddress.IPv4Interface("{addr}/{netmask}".format(ip_info[netifaces.AF_INET][idx]))
                 self.action.subnets.extend([{
                     'type': 'static',
                     'address': ip_network.with_prefixlen}])
@@ -106,8 +108,11 @@ class Networkdev():
         '''
         log.debug('getting ip info on {}'.format(self.ifname))
         ip4 = []
+        ip6 = []
         ip4_methods = []
+        ip6_methods = []
         ip4_providers = []
+        ip6_providers = []
 
         if self.is_configured:
             log.debug('iface is configured, check action')
@@ -117,11 +122,16 @@ class Networkdev():
             if len(using_dhcp) > 0:
                 log.debug('iface is using dhcp, get details')
                 ipinfo = self.probe_info.ip
-                probed_ip = [ af_inet.get('addr') for af_inet in ipinfo.get('af_inet') ]
-                ip4_methods = [ source.get('method') for source in ipinfo.get('sources') ]
-                ip4_providers = [ source.get('provider') for source in ipinfo.get('sources') ]
-                if probed_ip:
-                    ip4 = probed_ip
+                probed_ip4 = [ af_inet.get('addr') for af_inet in ipinfo.get(netifaces.AF_INET) ]
+                probed_ip6 = [ af_inet6.get('addr') for af_inet6 in ipinfo.get(netifaces.AF_INET6) ]
+                ip4_methods = [ source.get('method') for source in ipinfo.get('sources').get(netifaces.AF_INET, []) ]
+                ip6_methods = [ source.get('method') for source in ipinfo.get('sources').get(netifaces.AF_INET6, []) ]
+                ip4_providers = [ source.get('provider') for source in ipinfo.get('sources').get(netifaces.AF_INET, []) ]
+                ip4_providers = [ source.get('provider') for source in ipinfo.get('sources').get(netifaces.AF_INET6, []) ]
+                if probed_ip4:
+                    ip4 = probed_ip4
+                if probed_ip6:
+                    ip6 = probed_ip6
 
             else:  # using static
                 log.debug('no dhcp, must be static')
@@ -139,9 +149,9 @@ class Networkdev():
         log.debug('{} IPv4 info: {},{},{}'.format(self.ifname, ip4, ip4_methods,
                                                   ip4_providers))
 
-        ip_info = { 'ip4': ip4,
-                    'ip4_methods': ip4_methods,
-                    'ip4_providers': ip4_providers,
+        ip_info = { 'ip4': ip4, 'ip6': ip6,
+                    'ip4_methods': ip4_methods, 'ip6_methods': ip6_methods,
+                    'ip4_providers': ip4_providers, 'ip6_providers': ip6_providers,
                   }
 
         return ip_info
@@ -160,6 +170,21 @@ class Networkdev():
     def ip4_providers(self):
         ip_info = self._get_ip_info()
         return ip_info['ip4_providers']
+
+    @property
+    def ip6(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip6']
+
+    @property
+    def ip6_methods(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip6_methods']
+
+    @property
+    def ip6_providers(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip6_providers']
 
     def remove_subnets(self):
         log.debug('Removing subnets on iface: {}'.format(self.ifname))
@@ -333,6 +358,7 @@ class NetworkModel(BaseModel):
                 log.error(err)
 
             try:
+                log.debug('configuring with: {}'.format(ifinfo))
                 netdev.configure(action, probe_info=ifinfo)
             except Exception as e:
                 log.error(e)
