@@ -47,8 +47,7 @@ class NetworkController(BaseController):
         self.ui.set_body(NetworkView(self.model, self.signal))
 
     def network_finish(self, config):
-        log.debug("network config: \n%s", yaml.dump(config))
-        #self.ui.frame.body = 
+        log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
         if self.opts.dry_run:
             pass
         else:
