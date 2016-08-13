@@ -72,6 +72,7 @@ class LoginView(BaseView):
         }
         login_text = local_tpl.format(**login_info)
         login_text += remote_tpl.format(**login_info)
+        ips = []
         for iface in self.ifaces:
             for ip4 in iface.ip4:
                 try:
@@ -79,8 +80,18 @@ class LoginView(BaseView):
                 except IndexError:
                     ip = None
                 if ip is not None:
-                    ssh_iface = "    ssh %s@%s" % (user.username, ip)
-                    ssh += [Padding.center_50(Text(ssh_iface))]
+                    ips.append(ip)
+            for ip6 in iface.ip6:
+                try:
+                    ip = str(ip6).split("/")[0]
+                except IndexError:
+                    ip = None
+                if ip is not None:
+                    ips.append(ip)
+
+        for ip in ips:
+                ssh_iface = "    ssh %s@%s" % (user.username, ip)
+                ssh += [Padding.center_50(Text(ssh_iface))]
 
         sl += [Text(login_text),
                Padding.line_break("")] + ssh
@@ -96,6 +107,6 @@ class LoginView(BaseView):
             utils.mark_firstboot_complete()
 
             # stop the console-conf services (this will kill the current process).
-            utils.run_command(["systemctl", "stop", "console-conf@*.service", "serial-console-conf@*.service"])
+            utils.disable_first_boot_service()
 
         self.signal.emit_signal('quit')
