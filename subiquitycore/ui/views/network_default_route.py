@@ -55,14 +55,28 @@ class NetworkSetDefaultRouteView(BaseView):
         '''
         providers = {}
         for iface in self.model.get_all_interfaces():
-            gw = iface.ip_provider
-            if gw in providers:
-                providers[gw].append(iface.ifname)
-            else:
-                providers[gw] = [iface.ifname]
+            for provider in iface.ip4_providers:
+                log.debug('ipv4 provider: {}'.format(provider))
+                gw = provider
+                if gw in providers:
+                    providers[gw].append(iface.ifname)
+                else:
+                    providers[gw] = [iface.ifname]
+
+            for provider in iface.ip6_providers:
+                log.debug('ipv4 provider: {}'.format(provider))
+                gw = provider
+                if gw in providers:
+                    providers[gw].append(iface.ifname)
+                else:
+                    providers[gw] = [iface.ifname]
 
         log.debug('gateway providers: {}'.format(providers))
         items = []
+        del providers[None]
+        items.append(Padding.center_79(
+            Color.menu_button(menu_btn(label="None", on_press=self.done),
+            focus_map="menu_button focus")))
         for (gw, ifaces) in providers.items():
             items.append(Padding.center_79(
                 Color.menu_button(menu_btn(
@@ -101,7 +115,9 @@ class NetworkSetDefaultRouteView(BaseView):
         # self.signal.emit_signal('refresh')
 
     def done(self, result):
-        if self.default_gateway_w and self.default_gateway_w.value:
+        if self.default_gateway_w is None:
+            self.model.clear_gateway()
+        elif self.default_gateway_w and self.default_gateway_w.value:
             try:
                 self.model.set_default_gateway(self.default_gateway_w.value)
             except ValueError:

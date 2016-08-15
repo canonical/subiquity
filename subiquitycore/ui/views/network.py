@@ -83,53 +83,41 @@ class NetworkView(BaseView):
             interface = self.model.get_interface(iface)
             log.debug('{}: addresses: {}'.format(iface, interface.addresses))
             ip_status = {
-                'ip4': interface.ip4,
-                'ip6': interface.ip6,
-                'ip4_methods': interface.ip4_methods,
-                'ip6_methods': interface.ip6_methods,
-                'ip4_providers': interface.ip4_providers,
-                'ip6_providers': interface.ip6_providers,
+                'addresses': interface.addresses,
+                'dhcp_addresses': interface.dhcp_addresses,
+                'dhcp4': interface.dhcp4,
+                'dhcp6': interface.dhcp6,
             }
 
-            log.debug('{}: IPv4 addresses: {}'.format(iface, ip_status['ip4']))
-            log.debug('{}: IPv4 methods: {}'.format(iface, ip_status['ip4_methods']))
-            log.debug('{}: IPv4 providers: {}'.format(iface, ip_status['ip4_providers']))
-
             # Show IPv4 configuration.
-            ipv4_template = ''
-            if len(ip_status['ip4']) == 0:
-                ipv4_template += "No IPv4 configuration"
-                col_1.append(Text(""))  # vertical holder for ipv4 status
-            for i in range(len(ip_status['ip4'])):
-                col_1.append(Text(""))  # vertical holder for ipv4 status
+            for addr in ip_status['dhcp_addresses']:
+                template = '{} (dhcp)'.format(addr[0])
+                col_1.append(Text("")) 
+                col_2.append(Color.info_primary(Text(template)))
 
-                if i > 0:
-                    ipv4_template += '\n'
+            for addr in ip_status['addresses']:
+                template = '{} (manual)'.format(addr)
+                col_1.append(Text("")) 
+                col_2.append(Color.info_primary(Text(template)))
 
-                ipv4_template += '{}'.format(ip_status['ip4'][i])
-                try:
-                    ipv4_template += ' ({}) '.format(ip_status['ip4_methods'][i])
-                except IndexError:
-                    pass
-            col_2.append(Color.info_primary(Text(ipv4_template)))
+            if ( not ip_status['dhcp4'] and not ip_status['dhcp6'] ) \
+                    and len(ip_status['addresses']) == 0:
+                template = "Not configured"
+                col_1.append(Text("")) 
+                col_2.append(Color.info_primary(Text(template)))
 
-            # TODO: complete IPv6 displaying.
-            ipv6_template = ''
-            if len(ip_status['ip6']) == 0:
-                ipv6_template += "No IPv6 configuration"
-                col_1.append(Text(""))  # vertical holder for ipv4 status
-            for i in range(len(ip_status['ip6'])):
-                col_1.append(Text(""))  # vertical holder for ipv4 status
-
-                if i > 0:
-                    ipv6_template += '\n'
-
-                ipv6_template += '{}'.format(ip_status['ip6'][i])
-                try:
-                    ipv6_template += ' ({}) '.format(ip_status['ip6_methods'][i])
-                except IndexError:
-                    pass
-            col_2.append(Color.info_primary(Text(ipv6_template)))
+            if len(ip_status['addresses']) == 0 and \
+                    len(ip_status['dhcp_addresses']) == 0:
+                template = None
+                if ip_status['dhcp4'] and ip_status['dhcp6']:
+                    template = "DHCP is enabled but no IP addresses were discovered"
+                elif ip_status['dhcp4'] and not ip_status['dhcp6']:
+                    template = "DHCPv4 is enabled but no IP addresses were discovered"
+                elif ip_status['dhcp6'] and not ip_status['dhcp4']:
+                    template = "DHCPv6 is enabled but no IP addresses were discovered"
+                if template is not None:
+                    col_1.append(Text("")) 
+                    col_2.append(Color.info_primary(Text(template)))
 
             # Other device info (MAC, vendor/model, speed)
             info = self.model.get_iface_info(iface)
@@ -148,6 +136,8 @@ class NetworkView(BaseView):
                 template += '{} '.format(model)
             if info['speed']:
                 template += '({speed})'.format(**info)
+            #log.debug('template: {}', template)
+            log.debug('hwaddr:{}, {}'.format(hwaddr, template))
 
             col_2.append(Color.info_minor(Text(template)))
 

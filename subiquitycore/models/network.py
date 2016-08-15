@@ -33,9 +33,13 @@ class Networkdev():
         self.iftype = iftype
         self.is_switchport = False
         self.probe_info = probe_info
+        self.dhcp_addresses = []
         self.addresses = []
         self.dhcp4 = False
         self.dhcp6 = False
+        self.search_domains = []
+        self.nameservers = []
+        self.gateway = None
 
     def configure(self, probe_info=None):
         log.debug('Configuring iface {}'.format(self.ifname))
@@ -49,22 +53,47 @@ class Networkdev():
         ip_info = self.probe_info.ip
         sources = ip_info.get('sources', None)
         for idx in range(len(ip_info.get(netifaces.AF_INET, []))):
-            if sources.get(netifaces.AF_INET)[idx] and sources.get(netifaces.AF_INET)[idx]['method'].startswith('dhcp'):
+            address = ip_info.get(netifaces.AF_INET)[idx].get('addr', None)
+            netmask = ip_info.get(netifaces.AF_INET)[idx].get('netmask', None)
+            method = sources.get(netifaces.AF_INET)[idx].get('method', None)
+            provider = sources.get(netifaces.AF_INET)[idx].get('provider', None)
+
+            if address is None:
+                continue
+
+            ip_network = \
+                ipaddress.IPv4Interface("{}/{}".format(address, netmask))
+
+            if method and method.startswith('dhcp'):
                 self.dhcp4 = True
-            elif ip_info.get(netifaces.AF_INET)[idx].get('addr', None) is not None:
-                ip_network = \
-                    ipaddress.IPv4Interface("{addr}/{netmask}".format(**ip_info.get(netifaces.AF_INET)[idx]))
-                self.addresses.append(ip_network.with_prefixlen)
-        for idx in range(len(ip_info.get(netifaces.AF_INET6, []))):
-            if sources.get(netifaces.AF_INET6)[idx] and sources.get(netifaces.AF_INET6)[idx]['method'].startswith('dhcp'):
-                self.dhcp6 = True
-            elif ip_info[netifaces.AF_INET6][idx].get('addr', None) is not None:
-                # FIXME: parse netmasks like ffff:ffff:ffff:ffff:: to CIDR notation, because ipaddress is evil.
-                ip_network = \
-                    ipaddress.IPv6Interface("{addr}/64".format(**ip_info[netifaces.AF_INET6][idx]))
+                self.dhcp_addresses.append([ip_network.with_prefixlen, provider, netifaces.AF_INET])
+            else:
                 self.addresses.append(ip_network.with_prefixlen)
 
-        log.debug('configured as: {} dhcp4: {} dhcp6: {}'.format(self.addresses, self.dhcp4, self.dhcp6))
+        for idx in range(len(ip_info.get(netifaces.AF_INET6, []))):
+            address = ip_info.get(netifaces.AF_INET6)[idx].get('addr', None)
+            netmask = ip_info.get(netifaces.AF_INET6)[idx].get('netmask', None)
+            method = sources.get(netifaces.AF_INET6)[idx].get('method', None)
+            provider = sources.get(netifaces.AF_INET6)[idx].get('provider', None)
+
+            if address is None:
+                continue
+
+            raw_ip6 = address.split('%')[0]
+            if raw_ip6.startswith('fe80:'):
+                continue
+
+            # FIXME: parse netmasks like ffff:ffff:ffff:ffff:: to CIDR notation, because ipaddress is evil.
+            ip_network = \
+                ipaddress.IPv6Interface("{}/64".format(raw_ip6))
+
+            if method and method.startswith('dhcp'):
+                self.dhcp6 = True
+                self.dhcp_addresses.append([ip_network.with_prefixlen, provider, netifaces.AF_INET6])
+            else:
+                self.addresses.append(ip_network.with_prefixlen)
+
+        log.debug('configured as: {} dhcp: {}'.format(self.addresses, self.dhcp_addresses))
 
     def render(self):
         log.debug("render to YAML")
@@ -76,6 +105,7 @@ class Networkdev():
                      'addresses': self.addresses,
                    } 
                  }
+
         return result
 
     @property
@@ -120,7 +150,7 @@ class Networkdev():
             ip4_methods = [ source.get('method') for source in ipinfo.get('sources').get(netifaces.AF_INET, []) ]
             ip6_methods = [ source.get('method') for source in ipinfo.get('sources').get(netifaces.AF_INET6, []) ]
             ip4_providers = [ source.get('provider') for source in ipinfo.get('sources').get(netifaces.AF_INET, []) ]
-            ip4_providers = [ source.get('provider') for source in ipinfo.get('sources').get(netifaces.AF_INET6, []) ]
+            ip6_providers = [ source.get('provider') for source in ipinfo.get('sources').get(netifaces.AF_INET6, []) ]
             if probed_ip4:
                 ip4 = probed_ip4
             if probed_ip6:
@@ -165,6 +195,27 @@ class Networkdev():
     def ip6_providers(self):
         ip_info = self._get_ip_info()
         return ip_info['ip6_providers']
+
+    def remove_networks(self):
+        self.addresses.clear()
+        self.dhcp_addresses.clear()
+        self.dhcp4 = False
+        self.dhcp6 = False
+
+    def add_network(self, network):
+        # result = {
+        #    'network': self.subnet_input.value,
+        #    'address': self.address_input.value,
+        #    'gateway': self.gateway_input.value,
+        #    'nameserver': self.nameserver_input.value,
+        #    'searchpath': self.searchpath_input.value,
+        # }
+        address = network['address'].split('/')[0]
+        address += '/' + network['network'].split('/')[1]
+        self.addresses.append(address)
+        self.gateway = network['gateway']
+        self.nameservers.append(network['nameserver'])
+        self.search_domains.append(network['searchdomains'])
 
 
 def valid_ipv4_address(addr):
@@ -517,6 +568,9 @@ class NetworkModel(BaseModel):
 
         self.devices[ifname] = bonddev
         self.info[ifname] = bondinfo
+
+    def clear_gateway(self):
+        self.default_gateway = None
 
     def set_default_gateway(self, gateway_input):
         addr = valid_ipv4_address(gateway_input)

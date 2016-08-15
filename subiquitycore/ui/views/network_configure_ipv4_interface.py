@@ -32,14 +32,18 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         self.gateway_input = StringEditor(caption="")  # FIXME: ipaddr_editor
         self.address_input = StringEditor(caption="")  # FIXME: ipaddr_editor
         self.subnet_input = StringEditor(caption="")  # FIXME: ipaddr_editor
+        self.error = Text("", align='center')
         self.nameserver_input = \
             StringEditor(caption="")  # FIXME: ipaddr_editor
-        self.searchpath_input = \
+        self.searchdomains_input = \
             StringEditor(caption="")  # FIXME: ipaddr_editor
         body = [
             Padding.center_79(self._build_iface_inputs()),
             Padding.line_break(""),
             Padding.center_79(self._build_set_as_default_gw_button()),
+            Padding.line_break(""),
+            Padding.center_90(Color.info_error(self.error)),
+            Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
         ]
         super().__init__(ListBox(body))
@@ -103,21 +107,34 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         ]
         return Pile(buttons)
 
+    def validate(self):
+        try:
+            if '/' not in self.subnet_input.value:
+                raise ValueError("Network should be in CIDR form (xx.xx.xx.xx/yy)")
+
+            netmask = self.subnet_input.value.split('/')[1]
+            if int(netmask) > 32 or int(netmask) < 0:
+                raise ValueError("CIDR netmask value should be between 0 and 32")
+        except:
+            raise
+
     def done(self, btn):
         result = {
-            'subnet_type': 'static',
             'network': self.subnet_input.value,
             'address': self.address_input.value,
             'gateway': self.gateway_input.value,
             'nameserver': self.nameserver_input.value,
-            'searchpath': self.searchpath_input.value,
+            'searchdomains': self.searchdomains_input.value,
         }
         try:
-            self.iface.remove_subnets()
-            self.iface.add_subnet(**result)
-        except ValueError:
-            log.exception('Failed to manually configure interface')
-            self.iface.configure_from_info()
+            self.validate()
+            self.iface.remove_networks()
+            self.iface.add_network(result)
+        except ValueError as e:
+            error = 'Failed to manually configure interface: {}'.format(e)
+            log.exception(error)
+            self.error.set_text(str(e))
+            #self.iface.configure_from_info()
             # FIXME: set error message in UX ala identity
             return
 

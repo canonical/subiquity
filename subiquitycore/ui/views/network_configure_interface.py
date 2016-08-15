@@ -47,6 +47,7 @@ class NetworkConfigureInterfaceView(BaseView):
         methods = self.iface_obj.ip4_methods
         providers = self.iface_obj.ip4_providers
 
+        p = [Text(header)]
         for idx in range(len(ips)):
             if not (None in [ips[idx], providers[idx], methods[idx]]):
                 if methods[idx] in ['dhcp']:
@@ -56,7 +57,6 @@ class NetworkConfigureInterfaceView(BaseView):
                 gw_info = (str(ips[idx]) + (" provided by ") + methods[idx] +
                            (" from ") + providers[idx])
 
-            p = [Text(header)]
             if gw_info:
                 p.append(Text(gw_info))
 
