@@ -312,6 +312,7 @@ class NetworkModel(BaseModel):
         self.network_devices = {}
         self.network_routes = {}
         self.default_gateway = None
+        self.gateway_dev = None
 
     def reset(self):
         log.debug('resetting network model')
@@ -600,12 +601,13 @@ class NetworkModel(BaseModel):
     def clear_gateway(self):
         self.default_gateway = None
 
-    def set_default_gateway(self, gateway_input):
+    def set_default_gateway(self, ifname, gateway_input):
         addr = valid_ipv4_address(gateway_input)
         if addr is False:
             raise ValueError(('Invalid gateway IP ') + gateway_input)
 
         self.default_gateway = addr.compressed
+        self.gateway_dev = ifname
 
     def render(self):
         config = { 'network':
@@ -622,4 +624,9 @@ class NetworkModel(BaseModel):
                 bonds.update(iface.render())
         config['network']['ethernets'] = ethernets
         config['network']['bonds'] = bonds
+
+        if self.default_gateway:
+            config['network']['routes'] = [{ 'to': '0.0.0.0/0',
+                                            'via': self.default_gateway }]
+
         return config

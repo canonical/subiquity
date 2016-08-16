@@ -119,7 +119,7 @@ class NetworkSetDefaultRouteView(BaseView):
             self.model.clear_gateway()
         elif self.default_gateway_w and self.default_gateway_w.value:
             try:
-                self.model.set_default_gateway(self.default_gateway_w.value)
+                self.model.set_default_gateway(None, self.default_gateway_w.value)
             except ValueError:
                 # FIXME: raise UX error message
                 self.default_gateway_w.edit_text = ""

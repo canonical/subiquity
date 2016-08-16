@@ -30,6 +30,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         self.signal = signal
         self.ifname = iface
         self.iface = self.model.get_interface(self.ifname)
+        self.is_gateway = False
         self.gateway_input = StringEditor(caption="")  # FIXME: ipaddr_editor
         self.address_input = StringEditor(caption="")  # FIXME: ipaddr_editor
         self.subnet_input = StringEditor(caption="")  # FIXME: ipaddr_editor
@@ -38,10 +39,11 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
             StringEditor(caption="")  # FIXME: ipaddr_editor
         self.searchdomains_input = \
             StringEditor(caption="")  # FIXME: ipaddr_editor
+        self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
         body = [
             Padding.center_79(self._build_iface_inputs()),
             Padding.line_break(""),
-            Padding.center_79(self._build_set_as_default_gw_button()),
+            Padding.center_79(self.set_as_default_gw_button),
             Padding.line_break(""),
             Padding.center_90(Color.info_error(self.error)),
             Padding.line_break(""),
@@ -83,17 +85,26 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
 
     def _build_set_as_default_gw_button(self):
         ifaces = self.model.get_all_interface_names()
-        if len(ifaces) > 1:
+
+        self.is_gateway = self.model.gateway_dev == self.ifname
+
+        if not self.is_gateway and len(ifaces) > 1:
             btn = menu_btn(label="Set this as default gateway",
                            on_press=self.set_default_gateway)
         else:
             btn = Text("This will be your default gateway")
-        return Pile([btn])
+
+        return [btn]
 
     def set_default_gateway(self, button):
         if self.gateway_input.value:
             try:
-                self.model.set_default_gateway(self.gateway_input.value)
+                self.model.set_default_gateway(self.ifname,
+                                               self.gateway_input.value)
+                self.is_gateway = True
+                self.set_as_default_gw_button.contents = \
+                    [ (obj, ('pack', None)) \
+                           for obj in self._build_set_as_default_gw_button() ]
             except ValueError:
                 # FIXME: set error message UX ala identity
                 pass
