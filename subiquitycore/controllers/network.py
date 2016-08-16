@@ -48,6 +48,9 @@ class NetworkController(BaseController):
 
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
+
+        online = True
+
         if self.opts.dry_run:
             pass
         else:
@@ -55,9 +58,14 @@ class NetworkController(BaseController):
                 w.write(yaml.dump(config))
             run_command(['/lib/netplan/generate'])
             run_command(['systemctl', 'restart', 'systemd-networkd'])
-            while 'default' not in netifaces.gateways():
-                time.sleep(0.1)
-        self.signal.emit_signal('menu:identity:main')
+            ret = run_command(['/lib/systemd/systemd-networkd-wait-online',
+                               '--timeout=30'])
+            online = ( ret == 0 )
+
+        if online:
+            self.signal.emit_signal('menu:identity:main')
+        else:
+            self.ui.frame.body.show_network_error()
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")

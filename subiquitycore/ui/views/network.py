@@ -39,10 +39,13 @@ class NetworkView(BaseView):
         self.model = model
         self.signal = signal
         self.items = []
+        self.error = Text("", align='center')
         self.body = [
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.center_79(self._build_additional_options()),
+            Padding.line_break(""),
+            Padding.center_79(Color.info_error(self.error)),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons()),
         ]
@@ -225,6 +228,9 @@ class NetworkView(BaseView):
         log.debug("Selected network dev: {}".format(result.label))
         self.signal.emit_signal('menu:network:main:configure-interface',
                                 result.label)
+
+    def show_network_error(self):
+        self.error.set_text("Network configuration failed; please verify your settings.")
 
     def done(self, result):
         self.signal.emit_signal('network:finish', self.model.render())
