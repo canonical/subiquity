@@ -650,11 +650,18 @@ class NetworkModel(BaseModel):
                 ethernets.update(iface.render())
             if iface.iftype == 'bond':
                 bonds.update(iface.render())
-        config['network']['ethernets'] = ethernets
-        config['network']['bonds'] = bonds
+        if any(ethernets):
+            config['network']['ethernets'] = ethernets
+        if any(bonds):
+            config['network']['bonds'] = bonds
 
-        if self.default_gateway:
-            config['network']['routes'] = [{ 'to': '0.0.0.0/0',
-                                            'via': self.default_gateway }]
+        routes = self.get_default_route()
+        nw_routes = []
+        if routes[0] is not None:
+            nw_routes.append({ 'to': '0.0.0.0/0', 'via': routes[0] })
+        if routes[1] is not None:
+            nw_routes.append({ 'to': '::/0', 'via': routes[1] })
+        if len(nw_routes) > 0:
+            config['network']['routes'] = nw_routes
 
         return config
