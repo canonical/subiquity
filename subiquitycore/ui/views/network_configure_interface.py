@@ -52,7 +52,8 @@ class NetworkConfigureInterfaceView(BaseView):
         dhcp4 = self.iface_obj.dhcp4
 
         if dhcp4:
-            p = [Text("Will use DHCP for IPv4:")]
+            punct = ":" if len(ips) else "."
+            p = [Text("Will use DHCP for IPv4" + punct)]
 
             for idx in range(len(ips)):
                 gw_info = (str(ips[idx]) + (" provided by ") + methods[idx] +
@@ -63,7 +64,7 @@ class NetworkConfigureInterfaceView(BaseView):
             for idx in range(len(addresses)):
                 p.append(Color.info_minor(Text(addresses[idx])))
         else:
-            p = [Text("IPv4 not configured")]
+            p = [Text("IPv4 is not configured.")]
 
         return p
 
@@ -75,11 +76,9 @@ class NetworkConfigureInterfaceView(BaseView):
         dhcp6 = self.iface_obj.dhcp6
 
         if dhcp6:
-            p = [Text("Will use DHCP for IPv6:")]
+            punct = ":" if len(ips) else "."
+            p = [Text("Will use DHCP for IPv6" + punct)]
 
-            log.debug('ips: {}'.format(ips))
-            log.debug('providers: {}'.format(methods))
-            log.debug('methods: {}'.format(providers))
             for idx in range(len(ips)):
                 if methods[idx] and providers[idx]:
                     gw_info = (str(ips[idx]) + (" provided by ") + methods[idx] +
@@ -90,7 +89,7 @@ class NetworkConfigureInterfaceView(BaseView):
             for idx in range(len(addresses)):
                 p.append(Color.info_minor(Text(addresses[idx])))
         else:
-            p = [Text("IPv6 not configured")]
+            p = [Text("IPv6 is not configured.")]
 
         return p
 
@@ -98,11 +97,14 @@ class NetworkConfigureInterfaceView(BaseView):
         dhcp4 = self.iface_obj.dhcp6
 
         buttons = []
-        btn = menu_btn(label="Switch to manual IPv4 configuration",
+        btn = menu_btn(label="Use a static IPv4 configuration",
                        on_press=self.show_ipv4_configuration)
         buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
-        btn = menu_btn(label="Switch to using DHCP",
+        btn = menu_btn(label="Use DHCPv4 on this interface",
                        on_press=self.enable_dhcp4)
+        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+        btn = menu_btn(label="Do not use",
+                       on_press=self.clear_ipv4)
         buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
 
         return buttons
@@ -111,11 +113,14 @@ class NetworkConfigureInterfaceView(BaseView):
         dhcp6 = self.iface_obj.dhcp6
 
         buttons = []
-        btn = menu_btn(label="Switch to manual IPv6 configuration",
+        btn = menu_btn(label="Use a static IPv6 configuration",
                        on_press=self.show_ipv6_configuration)
         buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
-        btn = menu_btn(label="Switch to using DHCPv6",
+        btn = menu_btn(label="Use DHCPv6 on this interface",
                        on_press=self.enable_dhcp6)
+        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+        btn = menu_btn(label="Do not use",
+                       on_press=self.clear_ipv6)
         buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
 
         return buttons
@@ -128,26 +133,39 @@ class NetworkConfigureInterfaceView(BaseView):
         ]
         return Pile(buttons)
 
-    def enable_dhcp4(self, btn):
-        self.iface_obj.remove_ipv4_networks()
-        self.iface_obj.dhcp4 = True
-        self.model.set_default_v4_gateway(None, None)
+    def update_interface(self):
         self.ipv4_info.contents = [ (obj, ('pack', None)) for obj in self._build_gateway_ipv4_info() ]
-        #self.signal.emit_signal('refresh')
+        self.ipv6_info.contents = [ (obj, ('pack', None)) for obj in self._build_gateway_ipv6_info() ]
+
+    def clear_ipv4(self, btn):
+        self.iface_obj.remove_ipv4_networks()
+        self.model.set_default_v4_gateway(None, None)
+        self.update_interface()
+
+    def clear_ipv6(self, btn):
+        self.iface_obj.remove_ipv6_networks()
+        self.model.set_default_v6_gateway(None, None)
+        self.update_interface()
+
+    def enable_dhcp4(self, btn):
+        self.clear_ipv4(btn)
+        self.iface_obj.dhcp4 = True
+        self.update_interface()
 
     def enable_dhcp6(self, btn):
-        self.iface_obj.remove_ipv6_networks()
+        self.clear_ipv6(btn)
         self.iface_obj.dhcp6 = True
-        self.model.set_default_v6_gateway(None, None)
-        self.ipv6_info.contents = [ (obj, ('pack', None)) for obj in self._build_gateway_ipv6_info() ]
+        self.update_interface()
 
     def show_ipv4_configuration(self, btn):
         self.signal.emit_signal(
             'menu:network:main:configure-ipv4-interface', self.iface)
 
     def show_ipv6_configuration(self, btn):
-        self.signal.emit_signal(
-            'menu:network:main:configure-ipv6-interface', self.iface)
+        log.debug("calling menu:network:main:configure-ipv6-interface")
+        # TODO: implement UI for configuring static IPv6.
+        # self.signal.emit_signal(
+        #     'menu:network:main:configure-ipv6-interface', self.iface)
 
     def done(self, result):
         self.signal.prev_signal()
