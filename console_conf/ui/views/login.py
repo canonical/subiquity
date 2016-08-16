@@ -72,10 +72,43 @@ class LoginView(BaseView):
         }
         login_text = local_tpl.format(**login_info)
         login_text += remote_tpl.format(**login_info)
+        ips = []
         for iface in self.ifaces:
-            ip = str(iface.ip).split("/")[0]
-            ssh_iface = "    ssh %s@%s" % (user.username, ip)
-            ssh += [Padding.center_50(Text(ssh_iface))]
+            for addr in iface.dhcp4_addresses:
+                try:
+                    ip = str(addr[0]).split("/")[0]
+                except IndexError:
+                    ip = None
+                if ip is not None:
+                    ips.append(ip)
+
+            for addr in iface.ipv4_addresses:
+                try:
+                    ip = str(addr).split("/")[0]
+                except IndexError:
+                    ip = None
+                if ip is not None:
+                    ips.append(ip)
+
+            for addr in iface.dhcp6_addresses:
+                try:
+                    ip = str(addr[0]).split("/")[0]
+                except IndexError:
+                    ip = None
+                if ip is not None:
+                    ips.append(ip)
+
+            for addr in iface.ipv6_addresses:
+                try:
+                    ip = str(addr).split("/")[0]
+                except IndexError:
+                    ip = None
+                if ip is not None:
+                    ips.append(ip)
+
+        for ip in ips:
+                ssh_iface = "    ssh %s@%s" % (user.username, ip)
+                ssh += [Padding.center_50(Text(ssh_iface))]
 
         sl += [Text(login_text),
                Padding.line_break("")] + ssh
@@ -91,6 +124,6 @@ class LoginView(BaseView):
             utils.mark_firstboot_complete()
 
             # stop the console-conf services (this will kill the current process).
-            utils.run_command(["systemctl", "stop", "console-conf@*.service", "serial-console-conf@*.service"])
+            utils.disable_first_boot_service()
 
         self.signal.emit_signal('quit')

@@ -17,20 +17,13 @@ import errno
 import ipaddress
 import logging
 import os
+import netifaces
 from subiquitycore.prober import make_network_info
 from subiquitycore.model import BaseModel
 from subiquitycore.utils import (read_sys_net,
                                  sys_dev_path)
 
-from .actions import (
-    BondAction,
-    BridgeAction,
-    PhysicalAction,
-    RouteAction,
-    VlanAction,
-)
-
-NETDEV_IGNORED_IFACES = ['lo', 'bridge', 'tun', 'tap']
+NETDEV_IGNORED_IFACES = ['lo', 'bridge', 'tun', 'tap', 'dummy']
 log = logging.getLogger('subiquitycore.models.network')
 
 
@@ -38,14 +31,21 @@ class Networkdev():
     def __init__(self, ifname, iftype, probe_info=None):
         self.ifname = ifname
         self.iftype = iftype
-        self.action = None
+        self.is_switchport = False
         self.probe_info = probe_info
+        self.dhcp4_addresses = []
+        self.dhcp6_addresses = []
+        self.ipv4_addresses = []
+        self.ipv6_addresses = []
+        self.dhcp4 = False
+        self.dhcp6 = False
+        self.search_domains = []
+        self.nameservers = []
+        self.gateway = None
 
-    def configure(self, action, probe_info=None):
+    def configure(self, probe_info=None):
         log.debug('Configuring iface {}'.format(self.ifname))
-        log.debug('Action: {}'.format(action.get()))
-        log.debug('Info: {}'.format(probe_info))
-        self.action = action
+        log.debug('Info: {}'.format(probe_info.ip))
         self.probe_info = probe_info
         self.configure_from_info()
 
@@ -53,28 +53,67 @@ class Networkdev():
         log.debug('configuring netdev from info source')
 
         ip_info = self.probe_info.ip
-        source = ip_info.get('source', None)
-        if source and source['method'].startswith('dhcp'):
-            self.action.subnets.extend([{'type': 'dhcp'}])
-        elif ip_info['addr'] is not None:
-            # FIXME:
-            #  - ipv6
-            #  - read/fine default dns and route info
+
+        sources = ip_info.get('sources', None)
+        for idx in range(len(ip_info.get(netifaces.AF_INET, []))):
+            address = ip_info.get(netifaces.AF_INET)[idx].get('addr', None)
+            netmask = ip_info.get(netifaces.AF_INET)[idx].get('netmask', None)
+            method = sources.get(netifaces.AF_INET)[idx].get('method', None)
+            provider = sources.get(netifaces.AF_INET)[idx].get('provider', None)
+
+            if address is None:
+                continue
+
             ip_network = \
-                ipaddress.IPv4Interface("{addr}/{netmask}".format(**ip_info))
-            self.action.subnets.extend([{
-                'type': 'static',
-                'address': ip_network.with_prefixlen}])
+                ipaddress.IPv4Interface("{}/{}".format(address, netmask))
 
-        log.debug('Post config action: {}'.format(self.action.get()))
+            if method and method.startswith('dhcp'):
+                self.dhcp4 = True
+                self.dhcp4_addresses.append([ip_network.with_prefixlen, provider, netifaces.AF_INET])
+            else:
+                self.ipv4_addresses.append(ip_network.with_prefixlen)
 
-    def __repr__(self):
-        return "%s: %s" % (self.ifname, self.ip)
+        for idx in range(len(ip_info.get(netifaces.AF_INET6, []))):
+            address = ip_info.get(netifaces.AF_INET6)[idx].get('addr', None)
+            netmask = ip_info.get(netifaces.AF_INET6)[idx].get('netmask', None)
+            method = sources.get(netifaces.AF_INET6)[idx].get('method', None)
+            provider = sources.get(netifaces.AF_INET6)[idx].get('provider', None)
+
+            if address is None:
+                continue
+
+            raw_ip6 = address.split('%')[0]
+            if raw_ip6.startswith('fe80:'):
+                continue
+
+            # FIXME: parse netmasks like ffff:ffff:ffff:ffff:: to CIDR notation, because ipaddress is evil.
+            ip_network = \
+                ipaddress.IPv6Interface("{}/64".format(raw_ip6))
+
+            if method and method.startswith('dhcp'):
+                self.dhcp6 = True
+                self.dhcp6_addresses.append([ip_network.with_prefixlen, provider, netifaces.AF_INET6])
+            else:
+                self.ipv6_addresses.append(ip_network.with_prefixlen)
+
+    def render(self):
+        log.debug("render to YAML")
+        result = { self.ifname:
+                   { 
+                     'dhcp4': self.dhcp4,
+                     'dhcp6': self.dhcp6,
+                     'addresses': self.ipv4_addresses + self.ipv6_addresses,
+                   } 
+                 }
+
+        if self.iftype == 'bond':
+            result[self.ifname]['interfaces'] = self.probe_info.bond['slaves']
+
+        return result
 
     @property
     def is_configured(self):
-        return (self.action is not None and
-                self.probe_info is not None)
+        return not self.is_switchport
 
     @property
     def type(self):
@@ -83,12 +122,6 @@ class Networkdev():
     @property
     def info(self):
         return self.probe_info
-
-    @property
-    def subnets(self):
-        if not self.is_configured:
-            return []
-        return self.action.subnets
 
     def _get_ip_info(self):
         ''' try to find the configured ip for this device.
@@ -104,98 +137,109 @@ class Networkdev():
             ip from the static element of the subnets attribute.
         '''
         log.debug('getting ip info on {}'.format(self.ifname))
-        ip = 'No IPv4 configuration'
-        ip_method = None
-        ip_provider = None
+        ip4 = []
+        ip6 = []
+        ip4_methods = []
+        ip6_methods = []
+        ip4_providers = []
+        ip6_providers = []
 
         if self.is_configured:
-            log.debug('iface is configured, check action')
-            log.debug('subnets: {}'.format(self.subnets))
-            using_dhcp = [sn for sn in self.subnets
-                          if sn['type'].startswith('dhcp')]
-            if len(using_dhcp) > 0:
-                log.debug('iface is using dhcp, get details')
-                ipinfo = self.probe_info.ip
-                probed_ip = ipinfo.get('addr')
-                ip_method = ipinfo.get('source').get('method')
-                ip_provider = ipinfo.get('source').get('provider')
-                if probed_ip:
-                    ip = probed_ip
+            log.debug('iface is configured')
+            ipinfo = self.probe_info.ip
+            log.debug('probe ip: {}'.format(ipinfo))
+            probed_ip4 = None
+            if ipinfo.get(netifaces.AF_INET) is not None:
+                probed_ip4 = [ af_inet.get('addr') for af_inet in ipinfo.get(netifaces.AF_INET) ]
+            probed_ip6 = None
+            if ipinfo.get(netifaces.AF_INET6) is not None:
+                probed_ip6 = [ af_inet6.get('addr') for af_inet6 in ipinfo.get(netifaces.AF_INET6) ]
+            if probed_ip4:
+                ip4 = probed_ip4
+            if probed_ip6:
+                ip6 = probed_ip6
 
-            else:  # using static
-                log.debug('no dhcp, must be static')
-                static_sn = [sn for sn in self.subnets
-                             if sn['type'] == 'static']
-                if len(static_sn) > 0:
-                    log.debug('found a subnet entry, use the first')
-                    [static_sn] = static_sn
-                    ip = static_sn.get('address')
-                    ip_method = 'manual'
-                    ip_provider = static_sn.get('gateway', 'local config')
-                else:
-                    log.debug('no subnet entry')
+            if ipinfo.get('sources', None) is not None:
+                for source in ipinfo.get('sources').get(netifaces.AF_INET, []):
+                    if source is not None:
+                        ip4_methods.append(source.get('method'))
+                        ip4_providers.append(source.get('provider'))
+                for source in ipinfo.get('sources').get(netifaces.AF_INET6, []):
+                    if source is not None:
+                        ip6_methods.append(source.get('method'))
+                        ip6_providers.append(source.get('provider'))
 
-        log.debug('{} ipinfo: {},{},{}'.format(self.ifname, ip, ip_method,
-                                               ip_provider))
-        return (ip, ip_method, ip_provider)
+        log.debug('{} IPv4 info: {},{},{}'.format(self.ifname, ip4, ip4_methods,
+                                                  ip4_providers))
 
-    @property
-    def ip(self):
-        ip, *_ = self._get_ip_info()
-        return ip
+        ip_info = { 'ip4': ip4, 'ip6': ip6,
+                    'ip4_methods': ip4_methods, 'ip6_methods': ip6_methods,
+                    'ip4_providers': ip4_providers, 'ip6_providers': ip6_providers,
+                  }
 
-    @property
-    def ip_method(self):
-        _, ip_method, _ = self._get_ip_info()
-        return ip_method
+        return ip_info
 
     @property
-    def ip_provider(self):
-        _, _, ip_provider = self._get_ip_info()
-        return ip_provider
+    def ip4(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip4']
 
-    def remove_subnets(self):
-        log.debug('Removing subnets on iface: {}'.format(self.ifname))
-        self.action.subnets = []
+    @property
+    def ip4_methods(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip4_methods']
 
-    def add_subnet(self, subnet_type, network=None, address=None,
-                   gateway=None, nameserver=None, searchpath=None):
-        if subnet_type not in ['static', 'dhcp', 'dhcp6']:
-            raise ValueError(('Invalid subnet type ') + subnet_type)
+    @property
+    def ip4_providers(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip4_providers']
 
-        # network = 192.168.9.0/24
-        # address = 192.168.9.212
-        subnet = {
-            'type': subnet_type,
-        }
+    @property
+    def ip6(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip6']
 
-        if subnet_type == 'static':
-            ipaddr = valid_ipv4_address(address)
-            if ipaddr is False:
-                raise ValueError(('Invalid IP address ') + address)
+    @property
+    def ip6_methods(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip6_methods']
 
-            ipnet = valid_ipv4_network(network)
-            if ipnet is False:
-                raise ValueError(('Invalid IP network ') + network)
+    @property
+    def ip6_providers(self):
+        ip_info = self._get_ip_info()
+        return ip_info['ip6_providers']
 
-            ip_network = ipaddress.IPv4Interface("{}/{}".format(
-                ipaddr.compressed, ipnet.prefixlen))
-            subnet.update({'address': ip_network.with_prefixlen})
+    def remove_networks(self):
+        self.remove_ipv4_networks()
+        self.remove_ipv6_networks()
 
-        if gateway:
-            gw = valid_ipv4_address(gateway)
-            if gw is False:
-                raise ValueError(('Invalid gateway IP ') + gateway)
-            subnet.update({'gateway': gw.compressed})
+    def remove_ipv4_networks(self):
+        self.dhcp4 = False
+        self.ipv4_addresses.clear()
+        self.dhcp4_addresses.clear()
 
-        if nameserver:
-            subnet.update({'dns_nameserver': nameserver})
+    def remove_ipv6_networks(self):
+        self.dhcp6 = False
+        self.ipv6_addresses.clear()
+        self.dhcp6_addresses.clear()
 
-        if searchpath:
-            subnet.update({'dns_search': searchpath})
-
-        log.debug('Adding subnet:{}'.format(subnet))
-        self.action.subnets.extend([subnet])
+    def add_network(self, family, network):
+        # result = {
+        #    'network': self.subnet_input.value,
+        #    'address': self.address_input.value,
+        #    'gateway': self.gateway_input.value,
+        #    'nameserver': self.nameserver_input.value,
+        #    'searchpath': self.searchpath_input.value,
+        # }
+        address = network['address'].split('/')[0]
+        address += '/' + network['network'].split('/')[1]
+        if family == netifaces.AF_INET:
+            self.ipv4_addresses.append(address)
+        elif family == netifaces.AF_INET6:
+            self.ipv6_addresses.append(address)
+        self.gateway = network['gateway']
+        self.nameservers.append(network['nameserver'])
+        self.search_domains.append(network['searchdomains'])
 
 
 def valid_ipv4_address(addr):
@@ -237,9 +281,12 @@ class NetworkModel(BaseModel):
     ]
 
     additional_options = [
-        ('Set default route',
-         base_signal + ':set-default-route',
-         'set_default_route'),
+        ('Set a custom IPv4 default route',
+         base_signal + ':set-default-v4-route',
+         'set_default_v4_route'),
+        ('Set a custom IPv6 default route',
+         base_signal + ':set-default-v6-route',
+         'set_default_v6_route'),
         ('Bond interfaces',
          base_signal + ':bond-interfaces',
          'bond_interfaces'),
@@ -266,13 +313,19 @@ class NetworkModel(BaseModel):
         self.devices = {}
         self.network_devices = {}
         self.network_routes = {}
-        self.default_gateway = None
+        self.default_v4_gateway = None
+        self.default_v6_gateway = None
+        self.v4_gateway_dev = None
+        self.v6_gateway_dev = None
 
     def reset(self):
         log.debug('resetting network model')
         self.devices = {}
         self.info = {}
-        self.default_gateway = None
+        self.default_v4_gateway = None
+        self.default_v6_gateway = None
+        self.v4_gateway_dev = None
+        self.v6_gateway_dev = None
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -308,24 +361,12 @@ class NetworkModel(BaseModel):
         if iface not in self.devices:
             ifinfo = self.info[iface]
             netdev = Networkdev(iface, ifinfo.type)
-            if netdev.type in ['eth', 'wlan']:
-                action = PhysicalAction(name=iface,
-                                        mac_address=ifinfo.hwaddr)
-            elif netdev.type in ['bond']:
-                action = BondAction(name=iface,
-                                    bond_interfaces=ifinfo.bond['slaves'])
-            elif netdev.type in ['bridge']:
-                action = \
-                    BridgeAction(name=iface,
-                                 bridge_interfaces=ifinfo.bridge['interfaces'])
-            elif netdev.type in ['vlan']:
-                action = VlanAction(name=iface,
-                                    vlan_id=ifinfo.vlan.vlan_id)
-            else:
-                err = ('Unkown netdevice type: ') + netdev.type
-                log.error(err)
 
-            netdev.configure(action, probe_info=ifinfo)
+            try:
+                log.debug('configuring with: {}'.format(ifinfo))
+                netdev.configure(probe_info=ifinfo)
+            except Exception as e:
+                log.error(e)
             self.devices[iface] = netdev
 
         return self.devices[iface]
@@ -384,7 +425,7 @@ class NetworkModel(BaseModel):
         '''string'ify and bucketize iface speed:
            1M, 10M, 1G, 10G, 40G, 100G
         '''
-        hwattr = self.devices[iface].info.hwinfo['attrs']
+        hwattr = self.info[iface].hwinfo['attrs']
         speed = hwattr.get('speed', 0)
         if not speed:
             return None
@@ -428,7 +469,7 @@ class NetworkModel(BaseModel):
         return ifinfo.hwaddr
 
     def get_vendor(self, iface):
-        hwinfo = self.devices[iface].info.hwinfo
+        hwinfo = self.info[iface].hwinfo
         vendor_keys = [
             'ID_VENDOR_FROM_DATABASE',
             'ID_VENDOR',
@@ -445,7 +486,7 @@ class NetworkModel(BaseModel):
         return 'Unknown Vendor'
 
     def get_model(self, iface):
-        hwinfo = self.devices[iface].info.hwinfo
+        hwinfo = self.info[iface].hwinfo
         model_keys = [
             'ID_MODEL_FROM_DATABASE',
             'ID_MODEL_ID'
@@ -463,7 +504,7 @@ class NetworkModel(BaseModel):
 
     def iface_is_bonded(self, iface):
         log.debug('checking {} is bonded'.format(iface))
-        bondinfo = self.devices[iface].info.bond
+        bondinfo = self.info[iface].bond
         log.debug('bondinfo: {}'.format(bondinfo))
         if bondinfo:
             if bondinfo['is_master'] is True or bondinfo['is_slave'] is True:
@@ -471,7 +512,7 @@ class NetworkModel(BaseModel):
         return False
 
     def iface_is_bond_slave(self, iface):
-        bondinfo = self.devices[iface].info.bond
+        bondinfo = self.info[iface].bond
         log.debug('bondinfo: {}'.format(bondinfo))
         if bondinfo:
             if bondinfo['is_slave'] is True:
@@ -481,7 +522,7 @@ class NetworkModel(BaseModel):
     def get_bond_masters(self):
         bond_masters = []
         for iface in self.get_all_interface_names():
-            bondinfo = self.devices[iface].info.bond
+            bondinfo = self.info[iface].bond
             if bondinfo['is_master'] is True:
                 bond_masters.append(iface)
 
@@ -491,13 +532,16 @@ class NetworkModel(BaseModel):
         return self.devices[iface].type == 'bridge'
 
     def get_default_route(self):
-        if self.default_gateway:
-            action = {
-                'type': 'route',
-                'gateway': self.default_gateway
-            }
-            return [RouteAction(**action).get()]
-        return []
+        route = []
+        if self.default_v4_gateway:
+            route.append(self.default_v4_gateway)
+        else:
+            route.append(None)
+        if self.default_v6_gateway:
+            route.append(self.default_v6_gateway)
+        else:
+            route.append(None)
+        return route
 
     def get_iface_info(self, iface):
         info = {
@@ -507,16 +551,19 @@ class NetworkModel(BaseModel):
             'speed': self.iface_get_speed(iface),
             'vendor': self.get_vendor(iface),
             'model': self.get_model(iface),
-            'ip': self.devices[iface].ip,
+            'ip': self.devices[iface].ip4,
         }
         return info
 
     # update or change devices
     def add_bond(self, ifname, interfaces, params=[], subnets=[]):
         ''' create a bond action and info dict from parameters '''
-        action = BondAction(name=ifname,
-                            bond_interfaces=interfaces,
-                            params=params)
+        for iface in interfaces:
+            self.devices[iface].remove_networks()
+            self.devices[iface].dhcp4 = False
+            self.devices[iface].dhcp6 = False
+            self.devices[iface].switchport = True
+
         info = {
             "bond": {
                 "is_master": True,
@@ -547,7 +594,7 @@ class NetworkModel(BaseModel):
         }
         bondinfo = make_network_info(ifname, info)
         bonddev = Networkdev(ifname, 'bond')
-        bonddev.configure(action, probe_info=bondinfo)
+        bonddev.configure(probe_info=bondinfo)
 
         # update slave interface info
         for bondifname in interfaces:
@@ -561,9 +608,59 @@ class NetworkModel(BaseModel):
         self.devices[ifname] = bonddev
         self.info[ifname] = bondinfo
 
-    def set_default_gateway(self, gateway_input):
+    def clear_gateways(self):
+        log.debug("clearing default gateway")
+        self.default_v4_gateway = None
+        self.default_v6_gateway = None
+
+    def set_default_v4_gateway(self, ifname, gateway_input):
+        if gateway_input is None:
+            self.default_v4_gateway = None
+            self.v4_gateway_dev = None
+            return
+
         addr = valid_ipv4_address(gateway_input)
         if addr is False:
             raise ValueError(('Invalid gateway IP ') + gateway_input)
 
-        self.default_gateway = addr.compressed
+        self.default_v4_gateway = addr.compressed
+        self.v4_gateway_dev = ifname
+
+    def set_default_v6_gateway(self, ifname, gateway_input):
+        if gateway_input is None:
+            self.default_v6_gateway = None
+            self.v6_gateway_dev = None
+            return
+
+        # FIXME: validate v6 address.
+        self.default_v6_gateway = gateway_input
+        self.v6_gateway_dev = ifname
+
+    def render(self):
+        config = { 'network':
+                   {
+                     'version': 2,
+                   }
+                 }
+        ethernets = {}
+        bonds = {}
+        for iface in self.devices.values():
+            if iface.iftype == 'eth':
+                ethernets.update(iface.render())
+            if iface.iftype == 'bond':
+                bonds.update(iface.render())
+        if any(ethernets):
+            config['network']['ethernets'] = ethernets
+        if any(bonds):
+            config['network']['bonds'] = bonds
+
+        routes = self.get_default_route()
+        nw_routes = []
+        if routes[0] is not None:
+            nw_routes.append({ 'to': '0.0.0.0/0', 'via': routes[0] })
+        if routes[1] is not None:
+            nw_routes.append({ 'to': '::/0', 'via': routes[1] })
+        if len(nw_routes) > 0:
+            config['network']['routes'] = nw_routes
+
+        return config

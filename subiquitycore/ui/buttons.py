@@ -24,7 +24,7 @@ class PlainButton(Button):
 
 class MenuSelectButton(Button):
     button_left = Text("")
-    button_right = Text("")
+    button_right = Text(">")
 
 
 start_btn = partial(PlainButton, label="Start", on_press=None)

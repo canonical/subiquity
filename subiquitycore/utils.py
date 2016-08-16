@@ -213,19 +213,5 @@ def mark_firstboot_complete():
 def disable_first_boot_service():
     """ Stop firstboot service; which also restores getty service """
     log.info('disabling first boot service')
-    tty = os.ttyname(sys.stdout.fileno()).split("/")[-1]
-    if not tty.startswith('tty'):
-        log.debug('tty is not tty: %s , skipping service shutdown', tty)
-        return
-
-    cmd = "systemctl stop firstboot@%s" % tty
-    log.info("disabling firstboot service with %s", cmd)
-    fid = os.fork()
-    if fid == 0:
-        try:
-            call([cmd])
-            os._exit(0)
-        except:
-            log.warn("%s returned non-zero" % cmd)
-            os._exit(1)
+    run_command(["systemctl", "stop", "console-conf@*.service", "serial-console-conf@*.service"])
     return

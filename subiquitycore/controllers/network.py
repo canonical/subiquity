@@ -14,7 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from subiquitycore.controller import BaseController
+import time
+
+import netifaces
+import yaml
+
 from subiquitycore.models import NetworkModel
 from subiquitycore.ui.views import (NetworkView,
                                     NetworkSetDefaultRouteView,
@@ -22,9 +26,8 @@ from subiquitycore.ui.views import (NetworkView,
                                     NetworkConfigureInterfaceView,
                                     NetworkConfigureIPv4InterfaceView)
 from subiquitycore.ui.dummy import DummyView
-
-from subiquitycore.curtin import curtin_write_network_actions
-from subiquitycore.curtin import curtin_apply_networking
+from subiquitycore.controller import BaseController
+from subiquitycore.utils import run_command
 
 log = logging.getLogger("subiquitycore.controller.network")
 
@@ -37,30 +40,43 @@ class NetworkController(BaseController):
     def network(self):
         title = "Network connections"
         excerpt = ("Configure at least the main interface this server will "
-                   "use to talk to other machines, and preferably provide "
-                   "sufficient access for updates.")
+                   "use to talk to the store.")
         footer = ("Additional networking info here")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 20)
         self.ui.set_body(NetworkView(self.model, self.signal))
 
-    def network_finish(self, actions):
-        try:
-            curtin_write_network_actions(actions)
-        except (PermissionError, FileNotFoundError):
-            log.exception('Failed to obtain write permission')
-            self.signal.emit_signal('filesystem:error',
-                                    'curtin_write_network_actions')
-            return None
+    def network_finish(self, config):
+        log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
 
-        curtin_apply_networking(actions, dryrun=self.opts.dry_run)
+        online = True
 
-        # switch to identity view
-        self.signal.emit_signal('menu:identity:main')
+        if self.opts.dry_run:
+            pass
+        else:
+            with open('/etc/netplan/01-console-conf.yaml', 'w') as w:
+                w.write(yaml.dump(config))
+            run_command(['/lib/netplan/generate'])
+            run_command(['systemctl', 'restart', 'systemd-networkd'])
+            ret = run_command(['/lib/systemd/systemd-networkd-wait-online',
+                               '--timeout=30'])
+            online = ( ret == 0 )
 
-    def set_default_route(self):
+        if online:
+            self.signal.emit_signal('menu:identity:main')
+        else:
+            self.ui.frame.body.show_network_error()
+
+    def set_default_v4_route(self):
         self.ui.set_header("Default route")
         self.ui.set_body(NetworkSetDefaultRouteView(self.model,
+                                                    netifaces.AF_INET,
+                                                    self.signal))
+
+    def set_default_v6_route(self):
+        self.ui.set_header("Default route")
+        self.ui.set_body(NetworkSetDefaultRouteView(self.model,
+                                                    netifaces.AF_INET6,
                                                     self.signal))
 
     def bond_interfaces(self):
@@ -92,3 +108,4 @@ class NetworkController(BaseController):
 
     def install_network_driver(self):
         self.ui.set_body(DummyView(self.signal))
+

@@ -39,10 +39,13 @@ class NetworkView(BaseView):
         self.model = model
         self.signal = signal
         self.items = []
+        self.error = Text("", align='center')
         self.body = [
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.center_79(self._build_additional_options()),
+            Padding.line_break(""),
+            Padding.center_79(Color.info_error(self.error)),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons()),
         ]
@@ -68,39 +71,74 @@ class NetworkView(BaseView):
         ifname_width = 8  # default padding
 
         col_1 = []
+        col_2 = []
+
+        # Display each interface -- name in first column, then configured IPs
+        # in the second.
+        log.debug('interfaces: {}'.format(ifaces))
         for iface in ifaces:
             col_1.append(
                 Color.info_major(
                     menu_btn(label=iface,
                              on_press=self.on_net_dev_press),
                     focus_map='button focus'))
-            col_1.append(Text(""))  # vertical holder for ipv6 status
-            col_1.append(Text(""))  # vertical holder for ipv4 status
-        col_1 = BoxAdapter(SimpleList(col_1),
-                           height=len(col_1))
 
-        col_2 = []
-        for iface in ifaces:
             interface = self.model.get_interface(iface)
-            ipv4_status = {
-                'ip': interface.ip,
-                'method': interface.ip_method,
-                'provider': interface.ip_provider,
-                'subnets': interface.subnets,
+            ip_status = {
+                'ipv4_addresses': interface.ipv4_addresses,
+                'ipv6_addresses': interface.ipv6_addresses,
+                'dhcp4_addresses': interface.dhcp4_addresses,
+                'dhcp6_addresses': interface.dhcp6_addresses,
+                'dhcp4': interface.dhcp4,
+                'dhcp6': interface.dhcp6,
             }
-            log.debug('ipv4_status: {}'.format(ipv4_status))
-            ipv4_template = ''
-            if ipv4_status['ip']:
-                # FIXME: should show netmask or CIDR too
-                ipv4_template += '{ip}'.format(**ipv4_status)
-            if ipv4_status['method']:
-                ipv4_template += ' ({method}) '.format(**ipv4_status)
-            if ipv4_status['subnets']:
-                ipv4_template += 'from {subnets} '.format(**ipv4_status)
-            col_2.append(Color.info_primary(Text(ipv4_template)))
-            # TODO: add IPv6 address information retrieval.
-            col_2.append(Color.info_primary(Text("No IPv6 connection")))  # vert. holder for ipv6
 
+            for addr in ip_status['dhcp4_addresses']:
+                template = '{} (dhcp)'.format(addr[0])
+                col_1.append(Text("")) 
+                col_2.append(Color.info_primary(Text(template)))
+
+            for addr in ip_status['ipv4_addresses']:
+                template = '{} (manual)'.format(addr)
+                col_1.append(Text("")) 
+                col_2.append(Color.info_primary(Text(template)))
+
+            for addr in ip_status['dhcp6_addresses']:
+                template = '{} (dhcp)'.format(addr[0])
+                col_1.append(Text("")) 
+                col_2.append(Color.info_primary(Text(template)))
+
+            for addr in ip_status['ipv6_addresses']:
+                template = '{} (manual)'.format(addr)
+                col_1.append(Text("")) 
+                col_2.append(Color.info_primary(Text(template)))
+
+            template = None
+            if ( not ip_status['dhcp4'] and not ip_status['dhcp6'] ) \
+                    and len(ip_status['ipv4_addresses']) == 0 and \
+                    len(ip_status['ipv6_addresses']) == 0:
+                template = "Not configured"
+
+            if ip_status['dhcp4'] and ip_status['dhcp6'] and \
+                    len(ip_status['ipv4_addresses']) == 0 and \
+                    len(ip_status['dhcp4_addresses']) == 0 and \
+                    len(ip_status['ipv6_addresses']) == 0 and \
+                    len(ip_status['dhcp6_addresses']) == 0:
+                template = "DHCP is enabled"
+            elif ip_status['dhcp4'] and \
+                    len(ip_status['ipv4_addresses']) == 0 and \
+                    len(ip_status['dhcp4_addresses']) == 0:
+                template = "DHCPv4 is enabled"
+            elif ip_status['dhcp6'] and \
+                    len(ip_status['ipv6_addresses']) == 0 and \
+                    len(ip_status['dhcp6_addresses']) == 0:
+                template = "DHCPv6 is enabled"
+
+            if template is not None:
+                col_1.append(Text("")) 
+                col_2.append(Color.info_primary(Text(template)))
+
+            # Other device info (MAC, vendor/model, speed)
             info = self.model.get_iface_info(iface)
             hwaddr = self.model.get_hw_addr(iface)
             log.debug('iface info:{}'.format(info))
@@ -117,8 +155,13 @@ class NetworkView(BaseView):
                 template += '{} '.format(model)
             if info['speed']:
                 template += '({speed})'.format(**info)
+            #log.debug('template: {}', template)
+            log.debug('hwaddr:{}, {}'.format(hwaddr, template))
+
             col_2.append(Color.info_minor(Text(template)))
 
+        col_1 = BoxAdapter(SimpleList(col_1),
+                           height=len(col_1))
         if len(col_2):
             col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
                                height=len(col_2))
@@ -131,42 +174,26 @@ class NetworkView(BaseView):
         return Columns([(ifname_width, col_1), col_2], 2)
 
     def _build_additional_options(self):
-        opts = []
+        labels = []
         ifaces = self.model.get_all_interface_names()
 
         # Display default route status
-        if len(ifaces) > 0:
-            gateways = self.model.get_routes()
-            # FIXME: maybe deal with the case there are no routes at all?
-            ipv4_gateways = gateways['default'].get(AF_INET, [])
-            ipv6_gateways = gateways['default'].get(AF_INET6, [])
-            route_source = "is unset"
-            if self.model.default_gateway is not None:
-                route_source = "via " + self.model.default_gateway
-            elif len(ipv4_gateways):
-                route_source = ""
-                if ipv4_gateways[0]:
-                    route_source += "via {}".format(ipv4_gateways[0])
-                elif ipv4_gateways[1]:
-                    route_source += "through interface {}".format(ipv4_gateways[1])
-            default_route_w = Color.info_minor(
-                Text("  IPv4 default route " + route_source + "."))
-            opts.append(default_route_w)
+        if self.model.default_v4_gateway is not None:
+            v4_route_source = "via " + self.model.default_v4_gateway
 
-            # FIXME: do ipv6 default gateway
-            # if ipv6:
-            # if self.model.default_gateway6 is not None:
-            route_source = "is unset"
-            if len(ipv6_gateways):
-                route_source = ""
-                if ipv6_gateways[0]:
-                    route_source += "via {}".format(ipv6_gateways[0])
-                elif ipv6_gateways[1]:
-                    route_source += "through interface {}".format(ipv6_gateways[1])
-            default_route_w = Color.info_minor(
-                Text("  IPv6 default route " + route_source + "."))
-            opts.append(default_route_w)
+            default_v4_route_w = Color.info_minor(
+                Text("  IPv4 default route " + v4_route_source + "."))
+            labels.append(default_v4_route_w)
+            
+        if self.model.default_v6_gateway is not None:
+            v6_route_source = "via " + self.model.default_v6_gateway
 
+            default_v6_route_w = Color.info_minor(
+                Text("  IPv6 default route " + v6_route_source + "."))
+            labels.append(default_v6_route_w)
+
+        max_btn_len = 0
+        buttons = []
         for opt, sig, _ in self.model.get_menu():
             if ':set-default-route' in sig:
                 if len(ifaces) < 2:
@@ -180,12 +207,19 @@ class NetworkView(BaseView):
                     log.debug('Skipping bonding menu option'
                               ' (not enough available nics)')
                     continue
-            opts.append(
+
+            if len(opt) > max_btn_len:
+                max_btn_len = len(opt)
+
+            buttons.append(
                 Color.menu_button(
                     menu_btn(label=opt,
                              on_press=self.additional_menu_select),
                     focus_map='button focus'))
-        return Pile(opts)
+
+        padding = getattr(Padding, 'left_{}'.format(max_btn_len))
+        buttons = [ padding(button) for button in buttons ]
+        return Pile(labels + buttons)
 
     def additional_menu_select(self, result):
         self.signal.emit_signal(self.model.get_signal_by_name(result.label))
@@ -195,13 +229,11 @@ class NetworkView(BaseView):
         self.signal.emit_signal('menu:network:main:configure-interface',
                                 result.label)
 
+    def show_network_error(self):
+        self.error.set_text("Network configuration failed; please verify your settings.")
+
     def done(self, result):
-        actions = [iface.action.get() for iface in
-                   self.model.get_configured_interfaces()]
-        actions += self.model.get_default_route()
-        log.debug('Configured Network Actions:\n{}'.format(
-            yaml.dump(actions, default_flow_style=False)))
-        self.signal.emit_signal('network:finish', actions)
+        self.signal.emit_signal('network:finish', self.model.render())
 
     def cancel(self, button):
         self.model.reset()

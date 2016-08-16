@@ -39,7 +39,7 @@ class InstallProgressController(BaseController):
         self.model = InstallProgressModel()
         self.progress_view = None
         self.alarm = None
-        self.install_log = None
+        self.install_log = CURTIN_INSTALL_LOG
 
         # state flags
         self.install_error = False
@@ -103,7 +103,6 @@ class InstallProgressController(BaseController):
             raise Exception('AIEEE!')
 
         self.install_spawned = True
-        self.install_log = CURTIN_INSTALL_LOG
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = ["top", "-d", "0.5", "-n", "20", "-b", "-p",
@@ -224,6 +223,10 @@ class InstallProgressController(BaseController):
                 "Press (Control-x) to Quit."
             ]
             self.progress_view.text.set_text("\n".join(banner))
+
+            # FIXME: curtin_install not seemingly called from filesystem in
+            # dry-run mode.
+            self.curtin_install()
 
         self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
 
