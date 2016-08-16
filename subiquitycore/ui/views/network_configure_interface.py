@@ -96,6 +96,8 @@ class NetworkConfigureInterfaceView(BaseView):
     def _build_ipv4_method_buttons(self):
         dhcp4 = self.iface_obj.dhcp6
 
+        button_padding = 25
+
         buttons = []
         btn = menu_btn(label="Use a static IPv4 configuration",
                        on_press=self.show_ipv4_configuration)
@@ -107,10 +109,15 @@ class NetworkConfigureInterfaceView(BaseView):
                        on_press=self.clear_ipv4)
         buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
 
+        padding = getattr(Padding, 'left_{}'.format(button_padding))
+        buttons = [ padding(button) for button in buttons ]
+
         return buttons
 
     def _build_ipv6_method_buttons(self):
         dhcp6 = self.iface_obj.dhcp6
+
+        button_padding = 25
 
         buttons = []
         btn = menu_btn(label="Use a static IPv6 configuration",
@@ -122,6 +129,9 @@ class NetworkConfigureInterfaceView(BaseView):
         btn = menu_btn(label="Do not use",
                        on_press=self.clear_ipv6)
         buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+
+        padding = getattr(Padding, 'left_{}'.format(button_padding))
+        buttons = [ padding(button) for button in buttons ]
 
         return buttons
 

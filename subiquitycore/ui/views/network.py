@@ -171,7 +171,7 @@ class NetworkView(BaseView):
         return Columns([(ifname_width, col_1), col_2], 2)
 
     def _build_additional_options(self):
-        opts = []
+        labels = []
         ifaces = self.model.get_all_interface_names()
 
         # Display default route status
@@ -180,15 +180,17 @@ class NetworkView(BaseView):
 
             default_v4_route_w = Color.info_minor(
                 Text("  IPv4 default route " + v4_route_source + "."))
-            opts.append(default_v4_route_w)
+            labels.append(default_v4_route_w)
             
         if self.model.default_v6_gateway is not None:
             v6_route_source = "via " + self.model.default_v6_gateway
 
             default_v6_route_w = Color.info_minor(
                 Text("  IPv6 default route " + v6_route_source + "."))
-            opts.append(default_v6_route_w)
+            labels.append(default_v6_route_w)
 
+        max_btn_len = 0
+        buttons = []
         for opt, sig, _ in self.model.get_menu():
             if ':set-default-route' in sig:
                 if len(ifaces) < 2:
@@ -202,12 +204,19 @@ class NetworkView(BaseView):
                     log.debug('Skipping bonding menu option'
                               ' (not enough available nics)')
                     continue
-            opts.append(
+
+            if len(opt) > max_btn_len:
+                max_btn_len = len(opt)
+
+            buttons.append(
                 Color.menu_button(
                     menu_btn(label=opt,
                              on_press=self.additional_menu_select),
                     focus_map='button focus'))
-        return Pile(opts)
+
+        padding = getattr(Padding, 'left_{}'.format(max_btn_len))
+        buttons = [ padding(button) for button in buttons ]
+        return Pile(labels + buttons)
 
     def additional_menu_select(self, result):
         self.signal.emit_signal(self.model.get_signal_by_name(result.label))
