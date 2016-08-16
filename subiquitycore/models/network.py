@@ -100,7 +100,6 @@ class Networkdev():
         log.debug("render to YAML")
         result = { self.ifname:
                    { 
-                     'match': { 'name': self.ifname },
                      'dhcp4': self.dhcp4,
                      'dhcp6': self.dhcp6,
                      'addresses': self.ipv4_addresses + self.ipv6_addresses,
