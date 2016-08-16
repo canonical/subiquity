@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
 import logging
 import pwd
 
@@ -102,29 +103,20 @@ class IdentityView(BaseView):
         if not self.opts.dry_run:
             self.progress.set_text("Contacting store...")
             self.loop.draw_screen()
-            users_before = users()
-            result = run_command(["snap", "create-user", self.email.value])
+            result = run_command(["snap", "create-user", "--sudoer", "--json", self.email.value])
             self.progress.set_text("")
             if result['status'] != 0:
                 self.error.set_text("Creating user failed:\n" + result['err'])
                 return
             else:
-                users_after = users()
-                new_users = users_after - users_before
-                if len(new_users) != 1:
-                    self.error.set_text("uhh")
-                    return
-                new_user = pwd.getpwnam(new_users.pop())
-                # Use email for realname until
-                # https://bugs.launchpad.net/snappy/+bug/1607121 is resolved.
+                data = json.loads(result['output'])
+                new_user = pwd.getpwnam(data['username'])
                 result = {
-                    'realname': self.email.value, #new_user.pw_gecos.split(",")[0]
-                    'username': new_user.pw_name,
+                    'realname': self.email.value,
+                    'username': new_user,
                     'passwod': '',
                     'confirm_password': ''
                     }
-                # Work around https://bugs.launchpad.net/snappy/+bug/1606815
-                run_command(["chown", "{}:{}".format(new_user.pw_uid, new_user.pw_gid), "-R", new_user.pw_dir])
                 self.model.add_user(result)
         else:
                 result = {
@@ -135,9 +127,3 @@ class IdentityView(BaseView):
                     }
                 self.model.add_user(result)
         self.signal.emit_signal('menu:identity:login:main')
-
-def users():
-    r = set()
-    for pw in pwd.getpwall():
-        r.add(pw.pw_name)
-    return r
