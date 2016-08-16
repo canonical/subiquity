@@ -57,7 +57,7 @@ class NetworkBondInterfacesView(BaseView):
             device = self.model.get_interface(ifname)
             device_speed = self.model.iface_get_speed(ifname)
             iface_string = "{}     {},     {}".format(device.ifname,
-                                                      device.ip,
+                                                      device.ip4,
                                                       device_speed)
             log.debug('bond: iface_string={}'.format(iface_string))
             self.selected_ifaces.append(CheckBox(iface_string))

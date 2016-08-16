@@ -74,9 +74,7 @@ class LoginView(BaseView):
         login_text += remote_tpl.format(**login_info)
         ips = []
         for iface in self.ifaces:
-            #iface.configure_from_info()
-
-            for addr in iface.dhcp_addresses:
+            for addr in iface.dhcp4_addresses:
                 try:
                     ip = str(addr[0]).split("/")[0]
                 except IndexError:
@@ -84,7 +82,23 @@ class LoginView(BaseView):
                 if ip is not None:
                     ips.append(ip)
 
-            for addr in iface.addresses:
+            for addr in iface.ipv4_addresses:
+                try:
+                    ip = str(addr).split("/")[0]
+                except IndexError:
+                    ip = None
+                if ip is not None:
+                    ips.append(ip)
+
+            for addr in iface.dhcp6_addresses:
+                try:
+                    ip = str(addr[0]).split("/")[0]
+                except IndexError:
+                    ip = None
+                if ip is not None:
+                    ips.append(ip)
+
+            for addr in iface.ipv6_addresses:
                 try:
                     ip = str(addr).split("/")[0]
                 except IndexError:

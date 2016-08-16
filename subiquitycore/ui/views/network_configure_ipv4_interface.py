@@ -19,6 +19,7 @@ from subiquitycore.ui.buttons import done_btn, menu_btn, cancel_btn
 from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.interactive import StringEditor
 import logging
+import netifaces
 
 log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface')
 
@@ -129,7 +130,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         try:
             self.validate()
             self.iface.remove_networks()
-            self.iface.add_network(result)
+            self.iface.add_network(netifaces.AF_INET, result)
         except ValueError as e:
             error = 'Failed to manually configure interface: {}'.format(e)
             log.exception(error)

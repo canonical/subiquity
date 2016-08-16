@@ -23,7 +23,7 @@ class PlainButton(Button):
 
 
 class MenuSelectButton(Button):
-    button_left = Text("")
+    button_left = Text(">")
     button_right = Text("")
 
 

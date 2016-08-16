@@ -28,63 +28,97 @@ class NetworkConfigureInterfaceView(BaseView):
         self.signal = signal
         self.iface = iface
         self.iface_obj = self.model.get_interface(iface)
+        self.ipv4_info = Pile(self._build_gateway_ipv4_info())
+        self.ipv4_method = Pile(self._build_ipv4_method_buttons())
+        self.ipv6_info = Pile(self._build_gateway_ipv6_info())
+        self.ipv6_method = Pile(self._build_ipv6_method_buttons())
         body = [
-            Padding.center_79(self._build_gateway_ipv4_info()),
-            Padding.center_79(self._build_manual_ipv4_button()),
+            Padding.center_79(self.ipv4_info),
+            Padding.center_79(self.ipv4_method),
             Padding.line_break(""),
             Padding.line_break(""),
-            Padding.center_79(self._build_gateway_ipv6_info()),
-            Padding.center_79(self._build_manual_ipv6_button()),
+            Padding.center_79(self.ipv6_info),
+            Padding.center_79(self.ipv6_method),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
         ]
         super().__init__(ListBox(body))
 
     def _build_gateway_ipv4_info(self):
-        header = ("IPv4 not configured")
-        gw_info = None
+        addresses = self.iface_obj.ipv4_addresses
         ips = self.iface_obj.ip4
         methods = self.iface_obj.ip4_methods
         providers = self.iface_obj.ip4_providers
+        dhcp4 = self.iface_obj.dhcp4
 
-        p = [Text(header)]
-        for idx in range(len(ips)):
-            if not (None in [ips[idx], providers[idx], methods[idx]]):
-                if methods[idx] in ['dhcp']:
-                    header = ("Will use DHCP for IPv4:")
-                else:
-                    header = ("Will use static for IPv4:")
+        if dhcp4:
+            p = [Text("Will use DHCP for IPv4:")]
+
+            for idx in range(len(ips)):
                 gw_info = (str(ips[idx]) + (" provided by ") + methods[idx] +
                            (" from ") + providers[idx])
+                p.append(Color.info_minor(Text(gw_info)))
+        elif not dhcp4 and len(addresses) > 0:
+            p = [Text("Will use static addresses for IPv4:")]
+            for idx in range(len(addresses)):
+                p.append(Color.info_minor(Text(addresses[idx])))
+        else:
+            p = [Text("IPv4 not configured")]
 
-            if gw_info:
-                p.append(Text(gw_info))
-
-        return Pile(p)
+        return p
 
     def _build_gateway_ipv6_info(self):
-        header = ("IPv6 not configured")
-        gw_info = None
+        addresses = self.iface_obj.ipv6_addresses
+        ips = self.iface_obj.ip6
+        methods = self.iface_obj.ip6_methods
+        providers = self.iface_obj.ip6_providers
+        dhcp6 = self.iface_obj.dhcp6
 
-        p = [Text(header)]
-        if gw_info:
-            p.append(Text(gw_info))
+        if dhcp6:
+            p = [Text("Will use DHCP for IPv6:")]
 
-        return Pile(p)
+            log.debug('ips: {}'.format(ips))
+            log.debug('providers: {}'.format(methods))
+            log.debug('methods: {}'.format(providers))
+            for idx in range(len(ips)):
+                if methods[idx] and providers[idx]:
+                    gw_info = (str(ips[idx]) + (" provided by ") + methods[idx] +
+                               (" from ") + providers[idx])
+                    p.append(Color.info_minor(Text(gw_info)))
+        elif not dhcp6 and len(addresses) > 0:
+            p = [Text("Will use static addresses for IPv6:")]
+            for idx in range(len(addresses)):
+                p.append(Color.info_minor(Text(addresses[idx])))
+        else:
+            p = [Text("IPv6 not configured")]
 
-    def _build_manual_ipv4_button(self):
+        return p
+
+    def _build_ipv4_method_buttons(self):
+        dhcp4 = self.iface_obj.dhcp6
+
+        buttons = []
         btn = menu_btn(label="Switch to manual IPv4 configuration",
                        on_press=self.show_ipv4_configuration)
-        return Pile([Color.menu_button(btn, focus_map="menu_button focus")])
+        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+        btn = menu_btn(label="Switch to using DHCP",
+                       on_press=self.enable_dhcp4)
+        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
 
-    def _build_manual_ipv6_button(self):
-        text = ("Switch to manual IPv6 configuration")
-        # FIXME: ipv6 testing
-        # btn = menu_btn(label=text,
-        #                  on_press=self.show_ipv6_configuration)
-        # mb = Color.menu_button(btn, focus_map="menu_button focus")
-        mb = Color.info_minor(Text("  " + text))
-        return Pile([mb])
+        return buttons
+
+    def _build_ipv6_method_buttons(self):
+        dhcp6 = self.iface_obj.dhcp6
+
+        buttons = []
+        btn = menu_btn(label="Switch to manual IPv6 configuration",
+                       on_press=self.show_ipv6_configuration)
+        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+        btn = menu_btn(label="Switch to using DHCPv6",
+                       on_press=self.enable_dhcp6)
+        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+
+        return buttons
 
     def _build_buttons(self):
         done = done_btn(on_press=self.done)
@@ -93,6 +127,17 @@ class NetworkConfigureInterfaceView(BaseView):
             Color.button(done, focus_map='button focus'),
         ]
         return Pile(buttons)
+
+    def enable_dhcp4(self, btn):
+        self.iface_obj.remove_ipv4_networks()
+        self.iface_obj.dhcp4 = True
+        self.ipv4_info.contents = [ (obj, ('pack', None)) for obj in self._build_gateway_ipv4_info() ]
+        #self.signal.emit_signal('refresh')
+
+    def enable_dhcp6(self, btn):
+        self.iface_obj.remove_ipv6_networks()
+        self.iface_obj.dhcp6 = True
+        self.ipv6_info.contents = [ (obj, ('pack', None)) for obj in self._build_gateway_ipv6_info() ]
 
     def show_ipv4_configuration(self, btn):
         self.signal.emit_signal(

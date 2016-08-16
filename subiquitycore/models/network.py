@@ -33,8 +33,10 @@ class Networkdev():
         self.iftype = iftype
         self.is_switchport = False
         self.probe_info = probe_info
-        self.dhcp_addresses = []
-        self.addresses = []
+        self.dhcp4_addresses = []
+        self.dhcp6_addresses = []
+        self.ipv4_addresses = []
+        self.ipv6_addresses = []
         self.dhcp4 = False
         self.dhcp6 = False
         self.search_domains = []
@@ -51,6 +53,7 @@ class Networkdev():
         log.debug('configuring netdev from info source')
 
         ip_info = self.probe_info.ip
+
         sources = ip_info.get('sources', None)
         for idx in range(len(ip_info.get(netifaces.AF_INET, []))):
             address = ip_info.get(netifaces.AF_INET)[idx].get('addr', None)
@@ -66,9 +69,9 @@ class Networkdev():
 
             if method and method.startswith('dhcp'):
                 self.dhcp4 = True
-                self.dhcp_addresses.append([ip_network.with_prefixlen, provider, netifaces.AF_INET])
+                self.dhcp4_addresses.append([ip_network.with_prefixlen, provider, netifaces.AF_INET])
             else:
-                self.addresses.append(ip_network.with_prefixlen)
+                self.ipv4_addresses.append(ip_network.with_prefixlen)
 
         for idx in range(len(ip_info.get(netifaces.AF_INET6, []))):
             address = ip_info.get(netifaces.AF_INET6)[idx].get('addr', None)
@@ -89,22 +92,23 @@ class Networkdev():
 
             if method and method.startswith('dhcp'):
                 self.dhcp6 = True
-                self.dhcp_addresses.append([ip_network.with_prefixlen, provider, netifaces.AF_INET6])
+                self.dhcp6_addresses.append([ip_network.with_prefixlen, provider, netifaces.AF_INET6])
             else:
-                self.addresses.append(ip_network.with_prefixlen)
-
-        log.debug('configured as: {} dhcp: {}'.format(self.addresses, self.dhcp_addresses))
+                self.ipv6_addresses.append(ip_network.with_prefixlen)
 
     def render(self):
         log.debug("render to YAML")
         result = { self.ifname:
                    { 
-                     'match': { 'macaddress': self.probe_info.hwaddr },
+                     'match': { 'name': self.ifname },
                      'dhcp4': self.dhcp4,
                      'dhcp6': self.dhcp6,
-                     'addresses': self.addresses,
+                     'addresses': self.ipv4_addresses + self.ipv6_addresses,
                    } 
                  }
+
+        if self.iftype == 'bond':
+            result[self.ifname]['interfaces'] = self.probe_info.bond['slaves']
 
         return result
 
@@ -145,16 +149,26 @@ class Networkdev():
             log.debug('iface is configured')
             ipinfo = self.probe_info.ip
             log.debug('probe ip: {}'.format(ipinfo))
-            probed_ip4 = [ af_inet.get('addr') for af_inet in ipinfo.get(netifaces.AF_INET) ]
-            probed_ip6 = [ af_inet6.get('addr') for af_inet6 in ipinfo.get(netifaces.AF_INET6) ]
-            ip4_methods = [ source.get('method') for source in ipinfo.get('sources').get(netifaces.AF_INET, []) ]
-            ip6_methods = [ source.get('method') for source in ipinfo.get('sources').get(netifaces.AF_INET6, []) ]
-            ip4_providers = [ source.get('provider') for source in ipinfo.get('sources').get(netifaces.AF_INET, []) ]
-            ip6_providers = [ source.get('provider') for source in ipinfo.get('sources').get(netifaces.AF_INET6, []) ]
+            probed_ip4 = None
+            if ipinfo.get(netifaces.AF_INET) is not None:
+                probed_ip4 = [ af_inet.get('addr') for af_inet in ipinfo.get(netifaces.AF_INET) ]
+            probed_ip6 = None
+            if ipinfo.get(netifaces.AF_INET6) is not None:
+                probed_ip6 = [ af_inet6.get('addr') for af_inet6 in ipinfo.get(netifaces.AF_INET6) ]
             if probed_ip4:
                 ip4 = probed_ip4
             if probed_ip6:
                 ip6 = probed_ip6
+
+            if ipinfo.get('sources', None) is not None:
+                for source in ipinfo.get('sources').get(netifaces.AF_INET, []):
+                    if source is not None:
+                        ip4_methods.append(source.get('method'))
+                        ip4_providers.append(source.get('provider'))
+                for source in ipinfo.get('sources').get(netifaces.AF_INET6, []):
+                    if source is not None:
+                        ip6_methods.append(source.get('method'))
+                        ip6_providers.append(source.get('provider'))
 
         log.debug('{} IPv4 info: {},{},{}'.format(self.ifname, ip4, ip4_methods,
                                                   ip4_providers))
@@ -197,12 +211,20 @@ class Networkdev():
         return ip_info['ip6_providers']
 
     def remove_networks(self):
-        self.addresses.clear()
-        self.dhcp_addresses.clear()
-        self.dhcp4 = False
-        self.dhcp6 = False
+        self.remove_ipv4_networks()
+        self.remove_ipv6_networks()
 
-    def add_network(self, network):
+    def remove_ipv4_networks(self):
+        self.dhcp4 = False
+        self.ipv4_addresses.clear()
+        self.dhcp4_addresses.clear()
+
+    def remove_ipv6_networks(self):
+        self.dhcp6 = False
+        self.ipv6_addresses.clear()
+        self.dhcp6_addresses.clear()
+
+    def add_network(self, family, network):
         # result = {
         #    'network': self.subnet_input.value,
         #    'address': self.address_input.value,
@@ -212,7 +234,10 @@ class Networkdev():
         # }
         address = network['address'].split('/')[0]
         address += '/' + network['network'].split('/')[1]
-        self.addresses.append(address)
+        if family == netifaces.AF_INET:
+            self.ipv4_addresses.append(address)
+        elif family == netifaces.AF_INET6:
+            self.ipv6_addresses.append(address)
         self.gateway = network['gateway']
         self.nameservers.append(network['nameserver'])
         self.search_domains.append(network['searchdomains'])
@@ -522,9 +547,12 @@ class NetworkModel(BaseModel):
     # update or change devices
     def add_bond(self, ifname, interfaces, params=[], subnets=[]):
         ''' create a bond action and info dict from parameters '''
-        action = BondAction(name=ifname,
-                            bond_interfaces=interfaces,
-                            params=params)
+        for iface in interfaces:
+            self.devices[iface].remove_networks()
+            self.devices[iface].dhcp4 = False
+            self.devices[iface].dhcp6 = False
+            self.devices[iface].switchport = True
+
         info = {
             "bond": {
                 "is_master": True,
@@ -555,7 +583,7 @@ class NetworkModel(BaseModel):
         }
         bondinfo = make_network_info(ifname, info)
         bonddev = Networkdev(ifname, 'bond')
-        bonddev.configure(action, probe_info=bondinfo)
+        bonddev.configure(probe_info=bondinfo)
 
         # update slave interface info
         for bondifname in interfaces:
@@ -586,7 +614,12 @@ class NetworkModel(BaseModel):
                    }
                  }
         ethernets = {}
+        bonds = {}
         for iface in self.devices.values():
-            ethernets.update(iface.render())
+            if iface.iftype == 'eth':
+                ethernets.update(iface.render())
+            if iface.iftype == 'bond':
+                bonds.update(iface.render())
         config['network']['ethernets'] = ethernets
+        config['network']['bonds'] = bonds
         return config

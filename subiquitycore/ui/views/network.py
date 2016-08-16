@@ -81,43 +81,59 @@ class NetworkView(BaseView):
                     focus_map='button focus'))
 
             interface = self.model.get_interface(iface)
-            log.debug('{}: addresses: {}'.format(iface, interface.addresses))
             ip_status = {
-                'addresses': interface.addresses,
-                'dhcp_addresses': interface.dhcp_addresses,
+                'ipv4_addresses': interface.ipv4_addresses,
+                'ipv6_addresses': interface.ipv6_addresses,
+                'dhcp4_addresses': interface.dhcp4_addresses,
+                'dhcp6_addresses': interface.dhcp6_addresses,
                 'dhcp4': interface.dhcp4,
                 'dhcp6': interface.dhcp6,
             }
 
-            # Show IPv4 configuration.
-            for addr in ip_status['dhcp_addresses']:
+            for addr in ip_status['dhcp4_addresses']:
                 template = '{} (dhcp)'.format(addr[0])
                 col_1.append(Text("")) 
                 col_2.append(Color.info_primary(Text(template)))
 
-            for addr in ip_status['addresses']:
+            for addr in ip_status['ipv4_addresses']:
                 template = '{} (manual)'.format(addr)
                 col_1.append(Text("")) 
                 col_2.append(Color.info_primary(Text(template)))
 
-            if ( not ip_status['dhcp4'] and not ip_status['dhcp6'] ) \
-                    and len(ip_status['addresses']) == 0:
-                template = "Not configured"
+            for addr in ip_status['dhcp6_addresses']:
+                template = '{} (dhcp)'.format(addr[0])
                 col_1.append(Text("")) 
                 col_2.append(Color.info_primary(Text(template)))
 
-            if len(ip_status['addresses']) == 0 and \
-                    len(ip_status['dhcp_addresses']) == 0:
-                template = None
-                if ip_status['dhcp4'] and ip_status['dhcp6']:
-                    template = "DHCP is enabled but no IP addresses were discovered"
-                elif ip_status['dhcp4'] and not ip_status['dhcp6']:
-                    template = "DHCPv4 is enabled but no IP addresses were discovered"
-                elif ip_status['dhcp6'] and not ip_status['dhcp4']:
-                    template = "DHCPv6 is enabled but no IP addresses were discovered"
-                if template is not None:
-                    col_1.append(Text("")) 
-                    col_2.append(Color.info_primary(Text(template)))
+            for addr in ip_status['ipv6_addresses']:
+                template = '{} (manual)'.format(addr)
+                col_1.append(Text("")) 
+                col_2.append(Color.info_primary(Text(template)))
+
+            template = None
+            if ( not ip_status['dhcp4'] and not ip_status['dhcp6'] ) \
+                    and len(ip_status['ipv4_addresses']) == 0 and \
+                    len(ip_status['ipv6_addresses']) == 0:
+                template = "Not configured"
+
+            if ip_status['dhcp4'] and ip_status['dhcp6'] and \
+                    len(ip_status['ipv4_addresses']) == 0 and \
+                    len(ip_status['dhcp4_addresses']) == 0 and \
+                    len(ip_status['ipv6_addresses']) == 0 and \
+                    len(ip_status['dhcp6_addresses']) == 0:
+                template = "DHCP is enabled"
+            elif ip_status['dhcp4'] and \
+                    len(ip_status['ipv4_addresses']) == 0 and \
+                    len(ip_status['dhcp4_addresses']) == 0:
+                template = "DHCPv4 is enabled"
+            elif ip_status['dhcp6'] and \
+                    len(ip_status['ipv6_addresses']) == 0 and \
+                    len(ip_status['dhcp6_addresses']) == 0:
+                template = "DHCPv6 is enabled"
+
+            if template is not None:
+                col_1.append(Text("")) 
+                col_2.append(Color.info_primary(Text(template)))
 
             # Other device info (MAC, vendor/model, speed)
             info = self.model.get_iface_info(iface)
