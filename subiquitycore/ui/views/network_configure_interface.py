@@ -131,12 +131,14 @@ class NetworkConfigureInterfaceView(BaseView):
     def enable_dhcp4(self, btn):
         self.iface_obj.remove_ipv4_networks()
         self.iface_obj.dhcp4 = True
+        self.model.set_default_v4_gateway(None, None)
         self.ipv4_info.contents = [ (obj, ('pack', None)) for obj in self._build_gateway_ipv4_info() ]
         #self.signal.emit_signal('refresh')
 
     def enable_dhcp6(self, btn):
         self.iface_obj.remove_ipv6_networks()
         self.iface_obj.dhcp6 = True
+        self.model.set_default_v6_gateway(None, None)
         self.ipv6_info.contents = [ (obj, ('pack', None)) for obj in self._build_gateway_ipv6_info() ]
 
     def show_ipv4_configuration(self, btn):

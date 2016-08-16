@@ -282,9 +282,12 @@ class NetworkModel(BaseModel):
     ]
 
     additional_options = [
-        ('Set default route',
-         base_signal + ':set-default-route',
-         'set_default_route'),
+        ('Set a custom IPv4 default route',
+         base_signal + ':set-default-v4-route',
+         'set_default_v4_route'),
+        ('Set a custom IPv6 default route',
+         base_signal + ':set-default-v6-route',
+         'set_default_v6_route'),
         ('Bond interfaces',
          base_signal + ':bond-interfaces',
          'bond_interfaces'),
@@ -311,14 +314,19 @@ class NetworkModel(BaseModel):
         self.devices = {}
         self.network_devices = {}
         self.network_routes = {}
-        self.default_gateway = None
-        self.gateway_dev = None
+        self.default_v4_gateway = None
+        self.default_v6_gateway = None
+        self.v4_gateway_dev = None
+        self.v6_gateway_dev = None
 
     def reset(self):
         log.debug('resetting network model')
         self.devices = {}
         self.info = {}
-        self.default_gateway = None
+        self.default_v4_gateway = None
+        self.default_v6_gateway = None
+        self.v4_gateway_dev = None
+        self.v6_gateway_dev = None
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -525,13 +533,16 @@ class NetworkModel(BaseModel):
         return self.devices[iface].type == 'bridge'
 
     def get_default_route(self):
-        if self.default_gateway:
-            action = {
-                'type': 'route',
-                'gateway': self.default_gateway
-            }
-            log.debug(action)
-        return []
+        route = []
+        if self.default_v4_gateway:
+            route.append(self.default_v4_gateway)
+        else:
+            route.append(None)
+        if self.default_v6_gateway:
+            route.append(self.default_v6_gateway)
+        else:
+            route.append(None)
+        return route
 
     def get_iface_info(self, iface):
         info = {
@@ -598,16 +609,33 @@ class NetworkModel(BaseModel):
         self.devices[ifname] = bonddev
         self.info[ifname] = bondinfo
 
-    def clear_gateway(self):
-        self.default_gateway = None
+    def clear_gateways(self):
+        log.debug("clearing default gateway")
+        self.default_v4_gateway = None
+        self.default_v6_gateway = None
 
-    def set_default_gateway(self, ifname, gateway_input):
+    def set_default_v4_gateway(self, ifname, gateway_input):
+        if gateway_input is None:
+            self.default_v4_gateway = None
+            self.v4_gateway_dev = None
+            return
+
         addr = valid_ipv4_address(gateway_input)
         if addr is False:
             raise ValueError(('Invalid gateway IP ') + gateway_input)
 
-        self.default_gateway = addr.compressed
-        self.gateway_dev = ifname
+        self.default_v4_gateway = addr.compressed
+        self.v4_gateway_dev = ifname
+
+    def set_default_v6_gateway(self, ifname, gateway_input):
+        if gateway_input is None:
+            self.default_v6_gateway = None
+            self.v6_gateway_dev = None
+            return
+
+        # FIXME: validate v6 address.
+        self.default_v6_gateway = gateway_input
+        self.v6_gateway_dev = ifname
 
     def render(self):
         config = { 'network':

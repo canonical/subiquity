@@ -59,9 +59,16 @@ class NetworkController(BaseController):
                 time.sleep(0.1)
         self.signal.emit_signal('menu:identity:main')
 
-    def set_default_route(self):
+    def set_default_v4_route(self):
         self.ui.set_header("Default route")
         self.ui.set_body(NetworkSetDefaultRouteView(self.model,
+                                                    netifaces.AF_INET,
+                                                    self.signal))
+
+    def set_default_v6_route(self):
+        self.ui.set_header("Default route")
+        self.ui.set_body(NetworkSetDefaultRouteView(self.model,
+                                                    netifaces.AF_INET6,
                                                     self.signal))
 
     def bond_interfaces(self):

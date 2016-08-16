@@ -86,7 +86,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
     def _build_set_as_default_gw_button(self):
         ifaces = self.model.get_all_interface_names()
 
-        self.is_gateway = self.model.gateway_dev == self.ifname
+        self.is_gateway = self.model.v4_gateway_dev == self.ifname
 
         if not self.is_gateway and len(ifaces) > 1:
             btn = menu_btn(label="Set this as default gateway",
@@ -99,8 +99,8 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
     def set_default_gateway(self, button):
         if self.gateway_input.value:
             try:
-                self.model.set_default_gateway(self.ifname,
-                                               self.gateway_input.value)
+                self.model.set_default_v4_gateway(self.ifname,
+                                                  self.gateway_input.value)
                 self.is_gateway = True
                 self.set_as_default_gw_button.contents = \
                     [ (obj, ('pack', None)) \

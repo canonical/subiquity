@@ -175,37 +175,19 @@ class NetworkView(BaseView):
         ifaces = self.model.get_all_interface_names()
 
         # Display default route status
-        if len(ifaces) > 0:
-            gateways = self.model.get_routes()
-            # FIXME: maybe deal with the case there are no routes at all?
-            ipv4_gateways = gateways['default'].get(AF_INET, [])
-            ipv6_gateways = gateways['default'].get(AF_INET6, [])
-            route_source = "is unset"
-            if self.model.default_gateway is not None:
-                route_source = "via " + self.model.default_gateway
-            elif len(ipv4_gateways):
-                route_source = ""
-                if ipv4_gateways[0]:
-                    route_source += "via {}".format(ipv4_gateways[0])
-                elif ipv4_gateways[1]:
-                    route_source += "through interface {}".format(ipv4_gateways[1])
-            default_route_w = Color.info_minor(
-                Text("  IPv4 default route " + route_source + "."))
-            opts.append(default_route_w)
+        if self.model.default_v4_gateway is not None:
+            v4_route_source = "via " + self.model.default_v4_gateway
 
-            # FIXME: do ipv6 default gateway
-            # if ipv6:
-            # if self.model.default_gateway6 is not None:
-            route_source = "is unset"
-            if len(ipv6_gateways):
-                route_source = ""
-                if ipv6_gateways[0]:
-                    route_source += "via {}".format(ipv6_gateways[0])
-                elif ipv6_gateways[1]:
-                    route_source += "through interface {}".format(ipv6_gateways[1])
-            default_route_w = Color.info_minor(
-                Text("  IPv6 default route " + route_source + "."))
-            opts.append(default_route_w)
+            default_v4_route_w = Color.info_minor(
+                Text("  IPv4 default route " + v4_route_source + "."))
+            opts.append(default_v4_route_w)
+            
+        if self.model.default_v6_gateway is not None:
+            v6_route_source = "via " + self.model.default_v6_gateway
+
+            default_v6_route_w = Color.info_minor(
+                Text("  IPv6 default route " + v6_route_source + "."))
+            opts.append(default_v6_route_w)
 
         for opt, sig, _ in self.model.get_menu():
             if ':set-default-route' in sig:

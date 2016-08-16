@@ -19,19 +19,22 @@ from subiquitycore.ui.buttons import cancel_btn, done_btn, menu_btn
 from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.interactive import StringEditor
 import logging
+import netifaces
 
 log = logging.getLogger('subiquitycore.network.set_default_route')
 
 
 class NetworkSetDefaultRouteView(BaseView):
-    def __init__(self, model, signal):
+    def __init__(self, model, family, signal):
         self.model = model
+        self.family = family
         self.signal = signal
         self.default_gateway_w = None
+        self.gateway_options = Pile(self._build_default_routes())
         body = [
             Padding.center_79(Text("Please set the default gateway:")),
             Padding.line_break(""),
-            Padding.center_79(self._build_default_routes()),
+            Padding.center_79(self.gateway_options),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
         ]
@@ -54,16 +57,14 @@ class NetworkSetDefaultRouteView(BaseView):
             the model.
         '''
         providers = {}
-        for iface in self.model.get_all_interfaces():
-            for provider in iface.ip4_providers:
-                log.debug('ipv4 provider: {}'.format(provider))
-                gw = provider
-                if gw in providers:
-                    providers[gw].append(iface.ifname)
-                else:
-                    providers[gw] = [iface.ifname]
 
-            for provider in iface.ip6_providers:
+        for iface in self.model.get_all_interfaces():
+            if self.family == netifaces.AF_INET:
+                ip_providers = iface.ip4_providers
+            elif self.family == netifaces.AF_INET6:
+                ip_providers = iface.ip6_providers
+
+            for provider in ip_providers:
                 log.debug('ipv4 provider: {}'.format(provider))
                 gw = provider
                 if gw in providers:
@@ -73,11 +74,12 @@ class NetworkSetDefaultRouteView(BaseView):
 
         log.debug('gateway providers: {}'.format(providers))
         items = []
-        del providers[None]
         items.append(Padding.center_79(
             Color.menu_button(menu_btn(label="None", on_press=self.done),
             focus_map="menu_button focus")))
         for (gw, ifaces) in providers.items():
+            if gw is None:
+                continue
             items.append(Padding.center_79(
                 Color.menu_button(menu_btn(
                     label="{gw} ({ifaces})".format(
@@ -91,8 +93,7 @@ class NetworkSetDefaultRouteView(BaseView):
                 menu_btn(label="Specify the default route manually",
                          on_press=self.show_edit_default_route),
                 focus_map="menu_button focus")))
-        self.pile = Pile(items)
-        return self.pile
+        return items
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
@@ -108,25 +109,35 @@ class NetworkSetDefaultRouteView(BaseView):
         log.debug("Re-rendering specify default route")
         self.default_gateway_w = StringEditor(
             caption="Default gateway will be ")
-        self.pile.contents[-1] = (Padding.center_50(
+        self.gateway_options.contents[-1] = (Padding.center_50(
             Color.string_input(
                 self.default_gateway_w,
-                focus_map="string_input focus")), self.pile.options())
+                focus_map="string_input focus")), self.gateway_options.options())
         # self.signal.emit_signal('refresh')
 
     def done(self, result):
-        if self.default_gateway_w is None:
-            self.model.clear_gateway()
-        elif self.default_gateway_w and self.default_gateway_w.value:
+        log.debug("changing default gw: {}".format(result))
+
+        gw_func = None
+        if self.family == netifaces.AF_INET:
+            gw_func = self.model.set_default_v4_gateway
+        elif self.family == netifaces.AF_INET6:
+            gw_func = self.model.set_default_v6_gateway
+
+        if self.default_gateway_w and self.default_gateway_w.value:
             try:
-                self.model.set_default_gateway(None, self.default_gateway_w.value)
+                gw_func(None, self.default_gateway_w.value)
             except ValueError:
                 # FIXME: raise UX error message
                 self.default_gateway_w.edit_text = ""
         else:
             gw_ip_from_label = result.label.split(" ")[0]
+            log.debug("default gw entered: {}".format(gw_ip_from_label))
             try:
-                self.model.set_default_gateway(gw_ip_from_label)
+                if gw_ip_from_label.startswith('None'):
+                    gw_func(None, None)
+                else:
+                    gw_func(None, gw_ip_from_label)
             except ValueError:
                 # FIXME: raise UX error message
                 pass
