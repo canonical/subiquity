@@ -217,7 +217,7 @@ class NetworkView(BaseView):
                              on_press=self.additional_menu_select),
                     focus_map='button focus'))
 
-        padding = getattr(Padding, 'left_{}'.format(max_btn_len))
+        padding = getattr(Padding, 'left_{}'.format(max_btn_len + 10))
         buttons = [ padding(button) for button in buttons ]
         return Pile(labels + buttons)
 

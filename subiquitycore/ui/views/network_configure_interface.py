@@ -96,7 +96,7 @@ class NetworkConfigureInterfaceView(BaseView):
     def _build_ipv4_method_buttons(self):
         dhcp4 = self.iface_obj.dhcp6
 
-        button_padding = 25
+        button_padding = 40
 
         buttons = []
         btn = menu_btn(label="Use a static IPv4 configuration",
@@ -117,7 +117,7 @@ class NetworkConfigureInterfaceView(BaseView):
     def _build_ipv6_method_buttons(self):
         dhcp6 = self.iface_obj.dhcp6
 
-        button_padding = 25
+        button_padding = 40
 
         buttons = []
         btn = menu_btn(label="Use a static IPv6 configuration",
