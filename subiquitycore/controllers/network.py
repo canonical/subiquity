@@ -56,11 +56,13 @@ class NetworkController(BaseController):
         else:
             with open('/etc/netplan/01-console-conf.yaml', 'w') as w:
                 w.write(yaml.dump(config))
-            run_command(['/lib/netplan/generate'])
-            run_command(['systemctl', 'restart', 'systemd-networkd'])
-            ret = run_command(['/lib/systemd/systemd-networkd-wait-online',
+            ret = run_command(['/lib/netplan/generate'])
+            if ret['status'] == 0:
+                ret = run_command(['systemctl', 'restart', 'systemd-networkd'])
+            if ret['status'] == 0:
+                ret = run_command(['/lib/systemd/systemd-networkd-wait-online',
                                '--timeout=30'])
-            online = ( ret == 0 )
+            online = ( ret['status'] == 0 )
 
         if online:
             self.signal.emit_signal('menu:identity:main')
