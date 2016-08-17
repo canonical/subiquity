@@ -15,7 +15,6 @@
 
 import json
 import logging
-import pwd
 
 from urwid import (Pile, Columns, Text, ListBox)
 from subiquitycore.ui.buttons import done_btn, cancel_btn
@@ -110,10 +109,9 @@ class IdentityView(BaseView):
                 return
             else:
                 data = json.loads(result['output'])
-                new_user = pwd.getpwnam(data['username'])
                 result = {
                     'realname': self.email.value,
-                    'username': new_user,
+                    'username': data['username'],
                     'passwod': '',
                     'confirm_password': ''
                     }
