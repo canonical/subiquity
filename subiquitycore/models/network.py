@@ -100,11 +100,14 @@ class Networkdev():
         log.debug("render to YAML")
         result = { self.ifname:
                    { 
-                     'dhcp4': self.dhcp4,
-                     'dhcp6': self.dhcp6,
                      'addresses': self.ipv4_addresses + self.ipv6_addresses,
                    } 
                  }
+
+        if self.dhcp4:
+            result[self.ifname]['dhcp4'] = True
+        if self.dhcp6:
+            result[self.ifname]['dhcp6'] = True
 
         if self.iftype == 'bond':
             result[self.ifname]['interfaces'] = self.probe_info.bond['slaves']
