@@ -1,3 +1,13 @@
+subiquity (0.0.7~5~xenial) xenial; urgency=medium
+
+  * Write netplan config:
+    - Basic IPv6 support (DHCP only)
+    - Deal with setting a default route
+    - Initial bonding support.
+    - Various UI tweaks.
+
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Tue, 16 Aug 2016 15:36:46 -0400
+
 subiquity (0.0.7~4~xenial) xenial; urgency=medium
 
   * Use a drop-in files to run console-conf before getty.
