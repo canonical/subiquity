@@ -314,7 +314,6 @@ class NetworkModel(BaseModel):
         self.prober = prober
         self.info = {}
         self.devices = {}
-        self.network_devices = {}
         self.network_routes = {}
         self.default_v4_gateway = None
         self.default_v6_gateway = None
@@ -344,11 +343,12 @@ class NetworkModel(BaseModel):
     # --- Model Methods ----
     def probe_network(self):
         log.debug('model calling prober.get_network()')
-        self.network_devices = self.prober.get_network_devices()
+        network_devices = self.prober.get_network_devices()
         self.network_routes = self.prober.get_network_routes()
 
-        for iface in [iface for iface in self.network_devices.keys()
-                      if iface not in NETDEV_IGNORED_IFACES]:
+        for iface in network_devices:
+            if iface in NETDEV_IGNORED_IFACES:
+                continue
             ifinfo = self.prober.get_network_info(iface)
             self.info[iface] = ifinfo
 
@@ -417,7 +417,7 @@ class NetworkModel(BaseModel):
             and see if iface is included in a bridge '''
         bridges = self.get_bridges()
         for bridge in bridges:
-            brinfo = self.network_devices[bridge].get('bridge', {})
+            brinfo = self.info[bridge].bridge
             if brinfo:
                 if iface in brinfo['interfaces']:
                     return True
@@ -464,7 +464,7 @@ class NetworkModel(BaseModel):
             raise
 
     def get_bridges(self):
-        return [iface for iface in self.network_devices.keys()
+        return [iface for iface in self.info
                 if self.iface_is_bridge(iface)]
 
     def get_hw_addr(self, iface):
