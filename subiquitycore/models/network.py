@@ -375,16 +375,14 @@ class NetworkModel(BaseModel):
         return self.devices[iface]
 
     def get_all_interfaces(self):
-        possible_devices = list(set(list(self.devices.keys()) +
-                                    list(self.info.keys())))
-        possible_ifaces = [self.get_interface(i) for i in
-                           sorted(possible_devices) if
-                           self.info[i].type not in NETDEV_IGNORED_IFACES]
+        ifaces = [self.get_interface(i)
+                  for i in sorted(self.info)
+                  if self.info[i].type not in NETDEV_IGNORED_IFACES]
 
         log.debug('get_all_interfaces -> {}'.format(",".join(
                                                     [i.ifname for i in
-                                                     possible_ifaces])))
-        return possible_ifaces
+                                                     ifaces])))
+        return ifaces
 
     def get_all_interface_names(self):
         return [i.ifname for i in self.get_all_interfaces()]
