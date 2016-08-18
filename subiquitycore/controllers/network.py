@@ -14,8 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import threading
-import time
 
 import netifaces
 import yaml
@@ -29,89 +27,14 @@ from subiquitycore.ui.views import (NetworkView,
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
 from subiquitycore.utils import run_command
-from subiquitycore.prober import Prober
 
 log = logging.getLogger("subiquitycore.controller.network")
-
-
-class NetworkObserver:
-
-    def update_addresses_for_interface(self, interface, addresses):
-        log.debug("updated interface %s %s", interface, addresses)
-
-    def new_interface(self, interface, info):
-        log.debug("new interface %s %s", interface, info)
-
-    def remove_interface(self, interface):
-        log.debug("remove interface %s", interface)
-
-
-class NetworkWatcher:
-    """A NetworkWatcher watches the network configuration.
-
-    Methods will be called on the passed observer when a change is
-    detected. The reason for doing the interface this was is that this
-    should really work by subscribing to netlink events but that seems
-    hard.
-    """
-
-    def __init__(self, observer):
-        self.observer = observer
-        self.running = False
-        self.thread = None
-
-    def start(self):
-        self.running = True
-        self.info = self._probe()
-        threading.Thread(target=self._run).start()
-
-    def stop(self):
-        self.running = False
-        if self.thread is not None:
-            self.thread.join()
-            self.thread = None
-
-    def _probe(self):
-        NETDEV_IGNORED_IFACES = ['lo', 'bridge', 'tun', 'tap', 'dummy']
-        class opts:
-            machine_config = None
-        prober = Prober(opts)
-        network_devices = prober.get_network_devices()
-
-        info = {}
-
-        for iface in [iface for iface in network_devices.keys()
-                      if iface not in NETDEV_IGNORED_IFACES]:
-            ifinfo = prober.get_network_info(iface)
-            info[iface] = ifinfo
-
-        return info
-
-    def _run(self):
-        while 1:
-            log.debug("watching...")
-            new_info = self._probe()
-            new_ifs = set(new_info)
-            old_ifs = set(self.info)
-            for new_if in new_ifs - old_ifs:
-                self.observer.new_interface(new_if, new_info[new_if])
-            for old_if in old_ifs - new_ifs:
-                self.observer.remove_interface(old_if)
-            for ifname in old_ifs & new_ifs:
-                if self.info[ifname].ip != new_info[ifname].ip:
-                    self.observer.update_addresses_for_interface(ifname, new_info[ifname].ip)
-            self.info = new_info
-            if not self.running:
-                return
-            time.sleep(1.0)
 
 
 class NetworkController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = NetworkModel(self.prober, self.opts)
-        self.watcher = NetworkWatcher(NetworkObserver())
-        self.watcher.start()
 
     def network(self):
         title = "Network connections"
