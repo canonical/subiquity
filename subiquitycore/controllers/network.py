@@ -93,7 +93,6 @@ class NetworkController(BaseController):
             online = ( ret['status'] == 0 )
 
         if online:
-            self.watcher.stop()
             self.signal.emit_signal('menu:identity:main')
         else:
             self.ui.frame.body.show_network_error(network_error)
