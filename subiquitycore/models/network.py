@@ -336,25 +336,25 @@ class NetworkModel(BaseModel):
         return self.additional_options
 
     # --- Model Methods ----
-    def probe_network(self):
-        log.debug('model calling prober.get_network()')
-        network_devices = self.prober.get_network_devices()
-        self.network_routes = self.prober.get_network_routes()
+    ## def probe_network(self):
+    ##     log.debug('model calling prober.get_network()')
+    ##     network_devices = self.prober.get_network_devices()
+    ##     self.network_routes = self.prober.get_network_routes()
 
-        for iface in network_devices:
-            if iface in NETDEV_IGNORED_IFACES:
-                continue
-            ifinfo = self.prober.get_network_info(iface)
-            self.info[iface] = ifinfo
-            netdev = Networkdev(iface, ifinfo.type)
-            try:
-                log.debug('configuring with: {}'.format(ifinfo))
-                netdev.configure(probe_info=ifinfo)
-            except Exception as e:
-                log.error(e)
-            self.devices[iface] = netdev
+    ##     for iface in network_devices:
+    ##         if iface in NETDEV_IGNORED_IFACES:
+    ##             continue
+    ##         ifinfo = self.prober.get_network_info(iface)
+    ##         self.info[iface] = ifinfo
+    ##         netdev = Networkdev(iface, ifinfo.type)
+    ##         try:
+    ##             log.debug('configuring with: {}'.format(ifinfo))
+    ##             netdev.configure(probe_info=ifinfo)
+    ##         except Exception as e:
+    ##             log.error(e)
+    ##         self.devices[iface] = netdev
 
-        log.debug('probing network complete!')
+    ##     log.debug('probing network complete!')
 
     def get_routes(self):
         ''' get collection of currently configured routes '''
