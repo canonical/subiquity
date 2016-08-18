@@ -67,7 +67,7 @@ class NetworkView(BaseView):
 
     def _build_model_inputs(self):
         log.info("probing for network devices")
-        #self.model.probe_network()
+        self.model.probe_network()
         ifaces = self.model.get_all_interface_names()
         ifname_width = 8  # default padding
 

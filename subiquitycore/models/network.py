@@ -336,10 +336,10 @@ class NetworkModel(BaseModel):
         return self.additional_options
 
     # --- Model Methods ----
-    ## def probe_network(self):
+    def probe_network(self):
     ##     log.debug('model calling prober.get_network()')
     ##     network_devices = self.prober.get_network_devices()
-    ##     self.network_routes = self.prober.get_network_routes()
+        self.network_routes = self.prober.get_network_routes()
 
     ##     for iface in network_devices:
     ##         if iface in NETDEV_IGNORED_IFACES:
