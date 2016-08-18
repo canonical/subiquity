@@ -14,9 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+import subprocess
+import sys
 
 import netifaces
 import yaml
+
+from probert.network import NetworkInfo
 
 from subiquitycore.models import NetworkModel
 from subiquitycore.ui.views import (NetworkView,
@@ -35,6 +40,26 @@ class NetworkController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = NetworkModel(self.prober, self.opts)
+        self.proc = subprocess.Popen(
+            [sys.executable, os.path.join(os.path.dirname(__file__), 'netwatch.py')],
+            bufsize=0, stdout=subprocess.PIPE)
+        self.watch_handle = self.loop.watch_file(self.proc.stdout, self.output)
+        self.buf = b''
+
+    def output(self):
+        self.buf += self.proc.stdout.read(1024)
+        if b'\0' in self.buf:
+            lines = self.buf.split(b'\0')
+            self.buf = lines[-1]
+            for line in lines[:-1]:
+                update = yaml.safe_load(line.decode('utf-8'))
+                ifname = update['ifname']
+                action = update['action']
+                log.debug(update['action'])
+                if action == 'new_interface':
+                    self.model.info[ifname] = NetworkInfo({ifname: update['data']})
+                elif action == 'update_interface':
+                    log.debug("%s %s", ifname, update['data'])
 
     def network(self):
         title = "Network connections"

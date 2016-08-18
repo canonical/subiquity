@@ -40,8 +40,9 @@ class NetworkView(BaseView):
         self.signal = signal
         self.items = []
         self.error = Text("", align='center')
+        self.model_inputs = self._build_model_inputs()
         self.body = [
-            Padding.center_79(self._build_model_inputs()),
+            Padding.center_79(self.model_inputs),
             Padding.line_break(""),
             Padding.center_79(self._build_additional_options()),
             Padding.line_break(""),
@@ -66,7 +67,7 @@ class NetworkView(BaseView):
 
     def _build_model_inputs(self):
         log.info("probing for network devices")
-        self.model.probe_network()
+        #self.model.probe_network()
         ifaces = self.model.get_all_interface_names()
         ifname_width = 8  # default padding
 

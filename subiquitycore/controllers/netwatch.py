@@ -13,18 +13,25 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
+import yaml
 import sys
 import time
 
 from subiquitycore.prober import Prober
 
+# Prevent BS messages from being printed to stderr
+# (Also makes debugging impossible, so should probably be smarter here!)
+#sys.stderr.close()
+
 def output(action, ifname, data=None):
     msg = {'action': action, 'ifname': ifname}
     if data is not None:
         msg['data'] = data
-    print(json.dumps(msg))
-    sys.stdout.flush()
+    try:
+        sys.stdout.write(yaml.safe_dump(msg)+'\0')
+        sys.stdout.flush()
+    except BrokenPipeError:
+        sys.exit(0)
 
 def _probe():
     NETDEV_IGNORED_IFACES = ['lo', 'bridge', 'tun', 'tap', 'dummy']
@@ -39,11 +46,8 @@ def _probe():
         if iface in NETDEV_IGNORED_IFACES:
             continue
         ifinfo = prober.get_network_info(iface)
-        info[iface] = {
-            'ip': ifinfo.ip,
-            'bond': ifinfo.bond,
-            'type': ifinfo.type,
-            }
+        del ifinfo.raw['bridge']['options']
+        info[iface] = ifinfo.raw
 
     return info
 
