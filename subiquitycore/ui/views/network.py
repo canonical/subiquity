@@ -229,8 +229,19 @@ class NetworkView(BaseView):
         self.signal.emit_signal('menu:network:main:configure-interface',
                                 result.label)
 
-    def show_network_error(self):
-        self.error.set_text("Network configuration failed; please verify your settings.")
+    def show_network_error(self, action):
+        if action == 'generate':
+            self.error.set_text("Network configuration failed; " + \
+                                "please verify your settings.")
+        elif action == 'apply':
+            self.error.set_text("Network configuration could not be applied; " + \
+                                "please verify your settings.")
+        elif action == 'timeout':
+            self.error.set_text("Network configuration timed out; " + \
+                                "please verify your settings.")
+        else:
+            self.error.set_text("An unexpected error has occurred; " + \
+                                "please verify your settings.")
 
     def done(self, result):
         self.signal.emit_signal('network:finish', self.model.render())

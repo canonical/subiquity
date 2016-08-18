@@ -50,16 +50,20 @@ class NetworkController(BaseController):
         log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
 
         online = True
+        network_error = None
 
         if self.opts.dry_run:
             pass
         else:
             with open('/etc/netplan/01-console-conf.yaml', 'w') as w:
                 w.write(yaml.dump(config))
+            network_error = 'generate'
             ret = run_command(['/lib/netplan/generate'])
             if ret['status'] == 0:
+                network_error = 'apply'
                 ret = run_command(['systemctl', 'restart', 'systemd-networkd'])
             if ret['status'] == 0:
+                network_error = 'timeout'
                 ret = run_command(['/lib/systemd/systemd-networkd-wait-online',
                                '--timeout=30'])
             online = ( ret['status'] == 0 )
@@ -67,7 +71,7 @@ class NetworkController(BaseController):
         if online:
             self.signal.emit_signal('menu:identity:main')
         else:
-            self.ui.frame.body.show_network_error()
+            self.ui.frame.body.show_network_error(network_error)
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
