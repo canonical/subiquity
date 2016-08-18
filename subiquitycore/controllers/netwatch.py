@@ -21,7 +21,7 @@ from subiquitycore.prober import Prober
 
 # Prevent BS messages from being printed to stderr
 # (Also makes debugging impossible, so should probably be smarter here!)
-#sys.stderr.close()
+sys.stderr.close()
 
 def output(action, ifname, data=None):
     msg = {'action': action, 'ifname': ifname}

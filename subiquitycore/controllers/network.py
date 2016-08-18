@@ -55,11 +55,22 @@ class NetworkController(BaseController):
                 update = yaml.safe_load(line.decode('utf-8'))
                 ifname = update['ifname']
                 action = update['action']
-                log.debug(update['action'])
                 if action == 'new_interface':
+                    log.debug("new %s %s", ifname, update['data'])
                     self.model.info[ifname] = NetworkInfo({ifname: update['data']})
                 elif action == 'update_interface':
-                    log.debug("%s %s", ifname, update['data'])
+                    log.debug("update %s %s", ifname, update['data'])
+                    if ifname in self.model.devices:
+                        del self.model.devices[ifname]
+                    self.model.info[ifname] = NetworkInfo({ifname: update['data']})
+                elif action == 'remove_interface':
+                    log.debug("remove %s", ifname)
+                    if ifname in self.model.devices:
+                        del self.model.devices[ifname]
+                    if ifname in self.model.info:
+                        del self.model.info[ifname]
+                if isinstance(self.ui.frame.body, NetworkView):
+                    self.ui.frame.body.refresh_model_inputs()
 
     def network(self):
         title = "Network connections"
