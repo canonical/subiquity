@@ -61,11 +61,11 @@ class NetworkController(BaseController):
             ret = run_command(['/lib/netplan/generate'])
             if ret['status'] == 0:
                 network_error = 'apply'
-                ret = run_command(['systemctl', 'restart', 'systemd-networkd'])
+                ret = run_command(['netplan', 'apply'])
             if ret['status'] == 0:
                 network_error = 'timeout'
                 ret = run_command(['/lib/systemd/systemd-networkd-wait-online',
-                               '--timeout=30'])
+                                   '--timeout=30'])
             online = ( ret['status'] == 0 )
 
         if online:
