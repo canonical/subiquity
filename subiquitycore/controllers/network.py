@@ -43,7 +43,7 @@ class NetworkObserver:
         log.debug("new interface %s %s", interface, info)
 
     def remove_interface(self, interface):
-        log.debug("remove interface %s %s", interface)
+        log.debug("remove interface %s", interface)
 
 
 class NetworkWatcher:
