@@ -312,13 +312,7 @@ class NetworkModel(BaseModel):
     def __init__(self, prober, opts):
         self.opts = opts
         self.prober = prober
-        self.info = {}
-        self.devices = {}
-        self.network_routes = {}
-        self.default_v4_gateway = None
-        self.default_v6_gateway = None
-        self.v4_gateway_dev = None
-        self.v6_gateway_dev = None
+        self.reset()
 
     def reset(self):
         log.debug('resetting network model')
@@ -328,6 +322,7 @@ class NetworkModel(BaseModel):
         self.default_v6_gateway = None
         self.v4_gateway_dev = None
         self.v6_gateway_dev = None
+        self.network_routes = {}
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -351,6 +346,13 @@ class NetworkModel(BaseModel):
                 continue
             ifinfo = self.prober.get_network_info(iface)
             self.info[iface] = ifinfo
+            netdev = Networkdev(iface, ifinfo.type)
+            try:
+                log.debug('configuring with: {}'.format(ifinfo))
+                netdev.configure(probe_info=ifinfo)
+            except Exception as e:
+                log.error(e)
+            self.devices[iface] = netdev
 
         log.debug('probing network complete!')
 
@@ -361,17 +363,6 @@ class NetworkModel(BaseModel):
     def get_interface(self, iface):
         '''get iface object given iface name '''
         log.debug('get_iface({})'.format(iface))
-        if iface not in self.devices:
-            ifinfo = self.info[iface]
-            netdev = Networkdev(iface, ifinfo.type)
-
-            try:
-                log.debug('configuring with: {}'.format(ifinfo))
-                netdev.configure(probe_info=ifinfo)
-            except Exception as e:
-                log.error(e)
-            self.devices[iface] = netdev
-
         return self.devices[iface]
 
     def get_all_interfaces(self):
