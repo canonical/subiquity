@@ -33,6 +33,38 @@ from subiquitycore.utils import run_command_start, run_command_summarize
 log = logging.getLogger("subiquitycore.controller.network")
 
 
+
+class CommandSequence:
+    def __init__(self, cmds, controller):
+        self.cmds = cmds
+        self.controller = controller
+
+    def run(self):
+        self._run1()
+
+    def _run1(self):
+        self.stage, cmd = self.cmds[0]
+        self.cmds = self.cmds[1:]
+        self.controller.ui.frame.body.error.set_text("trying " + self.stage)
+        log.debug('running %s for stage %s', cmd, self.stage)
+        self.proc = run_command_start(cmd)
+        self.pipe = self.controller.loop.watch_pipe(self._complete)
+        Async.pool.submit(self._communicate)
+
+    def _communicate(self):
+        stdout, stderr = self.proc.communicate()
+        self.result = run_command_summarize(self.proc, stdout, stderr)
+        os.write(self.pipe, b'x')
+
+    def _complete(self, ignored):
+        if self.result['status'] != 0:
+            self.controller.ui.frame.body.show_network_error(self.stage)
+        elif len(self.cmds) == 0:
+            self.controller.signal.emit_signal('menu:identity:main')
+        else:
+            self._run1()
+
+
 class NetworkController(BaseController):
     def __init__(self, common):
         super().__init__(common)
@@ -46,32 +78,6 @@ class NetworkController(BaseController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 20)
         self.ui.set_body(NetworkView(self.model, self.signal))
-
-    def _run(self, last_stage, results, cmds):
-        log.debug('_run called with %s', cmds)
-        if results['status'] != 0:
-            self.ui.frame.body.show_network_error(last_stage)
-            return
-        if len(cmds) == 0:
-            self.signal.emit_signal('menu:identity:main')
-            return
-        stage, cmd = cmds[0]
-        rest = cmds[1:]
-        self.ui.frame.body.error.set_text("trying " + stage)
-        log.debug('running %s for stage %s', cmd, stage)
-        result_holder = []
-        def run_next(ignored):
-            self._run(stage, result_holder[0], rest)
-        pipe = self.loop.watch_pipe(run_next)
-        self.curp = p = run_command_start(cmd)
-        def t():
-            stdout, stderr = p.communicate()
-            result_holder.append(run_command_summarize(p, stdout, stderr))
-            os.write(pipe, b'x')
-        Async.pool.submit(t)
-
-    def run_commands(self, cmds):
-        self._run('', {'status':0}, cmds)
 
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
@@ -101,7 +107,7 @@ class NetworkController(BaseController):
                 ('apply', ['netplan', 'apply']),
                 ('timeout', ['/lib/systemd/systemd-networkd-wait-online', '--timeout=30']),
                 ]
-        self.run_commands(cmds)
+        CommandSequence(cmds, self).run()
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
