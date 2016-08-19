@@ -1,3 +1,11 @@
+subiquity (0.0.7) UNRELEASED; urgency=medium
+
+  * Release 0.0.7:
+    - Use netplan for network configuration.
+    - console-conf uses snapd for user creation.
+
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Fri, 19 Aug 2016 11:21:42 -0400
+
 subiquity (0.0.7~5~xenial) xenial; urgency=medium
 
   * Write netplan config:
