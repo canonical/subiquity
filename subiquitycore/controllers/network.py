@@ -23,6 +23,7 @@ import yaml
 
 from probert.network import NetworkInfo
 
+from subiquitycore.async import Async
 from subiquitycore.models import NetworkModel
 from subiquitycore.ui.views import (NetworkView,
                                     NetworkSetDefaultRouteView,
@@ -31,7 +32,7 @@ from subiquitycore.ui.views import (NetworkView,
                                     NetworkConfigureIPv4InterfaceView)
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
-from subiquitycore.utils import run_command, run_command_async
+from subiquitycore.utils import run_command, run_command_start, run_command_summarize
 
 log = logging.getLogger("subiquitycore.controller.network")
 
@@ -91,15 +92,16 @@ class NetworkController(BaseController):
         rest = cmds[1:]
         self.ui.frame.body.error.set_text("trying " + stage)
         log.debug('running %s for stage %s', cmd, stage)
-        results = []
+        result_holder = []
         def run_next(ignored):
-            self._run(stage, results[0], rest)
+            self._run(stage, result_holder[0], rest)
         pipe = self.loop.watch_pipe(run_next)
-        result = run_command_async(cmd)
-        def complete(fut):
-            results.append(fut.result(0))
+        self.curp = p = run_command_start(cmd)
+        def t():
+            stdout, stderr = p.communicate()
+            result_holder.append(run_command_summarize(p, stdout, stderr))
             os.write(pipe, b'x')
-        result.add_done_callback(complete)
+        Async.pool.submit(t)
 
     def run_commands(self, cmds):
         self._run('', {'status':0}, cmds)
