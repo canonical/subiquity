@@ -57,12 +57,10 @@ class NetworkController(BaseController):
                 action = update['action']
                 if action == 'new_interface':
                     log.debug("new %s %s", ifname, update['data'])
-                    self.model.info[ifname] = NetworkInfo({ifname: update['data']})
+                    self.model.new_interface(NetworkInfo({ifname: update['data']}))
                 elif action == 'update_interface':
                     log.debug("update %s %s", ifname, update['data'])
-                    if ifname in self.model.devices:
-                        del self.model.devices[ifname]
-                    self.model.info[ifname] = NetworkInfo({ifname: update['data']})
+                    self.model.new_interface(NetworkInfo({ifname: update['data']}))
                 elif action == 'remove_interface':
                     log.debug("remove %s", ifname)
                     if ifname in self.model.devices:

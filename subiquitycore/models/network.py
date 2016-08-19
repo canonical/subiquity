@@ -335,6 +335,16 @@ class NetworkModel(BaseModel):
     def get_menu(self):
         return self.additional_options
 
+    def new_interface(self, ifinfo):
+        self.info[ifinfo.name] = ifinfo
+        netdev = Networkdev(ifinfo.name, ifinfo.type)
+        try:
+            log.debug('configuring with: {}'.format(ifinfo))
+            netdev.configure(probe_info=ifinfo)
+        except Exception as e:
+            log.error(e)
+        self.devices[ifinfo.name] = netdev
+
     # --- Model Methods ----
     def probe_network(self):
     ##     log.debug('model calling prober.get_network()')
@@ -345,14 +355,7 @@ class NetworkModel(BaseModel):
     ##         if iface in NETDEV_IGNORED_IFACES:
     ##             continue
     ##         ifinfo = self.prober.get_network_info(iface)
-    ##         self.info[iface] = ifinfo
-    ##         netdev = Networkdev(iface, ifinfo.type)
-    ##         try:
-    ##             log.debug('configuring with: {}'.format(ifinfo))
-    ##             netdev.configure(probe_info=ifinfo)
-    ##         except Exception as e:
-    ##             log.error(e)
-    ##         self.devices[iface] = netdev
+    ##         self.new_interface(ifinfo)
 
     ##     log.debug('probing network complete!')
 
