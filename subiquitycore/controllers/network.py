@@ -46,32 +46,62 @@ class NetworkController(BaseController):
         self.ui.set_footer(footer, 20)
         self.ui.set_body(NetworkView(self.model, self.signal))
 
+    def _run(self, last_stage, results, cmds):
+        log.debug('_run called with %s', cmds)
+        if results['status'] != 0:
+            self.ui.frame.body.show_network_error(last_stage)
+            return
+        if len(cmds) == 0:
+            self.signal.emit_signal('menu:identity:main')
+            return
+        stage, cmd = cmds[0]
+        rest = cmds[1:]
+        self.ui.frame.body.error.set_text("trying " + stage)
+        log.debug('running %s for stage %s', cmd, stage)
+        results = []
+        def complete(ignored):
+            self._run(stage, results[0], rest)
+            #os.close(pipe)
+        pipe = self.loop.watch_pipe(complete)
+        import threading
+        def t():
+            results.append(run_command(cmd))
+            log.debug('%s completed, result %s', cmd, results[0])
+            os.write(pipe, b'x')
+        threading.Thread(target=t).start()
+
+    def run_commands(self, cmds):
+        self._run('', {'status':0}, cmds)
+
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
 
-        online = True
-        network_error = None
+        self.ui.frame.body.error.set_text("trying")
 
         if self.opts.dry_run:
-            pass
+            if hasattr(self, 'tried_once'):
+                cmds = [
+                    ('one', ['sleep', '1']),
+                    ('two', ['sleep', '1']),
+                    ('three', ['sleep', '1']),
+                    ]
+            else:
+                self.tried_once = True
+                cmds = [
+                    ('one', ['sleep', '1']),
+                    ('two', ['sleep', '1']),
+                    ('three', ['false']),
+                    ('four', ['sleep 1']),
+                    ]
         else:
             with open('/etc/netplan/01-console-conf.yaml', 'w') as w:
                 w.write(yaml.dump(config))
-            network_error = 'generate'
-            ret = run_command(['/lib/netplan/generate'])
-            if ret['status'] == 0:
-                network_error = 'apply'
-                ret = run_command(['netplan', 'apply'])
-            if ret['status'] == 0:
-                network_error = 'timeout'
-                ret = run_command(['/lib/systemd/systemd-networkd-wait-online',
-                                   '--timeout=30'])
-            online = ( ret['status'] == 0 )
-
-        if online:
-            self.signal.emit_signal('menu:identity:main')
-        else:
-            self.ui.frame.body.show_network_error(network_error)
+            cmds = [
+                ('generate', ['/lib/netplan/generate']),
+                ('apply', ['netplan', 'apply']),
+                ('timeout', ['/lib/systemd/systemd-networkd-wait-online', '--timeout=30']),
+                ]
+        self.run_commands(cmds)
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
