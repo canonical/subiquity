@@ -27,7 +27,7 @@ from subiquitycore.ui.views import (NetworkView,
                                     NetworkConfigureIPv4InterfaceView)
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
-from subiquitycore.utils import run_command
+from subiquitycore.utils import run_command, run_command_async
 
 log = logging.getLogger("subiquitycore.controller.network")
 
@@ -59,16 +59,14 @@ class NetworkController(BaseController):
         self.ui.frame.body.error.set_text("trying " + stage)
         log.debug('running %s for stage %s', cmd, stage)
         results = []
-        def complete(ignored):
+        def run_next(ignored):
             self._run(stage, results[0], rest)
-            #os.close(pipe)
-        pipe = self.loop.watch_pipe(complete)
-        import threading
-        def t():
-            results.append(run_command(cmd))
-            log.debug('%s completed, result %s', cmd, results[0])
+        pipe = self.loop.watch_pipe(run_next)
+        result = run_command_async(cmd)
+        def complete(fut):
+            results.append(fut.result(0))
             os.write(pipe, b'x')
-        threading.Thread(target=t).start()
+        result.add_done_callback(complete)
 
     def run_commands(self, cmds):
         self._run('', {'status':0}, cmds)
