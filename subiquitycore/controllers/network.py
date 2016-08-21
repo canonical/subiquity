@@ -14,11 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import time
+import os
+import subprocess
+import sys
 
 import netifaces
 import yaml
 
+from probert.network import NetworkInfo
+
+from subiquitycore.async import Async
 from subiquitycore.models import NetworkModel
 from subiquitycore.ui.views import (NetworkView,
                                     NetworkSetDefaultRouteView,
@@ -27,15 +32,76 @@ from subiquitycore.ui.views import (NetworkView,
                                     NetworkConfigureIPv4InterfaceView)
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
-from subiquitycore.utils import run_command
+from subiquitycore.utils import run_command, run_command_start, run_command_summarize
 
 log = logging.getLogger("subiquitycore.controller.network")
+
+
+
+class CommandSequence:
+    def __init__(self, cmds, controller):
+        self.cmds = cmds
+        self.controller = controller
+
+    def run(self):
+        self._run1()
+
+    def _run1(self):
+        self.stage, cmd = self.cmds[0]
+        self.cmds = self.cmds[1:]
+        self.controller.ui.frame.body.error.set_text("trying " + self.stage)
+        log.debug('running %s for stage %s', cmd, self.stage)
+        self.proc = run_command_start(cmd)
+        self.pipe = self.controller.loop.watch_pipe(self._complete)
+        Async.pool.submit(self._communicate)
+
+    def _communicate(self):
+        stdout, stderr = self.proc.communicate()
+        self.result = run_command_summarize(self.proc, stdout, stderr)
+        os.write(self.pipe, b'x')
+
+    def _complete(self, ignored):
+        if self.result['status'] != 0:
+            self.controller.ui.frame.body.show_network_error(self.stage)
+        elif len(self.cmds) == 0:
+            self.controller.signal.emit_signal('menu:identity:main')
+        else:
+            self._run1()
 
 
 class NetworkController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = NetworkModel(self.prober, self.opts)
+        self.proc = subprocess.Popen(
+            [sys.executable, os.path.join(os.path.dirname(__file__), 'netwatch.py')],
+            bufsize=0, stdout=subprocess.PIPE)
+        self.watch_handle = self.loop.watch_file(self.proc.stdout, self.output)
+        self.buf = b''
+
+    def output(self):
+        self.buf += self.proc.stdout.read(1024)
+        if b'\0' in self.buf:
+            lines = self.buf.split(b'\0')
+            self.buf = lines[-1]
+            for line in lines[:-1]:
+                update = yaml.safe_load(line.decode('utf-8'))
+                ifname = update['ifname']
+                action = update['action']
+                if action == 'new_interface':
+                    log.debug("new %s %s", ifname, update['data'])
+                    self.model.new_interface(NetworkInfo({ifname: update['data']}))
+                elif action == 'update_interface':
+                    log.debug("update %s %s", ifname, update['data'])
+                    self.model.new_interface(NetworkInfo({ifname: update['data']}))
+                elif action == 'remove_interface':
+                    log.debug("remove %s", ifname)
+                    if ifname in self.model.devices:
+                        del self.model.devices[ifname]
+                    if ifname in self.model.info:
+                        del self.model.info[ifname]
+                if isinstance(self.ui.frame.body, NetworkView):
+                    self.ui.frame.body.refresh_model_inputs()
 
     def network(self):
         title = "Network connections"
@@ -49,29 +115,32 @@ class NetworkController(BaseController):
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
 
-        online = True
-        network_error = None
+        self.ui.frame.body.error.set_text("trying")
 
         if self.opts.dry_run:
-            pass
+            if hasattr(self, 'tried_once'):
+                cmds = [
+                    ('one', ['sleep', '1']),
+                    ('two', ['sleep', '1']),
+                    ('three', ['sleep', '1']),
+                    ]
+            else:
+                self.tried_once = True
+                cmds = [
+                    ('one', ['sleep', '1']),
+                    ('two', ['sleep', '1']),
+                    ('three', ['false']),
+                    ('four', ['sleep 1']),
+                    ]
         else:
             with open('/etc/netplan/01-console-conf.yaml', 'w') as w:
                 w.write(yaml.dump(config))
-            network_error = 'generate'
-            ret = run_command(['/lib/netplan/generate'])
-            if ret['status'] == 0:
-                network_error = 'apply'
-                ret = run_command(['netplan', 'apply'])
-            if ret['status'] == 0:
-                network_error = 'timeout'
-                ret = run_command(['/lib/systemd/systemd-networkd-wait-online',
-                                   '--timeout=30'])
-            online = ( ret['status'] == 0 )
-
-        if online:
-            self.signal.emit_signal('menu:identity:main')
-        else:
-            self.ui.frame.body.show_network_error(network_error)
+            cmds = [
+                ('generate', ['/lib/netplan/generate']),
+                ('apply', ['netplan', 'apply']),
+                ('timeout', ['/lib/systemd/systemd-networkd-wait-online', '--timeout=30']),
+                ]
+        CommandSequence(cmds, self).run()
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")

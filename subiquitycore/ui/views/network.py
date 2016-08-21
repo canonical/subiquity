@@ -40,8 +40,9 @@ class NetworkView(BaseView):
         self.signal = signal
         self.items = []
         self.error = Text("", align='center')
+        self.model_input_holder = Padding.center_79(self._build_model_inputs())
         self.body = [
-            Padding.center_79(self._build_model_inputs()),
+            self.model_input_holder,
             Padding.line_break(""),
             Padding.center_79(self._build_additional_options()),
             Padding.line_break(""),
@@ -53,6 +54,9 @@ class NetworkView(BaseView):
         self.lb = ListBox(self.body)
         self.lb.set_focus(4)  # _build_buttons
         super().__init__(self.lb)
+
+    def refresh_model_inputs(self):
+        self.model_input_holder.original_widget = self._build_model_inputs()
 
     def _build_buttons(self):
         cancel = Color.button(cancel_btn(on_press=self.cancel),
@@ -247,5 +251,5 @@ class NetworkView(BaseView):
         self.signal.emit_signal('network:finish', self.model.render())
 
     def cancel(self, button):
-        self.model.reset()
+        #self.model.reset()
         self.signal.prev_signal()

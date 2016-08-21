@@ -312,14 +312,7 @@ class NetworkModel(BaseModel):
     def __init__(self, prober, opts):
         self.opts = opts
         self.prober = prober
-        self.info = {}
-        self.devices = {}
-        self.network_devices = {}
-        self.network_routes = {}
-        self.default_v4_gateway = None
-        self.default_v6_gateway = None
-        self.v4_gateway_dev = None
-        self.v6_gateway_dev = None
+        self.reset()
 
     def reset(self):
         log.debug('resetting network model')
@@ -329,6 +322,7 @@ class NetworkModel(BaseModel):
         self.default_v6_gateway = None
         self.v4_gateway_dev = None
         self.v6_gateway_dev = None
+        self.network_routes = {}
 
     def get_signal_by_name(self, selection):
         for x, y, z in self.get_signals():
@@ -341,18 +335,29 @@ class NetworkModel(BaseModel):
     def get_menu(self):
         return self.additional_options
 
+    def new_interface(self, ifinfo):
+        self.info[ifinfo.name] = ifinfo
+        netdev = Networkdev(ifinfo.name, ifinfo.type)
+        try:
+            log.debug('configuring with: {}'.format(ifinfo))
+            netdev.configure(probe_info=ifinfo)
+        except Exception as e:
+            log.error(e)
+        self.devices[ifinfo.name] = netdev
+
     # --- Model Methods ----
     def probe_network(self):
-        log.debug('model calling prober.get_network()')
-        self.network_devices = self.prober.get_network_devices()
+    ##     log.debug('model calling prober.get_network()')
+    ##     network_devices = self.prober.get_network_devices()
         self.network_routes = self.prober.get_network_routes()
 
-        for iface in [iface for iface in self.network_devices.keys()
-                      if iface not in NETDEV_IGNORED_IFACES]:
-            ifinfo = self.prober.get_network_info(iface)
-            self.info[iface] = ifinfo
+    ##     for iface in network_devices:
+    ##         if iface in NETDEV_IGNORED_IFACES:
+    ##             continue
+    ##         ifinfo = self.prober.get_network_info(iface)
+    ##         self.new_interface(ifinfo)
 
-        log.debug('probing network complete!')
+    ##     log.debug('probing network complete!')
 
     def get_routes(self):
         ''' get collection of currently configured routes '''
@@ -361,30 +366,17 @@ class NetworkModel(BaseModel):
     def get_interface(self, iface):
         '''get iface object given iface name '''
         log.debug('get_iface({})'.format(iface))
-        if iface not in self.devices:
-            ifinfo = self.info[iface]
-            netdev = Networkdev(iface, ifinfo.type)
-
-            try:
-                log.debug('configuring with: {}'.format(ifinfo))
-                netdev.configure(probe_info=ifinfo)
-            except Exception as e:
-                log.error(e)
-            self.devices[iface] = netdev
-
         return self.devices[iface]
 
     def get_all_interfaces(self):
-        possible_devices = list(set(list(self.devices.keys()) +
-                                    list(self.info.keys())))
-        possible_ifaces = [self.get_interface(i) for i in
-                           sorted(possible_devices) if
-                           self.info[i].type not in NETDEV_IGNORED_IFACES]
+        ifaces = [self.get_interface(i)
+                  for i in sorted(self.info)
+                  if self.info[i].type not in NETDEV_IGNORED_IFACES]
 
         log.debug('get_all_interfaces -> {}'.format(",".join(
                                                     [i.ifname for i in
-                                                     possible_ifaces])))
-        return possible_ifaces
+                                                     ifaces])))
+        return ifaces
 
     def get_all_interface_names(self):
         return [i.ifname for i in self.get_all_interfaces()]
@@ -417,7 +409,7 @@ class NetworkModel(BaseModel):
             and see if iface is included in a bridge '''
         bridges = self.get_bridges()
         for bridge in bridges:
-            brinfo = self.network_devices[bridge].get('bridge', {})
+            brinfo = self.info[bridge].bridge
             if brinfo:
                 if iface in brinfo['interfaces']:
                     return True
@@ -464,7 +456,7 @@ class NetworkModel(BaseModel):
             raise
 
     def get_bridges(self):
-        return [iface for iface in self.network_devices.keys()
+        return [iface for iface in self.info
                 if self.iface_is_bridge(iface)]
 
     def get_hw_addr(self, iface):

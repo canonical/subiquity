@@ -91,17 +91,7 @@ def run_command_async(cmd, timeout=None):
     return Async.pool.submit(run_command, cmd, timeout)
 
 
-def run_command(command, timeout=None, shell=False):
-    """ Execute command through system shell
-    :param command: command to run
-    :param timeout: (optional) use 'timeout' to limit time. default 300
-    :type command: str
-    :returns: {status: returncode, output: stdout, err: stderr}
-    :rtype: dict
-    .. code::
-        # Get output of juju status
-        cmd_dict = utils.get_command_output('juju status')
-    """
+def run_command_start(command, timeout=None, shell=False):
     log.debug('run_command called: {}'.format(command))
     cmd_env = os.environ.copy()
     # set consistent locale
@@ -126,8 +116,10 @@ def run_command(command, timeout=None, shell=False):
         else:
             log.debug('error raise!')
             raise e
-    log.debug('calling communicate()')
-    stdout, stderr = p.communicate()
+    return p
+
+
+def run_command_summarize(p, stdout, stderr):
     if p.returncode == 126 or p.returncode == 127:
         stdout = bytes()
     if not stderr:
@@ -137,6 +129,23 @@ def run_command(command, timeout=None, shell=False):
               err=stderr.decode('utf-8'))
     log.debug('run_command returning: {}'.format(rv))
     return rv
+
+
+def run_command(command, timeout=None, shell=False):
+    """ Execute command through system shell
+    :param command: command to run
+    :param timeout: (optional) use 'timeout' to limit time. default 300
+    :type command: str
+    :returns: {status: returncode, output: stdout, err: stderr}
+    :rtype: dict
+    .. code::
+        # Get output of juju status
+        cmd_dict = utils.get_command_output('juju status')
+    """
+    p = run_command_start(command, timeout, shell)
+    log.debug('calling communicate()')
+    stdout, stderr = p.communicate()
+    return run_command_summarize(p, stdout, stderr)
 
 
 def sys_dev_path(devname, path=""):

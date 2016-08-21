@@ -75,6 +75,7 @@ def main():
     if opts.dry_run:
         LOGDIR = ".subiquity"
     LOGFILE = setup_logger(dir=LOGDIR)
+    logging.getLogger('probert').setLevel(logging.CRITICAL)
     logger = logging.getLogger('console_conf')
     logger.info("Starting console-conf v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
