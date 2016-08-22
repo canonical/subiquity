@@ -26,6 +26,7 @@ from subiquitycore.ui.views import (NetworkView,
                                     NetworkBondInterfacesView,
                                     NetworkConfigureInterfaceView,
                                     NetworkConfigureIPv4InterfaceView)
+from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
 from subiquitycore.utils import run_command_start, run_command_summarize
@@ -35,20 +36,28 @@ log = logging.getLogger("subiquitycore.controller.network")
 
 
 class CommandSequence:
-    def __init__(self, cmds, controller):
+    def __init__(self, loop, cmds, watcher):
+        self.loop = loop
         self.cmds = cmds
-        self.controller = controller
+        self.watcher = watcher
+        self.canceled = False
 
     def run(self):
         self._run1()
 
+    def cancel(self):
+        self.canceled = True
+        try:
+            self.proc.terminate()
+        except ProcessLookupError:
+            pass
+
     def _run1(self):
         self.stage, cmd = self.cmds[0]
         self.cmds = self.cmds[1:]
-        self.controller.ui.frame.body.error.set_text("trying " + self.stage)
         log.debug('running %s for stage %s', cmd, self.stage)
         self.proc = run_command_start(cmd)
-        self.pipe = self.controller.loop.watch_pipe(self._complete)
+        self.pipe = self.loop.watch_pipe(self._complete)
         Async.pool.submit(self._communicate)
 
     def _communicate(self):
@@ -57,10 +66,14 @@ class CommandSequence:
         os.write(self.pipe, b'x')
 
     def _complete(self, ignored):
+        if self.canceled:
+            return
         if self.result['status'] != 0:
-            self.controller.ui.frame.body.show_network_error(self.stage)
-        elif len(self.cmds) == 0:
-            self.controller.signal.emit_signal('menu:identity:main')
+            self.watcher.cmd_error(self.stage)
+            return
+        self.watcher.cmd_complete(self.stage)
+        if len(self.cmds) == 0:
+            self.watcher.complete()
         else:
             self._run1()
 
@@ -81,8 +94,6 @@ class NetworkController(BaseController):
 
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
-
-        self.ui.frame.body.error.set_text("trying")
 
         if self.opts.dry_run:
             if hasattr(self, 'tried_once'):
@@ -107,7 +118,33 @@ class NetworkController(BaseController):
                 ('apply', ['netplan', 'apply']),
                 ('timeout', ['/lib/systemd/systemd-networkd-wait-online', '--timeout=30']),
                 ]
-        CommandSequence(cmds, self).run()
+
+        class CommandSequenceController:
+            def __init__(self, signal, loop, cmds, netview):
+                self.signal = signal
+                self.cs = CommandSequence(loop, cmds, self)
+                self.w = ApplyingConfigWidget(len(cmds), self.cancel)
+                self.netview = netview
+                self.netview.show_overlay(self.w)
+
+            def run(self):
+                self.cs.run()
+
+            def cancel(self):
+                self.cs.cancel()
+                self.netview.remove_overlay(self.w)
+                self.netview.show_network_error("canceled")
+
+            def cmd_complete(self, stage):
+                self.w.advance()
+            def cmd_error(self, stage):
+                self.netview.remove_overlay(self.w)
+                self.netview.show_network_error(stage)
+            def complete(self):
+                self.signal.emit_signal('menu:identity:main')
+
+        csc = CommandSequenceController(self.signal, self.loop, cmds, self.ui.frame.body)
+        csc.run()
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
