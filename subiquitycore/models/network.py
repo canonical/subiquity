@@ -23,7 +23,8 @@ from subiquitycore.model import BaseModel
 from subiquitycore.utils import (read_sys_net,
                                  sys_dev_path)
 
-NETDEV_IGNORED_IFACES = ['lo', 'bridge', 'tun', 'tap', 'dummy']
+NETDEV_IGNORED_IFACE_NAMES = ['lo']
+NETDEV_IGNORED_IFACE_TYPES = ['bridge', 'tun', 'tap', 'dummy']
 log = logging.getLogger('subiquitycore.models.network')
 
 
@@ -342,9 +343,11 @@ class NetworkModel(BaseModel):
         self.network_routes = self.prober.get_network_routes()
 
         for iface in network_devices:
-            if iface in NETDEV_IGNORED_IFACES:
+            if iface in NETDEV_IGNORED_IFACE_NAMES:
                 continue
             ifinfo = self.prober.get_network_info(iface)
+            if ifinfo.type in NETDEV_IGNORED_IFACE_TYPES:
+                continue
             self.info[iface] = ifinfo
             netdev = Networkdev(iface, ifinfo.type)
             try:
@@ -366,9 +369,7 @@ class NetworkModel(BaseModel):
         return self.devices[iface]
 
     def get_all_interfaces(self):
-        ifaces = [self.get_interface(i)
-                  for i in sorted(self.info)
-                  if self.info[i].type not in NETDEV_IGNORED_IFACES]
+        ifaces = [iface for _, iface in sorted(self.devices.items())]
 
         log.debug('get_all_interfaces -> {}'.format(",".join(
                                                     [i.ifname for i in
