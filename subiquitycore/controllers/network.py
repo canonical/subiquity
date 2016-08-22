@@ -95,6 +95,19 @@ class NetworkController(BaseController):
         self.model = NetworkModel(self.prober, self.opts)
 
     def network(self):
+        # The network signal is the one that is called when we enter
+        # the network configuration from the preceding or following
+        # screen. We clear any existing state, probe for the current
+        # state and then invoke the 'start' signal, which is what the
+        # sub screens will return to, so that the network state does
+        # not get re-probed when they return, which would throw away
+        # any configuration made in the sub-screen!
+        self.model.reset()
+        log.info("probing for network devices")
+        self.model.probe_network()
+        self.signal.emit_signal('menu:network:main:start')
+
+    def start(self):
         title = "Network connections"
         excerpt = ("Configure at least the main interface this server will "
                    "use to talk to the store.")

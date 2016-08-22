@@ -101,8 +101,6 @@ class NetworkView(BaseView):
         return Pile(buttons, focus_item=done)
 
     def _build_model_inputs(self):
-        log.info("probing for network devices")
-        self.model.probe_network()
         ifaces = self.model.get_all_interface_names()
         ifname_width = 8  # default padding
 
@@ -285,5 +283,7 @@ class NetworkView(BaseView):
         self.signal.emit_signal('network:finish', self.model.render())
 
     def cancel(self, button):
-        self.model.reset()
+        # Because of the double signal hack done in the controller we
+        # need to pop two signals here.
+        self.signal.signal_stack.pop()
         self.signal.prev_signal()
