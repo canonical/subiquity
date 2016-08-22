@@ -14,22 +14,79 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import time
+import os
+import queue
 
 import netifaces
 import yaml
 
+from subiquitycore.async import Async
 from subiquitycore.models import NetworkModel
 from subiquitycore.ui.views import (NetworkView,
                                     NetworkSetDefaultRouteView,
                                     NetworkBondInterfacesView,
                                     NetworkConfigureInterfaceView,
                                     NetworkConfigureIPv4InterfaceView)
+from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
-from subiquitycore.utils import run_command
+from subiquitycore.utils import run_command_start, run_command_summarize
 
 log = logging.getLogger("subiquitycore.controller.network")
+
+
+class CommandSequence:
+    def __init__(self, loop, cmds, watcher):
+        self.loop = loop
+        self.cmds = cmds
+        self.watcher = watcher
+        self.canceled = False
+        self.stage = None
+        self.queue = queue.Queue()
+
+    def run(self):
+        self._run1()
+
+    def cancel(self):
+        log.debug('canceling stage %s', self.stage)
+        self.canceled = True
+        try:
+            self.proc.terminate()
+        except ProcessLookupError:
+            pass
+
+    def _run1(self):
+        self.stage, cmd = self.cmds[0]
+        self.cmds = self.cmds[1:]
+        log.debug('running %s for stage %s', cmd, self.stage)
+        self.proc = run_command_start(cmd)
+        self.pipe = self.loop.watch_pipe(self._thread_callback)
+        Async.pool.submit(self._communicate)
+
+    def _communicate(self):
+        stdout, stderr = self.proc.communicate()
+        result = run_command_summarize(self.proc, stdout, stderr)
+        self.call_from_thread(self._complete, result)
+
+    def call_from_thread(self, func, *args):
+        self.queue.put((func, args))
+        os.write(self.pipe, b'x')
+
+    def _thread_callback(self, ignored):
+        func, args = self.queue.get()
+        func(*args)
+
+    def _complete(self, result):
+        if self.canceled:
+            return
+        if result['status'] != 0:
+            self.watcher.cmd_error(self.stage)
+            return
+        self.watcher.cmd_complete(self.stage)
+        if len(self.cmds) == 0:
+            self.watcher.cmd_finished()
+        else:
+            self._run1()
 
 
 class NetworkController(BaseController):
@@ -49,29 +106,48 @@ class NetworkController(BaseController):
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
 
-        online = True
-        network_error = None
-
         if self.opts.dry_run:
-            pass
+            if hasattr(self, 'tried_once'):
+                cmds = [
+                    ('one', ['sleep', '1']),
+                    ('two', ['sleep', '1']),
+                    ('three', ['sleep', '1']),
+                    ]
+            else:
+                self.tried_once = True
+                cmds = [
+                    ('one', ['sleep', '1']),
+                    ('two', ['sleep', '1']),
+                    ('three', ['false']),
+                    ('four', ['sleep 1']),
+                    ]
         else:
             with open('/etc/netplan/01-console-conf.yaml', 'w') as w:
                 w.write(yaml.dump(config))
-            network_error = 'generate'
-            ret = run_command(['/lib/netplan/generate'])
-            if ret['status'] == 0:
-                network_error = 'apply'
-                ret = run_command(['netplan', 'apply'])
-            if ret['status'] == 0:
-                network_error = 'timeout'
-                ret = run_command(['/lib/systemd/systemd-networkd-wait-online',
-                                   '--timeout=30'])
-            online = ( ret['status'] == 0 )
+            cmds = [
+                ('generate', ['/lib/netplan/generate']),
+                ('apply', ['netplan', 'apply']),
+                ('timeout', ['/lib/systemd/systemd-networkd-wait-online', '--timeout=30']),
+                ]
 
-        if online:
-            self.signal.emit_signal('menu:identity:main')
-        else:
-            self.ui.frame.body.show_network_error(network_error)
+        def cancel():
+            self.cs.cancel()
+            self.cmd_error('canceled')
+        self.acw = ApplyingConfigWidget(len(cmds), cancel)
+        self.ui.frame.body.show_overlay(self.acw)
+
+        self.cs = CommandSequence(self.loop, cmds, self)
+        self.cs.run()
+
+    def cmd_complete(self, stage):
+        self.acw.advance()
+
+    def cmd_error(self, stage):
+        self.ui.frame.body.remove_overlay(self.acw)
+        self.ui.frame.body.show_network_error(stage)
+
+    def cmd_finished(self):
+        self.signal.emit_signal('menu:identity:main')
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")

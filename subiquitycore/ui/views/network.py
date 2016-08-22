@@ -21,10 +21,11 @@ Provides network device listings and extended network information
 
 import logging
 import textwrap
+
 from urwid import (ListBox, Pile, BoxAdapter,
-                   Text, Columns)
-import yaml
-from netifaces import AF_INET, AF_INET6
+                   Text, Columns, Overlay,
+                   LineBox, ProgressBar, WidgetWrap)
+
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import cancel_btn, menu_btn, done_btn
 from subiquitycore.ui.utils import Padding, Color
@@ -32,6 +33,26 @@ from subiquitycore.view import BaseView
 
 
 log = logging.getLogger('subiquitycore.views.network')
+
+
+class ApplyingConfigWidget(WidgetWrap):
+
+    def __init__(self, step_count, cancel_func):
+        self.cancel_func = cancel_func
+        button = cancel_btn(on_press=self.do_cancel)
+        self.bar = ProgressBar(normal='progress_incomplete',
+                        complete='progress_complete',
+                        current=0, done=step_count)
+        box = LineBox(Pile([self.bar,
+                            Padding.fixed_10(button)]),
+                      title="Applying network config")
+        super().__init__(box)
+
+    def advance(self):
+        self.bar.current += 1
+
+    def do_cancel(self, sender):
+        self.cancel_func()
 
 
 class NetworkView(BaseView):
@@ -53,6 +74,21 @@ class NetworkView(BaseView):
         self.lb = ListBox(self.body)
         self.lb.set_focus(4)  # _build_buttons
         super().__init__(self.lb)
+
+    def show_overlay(self, overlay_widget):
+        self.orig_w = self._w
+        self._w = Overlay(top_w=overlay_widget,
+                          bottom_w=self._w,
+                          align='center',
+                          width=('relative', 60),
+                          min_width=80,
+                          valign='middle',
+                          height='pack')
+
+    def remove_overlay(self, overlay_widget):
+        # urwid note: we could also get orig_w as
+        # self._w.contents[0][0], but this is clearer:
+        self._w = self.orig_w
 
     def _build_buttons(self):
         cancel = Color.button(cancel_btn(on_press=self.cancel),
@@ -239,6 +275,8 @@ class NetworkView(BaseView):
         elif action == 'timeout':
             self.error.set_text("Network configuration timed out; " + \
                                 "please verify your settings.")
+        elif action == 'canceled':
+            self.error.set_text("Network configuration canceled.")
         else:
             self.error.set_text("An unexpected error has occurred; " + \
                                 "please verify your settings.")
