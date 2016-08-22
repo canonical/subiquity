@@ -41,12 +41,14 @@ class CommandSequence:
         self.cmds = cmds
         self.watcher = watcher
         self.canceled = False
+        self.stage = None
         self.queue = queue.Queue()
 
     def run(self):
         self._run1()
 
     def cancel(self):
+        log.debug('canceling stage %s', self.stage)
         self.canceled = True
         try:
             self.proc.terminate()
