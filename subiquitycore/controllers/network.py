@@ -15,6 +15,7 @@
 
 import logging
 import os
+import queue
 
 import netifaces
 import yaml
@@ -34,13 +35,13 @@ from subiquitycore.utils import run_command_start, run_command_summarize
 log = logging.getLogger("subiquitycore.controller.network")
 
 
-
 class CommandSequence:
     def __init__(self, loop, cmds, watcher):
         self.loop = loop
         self.cmds = cmds
         self.watcher = watcher
         self.canceled = False
+        self.queue = queue.Queue()
 
     def run(self):
         self._run1()
@@ -57,23 +58,31 @@ class CommandSequence:
         self.cmds = self.cmds[1:]
         log.debug('running %s for stage %s', cmd, self.stage)
         self.proc = run_command_start(cmd)
-        self.pipe = self.loop.watch_pipe(self._complete)
+        self.pipe = self.loop.watch_pipe(self._thread_callback)
         Async.pool.submit(self._communicate)
 
     def _communicate(self):
         stdout, stderr = self.proc.communicate()
-        self.result = run_command_summarize(self.proc, stdout, stderr)
+        result = run_command_summarize(self.proc, stdout, stderr)
+        self.call_from_thread(self._complete, result)
+
+    def call_from_thread(self, func, *args):
+        self.queue.put((func, args))
         os.write(self.pipe, b'x')
 
-    def _complete(self, ignored):
+    def _thread_callback(self, ignored):
+        func, args = self.queue.get()
+        func(*args)
+
+    def _complete(self, result):
         if self.canceled:
             return
-        if self.result['status'] != 0:
+        if result['status'] != 0:
             self.watcher.cmd_error(self.stage)
             return
         self.watcher.cmd_complete(self.stage)
         if len(self.cmds) == 0:
-            self.watcher.complete()
+            self.watcher.cmd_finished()
         else:
             self._run1()
 
@@ -119,32 +128,24 @@ class NetworkController(BaseController):
                 ('timeout', ['/lib/systemd/systemd-networkd-wait-online', '--timeout=30']),
                 ]
 
-        class CommandSequenceController:
-            def __init__(self, signal, loop, cmds, netview):
-                self.signal = signal
-                self.cs = CommandSequence(loop, cmds, self)
-                self.w = ApplyingConfigWidget(len(cmds), self.cancel)
-                self.netview = netview
-                self.netview.show_overlay(self.w)
+        def cancel():
+            self.cs.cancel()
+            self.cmd_error('canceled')
+        self.acw = ApplyingConfigWidget(len(cmds), cancel)
+        self.ui.frame.body.show_overlay(self.acw)
 
-            def run(self):
-                self.cs.run()
+        self.cs = CommandSequence(self.loop, cmds, self)
+        self.cs.run()
 
-            def cancel(self):
-                self.cs.cancel()
-                self.netview.remove_overlay(self.w)
-                self.netview.show_network_error("canceled")
+    def cmd_complete(self, stage):
+        self.acw.advance()
 
-            def cmd_complete(self, stage):
-                self.w.advance()
-            def cmd_error(self, stage):
-                self.netview.remove_overlay(self.w)
-                self.netview.show_network_error(stage)
-            def complete(self):
-                self.signal.emit_signal('menu:identity:main')
+    def cmd_error(self, stage):
+        self.ui.frame.body.remove_overlay(self.acw)
+        self.ui.frame.body.show_network_error(stage)
 
-        csc = CommandSequenceController(self.signal, self.loop, cmds, self.ui.frame.body)
-        csc.run()
+    def cmd_finished(self):
+        self.signal.emit_signal('menu:identity:main')
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
