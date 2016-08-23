@@ -1,8 +1,9 @@
-subiquity (0.0.8) yakkety; urgency=medium
+subiquity (0.0.9) UNRELEASED; urgency=medium
 
-  * Release 0.0.8:
+  * Release 0.0.9:
     - Fix crash on turning on DHCP for an interface that has manual addresses.
     - Better UI for applying networking changes.
+    - Probe network before showing Login screen.
 
  -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Tue, 23 Aug 2016 13:51:20 +1200
 
