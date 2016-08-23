@@ -56,8 +56,11 @@ class NetworkConfigureInterfaceView(BaseView):
             p = [Text("Will use DHCP for IPv4" + punct)]
 
             for idx in range(len(ips)):
-                gw_info = (str(ips[idx]) + (" provided by ") + methods[idx] +
-                           (" from ") + providers[idx])
+                if methods[idx] == "manual":
+                    gw_info = (str(ips[idx]) + (" provided by ") + methods[idx])
+                else:
+                    gw_info = (str(ips[idx]) + (" provided by ") + methods[idx] +
+                                (" from ") + providers[idx])
                 p.append(Color.info_minor(Text(gw_info)))
         elif not dhcp4 and len(addresses) > 0:
             p = [Text("Will use static addresses for IPv4:")]
@@ -80,10 +83,12 @@ class NetworkConfigureInterfaceView(BaseView):
             p = [Text("Will use DHCP for IPv6" + punct)]
 
             for idx in range(len(ips)):
-                if methods[idx] and providers[idx]:
+                if methods[idx] == "manual":
+                    gw_info = (str(ips[idx]) + (" provided by ") + methods[idx])
+                else:
                     gw_info = (str(ips[idx]) + (" provided by ") + methods[idx] +
-                               (" from ") + providers[idx])
-                    p.append(Color.info_minor(Text(gw_info)))
+                                (" from ") + providers[idx])
+                p.append(Color.info_minor(Text(gw_info)))
         elif not dhcp6 and len(addresses) > 0:
             p = [Text("Will use static addresses for IPv6:")]
             for idx in range(len(addresses)):
