@@ -1,9 +1,9 @@
-subiquity (0.0.10) UNRELEASED; urgency=medium
+subiquity (0.0.10) yakkety; urgency=medium
 
   * Release 0.0.10: we want subiquity on all architectures.
   * debian/control: the packages are Architecture: all.
 
- -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Thu, 25 Aug 2016 18:35:25 -0400
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Thu, 25 Aug 2016 21:57:57 -0400
 
 subiquity (0.0.9) yakkety; urgency=medium
 
