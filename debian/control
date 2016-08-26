@@ -17,7 +17,7 @@ Vcs-Browser: https://github.com/CanonicalLtd/subiquity
 Vcs-Git: https://github.com/CanonicalLtd/subiquity.git
 
 Package: subiquity
-Architecture: amd64
+Architecture: all
 Depends: curtin,
          python3,
          subiquitycore,
@@ -38,7 +38,7 @@ Description: Ubuntu Server Installer
  with the Subiquity the server installer UI.
 
 Package: subiquitycore
-Architecture: amd64
+Architecture: all
 Depends: probert,
          python3-tornado,
          python3-urwid (>= 1.2.1),
@@ -60,7 +60,7 @@ Description: Ubuntu Server Installer - core libraries
  with the Subiquity the server installer UI.
 
 Package: console-conf
-Architecture: amd64
+Architecture: all
 Depends: python3,
          subiquitycore,
          ${misc:Depends},
@@ -80,7 +80,7 @@ Description: Ubuntu Core Pre-Ownership Configurator
  a system.
 
 Package: subiquity-tools
-Architecture: amd64
+Architecture: all
 Depends: bzr,
          ${misc:Depends},
          cloud-image-utils,
