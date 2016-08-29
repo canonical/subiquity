@@ -25,8 +25,7 @@ LOGFILE = os.path.join(LOGDIR, "subiquity-debug.log")
 def setup_logger(name=__name__, dir=LOGDIR):
     LOGFILE = os.path.join(dir, "subiquity-debug.log")
     try:
-        if not os.path.isdir(dir):
-            os.makedirs(dir)
+        os.makedirs(dir, exist_ok=True)
         log = TimedRotatingFileHandler(LOGFILE,
                                        when='D',
                                        interval=1,
