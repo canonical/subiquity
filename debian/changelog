@@ -1,3 +1,9 @@
+subiquity (0.0.11) yakkety; urgency=medium
+
+  * debian/console-conf.dirs: add /var/lib/console-conf.
+
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Fri, 26 Aug 2016 16:35:57 -0400
+
 subiquity (0.0.10) yakkety; urgency=medium
 
   * Release 0.0.10: we want subiquity on all architectures.
