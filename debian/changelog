@@ -1,3 +1,10 @@
+subiquity (0.0.12) UNRELEASED; urgency=medium
+
+  * debian/console-conf.serial-console-conf@.service: start with --serial so
+    we don't spew as many control chars on the serial interface.
+
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Mon, 29 Aug 2016 19:09:11 -0400
+
 subiquity (0.0.11) yakkety; urgency=medium
 
   * debian/console-conf.dirs: add /var/lib/console-conf.
