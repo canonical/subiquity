@@ -16,6 +16,7 @@
 import logging
 import os
 import queue
+import select
 
 import netifaces
 import yaml
@@ -69,6 +70,26 @@ class BackgroundProcess(BackgroundTask):
             pass # It's OK if the process has already terminated.
 
 
+class PythonSleep(BackgroundTask):
+
+    def __init__(self, duration):
+        self.duration = duration
+        self.r, self.w = os.pipe()
+
+    def __repr__(self):
+        return 'PythonSleep(%r)'%(self.duration,)
+
+    def run(self, observer):
+        r, _, _ = select.select([self.r], [], [], self.duration)
+        if not r:
+            observer.task_succeeded()
+        os.close(self.r)
+        os.close(self.w)
+
+    def cancel(self):
+        os.write(self.w, b'x')
+
+
 class TaskSequence:
     def __init__(self, loop, tasks, watcher):
         self.loop = loop
@@ -86,6 +107,7 @@ class TaskSequence:
 
     def cancel(self):
         if self.curtask is not None:
+            log.debug("canceling %s", self.curtask)
             self.curtask.cancel()
         self.canceled = True
 
@@ -163,7 +185,7 @@ class NetworkController(BaseController):
             if hasattr(self, 'tried_once'):
                 tasks = [
                     ('one', BackgroundProcess(['sleep', '1'])),
-                    ('two', BackgroundProcess(['sleep', '1'])),
+                    ('two', PythonSleep(1)),
                     ('three', BackgroundProcess(['sleep', '1'])),
                     ]
             else:
