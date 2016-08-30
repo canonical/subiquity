@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+logger -t console-conf -- "Starting with parameters: $@"
+
 echo -n 'Press enter to configure: '
 read REPLY
 exec console-conf "$@"
