@@ -17,6 +17,8 @@ import logging
 import os
 import queue
 import select
+import threading
+import time
 
 import netifaces
 import yaml
@@ -85,6 +87,34 @@ class PythonSleep(BackgroundTask):
             observer.task_succeeded()
         os.close(self.r)
         os.close(self.w)
+
+    def cancel(self):
+        os.write(self.w, b'x')
+
+
+class WaitForDefaultRouteTask(BackgroundTask):
+
+    def __init__(self, timeout):
+        self.timeout = timeout
+        self.r, self.w = os.pipe()
+
+    def __repr__(self):
+        return 'WaitForDefaultRouteTask(%r)'%(self.timeout,)
+
+    def run(self, observer):
+        try:
+            start = time.time()
+            while time.time() - start < self.timeout:
+                if len(netifaces.gateways().get('default', {})) > 0:
+                    observer.task_succeeded()
+                    return
+                r, _, _ = select.select([self.r], [], [], 0.1)
+                if r: # we've been canceled
+                    return
+            observer.task_failed()
+        finally:
+            os.close(self.r)
+            os.close(self.w)
 
     def cancel(self):
         os.write(self.w, b'x')
@@ -191,6 +221,7 @@ class NetworkController(BaseController):
             else:
                 self.tried_once = True
                 tasks = [
+                    ('timeout', WaitForDefaultRouteTask(30)),
                     ('one', BackgroundProcess(['sleep', '1'])),
                     ('two', BackgroundProcess(['sleep', '1'])),
                     ('three', BackgroundProcess(['false'])),
@@ -202,7 +233,7 @@ class NetworkController(BaseController):
             tasks = [
                 ('generate', BackgroundProcess(['/lib/netplan/generate'])),
                 ('apply', BackgroundProcess(['netplan', 'apply'])),
-                ('timeout', BackgroundProcess(['/lib/systemd/systemd-networkd-wait-online', '--timeout=30'])),
+                ('timeout', WaitForDefaultRouteTask(30)),
                 ]
 
         def cancel():
