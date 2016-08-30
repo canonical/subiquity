@@ -228,7 +228,8 @@ class NetworkController(BaseController):
                     ('four', BackgroundProcess(['sleep 1'])),
                     ]
         else:
-            with open('/etc/netplan/01-console-conf.yaml', 'w') as w:
+            with open('/etc/netplan/00-snapd-config.yaml', 'w') as w:
+                w.write("# This is the network config written by 'console-conf'\n")
                 w.write(yaml.dump(config))
             tasks = [
                 ('generate', BackgroundProcess(['/lib/netplan/generate'])),

@@ -13,6 +13,7 @@ subiquity (0.0.13) UNRELEASED; urgency=medium
 
   [ Michael Hudson-Doyle ]
   * Prevent C-c, C-\ and C-x from exiting console-conf. 
+  * Overwrite the netplan config that snap firstboot creates. 
 
  -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Tue, 30 Aug 2016 13:57:46 -0400
 
