@@ -1,4 +1,4 @@
-subiquity (0.0.12) UNRELEASED; urgency=medium
+subiquity (0.0.12) yakkety; urgency=medium
 
   [ Mathieu Trudel-Lapierre ]
   * debian/console-conf.serial-console-conf@.service: start with --serial so
@@ -10,7 +10,7 @@ subiquity (0.0.12) UNRELEASED; urgency=medium
   * create log directory more carefully. (LP: #1617236)
   * Wait for a default route rather than networkd-wait-online.
 
- -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Mon, 29 Aug 2016 19:09:11 -0400
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Tue, 30 Aug 2016 15:57:59 +1200
 
 subiquity (0.0.11) yakkety; urgency=medium
 
