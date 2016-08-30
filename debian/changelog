@@ -1,10 +1,15 @@
 subiquity (0.0.13) UNRELEASED; urgency=medium
 
+  [ Mathieu Trudel-Lapierre ]
   * debian/console-conf.*.serial: Start the console-conf wrappers from
     their path in /usr/share/subiquity; no need to have them in /usr/bin.
   * bin/console-conf-serial-wrapper: add --serial to the command-line.
   * debian/console-conf.serial-console-conf@.service: don't pass --serial,
     this is meant to be parameters to agetty, not to the login program.
+
+  [ Steve Langasek ]
+  * debian/console-conf-wrapper: trap various signals in our shell script,
+    as they should be in console-conf itself.
 
  -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Tue, 30 Aug 2016 13:57:46 -0400
 
