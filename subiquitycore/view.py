@@ -27,8 +27,6 @@ class BaseView(WidgetWrap):
             self.signal.prev_signal()
             return None
         if key in ['ctrl x']:
-            self.signal.register_signals('quit')
-            self.signal.emit_signal('quit')
-            return None
+            self.signal.emit_signal('control-x-quit')
 
         return super().keypress(size, key)
