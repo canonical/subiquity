@@ -12,7 +12,7 @@ subiquity (0.0.13) UNRELEASED; urgency=medium
     as they should be in console-conf itself.
 
   [ Michael Hudson-Doyle ]
-  * Prevent C-c and C-x from exiting console-conf. 
+  * Prevent C-c, C-\ and C-x from exiting console-conf. 
 
  -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Tue, 30 Aug 2016 13:57:46 -0400
 

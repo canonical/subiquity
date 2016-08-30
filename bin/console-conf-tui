@@ -77,6 +77,7 @@ def main():
     logger.info("Arguments passed: {}".format(sys.argv))
 
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGQUIT, signal.SIG_IGN)
 
     env_ok = environment_check(ENVIRONMENT)
     if env_ok is False and not opts.dry_run:
