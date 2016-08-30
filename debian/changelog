@@ -15,6 +15,7 @@ subiquity (0.0.13) UNRELEASED; urgency=medium
   * Prevent C-c, C-\ and C-x from exiting console-conf. 
   * Hide bonding UI as the version of netplan we are currently using does not
     support bonds. 
+  * Overwrite the netplan config that snap firstboot creates. 
 
  -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Tue, 30 Aug 2016 13:57:46 -0400
 
