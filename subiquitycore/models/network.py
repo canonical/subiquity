@@ -294,9 +294,9 @@ class NetworkModel(BaseModel):
         ('Set a custom IPv6 default route',
          base_signal + ':set-default-v6-route',
          'set_default_v6_route'),
-        ('Bond interfaces',
-         base_signal + ':bond-interfaces',
-         'bond_interfaces'),
+        #('Bond interfaces',
+        # base_signal + ':bond-interfaces',
+        # 'bond_interfaces'),
         # ('Install network driver',
         #  'network:install-network-driver',
         #  'install_network_driver')
