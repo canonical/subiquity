@@ -68,6 +68,8 @@ class Application:
 
         # Add quit signal
         signals.append(('quit', self.exit))
+        if self.common['opts'].dry_run:
+            signals.append(('control-x-quit', self.exit))
         signals.append(('refresh', self.redraw_screen))
         self.common['signal'].connect_signals(signals)
 
