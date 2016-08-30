@@ -1,7 +1,10 @@
 subiquity (0.0.12) UNRELEASED; urgency=medium
 
   * debian/console-conf.serial-console-conf@.service: start with --serial so
-    we don't spew as many control chars on the serial interface.
+    we don't spew as many control chars on the serial interface. (LP: #1617231)
+  * spawn a simple shell wrapper around console-conf initially to reduce
+    RAM usage at rest. (LP: #1618239)
+  * create log directory more carefully. (LP: #1617236)
 
  -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Mon, 29 Aug 2016 19:09:11 -0400
 
