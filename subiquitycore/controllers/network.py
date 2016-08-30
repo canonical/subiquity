@@ -16,6 +16,9 @@
 import logging
 import os
 import queue
+import select
+import threading
+import time
 
 import netifaces
 import yaml
@@ -35,58 +38,147 @@ from subiquitycore.utils import run_command_start, run_command_summarize
 log = logging.getLogger("subiquitycore.controller.network")
 
 
-class CommandSequence:
-    def __init__(self, loop, cmds, watcher):
+class BackgroundTask:
+    """Something that runs without blocking the UI and can be canceled."""
+
+    def run(self):
+        raise NotImplementedError(self.run)
+
+    def cancel(self):
+        raise NotImplementedError(self.cancel)
+
+
+class BackgroundProcess(BackgroundTask):
+
+    def __init__(self, cmd):
+        self.cmd = cmd
+
+    def __repr__(self):
+        return 'BackgroundProcess(%r)'%(self.cmd,)
+
+    def run(self, observer):
+        self.proc = run_command_start(self.cmd)
+        stdout, stderr = self.proc.communicate()
+        result = run_command_summarize(self.proc, stdout, stderr)
+        if result['status'] == 0:
+            observer.task_succeeded()
+        else:
+            observer.task_failed()
+
+    def cancel(self):
+        try:
+            self.proc.terminate()
+        except ProcessLookupError:
+            pass # It's OK if the process has already terminated.
+
+
+class PythonSleep(BackgroundTask):
+
+    def __init__(self, duration):
+        self.duration = duration
+        self.r, self.w = os.pipe()
+
+    def __repr__(self):
+        return 'PythonSleep(%r)'%(self.duration,)
+
+    def run(self, observer):
+        r, _, _ = select.select([self.r], [], [], self.duration)
+        if not r:
+            observer.task_succeeded()
+        os.close(self.r)
+        os.close(self.w)
+
+    def cancel(self):
+        os.write(self.w, b'x')
+
+
+class WaitForDefaultRouteTask(BackgroundTask):
+
+    def __init__(self, timeout):
+        self.timeout = timeout
+        self.r, self.w = os.pipe()
+
+    def __repr__(self):
+        return 'WaitForDefaultRouteTask(%r)'%(self.timeout,)
+
+    def run(self, observer):
+        try:
+            start = time.time()
+            while time.time() - start < self.timeout:
+                if len(netifaces.gateways().get('default', {})) > 0:
+                    observer.task_succeeded()
+                    return
+                r, _, _ = select.select([self.r], [], [], 0.1)
+                if r: # we've been canceled
+                    return
+            observer.task_failed()
+        finally:
+            os.close(self.r)
+            os.close(self.w)
+
+    def cancel(self):
+        os.write(self.w, b'x')
+
+
+class TaskSequence:
+    def __init__(self, loop, tasks, watcher):
         self.loop = loop
-        self.cmds = cmds
+        self.tasks = tasks
         self.watcher = watcher
         self.canceled = False
         self.stage = None
-        self.queue = queue.Queue()
+        self.curtask = None
+        self.incoming = queue.Queue()
+        self.outgoing = queue.Queue()
+        self.pipe = self.loop.watch_pipe(self._thread_callback)
 
     def run(self):
         self._run1()
 
     def cancel(self):
-        log.debug('canceling stage %s', self.stage)
+        if self.curtask is not None:
+            log.debug("canceling %s", self.curtask)
+            self.curtask.cancel()
         self.canceled = True
-        try:
-            self.proc.terminate()
-        except ProcessLookupError:
-            pass
 
     def _run1(self):
-        self.stage, cmd = self.cmds[0]
-        self.cmds = self.cmds[1:]
-        log.debug('running %s for stage %s', cmd, self.stage)
-        self.proc = run_command_start(cmd)
-        self.pipe = self.loop.watch_pipe(self._thread_callback)
-        Async.pool.submit(self._communicate)
-
-    def _communicate(self):
-        stdout, stderr = self.proc.communicate()
-        result = run_command_summarize(self.proc, stdout, stderr)
-        self.call_from_thread(self._complete, result)
+        self.stage, self.curtask = self.tasks[0]
+        self.tasks = self.tasks[1:]
+        log.debug('running %s for stage %s', self.curtask, self.stage)
+        def cb(fut):
+            # We do this just so that any exceptions raised don't get lost.
+            # Vomiting a traceback all over the console is nasty, but not as
+            # nasty as silently doing nothing.
+            fut.result()
+        Async.pool.submit(self.curtask.run, self).add_done_callback(cb)
 
     def call_from_thread(self, func, *args):
-        self.queue.put((func, args))
+        log.debug('call_from_thread %s %s', func, args)
+        self.incoming.put((func, args))
         os.write(self.pipe, b'x')
+        self.outgoing.get()
 
     def _thread_callback(self, ignored):
-        func, args = self.queue.get()
+        func, args = self.incoming.get()
         func(*args)
+        self.outgoing.put(None)
 
-    def _complete(self, result):
+    def task_succeeded(self):
+        self.call_from_thread(self._task_succeeded)
+
+    def _task_succeeded(self):
         if self.canceled:
             return
-        if result['status'] != 0:
-            self.watcher.cmd_error(self.stage)
-            return
-        self.watcher.cmd_complete(self.stage)
-        if len(self.cmds) == 0:
-            self.watcher.cmd_finished()
+        self.watcher.task_complete(self.stage)
+        if len(self.tasks) == 0:
+            self.watcher.tasks_finished()
         else:
             self._run1()
+
+    def task_failed(self):
+        if self.canceled:
+            return
+        self.call_from_thread(self.watcher.task_error, self.stage)
 
 
 class NetworkController(BaseController):
@@ -121,45 +213,46 @@ class NetworkController(BaseController):
 
         if self.opts.dry_run:
             if hasattr(self, 'tried_once'):
-                cmds = [
-                    ('one', ['sleep', '1']),
-                    ('two', ['sleep', '1']),
-                    ('three', ['sleep', '1']),
+                tasks = [
+                    ('one', BackgroundProcess(['sleep', '1'])),
+                    ('two', PythonSleep(1)),
+                    ('three', BackgroundProcess(['sleep', '1'])),
                     ]
             else:
                 self.tried_once = True
-                cmds = [
-                    ('one', ['sleep', '1']),
-                    ('two', ['sleep', '1']),
-                    ('three', ['false']),
-                    ('four', ['sleep 1']),
+                tasks = [
+                    ('timeout', WaitForDefaultRouteTask(30)),
+                    ('one', BackgroundProcess(['sleep', '1'])),
+                    ('two', BackgroundProcess(['sleep', '1'])),
+                    ('three', BackgroundProcess(['false'])),
+                    ('four', BackgroundProcess(['sleep 1'])),
                     ]
         else:
             with open('/etc/netplan/01-console-conf.yaml', 'w') as w:
                 w.write(yaml.dump(config))
-            cmds = [
-                ('generate', ['/lib/netplan/generate']),
-                ('apply', ['netplan', 'apply']),
-                ('timeout', ['/lib/systemd/systemd-networkd-wait-online', '--timeout=30']),
+            tasks = [
+                ('generate', BackgroundProcess(['/lib/netplan/generate'])),
+                ('apply', BackgroundProcess(['netplan', 'apply'])),
+                ('timeout', WaitForDefaultRouteTask(30)),
                 ]
 
         def cancel():
             self.cs.cancel()
-            self.cmd_error('canceled')
-        self.acw = ApplyingConfigWidget(len(cmds), cancel)
+            self.task_error('canceled')
+        self.acw = ApplyingConfigWidget(len(tasks), cancel)
         self.ui.frame.body.show_overlay(self.acw)
 
-        self.cs = CommandSequence(self.loop, cmds, self)
+        self.cs = TaskSequence(self.loop, tasks, self)
         self.cs.run()
 
-    def cmd_complete(self, stage):
+    def task_complete(self, stage):
         self.acw.advance()
 
-    def cmd_error(self, stage):
+    def task_error(self, stage):
         self.ui.frame.body.remove_overlay(self.acw)
         self.ui.frame.body.show_network_error(stage)
 
-    def cmd_finished(self):
+    def tasks_finished(self):
         self.signal.emit_signal('menu:identity:main')
 
     def set_default_v4_route(self):
