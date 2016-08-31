@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+trap true HUP INT QUIT TSTP
+
+cat /usr/share/subiquity/console-conf-wait
+read REPLY
+exec console-conf "$@"

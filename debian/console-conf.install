@@ -1,3 +1,4 @@
 bin/console-conf-tui                 usr/share/subiquity
 bin/console-conf-wait                usr/share/subiquity
+bin/console-conf-wrapper             usr/share/subiquity
 usr/share/subiquity/console_conf

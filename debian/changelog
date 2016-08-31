@@ -1,8 +1,8 @@
 subiquity (0.0.13) UNRELEASED; urgency=medium
 
   [ Mathieu Trudel-Lapierre ]
-  * bin/console-conf-wait: replace console-conf-wrapper with an issue file
-    that agetty can show on screen while waiting for user input.
+  * bin/console-conf-wait: add an issue file that agetty can show on screen
+    while waiting for user input. This is used directly for serial.
   * debian/console-conf.*.service: configure agetty to wait for user input
     before running our login program (console-conf), and display our issue
     file in the meantime. Always clear the screen, so that the issue text
@@ -10,6 +10,12 @@ subiquity (0.0.13) UNRELEASED; urgency=medium
   * debian/console-conf.serial-console-conf@.service: pass --serial as an
     explicit login-program option to avoid it being seen as a parameter to
     agetty.
+  * debian/console-conf-wrapper: display the contents of our issue file
+    instead of a hard-coded string.
+
+  [ Steve Langasek ]
+  * debian/console-conf-wrapper: trap various signals in our shell script,
+    as they should be in console-conf itself.
 
   [ Michael Hudson-Doyle ]
   * Prevent C-c, C-\ and C-x from exiting console-conf. 
