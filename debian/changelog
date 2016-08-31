@@ -1,15 +1,15 @@
 subiquity (0.0.13) UNRELEASED; urgency=medium
 
   [ Mathieu Trudel-Lapierre ]
-  * debian/console-conf.*.serial: Start the console-conf wrappers from
-    their path in /usr/share/subiquity; no need to have them in /usr/bin.
-  * bin/console-conf-serial-wrapper: add --serial to the command-line.
-  * debian/console-conf.serial-console-conf@.service: don't pass --serial,
-    this is meant to be parameters to agetty, not to the login program.
-
-  [ Steve Langasek ]
-  * debian/console-conf-wrapper: trap various signals in our shell script,
-    as they should be in console-conf itself.
+  * bin/console-conf-wait: replace console-conf-wrapper with an issue file
+    that agetty can show on screen while waiting for user input.
+  * debian/console-conf.*.service: configure agetty to wait for user input
+    before running our login program (console-conf), and display our issue
+    file in the meantime. Always clear the screen, so that the issue text
+    isn't obscured by other line noise.
+  * debian/console-conf.serial-console-conf@.service: pass --serial as an
+    explicit login-program option to avoid it being seen as a parameter to
+    agetty.
 
   [ Michael Hudson-Doyle ]
   * Prevent C-c, C-\ and C-x from exiting console-conf. 
