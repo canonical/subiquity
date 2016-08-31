@@ -12,8 +12,6 @@ subiquity (0.0.13) yakkety; urgency=medium
     agetty.
   * debian/console-conf-wrapper: display the contents of our issue file
     instead of a hard-coded string.
-  * bin/console-conf-tui: drop requirement for /var/log/syslog to be
-    readable. We don't actually go read it.
 
   [ Steve Langasek ]
   * debian/console-conf-wrapper: trap various signals in our shell script,

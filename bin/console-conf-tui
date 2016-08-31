@@ -29,6 +29,9 @@ from subiquitycore.utils import environment_check
 # Does console-conf actually need any of this?
 ENVIRONMENT = '''
 checks:
+    read:
+        file:
+            - /var/log/syslog
     write:
         directory:
             - /tmp
