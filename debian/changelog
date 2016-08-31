@@ -1,3 +1,10 @@
+subiquity (0.0.14) UNRELEASED; urgency=medium
+
+  * bin/console-conf-tui: drop requirement for /var/log/syslog to be
+    readable. We don't actually go read it.
+
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Wed, 31 Aug 2016 16:21:24 -0400
+
 subiquity (0.0.13) yakkety; urgency=medium
 
   [ Mathieu Trudel-Lapierre ]
