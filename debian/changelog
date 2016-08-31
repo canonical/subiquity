@@ -1,4 +1,4 @@
-subiquity (0.0.13) UNRELEASED; urgency=medium
+subiquity (0.0.13) yakkety; urgency=medium
 
   [ Mathieu Trudel-Lapierre ]
   * bin/console-conf-wait: add an issue file that agetty can show on screen
@@ -23,7 +23,7 @@ subiquity (0.0.13) UNRELEASED; urgency=medium
     support bonds. 
   * Overwrite the netplan config that snap firstboot creates. 
 
- -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Tue, 30 Aug 2016 13:57:46 -0400
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Wed, 31 Aug 2016 01:06:40 -0400
 
 subiquity (0.0.12) yakkety; urgency=medium
 
