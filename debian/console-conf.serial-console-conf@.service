@@ -8,8 +8,8 @@ ConditionPathExists=!/var/lib/console-conf/complete
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
 ExecStartPre=/bin/systemctl stop serial-getty@%I
-ExecStart=-/sbin/agetty -n --keep-baud -f /usr/share/subiquity/console-conf-wait -w -l /usr/bin/console-conf --login-options "--serial" 115200,38400,9600 %I $TERM
-ExecStop=/bin/systemctl start serial-getty@%I
+ExecStart=/sbin/agetty -n --keep-baud -f /usr/share/subiquity/console-conf-wait -w -l /usr/bin/console-conf --login-options "--serial" 115200,38400,9600 %I $TERM
+ExecStopPost=/bin/systemctl start serial-getty@%I
 Type=idle
 Restart=always
 RestartSec=0

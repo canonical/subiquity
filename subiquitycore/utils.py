@@ -222,5 +222,5 @@ def mark_firstboot_complete():
 def disable_first_boot_service():
     """ Stop firstboot service; which also restores getty service """
     log.info('disabling first boot service')
-    run_command(["systemctl", "stop", "console-conf@*.service", "serial-console-conf@*.service"])
+    run_command(["systemctl", "stop", "--no-block", "console-conf@*.service", "serial-console-conf@*.service"])
     return
