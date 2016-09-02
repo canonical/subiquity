@@ -1,6 +1,6 @@
 subiquity (0.0.15~xenial~1) xenial; urgency=medium
 
-  * Experimental systemd cleanup.
+  * Clean up systemd jobs to allow console-conf to restart instantly when killed.
 
  -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Thu, 01 Sep 2016 22:35:01 +1200
 
