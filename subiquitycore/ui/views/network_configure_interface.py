@@ -32,6 +32,9 @@ class NetworkConfigureInterfaceView(BaseView):
         self.ipv4_method = Pile(self._build_ipv4_method_buttons())
         self.ipv6_info = Pile(self._build_gateway_ipv6_info())
         self.ipv6_method = Pile(self._build_ipv6_method_buttons())
+        super().__init__(ListBox(self._build_body()))
+
+    def _build_body(self):
         body = [
             Padding.center_79(self.ipv4_info),
             Padding.center_79(self.ipv4_method),
@@ -42,7 +45,7 @@ class NetworkConfigureInterfaceView(BaseView):
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
         ]
-        super().__init__(ListBox(body))
+        return body
 
     def _build_gateway_ipv4_info(self):
         addresses = self.iface_obj.ipv4_addresses
@@ -184,3 +187,25 @@ class NetworkConfigureInterfaceView(BaseView):
 
     def done(self, result):
         self.signal.prev_signal()
+
+
+class NetworkConfigureWLANInterfaceView(NetworkConfigureInterfaceView):
+    def __init__(self, model, signal, iface):
+        self.wifi_info = Pile(self._build_wifi_info())
+        self.wifi_method = Pile(self._build_wifi_config())
+        super().__init__(model, signal, iface)
+
+    def _build_wifi_info(self):
+        return [Text("WIFI")]
+
+    def _build_wifi_config(self):
+        return [Text("[config]")]
+
+    def _build_body(self):
+        body = [
+            Padding.center_79(self.wifi_info),
+            Padding.center_79(self.wifi_method),
+            Padding.line_break(""),
+            ]
+        body.extend(super()._build_body())
+        return body

@@ -172,6 +172,12 @@ class NetworkView(BaseView):
                 col_1.append(Text("")) 
                 col_2.append(Color.info_primary(Text(template)))
 
+            if interface.iftype == 'wlan':
+                if interface.essid is not None:
+                    col_2.append(Text("Associated to '" + interface.essid + "'"))
+                else:
+                    col_2.append(Text("Not associated."))
+
             # Other device info (MAC, vendor/model, speed)
             info = self.model.get_iface_info(iface)
             hwaddr = self.model.get_hw_addr(iface)
