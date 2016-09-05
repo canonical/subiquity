@@ -22,11 +22,10 @@ Provides network device listings and extended network information
 import logging
 import textwrap
 
-from urwid import (ListBox, Pile, BoxAdapter,
+from urwid import (ListBox, Pile,
                    Text, Columns, Overlay,
                    LineBox, ProgressBar, WidgetWrap)
 
-from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import cancel_btn, menu_btn, done_btn
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
@@ -103,14 +102,20 @@ class NetworkView(BaseView):
     def _build_model_inputs(self):
         ifaces = self.model.get_all_interface_names()
         ifname_width = 8  # default padding
+        if ifaces:
+            ifname_width += len(max(ifaces, key=len))
+            if ifname_width > 20:
+                ifname_width = 20
 
-        col_1 = []
-        col_2 = []
-
+        iface_menus = []
+        
         # Display each interface -- name in first column, then configured IPs
         # in the second.
         log.debug('interfaces: {}'.format(ifaces))
         for iface in ifaces:
+            col_1 = []
+            col_2 = []
+
             col_1.append(
                 Color.info_major(
                     menu_btn(label=iface,
@@ -193,19 +198,9 @@ class NetworkView(BaseView):
             log.debug('hwaddr:{}, {}'.format(hwaddr, template))
 
             col_2.append(Color.info_minor(Text(template)))
+            iface_menus.append(Columns([(ifname_width, Pile(col_1)), Pile(col_2)], 2))
 
-        col_1 = BoxAdapter(SimpleList(col_1),
-                           height=len(col_1))
-        if len(col_2):
-            col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
-                               height=len(col_2))
-            ifname_width += len(max(ifaces, key=len))
-            if ifname_width > 20:
-                ifname_width = 20
-        else:
-            col_2 = Pile([Text("No network interfaces detected.")])
-
-        return Columns([(ifname_width, col_1), col_2], 2)
+        return Pile(iface_menus)
 
     def _build_additional_options(self):
         labels = []
