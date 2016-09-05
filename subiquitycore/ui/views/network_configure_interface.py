@@ -37,9 +37,20 @@ class NetworkConfigureInterfaceView(BaseView):
         self.ipv4_method = Pile(self._build_ipv4_method_buttons())
         self.ipv6_info = Pile(self._build_gateway_ipv6_info())
         self.ipv6_method = Pile(self._build_ipv6_method_buttons())
+        if self.iface_obj.type == 'wlan':
+            self.wifi_info = Pile(self._build_wifi_info())
+            self.wifi_method = Pile(self._build_wifi_config())
+
 
     def _build_body(self):
-        body = [
+        body = []
+        if self.iface_obj.type == 'wlan':
+            body.extend([
+                Padding.center_79(self.wifi_info),
+                Padding.center_79(self.wifi_method),
+                Padding.line_break(""),
+                ])
+        body.extend([
             Padding.center_79(self.ipv4_info),
             Padding.center_79(self.ipv4_method),
             Padding.line_break(""),
@@ -48,7 +59,7 @@ class NetworkConfigureInterfaceView(BaseView):
             Padding.center_79(self.ipv6_method),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
-        ]
+        ])
         return body
 
     def _build_gateway_ipv4_info(self):
@@ -147,6 +158,17 @@ class NetworkConfigureInterfaceView(BaseView):
 
         return buttons
 
+
+    def _build_wifi_info(self):
+        if self.iface_obj.essid is not None:
+            return [Text("Will associate with '%s'" % (self.iface_obj.essid,))]
+        else:
+            return [Text("No access point configured.")]
+
+    def _build_wifi_config(self):
+        return [menu_btn(label="Configure WIFI settings",
+                         on_press=self.show_wlan_configuration)]
+
     def _build_buttons(self):
         done = done_btn(on_press=self.done)
 
@@ -179,6 +201,10 @@ class NetworkConfigureInterfaceView(BaseView):
         self.iface_obj.dhcp6 = True
         self.update_interface()
 
+    def show_wlan_configuration(self, btn):
+        self.signal.emit_signal(
+            'menu:network:main:configure-wlan-interface', self.iface)
+
     def show_ipv4_configuration(self, btn):
         self.signal.emit_signal(
             'menu:network:main:configure-ipv4-interface', self.iface)
@@ -191,36 +217,6 @@ class NetworkConfigureInterfaceView(BaseView):
 
     def done(self, result):
         self.signal.prev_signal()
-
-
-class NetworkConfigureWLANInterfaceView(NetworkConfigureInterfaceView):
-    def _build_widgets(self):
-        super()._build_widgets()
-        self.wifi_info = Pile(self._build_wifi_info())
-        self.wifi_method = Pile(self._build_wifi_config())
-
-    def _build_wifi_info(self):
-        if self.iface_obj.essid is not None:
-            return [Text("Will associate with '%s'" % (self.iface_obj.essid,))]
-        else:
-            return [Text("No access point configured.")]
-
-    def _build_wifi_config(self):
-        return [menu_btn(label="Configure WIFI settings",
-                         on_press=self.show_wlan_configuration)]
-
-    def show_wlan_configuration(self, btn):
-        self.signal.emit_signal(
-            'menu:network:main:configure-wlan-interface', self.iface)
-
-    def _build_body(self):
-        body = [
-            Padding.center_79(self.wifi_info),
-            Padding.center_79(self.wifi_method),
-            Padding.line_break(""),
-            ]
-        body.extend(super()._build_body())
-        return body
 
 
 class NetworkConfigureWLANView(BaseView):
