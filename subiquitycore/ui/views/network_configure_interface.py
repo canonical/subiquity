@@ -236,7 +236,7 @@ class NetworkConfigureWLANView(BaseView):
 
     def _build_iface_inputs(self):
         col = [
-            Padding.center_79(Color.info_minor(Text("Only open or WPA2 networks are supported at this time."))),
+            Padding.center_79(Color.info_minor(Text("Only open or WPA2/PSK networks are supported at this time."))),
             Padding.line_break(""),
             Columns(
                 [
@@ -248,7 +248,7 @@ class NetworkConfigureWLANView(BaseView):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Passwod:")),
+                    ("weight", 0.2, Text("Password:")),
                     ("weight", 0.3,
                      Color.string_input(self.psk_input,
                                         focus_map="string_input focus")),
