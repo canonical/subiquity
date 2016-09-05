@@ -24,7 +24,7 @@ from subiquitycore.utils import (read_sys_net,
                                  sys_dev_path)
 
 NETDEV_IGNORED_IFACE_NAMES = ['lo']
-NETDEV_IGNORED_IFACE_TYPES = ['bridge', 'tun', 'tap', 'dummy']
+NETDEV_IGNORED_IFACE_TYPES = ['bridge', 'tun', 'tap', 'dummy', 'sit']
 log = logging.getLogger('subiquitycore.models.network')
 
 

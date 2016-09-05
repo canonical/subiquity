@@ -1,6 +1,10 @@
-subiquity (0.0.15~xenial~1) xenial; urgency=medium
+subiquity (0.0.15~xenial~2) xenial; urgency=medium
 
+  [ Michael Hudson-Doyle ]
   * Clean up systemd jobs to allow console-conf to restart instantly when killed.
+
+  [ Mathieu Trudel-Lapierre ]
+  * Ignore sit devices.
 
  -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Thu, 01 Sep 2016 22:35:01 +1200
 
