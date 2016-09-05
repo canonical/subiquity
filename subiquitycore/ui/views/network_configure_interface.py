@@ -166,8 +166,8 @@ class NetworkConfigureInterfaceView(BaseView):
             return [Text("No access point configured.")]
 
     def _build_wifi_config(self):
-        return [menu_btn(label="Configure WIFI settings",
-                         on_press=self.show_wlan_configuration)]
+        return [Padding.left_40(menu_btn(label="Configure WIFI settings",
+                                on_press=self.show_wlan_configuration))]
 
     def _build_buttons(self):
         done = done_btn(on_press=self.done)
@@ -236,22 +236,22 @@ class NetworkConfigureWLANView(BaseView):
 
     def _build_iface_inputs(self):
         col = [
+            Padding.center_79(Color.info_minor(Text("Only open or WPA2 networks are supported at this time."))),
+            Padding.line_break(""),
             Columns(
                 [
-                    ("weight", 0.2, Text("ESSID")),
+                    ("weight", 0.2, Text("Network name:")),
                     ("weight", 0.3,
                      Color.string_input(self.essid_input,
                                         focus_map="string_input focus")),
-                    ("weight", 0.5, Text("mmm"))
                 ], dividechars=2
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("PSK")),
+                    ("weight", 0.2, Text("Passwod:")),
                     ("weight", 0.3,
                      Color.string_input(self.psk_input,
                                         focus_map="string_input focus")),
-                    ("weight", 0.5, Text("nnn"))
                 ], dividechars=2
             ),
         ]
@@ -267,6 +267,9 @@ class NetworkConfigureWLANView(BaseView):
         return Pile(buttons, focus_item=done)
 
     def done(self, btn):
+        if self.iface_obj.essid is None and self.essid_input.value:
+            # Turn DHCP4 on by default when specifying an ESSID for the first time...
+            self.iface_obj.dhcp4 = True
         if self.essid_input.value:
             self.iface_obj.essid = self.essid_input.value
         else:
