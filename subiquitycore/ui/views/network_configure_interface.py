@@ -271,6 +271,11 @@ class NetworkConfigureWLANView(BaseView):
         return Pile(buttons, focus_item=done)
 
     def done(self, btn):
+        if self.essid_input.value:
+            self.iface_obj.essid = self.essid_input.value
+        else:
+            self.iface_obj.essid = None
+        self.iface_obj.wpa_psk = self.psk_input.value
         self.signal.prev_signal()
 
     def cancel(self, btn):

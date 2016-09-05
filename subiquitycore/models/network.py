@@ -44,6 +44,7 @@ class Networkdev():
         self.nameservers = []
         self.gateway = None
         self.essid = None
+        self.wpa_psk = None
 
     def configure(self, probe_info=None):
         log.debug('Configuring iface {}'.format(self.ifname))
@@ -118,7 +119,13 @@ class Networkdev():
             result[self.ifname]['interfaces'] = self.probe_info.bond['slaves']
 
         if self.iftype == 'wlan':
-            pass
+            if self.essid is not None:
+                aps = result[self.ifname]['access-points'] = {}
+                ap = aps[self.essid] = {
+                    'mode': 'infrastructure',
+                    }
+                if self.wpa_psk is not None:
+                    ap['password'] = self.wpa_psk
 
         return result
 
