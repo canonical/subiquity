@@ -30,7 +30,8 @@ from subiquitycore.ui.views import (NetworkView,
                                     NetworkBondInterfacesView,
                                     NetworkConfigureInterfaceView,
                                     NetworkConfigureIPv4InterfaceView,
-                                    NetworkConfigureWLANInterfaceView)
+                                    NetworkConfigureWLANInterfaceView,
+                                    NetworkConfigureWLANView)
 from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
@@ -290,6 +291,14 @@ class NetworkController(BaseController):
         self.ui.set_body(NetworkConfigureIPv4InterfaceView(self.model,
                                                            self.signal,
                                                            iface))
+
+    def network_configure_wlan_interface(self, iface):
+        self.model.prev_signal = ('Back to configure interface menu',
+                                  'network:configure-interface-menu',
+                                  'network_configure_interface')
+        self.ui.set_header("Network interface {} manual IPv4 "
+                           "configuration".format(iface))
+        self.ui.set_body(NetworkConfigureWLANView(self.model, self.signal, iface))
 
     def network_configure_ipv6_interface(self, iface):
         self.model.prev_signal = ('Back to configure interface menu',

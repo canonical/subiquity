@@ -291,7 +291,10 @@ class NetworkModel(BaseModel):
          'network_configure_interface'),
         ('Network configure ipv4 interface',
          base_signal + ':configure-ipv4-interface',
-         'network_configure_ipv4_interface')
+         'network_configure_ipv4_interface'),
+        ('Network configure wlan interface',
+         base_signal + ':configure-wlan-interface',
+         'network_configure_wlan_interface'),
     ]
 
     additional_options = [

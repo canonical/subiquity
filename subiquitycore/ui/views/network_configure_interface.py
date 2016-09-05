@@ -13,9 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import Text, Pile, ListBox
+from urwid import Text, Pile, ListBox, Columns
 from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import done_btn, menu_btn
+from subiquitycore.ui.buttons import cancel_btn, done_btn, menu_btn
+from subiquitycore.ui.interactive import PasswordEditor, StringEditor
 from subiquitycore.ui.utils import Color, Padding
 import logging
 
@@ -28,11 +29,14 @@ class NetworkConfigureInterfaceView(BaseView):
         self.signal = signal
         self.iface = iface
         self.iface_obj = self.model.get_interface(iface)
+        self._build_widgets()
+        super().__init__(ListBox(self._build_body()))
+
+    def _build_widgets(self):
         self.ipv4_info = Pile(self._build_gateway_ipv4_info())
         self.ipv4_method = Pile(self._build_ipv4_method_buttons())
         self.ipv6_info = Pile(self._build_gateway_ipv6_info())
         self.ipv6_method = Pile(self._build_ipv6_method_buttons())
-        super().__init__(ListBox(self._build_body()))
 
     def _build_body(self):
         body = [
@@ -190,16 +194,24 @@ class NetworkConfigureInterfaceView(BaseView):
 
 
 class NetworkConfigureWLANInterfaceView(NetworkConfigureInterfaceView):
-    def __init__(self, model, signal, iface):
+    def _build_widgets(self):
+        super()._build_widgets()
         self.wifi_info = Pile(self._build_wifi_info())
         self.wifi_method = Pile(self._build_wifi_config())
-        super().__init__(model, signal, iface)
 
     def _build_wifi_info(self):
-        return [Text("WIFI")]
+        if self.iface_obj.essid is not None:
+            return [Text("Will associate with '%s'" % (self.iface_obj.essid,))]
+        else:
+            return [Text("No access point configured.")]
 
     def _build_wifi_config(self):
-        return [Text("[config]")]
+        return [menu_btn(label="Configure WIFI settings",
+                         on_press=self.show_wlan_configuration)]
+
+    def show_wlan_configuration(self, btn):
+        self.signal.emit_signal(
+            'menu:network:main:configure-wlan-interface', self.iface)
 
     def _build_body(self):
         body = [
@@ -209,3 +221,57 @@ class NetworkConfigureWLANInterfaceView(NetworkConfigureInterfaceView):
             ]
         body.extend(super()._build_body())
         return body
+
+
+class NetworkConfigureWLANView(BaseView):
+    def __init__(self, model, signal, iface):
+        self.model = model
+        self.signal = signal
+        self.iface = iface
+        self.iface_obj = self.model.get_interface(iface)
+        self.essid_input = StringEditor(caption="")
+        self.psk_input = PasswordEditor(caption="")
+        self.body = [
+            Padding.center_79(self._build_iface_inputs()),
+            Padding.line_break(""),
+            Padding.fixed_10(self._build_buttons())
+        ]
+        super().__init__(ListBox(self.body))
+
+    def _build_iface_inputs(self):
+        col = [
+            Columns(
+                [
+                    ("weight", 0.2, Text("ESSID")),
+                    ("weight", 0.3,
+                     Color.string_input(self.essid_input,
+                                        focus_map="string_input focus")),
+                    ("weight", 0.5, Text("mmm"))
+                ], dividechars=2
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("PSK")),
+                    ("weight", 0.3,
+                     Color.string_input(self.psk_input,
+                                        focus_map="string_input focus")),
+                    ("weight", 0.5, Text("nnn"))
+                ], dividechars=2
+            ),
+        ]
+        return Pile(col)
+
+    def _build_buttons(self):
+        cancel = Color.button(cancel_btn(on_press=self.cancel),
+                              focus_map='button focus')
+        done = Color.button(done_btn(on_press=self.done),
+                            focus_map='button focus')
+
+        buttons = [done, cancel]
+        return Pile(buttons, focus_item=done)
+
+    def done(self, btn):
+        self.signal.prev_signal()
+
+    def cancel(self, btn):
+        self.signal.prev_signal()
