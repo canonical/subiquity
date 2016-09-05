@@ -276,7 +276,9 @@ class NetworkController(BaseController):
 
     def network_configure_interface(self, iface):
         self.ui.set_header("Network interface {}".format(iface))
-        self.ui.set_body(NetworkConfigureInterfaceView(self.model, self.signal, iface))
+        self.ui.set_body(NetworkConfigureInterfaceView(self.model,
+                                                       self.signal,
+                                                       iface))
 
     def network_configure_ipv4_interface(self, iface):
         self.model.prev_signal = ('Back to configure interface menu',
