@@ -43,6 +43,8 @@ class Networkdev():
         self.search_domains = []
         self.nameservers = []
         self.gateway = None
+        self.essid = None
+        self.wpa_psk = None
 
     def configure(self, probe_info=None):
         log.debug('Configuring iface {}'.format(self.ifname))
@@ -52,6 +54,9 @@ class Networkdev():
 
     def configure_from_info(self):
         log.debug('configuring netdev from info source')
+
+        if self.iftype == 'wlan':
+            self.essid = self.probe_info.raw['essid']
 
         ip_info = self.probe_info.ip
 
@@ -112,6 +117,15 @@ class Networkdev():
 
         if self.iftype == 'bond':
             result[self.ifname]['interfaces'] = self.probe_info.bond['slaves']
+
+        if self.iftype == 'wlan':
+            if self.essid is not None:
+                aps = result[self.ifname]['access-points'] = {}
+                ap = aps[self.essid] = {
+                    'mode': 'infrastructure',
+                    }
+                if self.wpa_psk is not None:
+                    ap['password'] = self.wpa_psk
 
         return result
 
@@ -284,7 +298,10 @@ class NetworkModel(BaseModel):
          'network_configure_interface'),
         ('Network configure ipv4 interface',
          base_signal + ':configure-ipv4-interface',
-         'network_configure_ipv4_interface')
+         'network_configure_ipv4_interface'),
+        ('Network configure wlan interface',
+         base_signal + ':configure-wlan-interface',
+         'network_configure_wlan_interface'),
     ]
 
     additional_options = [
@@ -640,15 +657,20 @@ class NetworkModel(BaseModel):
                  }
         ethernets = {}
         bonds = {}
+        wifis = {}
         for iface in self.devices.values():
             if iface.iftype == 'eth':
                 ethernets.update(iface.render())
             if iface.iftype == 'bond':
                 bonds.update(iface.render())
+            if iface.iftype == 'wlan':
+                wifis.update(iface.render())
         if any(ethernets):
             config['network']['ethernets'] = ethernets
         if any(bonds):
             config['network']['bonds'] = bonds
+        if any(wifis):
+            config['network']['wifis'] = wifis
 
         routes = self.get_default_route()
         nw_routes = []
