@@ -127,3 +127,10 @@ class LoginView(BaseView):
             utils.disable_first_boot_service()
 
         self.signal.emit_signal('quit')
+
+    def keypress(self, size, key):
+        if key == 'esc':
+            # You can't press escape to get out of this screen!
+            return None
+
+        return super().keypress(size, key)
