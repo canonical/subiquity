@@ -46,6 +46,20 @@ log = logging.getLogger("console_conf.views.identity")
 +---------------------------------------------------+
 '''
 
+class SubmittingEmailEditor(EmailEditor):
+
+    def __init__(self, mainview):
+        self.mainview = mainview
+        super().__init__(caption="")
+
+    def keypress(self, size, key):
+        if key == 'enter':
+            self.mainview.done(None)
+            return None
+        else:
+            return super().keypress(size, key)
+
+
 class IdentityView(BaseView):
 
     def __init__(self, model, signal, opts, loop):
@@ -54,7 +68,7 @@ class IdentityView(BaseView):
         self.opts = opts
         self.loop = loop
         self.items = []
-        self.email = EmailEditor(caption="")
+        self.email = SubmittingEmailEditor(self)
         self.error = Text("", align="center")
         self.progress = Text("", align="center")
 
