@@ -3,6 +3,11 @@ set -e
 
 trap true HUP INT QUIT TSTP
 
+# agetty only sets ICRNL if it has read the username and seen whether
+# it was terminated by CR or NL. We pass -n to agetty so that hasn't
+# happened and need to force it on. Yay UNIX!
+stty icrnl
+
 cat /usr/share/subiquity/console-conf-wait
 read REPLY
 exec console-conf "$@"
