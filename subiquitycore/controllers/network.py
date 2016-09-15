@@ -53,6 +53,7 @@ class BackgroundProcess(BackgroundTask):
 
     def __init__(self, cmd):
         self.cmd = cmd
+        self.proc = None
 
     def __repr__(self):
         return 'BackgroundProcess(%r)'%(self.cmd,)
@@ -67,6 +68,8 @@ class BackgroundProcess(BackgroundTask):
             observer.task_failed()
 
     def cancel(self):
+        if self.proc is None:
+            return
         try:
             self.proc.terminate()
         except ProcessLookupError:
