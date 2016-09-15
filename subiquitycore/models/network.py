@@ -105,9 +105,9 @@ class Networkdev():
     def render(self):
         log.debug("render to YAML")
         result = { self.ifname:
-                   { 
+                   {
                      'addresses': self.ipv4_addresses + self.ipv6_addresses,
-                   } 
+                   }
                  }
 
         if self.dhcp4:
@@ -119,13 +119,14 @@ class Networkdev():
             result[self.ifname]['interfaces'] = self.probe_info.bond['slaves']
 
         if self.iftype == 'wlan':
-            if self.essid is not None:
-                aps = result[self.ifname]['access-points'] = {}
-                ap = aps[self.essid] = {
-                    'mode': 'infrastructure',
-                    }
-                if self.wpa_psk is not None:
-                    ap['password'] = self.wpa_psk
+            if self.essid is None:
+                return {}
+            aps = result[self.ifname]['access-points'] = {}
+            ap = aps[self.essid] = {
+                'mode': 'infrastructure',
+                }
+            if self.wpa_psk is not None:
+                ap['password'] = self.wpa_psk
 
         return result
 
