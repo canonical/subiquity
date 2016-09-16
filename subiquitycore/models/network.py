@@ -17,7 +17,10 @@ import errno
 import ipaddress
 import logging
 import os
+
 import netifaces
+from probert.network import IFF_UP, IFF_RUNNING
+
 from subiquitycore.prober import make_network_info
 from subiquitycore.model import BaseModel
 from subiquitycore.utils import (read_sys_net,
@@ -227,6 +230,12 @@ class Networkdev():
     def ip6_providers(self):
         ip_info = self._get_ip_info()
         return ip_info['ip6_providers']
+
+    def is_connected(self):
+        flags = self.info.flags
+        # This is the logic ip from iproute2 uses to determine whether
+        # to show NO-CARRIER or not.
+        return (not (flags & IFF_UP)) or (flags & IFF_RUNNING)
 
     def remove_networks(self):
         self.remove_ipv4_networks()

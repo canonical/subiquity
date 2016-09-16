@@ -156,7 +156,13 @@ class NetworkView(BaseView):
             if ( not ip_status['dhcp4'] and not ip_status['dhcp6'] ) \
                     and len(ip_status['ipv4_addresses']) == 0 and \
                     len(ip_status['ipv6_addresses']) == 0:
-                template = "Not configured"
+                if interface.type == 'eth':
+                    if interface.is_connected():
+                        template = "Not configured"
+                    else:
+                        template = "Not connected"
+                else:
+                    template = "Not configured"
 
             if ip_status['dhcp4'] and ip_status['dhcp6'] and \
                     len(ip_status['ipv4_addresses']) == 0 and \
