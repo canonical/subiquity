@@ -360,6 +360,7 @@ class NetworkModel(BaseModel):
     # --- Model Methods ----
     def probe_network(self):
         log.debug('model calling prober.get_network()')
+        self.prober.probe()
         network_devices = self.prober.get_network_devices()
         self.network_routes = self.prober.get_network_routes()
 
