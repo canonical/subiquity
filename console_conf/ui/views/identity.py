@@ -20,7 +20,7 @@ from urwid import (Pile, Columns, Text, ListBox)
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.interactive import EmailEditor
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.utils import run_command
+from subiquitycore.utils import run_command, mark_firstboot_complete
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.views.identity")
@@ -122,6 +122,9 @@ class IdentityView(BaseView):
                 self.error.set_text("Creating user failed:\n" + result['err'])
                 return
             else:
+                # mark ourselves complete
+                mark_firstboot_complete()
+
                 data = json.loads(result['output'])
                 result = {
                     'realname': self.email.value,

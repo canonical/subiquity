@@ -120,9 +120,6 @@ class LoginView(BaseView):
 
     def done(self, button):
         if not self.opts.dry_run:
-            # mark ourselves complete
-            utils.mark_firstboot_complete()
-
             # stop the console-conf services (this will kill the current process).
             utils.disable_first_boot_service()
 
