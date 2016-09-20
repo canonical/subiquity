@@ -206,7 +206,7 @@ class NetworkController(BaseController):
     def start(self):
         title = "Network connections"
         excerpt = ("Configure at least the main interface this server will "
-                   "use to talk to the store.")
+                   "use to receive updates.")
         footer = ("Additional networking info here")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 20)

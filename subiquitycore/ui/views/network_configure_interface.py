@@ -119,7 +119,7 @@ class NetworkConfigureInterfaceView(BaseView):
     def _build_ipv4_method_buttons(self):
         dhcp4 = self.iface_obj.dhcp6
 
-        button_padding = 40
+        button_padding = 70
 
         buttons = []
         btn = menu_btn(label="Use a static IPv4 configuration",
@@ -140,7 +140,7 @@ class NetworkConfigureInterfaceView(BaseView):
     def _build_ipv6_method_buttons(self):
         dhcp6 = self.iface_obj.dhcp6
 
-        button_padding = 40
+        button_padding = 70
 
         buttons = []
         btn = menu_btn(label="Use a static IPv6 configuration",
@@ -166,7 +166,7 @@ class NetworkConfigureInterfaceView(BaseView):
             return [Text("No access point configured.")]
 
     def _build_wifi_config(self):
-        return [Padding.left_40(menu_btn(label="Configure WIFI settings",
+        return [Padding.left_70(menu_btn(label="Configure WIFI settings",
                                 on_press=self.show_wlan_configuration))]
 
     def _build_buttons(self):
