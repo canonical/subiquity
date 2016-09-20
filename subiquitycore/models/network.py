@@ -17,7 +17,9 @@ import errno
 import ipaddress
 import logging
 import os
+
 import netifaces
+
 from subiquitycore.prober import make_network_info
 from subiquitycore.model import BaseModel
 from subiquitycore.utils import (read_sys_net,
@@ -228,6 +230,9 @@ class Networkdev():
         ip_info = self._get_ip_info()
         return ip_info['ip6_providers']
 
+    def is_connected(self):
+        return self.probe_info.is_connected
+
     def remove_networks(self):
         self.remove_ipv4_networks()
         self.remove_ipv6_networks()
@@ -360,6 +365,7 @@ class NetworkModel(BaseModel):
     # --- Model Methods ----
     def probe_network(self):
         log.debug('model calling prober.get_network()')
+        self.prober.probe()
         network_devices = self.prober.get_network_devices()
         self.network_routes = self.prober.get_network_routes()
 
