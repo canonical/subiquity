@@ -1,3 +1,15 @@
+subiquity (0.0.17~xenial) xenial; urgency=medium
+
+  * Use console-conf on the serial line again, which means that the "Press
+    enter to configure" message actually appears. (LP: #1621142)
+  * Do not write any config for a wlan device that has not been configured
+    with an ESSID.
+  * Avoid a traceback in BackgroundProcess.cancel.
+  * Mark firstboot complete as soon as we've called create-user.
+  * Indicate if a wired connection is connected or not. (LP: #1623897)
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Tue, 20 Sep 2016 13:14:03 +1200
+
 subiquity (0.0.16~xenial) xenial; urgency=medium
 
   * Prevent ESC from leaving the final screen. (LP: #1621339)
