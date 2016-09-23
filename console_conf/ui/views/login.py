@@ -107,11 +107,16 @@ class LoginView(BaseView):
                     ips.append(ip)
 
         for ip in ips:
-                ssh_iface = "    ssh %s@%s" % (user.username, ip)
-                ssh += [Padding.center_50(Text(ssh_iface))]
+            ssh_iface = "    ssh %s@%s" % (user.username, ip)
+            ssh += [Padding.center_50(Text(ssh_iface))]
+
 
         sl += [Text(login_text),
                Padding.line_break("")] + ssh
+
+        if 'QEMU Virtual CPU' in open('/proc/cpuinfo').read():
+            qemu_text = "Ubuntu Core is running under QEMU/KVM. If using user mode networking, the above addresses will be wrong!"
+            sl += [Padding.line_break(""), Text(qemu_text)]
 
         return Pile(sl)
 
