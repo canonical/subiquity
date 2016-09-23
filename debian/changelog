@@ -1,3 +1,15 @@
+subiquity (0.0.18) UNRELEASED; urgency=medium
+
+  [ Michael Hudson-Doyle ]
+  * Fix incorrect UI strings and padding.
+  * Enable better timestamps in logging.
+
+  [ Mathieu Trudel-Lapierre ]
+  * Don't render wireless interfaces if they have no DHCP or static addresses
+    configured, otherwise netplan might expect a SSID to go with it.
+
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Fri, 23 Sep 2016 15:37:20 -0400
+
 subiquity (0.0.17~xenial) xenial; urgency=medium
 
   * Use console-conf on the serial line again, which means that the "Press
