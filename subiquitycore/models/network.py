@@ -671,7 +671,10 @@ class NetworkModel(BaseModel):
             if iface.iftype == 'bond':
                 bonds.update(iface.render())
             if iface.iftype == 'wlan':
-                wifis.update(iface.render())
+                if len(iface.ipv4_addresses) > 0 \
+                        or len(iface.ipv6_addresses) > 0 \
+                        or iface.dhcp4 or iface.dhcp6: 
+                    wifis.update(iface.render())
         if any(ethernets):
             config['network']['ethernets'] = ethernets
         if any(bonds):
