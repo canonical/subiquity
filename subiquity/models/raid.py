@@ -23,26 +23,11 @@ log = logging.getLogger('subiquity.models.raid')
 class RaidModel(BaseModel):
     """ Model representing software raid
     """
-    base_signal = 'menu:raid:main'
-    signals = [
-        ('Create software RAID',
-         base_signal,
-         'raid'),
-        ('Finish software RAID',
-         'raid:finish',
-         'raid_handler')
-    ]
 
     menu = [
-        ('RAID Level',
-         'raid:set-raid-level',
-         'set_raid_level'),
-        ('Hot spares',
-         'raid:set-hot-spares',
-         'set_hot_spares'),
-        ('Chunk size',
-         'raid:set-chunk-size',
-         'set_chunk_size')
+        ('RAID Level', 'raid:set-raid-level'),
+        ('Hot spares', 'raid:set-hot-spares'),
+        ('Chunk size', 'raid:set-chunk-size')
     ]
 
     raid_levels = ['0', '1', '5', '6', '10', 'linear']
@@ -55,14 +40,6 @@ class RaidModel(BaseModel):
         '6': {'min_disks': 0},
         '10': {'min_disks': 0}
     }
-
-    def get_signal_by_name(self, selection):
-        for x, y, z in self.get_signals():
-            if x == selection:
-                return y
-
-    def get_signals(self):
-        return self.signals
 
     def get_menu(self):
         return self.menu

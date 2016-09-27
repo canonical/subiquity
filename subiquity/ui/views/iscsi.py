@@ -117,7 +117,7 @@ class IscsiDiskView(BaseView):
 
     def _build_menu(self):
         items = []
-        for label, _, _ in self.model.get_menu():
+        for label, sig in self.model.get_menu():
             items.append(
                 Columns(
                     [
@@ -125,7 +125,8 @@ class IscsiDiskView(BaseView):
                         ("weight", 0.3,
                          Color.menu_button(
                              menu_btn(label=label,
-                                      on_press=self.confirm),
+                                      on_press=self.confirm,
+                                      user_data=sig),
                              focus_map="menu_button focus"))
                     ]))
         return Pile(items)
@@ -136,5 +137,4 @@ class IscsiDiskView(BaseView):
         return Pile(items)
 
     def confirm(self, result):
-        self.signal.emit_signal(
-            self.model.get_signal_by_name(result.label))
+        self.signal.emit_signal(sig)

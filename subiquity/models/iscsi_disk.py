@@ -30,25 +30,10 @@ class IscsiDiskModel(BaseModel):
         'filesystem'
     )
 
-    signals = [
-        ('iSCSI view',
-         'iscsi:show',
-         'iscsi'),
-        ('iSCSI finish',
-         'iscsi:finish',
-         'iscsi_handler')
-    ]
-
     menu = [
-        ('Discover volumes now',
-         'iscsi:discover-volumes',
-         'discover_volumes'),
-        ('Use custom discovery credentials (advanced)',
-         'iscsi:custom-discovery-credentials',
-         'custom_discovery_credentials'),
-        ('Enter volume details manually',
-         'iscsi:manual-volume-details',
-         'manual_volume_details')
+        ('Discover volumes now',                        'iscsi:discover-volumes'),
+        ('Use custom discovery credentials (advanced)', 'iscsi:custom-discovery-credentials'),
+        ('Enter volume details manually',               'iscsi:manual-volume-details')
     ]
 
     server_authentication = {
@@ -60,14 +45,6 @@ class IscsiDiskModel(BaseModel):
         'server_username': None,
         'server_password': None
     }
-
-    def get_signal_by_name(self, selection):
-        for x, y, z in self.get_signals():
-            if x == selection:
-                return y
-
-    def get_signals(self):
-        return self.signals + self.menu
 
     def get_menu(self):
         return self.menu

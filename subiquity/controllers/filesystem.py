@@ -38,6 +38,27 @@ UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 
 class FilesystemController(BaseController):
+    signals = [
+        ('menu:filesystem:main',                           'filesystem'),
+        ('filesystem:error',                               'filesystem_error'),
+        ('filesystem:finish',                              'filesystem_handler'),
+        ('menu:filesystem:main:show-disk-partition',       'disk_partition'),
+        ('filesystem:finish-disk-partition',               'disk_partition_handler'),
+        ('menu:filesystem:main:add-disk-partition',        'add_disk_partition'),
+        ('filesystem:finish-add-disk-partition',           'add_disk_partition_handler'),
+        ('filesystem:finish-add-disk-format',              'add_disk_format_handler'),
+        ('menu:filesystem:main:create-swap-entire-device', 'create_swap_entire_device'),
+        ('menu:filesystem:main:show-disk-information',     'show_disk_information'),
+        ('filesystem:show-disk-info-next',                 'show_disk_information_next'),
+        ('filesystem:show-disk-info-prev',                 'show_disk_information_prev'),
+        ('filesystem:add-raid-dev',                        'add_raid_dev'),
+        # ('filesystem:connect-iscsi-disk',                 'connect_iscsi_disk'),
+        # ('filesystem:connect-ceph-disk',                  'connect_ceph_disk'),
+        ('menu:filesystem:main:create-volume-group',       'create_volume_group'),
+        ('menu:filesystem:main:create-raid',               'create_raid'),
+        ('menu:filesystem:main:setup-bcache',              'create_bcache'),
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = FilesystemModel(self.prober, self.opts)
