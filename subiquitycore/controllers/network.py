@@ -187,7 +187,6 @@ class TaskSequence:
 
 class NetworkController(BaseController):
     signals = [
-        ('menu:network:main',                          'network'),
         ('menu:network:main:start',                    'start'),
         ('network:finish',                             'network_finish'),
         ('menu:network:main:configure-interface',      'network_configure_interface'),
@@ -201,14 +200,7 @@ class NetworkController(BaseController):
         super().__init__(common)
         self.model = NetworkModel(self.prober, self.opts)
 
-    def network(self):
-        # The network signal is the one that is called when we enter
-        # the network configuration from the preceding or following
-        # screen. We clear any existing state, probe for the current
-        # state and then invoke the 'start' signal, which is what the
-        # sub screens will return to, so that the network state does
-        # not get re-probed when they return, which would throw away
-        # any configuration made in the sub-screen!
+    def default(self):
         self.model.reset()
         log.info("probing for network devices")
         self.model.probe_network()
@@ -269,7 +261,7 @@ class NetworkController(BaseController):
         self.ui.frame.body.show_network_error(stage)
 
     def tasks_finished(self):
-        self.signal.emit_signal('menu:identity:main')
+        self.signal.emit_signal('next-screen')
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")

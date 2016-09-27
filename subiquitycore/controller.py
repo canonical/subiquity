@@ -39,3 +39,6 @@ class BaseController:
             self.signal.connect_signals(signals)
         else:
             log.debug("No model signals found for {}".format(self))
+
+    def default(self):
+        raise NotImplementedError(self.default)

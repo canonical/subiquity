@@ -107,7 +107,7 @@ class IdentityView(BaseView):
         return Pile(buttons)
 
     def cancel(self, button):
-        self.signal.prev_signal()
+        self.signal.emit_signal('prev-screen')
 
     def done(self, button):
         if len(self.email.value) < 1:
@@ -141,4 +141,4 @@ class IdentityView(BaseView):
                     'confirm_password': '',
                     }
                 self.model.add_user(result)
-        self.signal.emit_signal('menu:identity:login:main')
+        self.signal.emit_signal('identity:done')

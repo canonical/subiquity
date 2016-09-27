@@ -34,15 +34,15 @@ class Application:
     # A concrete subclass must set project and controllers attributes, e.g.:
     #
     # project = "subiquity"
-    # controllers = {
-    #         "Welcome": None,
-    #         "Installpath": None,
-    #         "Network": None,
-    #         "Filesystem": None,
-    #         "Identity": None,
-    #         "InstallProgress": None,
-    #         "Login": None,
-    # }
+    # controllers = [
+    #         "Welcome",
+    #         "Installpath",
+    #         "Network",
+    #         "Filesystem",
+    #         "Identity",
+    #         "InstallProgress",
+    #         "Login",
+    # ]
 
     def __init__(self, ui, opts):
         try:
@@ -59,7 +59,8 @@ class Application:
             "prober": prober,
             "loop": None
         }
-        self.common['controllers'] = self.controllers
+        self.common['controllers'] = dict.fromkeys(self.controllers)
+        self.controller_index = -1
 
     def _connect_base_signals(self):
         """ Connect signals used in the core controller
@@ -71,12 +72,32 @@ class Application:
         if self.common['opts'].dry_run:
             signals.append(('control-x-quit', self.exit))
         signals.append(('refresh', self.redraw_screen))
+        signals.append(('next-screen', self.next_screen))
+        signals.append(('prev-screen', self.prev_screen))
         self.common['signal'].connect_signals(signals)
 
         # Registers signals from each controller
-        for controller, controller_class in self.controllers.items():
+        for controller, controller_class in self.common['controllers'].items():
             controller_class.register_signals()
         log.debug(self.common['signal'])
+
+    def next_screen(self, *args):
+        self.controller_index += 1
+        if self.controller_index >= len(self.controllers):
+            self.exit()
+        controller_name = self.controllers[self.controller_index]
+        next_controller = self.common['controllers'][controller_name]
+        next_controller.default()
+
+    def prev_screen(self, *args):
+        if self.controller_index == 0:
+            return
+        self.controller_index -= 1
+        if self.controller_index >= len(self.controllers):
+            self.exit()
+        controller_name = self.controllers[self.controller_index]
+        next_controller = self.common['controllers'][controller_name]
+        next_controller.default()
 
 # EventLoop -------------------------------------------------------------------
     def redraw_screen(self):
@@ -121,22 +142,16 @@ class Application:
                 self.common['loop'].event_loop))
 
         try:
-            self.set_alarm_in(0.05, self.welcome)
-            for k in self.controllers.keys():
+            self.set_alarm_in(0.05, self.next_screen)
+            for k in self.common['controllers'].keys():
                 log.debug("Importing controller: {}".format(k))
                 klass = import_object(
                     ("%s.controllers.{}Controller" % self.project).format(
                         k))
-                self.controllers[k] = klass(self.common)
-
+                self.common['controllers'][k] = klass(self.common)
+            log.debug("*** %s", self.common['controllers'])
             self._connect_base_signals()
             self.common['loop'].run()
         except:
             log.exception("Exception in controller.run():")
             raise
-
-    # Welcome Mode ------------------------------------------------------------
-    #
-    # Starts the initial UI view.
-    def welcome(self, *args, **kwargs):
-        self.controllers['Welcome'].signal.emit_signal('menu:welcome:main')

@@ -22,7 +22,7 @@ from console_conf.ui.views import IdentityView, LoginView
 class IdentityController(BaseIdentityController):
     identity_view = IdentityView
 
-    def identity(self):
+    def default(self):
         title = "Profile setup"
         excerpt = "Enter an email address from your account in the store."
         footer = ""
@@ -46,3 +46,6 @@ class IdentityController(BaseIdentityController):
                                configured_ifaces)
 
         self.ui.set_body(login_view)
+
+    def login_done(self):
+        self.signal.emit_signal('exit')

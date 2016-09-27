@@ -26,21 +26,25 @@ class BaseIdentityController(BaseController):
     identity_view = None
 
     signals = [
-        ('menu:identity:main',       'identity'),
-        ('menu:identity:login:main', 'login'),
+        ('identity:done',       'identity_done'),
+        ('identity:login',      'login'),
+        ('identity:login:done', 'login_done'),
     ]
 
     def __init__(self, common):
         super().__init__(common)
         self.model = IdentityModel(self.opts)
 
-    def identity(self):
+    def default(self):
         title = "Profile setup"
         excerpt = ("Input your username and password to log in to the system.")
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
         self.ui.set_body(self.identity_view(self.model, self.signal, self.opts))
+
+    def identity_done(self):
+        self.signal.emit_signal('identity:login')
 
     def login(self):
         log.debug("Identity login view")
@@ -57,3 +61,6 @@ class BaseIdentityController(BaseController):
                                configured_ifaces)
 
         self.ui.set_body(login_view)
+
+    def login_done(self):
+        self.signal.emit_signal('exit')

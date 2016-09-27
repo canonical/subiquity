@@ -291,7 +291,4 @@ class NetworkView(BaseView):
         self.signal.emit_signal('network:finish', self.model.render())
 
     def cancel(self, button):
-        # Because of the double signal hack done in the controller we
-        # need to pop two signals here.
-        self.signal.signal_stack.pop()
-        self.signal.prev_signal()
+        self.signal.emit_signal('prev-screen')
