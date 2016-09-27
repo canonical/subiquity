@@ -34,7 +34,7 @@ class BaseController:
         """Defines signals associated with controller from model."""
         if hasattr(self, 'model'):
             signals = []
-            for name, sig, cb in self.model.get_signals():
+            for sig, cb in self.signals:
                 signals.append((sig, getattr(self, cb)))
             self.signal.connect_signals(signals)
         else:

@@ -25,6 +25,11 @@ class BaseIdentityController(BaseController):
 
     identity_view = None
 
+    signals = [
+        ('menu:identity:main',       'identity'),
+        ('menu:identity:login:main', 'login'),
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = IdentityModel(self.opts)

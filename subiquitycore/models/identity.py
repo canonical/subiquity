@@ -58,40 +58,9 @@ class LocalUser(object):
 class IdentityModel(BaseModel):
     """ Model representing user identity
     """
-    signals = [
-        ("Identity view",
-         'menu:identity:main',
-         'identity'),
-        ("Login view",
-         'menu:identity:login:main',
-         'login')
-    ]
-
-    identity_menu = [
-        ("Username",
-         "identity:username",
-         "validate_username"),
-        ("Password",
-         "identity:password",
-         "validate_password"),
-        ("Confirm Password",
-         "identity:confirm-password",
-         "validate_confirm_password")
-    ]
 
     def __init__(self, opts):
         self.opts = opts
-
-    def get_signals(self):
-        return self.signals
-
-    def get_menu(self):
-        return self.identity_menu
-
-    def get_signal_by_name(self, selection):
-        for x, y, z in self.get_menu():
-            if x == selection:
-                return y
 
     def add_user(self, result):
         if result:

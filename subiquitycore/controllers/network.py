@@ -186,6 +186,17 @@ class TaskSequence:
 
 
 class NetworkController(BaseController):
+    signals = [
+        ('menu:network:main',                          'network'),
+        ('menu:network:main:start',                    'start'),
+        ('network:finish',                             'network_finish'),
+        ('menu:network:main:configure-interface',      'network_configure_interface'),
+        ('menu:network:main:configure-ipv4-interface', 'network_configure_ipv4_interface'),
+        ('menu:network:main:configure-wlan-interface', 'network_configure_wlan_interface'),
+        ('menu:network:main:set-default-v4-route',     'set_default_v4_route'),
+        ('menu:network:main:set-default-v6-route',     'set_default_v6_route'),
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = NetworkModel(self.prober, self.opts)

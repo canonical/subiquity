@@ -20,6 +20,10 @@ from subiquitycore.controller import BaseController
 
 
 class WelcomeController(BaseController):
+    signals = [
+        ('menu:welcome:main', 'welcome')
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = WelcomeModel()
