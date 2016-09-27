@@ -23,7 +23,6 @@ from urwid import (ListBox, Pile, Text)
 from subiquitycore.ui.buttons import finish_btn
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
-from subiquitycore import utils
 
 log = logging.getLogger("subiquitycore.views.login")
 
@@ -119,15 +118,4 @@ class LoginView(BaseView):
         self.done()
 
     def done(self, button):
-        if not self.opts.dry_run:
-            # stop the console-conf services (this will kill the current process).
-            utils.disable_first_boot_service()
-
-        self.signal.emit_signal('quit')
-
-    def keypress(self, size, key):
-        if key == 'esc':
-            # You can't press escape to get out of this screen!
-            return None
-
-        return super().keypress(size, key)
+        self.signal.emit_signal('identity:login:done')

@@ -63,4 +63,4 @@ class BaseIdentityController(BaseController):
         self.ui.set_body(login_view)
 
     def login_done(self):
-        self.signal.emit_signal('exit')
+        self.signal.emit_signal('quit')
