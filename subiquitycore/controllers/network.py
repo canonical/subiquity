@@ -229,18 +229,18 @@ class NetworkController(BaseController):
         if self.opts.dry_run:
             if hasattr(self, 'tried_once'):
                 tasks = [
-                    ('one', BackgroundProcess(['sleep', '1'])),
-                    ('two', PythonSleep(1)),
-                    ('three', BackgroundProcess(['sleep', '1'])),
+                    ('one', BackgroundProcess(['sleep', '0.1'])),
+                    ('two', PythonSleep(0.1)),
+                    ('three', BackgroundProcess(['sleep', '0.1'])),
                     ]
             else:
                 self.tried_once = True
                 tasks = [
                     ('timeout', WaitForDefaultRouteTask(30)),
-                    ('one', BackgroundProcess(['sleep', '1'])),
-                    ('two', BackgroundProcess(['sleep', '1'])),
+                    ('one', BackgroundProcess(['sleep', '0.1'])),
+                    ('two', BackgroundProcess(['sleep', '0.1'])),
                     ('three', BackgroundProcess(['false'])),
-                    ('four', BackgroundProcess(['sleep 1'])),
+                    ('four', BackgroundProcess(['sleep', '0.1'])),
                     ]
         else:
             with open('/etc/netplan/00-snapd-config.yaml', 'w') as w:
