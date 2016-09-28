@@ -13,26 +13,27 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" View policy
+import logging
+from subiquitycore.controller import BaseController
+from subiquitycore.models import LocaleModel
+from subiquitycore.ui.views import LocaleView
 
-Contains some default key navigations
-"""
-
-from urwid import WidgetWrap
+log = logging.getLogger('subiquitycore.controllers.locale')
 
 
-class BaseView(WidgetWrap):
+class CoreLocaleController(BaseController):
 
-    def keypress(self, size, key):
-        if key == 'esc':
-            self.signal.prev_signal()
-            return None
-        if key in ['ctrl x']:
-            self.signal.emit_signal('control-x-quit')
+    _view = LocaleView
 
-        return super().keypress(size, key)
+    def __init__(self, common):
+        super().__init__(common)
+        self.model = LocaleModel(self.opts)
 
-    @property
-    def next_signal(self):
-        return self._next_signal
+    def locale(self):
+        title = "Language setup"
+        excerpt = ("Please select your keyboard model:")
+        footer = ""
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer, 40)
+        self.ui.set_body(self.view(self.model, self.signal))
 

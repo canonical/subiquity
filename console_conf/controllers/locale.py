@@ -13,26 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" View policy
+import logging
+from subiquitycore.controller import BaseController
+from subiquitycore.controllers.locale import CoreLocaleController
+from console_conf.ui.views import LocaleView
 
-Contains some default key navigations
-"""
-
-from urwid import WidgetWrap
+log = logging.getLogger('console_conf.controllers.locale')
 
 
-class BaseView(WidgetWrap):
+class LocaleController(CoreLocaleController):
 
-    def keypress(self, size, key):
-        if key == 'esc':
-            self.signal.prev_signal()
-            return None
-        if key in ['ctrl x']:
-            self.signal.emit_signal('control-x-quit')
-
-        return super().keypress(size, key)
-
-    @property
-    def next_signal(self):
-        return self._next_signal
+    _view = LocaleView
 

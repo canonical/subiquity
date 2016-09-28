@@ -24,9 +24,12 @@ ifneq (,$(MACHINE))
 	MACHARGS=--machine=$(MACHINE)
 endif
 
-.PHONY: run clean check
+.PHONY: run clean check data
 
-all: dryrun
+all: data dryrun
+
+data:
+	make -C data/ localedata
 
 $(NAME)_$(VERSION).orig.tar.gz: probert clean
 	cd .. && tar czf $(NAME)_$(VERSION).orig.tar.gz $(shell basename `pwd`) --exclude-vcs --exclude=debian --exclude='.tox*'
@@ -104,3 +107,4 @@ clean:
 	rm -f installer/installer.img
 	rm -f installer/geninstaller.log
 	find installer -type f -name *-installer.img | xargs -i rm {}
+	make -C data/ clean

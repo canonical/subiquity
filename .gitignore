@@ -65,3 +65,6 @@ venv
 
 # probert as its pulled externally
 probert
+
+# helper data
+data/localedata

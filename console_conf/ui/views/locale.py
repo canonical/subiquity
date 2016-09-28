@@ -13,26 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" View policy
+""" Locale
 
-Contains some default key navigations
+Provide configuration for keymaps, languages, etc.
+
 """
+import logging
+from subiquitycore.ui.views.locale import CoreLocaleView
 
-from urwid import WidgetWrap
+log = logging.getLogger("console_conf.views.locale")
 
 
-class BaseView(WidgetWrap):
+class LocaleView(CoreLocaleView):
 
-    def keypress(self, size, key):
-        if key == 'esc':
-            self.signal.prev_signal()
-            return None
-        if key in ['ctrl x']:
-            self.signal.emit_signal('control-x-quit')
-
-        return super().keypress(size, key)
-
-    @property
-    def next_signal(self):
-        return self._next_signal
-
+    _next_signal = 'menu:network:main'

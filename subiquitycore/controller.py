@@ -39,3 +39,7 @@ class BaseController:
             self.signal.connect_signals(signals)
         else:
             log.debug("No model signals found for {}".format(self))
+
+    @property
+    def view(self):
+        return self._view
