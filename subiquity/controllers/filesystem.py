@@ -79,6 +79,8 @@ class FilesystemController(BaseController):
         self.ui.set_body(FilesystemView(self.model,
                                         self.signal))
 
+    default = filesystem
+
     def filesystem_error(self, error_fname):
         title = "Filesystem error"
         footer = ("Error while installing Ubuntu")
@@ -116,8 +118,8 @@ class FilesystemController(BaseController):
         # start curtin install in background
         self.signal.emit_signal('installprogress:curtin-install')
 
-        # switch to identity view
-        self.signal.emit_signal('menu:identity:main')
+        # switch to next screen
+        self.signal.emit_signal('next-screen')
 
     # Filesystem/Disk partition -----------------------------------------------
     def disk_partition(self, disk):

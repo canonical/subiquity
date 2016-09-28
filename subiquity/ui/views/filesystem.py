@@ -630,7 +630,7 @@ class FilesystemView(BaseView):
         self.signal.emit_signal(sig)
 
     def cancel(self, button):
-        self.signal.prev_signal()
+        self.signal.emit_signal('prev-screen')
 
     def reset(self, button):
         self.signal.emit_signal('menu:filesystem:main', True)

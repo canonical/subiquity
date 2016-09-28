@@ -60,7 +60,7 @@ class CoreWelcomeView(BaseView):
     def confirm(self, result):
         self.model.selected_language = result.label
         log.debug('calling installpath')
-        self.signal.emit_signal('menu:installpath:main')
+        self.signal.emit_signal('welcome:done')
 
     def cancel(self, button):
         raise SystemExit("No language selected, exiting as there are no "

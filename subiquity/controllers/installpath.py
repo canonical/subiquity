@@ -51,9 +51,11 @@ class InstallpathController(BaseController):
         self.ui.set_footer(footer, 10)
         self.ui.set_body(InstallpathView(self.model, self.signal))
 
+    default = installpath
+
     def install_ubuntu(self):
         log.debug("Installing Ubuntu path chosen.")
-        self.signal.emit_signal('menu:network:main')
+        self.signal.emit_signal('next-screen')
 
     def install_maas_region_server(self):
         self.ui.set_body(DummyView(self.signal))
