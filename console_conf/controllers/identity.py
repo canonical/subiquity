@@ -31,11 +31,13 @@ class IdentityController(BaseIdentityController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
         self.ui.set_body(self.identity_view(self.model, self.signal, self.opts, self.loop))
-        if self.is_device_owned():
-            # FIXME: should be email rather than realname here, but extrausers only has email
-            self.signal.emit_signal('identity:done', self.model.user.realname)
+        device_owner = self.get_device_owner()
+        if device_owner is not None:
+            # FIXME: should be email rather than realname here, but extrausers
+            # only has an email in realname.
+            self.signal.emit_signal('identity:done', device_owner['realname'])
 
-    def is_device_owned(self):
+    def get_device_owner(self):
         """ Check if device is owned """
 
         # TODO: use proper snap APIs.
@@ -47,20 +49,20 @@ class IdentityController(BaseIdentityController):
                     'realname': passwd[4].split(',')[0],
                     'username': passwd[0],
                     }
-                self.model.add_user(result)
-                return True
-        return False
+                return result
+        return None
 
     def identity_done(self, email):
+        device_owner = self.get_device_owner()
+
         if self.opts.dry_run:
             result = {
                 'realname': email,
                 'username': email,
                 }
             self.model.add_user(result)
-        elif self.is_device_owned():
-            # user was added to the model, we don't need to do anything else.
-            pass
+        elif device_owner is not None:
+            self.model.add_user(device_owner)
         else:
             self.ui.frame.body.progress.set_text("Contacting store...")
             self.loop.draw_screen()
