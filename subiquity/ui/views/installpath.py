@@ -50,19 +50,19 @@ class InstallpathView(BaseView):
 
     def _build_model_inputs(self):
         sl = []
-        for ipath, sig, _ in self.model.get_menu():
+        for ipath, sig in self.model.get_menu():
             log.debug("Building inputs: {}".format(ipath))
             sl.append(Color.menu_button(
                 menu_btn(label=ipath,
-                         on_press=self.confirm),
+                         on_press=self.confirm,
+                         user_data=sig),
                 focus_map='menu_button focus'))
 
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))
 
-    def confirm(self, result):
-        self.signal.emit_signal(
-            self.model.get_signal_by_name(result.label))
+    def confirm(self, result, sig):
+        self.signal.emit_signal(sig)
 
     def cancel(self, button):
-        self.signal.prev_signal()
+        self.signal.emit_signal('prev-screen')

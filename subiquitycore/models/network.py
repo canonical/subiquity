@@ -288,41 +288,12 @@ def valid_ipv4_network(subnet):
 class NetworkModel(BaseModel):
     """ Model representing network interfaces
     """
-    base_signal = 'menu:network:main'
-    signals = [
-        ('Network main view',
-         base_signal,
-         'network'),
-        ('Network main view',
-         base_signal + ':start',
-         'start'),
-        ('Network finish',
-         'network:finish',
-         'network_finish'),
-        ('Network configure interface',
-         base_signal + ':configure-interface',
-         'network_configure_interface'),
-        ('Network configure ipv4 interface',
-         base_signal + ':configure-ipv4-interface',
-         'network_configure_ipv4_interface'),
-        ('Network configure wlan interface',
-         base_signal + ':configure-wlan-interface',
-         'network_configure_wlan_interface'),
-    ]
 
     additional_options = [
-        ('Set a custom IPv4 default route',
-         base_signal + ':set-default-v4-route',
-         'set_default_v4_route'),
-        ('Set a custom IPv6 default route',
-         base_signal + ':set-default-v6-route',
-         'set_default_v6_route'),
-        #('Bond interfaces',
-        # base_signal + ':bond-interfaces',
-        # 'bond_interfaces'),
-        # ('Install network driver',
-        #  'network:install-network-driver',
-        #  'install_network_driver')
+        ('Set a custom IPv4 default route', 'menu:network:main:set-default-v4-route'),
+        ('Set a custom IPv6 default route', 'menu:network:main:set-default-v6-route'),
+        #('Bond interfaces',                 'menu:network:main:bond-interfaces'),
+        #('Install network driver',          'network:install-network-driver'),
     ]
 
     # TODO: what is "linear" level?
@@ -350,14 +321,6 @@ class NetworkModel(BaseModel):
         self.v4_gateway_dev = None
         self.v6_gateway_dev = None
         self.network_routes = {}
-
-    def get_signal_by_name(self, selection):
-        for x, y, z in self.get_signals():
-            if x == selection:
-                return y
-
-    def get_signals(self):
-        return self.signals + self.additional_options
 
     def get_menu(self):
         return self.additional_options

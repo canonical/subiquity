@@ -22,7 +22,7 @@ from subiquitycore.controllers.welcome import (
 
 
 class WelcomeController(WelcomeControllerBase):
-    def welcome(self):
+    def default(self):
         title = "Ubuntu Core"
         excerpt = ("Configure the network and setup an administrator "
                    "account on this all-snap Ubuntu Core system.")

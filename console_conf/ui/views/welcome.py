@@ -36,6 +36,4 @@ class WelcomeView(CoreWelcomeView):
         return Pile(self.buttons)
 
     def confirm(self, result):
-        self.model.selected_language = result.label
-        log.debug('calling network')
-        self.signal.emit_signal('menu:network:main')
+        self.signal.emit_signal('welcome:done')

@@ -16,37 +16,11 @@
 """ Model Policy
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 
 
 class BaseModel(ABC):
     """Expected contract for defining models. """
 
-    # Exposed emitter signals
-    signals = []
-
     # Back navigation
     prev_signal = None
-
-    @abstractmethod
-    def get_signal_by_name(self, *args, **kwargs):
-        """Implements a getter for retrieving signals exposed by the model."""
-        pass
-
-    @abstractmethod
-    def get_signals(self):
-        """ Lists available signals for model
-
-        Should return a list with a tuple format of
-        [('Name of item', 'signal-name', 'callback function string')]
-        """
-        pass
-
-    @abstractmethod
-    def get_menu(self):
-        """ Returns a list of menu items
-
-        Should return a list with a tuple format the same
-        as get_signals()
-        """
-        pass

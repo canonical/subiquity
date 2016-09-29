@@ -34,8 +34,11 @@ class BaseController:
         """Defines signals associated with controller from model."""
         if hasattr(self, 'model'):
             signals = []
-            for name, sig, cb in self.model.get_signals():
+            for sig, cb in self.signals:
                 signals.append((sig, getattr(self, cb)))
             self.signal.connect_signals(signals)
         else:
             log.debug("No model signals found for {}".format(self))
+
+    def default(self):
+        raise NotImplementedError(self.default)

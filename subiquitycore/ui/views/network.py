@@ -235,7 +235,7 @@ class NetworkView(BaseView):
 
         max_btn_len = 0
         buttons = []
-        for opt, sig, _ in self.model.get_menu():
+        for opt, sig in self.model.get_menu():
             if ':set-default-route' in sig:
                 if len(ifaces) < 2:
                     log.debug('Skipping default route menu option'
@@ -255,15 +255,16 @@ class NetworkView(BaseView):
             buttons.append(
                 Color.menu_button(
                     menu_btn(label=opt,
-                             on_press=self.additional_menu_select),
+                             on_press=self.additional_menu_select,
+                             user_data=sig),
                     focus_map='button focus'))
 
         padding = getattr(Padding, 'left_{}'.format(max_btn_len + 10))
         buttons = [ padding(button) for button in buttons ]
         return Pile(labels + buttons)
 
-    def additional_menu_select(self, result):
-        self.signal.emit_signal(self.model.get_signal_by_name(result.label))
+    def additional_menu_select(self, result, sig):
+        self.signal.emit_signal(sig)
 
     def on_net_dev_press(self, result):
         log.debug("Selected network dev: {}".format(result.label))
@@ -290,7 +291,4 @@ class NetworkView(BaseView):
         self.signal.emit_signal('network:finish', self.model.render())
 
     def cancel(self, button):
-        # Because of the double signal hack done in the controller we
-        # need to pop two signals here.
-        self.signal.signal_stack.pop()
-        self.signal.prev_signal()
+        self.signal.emit_signal('prev-screen')

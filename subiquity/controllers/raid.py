@@ -23,6 +23,14 @@ log = logging.getLogger("subiquitycore.controller.raid")
 
 
 class RaidDiskController(BaseController):
+    signals = [
+        ('menu:raid:main',      'raid'),
+        ('raid:finish',         'raid_handler'),
+        ('raid:set-raid-level', 'set_raid_level'),
+        ('raid:set-hot-spares', 'set_hot_spares'),
+        ('raid:set-chunk-size', 'set_chunk_size'),
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = RaidDiskModel()

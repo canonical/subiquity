@@ -25,37 +25,3 @@ class InstallProgressModel(BaseModel):
     """
     # FIXME: Decide what to do here if ESC is pressed, it's probably in
     # a state of no return so may be better to just exit with error.
-
-    signals = [
-        ("Run curtin",
-         'installprogress:curtin-install',
-         'curtin_install'),
-        ("Run curtin postinstall",
-         'installprogress:curtin-postinstall',
-         'curtin_postinstall'),
-        ("Indicate curtin config written",
-         'installprogress:wrote-install',
-         'curtin_wrote_install'),
-        ("Indicate curtin postconfig written",
-         'installprogress:wrote-postinstall',
-         'curtin_wrote_postinstall'),
-        ("Install progress final view",
-         'menu:installprogress:main',
-         'show_progress'),
-        ("Reboot curtin",
-         "installprogress:curtin-reboot",
-         "reboot")
-    ]
-
-    installprogress_menu = []
-
-    def get_signals(self):
-        return self.signals
-
-    def get_menu(self):
-        return self.installprogress_menu
-
-    def get_signal_by_name(self, selection):
-        for x, y, z in self.get_menu():
-            if x == selection:
-                return y

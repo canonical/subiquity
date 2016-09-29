@@ -13,14 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
 import logging
 
 from urwid import (Pile, Columns, Text, ListBox)
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.interactive import EmailEditor
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.utils import run_command, mark_firstboot_complete
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.views.identity")
@@ -107,38 +105,10 @@ class IdentityView(BaseView):
         return Pile(buttons)
 
     def cancel(self, button):
-        self.signal.prev_signal()
+        self.signal.emit_signal('prev-screen')
 
     def done(self, button):
         if len(self.email.value) < 1:
             self.error.set_text("Please enter an email address.")
             return
-        if not self.opts.dry_run:
-            self.progress.set_text("Contacting store...")
-            self.loop.draw_screen()
-            result = run_command(["snap", "create-user", "--sudoer", "--json", self.email.value])
-            self.progress.set_text("")
-            if result['status'] != 0:
-                self.error.set_text("Creating user failed:\n" + result['err'])
-                return
-            else:
-                # mark ourselves complete
-                mark_firstboot_complete()
-
-                data = json.loads(result['output'])
-                result = {
-                    'realname': self.email.value,
-                    'username': data['username'],
-                    'passwod': '',
-                    'confirm_password': ''
-                    }
-                self.model.add_user(result)
-        else:
-                result = {
-                    'realname': self.email.value,
-                    'username': self.email.value,
-                    'passwod': '',
-                    'confirm_password': '',
-                    }
-                self.model.add_user(result)
-        self.signal.emit_signal('menu:identity:login:main')
+        self.signal.emit_signal('identity:done', self.email.value)

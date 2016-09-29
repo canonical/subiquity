@@ -186,18 +186,21 @@ class TaskSequence:
 
 
 class NetworkController(BaseController):
+    signals = [
+        ('menu:network:main:start',                    'start'),
+        ('network:finish',                             'network_finish'),
+        ('menu:network:main:configure-interface',      'network_configure_interface'),
+        ('menu:network:main:configure-ipv4-interface', 'network_configure_ipv4_interface'),
+        ('menu:network:main:configure-wlan-interface', 'network_configure_wlan_interface'),
+        ('menu:network:main:set-default-v4-route',     'set_default_v4_route'),
+        ('menu:network:main:set-default-v6-route',     'set_default_v6_route'),
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = NetworkModel(self.prober, self.opts)
 
-    def network(self):
-        # The network signal is the one that is called when we enter
-        # the network configuration from the preceding or following
-        # screen. We clear any existing state, probe for the current
-        # state and then invoke the 'start' signal, which is what the
-        # sub screens will return to, so that the network state does
-        # not get re-probed when they return, which would throw away
-        # any configuration made in the sub-screen!
+    def default(self):
         self.model.reset()
         log.info("probing for network devices")
         self.model.probe_network()
@@ -218,18 +221,18 @@ class NetworkController(BaseController):
         if self.opts.dry_run:
             if hasattr(self, 'tried_once'):
                 tasks = [
-                    ('one', BackgroundProcess(['sleep', '1'])),
-                    ('two', PythonSleep(1)),
-                    ('three', BackgroundProcess(['sleep', '1'])),
+                    ('one', BackgroundProcess(['sleep', '0.1'])),
+                    ('two', PythonSleep(0.1)),
+                    ('three', BackgroundProcess(['sleep', '0.1'])),
                     ]
             else:
                 self.tried_once = True
                 tasks = [
                     ('timeout', WaitForDefaultRouteTask(30)),
-                    ('one', BackgroundProcess(['sleep', '1'])),
-                    ('two', BackgroundProcess(['sleep', '1'])),
+                    ('one', BackgroundProcess(['sleep', '0.1'])),
+                    ('two', BackgroundProcess(['sleep', '0.1'])),
                     ('three', BackgroundProcess(['false'])),
-                    ('four', BackgroundProcess(['sleep 1'])),
+                    ('four', BackgroundProcess(['sleep', '0.1'])),
                     ]
         else:
             with open('/etc/netplan/00-snapd-config.yaml', 'w') as w:
@@ -258,7 +261,7 @@ class NetworkController(BaseController):
         self.ui.frame.body.show_network_error(stage)
 
     def tasks_finished(self):
-        self.signal.emit_signal('menu:identity:main')
+        self.signal.emit_signal('next-screen')
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
