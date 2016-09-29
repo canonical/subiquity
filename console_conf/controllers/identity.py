@@ -49,16 +49,12 @@ class IdentityController(BaseIdentityController):
                 result = {
                     'realname': email,
                     'username': data['username'],
-                    'passwod': '',
-                    'confirm_password': ''
                     }
                 self.model.add_user(result)
         else:
             result = {
                 'realname': email,
                 'username': email,
-                'passwod': '',
-                'confirm_password': '',
                 }
             self.model.add_user(result)
         self.signal.emit_signal('identity:login')

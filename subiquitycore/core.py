@@ -43,6 +43,9 @@ class Application:
     #         "InstallProgress",
     #         "Login",
     # ]
+    # The 'next-screen' and 'prev-screen' signals move through the list of
+    # controllers in order, calling the default method on the controller
+    # instance.
 
     def __init__(self, ui, opts):
         try:
@@ -143,7 +146,7 @@ class Application:
 
         try:
             self.set_alarm_in(0.05, self.next_screen)
-            for k in self.common['controllers'].keys():
+            for k in self.common['controllers']:
                 log.debug("Importing controller: {}".format(k))
                 klass = import_object(
                     ("%s.controllers.{}Controller" % self.project).format(
