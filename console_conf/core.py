@@ -26,6 +26,7 @@ class ConsoleConf(Application):
     controllers = [
         "Welcome",
         "Network",
+        "Hostname",
         "Identity",
         "Login",
     ]

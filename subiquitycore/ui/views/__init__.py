@@ -20,3 +20,4 @@ from .network_configure_ipv4_interface import NetworkConfigureIPv4InterfaceView 
 from .network_bond_interfaces import NetworkBondInterfacesView  # NOQA
 from .welcome import CoreWelcomeView as WelcomeView  # NOQA
 from .login import LoginView  # NOQA
+from .hostname import HostnameView  # NOQA
