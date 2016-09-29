@@ -31,9 +31,37 @@ class IdentityController(BaseIdentityController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
         self.ui.set_body(self.identity_view(self.model, self.signal, self.opts, self.loop))
+        if self.is_device_owned():
+            # FIXME: should be email rather than realname here, but extrausers only has email
+            self.signal.emit_signal('identity:done', self.model.user.realname)
+
+    def is_device_owned(self):
+        """ Check if device is owned """
+
+        # TODO: use proper snap APIs.
+        with open('/var/lib/extrausers/passwd', 'r') as extrausers_fp:
+            passwd_line = extrausers_fp.readline()
+            if passwd_line and len(passwd_line) > 0:
+                passwd = passwd_line.split(':')
+                result = {
+                    'realname': passwd[4].split(',')[0],
+                    'username': passwd[0],
+                    }
+                self.model.add_user(result)
+                return True
+        return False
 
     def identity_done(self, email):
-        if not self.opts.dry_run:
+        if self.opts.dry_run:
+            result = {
+                'realname': email,
+                'username': email,
+                }
+            self.model.add_user(result)
+        elif self.is_device_owned():
+            # user was added to the model, we don't need to do anything else.
+            pass
+        else:
             self.ui.frame.body.progress.set_text("Contacting store...")
             self.loop.draw_screen()
             result = run_command(["snap", "create-user", "--sudoer", "--json", email])
@@ -51,12 +79,6 @@ class IdentityController(BaseIdentityController):
                     'username': data['username'],
                     }
                 self.model.add_user(result)
-        else:
-            result = {
-                'realname': email,
-                'username': email,
-                }
-            self.model.add_user(result)
         self.signal.emit_signal('identity:login')
 
     def login(self):
