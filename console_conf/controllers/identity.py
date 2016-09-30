@@ -37,7 +37,7 @@ class IdentityController(BaseIdentityController):
             self.ui.frame.body.progress.set_text("Contacting store...")
             self.loop.draw_screen()
             result = run_command(["snap", "create-user", "--sudoer", "--json", email])
-            self.progress.set_text("")
+            self.ui.frame.body.progress.set_text("")
             if result['status'] != 0:
                 self.ui.frame.body.error.set_text("Creating user failed:\n" + result['err'])
                 return
