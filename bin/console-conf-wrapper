@@ -8,6 +8,11 @@ trap true HUP INT QUIT TSTP
 # happened and need to force it on. Yay UNIX!
 stty icrnl
 
+if [ `snap is-managed` = "true" ]; then
+    touch /var/lib/console-conf/complete
+    exit 0
+fi
+
 cat /usr/share/subiquity/console-conf-wait
 read REPLY
 exec console-conf "$@"
