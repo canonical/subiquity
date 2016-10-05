@@ -25,10 +25,10 @@ log = logging.getLogger('subiquitycore.network.set_default_route')
 
 
 class NetworkSetDefaultRouteView(BaseView):
-    def __init__(self, model, family, signal):
+    def __init__(self, model, family, controller):
         self.model = model
         self.family = family
-        self.signal = signal
+        self.controller = controller
         self.default_gateway_w = None
         self.gateway_options = Pile(self._build_default_routes())
         body = [
@@ -113,7 +113,6 @@ class NetworkSetDefaultRouteView(BaseView):
             Color.string_input(
                 self.default_gateway_w,
                 focus_map="string_input focus")), self.gateway_options.options())
-        # self.signal.emit_signal('refresh')
 
     def done(self, result):
         log.debug("changing default gw: {}".format(result))
@@ -141,7 +140,7 @@ class NetworkSetDefaultRouteView(BaseView):
             except ValueError:
                 # FIXME: raise UX error message
                 pass
-        self.signal.prev_signal()
+        self.controller.prev_view()
 
     def cancel(self, button):
-        self.signal.prev_signal()
+        self.controller.prev_view()

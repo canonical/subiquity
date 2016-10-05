@@ -24,9 +24,9 @@ log = logging.getLogger('subiquitycore.network.network_configure_interface')
 
 
 class NetworkConfigureInterfaceView(BaseView):
-    def __init__(self, model, signal, iface):
+    def __init__(self, model, controller, iface):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.iface = iface
         self.iface_obj = self.model.get_interface(iface)
         self._build_widgets()
@@ -202,27 +202,24 @@ class NetworkConfigureInterfaceView(BaseView):
         self.update_interface()
 
     def show_wlan_configuration(self, btn):
-        self.signal.emit_signal(
-            'menu:network:main:configure-wlan-interface', self.iface)
+        self.contents.network_configure_wlan_interface(self.iface)
 
     def show_ipv4_configuration(self, btn):
-        self.signal.emit_signal(
-            'menu:network:main:configure-ipv4-interface', self.iface)
+        self.controller.network_configure_ipv4_interface(self.iface)
 
     def show_ipv6_configuration(self, btn):
-        log.debug("calling menu:network:main:configure-ipv6-interface")
+        log.debug("calling configure-ipv6-interface")
         # TODO: implement UI for configuring static IPv6.
-        # self.signal.emit_signal(
-        #     'menu:network:main:configure-ipv6-interface', self.iface)
+        # self.network_configure_ipv6_interface(self.iface)
 
     def done(self, result):
-        self.signal.prev_signal()
+        self.controller.prev_view()
 
 
 class NetworkConfigureWLANView(BaseView):
-    def __init__(self, model, signal, iface):
+    def __init__(self, model, controller, iface):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.iface = iface
         self.iface_obj = self.model.get_interface(iface)
         self.essid_input = StringEditor(caption="")
@@ -275,7 +272,7 @@ class NetworkConfigureWLANView(BaseView):
         else:
             self.iface_obj.essid = None
         self.iface_obj.wpa_psk = self.psk_input.value
-        self.signal.prev_signal()
+        self.controller.prev_view()
 
     def cancel(self, btn):
-        self.signal.prev_signal()
+        self.controller.prev_view()

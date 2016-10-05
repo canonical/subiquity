@@ -185,13 +185,16 @@ class TaskSequence:
         self.call_from_thread(self.watcher.task_error, self.stage)
 
 
+def view(func):
+    n = func.__name__
+    def f(self, *args, **kw):
+        m = getattr(self, n)
+        self.view_stack.append((m, args, kw))
+        return func(self, *args, **kw)
+    return f
+
 class NetworkController(BaseController):
     signals = [
-        ('menu:network:main:start',                    'start'),
-        ('network:finish',                             'network_finish'),
-        ('menu:network:main:configure-interface',      'network_configure_interface'),
-        ('menu:network:main:configure-ipv4-interface', 'network_configure_ipv4_interface'),
-        ('menu:network:main:configure-wlan-interface', 'network_configure_wlan_interface'),
         ('menu:network:main:set-default-v4-route',     'set_default_v4_route'),
         ('menu:network:main:set-default-v6-route',     'set_default_v6_route'),
     ]
@@ -199,13 +202,20 @@ class NetworkController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = NetworkModel(self.prober, self.opts)
+        self.view_stack = []
+
+    def prev_view(self):
+        self.view_stack.pop()
+        meth, args, kw = self.view_stack.pop()
+        meth(*args, **kw)
 
     def default(self):
         self.model.reset()
         log.info("probing for network devices")
         self.model.probe_network()
-        self.signal.emit_signal('menu:network:main:start')
+        self.start()
 
+    @view
     def start(self):
         title = "Network connections"
         excerpt = ("Configure at least the main interface this server will "
@@ -213,7 +223,7 @@ class NetworkController(BaseController):
         footer = ("Additional networking info here")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 20)
-        self.ui.set_body(NetworkView(self.model, self.signal))
+        self.ui.set_body(NetworkView(self.model, self))
 
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
@@ -263,53 +273,44 @@ class NetworkController(BaseController):
     def tasks_finished(self):
         self.signal.emit_signal('next-screen')
 
+
+    @view
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
-        self.ui.set_body(NetworkSetDefaultRouteView(self.model,
-                                                    netifaces.AF_INET,
-                                                    self.signal))
+        self.ui.set_body(NetworkSetDefaultRouteView(self.model, netifaces.AF_INET, self))
 
+    @view
     def set_default_v6_route(self):
         self.ui.set_header("Default route")
-        self.ui.set_body(NetworkSetDefaultRouteView(self.model,
-                                                    netifaces.AF_INET6,
-                                                    self.signal))
+        self.ui.set_body(NetworkSetDefaultRouteView(self.model, netifaces.AF_INET6, self))
 
+    @view
     def bond_interfaces(self):
         self.ui.set_header("Bond interfaces")
-        self.ui.set_body(NetworkBondInterfacesView(self.model,
-                                                   self.signal))
+        self.ui.set_body(NetworkBondInterfacesView(self.model, self))
 
+    @view
     def network_configure_interface(self, iface):
         self.ui.set_header("Network interface {}".format(iface))
-        self.ui.set_body(NetworkConfigureInterfaceView(self.model,
-                                                       self.signal,
-                                                       iface))
+        self.ui.set_body(NetworkConfigureInterfaceView(self.model, self, iface))
 
+    @view
     def network_configure_ipv4_interface(self, iface):
-        self.model.prev_signal = ('Back to configure interface menu',
-                                  'network:configure-interface-menu',
-                                  'network_configure_interface')
         self.ui.set_header("Network interface {} manual IPv4 "
                            "configuration".format(iface))
-        self.ui.set_body(NetworkConfigureIPv4InterfaceView(self.model,
-                                                           self.signal,
-                                                           iface))
+        self.ui.set_body(NetworkConfigureIPv4InterfaceView(self.model, self, iface))
 
+    @view
     def network_configure_wlan_interface(self, iface):
-        self.model.prev_signal = ('Back to configure interface menu',
-                                  'network:configure-interface-menu',
-                                  'network_configure_interface')
         self.ui.set_header("Network interface {} manual IPv4 "
                            "configuration".format(iface))
-        self.ui.set_body(NetworkConfigureWLANView(self.model, self.signal, iface))
+        self.ui.set_body(NetworkConfigureWLANView(self.model, self, iface))
 
+    @view
     def network_configure_ipv6_interface(self, iface):
-        self.model.prev_signal = ('Back to configure interface menu',
-                                  'network:configure-interface-menu',
-                                  'network_configure_interface')
-        self.ui.set_body(DummyView(self.signal))
+        self.ui.set_body(DummyView(self))
 
+    @view
     def install_network_driver(self):
-        self.ui.set_body(DummyView(self.signal))
+        self.ui.set_body(DummyView(self))
 

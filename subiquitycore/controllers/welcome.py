@@ -36,7 +36,7 @@ class WelcomeController(BaseController):
                   "select your language.")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
-        view = WelcomeView(self.model, self.signal)
+        view = WelcomeView(self.model, self)
         self.ui.set_body(view)
 
     def done(self):

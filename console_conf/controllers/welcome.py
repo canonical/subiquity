@@ -28,5 +28,5 @@ class WelcomeController(WelcomeControllerBase):
                    "account on this all-snap Ubuntu Core system.")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer("")
-        view = WelcomeView(self.model, self.signal)
+        view = WelcomeView(self.model, self)
         self.ui.set_body(view)

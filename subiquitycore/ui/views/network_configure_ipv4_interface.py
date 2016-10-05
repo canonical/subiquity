@@ -25,9 +25,9 @@ log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface'
 
 
 class NetworkConfigureIPv4InterfaceView(BaseView):
-    def __init__(self, model, signal, iface):
+    def __init__(self, model, controller, iface):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.ifname = iface
         self.iface = self.model.get_interface(self.ifname)
         self.is_gateway = False
@@ -151,8 +151,8 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
             return
 
         # return
-        self.signal.prev_signal()
+        self.controller.prev_view()
 
     def cancel(self, button):
         self.model.default_gateway = None
-        self.signal.prev_signal()
+        self.controller.prev_view()
