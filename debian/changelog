@@ -1,10 +1,10 @@
-subiquity (0.0.19) UNRELEASED; urgency=medium
+subiquity (0.0.19) yakkety; urgency=medium
 
   [ Michael Hudson-Doyle ]
   * Code cleanups and refactoring.
   * console-conf: do nothing if a snap system is managed.
 
- -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Wed, 05 Oct 2016 13:41:05 -0400
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Wed, 05 Oct 2016 13:45:37 -0400
 
 subiquity (0.0.18) yakkety; urgency=medium
 
