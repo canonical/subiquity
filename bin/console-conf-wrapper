@@ -8,7 +8,7 @@ trap true HUP INT QUIT TSTP
 # happened and need to force it on. Yay UNIX!
 stty icrnl
 
-if [ `snap is-managed` = "true" ]; then
+if [ `snap is-managed` = "system is managed" ]; then
     touch /var/lib/console-conf/complete
     exit 0
 fi
