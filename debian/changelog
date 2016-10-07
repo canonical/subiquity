@@ -1,3 +1,10 @@
+subiquity (0.0.20) UNRELEASED; urgency=medium
+
+  [ Michael Vogt ]
+  * Update code to follow latest `snap managed` API.
+
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Fri, 07 Oct 2016 11:33:12 -0400
+
 subiquity (0.0.19) yakkety; urgency=medium
 
   [ Michael Hudson-Doyle ]
