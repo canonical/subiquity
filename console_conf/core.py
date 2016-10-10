@@ -27,5 +27,4 @@ class ConsoleConf(Application):
         "Welcome",
         "Network",
         "Identity",
-        "Login",
     ]

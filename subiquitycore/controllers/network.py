@@ -215,6 +215,9 @@ class NetworkController(BaseController):
         self.model.probe_network()
         self.start()
 
+    def cancel(self):
+        self.signal.emit_signal('prev-screen')
+
     @view
     def start(self):
         title = "Network connections"

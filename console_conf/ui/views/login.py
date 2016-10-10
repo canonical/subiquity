@@ -28,11 +28,10 @@ log = logging.getLogger("subiquitycore.views.login")
 
 
 class LoginView(BaseView):
-    def __init__(self, opts, model, signal, user, ifaces):
+    def __init__(self, opts, model, controller, ifaces):
         self.opts = opts
         self.model = model
-        self.signal = signal
-        self.user = user
+        self.controller = controller
         self.ifaces = ifaces
         self.items = []
         self.body = [
@@ -118,4 +117,4 @@ class LoginView(BaseView):
         self.done()
 
     def done(self, button):
-        self.signal.emit_signal('identity:login:done')
+        self.controller.login_done()

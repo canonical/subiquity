@@ -23,16 +23,14 @@ from urwid import (ListBox, Pile, Text)
 from subiquitycore.ui.buttons import finish_btn
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
-from subiquitycore import utils
 
 log = logging.getLogger("subiquitycore.views.login")
 
 
 class LoginView(BaseView):
-    def __init__(self, model, signal, user, ifaces):
+    def __init__(self, model, controller, ifaces):
         self.model = model
-        self.signal = signal
-        self.user = user
+        self.controller = controller
         self.ifaces = ifaces
         self.items = []
         self.body = [
@@ -112,14 +110,5 @@ class LoginView(BaseView):
 
         return Pile(sl)
 
-    def confirm(self, result):
-        self.done()
-
     def done(self, button):
-        # mark ourselves complete
-        utils.mark_firstboot_complete()
-
-        # disable the UI service restoring getty service
-        utils.disable_first_boot_service()
-
-        self.signal.emit_signal('quit')
+        self.controller.login_done()

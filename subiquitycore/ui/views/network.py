@@ -290,4 +290,4 @@ class NetworkView(BaseView):
         self.controller.network_finish(self.model.render())
 
     def cancel(self, button):
-        self.controller.prev_view()
+        self.controller.cancel()

@@ -21,10 +21,6 @@ from subiquitycore.controller import BaseController
 
 class WelcomeController(BaseController):
 
-    signals = [
-        ('welcome:done', 'done'),
-    ]
-
     def __init__(self, common):
         super().__init__(common)
         self.model = WelcomeModel()

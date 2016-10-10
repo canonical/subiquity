@@ -22,6 +22,8 @@ log = logging.getLogger("subiquitycore.controller")
 class BaseController:
     """Base class for controllers."""
 
+    signals = []
+
     def __init__(self, common):
         self.ui = common['ui']
         self.signal = common['signal']

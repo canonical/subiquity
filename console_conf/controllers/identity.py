@@ -30,7 +30,7 @@ class IdentityController(BaseIdentityController):
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
-        self.ui.set_body(self.identity_view(self.model, self.signal, self.opts, self.loop))
+        self.ui.set_body(self.identity_view(self.model, self, self.opts, self.loop))
 
     def identity_done(self, email):
         if not self.opts.dry_run:
@@ -57,7 +57,7 @@ class IdentityController(BaseIdentityController):
                 'username': email,
                 }
             self.model.add_user(result)
-        self.signal.emit_signal('identity:login')
+        self.login()
 
     def login(self):
         title = "Configuration Complete"
@@ -68,11 +68,7 @@ class IdentityController(BaseIdentityController):
         net_model = self.controllers['Network'].model
         net_model.probe_network()
         configured_ifaces = net_model.get_configured_interfaces()
-        login_view = LoginView(self.opts,
-                               self.model,
-                               self.signal,
-                               self.model.user,
-                               configured_ifaces)
+        login_view = LoginView(self.opts, self.model, self, configured_ifaces)
 
         self.ui.set_body(login_view)
 
