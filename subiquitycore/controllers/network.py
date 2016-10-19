@@ -16,8 +16,8 @@
 import logging
 import os
 import queue
+import random
 import select
-import threading
 import time
 
 import netifaces
@@ -185,6 +185,8 @@ class TaskSequence:
         self.call_from_thread(self.watcher.task_error, self.stage)
 
 
+netplan_path = '/etc/netplan/00-snapd-config.yaml'
+
 class NetworkController(BaseController):
     signals = [
         ('menu:network:main:start',                    'start'),
@@ -235,9 +237,19 @@ class NetworkController(BaseController):
                     ('four', BackgroundProcess(['sleep', '0.1'])),
                     ]
         else:
-            with open('/etc/netplan/00-snapd-config.yaml', 'w') as w:
+            while True:
+                try:
+                    tmppath = '%s.%s' % (netplan_path, random.randrange(0, 1000))
+                    fd = os.open(tmppath, os.O_WRONLY | os.O_EXCL | os.O_CREAT, 0o0600)
+                except FileExistsError:
+                    continue
+                else:
+                    break
+            w = os.fdopen(fd, 'w')
+            with w:
                 w.write("# This is the network config written by 'console-conf'\n")
                 w.write(yaml.dump(config))
+            os.rename(tmppath, netplan_path)
             tasks = [
                 ('generate', BackgroundProcess(['/lib/netplan/generate'])),
                 ('apply', BackgroundProcess(['netplan', 'apply'])),
