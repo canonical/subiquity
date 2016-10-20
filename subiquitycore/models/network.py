@@ -44,7 +44,8 @@ class Networkdev():
         self.dhcp6 = False
         self.search_domains = []
         self.nameservers = []
-        self.gateway = None
+        self.gateway4 = None
+        self.gateway6 = None
         self.essid = None
         self.wpa_psk = None
 
@@ -111,6 +112,11 @@ class Networkdev():
                      'addresses': self.ipv4_addresses + self.ipv6_addresses,
                    }
                  }
+
+        if self.gateway4:
+            result[self.ifname]['gateway4'] = self.gateway4
+        if self.gateway6:
+            result[self.ifname]['gateway6'] = self.gateway6
 
         if self.dhcp4:
             result[self.ifname]['dhcp4'] = True
@@ -259,9 +265,10 @@ class Networkdev():
         address += '/' + network['network'].split('/')[1]
         if family == netifaces.AF_INET:
             self.ipv4_addresses.append(address)
+            self.gateway4 = network['gateway']
         elif family == netifaces.AF_INET6:
             self.ipv6_addresses.append(address)
-        self.gateway = network['gateway']
+            self.gateway6 = network['gateway']
         self.nameservers.append(network['nameserver'])
         self.search_domains.append(network['searchdomains'])
 
