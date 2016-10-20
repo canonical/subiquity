@@ -137,9 +137,9 @@ class Networkdev():
                 ap['password'] = self.wpa_psk
 
         if any(self.nameservers):
-            result['nameservers'] = {}
-            result['nameservers']['addresses'] = self.nameservers
-            result['nameservers']['search'] = self.search_domains
+            result[self.ifname]['nameservers'] = {}
+            result[self.ifname]['nameservers']['addresses'] = self.nameservers
+            result[self.ifname]['nameservers']['search'] = self.search_domains
 
         return result
 
