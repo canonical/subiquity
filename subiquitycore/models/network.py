@@ -136,6 +136,11 @@ class Networkdev():
             if self.wpa_psk is not None:
                 ap['password'] = self.wpa_psk
 
+        if any(self.nameservers):
+            result['network']['nameservers'] = {}
+            result['network']['nameservers']['addresses'] = self.nameservers
+            result['network']['nameservers']['search'] = self.search_domains
+
         return result
 
     @property
