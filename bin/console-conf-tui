@@ -17,6 +17,7 @@
 import argparse
 import sys
 import logging
+import os
 import signal
 from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION
@@ -64,6 +65,7 @@ def parse_options(argv):
 LOGDIR = "/var/log/console-conf/"
 
 def main():
+    os.umask(0o0077)
     opts = parse_options(sys.argv[1:])
     global LOGDIR
     if opts.dry_run:
