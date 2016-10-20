@@ -153,11 +153,15 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
 
     def done(self, btn):
         searchdomains = []
-        for ns in self.searchdomains_input.value.split(','):
-            searchdomains.append(ns.strip())
+        for sd in self.searchdomains_input.value.split(','):
+            sd = sd.strip()
+            if sd:
+                searchdomains.append(sd.strip())
         nameservers = []
         for ns in self.nameserver_input.value.split(','):
-            nameservers.append(ns.strip())
+            ns = ns.strip()
+            if ns:
+                nameservers.append(ns.strip())
         result = {
             'network': self.subnet_input.value,
             'address': self.address_input.value,
