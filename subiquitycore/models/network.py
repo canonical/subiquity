@@ -252,11 +252,17 @@ class Networkdev():
         self.dhcp4 = False
         self.ipv4_addresses.clear()
         self.dhcp4_addresses.clear()
+        self.gateway4 = None
+
+    def remove_nameservers(self):
+        self.nameservers = []
+        self.search_domains = []
 
     def remove_ipv6_networks(self):
         self.dhcp6 = False
         self.ipv6_addresses.clear()
         self.dhcp6_addresses.clear()
+        self.gateway6 = None
 
     def add_network(self, family, network):
         # result = {
