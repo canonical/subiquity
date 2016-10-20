@@ -20,6 +20,7 @@ from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.interactive import StringEditor
 import logging
 import netifaces
+import ipaddress
 
 log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface')
 
@@ -79,7 +80,25 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
                                         focus_map="string_input focus")),
                     ("weight", 0.5, Text(""))
                 ], dividechars=2
-            )
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("Name servers:")),
+                    ("weight", 0.3,
+                     Color.string_input(self.nameserver_input,
+                                        focus_map="string_input focus")),
+                    ("weight", 0.5, Text("IP addresses, comma separated"))
+                ], dividechars=2
+            ),
+            Columns(
+                [
+                    ("weight", 0.2, Text("Search domains:")),
+                    ("weight", 0.3,
+                     Color.string_input(self.searchdomains_input,
+                                        focus_map="string_input focus")),
+                    ("weight", 0.5, Text("Domains, comma separated"))
+                ], dividechars=2
+            ),
         ]
         return Pile(col1)
 
@@ -119,27 +138,35 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         ]
         return Pile(buttons)
 
-    def validate(self):
-        try:
-            if '/' not in self.subnet_input.value:
-                raise ValueError("Network should be in CIDR form (xx.xx.xx.xx/yy)")
+    def validate(self, result):
+        if '/' not in result['network']:
+            raise ValueError("Network should be in CIDR form (xx.xx.xx.xx/yy)")
 
-            netmask = self.subnet_input.value.split('/')[1]
-            if int(netmask) > 32 or int(netmask) < 0:
-                raise ValueError("CIDR netmask value should be between 0 and 32")
-        except:
-            raise
+        netmask = result['network'].split('/')[1]
+        if int(netmask) > 32 or int(netmask) < 0:
+            raise ValueError("CIDR netmask value should be between 0 and 32")
+        for ns in result['nameservers']:
+            try:
+                ipaddress.ip_address(ns)
+            except ValueError as v:
+                raise ValueError("Nameserver " + str(v))
 
     def done(self, btn):
+        searchdomains = []
+        for ns in self.searchdomains_input.value.split(','):
+            searchdomains.append(ns.strip())
+        nameservers = []
+        for ns in self.nameserver_input.value.split(','):
+            nameservers.append(ns.strip())
         result = {
             'network': self.subnet_input.value,
             'address': self.address_input.value,
             'gateway': self.gateway_input.value,
-            'nameserver': self.nameserver_input.value,
-            'searchdomains': self.searchdomains_input.value,
+            'nameservers': nameservers,
+            'searchdomains': searchdomains,
         }
         try:
-            self.validate()
+            self.validate(result)
             self.iface.remove_networks()
             self.iface.add_network(netifaces.AF_INET, result)
         except ValueError as e:
