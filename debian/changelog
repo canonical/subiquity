@@ -7,6 +7,9 @@ subiquity (0.0.20) UNRELEASED; urgency=medium
   * Render gateway4/gateway6 in network config.
   * Render nameservers in network config.
   * Various permission fixes on log and result files.
+  * Do not add empty strings to nameservers or search_domains
+  * Make sure selecting dhcp after manual configuration clears out gateway
+    and nameserver config.
 
  -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Fri, 07 Oct 2016 11:33:12 -0400
 
