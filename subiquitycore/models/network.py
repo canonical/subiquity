@@ -137,9 +137,9 @@ class Networkdev():
                 ap['password'] = self.wpa_psk
 
         if any(self.nameservers):
-            result['network']['nameservers'] = {}
-            result['network']['nameservers']['addresses'] = self.nameservers
-            result['network']['nameservers']['search'] = self.search_domains
+            result['nameservers'] = {}
+            result['nameservers']['addresses'] = self.nameservers
+            result['nameservers']['search'] = self.search_domains
 
         return result
 
@@ -274,8 +274,8 @@ class Networkdev():
         elif family == netifaces.AF_INET6:
             self.ipv6_addresses.append(address)
             self.gateway6 = network['gateway']
-        self.nameservers.append(network['nameserver'])
-        self.search_domains.append(network['searchdomains'])
+        self.nameservers.extend(network['nameservers'])
+        self.search_domains.extend(network['searchdomains'])
 
 
 def valid_ipv4_address(addr):
