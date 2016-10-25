@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import logging
 import os
 import queue
@@ -187,6 +188,18 @@ class TaskSequence:
 
 netplan_path = '/etc/netplan/00-snapd-config.yaml'
 
+def sanitize_config(config):
+    """Return a copy of config with passwords redacted."""
+    config = copy.deepcopy(config)
+    for iface, iface_config in config.get('network', {}).get('wifis', {}).items():
+        log.debug("%s %s", iface, iface_config)
+        for ap, ap_config in iface_config.get('access-points', {}).items():
+            log.debug(" - %s %s", ap, ap_config)
+            if 'password' in ap_config:
+                ap_config['password'] = '<REDACTED>'
+    return config
+
+
 class NetworkController(BaseController):
     signals = [
         ('menu:network:main:start',                    'start'),
@@ -218,7 +231,7 @@ class NetworkController(BaseController):
         self.ui.set_body(NetworkView(self.model, self.signal))
 
     def network_finish(self, config):
-        log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
+        log.debug("network config: \n%s", yaml.dump(sanitize_config(config), default_flow_style=False))
 
         if self.opts.dry_run:
             if hasattr(self, 'tried_once'):
