@@ -65,7 +65,6 @@ def parse_options(argv):
 LOGDIR = "/var/log/console-conf/"
 
 def main():
-    os.umask(0o0077)
     opts = parse_options(sys.argv[1:])
     global LOGDIR
     if opts.dry_run:
