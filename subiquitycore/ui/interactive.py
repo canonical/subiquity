@@ -81,7 +81,7 @@ class EmailEditor(StringEditor):
     def keypress(self, size, key):
         ''' restrict what chars we allow for username '''
 
-        realname = r'[-a-zA-Z0-9_.@]'
+        realname = r'[-a-zA-Z0-9_.@+]'
         if re.match(realname, key) is None:
             return False
 
