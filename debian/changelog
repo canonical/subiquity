@@ -1,8 +1,8 @@
-subiquity (0.0.22) UNRELEASED; urgency=medium
+subiquity (0.0.22) zesty; urgency=medium
 
   * Allow + and = in email addresses. (LP: #1636891)
 
- -- Michael Hudson-Doyle <michael.hudson@canonical.com>  Thu, 27 Oct 2016 09:50:42 +1300
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Thu, 27 Oct 2016 09:51:30 +1300
 
 subiquity (0.0.21) zesty; urgency=medium
 
