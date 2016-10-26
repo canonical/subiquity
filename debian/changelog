@@ -1,3 +1,9 @@
+subiquity (0.0.22) UNRELEASED; urgency=medium
+
+  * Allow + and = in email addresses. (LP: #1636891)
+
+ -- Michael Hudson-Doyle <michael.hudson@canonical.com>  Thu, 27 Oct 2016 09:50:42 +1300
+
 subiquity (0.0.21) zesty; urgency=medium
 
   * Remove setting of umask, which broke configuring wifi. (LP: #1636419)
