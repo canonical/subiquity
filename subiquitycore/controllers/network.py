@@ -192,9 +192,7 @@ def sanitize_config(config):
     """Return a copy of config with passwords redacted."""
     config = copy.deepcopy(config)
     for iface, iface_config in config.get('network', {}).get('wifis', {}).items():
-        log.debug("%s %s", iface, iface_config)
         for ap, ap_config in iface_config.get('access-points', {}).items():
-            log.debug(" - %s %s", ap, ap_config)
             if 'password' in ap_config:
                 ap_config['password'] = '<REDACTED>'
     return config
