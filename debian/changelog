@@ -1,3 +1,9 @@
+subiquity (0.0.23) zesty; urgency=medium
+
+  * Redact wifi password from log file more thoroughly. (LP: #1636421, again)
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Fri, 28 Oct 2016 13:32:44 +1300
+
 subiquity (0.0.22) zesty; urgency=medium
 
   * Allow + and = in email addresses. (LP: #1636891)
