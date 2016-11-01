@@ -204,7 +204,7 @@ class NetworkConfigureInterfaceView(BaseView):
         self.update_interface()
 
     def show_wlan_configuration(self, btn):
-        self.contents.network_configure_wlan_interface(self.iface)
+        self.controller.network_configure_wlan_interface(self.iface)
 
     def show_ipv4_configuration(self, btn):
         self.controller.network_configure_ipv4_interface(self.iface)
