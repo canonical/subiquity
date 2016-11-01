@@ -13,11 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import logging
 import os
 import queue
+import random
 import select
-import threading
 import time
 
 import netifaces
@@ -193,6 +194,18 @@ def view(func):
         return func(self, *args, **kw)
     return f
 
+netplan_path = '/etc/netplan/00-snapd-config.yaml'
+
+def sanitize_config(config):
+    """Return a copy of config with passwords redacted."""
+    config = copy.deepcopy(config)
+    for iface, iface_config in config.get('network', {}).get('wifis', {}).items():
+        for ap, ap_config in iface_config.get('access-points', {}).items():
+            if 'password' in ap_config:
+                ap_config['password'] = '<REDACTED>'
+    return config
+
+
 class NetworkController(BaseController):
     signals = [
         ('menu:network:main:set-default-v4-route',     'set_default_v4_route'),
@@ -229,7 +242,7 @@ class NetworkController(BaseController):
         self.ui.set_body(NetworkView(self.model, self))
 
     def network_finish(self, config):
-        log.debug("network config: \n%s", yaml.dump(config, default_flow_style=False))
+        log.debug("network config: \n%s", yaml.dump(sanitize_config(config), default_flow_style=False))
 
         if self.opts.dry_run:
             if hasattr(self, 'tried_once'):
@@ -248,9 +261,19 @@ class NetworkController(BaseController):
                     ('four', BackgroundProcess(['sleep', '0.1'])),
                     ]
         else:
-            with open('/etc/netplan/00-snapd-config.yaml', 'w') as w:
+            while True:
+                try:
+                    tmppath = '%s.%s' % (netplan_path, random.randrange(0, 1000))
+                    fd = os.open(tmppath, os.O_WRONLY | os.O_EXCL | os.O_CREAT, 0o0600)
+                except FileExistsError:
+                    continue
+                else:
+                    break
+            w = os.fdopen(fd, 'w')
+            with w:
                 w.write("# This is the network config written by 'console-conf'\n")
                 w.write(yaml.dump(config))
+            os.rename(tmppath, netplan_path)
             tasks = [
                 ('generate', BackgroundProcess(['/lib/netplan/generate'])),
                 ('apply', BackgroundProcess(['netplan', 'apply'])),

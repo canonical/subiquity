@@ -1,9 +1,36 @@
-subiquity (0.0.20) UNRELEASED; urgency=medium
+subiquity (0.0.23) zesty; urgency=medium
+
+  * Redact wifi password from log file more thoroughly. (LP: #1636421, again)
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Fri, 28 Oct 2016 13:32:44 +1300
+
+subiquity (0.0.22) zesty; urgency=medium
+
+  * Allow + and = in email addresses. (LP: #1636891)
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Thu, 27 Oct 2016 09:51:30 +1300
+
+subiquity (0.0.21) zesty; urgency=medium
+
+  * Remove setting of umask, which broke configuring wifi. (LP: #1636419)
+  * Redact wifi password from log file. (LP: #1636421)
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Wed, 26 Oct 2016 11:46:01 +1300
+
+subiquity (0.0.20) zesty; urgency=medium
 
   [ Michael Vogt ]
   * Update code to follow latest `snap managed` API.
 
- -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Fri, 07 Oct 2016 11:33:12 -0400
+  [ Michael Hudson-Doyle ]
+  * Render gateway4/gateway6 in network config.
+  * Render nameservers in network config.
+  * Various permission fixes on log and result files.
+  * Do not add empty strings to nameservers or search_domains
+  * Make sure selecting dhcp after manual configuration clears out gateway
+    and nameserver config.
+
+ -- Mathieu Trudel-Lapierre <cyphermox@ubuntu.com>  Thu, 20 Oct 2016 18:34:57 -0400
 
 subiquity (0.0.19) yakkety; urgency=medium
 

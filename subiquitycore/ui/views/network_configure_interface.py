@@ -193,11 +193,13 @@ class NetworkConfigureInterfaceView(BaseView):
 
     def enable_dhcp4(self, btn):
         self.clear_ipv4(btn)
+        self.iface_obj.remove_nameservers()
         self.iface_obj.dhcp4 = True
         self.update_interface()
 
     def enable_dhcp6(self, btn):
         self.clear_ipv6(btn)
+        self.iface_obj.remove_nameservers()
         self.iface_obj.dhcp6 = True
         self.update_interface()
 

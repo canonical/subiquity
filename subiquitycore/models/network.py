@@ -44,7 +44,8 @@ class Networkdev():
         self.dhcp6 = False
         self.search_domains = []
         self.nameservers = []
-        self.gateway = None
+        self.gateway4 = None
+        self.gateway6 = None
         self.essid = None
         self.wpa_psk = None
 
@@ -112,6 +113,11 @@ class Networkdev():
                    }
                  }
 
+        if self.gateway4:
+            result[self.ifname]['gateway4'] = self.gateway4
+        if self.gateway6:
+            result[self.ifname]['gateway6'] = self.gateway6
+
         if self.dhcp4:
             result[self.ifname]['dhcp4'] = True
         if self.dhcp6:
@@ -129,6 +135,11 @@ class Networkdev():
                 }
             if self.wpa_psk is not None:
                 ap['password'] = self.wpa_psk
+
+        if any(self.nameservers):
+            result[self.ifname]['nameservers'] = {}
+            result[self.ifname]['nameservers']['addresses'] = self.nameservers
+            result[self.ifname]['nameservers']['search'] = self.search_domains
 
         return result
 
@@ -241,11 +252,17 @@ class Networkdev():
         self.dhcp4 = False
         self.ipv4_addresses.clear()
         self.dhcp4_addresses.clear()
+        self.gateway4 = None
+
+    def remove_nameservers(self):
+        self.nameservers = []
+        self.search_domains = []
 
     def remove_ipv6_networks(self):
         self.dhcp6 = False
         self.ipv6_addresses.clear()
         self.dhcp6_addresses.clear()
+        self.gateway6 = None
 
     def add_network(self, family, network):
         # result = {
@@ -259,11 +276,12 @@ class Networkdev():
         address += '/' + network['network'].split('/')[1]
         if family == netifaces.AF_INET:
             self.ipv4_addresses.append(address)
+            self.gateway4 = network['gateway']
         elif family == netifaces.AF_INET6:
             self.ipv6_addresses.append(address)
-        self.gateway = network['gateway']
-        self.nameservers.append(network['nameserver'])
-        self.search_domains.append(network['searchdomains'])
+            self.gateway6 = network['gateway']
+        self.nameservers.extend(network['nameservers'])
+        self.search_domains.extend(network['searchdomains'])
 
 
 def valid_ipv4_address(addr):

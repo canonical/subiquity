@@ -31,9 +31,39 @@ class IdentityController(BaseIdentityController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
         self.ui.set_body(self.identity_view(self.model, self, self.opts, self.loop))
+        device_owner = self.get_device_owner()
+        if device_owner is not None:
+            mark_firstboot_complete()
+            self.model.add_user(device_owner)
+            self.signal.emit_signal('identity:login')
+
+    def get_device_owner(self):
+        """ Check if device is owned """
+
+        # TODO: use proper snap APIs.
+        try:
+            extrausers_fp = open('/var/lib/extrausers/passwd', 'r')
+        except FileNotFoundError:
+            return None
+        with extrausers_fp:
+            passwd_line = extrausers_fp.readline()
+            if passwd_line and len(passwd_line) > 0:
+                passwd = passwd_line.split(':')
+                result = {
+                    'realname': passwd[4].split(',')[0],
+                    'username': passwd[0],
+                    }
+                return result
+        return None
 
     def identity_done(self, email):
-        if not self.opts.dry_run:
+        if self.opts.dry_run:
+            result = {
+                'realname': email,
+                'username': email,
+                }
+            self.model.add_user(result)
+        else:
             self.ui.frame.body.progress.set_text("Contacting store...")
             self.loop.draw_screen()
             result = run_command(["snap", "create-user", "--sudoer", "--json", email])
@@ -51,12 +81,6 @@ class IdentityController(BaseIdentityController):
                     'username': data['username'],
                     }
                 self.model.add_user(result)
-        else:
-            result = {
-                'realname': email,
-                'username': email,
-                }
-            self.model.add_user(result)
         self.login()
 
     def login(self):
