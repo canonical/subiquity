@@ -222,14 +222,18 @@ class NetworkController(BaseController):
         meth, args, kw = self.view_stack.pop()
         meth(*args, **kw)
 
+    def cancel(self):
+        if len(self.view_stack) <= 1:
+            self.signal.emit_signal('prev-screen')
+        else:
+            self.prev_view()
+
     def default(self):
         self.model.reset()
+        self.view_stack = []
         log.info("probing for network devices")
         self.model.probe_network()
         self.start()
-
-    def cancel(self):
-        self.signal.emit_signal('prev-screen')
 
     @view
     def start(self):

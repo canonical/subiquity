@@ -83,6 +83,11 @@ class IdentityController(BaseIdentityController):
                 self.model.add_user(result)
         self.login()
 
+    def cancel(self):
+        # You can only go back if we haven't created a user yet.
+        if self.model.user is None:
+            self.signal.emit_signal('prev-screen')
+
     def login(self):
         title = "Configuration Complete"
         footer = "View configured user and device access methods"

@@ -37,3 +37,7 @@ class WelcomeController(BaseController):
 
     def done(self):
         self.signal.emit_signal('next-screen')
+
+    def cancel(self):
+        # Can't go back from here!
+        pass

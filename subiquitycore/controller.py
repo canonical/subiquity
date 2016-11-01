@@ -14,12 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from abc import ABC, abstractmethod
 import logging
 
 log = logging.getLogger("subiquitycore.controller")
 
 
-class BaseController:
+class BaseController(ABC):
     """Base class for controllers."""
 
     signals = []
@@ -39,5 +40,10 @@ class BaseController:
             signals.append((sig, getattr(self, cb)))
         self.signal.connect_signals(signals)
 
+    @abstractmethod
+    def cancel(self):
+        pass
+
+    @abstractmethod
     def default(self):
-        raise NotImplementedError(self.default)
+        pass

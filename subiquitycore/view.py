@@ -24,7 +24,7 @@ from urwid import WidgetWrap
 class BaseView(WidgetWrap):
     def keypress(self, size, key):
         if key == 'esc':
-            self.controller.signal.prev_signal()
+            self.controller.cancel()
             return None
         if key in ['ctrl x']:
             self.controller.signal.emit_signal('control-x-quit')
