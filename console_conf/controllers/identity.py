@@ -35,7 +35,7 @@ class IdentityController(BaseIdentityController):
         if device_owner is not None:
             mark_firstboot_complete()
             self.model.add_user(device_owner)
-            self.signal.emit_signal('identity:login')
+            self.login()
 
     def get_device_owner(self):
         """ Check if device is owned """
