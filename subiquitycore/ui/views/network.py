@@ -55,9 +55,9 @@ class ApplyingConfigWidget(WidgetWrap):
 
 
 class NetworkView(BaseView):
-    def __init__(self, model, signal):
+    def __init__(self, model, controller):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.items = []
         self.error = Text("", align='center')
         self.body = [
@@ -264,12 +264,11 @@ class NetworkView(BaseView):
         return Pile(labels + buttons)
 
     def additional_menu_select(self, result, sig):
-        self.signal.emit_signal(sig)
+        self.controller.signal.emit_signal(sig)
 
     def on_net_dev_press(self, result):
         log.debug("Selected network dev: {}".format(result.label))
-        self.signal.emit_signal('menu:network:main:configure-interface',
-                                result.label)
+        self.controller.network_configure_interface(result.label)
 
     def show_network_error(self, action):
         if action == 'generate':
@@ -288,7 +287,7 @@ class NetworkView(BaseView):
                                 "please verify your settings.")
 
     def done(self, result):
-        self.signal.emit_signal('network:finish', self.model.render())
+        self.controller.network_finish(self.model.render())
 
     def cancel(self, button):
-        self.signal.emit_signal('prev-screen')
+        self.controller.cancel()

@@ -61,6 +61,7 @@ class IdentityModel(BaseModel):
 
     def __init__(self, opts):
         self.opts = opts
+        self._user = None
 
     def add_user(self, result):
         if result:

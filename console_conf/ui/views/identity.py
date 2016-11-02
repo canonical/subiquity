@@ -60,9 +60,9 @@ class SubmittingEmailEditor(EmailEditor):
 
 class IdentityView(BaseView):
 
-    def __init__(self, model, signal, opts, loop):
+    def __init__(self, model, controller, opts, loop):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.opts = opts
         self.loop = loop
         self.items = []
@@ -105,10 +105,10 @@ class IdentityView(BaseView):
         return Pile(buttons)
 
     def cancel(self, button):
-        self.signal.emit_signal('prev-screen')
+        self.controller.cancel()
 
     def done(self, button):
         if len(self.email.value) < 1:
             self.error.set_text("Please enter an email address.")
             return
-        self.signal.emit_signal('identity:done', self.email.value)
+        self.controller.identity_done(self.email.value)

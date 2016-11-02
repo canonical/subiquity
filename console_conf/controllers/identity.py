@@ -30,12 +30,12 @@ class IdentityController(BaseIdentityController):
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
-        self.ui.set_body(self.identity_view(self.model, self.signal, self.opts, self.loop))
+        self.ui.set_body(self.identity_view(self.model, self, self.opts, self.loop))
         device_owner = self.get_device_owner()
         if device_owner is not None:
             mark_firstboot_complete()
             self.model.add_user(device_owner)
-            self.signal.emit_signal('identity:login')
+            self.login()
 
     def get_device_owner(self):
         """ Check if device is owned """
@@ -81,7 +81,12 @@ class IdentityController(BaseIdentityController):
                     'username': data['username'],
                     }
                 self.model.add_user(result)
-        self.signal.emit_signal('identity:login')
+        self.login()
+
+    def cancel(self):
+        # You can only go back if we haven't created a user yet.
+        if self.model.user is None:
+            self.signal.emit_signal('prev-screen')
 
     def login(self):
         title = "Configuration Complete"
@@ -92,11 +97,7 @@ class IdentityController(BaseIdentityController):
         net_model = self.controllers['Network'].model
         net_model.probe_network()
         configured_ifaces = net_model.get_configured_interfaces()
-        login_view = LoginView(self.opts,
-                               self.model,
-                               self.signal,
-                               self.model.user,
-                               configured_ifaces)
+        login_view = LoginView(self.opts, self.model, self, configured_ifaces)
 
         self.ui.set_body(login_view)
 

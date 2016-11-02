@@ -17,6 +17,7 @@ import logging
 from subiquitycore.controller import BaseController
 from subiquitycore.models import IdentityModel
 from subiquitycore.ui.views import LoginView
+from subiquitycore import utils
 
 log = logging.getLogger('subiquitycore.controllers.identity')
 
@@ -24,12 +25,6 @@ log = logging.getLogger('subiquitycore.controllers.identity')
 class BaseIdentityController(BaseController):
 
     identity_view = None
-
-    signals = [
-        ('identity:done',       'identity_done'),
-        ('identity:login',      'login'),
-        ('identity:login:done', 'login_done'),
-    ]
 
     def __init__(self, common):
         super().__init__(common)
@@ -41,10 +36,13 @@ class BaseIdentityController(BaseController):
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
-        self.ui.set_body(self.identity_view(self.model, self.signal, self.opts))
+        self.ui.set_body(self.identity_view(self.model, self, self.opts))
+
+    def cancel(self):
+        self.signal.emit_signal('prev-screen')
 
     def identity_done(self):
-        self.signal.emit_signal('identity:login')
+        self.login()
 
     def login(self):
         log.debug("Identity login view")
@@ -55,12 +53,15 @@ class BaseIdentityController(BaseController):
 
         net_model = self.controllers['Network'].model
         configured_ifaces = net_model.get_configured_interfaces()
-        login_view = LoginView(self.model,
-                               self.signal,
-                               self.model.user,
-                               configured_ifaces)
+        login_view = LoginView(self.model, self, configured_ifaces)
 
         self.ui.set_body(login_view)
 
     def login_done(self):
+        # mark ourselves complete
+        utils.mark_firstboot_complete()
+
+        # disable the UI service restoring getty service
+        utils.disable_first_boot_service()
+
         self.signal.emit_signal('quit')

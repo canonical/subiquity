@@ -34,6 +34,3 @@ class WelcomeView(CoreWelcomeView):
                          focus_map='button focus'),
         ]
         return Pile(self.buttons)
-
-    def confirm(self, result):
-        self.signal.emit_signal('welcome:done')

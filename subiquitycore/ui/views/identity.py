@@ -38,9 +38,10 @@ USERNAME_MAXLEN = 32
 
 
 class BaseIdentityView(BaseView):
-    def __init__(self, model, signal, opts):
+    def __init__(self, model, controller, opts):
         self.model = model
-        self.signal = signal
+        self.controller = controller
+        self.signal = controller.signal
         self.opts = opts
         self.items = []
         self.realname = RealnameEditor(caption="")
