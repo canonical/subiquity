@@ -70,7 +70,7 @@ class BackgroundProcess(BackgroundTask):
         if result['status'] == 0:
             observer.task_succeeded()
         else:
-            observer.task_failed()
+            observer.task_failed(result['err'])
 
     def cancel(self):
         if self.proc is None:
@@ -188,10 +188,10 @@ class TaskSequence:
         else:
             self._run1()
 
-    def task_failed(self):
+    def task_failed(self, info=None):
         if self.canceled:
             return
-        self.call_from_thread(self.watcher.task_error, self.stage)
+        self.call_from_thread(self.watcher.task_error, self.stage, info)
 
 
 def view(func):
@@ -390,7 +390,7 @@ class NetworkController(BaseController):
             if os.path.exists('/lib/netplan/generate'):
                 # If netplan appears to be installed, run generate to at
                 # least test that what we wrote is acceptable to netplan.
-                tasks.append(('gen', BackgroundProcess(['netplan', 'generate', '--root', self.root])))
+                tasks.append(('generate', BackgroundProcess(['netplan', 'generate', '--root', self.root])))
             if not self.tried_once:
                 tasks.append(('fail', WaitForDefaultRouteTask(30, self.observer)))
                 tasks.append(('fail', BackgroundProcess(['false'])))
@@ -414,9 +414,9 @@ class NetworkController(BaseController):
     def task_complete(self, stage):
         self.acw.advance()
 
-    def task_error(self, stage):
+    def task_error(self, stage, info=None):
         self.ui.frame.body.remove_overlay(self.acw)
-        self.ui.frame.body.show_network_error(stage)
+        self.ui.frame.body.show_network_error(stage, info)
 
     def tasks_finished(self):
         self.signal.emit_signal('next-screen')

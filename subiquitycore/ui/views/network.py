@@ -272,10 +272,9 @@ class NetworkView(BaseView):
         log.debug("Selected network dev: {}".format(result.label))
         self.controller.network_configure_interface(result.label)
 
-    def show_network_error(self, action):
+    def show_network_error(self, action, info=None):
         if action == 'generate':
-            self.error.set_text("Network configuration failed; " + \
-                                "please verify your settings.")
+            self.error.set_text("Network configuration failed: %r" % (info,))
         elif action == 'apply':
             self.error.set_text("Network configuration could not be applied; " + \
                                 "please verify your settings.")
