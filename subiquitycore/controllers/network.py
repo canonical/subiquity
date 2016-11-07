@@ -341,6 +341,9 @@ class NetworkController(BaseController):
         meth, args, kw = self.view_stack.pop()
         meth(*args, **kw)
 
+    def start_scan(self, dev):
+        self.observer.wlan_listener.trigger_scan(dev.ifindex)
+
     def cancel(self):
         if len(self.view_stack) <= 1:
             self.signal.emit_signal('prev-screen')

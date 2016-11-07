@@ -7,6 +7,27 @@ import logging
 
 log = logging.getLogger('subiquitycore.network.network_configure_wlan_interface')
 
+class NetworkList(WidgetWrap):
+
+    def __init__(self, parent, ssids):
+        self.parent = parent
+        button = cancel_btn(on_press=self.do_cancel)
+        ssid_list = [
+            Color.menu_button(
+                Button(label=ssid, on_press=self.do_network),
+                focus_map="menu_button focus")
+            for ssid in ssids]
+        p = Pile([BoxAdapter(ListBox(ssid_list), height=10), Padding.fixed_10(button)])
+        box = LineBox(p, title="Select a network")
+        super().__init__(box)
+
+    def do_network(self, sender):
+        self.parent.ssid_input.value = sender.label
+        self.parent.remove_overlay()
+
+    def do_cancel(self, sender):
+        self.parent.remove_overlay()
+
 
 class NetworkConfigureWLANView(BaseView):
     def __init__(self, model, controller, name):
@@ -31,7 +52,62 @@ class NetworkConfigureWLANView(BaseView):
         self.orig_w = None
         super().__init__(ListBox(self.body))
 
+    def keypress(self, size, key):
+        if key == 'esc':
+            if self.orig_w is not None:
+                self.remove_overlay()
+                return
+        return super().keypress(size, key)
+
+    def show_overlay(self, overlay_widget):
+        self.orig_w = self._w
+        self._w = Overlay(top_w=overlay_widget,
+                          bottom_w=self._w,
+                          align='center',
+                          width=('relative', 60),
+                          min_width=80,
+                          valign='middle',
+                          height='pack')
+
+    def remove_overlay(self):
+        self._w = self.orig_w
+        self.orig_w = None
+
+    def show_ssid_list(self, sender):
+        self.show_overlay(NetworkList(self, self.dev.actual_ssids))
+
+    def start_scan(self, sender):
+        self.keypress((0,0), 'up')
+        try:
+            self.controller.start_scan(self.dev)
+        except RuntimeError as r:
+            log.exception("start_scan failed")
+            self.error.set_text("%s" % (r,))
+
     def _build_iface_inputs(self):
+        if len(self.dev.actual_ssids) > 0:
+            networks_btn = Color.menu_button(
+                menu_btn("Choose a visible network", on_press=self.show_ssid_list),
+                focus_map="menu_button focus")
+        else:
+            networks_btn = Color.info_minor(Columns(
+                [
+                    ('fixed', 1, Text("")),
+                    Text("No visible networks"),
+                    ('fixed', 1, Text(">"))
+                ], dividechars=1))
+        if not self.dev.scan_state:
+            scan_btn = Color.menu_button(
+                menu_btn("Scan for networks", on_press=self.start_scan),
+                focus_map="menu_button focus")
+        else:
+            scan_btn = Color.info_minor(Columns(
+                [
+                    ('fixed', 1, Text("")),
+                    Text("Scanning for networks"),
+                    ('fixed', 1, Text(">"))
+                ], dividechars=1))
+
         col = [
             Padding.center_79(Color.info_minor(Text("Only open or WPA2/PSK networks are supported at this time."))),
             Padding.line_break(""),
@@ -42,6 +118,18 @@ class NetworkConfigureWLANView(BaseView):
                      Color.string_input(self.ssid_input,
                                         focus_map="string_input focus")),
                 ], dividechars=2
+            ),
+            Columns(
+                [
+                    ("weight", 1.0,
+                     Padding.fixed_30(networks_btn)),
+                ]
+            ),
+            Columns(
+                [
+                    ("weight", 1.0,
+                     Padding.fixed_30(scan_btn)),
+                ]
             ),
             Columns(
                 [
