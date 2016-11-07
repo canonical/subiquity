@@ -129,6 +129,10 @@ class Networkdev:
         return self._net_info.name
 
     @property
+    def ifindex(self):
+        return self._net_info.ifindex
+
+    @property
     def type(self):
         return self._net_info.type
 
@@ -165,7 +169,7 @@ class Networkdev:
         '''string'ify and bucketize iface speed:
            1M, 10M, 1G, 10G, 40G, 100G
         '''
-        hwattr = self._net_info.hwinfo['attrs']
+        hwattr = self._net_info.udev_data['attrs']
         speed = hwattr.get('speed', 0)
         if not speed:
             return None
@@ -200,11 +204,11 @@ class Networkdev:
 
     @property
     def actual_ipv4_addresses(self):
-        return [a['addr'] for a in self._net_info.ip.get(AF_INET, [])]
+        return [ipaddress.IPv4Interface(a).ip for a in self._net_info.ip.get(AF_INET, [])]
 
     @property
     def actual_ipv6_addresses(self):
-        return [a['addr'].split('%')[0] for a in self._net_info.ip.get(AF_INET6, [])]
+        return [ipaddress.IPv6Interface(a).ip for a in self._net_info.ip.get(AF_INET6, [])]
 
     @property
     def actual_ip_addresses(self):
@@ -253,8 +257,8 @@ class Networkdev:
 
     @property
     def actual_ssid(self):
-        if self._net_info.raw['essid']:
-            return self._net_info.raw['essid']
+        if self._net_info.ssid:
+            return self._net_info.ssid.decode('utf-8', 'replace')
         else:
             return None
 
@@ -358,9 +362,9 @@ class NetworkModel(BaseModel):
         6: 'balance-alb',
     }
 
-    def __init__(self, prober):
-        self.prober = prober
-        self.devices_by_name = {} # Maps interface names to Networkdev objects
+    def __init__(self):
+        self.devices = {} # Maps ifindex to Networkdev
+        self.devices_by_name = {} # Maps interface names to Networkdev
         self.config = NetplanConfig()
         self.default_v4_gateway = None
         self.default_v6_gateway = None
@@ -379,19 +383,37 @@ class NetworkModel(BaseModel):
     def get_menu(self):
         return self.additional_options
 
-    def probe_network(self):
-        self.prober.probe()
-        for name in self.prober.get_network_devices():
-            net_info = self.prober.get_network_info(name)
-            if net_info.type in NETDEV_IGNORED_IFACE_TYPES:
-                continue
-            if net_info.name in NETDEV_IGNORED_IFACE_NAMES:
-                continue
-            if net_info.is_virtual:
-                continue
-            config = self.config.config_for_device(net_info)
-            dev = Networkdev(net_info, config)
-            self.devices_by_name[dev.name] = dev
+    def new_link(self, ifindex, link):
+        if link.type in NETDEV_IGNORED_IFACE_TYPES:
+            return
+        if link.name in NETDEV_IGNORED_IFACE_NAMES:
+            return
+        if link.is_virtual:
+            return
+        config = self.config.config_for_device(link)
+        log.debug("new_link %s %s with config %s", ifindex, link.name, config)
+        self.devices[ifindex] = Networkdev(link, config)
+        self.devices_by_name[link.name] = Networkdev(link, config)
+
+    def update_link(self, ifindex):
+        # This is pretty edge-casey as the fact that we wait for the
+        # udev queue to settle should mean we never see an interface
+        # be renamed. But just in case...
+        if ifindex not in self.devices:
+            return
+        dev = self.devices[ifindex]
+        for k, v in self.devices_by_name.items():
+            if v.ifindex == ifindex and k != dev.name:
+                log.debug("link renamed %s -> %s", k, dev.name)
+                del self.devices_by_name[k]
+                self.devices_by_name[dev.name] = dev
+                return
+
+    def del_link(self, ifindex):
+        if ifindex in self.devices:
+            dev = self.devices[ifindex]
+            del self.devices_by_name[dev.name]
+            del self.devices[ifindex]
 
     def get_all_netdevs(self):
         return [v for k, v in sorted(self.devices_by_name.items())]

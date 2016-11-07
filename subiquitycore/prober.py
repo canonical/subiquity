@@ -18,8 +18,6 @@ import yaml
 import os
 from probert.storage import (Storage,
                              StorageInfo)
-from probert.network import (Network,
-                             NetworkInfo)
 
 log = logging.getLogger('subiquitycore.prober')
 
@@ -53,29 +51,6 @@ class Prober():
 
         return data
 
-    def probe(self):
-        network = Network()
-        results = network.probe()
-        self.probe_data['network'] = {}
-        self.probe_data['network']['devices'] = results
-        self.probe_data['network']['routes'] = network.get_routes()
-
-    def get_network_devices(self):
-        if 'network' not in self.probe_data:
-            log.debug('get_network_devices: no network in probe_data, fetching')
-            self.probe()
-        return self.probe_data['network']['devices']
-
-    def get_network_routes(self):
-        if 'network' not in self.probe_data:
-            log.debug('get_network_routes: no network in probe_data, fetching')
-            self.probe()
-        return self.probe_data['network']['routes']
-
-    def get_network_info(self, device):
-        ''' Load a NetworkInfo class for specified device '''
-        return NetworkInfo({device: self.get_network_devices().get(device)})
-
     def get_storage(self):
         ''' Load a StorageInfo class.  Probe if it's not present '''
         if 'storage' not in self.probe_data:
@@ -89,8 +64,3 @@ class Prober():
     def get_storage_info(self, device):
         ''' Load a StorageInfo class for specified device '''
         return StorageInfo({device: self.get_storage().get(device)})
-
-
-def make_network_info(device, info):
-    ''' Create a NetworkInfo class for specified device from info'''
-    return NetworkInfo({device: info})

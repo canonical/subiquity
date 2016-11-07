@@ -95,7 +95,6 @@ class IdentityController(BaseIdentityController):
         self.ui.set_footer(footer)
 
         net_model = self.controllers['Network'].model
-        net_model.probe_network()
         ifaces = net_model.get_all_netdevs()
         login_view = LoginView(self.opts, self.model, self, ifaces)
 

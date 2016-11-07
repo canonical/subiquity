@@ -54,6 +54,16 @@ class NetworkConfigureWLANView(BaseView):
         ]
         return col
 
+    def refresh_model_inputs(self):
+        try:
+            self.dev = self.model.get_netdev_by_name(self.dev.name)
+        except KeyError:
+            # The interface is gone
+            self.controller.prev_view()
+            self.controller.prev_view()
+            return
+        self.inputs.contents = [ (obj, ('pack', None)) for obj in self._build_iface_inputs() ]
+
     def _build_buttons(self):
         cancel = Color.button(cancel_btn(on_press=self.cancel),
                               focus_map='button focus')

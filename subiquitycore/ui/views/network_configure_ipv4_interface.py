@@ -61,6 +61,15 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         ]
         super().__init__(ListBox(body))
 
+    def refresh_model_inputs(self):
+        try:
+            self.dev = self.model.get_netdev_by_name(self.dev.name)
+        except KeyError:
+            # The interface is gone
+            self.controller.prev_view()
+            self.controller.prev_view()
+            return
+
     def _build_iface_inputs(self):
         col1 = [
             Columns(

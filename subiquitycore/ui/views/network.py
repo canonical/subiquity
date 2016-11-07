@@ -213,6 +213,10 @@ class NetworkView(BaseView):
 
         return iface_menus
 
+    def refresh_model_inputs(self):
+        self.model_inputs.contents = [ (obj, ('pack', None)) for obj in self._build_model_inputs() ]
+        self.additional_options.contents = [ (obj, ('pack', None)) for obj in self._build_additional_options() ]
+
     def _build_additional_options(self):
         labels = []
         netdevs = self.model.get_all_netdevs()
