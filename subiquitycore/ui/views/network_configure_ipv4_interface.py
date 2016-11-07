@@ -74,7 +74,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         col1 = [
             Columns(
                 [
-                    ("weight", 0.2, Text("Subnet")),
+                    ("weight", 0.2, Text("Subnet:")),
                     ("weight", 0.3,
                      Color.string_input(self.subnet_input,
                                         focus_map="string_input focus")),
@@ -83,7 +83,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Address")),
+                    ("weight", 0.2, Text("Address:")),
                     ("weight", 0.3,
                      Color.string_input(self.address_input,
                                         focus_map="string_input focus")),
@@ -92,7 +92,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Gateway")),
+                    ("weight", 0.2, Text("Gateway:")),
                     ("weight", 0.3,
                      Color.string_input(self.gateway_input,
                                         focus_map="string_input focus")),
@@ -158,11 +158,22 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
 
     def validate(self, result):
         if '/' not in result['network']:
-            raise ValueError("Network should be in CIDR form (xx.xx.xx.xx/yy)")
+            raise ValueError("Subnet: should be in CIDR form (xx.xx.xx.xx/yy)")
 
-        netmask = result['network'].split('/')[1]
-        if int(netmask) > 32 or int(netmask) < 0:
-            raise ValueError("CIDR netmask value should be between 0 and 32")
+        try:
+            network = ipaddress.IPv4Network(result['network'])
+        except ValueError as v:
+            raise ValueError("Subnet: " + str(v))
+        try:
+            address = ipaddress.IPv4Address(result['address'])
+        except ValueError as v:
+            raise ValueError("Address: " + str(v))
+        if address not in network:
+            raise ValueError("Address: '%s' is not contained in '%s'" % (address, network))
+        try:
+            ipaddress.IPv4Address(result['gateway'])
+        except ValueError as v:
+            raise ValueError("Gateway: " + str(v))
         for ns in result['nameservers']:
             try:
                 ipaddress.ip_address(ns)
@@ -189,15 +200,14 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         }
         try:
             self.validate(result)
-            self.dev.remove_ipv4_networks()
-            self.dev.add_network(socket.AF_INET, result)
         except ValueError as e:
             error = 'Failed to manually configure interface: {}'.format(e)
             log.exception(error)
             self.error.set_text(str(e))
-            #self.iface.configure_from_info()
-            # FIXME: set error message in UX ala identity
             return
+        self.dev.remove_ipv4_networks()
+        self.dev.remove_nameservers()
+        self.dev.add_network(socket.AF_INET, result)
 
         # return
         self.controller.prev_view()
