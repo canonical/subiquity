@@ -353,8 +353,8 @@ class NetworkModel(BaseModel):
     """
 
     additional_options = [
-        ('Set a custom IPv4 default route', 'menu:network:main:set-default-v4-route'),
-        ('Set a custom IPv6 default route', 'menu:network:main:set-default-v6-route'),
+        #('Set a custom IPv4 default route', 'menu:network:main:set-default-v4-route'),
+        #('Set a custom IPv6 default route', 'menu:network:main:set-default-v6-route'),
         #('Bond interfaces',                 'menu:network:main:bond-interfaces'),
         #('Install network driver',          'network:install-network-driver'),
     ]

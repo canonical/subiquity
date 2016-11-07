@@ -49,11 +49,11 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         self.searchdomains_input = StringEditor(caption="")  # FIXME: ipaddr_list_editor
         self.searchdomains_input.value = ', '.join(self.dev.configured_searchdomains)
         self.error = Text("", align='center')
-        self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
+        #self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
         body = [
             Padding.center_79(self._build_iface_inputs()),
-            Padding.line_break(""),
-            Padding.center_79(self.set_as_default_gw_button),
+            #Padding.line_break(""),
+            #Padding.center_79(self.set_as_default_gw_button),
             Padding.line_break(""),
             Padding.center_90(Color.info_error(self.error)),
             Padding.line_break(""),
