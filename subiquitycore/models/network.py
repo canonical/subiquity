@@ -17,8 +17,8 @@ import copy
 import fnmatch
 import ipaddress
 import logging
+from socket import AF_INET, AF_INET6
 
-from netifaces import AF_INET, AF_INET6
 import yaml, yaml.reader
 
 from subiquitycore.model import BaseModel

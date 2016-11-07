@@ -21,9 +21,9 @@ import os
 import queue
 import random
 import select
+import socket
 import subprocess
 
-import netifaces
 import yaml
 
 from probert.network import UdevObserver
@@ -425,12 +425,12 @@ class NetworkController(BaseController):
     @view
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
-        self.ui.set_body(NetworkSetDefaultRouteView(self.model, netifaces.AF_INET, self))
+        self.ui.set_body(NetworkSetDefaultRouteView(self.model, socket.AF_INET, self))
 
     @view
     def set_default_v6_route(self):
         self.ui.set_header("Default route")
-        self.ui.set_body(NetworkSetDefaultRouteView(self.model, netifaces.AF_INET6, self))
+        self.ui.set_body(NetworkSetDefaultRouteView(self.model, socket.AF_INET6, self))
 
     @view
     def bond_interfaces(self):

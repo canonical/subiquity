@@ -16,7 +16,7 @@
 import logging
 import ipaddress
 
-import netifaces
+import socket
 
 from urwid import Text, Pile, ListBox, Columns
 
@@ -190,7 +190,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         try:
             self.validate(result)
             self.dev.remove_ipv4_networks()
-            self.dev.add_network(netifaces.AF_INET, result)
+            self.dev.add_network(socket.AF_INET, result)
         except ValueError as e:
             error = 'Failed to manually configure interface: {}'.format(e)
             log.exception(error)

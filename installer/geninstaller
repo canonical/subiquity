@@ -52,7 +52,6 @@ INSTALLER_DEPS=(
   "petname"
   "python3-urwid"
   "python3-pyudev"
-  "python3-netifaces"
   "python-urwid"
   "python3-tornado"
   "probert"
