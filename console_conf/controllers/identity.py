@@ -96,8 +96,8 @@ class IdentityController(BaseIdentityController):
 
         net_model = self.controllers['Network'].model
         net_model.probe_network()
-        configured_ifaces = net_model.get_configured_interfaces()
-        login_view = LoginView(self.opts, self.model, self, configured_ifaces)
+        ifaces = net_model.get_all_netdevs()
+        login_view = LoginView(self.opts, self.model, self, ifaces)
 
         self.ui.set_body(login_view)
 

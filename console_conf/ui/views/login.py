@@ -19,7 +19,9 @@ Login provides user with language selection
 
 """
 import logging
+
 from urwid import (ListBox, Pile, Text)
+
 from subiquitycore.ui.buttons import finish_btn
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
@@ -28,11 +30,11 @@ log = logging.getLogger("subiquitycore.views.login")
 
 
 class LoginView(BaseView):
-    def __init__(self, opts, model, controller, ifaces):
+    def __init__(self, opts, model, controller, netdevs):
         self.opts = opts
         self.model = model
         self.controller = controller
-        self.ifaces = ifaces
+        self.netdevs = netdevs
         self.items = []
         self.body = [
             Padding.line_break(""),
@@ -71,38 +73,9 @@ class LoginView(BaseView):
         login_text = local_tpl.format(**login_info)
         login_text += remote_tpl.format(**login_info)
         ips = []
-        for iface in self.ifaces:
-            for addr in iface.dhcp4_addresses:
-                try:
-                    ip = str(addr[0]).split("/")[0]
-                except IndexError:
-                    ip = None
-                if ip is not None:
-                    ips.append(ip)
-
-            for addr in iface.ipv4_addresses:
-                try:
-                    ip = str(addr).split("/")[0]
-                except IndexError:
-                    ip = None
-                if ip is not None:
-                    ips.append(ip)
-
-            for addr in iface.dhcp6_addresses:
-                try:
-                    ip = str(addr[0]).split("/")[0]
-                except IndexError:
-                    ip = None
-                if ip is not None:
-                    ips.append(ip)
-
-            for addr in iface.ipv6_addresses:
-                try:
-                    ip = str(addr).split("/")[0]
-                except IndexError:
-                    ip = None
-                if ip is not None:
-                    ips.append(ip)
+        for dev in self.netdevs:
+            for addr in dev.actual_ip_addresses:
+                ips.append(addr)
 
         for ip in ips:
                 ssh_iface = "    ssh %s@%s" % (user.username, ip)

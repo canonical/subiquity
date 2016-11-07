@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import glob
 import logging
 import os
 import queue
@@ -194,7 +195,7 @@ def view(func):
         return func(self, *args, **kw)
     return f
 
-netplan_path = '/etc/netplan/00-snapd-config.yaml'
+netplan_config_file_name = '00-snapd-config.yaml'
 
 def sanitize_config(config):
     """Return a copy of config with passwords redacted."""
@@ -206,15 +207,44 @@ def sanitize_config(config):
     return config
 
 
+default_netplan = '''
+network:
+  version: 2
+  ethernets:
+    "en*":
+       addresses:
+         - 10.0.2.15/24
+       gateway4: 10.0.2.2
+       nameservers:
+         addresses:
+           - 8.8.8.8
+           - 8.4.8.4
+         search:
+           - foo
+           - bar
+    "eth*":
+       dhcp4: true
+'''
+
 class NetworkController(BaseController):
     signals = [
         ('menu:network:main:set-default-v4-route',     'set_default_v4_route'),
         ('menu:network:main:set-default-v6-route',     'set_default_v6_route'),
     ]
 
+    root = "/"
+
     def __init__(self, common):
         super().__init__(common)
-        self.model = NetworkModel(self.prober, self.opts)
+        self.model = NetworkModel(self.prober)
+        if self.opts.dry_run:
+            import atexit, shutil, tempfile
+            self.root = tempfile.mkdtemp()
+            self.tried_once = False
+            atexit.register(shutil.rmtree, self.root)
+            os.makedirs(os.path.join(self.root, 'etc/netplan'))
+            with open(os.path.join(self.root, 'etc/netplan', netplan_config_file_name), 'w') as fp:
+                fp.write(default_netplan)
         self.view_stack = []
 
     def prev_view(self):
@@ -230,6 +260,19 @@ class NetworkController(BaseController):
 
     def default(self):
         self.model.reset()
+        configs_by_basename = {}
+        paths = glob.glob(os.path.join(self.root, 'lib/netplan', "*.yaml")) + \
+          glob.glob(os.path.join(self.root, 'etc/netplan', "*.yaml")) + \
+          glob.glob(os.path.join(self.root, 'run/netplan', "*.yaml"))
+        for path in paths:
+            configs_by_basename[os.path.basename(path)] = path
+        for _, path in sorted(configs_by_basename.items()):
+            try:
+                fp = open(path)
+            except OSError:
+                log.exception("opening %s failed", path)
+            with fp:
+                self.model.parse_netplan_config(fp.read())
         self.view_stack = []
         log.info("probing for network devices")
         self.model.probe_network()
@@ -248,36 +291,34 @@ class NetworkController(BaseController):
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(sanitize_config(config), default_flow_style=False))
 
-        if self.opts.dry_run:
-            if hasattr(self, 'tried_once'):
-                tasks = [
-                    ('one', BackgroundProcess(['sleep', '0.1'])),
-                    ('two', PythonSleep(0.1)),
-                    ('three', BackgroundProcess(['sleep', '0.1'])),
-                    ]
+        netplan_path = os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
+        while True:
+            try:
+                tmppath = '%s.%s' % (netplan_path, random.randrange(0, 1000))
+                fd = os.open(tmppath, os.O_WRONLY | os.O_EXCL | os.O_CREAT, 0o0600)
+            except FileExistsError:
+                continue
             else:
+                break
+        w = os.fdopen(fd, 'w')
+        with w:
+            w.write("# This is the network config written by 'console-conf'\n")
+            w.write(yaml.dump(config))
+        os.rename(tmppath, netplan_path)
+        if self.opts.dry_run:
+            tasks = [
+                ('one', BackgroundProcess(['sleep', '0.1'])),
+                ('two', PythonSleep(0.1)),
+                ('three', BackgroundProcess(['sleep', '0.1'])),
+                ]
+            if os.path.exists('/lib/netplan/generate'):
+                # If netplan appears to be installed, run generate to at
+                # least test that what we wrote is acceptable to netplan.
+                tasks.append(('gen', BackgroundProcess(['netplan', 'generate', '--root', self.root])))
+            if not self.tried_once:
+                tasks.append(('fail', BackgroundProcess(['false'])))
                 self.tried_once = True
-                tasks = [
-                    ('timeout', WaitForDefaultRouteTask(30)),
-                    ('one', BackgroundProcess(['sleep', '0.1'])),
-                    ('two', BackgroundProcess(['sleep', '0.1'])),
-                    ('three', BackgroundProcess(['false'])),
-                    ('four', BackgroundProcess(['sleep', '0.1'])),
-                    ]
         else:
-            while True:
-                try:
-                    tmppath = '%s.%s' % (netplan_path, random.randrange(0, 1000))
-                    fd = os.open(tmppath, os.O_WRONLY | os.O_EXCL | os.O_CREAT, 0o0600)
-                except FileExistsError:
-                    continue
-                else:
-                    break
-            w = os.fdopen(fd, 'w')
-            with w:
-                w.write("# This is the network config written by 'console-conf'\n")
-                w.write(yaml.dump(config))
-            os.rename(tmppath, netplan_path)
             tasks = [
                 ('generate', BackgroundProcess(['/lib/netplan/generate'])),
                 ('apply', BackgroundProcess(['netplan', 'apply'])),
