@@ -293,6 +293,12 @@ network:
            - bar
     "eth*":
        dhcp4: true
+  wifis:
+    "wl*":
+       dhcp4: true
+       access-points:
+         "some-ap":
+            password: password
 '''
 
 class NetworkController(BaseController):
@@ -305,7 +311,6 @@ class NetworkController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
-        self.model = NetworkModel()
         if self.opts.dry_run:
             import atexit, shutil, tempfile
             self.root = tempfile.mkdtemp()
@@ -314,20 +319,7 @@ class NetworkController(BaseController):
             os.makedirs(os.path.join(self.root, 'etc/netplan'))
             with open(os.path.join(self.root, 'etc/netplan', netplan_config_file_name), 'w') as fp:
                 fp.write(default_netplan)
-
-        configs_by_basename = {}
-        paths = glob.glob(os.path.join(self.root, 'lib/netplan', "*.yaml")) + \
-          glob.glob(os.path.join(self.root, 'etc/netplan', "*.yaml")) + \
-          glob.glob(os.path.join(self.root, 'run/netplan', "*.yaml"))
-        for path in paths:
-            configs_by_basename[os.path.basename(path)] = path
-        for _, path in sorted(configs_by_basename.items()):
-            try:
-                fp = open(path)
-            except OSError:
-                log.exception("opening %s failed", path)
-            with fp:
-                self.model.parse_netplan_config(fp.read())
+        self.model = NetworkModel(self.root)
 
         self.view_stack = []
 
@@ -381,6 +373,7 @@ class NetworkController(BaseController):
             w.write("# This is the network config written by 'console-conf'\n")
             w.write(yaml.dump(config))
         os.rename(tmppath, netplan_path)
+        self.model.parse_netplan_configs()
         if self.opts.dry_run:
             tasks = [
                 ('one', BackgroundProcess(['sleep', '0.1'])),

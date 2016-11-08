@@ -15,8 +15,10 @@
 
 import copy
 import fnmatch
+import glob
 import ipaddress
 import logging
+import os
 from socket import AF_INET, AF_INET6
 
 import yaml, yaml.reader
@@ -370,23 +372,32 @@ class NetworkModel(BaseModel):
         6: 'balance-alb',
     }
 
-    def __init__(self):
+    def __init__(self, netplan_root):
         self.devices = {} # Maps ifindex to Networkdev
         self.devices_by_name = {} # Maps interface names to Networkdev
-        self.config = NetplanConfig()
         self.default_v4_gateway = None
         self.default_v6_gateway = None
         self.v4_gateway_dev = None
         self.v6_gateway_dev = None
         self.network_routes = {}
+        self.netplan_root = netplan_root
+        self.parse_netplan_configs()
 
-    def parse_netplan_config(self, config):
-        self.config.parse_netplan_config(config)
-
-    def reset(self):
-        log.debug('resetting network model')
-        self.devices = {}
-        self.info = {}
+    def parse_netplan_configs(self):
+        self.config = NetplanConfig()
+        configs_by_basename = {}
+        paths = glob.glob(os.path.join(self.netplan_root, 'lib/netplan', "*.yaml")) + \
+          glob.glob(os.path.join(self.netplan_root, 'etc/netplan', "*.yaml")) + \
+          glob.glob(os.path.join(self.netplan_root, 'run/netplan', "*.yaml"))
+        for path in paths:
+            configs_by_basename[os.path.basename(path)] = path
+        for _, path in sorted(configs_by_basename.items()):
+            try:
+                fp = open(path)
+            except OSError:
+                log.exception("opening %s failed", path)
+            with fp:
+                self.config.parse_netplan_config(fp.read())
 
     def get_menu(self):
         return self.additional_options
