@@ -13,13 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+import socket
+
 from urwid import Text, Pile, ListBox
+
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, done_btn, menu_btn
 from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.interactive import StringEditor
-import logging
-import netifaces
 
 log = logging.getLogger('subiquitycore.network.set_default_route')
 
@@ -59,9 +61,9 @@ class NetworkSetDefaultRouteView(BaseView):
         providers = {}
 
         for iface in self.model.get_all_interfaces():
-            if self.family == netifaces.AF_INET:
+            if self.family == socket.AF_INET:
                 ip_providers = iface.ip4_providers
-            elif self.family == netifaces.AF_INET6:
+            elif self.family == socket.AF_INET6:
                 ip_providers = iface.ip6_providers
 
             for provider in ip_providers:
@@ -118,9 +120,9 @@ class NetworkSetDefaultRouteView(BaseView):
         log.debug("changing default gw: {}".format(result))
 
         gw_func = None
-        if self.family == netifaces.AF_INET:
+        if self.family == socket.AF_INET:
             gw_func = self.model.set_default_v4_gateway
-        elif self.family == netifaces.AF_INET6:
+        elif self.family == socket.AF_INET6:
             gw_func = self.model.set_default_v6_gateway
 
         if self.default_gateway_w and self.default_gateway_w.value:

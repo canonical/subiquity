@@ -14,15 +14,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+from functools import partial
+import glob
 import logging
 import os
 import queue
 import random
 import select
-import time
+import socket
+import subprocess
 
-import netifaces
 import yaml
+
+from probert.network import UdevObserver
 
 from subiquitycore.async import Async
 from subiquitycore.models import NetworkModel
@@ -66,7 +70,7 @@ class BackgroundProcess(BackgroundTask):
         if result['status'] == 0:
             observer.task_succeeded()
         else:
-            observer.task_failed()
+            observer.task_failed(result['err'])
 
     def cancel(self):
         if self.proc is None:
@@ -99,30 +103,34 @@ class PythonSleep(BackgroundTask):
 
 class WaitForDefaultRouteTask(BackgroundTask):
 
-    def __init__(self, timeout):
+    def __init__(self, timeout, udev_observer):
         self.timeout = timeout
-        self.r, self.w = os.pipe()
+        self.fail_r, self.fail_w = os.pipe()
+        self.success_r, self.success_w = os.pipe()
+        self.udev_observer = udev_observer
 
     def __repr__(self):
         return 'WaitForDefaultRouteTask(%r)'%(self.timeout,)
 
+    def got_route(self):
+        os.write(self.success_w, b'x')
+
     def run(self, observer):
+        self.udev_observer.add_default_route_waiter(self.got_route)
         try:
-            start = time.time()
-            while time.time() - start < self.timeout:
-                if len(netifaces.gateways().get('default', {})) > 0:
-                    observer.task_succeeded()
-                    return
-                r, _, _ = select.select([self.r], [], [], 0.1)
-                if r: # we've been canceled
-                    return
-            observer.task_failed()
+            r, _, _ = select.select([self.fail_r, self.success_r], [], [], self.timeout)
+            if self.success_r in r:
+                observer.task_succeeded()
+            else:
+                observer.task_failed()
         finally:
-            os.close(self.r)
-            os.close(self.w)
+            os.close(self.fail_r)
+            os.close(self.fail_w)
+            os.close(self.success_r)
+            os.close(self.success_w)
 
     def cancel(self):
-        os.write(self.w, b'x')
+        os.write(self.fail_w, b'x')
 
 
 class TaskSequence:
@@ -180,10 +188,10 @@ class TaskSequence:
         else:
             self._run1()
 
-    def task_failed(self):
+    def task_failed(self, info=None):
         if self.canceled:
             return
-        self.call_from_thread(self.watcher.task_error, self.stage)
+        self.call_from_thread(self.watcher.task_error, self.stage, info)
 
 
 def view(func):
@@ -194,7 +202,7 @@ def view(func):
         return func(self, *args, **kw)
     return f
 
-netplan_path = '/etc/netplan/00-snapd-config.yaml'
+netplan_config_file_name = '00-snapd-config.yaml'
 
 def sanitize_config(config):
     """Return a copy of config with passwords redacted."""
@@ -205,6 +213,93 @@ def sanitize_config(config):
                 ap_config['password'] = '<REDACTED>'
     return config
 
+class SubiquityObserver(UdevObserver):
+    def __init__(self, model, ui, loop):
+        UdevObserver.__init__(self)
+        self.model = model
+        self.ui = ui
+        self.loop = loop
+        self.default_route_waiter = None
+        self.default_routes = set()
+
+    def start(self):
+        fds = super().start()
+        for fd in fds:
+            self.loop.watch_file(fd, partial(self.data_ready, fd))
+        return fds
+
+    def new_link(self, ifindex, link):
+        self.model.new_link(ifindex, link)
+
+    def del_link(self, ifindex):
+        self.model.del_link(ifindex)
+        if ifindex in self.default_routes:
+            self.default_routes.remove(ifindex)
+
+    def update_link(self, ifindex):
+        self.model.update_link(ifindex)
+
+    def route_change(self, action, data):
+        if data['dst'] != b'default':
+            return
+        if data['table'] != 254:
+            return
+        super().route_change(action, data)
+        ifindex = data['ifindex']
+        if action == "NEW":
+            self.default_routes.add(ifindex)
+            if self.default_route_waiter:
+                self.default_route_waiter()
+        elif action == "DEL" and ifindex in self.default_routes:
+            self.default_routes.remove(ifindex)
+        log.debug('default routes %s', self.default_routes)
+
+    def add_default_route_waiter(self, waiter):
+        if self.default_routes:
+            waiter()
+        else:
+            self.default_route_waiter = waiter
+
+    def refresh(self):
+        v = self.ui.frame.body
+        if hasattr(v, 'refresh_model_inputs'):
+            v.refresh_model_inputs()
+        if self.default_route_waiter:
+            pass
+
+    def data_ready(self, fd):
+        code = subprocess.call(['udevadm', 'settle', '-t', '0'])
+        if code != 0:
+            log.debug("waiting 0.1 to let udev event queue settle")
+            self.loop.set_alarm_in(0.1, lambda loop, ud:self.data_ready(fd))
+        super().data_ready(fd)
+        self.refresh()
+
+
+default_netplan = '''
+network:
+  version: 2
+  ethernets:
+    "en*":
+       addresses:
+         - 10.0.2.15/24
+       gateway4: 10.0.2.2
+       nameservers:
+         addresses:
+           - 8.8.8.8
+           - 8.4.8.4
+         search:
+           - foo
+           - bar
+    "eth*":
+       dhcp4: true
+  wifis:
+    "wl*":
+       dhcp4: true
+       access-points:
+         "some-ap":
+            password: password
+'''
 
 class NetworkController(BaseController):
     signals = [
@@ -212,15 +307,34 @@ class NetworkController(BaseController):
         ('menu:network:main:set-default-v6-route',     'set_default_v6_route'),
     ]
 
+    root = "/"
+
     def __init__(self, common):
         super().__init__(common)
-        self.model = NetworkModel(self.prober, self.opts)
+        if self.opts.dry_run:
+            import atexit, shutil, tempfile
+            self.root = tempfile.mkdtemp()
+            self.tried_once = False
+            atexit.register(shutil.rmtree, self.root)
+            os.makedirs(os.path.join(self.root, 'etc/netplan'))
+            with open(os.path.join(self.root, 'etc/netplan', netplan_config_file_name), 'w') as fp:
+                fp.write(default_netplan)
+        self.model = NetworkModel(self.root)
+
+        self.view_stack = []
+
+        self.observer = SubiquityObserver(self.model, self.ui, self.loop)
+        self.observer.start()
+
         self.view_stack = []
 
     def prev_view(self):
         self.view_stack.pop()
         meth, args, kw = self.view_stack.pop()
         meth(*args, **kw)
+
+    def start_scan(self, dev):
+        self.observer.wlan_listener.trigger_scan(dev.ifindex)
 
     def cancel(self):
         if len(self.view_stack) <= 1:
@@ -229,10 +343,7 @@ class NetworkController(BaseController):
             self.prev_view()
 
     def default(self):
-        self.model.reset()
         self.view_stack = []
-        log.info("probing for network devices")
-        self.model.probe_network()
         self.start()
 
     @view
@@ -248,40 +359,40 @@ class NetworkController(BaseController):
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(sanitize_config(config), default_flow_style=False))
 
-        if self.opts.dry_run:
-            if hasattr(self, 'tried_once'):
-                tasks = [
-                    ('one', BackgroundProcess(['sleep', '0.1'])),
-                    ('two', PythonSleep(0.1)),
-                    ('three', BackgroundProcess(['sleep', '0.1'])),
-                    ]
+        netplan_path = os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
+        while True:
+            try:
+                tmppath = '%s.%s' % (netplan_path, random.randrange(0, 1000))
+                fd = os.open(tmppath, os.O_WRONLY | os.O_EXCL | os.O_CREAT, 0o0600)
+            except FileExistsError:
+                continue
             else:
+                break
+        w = os.fdopen(fd, 'w')
+        with w:
+            w.write("# This is the network config written by 'console-conf'\n")
+            w.write(yaml.dump(config))
+        os.rename(tmppath, netplan_path)
+        self.model.parse_netplan_configs()
+        if self.opts.dry_run:
+            tasks = [
+                ('one', BackgroundProcess(['sleep', '0.1'])),
+                ('two', PythonSleep(0.1)),
+                ('three', BackgroundProcess(['sleep', '0.1'])),
+                ]
+            if os.path.exists('/lib/netplan/generate'):
+                # If netplan appears to be installed, run generate to at
+                # least test that what we wrote is acceptable to netplan.
+                tasks.append(('generate', BackgroundProcess(['netplan', 'generate', '--root', self.root])))
+            if not self.tried_once:
+                tasks.append(('fail', WaitForDefaultRouteTask(30, self.observer)))
+                tasks.append(('fail', BackgroundProcess(['false'])))
                 self.tried_once = True
-                tasks = [
-                    ('timeout', WaitForDefaultRouteTask(30)),
-                    ('one', BackgroundProcess(['sleep', '0.1'])),
-                    ('two', BackgroundProcess(['sleep', '0.1'])),
-                    ('three', BackgroundProcess(['false'])),
-                    ('four', BackgroundProcess(['sleep', '0.1'])),
-                    ]
         else:
-            while True:
-                try:
-                    tmppath = '%s.%s' % (netplan_path, random.randrange(0, 1000))
-                    fd = os.open(tmppath, os.O_WRONLY | os.O_EXCL | os.O_CREAT, 0o0600)
-                except FileExistsError:
-                    continue
-                else:
-                    break
-            w = os.fdopen(fd, 'w')
-            with w:
-                w.write("# This is the network config written by 'console-conf'\n")
-                w.write(yaml.dump(config))
-            os.rename(tmppath, netplan_path)
             tasks = [
                 ('generate', BackgroundProcess(['/lib/netplan/generate'])),
                 ('apply', BackgroundProcess(['netplan', 'apply'])),
-                ('timeout', WaitForDefaultRouteTask(30)),
+                ('timeout', WaitForDefaultRouteTask(30, self.observer)),
                 ]
 
         def cancel():
@@ -296,9 +407,9 @@ class NetworkController(BaseController):
     def task_complete(self, stage):
         self.acw.advance()
 
-    def task_error(self, stage):
+    def task_error(self, stage, info=None):
         self.ui.frame.body.remove_overlay(self.acw)
-        self.ui.frame.body.show_network_error(stage)
+        self.ui.frame.body.show_network_error(stage, info)
 
     def tasks_finished(self):
         self.signal.emit_signal('next-screen')
@@ -307,12 +418,12 @@ class NetworkController(BaseController):
     @view
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
-        self.ui.set_body(NetworkSetDefaultRouteView(self.model, netifaces.AF_INET, self))
+        self.ui.set_body(NetworkSetDefaultRouteView(self.model, socket.AF_INET, self))
 
     @view
     def set_default_v6_route(self):
         self.ui.set_header("Default route")
-        self.ui.set_body(NetworkSetDefaultRouteView(self.model, netifaces.AF_INET6, self))
+        self.ui.set_body(NetworkSetDefaultRouteView(self.model, socket.AF_INET6, self))
 
     @view
     def bond_interfaces(self):

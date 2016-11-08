@@ -1,3 +1,9 @@
+subiquity (0.0.24~ppa3) xenial; urgency=medium
+
+  * Rework network model and UI significantly. 
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Mon, 07 Nov 2016 16:43:06 +1300
+
 subiquity (0.0.23) zesty; urgency=medium
 
   * Redact wifi password from log file more thoroughly. (LP: #1636421, again)

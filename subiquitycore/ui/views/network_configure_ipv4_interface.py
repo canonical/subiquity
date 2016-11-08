@@ -13,38 +13,47 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+import ipaddress
+
+import socket
+
 from urwid import Text, Pile, ListBox, Columns
+
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, menu_btn, cancel_btn
 from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.interactive import StringEditor
-import logging
-import netifaces
-import ipaddress
+
 
 log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface')
 
 
 class NetworkConfigureIPv4InterfaceView(BaseView):
-    def __init__(self, model, controller, iface):
+    def __init__(self, model, controller, name):
         self.model = model
         self.controller = controller
-        self.ifname = iface
-        self.iface = self.model.get_interface(self.ifname)
+        self.dev = self.model.get_netdev_by_name(name)
         self.is_gateway = False
-        self.gateway_input = StringEditor(caption="")  # FIXME: ipaddr_editor
-        self.address_input = StringEditor(caption="")  # FIXME: ipaddr_editor
         self.subnet_input = StringEditor(caption="")  # FIXME: ipaddr_editor
+        self.address_input = StringEditor(caption="")  # FIXME: ipaddr_editor
+        if self.dev.configured_ipv4_addresses:
+            addr = ipaddress.ip_interface(self.dev.configured_ipv4_addresses[0])
+            self.subnet_input.value = str(addr.network)
+            self.address_input.value = str(addr.ip)
+        self.gateway_input = StringEditor(caption="")  # FIXME: ipaddr_editor
+        if self.dev.configured_gateway4:
+            self.gateway_input.value = self.dev.configured_gateway4
+        self.nameserver_input = StringEditor(caption="")  # FIXME: ipaddr_list_editor
+        self.nameserver_input.value = ', '.join(self.dev.configured_nameservers)
+        self.searchdomains_input = StringEditor(caption="")  # FIXME: ipaddr_list_editor
+        self.searchdomains_input.value = ', '.join(self.dev.configured_searchdomains)
         self.error = Text("", align='center')
-        self.nameserver_input = \
-            StringEditor(caption="")  # FIXME: ipaddr_editor
-        self.searchdomains_input = \
-            StringEditor(caption="")  # FIXME: ipaddr_editor
-        self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
+        #self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
         body = [
             Padding.center_79(self._build_iface_inputs()),
-            Padding.line_break(""),
-            Padding.center_79(self.set_as_default_gw_button),
+            #Padding.line_break(""),
+            #Padding.center_79(self.set_as_default_gw_button),
             Padding.line_break(""),
             Padding.center_90(Color.info_error(self.error)),
             Padding.line_break(""),
@@ -52,11 +61,20 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         ]
         super().__init__(ListBox(body))
 
+    def refresh_model_inputs(self):
+        try:
+            self.dev = self.model.get_netdev_by_name(self.dev.name)
+        except KeyError:
+            # The interface is gone
+            self.controller.prev_view()
+            self.controller.prev_view()
+            return
+
     def _build_iface_inputs(self):
         col1 = [
             Columns(
                 [
-                    ("weight", 0.2, Text("Subnet")),
+                    ("weight", 0.2, Text("Subnet:")),
                     ("weight", 0.3,
                      Color.string_input(self.subnet_input,
                                         focus_map="string_input focus")),
@@ -65,7 +83,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Address")),
+                    ("weight", 0.2, Text("Address:")),
                     ("weight", 0.3,
                      Color.string_input(self.address_input,
                                         focus_map="string_input focus")),
@@ -74,7 +92,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Gateway")),
+                    ("weight", 0.2, Text("Gateway:")),
                     ("weight", 0.3,
                      Color.string_input(self.gateway_input,
                                         focus_map="string_input focus")),
@@ -103,11 +121,11 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         return Pile(col1)
 
     def _build_set_as_default_gw_button(self):
-        ifaces = self.model.get_all_interface_names()
+        devs = self.model.get_all_netdevs()
 
-        self.is_gateway = self.model.v4_gateway_dev == self.ifname
+        self.is_gateway = self.model.v4_gateway_dev == self.dev.name
 
-        if not self.is_gateway and len(ifaces) > 1:
+        if not self.is_gateway and len(devs) > 1:
             btn = menu_btn(label="Set this as default gateway",
                            on_press=self.set_default_gateway)
         else:
@@ -118,7 +136,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
     def set_default_gateway(self, button):
         if self.gateway_input.value:
             try:
-                self.model.set_default_v4_gateway(self.ifname,
+                self.model.set_default_v4_gateway(self.dev.name,
                                                   self.gateway_input.value)
                 self.is_gateway = True
                 self.set_as_default_gw_button.contents = \
@@ -140,11 +158,22 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
 
     def validate(self, result):
         if '/' not in result['network']:
-            raise ValueError("Network should be in CIDR form (xx.xx.xx.xx/yy)")
+            raise ValueError("Subnet: should be in CIDR form (xx.xx.xx.xx/yy)")
 
-        netmask = result['network'].split('/')[1]
-        if int(netmask) > 32 or int(netmask) < 0:
-            raise ValueError("CIDR netmask value should be between 0 and 32")
+        try:
+            network = ipaddress.IPv4Network(result['network'])
+        except ValueError as v:
+            raise ValueError("Subnet: " + str(v))
+        try:
+            address = ipaddress.IPv4Address(result['address'])
+        except ValueError as v:
+            raise ValueError("Address: " + str(v))
+        if address not in network:
+            raise ValueError("Address: '%s' is not contained in '%s'" % (address, network))
+        try:
+            ipaddress.IPv4Address(result['gateway'])
+        except ValueError as v:
+            raise ValueError("Gateway: " + str(v))
         for ns in result['nameservers']:
             try:
                 ipaddress.ip_address(ns)
@@ -171,15 +200,14 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         }
         try:
             self.validate(result)
-            self.iface.remove_networks()
-            self.iface.add_network(netifaces.AF_INET, result)
         except ValueError as e:
             error = 'Failed to manually configure interface: {}'.format(e)
             log.exception(error)
             self.error.set_text(str(e))
-            #self.iface.configure_from_info()
-            # FIXME: set error message in UX ala identity
             return
+        self.dev.remove_ipv4_networks()
+        self.dev.remove_nameservers()
+        self.dev.add_network(socket.AF_INET, result)
 
         # return
         self.controller.prev_view()
