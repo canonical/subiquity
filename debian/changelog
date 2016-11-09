@@ -1,4 +1,4 @@
-subiquity (0.0.24~ppa4) xenial; urgency=medium
+subiquity (0.0.24~ppa5) xenial; urgency=medium
 
   * Rework network model and UI significantly. 
 
