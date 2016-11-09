@@ -14,11 +14,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
+import logging
+import subprocess
 
 from subiquitycore.controllers.identity import BaseIdentityController
 from subiquitycore.utils import disable_first_boot_service, run_command
 
 from console_conf.ui.views import IdentityView, LoginView
+
+log = logging.getLogger('console_conf.controllers.identity')
+
+login_details_tmpl = """This device is registered to {realname}.
+
+Remote access was enabled via authentication with SSO user <{username}>.
+Public SSH keys were added to the device for remote access.
+
+{realname} can connect remotely to this device via SSH:
+
+"""
 
 
 class IdentityController(BaseIdentityController):
@@ -62,6 +75,8 @@ class IdentityController(BaseIdentityController):
                 'username': email,
                 }
             self.model.add_user(result)
+            ssh_keys = subprocess.getoutput('ssh-add -L').splitlines()
+            login_details_path = '.subiquity/login-details.txt'
         else:
             self.ui.frame.body.progress.set_text("Contacting store...")
             self.loop.draw_screen()
@@ -76,9 +91,25 @@ class IdentityController(BaseIdentityController):
                     'realname': email,
                     'username': data['username'],
                     }
-                with open('/var/lib/console-conf/login-details.txt', 'w') as fp:
-                    fp.write("Please login to this system via ssh.\n")
+                ssh_keys = data['ssh-keys']
+                login_details_path = '/var/lib/console-conf/login-details.txt'
                 self.model.add_user(result)
+        log.debug('ssh_keys %s', ssh_keys)
+        fingerprints = []
+        for key in ssh_keys:
+            keygen_result = subprocess.Popen(['ssh-keygen', '-lf', '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            fingerprint, err = keygen_result.communicate(key.encode('utf-8'))
+            fingerprints.append(fingerprint.decode('utf-8', 'replace'))
+        log.debug('fingerprints %s', fingerprints)
+        net_model = self.controllers['Network'].model
+        with open(login_details_path, 'w') as fp:
+            fp.write(login_details_tmpl.format(**result))
+            for dev in net_model.get_all_netdevs():
+                for ip in dev.actual_ip_addresses:
+                    fp.write("    ssh %s@%s\n"%(result['username'], ip))
+            fp.write("\nSSH keys with the following fingerprints can be used to log in:\n\n")
+            for fingerprint in fingerprints:
+                fp.write("    " + fingerprint)
         self.login()
 
     def cancel(self):
