@@ -99,7 +99,7 @@ class IdentityController(BaseIdentityController):
         for key in ssh_keys:
             keygen_result = subprocess.Popen(['ssh-keygen', '-lf', '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             fingerprint, err = keygen_result.communicate(key.encode('utf-8'))
-            fingerprints.append(fingerprint.decode('utf-8', 'replace'))
+            fingerprints.append(fingerprint.decode('utf-8', 'replace').replace('\r', ''))
         log.debug('fingerprints %s', fingerprints)
         net_model = self.controllers['Network'].model
         with open(login_details_path, 'w') as fp:
@@ -110,6 +110,7 @@ class IdentityController(BaseIdentityController):
             fp.write("\nSSH keys with the following fingerprints can be used to log in:\n\n")
             for fingerprint in fingerprints:
                 fp.write("    " + fingerprint)
+            fp.write("\nPressing enter after setting a password will allow you to log in here.\n")
         self.login()
 
     def cancel(self):
