@@ -16,7 +16,7 @@
 import json
 
 from subiquitycore.controllers.identity import BaseIdentityController
-from subiquitycore.utils import disable_first_boot_service, run_command, mark_firstboot_complete
+from subiquitycore.utils import disable_first_boot_service, run_command
 
 from console_conf.ui.views import IdentityView, LoginView
 
@@ -33,7 +33,6 @@ class IdentityController(BaseIdentityController):
         self.ui.set_body(self.identity_view(self.model, self, self.opts, self.loop))
         device_owner = self.get_device_owner()
         if device_owner is not None:
-            mark_firstboot_complete()
             self.model.add_user(device_owner)
             self.login()
 
@@ -72,14 +71,13 @@ class IdentityController(BaseIdentityController):
                 self.ui.frame.body.error.set_text("Creating user failed:\n" + result['err'])
                 return
             else:
-                # mark ourselves complete
-                mark_firstboot_complete()
-
                 data = json.loads(result['output'])
                 result = {
                     'realname': email,
                     'username': data['username'],
                     }
+                with open('/var/lib/console-conf/login-details.txt', 'w') as fp:
+                    fp.write("Please login to this system via ssh.\n")
                 self.model.add_user(result)
         self.login()
 

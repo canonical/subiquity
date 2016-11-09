@@ -8,20 +8,15 @@ trap true HUP INT QUIT TSTP
 # happened and need to force it on. Yay UNIX!
 stty icrnl -echo
 
-# check if we have extrausers that have no password set
-if grep -qE '^[-a-z0-9+.-_]+:x:' /var/lib/extrausers/passwd && ! grep -qE '^[-a-z0-9+.-_]+:\$[0-9]+\$.*:' /var/lib/extrausers/shadow; then
-    cat /usr/share/subiquity/console-conf-ssh-login-only
-    # FIXME: do something better
-    read REPLY
-fi
-
-# all done and the user has a password
-if [ -e  /var/lib/console-conf/complete ]; then
-    exit 0
-fi
-
 if [ "$(snap managed)" = "true" ]; then
-    touch /var/lib/console-conf/complete
+    # check if we have extrausers that have no password set
+    if grep -qE '^[-a-z0-9+.-_]+:x:' /var/lib/extrausers/passwd && ! grep -qE '^[-a-z0-9+.-_]+:\$[0-9]+\$.*:' /var/lib/extrausers/shadow; then
+        cat /var/lib/console-conf/login-details.txt
+        read REPLY
+        stty echo
+    else
+        touch /var/lib/console-conf/complete
+    fi
     exit 0
 fi
 
