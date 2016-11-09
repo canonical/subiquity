@@ -6,7 +6,7 @@ trap true HUP INT QUIT TSTP
 # agetty only sets ICRNL if it has read the username and seen whether
 # it was terminated by CR or NL. We pass -n to agetty so that hasn't
 # happened and need to force it on. Yay UNIX!
-stty icrnl
+stty icrnl -echo
 
 if [ "$(snap managed)" = "true" ]; then
     touch /var/lib/console-conf/complete
@@ -15,4 +15,5 @@ fi
 
 cat /usr/share/subiquity/console-conf-wait
 read REPLY
+stty echo
 exec console-conf "$@"
