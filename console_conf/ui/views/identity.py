@@ -73,6 +73,8 @@ class IdentityView(BaseView):
         body = [
             Padding.center_90(self._build_model_inputs()),
             Padding.line_break(""),
+            Padding.center_79(Color.info_minor(Text("If you do not have an account, visit https://login.ubuntu.com to create one."))),
+            Padding.line_break(""),
             Padding.center_90(Color.info_error(self.error)),
             Padding.center_90(self.progress),
             Padding.line_break(""),
