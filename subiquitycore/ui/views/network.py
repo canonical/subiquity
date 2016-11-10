@@ -76,10 +76,10 @@ def _format_address_list(label, addresses):
     elif len(addresses) == 1:
         return [Text(label%('',)+' '+str(addresses[0]))]
     else:
-        r = [Text(label%('es',))]
+        ips = []
         for ip in addresses:
-            r.append(' ' + str(ip))
-        return r
+            ips.append(str(ip))
+        return [Text(label%('es',) + ' ' + ', '.join(ips))]
 
 def _build_gateway_ipv4_info(dev):
     if dev.dhcp4:

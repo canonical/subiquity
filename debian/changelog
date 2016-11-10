@@ -1,3 +1,10 @@
+subiquity (0.0.24.1) UNRELEASED; urgency=medium
+
+  * Fix crash when an interface has more than one IP address of the same
+    family.
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Fri, 11 Nov 2016 11:29:18 +1300
+
 subiquity (0.0.24) zesty; urgency=medium
 
   * Rework network model and UI significantly, using rtnetlink nl80211 events
