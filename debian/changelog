@@ -1,6 +1,13 @@
-subiquity (0.0.24~ppa5) xenial; urgency=medium
+subiquity (0.0.24) xenial; urgency=medium
 
-  * Rework network model and UI significantly. 
+  * Rework network model and UI significantly, using rtnetlink nl80211 events
+    to provide a live view of the state of the network as it changes. 
+    (LP: #1627031, #1624322, #1637153)
+  * Show friendly message instead of getty when only ssh login is possible.
+    (LP: #1639543)
+  * Hide keypresses while in the "press enter to configure" screen.
+    (LP: #1639917)
+  * Give a hint on how to create a store account. (LP: #1639799)
 
  -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Mon, 07 Nov 2016 16:43:06 +1300
 
