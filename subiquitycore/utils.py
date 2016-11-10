@@ -208,17 +208,6 @@ def sudo_user():
     return sudo_user
 
 
-def mark_firstboot_complete():
-    """ Touch our firstboot-complete eyecatcher """
-    log.info('marking firstboot service complete')
-    firstboot = '/var/lib/console-conf/complete'
-    if not os.path.exists(os.path.dirname(firstboot)):
-        os.makedirs(os.path.dirname(firstboot))
-    with open(firstboot, 'w') as fp:
-        os.utime(fp.name, None)
-        fp.close()
-
-
 def disable_first_boot_service():
     """ Stop firstboot service; which also restores getty service """
     log.info('disabling first boot service')

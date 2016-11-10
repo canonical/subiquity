@@ -2,6 +2,8 @@
 set -e
 
 trap true HUP INT QUIT TSTP
+echo_on () { stty echo; }
+trap echo_on EXIT
 
 # agetty only sets ICRNL if it has read the username and seen whether
 # it was terminated by CR or NL. We pass -n to agetty so that hasn't
@@ -9,11 +11,21 @@ trap true HUP INT QUIT TSTP
 stty icrnl -echo
 
 if [ "$(snap managed)" = "true" ]; then
-    touch /var/lib/console-conf/complete
+    # check if we have extrausers that have no password set
+    if grep -qE '^[-a-z0-9+.-_]+:x:' /var/lib/extrausers/passwd && ! grep -qE '^[-a-z0-9+.-_]+:\$[0-9]+\$.*:' /var/lib/extrausers/shadow; then
+        if [ ! -f /run/console-conf/login-details.txt ]; then
+            mkdir -p /run/console-conf
+            /usr/share/subiquity/console-conf-write-login-details > /run/console-conf/login-details.txt.tmp
+            mv /run/console-conf/login-details.txt.tmp /run/console-conf/login-details.txt
+        fi
+        cat /run/console-conf/login-details.txt
+        read REPLY
+    else
+        touch /var/lib/console-conf/complete
+    fi
     exit 0
 fi
 
 cat /usr/share/subiquity/console-conf-wait
 read REPLY
-stty echo
 exec console-conf "$@"

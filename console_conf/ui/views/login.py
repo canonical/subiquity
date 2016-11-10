@@ -37,9 +37,6 @@ class LoginView(BaseView):
         self.netdevs = netdevs
         self.items = []
         self.body = [
-            Padding.line_break(""),
-            Padding.line_break(""),
-            Padding.line_break(""),
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
@@ -64,7 +61,6 @@ class LoginView(BaseView):
             "device via SSH:")
 
         sl = []
-        ssh = []
         user = self.model.user
         login_info = {
             'realname': user.realname,
@@ -77,12 +73,19 @@ class LoginView(BaseView):
             for addr in dev.actual_ip_addresses:
                 ips.append(addr)
 
+        sl += [Text(login_text), Padding.line_break("")]
         for ip in ips:
-                ssh_iface = "    ssh %s@%s" % (user.username, ip)
-                ssh += [Padding.center_50(Text(ssh_iface))]
+            ssh_iface = "    ssh %s@%s" % (user.username, ip)
+            sl.append(Text(ssh_iface))
 
-        sl += [Text(login_text),
-               Padding.line_break("")] + ssh
+        sl += [
+            Padding.line_break(""),
+            Text("SSH keys with the following fingerprints can be used to log in:"),
+            Padding.line_break(""),
+        ]
+
+        for fingerprint in user.fingerprints:
+            sl.append(Text("    " + fingerprint))
 
         return Pile(sl)
 
