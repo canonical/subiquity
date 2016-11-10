@@ -107,6 +107,8 @@ class IdentityController(BaseIdentityController):
         device_owner = get_device_owner()
         if device_owner is not None:
             self.model.add_user(device_owner)
+            key_file = os.path.join(device_owner['homedir'], ".ssh/authorized_keys")
+            self.model.user.fingerprints = run_command(['ssh-keygen', '-lf', key_file])['output'].replace('\r', '').splitlines()
             self.login()
 
     def identity_done(self, email):
@@ -142,6 +144,7 @@ class IdentityController(BaseIdentityController):
             keygen_result = subprocess.Popen(['ssh-keygen', '-lf', '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
             fingerprint, err = keygen_result.communicate(key.encode('utf-8'))
             fingerprints.append(fingerprint.decode('utf-8', 'replace').replace('\r', '').strip())
+        self.model.user.fingerprints = fingerprints
         log.debug('fingerprints %s', fingerprints)
         ips = []
         net_model = self.controllers['Network'].model
