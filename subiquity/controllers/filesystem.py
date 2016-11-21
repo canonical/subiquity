@@ -81,6 +81,9 @@ class FilesystemController(BaseController):
 
     default = filesystem
 
+    def cancel(self):
+        self.signal.emit_signal('prev-screen')
+    
     def filesystem_error(self, error_fname):
         title = "Filesystem error"
         footer = ("Error while installing Ubuntu")

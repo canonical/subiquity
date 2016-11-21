@@ -21,17 +21,16 @@ from subiquitycore.controller import BaseController
 
 class LoginController(BaseController):
 
-    signals = [
-        ('menu:login:main', 'login'),
-    ]
-
     def __init__(self, common):
         super().__init__(common)
         self.model = LoginModel()
 
-    def login(self):
+    def default(self):
         title = "Configuration Complete"
         excerpt = "Your device is now configured.  Login details below."
         self.ui.set_header(title, excerpt)
         view = LoginView(self.model, self.signal, self.model.user)
         self.ui.set_body(view)
+
+    def cancel(self):
+        pass
