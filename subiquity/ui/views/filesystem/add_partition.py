@@ -47,10 +47,10 @@ log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 
 class AddPartitionView(BaseView):
 
-    def __init__(self, model, signal, selected_disk):
+    def __init__(self, model, controller, selected_disk):
         log.debug('AddPartitionView: selected_disk=[{}]'.format(selected_disk))
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.selected_disk = selected_disk
         self.disk_obj = self.model.get_disk(selected_disk)
 
@@ -131,7 +131,7 @@ class AddPartitionView(BaseView):
         return Pile(total_items)
 
     def cancel(self, button):
-        self.signal.prev_signal()
+        self.controller.prev_view()
 
     def done(self, result):
         """ partition spec
@@ -221,5 +221,4 @@ class AddPartitionView(BaseView):
             return
 
         log.debug("Add Partition Result: {}".format(result))
-        self.signal.emit_signal('filesystem:finish-add-disk-partition',
-                                self.disk_obj.devpath, result)
+        self.signal.add_disk_partition_handler(self.disk_obj.devpath, result)
