@@ -53,17 +53,82 @@ class ApplyingConfigWidget(WidgetWrap):
     def do_cancel(self, sender):
         self.cancel_func()
 
+def _build_wifi_info(dev):
+    r = []
+    if dev.actual_ssid is not None:
+        if dev.configured_ssid is not None:
+            if dev.actual_ssid != dev.configured_ssid:
+                r.append(Text("Associated to '%s', will associate to '%s'"%(dev.actual_ssid, dev.configured_ssid)))
+            else:
+                r.append(Text("Associated to '" + dev.actual_ssid + "'"))
+        else:
+            r.append(Text("No access point configured, but associated to '%s'"%(dev.actual_ssid,)))
+    else:
+        if dev.configured_ssid is not None:
+            r.append(Text("Will associate to '" + dev.configured_ssid + "'"))
+        else:
+            r.append(Text("No access point configured"))
+    return r
+
+def _format_address_list(label, addresses):
+    if len(addresses) == 0:
+        return []
+    elif len(addresses) == 1:
+        return [Text(label%('',)+' '+str(addresses[0]))]
+    else:
+        ips = []
+        for ip in addresses:
+            ips.append(str(ip))
+        return [Text(label%('es',) + ' ' + ', '.join(ips))]
+
+def _build_gateway_ipv4_info(dev):
+    if dev.dhcp4:
+        if dev.actual_ipv4_addresses:
+            return _format_address_list("Will use DHCP for IPv4, currently has address%s:", dev.actual_ipv4_addresses)
+        return [Text("Will use DHCP for IPv4")]
+    elif dev.configured_ipv4_addresses:
+        if sorted(dev.actual_ipv4_addresses) == sorted(dev.configured_ipv4_addresses):
+            return _format_address_list("Using static address%s for IPv4:", dev.actual_ipv4_addresses)
+        p = _format_address_list("Will use static address%s for IPv4:", dev.configured_ipv4_addresses)
+        if dev.actual_ipv4_addresses:
+            p.extend(_format_address_list("Currently has address%s:", dev.actual_ipv4_addresses))
+        return p
+    elif dev.actual_ipv4_addresses:
+        return _format_address_list("IPv4 is not configured but has address%s:", dev.actual_ipv4_addresses)
+    else:
+        return [Text("IPv4 is not configured")]
+
+
+def _build_gateway_ipv6_info(dev):
+    if dev.dhcp6:
+        if dev.actual_ipv6_addresses:
+            return _format_address_list("Will use DHCP for IPv6, currently has address%s:", dev.actual_ipv6_addresses)
+        return [Text("Will use DHCP for IPv6")]
+    elif dev.configured_ipv6_addresses:
+        if sorted(dev.actual_ipv6_addresses) == sorted(dev.configured_ipv6_addresses):
+            return _format_address_list("Using static address%s for IPv6:", dev.actual_ipv6_addresses)
+        p = _format_address_list("Will use static address%s for IPv6:", dev.configured_ipv6_addresses)
+        if dev.actual_ipv6_addresses:
+            p.extend(_format_address_list("Currently has address%s:", dev.actual_ipv6_addresses))
+        return p
+    elif dev.actual_ipv6_addresses:
+        return _format_address_list("IPv6 is not configured but has address%s:", dev.actual_ipv6_addresses)
+    else:
+        return [Text("IPv6 is not configured")]
+
 
 class NetworkView(BaseView):
-    def __init__(self, model, signal):
+    def __init__(self, model, controller):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.items = []
         self.error = Text("", align='center')
+        self.model_inputs = Pile(self._build_model_inputs())
+        self.additional_options = Pile(self._build_additional_options())
         self.body = [
-            Padding.center_79(self._build_model_inputs()),
+            Padding.center_79(self.model_inputs),
             Padding.line_break(""),
-            Padding.center_79(self._build_additional_options()),
+            Padding.center_79(self.additional_options),
             Padding.line_break(""),
             Padding.center_79(Color.info_error(self.error)),
             Padding.line_break(""),
@@ -100,123 +165,61 @@ class NetworkView(BaseView):
         return Pile(buttons, focus_item=done)
 
     def _build_model_inputs(self):
-        ifaces = self.model.get_all_interface_names()
+        netdevs = self.model.get_all_netdevs()
         ifname_width = 8  # default padding
-        if ifaces:
-            ifname_width += len(max(ifaces, key=len))
+        if netdevs:
+            ifname_width += max(map(lambda dev: len(dev.name), netdevs))
             if ifname_width > 20:
                 ifname_width = 20
 
         iface_menus = []
-        
+
         # Display each interface -- name in first column, then configured IPs
         # in the second.
-        log.debug('interfaces: {}'.format(ifaces))
-        for iface in ifaces:
+        log.debug('interfaces: {}'.format(netdevs))
+        for dev in netdevs:
             col_1 = []
             col_2 = []
 
             col_1.append(
                 Color.info_major(
-                    menu_btn(label=iface,
-                             on_press=self.on_net_dev_press),
+                    menu_btn(label=dev.name, on_press=self.on_net_dev_press),
                     focus_map='button focus'))
 
-            interface = self.model.get_interface(iface)
-            ip_status = {
-                'ipv4_addresses': interface.ipv4_addresses,
-                'ipv6_addresses': interface.ipv6_addresses,
-                'dhcp4_addresses': interface.dhcp4_addresses,
-                'dhcp6_addresses': interface.dhcp6_addresses,
-                'dhcp4': interface.dhcp4,
-                'dhcp6': interface.dhcp6,
-            }
-
-            for addr in ip_status['dhcp4_addresses']:
-                template = '{} (dhcp)'.format(addr[0])
-                col_1.append(Text("")) 
-                col_2.append(Color.info_primary(Text(template)))
-
-            for addr in ip_status['ipv4_addresses']:
-                template = '{} (manual)'.format(addr)
-                col_1.append(Text("")) 
-                col_2.append(Color.info_primary(Text(template)))
-
-            for addr in ip_status['dhcp6_addresses']:
-                template = '{} (dhcp)'.format(addr[0])
-                col_1.append(Text("")) 
-                col_2.append(Color.info_primary(Text(template)))
-
-            for addr in ip_status['ipv6_addresses']:
-                template = '{} (manual)'.format(addr)
-                col_1.append(Text("")) 
-                col_2.append(Color.info_primary(Text(template)))
-
-            template = None
-            if ( not ip_status['dhcp4'] and not ip_status['dhcp6'] ) \
-                    and len(ip_status['ipv4_addresses']) == 0 and \
-                    len(ip_status['ipv6_addresses']) == 0:
-                if interface.type == 'eth':
-                    if interface.is_connected():
-                        template = "Not configured"
-                    else:
-                        template = "Not connected"
-                else:
-                    template = "Not configured"
-
-            if ip_status['dhcp4'] and ip_status['dhcp6'] and \
-                    len(ip_status['ipv4_addresses']) == 0 and \
-                    len(ip_status['dhcp4_addresses']) == 0 and \
-                    len(ip_status['ipv6_addresses']) == 0 and \
-                    len(ip_status['dhcp6_addresses']) == 0:
-                template = "DHCP is enabled"
-            elif ip_status['dhcp4'] and \
-                    len(ip_status['ipv4_addresses']) == 0 and \
-                    len(ip_status['dhcp4_addresses']) == 0:
-                template = "DHCPv4 is enabled"
-            elif ip_status['dhcp6'] and \
-                    len(ip_status['ipv6_addresses']) == 0 and \
-                    len(ip_status['dhcp6_addresses']) == 0:
-                template = "DHCPv6 is enabled"
-
-            if template is not None:
-                col_1.append(Text("")) 
-                col_2.append(Color.info_primary(Text(template)))
-
-            if interface.iftype == 'wlan':
-                if interface.essid is not None:
-                    col_2.append(Text("Associated to '" + interface.essid + "'"))
-                else:
-                    col_2.append(Text("Not associated."))
+            if dev.type == 'wlan':
+                col_2.extend(_build_wifi_info(dev))
+            if len(dev.actual_ip_addresses) == 0 and dev.type == 'eth' and not dev.is_connected:
+                col_2.append(Color.info_primary(Text("Not connected")))
+            col_2.extend(_build_gateway_ipv4_info(dev))
+            col_2.extend(_build_gateway_ipv6_info(dev))
 
             # Other device info (MAC, vendor/model, speed)
-            info = self.model.get_iface_info(iface)
-            hwaddr = self.model.get_hw_addr(iface)
-            log.debug('iface info:{}'.format(info))
             template = ''
-            if hwaddr:
-                template += '{} '.format(hwaddr)
-            if info['bond_slave']:
+            if dev.hwaddr:
+                template += '{} '.format(dev.hwaddr)
+            if dev.is_bond_slave:
                 template += '(Bonded) '
-            if not info['vendor'].lower().startswith('unknown'):
-                vendor = textwrap.wrap(info['vendor'], 15)[0]
+            if not dev.vendor.lower().startswith('unknown'):
+                vendor = textwrap.wrap(dev.vendor, 15)[0]
                 template += '{} '.format(vendor)
-            if not info['model'].lower().startswith('unknown'):
-                model = textwrap.wrap(info['model'], 20)[0]
+            if not dev.model.lower().startswith('unknown'):
+                model = textwrap.wrap(dev.model, 20)[0]
                 template += '{} '.format(model)
-            if info['speed']:
-                template += '({speed})'.format(**info)
-            #log.debug('template: {}', template)
-            log.debug('hwaddr:{}, {}'.format(hwaddr, template))
+            if dev.speed:
+                template += '({})'.format(dev.speed)
 
             col_2.append(Color.info_minor(Text(template)))
             iface_menus.append(Columns([(ifname_width, Pile(col_1)), Pile(col_2)], 2))
 
-        return Pile(iface_menus)
+        return iface_menus
+
+    def refresh_model_inputs(self):
+        self.model_inputs.contents = [ (obj, ('pack', None)) for obj in self._build_model_inputs() ]
+        self.additional_options.contents = [ (obj, ('pack', None)) for obj in self._build_additional_options() ]
 
     def _build_additional_options(self):
         labels = []
-        ifaces = self.model.get_all_interface_names()
+        netdevs = self.model.get_all_netdevs()
 
         # Display default route status
         if self.model.default_v4_gateway is not None:
@@ -225,7 +228,7 @@ class NetworkView(BaseView):
             default_v4_route_w = Color.info_minor(
                 Text("  IPv4 default route " + v4_route_source + "."))
             labels.append(default_v4_route_w)
-            
+
         if self.model.default_v6_gateway is not None:
             v6_route_source = "via " + self.model.default_v6_gateway
 
@@ -235,15 +238,14 @@ class NetworkView(BaseView):
 
         max_btn_len = 0
         buttons = []
-        for opt, sig, _ in self.model.get_menu():
+        for opt, sig in self.model.get_menu():
             if ':set-default-route' in sig:
-                if len(ifaces) < 2:
+                if len(netdevs) < 2:
                     log.debug('Skipping default route menu option'
                               ' (only one nic)')
                     continue
             if ':bond-interfaces' in sig:
-                not_bonded = [iface for iface in ifaces
-                              if not self.model.iface_is_bonded(iface)]
+                not_bonded = [dev for dev in netdevs if not dev.is_bonded]
                 if len(not_bonded) < 2:
                     log.debug('Skipping bonding menu option'
                               ' (not enough available nics)')
@@ -255,25 +257,24 @@ class NetworkView(BaseView):
             buttons.append(
                 Color.menu_button(
                     menu_btn(label=opt,
-                             on_press=self.additional_menu_select),
+                             on_press=self.additional_menu_select,
+                             user_data=sig),
                     focus_map='button focus'))
 
-        padding = getattr(Padding, 'left_{}'.format(max_btn_len + 10))
-        buttons = [ padding(button) for button in buttons ]
-        return Pile(labels + buttons)
+        from urwid import Padding
+        buttons = [ Padding(button, align='left', width=max_btn_len + 6) for button in buttons ]
+        return labels + buttons
 
-    def additional_menu_select(self, result):
-        self.signal.emit_signal(self.model.get_signal_by_name(result.label))
+    def additional_menu_select(self, result, sig):
+        self.controller.signal.emit_signal(sig)
 
     def on_net_dev_press(self, result):
         log.debug("Selected network dev: {}".format(result.label))
-        self.signal.emit_signal('menu:network:main:configure-interface',
-                                result.label)
+        self.controller.network_configure_interface(result.label)
 
-    def show_network_error(self, action):
+    def show_network_error(self, action, info=None):
         if action == 'generate':
-            self.error.set_text("Network configuration failed; " + \
-                                "please verify your settings.")
+            self.error.set_text("Network configuration failed: %r" % (info,))
         elif action == 'apply':
             self.error.set_text("Network configuration could not be applied; " + \
                                 "please verify your settings.")
@@ -287,10 +288,7 @@ class NetworkView(BaseView):
                                 "please verify your settings.")
 
     def done(self, result):
-        self.signal.emit_signal('network:finish', self.model.render())
+        self.controller.network_finish(self.model.render())
 
     def cancel(self, button):
-        # Because of the double signal hack done in the controller we
-        # need to pop two signals here.
-        self.signal.signal_stack.pop()
-        self.signal.prev_signal()
+        self.controller.cancel()

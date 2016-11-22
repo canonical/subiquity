@@ -22,11 +22,11 @@ from subiquitycore.controllers.welcome import (
 
 
 class WelcomeController(WelcomeControllerBase):
-    def welcome(self):
+    def default(self):
         title = "Ubuntu Core"
         excerpt = ("Configure the network and setup an administrator "
                    "account on this all-snap Ubuntu Core system.")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer("")
-        view = WelcomeView(self.model, self.signal)
+        view = WelcomeView(self.model, self)
         self.ui.set_body(view)

@@ -19,27 +19,24 @@ Login provides user with language selection
 
 """
 import logging
+
 from urwid import (ListBox, Pile, Text)
+
 from subiquitycore.ui.buttons import finish_btn
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
-from subiquitycore import utils
 
 log = logging.getLogger("subiquitycore.views.login")
 
 
 class LoginView(BaseView):
-    def __init__(self, opts, model, signal, user, ifaces):
+    def __init__(self, opts, model, controller, netdevs):
         self.opts = opts
         self.model = model
-        self.signal = signal
-        self.user = user
-        self.ifaces = ifaces
+        self.controller = controller
+        self.netdevs = netdevs
         self.items = []
         self.body = [
-            Padding.line_break(""),
-            Padding.line_break(""),
-            Padding.line_break(""),
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
@@ -64,7 +61,6 @@ class LoginView(BaseView):
             "device via SSH:")
 
         sl = []
-        ssh = []
         user = self.model.user
         login_info = {
             'realname': user.realname,
@@ -73,45 +69,23 @@ class LoginView(BaseView):
         login_text = local_tpl.format(**login_info)
         login_text += remote_tpl.format(**login_info)
         ips = []
-        for iface in self.ifaces:
-            for addr in iface.dhcp4_addresses:
-                try:
-                    ip = str(addr[0]).split("/")[0]
-                except IndexError:
-                    ip = None
-                if ip is not None:
-                    ips.append(ip)
+        for dev in self.netdevs:
+            for addr in dev.actual_ip_addresses:
+                ips.append(addr)
 
-            for addr in iface.ipv4_addresses:
-                try:
-                    ip = str(addr).split("/")[0]
-                except IndexError:
-                    ip = None
-                if ip is not None:
-                    ips.append(ip)
-
-            for addr in iface.dhcp6_addresses:
-                try:
-                    ip = str(addr[0]).split("/")[0]
-                except IndexError:
-                    ip = None
-                if ip is not None:
-                    ips.append(ip)
-
-            for addr in iface.ipv6_addresses:
-                try:
-                    ip = str(addr).split("/")[0]
-                except IndexError:
-                    ip = None
-                if ip is not None:
-                    ips.append(ip)
-
+        sl += [Text(login_text), Padding.line_break("")]
         for ip in ips:
-                ssh_iface = "    ssh %s@%s" % (user.username, ip)
-                ssh += [Padding.center_50(Text(ssh_iface))]
+            ssh_iface = "    ssh %s@%s" % (user.username, ip)
+            sl.append(Text(ssh_iface))
 
-        sl += [Text(login_text),
-               Padding.line_break("")] + ssh
+        sl += [
+            Padding.line_break(""),
+            Text("SSH keys with the following fingerprints can be used to log in:"),
+            Padding.line_break(""),
+        ]
+
+        for fingerprint in user.fingerprints:
+            sl.append(Text("    " + fingerprint))
 
         return Pile(sl)
 
@@ -119,15 +93,4 @@ class LoginView(BaseView):
         self.done()
 
     def done(self, button):
-        if not self.opts.dry_run:
-            # stop the console-conf services (this will kill the current process).
-            utils.disable_first_boot_service()
-
-        self.signal.emit_signal('quit')
-
-    def keypress(self, size, key):
-        if key == 'esc':
-            # You can't press escape to get out of this screen!
-            return None
-
-        return super().keypress(size, key)
+        self.controller.login_done()

@@ -38,4 +38,4 @@ class WelcomeView(CoreWelcomeView):
     def confirm(self, result):
         self.model.selected_language = result.label
         log.debug('calling locale')
-        self.signal.emit_signal('menu:locale:main')
+        self.controller.done()

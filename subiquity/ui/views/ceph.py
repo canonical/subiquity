@@ -83,8 +83,7 @@ class CephDiskView(BaseView):
         return Pile(buttons)
 
     def done(self, result):
-        self.signal.emit_signal(
-            self.model.get_signal_by_name(result.label))
+        self.signal.emit_signal('ceph:finish')
 
     def cancel(self, button):
         self.signal.emit_signal(self.model.get_previous_signal)

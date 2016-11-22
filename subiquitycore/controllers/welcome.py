@@ -20,16 +20,24 @@ from subiquitycore.controller import BaseController
 
 
 class WelcomeController(BaseController):
+
     def __init__(self, common):
         super().__init__(common)
         self.model = WelcomeModel()
 
-    def welcome(self):
+    def default(self):
         title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
         excerpt = "Please choose your preferred language"
         footer = ("Use UP, DOWN arrow keys, and ENTER, to "
                   "select your language.")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
-        view = WelcomeView(self.model, self.signal)
+        view = WelcomeView(self.model, self)
         self.ui.set_body(view)
+
+    def done(self):
+        self.signal.emit_signal('next-screen')
+
+    def cancel(self):
+        # Can't go back from here!
+        pass

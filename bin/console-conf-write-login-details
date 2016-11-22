@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Copyright 2015 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
@@ -13,17 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Locale
+import sys
 
-Provide configuration for keymaps, languages, etc.
+from console_conf.controllers.identity import write_login_details_standalone
 
-"""
-import logging
-from subiquitycore.ui.views.locale import CoreLocaleView
-
-log = logging.getLogger("console_conf.views.locale")
-
-
-class LocaleView(CoreLocaleView):
-
-    _next_signal = 'menu:network:main'
+sys.exit(write_login_details_standalone())

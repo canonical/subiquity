@@ -23,6 +23,13 @@ log = logging.getLogger("subiquitycore.controller.ceph")
 
 
 class CephDiskController(BaseController):
+    signals = [
+        ('ceph:show',          'ceph'),
+        ('ceph:finish',        'ceph_handler')
+        ('ceph:fetch-key-usb', 'fetch_key_usb'),
+        ('ceph:fetch-key-ssh', 'fetch_key_ssh')
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = CephDiskModel()

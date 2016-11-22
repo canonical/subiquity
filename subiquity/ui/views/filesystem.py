@@ -617,20 +617,20 @@ class FilesystemView(BaseView):
         log.debug('FileSystemView: building menu')
         opts = []
         avail_disks = self.model.get_available_disk_names()
-        for opt, sig, _ in self.model.get_menu():
+        for opt, sig in self.model.get_menu():
             if len(avail_disks) > 1:
                 opts.append(Color.menu_button(
                             menu_btn(label=opt,
-                                     on_press=self.on_fs_menu_press),
+                                     on_press=self.on_fs_menu_press,
+                                     user_data=sig),
                             focus_map='menu_button focus'))
         return Pile(opts)
 
-    def on_fs_menu_press(self, result):
-        self.signal.emit_signal(
-            self.model.get_signal_by_name(result.label))
+    def on_fs_menu_press(self, result, sig):
+        self.signal.emit_signal(sig)
 
     def cancel(self, button):
-        self.signal.prev_signal()
+        self.signal.emit_signal('prev-screen')
 
     def reset(self, button):
         self.signal.emit_signal('menu:filesystem:main', True)

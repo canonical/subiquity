@@ -14,13 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from abc import ABC, abstractmethod
 import logging
 
 log = logging.getLogger("subiquitycore.controller")
 
 
-class BaseController:
+class BaseController(ABC):
     """Base class for controllers."""
+
+    signals = []
 
     def __init__(self, common):
         self.ui = common['ui']
@@ -32,14 +35,15 @@ class BaseController:
 
     def register_signals(self):
         """Defines signals associated with controller from model."""
-        if hasattr(self, 'model'):
-            signals = []
-            for name, sig, cb in self.model.get_signals():
-                signals.append((sig, getattr(self, cb)))
-            self.signal.connect_signals(signals)
-        else:
-            log.debug("No model signals found for {}".format(self))
+        signals = []
+        for sig, cb in self.signals:
+            signals.append((sig, getattr(self, cb)))
+        self.signal.connect_signals(signals)
 
-    @property
-    def view(self):
-        return self._view
+    @abstractmethod
+    def cancel(self):
+        pass
+
+    @abstractmethod
+    def default(self):
+        pass

@@ -23,17 +23,22 @@ log = logging.getLogger('subiquitycore.controllers.locale')
 
 class CoreLocaleController(BaseController):
 
-    _view = LocaleView
-
     def __init__(self, common):
         super().__init__(common)
         self.model = LocaleModel(self.opts)
+        self.view = LocaleView(self.model, self, self.signal)
 
-    def locale(self):
+    def default(self):
         title = "Language setup"
         excerpt = ("Please select your keyboard model:")
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
-        self.ui.set_body(self.view(self.model, self.signal))
+        self.ui.set_body(self.view)
+
+    def cancel(self):
+        pass
+
+    def done(self):
+        self.signal.emit_signal('next-screen')
 

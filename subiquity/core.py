@@ -23,12 +23,12 @@ log = logging.getLogger('console_conf.core')
 class Subiquity(Application):
 
     project = "subiquity"
-    controllers = {
-            "Welcome": None,
-            "Installpath": None,
-            "Network": None,
-            "Filesystem": None,
-            "Identity": None,
-            "InstallProgress": None,
-            "Login": None,
-    }
+    controllers = [
+            "Welcome",
+            "Installpath",
+            "Network",
+            "Filesystem",
+            "Identity",
+            "InstallProgress",
+            "Login",
+    ]

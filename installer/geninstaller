@@ -20,9 +20,9 @@ INSTALLER_IMAGE_SIZE_M=2048  # 2G image
 RSYNC_OPTS="-aXHAS --one-file-system"
 MKFS_OPTS="-E packed_meta_blocks=1 -J size=4 -m 0 -q"
 LOGFILE="geninstaller.log"
-TOPDIR=${TOPDIR-/usr/share/subiquity/installer}
-USQUERY=${TOPDIR}/usquery
-RESOURCES=${TOPDIR}/resources
+TOPDIR=./
+USQUERY=installer/usquery
+RESOURCES=installer/resources
 PKG_DEPS="
 qemu-utils
 kpartx
@@ -52,7 +52,6 @@ INSTALLER_DEPS=(
   "petname"
   "python3-urwid"
   "python3-pyudev"
-  "python3-netifaces"
   "python-urwid"
   "python3-tornado"
   "probert"
@@ -354,7 +353,7 @@ generate_seed() {
     local dldir=${1};
     local cachedir=${2};
     local seed=$cachedir/seed/nocloud-net
-    local installer_user_data=${TOPDIR}/resources/user-data/installer-user-data
+    local installer_user_data=${RESOURCES}/user-data/installer-user-data
 
     # inject user-data/meta-data into seed
     log "Writing seed meta-data"
@@ -379,7 +378,7 @@ generate_seed() {
 
     log "Writing seed user-data (subiquity)"
     local subiquity_tar=$dldir/subiquity.tar
-    local tar_cmd="tar -C ${TOPDIR}/.. -cpf $subiquity_tar subiquity"
+    local tar_cmd="tar -C ${TOPDIR} -cpf $subiquity_tar subiquity subiquitycore"
     if [[ ${TOPDIR} = /usr/share/subiquity* ]]; then
         log "Using installed subiquity paths"
         tar_cmd="$tar_cmd subiquity-tui"
@@ -452,12 +451,12 @@ generate_img() {
     local dldir=${1};
     local cachedir=${2};
     local bootloader=${3};
-    local extlinux_conf=${TOPDIR}/resources/menu/extlinux-menu.conf
-    local overlay_path=${TOPDIR}/resources/overlay
-    local grub_efi_core=${TOPDIR}/resources/grub/bootx64.efi  # FIXME, ARCH
-    local grub_conf=${TOPDIR}/resources/grub/grub.cfg
-    local embed_conf=${TOPDIR}/resources/grub/embed_efi.cfg
-    local efi_grub_conf=${TOPDIR}/resources/grub/efi_grub.cfg
+    local extlinux_conf=${RESOURCES}/menu/extlinux-menu.conf
+    local overlay_path=${RESOURCES}/overlay
+    local grub_efi_core=${RESOURCES}/grub/bootx64.efi  # FIXME, ARCH
+    local grub_conf=${RESOURCES}/grub/grub.cfg
+    local embed_conf=${RESOURCES}/grub/embed_efi.cfg
+    local efi_grub_conf=${RESOURCES}/grub/efi_grub.cfg
     local gptmbr=$(dpkg -L syslinux-common | grep \/gptmbr.bin | grep -v efi)
     local installimg=${cachedir}/installer.img
     local mnt=${cachedir}/mnt
@@ -467,7 +466,7 @@ generate_img() {
     local upper=${cachedir}/upper
     local work=${cachedir}/upper/overlay-work
     local seed=$cachedir/seed/nocloud-net
-    local splash=${TOPDIR}/resources/images/splash.png
+    local splash=${RESOURCES}/images/splash.png
     local syslinux_path=$(dpkg -L syslinux-common | grep \/vesamenu.c32 |
                           grep -v efi | xargs -i dirname {})
 
@@ -519,7 +518,7 @@ generate_img() {
     EFI_DEV="/dev/mapper/${loopparts[0]}"
     ROOTFS_DEV="/dev/mapper/${loopparts[1]}"
     OVERLAY_DEV="/dev/mapper/${loopparts[2]}"
-    LOOPDEV="`echo ${kpartx_ret} | fmt -w 1 | grep ^/dev | head -n1`"
+    LOOPDEV="`losetup | grep "$installimg" | fmt -w 1 | grep ^/dev`"
     [ -z "${LOOPDEV}" ] && {
         log "empty loopdev! aieeeeee!";
         return 1;
@@ -533,8 +532,8 @@ generate_img() {
      sudo mkdir -p ${efimnt}/boot/grub &&
      sudo mkdir -p ${efimnt}/grub/fonts &&
      sudo mkdir -p ${efimnt}/grub/x86_64-efi &&
-     sudo cp -a /usr/lib/shim/MokManager.efi.signed ${efimnt}/EFI/BOOT/MokManager.efi &&
-     sudo cp -a /usr/lib/shim/shim.efi.signed ${efimnt}/EFI/BOOT/shimx64.efi &&
+     sudo cp -a /usr/lib/shim/mmx64.efi.signed ${efimnt}/EFI/BOOT/MokManager.efi &&
+     sudo cp -a /usr/lib/shim/shimx64.efi.signed ${efimnt}/EFI/BOOT/shimx64.efi &&
      sudo cp -a /usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed ${efimnt}/EFI/BOOT/grubx64.efi &&
      sudo cp -a /usr/share/grub/unicode.pf2 ${efimnt}/grub/fonts/ &&
      sudo cp -a /usr/share/grub/unicode.pf2 ${efimnt}/boot/grub &&
@@ -544,6 +543,7 @@ generate_img() {
      sudo rsync ${RSYNC_OPTS} /usr/lib/grub/x86_64-efi/ ${efimnt}/grub/x86_64-efi/ &&
      sudo grub-mkimage -O x86_64-efi -p /grub -c ${efimnt}/grub/embed_efi.cfg -o ${efimnt}/EFI/BOOT/bootx64.efi ${GRUB_MODS} &&
      sudo grub-install --force --removable --no-floppy \
+                      --efi-directory=${efimnt}/EFI \
                       --boot-directory=${efimnt}/boot $LOOPDEV &&
      sudo cp -v ${splash} ${efimnt}/boot/grub) 2>&1 >> ${LOGFILE} || {
         log "ERROR: failed to create multiboot partition"

@@ -24,9 +24,9 @@ log = logging.getLogger('subiquitycore.ui.bond_interfaces')
 
 
 class NetworkBondInterfacesView(BaseView):
-    def __init__(self, model, signal):
+    def __init__(self, model, controller):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.bond_iface = None
         self.bond_mode = Selector(self.model.bonding_modes.values())
         self.selected_ifaces = []
@@ -128,8 +128,8 @@ class NetworkBondInterfacesView(BaseView):
             return
 
         log.debug('bond: successful bond creation')
-        self.signal.prev_signal()
+        self.controller.prev_view()
 
     def cancel(self, button):
         log.debug('bond: button_cancel')
-        self.signal.prev_signal()
+        self.controller.prev_view()

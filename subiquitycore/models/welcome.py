@@ -25,28 +25,14 @@ class WelcomeModel(BaseModel):
     """
     prev_signal = None
 
-    signals = [
-        ("Welcome view",
-         'menu:welcome:main',
-         'welcome')
-    ]
-
     supported_languages = ['English',
                            'Belgian',
                            'German',
                            'Italian']
     selected_language = None
 
-    def get_signals(self):
-        return self.signals
-
     def get_menu(self):
         return self.supported_languages
-
-    def get_signal_by_name(self, selection):
-        for x, y, z in self.get_menu():
-            if x == selection:
-                return y
 
     def __repr__(self):
         return "<Selected: {}>".format(self.selected_language)

@@ -23,10 +23,9 @@ log = logging.getLogger('console_conf.core')
 class ConsoleConf(Application):
 
     project = "console_conf"
-    controllers = {
-        "Welcome": None,
-        "Locale": None,
-        "Network": None,
-        "Identity": None,
-        "Login": None,
-    }
+    controllers = [
+        "Welcome",
+        "Locale",
+        "Network",
+        "Identity",
+    ]

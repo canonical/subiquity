@@ -17,6 +17,7 @@
 import argparse
 import sys
 import logging
+import os
 import signal
 from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION

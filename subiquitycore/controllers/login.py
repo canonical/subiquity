@@ -20,6 +20,11 @@ from subiquitycore.controller import BaseController
 
 
 class LoginController(BaseController):
+
+    signals = [
+        ('menu:login:main', 'login'),
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = LoginModel()

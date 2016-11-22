@@ -40,65 +40,13 @@ class AttrDict(dict):
 class FilesystemModel(BaseModel):
     """ Model representing storage options
     """
-    base_signal = 'menu:filesystem:main'
-    signals = [
-        ('Filesystem view',
-         base_signal,
-         'filesystem'),
-        ('Filesystem error',
-         'filesystem:error',
-         'filesystem_error'),
-        ('Filesystem finish',
-         'filesystem:finish',
-         'filesystem_handler'),
-        ('Show disk partition view',
-         base_signal + ':show-disk-partition',
-         'disk_partition'),
-        ('Finish disk partition',
-         'filesystem:finish-disk-partition',
-         'disk_partition_handler'),
-        ('Add disk partition',
-         base_signal + ':add-disk-partition',
-         'add_disk_partition'),
-        ('Finish add disk partition',
-         'filesystem:finish-add-disk-partition',
-         'add_disk_partition_handler'),
-        ('Finish whole disk format/mount',
-         'filesystem:finish-add-disk-format',
-         'add_disk_format_handler'),
-        ('Format or create swap on entire device (unusual, advanced)',
-         base_signal + ':create-swap-entire-device',
-         'create_swap_entire_device'),
-        ('Show disk information',
-         base_signal + ':show-disk-information',
-         'show_disk_information'),
-        ('Show next disk information',
-         'filesystem:show-disk-info-next',
-         'show_disk_information_next'),
-        ('Show prev disk information',
-         'filesystem:show-disk-info-prev',
-         'show_disk_information_prev'),
-        ('Add Raid Device',
-         'filesystem:add-raid-dev',
-         'add_raid_dev'),
-    ]
 
     fs_menu = [
-        # ('Connect iSCSI network disk',
-        #  'filesystem:connect-iscsi-disk',
-        #  'connect_iscsi_disk'),
-        # ('Connect Ceph network disk',
-        #  'filesystem:connect-ceph-disk',
-        #  'connect_ceph_disk'),
-        ('Create volume group (LVM2)',
-         base_signal + ':create-volume-group',
-         'create_volume_group'),
-        ('Create software RAID (MD)',
-         base_signal + ':create-raid',
-         'create_raid'),
-        ('Setup hierarchichal storage (bcache)',
-         base_signal + ':setup-bcache',
-         'create_bcache'),
+        # ('Connect iSCSI network disk',         'filesystem:connect-iscsi-disk'),
+        # ('Connect Ceph network disk',          'filesystem:connect-ceph-disk'),
+        ('Create volume group (LVM2)',           'menu:filesystem:main:create-volume-group'),
+        ('Create software RAID (MD)',            'menu:filesystem:main:create-raid'),
+        ('Setup hierarchichal storage (bcache)', 'menu:filesystem:main:setup-bcache'),
     ]
 
     supported_filesystems = [
@@ -156,14 +104,6 @@ class FilesystemModel(BaseModel):
         self.lvm_devices = {}
         self.holders = {}
         self.tags = {}
-
-    def get_signal_by_name(self, selection):
-        for x, y, z in self.get_signals():
-            if x == selection:
-                return y
-
-    def get_signals(self):
-        return self.signals + self.fs_menu
 
     def get_menu(self):
         return self.fs_menu

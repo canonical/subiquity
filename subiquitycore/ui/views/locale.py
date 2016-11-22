@@ -30,8 +30,9 @@ log = logging.getLogger("subiquitycore.views.locale")
 
 class CoreLocaleView(BaseView):
 
-    def __init__(self, model, signal):
+    def __init__(self, model, controller, signal):
         self.model = model
+        self.controller = controller
         self.signal = signal
         self.body = [
             Padding.line_break(""),
@@ -68,8 +69,7 @@ class CoreLocaleView(BaseView):
 
     def done(self, button):
         log.debug("Locale configuration: " + str(self.model))
-        log.debug("calling %s" % (self.next_signal))
-        self.signal.emit_signal(self.next_signal)
+        self.controller.done()
 
     def cancel(self, button):
         self.signal.prev_signal()

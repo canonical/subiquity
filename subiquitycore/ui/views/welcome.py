@@ -29,9 +29,9 @@ log = logging.getLogger("subiquitycore.views.welcome")
 
 
 class CoreWelcomeView(BaseView):
-    def __init__(self, model, signal):
+    def __init__(self, model, controller):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.items = []
         # Padding.center_50(self._build_model_inputs()),
         self.body = [
@@ -60,8 +60,4 @@ class CoreWelcomeView(BaseView):
     def confirm(self, result):
         self.model.selected_language = result.label
         log.debug('calling installpath')
-        self.signal.emit_signal('menu:installpath:main')
-
-    def cancel(self, button):
-        raise SystemExit("No language selected, exiting as there are no "
-                         "more previous controllers to render.")
+        self.controller.done()

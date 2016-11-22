@@ -23,6 +23,14 @@ log = logging.getLogger("subiquitycore.controller.iscsi")
 
 
 class IscsiDiskController(BaseController):
+    signals = [
+        ('iscsi:show',                         'iscsi'),
+        ('iscsi:finish',                       'iscsi_handler'),
+        ('iscsi:discover-volumes',             'discover_volumes'),
+        ('iscsi:custom-discovery-credentials', 'custom_discovery_credentials'),
+        ('iscsi:manual-volume-details',        'manual_volume_details'),
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = IscsiDiskModel()

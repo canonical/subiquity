@@ -34,6 +34,15 @@ log = logging.getLogger("subiquitycore.controller.installprogress")
 
 
 class InstallProgressController(BaseController):
+    signals = [
+        ('installprogress:curtin-install',     'curtin_install'),
+        ('installprogress:curtin-postinstall', 'curtin_postinstall'),
+        ('installprogress:wrote-install',      'curtin_wrote_install'),
+        ('installprogress:wrote-postinstall',  'curtin_wrote_postinstall'),
+        ('menu:installprogress:main',          'show_progress'),
+        ("installprogress:curtin-reboot",      'reboot'),
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = InstallProgressModel()
