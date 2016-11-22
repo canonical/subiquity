@@ -13,24 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+""" Filesystem
 
-from subiquitycore.ui.views import LoginView
-from subiquitycore.models import LoginModel
-from subiquitycore.controller import BaseController
+Provides storage device selection and additional storage
+configuration.
 
+"""
 
-class LoginController(BaseController):
-
-    def __init__(self, common):
-        super().__init__(common)
-        self.model = LoginModel()
-
-    def default(self):
-        title = "Configuration Complete"
-        excerpt = "Your device is now configured.  Login details below."
-        self.ui.set_header(title, excerpt)
-        view = LoginView(self.model, self.signal, self.model.user)
-        self.ui.set_body(view)
-
-    def cancel(self):
-        pass
+from .add_format import AddFormatView
+from .add_partition import AddPartitionView
+from .disk_info import DiskInfoView
+from .disk_partition import DiskPartitionView
+from .filesystem import FilesystemView

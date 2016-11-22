@@ -19,6 +19,14 @@ import logging
 
 log = logging.getLogger("subiquitycore.controller")
 
+def view(func):
+    n = func.__name__
+    def f(self, *args, **kw):
+        m = getattr(self, n)
+        self.view_stack.append((m, args, kw))
+        return func(self, *args, **kw)
+    return f
+
 
 class BaseController(ABC):
     """Base class for controllers."""
@@ -32,6 +40,7 @@ class BaseController(ABC):
         self.loop = common['loop']
         self.prober = common['prober']
         self.controllers = common['controllers']
+        self.view_stack = []
 
     def register_signals(self):
         """Defines signals associated with controller from model."""
@@ -39,6 +48,11 @@ class BaseController(ABC):
         for sig, cb in self.signals:
             signals.append((sig, getattr(self, cb)))
         self.signal.connect_signals(signals)
+
+    def prev_view(self):
+        self.view_stack.pop()
+        meth, args, kw = self.view_stack.pop()
+        meth(*args, **kw)
 
     @abstractmethod
     def cancel(self):

@@ -15,7 +15,6 @@
 
 import copy
 from functools import partial
-import glob
 import logging
 import os
 import queue
@@ -38,7 +37,7 @@ from subiquitycore.ui.views import (NetworkView,
                                     NetworkConfigureWLANView)
 from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.ui.dummy import DummyView
-from subiquitycore.controller import BaseController
+from subiquitycore.controller import BaseController, view
 from subiquitycore.utils import run_command_start, run_command_summarize
 
 log = logging.getLogger("subiquitycore.controller.network")
@@ -194,14 +193,6 @@ class TaskSequence:
         self.call_from_thread(self.watcher.task_error, self.stage, info)
 
 
-def view(func):
-    n = func.__name__
-    def f(self, *args, **kw):
-        m = getattr(self, n)
-        self.view_stack.append((m, args, kw))
-        return func(self, *args, **kw)
-    return f
-
 netplan_config_file_name = '00-snapd-config.yaml'
 
 def sanitize_config(config):
@@ -321,17 +312,8 @@ class NetworkController(BaseController):
                 fp.write(default_netplan)
         self.model = NetworkModel(self.root)
 
-        self.view_stack = []
-
         self.observer = SubiquityObserver(self.model, self.ui, self.loop)
         self.observer.start()
-
-        self.view_stack = []
-
-    def prev_view(self):
-        self.view_stack.pop()
-        meth, args, kw = self.view_stack.pop()
-        meth(*args, **kw)
 
     def start_scan(self, dev):
         self.observer.wlan_listener.trigger_scan(dev.ifindex)
