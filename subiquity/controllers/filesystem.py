@@ -291,9 +291,7 @@ class FilesystemController(BaseController):
         log.debug("formatting whole {}".format(disk))
         footer = ("Format or mount whole disk.")
         self.ui.set_footer(footer)
-        afv_view = AddFormatView(self.model,
-                                 self.signal,
-                                 disk)
+        afv_view = AddFormatView(self.model, self, disk)
         self.ui.set_body(afv_view)
 
     def show_disk_information_next(self, curr_device):
