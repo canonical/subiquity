@@ -144,6 +144,8 @@ def run_command(command, timeout=None, shell=False):
     """
     p = run_command_start(command, timeout, shell)
     log.debug('calling communicate()')
+    if isinstance(p, dict): # only in error cases
+        return p
     stdout, stderr = p.communicate()
     return run_command_summarize(p, stdout, stderr)
 
