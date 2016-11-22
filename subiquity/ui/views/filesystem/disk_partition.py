@@ -28,9 +28,9 @@ log = logging.getLogger('subiquity.ui.filesystem.disk_partition')
 
 
 class DiskPartitionView(BaseView):
-    def __init__(self, model, signal, selected_disk):
+    def __init__(self, model, controller, selected_disk):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.selected_disk = selected_disk
         self.disk_obj = self.model.get_disk(self.selected_disk)
 
@@ -131,23 +131,19 @@ class DiskPartitionView(BaseView):
                                      focus_map='menu_button focus')
 
     def show_disk_info(self, result):
-        self.signal.emit_signal('menu:filesystem:main:show-disk-information',
-                                self.selected_disk)
+        self.controller.show_disk_information(self.selected_disk)
 
     def add_partition(self, result):
         log.debug('add_partition: result={}'.format(result))
-        self.signal.emit_signal('menu:filesystem:main:add-disk-partition',
-                                self.selected_disk)
+        self.controller.add_disk_partition(self.selected_disk)
 
     def create_swap(self, result):
         log.debug('create_swap: result={}'.format(result))
-        self.signal.emit_signal(
-            'menu:filesystem:main:create-swap-entire-device',
-            self.selected_disk)
+        self.controller.create_swap_entire_device(self.selected_disk)
 
     def done(self, result):
         ''' Return to FilesystemView '''
-        self.signal.prev_signal()
+        self.controller.prev_view()
 
     def cancel(self, button):
-        self.signal.prev_signal()
+        self.controller.prev_view()
