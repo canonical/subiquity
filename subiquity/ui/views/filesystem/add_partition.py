@@ -221,4 +221,4 @@ class AddPartitionView(BaseView):
             return
 
         log.debug("Add Partition Result: {}".format(result))
-        self.signal.add_disk_partition_handler(self.disk_obj.devpath, result)
+        self.controller.add_disk_partition_handler(self.disk_obj.devpath, result)

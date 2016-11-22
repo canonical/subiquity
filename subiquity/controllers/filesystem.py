@@ -112,9 +112,7 @@ class FilesystemController(BaseController):
                   "without partitions.")
         self.ui.set_header(title)
         self.ui.set_footer(footer)
-        dp_view = DiskPartitionView(self.model,
-                                    self.signal,
-                                    disk)
+        dp_view = DiskPartitionView(self.model, self, disk)
 
         self.ui.set_body(dp_view)
 
