@@ -192,7 +192,7 @@ class FilesystemView(BaseView):
         return Pile(opts)
 
     def on_fs_menu_press(self, result, sig):
-        self.signal.emit_signal(sig)
+        self.controller.signal.emit_signal(sig)
 
     def cancel(self, button):
         self.controller.cancel()
@@ -205,5 +205,4 @@ class FilesystemView(BaseView):
         self.controller.finish(actions)
 
     def show_disk_partition_view(self, partition):
-        self.signal.emit_signal('menu:filesystem:main:show-disk-partition',
-                                partition.label)
+        self.controller.disk_partition(partition.label)
