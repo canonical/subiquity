@@ -481,10 +481,10 @@ class DiskPartitionView(BaseView):
 
 
 class FilesystemView(BaseView):
-    def __init__(self, model, signal):
+    def __init__(self, model, controller):
         log.debug('FileSystemView init start()')
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.items = []
         self.model.probe_storage()  # probe before we complete
         self.body = [
@@ -617,7 +617,16 @@ class FilesystemView(BaseView):
         log.debug('FileSystemView: building menu')
         opts = []
         avail_disks = self.model.get_available_disk_names()
-        for opt, sig in self.model.get_menu():
+
+        fs_menu = [
+            # ('Connect iSCSI network disk',         'filesystem:connect-iscsi-disk'),
+            # ('Connect Ceph network disk',          'filesystem:connect-ceph-disk'),
+            ('Create volume group (LVM2)',           'menu:filesystem:main:create-volume-group'),
+            ('Create software RAID (MD)',            'menu:filesystem:main:create-raid'),
+            ('Setup hierarchichal storage (bcache)', 'menu:filesystem:main:setup-bcache'),
+        ]
+
+        for opt, sig in fs_menu:
             if len(avail_disks) > 1:
                 opts.append(Color.menu_button(
                             menu_btn(label=opt,
@@ -630,14 +639,14 @@ class FilesystemView(BaseView):
         self.signal.emit_signal(sig)
 
     def cancel(self, button):
-        self.signal.emit_signal('prev-screen')
+        self.controller.cancel()
 
     def reset(self, button):
-        self.signal.emit_signal('menu:filesystem:main', True)
+        self.controller.reset()
 
     def done(self, button):
         actions = self.model.get_actions()
-        self.signal.emit_signal('filesystem:finish', False, actions)
+        self.controller.finish(actions)
 
     def show_disk_partition_view(self, partition):
         self.signal.emit_signal('menu:filesystem:main:show-disk-partition',

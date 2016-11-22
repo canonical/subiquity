@@ -41,14 +41,6 @@ class FilesystemModel(BaseModel):
     """ Model representing storage options
     """
 
-    fs_menu = [
-        # ('Connect iSCSI network disk',         'filesystem:connect-iscsi-disk'),
-        # ('Connect Ceph network disk',          'filesystem:connect-ceph-disk'),
-        ('Create volume group (LVM2)',           'menu:filesystem:main:create-volume-group'),
-        ('Create software RAID (MD)',            'menu:filesystem:main:create-raid'),
-        ('Setup hierarchichal storage (bcache)', 'menu:filesystem:main:setup-bcache'),
-    ]
-
     supported_filesystems = [
         'ext4',
         'xfs',

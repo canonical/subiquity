@@ -16,7 +16,7 @@
 import logging
 import os
 
-from subiquitycore.controller import BaseController
+from subiquitycore.controller import BaseController, view
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.ui.error import ErrorView
 from subiquitycore.curtin import (curtin_write_storage_actions,
@@ -39,9 +39,7 @@ UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 class FilesystemController(BaseController):
     signals = [
-        ('menu:filesystem:main',                           'filesystem'),
         ('filesystem:error',                               'filesystem_error'),
-        ('filesystem:finish',                              'filesystem_handler'),
         ('menu:filesystem:main:show-disk-partition',       'disk_partition'),
         ('filesystem:finish-disk-partition',               'disk_partition_handler'),
         ('menu:filesystem:main:add-disk-partition',        'add_disk_partition'),
@@ -66,7 +64,8 @@ class FilesystemController(BaseController):
         # self.ceph_model = CephDiskModel()
         self.raid_model = RaidModel()
 
-    def filesystem(self, reset=False):
+    @view
+    def default(self, reset=False):
         # FIXME: Is this the best way to zero out this list for a reset?
         if reset:
             log.info("Resetting Filesystem model")
@@ -76,14 +75,17 @@ class FilesystemController(BaseController):
         footer = ("Select available disks to format and mount")
         self.ui.set_header(title)
         self.ui.set_footer(footer, 30)
-        self.ui.set_body(FilesystemView(self.model,
-                                        self.signal))
+        self.ui.set_body(FilesystemView(self.model, self))
 
-    default = filesystem
+    def reset(self):
+        log.info("Resetting Filesystem model")
+        self.model.reset()
+        self.view_stack = []
+        self.default()
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
-    
+
     def filesystem_error(self, error_fname):
         title = "Filesystem error"
         footer = ("Error while installing Ubuntu")
@@ -92,17 +94,13 @@ class FilesystemController(BaseController):
         self.ui.set_footer(footer, 30)
         self.ui.set_body(ErrorView(self.signal, error_msg))
 
-    def filesystem_handler(self, reset=False, actions=None):
-        if actions is None and reset is False:
-            self.signal.emit_signal('network:show')
-
+    def finish(self, actions):
         log.info("Rendering curtin config from user choices")
         try:
             curtin_write_storage_actions(actions=actions)
         except PermissionError:
             log.exception('Failed to write storage actions')
-            self.signal.emit_signal('filesystem:error',
-                                    'curtin_write_storage_actions')
+            self.filesystem_error('curtin_write_storage_actions')
             return None
 
         log.info("Rendering preserved config for post install")
@@ -111,8 +109,7 @@ class FilesystemController(BaseController):
             curtin_write_preserved_actions(actions=preserved_actions)
         except PermissionError:
             log.exception('Failed to write preserved actions')
-            self.signal.emit_signal('filesystem:error',
-                                    'curtin_write_preserved_actions')
+            self.filesystem_error('curtin_write_preserved_actions')
             return None
 
         # mark that we've writting out curtin config
@@ -125,6 +122,7 @@ class FilesystemController(BaseController):
         self.signal.emit_signal('next-screen')
 
     # Filesystem/Disk partition -----------------------------------------------
+    @view
     def disk_partition(self, disk):
         log.debug("In disk partition view, using {} as the disk.".format(disk))
         title = ("Partition, format, and mount {}".format(disk))
@@ -142,8 +140,9 @@ class FilesystemController(BaseController):
         log.debug("Disk partition: {}".format(spec))
         if spec is None:
             self.signal.prev_signal()
-        self.signal.emit_signal('menu:filesystem:main:show-disk-partition', [])
+        self.disk_partition([])
 
+    @view
     def add_disk_partition(self, disk):
         log.debug("Adding partition to {}".format(disk))
         footer = ("Select whole disk, or partition, to format and mount.")
@@ -205,13 +204,12 @@ class FilesystemController(BaseController):
             log.exception('Failed to add disk partition')
             log.debug('Returning to add-disk-partition')
             # FIXME: on failure, we should repopulate input values
-            self.signal.emit_signal('filesystem:add-disk-partition', disk)
+            self.add_disk_partition(disk)
 
         log.info("Successfully added partition")
 
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
-        self.signal.emit_signal('menu:filesystem:main:show-disk-partition',
-                                disk)
+        self.prev_view()
 
     def add_disk_format_handler(self, disk, spec):
         log.debug('add_disk_format_handler')
@@ -220,8 +218,7 @@ class FilesystemController(BaseController):
         log.debug('disk.freespace: {}'.format(current_disk.freespace))
         current_disk.format_device(spec['fstype'], spec['mountpoint'])
         log.debug("FS Table: {}".format(current_disk.get_fs_table()))
-        self.signal.emit_signal('menu:filesystem:main:show-disk-partition',
-                                disk)
+        self.prev_view()
 
     def connect_iscsi_disk(self, *args, **kwargs):
         # title = ("Disk and filesystem setup")
@@ -242,6 +239,7 @@ class FilesystemController(BaseController):
         #                               self.signal))
         self.ui.set_body(DummyView(self.signal))
 
+    @view
     def create_volume_group(self, *args, **kwargs):
         title = ("Create Logical Volume Group (\"LVM2\") disk")
         footer = ("ENTER on a disk will show detailed "
@@ -252,6 +250,7 @@ class FilesystemController(BaseController):
         self.ui.set_footer(footer)
         self.ui.set_body(LVMVolumeGroupView(self.model, self.signal))
 
+    @view
     def create_raid(self, *args, **kwargs):
         title = ("Create software RAID (\"MD\") disk")
         footer = ("ENTER on a disk will show detailed "
@@ -265,6 +264,7 @@ class FilesystemController(BaseController):
         self.ui.set_body(RaidView(self.model,
                                   self.signal))
 
+    @view
     def create_bcache(self, *args, **kwargs):
         title = ("Create hierarchical storage (\"bcache\") disk")
         footer = ("ENTER on a disk will show detailed "
@@ -285,6 +285,7 @@ class FilesystemController(BaseController):
     def add_first_gpt_partition(self, *args, **kwargs):
         self.ui.set_body(DummyView(self.signal))
 
+    @view
     def create_swap_entire_device(self, disk):
         log.debug('create_swap_entire_device')
         log.debug("formatting whole {}".format(disk))
@@ -311,6 +312,7 @@ class FilesystemController(BaseController):
         next_device = available[next_idx]
         self.show_disk_information(next_device)
 
+    @view
     def show_disk_information(self, device):
         """ Show disk information, requires sudo/root
         """
