@@ -354,8 +354,7 @@ class FilesystemController(BaseController):
 """
         result = template.format(**dinfo)
         log.debug('calling DiskInfoView()')
-        disk_info_view = DiskInfoView(self.model, self.signal,
-                                      device, result)
+        disk_info_view = DiskInfoView(self.model, self, device, result)
         footer = ('Select next or previous disks with n and p')
         self.ui.set_footer(footer, 30)
         self.ui.set_body(disk_info_view)
