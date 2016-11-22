@@ -98,6 +98,8 @@ class Application:
             "loop": None,
             "pool": futures.ThreadPoolExecutor(1),
         }
+        if opts.screens:
+            self.controllers = [c for c in self.controllers if c in opts.screens]
         ui.progress_completion = len(self.controllers)
         self.common['controllers'] = dict.fromkeys(self.controllers)
         self.controller_index = -1

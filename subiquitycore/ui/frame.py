@@ -29,7 +29,7 @@ class SubiquityUI(WidgetWrap):
     def __init__(self):
         self.header = Header()
         self.body = Body()
-        self.footer = Footer("", 0, 0)
+        self.footer = Footer("", 0, 1)
         self.frame = Frame(self.body, header=self.header, footer=self.footer)
         self.progress_current = 0
         self.progress_completion = 0
