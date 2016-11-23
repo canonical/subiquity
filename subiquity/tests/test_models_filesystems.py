@@ -5,14 +5,14 @@ import testtools
 import yaml
 
 from mock import patch
-from subiquitycore.models.blockdev import (Blockdev,
-                                           blockdev_align_up,
-                                           FIRST_PARTITION_OFFSET,
-                                           GPT_END_RESERVE,
-                                           sort_actions)
-from subiquitycore.models.filesystem import FilesystemModel
+from subiquity.models.blockdev import (Blockdev,
+                                       blockdev_align_up,
+                                       FIRST_PARTITION_OFFSET,
+                                       GPT_END_RESERVE,
+                                       sort_actions)
+from subiquity.models.filesystem import FilesystemModel
 from subiquitycore.prober import Prober
-from subiquitycore.tests import fakes
+from subiquity.tests import fakes
 
 
 GB = 1 << 40
@@ -43,14 +43,6 @@ class TestFilesystemModel(testtools.TestCase):
         self.assertEqual(self.fsm.devices, {})
         self.assertEqual(self.fsm.raid_devices, {})
         self.assertEqual(self.fsm.storage, {})
-
-    def test_get_signals(self):
-        self.assertEqual(sorted(self.fsm.get_signals()),
-                         sorted(self.fsm.signals + self.fsm.fs_menu))
-
-    def test_get_signal_by_name(self):
-        for (name, signal, method) in self.fsm.get_signals():
-            self.assertEqual(self.fsm.get_signal_by_name(name), signal)
 
     def test_get_menu(self):
         self.assertEqual(sorted(self.fsm.get_menu()),
