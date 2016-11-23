@@ -253,6 +253,7 @@ acquire_image() {
     local arch=${3-"amd64"};
     local version=${4};
 
+    set -x
     # run a query unless they specify all params
     if [ $# -le 4 -a -z "${version}" ]; then
         log "Querying simplestreams for latest image: $label $release $arch"
@@ -262,12 +263,20 @@ acquire_image() {
              local version=${ssresult[0]}
              local item_url=${ssresult[1]}
              local sha256=${ssresult[2]}
+             kernel=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-daily release=$release arch=$arch item_name=boot-kernel` )
+             initrd=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-daily release=$release arch=$arch item_name=boot-initrd` )
+             local kernel_url=${kernel[1]}
+             local initrd_url=${initrd[1]}
              ;;
            release)
              ssresult=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-release release=$release arch=$arch item_name=$item_name` )
              local version=${ssresult[0]}
              local item_url=${ssresult[1]}
              local sha256=${ssresult[2]}
+             kernel=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-daily release=$release arch=$arch item_name=boot-kernel` )
+             initrd=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-daily release=$release arch=$arch item_name=boot-initrd` )
+             local kernel_url=${kernel[1]}
+             local initrd_url=${initrd[1]}
              ;;
            *)
              log "ERROR: simplestream label must be one of: [daily, release]"
@@ -277,8 +286,11 @@ acquire_image() {
     fi
     local cachedir=$dldir/maas/${label}/${release}/${arch}/${version}
     local ephimg=${cachedir}/${item_name}
+    local kernel_img=${cachedir}/vmlinuz
+    local initrd_img=${cachedir}/initrd
     local roottar=${cachedir}/root.tar.gz
     local rootfs=${cachedir}/rootfs
+    set +x
 
     # cache policy:
     #   $ephimg must be a file and it must checksum to $sha256 value otherwise
@@ -310,6 +322,14 @@ acquire_image() {
             log "ERROR: failed to download: ${item_url}";
             return 1;
         }
+        wget --progress=bar -c "${kernel_url}" -O "${kernel_img}" || {
+            log "ERROR: failed to download: ${kernel_url}";
+            return 1;
+        }
+        wget --progress=bar -c "${initrd_url}" -O "${initrd_img}" || {
+            log "ERROR: failed to download: ${initrd_url}";
+            return 1;
+        }
         (cd `dirname ${ephimg}` &&
          sha256sum `basename ${ephimg}` > ${ephimg}.sha256)
     else
@@ -330,15 +350,21 @@ acquire_image() {
         log "  $roottar"
     fi
 
+    set -x
     # unpack rootfs tar
     log "Unpacking roottar: $label $release $arch";
-    if [ ! -e ${rootfs}/vmlinuz ]; then
+    local kernel_img=${cachedir}/vmlinuz
+    if [ -e "${kernel_img}" ] && [ -e "${initrd_img}" ]; then
+        log "  Using cached $label $release $arch kernel and initrd:"
+	cp "${kernel_img}" "${initrd_img}" "${rootfs}"
+    elif [ ! -e ${rootfs}/vmlinuz ]; then
         mkdir -p ${rootfs} &&
         sudo tar -C $rootfs -xz --numeric-owner --xattrs -f $roottar
     else
         log "  Using cached $label $release $arch rootfs:"
         log "  $rootfs"
     fi
+    set +x
 
     _RETVAL=${cachedir}
 }
@@ -532,18 +558,19 @@ generate_img() {
      sudo mkdir -p ${efimnt}/boot/grub &&
      sudo mkdir -p ${efimnt}/grub/fonts &&
      sudo mkdir -p ${efimnt}/grub/x86_64-efi &&
-     sudo cp -a /usr/lib/shim/mmx64.efi.signed ${efimnt}/EFI/BOOT/MokManager.efi &&
-     sudo cp -a /usr/lib/shim/shimx64.efi.signed ${efimnt}/EFI/BOOT/shimx64.efi &&
-     sudo cp -a /usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed ${efimnt}/EFI/BOOT/grubx64.efi &&
      sudo cp -a /usr/share/grub/unicode.pf2 ${efimnt}/grub/fonts/ &&
      sudo cp -a /usr/share/grub/unicode.pf2 ${efimnt}/boot/grub &&
      cat ${efi_grub_conf} | sudo tee ${efimnt}/EFI/BOOT/grub.cfg &&
      cat ${embed_conf} | sudo tee ${efimnt}/grub/embed_efi.cfg &&
      cat ${grub_conf} | sudo tee ${efimnt}/grub/grub.cfg &&
      sudo rsync ${RSYNC_OPTS} /usr/lib/grub/x86_64-efi/ ${efimnt}/grub/x86_64-efi/ &&
+     sudo grub-install --force --removable --no-floppy \
+                      --target=x86_64-efi \
+                      --efi-directory=${efimnt} \
+                      --boot-directory=${efimnt}/boot $LOOPDEV &&
      sudo grub-mkimage -O x86_64-efi -p /grub -c ${efimnt}/grub/embed_efi.cfg -o ${efimnt}/EFI/BOOT/bootx64.efi ${GRUB_MODS} &&
      sudo grub-install --force --removable --no-floppy \
-                      --efi-directory=${efimnt}/EFI \
+                      --target=i386-pc \
                       --boot-directory=${efimnt}/boot $LOOPDEV &&
      sudo cp -v ${splash} ${efimnt}/boot/grub) 2>&1 >> ${LOGFILE} || {
         log "ERROR: failed to create multiboot partition"
