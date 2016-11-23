@@ -5,6 +5,7 @@ import testtools
 import yaml
 
 from mock import patch
+from subiquitycore.tests import fakes
 from subiquity.models.blockdev import (Blockdev,
                                        blockdev_align_up,
                                        FIRST_PARTITION_OFFSET,
@@ -12,7 +13,6 @@ from subiquity.models.blockdev import (Blockdev,
                                        sort_actions)
 from subiquity.models.filesystem import FilesystemModel
 from subiquitycore.prober import Prober
-from subiquity.tests import fakes
 
 
 GB = 1 << 40

@@ -43,4 +43,6 @@ setup(name='subiquity',
       url='https://github.com/CanonicalLtd/subiquity',
       license="AGPLv3+",
       packages=find_packages(exclude=["tests"]),
+      test_suite='nose.collector',
+      tests_require=['nose'],
       data_files=[])

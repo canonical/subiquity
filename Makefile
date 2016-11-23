@@ -55,7 +55,7 @@ lint:
 
 unit:
 	echo "Running unit tests..."
-	nosetests3 $(PYTHONSRC)/tests
+	python3 setup.py nosetests
 
 check: lint unit
 
