@@ -1,40 +1,20 @@
-import argparse
-import logging
 import random
-import testtools
 import yaml
 
-from mock import patch
-from subiquitycore.tests import fakes
 from subiquity.models.blockdev import (Blockdev,
                                        blockdev_align_up,
                                        FIRST_PARTITION_OFFSET,
                                        GPT_END_RESERVE,
                                        sort_actions)
 from subiquity.models.filesystem import FilesystemModel
-from subiquitycore.prober import Prober
+from subiquitycore.tests.utils import TestCase
 
 
 GB = 1 << 40
 
-class TestFilesystemModel(testtools.TestCase):
+class TestFilesystemModel(TestCase):
     def setUp(self):
         super(TestFilesystemModel, self).setUp()
-        # don't show logging messages while testing
-        logging.disable(logging.CRITICAL)
-        self.make_fsm()
-
-    # mocking the reading of the fake data saves on IO
-    @patch.object(Prober, '_load_machine_config')
-    @patch.object(Prober, 'get_storage')
-    def make_fsm(self, _get_storage, _load_machine_config):
-        _get_storage.return_value = fakes.FAKE_MACHINE_STORAGE_DATA
-        _load_machine_config.return_value = fakes.FAKE_MACHINE_JSON_DATA
-        self.opts = argparse.Namespace()
-        self.opts.machine_config = fakes.FAKE_MACHINE_JSON
-        self.opts.dry_run = True
-        self.prober = Prober(self.opts)
-        self.storage = fakes.FAKE_MACHINE_STORAGE_DATA
         self.fsm = FilesystemModel(self.prober, self.opts)
 
     def test_init(self):
@@ -242,7 +222,7 @@ class TestFilesystemModel(testtools.TestCase):
         self.assertTrue(disk.devpath in avail_disk_names)
 
 
-class TestBlockdev(testtools.TestCase):
+class TestBlockdev(TestCase):
     def setUp(self):
         super(TestBlockdev, self).setUp()
         self.devpath = '/dev/foobar'
