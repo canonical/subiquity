@@ -1,6 +1,6 @@
 
-localedata:
-	./kbdnames-maker > localedata
+keyboards:
+	./kbdnames-maker > keyboards
 
 clean:
-	rm -f localedata
+	rm -f keyboards

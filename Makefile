@@ -29,7 +29,7 @@ endif
 all: data dryrun
 
 data:
-	make -C data/ localedata
+	make -C data/ keyboards
 
 $(NAME)_$(VERSION).orig.tar.gz: probert clean
 	cd .. && tar czf $(NAME)_$(VERSION).orig.tar.gz $(shell basename `pwd`) --exclude-vcs --exclude=debian --exclude='.tox*'

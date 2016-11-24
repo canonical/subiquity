@@ -21,4 +21,6 @@ from .network_configure_wlan_interface import NetworkConfigureWLANView  # NOQA
 from .network_bond_interfaces import NetworkBondInterfacesView  # NOQA
 from .welcome import CoreWelcomeView as WelcomeView  # NOQA
 from .login import LoginView  # NOQA
-from .locale import CoreLocaleView as LocaleView  # NOQA
+from .keyboarddetect import KeyboardDetectView # NOQA
+from .keyboardlayout import KeyboardLayoutView # NOQA
+from .keyboardvariant import KeyboardVariantView # NOQA

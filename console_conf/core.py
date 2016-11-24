@@ -25,7 +25,7 @@ class ConsoleConf(Application):
     project = "console_conf"
     controllers = [
         "Welcome",
-        "Locale",
+        "Keyboard",
         "Network",
         "Identity",
     ]

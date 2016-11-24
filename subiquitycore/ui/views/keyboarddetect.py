@@ -13,27 +13,26 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Locale
+""" KeyboardDetect
 
-Provide configuration for keymaps, languages, etc.
+Allow the user to use keyboard detection
 
 """
 import logging
 from urwid import (ListBox, Pile, Text, RadioButton)
-from subiquitycore.ui.buttons import done_btn, cancel_btn
+from subiquitycore.ui.buttons import menu_btn, cancel_btn
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 from subiquitycore import utils
 
-log = logging.getLogger("subiquitycore.views.locale")
+log = logging.getLogger("subiquitycore.views.keyboard.detect")
 
 
-class CoreLocaleView(BaseView):
+class KeyboardDetectView(BaseView):
 
-    def __init__(self, model, controller, signal):
+    def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.signal = signal
         self.body = [
             Padding.line_break(""),
             Padding.center_79(self._build_model_inputs()),
@@ -44,32 +43,29 @@ class CoreLocaleView(BaseView):
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
             Color.button(cancel, focus_map='button focus')
         ]
         return Pile(buttons)
 
     def _build_model_inputs(self):
-        items = []
-        lang = []
+        detect = menu_btn(label="Auto-detect keyboard", on_press=self.do_detect)
+        pick = menu_btn(label="Select from a list", on_press=self.controller.pick_layout)
 
-        layouts = self.model.get_layouts()
-        variants = self.model.get_variants()
+        buttons = [
+            Color.button(detect, focus_map='button focus'),
+            Color.button(pick, focus_map='button focus')
+        ]
 
-        for layout in layouts:
-            has_variant = False
-            if layout[1] in variants:
-                has_variant = True
-            items += [ RadioButton(lang, layout[0] + ": " + str(has_variant), on_state_change=self.model.set_effective_layout, user_data=layout[1]) ]
+        return Pile(buttons)
 
-        return Pile(items)
+    def do_detect(self, btn):
+        log.debug("do detect")
 
     def done(self, button):
-        log.debug("Locale configuration: " + str(self.model))
-        self.controller.done()
+        pass
 
     def cancel(self, button):
-        self.signal.prev_signal()
+        self.controller.cancel()
+
