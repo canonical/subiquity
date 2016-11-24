@@ -138,6 +138,11 @@ class InstallProgressController(BaseController):
         log.debug('After curtin install OK')
         self.install_complete = True
 
+    default = curtin_install
+
+    def cancel(self):
+        pass
+
     @coroutine
     def curtin_postinstall(self):
         log.debug('Curtin Post Install: calling curtin '

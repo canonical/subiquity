@@ -53,6 +53,9 @@ class InstallpathController(BaseController):
 
     default = installpath
 
+    def cancel(self):
+        self.signal.emit_signal('prev-screen')
+
     def install_ubuntu(self):
         log.debug("Installing Ubuntu path chosen.")
         self.signal.emit_signal('next-screen')
