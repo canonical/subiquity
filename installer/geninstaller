@@ -18,7 +18,7 @@ PROG=`basename $0`
 PREFIX="${PROG}"
 INSTALLER_IMAGE_SIZE_M=2048  # 2G image
 RSYNC_OPTS="-aXHAS --one-file-system"
-MKFS_OPTS="-E packed_meta_blocks=1 -J size=4 -m 0 -q"
+MKFS_OPTS="-J size=4 -m 0 -q"
 LOGFILE="geninstaller.log"
 TOPDIR=./
 USQUERY=installer/usquery
@@ -287,7 +287,7 @@ acquire_image() {
     local cachedir=$dldir/maas/${label}/${release}/${arch}/${version}
     local ephimg=${cachedir}/${item_name}
     local kernel_img=${cachedir}/vmlinuz
-    local initrd_img=${cachedir}/initrd
+    local initrd_img=${cachedir}/initrd.img
     local roottar=${cachedir}/root.tar.gz
     local rootfs=${cachedir}/rootfs
     set +x
@@ -354,16 +354,19 @@ acquire_image() {
     # unpack rootfs tar
     log "Unpacking roottar: $label $release $arch";
     local kernel_img=${cachedir}/vmlinuz
-    if [ -e "${kernel_img}" ] && [ -e "${initrd_img}" ]; then
-        log "  Using cached $label $release $arch kernel and initrd:"
-	cp "${kernel_img}" "${initrd_img}" "${rootfs}"
-    elif [ ! -e ${rootfs}/vmlinuz ]; then
+    if [ ! -e ${rootfs}/vmlinuz ]; then
         mkdir -p ${rootfs} &&
         sudo tar -C $rootfs -xz --numeric-owner --xattrs -f $roottar
     else
         log "  Using cached $label $release $arch rootfs:"
         log "  $rootfs"
     fi
+
+    if [ -e "${kernel_img}" ] && [ -e "${initrd_img}" ]; then
+        log "  Using cached $label $release $arch kernel and initrd:"
+	sudo cp "${kernel_img}" "${initrd_img}" "${rootfs}"
+    fi
+
     set +x
 
     _RETVAL=${cachedir}
@@ -404,7 +407,7 @@ generate_seed() {
 
     log "Writing seed user-data (subiquity)"
     local subiquity_tar=$dldir/subiquity.tar
-    local tar_cmd="tar -C ${TOPDIR} -cpf $subiquity_tar subiquity subiquitycore"
+    local tar_cmd="tar -C ${TOPDIR} -cvpf $subiquity_tar subiquity subiquitycore"
     if [[ ${TOPDIR} = /usr/share/subiquity* ]]; then
         log "Using installed subiquity paths"
         tar_cmd="$tar_cmd subiquity-tui"
@@ -578,6 +581,7 @@ generate_img() {
      }
 
     log "Creating and syncing filesystem (original cloudimg rootfs)"
+    set -x
     (sudo mkfs.ext4 ${MKFS_OPTS} -L cloudimg-rootfs $ROOTFS_DEV &&
     sudo tune2fs -r 0 $ROOTFS_DEV &&
     mkdir -p ${lower} &&
@@ -612,6 +616,7 @@ generate_img() {
             log "ERROR: failed to overlay mount installer";
             return 1
     }
+    set +x
 
     log "Installing bootloader configuration"
     (sudo mkdir -p ${mnt}/proc
@@ -679,13 +684,16 @@ generate_img() {
 
     log "Installing on rootfs: $packages"
     # use curtin's system-install if available
+    CURTIN_FEATURES=disabled
     if echo ${CURTIN_FEATURES} | grep -q SUBCOMMAND_SYSTEM_INSTALL; then
         log "Using curtin to install packages in-target"
+        set -x
         (cd $dldir/curtin &&
          sudo ./bin/curtin system-install -t $mnt -- $packages) || {
             log "Failed to install packages on rootfs";
             return 1;
         }
+        set +x
     else
         log "WARNING: skipping preinstallation of mdadm, lvm2"
         log "WARNING: will install packages during runtime"
