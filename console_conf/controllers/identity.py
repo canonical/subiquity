@@ -26,16 +26,6 @@ from console_conf.ui.views import IdentityView, LoginView
 
 log = logging.getLogger('console_conf.controllers.identity')
 
-login_details_tmpl = """This device is registered to {realname}.
-
-Remote access was enabled via authentication with SSO user <{username}>.
-Public SSH keys were added to the device for remote access.
-
-{realname} can connect remotely to this device via SSH:
-
-"""
-
-
 def get_device_owner():
     """ Check if device is owned """
 
@@ -56,16 +46,30 @@ def get_device_owner():
             return result
     return None
 
+login_details_tmpl = """\
+Congratulations! This device is now registered to {realname}.
+
+The next step is to log into the device via ssh:
+
+{sshcommands}
+These keys can be used to log in:
+
+{sshkeys}
+Once you've logged in, you can optionally set a password by running
+"sudo passwd $USER". After you've set a password, you can also use it
+to log in here.
+
+Now you can explore snappy core with snap --help
+"""
 
 def write_login_details(fp, realname, username, ips, fingerprints):
-    fp.write(login_details_tmpl.format(realname=realname, username=username))
+    sshcommands = ""
     for ip in ips:
-        fp.write("    ssh %s@%s\n"%(username, ip))
-    fp.write("\nSSH keys with the following fingerprints can be used to log in:\n\n")
+        sshcommands += "    ssh %s@%s\n"%(username, ip)
+    sshkeys = ""
     for fingerprint in fingerprints:
-        fp.write("    " + fingerprint + "\n")
-    fp.write("\nPressing enter after setting a password will allow you to log in here.\n")
-
+        sshkeys += "    " + fingerprint + "\n"
+    fp.write(login_details_tmpl.format(realname=realname, username=username, sshcommands=sshcommands, sshkeys=sshkeys))
 
 def write_login_details_standalone():
     owner = get_device_owner()
