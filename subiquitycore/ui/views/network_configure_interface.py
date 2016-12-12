@@ -154,9 +154,7 @@ class NetworkConfigureInterfaceView(BaseView):
         self.controller.network_configure_ipv4_interface(self.dev.name)
 
     def show_ipv6_configuration(self, btn):
-        log.debug("calling configure-ipv6-interface")
-        # TODO: implement UI for configuring static IPv6.
-        # self.network_configure_ipv6_interface(self.dev.name)
+        self.controller.network_configure_ipv6_interface(self.dev.name)
 
     def done(self, result):
         self.controller.prev_view()

@@ -16,8 +16,6 @@
 import logging
 import ipaddress
 
-import socket
-
 from urwid import Text, Pile, ListBox, Columns
 
 from subiquitycore.view import BaseView
@@ -29,7 +27,7 @@ from subiquitycore.ui.interactive import StringEditor
 log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface')
 
 
-class NetworkConfigureIPv4InterfaceView(BaseView):
+class BaseNetworkConfigureManualView(BaseView):
     ip_version = 4
     ip_address_cls = ipaddress.IPv4Address
     ip_network_cls = ipaddress.IPv4Network
@@ -221,3 +219,14 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
     def cancel(self, button):
         self.model.default_gateway = None
         self.controller.prev_view()
+
+class NetworkConfigureIPv4InterfaceView(BaseNetworkConfigureManualView):
+    ip_version = 4
+    ip_address_cls = ipaddress.IPv4Address
+    ip_network_cls = ipaddress.IPv4Network
+
+
+class NetworkConfigureIPv6InterfaceView(BaseNetworkConfigureManualView):
+    ip_version = 6
+    ip_address_cls = ipaddress.IPv6Address
+    ip_network_cls = ipaddress.IPv6Network

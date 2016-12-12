@@ -16,7 +16,7 @@
 from .network import NetworkView  # NOQA
 from .network_default_route import NetworkSetDefaultRouteView  # NOQA
 from .network_configure_interface import NetworkConfigureInterfaceView  # NOQA
-from .network_configure_manual_interface import NetworkConfigureIPv4InterfaceView  # NOQA
+from .network_configure_manual_interface import NetworkConfigureIPv4InterfaceView, NetworkConfigureIPv6InterfaceView  # NOQA
 from .network_configure_wlan_interface import NetworkConfigureWLANView  # NOQA
 from .network_bond_interfaces import NetworkBondInterfacesView  # NOQA
 from .welcome import CoreWelcomeView as WelcomeView  # NOQA
