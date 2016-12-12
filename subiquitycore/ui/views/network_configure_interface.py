@@ -124,13 +124,13 @@ class NetworkConfigureInterfaceView(BaseView):
         self.ipv6_info.contents = [ (obj, ('pack', None)) for obj in _build_gateway_ip_info_for_version(self.dev, 6) ]
 
     def clear_ipv4(self, btn):
-        self.dev.remove_ipv4_networks()
+        self.dev.remove_ip_networks_for_version(4)
         self.dev.remove_nameservers()
         self.model.set_default_v4_gateway(None, None)
         self.refresh_model_inputs()
 
     def clear_ipv6(self, btn):
-        self.dev.remove_ipv6_networks()
+        self.dev.remove_ip_networks_for_version(6)
         self.dev.remove_nameservers()
         self.model.set_default_v6_gateway(None, None)
         self.refresh_model_inputs()

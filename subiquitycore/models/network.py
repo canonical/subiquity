@@ -112,8 +112,8 @@ class Networkdev:
     There are two 'sides' to a Networkdev: the state the device is
     actually in, and the device's configuration.  Where there is
     abiguity (e.g. when it comes to IP addresses), the former has
-    attribute names like "actual_ipv4_addresses" and the latter has
-    names like "configured_ipv4_addresses".
+    attribute names like "actual_ip_addresses_for_version" and the
+    latter has names like "configured_ip_addresses_for_version".
     """
 
     def __init__(self, net_info, configuration):
@@ -216,14 +216,6 @@ class Networkdev:
         return [ipaddress.ip_interface(a).ip for a in self._net_info.ip.get(fam, [])]
 
     @property
-    def actual_ipv4_addresses(self):
-        return self.actual_ip_addresses_for_version(4)
-
-    @property
-    def actual_ipv6_addresses(self):
-        return self.actual_ip_addresses_for_version(6)
-
-    @property
     def actual_ip_addresses(self):
         return self.actual_ip_addresses_for_version(4) + self.actual_ip_addresses_for_version(6)
 
@@ -233,14 +225,6 @@ class Networkdev:
             if ip_version(ip) == version:
                 r.append(ip)
         return r
-
-    @property
-    def configured_ipv4_addresses(self):
-        return self.configured_ip_addresses_for_version(4)
-
-    @property
-    def configured_ipv6_addresses(self):
-        return self.configured_ip_addresses_for_version(6)
 
     @property
     def configured_ip_addresses(self):
@@ -255,17 +239,6 @@ class Networkdev:
             self._configuration.pop(key, None)
         else:
             self._configuration[key] = gateway
-
-    @property
-    def configured_gateway4(self):
-        return self._configuration.get('gateway4', None)
-
-    @configured_gateway4.setter
-    def configured_gateway4(self, val):
-        if val is not None:
-            self._configuration['gateway4'] = val
-        else:
-            self._configuration.pop('gateway4', None)
 
     @property
     def configured_nameservers(self):
@@ -318,8 +291,8 @@ class Networkdev:
                 aps[ssid]['password'] = psk
 
     def remove_networks(self):
-        self.remove_ipv4_networks()
-        self.remove_ipv6_networks()
+        self.remove_ip_networks_for_version(4)
+        self.remove_ip_networks_for_version(6)
 
     def remove_ip_networks_for_version(self, version):
         dhcp_key = 'dhcp%s'%(version,)
@@ -330,12 +303,6 @@ class Networkdev:
                 addrs.append(ip)
         self._configuration['addresses'] = addrs
         self.set_configured_gateway_for_version(version, None)
-
-    def remove_ipv4_networks(self):
-        self.remove_ip_networks_for_version(4)
-
-    def remove_ipv6_networks(self):
-        self.remove_ip_networks_for_version(6)
 
     def remove_nameservers(self):
         self._configuration['nameservers'] = {}
