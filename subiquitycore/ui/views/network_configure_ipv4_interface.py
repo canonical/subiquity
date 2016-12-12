@@ -207,7 +207,7 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
             return
         self.dev.remove_ipv4_networks()
         self.dev.remove_nameservers()
-        self.dev.add_network(socket.AF_INET, result)
+        self.dev.add_network(4, result)
 
         # return
         self.controller.prev_view()
