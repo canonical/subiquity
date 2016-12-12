@@ -81,40 +81,25 @@ def _format_address_list(label, addresses):
             ips.append(str(ip))
         return [Text(label%('es',) + ' ' + ', '.join(ips))]
 
-def _build_gateway_ipv4_info(dev):
-    if dev.dhcp4:
-        if dev.actual_ipv4_addresses:
-            return _format_address_list("Will use DHCP for IPv4, currently has address%s:", dev.actual_ipv4_addresses)
-        return [Text("Will use DHCP for IPv4")]
-    elif dev.configured_ipv4_addresses:
-        if sorted(dev.actual_ipv4_addresses) == sorted(dev.configured_ipv4_addresses):
-            return _format_address_list("Using static address%s for IPv4:", dev.actual_ipv4_addresses)
-        p = _format_address_list("Will use static address%s for IPv4:", dev.configured_ipv4_addresses)
-        if dev.actual_ipv4_addresses:
-            p.extend(_format_address_list("Currently has address%s:", dev.actual_ipv4_addresses))
-        return p
-    elif dev.actual_ipv4_addresses:
-        return _format_address_list("IPv4 is not configured but has address%s:", dev.actual_ipv4_addresses)
-    else:
-        return [Text("IPv4 is not configured")]
 
-
-def _build_gateway_ipv6_info(dev):
-    if dev.dhcp6:
-        if dev.actual_ipv6_addresses:
-            return _format_address_list("Will use DHCP for IPv6, currently has address%s:", dev.actual_ipv6_addresses)
-        return [Text("Will use DHCP for IPv6")]
-    elif dev.configured_ipv6_addresses:
-        if sorted(dev.actual_ipv6_addresses) == sorted(dev.configured_ipv6_addresses):
-            return _format_address_list("Using static address%s for IPv6:", dev.actual_ipv6_addresses)
-        p = _format_address_list("Will use static address%s for IPv6:", dev.configured_ipv6_addresses)
-        if dev.actual_ipv6_addresses:
-            p.extend(_format_address_list("Currently has address%s:", dev.actual_ipv6_addresses))
+def _build_gateway_ip_info_for_version(dev, version):
+    actual_ip_addresses = dev.actual_ip_addresses_for_version(version)
+    configured_ip_addresses = dev.configured_ip_addresses_for_version(version)
+    if dev.dhcp_for_version(version):
+        if dev.actual_ip_addresses:
+            return _format_address_list("Will use DHCP for IPv%s, currently has address%%s:"%(version,), actual_ip_addresses)
+        return [Text("Will use DHCP for IPv%s"%(version,))]
+    elif configured_ip_addresses:
+        if sorted(actual_ip_addresses) == sorted(configured_ip_addresses):
+            return _format_address_list("Using static address%%s for IPv%s:"%(version,), actual_ip_addresses)
+        p = _format_address_list("Will use static address%%s for IPv%s:"%(version,), configured_ip_addresses)
+        if actual_ip_addresses:
+            p.extend(_format_address_list("Currently has address%s:", actual_ip_addresses))
         return p
-    elif dev.actual_ipv6_addresses:
-        return _format_address_list("IPv6 is not configured but has address%s:", dev.actual_ipv6_addresses)
+    elif actual_ip_addresses:
+        return _format_address_list("IPv%s is not configured but has address%%s:"%(version,), actual_ip_addresses)
     else:
-        return [Text("IPv6 is not configured")]
+        return [Text("IPv%s is not configured"%(version,))]
 
 
 class NetworkView(BaseView):
@@ -190,8 +175,8 @@ class NetworkView(BaseView):
                 col_2.extend(_build_wifi_info(dev))
             if len(dev.actual_ip_addresses) == 0 and dev.type == 'eth' and not dev.is_connected:
                 col_2.append(Color.info_primary(Text("Not connected")))
-            col_2.extend(_build_gateway_ipv4_info(dev))
-            col_2.extend(_build_gateway_ipv6_info(dev))
+            col_2.extend(_build_gateway_ip_info_for_version(dev, 4))
+            col_2.extend(_build_gateway_ip_info_for_version(dev, 6))
 
             # Other device info (MAC, vendor/model, speed)
             template = ''

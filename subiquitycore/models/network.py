@@ -182,6 +182,10 @@ class Networkdev:
 
         return "{}G".format(int(speed / 1000))
 
+    def dhcp_for_version(self, version):
+        dhcp_key = 'dhcp%s'%(version,)
+        return self._configuration.get(dhcp_key, False)
+
     @property
     def dhcp4(self):
         return self._configuration.get('dhcp4', False)

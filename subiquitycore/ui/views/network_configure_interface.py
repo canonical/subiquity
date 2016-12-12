@@ -17,7 +17,7 @@ from urwid import Pile, ListBox
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, menu_btn
 from subiquitycore.ui.utils import Color, Padding
-from subiquitycore.ui.views.network import _build_gateway_ipv4_info, _build_gateway_ipv6_info, _build_wifi_info
+from subiquitycore.ui.views.network import _build_gateway_ip_info_for_version, _build_wifi_info
 import logging
 
 log = logging.getLogger('subiquitycore.network.network_configure_interface')
@@ -32,9 +32,9 @@ class NetworkConfigureInterfaceView(BaseView):
         super().__init__(ListBox(self._build_body()))
 
     def _build_widgets(self):
-        self.ipv4_info = Pile(_build_gateway_ipv4_info(self.dev))
+        self.ipv4_info = Pile(_build_gateway_ip_info_for_version(self.dev, 4))
         self.ipv4_method = Pile(self._build_ipv4_method_buttons())
-        self.ipv6_info = Pile(_build_gateway_ipv6_info(self.dev))
+        self.ipv6_info = Pile(_build_gateway_ip_info_for_version(self.dev, 6))
         self.ipv6_method = Pile(self._build_ipv6_method_buttons())
         if self.dev.type == 'wlan':
             self.wifi_info = Pile(_build_wifi_info(self.dev))
@@ -120,8 +120,8 @@ class NetworkConfigureInterfaceView(BaseView):
             return
         if self.dev.type == 'wlan':
             self.wifi_info.contents = [ (obj, ('pack', None)) for obj in _build_wifi_info(self.dev) ]
-        self.ipv4_info.contents = [ (obj, ('pack', None)) for obj in _build_gateway_ipv4_info(self.dev) ]
-        self.ipv6_info.contents = [ (obj, ('pack', None)) for obj in _build_gateway_ipv6_info(self.dev) ]
+        self.ipv4_info.contents = [ (obj, ('pack', None)) for obj in _build_gateway_ip_info_for_version(self.dev, 4) ]
+        self.ipv6_info.contents = [ (obj, ('pack', None)) for obj in _build_gateway_ip_info_for_version(self.dev, 6) ]
 
     def clear_ipv4(self, btn):
         self.dev.remove_ipv4_networks()
