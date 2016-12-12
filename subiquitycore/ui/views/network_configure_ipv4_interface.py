@@ -30,6 +30,10 @@ log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface'
 
 
 class NetworkConfigureIPv4InterfaceView(BaseView):
+    ip_version = 4
+    ip_address_cls = ipaddress.IPv4Address
+    ip_network_cls = ipaddress.IPv4Network
+
     def __init__(self, model, controller, name):
         self.model = model
         self.controller = controller
@@ -37,13 +41,15 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
         self.is_gateway = False
         self.subnet_input = StringEditor(caption="")  # FIXME: ipaddr_editor
         self.address_input = StringEditor(caption="")  # FIXME: ipaddr_editor
-        if self.dev.configured_ipv4_addresses:
-            addr = ipaddress.ip_interface(self.dev.configured_ipv4_addresses[0])
+        configured_addresses = self.dev.configured_ip_addresses_for_version(self.ip_version)
+        if configured_addresses:
+            addr = ipaddress.ip_interface(configured_addresses[0])
             self.subnet_input.value = str(addr.network)
             self.address_input.value = str(addr.ip)
         self.gateway_input = StringEditor(caption="")  # FIXME: ipaddr_editor
-        if self.dev.configured_gateway4:
-            self.gateway_input.value = self.dev.configured_gateway4
+        configured_gateway = self.dev.configured_gateway_for_version(self.ip_version)
+        if configured_gateway:
+            self.gateway_input.value = configured_gateway
         self.nameserver_input = StringEditor(caption="")  # FIXME: ipaddr_list_editor
         self.nameserver_input.value = ', '.join(self.dev.configured_nameservers)
         self.searchdomains_input = StringEditor(caption="")  # FIXME: ipaddr_list_editor
@@ -161,17 +167,17 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
             raise ValueError("Subnet: should be in CIDR form (xx.xx.xx.xx/yy)")
 
         try:
-            network = ipaddress.IPv4Network(result['network'])
+            network = self.ip_network_cls(result['network'])
         except ValueError as v:
             raise ValueError("Subnet: " + str(v))
         try:
-            address = ipaddress.IPv4Address(result['address'])
+            address = self.ip_address_cls(result['address'])
         except ValueError as v:
             raise ValueError("Address: " + str(v))
         if address not in network:
             raise ValueError("Address: '%s' is not contained in '%s'" % (address, network))
         try:
-            ipaddress.IPv4Address(result['gateway'])
+            self.ip_address_cls(result['gateway'])
         except ValueError as v:
             raise ValueError("Gateway: " + str(v))
         for ns in result['nameservers']:
@@ -205,9 +211,9 @@ class NetworkConfigureIPv4InterfaceView(BaseView):
             log.exception(error)
             self.error.set_text(str(e))
             return
-        self.dev.remove_ipv4_networks()
+        self.dev.remove_ip_networks_for_version(self.ip_version)
         self.dev.remove_nameservers()
-        self.dev.add_network(4, result)
+        self.dev.add_network(self.ip_version, result)
 
         # return
         self.controller.prev_view()
