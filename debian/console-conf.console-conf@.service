@@ -5,6 +5,7 @@ After=rc-local.service
 IgnoreOnIsolate=yes
 ConditionPathExists=/dev/tty0
 ConditionPathExists=!/var/lib/console-conf/complete
+StartLimitInterval=0
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
