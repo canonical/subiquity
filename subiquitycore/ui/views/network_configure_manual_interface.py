@@ -28,9 +28,6 @@ log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface'
 
 
 class BaseNetworkConfigureManualView(BaseView):
-    ip_version = 4
-    ip_address_cls = ipaddress.IPv4Address
-    ip_network_cls = ipaddress.IPv4Network
 
     def __init__(self, model, controller, name):
         self.model = model
@@ -82,7 +79,7 @@ class BaseNetworkConfigureManualView(BaseView):
                     ("weight", 0.3,
                      Color.string_input(self.subnet_input,
                                         focus_map="string_input focus")),
-                    ("weight", 0.5, Text("CIDR e.g. 192.168.9.0/24"))
+                    ("weight", 0.5, Text("CIDR e.g. %s"%(self.example_address,)))
                 ], dividechars=2
             ),
             Columns(
@@ -224,9 +221,11 @@ class NetworkConfigureIPv4InterfaceView(BaseNetworkConfigureManualView):
     ip_version = 4
     ip_address_cls = ipaddress.IPv4Address
     ip_network_cls = ipaddress.IPv4Network
+    example_address = '192.168.9.0/24'
 
 
 class NetworkConfigureIPv6InterfaceView(BaseNetworkConfigureManualView):
     ip_version = 6
     ip_address_cls = ipaddress.IPv6Address
     ip_network_cls = ipaddress.IPv6Network
+    example_address = 'fde4:8dba:82e1::/64'
