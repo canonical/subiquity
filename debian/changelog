@@ -1,10 +1,10 @@
-subiquity (0.0.25) UNRELEASED; urgency=medium
+subiquity (0.0.25) zesty; urgency=medium
 
   * Allow manual configuration of IPv6. (LP: #1644232)
   * Make message after configuration is done friendlier. (LP: #1643930)
   * Start to repair subiquity-tui.
 
- -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Thu, 15 Dec 2016 13:47:18 +1300
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Thu, 15 Dec 2016 14:18:41 +1300
 
 subiquity (0.0.24.1) zesty; urgency=medium
 
