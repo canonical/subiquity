@@ -112,8 +112,8 @@ class Networkdev:
     There are two 'sides' to a Networkdev: the state the device is
     actually in, and the device's configuration.  Where there is
     abiguity (e.g. when it comes to IP addresses), the former has
-    attribute names like "actual_ipv4_addresses" and the latter has
-    names like "configured_ipv4_addresses".
+    attribute names like "actual_ip_addresses_for_version" and the
+    latter has names like "configured_ip_addresses_for_version".
     """
 
     def __init__(self, net_info, configuration):
@@ -182,6 +182,10 @@ class Networkdev:
 
         return "{}G".format(int(speed / 1000))
 
+    def dhcp_for_version(self, version):
+        dhcp_key = 'dhcp%s'%(version,)
+        return self._configuration.get(dhcp_key, False)
+
     @property
     def dhcp4(self):
         return self._configuration.get('dhcp4', False)
@@ -204,31 +208,21 @@ class Networkdev:
         else:
             self._configuration.pop('dhcp6', None)
 
-    @property
-    def actual_ipv4_addresses(self):
-        return [ipaddress.IPv4Interface(a).ip for a in self._net_info.ip.get(AF_INET, [])]
-
-    @property
-    def actual_ipv6_addresses(self):
-        return [ipaddress.IPv6Interface(a).ip for a in self._net_info.ip.get(AF_INET6, [])]
+    def actual_ip_addresses_for_version(self, version):
+        if version == 4:
+            fam = AF_INET
+        elif version == 6:
+            fam = AF_INET6
+        return [ipaddress.ip_interface(a).ip for a in self._net_info.ip.get(fam, [])]
 
     @property
     def actual_ip_addresses(self):
-        return self.actual_ipv4_addresses + self.actual_ipv6_addresses
+        return self.actual_ip_addresses_for_version(4) + self.actual_ip_addresses_for_version(6)
 
-    @property
-    def configured_ipv4_addresses(self):
+    def configured_ip_addresses_for_version(self, version):
         r = []
         for ip in self._configuration.get('addresses', []):
-            if ip_version(ip) == 4:
-                r.append(ip)
-        return r
-
-    @property
-    def configured_ipv6_addresses(self):
-        r = []
-        for ip in self._configuration.get('addresses', []):
-            if ip_version(ip) == 6:
+            if ip_version(ip) == version:
                 r.append(ip)
         return r
 
@@ -236,16 +230,15 @@ class Networkdev:
     def configured_ip_addresses(self):
         return self._configuration.setdefault('addresses', [])
 
-    @property
-    def configured_gateway4(self):
-        return self._configuration.get('gateway4', None)
+    def configured_gateway_for_version(self, version):
+        return self._configuration.get('gateway%s'%(version,), None)
 
-    @configured_gateway4.setter
-    def configured_gateway4(self, val):
-        if val is not None:
-            self._configuration['gateway4'] = val
+    def set_configured_gateway_for_version(self, version, gateway):
+        key = 'gateway%s'%(version,)
+        if gateway is None:
+            self._configuration.pop(key, None)
         else:
-            self._configuration.pop('gateway4', None)
+            self._configuration[key] = gateway
 
     @property
     def configured_nameservers(self):
@@ -298,31 +291,23 @@ class Networkdev:
                 aps[ssid]['password'] = psk
 
     def remove_networks(self):
-        self.remove_ipv4_networks()
-        self.remove_ipv6_networks()
+        self.remove_ip_networks_for_version(4)
+        self.remove_ip_networks_for_version(6)
 
-    def remove_ipv4_networks(self):
-        self.dhcp4 = False
+    def remove_ip_networks_for_version(self, version):
+        dhcp_key = 'dhcp%s'%(version,)
+        setattr(self, dhcp_key, False)
         addrs = []
         for ip in self._configuration.get('addresses', []):
-            if ip_version(ip) != 4:
+            if ip_version(ip) != version:
                 addrs.append(ip)
         self._configuration['addresses'] = addrs
-        self.configured_gateway4 = None
-
-    def remove_ipv6_networks(self):
-        self.dhcp6 = False
-        addrs = []
-        for ip in self._configuration.get('addresses', []):
-            if ip_version(ip) != 6:
-                addrs.append(ip)
-        self._configuration['addresses'] = addrs
-        self.configured_gateway6 = None
+        self.set_configured_gateway_for_version(version, None)
 
     def remove_nameservers(self):
         self._configuration['nameservers'] = {}
 
-    def add_network(self, family, network):
+    def add_network(self, version, network):
         # result = {
         #    'network': self.subnet_input.value,
         #    'address': self.address_input.value,
@@ -333,10 +318,7 @@ class Networkdev:
         address = network['address'].split('/')[0]
         address += '/' + network['network'].split('/')[1]
         self.configured_ip_addresses.append(address)
-        if family == AF_INET:
-            self.configured_gateway4 = network['gateway']
-        elif family == AF_INET6:
-            self.configured_gateway6 = network['gateway']
+        self.set_configured_gateway_for_version(version, network['gateway'])
         self.configured_nameservers.extend(network['nameservers'])
         self.configured_searchdomains.extend(network['searchdomains'])
 

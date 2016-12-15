@@ -34,6 +34,7 @@ from subiquitycore.ui.views import (NetworkView,
                                     NetworkBondInterfacesView,
                                     NetworkConfigureInterfaceView,
                                     NetworkConfigureIPv4InterfaceView,
+                                    NetworkConfigureIPv6InterfaceView,
                                     NetworkConfigureWLANView)
 from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.ui.dummy import DummyView
@@ -431,7 +432,9 @@ class NetworkController(BaseController):
 
     @view
     def network_configure_ipv6_interface(self, iface):
-        self.ui.set_body(DummyView(self))
+        self.ui.set_header("Network interface {} manual IPv6 "
+                           "configuration".format(iface))
+        self.ui.set_body(NetworkConfigureIPv6InterfaceView(self.model, self, iface))
 
     @view
     def install_network_driver(self):
