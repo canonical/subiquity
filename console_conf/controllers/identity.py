@@ -59,7 +59,7 @@ Once you've logged in, you can optionally set a password by running
 "sudo passwd $USER". After you've set a password, you can also use it
 to log in here.
 
-Now you can explore snappy core with snap --help
+You can explore snappy core with snap --help.
 """
 
 def write_login_details(fp, realname, username, ips, fingerprints):
