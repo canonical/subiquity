@@ -215,3 +215,9 @@ def disable_first_boot_service():
     log.info('disabling first boot service')
     run_command(["systemctl", "stop", "--no-block", "console-conf@*.service", "serial-console-conf@*.service"])
     return
+
+def disable_subiquity():
+    """ Stop subiquity service; which also restores getty service """
+    log.info('disabling subiquity service')
+    run_command(["systemctl", "stop", "--no-block", "subiquity@*.service"])
+    return

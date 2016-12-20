@@ -30,5 +30,4 @@ class Subiquity(Application):
             "Filesystem",
             "Identity",
             "InstallProgress",
-            "Login",
     ]
