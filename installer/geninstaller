@@ -56,6 +56,8 @@ INSTALLER_DEPS=(
   "python3-tornado"
   "probert"
   "xfsprogs"
+  "curtin"
+  "subiquity"
 )
 CACHEDIR=""
 GRUB_MODS="configfile fat part_gpt part_msdos cat echo test search search_label search_fs_uuid boot chain linux reboot halt normal efi_gop efi_uga font gfxterm gfxterm_menu gfxterm_background gfxmenu serial"
@@ -195,46 +197,6 @@ install_deps() {
         }
    }
    return 0
-}
-
-install_src() {
-    local dldir=${1}; shift;
-    mkdir -p ${dldir} || {
-        log "ERROR: failed to mkdir $dldir";
-        return 1;
-    }
-
-    log "Acquiring src packages..."
-    while [ $# -gt 0 ]; do
-        local proto=${1}; shift
-        local url=${1}; shift
-        local localdir=${1}; shift
-
-        [ -z "${proto}" -o -z "${url}" ] && {
-            log "ERROR installing source with args: $@"
-            return 1;
-        }
-
-        local target="$dldir/$localdir"
-        case "$proto" in
-            git)
-                cmd="git clone $url $target";;
-            bzr)
-                cmd="bzr branch $url $target";;
-            *)
-                log "ERROR: unsupported src protocol: $proto $url";;
-        esac
-
-        if [ ! -d "${target}" ]; then
-            log "Acquiring src @ $url with $proto"
-            $cmd || {
-                log "ERROR: failed to fetch src: $proto $url into $target";
-                return 1;
-            }
-        else
-            log "  Using cached src for repo $url @ $target"
-        fi
-    done
 }
 
 acquire_image() {
@@ -405,31 +367,6 @@ generate_seed() {
         sed -i "s/#packages/packages:\n$packages/" ${seed}/user-data
     fi
 
-    log "Writing seed user-data (subiquity)"
-    local subiquity_tar=$dldir/subiquity.tar
-    local tar_cmd="tar -C ${TOPDIR} -cvpf $subiquity_tar subiquity subiquitycore"
-    if [[ ${TOPDIR} = /usr/share/subiquity* ]]; then
-        log "Using installed subiquity paths"
-        tar_cmd="$tar_cmd subiquity-tui"
-    else
-        log "Using source subiquity paths"
-        tar_cmd="$tar_cmd bin"
-    fi
-    log "subiquity_tar cmd: ${tar_cmd}"
-    $tar_cmd || {
-        log "ERROR: Failed to package subiquity installer";
-        return 1;
-    }
-    [ -e ${subiquity_tar} ] || {
-        log "ERROR: failed to package subiquity installer";
-        return 1
-    }
-    userdata_write_file "/tmp/subiquity.tar" \
-                        "root:root" "0644" "b64" \
-                        "$subiquity_tar" >> $seed/user-data || {
-        log "Failed to subiquity into $seed";
-        return 1;
-    }
     return 0
 }
 
@@ -646,66 +583,17 @@ generate_img() {
         return 1;
     }
 
-    log "Installing curtin in rootfs"
-    local curtin_debbuild="$(cd $dldir/curtin &&
-                             ./tools/build-deb -us -uc || return 1)"
-    local curtin_ver=$(echo $curtin_debbuild |
-                       awk '/building upstream version/ {print $4}' |
-                       sed 's|,||g')
-    # no python2 curtin
-    local curtin_debs="$(ls $dldir/curtin/*${curtin_ver}*.deb | grep -v 'python-curtin')"
-    if [ -z "$curtin_ver" -o -z "$curtin_debs" ]; then
-        log "ERROR: failed to build curtin debs and get version";
-        return 1;
-    fi
-    for deb in ${curtin_debs}; do
-        cp ${deb} ${mnt}/tmp || {
-           log "ERROR: failed copyin ${deb} into ${mnt}/tmp";
-           return 1;
-        }
-    done
-
-    # disable daemons in target
-    disable_daemons_in_root $mnt
-
-    apt_opts=" --quiet --assume-yes"
-    apt_opts="$apt_opts --option=Dpkg::Options::=--force-unsafe-io"
-    apt_opts="$apt_opts --option=Dpkg::Options::=--force-confold"
-    sudo chroot ${mnt} /bin/bash -c \
-        "dpkg --install /tmp/*${curtin_ver}*.deb;
-         export DEBIAN_FRONTEND=noninteractive;
-         apt-get ${apt_opts} -y -f install" || {
-        log "ERROR: Failed to install curtin in target";
+    log "Installing on rootfs: $packages"
+    log "WARNING: skipping preinstallation of mdadm, lvm2"
+    log "WARNING: will install packages during runtime"
+    # if we don't have the right curtin features, we can't easily
+    # install mdadm/lvm2 into the target as it will start up system
+    # daemons and prevent us from unmounting the target
+    packages=$(echo $packages | fmt -w1 | egrep -v "(mdadm|lvm2)")
+    sudo chroot ${mnt} apt-get -y install $packages || {
+        log "Failed to install packages on rootfs";
         return 1;
     }
-
-    # restore daemons in target
-    undisable_daemons_in_root $mnt
-
-    log "Installing on rootfs: $packages"
-    # use curtin's system-install if available
-    CURTIN_FEATURES=disabled
-    if echo ${CURTIN_FEATURES} | grep -q SUBCOMMAND_SYSTEM_INSTALL; then
-        log "Using curtin to install packages in-target"
-        set -x
-        (cd $dldir/curtin &&
-         sudo ./bin/curtin system-install -t $mnt -- $packages) || {
-            log "Failed to install packages on rootfs";
-            return 1;
-        }
-        set +x
-    else
-        log "WARNING: skipping preinstallation of mdadm, lvm2"
-        log "WARNING: will install packages during runtime"
-        # if we don't have the right curtin features, we can't easily
-        # install mdadm/lvm2 into the target as it will start up system
-        # daemons and prevent us from unmounting the target
-        packages=$(echo $packages | fmt -w1 | egrep -v "(mdadm|lvm2)")
-        sudo chroot ${mnt} apt-get -y install $packages || {
-            log "Failed to install packages on rootfs";
-            return 1;
-        }
-    fi
 
     log "Cleaning up overlay apt cache"
     local before=( `sudo du -sk ${upper}` )
@@ -812,18 +700,6 @@ main() {
 
     [ -z "$OUTPUT" ] && {
         OUTPUT="ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img"
-    }
-
-    install_src ${DLDIR} ${SRC_DEPS[@]} || {
-        return 1;
-    }
-
-    export CURTIN_FEATURES="$(cd ${DLDIR}/curtin;
-                      python3 -c \
-                      'import curtin; [print(x) for x in curtin.FEATURES]')"
-    log "Detected curtin features: $CURTIN_FEATURES"
-    [ -n "${CURTIN_FEATURES}" ] || {
-        return 1;
     }
 
     acquire_image ${DLDIR} "$STREAM" "$RELEASE" "$ARCH" "$VERSION" || {

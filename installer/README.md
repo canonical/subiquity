@@ -12,12 +12,15 @@ Install package dependencies:
     qemu-system-x86
     qemu-utils
     syslinux-common
+    ubuntu-cloudimage-keyring
+    cloud-image-utils
+    grub-pc-bin
     "
     apt-get install $PKGS
 
-Generate the install image
+Generate the install image from subiquity's root directory:
 
-    ./geninstaller.sh
+    installer/geninstaller.sh
 
 
 Run the installer
