@@ -51,6 +51,9 @@ class LoginView(BaseView):
         return Pile(self.buttons)
 
     def auth_name(self, idstr):
+        if idstr is None:
+            return None
+
         # lp:<id>
         # gh:<id>
         # sso:<id>
@@ -60,7 +63,7 @@ class LoginView(BaseView):
             'gh': 'Github',
             'sso': 'Ubuntu SSO'
         }
-        return auth_to_name.get(auth_type, 'Unknown Authenication')
+        return auth_to_name.get(auth_type, 'Unknown Authentication')
 
     def _build_model_inputs(self):
         """
@@ -94,16 +97,19 @@ class LoginView(BaseView):
             'realname': user.realname,
             'username': user.username,
         }
-        login_info.update({'auth': self.auth_name(user.ssh_import_id),
-                           'ssh_import_id': user.ssh_import_id.split(":")[-1]})
-        print(login_info)
+
         login_text = local_tpl.format(**login_info)
+
         if user.ssh_import_id:
+            login_info.update({'auth': self.auth_name(user.ssh_import_id),
+                               'ssh_import_id': user.ssh_import_id.split(":")[-1]})
             login_text += remote_tpl.format(**login_info)
             for iface in self.ifaces:
                 ip = str(iface.ip).split("/")[0]
                 ssh_iface = "    ssh %s@%s" % (user.username, ip)
                 ssh += [Padding.center_50(Text(ssh_iface))]
+
+        print(login_info)
 
         sl += [Text(login_text),
                Padding.line_break("")] + ssh

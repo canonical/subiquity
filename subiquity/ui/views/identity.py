@@ -28,7 +28,7 @@ from subiquitycore.user import create_user
 from subiquitycore.view import BaseView
 
 
-log = logging.getLogger("console_conf.views.identity")
+log = logging.getLogger("subiquity.views.identity")
 
 HOSTNAME_MAXLEN = 64
 REALNAME_MAXLEN = 160
@@ -238,7 +238,7 @@ class IdentityView(BaseView):
         self.signal.emit_signal('installprogress:wrote-postinstall')
         # show next view
         if self.opts.firstboot:
-            self.signal.identity_done()
+            self.controller.identity_done()
         else:
             self.signal.emit_signal('menu:installprogress:main')
 

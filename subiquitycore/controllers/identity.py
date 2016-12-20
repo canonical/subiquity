@@ -59,9 +59,6 @@ class BaseIdentityController(BaseController):
 
     def login_done(self):
         # mark ourselves complete
-        utils.mark_firstboot_complete()
-
-        # disable the UI service restoring getty service
-        utils.disable_first_boot_service()
+        utils.disable_subiquity()
 
         self.signal.emit_signal('quit')
