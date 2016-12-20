@@ -127,6 +127,12 @@ class Networkdev:
             return {}
 
     @property
+    def configured(self):
+        if self.configured_ip_addresses or self.dhcp4 or self.dhcp6:
+            return True
+        return False
+
+    @property
     def name(self):
         return self._net_info.name
 
@@ -418,6 +424,9 @@ class NetworkModel(BaseModel):
 
     def get_all_netdevs(self):
         return [v for k, v in sorted(self.devices_by_name.items())]
+
+    def get_configured_interfaces(self):
+        return [dev for dev in self.get_all_netdevs() if dev.configured]
 
     def get_netdev_by_name(self, name):
         return self.devices_by_name[name]
