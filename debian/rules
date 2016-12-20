@@ -25,9 +25,12 @@ override_dh_python3:
 
 override_dh_installinit:
 	dh_installinit --no-start --name=console-conf@
+	dh_installinit --no-start --name=subiquity@
 	dh_installinit --no-start --name=serial-console-conf@
 	mkdir $(CURDIR)/debian/console-conf/lib/systemd/system/getty@.service.d/
 	install -m 0644 $(CURDIR)/debian/console-conf.conf $(CURDIR)/debian/console-conf/lib/systemd/system/getty@.service.d/
+	mkdir $(CURDIR)/debian/subiquity/lib/systemd/system/getty@.service.d/
+	install -m 0644 $(CURDIR)/debian/subiquity.conf $(CURDIR)/debian/subiquity/lib/systemd/system/getty@.service.d/
 	mkdir $(CURDIR)/debian/console-conf/lib/systemd/system/serial-getty@.service.d/
 	install -m 0644 $(CURDIR)/debian/console-conf-serial.conf $(CURDIR)/debian/console-conf/lib/systemd/system/serial-getty@.service.d/
 
