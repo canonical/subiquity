@@ -426,7 +426,7 @@ class NetworkController(BaseController):
 
     @view
     def network_configure_wlan_interface(self, iface):
-        self.ui.set_header("Network interface {} manual IPv4 "
+        self.ui.set_header("Network interface {} WIFI "
                            "configuration".format(iface))
         self.ui.set_body(NetworkConfigureWLANView(self.model, self, iface))
 
