@@ -104,8 +104,13 @@ class LoginView(BaseView):
             login_info.update({'auth': self.auth_name(user.ssh_import_id),
                                'ssh_import_id': user.ssh_import_id.split(":")[-1]})
             login_text += remote_tpl.format(**login_info)
-            for iface in self.ifaces:
-                ip = str(iface.ip).split("/")[0]
+
+            ips = []
+            for dev in self.ifaces:
+                for addr in dev.actual_ip_addresses:
+                    ips.append(addr)
+
+            for ip in ips:
                 ssh_iface = "    ssh %s@%s" % (user.username, ip)
                 ssh += [Padding.center_50(Text(ssh_iface))]
 
