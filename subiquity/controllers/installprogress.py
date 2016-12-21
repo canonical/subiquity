@@ -118,8 +118,7 @@ class InstallProgressController(BaseController):
                           str(os.getpid()), ">", self.install_log]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
-            configs = [CURTIN_CONFIGS['network'],
-                       CURTIN_CONFIGS['storage']]
+            configs = [CURTIN_CONFIGS['storage']]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
