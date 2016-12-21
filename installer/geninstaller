@@ -18,7 +18,7 @@ PROG=`basename $0`
 PREFIX="${PROG}"
 INSTALLER_IMAGE_SIZE_M=2048  # 2G image
 RSYNC_OPTS="-aXHAS --one-file-system"
-MKFS_OPTS="-E packed_meta_blocks=1 -J size=4 -m 0 -q"
+MKFS_OPTS="-J size=4 -m 0 -q"
 LOGFILE="geninstaller.log"
 TOPDIR=./
 USQUERY=installer/usquery
@@ -56,6 +56,8 @@ INSTALLER_DEPS=(
   "python3-tornado"
   "probert"
   "xfsprogs"
+  "curtin"
+  "subiquity"
 )
 CACHEDIR=""
 GRUB_MODS="configfile fat part_gpt part_msdos cat echo test search search_label search_fs_uuid boot chain linux reboot halt normal efi_gop efi_uga font gfxterm gfxterm_menu gfxterm_background gfxmenu serial"
@@ -197,46 +199,6 @@ install_deps() {
    return 0
 }
 
-install_src() {
-    local dldir=${1}; shift;
-    mkdir -p ${dldir} || {
-        log "ERROR: failed to mkdir $dldir";
-        return 1;
-    }
-
-    log "Acquiring src packages..."
-    while [ $# -gt 0 ]; do
-        local proto=${1}; shift
-        local url=${1}; shift
-        local localdir=${1}; shift
-
-        [ -z "${proto}" -o -z "${url}" ] && {
-            log "ERROR installing source with args: $@"
-            return 1;
-        }
-
-        local target="$dldir/$localdir"
-        case "$proto" in
-            git)
-                cmd="git clone $url $target";;
-            bzr)
-                cmd="bzr branch $url $target";;
-            *)
-                log "ERROR: unsupported src protocol: $proto $url";;
-        esac
-
-        if [ ! -d "${target}" ]; then
-            log "Acquiring src @ $url with $proto"
-            $cmd || {
-                log "ERROR: failed to fetch src: $proto $url into $target";
-                return 1;
-            }
-        else
-            log "  Using cached src for repo $url @ $target"
-        fi
-    done
-}
-
 acquire_image() {
     _RETVAL=""
     [ $# -lt 1 ] && {
@@ -253,6 +215,7 @@ acquire_image() {
     local arch=${3-"amd64"};
     local version=${4};
 
+    set -x
     # run a query unless they specify all params
     if [ $# -le 4 -a -z "${version}" ]; then
         log "Querying simplestreams for latest image: $label $release $arch"
@@ -262,12 +225,20 @@ acquire_image() {
              local version=${ssresult[0]}
              local item_url=${ssresult[1]}
              local sha256=${ssresult[2]}
+             kernel=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-daily release=$release arch=$arch item_name=boot-kernel` )
+             initrd=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-daily release=$release arch=$arch item_name=boot-initrd` )
+             local kernel_url=${kernel[1]}
+             local initrd_url=${initrd[1]}
              ;;
            release)
              ssresult=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-release release=$release arch=$arch item_name=$item_name` )
              local version=${ssresult[0]}
              local item_url=${ssresult[1]}
              local sha256=${ssresult[2]}
+             kernel=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-daily release=$release arch=$arch item_name=boot-kernel` )
+             initrd=( `${USQUERY} --output-format="%(version_name)s %(item_url)s %(sha256)s" --max=1 maas-daily release=$release arch=$arch item_name=boot-initrd` )
+             local kernel_url=${kernel[1]}
+             local initrd_url=${initrd[1]}
              ;;
            *)
              log "ERROR: simplestream label must be one of: [daily, release]"
@@ -277,8 +248,11 @@ acquire_image() {
     fi
     local cachedir=$dldir/maas/${label}/${release}/${arch}/${version}
     local ephimg=${cachedir}/${item_name}
+    local kernel_img=${cachedir}/vmlinuz
+    local initrd_img=${cachedir}/initrd.img
     local roottar=${cachedir}/root.tar.gz
     local rootfs=${cachedir}/rootfs
+    set +x
 
     # cache policy:
     #   $ephimg must be a file and it must checksum to $sha256 value otherwise
@@ -310,6 +284,14 @@ acquire_image() {
             log "ERROR: failed to download: ${item_url}";
             return 1;
         }
+        wget --progress=bar -c "${kernel_url}" -O "${kernel_img}" || {
+            log "ERROR: failed to download: ${kernel_url}";
+            return 1;
+        }
+        wget --progress=bar -c "${initrd_url}" -O "${initrd_img}" || {
+            log "ERROR: failed to download: ${initrd_url}";
+            return 1;
+        }
         (cd `dirname ${ephimg}` &&
          sha256sum `basename ${ephimg}` > ${ephimg}.sha256)
     else
@@ -330,8 +312,10 @@ acquire_image() {
         log "  $roottar"
     fi
 
+    set -x
     # unpack rootfs tar
     log "Unpacking roottar: $label $release $arch";
+    local kernel_img=${cachedir}/vmlinuz
     if [ ! -e ${rootfs}/vmlinuz ]; then
         mkdir -p ${rootfs} &&
         sudo tar -C $rootfs -xz --numeric-owner --xattrs -f $roottar
@@ -339,6 +323,13 @@ acquire_image() {
         log "  Using cached $label $release $arch rootfs:"
         log "  $rootfs"
     fi
+
+    if [ -e "${kernel_img}" ] && [ -e "${initrd_img}" ]; then
+        log "  Using cached $label $release $arch kernel and initrd:"
+	sudo cp "${kernel_img}" "${initrd_img}" "${rootfs}"
+    fi
+
+    set +x
 
     _RETVAL=${cachedir}
 }
@@ -376,31 +367,6 @@ generate_seed() {
         sed -i "s/#packages/packages:\n$packages/" ${seed}/user-data
     fi
 
-    log "Writing seed user-data (subiquity)"
-    local subiquity_tar=$dldir/subiquity.tar
-    local tar_cmd="tar -C ${TOPDIR} -cpf $subiquity_tar subiquity subiquitycore"
-    if [[ ${TOPDIR} = /usr/share/subiquity* ]]; then
-        log "Using installed subiquity paths"
-        tar_cmd="$tar_cmd subiquity-tui"
-    else
-        log "Using source subiquity paths"
-        tar_cmd="$tar_cmd bin"
-    fi
-    log "subiquity_tar cmd: ${tar_cmd}"
-    $tar_cmd || {
-        log "ERROR: Failed to package subiquity installer";
-        return 1;
-    }
-    [ -e ${subiquity_tar} ] || {
-        log "ERROR: failed to package subiquity installer";
-        return 1
-    }
-    userdata_write_file "/tmp/subiquity.tar" \
-                        "root:root" "0644" "b64" \
-                        "$subiquity_tar" >> $seed/user-data || {
-        log "Failed to subiquity into $seed";
-        return 1;
-    }
     return 0
 }
 
@@ -532,18 +498,19 @@ generate_img() {
      sudo mkdir -p ${efimnt}/boot/grub &&
      sudo mkdir -p ${efimnt}/grub/fonts &&
      sudo mkdir -p ${efimnt}/grub/x86_64-efi &&
-     sudo cp -a /usr/lib/shim/mmx64.efi.signed ${efimnt}/EFI/BOOT/MokManager.efi &&
-     sudo cp -a /usr/lib/shim/shimx64.efi.signed ${efimnt}/EFI/BOOT/shimx64.efi &&
-     sudo cp -a /usr/lib/grub/x86_64-efi-signed/grubx64.efi.signed ${efimnt}/EFI/BOOT/grubx64.efi &&
      sudo cp -a /usr/share/grub/unicode.pf2 ${efimnt}/grub/fonts/ &&
      sudo cp -a /usr/share/grub/unicode.pf2 ${efimnt}/boot/grub &&
      cat ${efi_grub_conf} | sudo tee ${efimnt}/EFI/BOOT/grub.cfg &&
      cat ${embed_conf} | sudo tee ${efimnt}/grub/embed_efi.cfg &&
      cat ${grub_conf} | sudo tee ${efimnt}/grub/grub.cfg &&
      sudo rsync ${RSYNC_OPTS} /usr/lib/grub/x86_64-efi/ ${efimnt}/grub/x86_64-efi/ &&
+     sudo grub-install --force --removable --no-floppy \
+                      --target=x86_64-efi \
+                      --efi-directory=${efimnt} \
+                      --boot-directory=${efimnt}/boot $LOOPDEV &&
      sudo grub-mkimage -O x86_64-efi -p /grub -c ${efimnt}/grub/embed_efi.cfg -o ${efimnt}/EFI/BOOT/bootx64.efi ${GRUB_MODS} &&
      sudo grub-install --force --removable --no-floppy \
-                      --efi-directory=${efimnt}/EFI \
+                      --target=i386-pc \
                       --boot-directory=${efimnt}/boot $LOOPDEV &&
      sudo cp -v ${splash} ${efimnt}/boot/grub) 2>&1 >> ${LOGFILE} || {
         log "ERROR: failed to create multiboot partition"
@@ -551,6 +518,7 @@ generate_img() {
      }
 
     log "Creating and syncing filesystem (original cloudimg rootfs)"
+    set -x
     (sudo mkfs.ext4 ${MKFS_OPTS} -L cloudimg-rootfs $ROOTFS_DEV &&
     sudo tune2fs -r 0 $ROOTFS_DEV &&
     mkdir -p ${lower} &&
@@ -585,6 +553,7 @@ generate_img() {
             log "ERROR: failed to overlay mount installer";
             return 1
     }
+    set +x
 
     log "Installing bootloader configuration"
     (sudo mkdir -p ${mnt}/proc
@@ -614,63 +583,17 @@ generate_img() {
         return 1;
     }
 
-    log "Installing curtin in rootfs"
-    local curtin_debbuild="$(cd $dldir/curtin &&
-                             ./tools/build-deb -us -uc || return 1)"
-    local curtin_ver=$(echo $curtin_debbuild |
-                       awk '/building upstream version/ {print $4}' |
-                       sed 's|,||g')
-    # no python2 curtin
-    local curtin_debs="$(ls $dldir/curtin/*${curtin_ver}*.deb | grep -v 'python-curtin')"
-    if [ -z "$curtin_ver" -o -z "$curtin_debs" ]; then
-        log "ERROR: failed to build curtin debs and get version";
-        return 1;
-    fi
-    for deb in ${curtin_debs}; do
-        cp ${deb} ${mnt}/tmp || {
-           log "ERROR: failed copyin ${deb} into ${mnt}/tmp";
-           return 1;
-        }
-    done
-
-    # disable daemons in target
-    disable_daemons_in_root $mnt
-
-    apt_opts=" --quiet --assume-yes"
-    apt_opts="$apt_opts --option=Dpkg::Options::=--force-unsafe-io"
-    apt_opts="$apt_opts --option=Dpkg::Options::=--force-confold"
-    sudo chroot ${mnt} /bin/bash -c \
-        "dpkg --install /tmp/*${curtin_ver}*.deb;
-         export DEBIAN_FRONTEND=noninteractive;
-         apt-get ${apt_opts} -y -f install" || {
-        log "ERROR: Failed to install curtin in target";
+    log "Installing on rootfs: $packages"
+    log "WARNING: skipping preinstallation of mdadm, lvm2"
+    log "WARNING: will install packages during runtime"
+    # if we don't have the right curtin features, we can't easily
+    # install mdadm/lvm2 into the target as it will start up system
+    # daemons and prevent us from unmounting the target
+    packages=$(echo $packages | fmt -w1 | egrep -v "(mdadm|lvm2)")
+    sudo chroot ${mnt} apt-get -y install $packages || {
+        log "Failed to install packages on rootfs";
         return 1;
     }
-
-    # restore daemons in target
-    undisable_daemons_in_root $mnt
-
-    log "Installing on rootfs: $packages"
-    # use curtin's system-install if available
-    if echo ${CURTIN_FEATURES} | grep -q SUBCOMMAND_SYSTEM_INSTALL; then
-        log "Using curtin to install packages in-target"
-        (cd $dldir/curtin &&
-         sudo ./bin/curtin system-install -t $mnt -- $packages) || {
-            log "Failed to install packages on rootfs";
-            return 1;
-        }
-    else
-        log "WARNING: skipping preinstallation of mdadm, lvm2"
-        log "WARNING: will install packages during runtime"
-        # if we don't have the right curtin features, we can't easily
-        # install mdadm/lvm2 into the target as it will start up system
-        # daemons and prevent us from unmounting the target
-        packages=$(echo $packages | fmt -w1 | egrep -v "(mdadm|lvm2)")
-        sudo chroot ${mnt} apt-get -y install $packages || {
-            log "Failed to install packages on rootfs";
-            return 1;
-        }
-    fi
 
     log "Cleaning up overlay apt cache"
     local before=( `sudo du -sk ${upper}` )
@@ -777,18 +700,6 @@ main() {
 
     [ -z "$OUTPUT" ] && {
         OUTPUT="ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img"
-    }
-
-    install_src ${DLDIR} ${SRC_DEPS[@]} || {
-        return 1;
-    }
-
-    export CURTIN_FEATURES="$(cd ${DLDIR}/curtin;
-                      python3 -c \
-                      'import curtin; [print(x) for x in curtin.FEATURES]')"
-    log "Detected curtin features: $CURTIN_FEATURES"
-    [ -n "${CURTIN_FEATURES}" ] || {
-        return 1;
     }
 
     acquire_image ${DLDIR} "$STREAM" "$RELEASE" "$ARCH" "$VERSION" || {

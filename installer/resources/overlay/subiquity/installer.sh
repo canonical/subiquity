@@ -1,4 +1,8 @@
 #!/bin/bash
+/usr/local/bin/subiquity-tui
+
+exit 0
+
 LASTCON=$(cat /proc/cmdline | fmt -w 1 | grep ^console= | tail -n 1)
 case $LASTCON in
     console=ttyS[0-9])

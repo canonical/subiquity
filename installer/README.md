@@ -12,12 +12,21 @@ Install package dependencies:
     qemu-system-x86
     qemu-utils
     syslinux-common
+    ubuntu-cloudimage-keyring
+    cloud-image-utils
+    grub-pc-bin
     "
     apt-get install $PKGS
 
-Generate the install image
+Grab a copy of curtin (for some conversion tools):
 
-    ./geninstaller.sh
+    mkdir -p ~/download
+    cd ~/download
+    bzr branch lp:curtin
+
+Generate the install image from subiquity's root directory:
+
+    installer/geninstaller.sh -a amd64 -b grub2 -r zesty
 
 
 Run the installer
