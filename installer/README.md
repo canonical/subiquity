@@ -18,9 +18,15 @@ Install package dependencies:
     "
     apt-get install $PKGS
 
+Grab a copy of curtin (for some conversion tools):
+
+    mkdir -p ~/download
+    cd ~/download
+    bzr branch lp:curtin
+
 Generate the install image from subiquity's root directory:
 
-    installer/geninstaller.sh
+    installer/geninstaller.sh -a amd64 -b grub2 -r zesty
 
 
 Run the installer
