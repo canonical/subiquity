@@ -36,7 +36,7 @@ Run the installer
 
     # run installer
     sudo qemu-system-x86_64 -m 1024 -enable-kvm \
-         -hda installer.img -hdb test.img \
+         -hda installer.img -hdb target.img \
          -serial telnet:127.0.0.1:2445,server,nowait \
          -monitor stdio
 
