@@ -39,7 +39,7 @@ class InstallpathController(BaseController):
         self.model = InstallpathModel()
 
     def installpath(self):
-        title = "15.10"
+        title = "17.04"
         excerpt = ("Welcome to Ubuntu! The world's favourite platform "
                    "for clouds, clusters and amazing internet things. "
                    "This is the installer for Ubuntu on servers and "
