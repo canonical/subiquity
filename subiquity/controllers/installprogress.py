@@ -122,7 +122,7 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
-        result = yield utils.run_command_async(" ".join(curtin_cmd))
+        result = yield utils.run_command_async(curtin_cmd)
         log.debug('curtin_install: result: {}'.format(result))
         if result['status'] > 0:
             msg = ("Problem with curtin "
@@ -166,7 +166,7 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
-        result = yield utils.run_command_async(" ".join(curtin_cmd))
+        result = yield utils.run_command_async(curtin_cmd)
         if result['status'] > 0:
             msg = ("Problem with curtin "
                    "post-install: {}".format(result))

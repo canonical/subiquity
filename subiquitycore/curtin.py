@@ -215,8 +215,8 @@ def curtin_install_cmd(configs):
     install_path = curtin_find_install_path()
 
     install_cmd = [curtin, '-vvv', '--showtrace']
-    if configs:
-        install_cmd += ['-c {}'.format(c) for c in configs]
+    for c in configs:
+        install_cmd += ['-c', '{}'.format(c)]
     install_cmd += ['install', 'cp://{}'.format(install_path)]
     log.info('curtin install command: {}'.format(" ".join(install_cmd)))
 
