@@ -86,9 +86,9 @@ def environment_check(check):
     return env_ok
 
 
-def run_command_async(cmd, timeout=None):
+def run_command_async(cmd, timeout=None, shell=False):
     log.debug('calling Async command: {}'.format(cmd))
-    return Async.pool.submit(run_command, cmd, timeout)
+    return Async.pool.submit(run_command, cmd, timeout, shell)
 
 
 def run_command_start(command, timeout=None, shell=False):
