@@ -32,7 +32,7 @@ class ProgressView(BaseView):
         """
         self.model = model
         self.signal = signal
-        self.text = Text("Wait for it ...", align="left")
+        self.text = Text("Installing Ubuntu ...", align="left")
         self.body = [
             Padding.center_79(self.text),
             Padding.line_break(""),

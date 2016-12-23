@@ -218,8 +218,7 @@ class InstallProgressController(BaseController):
     def show_progress(self):
         log.debug('show_progress called')
         title = ("Installing system")
-        excerpt = ("Please wait for the installation "
-                   "to finish before rebooting.")
+        excerpt = ("Please wait for the installation to finish.")
         footer = ("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 90)
