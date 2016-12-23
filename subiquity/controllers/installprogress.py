@@ -74,7 +74,7 @@ class InstallProgressController(BaseController):
 
     def curtin_tail_install_log(self):
         if os.path.exists(self.install_log):
-            tail_cmd = ['tail', '-n', '10', self.install_log]
+            tail_cmd = ['tail', '-n', '5', self.install_log]
             log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
             install_tail = subprocess.check_output(tail_cmd)
             return install_tail
@@ -87,7 +87,7 @@ class InstallProgressController(BaseController):
     def curtin_error(self):
         log.debug('curtin_error')
         # just the last ten lines
-        errmsg = self.curtin_tail_install_log()[-800:].decode('utf-8')
+        errmsg = str(self.curtin_tail_install_log()[-800:])
         # Holy Unescaping Batman!
         errmsg = errmsg.replace("\\\'", "")
         errmsg = errmsg.replace("\'\'", "")
