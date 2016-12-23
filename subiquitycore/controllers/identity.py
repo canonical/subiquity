@@ -61,4 +61,4 @@ class BaseIdentityController(BaseController):
         # mark ourselves complete
         utils.disable_subiquity()
 
-        self.signal.emit_signal('quit')
+        self.signal.emit_signal('next-screen')

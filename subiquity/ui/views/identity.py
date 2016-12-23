@@ -237,10 +237,7 @@ class IdentityView(BaseView):
 
         self.signal.emit_signal('installprogress:wrote-postinstall')
         # show next view
-        if self.opts.firstboot:
-            self.controller.identity_done()
-        else:
-            self.signal.emit_signal('menu:installprogress:main')
+        self.signal.emit_signal('menu:installprogress:main')
 
     def create_user(self, result):
         try:
