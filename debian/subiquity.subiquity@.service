@@ -4,7 +4,7 @@ After=systemd-user-sessions.service plymouth-quit-wait.service
 After=rc-local.service
 IgnoreOnIsolate=yes
 ConditionPathExists=/dev/tty0
-ConditionPathExists=!/var/lib/console-conf/complete
+ConditionPathExists=!/run/subiquity/complete
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity

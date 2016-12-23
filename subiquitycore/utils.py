@@ -219,5 +219,6 @@ def disable_first_boot_service():
 def disable_subiquity():
     """ Stop subiquity service; which also restores getty service """
     log.info('disabling subiquity service')
+    run_command(["touch", "/run/subiquity/complete"])
     run_command(["systemctl", "stop", "--no-block", "subiquity@*.service"])
     return

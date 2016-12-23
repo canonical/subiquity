@@ -20,6 +20,7 @@ from urwid import (Text, Filler,
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import confirm_btn
 from subiquitycore.ui.utils import Padding, Color
+from subiquitycore import utils
 
 log = logging.getLogger("subiquity.views.installprogress")
 
@@ -58,4 +59,5 @@ class ProgressView(BaseView):
         self.signal.emit_signal('installprogress:curtin-reboot')
 
     def quit(self, btn):
+        utils.disable_subiquity()
         self.signal.emit_signal('quit')
