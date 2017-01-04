@@ -7,7 +7,6 @@ Install package dependencies:
     bzr
     qemu-system-x86
     qemu-utils
-    grub-pc-bin
     "
     apt-get install $PKGS
 

@@ -32,10 +32,9 @@ extlinux
 dosfstools
 simplestreams
 syslinux-common
-grub2-common
-shim
 shim-signed
 grub-efi-amd64-signed
+grub-pc-bin
 probert
 wget
 rsync
