@@ -37,6 +37,7 @@ shim-signed
 grub-efi-amd64-signed
 probert
 wget
+rsync
 ubuntu-cloudimage-keyring
 cloud-image-utils
 "
