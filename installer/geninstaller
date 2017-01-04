@@ -36,6 +36,7 @@ shim
 shim-signed
 grub-efi-amd64-signed
 probert
+wget
 "
 # "URL" "GPGKEY"
 # ppa:foo/bar ""
