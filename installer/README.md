@@ -5,13 +5,8 @@ Install package dependencies:
 
     PKGS="
     bzr
-    extlinux
-    gdisk
-    kpartx
-    parted
     qemu-system-x86
     qemu-utils
-    syslinux-common
     ubuntu-cloudimage-keyring
     cloud-image-utils
     grub-pc-bin
