@@ -27,7 +27,7 @@ Grab a copy of curtin (for some conversion tools):
 Generate the install image from subiquity's root directory:
 
     installer/geninstaller.sh -a amd64 -b grub2 -r zesty
-
+    mv ~/download/maas/daily/*/amd64/*/installer.img .
 
 Run the installer
 
@@ -46,6 +46,6 @@ Run the installer
 Boot the installed image
 
     sudo qemu-system-x86_64 -m 1024 -enable-kvm \
-         -hda test.img \
+         -hda target.img \
          -serial telnet:127.0.0.1:2445,server,nowait
 
