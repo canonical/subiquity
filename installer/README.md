@@ -7,8 +7,6 @@ Install package dependencies:
     bzr
     qemu-system-x86
     qemu-utils
-    ubuntu-cloudimage-keyring
-    cloud-image-utils
     grub-pc-bin
     "
     apt-get install $PKGS

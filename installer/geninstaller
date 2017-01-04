@@ -37,6 +37,8 @@ shim-signed
 grub-efi-amd64-signed
 probert
 wget
+ubuntu-cloudimage-keyring
+cloud-image-utils
 "
 # "URL" "GPGKEY"
 # ppa:foo/bar ""
