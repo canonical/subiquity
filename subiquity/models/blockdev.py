@@ -30,13 +30,13 @@ from .actions import (
 )
 
 log = logging.getLogger("subiquity.models.blockdev")
-FIRST_PARTITION_OFFSET = 1 << 20  # 1K offset/aligned
+FIRST_PARTITION_OFFSET = 1 << 20  # 1M offset/aligned
 GPT_END_RESERVE = 1 << 20  # save room at the end for GPT
 
 
 # round up length by 1M
 def blockdev_align_up(size, block_size=1 << 20):
-    return size + (block_size - (size % block_size))
+    return (size + block_size - 1) & ~(block_size - 1)
 
 
 class Disk():
