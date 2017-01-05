@@ -254,9 +254,9 @@
                 "uevent": "MAJOR=8\nMINOR=3\nDEVNAME=sda3\nDEVTYPE=partition"
             }
         },
-        "/dev/sdb": {
-            "DEVNAME": "/dev/sdb",
-            "DEVPATH": "/devices/pci0000:00/0000:00:1f.2/ata2/host1/target1:0:0/1:0:0:0/block/sdb",
+        "/dev/sdf": {
+            "DEVNAME": "/dev/sdf",
+            "DEVPATH": "/devices/pci0000:00/0000:00:1f.2/ata2/host1/target1:0:0/1:0:0:0/block/sdf",
             "DEVTYPE": "disk",
             "MAJOR": "8",
             "MINOR": "16",
@@ -279,12 +279,12 @@
                 "size": "2000398934016",
                 "stat": "    4430       73   278090    38788    35846     1471  3375701    50368        0    32324    89148",
                 "subsystem": "block",
-                "uevent": "MAJOR=8\nMINOR=16\nDEVNAME=sdb\nDEVTYPE=disk"
+                "uevent": "MAJOR=8\nMINOR=16\nDEVNAME=sdf\nDEVTYPE=disk"
             }
         },
-        "/dev/sdb1": {
-            "DEVNAME": "/dev/sdb1",
-            "DEVPATH": "/devices/pci0000:00/0000:00:1f.2/ata2/host1/target1:0:0/1:0:0:0/block/sdb/sdb1",
+        "/dev/sdf1": {
+            "DEVNAME": "/dev/sdf1",
+            "DEVPATH": "/devices/pci0000:00/0000:00:1f.2/ata2/host1/target1:0:0/1:0:0:0/block/sdf/sdf1",
             "DEVTYPE": "partition",
             "MAJOR": "8",
             "MINOR": "17",
@@ -300,7 +300,7 @@
                 "start": "2048",
                 "stat": "    4344       73   276522    38752    26196     1471  3375701    43504        0    25868    82248",
                 "subsystem": "block",
-                "uevent": "MAJOR=8\nMINOR=17\nDEVNAME=sdb1\nDEVTYPE=partition"
+                "uevent": "MAJOR=8\nMINOR=17\nDEVNAME=sdf1\nDEVTYPE=partition"
             }
         },
         "/dev/sr0": {
