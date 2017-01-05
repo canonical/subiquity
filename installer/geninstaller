@@ -165,6 +165,7 @@ install_ppas() {
             echo sudo apt-key adv --keyserver keyserver.ubuntu.com --recv ${gpgkey}
         fi
         echo sudo apt-add-repository -y ${url}
+        echo sudo killall dirmngr gpg-agent
     done
     return 0
 }
@@ -177,7 +178,7 @@ remove_ppas() {
         if [ -n ${gpgkey} ]; then
             echo sudo apt-key del ${gpgkey}
         fi
-        echo sudo apt-add-repository --remove ${url}
+        echo sudo apt-add-repository --remove -y ${url}
     done
     return 0
 }
