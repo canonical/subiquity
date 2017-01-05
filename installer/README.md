@@ -5,16 +5,8 @@ Install package dependencies:
 
     PKGS="
     bzr
-    extlinux
-    gdisk
-    kpartx
-    parted
     qemu-system-x86
     qemu-utils
-    syslinux-common
-    ubuntu-cloudimage-keyring
-    cloud-image-utils
-    grub-pc-bin
     "
     apt-get install $PKGS
 
@@ -26,7 +18,7 @@ Grab a copy of curtin (for some conversion tools):
 
 Generate the install image from subiquity's root directory:
 
-    installer/geninstaller.sh -a amd64 -b grub2 -r zesty
+    installer/geninstaller -a amd64 -b grub2 -r zesty
     mv ~/download/maas/daily/*/amd64/*/installer.img .
 
 Run the installer

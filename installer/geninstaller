@@ -29,13 +29,17 @@ kpartx
 parted
 gdisk
 extlinux
+dosfstools
 simplestreams
 syslinux-common
-grub2-common
-shim
 shim-signed
 grub-efi-amd64-signed
+grub-pc-bin
 probert
+wget
+rsync
+ubuntu-cloudimage-keyring
+cloud-image-utils
 "
 # "URL" "GPGKEY"
 # ppa:foo/bar ""
@@ -67,10 +71,10 @@ cleanup_noexit() {
     [ -n "${CACHEDIR}" ] && {
         sync
         sudo umount -l ${CACHEDIR}/mnt/{dev,proc,sys}
-        sudo umount -l ${CACHEDIR}/mnt
-        sudo umount -l ${CACHEDIR}/lower
-        sudo umount -l ${CACHEDIR}/upper
-        sudo umount -l ${CACHEDIR}/efimnt
+        sudo umount ${CACHEDIR}/mnt
+        sudo umount ${CACHEDIR}/lower
+        sudo umount ${CACHEDIR}/upper
+        sudo umount ${CACHEDIR}/efimnt
         sudo kpartx -d ${CACHEDIR}/installer.img &>/dev/null || exit
         for DEV in $EFI_DEV $ROOTFS_DEV $OVERLAY_DEV; do
             [ -e "/dev/mapper/`basename $DEV`" ] && {
@@ -161,6 +165,7 @@ install_ppas() {
             echo sudo apt-key adv --keyserver keyserver.ubuntu.com --recv ${gpgkey}
         fi
         echo sudo apt-add-repository -y ${url}
+        echo sudo killall dirmngr gpg-agent
     done
     return 0
 }
@@ -173,7 +178,7 @@ remove_ppas() {
         if [ -n ${gpgkey} ]; then
             echo sudo apt-key del ${gpgkey}
         fi
-        echo sudo apt-add-repository --remove ${url}
+        echo sudo apt-add-repository --remove -y ${url}
     done
     return 0
 }
