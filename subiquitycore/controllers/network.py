@@ -410,7 +410,7 @@ class NetworkController(BaseController):
         self.acw.advance()
 
     def task_error(self, stage, info=None):
-        self.ui.frame.body.remove_overlay(self.acw)
+        self.ui.frame.body.remove_overlay()
         self.ui.frame.body.show_network_error(stage, info)
 
     def tasks_finished(self):

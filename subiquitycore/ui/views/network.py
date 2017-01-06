@@ -129,21 +129,6 @@ class NetworkView(BaseView):
         self.lb.set_focus(4)  # _build_buttons
         super().__init__(self.lb)
 
-    def show_overlay(self, overlay_widget):
-        self.orig_w = self._w
-        self._w = Overlay(top_w=overlay_widget,
-                          bottom_w=self._w,
-                          align='center',
-                          width=('relative', 60),
-                          min_width=80,
-                          valign='middle',
-                          height='pack')
-
-    def remove_overlay(self, overlay_widget):
-        # urwid note: we could also get orig_w as
-        # self._w.contents[0][0], but this is clearer:
-        self._w = self.orig_w
-
     def _build_buttons(self):
         cancel = Color.button(cancel_btn(on_press=self.cancel))
         done = Color.button(done_btn(on_press=self.done))
