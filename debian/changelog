@@ -1,3 +1,11 @@
+subiquity (0.0.27) UNRELEASED; urgency=medium
+
+  * Many fixes to get subiquity operation again.
+  * Fix header of WIFI config screen (LP: #1651119)
+  * Fix partion size rounding to correctly round to 1M boundaries, not 1G.
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Mon, 09 Jan 2017 21:59:32 +1300
+
 subiquity (0.0.26) zesty; urgency=medium
 
   * Disable unit restart rate limiting in console-conf service files.
