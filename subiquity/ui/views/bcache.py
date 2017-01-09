@@ -70,7 +70,7 @@ class BcacheView(BaseView):
 
         selector = Selector(avail_devs)
         self.selected_disks[section] = selector
-        items.append(Color.string_input(Pile(selector.group),
+        items.append(Color.string_input(selector,
                                         focus_map="string_input focus"))
 
         return Pile(items)

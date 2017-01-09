@@ -130,7 +130,8 @@ class Application:
             additional_opts = {
                 'screen': urwid.raw_display.Screen(),
                 'unhandled_input': self.header_hotkeys,
-                'handle_mouse': False
+                'handle_mouse': False,
+                'pop_ups': True,
             }
             if self.common['opts'].run_on_serial:
                 palette = STYLES_MONO

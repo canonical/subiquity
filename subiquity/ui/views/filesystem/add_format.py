@@ -53,16 +53,13 @@ class AddFormatView(BaseView):
         ]
         return Pile(buttons)
 
-    def _format_edit(self):
-        return Pile(self.fstype.group)
-
     def _container(self):
         total_items = [
             Columns(
                 [
                     ("weight", 0.2, Text("Format", align="right")),
                     ("weight", 0.3,
-                     Color.string_input(self._format_edit(),
+                     Color.string_input(self.fstype,
                                         focus_map="string_input focus"))
                 ], dividechars=4
             ),
