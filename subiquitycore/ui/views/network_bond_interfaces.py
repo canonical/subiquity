@@ -74,7 +74,7 @@ class NetworkBondInterfacesView(BaseView):
                 [
                     ("weight", 0.2, Text("Bonding Mode", align="right")),
                     ("weight", 0.3,
-                     Color.string_input(Pile(self.bond_mode.group),
+                     Color.string_input(self.bond_mode,
                                         focus_map="string_input focus"))
                 ],
                 dividechars=4

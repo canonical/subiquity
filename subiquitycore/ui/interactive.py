@@ -16,7 +16,20 @@
 """ Re-usable input widgets
 """
 
-from urwid import (Edit, IntEdit, RadioButton, WidgetWrap)
+from urwid import (
+    ACTIVATE,
+    AttrWrap,
+    connect_signal,
+    Edit,
+    Filler,
+    IntEdit,
+    LineBox,
+    Pile,
+    PopUpLauncher,
+    SelectableIcon,
+    TOP,
+    WidgetWrap,
+    )
 import logging
 import re
 
@@ -134,28 +147,81 @@ class IntegerEditor(WidgetWrap):
         return self._edit.get_edit_text()
 
 
-class Selector(WidgetWrap):
-    """ Radio selection list of options
-    """
-    def __init__(self, opts):
-        """
-        :param list opts: list of options to display
-        """
-        self.opts = opts
-        self.group = []
-        self._add_options()
+class _PopUpButton(SelectableIcon):
+    """It looks like a radio button, but it just emits 'click' on activation."""
 
-    def _add_options(self):
-        for item in self.opts:
-            RadioButton(self.group, item)
+    signals = ['click']
+
+    states = {
+        True: "(X) ",
+        False: "( ) ",
+        }
+
+    def __init__(self, option, state):
+        super().__init__(self.states[state] + option, 4)
+
+    def keypress(self, size, key):
+        if self._command_map[key] != ACTIVATE:
+            return key
+        self._emit('click')
+
+
+class _PopUpSelectDialog(WidgetWrap):
+    """A list of PopUpButtons with a box around them."""
+
+    def __init__(self, parent, cur_index):
+        self.parent = parent
+        group = []
+        for i, option in enumerate(self.parent._options):
+            btn = _PopUpButton(option, state=i==cur_index)
+            connect_signal(btn, 'click', self.click, i)
+            group.append(btn)
+        pile = Pile(group)
+        pile.set_focus(group[cur_index])
+        fill = Filler(pile, valign=TOP)
+        super().__init__(LineBox(AttrWrap(fill, 'menu_button')))
+
+    def click(self, btn, index):
+        self.parent.index = index
+        self.parent.close_pop_up()
+
+
+class Selector(PopUpLauncher):
+    """A widget that allows the user to chose between options by popping up this list of options.
+
+    (A bit like <select> in an HTML form).
+    """
+
+    def __init__(self, opts, index=0):
+        self._options = opts
+        self._button = SelectableIcon("", 0)
+        self.index = index
+        super().__init__(self._button)
+
+    def keypress(self, size, key):
+        if self._command_map[key] != ACTIVATE:
+            return key
+        self.open_pop_up()
+
+    @property
+    def index(self):
+        return self._index
+
+    @index.setter
+    def index(self, val):
+        self._button.set_text(self._options[val])
+        self._index = val
 
     @property
     def value(self):
-        for item in self.group:
-            log.debug(item)
-            if item.get_state():
-                return item.label
-        return "Unknown option"
+        return self._options[self._index]
+
+    def create_pop_up(self):
+        return _PopUpSelectDialog(self, self.index)
+
+    def get_pop_up_parameters(self):
+        width = max(map(len, self._options)) + 7 # longest option + line on left, "(?) ", space, line on right
+        return {'left':-5, 'top':-self.index-1, 'overlay_width':width, 'overlay_height':len(self._options) + 2}
 
 
 class YesNo(Selector):

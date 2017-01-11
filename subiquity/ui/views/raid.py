@@ -85,7 +85,7 @@ class RaidView(BaseView):
                 [
                     ("weight", 0.2, Text("RAID Level", align="right")),
                     ("weight", 0.3,
-                     Color.string_input(Pile(self.raid_level.group),
+                     Color.string_input(self.raid_level,
                                         focus_map="string_input focus"))
                 ],
                 dividechars=4
