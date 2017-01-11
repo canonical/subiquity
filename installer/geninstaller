@@ -23,6 +23,7 @@ LOGFILE="geninstaller.log"
 TOPDIR=./
 USQUERY=installer/usquery
 RESOURCES=installer/resources
+LOCAL_SUBIQUITY=no
 PKG_DEPS="
 qemu-utils
 kpartx
@@ -61,7 +62,6 @@ INSTALLER_DEPS=(
   "probert"
   "xfsprogs"
   "curtin"
-  "subiquity"
 )
 CACHEDIR=""
 GRUB_MODS="configfile fat part_gpt part_msdos cat echo test search search_label search_fs_uuid boot chain linux reboot halt normal efi_gop efi_uga font gfxterm gfxterm_menu gfxterm_background gfxmenu serial"
@@ -577,6 +577,9 @@ generate_img() {
     for installer_package in "${INSTALLER_DEPS[@]}"; do
         packages="$packages $installer_package"
     done
+    if [ "${LOCAL_SUBIQUITY}" = "no" ]; then
+        packages="$packages subiquity"
+    fi
     sudo mv ${resolvconf} ${resolvconf}.old &&
     sudo cp /etc/resolv.conf ${resolvconf} &&
 
@@ -599,6 +602,13 @@ generate_img() {
         log "Failed to install packages on rootfs";
         return 1;
     }
+    if [ "${LOCAL_SUBIQUITY}" = "yes" ]; then
+        dpkg-buildpackage -uc -us
+        V=$(dpkg-parsechangelog -SVersion)
+        sudo cp ../subiquity_${V}*.deb ../subiquitycore_${V}*.deb ${mnt}
+        sudo chroot ${mnt} sh -c 'dpkg -i *.deb'
+        sudo chroot ${mnt} apt-get install -f
+    fi
 
     log "Cleaning up overlay apt cache"
     local before=( `sudo du -sk ${upper}` )
@@ -658,8 +668,8 @@ parse_args() {
     # args:
     [ $# -lt 1 ] && { usage; exit 0; }
 
-    OPTS_LONG="arch:,bootloader:,download:,help,release:,stream:,verbose,version:"
-    OPTS="a:b:d:hor:s:vV:"
+    OPTS_LONG="arch:,bootloader:,download:,help,release:,stream:,verbose,version:,local-subiquity"
+    OPTS="a:b:d:hor:s:vV:l"
     ARGS=`getopt --name "$PROG" --long $OPTS_LONG --options $OPTS -- "$@"`
     if [ $? -ne 0 ]; then
         echo "$PROG: usage error (use -h for help)" >&2
@@ -684,6 +694,7 @@ parse_args() {
             -s | --stream)      STREAM="$2"; shift;;
             -V | --version)     VERSION="$2"; shift;;
             -v | --verbose)     VERBOSE="yes";;
+            -l | --local-subiquity)     LOCAL_SUBIQUITY="yes";;
             --)                 shift; break;; # end of options
         esac
         shift
