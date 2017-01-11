@@ -112,21 +112,18 @@ class InstallProgressController(BaseController):
             raise Exception('AIEEE!')
 
         self.install_spawned = True
-        shell = False
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
-            curtin_cmd = ["top", "-d", "0.5", "-n", "20", "-b", "-p",
-                          str(os.getpid()),
-                          '>', self.install_log,
-                          '2>', self.install_log]
-            shell = True
+            curtin_cmd = [
+                "bash", "-c",
+                "i=0;while [ $i -le 10 ];do i=$((i+1)); echo line $i; sleep 1; done > %s 2>&1"%self.install_log]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [CURTIN_CONFIGS['storage']]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
-        result = yield utils.run_command_async(self.pool, curtin_cmd, shell=shell)
+        result = yield utils.run_command_async(self.pool, curtin_cmd)
         log.debug('curtin_install: result: {}'.format(result))
         if result['status'] > 0:
             msg = ("Problem with curtin "
@@ -155,16 +152,13 @@ class InstallProgressController(BaseController):
             log.error('Attempting to spawn curtin install without a config')
             raise Exception('AIEEE!')
 
-        shell = False
         self.postinstall_spawned = True
         self.install_log = CURTIN_POSTINSTALL_LOG
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
-            curtin_cmd = ["top", "-d", "0.5", "-n", "20", "-b", "-p",
-                          str(os.getpid()),
-                          '>', self.install_log,
-                          '2>', self.install_log]
-            shell = True
+            curtin_cmd = [
+                "bash", "-c",
+                "i=0;while [ $i -le 10 ];do i=$((i+1)); echo line $i; sleep 1; done > %s 2>&1"%self.install_log]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [
@@ -174,7 +168,7 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
-        result = yield utils.run_command_async(self.pool, curtin_cmd, shell=shell)
+        result = yield utils.run_command_async(self.pool, curtin_cmd)
         if result['status'] > 0:
             msg = ("Problem with curtin "
                    "post-install: {}".format(result))
