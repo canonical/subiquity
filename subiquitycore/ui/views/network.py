@@ -97,7 +97,7 @@ def _build_gateway_ip_info_for_version(dev, version):
             p.extend(_format_address_list("Currently has address%s:", actual_ip_addresses))
         return p
     elif actual_ip_addresses:
-        return _format_address_list("IPv%s is not configured but has address%%s:"%(version,), actual_ip_addresses)
+        return _format_address_list("Has no IPv%s configuration, currently has address%%s:"%(version,), actual_ip_addresses)
     else:
         return [Text("IPv%s is not configured"%(version,))]
 
