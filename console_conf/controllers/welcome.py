@@ -16,12 +16,16 @@
 
 from console_conf.ui.views import WelcomeView
 
-from subiquitycore.controllers.welcome import (
-    WelcomeController as WelcomeControllerBase,
-    )
+from subiquitycore.controller import BaseController
+from subiquitycore.models import WelcomeModel
 
 
-class WelcomeController(WelcomeControllerBase):
+class WelcomeController(BaseController):
+
+    def __init__(self, common):
+        super().__init__(common)
+        self.model = WelcomeModel()
+
     def default(self):
         title = "Ubuntu Core"
         excerpt = ("Configure the network and setup an administrator "
@@ -30,3 +34,10 @@ class WelcomeController(WelcomeControllerBase):
         self.ui.set_footer("")
         view = WelcomeView(self.model, self)
         self.ui.set_body(view)
+
+    def done(self):
+        self.signal.emit_signal('next-screen')
+
+    def cancel(self):
+        # Can't go back from here!
+        pass
