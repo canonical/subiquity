@@ -28,8 +28,7 @@ log = logging.getLogger("console_conf.views.welcome")
 
 
 class WelcomeView(BaseView):
-    def __init__(self, model, controller):
-        self.model = model
+    def __init__(self, controller):
         self.controller = controller
         self.body = [
             Padding.fixed_10(self._build_buttons())

@@ -13,18 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 from console_conf.ui.views import WelcomeView
 
 from subiquitycore.controller import BaseController
-from subiquitycore.models import WelcomeModel
 
 
 class WelcomeController(BaseController):
-
-    def __init__(self, common):
-        super().__init__(common)
-        self.model = WelcomeModel()
 
     def default(self):
         title = "Ubuntu Core"
