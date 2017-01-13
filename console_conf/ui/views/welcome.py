@@ -19,18 +19,29 @@ Welcome provides user with language selection
 
 """
 import logging
-from urwid import Pile
-from subiquitycore.ui.buttons import start_btn
-from subiquitycore.ui.utils import Color
-from subiquitycore.ui.views.welcome import CoreWelcomeView
+from urwid import ListBox, Pile
+from subiquitycore.ui.buttons import ok_btn
+from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.views.welcome")
 
 
-class WelcomeView(CoreWelcomeView):
+class WelcomeView(BaseView):
+    def __init__(self, model, controller):
+        self.model = model
+        self.controller = controller
+        self.body = [
+            Padding.fixed_10(self._build_buttons())
+        ]
+        super().__init__(ListBox(self.body))
+
     def _build_buttons(self):
         self.buttons = [
-            Color.button(start_btn(on_press=self.confirm),
+            Color.button(ok_btn(on_press=self.confirm),
                          focus_map='button focus'),
         ]
         return Pile(self.buttons)
+
+    def confirm(self, result):
+        self.controller.done()
