@@ -14,10 +14,53 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from subiquitycore.controllers.identity import BaseIdentityController
+import logging
 
+from subiquitycore.controller import BaseController
+from subiquitycore.models import IdentityModel
 from subiquity.ui.views import IdentityView
+from subiquitycore import utils
+
+log = logging.getLogger('subiquity.controllers.identity')
 
 
-class IdentityController(BaseIdentityController):
-    identity_view = IdentityView
+class IdentityController(BaseController):
+
+    identity_view = None
+
+    def __init__(self, common):
+        super().__init__(common)
+        self.model = IdentityModel(self.opts)
+
+    def default(self):
+        title = "Profile setup"
+        excerpt = ("Input your username and password to log in to the system.")
+        footer = ""
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer(footer, 40)
+        self.ui.set_body(IdentityView(self.model, self, self.opts))
+
+    def cancel(self):
+        self.signal.emit_signal('prev-screen')
+
+    def identity_done(self):
+        self.login()
+
+    def login(self):
+        log.debug("Identity login view")
+        title = ("Configuration Complete")
+        footer = ("View configured user and device access methods")
+        self.ui.set_header(title)
+        self.ui.set_footer(footer)
+
+        net_model = self.controllers['Network'].model
+        configured_ifaces = net_model.get_configured_interfaces()
+        login_view = LoginView(self.model, self, configured_ifaces)
+
+        self.ui.set_body(login_view)
+
+    def login_done(self):
+        # mark ourselves complete
+        utils.disable_subiquity()
+
+        self.signal.emit_signal('next-screen')
