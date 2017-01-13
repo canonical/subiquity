@@ -18,11 +18,8 @@ import os
 import sys
 from logging.handlers import TimedRotatingFileHandler
 
-LOGDIR = "/writable/.subiquity"
-LOGFILE = os.path.join(LOGDIR, "subiquity-debug.log")
 
-
-def setup_logger(name=__name__, dir=LOGDIR):
+def setup_logger(dir):
     LOGFILE = os.path.join(dir, "subiquity-debug.log")
     try:
         os.makedirs(dir, exist_ok=True)
