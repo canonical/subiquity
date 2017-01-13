@@ -74,7 +74,6 @@ class Application:
         """
         signals = []
 
-        # Add quit signal
         signals.append(('quit', self.exit))
         if self.common['opts'].dry_run:
             signals.append(('control-x-quit', self.exit))
@@ -108,19 +107,11 @@ class Application:
 
 # EventLoop -------------------------------------------------------------------
     def redraw_screen(self):
-        if hasattr(self, 'loop'):
+        if self.common['loop'] is not None:
             try:
                 self.common['loop'].draw_screen()
             except AssertionError as e:
                 log.critical("Redraw screen error: {}".format(e))
-
-    def set_alarm_in(self, interval, cb):
-        self.common['loop'].set_alarm_in(interval, cb)
-        return
-
-    def update(self, *args, **kwds):
-        """ Update loop """
-        pass
 
     def exit(self):
         raise urwid.ExitMainLoop()
@@ -150,7 +141,7 @@ class Application:
                 self.common['loop'].event_loop))
 
         try:
-            self.set_alarm_in(0.05, self.next_screen)
+            self.common['loop'].set_alarm_in(0.05, self.next_screen)
             for k in self.common['controllers']:
                 log.debug("Importing controller: {}".format(k))
                 klass = import_object(
