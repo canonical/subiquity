@@ -20,12 +20,12 @@ from tornado.gen import coroutine
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
-from subiquitycore.curtin import (CURTIN_CONFIGS,
-                                  CURTIN_INSTALL_LOG,
-                                  CURTIN_POSTINSTALL_LOG,
-                                  curtin_reboot,
-                                  curtin_install_cmd)
 
+from subiquity.curtin import (CURTIN_CONFIGS,
+                              CURTIN_INSTALL_LOG,
+                              CURTIN_POSTINSTALL_LOG,
+                              curtin_reboot,
+                              curtin_install_cmd)
 from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView
 
@@ -126,7 +126,7 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
-        result = yield utils.run_command_async(curtin_cmd, shell=shell)
+        result = yield utils.run_command_async(self.pool, curtin_cmd, shell=shell)
         log.debug('curtin_install: result: {}'.format(result))
         if result['status'] > 0:
             msg = ("Problem with curtin "
@@ -174,7 +174,7 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
-        result = yield utils.run_command_async(curtin_cmd, shell=shell)
+        result = yield utils.run_command_async(self.pool, curtin_cmd, shell=shell)
         if result['status'] > 0:
             msg = ("Problem with curtin "
                    "post-install: {}".format(result))
