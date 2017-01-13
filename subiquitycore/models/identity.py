@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from subiquitycore.model import BaseModel
 from subiquitycore.utils import crypt_password
 
 
@@ -55,7 +54,7 @@ class LocalUser(object):
         return "%s <%s>" % (self._realname, self._username)
 
 
-class IdentityModel(BaseModel):
+class IdentityModel(object):
     """ Model representing user identity
     """
 

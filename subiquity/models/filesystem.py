@@ -19,8 +19,6 @@ import math
 import os
 import re
 
-from subiquitycore.model import BaseModel
-
 from .blockdev import (Bcachedev,
                        Blockdev,
                        LVMDev,
@@ -37,7 +35,7 @@ class AttrDict(dict):
     __setattr__ = dict.__setitem__
 
 
-class FilesystemModel(BaseModel):
+class FilesystemModel(object):
     """ Model representing storage options
     """
 
