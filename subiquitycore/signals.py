@@ -29,7 +29,6 @@ class SignalException(Exception):
 class Signal:
     known_signals = []
     signal_stack = []
-    default_signal = None
 
     def register_signals(self, signals):
         if type(signals) is list:
