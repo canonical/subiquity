@@ -13,10 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from concurrent import futures
 import logging
 import urwid
+
 from tornado.ioloop import IOLoop
 from tornado.util import import_object
+
 from subiquitycore.signals import Signal
 from subiquitycore.palette import STYLES, STYLES_MONO
 from subiquitycore.prober import Prober, ProberException
@@ -60,7 +63,8 @@ class Application:
             "opts": opts,
             "signal": Signal(),
             "prober": prober,
-            "loop": None
+            "loop": None,
+            "pool": futures.ThreadPoolExecutor(1),
         }
         self.common['controllers'] = dict.fromkeys(self.controllers)
         self.controller_index = -1

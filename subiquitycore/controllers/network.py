@@ -27,7 +27,6 @@ import yaml
 
 from probert.network import UdevObserver
 
-from subiquitycore.async import Async
 from subiquitycore.models import NetworkModel
 from subiquitycore.ui.views import (NetworkView,
                                     NetworkSetDefaultRouteView,
@@ -134,8 +133,9 @@ class WaitForDefaultRouteTask(BackgroundTask):
 
 
 class TaskSequence:
-    def __init__(self, loop, tasks, watcher):
+    def __init__(self, loop, pool, tasks, watcher):
         self.loop = loop
+        self.pool = pool
         self.tasks = tasks
         self.watcher = watcher
         self.canceled = False
@@ -163,7 +163,7 @@ class TaskSequence:
             # Vomiting a traceback all over the console is nasty, but not as
             # nasty as silently doing nothing.
             fut.result()
-        Async.pool.submit(self.curtask.run, self).add_done_callback(cb)
+        self.pool.submit(self.curtask.run, self).add_done_callback(cb)
 
     def call_from_thread(self, func, *args):
         log.debug('call_from_thread %s %s', func, args)
@@ -384,7 +384,7 @@ class NetworkController(BaseController):
         self.acw = ApplyingConfigWidget(len(tasks), cancel)
         self.ui.frame.body.show_overlay(self.acw)
 
-        self.cs = TaskSequence(self.loop, tasks, self)
+        self.cs = TaskSequence(self.loop, self.pool, tasks, self)
         self.cs.run()
 
     def task_complete(self, stage):

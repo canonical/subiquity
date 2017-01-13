@@ -40,6 +40,7 @@ class BaseController(ABC):
         self.loop = common['loop']
         self.prober = common['prober']
         self.controllers = common['controllers']
+        self.pool = common['pool']
         self.view_stack = []
 
     def register_signals(self):

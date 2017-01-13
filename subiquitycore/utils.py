@@ -18,10 +18,8 @@ import errno
 import logging
 import os
 import random
-import sys
 import yaml
-from subprocess import Popen, PIPE, call
-from subiquitycore.async import Async
+from subprocess import Popen, PIPE
 
 log = logging.getLogger("subiquitycore.utils")
 SYS_CLASS_NET = "/sys/class/net/"
@@ -86,9 +84,9 @@ def environment_check(check):
     return env_ok
 
 
-def run_command_async(cmd, timeout=None, shell=False):
+def run_command_async(pool, cmd, timeout=None, shell=False):
     log.debug('calling Async command: {}'.format(cmd))
-    return Async.pool.submit(run_command, cmd, timeout, shell)
+    return pool.submit(run_command, cmd, timeout, shell)
 
 
 def run_command_start(command, timeout=None, shell=False):
