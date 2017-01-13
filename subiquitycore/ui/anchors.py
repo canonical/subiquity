@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from urwid import WidgetWrap, Pile, Text, ProgressBar
-from collections import deque
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.ui.lists import SimpleList
 
@@ -54,12 +53,12 @@ class Footer(WidgetWrap):
             ProgressBar(normal='progress_incomplete',
                         complete='progress_complete',
                         current=completion, done=100))
-        status = deque([
+        status = [
             Padding.line_break(""),
-            message_widget
-        ])
+            message_widget,
+        ]
         if completion > 0:
-            status.appendleft(progress_bar)
+            status.insert(0, progress_bar)
         super().__init__(Pile(status))
 
 
@@ -68,8 +67,4 @@ class Body(WidgetWrap):
     """
 
     def __init__(self):
-        text = [
-            Padding.line_break(""),
-        ]
-        w = (SimpleList(text))
-        super().__init__(w)
+        super().__init__(SimpleList([Text("")]))
