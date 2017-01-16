@@ -17,7 +17,6 @@ import logging
 
 from urwid import Pile, Columns, Text, ListBox
 
-from subiquitycore.curtin import curtin_write_postinst_config
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.interactive import (PasswordEditor,
                                           RealnameEditor,
@@ -27,6 +26,7 @@ from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.user import create_user
 from subiquitycore.view import BaseView
 
+from subiquity.curtin import curtin_write_postinst_config
 
 log = logging.getLogger("subiquity.views.identity")
 

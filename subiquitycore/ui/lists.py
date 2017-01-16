@@ -23,7 +23,7 @@ class SimpleList(WidgetWrap):
         super().__init__(self._build_widget())
 
     def _build_widget(self):
-        lw = SimpleListWalker([x for x in self.contents])
+        lw = SimpleListWalker(list(self.contents))
 
         return ListBox(lw)
 

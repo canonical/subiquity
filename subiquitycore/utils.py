@@ -18,10 +18,8 @@ import errno
 import logging
 import os
 import random
-import sys
 import yaml
-from subprocess import Popen, PIPE, call
-from subiquitycore.async import Async
+from subprocess import Popen, PIPE
 
 log = logging.getLogger("subiquitycore.utils")
 SYS_CLASS_NET = "/sys/class/net/"
@@ -86,9 +84,9 @@ def environment_check(check):
     return env_ok
 
 
-def run_command_async(cmd, timeout=None, shell=False):
+def run_command_async(pool, cmd, timeout=None, shell=False):
     log.debug('calling Async command: {}'.format(cmd))
-    return Async.pool.submit(run_command, cmd, timeout, shell)
+    return pool.submit(run_command, cmd, timeout, shell)
 
 
 def run_command_start(command, timeout=None, shell=False):
@@ -150,32 +148,6 @@ def run_command(command, timeout=None, shell=False):
     return run_command_summarize(p, stdout, stderr)
 
 
-def sys_dev_path(devname, path=""):
-    return SYS_CLASS_NET + devname + "/" + path
-
-
-def read_sys_net(devname, path, translate=None, enoent=None, keyerror=None):
-    try:
-        contents = ""
-        with open(sys_dev_path(devname, path), "r") as fp:
-            contents = fp.read().strip()
-        if translate is None:
-            return contents
-
-        try:
-            return translate.get(contents)
-        except KeyError:
-            log.debug("found unexpected value '%s' in '%s/%s'", contents,
-                      devname, path)
-            if keyerror is not None:
-                return keyerror
-            raise
-    except OSError as e:
-        if e.errno == errno.ENOENT and enoent is not None:
-            return enoent
-        raise
-
-
 # FIXME: replace with passlib and update package deps
 def crypt_password(passwd, algo='SHA-512'):
     # encryption algo - id pairs for crypt()
@@ -190,24 +162,6 @@ def crypt_password(passwd, algo='SHA-512'):
     salt = 16 * ' '
     salt = ''.join([random.choice(salt_set) for c in salt])
     return crypt.crypt(passwd, algos[algo] + salt)
-
-
-def is_root():
-    """ Returns root or if sudo user exists
-    """
-    euid = os.geteuid()
-
-    log.debug('is_root: euid={}'.format(euid))
-    if euid != 0:
-        return False
-    return True
-
-
-def sudo_user():
-    """ Returns the value of env['SUDO_USER']
-    """
-    sudo_user = os.getenv('SUDO_USER', None)
-    return sudo_user
 
 
 def disable_first_boot_service():

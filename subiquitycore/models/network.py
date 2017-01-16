@@ -23,7 +23,6 @@ from socket import AF_INET, AF_INET6
 
 import yaml, yaml.reader
 
-from subiquitycore.model import BaseModel
 
 NETDEV_IGNORED_IFACE_NAMES = ['lo']
 NETDEV_IGNORED_IFACE_TYPES = ['bridge', 'tun', 'tap', 'dummy', 'sit']
@@ -338,7 +337,7 @@ def valid_ipv4_address(addr):
     return ip
 
 
-class NetworkModel(BaseModel):
+class NetworkModel(object):
     """ Model representing network interfaces
     """
 

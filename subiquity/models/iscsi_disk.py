@@ -15,20 +15,13 @@
 
 import logging
 
-from subiquitycore.model import BaseModel
-
 
 log = logging.getLogger('subiquity.models.iscsi_disk')
 
 
-class IscsiDiskModel(BaseModel):
+class IscsiDiskModel(object):
     """ Model representing iscsi network disk
     """
-    prev_signal = (
-        'Back to filesystem view',
-        'filesystem:show',
-        'filesystem'
-    )
 
     menu = [
         ('Discover volumes now',                        'iscsi:discover-volumes'),

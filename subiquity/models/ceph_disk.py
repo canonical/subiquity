@@ -15,20 +15,13 @@
 
 import logging
 
-from subiquitycore.model import BaseModel
-
 
 log = logging.getLogger('subiquity.models.ceph_disk')
 
 
-class CephDiskModel(BaseModel):
+class CephDiskModel(object):
     """ Model representing iscsi Ceph storage
     """
-    prev_signal = (
-        'Back to filesystem view',
-        'filesystem:show',
-        'filesystem'
-    )
 
     signals = [
         ('Ceph view',

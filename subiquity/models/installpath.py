@@ -14,13 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from subiquitycore.model import BaseModel
 
 
 log = logging.getLogger("subiquity.models.installpath")
 
 
-class InstallpathModel(BaseModel):
+class InstallpathModel(object):
     """ Model representing install options
 
     List of install paths in the form of:

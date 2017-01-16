@@ -22,7 +22,7 @@ import yaml
 from subiquitycore import utils
 
 
-log = logging.getLogger("subiquitycore.curtin")
+log = logging.getLogger("subiquity.curtin")
 
 TMPDIR = '/tmp'
 CURTIN_SEARCH_PATH = ['/usr/local/curtin/bin', '/usr/bin']
