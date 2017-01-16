@@ -26,3 +26,4 @@ from .lvm import LVMVolumeGroupView  # NOQA
 from .identity import IdentityView  # NOQA
 from .installpath import InstallpathView  # NOQA
 from .installprogress import ProgressView  # NOQA
+from .welcome import WelcomeView

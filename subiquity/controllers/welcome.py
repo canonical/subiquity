@@ -14,10 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from subiquitycore.ui.views import WelcomeView
-from subiquitycore.models import WelcomeModel
 from subiquitycore.controller import BaseController
 
+from subiquity.ui.views import WelcomeView
+from subiquity.models import WelcomeModel
 
 class WelcomeController(BaseController):
 

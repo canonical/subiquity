@@ -25,10 +25,10 @@ from subiquitycore.ui.buttons import menu_btn, ok_btn
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 
-log = logging.getLogger("subiquitycore.views.welcome")
+log = logging.getLogger("subiquity.views.welcome")
 
 
-class CoreWelcomeView(BaseView):
+class WelcomeView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
