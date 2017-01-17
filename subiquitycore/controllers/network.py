@@ -133,17 +133,14 @@ class WaitForDefaultRouteTask(BackgroundTask):
 
 
 class TaskSequence:
-    def __init__(self, loop, pool, tasks, watcher):
-        self.loop = loop
+    def __init__(self, call_from_thread, pool, tasks, watcher):
+        self.call_from_thread = call_from_thread
         self.pool = pool
         self.tasks = tasks
         self.watcher = watcher
         self.canceled = False
         self.stage = None
         self.curtask = None
-        self.incoming = queue.Queue()
-        self.outgoing = queue.Queue()
-        self.pipe = self.loop.watch_pipe(self._thread_callback)
 
     def run(self):
         self._run1()
@@ -164,17 +161,6 @@ class TaskSequence:
             # nasty as silently doing nothing.
             fut.result()
         self.pool.submit(self.curtask.run, self).add_done_callback(cb)
-
-    def call_from_thread(self, func, *args):
-        log.debug('call_from_thread %s %s', func, args)
-        self.incoming.put((func, args))
-        os.write(self.pipe, b'x')
-        self.outgoing.get()
-
-    def _thread_callback(self, ignored):
-        func, args = self.incoming.get()
-        func(*args)
-        self.outgoing.put(None)
 
     def task_succeeded(self):
         self.call_from_thread(self._task_succeeded)
@@ -384,7 +370,7 @@ class NetworkController(BaseController):
         self.acw = ApplyingConfigWidget(len(tasks), cancel)
         self.ui.frame.body.show_overlay(self.acw)
 
-        self.cs = TaskSequence(self.loop, self.pool, tasks, self)
+        self.cs = TaskSequence(self.call_from_thread, self.pool, tasks, self)
         self.cs.run()
 
     def task_complete(self, stage):

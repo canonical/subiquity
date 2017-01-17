@@ -41,6 +41,7 @@ class BaseController(ABC):
         self.prober = common['prober']
         self.controllers = common['controllers']
         self.pool = common['pool']
+        self._callfromthread = common['_callfromthread']
         self.view_stack = []
 
     def register_signals(self):
@@ -54,6 +55,9 @@ class BaseController(ABC):
         self.view_stack.pop()
         meth, args, kw = self.view_stack.pop()
         meth(*args, **kw)
+
+    def call_from_thread(self, func, *args, **kw):
+        return self._callfromthread.call_from_thread(func, *args, **kw)
 
     @abstractmethod
     def cancel(self):

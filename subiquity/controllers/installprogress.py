@@ -122,7 +122,7 @@ class InstallProgressController(BaseController):
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
         fut = utils.run_command_async(self.pool, curtin_cmd)
-        fut.add_done_callback(self.curtin_install_completed)
+        fut.add_done_callback(lambda fut:self.call_from_thread(self.curtin_install_completed, fut))
 
     def curtin_install_completed(self, fut):
         result = fut.result()
@@ -168,7 +168,7 @@ class InstallProgressController(BaseController):
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
         fut = utils.run_command_async(self.pool, curtin_cmd)
-        fut.add_done_callback(self.curtin_postinstall_completed)
+        fut.add_done_callback(lambda fut:self.call_from_thread(self.curtin_postinstall_completed, fut))
 
     def curtin_postinstall_completed(self, fut):
         result = fut.result()

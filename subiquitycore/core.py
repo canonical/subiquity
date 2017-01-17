@@ -15,6 +15,10 @@
 
 from concurrent import futures
 import logging
+import os
+import queue
+import sys
+
 import urwid
 
 from subiquitycore.signals import Signal
@@ -27,6 +31,32 @@ log = logging.getLogger('subiquitycore.core')
 class ApplicationError(Exception):
     """ Basecontroller exception """
     pass
+
+class _CallFromThread(object):
+    def __init__(self, loop):
+        self.incoming = queue.Queue()
+        self.pipe = loop.watch_pipe(self._thread_callback)
+
+    def call_from_thread(self, func, *args, **kw):
+        log.debug('call_from_thread %s %s', func, args)
+        outgoing = queue.Queue()
+        self.incoming.put((outgoing, func, args, kw))
+        os.write(self.pipe, b'x')
+        result = outgoing.get()
+        if len(result) == 1:
+            return result[0]
+        else:
+            typ, val, tb = result
+            raise val.with_traceback(tb)
+
+    def _thread_callback(self, ignored):
+        outgoing, func, args, kw = self.incoming.get()
+        try:
+            result = func(*args, **kw)
+        except BaseException:
+            outgoing.put(sys.exc_info())
+        else:
+            outgoing.put((result,))
 
 
 class Application:
@@ -138,6 +168,7 @@ class Application:
 
         try:
             self.common['loop'].set_alarm_in(0.05, self.next_screen)
+            self.common['_callfromthread'] = _CallFromThread(self.common['loop'])
             controllers_mod = __import__('%s.controllers' % self.project, None, None, [''])
             for k in self.common['controllers']:
                 log.debug("Importing controller: {}".format(k))
