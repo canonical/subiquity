@@ -40,7 +40,6 @@ Description: Ubuntu Server Installer
 Package: subiquitycore
 Architecture: all
 Depends: probert,
-         python3-tornado,
          python3-urwid (>= 1.2.1),
          python3-yaml,
          ${misc:Depends},

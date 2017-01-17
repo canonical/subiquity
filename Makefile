@@ -37,7 +37,7 @@ install_deps_amd64:
 	sudo apt-get install grub-efi-amd64-signed
 
 install_deps: install_deps_$(ARCH)
-	sudo apt-get install python3-urwid python3-pyudev python3-nose python3-flake8 python3-yaml python3-tornado git bzr ubuntu-cloudimage-keyring python3-coverage ovmf shim shim-signed grub-pc-bin
+	sudo apt-get install python3-urwid python3-pyudev python3-nose python3-flake8 python3-yaml git bzr ubuntu-cloudimage-keyring python3-coverage ovmf shim shim-signed grub-pc-bin
 
 dryrun: probert
 	$(MAKE) ui-view DRYRUN="--dry-run --uefi --install"

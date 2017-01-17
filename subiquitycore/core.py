@@ -17,9 +17,6 @@ from concurrent import futures
 import logging
 import urwid
 
-from tornado.ioloop import IOLoop
-from tornado.util import import_object
-
 from subiquitycore.signals import Signal
 from subiquitycore.palette import STYLES, STYLES_MONO
 from subiquitycore.prober import Prober, ProberException
@@ -134,19 +131,17 @@ class Application:
                 additional_opts['screen'].set_terminal_properties(colors=256)
                 additional_opts['screen'].reset_default_terminal_palette()
 
-            evl = urwid.TornadoEventLoop(IOLoop())
             self.common['loop'] = urwid.MainLoop(
-                self.common['ui'], palette, event_loop=evl, **additional_opts)
+                self.common['ui'], palette, **additional_opts)
             log.debug("Running event loop: {}".format(
                 self.common['loop'].event_loop))
 
         try:
             self.common['loop'].set_alarm_in(0.05, self.next_screen)
+            controllers_mod = __import__('%s.controllers' % self.project, None, None, [''])
             for k in self.common['controllers']:
                 log.debug("Importing controller: {}".format(k))
-                klass = import_object(
-                    ("%s.controllers.{}Controller" % self.project).format(
-                        k))
+                klass = getattr(controllers_mod, k+"Controller")
                 self.common['controllers'][k] = klass(self.common)
             log.debug("*** %s", self.common['controllers'])
             self._connect_base_signals()
