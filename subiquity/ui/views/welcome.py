@@ -29,6 +29,7 @@ log = logging.getLogger("subiquity.views.welcome")
 
 
 class WelcomeView(BaseView):
+
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller

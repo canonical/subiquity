@@ -19,6 +19,7 @@ from subiquitycore.controller import BaseController
 from subiquity.ui.views import WelcomeView
 from subiquity.models import WelcomeModel
 
+
 class WelcomeController(BaseController):
 
     def __init__(self, common):

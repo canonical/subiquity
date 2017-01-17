@@ -18,15 +18,14 @@ import logging
 
 from subiquitycore.controller import BaseController
 from subiquitycore.models import IdentityModel
-from subiquity.ui.views import IdentityView
 from subiquitycore import utils
+
+from subiquity.ui.views import IdentityView
 
 log = logging.getLogger('subiquity.controllers.identity')
 
 
 class IdentityController(BaseController):
-
-    identity_view = None
 
     def __init__(self, common):
         super().__init__(common)
@@ -43,24 +42,26 @@ class IdentityController(BaseController):
     def cancel(self):
         self.signal.emit_signal('prev-screen')
 
-    def identity_done(self):
-        self.login()
+    # None of the commented out code below is actually called. Maybe it should be?
 
-    def login(self):
-        log.debug("Identity login view")
-        title = ("Configuration Complete")
-        footer = ("View configured user and device access methods")
-        self.ui.set_header(title)
-        self.ui.set_footer(footer)
+    ## def identity_done(self):
+    ##     self.login()
 
-        net_model = self.controllers['Network'].model
-        configured_ifaces = net_model.get_configured_interfaces()
-        login_view = LoginView(self.model, self, configured_ifaces)
+    ## def login(self):
+    ##     log.debug("Identity login view")
+    ##     title = ("Configuration Complete")
+    ##     footer = ("View configured user and device access methods")
+    ##     self.ui.set_header(title)
+    ##     self.ui.set_footer(footer)
 
-        self.ui.set_body(login_view)
+    ##     net_model = self.controllers['Network'].model
+    ##     configured_ifaces = net_model.get_configured_interfaces()
+    ##     login_view = LoginView(self.model, self, configured_ifaces)
 
-    def login_done(self):
-        # mark ourselves complete
-        utils.disable_subiquity()
+    ##     self.ui.set_body(login_view)
 
-        self.signal.emit_signal('next-screen')
+    ## def login_done(self):
+    ##     # mark ourselves complete
+    ##     utils.disable_subiquity()
+
+    ##     self.signal.emit_signal('next-screen')
