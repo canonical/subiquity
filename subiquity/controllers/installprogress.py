@@ -32,10 +32,18 @@ from subiquity.ui.views import ProgressView
 log = logging.getLogger("subiquitycore.controller.installprogress")
 
 
+class InstallState:
+    NOT_STARTED = 0
+    RUNNING_INSTALL = 1
+    DONE_INSTALL = 2
+    RUNNING_POSTINSTALL = 3
+    DONE_POSTINSTALL = 4
+    ERROR = -1
+
+
 class InstallProgressController(BaseController):
     signals = [
         ('installprogress:curtin-install',     'curtin_start_install'),
-        ('installprogress:curtin-postinstall', 'curtin_start_postinstall'),
         ('installprogress:wrote-install',      'curtin_wrote_install'),
         ('installprogress:wrote-postinstall',  'curtin_wrote_postinstall'),
         ('menu:installprogress:main',          'show_progress'),
@@ -46,23 +54,16 @@ class InstallProgressController(BaseController):
         super().__init__(common)
         self.model = InstallProgressModel()
         self.progress_view = None
-        self.alarm = None
-        self.install_log = CURTIN_INSTALL_LOG
-
-        # state flags
-        self.install_error = False
-        self.install_config = False
-        self.install_spawned = False
-        self.install_complete = False
-        self.postinstall_config = False
-        self.postinstall_spawned = False
-        self.postinstall_complete = False
+        self.install_state = InstallState.NOT_STARTED
+        self.postinstall_written = False
 
     def curtin_wrote_install(self):
-        self.install_config = True
+        pass
 
     def curtin_wrote_postinstall(self):
-        self.postinstall_config = True
+        self.postinstall_written = True
+        if self.install_state == InstallState.DONE_INSTALL:
+            self.curtin_start_postinstall()
 
     @property
     def is_complete(self):
@@ -72,14 +73,18 @@ class InstallProgressController(BaseController):
         return (self.install_complete and self.postinstall_complete)
 
     def curtin_tail_install_log(self):
-        if os.path.exists(self.install_log):
-            tail_cmd = ['tail', '-n', '5', self.install_log]
+        if self.install_state < InstallState.RUNNING_POSTINSTALL:
+            install_log = CURTIN_INSTALL_LOG
+        else:
+            install_log = CURTIN_POSTINSTALL_LOG
+        if os.path.exists(install_log):
+            tail_cmd = ['tail', '-n', '5', install_log]
             log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
             install_tail = subprocess.check_output(tail_cmd)
             return install_tail
         else:
             log.debug(('Install log not yet present:') +
-                      '{}'.format(self.install_log))
+                      '{}'.format(install_log))
 
         return ''
 
@@ -105,16 +110,12 @@ class InstallProgressController(BaseController):
         log.debug('Curtin Install: calling curtin with '
                   'storage/net/postinstall config')
 
-        if self.install_config is False:
-            log.error('Attempting to spawn curtin install without a config')
-            raise Exception('AIEEE!')
-
-        self.install_spawned = True
+        self.install_state = InstallState.RUNNING_INSTALL
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
                 "bash", "-c",
-                "i=0;while [ $i -le 10 ];do i=$((i+1)); echo line $i; sleep 1; done > %s 2>&1"%self.install_log]
+                "i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done > %s 2>&1"%CURTIN_INSTALL_LOG]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [CURTIN_CONFIGS['storage']]
@@ -132,13 +133,16 @@ class InstallProgressController(BaseController):
                    "install: {}".format(result))
             log.error(msg)
             # stop the update and clear the screen
-            self.install_error = True
+            self.install_state = InstallState.ERROR
             log.debug('curtin_install: clearing screen')
-            self.progress_view.text.set_text('')
+            if self.progress_view is not None:
+                self.progress_view.text.set_text('')
             self.signal.emit_signal('refresh')
             return
+        self.install_state = InstallState.DONE_INSTALL
         log.debug('After curtin install OK')
-        self.install_complete = True
+        if self.postinstall_written:
+            self.curtin_start_postinstall()
 
     def cancel(self):
         pass
@@ -147,17 +151,16 @@ class InstallProgressController(BaseController):
         log.debug('Curtin Post Install: calling curtin '
                   'with postinstall config')
 
-        if self.postinstall_config is False:
+        if not self.postinstall_written:
             log.error('Attempting to spawn curtin install without a config')
             raise Exception('AIEEE!')
 
-        self.postinstall_spawned = True
-        self.install_log = CURTIN_POSTINSTALL_LOG
+        self.install_state = InstallState.RUNNING_POSTINSTALL
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
                 "bash", "-c",
-                "i=0;while [ $i -le 10 ];do i=$((i+1)); echo line $i; sleep 1; done > %s 2>&1"%self.install_log]
+                "i=0;while [ $i -le 10 ];do i=$((i+1)); echo postinstall line $i; sleep 1; done > %s 2>&1"%CURTIN_POSTINSTALL_LOG]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [
@@ -177,40 +180,29 @@ class InstallProgressController(BaseController):
                    "post-install: {}".format(result))
             log.error(msg)
             # stop the update and clear the screen
-            self.install_error = True
+            self.install_state = InstallState.ERROR
             log.debug('curtin_postinstall: clearing screen')
             self.progress_view.text.set_text('')
             self.signal.emit_signal('refresh')
             return
         log.debug('After curtin postinstall OK')
-        self.postinstall_complete = True
+        self.install_state = InstallState.DONE_POSTINSTALL
 
     def progress_indicator(self, *args, **kwargs):
         log.debug('progress_indicator')
-        if self.install_error:
+        if self.install_state == InstallState.ERROR:
             log.debug('progress_indicator: error detected')
             self.curtin_error()
-            return
-        if self.is_complete:
+        elif self.install_state == InstallState.DONE_POSTINSTALL:
             log.debug('progress_indicator: complete!')
             self.progress_view.text.set_text("Finished install!")
             self.ui.set_footer("", 100)
             self.progress_view.show_finished_button()
-            self.loop.remove_alarm(self.alarm)
-            return
-        elif (self.postinstall_config and
-              self.install_complete and
-              not self.postinstall_spawned):
-            # kick off postinstall
-            self.signal.emit_signal('installprogress:curtin-postinstall')
         else:
             log.debug('progress_indicator: looping')
             install_tail = self.curtin_tail_install_log()
             self.progress_view.text.set_text(install_tail)
-
-        if not self.install_error:
-            log.debug('progress_indicator: setting alarm')
-            self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
+            self.loop.set_alarm_in(0.3, self.progress_indicator)
 
     def reboot(self):
         if self.opts.dry_run:
@@ -229,7 +221,7 @@ class InstallProgressController(BaseController):
         self.progress_view = ProgressView(self.model, self.signal)
         self.ui.set_body(self.progress_view)
 
-        self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
+        self.loop.set_alarm_in(0.3, self.progress_indicator)
 
         self.ui.set_footer(footer, 90)
 
