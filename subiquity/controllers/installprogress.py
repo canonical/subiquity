@@ -229,17 +229,6 @@ class InstallProgressController(BaseController):
         self.progress_view = ProgressView(self.model, self.signal)
         self.ui.set_body(self.progress_view)
 
-        if self.opts.dry_run:
-            banner = [
-                "**** DRY_RUN ****",
-                ""
-                "",
-                "",
-                "",
-                "Press (Control-x) to Quit."
-            ]
-            self.progress_view.text.set_text("\n".join(banner))
-
         self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
 
         self.ui.set_footer(footer, 90)
