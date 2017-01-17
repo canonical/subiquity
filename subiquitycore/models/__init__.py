@@ -14,6 +14,5 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .network import NetworkModel  # NOQA
-from .welcome import WelcomeModel  # NOQA
 from .identity import IdentityModel  # NOQA
 from .login import LoginModel  # NOQA

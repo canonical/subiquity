@@ -16,7 +16,7 @@
 import logging
 
 
-log = logging.getLogger('subiquitycore.welcome')
+log = logging.getLogger('subiquity.models.welcome')
 
 
 class WelcomeModel(object):

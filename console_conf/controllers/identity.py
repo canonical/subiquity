@@ -19,7 +19,8 @@ import os
 import subprocess
 import sys
 
-from subiquitycore.controllers.identity import BaseIdentityController
+from subiquitycore.controller import BaseController
+from subiquitycore.models import IdentityModel
 from subiquitycore.utils import disable_first_boot_service, run_command
 
 from console_conf.ui.views import IdentityView, LoginView
@@ -98,8 +99,11 @@ def write_login_details_standalone():
     return 0
 
 
-class IdentityController(BaseIdentityController):
-    identity_view = IdentityView
+class IdentityController(BaseController):
+
+    def __init__(self, common):
+        super().__init__(common)
+        self.model = IdentityModel(self.opts)
 
     def default(self):
         title = "Profile setup"
@@ -107,7 +111,7 @@ class IdentityController(BaseIdentityController):
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
-        self.ui.set_body(self.identity_view(self.model, self, self.opts, self.loop))
+        self.ui.set_body(IdentityView(self.model, self, self.opts, self.loop))
         device_owner = get_device_owner()
         if device_owner is not None:
             self.model.add_user(device_owner)
