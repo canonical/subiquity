@@ -16,6 +16,7 @@
 
 from abc import ABC, abstractmethod
 import logging
+import os
 
 log = logging.getLogger("subiquitycore.controller")
 
@@ -41,7 +42,6 @@ class BaseController(ABC):
         self.prober = common['prober']
         self.controllers = common['controllers']
         self.pool = common['pool']
-        self._callfromthread = common['_callfromthread']
         self.view_stack = []
 
     def register_signals(self):
@@ -56,8 +56,23 @@ class BaseController(ABC):
         meth, args, kw = self.view_stack.pop()
         meth(*args, **kw)
 
-    def call_from_thread(self, func, *args, **kw):
-        return self._callfromthread.call_from_thread(func, *args, **kw)
+    def run_in_bg(self, func, callback):
+        """Run func() in a thread and call callback on UI thread.
+
+        callback will be passed a concurrent.futures.Future containing
+        the result of func(). The result of callback is discarded. Any
+        exception will be logged.
+        """
+        fut = self.pool.submit(func)
+        def in_main_thread(ignored):
+            try:
+                callback(fut)
+            except:
+                log.exception("callback %s after calling %s failed", callback, func)
+        pipe = self.loop.watch_pipe(in_main_thread)
+        def in_random_thread(ignored):
+            os.write(pipe, b'x')
+        fut.add_done_callback(in_random_thread)
 
     @abstractmethod
     def cancel(self):
