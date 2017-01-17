@@ -16,7 +16,6 @@
 import logging
 import os
 import subprocess
-from tornado.gen import coroutine
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
@@ -35,8 +34,8 @@ log = logging.getLogger("subiquitycore.controller.installprogress")
 
 class InstallProgressController(BaseController):
     signals = [
-        ('installprogress:curtin-install',     'curtin_install'),
-        ('installprogress:curtin-postinstall', 'curtin_postinstall'),
+        ('installprogress:curtin-install',     'curtin_start_install'),
+        ('installprogress:curtin-postinstall', 'curtin_start_postinstall'),
         ('installprogress:wrote-install',      'curtin_wrote_install'),
         ('installprogress:wrote-postinstall',  'curtin_wrote_postinstall'),
         ('menu:installprogress:main',          'show_progress'),
@@ -102,8 +101,7 @@ class InstallProgressController(BaseController):
         log.debug('curtin_error: refreshing final error screen')
         self.signal.emit_signal('refresh')
 
-    @coroutine
-    def curtin_install(self):
+    def curtin_start_install(self):
         log.debug('Curtin Install: calling curtin with '
                   'storage/net/postinstall config')
 
@@ -123,7 +121,11 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
-        result = yield utils.run_command_async(self.pool, curtin_cmd)
+        fut = utils.run_command_async(self.pool, curtin_cmd)
+        fut.add_done_callback(self.curtin_install_completed)
+
+    def curtin_install_completed(self, fut):
+        result = fut.result()
         log.debug('curtin_install: result: {}'.format(result))
         if result['status'] > 0:
             msg = ("Problem with curtin "
@@ -138,13 +140,10 @@ class InstallProgressController(BaseController):
         log.debug('After curtin install OK')
         self.install_complete = True
 
-    default = curtin_install
-
     def cancel(self):
         pass
 
-    @coroutine
-    def curtin_postinstall(self):
+    def curtin_start_postinstall(self):
         log.debug('Curtin Post Install: calling curtin '
                   'with postinstall config')
 
@@ -168,7 +167,11 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
-        result = yield utils.run_command_async(self.pool, curtin_cmd)
+        fut = utils.run_command_async(self.pool, curtin_cmd)
+        fut.add_done_callback(self.curtin_postinstall_completed)
+
+    def curtin_postinstall_completed(self, fut):
+        result = fut.result()
         if result['status'] > 0:
             msg = ("Problem with curtin "
                    "post-install: {}".format(result))
@@ -216,7 +219,6 @@ class InstallProgressController(BaseController):
 
         curtin_reboot()
 
-    @coroutine
     def show_progress(self):
         log.debug('show_progress called')
         title = ("Installing system")
@@ -238,10 +240,8 @@ class InstallProgressController(BaseController):
             ]
             self.progress_view.text.set_text("\n".join(banner))
 
-            # FIXME: curtin_install not seemingly called from filesystem in
-            # dry-run mode.
-            self.curtin_install()
-
         self.alarm = self.loop.set_alarm_in(0.3, self.progress_indicator)
 
         self.ui.set_footer(footer, 90)
+
+    default = show_progress
