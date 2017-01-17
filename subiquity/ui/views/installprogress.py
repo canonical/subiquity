@@ -26,12 +26,9 @@ log = logging.getLogger("subiquity.views.installprogress")
 
 
 class ProgressView(BaseView):
-    def __init__(self, model, signal):
-        """
-        :param output_w: Filler widget to display updated status text
-        """
+    def __init__(self, model, controller):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.text = Text("Installing Ubuntu ...", align="left")
         self.body = [
             Padding.center_79(self.text),
@@ -40,7 +37,14 @@ class ProgressView(BaseView):
         self.pile = Pile(self.body)
         super().__init__(Filler(self.pile, valign="middle"))
 
-    def show_finished_button(self):
+    def set_log_tail(self, text):
+        self.text.set_text(text)
+
+    def set_error(self, text):
+        self.text.set_text(text)
+
+    def show_complete(self):
+        self.text.set_text("Finished install!")
         w = Padding.fixed_20(
             Color.button(confirm_btn(label="Reboot now",
                                      on_press=self.reboot),
@@ -56,8 +60,7 @@ class ProgressView(BaseView):
         self.pile.focus_position = 2
 
     def reboot(self, btn):
-        self.signal.emit_signal('installprogress:curtin-reboot')
+        self.controller.reboot()
 
     def quit(self, btn):
-        utils.disable_subiquity()
-        self.signal.emit_signal('quit')
+        self.controller.quit()

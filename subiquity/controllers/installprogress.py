@@ -46,8 +46,6 @@ class InstallProgressController(BaseController):
         ('installprogress:curtin-install',     'curtin_start_install'),
         ('installprogress:wrote-install',      'curtin_wrote_install'),
         ('installprogress:wrote-postinstall',  'curtin_wrote_postinstall'),
-        ('menu:installprogress:main',          'show_progress'),
-        ("installprogress:curtin-reboot",      'reboot'),
     ]
 
     def __init__(self, common):
@@ -100,8 +98,8 @@ class InstallProgressController(BaseController):
         log.error(errmsg)
         title = ('An error occurred during installation')
         self.ui.set_header(title, 'Please report this error in Launchpad')
-        self.progress_view.text.set_text(errmsg)
-        self.ui.set_footer("An error as occurred.", 100)
+        self.progress_view.set_error(errmsg)
+        self.ui.set_footer("An error has occurred.", 100)
         self.progress_view.show_finished_button()
         log.debug('curtin_error: refreshing final error screen')
         self.signal.emit_signal('refresh')
@@ -132,12 +130,7 @@ class InstallProgressController(BaseController):
             msg = ("Problem with curtin "
                    "install: {}".format(result))
             log.error(msg)
-            # stop the update and clear the screen
             self.install_state = InstallState.ERROR
-            log.debug('curtin_install: clearing screen')
-            if self.progress_view is not None:
-                self.progress_view.text.set_text('')
-            self.signal.emit_signal('refresh')
             return
         self.install_state = InstallState.DONE_INSTALL
         log.debug('After curtin install OK')
@@ -179,11 +172,7 @@ class InstallProgressController(BaseController):
             msg = ("Problem with curtin "
                    "post-install: {}".format(result))
             log.error(msg)
-            # stop the update and clear the screen
             self.install_state = InstallState.ERROR
-            log.debug('curtin_postinstall: clearing screen')
-            self.progress_view.text.set_text('')
-            self.signal.emit_signal('refresh')
             return
         log.debug('After curtin postinstall OK')
         self.install_state = InstallState.DONE_POSTINSTALL
@@ -195,13 +184,12 @@ class InstallProgressController(BaseController):
             self.curtin_error()
         elif self.install_state == InstallState.DONE_POSTINSTALL:
             log.debug('progress_indicator: complete!')
-            self.progress_view.text.set_text("Finished install!")
             self.ui.set_footer("", 100)
-            self.progress_view.show_finished_button()
+            self.progress_view.show_complete()
         else:
             log.debug('progress_indicator: looping')
             install_tail = self.curtin_tail_install_log()
-            self.progress_view.text.set_text(install_tail)
+            self.progress_view.set_log_tail(install_tail)
             self.loop.set_alarm_in(0.3, self.progress_indicator)
 
     def reboot(self):
@@ -211,18 +199,20 @@ class InstallProgressController(BaseController):
 
         curtin_reboot()
 
-    def show_progress(self):
+    def quit(self):
+        utils.disable_subiquity()
+        self.signal.emit_signal('quit')
+
+    def default(self):
         log.debug('show_progress called')
         title = ("Installing system")
         excerpt = ("Please wait for the installation to finish.")
         footer = ("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 90)
-        self.progress_view = ProgressView(self.model, self.signal)
+        self.progress_view = ProgressView(self.model, self)
         self.ui.set_body(self.progress_view)
 
-        self.loop.set_alarm_in(0.3, self.progress_indicator)
+        self.progress_indicator()
 
         self.ui.set_footer(footer, 90)
-
-    default = show_progress

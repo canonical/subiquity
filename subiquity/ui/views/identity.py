@@ -237,7 +237,7 @@ class IdentityView(BaseView):
 
         self.signal.emit_signal('installprogress:wrote-postinstall')
         # show next view
-        self.signal.emit_signal('menu:installprogress:main')
+        self.signal.emit_signal('next-screen')
 
     def create_user(self, result):
         try:
