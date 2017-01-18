@@ -33,11 +33,9 @@ class ProgressView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.error = Text("")
         self.listwalker = SimpleListWalker([])
         self.linebox = LineBox(ListBox(self.listwalker))
         body = [
-            ('pack', Padding.center_79(self.error)),
             ('pack', Text("")),
             ('weight', 1, Padding.center_79(self.linebox)),
             ('pack', Text("")),
@@ -46,9 +44,8 @@ class ProgressView(BaseView):
         super().__init__(self.pile)
 
     def add_log_tail(self, text):
-        if text.endswith('\n'):
-            text = text[:-1]
-        self.listwalker.append(Text(text))
+        for line in text.splitlines():
+            self.listwalker.append(Text(line))
         self.listwalker.set_focus(len(self.listwalker) - 1)
 
     def clear_log_tail(self):
@@ -56,9 +53,6 @@ class ProgressView(BaseView):
 
     def set_status(self, text):
         self.linebox.set_title(text)
-
-    def set_error(self, text):
-        self.error.set_text(text)
 
     def show_complete(self):
         w = Padding.fixed_20(

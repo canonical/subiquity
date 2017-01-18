@@ -90,19 +90,11 @@ class InstallProgressController(BaseController):
 
     def curtin_error(self):
         log.debug('curtin_error')
-        # just the last ten lines
-        errmsg = str(self.curtin_tail_install_log()[-800:])
-        # Holy Unescaping Batman!
-        errmsg = errmsg.replace("\\\'", "")
-        errmsg = errmsg.replace("\'\'", "")
-        errmsg = errmsg.replace("\\n\'\n", "\n")
-        errmsg = errmsg.replace('\\n', '\n')
-        log.error(errmsg)
         title = ('An error occurred during installation')
         self.ui.set_header(title, 'Please report this error in Launchpad')
-        self.progress_view.set_error(errmsg)
+        self.progress_view.set_status("An error has occurred")
         self.ui.set_footer("An error has occurred.", 100)
-        self.progress_view.show_finished_button()
+        self.progress_view.show_complete()
         log.debug('curtin_error: refreshing final error screen')
         self.signal.emit_signal('refresh')
 
