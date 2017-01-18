@@ -19,6 +19,7 @@ from urwid import (
     ListBox,
     Text,
     Pile,
+    SimpleListWalker,
     )
 
 from subiquitycore.view import BaseView
@@ -33,13 +34,12 @@ class ProgressView(BaseView):
         self.model = model
         self.controller = controller
         self.error = Text("")
-        self.status = Text("Running install step.")
-        self.listbox = ListBox([Text("<log goes here>")])
+        self.listwalker = SimpleListWalker([])
+        self.linebox = LineBox(ListBox(self.listwalker))
         body = [
             ('pack', Padding.center_79(self.error)),
-            ('pack', Padding.center_79(self.status)),
             ('pack', Text("")),
-            ('weight', 1, Padding.center_79(LineBox(self.listbox, title="Installation logs"))),
+            ('weight', 1, Padding.center_79(self.linebox)),
             ('pack', Text("")),
         ]
         self.pile = Pile(body)
@@ -48,20 +48,19 @@ class ProgressView(BaseView):
     def add_log_tail(self, text):
         if text.endswith('\n'):
             text = text[:-1]
-        self.listbox.body.contents.append(Text(text))
-        self.listbox.set_focus_valign('bottom')
+        self.listwalker.append(Text(text))
+        self.listwalker.set_focus(len(self.listwalker) - 1)
 
     def clear_log_tail(self):
-        self.listbox.body.contents[:] = []
+        self.listwalker[:] = []
 
     def set_status(self, text):
-        self.status.set_text(text)
+        self.linebox.set_title(text)
 
     def set_error(self, text):
         self.error.set_text(text)
 
     def show_complete(self):
-        self.status.set_text("Finished install!")
         w = Padding.fixed_20(
             Color.button(confirm_btn(label="Reboot now",
                                      on_press=self.reboot),

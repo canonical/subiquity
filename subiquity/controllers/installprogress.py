@@ -152,7 +152,7 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.RUNNING_POSTINSTALL
         if self.progress_view is not None:
             self.progress_view.clear_log_tail()
-            self.progress_view.set_status("Running postinstall step.")
+            self.progress_view.set_status("Running postinstall step")
             if self.tail_proc is not None:
                 self.loop.remove_watch_file(self.tail_watcher_handle)
                 self.tail_proc.terminate()
@@ -216,6 +216,7 @@ class InstallProgressController(BaseController):
         elif self.install_state == InstallState.DONE_POSTINSTALL:
             log.debug('progress_indicator: complete!')
             self.ui.set_footer("", 100)
+            self.progress_view.set_status("Finished install!")
             self.progress_view.show_complete()
         elif self.tail_proc is None:
             self.maybe_start_tail_proc()
@@ -243,9 +244,9 @@ class InstallProgressController(BaseController):
         self.ui.set_footer(footer, 90)
         self.progress_view = ProgressView(self.model, self)
         if self.install_state < InstallState.RUNNING_POSTINSTALL:
-            self.progress_view.set_status("Running install step.")
+            self.progress_view.set_status("Running install step")
         else:
-            self.progress_view.set_status("Running postinstall step.")
+            self.progress_view.set_status("Running postinstall step")
         self.ui.set_body(self.progress_view)
 
         self.progress_indicator()
