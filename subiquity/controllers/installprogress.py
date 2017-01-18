@@ -148,6 +148,8 @@ class InstallProgressController(BaseController):
             raise Exception('AIEEE!')
 
         self.install_state = InstallState.RUNNING_POSTINSTALL
+        if self.progress_view is not None:
+            self.progress_view.set_status("Running postinstall step.")
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
@@ -176,7 +178,6 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.DONE_POSTINSTALL
 
     def progress_indicator(self, *args, **kwargs):
-        log.debug('progress_indicator')
         if self.install_state == InstallState.ERROR:
             log.debug('progress_indicator: error detected')
             self.curtin_error()
@@ -209,6 +210,10 @@ class InstallProgressController(BaseController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 90)
         self.progress_view = ProgressView(self.model, self)
+        if self.install_state < InstallState.RUNNING_POSTINSTALL:
+            self.progress_view.set_status("Running install step.")
+        else:
+            self.progress_view.set_status("Running postinstall step.")
         self.ui.set_body(self.progress_view)
 
         self.progress_indicator()
