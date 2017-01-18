@@ -34,19 +34,25 @@ class ProgressView(BaseView):
         self.controller = controller
         self.error = Text("")
         self.status = Text("Running install step.")
-        self.log = Text("<log goes here>")
+        self.listbox = ListBox([Text("<log goes here>")])
         body = [
             ('pack', Padding.center_79(self.error)),
             ('pack', Padding.center_79(self.status)),
             ('pack', Text("")),
-            ('weight', 1, Padding.center_79(LineBox(ListBox([self.log]), title="Installation logs"))),
+            ('weight', 1, Padding.center_79(LineBox(self.listbox, title="Installation logs"))),
             ('pack', Text("")),
         ]
         self.pile = Pile(body)
         super().__init__(self.pile)
 
-    def set_log_tail(self, text):
-        self.log.set_text(text)
+    def add_log_tail(self, text):
+        if text.endswith('\n'):
+            text = text[:-1]
+        self.listbox.body.contents.append(Text(text))
+        self.listbox.set_focus_valign('bottom')
+
+    def clear_log_tail(self):
+        self.listbox.body.contents[:] = []
 
     def set_status(self, text):
         self.status.set_text(text)

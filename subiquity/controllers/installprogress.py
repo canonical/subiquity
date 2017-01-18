@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import fcntl
 import logging
 import os
 import subprocess
@@ -54,6 +55,7 @@ class InstallProgressController(BaseController):
         self.progress_view = None
         self.install_state = InstallState.NOT_STARTED
         self.postinstall_written = False
+        self.tail_proc = None
 
     def curtin_wrote_install(self):
         pass
@@ -149,7 +151,12 @@ class InstallProgressController(BaseController):
 
         self.install_state = InstallState.RUNNING_POSTINSTALL
         if self.progress_view is not None:
+            self.progress_view.clear_log_tail()
             self.progress_view.set_status("Running postinstall step.")
+            if self.tail_proc is not None:
+                self.loop.remove_watch_file(self.tail_watcher_handle)
+                self.tail_proc.terminate()
+                self.tail_proc = None
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
@@ -177,6 +184,31 @@ class InstallProgressController(BaseController):
         log.debug('After curtin postinstall OK')
         self.install_state = InstallState.DONE_POSTINSTALL
 
+    def update_log_tail(self):
+        if self.tail_proc is None:
+            return
+        tail = self.tail_proc.stdout.read().decode('utf-8', 'replace')
+        self.progress_view.add_log_tail(tail)
+
+    def maybe_start_tail_proc(self):
+        if self.install_state < InstallState.RUNNING_POSTINSTALL:
+            install_log = CURTIN_INSTALL_LOG
+        else:
+            install_log = CURTIN_POSTINSTALL_LOG
+        if os.path.exists(install_log):
+            self.progress_view.clear_log_tail()
+            tail_cmd = ['tail', '-n', '1000', '-f', install_log]
+            log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
+            self.tail_proc = utils.run_command_start(tail_cmd)
+            stdout_fileno = self.tail_proc.stdout.fileno()
+            fcntl.fcntl(
+                stdout_fileno, fcntl.F_SETFL,
+                fcntl.fcntl(stdout_fileno, fcntl.F_GETFL) | os.O_NONBLOCK)
+            self.tail_watcher_handle = self.loop.watch_file(stdout_fileno, self.update_log_tail)
+        else:
+            log.debug(('Install log not yet present:') +
+                      '{}'.format(install_log))
+
     def progress_indicator(self, *args, **kwargs):
         if self.install_state == InstallState.ERROR:
             log.debug('progress_indicator: error detected')
@@ -185,10 +217,10 @@ class InstallProgressController(BaseController):
             log.debug('progress_indicator: complete!')
             self.ui.set_footer("", 100)
             self.progress_view.show_complete()
+        elif self.tail_proc is None:
+            self.maybe_start_tail_proc()
+            self.loop.set_alarm_in(0.3, self.progress_indicator)
         else:
-            log.debug('progress_indicator: looping')
-            install_tail = self.curtin_tail_install_log()
-            self.progress_view.set_log_tail(install_tail)
             self.loop.set_alarm_in(0.3, self.progress_indicator)
 
     def reboot(self):
