@@ -1,5 +1,5 @@
 [Unit]
-Description=Ubuntu Core Firstboot Configuration %I
+Description=Subiquity, the installer for Ubuntu Server
 After=systemd-user-sessions.service plymouth-quit-wait.service
 After=rc-local.service
 IgnoreOnIsolate=yes
@@ -8,14 +8,14 @@ ConditionPathExists=!/run/subiquity/complete
 
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
-ExecStartPre=/bin/systemctl stop getty@%I
-ExecStart=/sbin/agetty -n --noclear -l /usr/share/subiquity/subiquity-tui %I $TERM
-ExecStopPost=/bin/systemctl start getty@%I
+ExecStartPre=/bin/systemctl stop getty@tty1
+ExecStart=/sbin/agetty -n --noclear -l /usr/share/subiquity/subiquity-tui tty1 $TERM
+ExecStopPost=/bin/systemctl start getty@tty1
 Type=idle
 Restart=always
 RestartSec=0
-UtmpIdentifier=%I
-TTYPath=/dev/%I
+UtmpIdentifier=tty1
+TTYPath=/dev/tty1
 TTYReset=yes
 TTYVHangup=yes
 TTYVTDisallocate=yes

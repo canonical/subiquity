@@ -1,2 +1,3 @@
 bin/subiquity-tui                      usr/share/subiquity
+bin/subiquity-debug                    usr/share/subiquity
 usr/share/subiquity/subiquity

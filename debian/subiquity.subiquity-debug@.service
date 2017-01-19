@@ -1,0 +1,30 @@
+[Unit]
+Description=Subiquity debug shell %I
+After=systemd-user-sessions.service plymouth-quit-wait.service
+After=rc-local.service
+IgnoreOnIsolate=yes
+ConditionPathExists=/dev/tty0
+ConditionPathExists=!/run/subiquity/complete
+
+[Service]
+Environment=PYTHONPATH=/usr/share/subiquity
+ExecStartPre=/bin/systemctl stop getty@%I
+ExecStart=/sbin/agetty -n --noclear -l /usr/share/subiquity/subiquity-debug %I $TERM
+ExecStopPost=/bin/systemctl start getty@%I
+Type=idle
+Restart=always
+RestartSec=0
+UtmpIdentifier=%I
+TTYPath=/dev/%I
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+KillMode=process
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+
+#KillMode=process
+#Restart=always
+#StandardInput=tty-force
+#StandardOutput=tty
+#StandardError=tty
