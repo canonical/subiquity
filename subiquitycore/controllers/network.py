@@ -46,10 +46,36 @@ log = logging.getLogger("subiquitycore.controller.network")
 class BackgroundTask:
     """Something that runs without blocking the UI and can be canceled."""
 
+    def start(self):
+        """Start the task.
+
+        This is called on the UI thread, so must not block.
+        """
+        raise NotImplementedError(self.start)
+
     def run(self):
+        """Run the task.
+
+        This is called on an arbitrary thread so don't do UI stuff!
+        """
         raise NotImplementedError(self.run)
 
+    def end(self, observer, fut):
+        """Call task_succeeded or task_failed on observer.
+
+        This is called on the UI thread.
+
+        fut is a concurrent.futures.Future holding the result of running run.
+        """
+        raise NotImplementedError(self.end)
+
     def cancel(self):
+        """Abort the task.
+
+        Any calls to task_succeeded or task_failed on the observer will
+        be ignored after this point so it doesn't really matter what run
+        returns after this is called.
+        """
         raise NotImplementedError(self.cancel)
 
 
@@ -62,10 +88,15 @@ class BackgroundProcess(BackgroundTask):
     def __repr__(self):
         return 'BackgroundProcess(%r)'%(self.cmd,)
 
-    def run(self, observer):
+    def start(self):
         self.proc = run_command_start(self.cmd)
+
+    def run(self):
         stdout, stderr = self.proc.communicate()
-        result = run_command_summarize(self.proc, stdout, stderr)
+        return run_command_summarize(self.proc, stdout, stderr)
+
+    def end(self, observer, fut):
+        result = fut.result()
         if result['status'] == 0:
             observer.task_succeeded()
         else:
@@ -89,12 +120,19 @@ class PythonSleep(BackgroundTask):
     def __repr__(self):
         return 'PythonSleep(%r)'%(self.duration,)
 
-    def run(self, observer):
+    def start(self):
+        pass
+
+    def run(self):
         r, _, _ = select.select([self.r], [], [], self.duration)
         if not r:
-            observer.task_succeeded()
+            return True
         os.close(self.r)
         os.close(self.w)
+
+    def end(self, observer, fut):
+        if fut.result():
+            observer.task_succeeded()
 
     def cancel(self):
         os.write(self.w, b'x')
@@ -104,8 +142,6 @@ class WaitForDefaultRouteTask(BackgroundTask):
 
     def __init__(self, timeout, udev_observer):
         self.timeout = timeout
-        self.fail_r, self.fail_w = os.pipe()
-        self.success_r, self.success_w = os.pipe()
         self.udev_observer = udev_observer
 
     def __repr__(self):
@@ -114,36 +150,37 @@ class WaitForDefaultRouteTask(BackgroundTask):
     def got_route(self):
         os.write(self.success_w, b'x')
 
-    def run(self, observer):
+    def start(self):
+        self.fail_r, self.fail_w = os.pipe()
+        self.success_r, self.success_w = os.pipe()
         self.udev_observer.add_default_route_waiter(self.got_route)
+
+    def run(self):
         try:
             r, _, _ = select.select([self.fail_r, self.success_r], [], [], self.timeout)
-            if self.success_r in r:
-                observer.task_succeeded()
-            else:
-                observer.task_failed()
+            return self.success_r in r
         finally:
             os.close(self.fail_r)
             os.close(self.fail_w)
             os.close(self.success_r)
             os.close(self.success_w)
 
+    def end(self, observer, fut):
+        if fut.result():
+            observer.task_succeeded()
+
     def cancel(self):
         os.write(self.fail_w, b'x')
 
 
 class TaskSequence:
-    def __init__(self, loop, pool, tasks, watcher):
-        self.loop = loop
-        self.pool = pool
+    def __init__(self, run_in_bg, tasks, watcher):
+        self.run_in_bg = run_in_bg
         self.tasks = tasks
         self.watcher = watcher
         self.canceled = False
         self.stage = None
         self.curtask = None
-        self.incoming = queue.Queue()
-        self.outgoing = queue.Queue()
-        self.pipe = self.loop.watch_pipe(self._thread_callback)
 
     def run(self):
         self._run1()
@@ -158,28 +195,10 @@ class TaskSequence:
         self.stage, self.curtask = self.tasks[0]
         self.tasks = self.tasks[1:]
         log.debug('running %s for stage %s', self.curtask, self.stage)
-        def cb(fut):
-            # We do this just so that any exceptions raised don't get lost.
-            # Vomiting a traceback all over the console is nasty, but not as
-            # nasty as silently doing nothing.
-            fut.result()
-        self.pool.submit(self.curtask.run, self).add_done_callback(cb)
-
-    def call_from_thread(self, func, *args):
-        log.debug('call_from_thread %s %s', func, args)
-        self.incoming.put((func, args))
-        os.write(self.pipe, b'x')
-        self.outgoing.get()
-
-    def _thread_callback(self, ignored):
-        func, args = self.incoming.get()
-        func(*args)
-        self.outgoing.put(None)
+        self.curtask.start()
+        self.run_in_bg(self.curtask.run, lambda fut:self.curtask.end(self, fut))
 
     def task_succeeded(self):
-        self.call_from_thread(self._task_succeeded)
-
-    def _task_succeeded(self):
         if self.canceled:
             return
         self.watcher.task_complete(self.stage)
@@ -191,7 +210,7 @@ class TaskSequence:
     def task_failed(self, info=None):
         if self.canceled:
             return
-        self.call_from_thread(self.watcher.task_error, self.stage, info)
+        self.watcher.task_error(self.stage, info)
 
 
 netplan_config_file_name = '00-snapd-config.yaml'
@@ -384,7 +403,7 @@ class NetworkController(BaseController):
         self.acw = ApplyingConfigWidget(len(tasks), cancel)
         self.ui.frame.body.show_overlay(self.acw)
 
-        self.cs = TaskSequence(self.loop, self.pool, tasks, self)
+        self.cs = TaskSequence(self.run_in_bg, tasks, self)
         self.cs.run()
 
     def task_complete(self, stage):

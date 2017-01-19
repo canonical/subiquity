@@ -84,11 +84,6 @@ def environment_check(check):
     return env_ok
 
 
-def run_command_async(pool, cmd, timeout=None, shell=False):
-    log.debug('calling Async command: {}'.format(cmd))
-    return pool.submit(run_command, cmd, timeout, shell)
-
-
 def run_command_start(command, timeout=None, shell=False):
     log.debug('run_command called: {}'.format(command))
     cmd_env = os.environ.copy()

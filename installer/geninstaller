@@ -58,7 +58,6 @@ INSTALLER_DEPS=(
   "python3-urwid"
   "python3-pyudev"
   "python-urwid"
-  "python3-tornado"
   "probert"
   "xfsprogs"
   "curtin"

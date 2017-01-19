@@ -14,33 +14,47 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from urwid import (Text, Filler,
-                   Pile)
+from urwid import (
+    LineBox,
+    ListBox,
+    Text,
+    Pile,
+    SimpleListWalker,
+    )
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import confirm_btn
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore import utils
 
 log = logging.getLogger("subiquity.views.installprogress")
 
 
 class ProgressView(BaseView):
-    def __init__(self, model, signal):
-        """
-        :param output_w: Filler widget to display updated status text
-        """
+    def __init__(self, model, controller):
         self.model = model
-        self.signal = signal
-        self.text = Text("Installing Ubuntu ...", align="left")
-        self.body = [
-            Padding.center_79(self.text),
-            Padding.line_break(""),
+        self.controller = controller
+        self.listwalker = SimpleListWalker([])
+        self.linebox = LineBox(ListBox(self.listwalker))
+        body = [
+            ('pack', Text("")),
+            ('weight', 1, Padding.center_79(self.linebox)),
+            ('pack', Text("")),
         ]
-        self.pile = Pile(self.body)
-        super().__init__(Filler(self.pile, valign="middle"))
+        self.pile = Pile(body)
+        super().__init__(self.pile)
 
-    def show_finished_button(self):
+    def add_log_tail(self, text):
+        for line in text.splitlines():
+            self.listwalker.append(Text(line))
+        self.listwalker.set_focus(len(self.listwalker) - 1)
+
+    def clear_log_tail(self):
+        self.listwalker[:] = []
+
+    def set_status(self, text):
+        self.linebox.set_title(text)
+
+    def show_complete(self):
         w = Padding.fixed_20(
             Color.button(confirm_btn(label="Reboot now",
                                      on_press=self.reboot),
@@ -51,13 +65,14 @@ class ProgressView(BaseView):
                                      on_press=self.quit),
                          focus_map='button focus'))
 
-        self.pile.contents.append((w, self.pile.options()))
-        self.pile.contents.append((z, self.pile.options()))
-        self.pile.focus_position = 2
+        new_focus = len(self.pile.contents)
+        self.pile.contents.append((w, self.pile.options('pack')))
+        self.pile.contents.append((z, self.pile.options('pack')))
+        self.pile.contents.append((Text(""), self.pile.options('pack')))
+        self.pile.focus_position = new_focus
 
     def reboot(self, btn):
-        self.signal.emit_signal('installprogress:curtin-reboot')
+        self.controller.reboot()
 
     def quit(self, btn):
-        utils.disable_subiquity()
-        self.signal.emit_signal('quit')
+        self.controller.quit()
