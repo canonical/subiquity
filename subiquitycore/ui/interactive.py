@@ -153,12 +153,13 @@ class _PopUpButton(SelectableIcon):
     signals = ['click']
 
     states = {
-        True: "(X) ",
-        False: "( ) ",
+        True: " ▸ ",
+        False: "   ",
         }
 
     def __init__(self, option, state):
-        super().__init__(self.states[state] + option, 4)
+        p = self.states[state]
+        super().__init__(p + option, len(p))
 
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
@@ -175,11 +176,11 @@ class _PopUpSelectDialog(WidgetWrap):
         for i, option in enumerate(self.parent._options):
             btn = _PopUpButton(option, state=i==cur_index)
             connect_signal(btn, 'click', self.click, i)
-            group.append(btn)
+            group.append(AttrWrap(btn, 'menu_button', 'menu_button focus'))
         pile = Pile(group)
         pile.set_focus(group[cur_index])
         fill = Filler(pile, valign=TOP)
-        super().__init__(LineBox(AttrWrap(fill, 'menu_button')))
+        super().__init__(LineBox(fill))
 
     def click(self, btn, index):
         self.parent.index = index
@@ -192,9 +193,11 @@ class Selector(PopUpLauncher):
     (A bit like <select> in an HTML form).
     """
 
+    _prefix = " ▾ "
+
     def __init__(self, opts, index=0):
         self._options = opts
-        self._button = SelectableIcon("", 0)
+        self._button = SelectableIcon(self._prefix, len(self._prefix))
         self.index = index
         super().__init__(self._button)
 
@@ -209,7 +212,7 @@ class Selector(PopUpLauncher):
 
     @index.setter
     def index(self, val):
-        self._button.set_text(self._options[val])
+        self._button.set_text(self._prefix + self._options[val])
         self._index = val
 
     @property
@@ -220,8 +223,8 @@ class Selector(PopUpLauncher):
         return _PopUpSelectDialog(self, self.index)
 
     def get_pop_up_parameters(self):
-        width = max(map(len, self._options)) + 7 # longest option + line on left, "(?) ", space, line on right
-        return {'left':-5, 'top':-self.index-1, 'overlay_width':width, 'overlay_height':len(self._options) + 2}
+        width = max(map(len, self._options)) + len(self._prefix) +  3 # line on left, space, line on right
+        return {'left':-1, 'top':-self.index-1, 'overlay_width':width, 'overlay_height':len(self._options) + 2}
 
 
 class YesNo(Selector):
