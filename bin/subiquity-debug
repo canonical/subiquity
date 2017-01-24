@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+
+stty -echo
+echo "Please press Enter to activate this console."
+read REPLY
+stty echo
+exec bash
