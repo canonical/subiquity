@@ -223,7 +223,8 @@ class InstallProgressController(BaseController):
             utils.run_command(["/sbin/reboot"])
 
     def quit(self):
-        utils.disable_subiquity()
+        if not self.opts.dry_run:
+            utils.disable_subiquity()
         self.signal.emit_signal('quit')
 
     def default(self):
