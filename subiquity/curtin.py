@@ -16,7 +16,6 @@
 import datetime
 import logging
 import os
-import subprocess
 import yaml
 
 from subiquitycore import utils
@@ -55,11 +54,6 @@ install:
   log_file: {}
 """
 
-CURTIN_CONFIG_REBOOT = """
-power_state:
-  message: s-Ubiquity install complete. Rebooting
-  mode: reboot
-"""
 CURTIN_STORAGE_CONFIG_HEADER = """
 storage:
   version: 1
@@ -83,16 +77,14 @@ POST_INSTALL_LIST = [
      '"/bin/echo -e instance-id: inst-3011 '
      '> /var/lib/cloud/seed/nocloud-net/meta-data"]'),
     ("    12_postinst_userdata: [curtin, in-target, --, sh, '-c',"
-     "\"/bin/echo -e '#cloud-config\\npassword: passw0rd\\nchpasswd: "
-     "{{ expire: False }}\\n{hostinfo}\\nusers:\\n{users}' > "
+     "\"/bin/echo -e '#cloud-config\\n\\n{hostinfo}\\nusers:\\n{users}' > "
      "/var/lib/cloud/seed/nocloud-net/user-data\"]"),
 ]
 POST_INSTALL = '\n' + "\n".join(POST_INSTALL_LIST) + '\n'
 
 
 def curtin_userinfo_to_config(userinfo):
-    user_template = '  - default\\n' + \
-        '  - name: {username}\\n' + \
+    user_template = '  - name: {username}\\n' + \
         '    gecos: {realname}\\n' + \
         '    passwd: {password}\\n' + \
         '    shell: /bin/bash\\n' + \

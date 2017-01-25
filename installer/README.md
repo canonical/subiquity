@@ -31,9 +31,6 @@ Run the installer
          -serial telnet:127.0.0.1:2445,server,nowait \
          -monitor stdio
 
-    # login and shutdown, ubuntu/passw0rd
-
-
 Boot the installed image
 
     sudo qemu-system-x86_64 -m 1024 -enable-kvm \

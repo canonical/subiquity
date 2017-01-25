@@ -18,8 +18,7 @@ cloud_config_modules:
 #http_proxy: http://my-proxy:3129/
 bootcmd:
     - /subiquity/network_up.sh
-password: passw0rd
-chpasswd: { expire: False }
+users: []
 output: {all: '| tee -a /var/log/cloud-init-output.log'}
 #packages
 runcmd:
