@@ -18,8 +18,9 @@ import logging
 
 from subiquitycore.controller import BaseController
 from subiquitycore.models import IdentityModel
-from subiquitycore import utils
+from subiquitycore.user import create_user
 
+from subiquity.curtin import curtin_write_postinst_config
 from subiquity.ui.views import IdentityView
 
 log = logging.getLogger('subiquity.controllers.identity')
@@ -42,7 +43,22 @@ class IdentityController(BaseController):
     def cancel(self):
         self.signal.emit_signal('prev-screen')
 
-    # None of the commented out code below is actually called. Maybe it should be?
+    def create_user(self, result):
+        log.debug("User input: {}".format(result))
+        self.model.add_user(result)
+        try:
+            curtin_write_postinst_config(result)
+            create_user(result, dryrun=self.opts.dry_run)
+        except PermissionError:
+            log.exception('Failed to write curtin post-install config')
+            self.signal.emit_signal('filesystem:error',
+                                    'curtin_write_postinst_config', result)
+            return None
+        self.signal.emit_signal('installprogress:wrote-postinstall')
+        # show next view
+        self.signal.emit_signal('next-screen')
+
+        # None of the commented out code below is actually called. Maybe it should be?
 
     ## def identity_done(self):
     ##     self.login()

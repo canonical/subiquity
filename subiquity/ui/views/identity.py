@@ -23,10 +23,8 @@ from subiquitycore.ui.interactive import (PasswordEditor,
                                           StringEditor,
                                           UsernameEditor)
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.user import create_user
 from subiquitycore.view import BaseView
 
-from subiquity.curtin import curtin_write_postinst_config
 
 log = logging.getLogger("subiquity.views.identity")
 
@@ -231,23 +229,7 @@ class IdentityView(BaseView):
                 return
 
         log.debug("User input: {}".format(result))
-        self.model.add_user(result)
-
-        self.create_user(result)
-
-        self.signal.emit_signal('installprogress:wrote-postinstall')
-        # show next view
-        self.signal.emit_signal('next-screen')
-
-    def create_user(self, result):
-        try:
-            curtin_write_postinst_config(result)
-            create_user(result, dryrun=self.opts.dry_run)
-        except PermissionError:
-            log.exception('Failed to write curtin post-install config')
-            self.signal.emit_signal('filesystem:error',
-                                    'curtin_write_postinst_config', result)
-            return None
+        self.controller.create_user(result)
 
     def cancel(self, button):
-        self.signal.prev_signal()
+        self.controller.cancel()
