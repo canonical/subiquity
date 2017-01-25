@@ -21,7 +21,7 @@ configuration.
 """
 import logging
 import re
-from urwid import ListBox, Pile, Text, Columns
+from urwid import connect_signal, ListBox, Pile, Text, Columns
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.utils import Padding, Color
@@ -60,8 +60,11 @@ class AddPartitionView(BaseView):
         self.size_str = _humanize_size(self.disk_obj.freespace)
         self.size = StringEditor(
             caption="".format(self.size_str))
-        self.mountpoint = MountEditor(caption="", edit_text="/")
+        self.mountpoint = Selector(opts=['/', '/home', '/var', 'other'])
+        connect_signal(self.mountpoint, 'select', self.select_mountpoint)
+        self.mountpoint_other = MountEditor(caption="", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
+        self.pile = self._container()
         body = [
             Columns(
                 [
@@ -71,7 +74,7 @@ class AddPartitionView(BaseView):
                 ]
             ),
             Padding.line_break(""),
-            self._container(),
+            self.pile,
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
         ]
@@ -126,6 +129,23 @@ class AddPartitionView(BaseView):
             )
         ]
         return Pile(total_items)
+
+    def select_mountpoint(self, sender, val):
+        log.debug("select_mountpoint %s", val)
+        if self.mountpoint.value != 'other' and val == 'other':
+            self.pile.contents.append((
+            Columns(
+                [
+                    ("weight", 0.2, Text("")),
+                    ("weight", 0.3,
+                     Padding.push_4(Color.string_input(self.mountpoint_other,
+                                        focus_map="string_input focs"))),
+                ], dividechars=4
+            ), self.pile.options('pack')))
+        elif self.mountpoint.value == 'other' and val != 'other':
+            del self.pile.contents[-1]
+        if val == 'other':
+            self.pile.focus_position = len(self.pile.contents) - 1
 
     def cancel(self, button):
         self.controller.prev_view()
@@ -195,12 +215,16 @@ class AddPartitionView(BaseView):
                     sz = self.disk_obj.freespace
                 return sz
 
+        mount = self.mountpoint.value
+        if mount == 'other':
+            mount = self.mountpoint_other.value
+
         result = {
             "partnum": self.partnum.value,
             "raw_size": self.size.value,
             "bytes": __get_size(),
             "fstype": self.fstype.value,
-            "mountpoint": self.mountpoint.value
+            "mountpoint": mount,
         }
 
         # Validate size (bytes) input
