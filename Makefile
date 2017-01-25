@@ -15,7 +15,7 @@ BOOTLOADER=grub2
 INSTALLIMG=ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img
 INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 PROBERTDIR=./probert
-PROBERT_REPO=git@github.com:CanonicalLtd/probert.git
+PROBERT_REPO=https://github.com/CanonicalLtd/probert
 GITDEBDIR=./debian.git
 DEBDIR=./debian
 
