@@ -148,13 +148,13 @@ class IntegerEditor(WidgetWrap):
 
 
 class _PopUpButton(SelectableIcon):
-    """It looks like a radio button, but it just emits 'click' on activation."""
+    """It looks a bit like a radio button, but it just emits 'click' on activation."""
 
     signals = ['click']
 
     states = {
-        True: " ▸ ",
-        False: "   ",
+        True: "(+) ",
+        False: "( ) ",
         }
 
     def __init__(self, option, state):
@@ -186,6 +186,11 @@ class _PopUpSelectDialog(WidgetWrap):
         self.parent.index = index
         self.parent.close_pop_up()
 
+    def keypress(self, size, key):
+        if key == 'esc':
+            self.parent.close_pop_up()
+        else:
+            return super().keypress(size, key)
 
 class Selector(PopUpLauncher):
     """A widget that allows the user to chose between options by popping up this list of options.
@@ -193,7 +198,7 @@ class Selector(PopUpLauncher):
     (A bit like <select> in an HTML form).
     """
 
-    _prefix = " ▾ "
+    _prefix = "(+) "
 
     def __init__(self, opts, index=0):
         self._options = opts
