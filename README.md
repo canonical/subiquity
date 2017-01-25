@@ -19,7 +19,7 @@ backend configuration files to /tmp/subiquity-config-* but it won't attempt to
 run any installer commands (which would fail without root privileges).  Further,
 subiquity can load other machine profiles in case you want to test out the
 installer without having access to the machine.  A few sample machine
-profiles are available in the repository at /examples/ and
+profiles are available in the repository at ./examples/ and
 can be loaded via the MACHINE make variable:
 
 `make dryrun MACHINE=examples/desktop.json`
@@ -27,12 +27,9 @@ can be loaded via the MACHINE make variable:
 # Generating machine profiles
 Machine profiles are generated from the probert tool.  To collect a machine profile:
 
-`probert --all > mymachine.json`
+`PYTHONPATH=probert ./probert/bin/probert --all > mymachine.json`
 
 # Making an install image.
 
-`make installer`
-
-The resulting build image is avaiable at installer/installer.img The
-installer image requires approximately 2G of space at this time. See
-installer/README.md for more.
+To try out subiquity for real, it is necessary to make an image and run it in a
+VM. See installer/README.md for instructions on how to do this.

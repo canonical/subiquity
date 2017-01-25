@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 PROG=`basename $0`
-PREFIX="${PROG}"
 INSTALLER_IMAGE_SIZE_M=2048  # 2G image
 RSYNC_OPTS="-aXHAS --one-file-system"
 MKFS_OPTS="-J size=4 -m 0 -q"
@@ -41,15 +40,8 @@ wget
 rsync
 ubuntu-cloudimage-keyring
 cloud-image-utils
+qemu-system-x86
 "
-# "URL" "GPGKEY"
-# ppa:foo/bar ""
-PPAS=(
-  "https://raharper:Q9F9bRlSxg70BGv8m6dc@private-ppa.launchpad.net/subiquity/subiquity-dev/ubuntu" "3D2F6C3B"
-)
-SRC_DEPS=(
-  "bzr" "lp:curtin" "curtin"
-)
 INSTALLER_DEPS=(
   "bcache-tools"
   "lvm2"
@@ -64,7 +56,6 @@ INSTALLER_DEPS=(
 )
 CACHEDIR=""
 GRUB_MODS="configfile fat part_gpt part_msdos cat echo test search search_label search_fs_uuid boot chain linux reboot halt normal efi_gop efi_uga font gfxterm gfxterm_menu gfxterm_background gfxmenu serial"
-
 
 cleanup_noexit() {
     [ -n "${CACHEDIR}" ] && {
@@ -581,14 +572,6 @@ generate_img() {
     fi
     sudo mv ${resolvconf} ${resolvconf}.old &&
     sudo cp /etc/resolv.conf ${resolvconf} &&
-
-    log "Installing ppas in rootfs"
-    # export existing install_ppa and run it in the chroot
-    install_ppas_cmds="$(install_ppas ${PPAS[@]})"
-    sudo chroot ${mnt} /bin/bash -c "${install_ppas_cmds}; apt-get update" || {
-        log "Failed to add installer ppas to chroot";
-        return 1;
-    }
 
     log "Installing on rootfs: $packages"
     log "WARNING: skipping preinstallation of mdadm, lvm2"
