@@ -200,10 +200,12 @@ class Selector(PopUpLauncher):
 
     _prefix = "(+) "
 
+    signals = ['select']
+
     def __init__(self, opts, index=0):
         self._options = opts
         self._button = SelectableIcon(self._prefix, len(self._prefix))
-        self.index = index
+        self._set_index(index)
         super().__init__(self._button)
 
     def keypress(self, size, key):
@@ -211,14 +213,18 @@ class Selector(PopUpLauncher):
             return key
         self.open_pop_up()
 
+    def _set_index(self, val):
+        self._button.set_text(self._prefix + self._options[val])
+        self._index = val
+
     @property
     def index(self):
         return self._index
 
     @index.setter
     def index(self, val):
-        self._button.set_text(self._prefix + self._options[val])
-        self._index = val
+        self._emit('select', self._options[val])
+        self._set_index(val)
 
     @property
     def value(self):
