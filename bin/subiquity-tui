@@ -53,10 +53,6 @@ def parse_options(argv):
     parser.add_argument('--dry-run', action='store_true',
                         dest='dry_run',
                         help='menu-only, do not call installer function')
-    # XXX Defaults to firstboot mode unless one runs subiquity --install.
-    parser.add_argument('--install', action='store_false',
-                        dest='firstboot', default=True,
-                        help='run installer in firstboot mode')
     parser.add_argument('--serial', action='store_true',
                         dest='run_on_serial',
                         help='Run the installer over serial console.')

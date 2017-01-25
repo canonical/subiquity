@@ -60,8 +60,8 @@ def create_user(userinfo, dryrun=False, extra_args=[]):
         run_command(chown, shell=False)
 
         # add sudo rule
-        with open('/etc/sudoers.d/firstboot-user', 'w') as fh:
-            fh.write('# firstboot config added user\n\n')
+        with open('/etc/sudoers.d/installer-user', 'w') as fh:
+            fh.write('# installer added user\n\n')
             fh.write('{} ALL=(ALL) NOPASSWD:ALL\n'.format(username))
     else:
-        log.info('dry-run, skiping user configuration')
+        log.info('dry-run, skipping user configuration')

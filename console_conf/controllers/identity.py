@@ -21,7 +21,7 @@ import sys
 
 from subiquitycore.controller import BaseController
 from subiquitycore.models import IdentityModel
-from subiquitycore.utils import disable_first_boot_service, run_command
+from subiquitycore.utils import disable_console_conf, run_command
 
 from console_conf.ui.views import IdentityView, LoginView
 
@@ -182,6 +182,6 @@ class IdentityController(BaseController):
     def login_done(self):
         if not self.opts.dry_run:
             # stop the console-conf services (this will kill the current process).
-            disable_first_boot_service()
+            disable_console_conf()
 
         self.signal.emit_signal('quit')

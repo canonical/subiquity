@@ -102,7 +102,6 @@ def curtin_hostinfo_to_config(hostinfo):
 
 
 def curtin_write_postinst_config(userinfo):
-    # firstboot doesn't get hostinfo; but it's still present in the template
     config = {
         'users': curtin_userinfo_to_config(userinfo),
         'hostinfo': curtin_hostinfo_to_config(userinfo),

@@ -159,9 +159,9 @@ def crypt_password(passwd, algo='SHA-512'):
     return crypt.crypt(passwd, algos[algo] + salt)
 
 
-def disable_first_boot_service():
-    """ Stop firstboot service; which also restores getty service """
-    log.info('disabling first boot service')
+def disable_console_conf():
+    """ Stop console-conf service; which also restores getty service """
+    log.info('disabling console-conf service')
     run_command(["systemctl", "stop", "--no-block", "console-conf@*.service", "serial-console-conf@*.service"])
     return
 
