@@ -177,9 +177,9 @@ class FilesystemView(BaseView):
         fs_menu = [
             # ('Connect iSCSI network disk',         'filesystem:connect-iscsi-disk'),
             # ('Connect Ceph network disk',          'filesystem:connect-ceph-disk'),
-            ('Create volume group (LVM2)',           'menu:filesystem:main:create-volume-group'),
-            ('Create software RAID (MD)',            'menu:filesystem:main:create-raid'),
-            ('Setup hierarchichal storage (bcache)', 'menu:filesystem:main:setup-bcache'),
+            # ('Create volume group (LVM2)',           'menu:filesystem:main:create-volume-group'),
+            # ('Create software RAID (MD)',            'menu:filesystem:main:create-raid'),
+            # ('Setup hierarchichal storage (bcache)', 'menu:filesystem:main:setup-bcache'),
         ]
 
         for opt, sig in fs_menu:
