@@ -52,9 +52,6 @@ def parse_options(argv):
     parser.add_argument('--machine-config', metavar='CONFIG',
                         dest='machine_config',
                         help="Don't Probe. Use probe data file")
-    parser.add_argument('--uefi', action='store_true',
-                        dest='uefi',
-                        help='run in uefi support mode')
     return parser.parse_args(argv)
 
 
