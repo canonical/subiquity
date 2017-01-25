@@ -21,7 +21,7 @@ configuration.
 """
 import logging
 import re
-from urwid import connect_signal, ListBox, Pile, Text, Columns
+from urwid import connect_signal, ListBox, Pile, Text, Columns, Padding as UrwidPadding
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.utils import Padding, Color
@@ -44,6 +44,17 @@ PARTITION_ERRORS = [
 log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 
 
+common_mountpoints = [
+    '/',
+    '/boot',
+    '/home',
+    '/srv',
+    '/usr',
+    '/var',
+    '/var/lib',
+    'other',
+    ]
+
 
 class AddPartitionView(BaseView):
 
@@ -60,7 +71,7 @@ class AddPartitionView(BaseView):
         self.size_str = _humanize_size(self.disk_obj.freespace)
         self.size = StringEditor(
             caption="".format(self.size_str))
-        self.mountpoint = Selector(opts=['/', '/home', '/var', 'other'])
+        self.mountpoint = Selector(opts=common_mountpoints)
         connect_signal(self.mountpoint, 'select', self.select_mountpoint)
         self.mountpoint_other = MountEditor(caption="", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
@@ -138,8 +149,10 @@ class AddPartitionView(BaseView):
                 [
                     ("weight", 0.2, Text("")),
                     ("weight", 0.3,
-                     Padding.push_4(Color.string_input(self.mountpoint_other,
-                                        focus_map="string_input focs"))),
+                     UrwidPadding(
+                         Color.string_input(self.mountpoint_other,
+                                            focus_map="string_input focs"),
+                         left=len(self.mountpoint._prefix))),
                 ], dividechars=4
             ), self.pile.options('pack')))
         elif self.mountpoint.value == 'other' and val != 'other':
