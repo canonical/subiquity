@@ -16,7 +16,6 @@
 import fcntl
 import logging
 import os
-import subprocess
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
@@ -95,11 +94,13 @@ class InstallProgressController(BaseController):
     def curtin_install_completed(self, fut):
         result = fut.result()
         log.debug('curtin_install: result: {}'.format(result))
+        self.stop_tail_proc()
         if result['status'] > 0:
             msg = ("Problem with curtin "
                    "install: {}".format(result))
             log.error(msg)
             self.install_state = InstallState.ERROR
+            self.curtin_error()
             return
         self.install_state = InstallState.DONE_INSTALL
         log.debug('After curtin install OK')
@@ -121,10 +122,7 @@ class InstallProgressController(BaseController):
         if self.progress_view is not None:
             self.progress_view.clear_log_tail()
             self.progress_view.set_status("Running postinstall step")
-            if self.tail_proc is not None:
-                self.loop.remove_watch_file(self.tail_watcher_handle)
-                self.tail_proc.terminate()
-                self.tail_proc = None
+            self.start_tail_proc()
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
@@ -143,6 +141,7 @@ class InstallProgressController(BaseController):
 
     def curtin_postinstall_completed(self, fut):
         result = fut.result()
+        self.stop_tail_proc()
         if result['status'] > 0:
             msg = ("Problem with curtin "
                    "post-install: {}".format(result))
@@ -151,6 +150,9 @@ class InstallProgressController(BaseController):
             return
         log.debug('After curtin postinstall OK')
         self.install_state = InstallState.DONE_POSTINSTALL
+        self.ui.set_footer("", 100)
+        self.progress_view.set_status("Finished install!")
+        self.progress_view.show_complete()
 
     def update_log_tail(self):
         if self.tail_proc is None:
@@ -158,39 +160,26 @@ class InstallProgressController(BaseController):
         tail = self.tail_proc.stdout.read().decode('utf-8', 'replace')
         self.progress_view.add_log_tail(tail)
 
-    def maybe_start_tail_proc(self):
+    def start_tail_proc(self):
         if self.install_state < InstallState.RUNNING_POSTINSTALL:
             install_log = CURTIN_INSTALL_LOG
         else:
             install_log = CURTIN_POSTINSTALL_LOG
-        if os.path.exists(install_log):
-            self.progress_view.clear_log_tail()
-            tail_cmd = ['tail', '-n', '1000', '-f', install_log]
-            log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
-            self.tail_proc = utils.run_command_start(tail_cmd)
-            stdout_fileno = self.tail_proc.stdout.fileno()
-            fcntl.fcntl(
-                stdout_fileno, fcntl.F_SETFL,
-                fcntl.fcntl(stdout_fileno, fcntl.F_GETFL) | os.O_NONBLOCK)
-            self.tail_watcher_handle = self.loop.watch_file(stdout_fileno, self.update_log_tail)
-        else:
-            log.debug(('Install log not yet present:') +
-                      '{}'.format(install_log))
+        self.progress_view.clear_log_tail()
+        tail_cmd = ['tail', '-n', '1000', '-F', install_log]
+        log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
+        self.tail_proc = utils.run_command_start(tail_cmd)
+        stdout_fileno = self.tail_proc.stdout.fileno()
+        fcntl.fcntl(
+            stdout_fileno, fcntl.F_SETFL,
+            fcntl.fcntl(stdout_fileno, fcntl.F_GETFL) | os.O_NONBLOCK)
+        self.tail_watcher_handle = self.loop.watch_file(stdout_fileno, self.update_log_tail)
 
-    def progress_indicator(self, *args, **kwargs):
-        if self.install_state == InstallState.ERROR:
-            log.debug('progress_indicator: error detected')
-            self.curtin_error()
-        elif self.install_state == InstallState.DONE_POSTINSTALL:
-            log.debug('progress_indicator: complete!')
-            self.ui.set_footer("", 100)
-            self.progress_view.set_status("Finished install!")
-            self.progress_view.show_complete()
-        elif self.tail_proc is None:
-            self.maybe_start_tail_proc()
-            self.loop.set_alarm_in(0.3, self.progress_indicator)
-        else:
-            self.loop.set_alarm_in(0.3, self.progress_indicator)
+    def stop_tail_proc(self):
+        if self.tail_proc is not None:
+            self.loop.remove_watch_file(self.tail_watcher_handle)
+            self.tail_proc.terminate()
+            self.tail_proc = None
 
     def reboot(self):
         if self.opts.dry_run:
@@ -218,6 +207,6 @@ class InstallProgressController(BaseController):
             self.progress_view.set_status("Running postinstall step")
         self.ui.set_body(self.progress_view)
 
-        self.progress_indicator()
+        self.start_tail_proc()
 
         self.ui.set_footer(footer, 90)
