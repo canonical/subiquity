@@ -150,6 +150,7 @@ class InstallProgressController(BaseController):
             return
         log.debug('After curtin postinstall OK')
         self.install_state = InstallState.DONE_POSTINSTALL
+        self.ui.set_header("Installation complete!", "")
         self.ui.set_footer("", 100)
         self.progress_view.set_status("Finished install!")
         self.progress_view.show_complete()
@@ -208,5 +209,3 @@ class InstallProgressController(BaseController):
         self.ui.set_body(self.progress_view)
 
         self.start_tail_proc()
-
-        self.ui.set_footer(footer, 90)
