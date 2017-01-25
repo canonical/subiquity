@@ -64,29 +64,6 @@ class InstallProgressController(BaseController):
         if self.install_state == InstallState.DONE_INSTALL:
             self.curtin_start_postinstall()
 
-    @property
-    def is_complete(self):
-        log.debug('Checking is_complete: {} and {}'.format(
-                  self.install_complete,
-                  self.postinstall_complete))
-        return (self.install_complete and self.postinstall_complete)
-
-    def curtin_tail_install_log(self):
-        if self.install_state < InstallState.RUNNING_POSTINSTALL:
-            install_log = CURTIN_INSTALL_LOG
-        else:
-            install_log = CURTIN_POSTINSTALL_LOG
-        if os.path.exists(install_log):
-            tail_cmd = ['tail', '-n', '5', install_log]
-            log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
-            install_tail = subprocess.check_output(tail_cmd)
-            return install_tail
-        else:
-            log.debug(('Install log not yet present:') +
-                      '{}'.format(install_log))
-
-        return ''
-
     def curtin_error(self):
         log.debug('curtin_error')
         title = ('An error occurred during installation')
