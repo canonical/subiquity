@@ -33,7 +33,7 @@ $(NAME)_$(VERSION).orig.tar.gz: probert clean
 tarball: $(NAME)_$(VERSION).orig.tar.gz
 
 install_deps:
-	sudo apt-get install python3-urwid python3-pyudev python3-nose python3-flake8 python3-yaml python3-coverage
+	sudo apt-get install python3-urwid python3-pyudev python3-nose python3-flake8 python3-yaml python3-coverage pkg-config
 
 dryrun: probert
 	$(MAKE) ui-view DRYRUN="--dry-run --uefi"
