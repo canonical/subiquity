@@ -36,6 +36,7 @@ override_dh_installinit:
 	install -m 0644 $(CURDIR)/debian/subiquity-tty1.conf $(CURDIR)/debian/subiquity/lib/systemd/system/getty@tty1.service.d/
 	mkdir $(CURDIR)/debian/subiquity/lib/systemd/system/getty@.service.d/
 	install -m 0644 $(CURDIR)/debian/subiquity-ttyN.conf $(CURDIR)/debian/subiquity/lib/systemd/system/getty@.service.d/
+	ln -s /dev/null $(CURDIR)/debian/subiquity/lib/systemd/system/systemd-debug@tty1.service
 
 override_dh_auto_test:
 	@echo "No tests."
