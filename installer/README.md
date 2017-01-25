@@ -13,7 +13,10 @@ Create the image
 
 Generate the install image from subiquity's root directory:
 
-    installer/geninstaller -a amd64 -b grub2 -r zesty
+    installer/geninstaller -a amd64 -b grub2 -r zesty -l
+
+(-l means build the current working tree into a deb and install that,
+leaving it out will install subiquity from the archive).
 
 Run the installer
 -----------------
