@@ -221,17 +221,3 @@ def curtin_install_cmd(configs):
     log.info('curtin install command: {}'.format(" ".join(install_cmd)))
 
     return install_cmd
-
-
-def curtin_reboot():
-    cmd = "/sbin/reboot"
-    log.info("powering off with %s", cmd)
-    fid = os.fork()
-    if fid == 0:
-        try:
-            subprocess.call([cmd])
-            os._exit(0)
-        except:
-            log.warn("%s returned non-zero" % cmd)
-            os._exit(1)
-    return

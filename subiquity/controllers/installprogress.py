@@ -24,7 +24,6 @@ from subiquitycore.controller import BaseController
 from subiquity.curtin import (CURTIN_CONFIGS,
                               CURTIN_INSTALL_LOG,
                               CURTIN_POSTINSTALL_LOG,
-                              curtin_reboot,
                               curtin_install_cmd)
 from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView
@@ -220,8 +219,8 @@ class InstallProgressController(BaseController):
         if self.opts.dry_run:
             log.debug('dry-run enabled, skipping reboot, quiting instead')
             self.signal.emit_signal('quit')
-
-        curtin_reboot()
+        else:
+            utils.run_command(["/sbin/reboot"])
 
     def quit(self):
         utils.disable_subiquity()
