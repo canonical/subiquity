@@ -146,32 +146,6 @@ Example usage:
 EOF
 }
 
-install_ppas() {
-    while [ $# -gt 0 ]; do
-        local url=${1}; shift
-        local gpgkey=${1}; shift;
-        if [ -n ${gpgkey} ]; then
-            echo sudo apt-key adv --keyserver keyserver.ubuntu.com --recv ${gpgkey}
-        fi
-        echo sudo apt-add-repository -y ${url}
-        echo sudo killall dirmngr gpg-agent
-    done
-    return 0
-}
-
-remove_ppas() {
-    while [ $# -gt 0 ]; do
-        local url=${1}; shift
-        local gpgkey=${1}; shift;
-
-        if [ -n ${gpgkey} ]; then
-            echo sudo apt-key del ${gpgkey}
-        fi
-        echo sudo apt-add-repository --remove -y ${url}
-    done
-    return 0
-}
-
 install_deps() {
     local packages="$1"
     local to_install=""
@@ -601,13 +575,6 @@ generate_img() {
     local after=( `sudo du -sk ${upper}` )
     local delta=$((($before - $after) / 1024))
     log "Saved ${delta} MiB"
-
-    log "Removing ppas in rootfs"
-    remove_ppas_cmds="$(remove_ppas ${PPAS[@]})"
-    sudo chroot ${mnt} /bin/bash -c "${remove_ppas_cmds}" || {
-        log "Failed to remove installer ppas from chroot";
-        return 1;
-    }
 
     sudo rm ${resolvconf}
     sudo mv ${resolvconf}.old ${resolvconf}
