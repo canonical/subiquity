@@ -35,7 +35,6 @@ syslinux-common
 shim-signed
 grub-efi-amd64-signed
 grub-pc-bin
-probert
 wget
 rsync
 ubuntu-cloudimage-keyring
