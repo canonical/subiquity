@@ -4,6 +4,19 @@ subiquity (0.0.27) UNRELEASED; urgency=medium
   * Fix header of WIFI config screen (LP: #1651119)
   * Fix partion size rounding to correctly round to 1M boundaries, not 1G.
   * Improve widget used to select filesystem type. (LP: #1654387)
+  * Add flag to geninstaller to install local subiquity. (LP: #1654386)
+  * Do not say a netdev is not configured when there is no configuration. (LP:
+    #1654381)
+  * Make a cleaner separation between console-conf and subiquity code.
+  * Remove lots of unused code.
+  * Make installprogress controller (the code that drives curtin) more event
+    driven, removing polling and the dependency on python3-tornado.
+  * Make the curtin log viewer much more intuitive. (LP: #1654390)
+  * Rearrange subiquity's systemd units to allow running a root shell for
+    debugging on tty's other than tty1. (LP: #1654085)
+  * Do not create an ubuntu user in the installer or in the installed system.
+    (LP: #1659170)
+  * Recommend some common mount points when creating a partition.
 
  -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Mon, 09 Jan 2017 21:59:32 +1300
 
