@@ -15,8 +15,7 @@ BOOTLOADER=grub2
 INSTALLIMG=ubuntu-server-${STREAM}-${RELEASE}-${ARCH}-installer.img
 INSTALLER_RESOURCES += $(shell find installer/resources -type f)
 PROBERTDIR=./probert
-PROBERT_REPO=git@github.com:CanonicalLtd/probert.git
-PROBERT_REVNO=xenial
+PROBERT_REPO=https://github.com/CanonicalLtd/probert
 GITDEBDIR=./debian.git
 DEBDIR=./debian
 
@@ -33,14 +32,12 @@ $(NAME)_$(VERSION).orig.tar.gz: probert clean
 
 tarball: $(NAME)_$(VERSION).orig.tar.gz
 
-install_deps_amd64:
-	sudo apt-get install grub-efi-amd64-signed
-
-install_deps: install_deps_$(ARCH)
-	sudo apt-get install python3-urwid python3-pyudev python3-nose python3-flake8 python3-yaml git bzr ubuntu-cloudimage-keyring python3-coverage ovmf shim shim-signed grub-pc-bin
+install_deps:
+	sudo apt-get install python3-urwid python3-pyudev python3-nose python3-flake8 python3-yaml \
+		python3-coverage python3-dev pkg-config libnl-genl-3-dev libnl-route-3-dev
 
 dryrun: probert
-	$(MAKE) ui-view DRYRUN="--dry-run --uefi --install"
+	$(MAKE) ui-view DRYRUN="--dry-run --uefi"
 
 ui-view:
 	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC)-tui $(DRYRUN) $(MACHARGS))
@@ -71,7 +68,7 @@ run: installer
 probert:
 	@if [ ! -d "$(PROBERTDIR)" ]; then \
 		git clone -q $(PROBERT_REPO) $(PROBERTDIR); \
-		(cd probert && git checkout -f $(PROBERT_REVNO)); \
+		(cd probert && python3 setup.py build_ext -i); \
     fi
 
 git-checkout-deb:
@@ -98,7 +95,7 @@ clean:
 	    rm -rf ../$(NAME)_*.deb ../$(NAME)_*.tar.gz ../$(NAME)_$.dsc ../$(NAME)_*.changes \
 		    ../$(NAME)_*.build ../$(NAME)_*.upload; \
 	    wrap-and-sort; \
-    fi
+	fi
 	rm -f installer/target.img
 	rm -f installer/target.img_*
 	rm -f installer/installer.img
