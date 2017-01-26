@@ -386,7 +386,6 @@ generate_img() {
     local cachedir=${2};
     local bootloader=${3};
     local extlinux_conf=${RESOURCES}/menu/extlinux-menu.conf
-    local overlay_path=${RESOURCES}/overlay
     local grub_efi_core=${RESOURCES}/grub/bootx64.efi  # FIXME, ARCH
     local grub_conf=${RESOURCES}/grub/grub.cfg
     local embed_conf=${RESOURCES}/grub/embed_efi.cfg
@@ -564,6 +563,7 @@ generate_img() {
         sudo cp ../subiquity_${V}*.deb ../subiquitycore_${V}*.deb ${mnt}
         sudo chroot ${mnt} sh -c 'dpkg -i *.deb'
         sudo chroot ${mnt} apt-get install -f
+        sudo rm ${mnt}/*.deb
     fi
 
     log "Cleaning up overlay apt cache"
@@ -589,13 +589,6 @@ generate_img() {
         log "Installing grub2"
         cat ${grub_conf} | sudo tee ${efimnt}/boot/grub/grub.cfg 2>&1 >> ${LOGFILE} && true
     fi
-
-    # syncing overlay
-    log "Injecting installer configuration/scripts"
-    sudo rsync ${RSYNC_OPTS} ${overlay_path}/ ${mnt}/ || {
-        log "Failed to sync local installer configuration/scripts";
-        return 1;
-    }
 
     log "Installing cloud seed"
     sudo mkdir -p ${mnt}/var/lib/cloud/seed &&
