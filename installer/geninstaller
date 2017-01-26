@@ -579,6 +579,7 @@ generate_img() {
     # install mdadm/lvm2 into the target as it will start up system
     # daemons and prevent us from unmounting the target
     packages=$(echo $packages | fmt -w1 | egrep -v "(mdadm|lvm2)")
+    sudo chroot ${mnt} apt-get update
     sudo chroot ${mnt} apt-get -y install $packages || {
         log "Failed to install packages on rootfs";
         return 1;
