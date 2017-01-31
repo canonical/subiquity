@@ -100,33 +100,6 @@ local-hostname: ubuntu-server-installer
 EOF
 }
 
-userdata_write_file() {
-    local path=${1}; shift;
-    local owner=${1}; shift;
-    local permissions=${1}; shift;
-    local encoding=${1}; shift;
-    case $encoding in
-        none)
-            echo "-   content: |"
-            for x in "$@"; do
-                sed 's,^,        ,' "$x" || return
-            done
-            ;;
-        b64)
-            echo "-   encoding: $encoding"
-            echo "    content: |"
-            base64 "$@" | sed 's,^,        ,'
-            ;;
-        *)
-            log "ERROR: unsupported encoding $encoding"
-            return 1;
-            ;;
-    esac
-    echo "    path: $path"
-    echo "    owner: $owner"
-    echo "    permissions: '$permissions'"
-}
-
 usage() {
     cat << EOF
 
@@ -321,20 +294,8 @@ generate_seed() {
         log "Failed to write meta-data into $seed";
         return 1;
     }
-    log "Writing seed user-data (curtin)"
-    # remove the old seed; copy in the base template and
-    # append the curtin-cmd file
-    rm -f ${seed}/user-data &&
-    cp $installer_user_data $seed/user-data &&
-
-    if [ "${OFFLINE}" == "no" ]; then
-        log "Enabling cloud-init package installation"
-        local packages=""
-        for pkg in ${INSTALLER_DEPS[@]}; do
-            packages="$packages - $pkg\n"
-        done
-        sed -i "s/#packages/packages:\n$packages/" ${seed}/user-data
-    fi
+    log "Writing seed user-data"
+    rm -f ${seed}/user-data && cp $installer_user_data $seed/user-data
 
     return 0
 }
@@ -597,6 +558,26 @@ generate_img() {
         log "Failed to install bootloader and configuration";
         return 1;
     }
+
+    log "Configuring netplan"
+    sudo mkdir -p ${mnt}/etc/netplan
+    cat <<EOF | sudo tee ${mnt}/etc/netplan/00-installer-config.yaml > /dev/null
+network:
+    version: 2
+    ethernets:
+        all-en:
+            match:
+                name: "en*"
+            dhcp4: true
+        all-eth:
+            match:
+                name: "eth*"
+            dhcp4: true
+EOF
+    sudo mkdir -p ${mnt}/etc/cloud/cloud.cfg.d
+    cat <<EOF | sudo tee ${mnt}/etc/cloud/cloud.cfg.d/99-no-cloud-init-net.cfg > /dev/null
+network: {config: disabled}
+EOF
 
     _RETVAL="$installimg";
     return 0;
