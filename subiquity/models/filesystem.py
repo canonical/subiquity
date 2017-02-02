@@ -35,20 +35,25 @@ class AttrDict(dict):
     __setattr__ = dict.__setitem__
 
 
+class FS:
+    def __init__(self, label, is_mounted):
+        self.label = label
+        self.is_mounted = is_mounted
+
 class FilesystemModel(object):
     """ Model representing storage options
     """
 
     supported_filesystems = [
-        'ext4',
-        'xfs',
-        'btrfs',
+        ('ext4', True, FS('ext4', True)),
+        ('xfs', True, FS('xfs', True)),
+        ('btrfs', True, FS('btrfs', True)),
         ('---', False),
-        'swap',
-        'bcache cache',
-        'bcache store',
+        ('swap', True, FS('swap', False)),
+        ('bcache cache', True, FS('bcache cache', False)),
+        ('bcache store', True, FS('bcache store', False)),
         ('---', False),
-        'leave unformatted'
+        ('leave unformatted', True, FS('leave unformatted', False)),
     ]
 
     partition_flags = [
