@@ -27,6 +27,7 @@ from urwid import (
     Pile,
     PopUpLauncher,
     SelectableIcon,
+    Text,
     TOP,
     WidgetWrap,
     )
@@ -174,9 +175,13 @@ class _PopUpSelectDialog(WidgetWrap):
         self.parent = parent
         group = []
         for i, option in enumerate(self.parent._options):
-            btn = _PopUpButton(option, state=i==cur_index)
-            connect_signal(btn, 'click', self.click, i)
-            group.append(AttrWrap(btn, 'menu_button', 'menu_button focus'))
+            if option[1]:
+                btn = _PopUpButton(option[0], state=i==cur_index)
+                connect_signal(btn, 'click', self.click, i)
+                group.append(AttrWrap(btn, 'menu_button', 'menu_button focus'))
+            else:
+                btn = Text("    " + option[0])
+                group.append(AttrWrap(btn, 'info_minor'))
         pile = Pile(group)
         pile.set_focus(group[cur_index])
         fill = Filler(pile, valign=TOP)
@@ -192,6 +197,9 @@ class _PopUpSelectDialog(WidgetWrap):
         else:
             return super().keypress(size, key)
 
+class SelectorError(Exception):
+    pass
+
 class Selector(PopUpLauncher):
     """A widget that allows the user to chose between options by popping up this list of options.
 
@@ -203,7 +211,19 @@ class Selector(PopUpLauncher):
     signals = ['select']
 
     def __init__(self, opts, index=0):
-        self._options = opts
+        self._options = []
+        for opt in opts:
+            if not isinstance(opt, tuple):
+                if not isinstance(opt, str):
+                    raise SelectorError("invalid option %r", opt)
+                opt = (opt, True, opt)
+            elif len(opt) == 1:
+                opt = (opt[0], True, opt[0])
+            elif len(opt) == 2:
+                opt = (opt[0], opt[1], opt[0])
+            elif len(opt) != 3:
+                raise SelectorError("invalid option %r", opt)
+            self._options.append(opt)
         self._button = SelectableIcon(self._prefix, len(self._prefix))
         self._set_index(index)
         super().__init__(self._button)
@@ -214,7 +234,7 @@ class Selector(PopUpLauncher):
         self.open_pop_up()
 
     def _set_index(self, val):
-        self._button.set_text(self._prefix + self._options[val])
+        self._button.set_text(self._prefix + self._options[val][0])
         self._index = val
 
     @property
@@ -223,18 +243,19 @@ class Selector(PopUpLauncher):
 
     @index.setter
     def index(self, val):
-        self._emit('select', self._options[val])
+        self._emit('select', self._options[val][2])
         self._set_index(val)
 
     @property
     def value(self):
-        return self._options[self._index]
+        return self._options[self._index][2]
 
     def create_pop_up(self):
         return _PopUpSelectDialog(self, self.index)
 
     def get_pop_up_parameters(self):
-        width = max(map(len, self._options)) + len(self._prefix) +  3 # line on left, space, line on right
+        width = max([len(o[0]) for o in self._options]) \
+          + len(self._prefix) +  3 # line on left, space, line on right
         return {'left':-1, 'top':-self.index-1, 'overlay_width':width, 'overlay_height':len(self._options) + 2}
 
 

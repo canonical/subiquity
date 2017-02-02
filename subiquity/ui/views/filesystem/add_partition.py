@@ -21,7 +21,7 @@ configuration.
 """
 import logging
 import re
-from urwid import connect_signal, ListBox, Pile, Text, Columns, Padding as UrwidPadding
+from urwid import connect_signal, ListBox, Pile, Text, Columns, Padding as UrwidPadding, WidgetDisable
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.utils import Padding, Color
@@ -75,7 +75,10 @@ class AddPartitionView(BaseView):
         connect_signal(self.mountpoint, 'select', self.select_mountpoint)
         self.mountpoint_other = MountEditor(caption="", edit_text="/")
         self.fstype = Selector(opts=self.model.supported_filesystems)
+        connect_signal(self.fstype, 'select', self.select_fstype)
+        self.mount_pile = Pile([])
         self.pile = self._container()
+        self._update_mount_pile()
         body = [
             Columns(
                 [
@@ -102,63 +105,51 @@ class AddPartitionView(BaseView):
         ]
         return Pile(buttons)
 
+    def _col(self, caption, input, active=True, padding=0):
+        text = Text(caption, align="right")
+        if active:
+            input = Color.string_input(input, focus_map="string_input focus")
+        else:
+            input = Color.info_minor(WidgetDisable(input))
+            text = Color.info_minor(text)
+        if padding:
+            input = UrwidPadding(input, left=padding)
+        return Columns(
+                [
+                    ("weight", 0.2, text),
+                    ("weight", 0.3, input)
+                ],
+            dividechars=4)
+
+    def _update_mount_pile(self, mount=None, is_mounted=None):
+        if mount is None:
+            mount = self.mountpoint.value
+        if is_mounted is None:
+            is_mounted = self.fstype.value.is_mounted
+        contents = [(self._col("Mount", self.mountpoint, is_mounted), self.mount_pile.options('pack'))]
+        if mount == 'other':
+            contents.append((self._col("", self.mountpoint_other, is_mounted, 4), self.mount_pile.options('pack')))
+        self.mount_pile.contents = contents
+
     def _container(self):
         total_items = [
-            Columns(
-                [
-                    ("weight", 0.2, Text("Partition number", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.partnum,
-                                        focus_map="string_input focus"))
-                ], dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2,
-                     Text("Size (max {})".format(self.size_str),
-                          align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.size,
-                                        focus_map="string_input focus")),
-                ], dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Format", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.fstype,
-                                        focus_map="string_input focus"))
-                ], dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Mount", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.mountpoint,
-                                        focus_map="string_input focs"))
-                ], dividechars=4
-            )
+            self._col("Partition number", self.partnum),
+            self._col("Size (max {})".format(self.size_str), self.size),
+            self._col("Format".format(self.size_str), self.fstype),
+            self.mount_pile,
         ]
         return Pile(total_items)
 
     def select_mountpoint(self, sender, val):
         log.debug("select_mountpoint %s", val)
-        if self.mountpoint.value != 'other' and val == 'other':
-            self.pile.contents.append((
-            Columns(
-                [
-                    ("weight", 0.2, Text("")),
-                    ("weight", 0.3,
-                     UrwidPadding(
-                         Color.string_input(self.mountpoint_other,
-                                            focus_map="string_input focs"),
-                         left=len(self.mountpoint._prefix))),
-                ], dividechars=4
-            ), self.pile.options('pack')))
-        elif self.mountpoint.value == 'other' and val != 'other':
-            del self.pile.contents[-1]
+        if (self.mountpoint.value == 'other') != (val == 'other'):
+            self._update_mount_pile(mount=val)
         if val == 'other':
-            self.pile.focus_position = len(self.pile.contents) - 1
+            self.mount_pile.focus_position = 1
+
+    def select_fstype(self, sender, fs):
+        if fs.is_mounted != sender.value.is_mounted:
+            self._update_mount_pile(is_mounted=fs.is_mounted)
 
     def cancel(self, button):
         self.controller.prev_view()
@@ -236,7 +227,7 @@ class AddPartitionView(BaseView):
             "partnum": self.partnum.value,
             "raw_size": self.size.value,
             "bytes": __get_size(),
-            "fstype": self.fstype.value,
+            "fstype": self.fstype.value.label,
             "mountpoint": mount,
         }
 
