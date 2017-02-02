@@ -43,9 +43,11 @@ class FilesystemModel(object):
         'ext4',
         'xfs',
         'btrfs',
+        ('---', False),
         'swap',
         'bcache cache',
         'bcache store',
+        ('---', False),
         'leave unformatted'
     ]
 
