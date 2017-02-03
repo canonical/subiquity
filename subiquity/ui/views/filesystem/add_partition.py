@@ -26,13 +26,13 @@ from urwid import connect_signal, Text, Padding as UrwidPadding, WidgetDisable
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.ui.interactive import (StringEditor, IntegerEditor,
-                                          Selector, MountEditor)
+from subiquitycore.ui.interactive import StringEditor, IntegerEditor, Selector
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (_humanize_size,
                                          _dehumanize_size,
                                          HUMAN_UNITS)
+from subiquity.ui.mount import MountSelector
 
 INVALID_PARTITION_SIZE = 'Invalid Partition Size'
 PARTITION_SIZE_TOO_BIG = 'Requested size too big'
@@ -44,18 +44,21 @@ PARTITION_ERRORS = [
 
 log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 
-
-common_mountpoints = [
-    '/',
-    '/boot',
-    '/home',
-    '/srv',
-    '/usr',
-    '/var',
-    '/var/lib',
-    'other',
-    ]
-
+def _col(caption, input, active=True, padding=0):
+    text = Text(caption, align="right")
+    if active:
+        input = Color.string_input(input, focus_map="string_input focus")
+    else:
+        input = Color.info_minor(WidgetDisable(input))
+        text = Color.info_minor(text)
+    if padding:
+        input = UrwidPadding(input, left=padding)
+    return Columns(
+            [
+                ("weight", 0.2, text),
+                ("weight", 0.3, input)
+            ],
+        dividechars=4)
 
 class AddPartitionView(BaseView):
 
@@ -72,14 +75,10 @@ class AddPartitionView(BaseView):
         self.size_str = _humanize_size(self.disk_obj.freespace)
         self.size = StringEditor(
             caption="".format(self.size_str))
-        self.mountpoint = Selector(opts=common_mountpoints)
-        connect_signal(self.mountpoint, 'select', self.select_mountpoint)
-        self.mountpoint_other = MountEditor(caption="", edit_text="/")
+        self.mountpoint = MountSelector()
         self.fstype = Selector(opts=self.model.supported_filesystems)
         connect_signal(self.fstype, 'select', self.select_fstype)
-        self.mount_pile = Pile([])
         self.pile = self._container()
-        self._update_mount_pile()
         body = [
             Columns(
                 [
@@ -106,51 +105,23 @@ class AddPartitionView(BaseView):
         ]
         return Pile(buttons)
 
-    def _col(self, caption, input, active=True, padding=0):
-        text = Text(caption, align="right")
-        if active:
-            input = Color.string_input(input, focus_map="string_input focus")
-        else:
-            input = Color.info_minor(WidgetDisable(input))
-            text = Color.info_minor(text)
-        if padding:
-            input = UrwidPadding(input, left=padding)
-        return Columns(
-                [
-                    ("weight", 0.2, text),
-                    ("weight", 0.3, input)
-                ],
-            dividechars=4)
-
-    def _update_mount_pile(self, mount=None, is_mounted=None):
-        if mount is None:
-            mount = self.mountpoint.value
-        if is_mounted is None:
-            is_mounted = self.fstype.value.is_mounted
-        contents = [(self._col("Mount", self.mountpoint, is_mounted), self.mount_pile.options('pack'))]
-        if mount == 'other':
-            contents.append((self._col("", self.mountpoint_other, is_mounted, 4), self.mount_pile.options('pack')))
-        self.mount_pile.contents = contents
-
     def _container(self):
         total_items = [
-            self._col("Partition number", self.partnum),
-            self._col("Size (max {})".format(self.size_str), self.size),
-            self._col("Format".format(self.size_str), self.fstype),
-            self.mount_pile,
+            _col("Partition number", self.partnum),
+            _col("Size (max {})".format(self.size_str), self.size),
+            _col("Format", self.fstype),
+            _col("Mount", self.mountpoint),
         ]
         return Pile(total_items)
 
-    def select_mountpoint(self, sender, val):
-        log.debug("select_mountpoint %s", val)
-        if (self.mountpoint.value == 'other') != (val == 'other'):
-            self._update_mount_pile(mount=val)
-        if val == 'other':
-            self.mount_pile.focus_position = 1
+    def _enable_disable_mount(self, enabled):
+        self.pile.contents[-1] = (
+            _col("Mount", self.mountpoint, enabled),
+            self.pile.options('pack'))
 
     def select_fstype(self, sender, fs):
         if fs.is_mounted != sender.value.is_mounted:
-            self._update_mount_pile(is_mounted=fs.is_mounted)
+            self._enable_disable_mount(fs.is_mounted)
 
     def cancel(self, button):
         self.controller.prev_view()
@@ -220,15 +191,18 @@ class AddPartitionView(BaseView):
                     sz = self.disk_obj.freespace
                 return sz
 
-        mount = self.mountpoint.value
-        if mount == 'other':
-            mount = self.mountpoint_other.value
+        fstype = self.fstype.value
+
+        if fstype.is_mounted:
+            mount = self.mountpoint.value
+        else:
+            mount = None
 
         result = {
             "partnum": self.partnum.value,
             "raw_size": self.size.value,
             "bytes": __get_size(),
-            "fstype": self.fstype.value.label,
+            "fstype": fstype.label,
             "mountpoint": mount,
         }
 
@@ -238,13 +212,14 @@ class AddPartitionView(BaseView):
             self.size.set_error('ERROR: {}'.format(result['bytes']))
             return
         # Validate mountpoint input
-        try:
-            self.model.valid_mount(result)
-        except ValueError as e:
-            log.exception('Invalid mount point')
-            self.mountpoint.set_error('Error: {}'.format(str(e)))
-            log.debug("Invalid mountpoint, try again")
-            return
+        if mount is not None:
+            try:
+                self.model.valid_mount(result)
+            except ValueError as e:
+                log.exception('Invalid mount point')
+                self.mountpoint.set_error('Error: {}'.format(str(e)))
+                log.debug("Invalid mountpoint, try again")
+                return
 
         log.debug("Add Partition Result: {}".format(result))
         self.controller.add_disk_partition_handler(self.disk_obj.devpath, result)

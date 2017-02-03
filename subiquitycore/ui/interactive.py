@@ -123,20 +123,6 @@ class UsernameEditor(StringEditor):
         return super().keypress(size, key)
 
 
-class MountEditor(StringEditor):
-    """ Mountpoint input prompt with input rules
-    """
-
-    def keypress(self, size, key):
-        ''' restrict what chars we allow for mountpoints '''
-
-        mountpoint = r'[a-zA-Z0-9_/\.\-]'
-        if re.match(mountpoint, key) is None:
-            return False
-
-        return super().keypress(size, key)
-
-
 class IntegerEditor(WidgetWrap):
     """ IntEdit input class
     """
