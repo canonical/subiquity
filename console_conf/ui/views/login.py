@@ -20,9 +20,10 @@ Login provides user with language selection
 """
 import logging
 
-from urwid import (ListBox, Pile, Text)
+from urwid import Text
 
 from subiquitycore.ui.buttons import finish_btn
+from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 

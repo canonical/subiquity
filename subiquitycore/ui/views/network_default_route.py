@@ -16,10 +16,11 @@
 import logging
 import socket
 
-from urwid import Text, Pile, ListBox
+from urwid import Text
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, done_btn, menu_btn
+from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.interactive import StringEditor
 

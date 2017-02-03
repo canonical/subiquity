@@ -1,6 +1,7 @@
-from urwid import Text, Pile, ListBox, Columns, Overlay, WidgetWrap, LineBox, Button, BoxAdapter
+from urwid import Text, Overlay, WidgetWrap, LineBox, Button, BoxAdapter
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, done_btn, menu_btn
+from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.interactive import PasswordEditor, StringEditor
 from subiquitycore.ui.utils import Color, Padding
 import logging

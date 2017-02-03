@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import Pile, ListBox
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, menu_btn
+from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.views.network import _build_gateway_ip_info_for_version, _build_wifi_info
 import logging
@@ -39,7 +39,6 @@ class NetworkConfigureInterfaceView(BaseView):
         if self.dev.type == 'wlan':
             self.wifi_info = Pile(_build_wifi_info(self.dev))
             self.wifi_method = Pile(self._build_wifi_config())
-
 
     def _build_body(self):
         body = []

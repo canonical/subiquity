@@ -19,11 +19,12 @@ Provides high level options for Ubuntu install
 
 """
 import logging
-from urwid import (ListBox, Pile, BoxAdapter)
+from urwid import BoxAdapter
 
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import menu_btn, cancel_btn
 from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.view import BaseView
 
 log = logging.getLogger('subiquity.installpath')

@@ -16,10 +16,11 @@
 import logging
 import ipaddress
 
-from urwid import Text, Pile, ListBox, Columns
+from urwid import Text
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, menu_btn, cancel_btn
+from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.interactive import StringEditor
 

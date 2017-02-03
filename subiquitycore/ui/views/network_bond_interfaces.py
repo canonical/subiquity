@@ -13,9 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import Text, Columns, Pile, ListBox, CheckBox
+from urwid import Text, CheckBox
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, done_btn
+from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.interactive import Selector
 from subiquitycore.ui.utils import Color, Padding
 import logging

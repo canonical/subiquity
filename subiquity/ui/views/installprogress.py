@@ -16,14 +16,13 @@
 import logging
 from urwid import (
     LineBox,
-    ListBox,
     Text,
-    Pile,
     SimpleListWalker,
     )
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import confirm_btn
+from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 
 log = logging.getLogger("subiquity.views.installprogress")

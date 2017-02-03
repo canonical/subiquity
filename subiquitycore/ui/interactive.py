@@ -24,7 +24,6 @@ from urwid import (
     Filler,
     IntEdit,
     LineBox,
-    Pile,
     PopUpLauncher,
     SelectableIcon,
     Text,
@@ -33,6 +32,8 @@ from urwid import (
     )
 import logging
 import re
+
+from subiquitycore.ui.container import Pile
 
 log = logging.getLogger("subiquitycore.ui.input")
 

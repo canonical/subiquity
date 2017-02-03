@@ -14,10 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from urwid import Text, Columns, Pile, ListBox
+from urwid import Text
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import menu_btn
+from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.interactive import (StringEditor, YesNo,
                                           PasswordEditor)
 from subiquitycore.ui.utils import Color, Padding

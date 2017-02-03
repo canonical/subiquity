@@ -19,8 +19,8 @@ Welcome provides user with language selection
 
 """
 import logging
-from urwid import ListBox, Pile
 from subiquitycore.ui.buttons import ok_btn
+from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 
