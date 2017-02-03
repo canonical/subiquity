@@ -24,7 +24,6 @@ log = logging.getLogger('subiquitycore.ui.frame')
 
 
 class SubiquityUI(WidgetWrap):
-    key_conversion_map = {'tab': 'down', 'shift tab': 'up'}
 
     def __init__(self, header=None, body=None, footer=None):
         self.header = header if header else Header()
@@ -34,7 +33,6 @@ class SubiquityUI(WidgetWrap):
         super().__init__(self.frame)
 
     def keypress(self, size, key):
-        key = self.key_conversion_map.get(key, key)
         return super().keypress(size, key)
 
     def set_header(self, title=None, excerpt=None):
