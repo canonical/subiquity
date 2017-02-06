@@ -42,7 +42,6 @@ import urwid
 log = logging.getLogger('subiquitycore.ui.frame')
 
 
-
 def _maybe_select_first_selectable(w):
     """If w implements _select_first_selectable, call it."""
     m = getattr(w.base_widget, "_select_first_selectable", None)
@@ -55,67 +54,46 @@ def _maybe_select_last_selectable(w):
     if m is not None:
         m()
 
+
 class TabCyclingMixin:
     """Tab-cycling implementation that works with Pile and Columns."""
 
     def _select_first_selectable(self):
         """Select first selectable child (possibily recursively)."""
-        log.debug("%s _select_first_selectable", self.__class__.__name__)
-        i = self._first_selectable()
-        self.set_focus(i)
-        log.debug(" -> first selectable %s", self.contents[i][0])
-        _maybe_select_first_selectable(self.contents[i][0])
+        for i, (w, o) in enumerate(self.contents):
+            if w.selectable():
+                self.set_focus(i)
+                _maybe_select_first_selectable(w)
+                return
 
     def _select_last_selectable(self):
         """Select last selectable child (possibily recursively)."""
-        log.debug("%s _select_last_selectable", self.__class__.__name__)
-        i = self._last_selectable()
-        self.set_focus(i)
-        log.debug(" -> last selectable %s", self.contents[i][0])
-        self.set_focus(i)
-        _maybe_select_last_selectable(self.contents[i][0])
-
-    def _first_selectable(self):
-        """return sequence number of self.contents last selectable item"""
-        for j in range(0, len(self._contents)):
-            if self._contents[j][0].selectable():
-                return j
-        return False
-
-    def _last_selectable(self):
-        """return sequence number of self._contents last selectable item"""
-        for j in range(len(self._contents) - 1, - 1, - 1):
-            if self._contents[j][0].selectable():
-                return j
-        return False
+        for i, (w, o) in reversed(list(enumerate(self.contents))):
+            if w.selectable():
+                self.set_focus(i)
+                _maybe_select_last_selectable(w)
+                return
 
     def keypress(self, size, key):
         key = super(TabCyclingMixin, self).keypress(size, key)
 
         if key == 'tab':
-            if self.focus_position == self._last_selectable():
-                self._select_first_selectable()
-                return key
-            else:
-                for i in range(self.focus_position + 1, len(self._contents)):
-                    if self._contents[i][0].selectable():
-                        self.set_focus(i)
-                        _maybe_select_first_selectable(self._contents[i][0])
-                        break
-                else:  # no break
-                    return key
+            next_fp = self.focus_position + 1
+            for i, (w, o) in enumerate(self._contents[next_fp:], next_fp):
+                if w.selectable():
+                    self.set_focus(i)
+                    _maybe_select_first_selectable(w)
+                    return
+            self._select_first_selectable()
+            return key
         elif key == 'shift tab':
-            if self.focus_position == self._first_selectable():
-                self._select_last_selectable()
-                return key
-            else:
-                for i in range(self.focus_position - 1, 0 - 1, -1):
-                    if self._contents[i][0].selectable():
-                        self.set_focus(i)
-                        _maybe_select_last_selectable(self._contents[i][0])
-                        break
-                else:  # no break
-                    return key
+            for i, (w, o) in reversed(list(enumerate(self._contents[:self.focus_position]))):
+                if w.selectable():
+                    self.set_focus(i)
+                    _maybe_select_last_selectable(w)
+                    return
+            self._select_last_selectable()
+            return key
         else:
             return key
 
@@ -129,7 +107,7 @@ class TabCyclingColumns(TabCyclingMixin, urwid.Columns):
 
 class TabCyclingListBox(urwid.ListBox):
     def __init__(self, body):
-        # urwid.ListBox converts a random sequence argument to a
+        # urwid.ListBox converts an arbitrarysequence argument to a
         # PollingListWalker, which doesn't work with the below code.
         if getattr(body, 'get_focus', None) is None:
             body = urwid.SimpleListWalker(body)
