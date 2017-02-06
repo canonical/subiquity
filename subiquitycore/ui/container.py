@@ -1,8 +1,17 @@
-import logging
-
-import urwid
-
-log = logging.getLogger('subiquitycore.ui.frame')
+# Portions Copyright 2017 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # This is adapted from
 # https://github.com/pimutils/khal/commit/bd7c5f928a7670de9afae5657e66c6dc846688ac, which has this license:
@@ -26,36 +35,45 @@ log = logging.getLogger('subiquitycore.ui.frame')
 # IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import logging
 
-def _maybe_sfs(w):
+import urwid
+
+log = logging.getLogger('subiquitycore.ui.frame')
+
+
+
+def _maybe_select_first_selectable(w):
+    """If w implements _select_first_selectable, call it."""
     m = getattr(w.base_widget, "_select_first_selectable", None)
     if m is not None:
         m()
 
-def _maybe_sls(w):
+def _maybe_select_last_selectable(w):
+    """If w implements _select_last_selectable, call it."""
     m = getattr(w.base_widget, "_select_last_selectable", None)
     if m is not None:
         m()
 
-class NextMixin:
-    """Implements _select_first_selectable/_select_last_selectable for urwid.Pile and urwid.Columns"""
+class TabCyclingMixin:
+    """Tab-cycling implementation that works with Pile and Columns."""
 
     def _select_first_selectable(self):
-        """select our first selectable item (recursivly if that item SupportsNext)"""
+        """Select first selectable child (possibily recursively)."""
         log.debug("%s _select_first_selectable", self.__class__.__name__)
         i = self._first_selectable()
         self.set_focus(i)
         log.debug(" -> first selectable %s", self.contents[i][0])
-        _maybe_sfs(self.contents[i][0])
+        _maybe_select_first_selectable(self.contents[i][0])
 
     def _select_last_selectable(self):
-        """select our last selectable item (recursivly if that item SupportsNext)"""
+        """Select last selectable child (possibily recursively)."""
         log.debug("%s _select_last_selectable", self.__class__.__name__)
         i = self._last_selectable()
         self.set_focus(i)
         log.debug(" -> last selectable %s", self.contents[i][0])
         self.set_focus(i)
-        _maybe_sls(self.contents[i][0])
+        _maybe_select_last_selectable(self.contents[i][0])
 
     def _first_selectable(self):
         """return sequence number of self.contents last selectable item"""
@@ -72,7 +90,7 @@ class NextMixin:
         return False
 
     def keypress(self, size, key):
-        key = super(NextMixin, self).keypress(size, key)
+        key = super(TabCyclingMixin, self).keypress(size, key)
 
         if key == 'tab':
             if self.focus_position == self._last_selectable():
@@ -82,7 +100,7 @@ class NextMixin:
                 for i in range(self.focus_position + 1, len(self._contents)):
                     if self._contents[i][0].selectable():
                         self.set_focus(i)
-                        _maybe_sfs(self._contents[i][0])
+                        _maybe_select_first_selectable(self._contents[i][0])
                         break
                 else:  # no break
                     return key
@@ -94,7 +112,7 @@ class NextMixin:
                 for i in range(self.focus_position - 1, 0 - 1, -1):
                     if self._contents[i][0].selectable():
                         self.set_focus(i)
-                        _maybe_sls(self._contents[i][0])
+                        _maybe_select_last_selectable(self._contents[i][0])
                         break
                 else:  # no break
                     return key
@@ -102,21 +120,23 @@ class NextMixin:
             return key
 
 
-class NPile(NextMixin, urwid.Pile):
+class TabCyclingPile(TabCyclingMixin, urwid.Pile):
     pass
 
-class NColumns(NextMixin, urwid.Columns):
+class TabCyclingColumns(TabCyclingMixin, urwid.Columns):
     pass
 
 
-class NListBox(urwid.ListBox):
+class TabCyclingListBox(urwid.ListBox):
     def __init__(self, body):
+        # urwid.ListBox converts a random sequence argument to a
+        # PollingListWalker, which doesn't work with the below code.
         if getattr(body, 'get_focus', None) is None:
             body = urwid.SimpleListWalker(body)
         super().__init__(body)
 
     def _select_first_selectable(self):
-        """select our first selectable item (recursivly if that item SupportsNext)"""
+        """Select first selectable child (possibily recursively)."""
         log.debug("%s _select_first_selectable", self.__class__.__name__)
         i = self._first_selectable()
         # We call set_focus twice because otherwise the listbox
@@ -129,10 +149,10 @@ class NListBox(urwid.ListBox):
         # I don't really understand why this is required but it seems it is.
         self._invalidate()
         log.debug(" -> first selectable %s", self.body[i])
-        _maybe_sfs(self.body[i])
+        _maybe_select_first_selectable(self.body[i])
 
     def _select_last_selectable(self):
-        """select our last selectable item (recursivly if that item SupportsNext)"""
+        """Select last selectable child (possibily recursively)."""
         log.debug("%s _select_last_selectable", self.__class__.__name__)
         i = self._last_selectable()
         # See comment in _select_first_selectable for why we call this twice.
@@ -140,7 +160,7 @@ class NListBox(urwid.ListBox):
         self.set_focus(i)
         self._invalidate()
         log.debug(" -> last selectable %s", self.body[i])
-        _maybe_sls(self.body[i])
+        _maybe_select_last_selectable(self.body[i])
 
     def _first_selectable(self):
         """return sequence number of self._contents last selectable item"""
@@ -173,6 +193,6 @@ class NListBox(urwid.ListBox):
         else:
             return key
 
-Columns = NColumns
-Pile = NPile
-ListBox = NListBox
+Columns = TabCyclingColumns
+Pile = TabCyclingPile
+ListBox = TabCyclingListBox
