@@ -19,9 +19,10 @@ Welcome provides user with language selection
 
 """
 import logging
-from urwid import (ListBox, Pile, BoxAdapter)
+from urwid import BoxAdapter
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import menu_btn, ok_btn
+from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 

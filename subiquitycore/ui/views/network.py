@@ -22,11 +22,16 @@ Provides network device listings and extended network information
 import logging
 import textwrap
 
-from urwid import (ListBox, Pile,
-                   Text, Columns, Overlay,
-                   LineBox, ProgressBar, WidgetWrap)
+from urwid import (
+    LineBox,
+    Overlay,
+    ProgressBar,
+    Text,
+    WidgetWrap,
+    )
 
 from subiquitycore.ui.buttons import cancel_btn, menu_btn, done_btn
+from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 

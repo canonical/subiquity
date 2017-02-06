@@ -15,13 +15,14 @@
 
 import logging
 
-from urwid import Pile, Columns, Text, ListBox
+from urwid import Text
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.interactive import (PasswordEditor,
                                           RealnameEditor,
                                           StringEditor,
                                           UsernameEditor)
+from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 

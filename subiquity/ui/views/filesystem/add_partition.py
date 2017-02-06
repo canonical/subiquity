@@ -21,9 +21,10 @@ configuration.
 """
 import logging
 import re
-from urwid import connect_signal, ListBox, Pile, Text, Columns, Padding as UrwidPadding, WidgetDisable
+from urwid import connect_signal, Text, Padding as UrwidPadding, WidgetDisable
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
+from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.ui.interactive import (StringEditor, IntegerEditor,
                                           Selector, MountEditor)

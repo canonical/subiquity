@@ -20,13 +20,14 @@ configuration.
 
 """
 import logging
-from urwid import (ListBox, Pile, BoxAdapter, Text, Columns)
+from urwid import BoxAdapter, Text
 
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import (done_btn,
                                       reset_btn,
                                       cancel_btn,
                                       menu_btn)
+from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 
