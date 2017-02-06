@@ -77,7 +77,7 @@ class TabCyclingMixin:
     def keypress(self, size, key):
         key = super(TabCyclingMixin, self).keypress(size, key)
 
-        if key == 'tab':
+        if self._command_map[key] == 'next selectable':
             next_fp = self.focus_position + 1
             for i, (w, o) in enumerate(self._contents[next_fp:], next_fp):
                 if w.selectable():
@@ -86,7 +86,7 @@ class TabCyclingMixin:
                     return
             self._select_first_selectable()
             return key
-        elif key == 'shift tab':
+        elif self._command_map[key] == 'prev selectable':
             for i, (w, o) in reversed(list(enumerate(self._contents[:self.focus_position]))):
                 if w.selectable():
                     self.set_focus(i)
@@ -149,7 +149,7 @@ class TabCyclingListBox(urwid.ListBox):
     def keypress(self, size, key):
         key = super(TabCyclingListBox, self).keypress(size, key)
 
-        if key == 'tab':
+        if self._command_map[key] == 'next selectable':
             next_fp = self.focus_position + 1
             for i, w in enumerate(self.body[next_fp:], next_fp):
                 if w.selectable():
@@ -158,7 +158,7 @@ class TabCyclingListBox(urwid.ListBox):
                     return
             self._select_first_selectable()
             return key
-        elif key == 'shift tab':
+        elif self._command_map[key] == 'prev selectable':
             for i, w in reversed(list(enumerate(self.body[:self.focus_position]))):
                 if w.selectable():
                     self.set_focus(i)
