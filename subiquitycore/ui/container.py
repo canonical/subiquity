@@ -39,7 +39,7 @@ import logging
 
 import urwid
 
-log = logging.getLogger('subiquitycore.ui.frame')
+log = logging.getLogger('subiquitycore.ui.container')
 
 
 def _maybe_select_first_selectable(w):
@@ -106,70 +106,69 @@ class TabCyclingColumns(TabCyclingMixin, urwid.Columns):
 
 
 class TabCyclingListBox(urwid.ListBox):
+    # It feels like it ought to be possible to write TabCyclingMixin
+    # so it works for a ListBox as well, but it seems to be just
+    # awkward enough to make the repeated code the easier and clearer
+    # option.
+
     def __init__(self, body):
-        # urwid.ListBox converts an arbitrarysequence argument to a
+        # urwid.ListBox converts an arbitrary sequence argument to a
         # PollingListWalker, which doesn't work with the below code.
         if getattr(body, 'get_focus', None) is None:
             body = urwid.SimpleListWalker(body)
         super().__init__(body)
 
-    def _select_first_selectable(self):
-        """Select first selectable child (possibily recursively)."""
-        log.debug("%s _select_first_selectable", self.__class__.__name__)
-        i = self._first_selectable()
+    def _set_focus_no_move(self, i):
         # We call set_focus twice because otherwise the listbox
         # attempts to do the minimal amount of scrolling required to
         # get the new focus widget into view, which is not what we
         # want, as if our first widget is a compound widget it results
-        # its last widget being focused -- not at all what we want!
+        # its last widget being focused -- in fact the opposite of
+        # what we want!
         self.set_focus(i)
         self.set_focus(i)
         # I don't really understand why this is required but it seems it is.
         self._invalidate()
-        log.debug(" -> first selectable %s", self.body[i])
-        _maybe_select_first_selectable(self.body[i])
+
+    def _select_first_selectable(self):
+        """Select first selectable child (possibily recursively)."""
+        for i, w in enumerate(self.body):
+            if w.selectable():
+                self._set_focus_no_move(i)
+                _maybe_select_first_selectable(w)
+                return
 
     def _select_last_selectable(self):
         """Select last selectable child (possibily recursively)."""
-        log.debug("%s _select_last_selectable", self.__class__.__name__)
-        i = self._last_selectable()
-        # See comment in _select_first_selectable for why we call this twice.
-        self.set_focus(i)
-        self.set_focus(i)
-        self._invalidate()
-        log.debug(" -> last selectable %s", self.body[i])
-        _maybe_select_last_selectable(self.body[i])
-
-    def _first_selectable(self):
-        """return sequence number of self._contents last selectable item"""
-        for j in range(0, len(self.body)):
-            if self.body[j].selectable():
-                return j
-        return False
-
-    def _last_selectable(self):
-        """return sequence number of self.contents last selectable item"""
-        for j in range(len(self.body) - 1, - 1, - 1):
-            if self.body[j].selectable():
-                return j
-        return False
+        for i, w in reversed(list(enumerate(self.body))):
+            if w.selectable():
+                self._set_focus_no_move(i)
+                _maybe_select_last_selectable(w)
+                return
 
     def keypress(self, size, key):
-        key = super().keypress(size, key)
+        key = super(TabCyclingListBox, self).keypress(size, key)
+
         if key == 'tab':
-            if self.focus_position == self._last_selectable():
-                self._select_first_selectable()
-                return key
-            else:
-                self._keypress_down(size)
+            next_fp = self.focus_position + 1
+            for i, w in enumerate(self.body[next_fp:], next_fp):
+                if w.selectable():
+                    self.set_focus(i)
+                    _maybe_select_first_selectable(w)
+                    return
+            self._select_first_selectable()
+            return key
         elif key == 'shift tab':
-            if self.focus_position == self._first_selectable():
-                self._select_last_selectable()
-                return key
-            else:
-                self._keypress_up(size)
+            for i, w in reversed(list(enumerate(self.body[:self.focus_position]))):
+                if w.selectable():
+                    self.set_focus(i)
+                    _maybe_select_last_selectable(w)
+                    return
+            self._select_last_selectable()
+            return key
         else:
             return key
+
 
 Columns = TabCyclingColumns
 Pile = TabCyclingPile
