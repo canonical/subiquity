@@ -16,13 +16,14 @@
 import logging
 import ipaddress
 
-from urwid import Text
+from urwid import connect_signal, Text
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, menu_btn, cancel_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.interactive import StringEditor
+from subiquitycore.ui.utils import Color, Padding
+from subiquitycore.ui.validation import Toggleable, ValidatingWidgetSet
 
 
 log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface')
@@ -52,6 +53,7 @@ class BaseNetworkConfigureManualView(BaseView):
         self.searchdomains_input.value = ', '.join(self.dev.configured_searchdomains)
         self.error = Text("", align='center')
         #self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
+        self.buttons = self._build_buttons()
         body = [
             Padding.center_79(self._build_iface_inputs()),
             #Padding.line_break(""),
@@ -59,7 +61,7 @@ class BaseNetworkConfigureManualView(BaseView):
             Padding.line_break(""),
             Padding.center_90(Color.info_error(self.error)),
             Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons())
+            Padding.fixed_10(self.buttons)
         ]
         super().__init__(ListBox(body))
 
@@ -72,55 +74,48 @@ class BaseNetworkConfigureManualView(BaseView):
             self.controller.prev_view()
             return
 
+    def _vws(self, caption, input, help, validator=None):
+        text = Text(caption, align="right")
+        decorated = Toggleable(input, 'string_input')
+        captioned = Columns(
+                [
+                    ("weight", 0.2, text),
+                    ("weight", 0.3,
+                     Color.string_input(input,
+                                        focus_map="string_input focus")),
+                    ("weight", 0.5, Text(help))
+                ], dividechars=2
+            )
+        return ValidatingWidgetSet(captioned, decorated, input, validator)
+
     def _build_iface_inputs(self):
-        col1 = [
-            Columns(
-                [
-                    ("weight", 0.2, Text("Subnet:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.subnet_input,
-                                        focus_map="string_input focus")),
-                    ("weight", 0.5, Text("CIDR e.g. %s"%(self.example_address,)))
-                ], dividechars=2
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Address:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.address_input,
-                                        focus_map="string_input focus")),
-                    ("weight", 0.5, Text(""))
-                ], dividechars=2
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Gateway:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.gateway_input,
-                                        focus_map="string_input focus")),
-                    ("weight", 0.5, Text(""))
-                ], dividechars=2
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Name servers:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.nameserver_input,
-                                        focus_map="string_input focus")),
-                    ("weight", 0.5, Text("IP addresses, comma separated"))
-                ], dividechars=2
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Search domains:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.searchdomains_input,
-                                        focus_map="string_input focus")),
-                    ("weight", 0.5, Text("Domains, comma separated"))
-                ], dividechars=2
-            ),
+        self.all_vws = [
+            self._vws("Subnet:", self.subnet_input, "CIDR e.g. %s"%(self.example_address,), self._validate_subnet),
+            self._vws("Address:", self.address_input, ""),
+            self._vws("Gateway:", self.gateway_input, ""),
+            self._vws("Name servers:", self.nameserver_input, "IP addresses, comma separated"),
+            self._vws("Search domains:", self.searchdomains_input, "Domains, comma separated"),
         ]
-        return Pile(col1)
+        for vw in self.all_vws:
+            connect_signal(vw, 'validated', self._validated)
+        return Pile(self.all_vws)
+
+    def _validate_subnet(self):
+        subnet = self.subnet_input.value
+        if '/' not in subnet:
+            return "should be in CIDR form (xx.xx.xx.xx/yy)"
+
+    def _validated(self, sender):
+        error = False
+        for w in self.all_vws:
+            if w.has_error():
+                error = True
+                break
+        if error:
+            self.buttons[0].disable()
+            self.buttons.focus_position = 1
+        else:
+            self.buttons[0].enable()
 
     def _build_set_as_default_gw_button(self):
         devs = self.model.get_all_netdevs()
@@ -153,7 +148,7 @@ class BaseNetworkConfigureManualView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
+            Toggleable(done, 'button'),
             Color.button(cancel, focus_map='button focus')
         ]
         return Pile(buttons)
