@@ -141,10 +141,10 @@ class AddPartitionView(BaseView):
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
-        self.done_btn = Toggleable(done_btn(on_press=self.done), 'button')
+        done = done_btn(on_press=self.done)
 
         buttons = [
-            self.done_btn,
+            Toggleable(done, 'button'),
             Color.button(cancel, focus_map='button focus')
         ]
         return Pile(buttons)
@@ -217,7 +217,7 @@ class AddPartitionView(BaseView):
                 log.debug("%s has error", w)
                 error = True
         if error:
-            self.done_btn.disable()
+            self.button_pile[0].disable()
             self.button_pile.focus_position = 1
         else:
             self.done_btn.enable()
