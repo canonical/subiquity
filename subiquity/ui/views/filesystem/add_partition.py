@@ -34,15 +34,23 @@ from subiquity.models.filesystem import (_humanize_size,
                                          HUMAN_UNITS)
 from subiquity.ui.mount import MountSelector
 
-INVALID_PARTITION_SIZE = 'Invalid Partition Size'
-PARTITION_SIZE_TOO_BIG = 'Requested size too big'
-PARTITION_ERRORS = [
-    INVALID_PARTITION_SIZE,
-    PARTITION_SIZE_TOO_BIG,
-]
-
 
 log = logging.getLogger('subiquity.ui.filesystem.add_partition')
+
+
+class Toggleable(WidgetWrap):
+
+    def __init__(self, original, active_color):
+        self.original = original
+        self.active_color = active_color
+        self.enable()
+
+    def enable(self):
+        self._w = AttrMap(self.original, self.active_color, self.active_color + ' focus')
+
+    def disable(self):
+        log.debug("disable %s", self)
+        self._w = WidgetDisable(Color.info_minor(self.original))
 
 
 class ErrorDecoration(WidgetWrap):
@@ -69,6 +77,7 @@ class ErrorDecoration(WidgetWrap):
             self._w.contents[1] = t
         else:
             self._w.contents.append(t)
+        self.in_error = in_error
 
     def hide_error(self):
         if len(self._w.contents) > 1:
@@ -91,13 +100,8 @@ class ErrorDecoration(WidgetWrap):
         self.validate()
 
 
-def _col(caption, input, active=True, validator=None):
+def _col(caption, input, validator=None):
     text = Text(caption, align="right")
-    if active:
-        input = Color.string_input(input, focus_map="string_input focus")
-    else:
-        input = Color.info_minor(WidgetDisable(input))
-        text = Color.info_minor(text)
     col = Columns(
             [
                 ("weight", 0.2, text),
@@ -116,15 +120,8 @@ class AddPartitionView(BaseView):
         self.selected_disk = selected_disk
         self.disk_obj = self.model.get_disk(selected_disk)
 
-        self.partnum = IntegerEditor(
-            caption="",
-            default=self.disk_obj.lastpartnumber + 1)
         self.size_str = _humanize_size(self.disk_obj.freespace)
-        self.size = StringEditor(caption="")
-        self.mountpoint = MountSelector(self.model)
-        self.fstype = Selector(opts=self.model.supported_filesystems)
-        connect_signal(self.fstype, 'select', self.select_fstype)
-        self.pile = self._container()
+
         self.button_pile = self._build_buttons()
         body = [
             Columns(
@@ -135,7 +132,7 @@ class AddPartitionView(BaseView):
                 ]
             ),
             Padding.line_break(""),
-            self.pile,
+            self._build_container(),
             Padding.line_break(""),
             Padding.fixed_10(self.button_pile),
         ]
@@ -144,10 +141,10 @@ class AddPartitionView(BaseView):
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
-        self.done_btn = done_btn(on_press=self.done)
+        self.done_btn = Toggleable(done_btn(on_press=self.done), 'button')
 
         buttons = [
-            Color.button(self.done_btn, focus_map='button focus'),
+            self.done_btn,
             Color.button(cancel, focus_map='button focus')
         ]
         return Pile(buttons)
@@ -174,39 +171,56 @@ class AddPartitionView(BaseView):
         mnts = self.model.get_mounts2()
         dev = mnts.get(self.mountpoint.value)
         if dev is not None:
-            return "%s is mounted at %s"%(dev, self.mountpoint.value)
+            return "%s is already mounted at %s"%(dev, self.mountpoint.value)
 
-    def _container(self):
-        total_items = [
-            _col("Partition number", self.partnum),
-            _col("Size (max {})".format(self.size_str), self.size, validator=self._validate_size),
-            _col("Format", self.fstype),
-            _col("Mount", self.mountpoint, validator=self._validate_mount),
+    def _build_container(self):
+
+        self.partnum = IntegerEditor(caption="", default=self.disk_obj.lastpartnumber + 1)
+        self.partnum_decorated = Color.string_input(self.partnum, focus_map='string_input focus')
+        self.partnum_row = _col("Partition number", self.partnum_decorated)
+
+        self.size = StringEditor(caption="")
+        self.size_decorated = Color.string_input(self.size, focus_map='string_input focus')
+        self.size_row = _col("Size (max {})".format(self.size_str), self.size_decorated, validator=self._validate_size)
+
+        self.fstype = Selector(opts=self.model.supported_filesystems)
+        connect_signal(self.fstype, 'select', self.select_fstype)
+        self.fstype_decorated = Color.string_input(self.fstype, focus_map='string_input focus')
+        self.fstype_row = _col("Format", self.fstype_decorated)
+
+        self.mountpoint = MountSelector(self.model)
+        self.mountpoint_decorated = Toggleable(self.mountpoint, 'string_input')
+        self.mountpoint_row = _col("Mount", self.mountpoint_decorated, validator=self._validate_mount)
+
+        self.all_rows = [
+            self.partnum_row,
+            self.size_row,
+            self.fstype_row,
+            self.mountpoint_row,
         ]
-        for item in total_items:
-            connect_signal(item, 'validated', self._validated)
-        return Pile(total_items)
+        for row in self.all_rows:
+            connect_signal(row, 'validated', self._validated)
+        return Pile(self.all_rows)
 
     def _enable_disable_mount(self, enabled):
-        ed = _col("Mount", self.mountpoint, enabled, validator=self._validate_mount)
-        connect_signal(ed, 'validated', self._validated)
-        self.pile.contents[-1] = (
-            ed, self.pile.options('pack'))
         if enabled:
-            ed.validate()
+            self.mountpoint_decorated.enable()
+            self.mountpoint_row.validate()
         else:
-            ed.hide_error()
+            self.mountpoint_decorated.disable()
+            self.mountpoint_row.hide_error()
 
     def _validated(self, sender):
         error = False
-        for w, o in self.pile.contents:
+        for w in self.all_rows:
             if w.has_error():
+                log.debug("%s has error", w)
                 error = True
         if error:
-            self.button_pile.contents[0] = (Color.info_minor(WidgetDisable(self.done_btn)), self.button_pile.options('pack'))
+            self.done_btn.disable()
             self.button_pile.focus_position = 1
         else:
-            self.button_pile.contents[0] = (Color.button(self.done_btn, focus_map='button focus'), self.button_pile.options('pack'))
+            self.done_btn.enable()
 
     def select_fstype(self, sender, fs):
         if fs.is_mounted != sender.value.is_mounted:
