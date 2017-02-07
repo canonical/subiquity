@@ -21,7 +21,7 @@ configuration.
 """
 import logging
 import re
-from urwid import connect_signal, Text, Padding as UrwidPadding, WidgetDisable
+from urwid import connect_signal, Text, WidgetDisable, WidgetWrap
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
@@ -44,21 +44,53 @@ PARTITION_ERRORS = [
 
 log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 
-def _col(caption, input, active=True, padding=0):
+
+class ErrorDecoration(WidgetWrap):
+    def __init__(self, w, validator):
+        self.validator = validator
+        super().__init__(Pile([w]))
+
+    def set_error(self, err_msg):
+        err_msg = "ERROR: " + err_msg
+        if self.has_error():
+            self._w.contents[1][0].base_widget.set_text(err_msg)
+        else:
+            self._w.contents.append((Color.info_error(Text(err_msg, align="center")), self._w.options('pack')))
+
+    def hide_error(self):
+        if self.has_error():
+            self._w.contents = self._w.contents[:1]
+
+    def has_error(self):
+        return len(self._w.contents) > 1
+
+    def validate(self):
+        if self.validator is not None:
+            err = self.validator()
+            if err is None:
+                self.hide_error()
+            else:
+                self.set_error(err)
+
+    def lost_focus(self):
+        self.validate()
+
+
+def _col(caption, input, active=True, validator=None):
     text = Text(caption, align="right")
     if active:
         input = Color.string_input(input, focus_map="string_input focus")
     else:
         input = Color.info_minor(WidgetDisable(input))
         text = Color.info_minor(text)
-    if padding:
-        input = UrwidPadding(input, left=padding)
-    return Columns(
+    col = Columns(
             [
                 ("weight", 0.2, text),
                 ("weight", 0.3, input)
             ],
         dividechars=4)
+    return ErrorDecoration(col, validator)
+
 
 class AddPartitionView(BaseView):
 
@@ -75,7 +107,7 @@ class AddPartitionView(BaseView):
         self.size_str = _humanize_size(self.disk_obj.freespace)
         self.size = StringEditor(
             caption="".format(self.size_str))
-        self.mountpoint = MountSelector()
+        self.mountpoint = MountSelector(self.model)
         self.fstype = Selector(opts=self.model.supported_filesystems)
         connect_signal(self.fstype, 'select', self.select_fstype)
         self.pile = self._container()
@@ -105,19 +137,37 @@ class AddPartitionView(BaseView):
         ]
         return Pile(buttons)
 
+    def _validate_size(self):
+        log.debug("hi from _validate_size")
+        if 'x' in self.size.value:
+            return 'hi'
+        else:
+            return None
+
+    def _validate_mount(self):
+        mnts = self.model.get_mounts2()
+        dev = mnts.get(self.mountpoint.value)
+        if dev is not None:
+            return "%s is mounted at %s"%(dev, self.mountpoint.value)
+
     def _container(self):
         total_items = [
             _col("Partition number", self.partnum),
-            _col("Size (max {})".format(self.size_str), self.size),
+            _col("Size (max {})".format(self.size_str), self.size, validator=self._validate_size),
             _col("Format", self.fstype),
-            _col("Mount", self.mountpoint),
+            _col("Mount", self.mountpoint, validator=self._validate_mount),
         ]
-        return Pile(total_items)
+        ftp = Pile(total_items)
+        return ftp
 
     def _enable_disable_mount(self, enabled):
+        ed = _col("Mount", self.mountpoint, enabled)
         self.pile.contents[-1] = (
-            _col("Mount", self.mountpoint, enabled),
-            self.pile.options('pack'))
+            ed, self.pile.options('pack'))
+        if enabled:
+            ed.validate()
+        else:
+            ed.hide_error()
 
     def select_fstype(self, sender, fs):
         if fs.is_mounted != sender.value.is_mounted:

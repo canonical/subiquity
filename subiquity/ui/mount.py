@@ -13,7 +13,6 @@ common_mountpoints = [
     '/usr',
     '/var',
     '/var/lib',
-    ('other', True, None)
     ]
 
 class _MountEditor(StringEditor):
@@ -30,8 +29,21 @@ class _MountEditor(StringEditor):
         return super().keypress(size, key)
 
 class MountSelector(WidgetWrap):
-    def __init__(self):
-        self._selector = Selector(opts=common_mountpoints)
+    def __init__(self, model):
+        mounts = model.get_mounts2()
+        opts = []
+        first_opt = None
+        max_len = max(map(len, common_mountpoints))
+        for i, mnt in enumerate(common_mountpoints):
+            devpath = mounts.get(mnt)
+            if devpath is None:
+                if first_opt is None:
+                    first_opt = i
+                opts.append((mnt, True, mnt))
+            else:
+                opts.append(("%-*s (%s)"%(max_len, mnt, devpath), False, None))
+        opts.append(('other', True, None))
+        self._selector = Selector(opts, first_opt)
         connect_signal(self._selector, 'select', self._select_mount)
         self._other = _MountEditor(caption='', edit_text='/')
         super().__init__(Pile([self._selector]))

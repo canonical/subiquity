@@ -587,6 +587,14 @@ class FilesystemModel(object):
 
         return mounts
 
+    def get_mounts2(self):
+        r = {}
+        for dev in self.get_all_disks():
+            for k, v in dev._mounts.items():
+                r[v] = k
+
+        return r
+
     def get_disk_action(self, disk):
         return self.devices[disk].get_actions()
 

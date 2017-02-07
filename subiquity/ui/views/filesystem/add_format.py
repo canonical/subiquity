@@ -36,7 +36,7 @@ class AddFormatView(BaseView):
         self.selected_disk = selected_disk
         self.disk_obj = self.model.get_disk(selected_disk)
 
-        self.mountpoint = MountSelector()
+        self.mountpoint = MountSelector(self.model)
         self.fstype = Selector(opts=self.model.supported_filesystems)
         connect_signal(self.fstype, 'select', self.select_fstype)
         self.pile = self._container()
