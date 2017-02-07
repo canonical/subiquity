@@ -220,7 +220,7 @@ class AddPartitionView(BaseView):
             self.button_pile[0].disable()
             self.button_pile.focus_position = 1
         else:
-            self.done_btn.enable()
+            self.button_pile[0].enable()
 
     def select_fstype(self, sender, fs):
         if fs.is_mounted != sender.value.is_mounted:

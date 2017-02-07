@@ -23,7 +23,7 @@ from subiquitycore.ui.interactive import Selector
 from subiquitycore.view import BaseView
 
 from subiquity.ui.mount import MountSelector
-from subiquity.ui.views.filesystem.add_partition import _col
+from subiquity.ui.views.filesystem.add_partition import _col, Toggleable, ErrorDecoration
 
 
 log = logging.getLogger('subiquity.ui.filesystem.add_format')
@@ -37,12 +37,14 @@ class AddFormatView(BaseView):
         self.disk_obj = self.model.get_disk(selected_disk)
 
         self.mountpoint = MountSelector(self.model)
+
         self.fstype = Selector(opts=self.model.supported_filesystems)
         connect_signal(self.fstype, 'select', self.select_fstype)
-        self.pile = self._container()
+
+        self.buttons = self._build_buttons()
         body = [
             Padding.line_break(""),
-            self.pile,
+            self._build_container(),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
         ]
@@ -59,17 +61,46 @@ class AddFormatView(BaseView):
         ]
         return Pile(buttons)
 
-    def _container(self):
-        total_items = [
-            _col("Format", self.fstype),
-            _col("Mount", self.mountpoint),
+    def _validate_mount(self):
+        mnts = self.model.get_mounts2()
+        dev = mnts.get(self.mountpoint.value)
+        if dev is not None:
+            return "%s is already mounted at %s"%(dev, self.mountpoint.value)
+
+    def _build_container(self):
+        self.fstype_decorated = Color.string_input(self.fstype, focus_map='string_input focus')
+        self.fstype_row = _col("Format", self.fstype_decorated)
+
+        self.mountpoint_decorated = Toggleable(self.mountpoint, 'string_input')
+        self.mountpoint_row = _col("Mount", self.mountpoint_decorated, validator=self._validate_mount)
+
+        self.all_rows = [
+            self.fstype_row,
+            self.mountpoint_row,
         ]
-        return Pile(total_items)
+        for row in self.all_rows:
+            connect_signal(row, 'validated', self._validated)
+        return Pile(self.all_rows)
+
+    def _validated(self, sender):
+        error = False
+        for w in self.all_rows:
+            if w.has_error():
+                log.debug("%s has error", w)
+                error = True
+        if error:
+            self.buttons[0].disable()
+            self.buttons.focus_position = 1
+        else:
+            self.buttons[0].enable()
 
     def _enable_disable_mount(self, enabled):
-        self.pile.contents[-1] = (
-            _col("Mount", self.mountpoint, enabled),
-            self.pile.options('pack'))
+        if enabled:
+            self.mountpoint_decorated.enable()
+            self.mountpoint_row.validate()
+        else:
+            self.mountpoint_decorated.disable()
+            self.mountpoint_row.hide_error()
 
     def select_fstype(self, sender, fs):
         if fs.is_mounted != sender.value.is_mounted:
