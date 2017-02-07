@@ -21,7 +21,7 @@ configuration.
 """
 import logging
 import re
-from urwid import connect_signal, Text, WidgetDisable, WidgetWrap
+from urwid import AttrMap, connect_signal, Text, WidgetDisable, WidgetWrap
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
@@ -46,23 +46,37 @@ log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 
 
 class ErrorDecoration(WidgetWrap):
+
+    signals = ['validated']
+
     def __init__(self, w, validator):
         self.validator = validator
+        self.in_error = False
         super().__init__(Pile([w]))
 
     def set_error(self, err_msg):
-        err_msg = "ERROR: " + err_msg
-        if self.has_error():
-            self._w.contents[1][0].base_widget.set_text(err_msg)
+        in_error = True
+        if isinstance(err_msg, tuple):
+            if len(err_msg) == 3:
+                color, err_msg, in_error = err_msg
+            else:
+                color, err_msg = err_msg
         else:
-            self._w.contents.append((Color.info_error(Text(err_msg, align="center")), self._w.options('pack')))
+            color = 'info_error'
+        e = AttrMap(Text(err_msg, align="center"), color)
+        t = (e, self._w.options('pack'))
+        if len(self._w.contents) > 1:
+            self._w.contents[1] = t
+        else:
+            self._w.contents.append(t)
 
     def hide_error(self):
-        if self.has_error():
+        if len(self._w.contents) > 1:
             self._w.contents = self._w.contents[:1]
+        self.in_error = False
 
     def has_error(self):
-        return len(self._w.contents) > 1
+        return self.in_error
 
     def validate(self):
         if self.validator is not None:
@@ -71,6 +85,7 @@ class ErrorDecoration(WidgetWrap):
                 self.hide_error()
             else:
                 self.set_error(err)
+            self._emit('validated')
 
     def lost_focus(self):
         self.validate()
@@ -105,12 +120,12 @@ class AddPartitionView(BaseView):
             caption="",
             default=self.disk_obj.lastpartnumber + 1)
         self.size_str = _humanize_size(self.disk_obj.freespace)
-        self.size = StringEditor(
-            caption="".format(self.size_str))
+        self.size = StringEditor(caption="")
         self.mountpoint = MountSelector(self.model)
         self.fstype = Selector(opts=self.model.supported_filesystems)
         connect_signal(self.fstype, 'select', self.select_fstype)
         self.pile = self._container()
+        self.button_pile = self._build_buttons()
         body = [
             Columns(
                 [
@@ -122,27 +137,38 @@ class AddPartitionView(BaseView):
             Padding.line_break(""),
             self.pile,
             Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons())
+            Padding.fixed_10(self.button_pile),
         ]
         partition_box = Padding.center_50(ListBox(body))
         super().__init__(partition_box)
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        self.done_btn = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
+            Color.button(self.done_btn, focus_map='button focus'),
             Color.button(cancel, focus_map='button focus')
         ]
         return Pile(buttons)
 
     def _validate_size(self):
-        log.debug("hi from _validate_size")
-        if 'x' in self.size.value:
-            return 'hi'
-        else:
-            return None
+        v = self.size.value
+        if not v:
+            return
+        r = '(\d+[\.]?\d*)([{}])?$'.format(''.join(HUMAN_UNITS))
+        match = re.match(r, v)
+        if not match:
+            return "Invalid partition size"
+        unit = match.group(2)
+        if unit is None:
+            unit = self.size_str[-1]
+            v += unit
+            self.size.value = v
+        sz = _dehumanize_size(v)
+        if sz > self.disk_obj.freespace:
+            self.size.value = self.size_str
+            return ("info_minor", "Capped partition size at %s"%(self.size_str,), False)
 
     def _validate_mount(self):
         mnts = self.model.get_mounts2()
@@ -157,17 +183,30 @@ class AddPartitionView(BaseView):
             _col("Format", self.fstype),
             _col("Mount", self.mountpoint, validator=self._validate_mount),
         ]
-        ftp = Pile(total_items)
-        return ftp
+        for item in total_items:
+            connect_signal(item, 'validated', self._validated)
+        return Pile(total_items)
 
     def _enable_disable_mount(self, enabled):
-        ed = _col("Mount", self.mountpoint, enabled)
+        ed = _col("Mount", self.mountpoint, enabled, validator=self._validate_mount)
+        connect_signal(ed, 'validated', self._validated)
         self.pile.contents[-1] = (
             ed, self.pile.options('pack'))
         if enabled:
             ed.validate()
         else:
             ed.hide_error()
+
+    def _validated(self, sender):
+        error = False
+        for w, o in self.pile.contents:
+            if w.has_error():
+                error = True
+        if error:
+            self.button_pile.contents[0] = (Color.info_minor(WidgetDisable(self.done_btn)), self.button_pile.options('pack'))
+            self.button_pile.focus_position = 1
+        else:
+            self.button_pile.contents[0] = (Color.button(self.done_btn, focus_map='button focus'), self.button_pile.options('pack'))
 
     def select_fstype(self, sender, fs):
         if fs.is_mounted != sender.value.is_mounted:
@@ -177,69 +216,6 @@ class AddPartitionView(BaseView):
         self.controller.prev_view()
 
     def done(self, result):
-        """ partition spec
-
-        { 'partition_number': Int,
-          'size': Int(M|G),
-          'format' Str(ext4|btrfs..,
-          'mountpoint': Str
-        }
-        """
-        def __get_valid_size(size_str):
-            r = '(\d*)(\d+[\.]?\d*)[{}]*$'.format(''.join(HUMAN_UNITS))
-            match = re.match(r, size_str)
-            log.debug('valid_size: input:{} match:{}'.format(size_str, match))
-            if match:
-                return match.group(0)
-
-            return ''
-
-        def __append_unit(input_size):
-            ''' examine the input for a unit string.
-                if not present, use the unit string from
-                the displayed maximum size
-
-                returns: number string with unit size
-                '''
-            unit_regex = '[{}]$'.format(''.join(HUMAN_UNITS))
-            input_has_unit = re.findall(unit_regex, input_size)
-            log.debug('input:{} re:{}'.format(input_size, input_has_unit))
-            if len(input_has_unit) == 0:
-                # input does not have unit string
-                displayed_unit = re.search(unit_regex, self.size_str)
-                log.debug('input:{} re:{}'.format(self.size_str,
-                                                  displayed_unit))
-                input_size += displayed_unit.group(0)
-
-            return input_size
-
-        def __get_size():
-            log.debug('Getting partition size')
-            log.debug('size.value={} size_str={} freespace={}'.format(
-                      self.size.value, self.size_str,
-                      self.disk_obj.freespace))
-            if self.size.value == '' or \
-               self.size.value == self.size_str:
-                log.debug('Using default value: {}'.format(
-                          self.disk_obj.freespace))
-                return int(self.disk_obj.freespace)
-            else:
-                # 120B 120
-                valid_size = __get_valid_size(self.size.value)
-                if len(valid_size) == 0:
-                    return INVALID_PARTITION_SIZE
-
-                self.size.value = __append_unit(valid_size)
-                log.debug('dehumanize_size({})'.format(self.size.value))
-                sz = _dehumanize_size(self.size.value)
-                if sz > self.disk_obj.freespace:
-                    log.debug(
-                        'Input size too big for device: ({} > {})'.format(
-                            sz, self.disk_obj.freespace))
-                    log.warn('Capping size @ max freespace: {}'.format(
-                        self.disk_obj.freespace))
-                    sz = self.disk_obj.freespace
-                return sz
 
         fstype = self.fstype.value
 
@@ -248,28 +224,20 @@ class AddPartitionView(BaseView):
         else:
             mount = None
 
+        if self.size.value:
+            size = _dehumanize_size(self.size.value)
+            if size > self.disk_obj.freespace:
+                size = self.disk_obj.freespace
+        else:
+            size = self.disk_obj.freespace
+
         result = {
             "partnum": self.partnum.value,
             "raw_size": self.size.value,
-            "bytes": __get_size(),
+            "bytes": size,
             "fstype": fstype.label,
             "mountpoint": mount,
         }
-
-        # Validate size (bytes) input
-        if result['bytes'] in PARTITION_ERRORS:
-            log.error(result['bytes'])
-            self.size.set_error('ERROR: {}'.format(result['bytes']))
-            return
-        # Validate mountpoint input
-        if mount is not None:
-            try:
-                self.model.valid_mount(result)
-            except ValueError as e:
-                log.exception('Invalid mount point')
-                self.mountpoint.set_error('Error: {}'.format(str(e)))
-                log.debug("Invalid mountpoint, try again")
-                return
 
         log.debug("Add Partition Result: {}".format(result))
         self.controller.add_disk_partition_handler(self.disk_obj.devpath, result)
