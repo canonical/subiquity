@@ -23,7 +23,7 @@ from subiquitycore.ui.interactive import Selector
 from subiquitycore.view import BaseView
 
 from subiquity.ui.mount import MountSelector
-from subiquity.ui.views.filesystem.add_partition import _col, Toggleable, ErrorDecoration
+from subiquity.ui.views.filesystem.add_partition import vws
 
 
 log = logging.getLogger('subiquity.ui.filesystem.add_format')
@@ -37,7 +37,6 @@ class AddFormatView(BaseView):
         self.disk_obj = self.model.get_disk(selected_disk)
 
         self.mountpoint = MountSelector(self.model)
-
         self.fstype = Selector(opts=self.model.supported_filesystems)
         connect_signal(self.fstype, 'select', self.select_fstype)
 
@@ -68,23 +67,20 @@ class AddFormatView(BaseView):
             return "%s is already mounted at %s"%(dev, self.mountpoint.value)
 
     def _build_container(self):
-        self.fstype_decorated = Color.string_input(self.fstype, focus_map='string_input focus')
-        self.fstype_row = _col("Format", self.fstype_decorated)
-
-        self.mountpoint_decorated = Toggleable(self.mountpoint, 'string_input')
-        self.mountpoint_row = _col("Mount", self.mountpoint_decorated, validator=self._validate_mount)
+        self.fstype_vws = vws("Format", self.fstype)
+        self.mountpoint_vws = vws("Mount", self.mountpoint, validator=self._validate_mount)
 
         self.all_rows = [
-            self.fstype_row,
-            self.mountpoint_row,
+            self.fstype_vws,
+            self.mountpoint_vws,
         ]
-        for row in self.all_rows:
-            connect_signal(row, 'validated', self._validated)
+        for vw in self.all_vws:
+            connect_signal(vw, 'validated', self._validated)
         return Pile(self.all_rows)
 
     def _validated(self, sender):
         error = False
-        for w in self.all_rows:
+        for w in self.all_vws:
             if w.has_error():
                 log.debug("%s has error", w)
                 error = True
@@ -96,11 +92,9 @@ class AddFormatView(BaseView):
 
     def _enable_disable_mount(self, enabled):
         if enabled:
-            self.mountpoint_decorated.enable()
-            self.mountpoint_row.validate()
+            self.mountpoint_vws.enable()
         else:
-            self.mountpoint_decorated.disable()
-            self.mountpoint_row.hide_error()
+            self.mountpoint_vws.disable()
 
     def select_fstype(self, sender, fs):
         if fs.is_mounted != sender.value.is_mounted:

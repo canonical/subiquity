@@ -43,24 +43,39 @@ class Toggleable(WidgetWrap):
     def __init__(self, original, active_color):
         self.original = original
         self.active_color = active_color
+        self.enabled = False
         self.enable()
 
     def enable(self):
-        self._w = AttrMap(self.original, self.active_color, self.active_color + ' focus')
+        if not self.enabled:
+            self._w = AttrMap(self.original, self.active_color, self.active_color + ' focus')
+            self.enabled = True
 
     def disable(self):
-        log.debug("disable %s", self)
-        self._w = WidgetDisable(Color.info_minor(self.original))
+        if self.enabled:
+            self._w = WidgetDisable(Color.info_minor(self.original))
+            self.enabled = False
 
 
-class ErrorDecoration(WidgetWrap):
+class ValidatingWidgetSet(WidgetWrap):
 
     signals = ['validated']
 
-    def __init__(self, w, validator):
+    def __init__(self, captioned, decorated, input, validator):
+        self.captioned = captioned
+        self.decorated = decorated
+        self.input = input
         self.validator = validator
         self.in_error = False
-        super().__init__(Pile([w]))
+        super().__init__(Pile([captioned]))
+
+    def disable(self):
+        self.decorated.disable()
+        self.hide_error()
+
+    def enable(self):
+        self.decorated.enable()
+        self.validate()
 
     def set_error(self, err_msg):
         in_error = True
@@ -100,15 +115,16 @@ class ErrorDecoration(WidgetWrap):
         self.validate()
 
 
-def _col(caption, input, validator=None):
+def vws(caption, input, validator=None):
     text = Text(caption, align="right")
-    col = Columns(
+    decorated = Toggleable(input, 'string_input')
+    captioned = Columns(
             [
                 ("weight", 0.2, text),
-                ("weight", 0.3, input)
+                ("weight", 0.3, decorated)
             ],
         dividechars=4)
-    return ErrorDecoration(col, validator)
+    return ValidatingWidgetSet(captioned, decorated, input, validator)
 
 
 class AddPartitionView(BaseView):
@@ -122,7 +138,12 @@ class AddPartitionView(BaseView):
 
         self.size_str = _humanize_size(self.disk_obj.freespace)
 
-        self.button_pile = self._build_buttons()
+        self.partnum = IntegerEditor(caption="", default=self.disk_obj.lastpartnumber + 1)
+        self.size = StringEditor(caption="")
+        self.fstype = Selector(opts=self.model.supported_filesystems)
+        self.mountpoint = MountSelector(self.model)
+
+        self.buttons = self._build_buttons()
         body = [
             Columns(
                 [
@@ -134,7 +155,7 @@ class AddPartitionView(BaseView):
             Padding.line_break(""),
             self._build_container(),
             Padding.line_break(""),
-            Padding.fixed_10(self.button_pile),
+            Padding.fixed_10(self.buttons),
         ]
         partition_box = Padding.center_50(ListBox(body))
         super().__init__(partition_box)
@@ -175,52 +196,38 @@ class AddPartitionView(BaseView):
 
     def _build_container(self):
 
-        self.partnum = IntegerEditor(caption="", default=self.disk_obj.lastpartnumber + 1)
-        self.partnum_decorated = Color.string_input(self.partnum, focus_map='string_input focus')
-        self.partnum_row = _col("Partition number", self.partnum_decorated)
+        self.partnum_vws = vws("Partition number", self.partnum)
+        self.size_vws = vws("Size (max {})".format(self.size_str), self.size, validator=self._validate_size)
+        self.fstype_vws = vws("Format", self.fstype)
+        self.mountpoint_vws = vws("Mount", self.mountpoint, validator=self._validate_mount)
 
-        self.size = StringEditor(caption="")
-        self.size_decorated = Color.string_input(self.size, focus_map='string_input focus')
-        self.size_row = _col("Size (max {})".format(self.size_str), self.size_decorated, validator=self._validate_size)
-
-        self.fstype = Selector(opts=self.model.supported_filesystems)
-        connect_signal(self.fstype, 'select', self.select_fstype)
-        self.fstype_decorated = Color.string_input(self.fstype, focus_map='string_input focus')
-        self.fstype_row = _col("Format", self.fstype_decorated)
-
-        self.mountpoint = MountSelector(self.model)
-        self.mountpoint_decorated = Toggleable(self.mountpoint, 'string_input')
-        self.mountpoint_row = _col("Mount", self.mountpoint_decorated, validator=self._validate_mount)
-
-        self.all_rows = [
-            self.partnum_row,
-            self.size_row,
-            self.fstype_row,
-            self.mountpoint_row,
+        self.all_vws = [
+            self.partnum_vws,
+            self.size_vws,
+            self.fstype_vws,
+            self.mountpoint_vws,
         ]
-        for row in self.all_rows:
-            connect_signal(row, 'validated', self._validated)
-        return Pile(self.all_rows)
+        for vw in self.all_vws:
+            connect_signal(vw, 'validated', self._validated)
+        return Pile(self.all_vws)
 
     def _enable_disable_mount(self, enabled):
         if enabled:
-            self.mountpoint_decorated.enable()
-            self.mountpoint_row.validate()
+            self.mountpoint_vws.enable()
         else:
-            self.mountpoint_decorated.disable()
-            self.mountpoint_row.hide_error()
+            self.mountpoint_vws.disable()
 
     def _validated(self, sender):
         error = False
-        for w in self.all_rows:
+        for w in self.all_vws:
             if w.has_error():
                 log.debug("%s has error", w)
                 error = True
         if error:
-            self.button_pile[0].disable()
-            self.button_pile.focus_position = 1
+            self.buttons[0].disable()
+            self.buttons.focus_position = 1
         else:
-            self.button_pile[0].enable()
+            self.buttons[0].enable()
 
     def select_fstype(self, sender, fs):
         if fs.is_mounted != sender.value.is_mounted:
