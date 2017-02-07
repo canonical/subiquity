@@ -221,8 +221,8 @@ class AddPartitionView(BaseView):
         error = False
         for w in self.all_vws:
             if w.has_error():
-                log.debug("%s has error", w)
                 error = True
+                break
         if error:
             self.buttons[0].disable()
             self.buttons.focus_position = 1
