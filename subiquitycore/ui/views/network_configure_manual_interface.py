@@ -29,6 +29,15 @@ from subiquitycore.ui.validation import Toggleable, ValidatingWidgetSet
 log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface')
 
 
+def _validator_from_cleaner(cleaner):
+    def validator():
+        try:
+            cleaner()
+        except ValueError as v:
+            return str(v)
+    return validator
+
+
 class BaseNetworkConfigureManualView(BaseView):
 
     def __init__(self, model, controller, name):
@@ -90,20 +99,46 @@ class BaseNetworkConfigureManualView(BaseView):
 
     def _build_iface_inputs(self):
         self.all_vws = [
-            self._vws("Subnet:", self.subnet_input, "CIDR e.g. %s"%(self.example_address,), self._validate_subnet),
-            self._vws("Address:", self.address_input, ""),
-            self._vws("Gateway:", self.gateway_input, ""),
-            self._vws("Name servers:", self.nameserver_input, "IP addresses, comma separated"),
+            self._vws("Subnet:", self.subnet_input, "CIDR e.g. %s"%(self.example_address,),
+                          _validator_from_cleaner(self._clean_subnet)),
+            self._vws("Address:", self.address_input, "",
+                          _validator_from_cleaner(self._clean_address)),
+            self._vws("Gateway:", self.gateway_input, "",
+                          _validator_from_cleaner(self._clean_gateway)),
+            self._vws("Name servers:", self.nameserver_input, "IP addresses, comma separated",
+                          _validator_from_cleaner(self._clean_nameservers)),
             self._vws("Search domains:", self.searchdomains_input, "Domains, comma separated"),
         ]
         for vw in self.all_vws:
             connect_signal(vw, 'validated', self._validated)
         return Pile(self.all_vws)
 
-    def _validate_subnet(self):
+    def _clean_subnet(self):
         subnet = self.subnet_input.value
         if '/' not in subnet:
-            return "should be in CIDR form (xx.xx.xx.xx/yy)"
+            raise ValueError("should be in CIDR form (xx.xx.xx.xx/yy)")
+        return self.ip_network_cls(subnet)
+
+    def _clean_address(self):
+        address = self.ip_address_cls(self.address_input.value)
+        try:
+            subnet = self._clean_subnet()
+        except ValueError:
+            return
+        if address not in subnet:
+            raise ValueError("'%s' is not contained in '%s'" % (address, subnet))
+        return address
+
+    def _clean_gateway(self):
+        return self.ip_address_cls(self.gateway_input.value)
+
+    def _clean_nameservers(self):
+        nameservers = []
+        for ns in self.nameserver_input.value.split(','):
+            ns = ns.strip()
+            if ns:
+                nameservers.append(ipaddress.ip_address(ns.strip()))
+        return nameservers
 
     def _validated(self, sender):
         error = False
@@ -153,55 +188,20 @@ class BaseNetworkConfigureManualView(BaseView):
         ]
         return Pile(buttons)
 
-    def validate(self, result):
-        if '/' not in result['network']:
-            raise ValueError("Subnet: should be in CIDR form (xx.xx.xx.xx/yy)")
-
-        try:
-            network = self.ip_network_cls(result['network'])
-        except ValueError as v:
-            raise ValueError("Subnet: " + str(v))
-        try:
-            address = self.ip_address_cls(result['address'])
-        except ValueError as v:
-            raise ValueError("Address: " + str(v))
-        if address not in network:
-            raise ValueError("Address: '%s' is not contained in '%s'" % (address, network))
-        try:
-            self.ip_address_cls(result['gateway'])
-        except ValueError as v:
-            raise ValueError("Gateway: " + str(v))
-        for ns in result['nameservers']:
-            try:
-                ipaddress.ip_address(ns)
-            except ValueError as v:
-                raise ValueError("Nameserver " + str(v))
-
     def done(self, btn):
         searchdomains = []
         for sd in self.searchdomains_input.value.split(','):
             sd = sd.strip()
             if sd:
                 searchdomains.append(sd.strip())
-        nameservers = []
-        for ns in self.nameserver_input.value.split(','):
-            ns = ns.strip()
-            if ns:
-                nameservers.append(ns.strip())
+        # XXX this converting from and to and from strings thing is a bit out of hand.
         result = {
-            'network': self.subnet_input.value,
-            'address': self.address_input.value,
-            'gateway': self.gateway_input.value,
-            'nameservers': nameservers,
+            'network': str(self._clean_subnet()),
+            'address': str(self._clean_address()),
+            'gateway': str(self._clean_gateway()),
+            'nameservers': map(str, self._clean_nameservers()),
             'searchdomains': searchdomains,
         }
-        try:
-            self.validate(result)
-        except ValueError as e:
-            error = 'Failed to manually configure interface: {}'.format(e)
-            log.exception(error)
-            self.error.set_text(str(e))
-            return
         self.dev.remove_ip_networks_for_version(self.ip_version)
         self.dev.remove_nameservers()
         self.dev.add_network(self.ip_version, result)
