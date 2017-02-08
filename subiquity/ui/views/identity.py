@@ -15,7 +15,7 @@
 
 import logging
 
-from urwid import Text
+from urwid import connect_signal, Text
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.interactive import (PasswordEditor,
@@ -24,6 +24,7 @@ from subiquitycore.ui.interactive import (PasswordEditor,
                                           UsernameEditor)
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.validation import Toggleable, ValidatingWidgetSet
 from subiquitycore.view import BaseView
 
 
@@ -42,21 +43,25 @@ class IdentityView(BaseView):
         self.signal = controller.signal
         self.opts = opts
         self.items = []
+
         self.realname = RealnameEditor(caption="")
         self.hostname = UsernameEditor(caption="")
         self.username = UsernameEditor(caption="")
         self.password = PasswordEditor(caption="")
         self.ssh_import_id = StringEditor(caption="")
         self.ssh_import_confirmed = True
+
         self.error = Text("", align="center")
         self.confirm_password = PasswordEditor(caption="")
+
+        self.buttons = self._build_buttons()
 
         body = [
             Padding.center_90(self._build_model_inputs()),
             Padding.line_break(""),
             Padding.center_90(Color.info_error(self.error)),
             Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons()),
+            Padding.fixed_10(self.buttons),
         ]
         super().__init__(ListBox(body))
 
@@ -65,28 +70,41 @@ class IdentityView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done),
+            Toggleable(done, 'button'),
             Color.button(cancel)
         ]
         return Pile(buttons)
 
+    def _vws(self, caption, input, validator=None):
+        text = Text(caption, align="right")
+        decorated = Toggleable(input, 'string_input')
+        captioned = Columns(
+                [
+                    ("weight", 0.2, text),
+                    ("weight", 0.3, Color.string_input(input))
+                ], dividechars=4)
+        return ValidatingWidgetSet(captioned, decorated, input, validator)
+
     def _build_model_inputs(self):
-        sl = [
-            Columns(
-                [
-                    ("weight", 0.2, Text("Your name:", align="right")),
-                    ("weight", 0.3, Color.string_input(self.realname)),
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Your server's name:",
-                                         align="right")),
-                    ("weight", 0.3, Color.string_input(self.hostname)),
-                ],
-                dividechars=4
-            ),
+        self.realname_vws = self._vws("Your name:", self.realname)
+        self.hostname_vws = self._vws("Your server's name:", self.hostname)
+        self.username_vws = self._vws("Pick a username:", self.username)
+        self.password_vws = self._vws("Choose a password:", self.password)
+        self.confirm_password_vws = self._vws("Confirm your password:", self.confirm_password)
+        self.ssh_import_id_vws = self._vws("Import SSH identity:", self.ssh_import_id)
+        self.all_vws = [
+            self.realname_vws,
+            self.hostname_vws,
+            self.username_vws,
+            self.password_vws,
+            self.confirm_password_vws,
+            self.ssh_import_id_vws,
+            ]
+        for vw in self.all_vws:
+            connect_signal(vw, 'validated', self._validated)
+        return Pile([
+            self.realname_vws,
+            self.hostname_vws,
             Columns(
                 [
                     ("weight", 0.2, Text("", align="right")),
@@ -96,41 +114,10 @@ class IdentityView(BaseView):
                 ],
                 dividechars=4
             ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Pick a username:", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.username))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Choose a password:", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.password))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Confirm your password:",
-                                         align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.confirm_password))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Import SSH identity:",
-                                         align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.ssh_import_id))
-                ],
-                dividechars=4
-            ),
-
+            self.username_vws,
+            self.password_vws,
+            self.confirm_password_vws,
+            self.ssh_import_id_vws,
             Columns(
                 [
                     ("weight", 0.2, Text("", align="right")),
@@ -143,8 +130,19 @@ class IdentityView(BaseView):
                 ],
                 dividechars=4
             ),
-        ]
-        return Pile(sl)
+            ])
+
+    def _validated(self, sender):
+        error = False
+        for w in self.all_vws:
+            if w.has_error():
+                error = True
+                break
+        if error:
+            self.buttons[0].disable()
+            self.buttons.focus_position = 1
+        else:
+            self.buttons[0].enable()
 
     def done(self, result):
         # check in display order:
