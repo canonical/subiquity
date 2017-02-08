@@ -42,15 +42,8 @@ import urwid
 log = logging.getLogger('subiquitycore.ui.container')
 
 
-def _maybe_select_first_selectable(w):
-    """If w implements _select_first_selectable, call it."""
-    m = getattr(w.base_widget, "_select_first_selectable", None)
-    if m is not None:
-        m()
-
-def _maybe_select_last_selectable(w):
-    """If w implements _select_last_selectable, call it."""
-    m = getattr(w.base_widget, "_select_last_selectable", None)
+def _maybe_call(w, methname):
+    m = getattr(w.base_widget, methname, None)
     if m is not None:
         m()
 
@@ -63,7 +56,7 @@ class TabCyclingMixin:
         for i, (w, o) in enumerate(self.contents):
             if w.selectable():
                 self.set_focus(i)
-                _maybe_select_first_selectable(w)
+                _maybe_call(w, "_select_first_selectable")
                 return
 
     def _select_last_selectable(self):
@@ -71,7 +64,7 @@ class TabCyclingMixin:
         for i, (w, o) in reversed(list(enumerate(self.contents))):
             if w.selectable():
                 self.set_focus(i)
-                _maybe_select_last_selectable(w)
+                _maybe_call(w, "_select_last_selectable")
                 return
 
     def keypress(self, size, key):
@@ -82,7 +75,7 @@ class TabCyclingMixin:
             for i, (w, o) in enumerate(self._contents[next_fp:], next_fp):
                 if w.selectable():
                     self.set_focus(i)
-                    _maybe_select_first_selectable(w)
+                    _maybe_call(w, "_select_first_selectable")
                     return
             self._select_first_selectable()
             return key
@@ -90,7 +83,7 @@ class TabCyclingMixin:
             for i, (w, o) in reversed(list(enumerate(self._contents[:self.focus_position]))):
                 if w.selectable():
                     self.set_focus(i)
-                    _maybe_select_last_selectable(w)
+                    _maybe_call(w, "_select_last_selectable")
                     return
             self._select_last_selectable()
             return key
@@ -115,7 +108,7 @@ class TabCyclingListBox(urwid.ListBox):
         # urwid.ListBox converts an arbitrary sequence argument to a
         # PollingListWalker, which doesn't work with the below code.
         if getattr(body, 'get_focus', None) is None:
-            body = urwid.SimpleListWalker(body)
+            body = urwid.SimpleFocusListWalker(body)
         super().__init__(body)
 
     def _set_focus_no_move(self, i):
@@ -135,7 +128,7 @@ class TabCyclingListBox(urwid.ListBox):
         for i, w in enumerate(self.body):
             if w.selectable():
                 self._set_focus_no_move(i)
-                _maybe_select_first_selectable(w)
+                _maybe_call(w, "_select_first_selectable")
                 return
 
     def _select_last_selectable(self):
@@ -143,7 +136,7 @@ class TabCyclingListBox(urwid.ListBox):
         for i, w in reversed(list(enumerate(self.body))):
             if w.selectable():
                 self._set_focus_no_move(i)
-                _maybe_select_last_selectable(w)
+                _maybe_call(w, "_select_last_selectable")
                 return
 
     def keypress(self, size, key):
@@ -154,7 +147,7 @@ class TabCyclingListBox(urwid.ListBox):
             for i, w in enumerate(self.body[next_fp:], next_fp):
                 if w.selectable():
                     self.set_focus(i)
-                    _maybe_select_first_selectable(w)
+                    _maybe_call(w, "_select_first_selectable")
                     return
             self._select_first_selectable()
             return key
@@ -162,7 +155,7 @@ class TabCyclingListBox(urwid.ListBox):
             for i, w in reversed(list(enumerate(self.body[:self.focus_position]))):
                 if w.selectable():
                     self.set_focus(i)
-                    _maybe_select_last_selectable(w)
+                    _maybe_call(w, "_select_last_selectable")
                     return
             self._select_last_selectable()
             return key
@@ -170,6 +163,51 @@ class TabCyclingListBox(urwid.ListBox):
             return key
 
 
-Columns = TabCyclingColumns
-Pile = TabCyclingPile
-ListBox = TabCyclingListBox
+class FocusTrackingMixin:
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self._contents.set_focus_changed_callback(self._focus_changed)
+
+    def lost_focus(self):
+        _maybe_call(self.focus, 'lost_focus')
+
+    def gained_focus(self):
+        _maybe_call(self.focus, 'gained_focus')
+
+    def _focus_changed(self, new_focus):
+        log.debug("_focus_changed %s", self)
+        _maybe_call(self.focus, 'lost_focus')
+        _maybe_call(self[new_focus], 'gained_focus')
+        self._invalidate()
+
+
+class FocusTrackingColumns(FocusTrackingMixin, TabCyclingColumns):
+    pass
+
+
+class FocusTrackingPile(FocusTrackingMixin, TabCyclingPile):
+    pass
+
+
+class FocusTrackingListBox(TabCyclingListBox):
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.body.set_focus_changed_callback(self._focus_changed)
+
+    def _focus_changed(self, new_focus):
+        log.debug("_focus_changed %s", self)
+        _maybe_call(self.focus, 'lost_focus')
+        _maybe_call(self.body[new_focus], 'gained_focus')
+        self._invalidate()
+
+    def lost_focus(self):
+        _maybe_call(self.focus, 'lost_focus')
+
+    def gained_focus(self):
+        _maybe_call(self.focus, 'gained_focus')
+
+Columns = FocusTrackingColumns
+Pile = FocusTrackingPile
+ListBox = FocusTrackingListBox

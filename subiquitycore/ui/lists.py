@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import SimpleListWalker, WidgetWrap
+from urwid import SimpleFocusListWalker, WidgetWrap
 
 from subiquitycore.ui.container import ListBox
 
@@ -25,7 +25,7 @@ class SimpleList(WidgetWrap):
         super().__init__(self._build_widget())
 
     def _build_widget(self):
-        lw = SimpleListWalker(list(self.contents))
+        lw = SimpleFocusListWalker(list(self.contents))
 
         return ListBox(lw)
 

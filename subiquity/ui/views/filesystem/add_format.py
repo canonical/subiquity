@@ -14,13 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from urwid import Text
+from urwid import connect_signal
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.interactive import Selector, MountEditor
+from subiquitycore.ui.container import ListBox, Pile
+from subiquitycore.ui.interactive import Selector
 from subiquitycore.view import BaseView
+
+from subiquity.ui.mount import MountSelector
+from subiquity.ui.views.filesystem.add_partition import vws
 
 
 log = logging.getLogger('subiquity.ui.filesystem.add_format')
@@ -33,11 +36,14 @@ class AddFormatView(BaseView):
         self.selected_disk = selected_disk
         self.disk_obj = self.model.get_disk(selected_disk)
 
-        self.mountpoint = MountEditor(caption="", edit_text="/")
+        self.mountpoint = MountSelector(self.model)
         self.fstype = Selector(opts=self.model.supported_filesystems)
+        connect_signal(self.fstype, 'select', self.select_fstype)
+
+        self.buttons = self._build_buttons()
         body = [
             Padding.line_break(""),
-            self._container(),
+            self._build_container(),
             Padding.line_break(""),
             Padding.fixed_10(self._build_buttons())
         ]
@@ -54,26 +60,45 @@ class AddFormatView(BaseView):
         ]
         return Pile(buttons)
 
-    def _container(self):
-        total_items = [
-            Columns(
-                [
-                    ("weight", 0.2, Text("Format", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.fstype,
-                                        focus_map="string_input focus"))
-                ], dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Mount", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.mountpoint,
-                                        focus_map="string_input focs"))
-                ], dividechars=4
-            )
+    def _validate_mount(self):
+        mnts = self.model.get_mounts2()
+        dev = mnts.get(self.mountpoint.value)
+        if dev is not None:
+            return "%s is already mounted at %s"%(dev, self.mountpoint.value)
+
+    def _build_container(self):
+        self.fstype_vws = vws("Format", self.fstype)
+        self.mountpoint_vws = vws("Mount", self.mountpoint, validator=self._validate_mount)
+
+        self.all_rows = [
+            self.fstype_vws,
+            self.mountpoint_vws,
         ]
-        return Pile(total_items)
+        for vw in self.all_vws:
+            connect_signal(vw, 'validated', self._validated)
+        return Pile(self.all_rows)
+
+    def _validated(self, sender):
+        error = False
+        for w in self.all_vws:
+            if w.has_error():
+                log.debug("%s has error", w)
+                error = True
+        if error:
+            self.buttons[0].disable()
+            self.buttons.focus_position = 1
+        else:
+            self.buttons[0].enable()
+
+    def _enable_disable_mount(self, enabled):
+        if enabled:
+            self.mountpoint_vws.enable()
+        else:
+            self.mountpoint_vws.disable()
+
+    def select_fstype(self, sender, fs):
+        if fs.is_mounted != sender.value.is_mounted:
+            self._enable_disable_mount(fs.is_mounted)
 
     def cancel(self, button):
         self.controller.prev_view()
@@ -88,18 +113,19 @@ class AddFormatView(BaseView):
         """
 
         result = {
-            "fstype": self.fstype.value,
+            "fstype": self.fstype.value.label,
             "mountpoint": self.mountpoint.value
         }
 
-        # Validate mountpoint input
-        try:
-            self.model.valid_mount(result)
-        except ValueError as e:
-            log.exception('Invalid mount point')
-            self.mountpoint.set_error('Error: {}'.format(str(e)))
-            log.debug('Invalid mountpoint, try again')
-            return
+        if self.mountpoint.value is not None:
+            # Validate mountpoint input
+            try:
+                self.model.valid_mount(result)
+            except ValueError as e:
+                log.exception('Invalid mount point')
+                self.mountpoint.set_error('Error: {}'.format(str(e)))
+                log.debug('Invalid mountpoint, try again')
+                return
 
         log.debug("Add Format Result: {}".format(result))
         self.controller.add_disk_format_handler(self.disk_obj.devpath, result)
