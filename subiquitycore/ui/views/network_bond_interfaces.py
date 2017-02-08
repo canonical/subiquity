@@ -74,9 +74,7 @@ class NetworkBondInterfacesView(BaseView):
             Columns(
                 [
                     ("weight", 0.2, Text("Bonding Mode", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.bond_mode,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.bond_mode))
                 ],
                 dividechars=4
             ),
@@ -90,8 +88,8 @@ class NetworkBondInterfacesView(BaseView):
         done = done_btn(on_press=self.done)
 
         items = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(done),
+            Color.button(cancel)
         ]
         log.debug('buttons: items: {}'.format(items))
         return Pile(items)

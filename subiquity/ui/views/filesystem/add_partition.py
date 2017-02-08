@@ -91,7 +91,7 @@ class AddPartitionView(BaseView):
 
         buttons = [
             Toggleable(done, 'button'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(cancel)
         ]
         return Pile(buttons)
 

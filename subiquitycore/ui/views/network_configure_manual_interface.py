@@ -89,11 +89,8 @@ class BaseNetworkConfigureManualView(BaseView):
         captioned = Columns(
                 [
                     ("weight", 0.2, text),
-                    ("weight", 0.3,
-                     Color.string_input(input,
-                                        focus_map="string_input focus")),
+                    ("weight", 0.3, Color.string_input(input)),
                     ("weight", 0.5, Text(help))
-                ], dividechars=2
             )
         return ValidatingWidgetSet(captioned, decorated, input, validator)
 
@@ -184,7 +181,7 @@ class BaseNetworkConfigureManualView(BaseView):
 
         buttons = [
             Toggleable(done, 'button'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(cancel)
         ]
         return Pile(buttons)
 

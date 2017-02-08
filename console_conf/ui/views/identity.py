@@ -88,9 +88,7 @@ class IdentityView(BaseView):
             Columns(
                 [
                     ("weight", 0.2, Text("Email address:", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.email,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.email)),
                 ],
                 dividechars=4
             ),
@@ -102,8 +100,8 @@ class IdentityView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(done),
+            Color.button(cancel),
         ]
         return Pile(buttons)
 

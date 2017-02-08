@@ -85,8 +85,7 @@ class LVMVolumeGroupView(BaseView):
                     ("weight", 0.2, Text("VolumeGroup Name",
                                          align="right")),
                     ("weight", 0.3,
-                     Color.string_input(self.volgroup,
-                                        focus_map="string_input focus"))
+                     Color.string_input(self.volgroup))
                 ],
                 dividechars=4
             ),
@@ -99,8 +98,8 @@ class LVMVolumeGroupView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(done),
+            Color.button(cancel)
         ]
         return Pile(buttons)
 

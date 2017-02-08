@@ -46,8 +46,7 @@ class LoginView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button(finish_btn(on_press=self.done),
-                         focus_map='button focus'),
+            Color.button(finish_btn(on_press=self.done)),
         ]
         return Pile(self.buttons)
 

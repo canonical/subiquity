@@ -65,13 +65,13 @@ class NetworkConfigureInterfaceView(BaseView):
         buttons = []
         btn = menu_btn(label="Use a static IPv4 configuration",
                        on_press=self.show_ipv4_configuration)
-        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+        buttons.append(Color.menu_button(btn))
         btn = menu_btn(label="Use DHCPv4 on this interface",
                        on_press=self.enable_dhcp4)
-        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+        buttons.append(Color.menu_button(btn))
         btn = menu_btn(label="Do not use",
                        on_press=self.clear_ipv4)
-        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+        buttons.append(Color.menu_button(btn))
 
         padding = getattr(Padding, 'left_{}'.format(button_padding))
         buttons = [ padding(button) for button in buttons ]
@@ -84,13 +84,13 @@ class NetworkConfigureInterfaceView(BaseView):
         buttons = []
         btn = menu_btn(label="Use a static IPv6 configuration",
                        on_press=self.show_ipv6_configuration)
-        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+        buttons.append(Color.menu_button(btn))
         btn = menu_btn(label="Use DHCPv6 on this interface",
                        on_press=self.enable_dhcp6)
-        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+        buttons.append(Color.menu_button(btn))
         btn = menu_btn(label="Do not use",
                        on_press=self.clear_ipv6)
-        buttons.append(Color.menu_button(btn, focus_map="menu_button focus"))
+        buttons.append(Color.menu_button(btn))
 
         padding = getattr(Padding, 'left_{}'.format(button_padding))
         buttons = [ padding(button) for button in buttons ]
@@ -100,13 +100,13 @@ class NetworkConfigureInterfaceView(BaseView):
 
     def _build_wifi_config(self):
         btn = menu_btn(label="Configure WIFI settings", on_press=self.show_wlan_configuration)
-        return [Padding.left_70(Color.menu_button(btn, focus_map="menu_button focus"))]
+        return [Padding.left_70(Color.menu_button(btn))]
 
     def _build_buttons(self):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
+            Color.button(done),
         ]
         return Pile(buttons)
 

@@ -15,8 +15,7 @@ class NetworkList(WidgetWrap):
         button = cancel_btn(on_press=self.do_cancel)
         ssid_list = [
             Color.menu_button(
-                Button(label=ssid, on_press=self.do_network),
-                focus_map="menu_button focus")
+                Button(label=ssid, on_press=self.do_network))
             for ssid in ssids]
         p = Pile([BoxAdapter(ListBox(ssid_list), height=10), Padding.fixed_10(button)])
         box = LineBox(p, title="Select a network")
@@ -88,8 +87,7 @@ class NetworkConfigureWLANView(BaseView):
     def _build_iface_inputs(self):
         if len(self.dev.actual_ssids) > 0:
             networks_btn = Color.menu_button(
-                menu_btn("Choose a visible network", on_press=self.show_ssid_list),
-                focus_map="menu_button focus")
+                menu_btn("Choose a visible network", on_press=self.show_ssid_list))
         else:
             networks_btn = Color.info_minor(Columns(
                 [
@@ -99,8 +97,7 @@ class NetworkConfigureWLANView(BaseView):
                 ], dividechars=1))
         if not self.dev.scan_state:
             scan_btn = Color.menu_button(
-                menu_btn("Scan for networks", on_press=self.start_scan),
-                focus_map="menu_button focus")
+                menu_btn("Scan for networks", on_press=self.start_scan))
         else:
             scan_btn = Color.info_minor(Columns(
                 [
@@ -115,9 +112,7 @@ class NetworkConfigureWLANView(BaseView):
             Columns(
                 [
                     ("weight", 0.2, Text("Network name:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.ssid_input,
-                                        focus_map="string_input focus")),
+                    ("weight", 0.3, Color.string_input(self.ssid_input)),
                 ], dividechars=2
             ),
             Columns(
@@ -136,8 +131,7 @@ class NetworkConfigureWLANView(BaseView):
                 [
                     ("weight", 0.2, Text("Password:")),
                     ("weight", 0.3,
-                     Color.string_input(self.psk_input,
-                                        focus_map="string_input focus")),
+                     Color.string_input(self.psk_input)),
                 ], dividechars=2
             ),
         ]
@@ -154,10 +148,8 @@ class NetworkConfigureWLANView(BaseView):
         self.inputs.contents = [ (obj, ('pack', None)) for obj in self._build_iface_inputs() ]
 
     def _build_buttons(self):
-        cancel = Color.button(cancel_btn(on_press=self.cancel),
-                              focus_map='button focus')
-        done = Color.button(done_btn(on_press=self.done),
-                            focus_map='button focus')
+        cancel = Color.button(cancel_btn(on_press=self.cancel))
+        done = Color.button(done_btn(on_press=self.done))
 
         buttons = [done, cancel]
         return Pile(buttons, focus_item=done)

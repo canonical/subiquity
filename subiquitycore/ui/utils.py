@@ -133,8 +133,15 @@ def apply_style_map(cls):
       Color.frame_header(Text("I'm text in the Orange frame header"))
       Color.body(Text("Im text in wrapped with the body color"))
     """
+    style_names = set()
     for k in STYLES:
-        setattr(cls, k[0], partialmethod(AttrMap, attr_map=k[0]))
+        style_names.add(k[0])
+    for k in STYLES:
+        kf = k[0] + ' focus'
+        if k[0] + ' focus' in style_names:
+            setattr(cls, k[0], partialmethod(AttrMap, attr_map=k[0], focus_map=kf))
+        else:
+            setattr(cls, k[0], partialmethod(AttrMap, attr_map=k[0]))
     return cls
 
 

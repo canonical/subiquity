@@ -85,9 +85,7 @@ class RaidView(BaseView):
             Columns(
                 [
                     ("weight", 0.2, Text("RAID Level", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.raid_level,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.raid_level))
                 ],
                 dividechars=4
             ),
@@ -95,18 +93,14 @@ class RaidView(BaseView):
                 [
                     ("weight", 0.2, Text("Hot spares",
                                          align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.hot_spares,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.hot_spares))
                 ],
                 dividechars=4
             ),
             Columns(
                 [
                     ("weight", 0.2, Text("Chunk size", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.chunk_size,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.chunk_size))
                 ],
                 dividechars=4
             )
@@ -119,8 +113,8 @@ class RaidView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(done),
+            Color.button(cancel)
         ]
         return Pile(buttons)
 
