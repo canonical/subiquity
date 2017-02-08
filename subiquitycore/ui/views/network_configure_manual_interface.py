@@ -77,45 +77,35 @@ class BaseNetworkConfigureManualView(BaseView):
             Columns(
                 [
                     ("weight", 0.2, Text("Subnet:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.subnet_input,
-                                        focus_map="string_input focus")),
+                    ("weight", 0.3, Color.string_input(self.subnet_input)),
                     ("weight", 0.5, Text("CIDR e.g. %s"%(self.example_address,)))
                 ], dividechars=2
             ),
             Columns(
                 [
                     ("weight", 0.2, Text("Address:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.address_input,
-                                        focus_map="string_input focus")),
+                    ("weight", 0.3, Color.string_input(self.address_input)),
                     ("weight", 0.5, Text(""))
                 ], dividechars=2
             ),
             Columns(
                 [
                     ("weight", 0.2, Text("Gateway:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.gateway_input,
-                                        focus_map="string_input focus")),
+                    ("weight", 0.3, Color.string_input(self.gateway_input)),
                     ("weight", 0.5, Text(""))
                 ], dividechars=2
             ),
             Columns(
                 [
                     ("weight", 0.2, Text("Name servers:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.nameserver_input,
-                                        focus_map="string_input focus")),
+                    ("weight", 0.3, Color.string_input(self.nameserver_input)),
                     ("weight", 0.5, Text("IP addresses, comma separated"))
                 ], dividechars=2
             ),
             Columns(
                 [
                     ("weight", 0.2, Text("Search domains:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.searchdomains_input,
-                                        focus_map="string_input focus")),
+                    ("weight", 0.3, Color.string_input(self.searchdomains_input)),
                     ("weight", 0.5, Text("Domains, comma separated"))
                 ], dividechars=2
             ),
@@ -153,8 +143,8 @@ class BaseNetworkConfigureManualView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(done),
+            Color.button(cancel)
         ]
         return Pile(buttons)
 

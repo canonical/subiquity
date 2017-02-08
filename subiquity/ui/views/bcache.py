@@ -71,8 +71,7 @@ class BcacheView(BaseView):
 
         selector = Selector(avail_devs)
         self.selected_disks[section] = selector
-        items.append(Color.string_input(selector,
-                                        focus_map="string_input focus"))
+        items.append(Color.string_input(selector))
 
         return Pile(items)
 
@@ -119,8 +118,8 @@ class BcacheView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(done),
+            Color.button(cancel)
         ]
         return Pile(buttons)
 

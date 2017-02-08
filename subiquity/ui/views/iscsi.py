@@ -51,65 +51,49 @@ class IscsiDiskView(BaseView):
             Columns(
                 [
                     ("weight", 0.2, Text("iSCSI Server Host", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.iscsi_host,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.iscsi_host))
                 ],
                 dividechars=4
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Connect anonymously",
-                                         align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(Pile(self.connect_anon.group),
-                                        focus_map="string_input focus"))
+                    ("weight", 0.2, Text("Connect anonymously", align="right")),
+                    ("weight", 0.3, Color.string_input(Pile(self.connect_anon.group)))
                 ],
                 dividechars=4
             ),
             Columns(
                 [
                     ("weight", 0.2, Text("Connect as user", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.connect_username,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.connect_username))
                 ],
                 dividechars=4
             ),
             Columns(
                 [
                     ("weight", 0.2, Text("Password", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.connect_password,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.connect_password))
                 ],
                 dividechars=4
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Require server auth",
-                                         align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(Pile(self.server_auth.group),
-                                        focus_map="string_input focus"))
+                    ("weight", 0.2, Text("Require server auth", align="right")),
+                    ("weight", 0.3, Color.string_input(Pile(self.server_auth.group)))
                 ],
                 dividechars=4
             ),
             Columns(
                 [
                     ("weight", 0.2, Text("Server identity", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.server_username,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.server_username))
                 ],
                 dividechars=4
             ),
             Columns(
                 [
                     ("weight", 0.2, Text("Server password", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.server_password,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.server_password))
                 ],
                 dividechars=4
             )
@@ -127,8 +111,7 @@ class IscsiDiskView(BaseView):
                          Color.menu_button(
                              menu_btn(label=label,
                                       on_press=self.confirm,
-                                      user_data=sig),
-                             focus_map="menu_button focus"))
+                                      user_data=sig)))
                     ]))
         return Pile(items)
 

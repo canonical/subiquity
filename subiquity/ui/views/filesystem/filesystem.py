@@ -112,13 +112,10 @@ class FilesystemView(BaseView):
         # don't enable done botton if we can't install
         if self.model.installable():
             buttons.append(
-                Color.button(done_btn(on_press=self.done),
-                             focus_map='button focus'))
+                Color.button(done_btn(on_press=self.done)))
 
-        buttons.append(Color.button(reset_btn(on_press=self.reset),
-                                    focus_map='button focus'))
-        buttons.append(Color.button(cancel_btn(on_press=self.cancel),
-                                    focus_map='button focus'))
+        buttons.append(Color.button(reset_btn(on_press=self.reset)))
+        buttons.append(Color.button(cancel_btn(on_press=self.cancel)))
 
         return Pile(buttons)
 
@@ -146,8 +143,7 @@ class FilesystemView(BaseView):
             btn = menu_btn(label=disk.name,
                            on_press=self.show_disk_partition_view)
 
-            col_1.append(
-                Color.menu_button(btn, focus_map='menu_button focus'))
+            col_1.append(Color.menu_button(btn))
             disk_sz = _humanize_size(disk.size)
             log.debug('device partitions: {}'.format(len(device.partitions)))
             # if we've consumed some of the device, show
@@ -160,8 +156,7 @@ class FilesystemView(BaseView):
                 part = device.get_partition(partname)
                 btn = menu_btn(label=partname,
                                on_press=self.show_disk_partition_view)
-                col_1.append(
-                    Color.menu_button(btn, focus_map='menu_button focus'))
+                col_1.append(Color.menu_button(btn))
                 col_2.append(Text(_humanize_size(part.size)))
 
         col_1 = BoxAdapter(SimpleList(col_1),
@@ -188,8 +183,7 @@ class FilesystemView(BaseView):
                 opts.append(Color.menu_button(
                             menu_btn(label=opt,
                                      on_press=self.on_fs_menu_press,
-                                     user_data=sig),
-                            focus_map='menu_button focus'))
+                                     user_data=sig)))
         return Pile(opts)
 
     def on_fs_menu_press(self, result, sig):

@@ -65,8 +65,8 @@ class IdentityView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(done),
+            Color.button(cancel)
         ]
         return Pile(buttons)
 
@@ -75,9 +75,7 @@ class IdentityView(BaseView):
             Columns(
                 [
                     ("weight", 0.2, Text("Your name:", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.realname,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.realname)),
                 ],
                 dividechars=4
             ),
@@ -85,9 +83,7 @@ class IdentityView(BaseView):
                 [
                     ("weight", 0.2, Text("Your server's name:",
                                          align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.hostname,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.hostname)),
                 ],
                 dividechars=4
             ),
@@ -104,8 +100,7 @@ class IdentityView(BaseView):
                 [
                     ("weight", 0.2, Text("Pick a username:", align="right")),
                     ("weight", 0.3,
-                     Color.string_input(self.username,
-                                        focus_map="string_input focus"))
+                     Color.string_input(self.username))
                 ],
                 dividechars=4
             ),
@@ -113,8 +108,7 @@ class IdentityView(BaseView):
                 [
                     ("weight", 0.2, Text("Choose a password:", align="right")),
                     ("weight", 0.3,
-                     Color.string_input(self.password,
-                                        focus_map="string_input focus"))
+                     Color.string_input(self.password))
                 ],
                 dividechars=4
             ),
@@ -123,8 +117,7 @@ class IdentityView(BaseView):
                     ("weight", 0.2, Text("Confirm your password:",
                                          align="right")),
                     ("weight", 0.3,
-                     Color.string_input(self.confirm_password,
-                                        focus_map="string_input focus"))
+                     Color.string_input(self.confirm_password))
                 ],
                 dividechars=4
             ),
@@ -133,8 +126,7 @@ class IdentityView(BaseView):
                     ("weight", 0.2, Text("Import SSH identity:",
                                          align="right")),
                     ("weight", 0.3,
-                     Color.string_input(self.ssh_import_id,
-                                        focus_map="string_input focus"))
+                     Color.string_input(self.ssh_import_id))
                 ],
                 dividechars=4
             ),
