@@ -86,11 +86,11 @@ class IdentityView(BaseView):
         return ValidatingWidgetSet(captioned, decorated, input, validator)
 
     def _build_model_inputs(self):
-        self.realname_vws = self._vws("Your name:", self.realname)
-        self.hostname_vws = self._vws("Your server's name:", self.hostname)
-        self.username_vws = self._vws("Pick a username:", self.username)
-        self.password_vws = self._vws("Choose a password:", self.password)
-        self.confirm_password_vws = self._vws("Confirm your password:", self.confirm_password)
+        self.realname_vws = self._vws("Your name:", self.realname, self._validate_realname)
+        self.hostname_vws = self._vws("Your server's name:", self.hostname, self._validate_hostname)
+        self.username_vws = self._vws("Pick a username:", self.username, self._validate_username)
+        self.password_vws = self._vws("Choose a password:", self.password, self._validate_password)
+        self.confirm_password_vws = self._vws("Confirm your password:", self.confirm_password, self._validate_confirm_password)
         self.ssh_import_id_vws = self._vws("Import SSH identity:", self.ssh_import_id)
         self.all_vws = [
             self.realname_vws,
@@ -144,61 +144,40 @@ class IdentityView(BaseView):
         else:
             self.buttons[0].enable()
 
-    def done(self, result):
-        # check in display order:
-        #   realname, hostname, username, password, ssh
+    def _validate_realname(self):
         if len(self.realname.value) < 1:
-            self.error.set_text("Realname missing.")
-            self.realname.value = ""
-            return
-
+            return "Real name must not be empty."
         if len(self.realname.value) > REALNAME_MAXLEN:
-            self.error.set_text("Realname too long, must be < " +
-                                str(REALNAME_MAXLEN))
-            self.realname.value = ""
-            return
+            return "Realname too long, must be < " + str(REALNAME_MAXLEN)
 
+    def _validate_hostname(self):
         if len(self.hostname.value) < 1:
-            self.error.set_text("Server name missing.")
-            self.hostname.value = ""
-            return
+            return "Server name must not be empty"
 
         if len(self.hostname.value) > HOSTNAME_MAXLEN:
-            self.error.set_text("Server name too long, must be < " +
-                                str(HOSTNAME_MAXLEN))
-            self.hostname.value = ""
-            return
+            return "Server name too long, must be < " + str(HOSTNAME_MAXLEN)
 
+    def _validate_username(self):
         if len(self.username.value) < 1:
-            self.error.set_text("Username missing.")
-            self.username.value = ""
-            return
+            return "Username missing"
 
         if len(self.username.value) > USERNAME_MAXLEN:
-            self.error.set_text("Username too long, must be < " +
-                                str(USERNAME_MAXLEN))
-            self.username.value = ""
-            return
+            return "Username too long, must be < " + str(USERNAME_MAXLEN)
 
+    def _validate_password(self):
         if len(self.password.value) < 1:
-            self.error.set_text("Password must be set")
-            self.password.value = ""
-            self.confirm_password.value = ""
-            return
+            return "Password must be set"
 
+    def _validate_confirm_password(self):
         if self.password.value != self.confirm_password.value:
-            self.error.set_text("Passwords do not match.")
-            self.password.value = ""
-            self.confirm_password.value = ""
-            return
+            return "Passwords do not match"
 
-        # ssh_id is optional
+    def _validate_ssh_import_id(self):
         if len(self.ssh_import_id.value) > SSH_IMPORT_MAXLEN:
             self.error.set_text("SSH id too long, must be < " +
                                 str(SSH_IMPORT_MAXLEN))
-            self.ssh_import_id.value = ""
-            return
 
+    def done(self, result):
         cpassword = self.model.encrypt_password(self.password.value)
         log.debug("*crypted* User input: {} {} {}".format(
             self.username.value, cpassword, cpassword))
