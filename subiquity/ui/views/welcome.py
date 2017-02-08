@@ -44,17 +44,14 @@ class WelcomeView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button(ok_btn(on_press=self.confirm),
-                         focus_map='button focus'),
+            Color.button(ok_btn(on_press=self.confirm)),
         ]
         return Pile(self.buttons)
 
     def _build_model_inputs(self):
         sl = []
         for lang in self.model.get_menu():
-            sl.append(Color.menu_button(
-                menu_btn(label=lang, on_press=self.confirm),
-                focus_map="menu_button focus"))
+            sl.append(Color.menu_button(menu_btn(label=lang, on_press=self.confirm)))
 
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))

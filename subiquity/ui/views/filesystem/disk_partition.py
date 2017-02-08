@@ -49,8 +49,8 @@ class DiskPartitionView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(done),
+            Color.button(cancel)
         ]
         return Pile(buttons)
 
@@ -100,8 +100,7 @@ class DiskPartitionView(BaseView):
         return Color.menu_button(
             menu_btn(
                 label=text,
-                on_press=self.show_disk_info
-            ), focus_map='menu_button focus')
+                on_press=self.show_disk_info))
 
     def create_swap_w(self):
         """ Handles presenting an enabled create swap on
@@ -113,8 +112,7 @@ class DiskPartitionView(BaseView):
         if len(self.disk_obj.partitions) == 0 and \
            self.disk_obj.available:
             return Color.menu_button(menu_btn(label=text,
-                                              on_press=self.create_swap),
-                                     focus_map='menu_button focus')
+                                              on_press=self.create_swap))
 
     def add_partition_w(self):
         """ Handles presenting the add partition widget button
@@ -128,8 +126,7 @@ class DiskPartitionView(BaseView):
         if self.disk_obj.available and \
            self.disk_obj.blocktype not in self.model.no_partition_blocktypes:
             return Color.menu_button(menu_btn(label=text,
-                                              on_press=self.add_partition),
-                                     focus_map='menu_button focus')
+                                              on_press=self.add_partition))
 
     def show_disk_info(self, result):
         self.controller.show_disk_information(self.selected_disk)

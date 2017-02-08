@@ -37,8 +37,7 @@ class WelcomeView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button(ok_btn(on_press=self.confirm),
-                         focus_map='button focus'),
+            Color.button(ok_btn(on_press=self.confirm)),
         ]
         return Pile(self.buttons)
 

@@ -45,9 +45,7 @@ class CephDiskView(BaseView):
             Columns(
                 [
                     ("weight", 0.2, Text("Ceph MON", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.ceph_mon,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.ceph_mon))
                 ],
                 dividechars=4
             ),
@@ -55,18 +53,14 @@ class CephDiskView(BaseView):
                 [
                     ("weight", 0.2, Text("Username",
                                          align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.username,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.username))
                 ],
                 dividechars=4
             ),
             Columns(
                 [
                     ("weight", 0.2, Text("Key", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.ceph_key,
-                                        focus_map="string_input focus"))
+                    ("weight", 0.3, Color.string_input(self.ceph_key))
                 ],
                 dividechars=4
             )
@@ -78,8 +72,8 @@ class CephDiskView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(done),
+            Color.button(cancel)
         ]
         return Pile(buttons)
 

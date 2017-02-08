@@ -41,8 +41,7 @@ class ErrorView(WidgetWrap):
     def _build_buttons(self):
         buttons = [
             Color.button(cancel_btn(label="Back to Start",
-                                    on_press=self.cancel),
-                         focus_map='button focus'),
+                                    on_press=self.cancel)),
         ]
         return Pile(buttons)
 

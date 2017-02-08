@@ -78,8 +78,7 @@ class NetworkSetDefaultRouteView(BaseView):
         log.debug('gateway providers: {}'.format(providers))
         items = []
         items.append(Padding.center_79(
-            Color.menu_button(menu_btn(label="None", on_press=self.done),
-            focus_map="menu_button focus")))
+            Color.menu_button(menu_btn(label="None", on_press=self.done))))
         for (gw, ifaces) in providers.items():
             if gw is None:
                 continue
@@ -88,14 +87,12 @@ class NetworkSetDefaultRouteView(BaseView):
                     label="{gw} ({ifaces})".format(
                         gw=gw,
                         ifaces=(",".join(ifaces))),
-                    on_press=self.done),
-                    focus_map="menu_button focus")))
+                    on_press=self.done))))
 
         items.append(Padding.center_79(
             Color.menu_button(
                 menu_btn(label="Specify the default route manually",
-                         on_press=self.show_edit_default_route),
-                focus_map="menu_button focus")))
+                         on_press=self.show_edit_default_route))))
         return items
 
     def _build_buttons(self):
@@ -103,8 +100,8 @@ class NetworkSetDefaultRouteView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done, focus_map='button focus'),
-            Color.button(cancel, focus_map='button focus')
+            Color.button(done),
+            Color.button(cancel)
         ]
         return Pile(buttons)
 
@@ -112,10 +109,9 @@ class NetworkSetDefaultRouteView(BaseView):
         log.debug("Re-rendering specify default route")
         self.default_gateway_w = StringEditor(
             caption="Default gateway will be ")
-        self.gateway_options.contents[-1] = (Padding.center_50(
-            Color.string_input(
-                self.default_gateway_w,
-                focus_map="string_input focus")), self.gateway_options.options())
+        self.gateway_options.contents[-1] = (
+            Padding.center_50(Color.string_input(self.default_gateway_w)),
+            self.gateway_options.options())
 
     def done(self, result):
         log.debug("changing default gw: {}".format(result))
