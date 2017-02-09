@@ -16,16 +16,26 @@
 import logging
 import ipaddress
 
-from urwid import Text
+from urwid import connect_signal, Text
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, menu_btn, cancel_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.ui.interactive import StringEditor
+from subiquitycore.ui.utils import Color, Padding
+from subiquitycore.ui.validation import Toggleable, ValidatingWidgetSet
 
 
 log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface')
+
+
+def _validator_from_cleaner(cleaner):
+    def validator():
+        try:
+            cleaner()
+        except ValueError as v:
+            return str(v)
+    return validator
 
 
 class BaseNetworkConfigureManualView(BaseView):
@@ -52,6 +62,7 @@ class BaseNetworkConfigureManualView(BaseView):
         self.searchdomains_input.value = ', '.join(self.dev.configured_searchdomains)
         self.error = Text("", align='center')
         #self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
+        self.buttons = self._build_buttons()
         body = [
             Padding.center_79(self._build_iface_inputs()),
             #Padding.line_break(""),
@@ -59,7 +70,7 @@ class BaseNetworkConfigureManualView(BaseView):
             Padding.line_break(""),
             Padding.center_90(Color.info_error(self.error)),
             Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons())
+            Padding.fixed_10(self.buttons)
         ]
         super().__init__(ListBox(body))
 
@@ -72,45 +83,71 @@ class BaseNetworkConfigureManualView(BaseView):
             self.controller.prev_view()
             return
 
+    def _vws(self, caption, input, help, validator=None):
+        text = Text(caption, align="right")
+        decorated = Toggleable(input, 'string_input')
+        captioned = Columns(
+                [
+                    ("weight", 0.2, text),
+                    ("weight", 0.3, Color.string_input(input)),
+                    ("weight", 0.5, Text(help))
+            )
+        return ValidatingWidgetSet(captioned, decorated, input, validator)
+
     def _build_iface_inputs(self):
-        col1 = [
-            Columns(
-                [
-                    ("weight", 0.2, Text("Subnet:")),
-                    ("weight", 0.3, Color.string_input(self.subnet_input)),
-                    ("weight", 0.5, Text("CIDR e.g. %s"%(self.example_address,)))
-                ], dividechars=2
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Address:")),
-                    ("weight", 0.3, Color.string_input(self.address_input)),
-                    ("weight", 0.5, Text(""))
-                ], dividechars=2
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Gateway:")),
-                    ("weight", 0.3, Color.string_input(self.gateway_input)),
-                    ("weight", 0.5, Text(""))
-                ], dividechars=2
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Name servers:")),
-                    ("weight", 0.3, Color.string_input(self.nameserver_input)),
-                    ("weight", 0.5, Text("IP addresses, comma separated"))
-                ], dividechars=2
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Search domains:")),
-                    ("weight", 0.3, Color.string_input(self.searchdomains_input)),
-                    ("weight", 0.5, Text("Domains, comma separated"))
-                ], dividechars=2
-            ),
+        self.all_vws = [
+            self._vws("Subnet:", self.subnet_input, "CIDR e.g. %s"%(self.example_address,),
+                          _validator_from_cleaner(self._clean_subnet)),
+            self._vws("Address:", self.address_input, "",
+                          _validator_from_cleaner(self._clean_address)),
+            self._vws("Gateway:", self.gateway_input, "",
+                          _validator_from_cleaner(self._clean_gateway)),
+            self._vws("Name servers:", self.nameserver_input, "IP addresses, comma separated",
+                          _validator_from_cleaner(self._clean_nameservers)),
+            self._vws("Search domains:", self.searchdomains_input, "Domains, comma separated"),
         ]
-        return Pile(col1)
+        for vw in self.all_vws:
+            connect_signal(vw, 'validated', self._validated)
+        return Pile(self.all_vws)
+
+    def _clean_subnet(self):
+        subnet = self.subnet_input.value
+        if '/' not in subnet:
+            raise ValueError("should be in CIDR form (xx.xx.xx.xx/yy)")
+        return self.ip_network_cls(subnet)
+
+    def _clean_address(self):
+        address = self.ip_address_cls(self.address_input.value)
+        try:
+            subnet = self._clean_subnet()
+        except ValueError:
+            return
+        if address not in subnet:
+            raise ValueError("'%s' is not contained in '%s'" % (address, subnet))
+        return address
+
+    def _clean_gateway(self):
+        return self.ip_address_cls(self.gateway_input.value)
+
+    def _clean_nameservers(self):
+        nameservers = []
+        for ns in self.nameserver_input.value.split(','):
+            ns = ns.strip()
+            if ns:
+                nameservers.append(ipaddress.ip_address(ns.strip()))
+        return nameservers
+
+    def _validated(self, sender):
+        error = False
+        for w in self.all_vws:
+            if w.has_error():
+                error = True
+                break
+        if error:
+            self.buttons[0].disable()
+            self.buttons.focus_position = 1
+        else:
+            self.buttons[0].enable()
 
     def _build_set_as_default_gw_button(self):
         devs = self.model.get_all_netdevs()
@@ -143,34 +180,10 @@ class BaseNetworkConfigureManualView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done),
+            Toggleable(done, 'button'),
             Color.button(cancel)
         ]
         return Pile(buttons)
-
-    def validate(self, result):
-        if '/' not in result['network']:
-            raise ValueError("Subnet: should be in CIDR form (xx.xx.xx.xx/yy)")
-
-        try:
-            network = self.ip_network_cls(result['network'])
-        except ValueError as v:
-            raise ValueError("Subnet: " + str(v))
-        try:
-            address = self.ip_address_cls(result['address'])
-        except ValueError as v:
-            raise ValueError("Address: " + str(v))
-        if address not in network:
-            raise ValueError("Address: '%s' is not contained in '%s'" % (address, network))
-        try:
-            self.ip_address_cls(result['gateway'])
-        except ValueError as v:
-            raise ValueError("Gateway: " + str(v))
-        for ns in result['nameservers']:
-            try:
-                ipaddress.ip_address(ns)
-            except ValueError as v:
-                raise ValueError("Nameserver " + str(v))
 
     def done(self, btn):
         searchdomains = []
@@ -178,25 +191,14 @@ class BaseNetworkConfigureManualView(BaseView):
             sd = sd.strip()
             if sd:
                 searchdomains.append(sd.strip())
-        nameservers = []
-        for ns in self.nameserver_input.value.split(','):
-            ns = ns.strip()
-            if ns:
-                nameservers.append(ns.strip())
+        # XXX this converting from and to and from strings thing is a bit out of hand.
         result = {
-            'network': self.subnet_input.value,
-            'address': self.address_input.value,
-            'gateway': self.gateway_input.value,
-            'nameservers': nameservers,
+            'network': str(self._clean_subnet()),
+            'address': str(self._clean_address()),
+            'gateway': str(self._clean_gateway()),
+            'nameservers': map(str, self._clean_nameservers()),
             'searchdomains': searchdomains,
         }
-        try:
-            self.validate(result)
-        except ValueError as e:
-            error = 'Failed to manually configure interface: {}'.format(e)
-            log.exception(error)
-            self.error.set_text(str(e))
-            return
         self.dev.remove_ip_networks_for_version(self.ip_version)
         self.dev.remove_nameservers()
         self.dev.add_network(self.ip_version, result)

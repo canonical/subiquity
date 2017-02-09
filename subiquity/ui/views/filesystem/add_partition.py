@@ -21,12 +21,13 @@ configuration.
 """
 import logging
 import re
-from urwid import AttrMap, connect_signal, Text, WidgetDisable, WidgetWrap
+from urwid import connect_signal, Text
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.ui.interactive import StringEditor, IntegerEditor, Selector
+from subiquitycore.ui.validation import Toggleable, ValidatingWidgetSet
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (_humanize_size,
@@ -37,82 +38,6 @@ from subiquity.ui.mount import MountSelector
 
 log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 
-
-class Toggleable(WidgetWrap):
-
-    def __init__(self, original, active_color):
-        self.original = original
-        self.active_color = active_color
-        self.enabled = False
-        self.enable()
-
-    def enable(self):
-        if not self.enabled:
-            self._w = AttrMap(self.original, self.active_color, self.active_color + ' focus')
-            self.enabled = True
-
-    def disable(self):
-        if self.enabled:
-            self._w = WidgetDisable(Color.info_minor(self.original))
-            self.enabled = False
-
-
-class ValidatingWidgetSet(WidgetWrap):
-
-    signals = ['validated']
-
-    def __init__(self, captioned, decorated, input, validator):
-        self.captioned = captioned
-        self.decorated = decorated
-        self.input = input
-        self.validator = validator
-        self.in_error = False
-        super().__init__(Pile([captioned]))
-
-    def disable(self):
-        self.decorated.disable()
-        self.hide_error()
-
-    def enable(self):
-        self.decorated.enable()
-        self.validate()
-
-    def set_error(self, err_msg):
-        in_error = True
-        if isinstance(err_msg, tuple):
-            if len(err_msg) == 3:
-                color, err_msg, in_error = err_msg
-            else:
-                color, err_msg = err_msg
-        else:
-            color = 'info_error'
-        e = AttrMap(Text(err_msg, align="center"), color)
-        t = (e, self._w.options('pack'))
-        if len(self._w.contents) > 1:
-            self._w.contents[1] = t
-        else:
-            self._w.contents.append(t)
-        self.in_error = in_error
-
-    def hide_error(self):
-        if len(self._w.contents) > 1:
-            self._w.contents = self._w.contents[:1]
-        self.in_error = False
-
-    def has_error(self):
-        return self.in_error
-
-    def validate(self):
-        if self.validator is not None:
-            err = self.validator()
-            if err is None:
-                self.hide_error()
-            else:
-                self.set_error(err)
-            self._emit('validated')
-
-    def lost_focus(self):
-        self.validate()
 
 
 def vws(caption, input, validator=None):
