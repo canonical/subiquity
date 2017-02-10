@@ -91,7 +91,7 @@ class BaseNetworkConfigureManualView(BaseView):
                     ("weight", 0.2, text),
                     ("weight", 0.3, Color.string_input(input)),
                     ("weight", 0.5, Text(help))
-            )
+                ])
         return ValidatingWidgetSet(captioned, decorated, input, validator)
 
     def _build_iface_inputs(self):
