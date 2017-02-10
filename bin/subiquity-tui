@@ -65,10 +65,6 @@ def parse_options(argv):
     return parser.parse_args(argv)
 
 
-def control_c_handler(signum, frame):
-    sys.exit(1)
-
-
 LOGDIR = "/var/log/installer/"
 
 def main():
@@ -81,7 +77,8 @@ def main():
     logger.info("Starting SUbiquity v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
 
-    signal.signal(signal.SIGINT, control_c_handler)
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGQUIT, signal.SIG_IGN)
 
     env_ok = environment_check(ENVIRONMENT)
     if env_ok is False and not opts.dry_run:
