@@ -132,7 +132,7 @@ class BaseNetworkConfigureManualView(BaseView):
         self.error = Text("", align='center')
         #self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
         body = [
-            Padding.center_79(self.form.as_rows()),
+            Padding.center_79(self.form.as_rows(self)),
             #Padding.line_break(""),
             #Padding.center_79(self.set_as_default_gw_button),
             Padding.line_break(""),
