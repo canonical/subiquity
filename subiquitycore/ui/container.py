@@ -146,7 +146,7 @@ class TabCyclingListBox(urwid.ListBox):
             next_fp = self.focus_position + 1
             for i, w in enumerate(self.body[next_fp:], next_fp):
                 if w.selectable():
-                    self.set_focus(i)
+                    self._set_focus_no_move(i)
                     _maybe_call(w, "_select_first_selectable")
                     return
             self._select_first_selectable()
@@ -154,7 +154,7 @@ class TabCyclingListBox(urwid.ListBox):
         elif self._command_map[key] == 'prev selectable':
             for i, w in reversed(list(enumerate(self.body[:self.focus_position]))):
                 if w.selectable():
-                    self.set_focus(i)
+                    self._set_focus_no_move(i)
                     _maybe_call(w, "_select_last_selectable")
                     return
             self._select_last_selectable()
