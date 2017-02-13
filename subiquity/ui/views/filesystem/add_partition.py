@@ -25,6 +25,13 @@ from urwid import connect_signal, Text
 
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.form import (
+    BoundFormField,
+    Form,
+    FormField,
+    IntegerField,
+    StringField,
+    )
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.ui.interactive import StringEditor, IntegerEditor, Selector
 from subiquitycore.ui.validation import Toggleable, ValidatingWidgetSet
@@ -52,50 +59,38 @@ def vws(caption, input, validator=None):
     return ValidatingWidgetSet(captioned, decorated, input, validator)
 
 
-class AddPartitionView(BaseView):
+class BoundFSTypeField(BoundFormField):
+    def _make_widget(self):
+        return Selector(opts=self.form.model.supported_filesystems)
 
-    def __init__(self, model, controller, selected_disk):
-        log.debug('AddPartitionView: selected_disk=[{}]'.format(selected_disk))
+class FSTypeField(FormField):
+    bound_class = BoundFSTypeField
+
+
+class BoundMountField(BoundFormField):
+    def _make_widget(self):
+        return MountSelector(self.form.model)
+
+class MountField(FormField):
+    bound_class = BoundMountField
+
+
+class AddPartitionForm(Form):
+
+    def __init__(self, model, disk_obj):
         self.model = model
-        self.controller = controller
-        self.selected_disk = selected_disk
-        self.disk_obj = self.model.get_disk(selected_disk)
+        self.disk_obj = disk_obj
+        self.size_str = _humanize_size(disk_obj.freespace)
+        super().__init__()
+        self.size.caption = "Size (max {})".format(self.size_str)
+        self.partnum.value = self.disk_obj.lastpartnumber + 1
 
-        self.size_str = _humanize_size(self.disk_obj.freespace)
+    partnum = IntegerField("Partition number")
+    size = StringField()
+    fstype = FSTypeField("Format")
+    mount = MountField("Mount")
 
-        self.partnum = IntegerEditor(caption="", default=self.disk_obj.lastpartnumber + 1)
-        self.size = StringEditor(caption="")
-        self.fstype = Selector(opts=self.model.supported_filesystems)
-        self.mountpoint = MountSelector(self.model)
-
-        self.buttons = self._build_buttons()
-        body = [
-            Columns(
-                [
-                    ("weight", 0.2, Text("Adding partition to {}".format(
-                        self.disk_obj.devpath), align="right")),
-                    ("weight", 0.3, Text(""))
-                ]
-            ),
-            Padding.line_break(""),
-            self._build_container(),
-            Padding.line_break(""),
-            Padding.fixed_10(self.buttons),
-        ]
-        partition_box = Padding.center_50(ListBox(body))
-        super().__init__(partition_box)
-
-    def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
-
-        buttons = [
-            Toggleable(done, 'button'),
-            Color.button(cancel)
-        ]
-        return Pile(buttons)
-
-    def _validate_size(self):
+    def validate_size(self):
         v = self.size.value
         if not v:
             return
@@ -111,48 +106,51 @@ class AddPartitionView(BaseView):
         sz = _dehumanize_size(v)
         if sz > self.disk_obj.freespace:
             self.size.value = self.size_str
-            return ("info_minor", "Capped partition size at %s"%(self.size_str,), False)
+            self.size.show_extra(Color.info_minor(Text("Capped partition size at %s"%(self.size_str,))))
 
-    def _validate_mount(self):
+    def validate_mount(self):
         mnts = self.model.get_mounts2()
-        dev = mnts.get(self.mountpoint.value)
+        dev = mnts.get(self.mount.value)
         if dev is not None:
-            return "%s is already mounted at %s"%(dev, self.mountpoint.value)
+            return "%s is already mounted at %s"%(dev, self.mount.value)
 
-    def _build_container(self):
 
-        self.partnum_vws = vws("Partition number", self.partnum)
-        self.size_vws = vws("Size (max {})".format(self.size_str), self.size, validator=self._validate_size)
-        self.fstype_vws = vws("Format", self.fstype)
-        self.mountpoint_vws = vws("Mount", self.mountpoint, validator=self._validate_mount)
+class AddPartitionView(BaseView):
 
-        self.all_vws = [
-            self.partnum_vws,
-            self.size_vws,
-            self.fstype_vws,
-            self.mountpoint_vws,
+    def __init__(self, model, controller, selected_disk):
+        log.debug('AddPartitionView: selected_disk=[{}]'.format(selected_disk))
+        self.model = model
+        self.controller = controller
+        self.selected_disk = selected_disk
+        self.disk_obj = self.model.get_disk(selected_disk)
+
+        self.form = AddPartitionForm(model, self.disk_obj)
+
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+        connect_signal(self.form.fstype.widget, 'select', self.select_fstype)
+
+        body = [
+            Columns(
+                [
+                    ("weight", 0.2, Text("Adding partition to {}".format(
+                        self.disk_obj.devpath), align="right")),
+                    ("weight", 0.3, Text(""))
+                ]
+            ),
+            Padding.line_break(""),
+            self.form.as_rows(),
+            Padding.line_break(""),
+            Padding.fixed_10(self.form.buttons),
         ]
-        for vw in self.all_vws:
-            connect_signal(vw, 'validated', self._validated)
-        return Pile(self.all_vws)
+        partition_box = Padding.center_50(ListBox(body))
+        super().__init__(partition_box)
 
     def _enable_disable_mount(self, enabled):
         if enabled:
-            self.mountpoint_vws.enable()
+            self.form.mount.enable()
         else:
-            self.mountpoint_vws.disable()
-
-    def _validated(self, sender):
-        error = False
-        for w in self.all_vws:
-            if w.has_error():
-                error = True
-                break
-        if error:
-            self.buttons[0].disable()
-            self.buttons.focus_position = 1
-        else:
-            self.buttons[0].enable()
+            self.form.mount.disable()
 
     def select_fstype(self, sender, fs):
         if fs.is_mounted != sender.value.is_mounted:
@@ -163,23 +161,23 @@ class AddPartitionView(BaseView):
 
     def done(self, result):
 
-        fstype = self.fstype.value
+        fstype = self.form.fstype.value
 
         if fstype.is_mounted:
-            mount = self.mountpoint.value
+            mount = self.form.mountpoint.value
         else:
             mount = None
 
-        if self.size.value:
-            size = _dehumanize_size(self.size.value)
+        if self.form.size.value:
+            size = _dehumanize_size(self.form.size.value)
             if size > self.disk_obj.freespace:
                 size = self.disk_obj.freespace
         else:
             size = self.disk_obj.freespace
 
         result = {
-            "partnum": self.partnum.value,
-            "raw_size": self.size.value,
+            "partnum": self.form.partnum.value,
+            "raw_size": self.form.size.value,
             "bytes": size,
             "fstype": fstype.label,
             "mountpoint": mount,

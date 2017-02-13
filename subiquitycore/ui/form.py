@@ -27,7 +27,7 @@ from urwid import (
 
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.container import Columns, Pile
-from subiquitycore.ui.interactive import StringEditor
+from subiquitycore.ui.interactive import IntegerEditor, StringEditor
 from subiquitycore.ui.utils import Color
 
 class Toggleable(delegate_to_widget_mixin('_original_widget'), WidgetDecoration):
@@ -81,6 +81,7 @@ class BoundFormField(object):
         self.form = form
         self.in_error = False
         self._help = None
+        self._caption = None
         self.widget = self._make_widget()
 
     def _make_widget(self):
@@ -148,8 +149,19 @@ class BoundFormField(object):
     def help(self, val):
         self._help = val
 
+    @property
+    def caption(self):
+        if self._caption is not None:
+            return self._caption
+        else:
+            return self.field.caption
+
+    @caption.setter
+    def caption(self, val):
+        self._caption = val
+
     def as_row(self, include_help):
-        text = Text(self.field.caption, align="right")
+        text = Text(self.caption, align="right")
         input = _Validator(self, self.widget)
         cols = [
                     ("weight", 0.2, text),
@@ -167,14 +179,21 @@ class BoundFormField(object):
 
 
 class BoundStringField(BoundFormField):
-
     def _make_widget(self):
         return StringEditor(caption="")
 
 
-
 class StringField(FormField):
     bound_class = BoundStringField
+
+
+class BoundIntegerField(BoundFormField):
+    def _make_widget(self):
+        return IntegerEditor(caption="")
+
+
+class IntegerField(FormField):
+    bound_class = BoundIntegerField
 
 
 class MetaForm(MetaSignals):

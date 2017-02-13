@@ -134,6 +134,10 @@ class IntegerEditor(WidgetWrap):
     def value(self):
         return self._edit.get_edit_text()
 
+    @value.setter
+    def value(self, val):
+        return self._edit.set_edit_text(str(val))
+
 
 class _PopUpButton(SelectableIcon):
     """It looks a bit like a radio button, but it just emits 'click' on activation."""
