@@ -23,8 +23,7 @@ import logging
 import re
 from urwid import connect_signal, Text
 
-from subiquitycore.ui.buttons import done_btn, cancel_btn
-from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.container import Columns, ListBox
 from subiquitycore.ui.form import (
     BoundFormField,
     Form,
@@ -33,30 +32,18 @@ from subiquitycore.ui.form import (
     StringField,
     )
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.ui.interactive import StringEditor, IntegerEditor, Selector
-from subiquitycore.ui.validation import Toggleable, ValidatingWidgetSet
+from subiquitycore.ui.interactive import Selector
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import (_humanize_size,
-                                         _dehumanize_size,
-                                         HUMAN_UNITS)
+from subiquity.models.filesystem import (
+    _humanize_size,
+    _dehumanize_size,
+    HUMAN_UNITS,
+    )
 from subiquity.ui.mount import MountSelector
 
 
 log = logging.getLogger('subiquity.ui.filesystem.add_partition')
-
-
-
-def vws(caption, input, validator=None):
-    text = Text(caption, align="right")
-    decorated = Toggleable(input, 'string_input')
-    captioned = Columns(
-            [
-                ("weight", 0.2, text),
-                ("weight", 0.3, decorated)
-            ],
-        dividechars=4)
-    return ValidatingWidgetSet(captioned, decorated, input, validator)
 
 
 class BoundFSTypeField(BoundFormField):
