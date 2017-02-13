@@ -82,6 +82,8 @@ class BoundFormField(object):
         self.in_error = False
         self._help = None
         self._caption = None
+        self.pile = None
+        self.enabled = True
         self.widget = self._make_widget()
 
     def _make_widget(self):
@@ -96,6 +98,8 @@ class BoundFormField(object):
         return value
 
     def _validate(self):
+        if not self.enabled:
+            return
         try:
             v = self.value
         except ValueError as e:
@@ -160,22 +164,45 @@ class BoundFormField(object):
     def caption(self, val):
         self._caption = val
 
-    def as_row(self, include_help):
+    def cols(self):
         text = Text(self.caption, align="right")
-        input = _Validator(self, self.widget)
+        if self.enabled:
+            input = Color.string_input(_Validator(self, self.widget))
+        else:
+            input = self.widget
         cols = [
                     ("weight", 0.2, text),
-                    ("weight", 0.3, Color.string_input(input)),
+                    ("weight", 0.3, input),
                 ]
-        if include_help:
+        if self.include_help:
             if self.help is not None:
                 help = self.help
             else:
                 help = ""
             cols.append(
                 ("weight", 0.5, Text(help)))
-        self.pile = Pile([Columns(cols, dividechars=4)])
+        cols = Columns(cols, dividechars=4)
+        if self.enabled:
+            return cols
+        else:
+            return WidgetDisable(Color.info_minor(cols))
+
+    def as_row(self, include_help):
+        if self.pile is not None:
+            raise RuntimeError("do not call as_row more than once!")
+        self.include_help = include_help
+        self.pile = Pile([self.cols()])
         return self.pile
+
+    def enable(self):
+        self.enabled = True
+        self.pile.contents[0] = (self.cols(), self.pile.contents[0][1])
+        self.validate()
+
+    def disable(self):
+        self.enabled = False
+        self.pile.contents[0] = (self.cols(), self.pile.contents[0][1])
+        self.validate()
 
 
 class BoundStringField(BoundFormField):

@@ -164,7 +164,7 @@ class AddPartitionView(BaseView):
         fstype = self.form.fstype.value
 
         if fstype.is_mounted:
-            mount = self.form.mountpoint.value
+            mount = self.form.mount.value
         else:
             mount = None
 
