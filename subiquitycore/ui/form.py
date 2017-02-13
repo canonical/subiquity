@@ -205,22 +205,17 @@ class BoundFormField(object):
             self.pile.contents[0] = (self.cols(), self.pile.contents[0][1])
 
 
-class BoundStringField(BoundFormField):
-    def _make_widget(self):
-        return StringEditor(caption="")
+def simple_field(widget_maker):
+    class BoundField(BoundFormField):
+        def _make_widget(self):
+            return widget_maker()
+    class Field(FormField):
+        bound_class = BoundField
+    return Field
 
 
-class StringField(FormField):
-    bound_class = BoundStringField
-
-
-class BoundIntegerField(BoundFormField):
-    def _make_widget(self):
-        return IntegerEditor(caption="")
-
-
-class IntegerField(FormField):
-    bound_class = BoundIntegerField
+StringField = simple_field(lambda:StringEditor(caption=""))
+IntegerField = simple_field(lambda:StringEditor(caption=""))
 
 
 class MetaForm(MetaSignals):
