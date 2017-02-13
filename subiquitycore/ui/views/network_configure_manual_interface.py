@@ -39,6 +39,7 @@ ip_families = {
 }
 
 class NetworkConfigForm(Form):
+    opts = {'help_style': 'right'}
 
     def __init__(self, ip_version):
         super().__init__()

@@ -15,20 +15,20 @@
 
 import logging
 
-from urwid import Text
+from urwid import connect_signal
 
-from subiquitycore.ui.buttons import done_btn, cancel_btn
-from subiquitycore.ui.interactive import (PasswordEditor,
-                                          RealnameEditor,
-                                          StringEditor,
-                                          UsernameEditor)
+from subiquitycore.ui.interactive import (
+    PasswordEditor,
+    RealnameEditor,
+    UsernameEditor,
+    )
 from subiquitycore.ui.form import (
     simple_field,
     Form,
     StringField,
     )
-from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 
@@ -101,6 +101,8 @@ class IdentityView(BaseView):
         self.items = []
 
         self.form = IdentityForm()
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
 
         self.ssh_import_confirmed = True
 

@@ -84,6 +84,7 @@ class BoundFormField(object):
         self._caption = None
         self.pile = None
         self._enabled = True
+        self.showing_extra = False
         self.widget = self._make_widget()
 
     def _make_widget(self):
@@ -124,15 +125,17 @@ class BoundFormField(object):
         self.form.validated()
 
     def hide_extra(self):
-        if len(self.pile.contents) > 1:
-            self.pile.contents = self.pile.contents[:1]
+        if self.showing_extra:
+            del self.pile.contents[1]
+            self.showing_extra = False
 
     def show_extra(self, extra):
         t = (extra, self.pile.options('pack'))
-        if len(self.pile.contents) > 1:
+        if self.showing_extra:
             self.pile.contents[1] = t
         else:
-            self.pile.contents.append(t)
+            self.pile.contents[1:1] = [t]
+        self.showing_extra = True
 
     @property
     def value(self):
@@ -164,7 +167,7 @@ class BoundFormField(object):
     def caption(self, val):
         self._caption = val
 
-    def cols(self):
+    def _cols(self):
         text = Text(self.caption, align="right")
         if self._enabled:
             input = Color.string_input(_Validator(self, self.widget))
@@ -174,7 +177,7 @@ class BoundFormField(object):
                     ("weight", 0.2, text),
                     ("weight", 0.3, input),
                 ]
-        if self.include_help:
+        if self.help_style == 'right':
             if self.help is not None:
                 help = self.help
             else:
@@ -187,11 +190,17 @@ class BoundFormField(object):
         else:
             return WidgetDisable(Color.info_minor(cols))
 
-    def as_row(self, include_help):
+    def as_row(self):
         if self.pile is not None:
             raise RuntimeError("do not call as_row more than once!")
-        self.include_help = include_help
-        self.pile = Pile([self.cols()])
+        self.help_style = self.form.opts.get('help_style')
+        self.pile = Pile([self._cols()])
+        if self.help_style == 'below' and self.help is not None:
+            cols = [
+                    ("weight", 0.2, Text("")),
+                    ("weight", 0.3, Color.info_minor(Text(self.help))),
+                ]
+            self.pile.contents.append((Columns(cols, dividechars=4), self.pile.options('pack')))
         return self.pile
 
     @property
@@ -202,7 +211,7 @@ class BoundFormField(object):
     def enabled(self, val):
         if val != self._enabled:
             self._enabled = val
-            self.pile.contents[0] = (self.cols(), self.pile.contents[0][1])
+            self.pile.contents[0] = (self._cols(), self.pile.contents[0][1])
 
 
 def simple_field(widget_maker):
@@ -258,14 +267,9 @@ class Form(object, metaclass=MetaForm):
         emit_signal(self, 'cancel', self)
 
     def as_rows(self):
-        has_help = False
-        for field in self._fields:
-            if field.help is not None:
-                has_help = True
-                break
         rows = []
         for field in self._fields:
-            rows.append(field.as_row(has_help))
+            rows.append(field.as_row())
         return Pile(rows)
 
     def validated(self):
