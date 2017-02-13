@@ -1,0 +1,2 @@
+tar-ignore = *.img
+tar-ignore = .git*
