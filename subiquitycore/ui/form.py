@@ -83,7 +83,7 @@ class BoundFormField(object):
         self._help = None
         self._caption = None
         self.pile = None
-        self.enabled = True
+        self._enabled = True
         self.widget = self._make_widget()
 
     def _make_widget(self):
@@ -98,7 +98,7 @@ class BoundFormField(object):
         return value
 
     def _validate(self):
-        if not self.enabled:
+        if not self._enabled:
             return
         try:
             v = self.value
@@ -166,7 +166,7 @@ class BoundFormField(object):
 
     def cols(self):
         text = Text(self.caption, align="right")
-        if self.enabled:
+        if self._enabled:
             input = Color.string_input(_Validator(self, self.widget))
         else:
             input = self.widget
@@ -182,7 +182,7 @@ class BoundFormField(object):
             cols.append(
                 ("weight", 0.5, Text(help)))
         cols = Columns(cols, dividechars=4)
-        if self.enabled:
+        if self._enabled:
             return cols
         else:
             return WidgetDisable(Color.info_minor(cols))
@@ -194,15 +194,15 @@ class BoundFormField(object):
         self.pile = Pile([self.cols()])
         return self.pile
 
-    def enable(self):
-        self.enabled = True
-        self.pile.contents[0] = (self.cols(), self.pile.contents[0][1])
-        self.validate()
+    @property
+    def enabled(self):
+        return self._enabled
 
-    def disable(self):
-        self.enabled = False
-        self.pile.contents[0] = (self.cols(), self.pile.contents[0][1])
-        self.validate()
+    @enabled.setter
+    def enabled(self, val):
+        if val != self._enabled:
+            self._enabled = val
+            self.pile.contents[0] = (self.cols(), self.pile.contents[0][1])
 
 
 class BoundStringField(BoundFormField):

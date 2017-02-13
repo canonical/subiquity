@@ -63,15 +63,8 @@ class AddFormatView(BaseView):
         format_box = Padding.center_50(ListBox(body))
         super().__init__(format_box)
 
-    def _enable_disable_mount(self, enabled):
-        if enabled:
-            self.form.mount.enable()
-        else:
-            self.form.mount.disable()
-
     def select_fstype(self, sender, fs):
-        if fs.is_mounted != sender.value.is_mounted:
-            self._enable_disable_mount(fs.is_mounted)
+        self.form.mount.enabled = fs.is_mounted
 
     def cancel(self, button):
         self.controller.prev_view()
