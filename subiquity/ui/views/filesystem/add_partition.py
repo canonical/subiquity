@@ -70,7 +70,7 @@ class AddPartitionForm(Form):
         self.size_str = _humanize_size(disk_obj.freespace)
         super().__init__()
         self.size.caption = "Size (max {})".format(self.size_str)
-        self.partnum.value = self.disk_obj.lastpartnumber + 1
+        self.partnum.value = str(self.disk_obj.lastpartnumber + 1)
 
     partnum = IntegerField("Partition number")
     size = StringField()
