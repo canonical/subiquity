@@ -19,23 +19,73 @@ import ipaddress
 from urwid import connect_signal, Text
 
 from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import done_btn, menu_btn, cancel_btn
-from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.interactive import StringEditor
-from subiquitycore.ui.utils import Color, Padding
-from subiquitycore.ui.validation import Toggleable, ValidatingWidgetSet
+from subiquitycore.ui.buttons import menu_btn
+from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.form import Form, StringField
 
 
 log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface')
 
+ip_families = {
+    4: {
+        'address_cls': ipaddress.IPv4Address,
+        'network_cls': ipaddress.IPv4Network,
+    },
+    6: {
+        'address_cls': ipaddress.IPv6Address,
+        'network_cls': ipaddress.IPv6Network,
+    }
+}
 
-def _validator_from_cleaner(cleaner):
-    def validator():
+class NetworkConfigForm(Form):
+
+    def __init__(self, ip_version):
+        super().__init__()
+        fam = ip_families[ip_version]
+        self.ip_address_cls = fam['address_cls']
+        self.ip_network_cls = fam['network_cls']
+
+    subnet = StringField("Subnet:")
+    address = StringField("Address:")
+    gateway = StringField("Gateway:")
+    nameservers = StringField("Name servers:", help="IP addresses, comma separated")
+    searchdomains = StringField("Search domains:", help="Domains, comma separated")
+
+    def clean_subnet(self, subnet):
+        log.debug("clean_subnet %r", subnet)
+        if '/' not in subnet:
+            raise ValueError("should be in CIDR form (xx.xx.xx.xx/yy)")
+        return self.ip_network_cls(subnet)
+
+    def clean_address(self, address):
+        address = self.ip_address_cls(address)
         try:
-            cleaner()
-        except ValueError as v:
-            return str(v)
-    return validator
+            subnet = self.subnet.value
+        except ValueError:
+            return
+        if address not in subnet:
+            raise ValueError("'%s' is not contained in '%s'" % (address, subnet))
+        return address
+
+    def clean_gateway(self, gateway):
+        return self.ip_address_cls(gateway)
+
+    def clean_nameservers(self, value):
+        nameservers = []
+        for ns in value.split(','):
+            ns = ns.strip()
+            if ns:
+                nameservers.append(ipaddress.ip_address(ns))
+        return nameservers
+
+    def clean_searchdomains(self, value):
+        domains = []
+        for domain in value.split(','):
+            domain = domain.strip()
+            if domain:
+                domains.append(domain)
+        return domains
 
 
 class BaseNetworkConfigureManualView(BaseView):
@@ -45,32 +95,29 @@ class BaseNetworkConfigureManualView(BaseView):
         self.controller = controller
         self.dev = self.model.get_netdev_by_name(name)
         self.is_gateway = False
-        self.subnet_input = StringEditor(caption="")  # FIXME: ipaddr_editor
-        self.address_input = StringEditor(caption="")  # FIXME: ipaddr_editor
+        self.form = NetworkConfigForm(self.ip_version)
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+
+        self.form.subnet.help = "CIDR e.g. %s"%(self.example_address,)
         configured_addresses = self.dev.configured_ip_addresses_for_version(self.ip_version)
         if configured_addresses:
             addr = ipaddress.ip_interface(configured_addresses[0])
-            self.subnet_input.value = str(addr.network)
-            self.address_input.value = str(addr.ip)
-        self.gateway_input = StringEditor(caption="")  # FIXME: ipaddr_editor
+            self.form.subnet.value = str(addr.network)
+            self.form.address.value = str(addr.ip)
         configured_gateway = self.dev.configured_gateway_for_version(self.ip_version)
         if configured_gateway:
-            self.gateway_input.value = configured_gateway
-        self.nameserver_input = StringEditor(caption="")  # FIXME: ipaddr_list_editor
-        self.nameserver_input.value = ', '.join(self.dev.configured_nameservers)
-        self.searchdomains_input = StringEditor(caption="")  # FIXME: ipaddr_list_editor
-        self.searchdomains_input.value = ', '.join(self.dev.configured_searchdomains)
+            self.form.gateway.value = configured_gateway
+        self.form.nameservers.value = ', '.join(self.dev.configured_nameservers)
+        self.form.searchdomains.value = ', '.join(self.dev.configured_searchdomains)
         self.error = Text("", align='center')
         #self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
-        self.buttons = self._build_buttons()
         body = [
-            Padding.center_79(self._build_iface_inputs()),
+            Padding.center_79(self.form.as_rows()),
             #Padding.line_break(""),
             #Padding.center_79(self.set_as_default_gw_button),
             Padding.line_break(""),
-            Padding.center_90(Color.info_error(self.error)),
-            Padding.line_break(""),
-            Padding.fixed_10(self.buttons)
+            Padding.fixed_10(self.form.buttons)
         ]
         super().__init__(ListBox(body))
 
@@ -82,72 +129,6 @@ class BaseNetworkConfigureManualView(BaseView):
             self.controller.prev_view()
             self.controller.prev_view()
             return
-
-    def _vws(self, caption, input, help, validator=None):
-        text = Text(caption, align="right")
-        decorated = Toggleable(input, 'string_input')
-        captioned = Columns(
-                [
-                    ("weight", 0.2, text),
-                    ("weight", 0.3, Color.string_input(input)),
-                    ("weight", 0.5, Text(help))
-                ])
-        return ValidatingWidgetSet(captioned, decorated, input, validator)
-
-    def _build_iface_inputs(self):
-        self.all_vws = [
-            self._vws("Subnet:", self.subnet_input, "CIDR e.g. %s"%(self.example_address,),
-                          _validator_from_cleaner(self._clean_subnet)),
-            self._vws("Address:", self.address_input, "",
-                          _validator_from_cleaner(self._clean_address)),
-            self._vws("Gateway:", self.gateway_input, "",
-                          _validator_from_cleaner(self._clean_gateway)),
-            self._vws("Name servers:", self.nameserver_input, "IP addresses, comma separated",
-                          _validator_from_cleaner(self._clean_nameservers)),
-            self._vws("Search domains:", self.searchdomains_input, "Domains, comma separated"),
-        ]
-        for vw in self.all_vws:
-            connect_signal(vw, 'validated', self._validated)
-        return Pile(self.all_vws)
-
-    def _clean_subnet(self):
-        subnet = self.subnet_input.value
-        if '/' not in subnet:
-            raise ValueError("should be in CIDR form (xx.xx.xx.xx/yy)")
-        return self.ip_network_cls(subnet)
-
-    def _clean_address(self):
-        address = self.ip_address_cls(self.address_input.value)
-        try:
-            subnet = self._clean_subnet()
-        except ValueError:
-            return
-        if address not in subnet:
-            raise ValueError("'%s' is not contained in '%s'" % (address, subnet))
-        return address
-
-    def _clean_gateway(self):
-        return self.ip_address_cls(self.gateway_input.value)
-
-    def _clean_nameservers(self):
-        nameservers = []
-        for ns in self.nameserver_input.value.split(','):
-            ns = ns.strip()
-            if ns:
-                nameservers.append(ipaddress.ip_address(ns.strip()))
-        return nameservers
-
-    def _validated(self, sender):
-        error = False
-        for w in self.all_vws:
-            if w.has_error():
-                error = True
-                break
-        if error:
-            self.buttons[0].disable()
-            self.buttons.focus_position = 1
-        else:
-            self.buttons[0].enable()
 
     def _build_set_as_default_gw_button(self):
         devs = self.model.get_all_netdevs()
@@ -175,29 +156,14 @@ class BaseNetworkConfigureManualView(BaseView):
                 # FIXME: set error message UX ala identity
                 pass
 
-    def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
-
-        buttons = [
-            Toggleable(done, 'button'),
-            Color.button(cancel)
-        ]
-        return Pile(buttons)
-
-    def done(self, btn):
-        searchdomains = []
-        for sd in self.searchdomains_input.value.split(','):
-            sd = sd.strip()
-            if sd:
-                searchdomains.append(sd.strip())
+    def done(self, sender):
         # XXX this converting from and to and from strings thing is a bit out of hand.
         result = {
-            'network': str(self._clean_subnet()),
-            'address': str(self._clean_address()),
-            'gateway': str(self._clean_gateway()),
-            'nameservers': map(str, self._clean_nameservers()),
-            'searchdomains': searchdomains,
+            'network': str(self.form.subnet.value),
+            'address': str(self.form.address.value),
+            'gateway': str(self.form.gateway.value),
+            'nameservers': map(str, self.form.nameservers.value),
+            'searchdomains': self.form.searchdomains.value,
         }
         self.dev.remove_ip_networks_for_version(self.ip_version)
         self.dev.remove_nameservers()
@@ -206,19 +172,15 @@ class BaseNetworkConfigureManualView(BaseView):
         # return
         self.controller.prev_view()
 
-    def cancel(self, button):
+    def cancel(self, sender):
         self.model.default_gateway = None
         self.controller.prev_view()
 
 class NetworkConfigureIPv4InterfaceView(BaseNetworkConfigureManualView):
     ip_version = 4
-    ip_address_cls = ipaddress.IPv4Address
-    ip_network_cls = ipaddress.IPv4Network
     example_address = '192.168.9.0/24'
 
 
 class NetworkConfigureIPv6InterfaceView(BaseNetworkConfigureManualView):
     ip_version = 6
-    ip_address_cls = ipaddress.IPv6Address
-    ip_network_cls = ipaddress.IPv6Network
     example_address = 'fde4:8dba:82e1::/64'
