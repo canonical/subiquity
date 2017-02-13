@@ -15,15 +15,20 @@
 
 import logging
 
-from urwid import Text
+from urwid import connect_signal
 
-from subiquitycore.ui.buttons import done_btn, cancel_btn
-from subiquitycore.ui.interactive import (PasswordEditor,
-                                          RealnameEditor,
-                                          StringEditor,
-                                          UsernameEditor)
-from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.interactive import (
+    PasswordEditor,
+    RealnameEditor,
+    UsernameEditor,
+    )
+from subiquitycore.ui.form import (
+    simple_field,
+    Form,
+    StringField,
+    )
+from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 
@@ -34,6 +39,58 @@ REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
 
+RealnameField = simple_field(lambda:RealnameEditor(caption=""))
+UsernameField = simple_field(lambda:UsernameEditor(caption=""))
+PasswordField = simple_field(lambda:PasswordEditor(caption=""))
+
+
+class IdentityForm(Form):
+    opts = {'help_style': 'below'}
+
+    realname = RealnameField("Your name:")
+    hostname = UsernameField(
+        "Your server's name:",
+        help="The name it uses when it talks to other computers.")
+    username = UsernameField("Pick a username:")
+    password = PasswordField("Choose a password:")
+    confirm_password = PasswordField("Confirm your password:")
+    ssh_import_id = StringField(
+        "Import SSH identity:",
+        help=("Input your SSH user id from Ubuntu SSO (sso:email), "
+              "Launchpad (lp:username) or Github (gh:username)."))
+
+    def validate_realname(self):
+        if len(self.realname.value) < 1:
+            return "Real name must not be empty."
+        if len(self.realname.value) > REALNAME_MAXLEN:
+            return "Realname too long, must be < " + str(REALNAME_MAXLEN)
+
+    def validate_hostname(self):
+        if len(self.hostname.value) < 1:
+            return "Server name must not be empty"
+
+        if len(self.hostname.value) > HOSTNAME_MAXLEN:
+            return "Server name too long, must be < " + str(HOSTNAME_MAXLEN)
+
+    def validate_username(self):
+        if len(self.username.value) < 1:
+            return "Username missing"
+
+        if len(self.username.value) > USERNAME_MAXLEN:
+            return "Username too long, must be < " + str(USERNAME_MAXLEN)
+
+    def validate_password(self):
+        if len(self.password.value) < 1:
+            return "Password must be set"
+
+    def validate_confirm_password(self):
+        if self.password.value != self.confirm_password.value:
+            return "Passwords do not match"
+
+    def validate_ssh_import_id(self):
+        if len(self.ssh_import_id.value) > SSH_IMPORT_MAXLEN:
+            return "SSH id too long, must be < " + str(SSH_IMPORT_MAXLEN)
+
 
 class IdentityView(BaseView):
     def __init__(self, model, controller, opts):
@@ -42,165 +99,21 @@ class IdentityView(BaseView):
         self.signal = controller.signal
         self.opts = opts
         self.items = []
-        self.realname = RealnameEditor(caption="")
-        self.hostname = UsernameEditor(caption="")
-        self.username = UsernameEditor(caption="")
-        self.password = PasswordEditor(caption="")
-        self.ssh_import_id = StringEditor(caption="")
+
+        self.form = IdentityForm()
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+
         self.ssh_import_confirmed = True
-        self.error = Text("", align="center")
-        self.confirm_password = PasswordEditor(caption="")
 
         body = [
-            Padding.center_90(self._build_model_inputs()),
+            Padding.center_90(self.form.as_rows()),
             Padding.line_break(""),
-            Padding.center_90(Color.info_error(self.error)),
-            Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons()),
+            Padding.fixed_10(self.form.buttons),
         ]
         super().__init__(ListBox(body))
 
-    def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
-
-        buttons = [
-            Color.button(done),
-            Color.button(cancel)
-        ]
-        return Pile(buttons)
-
-    def _build_model_inputs(self):
-        sl = [
-            Columns(
-                [
-                    ("weight", 0.2, Text("Your name:", align="right")),
-                    ("weight", 0.3, Color.string_input(self.realname)),
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Your server's name:",
-                                         align="right")),
-                    ("weight", 0.3, Color.string_input(self.hostname)),
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("", align="right")),
-                    ("weight", 0.3, Color.info_minor(
-                        Text("The name it uses when it talks to "
-                             "other computers", align="left"))),
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Pick a username:", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.username))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Choose a password:", align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.password))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Confirm your password:",
-                                         align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.confirm_password))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Import SSH identity:",
-                                         align="right")),
-                    ("weight", 0.3,
-                     Color.string_input(self.ssh_import_id))
-                ],
-                dividechars=4
-            ),
-
-            Columns(
-                [
-                    ("weight", 0.2, Text("", align="right")),
-                    ("weight", 0.3, Color.info_minor(
-                        Text("Input your SSH user id from "
-                             "Ubuntu SSO (sso:email), "
-                             "Launchpad (lp:username) or "
-                             "Github (gh:username).",
-                             align="left"))),
-                ],
-                dividechars=4
-            ),
-        ]
-        return Pile(sl)
-
     def done(self, result):
-        # check in display order:
-        #   realname, hostname, username, password, ssh
-        if len(self.realname.value) < 1:
-            self.error.set_text("Realname missing.")
-            self.realname.value = ""
-            return
-
-        if len(self.realname.value) > REALNAME_MAXLEN:
-            self.error.set_text("Realname too long, must be < " +
-                                str(REALNAME_MAXLEN))
-            self.realname.value = ""
-            return
-
-        if len(self.hostname.value) < 1:
-            self.error.set_text("Server name missing.")
-            self.hostname.value = ""
-            return
-
-        if len(self.hostname.value) > HOSTNAME_MAXLEN:
-            self.error.set_text("Server name too long, must be < " +
-                                str(HOSTNAME_MAXLEN))
-            self.hostname.value = ""
-            return
-
-        if len(self.username.value) < 1:
-            self.error.set_text("Username missing.")
-            self.username.value = ""
-            return
-
-        if len(self.username.value) > USERNAME_MAXLEN:
-            self.error.set_text("Username too long, must be < " +
-                                str(USERNAME_MAXLEN))
-            self.username.value = ""
-            return
-
-        if len(self.password.value) < 1:
-            self.error.set_text("Password must be set")
-            self.password.value = ""
-            self.confirm_password.value = ""
-            return
-
-        if self.password.value != self.confirm_password.value:
-            self.error.set_text("Passwords do not match.")
-            self.password.value = ""
-            self.confirm_password.value = ""
-            return
-
-        # ssh_id is optional
-        if len(self.ssh_import_id.value) > SSH_IMPORT_MAXLEN:
-            self.error.set_text("SSH id too long, must be < " +
-                                str(SSH_IMPORT_MAXLEN))
-            self.ssh_import_id.value = ""
-            return
-
         cpassword = self.model.encrypt_password(self.password.value)
         log.debug("*crypted* User input: {} {} {}".format(
             self.username.value, cpassword, cpassword))
