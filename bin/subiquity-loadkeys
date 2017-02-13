@@ -1,0 +1,5 @@
+#!/bin/sh
+loadkeys - <<EOF
+ string F91 = "\033[Z"
+ keycode 15 = Tab F91
+EOF
