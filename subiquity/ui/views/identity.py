@@ -115,24 +115,24 @@ class IdentityView(BaseView):
         super().__init__(ListBox(body))
 
     def done(self, result):
-        cpassword = self.model.encrypt_password(self.password.value)
+        cpassword = self.model.encrypt_password(self.form.password.value)
         log.debug("*crypted* User input: {} {} {}".format(
-            self.username.value, cpassword, cpassword))
+            self.form.username.value, cpassword, cpassword))
         result = {
-            "hostname": self.hostname.value,
-            "realname": self.realname.value,
-            "username": self.username.value,
+            "hostname": self.form.hostname.value,
+            "realname": self.form.realname.value,
+            "username": self.form.username.value,
             "password": cpassword,
             "confirm_password": cpassword,
         }
 
         # if user specifed a value, allow user to validate fingerprint
-        if self.ssh_import_id.value:
+        if self.form.ssh_import_id.value:
             if self.ssh_import_confirmed is True:
-                result.update({'ssh_import_id': self.ssh_import_id.value})
+                result.update({'ssh_import_id': self.form.ssh_import_id.value})
             else:
                 self.emit_signal('identity:confirm-ssh-id',
-                                 self.ssh_import_id.value)
+                                 self.form.ssh_import_id.value)
                 return
 
         log.debug("User input: {}".format(result))

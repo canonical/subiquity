@@ -17,7 +17,7 @@ import logging
 from urwid import (
     LineBox,
     Text,
-    SimpleListWalker,
+    SimpleFocusListWalker,
     )
 
 from subiquitycore.view import BaseView
@@ -32,7 +32,7 @@ class ProgressView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.listwalker = SimpleListWalker([])
+        self.listwalker = SimpleFocusListWalker([])
         self.linebox = LineBox(ListBox(self.listwalker))
         body = [
             ('pack', Text("")),
