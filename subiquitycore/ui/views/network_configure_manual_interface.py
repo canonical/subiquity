@@ -22,7 +22,8 @@ from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import menu_btn
 from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.utils import Padding
-from subiquitycore.ui.form import Form, StringField
+from subiquitycore.ui.interactive import RestrictedEditor, StringEditor
+from subiquitycore.ui.form import Form, FormField, StringField
 
 
 log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface')
@@ -38,18 +39,35 @@ ip_families = {
     }
 }
 
+
+class IPField(FormField):
+    def __init__(self, *args, **kw):
+        self.has_mask = kw.pop('has_mask', False)
+        super().__init__(*args, **kw)
+    def _make_widget(self, form):
+        if form.ip_version == 6:
+            return StringEditor(caption="")
+        else:
+            if self.has_mask:
+                allowed = '[0-9./]'
+            else:
+                allowed = '[0-9.]'
+            return RestrictedEditor(allowed)
+
+
 class NetworkConfigForm(Form):
     opts = {'help_style': 'right'}
 
     def __init__(self, ip_version):
+        self.ip_version = ip_version
         super().__init__()
         fam = ip_families[ip_version]
         self.ip_address_cls = fam['address_cls']
         self.ip_network_cls = fam['network_cls']
 
-    subnet = StringField("Subnet:")
-    address = StringField("Address:")
-    gateway = StringField("Gateway:")
+    subnet = IPField("Subnet:", has_mask=True)
+    address = IPField("Address:")
+    gateway = IPField("Gateway:")
     nameservers = StringField("Name servers:", help="IP addresses, comma separated")
     searchdomains = StringField("Search domains:", help="Domains, comma separated")
 

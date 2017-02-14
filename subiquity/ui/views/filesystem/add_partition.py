@@ -46,20 +46,14 @@ from subiquity.ui.mount import MountSelector
 log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 
 
-class BoundFSTypeField(BoundFormField):
-    def _make_widget(self):
-        return Selector(opts=self.form.model.supported_filesystems)
-
 class FSTypeField(FormField):
-    bound_class = BoundFSTypeField
+    def _make_widget(self, form):
+        return Selector(opts=form.model.supported_filesystems)
 
-
-class BoundMountField(BoundFormField):
-    def _make_widget(self):
-        return MountSelector(self.form.model)
 
 class MountField(FormField):
-    bound_class = BoundMountField
+    def _make_widget(self, form):
+        return MountSelector(form.model)
 
 
 class AddPartitionForm(Form):
@@ -93,7 +87,7 @@ class AddPartitionForm(Form):
         sz = _dehumanize_size(v)
         if sz > self.disk_obj.freespace:
             self.size.value = self.size_str
-            self.size.show_extra(Color.info_minor(Text("Capped partition size at %s"%(self.size_str,))))
+            self.size.show_extra(Color.info_minor(Text("Capped partition size at %s"%(self.size_str,), align="center")))
 
     def validate_mount(self):
         mnts = self.model.get_mounts2()

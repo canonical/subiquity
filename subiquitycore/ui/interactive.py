@@ -16,6 +16,10 @@
 """ Re-usable input widgets
 """
 
+from functools import partial
+import logging
+import re
+
 from urwid import (
     ACTIVATE,
     AttrWrap,
@@ -30,77 +34,52 @@ from urwid import (
     TOP,
     WidgetWrap,
     )
-import logging
-import re
 
 from subiquitycore.ui.container import Pile
 
 log = logging.getLogger("subiquitycore.ui.input")
 
 
-class StringEditor(WidgetWrap):
+class StringEditor(Edit):
     """ Edit input class
 
-    Initializes and Edit object and attachs its result
-    to the `value` accessor.
+    Attaches its result to the `value` accessor.
     """
-    def __init__(self, caption, **kwargs):
-        self._edit = Edit(caption=caption, **kwargs)
-        self.error = None
-        super().__init__(self._edit)
-
-    def keypress(self, size, key):
-        if self.error:
-            self._edit.set_edit_text("")
-            self.error = None
-        return super().keypress(size, key)
-
-    def set_error(self, msg):
-        self.error = msg
-        return self._edit.set_edit_text(msg)
 
     @property
     def value(self):
-        return self._edit.get_edit_text()
+        return self.get_edit_text()
 
     @value.setter  # NOQA
     def value(self, value):
-        self._edit.set_edit_text(value)
+        self.set_edit_text(value)
 
 
 class PasswordEditor(StringEditor):
     """ Password input prompt with masking
     """
-    def __init__(self, caption, mask="*"):
-        super().__init__(caption, mask=mask)
+    def __init__(self, mask="*"):
+        super().__init__(mask=mask)
 
 
-class RealnameEditor(StringEditor):
-    """ Username input prompt with input rules
-    """
+class RestrictedEditor(StringEditor):
+    """Editor that only allows certain characters."""
+
+    def __init__(self, allowed=None):
+        super().__init__()
+        self.matcher = re.compile(allowed)
 
     def keypress(self, size, key):
-        ''' restrict what chars we allow for username '''
-
-        realname = r'[a-zA-Z0-9_\- ]'
-        if re.match(realname, key) is None:
+        if len(key) > 1:
+            return super().keypress(size, key)
+        log.debug('key %s %s', key, self.matcher.match(key))
+        if self.matcher.match(key) is None:
             return False
-
         return super().keypress(size, key)
 
 
-class EmailEditor(StringEditor):
-    """ Email input prompt with input rules
-    """
-
-    def keypress(self, size, key):
-        ''' restrict what chars we allow for username '''
-
-        realname = r'[-a-zA-Z0-9_.@+=]'
-        if re.match(realname, key) is None:
-            return False
-
-        return super().keypress(size, key)
+RealnameEditor = partial(RestrictedEditor, r'[a-zA-Z0-9_\- ]')
+EmailEditor = partial(RestrictedEditor, r'[-a-zA-Z0-9_.@+=]')
 
 
 class UsernameEditor(StringEditor):
@@ -109,25 +88,21 @@ class UsernameEditor(StringEditor):
 
     def keypress(self, size, key):
         ''' restrict what chars we allow for username '''
-
-        userlen = len(self.value)
-        if userlen == 0:
-            username = r'[a-z_]'
-        else:
-            username = r'[a-z0-9_-]'
-
+        if self._command_map[key] is not None:
+            return super().keypress(size, key)
+        new_text = self.insert_text_result(key)[0]
+        username = r'[a-z_][a-z0-9_-]*'
         # don't allow non username chars
-        if re.match(username, key) is None:
+        if new_text != "" and re.match(username, new_text) is None:
             return False
-
         return super().keypress(size, key)
 
 
 class IntegerEditor(WidgetWrap):
     """ IntEdit input class
     """
-    def __init__(self, caption, default=0):
-        self._edit = IntEdit(caption=caption, default=default)
+    def __init__(self, default=0):
+        self._edit = IntEdit(default=default)
         super().__init__(self._edit)
 
     @property

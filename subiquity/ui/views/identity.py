@@ -39,9 +39,9 @@ REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
 
-RealnameField = simple_field(lambda:RealnameEditor(caption=""))
-UsernameField = simple_field(lambda:UsernameEditor(caption=""))
-PasswordField = simple_field(lambda:PasswordEditor(caption=""))
+RealnameField = simple_field(RealnameEditor)
+UsernameField = simple_field(UsernameEditor)
+PasswordField = simple_field(PasswordEditor)
 
 
 class IdentityForm(Form):
@@ -86,6 +86,7 @@ class IdentityForm(Form):
     def validate_confirm_password(self):
         if self.password.value != self.confirm_password.value:
             return "Passwords do not match"
+        self.password.validate()
 
     def validate_ssh_import_id(self):
         if len(self.ssh_import_id.value) > SSH_IMPORT_MAXLEN:

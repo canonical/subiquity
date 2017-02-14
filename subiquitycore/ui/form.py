@@ -70,13 +70,17 @@ class FormField(object):
         self.index = FormField.next_index
         FormField.next_index += 1
 
+    def _make_widget(self, form):
+        raise NotImplementedError(self._make_widget)
+
     def bind(self, form):
-        return self.bound_class(self, form)
+        widget = self._make_widget(form)
+        return BoundFormField(self, form, widget)
 
 
 class BoundFormField(object):
 
-    def __init__(self, field, form):
+    def __init__(self, field, form, widget):
         self.field = field
         self.form = form
         self.in_error = False
@@ -85,10 +89,7 @@ class BoundFormField(object):
         self.pile = None
         self._enabled = True
         self.showing_extra = False
-        self.widget = self._make_widget()
-
-    def _make_widget(self):
-        raise NotImplementedError(self._make_widget)
+        self.widget = widget
 
     def clean(self, value):
         if self.field.cleaner is not None:
@@ -114,10 +115,10 @@ class BoundFormField(object):
             return validator()
 
     def validate(self):
+        self.hide_extra()
         r = self._validate()
         if r is None:
             self.in_error = False
-            self.hide_extra()
         else:
             self.in_error = True
             extra = Color.info_error(Text(r, align="center"))
@@ -215,17 +216,14 @@ class BoundFormField(object):
 
 
 def simple_field(widget_maker):
-    class BoundField(BoundFormField):
-        def _make_widget(self):
-            return widget_maker()
     class Field(FormField):
-        bound_class = BoundField
+        def _make_widget(self, form):
+            return widget_maker()
     return Field
 
 
-StringField = simple_field(lambda:StringEditor(caption=""))
-IntegerField = simple_field(lambda:StringEditor(caption=""))
-
+StringField = simple_field(StringEditor)
+IntegerField = simple_field(IntegerEditor)
 
 class MetaForm(MetaSignals):
 
