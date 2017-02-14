@@ -70,7 +70,7 @@ class RestrictedEditor(StringEditor):
         self.matcher = re.compile(allowed)
 
     def valid_char(self, ch):
-        return self.matcher.match(ch) is not None
+        return len(ch) == 1 and self.matcher.match(ch) is not None
 
 
 RealnameEditor = partial(RestrictedEditor, r'[a-zA-Z0-9_\- ]')
