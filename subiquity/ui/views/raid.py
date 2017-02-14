@@ -33,8 +33,8 @@ class RaidView(BaseView):
         self.model = model
         self.signal = signal
         self.raid_level = Selector(self.model.raid_levels)
-        self.hot_spares = IntegerEditor(caption="")
-        self.chunk_size = StringEditor(edit_text="4K", caption="")
+        self.hot_spares = IntegerEditor()
+        self.chunk_size = StringEditor(edit_text="4K")
         self.selected_disks = []
         body = [
             Padding.center_50(self._build_disk_selection()),

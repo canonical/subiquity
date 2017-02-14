@@ -34,10 +34,10 @@ class NetworkConfigureWLANView(BaseView):
         self.model = model
         self.controller = controller
         self.dev = self.model.get_netdev_by_name(name)
-        self.ssid_input = StringEditor(caption="")
+        self.ssid_input = StringEditor()
         if self.dev.configured_ssid is not None:
             self.ssid_input.value = self.dev.configured_ssid
-        self.psk_input = PasswordEditor(caption="")
+        self.psk_input = PasswordEditor()
         if self.dev.configured_wifi_psk is not None:
             self.psk_input.value = self.dev.configured_wifi_psk
         self.inputs = Pile(self._build_iface_inputs())

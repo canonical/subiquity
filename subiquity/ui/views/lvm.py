@@ -32,7 +32,7 @@ class LVMVolumeGroupView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal
-        self.volgroup = UsernameEditor(edit_text="", caption="")
+        self.volgroup = UsernameEditor()
         self.selected_disks = []
         body = [
             Padding.center_50(self._build_disk_selection()),

@@ -45,7 +45,7 @@ class MountSelector(WidgetWrap):
         opts.append(('other', True, None))
         self._selector = Selector(opts, first_opt)
         connect_signal(self._selector, 'select', self._select_mount)
-        self._other = _MountEditor(caption='', edit_text='/')
+        self._other = _MountEditor(edit_text='/')
         super().__init__(Pile([self._selector]))
 
     def _showhide_other(self, show):

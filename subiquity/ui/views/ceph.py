@@ -29,9 +29,9 @@ class CephDiskView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal
-        self.ceph_mon = StringEditor(caption="")
-        self.username = StringEditor(caption="")
-        self.ceph_key = StringEditor(caption="")
+        self.ceph_mon = StringEditor()
+        self.username = StringEditor()
+        self.ceph_key = StringEditor()
         self.pool = []
         body = [
             Padding.center_50(self._build_model_inputs()),

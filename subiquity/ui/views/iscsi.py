@@ -30,13 +30,13 @@ class IscsiDiskView(BaseView):
     def __init__(self, model, signal):
         self.model = model
         self.signal = signal
-        self.iscsi_host = StringEditor(caption="")
+        self.iscsi_host = StringEditor()
         self.connect_anon = YesNo()
-        self.connect_username = StringEditor(caption="")
-        self.connect_password = PasswordEditor(caption="")
+        self.connect_username = StringEditor()
+        self.connect_password = PasswordEditor()
         self.server_auth = YesNo()
-        self.server_username = StringEditor(caption="")
-        self.server_password = PasswordEditor(caption="")
+        self.server_username = StringEditor()
+        self.server_password = PasswordEditor()
         body = [
             Padding.center_50(self._build_model_inputs()),
             Padding.line_break(""),

@@ -49,7 +49,7 @@ class SubmittingEmailEditor(EmailEditor):
 
     def __init__(self, mainview):
         self.mainview = mainview
-        super().__init__(caption="")
+        super().__init__()
 
     def keypress(self, size, key):
         if key == 'enter':

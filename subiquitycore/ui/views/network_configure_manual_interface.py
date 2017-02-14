@@ -46,7 +46,7 @@ class IPField(FormField):
         super().__init__(*args, **kw)
     def _make_widget(self, form):
         if form.ip_version == 6:
-            return StringEditor(caption="")
+            return StringEditor()
         else:
             if self.has_mask:
                 allowed = '[0-9./]'
