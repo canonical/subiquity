@@ -69,13 +69,8 @@ class RestrictedEditor(StringEditor):
         super().__init__()
         self.matcher = re.compile(allowed)
 
-    def keypress(self, size, key):
-        if len(key) > 1:
-            return super().keypress(size, key)
-        log.debug('key %s %s', key, self.matcher.match(key))
-        if self.matcher.match(key) is None:
-            return False
-        return super().keypress(size, key)
+    def valid_char(self, ch):
+        return self.matcher.match(ch) is not None
 
 
 RealnameEditor = partial(RestrictedEditor, r'[a-zA-Z0-9_\- ]')
