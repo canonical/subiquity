@@ -45,7 +45,6 @@ PasswordField = simple_field(PasswordEditor)
 
 
 class IdentityForm(Form):
-    opts = {'help_style': 'below'}
 
     realname = RealnameField("Your name:")
     hostname = UsernameField(

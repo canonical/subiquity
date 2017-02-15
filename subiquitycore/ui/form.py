@@ -193,7 +193,6 @@ class BoundFormField(object):
         if self.pile is not None:
             raise RuntimeError("do not call as_row more than once!")
         self.parent_view = view
-        self.help_style = self.form.opts.get('help_style')
         self.pile = Pile([self._cols()])
         return self.pile
 
