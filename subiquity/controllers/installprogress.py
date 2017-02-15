@@ -67,7 +67,7 @@ class InstallProgressController(BaseController):
         log.debug('curtin_error')
         title = ('An error occurred during installation')
         self.ui.set_header(title, 'Please report this error in Launchpad')
-        self.progress_view.set_status("An error has occurred")
+        self.progress_view.set_status(('info_error', "An error has occurred"))
         self.ui.set_footer("An error has occurred.", 100)
         self.progress_view.show_complete()
         log.debug('curtin_error: refreshing final error screen')
@@ -82,7 +82,7 @@ class InstallProgressController(BaseController):
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
                 "bash", "-c",
-                "i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done > %s 2>&1"%CURTIN_INSTALL_LOG]
+                "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; } > %s 2>&1"%CURTIN_INSTALL_LOG]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [CURTIN_CONFIGS['storage']]
@@ -127,7 +127,7 @@ class InstallProgressController(BaseController):
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
                 "bash", "-c",
-                "i=0;while [ $i -le 10 ];do i=$((i+1)); echo postinstall line $i; sleep 1; done > %s 2>&1"%CURTIN_POSTINSTALL_LOG]
+                "{ i=0;while [ $i -le 10 ];do i=$((i+1)); echo postinstall line $i; sleep 1; done; } > %s 2>&1"%CURTIN_POSTINSTALL_LOG]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [
@@ -147,6 +147,7 @@ class InstallProgressController(BaseController):
                    "post-install: {}".format(result))
             log.error(msg)
             self.install_state = InstallState.ERROR
+            self.curtin_error()
             return
         log.debug('After curtin postinstall OK')
         self.install_state = InstallState.DONE_POSTINSTALL

@@ -27,13 +27,20 @@ from subiquitycore.ui.utils import Padding, Color
 
 log = logging.getLogger("subiquity.views.installprogress")
 
+class MyLineBox(LineBox):
+    def format_title(self, title):
+        if title:
+            return [" ", title, " "]
+        else:
+            return ""
+
 
 class ProgressView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
         self.listwalker = SimpleFocusListWalker([])
-        self.linebox = LineBox(ListBox(self.listwalker))
+        self.linebox = MyLineBox(ListBox(self.listwalker))
         body = [
             ('pack', Text("")),
             ('weight', 1, Padding.center_79(self.linebox)),
