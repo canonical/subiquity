@@ -108,7 +108,7 @@ class IdentityView(BaseView):
         self.ssh_import_confirmed = True
 
         body = [
-            Padding.center_90(self.form.as_rows()),
+            Padding.center_90(self.form.as_rows(self)),
             Padding.line_break(""),
             Padding.fixed_10(self.form.buttons),
         ]

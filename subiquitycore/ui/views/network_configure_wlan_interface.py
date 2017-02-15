@@ -59,20 +59,6 @@ class NetworkConfigureWLANView(BaseView):
                 return
         return super().keypress(size, key)
 
-    def show_overlay(self, overlay_widget):
-        self.orig_w = self._w
-        self._w = Overlay(top_w=overlay_widget,
-                          bottom_w=self._w,
-                          align='center',
-                          width=('relative', 60),
-                          min_width=80,
-                          valign='middle',
-                          height='pack')
-
-    def remove_overlay(self):
-        self._w = self.orig_w
-        self.orig_w = None
-
     def show_ssid_list(self, sender):
         self.show_overlay(NetworkList(self, self.dev.actual_ssids))
 

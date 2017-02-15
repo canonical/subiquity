@@ -18,15 +18,32 @@
 Contains some default key navigations
 """
 
-from urwid import WidgetWrap
+from urwid import Overlay, WidgetWrap
 
 
 class BaseView(WidgetWrap):
+    def show_overlay(self, overlay_widget, **kw):
+        self.orig_w = self._w
+        args = dict(
+            align='center',
+            width=('relative', 60),
+            min_width=80,
+            valign='middle',
+            height='pack'
+            )
+        args.update(kw)
+        self._w = Overlay(top_w=overlay_widget, bottom_w=self._w, **args)
+
+    def remove_overlay(self):
+        self._w = self.orig_w
+        self.orig_w = None
+
     def keypress(self, size, key):
+        if key in ['ctrl x']:
+            self.controller.signal.emit_signal('control-x-quit')
+            return None
+        key = super().keypress(size, key)
         if key == 'esc':
             self.controller.cancel()
             return None
-        if key in ['ctrl x']:
-            self.controller.signal.emit_signal('control-x-quit')
-
-        return super().keypress(size, key)
+        return key

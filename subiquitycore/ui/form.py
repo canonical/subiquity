@@ -27,7 +27,7 @@ from urwid import (
 
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.container import Columns, Pile
-from subiquitycore.ui.interactive import IntegerEditor, StringEditor
+from subiquitycore.ui.interactive import Help, IntegerEditor, StringEditor
 from subiquitycore.ui.utils import Color
 
 class Toggleable(delegate_to_widget_mixin('_original_widget'), WidgetDecoration):
@@ -174,34 +174,27 @@ class BoundFormField(object):
             input = Color.string_input(_Validator(self, self.widget))
         else:
             input = self.widget
+        if self.help is not None:
+            help = Help(self.parent_view, self.help)
+        else:
+            help = Text("")
         cols = [
                     ("weight", 0.2, text),
                     ("weight", 0.3, input),
+                    (3, help),
                 ]
-        if self.help_style == 'right':
-            if self.help is not None:
-                help = self.help
-            else:
-                help = ""
-            cols.append(
-                ("weight", 0.5, Text(help)))
         cols = Columns(cols, dividechars=4)
         if self._enabled:
             return cols
         else:
             return WidgetDisable(Color.info_minor(cols))
 
-    def as_row(self):
+    def as_row(self, view):
         if self.pile is not None:
             raise RuntimeError("do not call as_row more than once!")
+        self.parent_view = view
         self.help_style = self.form.opts.get('help_style')
         self.pile = Pile([self._cols()])
-        if self.help_style == 'below' and self.help is not None:
-            cols = [
-                    ("weight", 0.2, Text("")),
-                    ("weight", 0.3, Color.info_minor(Text(self.help))),
-                ]
-            self.pile.contents.append((Columns(cols, dividechars=4), self.pile.options('pack')))
         return self.pile
 
     @property
@@ -264,10 +257,10 @@ class Form(object, metaclass=MetaForm):
     def _click_cancel(self, sender):
         emit_signal(self, 'cancel', self)
 
-    def as_rows(self):
+    def as_rows(self, view):
         rows = []
         for field in self._fields:
-            rows.append(field.as_row())
+            rows.append(field.as_row(view))
         return Pile(rows)
 
     def validated(self):

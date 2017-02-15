@@ -120,7 +120,7 @@ class AddPartitionView(BaseView):
                 ]
             ),
             Padding.line_break(""),
-            self.form.as_rows(),
+            self.form.as_rows(self),
             Padding.line_break(""),
             Padding.fixed_10(self.form.buttons),
         ]
