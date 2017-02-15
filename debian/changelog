@@ -1,4 +1,4 @@
-subiquity (0.0.27) UNRELEASED; urgency=medium
+subiquity (0.0.27) zesty; urgency=medium
 
   * Many fixes to get subiquity operational again.
   * Fix header of WIFI config screen (LP: #1651119)
@@ -41,7 +41,6 @@ subiquity (0.0.25) zesty; urgency=medium
   * Start to repair subiquity-tui.
 
  -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Thu, 15 Dec 2016 14:18:41 +1300
-
 subiquity (0.0.24.1) zesty; urgency=medium
 
   * Fix crash when an interface has more than one IP address of the same
