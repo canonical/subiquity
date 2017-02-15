@@ -43,6 +43,8 @@ log = logging.getLogger('subiquitycore.ui.container')
 
 
 def _maybe_call(w, methname):
+    if w is None:
+        return
     m = getattr(w.base_widget, methname, None)
     if m is not None:
         m()
