@@ -5,8 +5,8 @@ subiquity (0.0.27) UNRELEASED; urgency=medium
   * Fix partion size rounding to correctly round to 1M boundaries, not 1G.
   * Improve widget used to select filesystem type. (LP: #1654387)
   * Add flag to geninstaller to install local subiquity. (LP: #1654386)
-  * Do not say a netdev is not configured when there is no configuration. (LP:
-    #1654381)
+  * Do not say a netdev is not configured when there is no configuration. 
+    (LP: #1654381)
   * Make a cleaner separation between console-conf and subiquity code.
   * Remove lots of unused code.
   * Make installprogress controller (the code that drives curtin) more event
@@ -16,7 +16,15 @@ subiquity (0.0.27) UNRELEASED; urgency=medium
     debugging on tty's other than tty1. (LP: #1654085)
   * Do not create an ubuntu user in the installer or in the installed system.
     (LP: #1659170)
+  * Use a custom widget for choosing a filesystem type. (LP: #1654387)
   * Recommend some common mount points when creating a partition.
+  * Simplify Makefile and README.
+  * Simplify geninstaller script a little.
+  * Add proper support for tab-cycling (i.e. tab when the last selectable
+    widget is selected now selects the first). (LP: #1660193)
+  * Make the way input validation is done more consistent and immediate.
+  * Make shift-tab work (i.e. go backwards, not forwards) in the linux console.
+  * Move help to overlay views triggered by [?] widgets.
 
  -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Mon, 09 Jan 2017 21:59:32 +1300
 
