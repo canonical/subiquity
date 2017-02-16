@@ -90,7 +90,8 @@ def write_login_details_standalone():
         if l.name in NETDEV_IGNORED_IFACE_NAMES:
             continue
         for _, addr in sorted(l.addresses.items()):
-            ips.append(addr.ip)
+            if addr.scope == "global":
+                ips.append(addr.ip)
     key_file = os.path.join(owner['homedir'], ".ssh/authorized_keys")
     fingerprints = run_command(['ssh-keygen', '-lf', key_file])['output'].replace('\r', '').splitlines()
     write_login_details(sys.stdout, owner['realname'], owner['username'], ips, fingerprints)
@@ -155,7 +156,7 @@ class IdentityController(BaseController):
         ips = []
         net_model = self.controllers['Network'].model
         for dev in net_model.get_all_netdevs():
-            ips.extend(dev.actual_ip_addresses)
+            ips.extend(dev.actual_global_ip_addresses)
         with open(login_details_path, 'w') as fp:
             write_login_details(fp, result['realname'], result['username'], ips, fingerprints)
         self.login()
