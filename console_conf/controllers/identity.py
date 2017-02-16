@@ -80,9 +80,7 @@ def write_login_details_standalone():
         return 0
     from probert import network
     from subiquitycore.models.network import NETDEV_IGNORED_IFACE_NAMES, NETDEV_IGNORED_IFACE_TYPES
-    import ipaddress
     import operator
-    import socket
     observer = network.UdevObserver()
     observer.start()
     ips = []
@@ -91,8 +89,8 @@ def write_login_details_standalone():
             continue
         if l.name in NETDEV_IGNORED_IFACE_NAMES:
             continue
-        ips.extend([str(ipaddress.IPv4Interface(a).ip) for a in l.ip.get(socket.AF_INET, [])])
-        ips.extend([str(ipaddress.IPv6Interface(a).ip) for a in l.ip.get(socket.AF_INET6, [])])
+        for _, addr in sorted(l.addresses.items()):
+            ips.append(addr.ip)
     key_file = os.path.join(owner['homedir'], ".ssh/authorized_keys")
     fingerprints = run_command(['ssh-keygen', '-lf', key_file])['output'].replace('\r', '').splitlines()
     write_login_details(sys.stdout, owner['realname'], owner['username'], ips, fingerprints)
