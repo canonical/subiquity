@@ -78,15 +78,6 @@ class LoginView(BaseView):
             ssh_iface = "    ssh %s@%s" % (user.username, ip)
             sl.append(Text(ssh_iface))
 
-        sl += [
-            Padding.line_break(""),
-            Text("SSH keys with the following fingerprints can be used to log in:"),
-            Padding.line_break(""),
-        ]
-
-        for fingerprint in user.fingerprints:
-            sl.append(Text("    " + fingerprint))
-
         return Pile(sl)
 
     def confirm(self, result):
