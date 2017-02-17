@@ -71,11 +71,12 @@ class IdentityView(BaseView):
         super().__init__(ListBox(body))
 
     def keypress(self, size, key):
+        key = super().keypress(size, key)
         if key == 'enter':
             self.done(None)
             return None
         else:
-            return super().keypress(size, key)
+            return key
 
     def _build_model_inputs(self):
         sl = [
