@@ -1,3 +1,9 @@
+subiquity (0.0.28) UNRELEASED; urgency=medium
+
+  * Update to cope with changes in probert 0.0.14. 
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Fri, 17 Feb 2017 14:08:44 +1300
+
 subiquity (0.0.27) zesty; urgency=medium
 
   * Many fixes to get subiquity operational again.
