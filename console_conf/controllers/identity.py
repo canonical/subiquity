@@ -16,7 +16,6 @@
 import json
 import logging
 import os
-import subprocess
 import sys
 
 from subiquitycore.controller import BaseController
@@ -111,8 +110,9 @@ def write_login_details(fp, username, ips):
     sshcommands = "\n"
     for ip in ips:
         sshcommands += "    ssh %s@%s\n"%(username, ip)
+    tty_name = os.ttyname(0)[5:] # strip off the /dev/
     fp.write(login_details_tmpl.format(
-        sshcommands=sshcommands, host_key_info=host_key_info(), tty_name=os.ttyname(0), first_ip=ips[0]))
+        sshcommands=sshcommands, host_key_info=host_key_info(), tty_name=tty_name, first_ip=ips[0]))
 
 def write_login_details_standalone():
     owner = get_device_owner()
