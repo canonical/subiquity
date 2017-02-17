@@ -561,7 +561,6 @@ generate_img() {
         dpkg-buildpackage -uc -us
         V=$(dpkg-parsechangelog -SVersion)
         sudo cp ../subiquity_${V}*.deb ../subiquitycore_${V}*.deb ${mnt}
-        sudo cp ../probert_0.0.14_amd64.deb ${mnt}
         sudo chroot ${mnt} sh -c 'dpkg -i *.deb'
         sudo chroot ${mnt} apt-get install -f
         sudo rm ${mnt}/*.deb
