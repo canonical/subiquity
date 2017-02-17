@@ -218,7 +218,7 @@ class Networkdev:
             fam = AF_INET
         elif version == 6:
             fam = AF_INET6
-        return [ipaddress.ip_interface(a).ip for a in self._net_info.ip.get(fam, [])]
+        return [addr.ip for _, addr in sorted(self._net_info.addresses.items()) if addr.family == fam]
 
     @property
     def actual_ip_addresses(self):
