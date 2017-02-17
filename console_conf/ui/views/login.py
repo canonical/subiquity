@@ -70,22 +70,13 @@ class LoginView(BaseView):
         login_text += remote_tpl.format(**login_info)
         ips = []
         for dev in self.netdevs:
-            for addr in dev.actual_ip_addresses:
+            for addr in dev.actual_global_ip_addresses:
                 ips.append(addr)
 
         sl += [Text(login_text), Padding.line_break("")]
         for ip in ips:
             ssh_iface = "    ssh %s@%s" % (user.username, ip)
             sl.append(Text(ssh_iface))
-
-        sl += [
-            Padding.line_break(""),
-            Text("SSH keys with the following fingerprints can be used to log in:"),
-            Padding.line_break(""),
-        ]
-
-        for fingerprint in user.fingerprints:
-            sl.append(Text("    " + fingerprint))
 
         return Pile(sl)
 

@@ -16,7 +16,6 @@
 import json
 import logging
 import os
-import subprocess
 import sys
 
 from subiquitycore.controller import BaseController
@@ -47,36 +46,78 @@ def get_device_owner():
             return result
     return None
 
-login_details_tmpl = """\
-Congratulations! This device is now registered to {realname}.
+def host_key_fingerprints():
+    """Query sshd to find the host keys and then fingerprint them.
 
-The next step is to log into the device via ssh:
+    Returns a sequence of (key-type, fingerprint) pairs.
+    """
+    config = run_command(['sshd', '-T'])
+    if config['status'] != 0:
+        log.debug("sshd -T failed %r", config['err'])
+        return []
+    keyfiles = []
+    for line in config['output'].splitlines():
+        if line.startswith('hostkey '):
+            keyfiles.append(line.split(None, 1)[1])
+    info = []
+    for keyfile in keyfiles:
+        result = run_command(['ssh-keygen', '-lf', keyfile])
+        if result['status'] != 0:
+            log.debug("ssh-keygen -lf %s failed %r", keyfile, result['err'])
+            continue
+        parts = result['output'].strip().split()
+        length, fingerprint, host, keytype = parts
+        keytype = keytype.strip('()')
+        info.append((keytype, fingerprint))
+    return info
 
-{sshcommands}
-These keys can be used to log in:
 
-{sshkeys}
-Once you've logged in, you can optionally set a password by running
-"sudo passwd $USER". After you've set a password, you can also use it
-to log in here.
+host_keys_intro = """
+The host key fingerprints are:
 
-You can explore snappy core with snap --help.
 """
 
-def write_login_details(fp, realname, username, ips, fingerprints):
-    sshcommands = ""
+host_key_tmpl = """\
+    {keytype:{width}} {fingerprint}
+"""
+
+single_host_key_tmpl = """\
+The {keytype} host key fingerprints is:
+    {fingerprint}
+"""
+
+
+def host_key_info():
+    fingerprints = host_key_fingerprints()
+    if len(fingerprints) == 1:
+        [(keytype, fingerprint)] = fingerprints
+        return single_host_key_tmpl.format(keytype=keytype, fingerprint=fingerprint)
+    lines = [host_keys_intro]
+    longest_type = max([len(keytype) for keytype, _ in fingerprints])
+    for keytype, fingerprint in fingerprints:
+        lines.append(host_key_tmpl.format(keytype=keytype, fingerprint=fingerprint, width=longest_type))
+    return "".join(lines)
+
+login_details_tmpl = """\
+Ubuntu Core 16 on {first_ip} ({tty_name})
+{host_key_info}
+To login:
+{sshcommands}
+Personalize your account at https://login.ubuntu.com.
+"""
+
+def write_login_details(fp, username, ips):
+    sshcommands = "\n"
     for ip in ips:
         sshcommands += "    ssh %s@%s\n"%(username, ip)
-    sshkeys = ""
-    for fingerprint in fingerprints:
-        sshkeys += "    " + fingerprint + "\n"
-    fp.write(login_details_tmpl.format(realname=realname, username=username, sshcommands=sshcommands, sshkeys=sshkeys))
+    tty_name = os.ttyname(0)[5:] # strip off the /dev/
+    fp.write(login_details_tmpl.format(
+        sshcommands=sshcommands, host_key_info=host_key_info(), tty_name=tty_name, first_ip=ips[0]))
 
 def write_login_details_standalone():
     owner = get_device_owner()
     if owner is None:
-        # Nothing much we can do :/
-        print("No device owner details found")
+        print("No device owner details found.")
         return 0
     from probert import network
     from subiquitycore.models.network import NETDEV_IGNORED_IFACE_NAMES, NETDEV_IGNORED_IFACE_TYPES
@@ -90,10 +131,9 @@ def write_login_details_standalone():
         if l.name in NETDEV_IGNORED_IFACE_NAMES:
             continue
         for _, addr in sorted(l.addresses.items()):
-            ips.append(addr.ip)
-    key_file = os.path.join(owner['homedir'], ".ssh/authorized_keys")
-    fingerprints = run_command(['ssh-keygen', '-lf', key_file])['output'].replace('\r', '').splitlines()
-    write_login_details(sys.stdout, owner['realname'], owner['username'], ips, fingerprints)
+            if addr.scope == "global":
+                ips.append(addr.ip)
+    write_login_details(sys.stdout, owner['username'], ips)
     return 0
 
 
@@ -124,7 +164,6 @@ class IdentityController(BaseController):
                 'username': email,
                 }
             self.model.add_user(result)
-            ssh_keys = subprocess.getoutput('ssh-add -L').splitlines()
             login_details_path = '.subiquity/login-details.txt'
         else:
             self.ui.frame.body.progress.set_text("Contacting store...")
@@ -140,24 +179,15 @@ class IdentityController(BaseController):
                     'realname': email,
                     'username': data['username'],
                     }
-                ssh_keys = data['ssh-keys']
                 os.makedirs('/run/console-conf', exist_ok=True)
                 login_details_path = '/run/console-conf/login-details.txt'
                 self.model.add_user(result)
-        log.debug('ssh_keys %s', ssh_keys)
-        fingerprints = []
-        for key in ssh_keys:
-            keygen_result = subprocess.Popen(['ssh-keygen', '-lf', '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            fingerprint, err = keygen_result.communicate(key.encode('utf-8'))
-            fingerprints.append(fingerprint.decode('utf-8', 'replace').replace('\r', '').strip())
-        self.model.user.fingerprints = fingerprints
-        log.debug('fingerprints %s', fingerprints)
         ips = []
         net_model = self.controllers['Network'].model
         for dev in net_model.get_all_netdevs():
-            ips.extend(dev.actual_ip_addresses)
+            ips.extend(dev.actual_global_ip_addresses)
         with open(login_details_path, 'w') as fp:
-            write_login_details(fp, result['realname'], result['username'], ips, fingerprints)
+            write_login_details(fp, result['username'], ips)
         self.login()
 
     def cancel(self):

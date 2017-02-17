@@ -13,12 +13,14 @@ stty icrnl -echo
 if [ "$(snap managed)" = "true" ]; then
     # check if we have extrausers that have no password set
     if grep -qE '^[-a-z0-9+.-_]+:x:' /var/lib/extrausers/passwd && ! grep -qE '^[-a-z0-9+.-_]+:\$[0-9]+\$.*:' /var/lib/extrausers/shadow; then
-        if [ ! -f /run/console-conf/login-details.txt ]; then
+        tty=$(tty)
+        tty=$(echo ${tty#/dev/} | tr '/' '-')
+        if [ ! -f /run/console-conf/login-details-${tty}.txt ]; then
             mkdir -p /run/console-conf
-            /usr/share/subiquity/console-conf-write-login-details > /run/console-conf/login-details.txt.tmp
-            mv /run/console-conf/login-details.txt.tmp /run/console-conf/login-details.txt
+            /usr/share/subiquity/console-conf-write-login-details > /run/console-conf/login-details-${tty}.txt.tmp
+            mv /run/console-conf/login-details-${tty}.txt.tmp /run/console-conf/login-details-${tty}.txt
         fi
-        cat /run/console-conf/login-details.txt
+        cat /run/console-conf/login-details-${tty}.txt
         read REPLY
     else
         touch /var/lib/console-conf/complete

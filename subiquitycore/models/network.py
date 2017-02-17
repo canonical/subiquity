@@ -232,6 +232,10 @@ class Networkdev:
         return r
 
     @property
+    def actual_global_ip_addresses(self):
+        return [addr.ip for _, addr in sorted(self._net_info.addresses.items()) if addr.scope == "global"]
+
+    @property
     def configured_ip_addresses(self):
         return self._configuration.setdefault('addresses', [])
 
