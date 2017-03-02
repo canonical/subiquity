@@ -172,14 +172,24 @@ class FocusTrackingMixin:
         self._contents.set_focus_changed_callback(self._focus_changed)
 
     def lost_focus(self):
-        _maybe_call(self.focus, 'lost_focus')
+        try:
+            cur_focus = self.focus
+        except IndexError:
+            pass
+        else:
+            _maybe_call(cur_focus, 'lost_focus')
 
     def gained_focus(self):
         _maybe_call(self.focus, 'gained_focus')
 
     def _focus_changed(self, new_focus):
-        log.debug("_focus_changed %s", self)
-        _maybe_call(self.focus, 'lost_focus')
+        #log.debug("_focus_changed %s", self)
+        try:
+            cur_focus = self.focus
+        except IndexError:
+            pass
+        else:
+            _maybe_call(cur_focus, 'lost_focus')
         _maybe_call(self[new_focus], 'gained_focus')
         self._invalidate()
 

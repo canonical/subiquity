@@ -275,8 +275,6 @@ class SubiquityObserver(UdevObserver):
         v = self.ui.frame.body
         if hasattr(v, 'refresh_model_inputs'):
             v.refresh_model_inputs()
-        if self.default_route_waiter:
-            pass
 
     def data_ready(self, fd):
         code = subprocess.call(['udevadm', 'settle', '-t', '0'])
