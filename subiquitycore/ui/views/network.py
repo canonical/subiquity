@@ -24,7 +24,6 @@ import textwrap
 
 from urwid import (
     LineBox,
-    Overlay,
     ProgressBar,
     Text,
     WidgetWrap,

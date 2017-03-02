@@ -351,8 +351,9 @@ class NetworkController(BaseController):
     @view
     def start(self):
         title = "Network connections"
-        excerpt = ("Configure at least the main interface this server will "
-                   "use to receive updates.")
+        excerpt = ("Configure at least one interface this server can use to talk to "
+                   "other machines, and which preferably provides sufficient access for "
+                   "updates.")
         footer = ("Additional networking info here")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 20)
