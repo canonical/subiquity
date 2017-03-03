@@ -68,10 +68,18 @@ def environment_check(check):
         for ftype, items in checks[check_type].items():
             for i in items:
                 if not os.path.exists(i):
-                    log.error('FAIL: {} is not found on the'
-                              ' filesystem'.format(i))
-                    env_ok = False
-                    continue
+                    if 'SNAP' in os.environ:
+                        log.warn("Adjusting path for snaps: {}".format(os.environ.get('SNAP')))
+                        i = os.environ.get('SNAP') + i
+                        if not os.path.exists(i):
+                            env_ok = False
+                    else:
+                        env_ok = False
+
+                    if not env_ok:
+                        log.error('FAIL: {} is not found on the'
+                                  ' filesystem'.format(i))
+                        continue
                 if check_map[ftype](i) is False:
                     log.error('FAIL: {} is NOT of type: {}'.format(i, ftype))
                     env_ok = False
