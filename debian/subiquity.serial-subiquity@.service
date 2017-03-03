@@ -1,0 +1,30 @@
+[Unit]
+Description=Subiquity, the installer for Ubuntu Server %I
+BindsTo=dev-%i.device
+After=dev-%i.device systemd-user-sessions.service plymouth-quit-wait.service
+After=rc-local.service
+ConditionPathExists=!/run/subiquity/complete
+StartLimitInterval=0
+
+[Service]
+Environment=PYTHONPATH=/usr/share/subiquity
+ExecStartPre=/bin/systemctl stop serial-getty@%I
+ExecStart=/sbin/agetty -n --keep-baud -l /usr/share/subiquity/subiquity-tui --login-options "--serial" 115200,38400,9600 %I $TERM
+ExecStopPost=/bin/systemctl start serial-getty@%I
+Type=idle
+Restart=always
+RestartSec=0
+UtmpIdentifier=%I
+TTYPath=/dev/%I
+TTYReset=yes
+TTYVHangup=yes
+KillMode=process
+IgnoreSIGPIPE=no
+SendSIGHUP=yes
+
+#TTYVTDisallocate=yes
+#KillMode=process
+#Restart=always
+#StandardInput=tty-force
+#StandardOutput=tty
+#StandardError=tty
