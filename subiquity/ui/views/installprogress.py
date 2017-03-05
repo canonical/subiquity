@@ -62,7 +62,7 @@ class ProgressView(BaseView):
 
     def show_complete(self):
         w = Padding.fixed_20(
-            Color.button(confirm_btn(label="Reboot now", on_press=self.reboot)))
+            Color.button(confirm_btn(label="Reboot Now", on_press=self.reboot)))
 
         z = Padding.fixed_20(
             Color.button(confirm_btn(label="Quit Installer", on_press=self.quit)))

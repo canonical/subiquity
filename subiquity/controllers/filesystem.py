@@ -288,7 +288,6 @@ class FilesystemController(BaseController):
         next_device = available[next_idx]
         self.show_disk_information(next_device)
 
-    @view
     def show_disk_information(self, device):
         """ Show disk information, requires sudo/root
         """

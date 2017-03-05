@@ -29,8 +29,7 @@ class WelcomeController(BaseController):
     def default(self):
         title = "Wilkommen! Bienvenue! Welcome! Zdrastvutie! Welkom!"
         excerpt = "Please choose your preferred language"
-        footer = ("Use UP, DOWN arrow keys, and ENTER, to "
-                  "select your language.")
+        footer = ("Use UP, DOWN and ENTER keys to select your language.")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
         view = WelcomeView(self.model, self)

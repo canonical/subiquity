@@ -41,7 +41,7 @@ class InstallpathController(BaseController):
     def installpath(self):
         title = "17.04"
         excerpt = ("Welcome to Ubuntu! The world's favorite platform "
-                   "for clouds, clusters and amazing internet things. "
+                   "for clouds, clusters, and amazing internet things. "
                    "This is the installer for Ubuntu on servers and "
                    "internet devices.")
         footer = ("Use UP, DOWN arrow keys, and ENTER, to "
