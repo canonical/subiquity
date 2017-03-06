@@ -116,12 +116,6 @@ class FilesystemController(BaseController):
 
         self.ui.set_body(dp_view)
 
-    def disk_partition_handler(self, spec=None):
-        log.debug("Disk partition: {}".format(spec))
-        if spec is None:
-            self.signal.prev_signal()
-        self.disk_partition([])
-
     @view
     def add_disk_partition(self, disk):
         log.debug("Adding partition to {}".format(disk))
@@ -259,9 +253,6 @@ class FilesystemController(BaseController):
         log.debug('add_raid_dev: result={}'.format(result))
         self.model.add_raid_device(result)
         self.signal.prev_signal()
-
-    def add_first_gpt_partition(self, *args, **kwargs):
-        self.ui.set_body(DummyView(self.signal))
 
     @view
     def create_swap_entire_device(self, disk):
