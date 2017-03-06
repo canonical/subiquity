@@ -101,9 +101,6 @@ class FilesystemModel(object):
         self.holders = {}
         self.tags = {}
 
-    def get_menu(self):
-        return self.fs_menu
-
     def probe_storage(self):
         log.debug('model.probe_storage: probing storage')
         storage = self.prober.get_storage()
