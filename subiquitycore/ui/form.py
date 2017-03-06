@@ -77,6 +77,15 @@ class FormField(object):
         widget = self._make_widget(form)
         return BoundFormField(self, form, widget)
 
+    def clean(self, value):
+        if self.cleaner is not None:
+            return self.cleaner(value)
+        else:
+            return value
+
+    def validate(self, value):
+        pass
+
 
 class BoundFormField(object):
 
@@ -92,8 +101,7 @@ class BoundFormField(object):
         self.widget = widget
 
     def clean(self, value):
-        if self.field.cleaner is not None:
-            value = self.field.cleaner(value)
+        value = self.field.clean(value)
         cleaner = getattr(self.form, "clean_" + self.field.name, None)
         if cleaner is not None:
             value = cleaner(value)

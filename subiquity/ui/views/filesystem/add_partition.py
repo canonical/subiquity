@@ -20,6 +20,7 @@ configuration.
 
 """
 import logging
+import os
 import re
 from urwid import connect_signal, Text
 
@@ -40,7 +41,7 @@ from subiquity.models.filesystem import (
     _dehumanize_size,
     HUMAN_UNITS,
     )
-from subiquity.ui.mount import MountSelector
+from subiquity.ui.mount import MountField
 
 
 log = logging.getLogger('subiquity.ui.filesystem.add_partition')
@@ -49,11 +50,6 @@ log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 class FSTypeField(FormField):
     def _make_widget(self, form):
         return Selector(opts=form.model.supported_filesystems)
-
-
-class MountField(FormField):
-    def _make_widget(self, form):
-        return MountSelector(form.model)
 
 
 class AddPartitionForm(Form):
@@ -90,10 +86,7 @@ class AddPartitionForm(Form):
             self.size.show_extra(Color.info_minor(Text("Capped partition size at %s"%(self.size_str,), align="center")))
 
     def validate_mount(self):
-        mnts = self.model.get_mounts2()
-        dev = mnts.get(self.mount.value)
-        if dev is not None:
-            return "%s is already mounted at %s"%(dev, self.mount.value)
+        return self.model.validate_mount(self.mount.value)
 
 
 class AddPartitionView(BaseView):

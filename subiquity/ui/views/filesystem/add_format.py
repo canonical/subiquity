@@ -21,10 +21,12 @@ from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.form import Form
 from subiquitycore.view import BaseView
 
-from subiquity.ui.views.filesystem.add_partition import FSTypeField, MountField
+from subiquity.ui.mount import MountField
+from subiquity.ui.views.filesystem.add_partition import FSTypeField
 
 
 log = logging.getLogger('subiquity.ui.filesystem.add_format')
+
 
 class AddFormatForm(Form):
 
@@ -36,10 +38,7 @@ class AddFormatForm(Form):
     mount = MountField("Mount")
 
     def validate_mount(self):
-        mnts = self.model.get_mounts2()
-        dev = mnts.get(self.mount.value)
-        if dev is not None:
-            return "%s is already mounted at %s"%(dev, self.mount.value)
+        return self.model.validate_mount(self.mount.value)
 
 
 class AddFormatView(BaseView):

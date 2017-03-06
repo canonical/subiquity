@@ -501,47 +501,14 @@ class FilesystemModel(object):
     def get_tag(self, device):
         return self.tags.get(device, '')
 
-    def valid_mount(self, format_spec):
-        """ format spec
-
-        {
-          'fstype' Str(ext4|btrfs..,
-          'mountpoint': Str
-        }
-        """
-        log.debug('valid_mount: spec: {}'.format(format_spec))
-        # if user is not formatting, ignore mountpoint
-        fmt = format_spec.get('fstype')
-        if fmt in ['leave unformatted']:
-            format_spec['mountpoint'] = None
-            return True
-
-        mountpoint = format_spec.get('mountpoint')
-        if not mountpoint:
-            raise ValueError('Is None')
-
-        # If the value is in error state, return the
-        # the same error
-        err_prefix = 'error: '
-        if mountpoint.lower().startswith(err_prefix):
-            mountpoint = mountpoint[len(err_prefix):]
-            raise ValueError(mountpoint)
-
-        if not mountpoint.startswith('/'):
-            raise ValueError('Does not start with /')
-
-        # remove redundent // and ..
-        mountpoint = os.path.realpath(mountpoint)
-
+    def validate_mount(self, mountpoint):
         # /usr/include/linux/limits.h:PATH_MAX
         if len(mountpoint) > 4095:
-            raise ValueError('Path exceeds PATH_MAX')
-
-        all_mounts = self.get_mounts()
-        if mountpoint in all_mounts:
-            raise ValueError('Already mounted')
-
-        return True
+            return 'Path exceeds PATH_MAX'
+        mnts = self.get_mounts2()
+        dev = mnts.get(mountpoint)
+        if dev is not None:
+            return "%s is already mounted at %s"%(dev, mountpoint)
 
     def get_empty_disks(self):
         ''' empty disk is one that does not have any

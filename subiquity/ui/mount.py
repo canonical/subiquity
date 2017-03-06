@@ -1,8 +1,10 @@
 
+import os
 import re
 
 from urwid import connect_signal, Padding, Pile, WidgetWrap
 
+from subiquitycore.ui.form import FormField
 from subiquitycore.ui.interactive import Selector, StringEditor
 
 common_mountpoints = [
@@ -66,3 +68,14 @@ class MountSelector(WidgetWrap):
             return self._other.value
         else:
             return self._selector.value
+
+
+class MountField(FormField):
+
+    def _make_widget(self, form):
+        return MountSelector(form.model)
+
+    def clean(self, value):
+        if not value.startswith('/'):
+            raise ValueError('Does not start with /')
+        return os.path.realpath(value)
