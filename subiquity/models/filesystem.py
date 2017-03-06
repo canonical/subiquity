@@ -88,7 +88,6 @@ class FilesystemModel(object):
         self.raid_devices = {}
         self.bcache_devices = {}
         self.lvm_devices = {}
-        self.storage = {}
         self.holders = {}
         self.tags = {}
 
@@ -107,8 +106,8 @@ class FilesystemModel(object):
 
     def probe_storage(self):
         log.debug('model.probe_storage: probing storage')
-        self.storage = self.prober.get_storage()
-        log.debug('got storage:\n{}'.format(self.storage))
+        storage = self.prober.get_storage()
+        log.debug('got storage:\n{}'.format(storage))
         # TODO: Put this into a logging namespace for probert
         #       since its quite a bit of log information.
         # log.debug('storage probe data:\n{}'.format(
@@ -117,11 +116,11 @@ class FilesystemModel(object):
         # TODO: replace this with Storage.get_device_by_match()
         # which takes a lambda fn for matching
         VALID_MAJORS = ['8', '253']
-        for disk in self.storage.keys():
-            if self.storage[disk]['DEVTYPE'] == 'disk' and \
-               self.storage[disk]['MAJOR'] in VALID_MAJORS:
+        for disk in storage.keys():
+            if storage[disk]['DEVTYPE'] == 'disk' and \
+               storage[disk]['MAJOR'] in VALID_MAJORS:
                 log.debug('disk={}\n{}'.format(disk,
-                          json.dumps(self.storage[disk], indent=4,
+                          json.dumps(storage[disk], indent=4,
                                      sort_keys=True)))
                 self.info[disk] = self.prober.get_storage_info(disk)
 
