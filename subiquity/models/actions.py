@@ -68,14 +68,14 @@ class DiskAction():
             'type': self._type,
         }
         if self._ptable:
-            action.update({'ptable': self._ptable})
+            action['ptable'] = self._ptable
         if self._wipe:
-            action.update({'wipe': self._wipe})
+            action['wipe'] = self._wipe
         # if we don't have a valid serial, then we must use
         # device path, which is stored in action_id
         if self._serial in ['Unknown Serial']:
             del action['serial']
-            action.update({'path': '/dev/{}'.format(self.action_id)})
+            action['path'] = '/dev/{}'.format(self.action_id)
 
         return action
 
@@ -358,7 +358,7 @@ class MountAction(DiskAction):
 
 def preserve_action(action):
     a = copy.deepcopy(action)
-    a.update({'preserve': True})
+    a['preserve'] = True
     return a
 
 

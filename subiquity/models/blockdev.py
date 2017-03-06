@@ -232,9 +232,9 @@ class Blockdev():
     def available(self):
         ''' return True if has free space or partitions not
             assigned, and no holders '''
-        if not self.is_mounted() and self.percent_free > 0:
-            return True
-        return False
+        if self.is_mounted():
+            return False
+        return self.percent_free > 0
 
     @property
     def available_partitions(self):
@@ -317,7 +317,7 @@ class Blockdev():
 
         log.debug('PartitionAction:\n{}'.format(part_action.get()))
 
-        self.disk.partitions.update({partnum: part_action})
+        self.disk.partitions[partnum] = part_action
         partpath = "{}{}".format(self.disk.devpath, partnum)
 
         # record filesystem formating
@@ -325,7 +325,7 @@ class Blockdev():
             fs_action = FormatAction(part_action, fstype)
             log.debug('Adding filesystem on {}'.format(partpath))
             log.debug('FormatAction:\n{}'.format(fs_action.get()))
-            self.filesystems.update({partpath: fs_action})
+            self.filesystems[partpath] = fs_action
 
         # associate partition devpath with mountpoint
         if mountpoint:
@@ -350,7 +350,7 @@ class Blockdev():
         fs_action = FormatAction(self.baseaction, fstype)
         log.debug('Adding filesystem on {}'.format(mntdev))
         log.debug('FormatAction:\n{}'.format(fs_action.get()))
-        self.filesystems.update({mntdev: fs_action})
+        self.filesystems[mntdev] = fs_action
 
         # associate partition devpath with mountpoint
         if mountpoint:
@@ -375,8 +375,7 @@ class Blockdev():
         for mnt in re.findall('/dev/.*', mounts):
             (devpath, mount, *_) = mnt.split()
             # resolve any symlinks
-            mounted_devs.update(
-                {os.path.realpath(devpath): mount})
+            mounted_devs[os.path.realpath(devpath)] = mount
 
         matches = [dev for dev in mounted_devs.keys()
                    if dev.startswith(self.disk.devpath)]

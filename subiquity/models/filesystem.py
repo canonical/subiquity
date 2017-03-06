@@ -593,7 +593,7 @@ def _dehumanize_size(size):
     # build mpliers based on HUMAN_UNITS
     mpliers = {}
     for (unit, exponent) in zip(HUMAN_UNITS, range(0, len(HUMAN_UNITS))):
-        mpliers.update({unit: 2 ** (exponent * 10)})
+        mpliers[unit] = 2 ** (exponent * 10)
 
     num = size
     mplier = 'B'
