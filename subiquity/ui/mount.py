@@ -44,11 +44,16 @@ class MountSelector(WidgetWrap):
                 opts.append((mnt, True, mnt))
             else:
                 opts.append(("%-*s (%s)"%(max_len, mnt, devpath), False, None))
+        if first_opt is None:
+            first_opt = len(opts)
         opts.append(('other', True, None))
         self._selector = Selector(opts, first_opt)
         connect_signal(self._selector, 'select', self._select_mount)
         self._other = _MountEditor(edit_text='/')
         super().__init__(Pile([self._selector]))
+        if self._selector.value is None:
+            # This can happen if all the common_mountpoints are in use.
+            self._showhide_other(True)
 
     def _showhide_other(self, show):
         if show:
