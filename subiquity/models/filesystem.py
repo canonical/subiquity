@@ -133,15 +133,17 @@ class FilesystemModel(object):
             disk = os.path.join('/dev', disk)
 
         if disk not in self.devices:
-            try:
-                self.devices[disk] = Blockdev(disk, self.info[disk].serial,
-                                              self.info[disk].model,
-                                              size=self.info[disk].size)
-            except KeyError:
+            info = self.info.get(disk)
+            if info is not None:
+                self.devices[disk] = Blockdev(disk, info.serial, info.model, size=info.size)
+            else:
                 ''' if it looks like a partition, try again with
                     parent device '''
+                # This is crazy, we should remove this fallback asap.
                 if disk[-1].isdigit():
                     return self.get_disk(re.split('[\d+]', disk)[0])
+                else:
+                    raise KeyError(disk)
 
         return self.devices[disk]
 
