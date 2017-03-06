@@ -31,16 +31,7 @@ class DiskAction():
     __hash__ = None
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (self._action_id == other._action_id and
-                    self.parent == other.parent and
-                    self._ptable == other._ptable and
-                    self._model == other._model and
-                    self._serial == other._serial and
-                    self._wipe == other._wipe and
-                    self._type == other._type)
-        else:
-            return False
+        1/0
 
     def get_parent(self):
         return self.parent
@@ -98,15 +89,7 @@ class RaidAction(DiskAction):
     __hash__ = None
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (self._action_id == other._action_id and
-                    self.parent == other.parent and
-                    self._raidlevel == other._raidlevel and
-                    self._devices == other._devices and
-                    self._spares == other._spares and
-                    self._type == other._type)
-        else:
-            return False
+        1/0
 
     def get(self):
         action = {
@@ -131,14 +114,7 @@ class LVMVolGroupAction(DiskAction):
     __hash__ = None
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (self._action_id == other._action_id and
-                    self.parent == other.parent and
-                    self._volgroup == other._volgroup and
-                    self._devices == other._devices and
-                    self._type == other._type)
-        else:
-            return False
+        1/0
 
     def get(self):
         action = {
@@ -170,14 +146,7 @@ class LVMPartitionAction(DiskAction):
     __hash__ = None
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (self._action_id == other._action_id and
-                    self.parent == other.parent and
-                    self._lvmpartition == other._lvmpartition and
-                    self._devices == other._devices and
-                    self._type == other._type)
-        else:
-            return False
+        1/0
 
     def get(self):
         action = {
@@ -215,16 +184,7 @@ class PartitionAction(DiskAction):
     __hash__ = None
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (self._action_id == other._action_id and
-                    self.parent == other.parent and
-                    self.partnum == other.partnum and
-                    self._offset == other._offset and
-                    self._size == other._size and
-                    self.flags == other.flags and
-                    self._type == other._type)
-        else:
-            return False
+        1/0
 
     @property
     def path(self):
@@ -273,14 +233,7 @@ class BcacheAction(DiskAction):
         return self._cache_device
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (self._action_id == other._action_id and
-                    self.parent == other.parent and
-                    self.backing_device == other.backing_device and
-                    self.cache_device == other.cache_device and
-                    self._type == other._type)
-        else:
-            return False
+        1/0
 
     def get(self):
         return {
@@ -304,13 +257,7 @@ class FormatAction(DiskAction):
     __hash__ = None
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (self._action_id == other._action_id and
-                    self.parent == other.parent and
-                    self._fstype == other._fstype and
-                    self._type == other._type)
-        else:
-            return False
+        1/0
 
     @property
     def fstype(self):
@@ -335,13 +282,7 @@ class MountAction(DiskAction):
     __hash__ = None
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (self._action_id == other._action_id and
-                    self.parent == other.parent and
-                    self._path == other._path and
-                    self._type == other._type)
-        else:
-            return False
+        1/0
 
     @property
     def path(self):

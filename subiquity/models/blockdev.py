@@ -49,21 +49,9 @@ class Disk():
         self._partitions = OrderedDict()
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            print('disk same class, checking members')
-            return (self._devpath == other._devpath and
-                    self._serial == other._serial and
-                    self._parttype == other._parttype and
-                    self._model == other._model and
-                    self._size == other._size and
-                    self._partitions == other._partitions)
-        else:
-            return False
+        1/0
 
     __hash__ = None  # declare we don't supply a hash
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def _get_size(self, devpath, size):
         if size:
@@ -137,16 +125,7 @@ class Blockdev():
                                      self.disk.parttype)
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return (self.disk == other.disk and
-                    self._filesystems == other._filesystems and
-                    self._mounts == other._mounts and
-                    self._mountactions == other._mountactions and
-                    self.bcache == other.bcache and
-                    self.lvm == other.lvm and
-                    self.baseaction == other.baseaction)
-        else:
-            return False
+        1/0
 
     __hash__ = None  # declare we don't supply a hash
 
