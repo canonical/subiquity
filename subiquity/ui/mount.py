@@ -17,6 +17,7 @@ common_mountpoints = [
     '/var/lib',
     ]
 
+
 class _MountEditor(StringEditor):
     """ Mountpoint input prompt with input rules
     """
@@ -30,9 +31,10 @@ class _MountEditor(StringEditor):
 
         return super().keypress(size, key)
 
+
 class MountSelector(WidgetWrap):
     def __init__(self, model):
-        mounts = model.get_mounts2()
+        mounts = model.get_mounts()
         opts = []
         first_opt = None
         max_len = max(map(len, common_mountpoints))

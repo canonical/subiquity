@@ -504,7 +504,7 @@ class FilesystemModel(object):
         # /usr/include/linux/limits.h:PATH_MAX
         if len(mountpoint) > 4095:
             return 'Path exceeds PATH_MAX'
-        mnts = self.get_mounts2()
+        mnts = self.get_mounts()
         dev = mnts.get(mountpoint)
         if dev is not None:
             return "%s is already mounted at %s"%(dev, mountpoint)
@@ -545,7 +545,8 @@ class FilesystemModel(object):
     def get_disk_info(self, disk):
         return self.info.get(disk, {})
 
-    def get_mounts2(self):
+    def get_mounts(self):
+        """Return a dict mapping mountpoint to device."""
         r = {}
         for dev in self.get_all_disks():
             for k, v in dev._mounts.items():
