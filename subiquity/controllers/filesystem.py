@@ -105,9 +105,9 @@ class FilesystemController(BaseController):
 
     # Filesystem/Disk partition -----------------------------------------------
     @view
-    def disk_partition(self, disk):
-        log.debug("In disk partition view, using {} as the disk.".format(disk))
-        title = ("Partition, format, and mount {}".format(disk))
+    def partition_disk(self, disk):
+        log.debug("In disk partition view, using {} as the disk.".format(disk.path))
+        title = ("Partition, format, and mount {}".format(disk.path))
         footer = ("Partition the disk, or format the entire device "
                   "without partitions.")
         self.ui.set_header(title)

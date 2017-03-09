@@ -672,6 +672,10 @@ class Disk:
             r += p.size
         return r
 
+    @property
+    def free(self):
+        return self.size - self.used
+
     def render(self):
         return asdict(self)
 
@@ -757,10 +761,8 @@ class FilesystemModel(object):
         mounted_devs = []
         with open('/proc/mounts') as pm:
             for line in pm:
-                print(repr(line))
                 if line.startswith('/dev/'):
                     mounted_devs.append(line.split()[0][5:])
-        print(mounted_devs)
         mounted_disks = set()
         for dev in mounted_devs:
             if os.path.exists('/sys/block/{}'.format(dev)):

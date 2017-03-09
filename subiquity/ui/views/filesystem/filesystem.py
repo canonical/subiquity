@@ -110,15 +110,6 @@ class FilesystemView(BaseView):
 
         return Pile(buttons)
 
-    def _get_percent_free(self, device):
-        ''' return the device free space and percentage
-            of the whole device'''
-        percent = "%d" % (
-            int((1.0 - (device.usedspace / device.size)) * 100))
-        free = _humanize_size(device.freespace)
-        rounded = "{}{}".format(int(float(free[:-1])), free[-1])
-        return (rounded, percent)
-
     def _build_available_inputs(self):
         inputs = []
 
@@ -129,24 +120,29 @@ class FilesystemView(BaseView):
             for partition in disk._partitions:
                 if partition.available:
                     available_partitions.append(partition)
+            disk_btn = menu_btn(label=disk.path)
+            connect_signal(disk_btn, 'click', self.click_disk, disk)
+            disk_btn = Padding.fixed_15(disk_btn)
             if len(available_partitions):
                 pass
             elif disk.used > 0:
-                col1 = menu_btn(label=disk.path)
-                connect_signal(col1, 'click', self.click_disk, disk)
+                col1 = disk_btn
                 size = disk.size
-                free = disk.size - disk.used
+                free = disk.free
                 percent = int(100*free/size)
                 if percent == 0:
                     continue
                 col2 = "{} ({}%)".format(_humanize_size(free), percent)
                 inputs.append(Columns([col1, col2]))
             else:
-                inputs.append(menu_btn(label=disk.path))
+                inputs.append(disk_btn)
         return Pile(inputs)
 
     def click_disk(self, sender, disk):
         self.controller.partition_disk(disk)
+
+    def click_partition(self, sender, disk):
+        self.controller.format_mount_partition(disk)
 
     def _build_menu(self):
         log.debug('FileSystemView: building menu')
@@ -169,9 +165,6 @@ class FilesystemView(BaseView):
                                      user_data=sig)))
         return Pile(opts)
 
-    def on_fs_menu_press(self, result, sig):
-        self.controller.signal.emit_signal(sig)
-
     def cancel(self, button):
         self.controller.cancel()
 
@@ -181,6 +174,3 @@ class FilesystemView(BaseView):
     def done(self, button):
         actions = self.model.get_actions()
         self.controller.finish(actions)
-
-    def show_disk_partition_view(self, partition):
-        self.controller.disk_partition(partition.label)
