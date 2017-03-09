@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import glob
 import json
 import logging
 import math
@@ -604,3 +605,226 @@ def _dehumanize_size(size):
         raise ValueError("'{}': cannot be negative".format(size_in))
 
     return int(num * mpliers[mplier])
+
+
+import collections
+import attr
+
+
+def id_factory(name):
+    i = 0
+    def factory():
+        nonlocal i
+        r = "%s-%s"%(name, i)
+        i += 1
+        return r
+    return attr.Factory(factory)
+
+def filter_false(attr, val):
+    if attr.name.startswith('_'):
+        return False
+    return bool(val)
+
+def asdict(inst):
+    return inst.asdict(
+        recurse=False, filter=filter_false, dict_factory=collections.OrderedDict)
+
+@attr.s
+class Disk:
+    id = attr.ib(default=id_factory("disk"))
+    type = attr.ib(default="disk")
+    ptable = attr.ib(default='gpt')
+    serial = attr.ib(default=None)
+    path = attr.ib(default=None)
+    model = attr.ib(default=None)
+    wipe = attr.ib(default=None)
+    preserve = attr.ib(default=False)
+    name = attr.ib(default="")
+    grub_device = attr.ib(default=False)
+    _partitions = attr.ib(default=attr.Factory(list))
+    _fs = attr.ib(default=None)
+    _info = attr.ib(default=None)
+
+    @classmethod
+    def from_info(self, info):
+        d = Disk(info=info)
+        d.serial = info.serial
+        d.path = info.name
+        d.model = info.model
+        return d
+
+    @property
+    def available(self):
+        return self.used < self.size and self._fs is None
+
+    @property
+    def next_partnum(self):
+        return len(self._partitions)
+
+    @property
+    def size(self):
+        return self._info.size
+
+    @property
+    def used(self):
+        r = 0
+        for p in self._partitions:
+            r += p.size
+        return r
+
+    def render(self):
+        return asdict(self)
+
+@attr.s
+class Partition:
+    id = attr.ib(default=id_factory("part"))
+    type = attr.ib(default="partition")
+    number = attr.ib(default=0)
+    device = attr.ib(default=None)
+    size = attr.ib(default=None)
+    wipe = attr.ib(default=None)
+    flag = attr.ib(default=None)
+    preserve = attr.ib(default=False)
+
+    _fs = attr.ib(default=None)
+
+    @property
+    def available(self):
+        return self._fs is None or self._fs._mount is None
+
+    @property
+    def path(self):
+        return "%s%s"(self.device.path, self.number)
+
+    def render(self):
+        r = asdict(self)
+        r['device'] = self.device.id
+        return r
+
+@attr.s
+class Filesystem:
+    id = attr.ib(default=id_factory("fs"))
+    type = attr.ib(default="format")
+    fstype = attr.ib(default=None)
+    volume = attr.ib(default=None) # validator=attr.validators.instance_of((Partition, Disk, type(None))), 
+    label = attr.ib(default=None)
+    uuid = attr.ib(default=None)
+    preserve = attr.ib(default=False)
+    _mount = attr.ib(default=None)
+
+    def render(self):
+        r = asdict(self)
+        r['volume'] = self.volume.id
+        return r
+
+@attr.s
+class Mount:
+    id = attr.ib(default=id_factory("mount"))
+    type = attr.ib(default="mount")
+    device = attr.ib(default=None) # validator=attr.validators.instance_of((Filesystem, type(None))), 
+    path = attr.ib(default=None)
+
+
+class FilesystemModel(object):
+
+    def __init__(self, prober, opts):
+        self.prober = prober
+        self.opts = opts
+        self._available_disks = {} # keyed by path, eg /dev/sda
+        self.reset()
+
+    def reset(self):
+        self._disks = collections.OrderedDict() # only gets populated when something uses the disk
+        self._filesystems = []
+        self._partitions = []
+        self._mounts = []
+
+    def render(self):
+        r = []
+        for d in self._disks.values():
+            r.append(d.render())
+        for p in self._partitions:
+            r.append(p.render())
+        for f in self._formats:
+            r.append(f.format())
+        for m in self._mounts:
+            r.append(m.format())
+        return r
+
+    def _get_system_mounted_disks(self):
+        # This assumes a fairly vanilla setup. It won't list as
+        # mounted a disk that is only mounted via lvm, for example.
+        mounted_devs = []
+        with open('/proc/mounts') as pm:
+            for line in pm:
+                print(repr(line))
+                if line.startswith('/dev/'):
+                    mounted_devs.append(line.split()[0][5:])
+        print(mounted_devs)
+        mounted_disks = set()
+        for dev in mounted_devs:
+            if os.path.exists('/sys/block/{}'.format(dev)):
+                mounted_disks.add('/dev/' + dev)
+            else:
+                paths = glob.glob('/sys/block/*/{}/partition'.format(dev))
+                if len(paths) == 1:
+                    mounted_disks.add('/dev/' + paths[0].split('/')[3])
+        return mounted_disks
+
+    def probe(self):
+        storage = self.prober.get_storage()
+        VALID_MAJORS = ['8', '253']
+        currently_mounted = self._get_system_mounted_disks()
+        for path, data in storage.items():
+            if path in currently_mounted:
+                continue
+            if data['DEVTYPE'] == 'disk' and data['MAJOR'] in VALID_MAJORS:
+                #log.debug('disk={}\n{}'.format(
+                #    path, json.dumps(data, indent=4, sort_keys=True)))
+                info = self.prober.get_storage_info(path)
+                self._available_disks[path] = Disk.from_info(info)
+
+    def _use_disk(self, disk):
+        if disk.path not in self._disks:
+            self._disks[disk.path] = disk
+
+    def all_disks(self):
+        return [disk for (path, disk) in sorted(self._available_disks.items())]
+
+    def get_disk(self, path):
+        return self._available_disks.get(path)
+
+    def add_partition(self, disk, partnum, size):
+        self._use_disk(disk)
+        p = Partition(device=disk, number=partnum, size=size)
+        disk._partitions.append(p)
+        self._partitions.append(p)
+        return p
+
+    def add_filesystem(self, volume, fstype):
+        if not volume.available:
+            raise Exception("%s is not available", volume)
+        if isinstance(volume, Disk):
+            self._use_disk(volume)
+        if volume._fs is not None:
+            raise Exception("%s is already formatted")
+        volume._fs = fs = Filesystem(volume=volume, fstype=fstype)
+        self._filesystems.append(fs)
+        return fs
+
+    def add_mount(self, fs, path):
+        if fs._mount is not None:
+            raise Exception("%s is already mounted")
+        fs._mount = m = Mount(device=fs, path=path)
+        self._mounts.append(m)
+        return m
+
+    def get_mountpoint_to_devpath_mapping(self):
+        r = {}
+        for m in self._mounts:
+            r[m.path] = m.device.volume.path
+        return r
+
+    def can_install(self):
+        # Need to figure out stuff to do with grub & a boot partition
+        return '/' in self.get_mountpoint_to_devpath_mapping()
