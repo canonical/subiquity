@@ -501,6 +501,8 @@ class FilesystemModel(object):
         return self.tags.get(device, '')
 
     def validate_mount(self, mountpoint):
+        if mountpoint is None:
+            return
         # /usr/include/linux/limits.h:PATH_MAX
         if len(mountpoint) > 4095:
             return 'Path exceeds PATH_MAX'

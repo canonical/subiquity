@@ -32,6 +32,9 @@ class _MountEditor(StringEditor):
         return super().keypress(size, key)
 
 
+OTHER = object()
+LEAVE_UNMOUNTED = object()
+
 class MountSelector(WidgetWrap):
     def __init__(self, model):
         mounts = model.get_mounts()
@@ -45,15 +48,17 @@ class MountSelector(WidgetWrap):
                     first_opt = i
                 opts.append((mnt, True, mnt))
             else:
-                opts.append(("%-*s (%s)"%(max_len, mnt, devpath), False, None))
+                opts.append(("%-*s (%s)"%(max_len, mnt, devpath), False))
         if first_opt is None:
             first_opt = len(opts)
-        opts.append(('other', True, None))
+        opts.append(('other', True, OTHER))
+        opts.append(('---', False)),
+        opts.append(('leave unmounted', True, LEAVE_UNMOUNTED))
         self._selector = Selector(opts, first_opt)
         connect_signal(self._selector, 'select', self._select_mount)
         self._other = _MountEditor(edit_text='/')
         super().__init__(Pile([self._selector]))
-        if self._selector.value is None:
+        if self._selector.value is OTHER:
             # This can happen if all the common_mountpoints are in use.
             self._showhide_other(True)
 
@@ -64,14 +69,16 @@ class MountSelector(WidgetWrap):
             del self._w.contents[-1]
 
     def _select_mount(self, sender, value):
-        if (self._selector.value == None) != (value == None):
-            self._showhide_other(value==None)
-        if value == None:
+        if (self._selector.value == OTHER) != (value == OTHER):
+            self._showhide_other(value==OTHER)
+        if value == OTHER:
             self._w.focus_position = 1
 
     @property
     def value(self):
-        if self._selector.value is None:
+        if self._selector.value is LEAVE_UNMOUNTED:
+            return None
+        elif self._selector.value is OTHER:
             return self._other.value
         else:
             return self._selector.value
@@ -83,6 +90,8 @@ class MountField(FormField):
         return MountSelector(form.model)
 
     def clean(self, value):
+        if value is None:
+            return value
         if not value.startswith('/'):
             raise ValueError('Does not start with /')
         return os.path.realpath(value)
