@@ -125,62 +125,38 @@ class FilesystemController(BaseController):
         self.ui.set_body(adp_view)
 
     def add_disk_partition_handler(self, disk, spec):
-        current_disk = self.model.get_disk(disk)
         log.debug('spec: {}'.format(spec))
-        log.debug('disk.freespace: {}'.format(current_disk.freespace))
+        log.debug('disk.freespace: {}'.format(disk.free))
 
-        try:
-            ''' create a gpt boot partition if one doesn't exist, only
-                one one disk'''
-
-            system_bootable = self.model.bootable()
-            log.debug('model has bootable device? {}'.format(system_bootable))
-            if system_bootable is False and \
-               current_disk.parttype == 'gpt' and \
-               len(current_disk.disk.partitions) == 0:
-                if self.is_uefi():
-                    log.debug('Adding EFI partition first')
-                    size_added = \
-                        current_disk.add_partition(partnum=1,
-                                                   size=UEFI_GRUB_SIZE_BYTES,
-                                                   flag='bios_grub',
-                                                   fstype='fat32',
-                                                   mountpoint='/boot/efi')
-                else:
-                    log.debug('Adding grub_bios gpt partition first')
-                    size_added = \
-                        current_disk.add_partition(partnum=1,
-                                                   size=BIOS_GRUB_SIZE_BYTES,
-                                                   fstype=None,
-                                                   flag='bios_grub')
-                current_disk.set_tag('(boot)')
-
-                # adjust downward the partition size to accommodate
-                # the offset and bios/grub partition
-                log.debug("Adjusting request down:" +
-                          "{} - {} = {}".format(spec['bytes'], size_added,
-                                                spec['bytes'] - size_added))
-                spec['bytes'] -= size_added
-                spec['partnum'] = 2
-
-            if spec["fstype"] in ["swap"]:
-                current_disk.add_partition(partnum=spec["partnum"],
-                                           size=spec["bytes"],
-                                           fstype=spec["fstype"])
+        system_bootable = self.model.bootable()
+        log.debug('model has bootable device? {}'.format(system_bootable))
+        if not system_bootable and len(disk._partitions) == 0:
+            if self.is_uefi():
+                log.debug('Adding EFI partition first')
+                part = self.model.add_partition(disk=disk, partnum=1, size=UEFI_GRUB_SIZE_BYTES, flag='bios_grub')
+                fs = self.model.add_filesystem(part, 'fat32')
+                self.model.add_mount(fs, '/boot/efi')
             else:
-                current_disk.add_partition(partnum=spec["partnum"],
-                                           size=spec["bytes"],
-                                           fstype=spec["fstype"],
-                                           mountpoint=spec["mountpoint"])
-        except Exception:
-            log.exception('Failed to add disk partition')
-            log.debug('Returning to add-disk-partition')
-            # FIXME: on failure, we should repopulate input values
-            self.add_disk_partition(disk)
+                log.debug('Adding grub_bios gpt partition first')
+                part = self.model.add_partition(disk=disk, partnum=1, size=BIOS_GRUB_SIZE_BYTES, flag='bios_grub')
+            disk.grub_device = True
+
+            # adjust downward the partition size to accommodate
+            # the offset and bios/grub partition
+            # XXX should probably only do this if the partition is now too big to fit on the disk?
+            log.debug("Adjusting request down:" +
+                      "{} - {} = {}".format(spec['bytes'], part.size,
+                                            spec['bytes'] - part.size))
+            spec['bytes'] -= part.size
+            spec['partnum'] = 2
+
+        part = self.model.add_partition(disk=disk, partnum=spec["partnum"], size=spec["bytes"])
+        if spec['fstype'] is not None:
+            fs = self.model.add_filesystem(part, spec['fstype'])
+            if spec['mountpoint']:
+                self.model.add_mount(fs, spec['mountpoint'])
 
         log.info("Successfully added partition")
-
-        log.debug("FS Table: {}".format(current_disk.get_fs_table()))
         self.prev_view()
 
     def add_disk_format_handler(self, disk, spec):

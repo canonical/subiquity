@@ -37,7 +37,7 @@ LEAVE_UNMOUNTED = object()
 
 class MountSelector(WidgetWrap):
     def __init__(self, model):
-        mounts = model.get_mounts()
+        mounts = model.get_mountpoint_to_devpath_mapping()
         opts = []
         first_opt = None
         max_len = max(map(len, common_mountpoints))

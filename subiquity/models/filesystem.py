@@ -659,7 +659,7 @@ class Disk:
 
     @property
     def next_partnum(self):
-        return len(self._partitions)
+        return len(self._partitions) + 1
 
     @property
     def size(self):
@@ -698,7 +698,7 @@ class Partition:
 
     @property
     def path(self):
-        return "%s%s"(self.device.path, self.number)
+        return "%s%s"%(self.device.path, self.number)
 
     def render(self):
         r = asdict(self)
@@ -730,6 +730,18 @@ class Mount:
 
 
 class FilesystemModel(object):
+
+    supported_filesystems = [
+        ('ext4', True, FS('ext4', True)),
+        ('xfs', True, FS('xfs', True)),
+        ('btrfs', True, FS('btrfs', True)),
+        ('---', False),
+        ('swap', True, FS('swap', False)),
+        ('bcache cache', True, FS('bcache cache', False)),
+        ('bcache store', True, FS('bcache store', False)),
+        ('---', False),
+        ('leave unformatted', True, FS('leave unformatted', False)),
+    ]
 
     def __init__(self, prober, opts):
         self.prober = prober
@@ -796,9 +808,10 @@ class FilesystemModel(object):
     def get_disk(self, path):
         return self._available_disks.get(path)
 
-    def add_partition(self, disk, partnum, size):
+    def add_partition(self, disk, partnum, size, flag=""):
+        ## XXX check, round, maybe adjust size?
         self._use_disk(disk)
-        p = Partition(device=disk, number=partnum, size=size)
+        p = Partition(device=disk, number=partnum, size=size, flag=flag)
         disk._partitions.append(p)
         self._partitions.append(p)
         return p
@@ -830,3 +843,21 @@ class FilesystemModel(object):
     def can_install(self):
         # Need to figure out stuff to do with grub & a boot partition
         return '/' in self.get_mountpoint_to_devpath_mapping()
+
+    def validate_mount(self, mountpoint):
+        if mountpoint is None:
+            return
+        # /usr/include/linux/limits.h:PATH_MAX
+        if len(mountpoint) > 4095:
+            return 'Path exceeds PATH_MAX'
+        mnts = self.get_mountpoint_to_devpath_mapping()
+        dev = mnts.get(mountpoint)
+        if dev is not None:
+            return "%s is already mounted at %s"%(dev, mountpoint)
+
+    def bootable(self):
+        ''' true if one disk has a boot partition '''
+        for p in self._partitions:
+            if p.flag == 'bios_grub':
+                return True
+        return False

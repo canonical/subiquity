@@ -67,7 +67,7 @@ class DiskPartitionView(BaseView):
                 mountpoint = '-'
             else:
                 fstype = part._fs.fstype
-                mountpoint = part._fs.path
+                mountpoint = part._fs._mount.path
             partition_column = Columns([
                 (15, Text(path)),
                 Text(size),
@@ -124,6 +124,8 @@ class DiskPartitionView(BaseView):
         """ Handles presenting the add partition widget button
         depending on if partitions exist already or not.
         """
+        if not self.disk.available:
+            return None
         text = "Add first partition"
         if len(self.disk._partitions) > 0:
             text = "Add partition (max size {})".format(
