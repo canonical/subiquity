@@ -113,28 +113,27 @@ class FilesystemView(BaseView):
         inputs = []
 
         for disk in self.model.all_disks():
-            if not disk.available:
-                continue
-            available_partitions = []
+            if disk.available:
+                disk_btn = menu_btn(label=disk.path)
+                connect_signal(disk_btn, 'click', self.click_disk, disk)
+                disk_btn = Padding.fixed_15(disk_btn)
+                if disk.used > 0:
+                    col1 = disk_btn
+                    size = disk.size
+                    free = disk.free
+                    percent = int(100*free/size)
+                    if percent == 0:
+                        continue
+                    col2 = Text("{} ({}%)".format(_humanize_size(free), percent))
+                    inputs.append(Columns([col1, col2]))
+                else:
+                    inputs.append(disk_btn)
             for partition in disk._partitions:
                 if partition.available:
-                    available_partitions.append(partition)
-            disk_btn = menu_btn(label=disk.path)
-            connect_signal(disk_btn, 'click', self.click_disk, disk)
-            disk_btn = Padding.fixed_15(disk_btn)
-            if len(available_partitions):
-                pass
-            elif disk.used > 0:
-                col1 = disk_btn
-                size = disk.size
-                free = disk.free
-                percent = int(100*free/size)
-                if percent == 0:
-                    continue
-                col2 = "{} ({}%)".format(_humanize_size(free), percent)
-                inputs.append(Columns([col1, col2]))
-            else:
-                inputs.append(disk_btn)
+                    part_btn = menu_btn(label=' ' + partition.path)
+                    connect_signal(part_btn, 'click', self.click_partition, partition)
+                    part_btn = Padding.fixed_15(part_btn)
+                    inputs.append(part_btn)
         if len(inputs) == 0:
             return Pile([Color.info_minor(
                 Text("No disks available."))])
@@ -143,8 +142,8 @@ class FilesystemView(BaseView):
     def click_disk(self, sender, disk):
         self.controller.partition_disk(disk)
 
-    def click_partition(self, sender, disk):
-        self.controller.format_mount_partition(disk)
+    def click_partition(self, sender, partition):
+        self.controller.format_mount_partition(partition)
 
     def _build_menu(self):
         log.debug('FileSystemView: building menu')

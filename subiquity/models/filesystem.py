@@ -747,7 +747,7 @@ class FilesystemModel(object):
         ('bcache cache', True, FS('bcache cache', False)),
         ('bcache store', True, FS('bcache store', False)),
         ('---', False),
-        ('leave unformatted', True, FS('leave unformatted', False)),
+        ('leave unformatted', True, FS(None, False)),
     ]
 
     def __init__(self, prober, opts):
