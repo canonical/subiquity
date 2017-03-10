@@ -13,18 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+
+import collections
 import glob
-import json
 import logging
 import math
 import os
-import re
 
-from .blockdev import (Bcachedev,
-                       Blockdev,
-                       LVMDev,
-                       Raiddev,
-                       sort_actions)
+import attr
 
 
 HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
@@ -41,7 +38,7 @@ class FS:
         self.label = label
         self.is_mounted = is_mounted
 
-class FilesystemModel(object):
+class OldFilesystemModel(object):
     """ Model representing storage options
     """
 
@@ -72,95 +69,6 @@ class FilesystemModel(object):
         "6",
         "10",
     ]
-
-    # th following blocktypes cannot be partitioned
-    no_partition_blocktypes = [
-        "bcache",
-        "lvm_partition",
-        "lvm_volgroup",
-        "raid",
-    ]
-
-    def __init__(self, prober, opts):
-        self.opts = opts
-        self.prober = prober
-        self.info = {}
-        self.devices = {}
-        self.raid_devices = {}
-        self.bcache_devices = {}
-        self.lvm_devices = {}
-        self.holders = {}
-        self.tags = {}
-
-    def reset(self):
-        log.debug('FilesystemModel: resetting disks')
-        self.devices = {}
-        self.info = {}
-        self.raid_devices = {}
-        self.bcache_devices = {}
-        self.lvm_devices = {}
-        self.holders = {}
-        self.tags = {}
-
-    def probe_storage(self):
-        log.debug('model.probe_storage: probing storage')
-        storage = self.prober.get_storage()
-        log.debug('got storage:\n{}'.format(storage))
-        # TODO: Put this into a logging namespace for probert
-        #       since its quite a bit of log information.
-        # log.debug('storage probe data:\n{}'.format(
-        #          json.dumps(self.storage, indent=4, sort_keys=True)))
-
-        # TODO: replace this with Storage.get_device_by_match()
-        # which takes a lambda fn for matching
-        VALID_MAJORS = ['8', '253']
-        for disk in storage.keys():
-            if storage[disk]['DEVTYPE'] == 'disk' and \
-               storage[disk]['MAJOR'] in VALID_MAJORS:
-                log.debug('disk={}\n{}'.format(disk,
-                          json.dumps(storage[disk], indent=4,
-                                     sort_keys=True)))
-                self.info[disk] = self.prober.get_storage_info(disk)
-
-    def get_disk(self, disk):
-        '''get disk object given path.  If provided a partition, then
-         return the parent disk.  /dev/sda2 --> /dev/sda obj'''
-        log.debug('probe_storage: get_disk({})'.format(disk))
-
-        if not disk.startswith('/dev/'):
-            disk = os.path.join('/dev', disk)
-
-        if disk not in self.devices:
-            info = self.info.get(disk)
-            if info is not None:
-                self.devices[disk] = Blockdev(disk, info.serial, info.model, size=info.size)
-            else:
-                ''' if it looks like a partition, try again with
-                    parent device '''
-                # This is crazy, we should remove this fallback asap.
-                if disk[-1].isdigit():
-                    return self.get_disk(re.split('[\d+]', disk)[0])
-                else:
-                    raise KeyError(disk)
-
-        return self.devices[disk]
-
-    def get_available_disks(self):
-        ''' currently only returns available disks '''
-        disks = [d for d in self.get_all_disks()
-                 if (d.available and
-                     len(self.get_holders(d.devpath)) == 0)]
-        log.debug('get_available_disks -> {}'.format(
-                  ",".join([d.devpath for d in disks])))
-        return disks
-
-    def get_all_disks(self):
-        possible_devices = list(set(list(self.devices.keys()) +
-                                    list(self.info.keys())))
-        possible_disks = [self.get_disk(d) for d in sorted(possible_devices)]
-        log.debug('get_all_disks -> {}'.format(",".join([d.devpath for d in
-                                                         possible_disks])))
-        return possible_disks
 
     def calculate_raid_size(self, raid_level, raid_devices, spare_devices):
         '''
@@ -432,52 +340,6 @@ class FilesystemModel(object):
         log.debug('bcache cache devs: {}'.format(cachedevs))
         return cachedevs
 
-    def add_device(self, devpath, device):
-        log.debug("adding device: {} = {}".format(devpath, device))
-        self.devices[devpath] = device
-
-    def get_partitions(self):
-        log.debug('probe_storage: get_partitions()')
-        partitions = []
-        for dev in self.devices.values():
-            partnames = [part.devpath for (num, part) in
-                         dev.disk.partitions.items()]
-            partitions += partnames
-
-        partitions = sorted(partitions)
-        log.debug('probe_storage: get_partitions() returns: {}'.format(
-                  partitions))
-        return partitions
-
-    def get_filesystems(self):
-        log.debug('get_fs')
-        fs = []
-        for dev in self.devices.values():
-            fs += dev.filesystems
-
-        return fs
-
-    def installable(self):
-        ''' one or more disks has used space
-            and has "/" as a mount
-        '''
-        for disk in self.get_all_disks():
-            if disk.usedspace > 0 and "/" in disk.mounts:
-                return True
-
-        return False
-
-    def bootable(self):
-        ''' true if one disk has a boot partition '''
-        log.debug('bootable check')
-        for disk in self.get_all_disks():
-            for (num, action) in disk.partitions.items():
-                if action.flags in ['bios_grub']:
-                    log.debug('bootable check: we\'ve got boot!')
-                    return True
-
-        log.debug('bootable check: no disks have been marked bootable')
-        return False
 
     def set_holder(self, held_device, holder_devpath):
         ''' insert a hold on `held_device' by adding `holder_devpath' to
@@ -500,74 +362,6 @@ class FilesystemModel(object):
 
     def get_tag(self, device):
         return self.tags.get(device, '')
-
-    def validate_mount(self, mountpoint):
-        if mountpoint is None:
-            return
-        # /usr/include/linux/limits.h:PATH_MAX
-        if len(mountpoint) > 4095:
-            return 'Path exceeds PATH_MAX'
-        mnts = self.get_mounts()
-        dev = mnts.get(mountpoint)
-        if dev is not None:
-            return "%s is already mounted at %s"%(dev, mountpoint)
-
-    def get_empty_disks(self):
-        ''' empty disk is one that does not have any
-            partitions, filesystems or mounts, and is non-zero size '''
-        empty = []
-        for dev in self.get_available_disks():
-            if len(dev.partitions) == 0 and \
-               len(dev.mounts) == 0 and \
-               len(dev.filesystems) == 0:
-                empty.append(dev)
-        log.debug('empty_disks: {}'.format(
-                  ", ".join([dev.path for dev in empty])))
-        return empty
-
-    def get_empty_disk_names(self):
-        return [dev.disk.devpath for dev in self.get_empty_disks()]
-
-    def get_empty_partition_names(self):
-        ''' empty partitions have non-zero size, but are not part
-            of a filesystem or mount point or other raid '''
-        empty = []
-        for dev in self.get_available_disks():
-            empty += dev.available_partitions
-
-        log.debug('empty_partitions: {}'.format(", ".join(empty)))
-        return empty
-
-    def get_available_disk_names(self):
-        return [dev.disk.devpath for dev in self.get_available_disks()]
-
-    def get_used_disk_names(self):
-        return [dev.disk.devpath for dev in self.get_all_disks()
-                if dev.available is False]
-
-    def get_disk_info(self, disk):
-        return self.info.get(disk, {})
-
-    def get_mounts(self):
-        """Return a dict mapping mountpoint to device."""
-        r = {}
-        for dev in self.get_all_disks():
-            for k, v in dev._mounts.items():
-                r[v] = k
-
-        return r
-
-    def get_actions(self):
-        actions = []
-        for dev in self.devices.values():
-            # don't write out actions for devices not in use
-            if not dev.available:
-                actions += dev.get_actions()
-
-        log.debug('****')
-        log.debug('all actions:{}'.format(actions))
-        log.debug('****')
-        return sort_actions(actions)
 
 
 def _humanize_size(size):
@@ -605,10 +399,6 @@ def _dehumanize_size(size):
         raise ValueError("'{}': cannot be negative".format(size_in))
 
     return int(num * mpliers[mplier])
-
-
-import collections
-import attr
 
 
 def id_factory(name):
