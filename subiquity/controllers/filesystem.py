@@ -163,9 +163,14 @@ class FilesystemController(BaseController):
         log.info("Successfully added partition")
         self.prev_view()
 
-    def add_disk_format_handler(self, disk, spec):
-        log.debug('add_disk_format_handler')
-        fs = self.model.add_filesystem(disk, spec['fstype'])
+    def add_format_handler(self, volume, spec):
+        log.debug('add_format_handler')
+        if spec['fstype'] is not None:
+            fs = self.model.add_filesystem(volume, spec['fstype'])
+        else:
+            fs = volume._fs
+            if fs is None:
+                raise Exception("%s is not formatted" % (volume.path,))
         if spec['mountpoint']:
             self.model.add_mount(fs, spec['mountpoint'])
         self.prev_view()
@@ -235,9 +240,25 @@ class FilesystemController(BaseController):
     @view
     def format_entire(self, disk):
         log.debug("format_entire {}".format(disk))
+        header = ("Format and/or mount %s"%(disk.path))
         footer = ("Format or mount whole disk.")
+        self.ui.set_header(header)
         self.ui.set_footer(footer)
         afv_view = AddFormatView(self.model, self, disk)
+        self.ui.set_body(afv_view)
+
+    @view
+    def format_mount_partition(self, partition):
+        log.debug("format_entire {}".format(partition))
+        if partition._fs is not None:
+            header = ("Mount %s"%(partition.path))
+            footer = ("Mount partition.")
+        else:
+            header = ("Format and mount %s"%(partition.path))
+            footer = ("Format and mount partition.")
+        self.ui.set_header(header)
+        self.ui.set_footer(footer)
+        afv_view = AddFormatView(self.model, self, partition)
         self.ui.set_body(afv_view)
 
     def show_disk_information_next(self, disk):

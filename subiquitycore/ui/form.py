@@ -212,7 +212,8 @@ class BoundFormField(object):
     def enabled(self, val):
         if val != self._enabled:
             self._enabled = val
-            self.pile.contents[0] = (self._cols(), self.pile.contents[0][1])
+            if self.pile is not None:
+                self.pile.contents[0] = (self._cols(), self.pile.contents[0][1])
 
 
 def simple_field(widget_maker):
@@ -263,6 +264,13 @@ class Form(object, metaclass=MetaForm):
 
     def _click_cancel(self, sender):
         emit_signal(self, 'cancel', self)
+
+    def remove_field(self, field_name):
+        new_fields = []
+        for bf in self._fields:
+            if bf.field.name != field_name:
+                new_fields.append(bf)
+        self._fields[:] = new_fields
 
     def as_rows(self, view):
         rows = []

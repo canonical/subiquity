@@ -46,12 +46,19 @@ class AddFormatForm(Form):
 
 
 class AddFormatView(BaseView):
-    def __init__(self, model, controller, disk):
+    def __init__(self, model, controller, volume):
         self.model = model
         self.controller = controller
-        self.disk = disk
+        self.volume = volume
 
         self.form = AddFormatForm(model)
+        if self.volume._fs is not None:
+            for i, fs_spec in enumerate(self.model.supported_filesystems):
+                if len(fs_spec) == 3:
+                    fs = fs_spec[2]
+                    if fs.label == self.volume._fs.fstype:
+                        self.form.fstype.widget.index = i
+            self.form.fstype.enabled = False
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
@@ -86,6 +93,8 @@ class AddFormatView(BaseView):
             "fstype": fstype.label,
             "mountpoint": mount,
         }
+        if self.volume._fs is not None:
+            result['fstype'] = None
 
         log.debug("Add Format Result: {}".format(result))
-        self.controller.add_disk_format_handler(self.disk, result)
+        self.controller.add_format_handler(self.volume, result)
