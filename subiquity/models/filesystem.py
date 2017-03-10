@@ -644,8 +644,8 @@ class Disk:
     preserve = attr.ib(default=False)
     name = attr.ib(default="")
     grub_device = attr.ib(default=False)
-    _partitions = attr.ib(default=attr.Factory(list))
-    _fs = attr.ib(default=None)
+    _partitions = attr.ib(default=attr.Factory(list), repr=False)
+    _fs = attr.ib(default=None, repr=False)
     _info = attr.ib(default=None)
 
     @classmethod
@@ -692,7 +692,7 @@ class Partition:
     flag = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
-    _fs = attr.ib(default=None)
+    _fs = attr.ib(default=None, repr=False)
 
     @property
     def available(self):
@@ -716,7 +716,7 @@ class Filesystem:
     label = attr.ib(default=None)
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
-    _mount = attr.ib(default=None)
+    _mount = attr.ib(default=None, repr=False)
 
     def render(self):
         r = asdict(self)

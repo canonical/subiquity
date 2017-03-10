@@ -240,34 +240,31 @@ class FilesystemController(BaseController):
         afv_view = AddFormatView(self.model, self, disk)
         self.ui.set_body(afv_view)
 
-    def show_disk_information_next(self, curr_device):
-        log.debug('show_disk_info_next: curr_device={}'.format(curr_device))
-        available = self.model.get_available_disk_names()
-        idx = available.index(curr_device)
+    def show_disk_information_next(self, disk):
+        log.debug('show_disk_info_next: curr_device={}'.format(disk))
+        available = self.model.all_disks()
+        idx = available.index(disk)
         next_idx = (idx + 1) % len(available)
         next_device = available[next_idx]
         self.show_disk_information(next_device)
 
-    def show_disk_information_prev(self, curr_device):
-        log.debug('show_disk_info_prev: curr_device={}'.format(curr_device))
-        available = self.model.get_available_disk_names()
-        idx = available.index(curr_device)
+    def show_disk_information_prev(self, disk):
+        log.debug('show_disk_info_prev: curr_device={}'.format(disk))
+        available = self.model.all_disks()
+        idx = available.index(disk)
         next_idx = (idx - 1) % len(available)
         next_device = available[next_idx]
         self.show_disk_information(next_device)
 
-    def show_disk_information(self, device):
+    def show_disk_information(self, disk):
         """ Show disk information, requires sudo/root
         """
-        disk_info = self.model.get_disk_info(device)
-        disk = self.model.get_disk(device)
-
-        bus = disk_info.raw.get('ID_BUS', None)
-        major = disk_info.raw.get('MAJOR', None)
+        bus = disk._info.raw.get('ID_BUS', None)
+        major = disk._info.raw.get('MAJOR', None)
         if bus is None and major == '253':
             bus = 'virtio'
 
-        devpath = disk_info.raw.get('DEVPATH', disk.devpath)
+        devpath = disk._info.raw.get('DEVPATH', disk.path)
         rotational = '1'
         try:
             dev = os.path.basename(devpath)
@@ -279,13 +276,13 @@ class FilesystemController(BaseController):
 
         dinfo = {
             'bus': bus,
-            'devname': disk.devpath,
+            'devname': disk.path,
             'devpath': devpath,
             'model': disk.model,
             'serial': disk.serial,
             'size': disk.size,
             'humansize': _humanize_size(disk.size),
-            'vendor': disk_info.vendor,
+            'vendor': disk._info.vendor,
             'rotational': 'true' if rotational == '1' else 'false',
         }
 
@@ -301,7 +298,7 @@ class FilesystemController(BaseController):
 """
         result = template.format(**dinfo)
         log.debug('calling DiskInfoView()')
-        disk_info_view = DiskInfoView(self.model, self, device, result)
+        disk_info_view = DiskInfoView(self.model, self, disk, result)
         footer = ('Select next or previous disks with n and p')
         self.ui.set_footer(footer, 30)
         self.ui.set_body(disk_info_view)
