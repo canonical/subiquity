@@ -33,25 +33,27 @@ class AddFormatForm(Form):
     def __init__(self, model):
         self.model = model
         super().__init__()
+        connect_signal(self.fstype.widget, 'select', self.select_fstype)
 
     fstype = FSTypeField("Format")
     mount = MountField("Mount")
+
+    def select_fstype(self, sender, fs):
+        self.mount.enabled = fs.is_mounted
 
     def validate_mount(self):
         return self.model.validate_mount(self.mount.value)
 
 
 class AddFormatView(BaseView):
-    def __init__(self, model, controller, selected_disk):
+    def __init__(self, model, controller, disk):
         self.model = model
         self.controller = controller
-        self.selected_disk = selected_disk
-        self.disk_obj = self.model.get_disk(selected_disk)
+        self.disk = disk
 
         self.form = AddFormatForm(model)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
-        connect_signal(self.form.fstype.widget, 'select', self.select_fstype)
 
         body = [
             Padding.line_break(""),
@@ -61,9 +63,6 @@ class AddFormatView(BaseView):
         ]
         format_box = Padding.center_50(ListBox(body))
         super().__init__(format_box)
-
-    def select_fstype(self, sender, fs):
-        self.form.mount.enabled = fs.is_mounted
 
     def cancel(self, button):
         self.controller.prev_view()
@@ -89,4 +88,4 @@ class AddFormatView(BaseView):
         }
 
         log.debug("Add Format Result: {}".format(result))
-        self.controller.add_disk_format_handler(self.disk_obj.devpath, result)
+        self.controller.add_disk_format_handler(self.disk, result)

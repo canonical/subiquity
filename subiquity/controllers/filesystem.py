@@ -161,11 +161,9 @@ class FilesystemController(BaseController):
 
     def add_disk_format_handler(self, disk, spec):
         log.debug('add_disk_format_handler')
-        current_disk = self.model.get_disk(disk)
-        log.debug('format spec: {}'.format(spec))
-        log.debug('disk.freespace: {}'.format(current_disk.freespace))
-        current_disk.format_device(spec['fstype'], spec['mountpoint'])
-        log.debug("FS Table: {}".format(current_disk.get_fs_table()))
+        fs = self.model.add_filesystem(disk, spec['fstype'])
+        if spec['mountpoint']:
+            self.model.add_mount(fs, spec['mountpoint'])
         self.prev_view()
 
     def connect_iscsi_disk(self, *args, **kwargs):
@@ -231,9 +229,8 @@ class FilesystemController(BaseController):
         self.signal.prev_signal()
 
     @view
-    def create_swap_entire_device(self, disk):
-        log.debug('create_swap_entire_device')
-        log.debug("formatting whole {}".format(disk))
+    def format_entire(self, disk):
+        log.debug("format_entire {}".format(disk))
         footer = ("Format or mount whole disk.")
         self.ui.set_footer(footer)
         afv_view = AddFormatView(self.model, self, disk)

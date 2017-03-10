@@ -667,6 +667,8 @@ class Disk:
 
     @property
     def used(self):
+        if self._fs is not None:
+            return self.size
         r = 0
         for p in self._partitions:
             r += p.size

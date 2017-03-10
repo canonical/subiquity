@@ -118,7 +118,7 @@ class DiskPartitionView(BaseView):
         if len(self.disk._partitions) == 0 and \
            self.disk.available:
             return Color.menu_button(
-                menu_btn(label=text, on_press=self.create_swap))
+                menu_btn(label=text, on_press=self.format_entire))
 
     def add_partition_w(self):
         """ Handles presenting the add partition widget button
@@ -140,8 +140,8 @@ class DiskPartitionView(BaseView):
     def add_partition(self, result):
         self.controller.add_disk_partition(self.disk)
 
-    def create_swap(self, result):
-        self.controller.create_swap_entire_device(self.selected_disk)
+    def format_entire(self, result):
+        self.controller.format_entire(self.disk)
 
     def done(self, result):
         ''' Return to FilesystemView '''
