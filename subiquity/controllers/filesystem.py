@@ -45,6 +45,7 @@ class FilesystemController(BaseController):
         # self.iscsi_model = IscsiDiskModel()
         # self.ceph_model = CephDiskModel()
         self.raid_model = RaidModel()
+        self.model.probe()  # probe before we complete
 
     @view
     def default(self, reset=False):
@@ -76,17 +77,20 @@ class FilesystemController(BaseController):
         self.ui.set_footer(footer, 30)
         self.ui.set_body(ErrorView(self.signal, error_msg))
 
-    def finish(self, actions):
+    def finish(self):
         log.info("Rendering curtin config from user choices")
         try:
-            curtin_write_storage_actions(actions=actions)
+            curtin_write_storage_actions(actions=self.model.render())
         except PermissionError:
             log.exception('Failed to write storage actions')
             self.filesystem_error('curtin_write_storage_actions')
             return None
 
         log.info("Rendering preserved config for post install")
-        preserved_actions = [preserve_action(a) for a in actions]
+        preserved_actions = []
+        for a in self.model.render():
+            a['preserve'] = True
+            preserved_actions.append(a)
         try:
             curtin_write_preserved_actions(actions=preserved_actions)
         except PermissionError:

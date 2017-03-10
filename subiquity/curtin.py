@@ -132,6 +132,12 @@ def curtin_write_storage_actions(actions):
         conf.write(curtin_config)
         conf.close()
 
+from collections import OrderedDict
+def setup_yaml():
+    """ http://stackoverflow.com/a/8661021 """
+    represent_dict_order = lambda self, data:  self.represent_mapping('tag:yaml.org,2002:map', data.items())
+    yaml.add_representer(OrderedDict, represent_dict_order)
+setup_yaml()
 
 def curtin_write_network_actions(actions):
     curtin_config = yaml.dump(actions, default_flow_style=False)

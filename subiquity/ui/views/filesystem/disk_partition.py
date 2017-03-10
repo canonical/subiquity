@@ -56,7 +56,7 @@ class DiskPartitionView(BaseView):
     def _build_model_inputs(self):
         partitioned_disks = []
 
-        for part in self.disk._partitions:
+        def format_volume(part):
             path = part.path
             size = _humanize_size(part.size)
             if part._fs is None:
@@ -68,20 +68,25 @@ class DiskPartitionView(BaseView):
             else:
                 fstype = part._fs.fstype
                 mountpoint = part._fs._mount.path
-            partition_column = Columns([
+            return Columns([
                 (15, Text(path)),
                 Text(size),
                 Text(fstype),
                 Text(mountpoint),
             ], 4)
-            partitioned_disks.append(partition_column)
-        free_space = _humanize_size(self.disk.free)
-        partitioned_disks.append(Columns([
-            (15, Text("FREE SPACE")),
-            Text(free_space),
-            Text(""),
-            Text("")
-        ], 4))
+        if self.disk._fs is not None:
+            partitioned_disks.append(format_volume(self.disk))
+        else:
+            for part in self.disk._partitions:
+                partitioned_disks.append(format_volume(part))
+        if self.disk.free > 0:
+            free_space = _humanize_size(self.disk.free)
+            partitioned_disks.append(Columns([
+                (15, Text("FREE SPACE")),
+                Text(free_space),
+                Text(""),
+                Text("")
+            ], 4))
 
         return BoxAdapter(SimpleList(partitioned_disks, is_selectable=False),
                           height=len(partitioned_disks))

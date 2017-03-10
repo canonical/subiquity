@@ -43,7 +43,6 @@ class FilesystemView(BaseView):
         self.model = model
         self.controller = controller
         self.items = []
-        self.model.probe()  # probe before we complete
         self.body = [
             Padding.center_79(Text("FILE SYSTEM")),
             Padding.center_79(self._build_filesystem_list()),
@@ -88,10 +87,10 @@ class FilesystemView(BaseView):
         pl = []
         for m in mounts:
             col = Columns([
-                    (15, m.device.volume.path),
-                    _humanize_size(m.device.volume.size),
-                    m.device.fstype,
-                    m.path,
+                    (15, Text(m.device.volume.path)),
+                    Text(_humanize_size(m.device.volume.size)),
+                    Text(m.device.fstype),
+                    Text(m.path),
                 ], 4)
             pl.append(col)
         return Pile(pl)
@@ -136,6 +135,9 @@ class FilesystemView(BaseView):
                 inputs.append(Columns([col1, col2]))
             else:
                 inputs.append(disk_btn)
+        if len(inputs) == 0:
+            return Pile([Color.info_minor(
+                Text("No disks available."))])
         return Pile(inputs)
 
     def click_disk(self, sender, disk):
@@ -172,5 +174,4 @@ class FilesystemView(BaseView):
         self.controller.reset()
 
     def done(self, button):
-        actions = self.model.get_actions()
-        self.controller.finish(actions)
+        self.controller.finish()

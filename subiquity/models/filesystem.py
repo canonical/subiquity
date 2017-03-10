@@ -620,14 +620,17 @@ def id_factory(name):
         return r
     return attr.Factory(factory)
 
-def filter_false(attr, val):
-    if attr.name.startswith('_'):
-        return False
-    return bool(val)
-
 def asdict(inst):
-    return inst.asdict(
-        recurse=False, filter=filter_false, dict_factory=collections.OrderedDict)
+    r = collections.OrderedDict()
+    for field in attr.fields(type(inst)):
+        if field.name.startswith('_'):
+            continue
+        v = getattr(inst, field.name)
+        if v:
+            if hasattr(v, 'id'):
+                v = v.id
+            r[field.name] = v
+    return r
 
 @attr.s
 class Disk:
@@ -655,7 +658,7 @@ class Disk:
 
     @property
     def available(self):
-        return self.used < self.size and self._fs is None
+        return self.used < self.size
 
     @property
     def next_partnum(self):
@@ -677,9 +680,6 @@ class Disk:
     @property
     def free(self):
         return self.size - self.used
-
-    def render(self):
-        return asdict(self)
 
 @attr.s
 class Partition:
@@ -730,6 +730,11 @@ class Mount:
     device = attr.ib(default=None) # validator=attr.validators.instance_of((Filesystem, type(None))), 
     path = attr.ib(default=None)
 
+    def render(self):
+        r = asdict(self)
+        r['device'] = self.device.id
+        return r
+
 
 class FilesystemModel(object):
 
@@ -760,13 +765,13 @@ class FilesystemModel(object):
     def render(self):
         r = []
         for d in self._disks.values():
-            r.append(d.render())
+            r.append(asdict(d))
         for p in self._partitions:
-            r.append(p.render())
-        for f in self._formats:
-            r.append(f.format())
+            r.append(asdict(p))
+        for f in self._filesystems:
+            r.append(asdict(f))
         for m in self._mounts:
-            r.append(m.format())
+            r.append(asdict(m))
         return r
 
     def _get_system_mounted_disks(self):
@@ -813,12 +818,15 @@ class FilesystemModel(object):
     def add_partition(self, disk, partnum, size, flag=""):
         ## XXX check, round, maybe adjust size?
         self._use_disk(disk)
+        if disk._fs is not None:
+            raise Exception("%s is already formatted" % (disk.path,))
         p = Partition(device=disk, number=partnum, size=size, flag=flag)
         disk._partitions.append(p)
         self._partitions.append(p)
         return p
 
     def add_filesystem(self, volume, fstype):
+        log.debug("adding %s to %s", fstype, volume)
         if not volume.available:
             raise Exception("%s is not available", volume)
         if isinstance(volume, Disk):
@@ -843,8 +851,8 @@ class FilesystemModel(object):
         return r
 
     def can_install(self):
-        # Need to figure out stuff to do with grub & a boot partition
-        return '/' in self.get_mountpoint_to_devpath_mapping()
+        # Do we need to check that there is a disk with the boot flag?
+        return '/' in self.get_mountpoint_to_devpath_mapping() and self.bootable()
 
     def validate_mount(self, mountpoint):
         if mountpoint is None:
