@@ -22,9 +22,8 @@ from subiquitycore.ui.error import ErrorView
 
 from subiquity.curtin import (curtin_write_storage_actions,
                               curtin_write_preserved_actions)
-from subiquity.models.actions import preserve_action
 from subiquity.models import (FilesystemModel, RaidModel)
-from subiquity.models.filesystem import (_humanize_size)
+from subiquity.models.filesystem import _humanize_size
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
                                 AddFormatView, FilesystemView,
                                 DiskInfoView, RaidView, BcacheView,
