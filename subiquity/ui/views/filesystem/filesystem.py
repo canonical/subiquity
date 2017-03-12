@@ -47,7 +47,8 @@ class FilesystemView(BaseView):
             Padding.center_79(Text("FILE SYSTEM")),
             Padding.center_79(self._build_filesystem_list()),
             Padding.line_break(""),
-            Padding.center_79(Text("AVAILABLE DISKS")),
+            Padding.center_79(Text("AVAILABLE DISKS AND PARTITIONS")),
+            Padding.line_break(""),
             Padding.center_79(self._build_available_inputs()),
             Padding.line_break(""),
             Padding.center_79(self._build_menu()),
@@ -112,28 +113,39 @@ class FilesystemView(BaseView):
     def _build_available_inputs(self):
         inputs = []
 
+        def col(col1, col2, col3):
+            inputs.append(Columns([(15, col1), (18, col2), col3], 2))
+
+        col(Text("DEVICE"), Text("SIZE"), Text("TYPE"))
+
         for disk in self.model.all_disks():
             if disk.available:
                 disk_btn = menu_btn(label=disk.path)
                 connect_signal(disk_btn, 'click', self.click_disk, disk)
-                disk_btn = Padding.fixed_15(disk_btn)
+                col1 = Color.menu_button(disk_btn)
                 if disk.used > 0:
-                    col1 = disk_btn
                     size = disk.size
                     free = disk.free
                     percent = int(100*free/size)
                     if percent == 0:
                         continue
-                    col2 = Text("{} ({}%)".format(_humanize_size(free), percent))
-                    inputs.append(Columns([col1, col2]))
+                    col2 = Text("{} ({}%) free".format(_humanize_size(free), percent))
                 else:
-                    inputs.append(disk_btn)
+                    col2 = Text(_humanize_size(disk.size))
+                col3 = Text("local disk")
+                col(col1, col2, col3)
             for partition in disk._partitions:
                 if partition.available:
                     part_btn = menu_btn(label=' ' + partition.path)
                     connect_signal(part_btn, 'click', self.click_partition, partition)
-                    part_btn = Padding.fixed_15(part_btn)
-                    inputs.append(part_btn)
+                    col1 = Color.menu_button(part_btn)
+                    if partition._fs is not None:
+                        fs = partition._fs.fstype
+                    else:
+                        fs = "unformatted"
+                    col2 = Text(_humanize_size(partition.size))
+                    col3 = Text("{} partition on local disk".format(fs))
+                    col(col1, col2, col3)
         if len(inputs) == 0:
             return Pile([Color.info_minor(
                 Text("No disks available."))])
