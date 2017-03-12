@@ -45,15 +45,19 @@ class FilesystemView(BaseView):
         self.items = []
         self.body = [
             Padding.center_79(Text("FILE SYSTEM")),
+            Padding.line_break(""),
             Padding.center_79(self._build_filesystem_list()),
             Padding.line_break(""),
             Padding.center_79(Text("AVAILABLE DISKS AND PARTITIONS")),
             Padding.line_break(""),
             Padding.center_79(self._build_available_inputs()),
             Padding.line_break(""),
-            Padding.center_79(self._build_menu()),
-            Padding.line_break(""),
-            Padding.center_79(self._build_used_disks()),
+            #Padding.center_79(self._build_menu()),
+            #Padding.line_break(""),
+            #Padding.center_79(Text("USED DISKS")),
+            #Padding.line_break(""),
+            #Padding.center_79(self._build_used_disks()),
+            #Padding.line_break(""),
             Padding.fixed_10(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
@@ -61,30 +65,14 @@ class FilesystemView(BaseView):
 
     def _build_used_disks(self):
         log.debug('FileSystemView: building used disks')
-        return Text("")
-        pl = []
-        for disk in self.model.get_used_disk_names():
-            log.debug('used disk: {}'.format(disk))
-            disk_string = disk
-            disk_tag = self.model.get_tag(disk)
-            if len(disk_tag):
-                disk_string += " {}".format(disk_tag)
-            pl.append(Color.info_minor(Text(disk_string)))
-        if len(pl):
-            return Pile(
-                [Text("USED DISKS"),
-                 Padding.line_break("")] + pl +
-                [Padding.line_break("")]
-            )
-
-        return Pile(pl)
+        return Color.info_minor(Text("No disks have been used to create a constructed disk."))
 
     def _build_filesystem_list(self):
         log.debug('FileSystemView: building part list')
         mounts = sorted(self.model._mounts, key=lambda m:m.device.volume.path)
         if len(mounts) == 0:
             return Pile([Color.info_minor(
-                Text("No disks or partitions mounted"))])
+                Text("No disks or partitions mounted."))])
         pl = []
         for m in mounts:
             col = Columns([
@@ -114,7 +102,7 @@ class FilesystemView(BaseView):
         inputs = []
 
         def col(col1, col2, col3):
-            inputs.append(Columns([(15, col1), (18, col2), col3], 2))
+            inputs.append(Columns([(15, col1), (28, col2), col3], 2))
 
         col(Text("DEVICE"), Text("SIZE"), Text("TYPE"))
 
@@ -129,7 +117,7 @@ class FilesystemView(BaseView):
                     percent = int(100*free/size)
                     if percent == 0:
                         continue
-                    col2 = Text("{} ({}%) free".format(_humanize_size(free), percent))
+                    col2 = Text("{}, {} ({}%) free".format(_humanize_size(disk.size), _humanize_size(free), percent))
                 else:
                     col2 = Text(_humanize_size(disk.size))
                 col3 = Text("local disk")
@@ -146,9 +134,11 @@ class FilesystemView(BaseView):
                     col2 = Text(_humanize_size(partition.size))
                     col3 = Text("{} partition on local disk".format(fs))
                     col(col1, col2, col3)
-        if len(inputs) == 0:
+
+        if len(inputs) == 1:
             return Pile([Color.info_minor(
                 Text("No disks available."))])
+
         return Pile(inputs)
 
     def click_disk(self, sender, disk):

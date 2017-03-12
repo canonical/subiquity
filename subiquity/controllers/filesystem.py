@@ -168,9 +168,9 @@ class FilesystemController(BaseController):
             fs = self.model.add_filesystem(volume, spec['fstype'])
         else:
             fs = volume._fs
+        if spec['mountpoint']:
             if fs is None:
                 raise Exception("%s is not formatted" % (volume.path,))
-        if spec['mountpoint']:
             self.model.add_mount(fs, spec['mountpoint'])
         self.prev_view()
 

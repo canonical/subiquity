@@ -416,6 +416,7 @@ class Disk:
     preserve = attr.ib(default=False)
     name = attr.ib(default="")
     grub_device = attr.ib(default=False)
+
     _partitions = attr.ib(default=attr.Factory(list), repr=False)
     _fs = attr.ib(default=None, repr=False)
     _info = attr.ib(default=None)
@@ -579,7 +580,7 @@ class FilesystemModel(object):
 
     def _use_disk(self, disk):
         if disk.path not in self._disks:
-            self._disks[disk.path] = disk
+            self._disks[disk.path] = attr.assoc(disk)
 
     def all_disks(self):
         return [disk for (path, disk) in sorted(self._available_disks.items())]
