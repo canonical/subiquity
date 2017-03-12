@@ -26,7 +26,6 @@ from urwid import connect_signal, Text
 
 from subiquitycore.ui.container import Columns, ListBox
 from subiquitycore.ui.form import (
-    BoundFormField,
     Form,
     FormField,
     IntegerField,
@@ -107,13 +106,7 @@ class AddPartitionView(BaseView):
         connect_signal(self.form, 'cancel', self.cancel)
 
         body = [
-            Columns(
-                [
-                    ("weight", 0.2, Text("Adding partition to {}".format(
-                        self.disk.path), align="right")),
-                    ("weight", 0.3, Text(""))
-                ]
-            ),
+            Text("Adding partition to {}".format(self.disk.path), align="center"),
             Padding.line_break(""),
             self.form.as_rows(self),
             Padding.line_break(""),

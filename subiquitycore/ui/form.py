@@ -187,20 +187,21 @@ class BoundFormField(object):
         else:
             help = Text("")
         cols = [
-                    ("weight", 0.2, text),
-                    ("weight", 0.3, input),
+                    (self._longest_caption, text),
+                    input,
                     (3, help),
                 ]
-        cols = Columns(cols, dividechars=4)
+        cols = Columns(cols, dividechars=2)
         if self._enabled:
             return cols
         else:
             return WidgetDisable(Color.info_minor(cols))
 
-    def as_row(self, view):
+    def as_row(self, view, longest_caption):
         if self.pile is not None:
             raise RuntimeError("do not call as_row more than once!")
         self.parent_view = view
+        self._longest_caption = longest_caption
         self.pile = Pile([self._cols()])
         return self.pile
 
@@ -273,9 +274,12 @@ class Form(object, metaclass=MetaForm):
         self._fields[:] = new_fields
 
     def as_rows(self, view):
+        longest_caption = 0
+        for field in self._fields:
+            longest_caption = max(longest_caption, len(field.caption))
         rows = []
         for field in self._fields:
-            rows.append(field.as_row(view))
+            rows.append(field.as_row(view, longest_caption))
         return Pile(rows)
 
     def validated(self):
