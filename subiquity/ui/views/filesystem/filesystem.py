@@ -20,9 +20,8 @@ configuration.
 
 """
 import logging
-from urwid import BoxAdapter, connect_signal, Text
+from urwid import connect_signal, Text
 
-from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import (done_btn,
                                       reset_btn,
                                       cancel_btn,
@@ -103,7 +102,7 @@ class FilesystemView(BaseView):
         inputs = []
 
         def col(col1, col2, col3):
-            inputs.append(Columns([(15, col1), (28, col2), col3], 2))
+            inputs.append(Columns([(15, col1), (10, col2), col3], 2))
 
         col(Text("DEVICE"), Text("SIZE"), Text("TYPE"))
 
@@ -112,16 +111,16 @@ class FilesystemView(BaseView):
                 disk_btn = menu_btn(label=disk.path)
                 connect_signal(disk_btn, 'click', self.click_disk, disk)
                 col1 = Color.menu_button(disk_btn)
+                col2 = Text(_humanize_size(disk.size))
                 if disk.used > 0:
                     size = disk.size
                     free = disk.free
                     percent = int(100*free/size)
                     if percent == 0:
                         continue
-                    col2 = Text("{}, {} ({}%) free".format(_humanize_size(disk.size), _humanize_size(free), percent))
+                    col3 = Text("local disk, {} ({}%) free".format(_humanize_size(free), percent))
                 else:
-                    col2 = Text(_humanize_size(disk.size))
-                col3 = Text("local disk")
+                    col3 = Text("local disk")
                 col(col1, col2, col3)
             for partition in disk._partitions:
                 if partition.available:
