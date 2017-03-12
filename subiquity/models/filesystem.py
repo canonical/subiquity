@@ -534,6 +534,8 @@ class FilesystemModel(object):
         self._filesystems = []
         self._partitions = []
         self._mounts = []
+        for k, d in self._available_disks.items():
+            self._available_disks[k] = Disk.from_info(d._info)
 
     def render(self):
         r = []
