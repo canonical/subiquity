@@ -69,19 +69,20 @@ class FilesystemView(BaseView):
 
     def _build_filesystem_list(self):
         log.debug('FileSystemView: building part list')
-        mounts = sorted(self.model._mounts, key=lambda m:m.device.volume.path)
-        if len(mounts) == 0:
+        cols = []
+        for m in self.model._mounts:
+            cols.append((m.device.volume.path, _humanize_size(m.device.volume.size), m.device.fstype, m.path))
+        for fs in self.model._filesystems:
+            if fs.fstype == 'swap':
+                cols.append((fs.volume.path, _humanize_size(fs.volume.size), fs.fstype, 'SWAP'))
+
+        if len(cols) == 0:
             return Pile([Color.info_minor(
                 Text("No disks or partitions mounted."))])
+        cols.insert(0, ("PARTITION", "SIZE", "TYPE", "MOUNT POINT"))
         pl = []
-        for m in mounts:
-            col = Columns([
-                    (15, Text(m.device.volume.path)),
-                    Text(_humanize_size(m.device.volume.size)),
-                    Text(m.device.fstype),
-                    Text(m.path),
-                ], 4)
-            pl.append(col)
+        for a, b, c, d in cols:
+            pl.append(Columns([(15, Text(a)), Text(b), Text(c), Text(d)], 4))
         return Pile(pl)
 
     def _build_buttons(self):

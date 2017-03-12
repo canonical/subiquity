@@ -469,7 +469,12 @@ class Partition:
 
     @property
     def available(self):
-        return self._fs is None or self._fs._mount is None
+        if self._fs is None:
+            return True
+        if self._fs._mount is None:
+            fs_obj = FilesystemModel.fs_by_name[self._fs.fstype]
+            return fs_obj.is_mounted
+        return False
 
     @property
     def path(self):
@@ -517,11 +522,18 @@ class FilesystemModel(object):
         ('btrfs', True, FS('btrfs', True)),
         ('---', False),
         ('swap', True, FS('swap', False)),
-        ('bcache cache', True, FS('bcache cache', False)),
-        ('bcache store', True, FS('bcache store', False)),
+        #('bcache cache', True, FS('bcache cache', False)),
+        #('bcache store', True, FS('bcache store', False)),
         ('---', False),
         ('leave unformatted', True, FS(None, False)),
     ]
+
+    fs_by_name = {}
+    for t in supported_filesystems:
+        if len(t) > 2:
+            fs = t[2]
+            if fs.label is not None:
+                fs_by_name[fs.label] = fs
 
     def __init__(self, prober, opts):
         self.prober = prober
