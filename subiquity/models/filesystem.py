@@ -33,33 +33,15 @@ class AttrDict(dict):
     __setattr__ = dict.__setitem__
 
 
+@attr.s
 class FS:
-    def __init__(self, label, is_mounted):
-        self.label = label
-        self.is_mounted = is_mounted
+    label = attr.ib()
+    is_mounted = attr.ib()
+
 
 class OldFilesystemModel(object):
     """ Model representing storage options
     """
-
-    supported_filesystems = [
-        ('ext4', True, FS('ext4', True)),
-        ('xfs', True, FS('xfs', True)),
-        ('btrfs', True, FS('btrfs', True)),
-        ('---', False),
-        ('swap', True, FS('swap', False)),
-        ('bcache cache', True, FS('bcache cache', False)),
-        ('bcache store', True, FS('bcache store', False)),
-        ('---', False),
-        ('leave unformatted', True, FS('leave unformatted', False)),
-    ]
-
-    partition_flags = [
-        'boot',
-        'lvm',
-        'raid',
-        'bios_grub',
-    ]
 
     # TODO: what is "linear" level?
     raid_levels = [
