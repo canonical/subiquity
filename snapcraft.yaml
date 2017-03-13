@@ -1,0 +1,40 @@
+name: subiquity
+version: "0.0.30"
+summary: Ubuntu installer
+description: The Ubuntu server installer
+confinement: classic
+
+apps:
+  subiquity:
+    command: usr/bin/subiquity
+  console-conf:
+    command: usr/bin/console-conf
+  probert:
+    command: bin/probert
+
+parts:
+  subiquity:
+    plugin: python
+    build-packages: [python-setuptools]
+    stage-packages: [curtin]
+    python-packages:
+      - urwid
+      - pyyaml
+      - pyudev
+    source: https://github.com/CanonicalLtd/subiquity.git
+    source-branch: cyphermox/snap
+    source-type: git
+  wrappers:
+    plugin: dump
+    source: https://github.com/CanonicalLtd/subiquity.git
+    source-type: git
+    organize:
+      'bin/console-conf-tui': usr/bin/console-conf
+      'bin/subiquity-tui': usr/bin/subiquity
+    snap:
+      - usr/bin
+  probert:
+    plugin: python
+    build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
+    source: https://github.com/CanonicalLtd/probert.git
+    source-type: git
