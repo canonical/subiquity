@@ -28,322 +28,10 @@ HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
 log = logging.getLogger('subiquity.models.filesystem')
 
 
-class AttrDict(dict):
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
-
-
 @attr.s
 class FS:
     label = attr.ib()
     is_mounted = attr.ib()
-
-
-class OldFilesystemModel(object):
-    """ Model representing storage options
-    """
-
-    # TODO: what is "linear" level?
-    raid_levels = [
-        "0",
-        "1",
-        "5",
-        "6",
-        "10",
-    ]
-
-    def calculate_raid_size(self, raid_level, raid_devices, spare_devices):
-        '''
-            0: array size is the size of the smallest component partition times
-               the number of component partitions
-            1: array size is the size of the smallest component partition
-            5: array size is the size of the smallest component partition times
-               the number of component partitions munus 1
-            6: array size is the size of the smallest component partition times
-               the number of component partitions munus 2
-        '''
-        # https://raid.wiki.kernel.org/ \
-        #       index.php/RAID_superblock_formats#Total_Size_of_superblock
-        # Version-1 superblock format on-disk layout:
-        # Total size of superblock: 256 Bytes plus 2 bytes per device in the
-        # array
-        log.debug('calc_raid_size: level={} rd={} sd={}'.format(raid_level,
-                                                                raid_devices,
-                                                                spare_devices))
-        overhead_bytes = 256 + (2 * (len(raid_devices) + len(spare_devices)))
-        log.debug('calc_raid_size: overhead_bytes={}'.format(overhead_bytes))
-
-        # find the smallest device
-        min_dev_size = min([d.size for d in raid_devices])
-        log.debug('calc_raid_size: min_dev_size={}'.format(min_dev_size))
-
-        if raid_level == 0:
-            array_size = min_dev_size * len(raid_devices)
-        elif raid_level == 1:
-            array_size = min_dev_size
-        elif raid_level == 5:
-            array_size = min_dev_size * (len(raid_devices) - 1)
-        elif raid_level == 10:
-            array_size = min_dev_size * int((len(raid_devices) /
-                                             len(spare_devices)))
-        total_size = array_size - overhead_bytes
-        log.debug('calc_raid_size: array_size:{} - overhead:{} = {}'.format(
-                  array_size, overhead_bytes, total_size))
-        return total_size
-
-    def add_raid_device(self, raidspec):
-        # assume raidspec has already been valided in view/controller
-        log.debug('Attempting to create a raid device')
-        '''
-        raidspec = {
-            'devices': ['/dev/sdb     1.819T, HDS5C3020ALA632',
-                        '/dev/sdc     1.819T, 001-9YN164',
-                        '/dev/sdf     1.819T, 001-9YN164',
-                        '/dev/sdg     1.819T, 001-9YN164',
-                        '/dev/sdh     1.819T, HDS5C3020ALA632',
-                        '/dev/sdi     1.819T, 001-9YN164'],
-                        '/dev/sdj     1.819T, Unknown Model'],
-            'raid_level': '0',
-            'hot_spares': '0',
-            'chunk_size': '4K',
-        }
-        could be /dev/sda1, /dev/md0, /dev/bcache1, /dev/vg_foo/foobar2?
-        '''
-        raid_devices = []
-        spare_devices = []
-        all_devices = [r.split() for r in raidspec.get('devices', [])]
-        nr_spares = int(raidspec.get('hot_spares'))
-
-        # XXX: curtin requires a partition table on the base devices
-        # and then one partition of type raid
-        for (devpath, *_) in all_devices:
-            disk = self.get_disk(devpath)
-
-            # add or update a partition to be raid type
-            if disk.path != devpath:  # we must have got a partition
-                raiddev = disk.get_partition(devpath)
-                raiddev.flags = 'raid'
-            else:
-                disk.add_partition(1, disk.freespace, None, None, flag='raid')
-                raiddev = disk
-
-            if len(raid_devices) + nr_spares < len(all_devices):
-                raid_devices.append(raiddev)
-            else:
-                spare_devices.append(raiddev)
-
-        # auto increment md number based in registered devices
-        raid_shortname = 'md{}'.format(len(self.raid_devices))
-        raid_dev_name = '/dev/' + raid_shortname
-        raid_serial = '{}_serial'.format(raid_dev_name)
-        raid_model = '{}_model'.format(raid_dev_name)
-        raid_parttype = 'gpt'
-        raid_level = int(raidspec.get('raid_level'))
-        raid_size = self.calculate_raid_size(raid_level, raid_devices,
-                                             spare_devices)
-
-        # create a Raiddev (pass in only the names)
-        raid_parts = []
-        for dev in raid_devices:
-            self.set_holder(dev.devpath, raid_dev_name)
-            self.set_tag(dev.devpath, 'member of MD ' + raid_shortname)
-            for num, action in dev.partitions.items():
-                raid_parts.append(action.action_id)
-        spare_parts = []
-        for dev in spare_devices:
-            self.set_holder(dev.devpath, raid_dev_name)
-            self.set_tag(dev.devpath, 'member of MD ' + raid_shortname)
-            for num, action in dev.partitions.items():
-                spare_parts.append(action.action_id)
-
-        raid_dev = Raiddev(raid_dev_name, raid_serial, raid_model,
-                           raid_parttype, raid_size,
-                           raid_parts,
-                           raid_level,
-                           spare_parts)
-
-        # add it to the model's info dict
-        raid_dev_info = {
-            'type': 'disk',
-            'name': raid_dev_name,
-            'size': raid_size,
-            'serial': raid_serial,
-            'vendor': 'Linux Software RAID',
-            'model': raid_model,
-            'is_virtual': True,
-            'raw': {
-                'MAJOR': '9',
-            },
-        }
-        self.info[raid_dev_name] = AttrDict(raid_dev_info)
-
-        # add it to the model's raid devices
-        self.raid_devices[raid_dev_name] = raid_dev
-        # add it to the model's devices
-        self.add_device(raid_dev_name, raid_dev)
-
-        log.debug('Successfully added raid_dev: {}'.format(raid_dev))
-
-    def add_lvm_volgroup(self, lvmspec):
-        log.debug('Attempting to create an LVM volgroup device')
-        '''
-        lvm_volgroup_spec = {
-            'volgroup': 'my_volgroup_name',
-            'devices': ['/dev/sdb     1.819T, HDS5C3020ALA632']
-        }
-        '''
-        lvm_shortname = lvmspec.get('volgroup')
-        lvm_dev_name = '/dev/' + lvm_shortname
-        lvm_serial = '{}_serial'.format(lvm_dev_name)
-        lvm_model = '{}_model'.format(lvm_dev_name)
-        lvm_parttype = 'gpt'
-        lvm_devices = []
-
-        # extract just the device name for disks in this volgroup
-        all_devices = [r.split() for r in lvmspec.get('devices', [])]
-
-        # XXX: curtin requires a partition table on the base devices
-        # and then one partition of type lvm
-        for (devpath, *_) in all_devices:
-            disk = self.get_disk(devpath)
-
-            self.set_holder(devpath, lvm_dev_name)
-            self.set_tag(devpath, 'member of LVM ' + lvm_shortname)
-
-            # add or update a partition to be raid type
-            if disk.path != devpath:  # we must have got a partition
-                pv_dev = disk.get_partition(devpath)
-                pv_dev.flags = 'lvm'
-            else:
-                disk.add_partition(1, disk.freespace, None, None, flag='lvm')
-                pv_dev = disk
-
-            lvm_devices.append(pv_dev)
-
-        lvm_size = sum([pv.size for pv in lvm_devices])
-        lvm_device_names = [pv.id for pv in lvm_devices]
-
-        log.debug('lvm_devices: {}'.format(lvm_device_names))
-        lvm_dev = LVMDev(lvm_dev_name, lvm_serial, lvm_model,
-                         lvm_parttype, lvm_size,
-                         lvm_shortname, lvm_device_names)
-        log.debug('{} volgroup: {} devices: {}'.format(lvm_dev.id,
-                                                       lvm_dev.volgroup,
-                                                       lvm_dev.devices))
-
-        # add it to the model's info dict
-        lvm_dev_info = {
-            'type': 'disk',
-            'name': lvm_dev_name,
-            'size': lvm_size,
-            'serial': lvm_serial,
-            'vendor': 'Linux Volume Group (LVM2)',
-            'model': lvm_model,
-            'is_virtual': True,
-            'raw': {
-                'MAJOR': '9',
-            },
-        }
-        self.info[lvm_dev_name] = AttrDict(lvm_dev_info)
-
-        # add it to the model's lvm devices
-        self.lvm_devices[lvm_dev_name] = lvm_dev
-        # add it to the model's devices
-        self.add_device(lvm_dev_name, lvm_dev)
-
-        log.debug('Successfully added lvm_dev: {}'.format(lvm_dev))
-
-    def add_bcache_device(self, bcachespec):
-        # assume bcachespec has already been valided in view/controller
-        log.debug('Attempting to create a bcache device')
-        '''
-        bcachespec = {
-            'backing_device': '/dev/sdc     1.819T, 001-9YN164',
-            'cache_device': '/dev/sdb     1.819T, HDS5C3020ALA632',
-        }
-        could be /dev/sda1, /dev/md0, /dev/vg_foo/foobar2?
-        '''
-        backing_device = self.get_disk(bcachespec['backing_device'].split()[0])
-        cache_device = self.get_disk(bcachespec['cache_device'].split()[0])
-
-        # auto increment md number based in registered devices
-        bcache_shortname = 'bcache{}'.format(len(self.bcache_devices))
-        bcache_dev_name = '/dev/' + bcache_shortname
-        bcache_serial = '{}_serial'.format(bcache_dev_name)
-        bcache_model = '{}_model'.format(bcache_dev_name)
-        bcache_parttype = 'gpt'
-        bcache_size = backing_device.size
-
-        # create a Bcachedev (pass in only the names)
-        bcache_dev = Bcachedev(bcache_dev_name, bcache_serial, bcache_model,
-                               bcache_parttype, bcache_size,
-                               backing_device, cache_device)
-
-        # mark bcache holders
-        self.set_holder(backing_device.devpath, bcache_dev_name)
-        self.set_holder(cache_device.devpath, bcache_dev_name)
-
-        # tag device use
-        self.set_tag(backing_device.devpath,
-                     'backing store for ' + bcache_shortname)
-        cache_tag = self.get_tag(cache_device.devpath)
-        if len(cache_tag) > 0:
-            cache_tag += ", " + bcache_shortname
-        else:
-            cache_tag = "cache for " + bcache_shortname
-        self.set_tag(cache_device.devpath, cache_tag)
-
-        # add it to the model's info dict
-        bcache_dev_info = {
-            'type': 'disk',
-            'name': bcache_dev_name,
-            'size': bcache_size,
-            'serial': bcache_serial,
-            'vendor': 'Linux bcache',
-            'model': bcache_model,
-            'is_virtual': True,
-            'raw': {
-                'MAJOR': '9',
-            },
-        }
-        self.info[bcache_dev_name] = AttrDict(bcache_dev_info)
-
-        # add it to the model's bcache devices
-        self.bcache_devices[bcache_dev_name] = bcache_dev
-        # add it to the model's devices
-        self.add_device(bcache_dev_name, bcache_dev)
-
-        log.debug('Successfully added bcache_dev: {}'.format(bcache_dev))
-
-    def get_bcache_cachedevs(self):
-        ''' return uniq list of bcache cache devices '''
-        cachedevs = list(set([bcache_dev.cache_device for bcache_dev in
-                              self.bcache_devices.values()]))
-        log.debug('bcache cache devs: {}'.format(cachedevs))
-        return cachedevs
-
-
-    def set_holder(self, held_device, holder_devpath):
-        ''' insert a hold on `held_device' by adding `holder_devpath' to
-            a list at self.holders[`held_device']
-        '''
-        if held_device not in self.holders:
-            self.holders[held_device] = [holder_devpath]
-        else:
-            self.holders[held_device].append(holder_devpath)
-
-    def clear_holder(self, held_device, holder_devpath):
-        if held_device in self.holders:
-            self.holders[held_device].remove(holder_devpath)
-
-    def get_holders(self, held_device):
-        return self.holders.get(held_device, [])
-
-    def set_tag(self, device, tag):
-        self.tags[device] = tag
-
-    def get_tag(self, device):
-        return self.tags.get(device, '')
 
 
 def _humanize_size(size):
@@ -392,6 +80,7 @@ def id_factory(name):
         return r
     return attr.Factory(factory)
 
+
 def asdict(inst):
     r = collections.OrderedDict()
     for field in attr.fields(type(inst)):
@@ -403,6 +92,7 @@ def asdict(inst):
                 v = v.id
             r[field.name] = v
     return r
+
 
 @attr.s
 class Disk:
@@ -417,8 +107,8 @@ class Disk:
     name = attr.ib(default="")
     grub_device = attr.ib(default=False)
 
-    _partitions = attr.ib(default=attr.Factory(list), repr=False)
-    _fs = attr.ib(default=None, repr=False)
+    _partitions = attr.ib(default=attr.Factory(list), repr=False) # [Partition]
+    _fs = attr.ib(default=None, repr=False) # Filesystem
     _info = attr.ib(default=None)
 
     @classmethod
@@ -454,21 +144,24 @@ class Disk:
     def free(self):
         return self.size - self.used
 
+
 @attr.s
 class Partition:
     id = attr.ib(default=id_factory("part"))
     type = attr.ib(default="partition")
     number = attr.ib(default=0)
-    device = attr.ib(default=None)
+    device = attr.ib(default=None) # Disk
     size = attr.ib(default=None)
     wipe = attr.ib(default=None)
     flag = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
-    _fs = attr.ib(default=None, repr=False)
+    _fs = attr.ib(default=None, repr=False) # Filesystem
 
     @property
     def available(self):
+        if self.flag == 'bios_grub':
+            return False
         if self._fs is None:
             return True
         if self._fs._mount is None:
@@ -480,38 +173,26 @@ class Partition:
     def path(self):
         return "%s%s"%(self.device.path, self.number)
 
-    def render(self):
-        r = asdict(self)
-        r['device'] = self.device.id
-        return r
 
 @attr.s
 class Filesystem:
     id = attr.ib(default=id_factory("fs"))
     type = attr.ib(default="format")
     fstype = attr.ib(default=None)
-    volume = attr.ib(default=None) # validator=attr.validators.instance_of((Partition, Disk, type(None))), 
+    volume = attr.ib(default=None) # Partition or Disk
     label = attr.ib(default=None)
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
-    _mount = attr.ib(default=None, repr=False)
+    _mount = attr.ib(default=None, repr=False) # Mount
 
-    def render(self):
-        r = asdict(self)
-        r['volume'] = self.volume.id
-        return r
 
 @attr.s
 class Mount:
     id = attr.ib(default=id_factory("mount"))
     type = attr.ib(default="mount")
-    device = attr.ib(default=None) # validator=attr.validators.instance_of((Filesystem, type(None))), 
+    device = attr.ib(default=None) # Filesystem
     path = attr.ib(default=None)
 
-    def render(self):
-        r = asdict(self)
-        r['device'] = self.device.id
-        return r
 
 def align_up(size, block_size=1 << 20):
     return (size + block_size - 1) & ~(block_size - 1)
@@ -667,3 +348,314 @@ class FilesystemModel(object):
             if p.flag == 'bios_grub':
                 return True
         return False
+
+
+## class AttrDict(dict):
+##     __getattr__ = dict.__getitem__
+##     __setattr__ = dict.__setitem__
+
+## class OldFilesystemModel(object):
+##     """ Model representing storage options
+##     """
+
+##     # TODO: what is "linear" level?
+##     raid_levels = [
+##         "0",
+##         "1",
+##         "5",
+##         "6",
+##         "10",
+##     ]
+
+##     def calculate_raid_size(self, raid_level, raid_devices, spare_devices):
+##         '''
+##             0: array size is the size of the smallest component partition times
+##                the number of component partitions
+##             1: array size is the size of the smallest component partition
+##             5: array size is the size of the smallest component partition times
+##                the number of component partitions munus 1
+##             6: array size is the size of the smallest component partition times
+##                the number of component partitions munus 2
+##         '''
+##         # https://raid.wiki.kernel.org/ \
+##         #       index.php/RAID_superblock_formats#Total_Size_of_superblock
+##         # Version-1 superblock format on-disk layout:
+##         # Total size of superblock: 256 Bytes plus 2 bytes per device in the
+##         # array
+##         log.debug('calc_raid_size: level={} rd={} sd={}'.format(raid_level,
+##                                                                 raid_devices,
+##                                                                 spare_devices))
+##         overhead_bytes = 256 + (2 * (len(raid_devices) + len(spare_devices)))
+##         log.debug('calc_raid_size: overhead_bytes={}'.format(overhead_bytes))
+
+##         # find the smallest device
+##         min_dev_size = min([d.size for d in raid_devices])
+##         log.debug('calc_raid_size: min_dev_size={}'.format(min_dev_size))
+
+##         if raid_level == 0:
+##             array_size = min_dev_size * len(raid_devices)
+##         elif raid_level == 1:
+##             array_size = min_dev_size
+##         elif raid_level == 5:
+##             array_size = min_dev_size * (len(raid_devices) - 1)
+##         elif raid_level == 10:
+##             array_size = min_dev_size * int((len(raid_devices) /
+##                                              len(spare_devices)))
+##         total_size = array_size - overhead_bytes
+##         log.debug('calc_raid_size: array_size:{} - overhead:{} = {}'.format(
+##                   array_size, overhead_bytes, total_size))
+##         return total_size
+
+##     def add_raid_device(self, raidspec):
+##         # assume raidspec has already been valided in view/controller
+##         log.debug('Attempting to create a raid device')
+##         '''
+##         raidspec = {
+##             'devices': ['/dev/sdb     1.819T, HDS5C3020ALA632',
+##                         '/dev/sdc     1.819T, 001-9YN164',
+##                         '/dev/sdf     1.819T, 001-9YN164',
+##                         '/dev/sdg     1.819T, 001-9YN164',
+##                         '/dev/sdh     1.819T, HDS5C3020ALA632',
+##                         '/dev/sdi     1.819T, 001-9YN164'],
+##                         '/dev/sdj     1.819T, Unknown Model'],
+##             'raid_level': '0',
+##             'hot_spares': '0',
+##             'chunk_size': '4K',
+##         }
+##         could be /dev/sda1, /dev/md0, /dev/bcache1, /dev/vg_foo/foobar2?
+##         '''
+##         raid_devices = []
+##         spare_devices = []
+##         all_devices = [r.split() for r in raidspec.get('devices', [])]
+##         nr_spares = int(raidspec.get('hot_spares'))
+
+##         # XXX: curtin requires a partition table on the base devices
+##         # and then one partition of type raid
+##         for (devpath, *_) in all_devices:
+##             disk = self.get_disk(devpath)
+
+##             # add or update a partition to be raid type
+##             if disk.path != devpath:  # we must have got a partition
+##                 raiddev = disk.get_partition(devpath)
+##                 raiddev.flags = 'raid'
+##             else:
+##                 disk.add_partition(1, disk.freespace, None, None, flag='raid')
+##                 raiddev = disk
+
+##             if len(raid_devices) + nr_spares < len(all_devices):
+##                 raid_devices.append(raiddev)
+##             else:
+##                 spare_devices.append(raiddev)
+
+##         # auto increment md number based in registered devices
+##         raid_shortname = 'md{}'.format(len(self.raid_devices))
+##         raid_dev_name = '/dev/' + raid_shortname
+##         raid_serial = '{}_serial'.format(raid_dev_name)
+##         raid_model = '{}_model'.format(raid_dev_name)
+##         raid_parttype = 'gpt'
+##         raid_level = int(raidspec.get('raid_level'))
+##         raid_size = self.calculate_raid_size(raid_level, raid_devices,
+##                                              spare_devices)
+
+##         # create a Raiddev (pass in only the names)
+##         raid_parts = []
+##         for dev in raid_devices:
+##             self.set_holder(dev.devpath, raid_dev_name)
+##             self.set_tag(dev.devpath, 'member of MD ' + raid_shortname)
+##             for num, action in dev.partitions.items():
+##                 raid_parts.append(action.action_id)
+##         spare_parts = []
+##         for dev in spare_devices:
+##             self.set_holder(dev.devpath, raid_dev_name)
+##             self.set_tag(dev.devpath, 'member of MD ' + raid_shortname)
+##             for num, action in dev.partitions.items():
+##                 spare_parts.append(action.action_id)
+
+##         raid_dev = Raiddev(raid_dev_name, raid_serial, raid_model,
+##                            raid_parttype, raid_size,
+##                            raid_parts,
+##                            raid_level,
+##                            spare_parts)
+
+##         # add it to the model's info dict
+##         raid_dev_info = {
+##             'type': 'disk',
+##             'name': raid_dev_name,
+##             'size': raid_size,
+##             'serial': raid_serial,
+##             'vendor': 'Linux Software RAID',
+##             'model': raid_model,
+##             'is_virtual': True,
+##             'raw': {
+##                 'MAJOR': '9',
+##             },
+##         }
+##         self.info[raid_dev_name] = AttrDict(raid_dev_info)
+
+##         # add it to the model's raid devices
+##         self.raid_devices[raid_dev_name] = raid_dev
+##         # add it to the model's devices
+##         self.add_device(raid_dev_name, raid_dev)
+
+##         log.debug('Successfully added raid_dev: {}'.format(raid_dev))
+
+##     def add_lvm_volgroup(self, lvmspec):
+##         log.debug('Attempting to create an LVM volgroup device')
+##         '''
+##         lvm_volgroup_spec = {
+##             'volgroup': 'my_volgroup_name',
+##             'devices': ['/dev/sdb     1.819T, HDS5C3020ALA632']
+##         }
+##         '''
+##         lvm_shortname = lvmspec.get('volgroup')
+##         lvm_dev_name = '/dev/' + lvm_shortname
+##         lvm_serial = '{}_serial'.format(lvm_dev_name)
+##         lvm_model = '{}_model'.format(lvm_dev_name)
+##         lvm_parttype = 'gpt'
+##         lvm_devices = []
+
+##         # extract just the device name for disks in this volgroup
+##         all_devices = [r.split() for r in lvmspec.get('devices', [])]
+
+##         # XXX: curtin requires a partition table on the base devices
+##         # and then one partition of type lvm
+##         for (devpath, *_) in all_devices:
+##             disk = self.get_disk(devpath)
+
+##             self.set_holder(devpath, lvm_dev_name)
+##             self.set_tag(devpath, 'member of LVM ' + lvm_shortname)
+
+##             # add or update a partition to be raid type
+##             if disk.path != devpath:  # we must have got a partition
+##                 pv_dev = disk.get_partition(devpath)
+##                 pv_dev.flags = 'lvm'
+##             else:
+##                 disk.add_partition(1, disk.freespace, None, None, flag='lvm')
+##                 pv_dev = disk
+
+##             lvm_devices.append(pv_dev)
+
+##         lvm_size = sum([pv.size for pv in lvm_devices])
+##         lvm_device_names = [pv.id for pv in lvm_devices]
+
+##         log.debug('lvm_devices: {}'.format(lvm_device_names))
+##         lvm_dev = LVMDev(lvm_dev_name, lvm_serial, lvm_model,
+##                          lvm_parttype, lvm_size,
+##                          lvm_shortname, lvm_device_names)
+##         log.debug('{} volgroup: {} devices: {}'.format(lvm_dev.id,
+##                                                        lvm_dev.volgroup,
+##                                                        lvm_dev.devices))
+
+##         # add it to the model's info dict
+##         lvm_dev_info = {
+##             'type': 'disk',
+##             'name': lvm_dev_name,
+##             'size': lvm_size,
+##             'serial': lvm_serial,
+##             'vendor': 'Linux Volume Group (LVM2)',
+##             'model': lvm_model,
+##             'is_virtual': True,
+##             'raw': {
+##                 'MAJOR': '9',
+##             },
+##         }
+##         self.info[lvm_dev_name] = AttrDict(lvm_dev_info)
+
+##         # add it to the model's lvm devices
+##         self.lvm_devices[lvm_dev_name] = lvm_dev
+##         # add it to the model's devices
+##         self.add_device(lvm_dev_name, lvm_dev)
+
+##         log.debug('Successfully added lvm_dev: {}'.format(lvm_dev))
+
+##     def add_bcache_device(self, bcachespec):
+##         # assume bcachespec has already been valided in view/controller
+##         log.debug('Attempting to create a bcache device')
+##         '''
+##         bcachespec = {
+##             'backing_device': '/dev/sdc     1.819T, 001-9YN164',
+##             'cache_device': '/dev/sdb     1.819T, HDS5C3020ALA632',
+##         }
+##         could be /dev/sda1, /dev/md0, /dev/vg_foo/foobar2?
+##         '''
+##         backing_device = self.get_disk(bcachespec['backing_device'].split()[0])
+##         cache_device = self.get_disk(bcachespec['cache_device'].split()[0])
+
+##         # auto increment md number based in registered devices
+##         bcache_shortname = 'bcache{}'.format(len(self.bcache_devices))
+##         bcache_dev_name = '/dev/' + bcache_shortname
+##         bcache_serial = '{}_serial'.format(bcache_dev_name)
+##         bcache_model = '{}_model'.format(bcache_dev_name)
+##         bcache_parttype = 'gpt'
+##         bcache_size = backing_device.size
+
+##         # create a Bcachedev (pass in only the names)
+##         bcache_dev = Bcachedev(bcache_dev_name, bcache_serial, bcache_model,
+##                                bcache_parttype, bcache_size,
+##                                backing_device, cache_device)
+
+##         # mark bcache holders
+##         self.set_holder(backing_device.devpath, bcache_dev_name)
+##         self.set_holder(cache_device.devpath, bcache_dev_name)
+
+##         # tag device use
+##         self.set_tag(backing_device.devpath,
+##                      'backing store for ' + bcache_shortname)
+##         cache_tag = self.get_tag(cache_device.devpath)
+##         if len(cache_tag) > 0:
+##             cache_tag += ", " + bcache_shortname
+##         else:
+##             cache_tag = "cache for " + bcache_shortname
+##         self.set_tag(cache_device.devpath, cache_tag)
+
+##         # add it to the model's info dict
+##         bcache_dev_info = {
+##             'type': 'disk',
+##             'name': bcache_dev_name,
+##             'size': bcache_size,
+##             'serial': bcache_serial,
+##             'vendor': 'Linux bcache',
+##             'model': bcache_model,
+##             'is_virtual': True,
+##             'raw': {
+##                 'MAJOR': '9',
+##             },
+##         }
+##         self.info[bcache_dev_name] = AttrDict(bcache_dev_info)
+
+##         # add it to the model's bcache devices
+##         self.bcache_devices[bcache_dev_name] = bcache_dev
+##         # add it to the model's devices
+##         self.add_device(bcache_dev_name, bcache_dev)
+
+##         log.debug('Successfully added bcache_dev: {}'.format(bcache_dev))
+
+##     def get_bcache_cachedevs(self):
+##         ''' return uniq list of bcache cache devices '''
+##         cachedevs = list(set([bcache_dev.cache_device for bcache_dev in
+##                               self.bcache_devices.values()]))
+##         log.debug('bcache cache devs: {}'.format(cachedevs))
+##         return cachedevs
+
+
+##     def set_holder(self, held_device, holder_devpath):
+##         ''' insert a hold on `held_device' by adding `holder_devpath' to
+##             a list at self.holders[`held_device']
+##         '''
+##         if held_device not in self.holders:
+##             self.holders[held_device] = [holder_devpath]
+##         else:
+##             self.holders[held_device].append(holder_devpath)
+
+##     def clear_holder(self, held_device, holder_devpath):
+##         if held_device in self.holders:
+##             self.holders[held_device].remove(holder_devpath)
+
+##     def get_holders(self, held_device):
+##         return self.holders.get(held_device, [])
+
+##     def set_tag(self, device, tag):
+##         self.tags[device] = tag
+
+##     def get_tag(self, device):
+##         return self.tags.get(device, '')
