@@ -46,6 +46,7 @@ INSTALLER_DEPS=(
   "lvm2"
   "mdadm"
   "petname"
+  "python3-attr"
   "python3-urwid"
   "python3-pyudev"
   "python-urwid"
