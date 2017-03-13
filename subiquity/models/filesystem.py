@@ -93,6 +93,12 @@ def asdict(inst):
             r[field.name] = v
     return r
 
+# This code is not going to make much sense unless you have read
+# http://curtin.readthedocs.io/en/latest/topics/storage.html. The
+# Disk, Partition etc classes correspond to entries in curtin's
+# storage config list. They are mostly 'dumb data', all the logic is
+# in the FilesystemModel or FilesystemController classes.
+
 
 @attr.s
 class Disk:
