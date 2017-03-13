@@ -513,6 +513,10 @@ class Mount:
         r['device'] = self.device.id
         return r
 
+def align_up(size, block_size=1 << 20):
+    return (size + block_size - 1) & ~(block_size - 1)
+
+GPT_END_RESERVE = 1 << 20
 
 class FilesystemModel(object):
 
@@ -603,11 +607,16 @@ class FilesystemModel(object):
         return self._available_disks.get(path)
 
     def add_partition(self, disk, partnum, size, flag=""):
-        ## XXX check, round, maybe adjust size?
+        if size > disk.free:
+            raise Exception("%s > %s", size, disk.free)
+        real_size = align_up(size)
+        if real_size > disk.free - GPT_END_RESERVE:
+            real_size = disk.free - GPT_END_RESERVE
+        log.debug("add_partition: rounded size from %s to %s", size, real_size)
         self._use_disk(disk)
         if disk._fs is not None:
             raise Exception("%s is already formatted" % (disk.path,))
-        p = Partition(device=disk, number=partnum, size=size, flag=flag)
+        p = Partition(device=disk, number=partnum, size=real_size, flag=flag)
         disk._partitions.append(p)
         self._partitions.append(p)
         return p
