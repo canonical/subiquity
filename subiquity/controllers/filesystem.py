@@ -133,7 +133,7 @@ class FilesystemController(BaseController):
 
         system_bootable = self.model.bootable()
         log.debug('model has bootable device? {}'.format(system_bootable))
-        if not system_bootable and len(disk._partitions) == 0:
+        if not system_bootable and len(disk.partitions()) == 0:
             if self.is_uefi():
                 log.debug('Adding EFI partition first')
                 part = self.model.add_partition(disk=disk, partnum=1, size=UEFI_GRUB_SIZE_BYTES, flag='bios_grub')
@@ -167,7 +167,7 @@ class FilesystemController(BaseController):
         if spec['fstype'] is not None:
             fs = self.model.add_filesystem(volume, spec['fstype'])
         else:
-            fs = volume._fs
+            fs = volume.fs()
         if spec['mountpoint']:
             if fs is None:
                 raise Exception("{} is not formatted".format(volume.path))
@@ -249,7 +249,7 @@ class FilesystemController(BaseController):
     @view
     def format_mount_partition(self, partition):
         log.debug("format_entire {}".format(partition))
-        if partition._fs is not None:
+        if partition.fs() is not None:
             header = ("Mount {}".format(partition.path))
             footer = ("Mount partition.")
         else:

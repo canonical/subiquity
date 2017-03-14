@@ -101,6 +101,7 @@ def asdict(inst):
 
 @attr.s
 class Disk:
+
     id = attr.ib(default=id_factory("disk"))
     type = attr.ib(default="disk")
     ptable = attr.ib(default='gpt')
@@ -114,6 +115,11 @@ class Disk:
 
     _partitions = attr.ib(default=attr.Factory(list), repr=False) # [Partition]
     _fs = attr.ib(default=None, repr=False) # Filesystem
+    def partitions(self):
+        return self._partitions
+    def fs(self):
+        return self._fs
+
     _info = attr.ib(default=None)
 
     @classmethod
@@ -152,6 +158,7 @@ class Disk:
 
 @attr.s
 class Partition:
+
     id = attr.ib(default=id_factory("part"))
     type = attr.ib(default="partition")
     number = attr.ib(default=0)
@@ -162,6 +169,8 @@ class Partition:
     preserve = attr.ib(default=False)
 
     _fs = attr.ib(default=None, repr=False) # Filesystem
+    def fs(self):
+        return self._fs
 
     @property
     def available(self):
@@ -181,6 +190,7 @@ class Partition:
 
 @attr.s
 class Filesystem:
+
     id = attr.ib(default=id_factory("fs"))
     type = attr.ib(default="format")
     fstype = attr.ib(default=None)
@@ -188,7 +198,10 @@ class Filesystem:
     label = attr.ib(default=None)
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
+
     _mount = attr.ib(default=None, repr=False) # Mount
+    def mount(self):
+        return self._mount
 
 
 @attr.s
@@ -201,6 +214,7 @@ class Mount:
 
 def align_up(size, block_size=1 << 20):
     return (size + block_size - 1) & ~(block_size - 1)
+
 
 class FilesystemModel(object):
 
@@ -282,7 +296,7 @@ class FilesystemModel(object):
 
     def _use_disk(self, disk):
         if disk.path not in self._disks:
-            self._disks[disk.path] = attr.assoc(disk)
+            self._disks[disk.path] = disk
 
     def all_disks(self):
         return [disk for (path, disk) in sorted(self._available_disks.items())]

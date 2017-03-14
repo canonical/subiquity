@@ -59,25 +59,25 @@ class DiskPartitionView(BaseView):
         def format_volume(part):
             path = part.path
             size = _humanize_size(part.size)
-            if part._fs is None:
+            if part.fs() is None:
                  fstype = '-'
                  mountpoint = '-'
-            elif part._fs._mount is None:
-                fstype = part._fs.fstype
+            elif part.fs().mount() is None:
+                fstype = part.fs().fstype
                 mountpoint = '-'
             else:
-                fstype = part._fs.fstype
-                mountpoint = part._fs._mount.path
+                fstype = part.fs().fstype
+                mountpoint = part.fs().mount().path
             return Columns([
                 (15, Text(path)),
                 Text(size),
                 Text(fstype),
                 Text(mountpoint),
             ], 4)
-        if self.disk._fs is not None:
+        if self.disk.fs() is not None:
             partitioned_disks.append(format_volume(self.disk))
         else:
-            for part in self.disk._partitions:
+            for part in self.disk.partitions():
                 partitioned_disks.append(format_volume(part))
         if self.disk.free > 0:
             free_space = _humanize_size(self.disk.free)
@@ -120,7 +120,7 @@ class DiskPartitionView(BaseView):
         """
         text = ("Format or create swap on entire "
                 "device (unusual, advanced)")
-        if len(self.disk._partitions) == 0 and \
+        if len(self.disk.partitions()) == 0 and \
            self.disk.available:
             return Color.menu_button(
                 menu_btn(label=text, on_press=self.format_entire))
@@ -132,7 +132,7 @@ class DiskPartitionView(BaseView):
         if not self.disk.available:
             return None
         text = "Add first partition"
-        if len(self.disk._partitions) > 0:
+        if len(self.disk.partitions()) > 0:
             text = "Add partition (max size {})".format(
                 _humanize_size(self.disk.free))
 

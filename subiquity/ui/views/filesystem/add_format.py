@@ -52,11 +52,11 @@ class AddFormatView(BaseView):
         self.volume = volume
 
         self.form = AddFormatForm(model)
-        if self.volume._fs is not None:
+        if self.volume.fs() is not None:
             for i, fs_spec in enumerate(self.model.supported_filesystems):
                 if len(fs_spec) == 3:
                     fs = fs_spec[2]
-                    if fs.label == self.volume._fs.fstype:
+                    if fs.label == self.volume.fs().fstype:
                         self.form.fstype.widget.index = i
             self.form.fstype.enabled = False
         connect_signal(self.form, 'submit', self.done)
@@ -93,7 +93,7 @@ class AddFormatView(BaseView):
             "fstype": fstype.label,
             "mountpoint": mount,
         }
-        if self.volume._fs is not None:
+        if self.volume.fs() is not None:
             result['fstype'] = None
 
         log.debug("Add Format Result: {}".format(result))

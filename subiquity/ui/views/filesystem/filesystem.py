@@ -122,13 +122,13 @@ class FilesystemView(BaseView):
                 else:
                     col3 = Text("local disk")
                 col(col1, col2, col3)
-            for partition in disk._partitions:
+            for partition in disk.partitions():
                 if partition.available:
                     part_btn = menu_btn(label=' ' + partition.path)
                     connect_signal(part_btn, 'click', self.click_partition, partition)
                     col1 = Color.menu_button(part_btn)
-                    if partition._fs is not None:
-                        fs = partition._fs.fstype
+                    if partition.fs() is not None:
+                        fs = partition.fs().fstype
                     else:
                         fs = "unformatted"
                     col2 = Text(_humanize_size(partition.size))
