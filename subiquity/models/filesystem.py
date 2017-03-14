@@ -13,13 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
 import collections
 import glob
 import logging
 import math
 import os
+import sys
 
 import attr
 
@@ -256,7 +255,7 @@ class FilesystemModel(object):
         # This assumes a fairly vanilla setup. It won't list as
         # mounted a disk that is only mounted via lvm, for example.
         mounted_devs = []
-        with open('/proc/mounts') as pm:
+        with open('/proc/mounts', encoding=sys.getfilesystemencoding()) as pm:
             for line in pm:
                 if line.startswith('/dev/'):
                     mounted_devs.append(line.split()[0][5:])

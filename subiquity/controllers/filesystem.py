@@ -170,7 +170,7 @@ class FilesystemController(BaseController):
             fs = volume._fs
         if spec['mountpoint']:
             if fs is None:
-                raise Exception("%s is not formatted" % (volume.path,))
+                raise Exception("{} is not formatted".format(volume.path))
             self.model.add_mount(fs, spec['mountpoint'])
         self.prev_view()
 
@@ -239,7 +239,7 @@ class FilesystemController(BaseController):
     @view
     def format_entire(self, disk):
         log.debug("format_entire {}".format(disk))
-        header = ("Format and/or mount %s"%(disk.path))
+        header = ("Format and/or mount {}".format(disk.path))
         footer = ("Format or mount whole disk.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
@@ -250,10 +250,10 @@ class FilesystemController(BaseController):
     def format_mount_partition(self, partition):
         log.debug("format_entire {}".format(partition))
         if partition._fs is not None:
-            header = ("Mount %s"%(partition.path))
+            header = ("Mount {}".format(partition.path))
             footer = ("Mount partition.")
         else:
-            header = ("Format and mount %s"%(partition.path))
+            header = ("Format and mount {}".format(partition.path))
             footer = ("Format and mount partition.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
