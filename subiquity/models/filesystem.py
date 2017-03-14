@@ -134,7 +134,7 @@ class Disk:
 
     @property
     def size(self):
-        return self._info.size
+        return self._info.size - (2<<20) # The first and last megabyte of the disk are not usable.
 
     @property
     def used(self):
@@ -201,8 +201,6 @@ class Mount:
 
 def align_up(size, block_size=1 << 20):
     return (size + block_size - 1) & ~(block_size - 1)
-
-GPT_END_RESERVE = 1 << 20
 
 class FilesystemModel(object):
 
@@ -296,8 +294,6 @@ class FilesystemModel(object):
         if size > disk.free:
             raise Exception("%s > %s", size, disk.free)
         real_size = align_up(size)
-        if real_size > disk.free - GPT_END_RESERVE:
-            real_size = disk.free - GPT_END_RESERVE
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
         self._use_disk(disk)
         if disk._fs is not None:
