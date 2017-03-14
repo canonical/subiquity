@@ -310,7 +310,8 @@ class FilesystemModel(object):
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
         if not volume.available:
-            raise Exception("%s is not available", volume)
+            if not (isinstance(volume, Partition) and volume.flag == 'bios_grub' and fstype == 'fat32'):
+                raise Exception("{} is not available".format(volume))
         if isinstance(volume, Disk):
             self._use_disk(volume)
         if volume._fs is not None:
