@@ -1,5 +1,5 @@
 name: subiquity
-version: "0.0.30"
+version: "0.0.31"
 summary: Ubuntu installer
 description: The Ubuntu server installer
 confinement: classic

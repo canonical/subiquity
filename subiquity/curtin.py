@@ -71,6 +71,11 @@ network:
 # Reworked for flake8, but it does make it harder to read.
 POST_INSTALL_LIST = [
     ("late_commands:"),
+    ("    05_clear_subiquity: curtin in-target -- "
+     "snap remove subiquity || true"),
+    ("    06_remove_subiquity_service: curtin in-target -- "
+     "rm -f /lib/systemd/system/subiquity*.service "
+     " /lib/systemd/system/multi-user.target.wants/subiquity* || true"),
     ("    10_mkdir_seed: curtin in-target -- "
      "mkdir -p /var/lib/cloud/seed/nocloud-net"),
     ("    11_postinst_metadata: [curtin, in-target, --, sh, '-c',"
