@@ -29,11 +29,10 @@ log = logging.getLogger('subiquity.ui.filesystem.disk_partition')
 
 
 class DiskPartitionView(BaseView):
-    def __init__(self, model, controller, selected_disk):
+    def __init__(self, model, controller, disk):
         self.model = model
         self.controller = controller
-        self.selected_disk = selected_disk
-        self.disk_obj = self.model.get_disk(self.selected_disk)
+        self.disk = disk
 
         self.body = [
             Padding.center_79(self._build_model_inputs()),
@@ -57,25 +56,37 @@ class DiskPartitionView(BaseView):
     def _build_model_inputs(self):
         partitioned_disks = []
 
-        for mnt, size, fstype, path in self.disk_obj.get_fs_table():
-            mnt = Text(mnt)
-            size = Text("{}".format(_humanize_size(size)))
-            fstype = Text(fstype) if fstype else '-'
-            path = Text(path) if path else '-'
-            partition_column = Columns([
-                (15, path),
-                size,
-                fstype,
-                mnt
+        def format_volume(part):
+            path = part.path
+            size = _humanize_size(part.size)
+            if part.fs() is None:
+                 fstype = '-'
+                 mountpoint = '-'
+            elif part.fs().mount() is None:
+                fstype = part.fs().fstype
+                mountpoint = '-'
+            else:
+                fstype = part.fs().fstype
+                mountpoint = part.fs().mount().path
+            return Columns([
+                (15, Text(path)),
+                Text(size),
+                Text(fstype),
+                Text(mountpoint),
             ], 4)
-            partitioned_disks.append(partition_column)
-        free_space = _humanize_size(self.disk_obj.freespace)
-        partitioned_disks.append(Columns([
-            (15, Text("FREE SPACE")),
-            Text(free_space),
-            Text(""),
-            Text("")
-        ], 4))
+        if self.disk.fs() is not None:
+            partitioned_disks.append(format_volume(self.disk))
+        else:
+            for part in self.disk.partitions():
+                partitioned_disks.append(format_volume(part))
+        if self.disk.free > 0:
+            free_space = _humanize_size(self.disk.free)
+            partitioned_disks.append(Columns([
+                (15, Text("FREE SPACE")),
+                Text(free_space),
+                Text(""),
+                Text("")
+            ], 4))
 
         return BoxAdapter(SimpleList(partitioned_disks, is_selectable=False),
                           height=len(partitioned_disks))
@@ -109,35 +120,33 @@ class DiskPartitionView(BaseView):
         """
         text = ("Format or create swap on entire "
                 "device (unusual, advanced)")
-        if len(self.disk_obj.partitions) == 0 and \
-           self.disk_obj.available:
-            return Color.menu_button(menu_btn(label=text,
-                                              on_press=self.create_swap))
+        if len(self.disk.partitions()) == 0 and \
+           self.disk.available:
+            return Color.menu_button(
+                menu_btn(label=text, on_press=self.format_entire))
 
     def add_partition_w(self):
         """ Handles presenting the add partition widget button
         depending on if partitions exist already or not.
         """
-        text = "Add first GPT partition"
-        if len(self.disk_obj.partitions) > 0:
+        if not self.disk.available:
+            return None
+        text = "Add first partition"
+        if len(self.disk.partitions()) > 0:
             text = "Add partition (max size {})".format(
-                _humanize_size(self.disk_obj.freespace))
+                _humanize_size(self.disk.free))
 
-        if self.disk_obj.available and \
-           self.disk_obj.blocktype not in self.model.no_partition_blocktypes:
-            return Color.menu_button(menu_btn(label=text,
-                                              on_press=self.add_partition))
+        return Color.menu_button(
+            menu_btn(label=text, on_press=self.add_partition))
 
     def show_disk_info(self, result):
-        self.controller.show_disk_information(self.selected_disk)
+        self.controller.show_disk_information(self.disk)
 
     def add_partition(self, result):
-        log.debug('add_partition: result={}'.format(result))
-        self.controller.add_disk_partition(self.selected_disk)
+        self.controller.add_disk_partition(self.disk)
 
-    def create_swap(self, result):
-        log.debug('create_swap: result={}'.format(result))
-        self.controller.create_swap_entire_device(self.selected_disk)
+    def format_entire(self, result):
+        self.controller.format_entire(self.disk)
 
     def done(self, result):
         ''' Return to FilesystemView '''

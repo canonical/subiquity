@@ -90,6 +90,7 @@ class Application:
         if self.controller_index >= len(self.controllers):
             self.exit()
         controller_name = self.controllers[self.controller_index]
+        log.debug("moving to screen %s", controller_name)
         next_controller = self.common['controllers'][controller_name]
         next_controller.default()
 

@@ -77,6 +77,15 @@ class FormField(object):
         widget = self._make_widget(form)
         return BoundFormField(self, form, widget)
 
+    def clean(self, value):
+        if self.cleaner is not None:
+            return self.cleaner(value)
+        else:
+            return value
+
+    def validate(self, value):
+        pass
+
 
 class BoundFormField(object):
 
@@ -92,8 +101,7 @@ class BoundFormField(object):
         self.widget = widget
 
     def clean(self, value):
-        if self.field.cleaner is not None:
-            value = self.field.cleaner(value)
+        value = self.field.clean(value)
         cleaner = getattr(self.form, "clean_" + self.field.name, None)
         if cleaner is not None:
             value = cleaner(value)
@@ -179,20 +187,21 @@ class BoundFormField(object):
         else:
             help = Text("")
         cols = [
-                    ("weight", 0.2, text),
-                    ("weight", 0.3, input),
+                    (self._longest_caption, text),
+                    input,
                     (3, help),
                 ]
-        cols = Columns(cols, dividechars=4)
+        cols = Columns(cols, dividechars=2)
         if self._enabled:
             return cols
         else:
             return WidgetDisable(Color.info_minor(cols))
 
-    def as_row(self, view):
+    def as_row(self, view, longest_caption):
         if self.pile is not None:
             raise RuntimeError("do not call as_row more than once!")
         self.parent_view = view
+        self._longest_caption = longest_caption
         self.pile = Pile([self._cols()])
         return self.pile
 
@@ -204,7 +213,8 @@ class BoundFormField(object):
     def enabled(self, val):
         if val != self._enabled:
             self._enabled = val
-            self.pile.contents[0] = (self._cols(), self.pile.contents[0][1])
+            if self.pile is not None:
+                self.pile.contents[0] = (self._cols(), self.pile.contents[0][1])
 
 
 def simple_field(widget_maker):
@@ -256,10 +266,20 @@ class Form(object, metaclass=MetaForm):
     def _click_cancel(self, sender):
         emit_signal(self, 'cancel', self)
 
+    def remove_field(self, field_name):
+        new_fields = []
+        for bf in self._fields:
+            if bf.field.name != field_name:
+                new_fields.append(bf)
+        self._fields[:] = new_fields
+
     def as_rows(self, view):
+        longest_caption = 0
+        for field in self._fields:
+            longest_caption = max(longest_caption, len(field.caption))
         rows = []
         for field in self._fields:
-            rows.append(field.as_row(view))
+            rows.append(field.as_row(view, longest_caption))
         return Pile(rows)
 
     def validated(self):

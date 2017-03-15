@@ -22,9 +22,8 @@ from subiquitycore.ui.error import ErrorView
 
 from subiquity.curtin import (curtin_write_storage_actions,
                               curtin_write_preserved_actions)
-from subiquity.models.actions import preserve_action
 from subiquity.models import (FilesystemModel, RaidModel)
-from subiquity.models.filesystem import (_humanize_size)
+from subiquity.models.filesystem import _humanize_size
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
                                 AddFormatView, FilesystemView,
                                 DiskInfoView, RaidView, BcacheView,
@@ -45,6 +44,7 @@ class FilesystemController(BaseController):
         # self.iscsi_model = IscsiDiskModel()
         # self.ceph_model = CephDiskModel()
         self.raid_model = RaidModel()
+        self.model.probe()  # probe before we complete
 
     @view
     def default(self, reset=False):
@@ -76,17 +76,20 @@ class FilesystemController(BaseController):
         self.ui.set_footer(footer, 30)
         self.ui.set_body(ErrorView(self.signal, error_msg))
 
-    def finish(self, actions):
+    def finish(self):
         log.info("Rendering curtin config from user choices")
         try:
-            curtin_write_storage_actions(actions=actions)
+            curtin_write_storage_actions(actions=self.model.render())
         except PermissionError:
             log.exception('Failed to write storage actions')
             self.filesystem_error('curtin_write_storage_actions')
             return None
 
         log.info("Rendering preserved config for post install")
-        preserved_actions = [preserve_action(a) for a in actions]
+        preserved_actions = []
+        for a in self.model.render():
+            a['preserve'] = True
+            preserved_actions.append(a)
         try:
             curtin_write_preserved_actions(actions=preserved_actions)
         except PermissionError:
@@ -105,9 +108,9 @@ class FilesystemController(BaseController):
 
     # Filesystem/Disk partition -----------------------------------------------
     @view
-    def disk_partition(self, disk):
-        log.debug("In disk partition view, using {} as the disk.".format(disk))
-        title = ("Partition, format, and mount {}".format(disk))
+    def partition_disk(self, disk):
+        log.debug("In disk partition view, using {} as the disk.".format(disk.path))
+        title = ("Partition, format, and mount {}".format(disk.path))
         footer = ("Partition the disk, or format the entire device "
                   "without partitions.")
         self.ui.set_header(title)
@@ -115,12 +118,6 @@ class FilesystemController(BaseController):
         dp_view = DiskPartitionView(self.model, self, disk)
 
         self.ui.set_body(dp_view)
-
-    def disk_partition_handler(self, spec=None):
-        log.debug("Disk partition: {}".format(spec))
-        if spec is None:
-            self.signal.prev_signal()
-        self.disk_partition([])
 
     @view
     def add_disk_partition(self, disk):
@@ -131,71 +128,50 @@ class FilesystemController(BaseController):
         self.ui.set_body(adp_view)
 
     def add_disk_partition_handler(self, disk, spec):
-        current_disk = self.model.get_disk(disk)
         log.debug('spec: {}'.format(spec))
-        log.debug('disk.freespace: {}'.format(current_disk.freespace))
+        log.debug('disk.freespace: {}'.format(disk.free))
 
-        try:
-            ''' create a gpt boot partition if one doesn't exist, only
-                one one disk'''
-
-            system_bootable = self.model.bootable()
-            log.debug('model has bootable device? {}'.format(system_bootable))
-            if system_bootable is False and \
-               current_disk.parttype == 'gpt' and \
-               len(current_disk.disk.partitions) == 0:
-                if self.is_uefi():
-                    log.debug('Adding EFI partition first')
-                    size_added = \
-                        current_disk.add_partition(partnum=1,
-                                                   size=UEFI_GRUB_SIZE_BYTES,
-                                                   flag='bios_grub',
-                                                   fstype='fat32',
-                                                   mountpoint='/boot/efi')
-                else:
-                    log.debug('Adding grub_bios gpt partition first')
-                    size_added = \
-                        current_disk.add_partition(partnum=1,
-                                                   size=BIOS_GRUB_SIZE_BYTES,
-                                                   fstype=None,
-                                                   flag='bios_grub')
-                current_disk.set_tag('(boot)')
-
-                # adjust downward the partition size to accommodate
-                # the offset and bios/grub partition
-                log.debug("Adjusting request down:" +
-                          "{} - {} = {}".format(spec['bytes'], size_added,
-                                                spec['bytes'] - size_added))
-                spec['bytes'] -= size_added
-                spec['partnum'] = 2
-
-            if spec["fstype"] in ["swap"]:
-                current_disk.add_partition(partnum=spec["partnum"],
-                                           size=spec["bytes"],
-                                           fstype=spec["fstype"])
+        system_bootable = self.model.bootable()
+        log.debug('model has bootable device? {}'.format(system_bootable))
+        if not system_bootable and len(disk.partitions()) == 0:
+            if self.is_uefi():
+                log.debug('Adding EFI partition first')
+                part = self.model.add_partition(disk=disk, partnum=1, size=UEFI_GRUB_SIZE_BYTES, flag='bios_grub')
+                fs = self.model.add_filesystem(part, 'fat32')
+                self.model.add_mount(fs, '/boot/efi')
             else:
-                current_disk.add_partition(partnum=spec["partnum"],
-                                           size=spec["bytes"],
-                                           fstype=spec["fstype"],
-                                           mountpoint=spec["mountpoint"])
-        except Exception:
-            log.exception('Failed to add disk partition')
-            log.debug('Returning to add-disk-partition')
-            # FIXME: on failure, we should repopulate input values
-            self.add_disk_partition(disk)
+                log.debug('Adding grub_bios gpt partition first')
+                part = self.model.add_partition(disk=disk, partnum=1, size=BIOS_GRUB_SIZE_BYTES, flag='bios_grub')
+            disk.grub_device = True
+
+            # adjust downward the partition size to accommodate
+            # the offset and bios/grub partition
+            # XXX should probably only do this if the partition is now too big to fit on the disk?
+            log.debug("Adjusting request down:" +
+                      "{} - {} = {}".format(spec['bytes'], part.size,
+                                            spec['bytes'] - part.size))
+            spec['bytes'] -= part.size
+            spec['partnum'] = 2
+
+        part = self.model.add_partition(disk=disk, partnum=spec["partnum"], size=spec["bytes"])
+        if spec['fstype'] is not None:
+            fs = self.model.add_filesystem(part, spec['fstype'])
+            if spec['mountpoint']:
+                self.model.add_mount(fs, spec['mountpoint'])
 
         log.info("Successfully added partition")
-
-        log.debug("FS Table: {}".format(current_disk.get_fs_table()))
         self.prev_view()
 
-    def add_disk_format_handler(self, disk, spec):
-        log.debug('add_disk_format_handler')
-        current_disk = self.model.get_disk(disk)
-        log.debug('format spec: {}'.format(spec))
-        log.debug('disk.freespace: {}'.format(current_disk.freespace))
-        current_disk.format_device(spec['fstype'], spec['mountpoint'])
-        log.debug("FS Table: {}".format(current_disk.get_fs_table()))
+    def add_format_handler(self, volume, spec):
+        log.debug('add_format_handler')
+        if spec['fstype'] is not None:
+            fs = self.model.add_filesystem(volume, spec['fstype'])
+        else:
+            fs = volume.fs()
+        if spec['mountpoint']:
+            if fs is None:
+                raise Exception("{} is not formatted".format(volume.path))
+            self.model.add_mount(fs, spec['mountpoint'])
         self.prev_view()
 
     def connect_iscsi_disk(self, *args, **kwargs):
@@ -260,46 +236,55 @@ class FilesystemController(BaseController):
         self.model.add_raid_device(result)
         self.signal.prev_signal()
 
-    def add_first_gpt_partition(self, *args, **kwargs):
-        self.ui.set_body(DummyView(self.signal))
-
     @view
-    def create_swap_entire_device(self, disk):
-        log.debug('create_swap_entire_device')
-        log.debug("formatting whole {}".format(disk))
+    def format_entire(self, disk):
+        log.debug("format_entire {}".format(disk))
+        header = ("Format and/or mount {}".format(disk.path))
         footer = ("Format or mount whole disk.")
+        self.ui.set_header(header)
         self.ui.set_footer(footer)
         afv_view = AddFormatView(self.model, self, disk)
         self.ui.set_body(afv_view)
 
-    def show_disk_information_next(self, curr_device):
-        log.debug('show_disk_info_next: curr_device={}'.format(curr_device))
-        available = self.model.get_available_disk_names()
-        idx = available.index(curr_device)
+    @view
+    def format_mount_partition(self, partition):
+        log.debug("format_entire {}".format(partition))
+        if partition.fs() is not None:
+            header = ("Mount {}".format(partition.path))
+            footer = ("Mount partition.")
+        else:
+            header = ("Format and mount {}".format(partition.path))
+            footer = ("Format and mount partition.")
+        self.ui.set_header(header)
+        self.ui.set_footer(footer)
+        afv_view = AddFormatView(self.model, self, partition)
+        self.ui.set_body(afv_view)
+
+    def show_disk_information_next(self, disk):
+        log.debug('show_disk_info_next: curr_device={}'.format(disk))
+        available = self.model.all_disks()
+        idx = available.index(disk)
         next_idx = (idx + 1) % len(available)
         next_device = available[next_idx]
         self.show_disk_information(next_device)
 
-    def show_disk_information_prev(self, curr_device):
-        log.debug('show_disk_info_prev: curr_device={}'.format(curr_device))
-        available = self.model.get_available_disk_names()
-        idx = available.index(curr_device)
+    def show_disk_information_prev(self, disk):
+        log.debug('show_disk_info_prev: curr_device={}'.format(disk))
+        available = self.model.all_disks()
+        idx = available.index(disk)
         next_idx = (idx - 1) % len(available)
         next_device = available[next_idx]
         self.show_disk_information(next_device)
 
-    def show_disk_information(self, device):
+    def show_disk_information(self, disk):
         """ Show disk information, requires sudo/root
         """
-        disk_info = self.model.get_disk_info(device)
-        disk = self.model.get_disk(device)
-
-        bus = disk_info.raw.get('ID_BUS', None)
-        major = disk_info.raw.get('MAJOR', None)
+        bus = disk._info.raw.get('ID_BUS', None)
+        major = disk._info.raw.get('MAJOR', None)
         if bus is None and major == '253':
             bus = 'virtio'
 
-        devpath = disk_info.raw.get('DEVPATH', disk.devpath)
+        devpath = disk._info.raw.get('DEVPATH', disk.path)
         rotational = '1'
         try:
             dev = os.path.basename(devpath)
@@ -311,13 +296,13 @@ class FilesystemController(BaseController):
 
         dinfo = {
             'bus': bus,
-            'devname': disk.devpath,
+            'devname': disk.path,
             'devpath': devpath,
             'model': disk.model,
             'serial': disk.serial,
             'size': disk.size,
             'humansize': _humanize_size(disk.size),
-            'vendor': disk_info.vendor,
+            'vendor': disk._info.vendor,
             'rotational': 'true' if rotational == '1' else 'false',
         }
 
@@ -333,7 +318,7 @@ class FilesystemController(BaseController):
 """
         result = template.format(**dinfo)
         log.debug('calling DiskInfoView()')
-        disk_info_view = DiskInfoView(self.model, self, device, result)
+        disk_info_view = DiskInfoView(self.model, self, disk, result)
         footer = ('Select next or previous disks with n and p')
         self.ui.set_footer(footer, 30)
         self.ui.set_body(disk_info_view)
