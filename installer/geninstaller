@@ -361,7 +361,6 @@ generate_img() {
     local upper=${cachedir}/upper
     local work=${cachedir}/upper/overlay-work
     local seed=$cachedir/seed/nocloud-net
-    local splash=${RESOURCES}/images/splash.png
     local syslinux_path=$(dpkg -L syslinux-common | grep \/vesamenu.c32 |
                           grep -v efi | xargs -i dirname {})
 
@@ -440,8 +439,7 @@ generate_img() {
      sudo grub-mkimage -O x86_64-efi -p /grub -c ${efimnt}/grub/embed_efi.cfg -o ${efimnt}/EFI/BOOT/bootx64.efi ${GRUB_MODS} &&
      sudo grub-install --force --removable --no-floppy \
                       --target=i386-pc \
-                      --boot-directory=${efimnt}/boot $LOOPDEV &&
-     sudo cp -v ${splash} ${efimnt}/boot/grub) 2>&1 >> ${LOGFILE} || {
+                      --boot-directory=${efimnt}/boot $LOOPDEV) 2>&1 >> ${LOGFILE} || {
         log "ERROR: failed to create multiboot partition"
          return 1
      }
@@ -545,7 +543,6 @@ generate_img() {
         sudo mkdir -p ${mnt}/boot/extlinux &&
         sudo extlinux --install ${mnt}/boot/extlinux &&
         sudo cp -av ${syslinux_path}/*.c32 ${mnt}/boot/extlinux &&
-        sudo cp -av ${splash} ${mnt}/boot/extlinux &&
         cat ${extlinux_conf} | sudo tee ${mnt}/boot/extlinux/extlinux.conf
     else
         log "Installing grub2"
