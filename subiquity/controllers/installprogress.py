@@ -16,6 +16,7 @@
 import fcntl
 import logging
 import os
+import yaml
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
@@ -23,7 +24,8 @@ from subiquitycore.controller import BaseController
 from subiquity.curtin import (CURTIN_CONFIGS,
                               CURTIN_INSTALL_LOG,
                               CURTIN_POSTINSTALL_LOG,
-                              curtin_install_cmd)
+                              curtin_install_cmd,
+                              curtin_write_network_config)
 from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView
 
@@ -39,12 +41,12 @@ class InstallState:
     DONE_POSTINSTALL = 4
     ERROR = -1
 
-
 class InstallProgressController(BaseController):
     signals = [
         ('installprogress:curtin-install',     'curtin_start_install'),
         ('installprogress:wrote-install',      'curtin_wrote_install'),
         ('installprogress:wrote-postinstall',  'curtin_wrote_postinstall'),
+        ('network-config-written',             'curtin_wrote_network_config'),
     ]
 
     def __init__(self, common):
@@ -54,6 +56,9 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.NOT_STARTED
         self.postinstall_written = False
         self.tail_proc = None
+
+    def curtin_wrote_network_config(self, path):
+        curtin_write_network_config(open(path).read())
 
     def curtin_wrote_install(self):
         pass
@@ -85,7 +90,8 @@ class InstallProgressController(BaseController):
                 "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; } > %s 2>&1"%CURTIN_INSTALL_LOG]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
-            configs = [CURTIN_CONFIGS['storage']]
+            configs = [CURTIN_CONFIGS['storage'],
+                       CURTIN_CONFIGS['network']]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
