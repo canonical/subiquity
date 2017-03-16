@@ -56,6 +56,8 @@ class Application:
             log.exception(err)
             raise ApplicationError(err)
 
+        opts.project = self.project
+
         self.common = {
             "ui": ui,
             "opts": opts,
