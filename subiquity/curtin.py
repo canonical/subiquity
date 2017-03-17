@@ -140,6 +140,11 @@ def setup_yaml():
 setup_yaml()
 
 def curtin_write_network_config(netplan_config):
+    # As soon as curtin and cloud-init support v2 network config
+    # (RSN!) we can just pass this sensibly to curtin. But for now,
+    # just use write_files to install the config and make sure curtin
+    # and cloud-init doesn't do any networking stuff of their own
+    # accord.
     curtin_conf = {
         'write_files': {
             'netplan': {
