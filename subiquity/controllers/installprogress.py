@@ -39,7 +39,8 @@ class InstallState:
     DONE_INSTALL = 2
     RUNNING_POSTINSTALL = 3
     DONE_POSTINSTALL = 4
-    ERROR = -1
+    ERROR_INSTALL = -1
+    ERROR_POSTINSTALL = -2
 
 class InstallProgressController(BaseController):
     signals = [
@@ -72,11 +73,12 @@ class InstallProgressController(BaseController):
         log.debug('curtin_error')
         title = ('An error occurred during installation')
         self.ui.set_header(title, 'Please report this error in Launchpad')
-        self.progress_view.set_status(('info_error', "An error has occurred"))
         self.ui.set_footer("An error has occurred.", 100)
-        self.progress_view.show_complete()
-        log.debug('curtin_error: refreshing final error screen')
-        self.signal.emit_signal('refresh')
+        if self.progress_view is not None:
+            self.progress_view.set_status(('info_error', "An error has occurred"))
+            self.progress_view.show_complete()
+        else:
+            self.default()
 
     def curtin_start_install(self):
         log.debug('Curtin Install: calling curtin with '
@@ -105,7 +107,7 @@ class InstallProgressController(BaseController):
             msg = ("Problem with curtin "
                    "install: {}".format(result))
             log.error(msg)
-            self.install_state = InstallState.ERROR
+            self.install_state = InstallState.ERROR_INSTALL
             self.curtin_error()
             return
         self.install_state = InstallState.DONE_INSTALL
@@ -152,7 +154,7 @@ class InstallProgressController(BaseController):
             msg = ("Problem with curtin "
                    "post-install: {}".format(result))
             log.error(msg)
-            self.install_state = InstallState.ERROR
+            self.install_state = InstallState.ERROR_POSTINSTALL
             self.curtin_error()
             return
         log.debug('After curtin postinstall OK')
@@ -169,7 +171,11 @@ class InstallProgressController(BaseController):
         self.progress_view.add_log_tail(tail)
 
     def start_tail_proc(self):
-        if self.install_state < InstallState.RUNNING_POSTINSTALL:
+        if self.install_state == InstallState.ERROR_INSTALL:
+            install_log = CURTIN_INSTALL_LOG
+        elif self.install_state == InstallState.ERROR_INSTALL:
+            install_log = CURTIN_POSTINSTALL_LOG
+        elif self.install_state < InstallState.RUNNING_POSTINSTALL:
             install_log = CURTIN_INSTALL_LOG
         else:
             install_log = CURTIN_POSTINSTALL_LOG
@@ -209,6 +215,10 @@ class InstallProgressController(BaseController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 90)
         self.progress_view = ProgressView(self.model, self)
+        if self.install_state < 0:
+            self.curtin_error()
+            self.ui.set_body(self.progress_view)
+            return
         if self.install_state < InstallState.RUNNING_POSTINSTALL:
             self.progress_view.set_status("Running install step")
         else:
