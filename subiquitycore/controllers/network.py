@@ -325,7 +325,7 @@ class NetworkController(BaseController):
             if os.path.exists(netplan_dir):
                 import shutil
                 shutil.rmtree(netplan_dir)
-                os.makedirs(netplan_dir)
+            os.makedirs(netplan_dir)
             with open(netplan_path, 'w') as fp:
                 fp.write(default_netplan)
         self.model = NetworkModel(self.root)
