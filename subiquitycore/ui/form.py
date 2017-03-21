@@ -27,7 +27,12 @@ from urwid import (
 
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.container import Columns, Pile
-from subiquitycore.ui.interactive import Help, IntegerEditor, StringEditor
+from subiquitycore.ui.interactive import (
+    Help,
+    PasswordEditor,
+    IntegerEditor,
+    StringEditor,
+    )
 from subiquitycore.ui.utils import Color
 
 class Toggleable(delegate_to_widget_mixin('_original_widget'), WidgetDecoration):
@@ -225,6 +230,7 @@ def simple_field(widget_maker):
 
 
 StringField = simple_field(StringEditor)
+PasswordField = simple_field(PasswordEditor)
 IntegerField = simple_field(IntegerEditor)
 
 class MetaForm(MetaSignals):
@@ -273,10 +279,15 @@ class Form(object, metaclass=MetaForm):
                 new_fields.append(bf)
         self._fields[:] = new_fields
 
-    def as_rows(self, view):
+    @property
+    def longest_caption(self):
         longest_caption = 0
         for field in self._fields:
             longest_caption = max(longest_caption, len(field.caption))
+        return longest_caption
+
+    def as_rows(self, view):
+        longest_caption = self.longest_caption
         rows = []
         for field in self._fields:
             rows.append(field.as_row(view, longest_caption))
