@@ -1,8 +1,8 @@
-from urwid import Text, Overlay, WidgetWrap, LineBox, Button, BoxAdapter
+from urwid import Text, WidgetWrap, LineBox, Button, BoxAdapter
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, done_btn, menu_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.interactive import PasswordEditor, StringEditor
+from subiquitycore.ui.form import Form, PasswordField, StringField
 from subiquitycore.ui.utils import Color, Padding
 import logging
 
@@ -22,25 +22,45 @@ class NetworkList(WidgetWrap):
         super().__init__(box)
 
     def do_network(self, sender):
-        self.parent.ssid_input.value = sender.label
+        self.parent.form.ssid.value = sender.label
         self.parent.remove_overlay()
 
     def do_cancel(self, sender):
         self.parent.remove_overlay()
 
 
+class WLANForm(Form):
+
+    ssid = StringField(caption="Network Name:")
+    psk = PasswordField(caption="Password:")
+
+    def validate_psk(self):
+        psk = self.psk.value
+        if len(psk) == 0:
+            return
+        elif len(psk) < 8:
+            return "Password must be at least 8 characters long if present"
+        elif len(psk) > 63:
+            return "Password must be less than 63 characters long"
+
 class NetworkConfigureWLANView(BaseView):
     def __init__(self, model, controller, name):
         self.model = model
         self.controller = controller
         self.dev = self.model.get_netdev_by_name(name)
-        self.ssid_input = StringEditor()
+
+        self.form = WLANForm()
+
         if self.dev.configured_ssid is not None:
-            self.ssid_input.value = self.dev.configured_ssid
-        self.psk_input = PasswordEditor()
+            self.form.ssid.value = self.dev.configured_ssid
         if self.dev.configured_wifi_psk is not None:
-            self.psk_input.value = self.dev.configured_wifi_psk
+            self.form.psk.value = self.dev.configured_wifi_psk
+
+        self.ssid_row = self.form.ssid.as_row(self, self.form.longest_caption)
+        self.psk_row = self.form.psk.as_row(self, self.form.longest_caption)
+
         self.inputs = Pile(self._build_iface_inputs())
+
         self.error = Text("")
         self.body = [
             Padding.center_79(self.inputs),
@@ -81,6 +101,7 @@ class NetworkConfigureWLANView(BaseView):
                     Text("No visible networks"),
                     ('fixed', 1, Text(">"))
                 ], dividechars=1))
+
         if not self.dev.scan_state:
             scan_btn = Color.menu_button(
                 menu_btn("Scan for networks", on_press=self.start_scan))
@@ -95,12 +116,7 @@ class NetworkConfigureWLANView(BaseView):
         col = [
             Padding.center_79(Color.info_minor(Text("Only open or WPA2/PSK networks are supported at this time."))),
             Padding.line_break(""),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Network name:")),
-                    ("weight", 0.3, Color.string_input(self.ssid_input)),
-                ], dividechars=2
-            ),
+            self.ssid_row,
             Columns(
                 [
                     ("weight", 1.0,
@@ -113,13 +129,7 @@ class NetworkConfigureWLANView(BaseView):
                      Padding.fixed_30(scan_btn)),
                 ]
             ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Password:")),
-                    ("weight", 0.3,
-                     Color.string_input(self.psk_input)),
-                ], dividechars=2
-            ),
+            self.psk_row,
         ]
         return col
 
