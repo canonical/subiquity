@@ -1,6 +1,13 @@
-from urwid import Text, WidgetWrap, LineBox, Button, BoxAdapter
+from urwid import (
+    BoxAdapter,
+    Button,
+    connect_signal,
+    LineBox,
+    Text,
+    WidgetWrap,
+    )
 from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import cancel_btn, done_btn, menu_btn
+from subiquitycore.ui.buttons import cancel_btn, menu_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.form import Form, PasswordField, StringField
 from subiquitycore.ui.utils import Color, Padding
@@ -51,6 +58,9 @@ class NetworkConfigureWLANView(BaseView):
 
         self.form = WLANForm()
 
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+
         if self.dev.configured_ssid is not None:
             self.form.ssid.value = self.dev.configured_ssid
         if self.dev.configured_wifi_psk is not None:
@@ -67,7 +77,7 @@ class NetworkConfigureWLANView(BaseView):
             Padding.line_break(""),
             Padding.center_79(Color.info_error(self.error)),
             Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons())
+            Padding.fixed_10(Pile([self.form.done_btn, self.form.cancel_btn])),
         ]
         self.orig_w = None
         super().__init__(ListBox(self.body))
@@ -117,18 +127,8 @@ class NetworkConfigureWLANView(BaseView):
             Padding.center_79(Color.info_minor(Text("Only open or WPA2/PSK networks are supported at this time."))),
             Padding.line_break(""),
             self.ssid_row,
-            Columns(
-                [
-                    ("weight", 1.0,
-                     Padding.fixed_30(networks_btn)),
-                ]
-            ),
-            Columns(
-                [
-                    ("weight", 1.0,
-                     Padding.fixed_30(scan_btn)),
-                ]
-            ),
+            Padding.fixed_30(networks_btn),
+            Padding.fixed_30(scan_btn),
             self.psk_row,
         ]
         return col
@@ -143,27 +143,20 @@ class NetworkConfigureWLANView(BaseView):
             return
         self.inputs.contents = [ (obj, ('pack', None)) for obj in self._build_iface_inputs() ]
 
-    def _build_buttons(self):
-        cancel = Color.button(cancel_btn(on_press=self.cancel))
-        done = Color.button(done_btn(on_press=self.done))
-
-        buttons = [done, cancel]
-        return Pile(buttons, focus_item=done)
-
-    def done(self, btn):
-        if self.dev.configured_ssid is None and self.ssid_input.value:
+    def done(self, sender):
+        if self.dev.configured_ssid is None and self.form.ssid.value:
             # Turn DHCP4 on by default when specifying an SSID for the first time...
             self.dev.dhcp4 = True
-        if self.ssid_input.value:
-            ssid = self.ssid_input.value
+        if self.form.ssid.value:
+            ssid = self.form.ssid.value
         else:
             ssid = None
-        if self.psk_input.value:
-            psk = self.psk_input.value
+        if self.form.psk.value:
+            psk = self.form.psk.value
         else:
             psk = None
         self.dev.set_ssid_psk(ssid, psk)
         self.controller.prev_view()
 
-    def cancel(self, btn):
+    def cancel(self, sender):
         self.controller.prev_view()
