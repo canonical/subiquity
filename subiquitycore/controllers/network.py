@@ -132,6 +132,8 @@ class PythonSleep(BackgroundTask):
     def end(self, observer, fut):
         if fut.result():
             observer.task_succeeded()
+        else:
+            observer.task_failed()
 
     def cancel(self):
         os.write(self.w, b'x')
@@ -167,6 +169,8 @@ class WaitForDefaultRouteTask(BackgroundTask):
     def end(self, observer, fut):
         if fut.result():
             observer.task_succeeded()
+        else:
+            observer.task_failed('timeout')
 
     def cancel(self):
         os.write(self.fail_w, b'x')
@@ -394,7 +398,7 @@ class NetworkController(BaseController):
                 # least test that what we wrote is acceptable to netplan.
                 tasks.append(('generate', BackgroundProcess(['netplan', 'generate', '--root', self.root])))
             if not self.tried_once:
-                tasks.append(('fail', WaitForDefaultRouteTask(30, self.observer)))
+                tasks.append(('timeout', WaitForDefaultRouteTask(3, self.observer)))
                 tasks.append(('fail', BackgroundProcess(['false'])))
                 self.tried_once = True
         else:
