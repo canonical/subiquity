@@ -20,12 +20,15 @@ configuration.
 
 """
 import logging
-from urwid import connect_signal, Text
+from urwid import connect_signal, LineBox, Text, WidgetWrap
 
-from subiquitycore.ui.buttons import (done_btn,
-                                      reset_btn,
-                                      cancel_btn,
-                                      menu_btn)
+from subiquitycore.ui.buttons import (
+    cancel_btn,
+    continue_btn,
+    done_btn,
+    menu_btn,
+    reset_btn,
+    )
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
@@ -34,6 +37,26 @@ from subiquity.models.filesystem import _humanize_size
 
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
+
+
+class FilesystemConfirmationView(WidgetWrap):
+    def __init__(self, parent, controller):
+        self.parent = parent
+        self.controller = controller
+        pile = Pile([
+            Text("Selecting Continue below will result of the loss of data disks selected to be formatted. Are you sure you want to continue?"),
+            Text(""),
+            Padding.fixed_15(Color.button(cancel_btn(on_press=self.cancel))),
+            Padding.fixed_15(Color.button(continue_btn(on_press=self.ok))),
+            ])
+        lb = LineBox(pile, title="Confirm destructive action")
+        super().__init__(Padding.center_75(lb))
+
+    def ok(self, sender):
+        self.controller.finish()
+
+    def cancel(self, sender):
+        self.parent.remove_overlay()
 
 
 class FilesystemView(BaseView):
@@ -175,4 +198,4 @@ class FilesystemView(BaseView):
         self.controller.reset()
 
     def done(self, button):
-        self.controller.finish()
+        self.show_overlay(FilesystemConfirmationView(self, self.controller))
