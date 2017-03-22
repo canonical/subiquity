@@ -1,5 +1,5 @@
 name: subiquity
-version: "0.0.31"
+version: "0.0.32"
 summary: Ubuntu installer
 description: The Ubuntu server installer
 confinement: classic
@@ -21,6 +21,7 @@ parts:
       - urwid
       - pyyaml
       - pyudev
+      - attrs
     source: https://github.com/CanonicalLtd/subiquity.git
     source-branch: cyphermox/snap
     source-type: git
