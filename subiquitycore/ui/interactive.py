@@ -213,6 +213,14 @@ class Selector(PopUpLauncher):
     def value(self):
         return self._options[self._index][2]
 
+    @value.setter
+    def value(self, val):
+        for i, (label, enabled, value) in enumerate(self._options):
+            if value == val:
+                self.index = i
+                return
+        raise AttributeError("cannot set value to %r", val)
+
     def create_pop_up(self):
         return _PopUpSelectDialog(self, self.index)
 

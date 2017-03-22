@@ -21,38 +21,46 @@ from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.form import Form
 from subiquitycore.view import BaseView
 
-from subiquity.ui.views.filesystem.add_partition import FSTypeField, MountField
+from subiquity.ui.mount import MountField
+from subiquity.ui.views.filesystem.add_partition import FSTypeField
 
 
 log = logging.getLogger('subiquity.ui.filesystem.add_format')
+
 
 class AddFormatForm(Form):
 
     def __init__(self, model):
         self.model = model
         super().__init__()
+        connect_signal(self.fstype.widget, 'select', self.select_fstype)
 
     fstype = FSTypeField("Format")
     mount = MountField("Mount")
 
+    def select_fstype(self, sender, fs):
+        self.mount.enabled = fs.is_mounted
+
     def validate_mount(self):
-        mnts = self.model.get_mounts2()
-        dev = mnts.get(self.mount.value)
-        if dev is not None:
-            return "%s is already mounted at %s"%(dev, self.mount.value)
+        return self.model.validate_mount(self.mount.value)
 
 
 class AddFormatView(BaseView):
-    def __init__(self, model, controller, selected_disk):
+    def __init__(self, model, controller, volume):
         self.model = model
         self.controller = controller
-        self.selected_disk = selected_disk
-        self.disk_obj = self.model.get_disk(selected_disk)
+        self.volume = volume
 
         self.form = AddFormatForm(model)
+        if self.volume.fs() is not None:
+            for i, fs_spec in enumerate(self.model.supported_filesystems):
+                if len(fs_spec) == 3:
+                    fs = fs_spec[2]
+                    if fs.label == self.volume.fs().fstype:
+                        self.form.fstype.widget.index = i
+            self.form.fstype.enabled = False
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
-        connect_signal(self.form.fstype.widget, 'select', self.select_fstype)
 
         body = [
             Padding.line_break(""),
@@ -62,9 +70,6 @@ class AddFormatView(BaseView):
         ]
         format_box = Padding.center_50(ListBox(body))
         super().__init__(format_box)
-
-    def select_fstype(self, sender, fs):
-        self.form.mount.enabled = fs.is_mounted
 
     def cancel(self, button):
         self.controller.prev_view()
@@ -88,6 +93,8 @@ class AddFormatView(BaseView):
             "fstype": fstype.label,
             "mountpoint": mount,
         }
+        if self.volume.fs() is not None:
+            result['fstype'] = None
 
         log.debug("Add Format Result: {}".format(result))
-        self.controller.add_disk_format_handler(self.disk_obj.devpath, result)
+        self.controller.add_format_handler(self.volume, result)

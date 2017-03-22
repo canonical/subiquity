@@ -46,6 +46,7 @@ INSTALLER_DEPS=(
   "lvm2"
   "mdadm"
   "petname"
+  "python3-attr"
   "python3-urwid"
   "python3-pyudev"
   "python-urwid"
@@ -97,33 +98,6 @@ write_metadata() {
 instance-id: 'inst-${RANDOM}'
 local-hostname: ubuntu-server-installer
 EOF
-}
-
-userdata_write_file() {
-    local path=${1}; shift;
-    local owner=${1}; shift;
-    local permissions=${1}; shift;
-    local encoding=${1}; shift;
-    case $encoding in
-        none)
-            echo "-   content: |"
-            for x in "$@"; do
-                sed 's,^,        ,' "$x" || return
-            done
-            ;;
-        b64)
-            echo "-   encoding: $encoding"
-            echo "    content: |"
-            base64 "$@" | sed 's,^,        ,'
-            ;;
-        *)
-            log "ERROR: unsupported encoding $encoding"
-            return 1;
-            ;;
-    esac
-    echo "    path: $path"
-    echo "    owner: $owner"
-    echo "    permissions: '$permissions'"
 }
 
 usage() {
@@ -320,20 +294,8 @@ generate_seed() {
         log "Failed to write meta-data into $seed";
         return 1;
     }
-    log "Writing seed user-data (curtin)"
-    # remove the old seed; copy in the base template and
-    # append the curtin-cmd file
-    rm -f ${seed}/user-data &&
-    cp $installer_user_data $seed/user-data &&
-
-    if [ "${OFFLINE}" == "no" ]; then
-        log "Enabling cloud-init package installation"
-        local packages=""
-        for pkg in ${INSTALLER_DEPS[@]}; do
-            packages="$packages - $pkg\n"
-        done
-        sed -i "s/#packages/packages:\n$packages/" ${seed}/user-data
-    fi
+    log "Writing seed user-data"
+    rm -f ${seed}/user-data && cp $installer_user_data $seed/user-data
 
     return 0
 }
@@ -399,7 +361,6 @@ generate_img() {
     local upper=${cachedir}/upper
     local work=${cachedir}/upper/overlay-work
     local seed=$cachedir/seed/nocloud-net
-    local splash=${RESOURCES}/images/splash.png
     local syslinux_path=$(dpkg -L syslinux-common | grep \/vesamenu.c32 |
                           grep -v efi | xargs -i dirname {})
 
@@ -478,8 +439,7 @@ generate_img() {
      sudo grub-mkimage -O x86_64-efi -p /grub -c ${efimnt}/grub/embed_efi.cfg -o ${efimnt}/EFI/BOOT/bootx64.efi ${GRUB_MODS} &&
      sudo grub-install --force --removable --no-floppy \
                       --target=i386-pc \
-                      --boot-directory=${efimnt}/boot $LOOPDEV &&
-     sudo cp -v ${splash} ${efimnt}/boot/grub) 2>&1 >> ${LOGFILE} || {
+                      --boot-directory=${efimnt}/boot $LOOPDEV) 2>&1 >> ${LOGFILE} || {
         log "ERROR: failed to create multiboot partition"
          return 1
      }
@@ -583,7 +543,6 @@ generate_img() {
         sudo mkdir -p ${mnt}/boot/extlinux &&
         sudo extlinux --install ${mnt}/boot/extlinux &&
         sudo cp -av ${syslinux_path}/*.c32 ${mnt}/boot/extlinux &&
-        sudo cp -av ${splash} ${mnt}/boot/extlinux &&
         cat ${extlinux_conf} | sudo tee ${mnt}/boot/extlinux/extlinux.conf
     else
         log "Installing grub2"
@@ -596,6 +555,26 @@ generate_img() {
         log "Failed to install bootloader and configuration";
         return 1;
     }
+
+    log "Configuring netplan"
+    sudo mkdir -p ${mnt}/etc/netplan
+    cat <<EOF | sudo tee ${mnt}/etc/netplan/00-installer-config.yaml > /dev/null
+network:
+    version: 2
+    ethernets:
+        all-en:
+            match:
+                name: "en*"
+            dhcp4: true
+        all-eth:
+            match:
+                name: "eth*"
+            dhcp4: true
+EOF
+    sudo mkdir -p ${mnt}/etc/cloud/cloud.cfg.d
+    cat <<EOF | sudo tee ${mnt}/etc/cloud/cloud.cfg.d/99-no-cloud-init-net.cfg > /dev/null
+network: {config: disabled}
+EOF
 
     _RETVAL="$installimg";
     return 0;

@@ -20,9 +20,8 @@ configuration.
 
 """
 import logging
-from urwid import BoxAdapter, Text
+from urwid import connect_signal, Text
 
-from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import (done_btn,
                                       reset_btn,
                                       cancel_btn,
@@ -43,17 +42,21 @@ class FilesystemView(BaseView):
         self.model = model
         self.controller = controller
         self.items = []
-        self.model.probe_storage()  # probe before we complete
         self.body = [
             Padding.center_79(Text("FILE SYSTEM")),
-            Padding.center_79(self._build_partition_list()),
             Padding.line_break(""),
-            Padding.center_79(Text("AVAILABLE DISKS")),
-            Padding.center_79(self._build_model_inputs()),
+            Padding.center_79(self._build_filesystem_list()),
             Padding.line_break(""),
-            Padding.center_79(self._build_menu()),
+            Padding.center_79(Text("AVAILABLE DISKS AND PARTITIONS")),
             Padding.line_break(""),
-            Padding.center_79(self._build_used_disks()),
+            Padding.center_79(self._build_available_inputs()),
+            Padding.line_break(""),
+            #Padding.center_79(self._build_menu()),
+            #Padding.line_break(""),
+            #Padding.center_79(Text("USED DISKS")),
+            #Padding.line_break(""),
+            #Padding.center_79(self._build_used_disks()),
+            #Padding.line_break(""),
             Padding.fixed_10(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
@@ -61,48 +64,24 @@ class FilesystemView(BaseView):
 
     def _build_used_disks(self):
         log.debug('FileSystemView: building used disks')
-        pl = []
-        for disk in self.model.get_used_disk_names():
-            log.debug('used disk: {}'.format(disk))
-            disk_string = disk
-            disk_tag = self.model.get_tag(disk)
-            if len(disk_tag):
-                disk_string += " {}".format(disk_tag)
-            pl.append(Color.info_minor(Text(disk_string)))
-        if len(pl):
-            return Pile(
-                [Text("USED DISKS"),
-                 Padding.line_break("")] + pl +
-                [Padding.line_break("")]
-            )
+        return Color.info_minor(Text("No disks have been used to create a constructed disk."))
 
-        return Pile(pl)
-
-    def _build_partition_list(self):
+    def _build_filesystem_list(self):
         log.debug('FileSystemView: building part list')
+        cols = []
+        for m in self.model._mounts:
+            cols.append((m.device.volume.path, _humanize_size(m.device.volume.size), m.device.fstype, m.path))
+        for fs in self.model._filesystems:
+            if fs.fstype == 'swap':
+                cols.append((fs.volume.path, _humanize_size(fs.volume.size), fs.fstype, 'SWAP'))
+
+        if len(cols) == 0:
+            return Pile([Color.info_minor(
+                Text("No disks or partitions mounted."))])
+        cols.insert(0, ("PARTITION", "SIZE", "TYPE", "MOUNT POINT"))
         pl = []
-        nr_parts = len(self.model.get_partitions())
-        nr_fs = len(self.model.get_filesystems())
-        if nr_parts == 0 and nr_fs == 0:
-            pl.append(Color.info_minor(
-                Text("No disks or partitions mounted")))
-            log.debug('FileSystemView: no partitions')
-            return Pile(pl)
-        log.debug('FileSystemView: weve got partitions!')
-        for dev in self.model.devices.values():
-            for mnt, size, fstype, path in dev.get_fs_table():
-                mnt = Text(mnt)
-                size = Text("{}".format(_humanize_size(size)))
-                fstype = Text(fstype) if fstype else '-'
-                path = Text(path) if path else '-'
-                partition_column = Columns([
-                    (15, path),
-                    size,
-                    fstype,
-                    mnt
-                ], 4)
-                pl.append(partition_column)
-        log.debug('FileSystemView: build-part-list done')
+        for a, b, c, d in cols:
+            pl.append(Columns([(15, Text(a)), Text(b), Text(c), Text(d)], 4))
         return Pile(pl)
 
     def _build_buttons(self):
@@ -110,7 +89,7 @@ class FilesystemView(BaseView):
         buttons = []
 
         # don't enable done botton if we can't install
-        if self.model.installable():
+        if self.model.can_install():
             buttons.append(
                 Color.button(done_btn(on_press=self.done)))
 
@@ -119,56 +98,59 @@ class FilesystemView(BaseView):
 
         return Pile(buttons)
 
-    def _get_percent_free(self, device):
-        ''' return the device free space and percentage
-            of the whole device'''
-        percent = "%d" % (
-            int((1.0 - (device.usedspace / device.size)) * 100))
-        free = _humanize_size(device.freespace)
-        rounded = "{}{}".format(int(float(free[:-1])), free[-1])
-        return (rounded, percent)
+    def _build_available_inputs(self):
+        inputs = []
 
-    def _build_model_inputs(self):
-        log.debug('FileSystemView: building model inputs')
-        col_1 = []
-        col_2 = []
+        def col(col1, col2, col3):
+            inputs.append(Columns([(15, col1), (10, col2), col3], 2))
 
-        avail_disks = self.model.get_available_disk_names()
-        if len(avail_disks) == 0:
-            return Pile([Color.info_minor(Text("No available disks."))])
+        col(Text("DEVICE"), Text("SIZE"), Text("TYPE"))
 
-        for dname in avail_disks:
-            disk = self.model.get_disk_info(dname)
-            device = self.model.get_disk(dname)
-            btn = menu_btn(label=disk.name,
-                           on_press=self.show_disk_partition_view)
+        for disk in self.model.all_disks():
+            if disk.available:
+                disk_btn = menu_btn(label=disk.path)
+                connect_signal(disk_btn, 'click', self.click_disk, disk)
+                col1 = Color.menu_button(disk_btn)
+                col2 = Text(_humanize_size(disk.size))
+                if disk.used > 0:
+                    size = disk.size
+                    free = disk.free
+                    percent = int(100*free/size)
+                    if percent == 0:
+                        continue
+                    col3 = Text("local disk, {} ({}%) free".format(_humanize_size(free), percent))
+                else:
+                    col3 = Text("local disk")
+                col(col1, col2, col3)
+            for partition in disk.partitions():
+                if partition.available:
+                    part_btn = menu_btn(label=' ' + partition.path)
+                    connect_signal(part_btn, 'click', self.click_partition, partition)
+                    col1 = Color.menu_button(part_btn)
+                    if partition.fs() is not None:
+                        fs = partition.fs().fstype
+                    else:
+                        fs = "unformatted"
+                    col2 = Text(_humanize_size(partition.size))
+                    col3 = Text("{} partition on local disk".format(fs))
+                    col(col1, col2, col3)
 
-            col_1.append(Color.menu_button(btn))
-            disk_sz = _humanize_size(disk.size)
-            log.debug('device partitions: {}'.format(len(device.partitions)))
-            # if we've consumed some of the device, show
-            # the remaining space and percentage of the whole
-            if len(device.partitions) > 0:
-                free, percent = self._get_percent_free(device)
-                disk_sz = "{} ({}%) free".format(free, percent)
-            col_2.append(Text(disk_sz))
-            for partname in device.available_partitions:
-                part = device.get_partition(partname)
-                btn = menu_btn(label=partname,
-                               on_press=self.show_disk_partition_view)
-                col_1.append(Color.menu_button(btn))
-                col_2.append(Text(_humanize_size(part.size)))
+        if len(inputs) == 1:
+            return Pile([Color.info_minor(
+                Text("No disks available."))])
 
-        col_1 = BoxAdapter(SimpleList(col_1),
-                           height=len(col_1))
-        col_2 = BoxAdapter(SimpleList(col_2, is_selectable=False),
-                           height=len(col_2))
-        return Columns([(16, col_1), col_2], 2)
+        return Pile(inputs)
+
+    def click_disk(self, sender, disk):
+        self.controller.partition_disk(disk)
+
+    def click_partition(self, sender, partition):
+        self.controller.format_mount_partition(partition)
 
     def _build_menu(self):
         log.debug('FileSystemView: building menu')
         opts = []
-        avail_disks = self.model.get_available_disk_names()
+        #avail_disks = self.model.get_available_disk_names()
 
         fs_menu = [
             # ('Connect iSCSI network disk',         'filesystem:connect-iscsi-disk'),
@@ -186,9 +168,6 @@ class FilesystemView(BaseView):
                                      user_data=sig)))
         return Pile(opts)
 
-    def on_fs_menu_press(self, result, sig):
-        self.controller.signal.emit_signal(sig)
-
     def cancel(self, button):
         self.controller.cancel()
 
@@ -196,8 +175,4 @@ class FilesystemView(BaseView):
         self.controller.reset()
 
     def done(self, button):
-        actions = self.model.get_actions()
-        self.controller.finish(actions)
-
-    def show_disk_partition_view(self, partition):
-        self.controller.disk_partition(partition.label)
+        self.controller.finish()

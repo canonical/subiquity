@@ -87,6 +87,8 @@ class NetworkConfigForm(Form):
         return address
 
     def clean_gateway(self, gateway):
+        if not gateway:
+            return None
         return self.ip_address_cls(gateway)
 
     def clean_nameservers(self, value):
@@ -176,10 +178,13 @@ class BaseNetworkConfigureManualView(BaseView):
 
     def done(self, sender):
         # XXX this converting from and to and from strings thing is a bit out of hand.
+        gateway = self.form.gateway.value
+        if gateway is not None:
+            gateway = str(gateway)
         result = {
             'network': str(self.form.subnet.value),
             'address': str(self.form.address.value),
-            'gateway': str(self.form.gateway.value),
+            'gateway': gateway,
             'nameservers': map(str, self.form.nameservers.value),
             'searchdomains': self.form.searchdomains.value,
         }

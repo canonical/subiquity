@@ -17,7 +17,6 @@ import copy
 from functools import partial
 import logging
 import os
-import queue
 import random
 import select
 import socket
@@ -133,6 +132,8 @@ class PythonSleep(BackgroundTask):
     def end(self, observer, fut):
         if fut.result():
             observer.task_succeeded()
+        else:
+            observer.task_failed()
 
     def cancel(self):
         os.write(self.w, b'x')
@@ -168,6 +169,8 @@ class WaitForDefaultRouteTask(BackgroundTask):
     def end(self, observer, fut):
         if fut.result():
             observer.task_succeeded()
+        else:
+            observer.task_failed('timeout')
 
     def cancel(self):
         os.write(self.fail_w, b'x')
@@ -212,8 +215,6 @@ class TaskSequence:
             return
         self.watcher.task_error(self.stage, info)
 
-
-netplan_config_file_name = '00-snapd-config.yaml'
 
 def sanitize_config(config):
     """Return a copy of config with passwords redacted."""
@@ -321,12 +322,15 @@ class NetworkController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         if self.opts.dry_run:
-            import atexit, shutil, tempfile
-            self.root = tempfile.mkdtemp()
+            self.root = os.path.abspath(".subiquity")
             self.tried_once = False
-            atexit.register(shutil.rmtree, self.root)
-            os.makedirs(os.path.join(self.root, 'etc/netplan'))
-            with open(os.path.join(self.root, 'etc/netplan', netplan_config_file_name), 'w') as fp:
+            netplan_path = self.netplan_path
+            netplan_dir = os.path.dirname(netplan_path)
+            if os.path.exists(netplan_dir):
+                import shutil
+                shutil.rmtree(netplan_dir)
+            os.makedirs(netplan_dir)
+            with open(netplan_path, 'w') as fp:
                 fp.write(default_netplan)
         self.model = NetworkModel(self.root)
 
@@ -357,10 +361,18 @@ class NetworkController(BaseController):
         self.ui.set_footer(footer, 20)
         self.ui.set_body(NetworkView(self.model, self))
 
+    @property
+    def netplan_path(self):
+        if self.opts.project == "subiquity":
+            netplan_config_file_name = '00-installer-config.yaml'
+        else:
+            netplan_config_file_name = '00-snapd-config.yaml'
+        return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
+
     def network_finish(self, config):
         log.debug("network config: \n%s", yaml.dump(sanitize_config(config), default_flow_style=False))
 
-        netplan_path = os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
+        netplan_path = self.netplan_path
         while True:
             try:
                 tmppath = '%s.%s' % (netplan_path, random.randrange(0, 1000))
@@ -371,7 +383,7 @@ class NetworkController(BaseController):
                 break
         w = os.fdopen(fd, 'w')
         with w:
-            w.write("# This is the network config written by 'console-conf'\n")
+            w.write("# This is the network config written by '{}'\n".format(self.opts.project))
             w.write(yaml.dump(config))
         os.rename(tmppath, netplan_path)
         self.model.parse_netplan_configs()
@@ -386,7 +398,7 @@ class NetworkController(BaseController):
                 # least test that what we wrote is acceptable to netplan.
                 tasks.append(('generate', BackgroundProcess(['netplan', 'generate', '--root', self.root])))
             if not self.tried_once:
-                tasks.append(('fail', WaitForDefaultRouteTask(30, self.observer)))
+                tasks.append(('timeout', WaitForDefaultRouteTask(3, self.observer)))
                 tasks.append(('fail', BackgroundProcess(['false'])))
                 self.tried_once = True
         else:
@@ -413,8 +425,8 @@ class NetworkController(BaseController):
         self.ui.frame.body.show_network_error(stage, info)
 
     def tasks_finished(self):
+        self.signal.emit_signal('network-config-written', self.netplan_path)
         self.signal.emit_signal('next-screen')
-
 
     @view
     def set_default_v4_route(self):

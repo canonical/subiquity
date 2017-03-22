@@ -27,11 +27,11 @@ log = logging.getLogger('subiquity.ui.filesystem.disk_info')
 
 
 class DiskInfoView(BaseView):
-    def __init__(self, model, controller, selected_device, hdinfo):
-        log.debug('DiskInfoView: {}'.format(selected_device))
+    def __init__(self, model, controller, disk, hdinfo):
+        log.debug('DiskInfoView: {}'.format(disk))
         self.model = model
         self.controller = controller
-        self.selected_device = selected_device
+        self.disk = disk
         hdinfo = hdinfo.split("\n")
         body = []
         for h in hdinfo:
@@ -50,18 +50,18 @@ class DiskInfoView(BaseView):
     def keypress(self, size, key):
         if key in ['tab', 'n', 'N', 'j', 'J']:
             log.debug('keypress: [{}]'.format(key))
-            self.controller.show_disk_information_next(self.selected_device)
+            self.controller.show_disk_information_next(self.disk)
             return None
         if key in ['shift tab', 'p', 'P', 'k', 'K']:
             log.debug('keypress: [{}]'.format(key))
-            self.controller.show_disk_information_prev(self.selected_device)
+            self.controller.show_disk_information_prev(self.disk)
             return None
 
         return super().keypress(size, key)
 
     def done(self, result):
         ''' Return to FilesystemView '''
-        self.controller.prev_view()
+        self.controller.partition_disk(self.disk)
 
     def cancel(self, button):
-        self.controller.prev_view()
+        self.controller.partition_disk(self.disk)

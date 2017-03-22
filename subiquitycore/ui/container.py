@@ -72,6 +72,9 @@ class TabCyclingMixin:
     def keypress(self, size, key):
         key = super(TabCyclingMixin, self).keypress(size, key)
 
+        if len(self.contents) == 0:
+            return key
+
         if self._command_map[key] == 'next selectable':
             next_fp = self.focus_position + 1
             for i, (w, o) in enumerate(self._contents[next_fp:], next_fp):
@@ -143,6 +146,9 @@ class TabCyclingListBox(urwid.ListBox):
 
     def keypress(self, size, key):
         key = super(TabCyclingListBox, self).keypress(size, key)
+
+        if len(self.body) == 0:
+            return key
 
         if self._command_map[key] == 'next selectable':
             next_fp = self.focus_position + 1
