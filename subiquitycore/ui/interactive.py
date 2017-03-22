@@ -104,7 +104,7 @@ class IntegerEditor(WidgetWrap):
 
     @property
     def value(self):
-        return self._edit.get_edit_text()
+        return self._edit.value()
 
     @value.setter
     def value(self, val):
