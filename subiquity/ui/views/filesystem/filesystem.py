@@ -25,6 +25,7 @@ from urwid import (
     LineBox,
     Padding as UrwidPadding,
     Text,
+    WidgetDisable,
     WidgetWrap,
     )
 
@@ -78,23 +79,23 @@ class FilesystemView(BaseView):
         self.controller = controller
         self.items = []
         self.body = [
-            Padding.center_79(Text("FILE SYSTEM")),
-            Padding.line_break(""),
-            Padding.center_79(self._build_filesystem_list()),
-            Padding.line_break(""),
-            Padding.center_79(Text("AVAILABLE DISKS AND PARTITIONS")),
-            Padding.line_break(""),
-            Padding.center_79(self._build_available_inputs()),
-            Padding.line_break(""),
-            #Padding.center_79(self._build_menu()),
-            #Padding.line_break(""),
-            #Padding.center_79(Text("USED DISKS")),
-            #Padding.line_break(""),
-            #Padding.center_79(self._build_used_disks()),
-            #Padding.line_break(""),
+            Text("FILE SYSTEM"),
+            Text(""),
+            self._build_filesystem_list(),
+            Text(""),
+            Text("AVAILABLE DISKS AND PARTITIONS"),
+            Text(""),
+            self._build_available_inputs(),
+            Text(""),
+            #self._build_menu(),
+            #Text(""),
+            #Text("USED DISKS"),
+            #Text(""),
+            #self._build_used_disks(),
+            #Text(""),
             Padding.fixed_10(self._build_buttons()),
         ]
-        super().__init__(ListBox(self.body))
+        super().__init__(Padding.center_90(ListBox(self.body)))
         log.debug('FileSystemView init complete()')
 
     def _build_used_disks(self):
@@ -136,39 +137,57 @@ class FilesystemView(BaseView):
     def _build_available_inputs(self):
         inputs = []
 
-        def col(col1, col2, col3):
-            inputs.append(Columns([(15, col1), (10, col2), col3], 2))
+        def col3(col1, col2, col3):
+            inputs.append(Columns([(40, col1), (10, col2), (10, col3)], 2))
+        def col2(col1, col2):
+            inputs.append(Columns([(40, col1), col2], 2))
 
-        col(Text("DEVICE"), Text("SIZE"), Text("TYPE"))
+        col3(Text("DEVICE"), Text("SIZE"), Text("TYPE"))
 
         for disk in self.model.all_disks():
-            if disk.available:
-                disk_btn = menu_btn(label=disk.path)
-                connect_signal(disk_btn, 'click', self.click_disk, disk)
-                col1 = Color.menu_button(disk_btn)
-                col2 = Text(_humanize_size(disk.size))
-                if disk.used > 0:
-                    size = disk.size
-                    free = disk.free
-                    percent = int(100*free/size)
-                    if percent == 0:
-                        continue
-                    col3 = Text("local disk, {} ({}%) free".format(_humanize_size(free), percent))
-                else:
-                    col3 = Text("local disk")
-                col(col1, col2, col3)
-            for partition in disk.partitions():
-                if partition.available:
-                    part_btn = menu_btn(label=' ' + partition.path)
-                    connect_signal(part_btn, 'click', self.click_partition, partition)
-                    col1 = Color.menu_button(part_btn)
-                    if partition.fs() is not None:
-                        fs = partition.fs().fstype
+            avail_partitions = [p for p in disk.partitions() if p.available]
+            if disk.available or len(avail_partitions) > 0:
+                disk_label = Text(disk.serial)
+                size = Text(_humanize_size(disk.size))
+                typ = Text("local disk")
+                col3(disk_label, size, typ)
+                for partition in disk.partitions():
+                    label = "partition {}, ".format(partition.number)
+                    fs = partition.fs()
+                    if fs is not None:
+                        label += fs.fstype
+                        if fs.mount():
+                            label += ", " + fs.mount().path
                     else:
-                        fs = "unformatted"
-                    col2 = Text(_humanize_size(partition.size))
-                    col3 = Text("{} partition on local disk".format(fs))
-                    col(col1, col2, col3)
+                        label += "unformatted"
+                    if partition.available:
+                        part_btn = menu_btn(label=label)
+                        connect_signal(part_btn, 'click', self.click_partition, partition)
+                        part_btn = Color.menu_button(part_btn)
+                        size = Text("{} ({}%)".format(_humanize_size(partition.size), int(100*partition.size/disk.size)))
+                        col2(part_btn, size)
+                    else:
+                        part_btn = WidgetDisable(menu_btn(label=label))
+                        part_btn = Color.info_minor(part_btn)
+                        size = Color.info_minor(Text("{} ({}%)".format(_humanize_size(partition.size), int(100*partition.size/disk.size))))
+                        col2(part_btn, size)
+                if disk.available:
+                    if disk.used > 0:
+                        disk_btn = menu_btn(label="FREE SPACE")
+                        connect_signal(disk_btn, 'click', self.click_disk, disk)
+                        disk_btn = Color.menu_button(disk_btn)
+                        size = disk.size
+                        free = disk.free
+                        percent = int(100*free/size)
+                        if percent == 0:
+                            continue
+                        size = Text("{} ({}%)".format(_humanize_size(free), percent))
+                        col2(disk_btn, size)
+                    else:
+                        disk_btn = menu_btn(label="ADD FIRST PARTITION")
+                        connect_signal(disk_btn, 'click', self.click_disk, disk)
+                        disk_btn = Color.menu_button(disk_btn)
+                        col2(disk_btn, Text(""))
 
         if len(inputs) == 1:
             return Pile([Color.info_minor(

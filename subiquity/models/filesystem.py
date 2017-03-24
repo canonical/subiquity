@@ -299,7 +299,7 @@ class FilesystemModel(object):
             self._disks[disk.path] = disk
 
     def all_disks(self):
-        return [disk for (path, disk) in sorted(self._available_disks.items())]
+        return sorted(self._available_disks.values(), key=lambda x:x.serial)
 
     def get_disk(self, path):
         return self._available_disks.get(path)
