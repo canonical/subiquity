@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 trap true HUP INT QUIT TSTP
@@ -15,13 +15,43 @@ if [ "$(snap managed)" = "true" ]; then
     if grep -qE '^[-a-z0-9+.-_]+:x:' /var/lib/extrausers/passwd && ! grep -qE '^[-a-z0-9+.-_]+:\$[0-9]+\$.*:' /var/lib/extrausers/shadow; then
         tty=$(tty)
         tty=$(echo ${tty#/dev/} | tr '/' '-')
-        if [ ! -f /run/console-conf/login-details-${tty}.txt ]; then
+        readargs=()
+        filepath="/run/console-conf/login-details-${tty}.txt"
+        if [ ! -f ${filepath} ]; then
             mkdir -p /run/console-conf
-            /usr/share/subiquity/console-conf-write-login-details > /run/console-conf/login-details-${tty}.txt.tmp
-            mv /run/console-conf/login-details-${tty}.txt.tmp /run/console-conf/login-details-${tty}.txt
+            set +e
+            /usr/share/subiquity/console-conf-write-login-details > ${filepath}.tmp
+            rval=$?
+            set -e
+            # A exit code of 2 from console-conf-write-login-details
+            # means there are no scope global IP addresses. It will
+            # have printed a message saying that you can't log in
+            # until the device gets an IP address so we display that
+            # but check every 5 seconds if an ip address has appeared.
+            if [ $rval -eq 0 ]; then
+                mv ${filepath}.tmp ${filepath}
+            elif [ $rval -eq 2 ]; then
+                mv ${filepath}.tmp ${filepath}.noip
+                filepath=${filepath}.noip
+                readargs=(-t 5)
+            else
+                exit $rval
+            fi
         fi
-        cat /run/console-conf/login-details-${tty}.txt
-        read REPLY
+        cat $filepath
+        set +e
+        while :; do
+            read "${readargs[@]}" REPLY
+            if [ $? -le 128 ]; then
+                # If we didn't time out, re-display everything.
+                exit 0
+            fi
+            if ip addr show | grep -qE "scope global"; then
+                # If we timed out, but it appears that we may now have
+                # an IP address, re-display everything.
+                exit 0
+            fi
+        done
     else
         touch /var/lib/console-conf/complete
     fi
