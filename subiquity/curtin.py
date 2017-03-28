@@ -94,7 +94,7 @@ def curtin_userinfo_to_config(userinfo):
         '    groups: admin\\n' + \
         '    lock-passwd: false\\n'
     if 'ssh_import_id' in userinfo:
-        user_template += '    ssh-import-id: [{ssh_import_id}]\\n'
+        user_template += '    ssh-import-id: [ "{ssh_import_id}" ]\\n'
 
     return user_template.format(**userinfo)
 
