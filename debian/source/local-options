@@ -1,2 +1,7 @@
 tar-ignore = *.img
 tar-ignore = .git*
+tar-ignore = .subiquity
+tar-ignore = *.snap
+tar-ignore = stage
+tar-ignore = parts
+tar-ignore = prime
