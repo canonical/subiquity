@@ -18,4 +18,8 @@ import sys
 
 from console_conf.controllers.identity import write_login_details_standalone
 
+from subiquitycore.log import setup_logger
+
+setup_logger(dir='/var/log/console-conf')
+
 sys.exit(write_login_details_standalone())

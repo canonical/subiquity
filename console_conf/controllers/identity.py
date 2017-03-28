@@ -106,13 +106,27 @@ To login:
 Personalize your account at https://login.ubuntu.com.
 """
 
+login_details_tmpl_no_ip = """\
+Ubuntu Core 16 on <no ip address> ({tty_name})
+
+You cannot log in until the system has an IP address. (Is there
+supposed to be a DHCP server running on your network?)
+
+Personalize your account at https://login.ubuntu.com.
+"""
+
 def write_login_details(fp, username, ips):
     sshcommands = "\n"
     for ip in ips:
         sshcommands += "    ssh %s@%s\n"%(username, ip)
     tty_name = os.ttyname(0)[5:] # strip off the /dev/
-    fp.write(login_details_tmpl.format(
-        sshcommands=sshcommands, host_key_info=host_key_info(), tty_name=tty_name, first_ip=ips[0]))
+    if len(ips) == 0:
+        fp.write(login_details_tmpl_no_ip.format(
+            sshcommands=sshcommands, tty_name=tty_name))
+    else:
+        first_ip = ips[0]
+        fp.write(login_details_tmpl.format(
+            sshcommands=sshcommands, host_key_info=host_key_info(), tty_name=tty_name, first_ip=first_ip))
 
 def write_login_details_standalone():
     owner = get_device_owner()
@@ -133,6 +147,13 @@ def write_login_details_standalone():
         for _, addr in sorted(l.addresses.items()):
             if addr.scope == "global":
                 ips.append(addr.ip)
+    if len(ips) == 0:
+        tty_name = os.ttyname(0)[5:]
+        print("Ubuntu Core 16 on <no ip address> ({})".format(tty_name))
+        print()
+        print("You cannot log in until the system has an IP address.")
+        print("(Is there supposed to be a DHCP server running on your network?)")
+        return 2
     write_login_details(sys.stdout, owner['username'], ips)
     return 0
 
