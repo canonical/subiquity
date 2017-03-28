@@ -71,11 +71,6 @@ network:
 # Reworked for flake8, but it does make it harder to read.
 POST_INSTALL_LIST = [
     ("late_commands:"),
-    ("    05_clear_subiquity: curtin in-target -- "
-     "snap remove subiquity || true"),
-    ("    06_remove_subiquity_service: curtin in-target -- "
-     "rm -f /lib/systemd/system/subiquity*.service "
-     " /lib/systemd/system/multi-user.target.wants/subiquity* || true"),
     ("    10_mkdir_seed: curtin in-target -- "
      "mkdir -p /var/lib/cloud/seed/nocloud-net"),
     ("    11_postinst_metadata: [curtin, in-target, --, sh, '-c',"
@@ -84,6 +79,9 @@ POST_INSTALL_LIST = [
     ("    12_postinst_userdata: [curtin, in-target, --, sh, '-c',"
      "\"/bin/echo -e '#cloud-config\\n\\n{hostinfo}\\nusers:\\n{users}' > "
      "/var/lib/cloud/seed/nocloud-net/user-data\"]"),
+    ("    13_postinst_enable_cloud-init: [curtin, in-target, --, sh, '-c',"
+     '"/bin/echo -e policy: enabled '
+     '> /etc/cloud/ds-identify.cfg"]'),
 ]
 POST_INSTALL = '\n' + "\n".join(POST_INSTALL_LIST) + '\n'
 
