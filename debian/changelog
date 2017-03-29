@@ -1,4 +1,4 @@
-subiquity (0.0.29) UNRELEASED; urgency=medium
+subiquity (0.0.29) zesty; urgency=medium
 
   * Fix a crash when widgets disappear (e.g. when a NIC is unplugged). 
     (LP: #1667829)
