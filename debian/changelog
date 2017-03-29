@@ -1,3 +1,22 @@
+subiquity (0.0.29) UNRELEASED; urgency=medium
+
+  * Fix a crash when widgets disappear (e.g. when a NIC is unplugged). 
+    (LP: #1667829)
+  * Run subiquity on the serial console. (LP: #1660194)
+  * Various improvements in wording and layout.
+  * Allow a filesytem to be formatted but not mounted.
+  * Rewrite the filesystem model code.
+  * Change the geninstaller script to use netplan for network config.
+  * Actually use the network config the user provides in the installed system.
+  * Allow the gateway to be omitted when manually configuring an interface.
+  * Make sure that timing out when waiting for a default route works properly.
+    (LP: #1672803)
+  * Make sure WPA PSK is between 8 and 63 characters long.
+  * Add a confirmation dialog before writing data to disk.
+  * Fix crash on startup of a configured Ubuntu Core system with no IP address.
+
+ -- Michael Hudson-Doyle <michael.hudson@ubuntu.com>  Wed, 29 Mar 2017 11:09:03 +1300
+
 subiquity (0.0.28) zesty; urgency=medium
 
   * Update to cope with changes in probert 0.0.14. 
