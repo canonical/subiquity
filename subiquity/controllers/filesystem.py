@@ -109,8 +109,8 @@ class FilesystemController(BaseController):
     # Filesystem/Disk partition -----------------------------------------------
     @view
     def partition_disk(self, disk):
-        log.debug("In disk partition view, using {} as the disk.".format(disk.path))
-        title = ("Partition, format, and mount {}".format(disk.path))
+        log.debug("In disk partition view, using {} as the disk.".format(disk.serial))
+        title = ("Partition, format, and mount {}".format(disk.serial))
         footer = ("Partition the disk, or format the entire device "
                   "without partitions.")
         self.ui.set_header(title)
@@ -238,8 +238,8 @@ class FilesystemController(BaseController):
 
     @view
     def format_entire(self, disk):
-        log.debug("format_entire {}".format(disk))
-        header = ("Format and/or mount {}".format(disk.path))
+        log.debug("format_entire {}".format(disk.serial))
+        header = ("Format and/or mount {}".format(disk.serial))
         footer = ("Format or mount whole disk.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
@@ -250,10 +250,10 @@ class FilesystemController(BaseController):
     def format_mount_partition(self, partition):
         log.debug("format_entire {}".format(partition))
         if partition.fs() is not None:
-            header = ("Mount {}".format(partition.path))
+            header = ("Mount partition {} of {}".format(partition.number, partition.device.serial))
             footer = ("Mount partition.")
         else:
-            header = ("Format and mount {}".format(partition.path))
+            header = ("Format and mount partition {} of {}".format(partition.number, partition.device.serial))
             footer = ("Format and mount partition.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)

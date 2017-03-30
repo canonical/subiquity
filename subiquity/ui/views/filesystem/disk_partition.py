@@ -56,8 +56,7 @@ class DiskPartitionView(BaseView):
     def _build_model_inputs(self):
         partitioned_disks = []
 
-        def format_volume(part):
-            path = part.path
+        def format_volume(label, part):
             size = _humanize_size(part.size)
             if part.fs() is None:
                  fstype = '-'
@@ -69,16 +68,16 @@ class DiskPartitionView(BaseView):
                 fstype = part.fs().fstype
                 mountpoint = part.fs().mount().path
             return Columns([
-                (15, Text(path)),
+                (15, Text(label)),
                 Text(size),
                 Text(fstype),
                 Text(mountpoint),
             ], 4)
         if self.disk.fs() is not None:
-            partitioned_disks.append(format_volume(self.disk))
+            partitioned_disks.append(format_volume("entire disk", self.disk))
         else:
             for part in self.disk.partitions():
-                partitioned_disks.append(format_volume(part))
+                partitioned_disks.append(format_volume("partition {}".format(part.number), part))
         if self.disk.free > 0:
             free_space = _humanize_size(self.disk.free)
             partitioned_disks.append(Columns([
