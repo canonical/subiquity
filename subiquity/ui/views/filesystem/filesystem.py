@@ -148,28 +148,29 @@ class FilesystemView(BaseView):
             avail_partitions = [p for p in disk.partitions() if p.available]
             if disk.available or len(avail_partitions) > 0:
                 disk_label = Text(disk.serial)
-                size = Text(_humanize_size(disk.size))
+                size = Text(_humanize_size(disk.size).rjust(9))
                 typ = Text("local disk")
                 col3(disk_label, size, typ)
                 for partition in disk.partitions():
                     label = "partition {}, ".format(partition.number)
                     fs = partition.fs()
                     if fs is not None:
-                        label += fs.fstype
                         if fs.mount():
-                            label += ", " + fs.mount().path
+                            label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
+                        else:
+                            label += fs.fstype
                     else:
                         label += "unformatted"
+                    size = Text("{:>9} ({}%)".format(_humanize_size(partition.size), int(100*partition.size/disk.size)))
                     if partition.available:
                         part_btn = menu_btn(label=label)
                         connect_signal(part_btn, 'click', self.click_partition, partition)
                         part_btn = Color.menu_button(part_btn)
-                        size = Text("{} ({}%)".format(_humanize_size(partition.size), int(100*partition.size/disk.size)))
                         col2(part_btn, size)
                     else:
                         part_btn = WidgetDisable(menu_btn(label=label))
                         part_btn = Color.info_minor(part_btn)
-                        size = Color.info_minor(Text("{} ({}%)".format(_humanize_size(partition.size), int(100*partition.size/disk.size))))
+                        size = Color.info_minor(size)
                         col2(part_btn, size)
                 if disk.available:
                     if disk.used > 0:
@@ -181,7 +182,7 @@ class FilesystemView(BaseView):
                         percent = int(100*free/size)
                         if percent == 0:
                             continue
-                        size = Text("{} ({}%)".format(_humanize_size(free), percent))
+                        size = Text("{:>9} ({}%)".format(_humanize_size(free), percent))
                         col2(disk_btn, size)
                     else:
                         disk_btn = menu_btn(label="ADD FIRST PARTITION")

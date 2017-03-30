@@ -231,10 +231,13 @@ class FilesystemModel(object):
     ]
 
     fs_by_name = {}
+    longest_fs_name = 0
     for t in supported_filesystems:
         if len(t) > 2:
             fs = t[2]
             if fs.label is not None:
+                if len(fs.label) > longest_fs_name:
+                    longest_fs_name = len(fs.label)
                 fs_by_name[fs.label] = fs
 
     def __init__(self, prober, opts):
