@@ -106,8 +106,6 @@ class AddPartitionView(BaseView):
         connect_signal(self.form, 'cancel', self.cancel)
 
         body = [
-            Text("Adding partition to {}".format(self.disk.path), align="center"),
-            Padding.line_break(""),
             self.form.as_rows(self),
             Padding.line_break(""),
             Padding.fixed_10(self.form.buttons),

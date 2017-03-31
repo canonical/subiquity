@@ -142,7 +142,7 @@ class Disk:
     def size(self):
         return self._info.size - (2<<20) # The first and last megabyte of the disk are not usable.
 
-    def type(self):
+    def desc(self):
         return "local disk"
 
     @property
@@ -175,8 +175,8 @@ class Partition:
     def fs(self):
         return self._fs
 
-    def type(self):
-        return "partition of {}".format(self.device.type())
+    def desc(self):
+        return "partition of {}".format(self.device.desc())
 
     @property
     def available(self):

@@ -113,10 +113,10 @@ class FilesystemView(BaseView):
                 if path.startswith(p):
                     path = [('info_minor', p), path[len(p):]]
                     break
-            cols.append((m.path, path, _humanize_size(m.device.volume.size), m.device.fstype, m.device.volume.type()))
+            cols.append((m.path, path, _humanize_size(m.device.volume.size), m.device.fstype, m.device.volume.desc()))
         for fs in self.model._filesystems:
             if fs.fstype == 'swap':
-                cols.append((None, 'SWAP', _humanize_size(fs.volume.size), fs.fstype, fs.device.volume.type()))
+                cols.append((None, 'SWAP', _humanize_size(fs.volume.size), fs.fstype, fs.device.volume.desc()))
 
         if len(cols) == 0:
             return Pile([Color.info_minor(
@@ -156,7 +156,7 @@ class FilesystemView(BaseView):
         for disk in self.model.all_disks():
             disk_label = Text(disk.serial)
             size = Text(_humanize_size(disk.size).rjust(9))
-            typ = Text(disk.type())
+            typ = Text(disk.desc())
             col3(disk_label, size, typ)
             if disk.fs() is not None:
                 label = "entire device, "
