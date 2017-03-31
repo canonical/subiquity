@@ -79,11 +79,11 @@ class FilesystemView(BaseView):
         self.controller = controller
         self.items = []
         self.body = [
-            Text("FILE SYSTEM"),
+            Text("FILE SYSTEM SUMMARY"),
             Text(""),
             self._build_filesystem_list(),
             Text(""),
-            Text("AVAILABLE DISKS AND PARTITIONS"),
+            Text("AVAILABLE DEVICES"),
             Text(""),
             self._build_available_inputs(),
             Text(""),
@@ -105,19 +105,26 @@ class FilesystemView(BaseView):
     def _build_filesystem_list(self):
         log.debug('FileSystemView: building part list')
         cols = []
-        for m in self.model._mounts:
-            cols.append((m.device.volume.path, _humanize_size(m.device.volume.size), m.device.fstype, m.path))
+        longest_path = len("MOUNT POINT")
+        for m in sorted(self.model._mounts, key=lambda m:m.path):
+            path = m.path
+            longest_path = max(longest_path, len(path))
+            for p, *_ in reversed(cols):
+                if path.startswith(p):
+                    path = [('info_minor', p), path[len(p):]]
+                    break
+            cols.append((m.path, path, _humanize_size(m.device.volume.size), m.device.fstype, m.device.volume.type()))
         for fs in self.model._filesystems:
             if fs.fstype == 'swap':
-                cols.append((fs.volume.path, _humanize_size(fs.volume.size), fs.fstype, 'SWAP'))
+                cols.append((None, 'SWAP', _humanize_size(fs.volume.size), fs.fstype, fs.device.volume.type()))
 
         if len(cols) == 0:
             return Pile([Color.info_minor(
                 Text("No disks or partitions mounted."))])
-        cols.insert(0, ("PARTITION", "SIZE", "TYPE", "MOUNT POINT"))
+        cols.insert(0, (None, "MOUNT POINT", "SIZE", "TYPE", "DEVICE TYPE"))
         pl = []
-        for a, b, c, d in cols:
-            pl.append(Columns([(15, Text(a)), Text(b), Text(c), Text(d)], 4))
+        for _, a, b, c, d in cols:
+            pl.append(Columns([(longest_path, Text(a)), (9, Text(b)), (self.model.longest_fs_name, Text(c)), Text(d)], 4))
         return Pile(pl)
 
     def _build_buttons(self):
@@ -141,54 +148,70 @@ class FilesystemView(BaseView):
             inputs.append(Columns([(40, col1), (10, col2), (10, col3)], 2))
         def col2(col1, col2):
             inputs.append(Columns([(40, col1), col2], 2))
+        def col1(col1):
+            inputs.append(Columns([(40, col1)], 1))
 
         col3(Text("DEVICE"), Text("SIZE"), Text("TYPE"))
 
         for disk in self.model.all_disks():
-            avail_partitions = [p for p in disk.partitions() if p.available]
-            if disk.available or len(avail_partitions) > 0:
-                disk_label = Text(disk.serial)
-                size = Text(_humanize_size(disk.size).rjust(9))
-                typ = Text("local disk")
-                col3(disk_label, size, typ)
-                for partition in disk.partitions():
-                    label = "partition {}, ".format(partition.number)
-                    fs = partition.fs()
-                    if fs is not None:
-                        if fs.mount():
-                            label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
-                        else:
-                            label += fs.fstype
+            disk_label = Text(disk.serial)
+            size = Text(_humanize_size(disk.size).rjust(9))
+            typ = Text(disk.type())
+            col3(disk_label, size, typ)
+            if disk.fs() is not None:
+                label = "entire device, "
+                fs = disk.fs()
+                if fs is not None:
+                    if fs.mount():
+                        label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
                     else:
-                        label += "unformatted"
-                    size = Text("{:>9} ({}%)".format(_humanize_size(partition.size), int(100*partition.size/disk.size)))
-                    if partition.available:
-                        part_btn = menu_btn(label=label)
-                        connect_signal(part_btn, 'click', self.click_partition, partition)
-                        part_btn = Color.menu_button(part_btn)
-                        col2(part_btn, size)
+                        label += fs.fstype
+                else:
+                    label += "unformatted"
+                if not fs.mount():
+                    disk_btn = menu_btn(label=label)
+                    connect_signal(disk_btn, 'click', self.click_disk, disk)
+                    disk_btn = Color.menu_button(disk_btn)
+                else:
+                    disk_btn = Color.info_minor(Text("  " + label))
+                col1(disk_btn)
+            for partition in disk.partitions():
+                label = "partition {}, ".format(partition.number)
+                fs = partition.fs()
+                if fs is not None:
+                    if fs.mount():
+                        label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
                     else:
-                        part_btn = WidgetDisable(menu_btn(label=label))
-                        part_btn = Color.info_minor(part_btn)
-                        size = Color.info_minor(size)
-                        col2(part_btn, size)
-                if disk.available:
-                    if disk.used > 0:
-                        disk_btn = menu_btn(label="FREE SPACE")
-                        connect_signal(disk_btn, 'click', self.click_disk, disk)
-                        disk_btn = Color.menu_button(disk_btn)
-                        size = disk.size
-                        free = disk.free
-                        percent = int(100*free/size)
-                        if percent == 0:
-                            continue
-                        size = Text("{:>9} ({}%)".format(_humanize_size(free), percent))
-                        col2(disk_btn, size)
-                    else:
-                        disk_btn = menu_btn(label="ADD FIRST PARTITION")
-                        connect_signal(disk_btn, 'click', self.click_disk, disk)
-                        disk_btn = Color.menu_button(disk_btn)
-                        col2(disk_btn, Text(""))
+                        label += fs.fstype
+                else:
+                    label += "unformatted"
+                size = Text("{:>9} ({}%)".format(_humanize_size(partition.size), int(100*partition.size/disk.size)))
+                if partition.available:
+                    part_btn = menu_btn(label=label)
+                    connect_signal(part_btn, 'click', self.click_partition, partition)
+                    part_btn = Color.menu_button(part_btn)
+                    col2(part_btn, size)
+                else:
+                    part_btn = Color.info_minor(Text("  " + label))
+                    size = Color.info_minor(size)
+                    col2(part_btn, size)
+            if disk.available:
+                if disk.used > 0:
+                    disk_btn = menu_btn(label="FREE SPACE")
+                    connect_signal(disk_btn, 'click', self.click_disk, disk)
+                    disk_btn = Color.menu_button(disk_btn)
+                    size = disk.size
+                    free = disk.free
+                    percent = int(100*free/size)
+                    if percent == 0:
+                        continue
+                    size = Text("{:>9} ({}%)".format(_humanize_size(free), percent))
+                    col2(disk_btn, size)
+                else:
+                    disk_btn = menu_btn(label="ADD FIRST PARTITION")
+                    connect_signal(disk_btn, 'click', self.click_disk, disk)
+                    disk_btn = Color.menu_button(disk_btn)
+                    col2(disk_btn, Text(""))
 
         if len(inputs) == 1:
             return Pile([Color.info_minor(
@@ -197,7 +220,10 @@ class FilesystemView(BaseView):
         return Pile(inputs)
 
     def click_disk(self, sender, disk):
-        self.controller.partition_disk(disk)
+        if disk.fs() is not None:
+            self.controller.format_entire(disk)
+        else:
+            self.controller.partition_disk(disk)
 
     def click_partition(self, sender, partition):
         self.controller.format_mount_partition(partition)
