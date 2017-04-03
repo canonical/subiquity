@@ -37,7 +37,7 @@ from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
     _humanize_size,
-    _dehumanize_size,
+    dehumanize_size,
     HUMAN_UNITS,
     )
 from subiquity.ui.mount import MountField
@@ -83,7 +83,7 @@ class AddPartitionForm(Form):
             unit = self.size_str[-1]
             v += unit
             self.size.value = v
-        sz = _dehumanize_size(v)
+        sz = dehumanize_size(v)
         if sz > self.disk.free:
             self.size.value = self.size_str
             self.size.show_extra(Color.info_minor(Text("Capped partition size at %s"%(self.size_str,), align="center")))
@@ -128,7 +128,7 @@ class AddPartitionView(BaseView):
             mount = None
 
         if self.form.size.value:
-            size = _dehumanize_size(self.form.size.value)
+            size = dehumanize_size(self.form.size.value)
             if size > self.disk.free:
                 size = self.disk.free
         else:

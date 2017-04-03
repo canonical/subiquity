@@ -41,7 +41,7 @@ def _humanize_size(size):
     return "%.3f%s" % (size / math.pow(1024, p), HUMAN_UNITS[int(p)])
 
 
-def _dehumanize_size(size):
+def dehumanize_size(size):
     # convert human 'size' to integer
     size_in = size
     if size.endswith("B"):
