@@ -74,16 +74,15 @@ class AddPartitionForm(Form):
         v = self.size.value
         if not v:
             return
-        r = '(\d+[\.]?\d*)([{}])?$'.format(''.join(HUMAN_UNITS))
-        match = re.match(r, v)
-        if not match:
-            return "Invalid partition size"
-        unit = match.group(2)
-        if unit is None:
+        suffixes = ''.join(HUMAN_UNITS) + ''.join(HUMAN_UNITS).lower()
+        if v[-1] not in suffixes:
             unit = self.size_str[-1]
             v += unit
             self.size.value = v
-        sz = dehumanize_size(v)
+        try:
+            sz = dehumanize_size(v)
+        except ValueError as v:
+            return str(v)
         if sz > self.disk.free:
             self.size.value = self.size_str
             self.size.show_extra(Color.info_minor(Text("Capped partition size at %s"%(self.size_str,), align="center")))
