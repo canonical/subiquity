@@ -36,8 +36,8 @@ from subiquitycore.ui.interactive import Selector
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
-    _humanize_size,
-    _dehumanize_size,
+    humanize_size,
+    dehumanize_size,
     HUMAN_UNITS,
     )
 from subiquity.ui.mount import MountField
@@ -56,7 +56,7 @@ class AddPartitionForm(Form):
     def __init__(self, model, disk):
         self.model = model
         self.disk = disk
-        self.size_str = _humanize_size(disk.free)
+        self.size_str = humanize_size(disk.free)
         super().__init__()
         self.size.caption = "Size (max {})".format(self.size_str)
         self.partnum.value = self.disk.next_partnum
@@ -74,16 +74,15 @@ class AddPartitionForm(Form):
         v = self.size.value
         if not v:
             return
-        r = '(\d+[\.]?\d*)([{}])?$'.format(''.join(HUMAN_UNITS))
-        match = re.match(r, v)
-        if not match:
-            return "Invalid partition size"
-        unit = match.group(2)
-        if unit is None:
+        suffixes = ''.join(HUMAN_UNITS) + ''.join(HUMAN_UNITS).lower()
+        if v[-1] not in suffixes:
             unit = self.size_str[-1]
             v += unit
             self.size.value = v
-        sz = _dehumanize_size(v)
+        try:
+            sz = dehumanize_size(v)
+        except ValueError as v:
+            return str(v)
         if sz > self.disk.free:
             self.size.value = self.size_str
             self.size.show_extra(Color.info_minor(Text("Capped partition size at %s"%(self.size_str,), align="center")))
@@ -128,7 +127,7 @@ class AddPartitionView(BaseView):
             mount = None
 
         if self.form.size.value:
-            size = _dehumanize_size(self.form.size.value)
+            size = dehumanize_size(self.form.size.value)
             if size > self.disk.free:
                 size = self.disk.free
         else:

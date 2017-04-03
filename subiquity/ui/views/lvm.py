@@ -22,7 +22,7 @@ from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.interactive import UsernameEditor
 from subiquitycore.ui.utils import Color, Padding
 
-from subiquity.models.filesystem import _humanize_size
+from subiquity.models.filesystem import humanize_size
 
 
 log = logging.getLogger('subiquitycore.ui.lvm')
@@ -65,7 +65,7 @@ class LVMVolumeGroupView(BaseView):
             else:
                 lvmdev = device
 
-            disk_sz = _humanize_size(lvmdev.size)
+            disk_sz = humanize_size(lvmdev.size)
             disk_string = "{}     {},     {}".format(dname,
                                                      disk_sz,
                                                      device.model)

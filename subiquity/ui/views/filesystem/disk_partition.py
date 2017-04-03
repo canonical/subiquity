@@ -22,7 +22,7 @@ from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import _humanize_size
+from subiquity.models.filesystem import humanize_size
 
 
 log = logging.getLogger('subiquity.ui.filesystem.disk_partition')
@@ -58,7 +58,7 @@ class DiskPartitionView(BaseView):
 
         def format_volume(part):
             path = part.path
-            size = _humanize_size(part.size)
+            size = humanize_size(part.size)
             if part.fs() is None:
                  fstype = '-'
                  mountpoint = '-'
@@ -80,7 +80,7 @@ class DiskPartitionView(BaseView):
             for part in self.disk.partitions():
                 partitioned_disks.append(format_volume(part))
         if self.disk.free > 0:
-            free_space = _humanize_size(self.disk.free)
+            free_space = humanize_size(self.disk.free)
             partitioned_disks.append(Columns([
                 (15, Text("FREE SPACE")),
                 Text(free_space),
@@ -134,7 +134,7 @@ class DiskPartitionView(BaseView):
         text = "Add first partition"
         if len(self.disk.partitions()) > 0:
             text = "Add partition (max size {})".format(
-                _humanize_size(self.disk.free))
+                humanize_size(self.disk.free))
 
         return Color.menu_button(
             menu_btn(label=text, on_press=self.add_partition))

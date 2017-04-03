@@ -23,7 +23,7 @@ from subiquitycore.ui.interactive import (StringEditor, IntegerEditor,
                                           Selector)
 from subiquitycore.ui.utils import Color, Padding
 
-from subiquity.models.filesystem import _humanize_size
+from subiquity.models.filesystem import humanize_size
 
 log = logging.getLogger('subiquity.ui.raid')
 
@@ -67,7 +67,7 @@ class RaidView(BaseView):
             else:
                 raiddev = device
 
-            disk_sz = _humanize_size(raiddev.size)
+            disk_sz = humanize_size(raiddev.size)
             disk_string = "{}     {},     {}".format(dname,
                                                      disk_sz,
                                                      device.model)
