@@ -49,7 +49,7 @@ def dehumanize_size(size):
         raise ValueError("input cannot be empty")
 
     if not size[-1].isdigit():
-        suffix = size[-1]
+        suffix = size[-1].upper()
         size = size[:-1]
     else:
         suffix = None
@@ -70,7 +70,7 @@ def dehumanize_size(size):
 
     if suffix is not None:
         if suffix not in HUMAN_UNITS:
-            raise ValueError("unrecognized suffix {!r} in {!r}".format(suffix, size_in))
+            raise ValueError("unrecognized suffix {!r} in {!r}".format(size_in[-1], size_in))
         mult = 2**(10*HUMAN_UNITS.index(suffix))
     else:
         mult = 1
