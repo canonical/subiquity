@@ -33,7 +33,7 @@ class FS:
     is_mounted = attr.ib()
 
 
-def _humanize_size(size):
+def humanize_size(size):
     size = abs(size)
     if size == 0:
         return "0B"

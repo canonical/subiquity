@@ -39,7 +39,7 @@ from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import _humanize_size
+from subiquity.models.filesystem import humanize_size
 
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
@@ -105,10 +105,10 @@ class FilesystemView(BaseView):
         log.debug('FileSystemView: building part list')
         cols = []
         for m in self.model._mounts:
-            cols.append((m.device.volume.path, _humanize_size(m.device.volume.size), m.device.fstype, m.path))
+            cols.append((m.device.volume.path, humanize_size(m.device.volume.size), m.device.fstype, m.path))
         for fs in self.model._filesystems:
             if fs.fstype == 'swap':
-                cols.append((fs.volume.path, _humanize_size(fs.volume.size), fs.fstype, 'SWAP'))
+                cols.append((fs.volume.path, humanize_size(fs.volume.size), fs.fstype, 'SWAP'))
 
         if len(cols) == 0:
             return Pile([Color.info_minor(
@@ -146,14 +146,14 @@ class FilesystemView(BaseView):
                 disk_btn = menu_btn(label=disk.path)
                 connect_signal(disk_btn, 'click', self.click_disk, disk)
                 col1 = Color.menu_button(disk_btn)
-                col2 = Text(_humanize_size(disk.size))
+                col2 = Text(humanize_size(disk.size))
                 if disk.used > 0:
                     size = disk.size
                     free = disk.free
                     percent = int(100*free/size)
                     if percent == 0:
                         continue
-                    col3 = Text("local disk, {} ({}%) free".format(_humanize_size(free), percent))
+                    col3 = Text("local disk, {} ({}%) free".format(humanize_size(free), percent))
                 else:
                     col3 = Text("local disk")
                 col(col1, col2, col3)
@@ -166,7 +166,7 @@ class FilesystemView(BaseView):
                         fs = partition.fs().fstype
                     else:
                         fs = "unformatted"
-                    col2 = Text(_humanize_size(partition.size))
+                    col2 = Text(humanize_size(partition.size))
                     col3 = Text("{} partition on local disk".format(fs))
                     col(col1, col2, col3)
 

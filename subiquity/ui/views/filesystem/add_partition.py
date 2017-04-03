@@ -36,7 +36,7 @@ from subiquitycore.ui.interactive import Selector
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
-    _humanize_size,
+    humanize_size,
     dehumanize_size,
     HUMAN_UNITS,
     )
@@ -56,7 +56,7 @@ class AddPartitionForm(Form):
     def __init__(self, model, disk):
         self.model = model
         self.disk = disk
-        self.size_str = _humanize_size(disk.free)
+        self.size_str = humanize_size(disk.free)
         super().__init__()
         self.size.caption = "Size (max {})".format(self.size_str)
         self.partnum.value = self.disk.next_partnum
