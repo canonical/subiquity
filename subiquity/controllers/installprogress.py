@@ -16,7 +16,6 @@
 import fcntl
 import logging
 import os
-import yaml
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController

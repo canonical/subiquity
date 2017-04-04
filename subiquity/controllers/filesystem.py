@@ -20,8 +20,12 @@ from subiquitycore.controller import BaseController, view
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.ui.error import ErrorView
 
-from subiquity.curtin import (curtin_write_storage_actions,
-                              curtin_write_preserved_actions)
+from subiquity.curtin import (
+    CURTIN_CONFIGS,
+    CURTIN_INSTALL_LOG,
+    CURTIN_POSTINSTALL_LOG,
+    curtin_write_storage_actions,
+    )
 from subiquity.models import (FilesystemModel, RaidModel)
 from subiquity.models.filesystem import humanize_size
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
@@ -79,7 +83,10 @@ class FilesystemController(BaseController):
     def finish(self):
         log.info("Rendering curtin config from user choices")
         try:
-            curtin_write_storage_actions(actions=self.model.render())
+            curtin_write_storage_actions(
+                CURTIN_CONFIGS['storage'],
+                CURTIN_INSTALL_LOG,
+                actions=self.model.render())
         except PermissionError:
             log.exception('Failed to write storage actions')
             self.filesystem_error('curtin_write_storage_actions')
@@ -91,7 +98,10 @@ class FilesystemController(BaseController):
             a['preserve'] = True
             preserved_actions.append(a)
         try:
-            curtin_write_preserved_actions(actions=preserved_actions)
+            curtin_write_storage_actions(
+                CURTIN_CONFIGS['preserved'],
+                CURTIN_POSTINSTALL_LOG,
+                actions=preserved_actions)
         except PermissionError:
             log.exception('Failed to write preserved actions')
             self.filesystem_error('curtin_write_preserved_actions')
