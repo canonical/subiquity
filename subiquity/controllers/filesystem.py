@@ -23,7 +23,7 @@ from subiquitycore.ui.error import ErrorView
 from subiquity.curtin import (curtin_write_storage_actions,
                               curtin_write_preserved_actions)
 from subiquity.models import (FilesystemModel, RaidModel)
-from subiquity.models.filesystem import _humanize_size
+from subiquity.models.filesystem import humanize_size
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
                                 AddFormatView, FilesystemView,
                                 DiskInfoView, RaidView, BcacheView,
@@ -301,7 +301,7 @@ class FilesystemController(BaseController):
             'model': disk.model,
             'serial': disk.serial,
             'size': disk.size,
-            'humansize': _humanize_size(disk.size),
+            'humansize': humanize_size(disk.size),
             'vendor': disk._info.vendor,
             'rotational': 'true' if rotational == '1' else 'false',
         }

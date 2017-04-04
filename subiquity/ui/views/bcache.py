@@ -22,7 +22,7 @@ from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.interactive import Selector
 from subiquitycore.ui.utils import Color, Padding
 
-from subiquity.models.filesystem import _humanize_size
+from subiquity.models.filesystem import humanize_size
 
 log = logging.getLogger('subiquity.ui.bcache')
 
@@ -103,7 +103,7 @@ class BcacheView(BaseView):
             else:
                 bcachedev = device
 
-            disk_sz = _humanize_size(bcachedev.size)
+            disk_sz = humanize_size(bcachedev.size)
             disk_string = "{}     {},     {}".format(dname,
                                                      disk_sz,
                                                      device.model)

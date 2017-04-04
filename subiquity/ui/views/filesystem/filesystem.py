@@ -25,7 +25,6 @@ from urwid import (
     LineBox,
     Padding as UrwidPadding,
     Text,
-    WidgetDisable,
     WidgetWrap,
     )
 
@@ -40,7 +39,7 @@ from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import _humanize_size
+from subiquity.models.filesystem import humanize_size
 
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
@@ -113,10 +112,10 @@ class FilesystemView(BaseView):
                 if path.startswith(p):
                     path = [('info_minor', p), path[len(p):]]
                     break
-            cols.append((m.path, path, _humanize_size(m.device.volume.size), m.device.fstype, m.device.volume.desc()))
+            cols.append((m.path, path, humanize_size(m.device.volume.size), m.device.fstype, m.device.volume.desc()))
         for fs in self.model._filesystems:
             if fs.fstype == 'swap':
-                cols.append((None, 'SWAP', _humanize_size(fs.volume.size), fs.fstype, fs.device.volume.desc()))
+                cols.append((None, 'SWAP', humanize_size(fs.volume.size), fs.fstype, fs.device.volume.desc()))
 
         if len(cols) == 0:
             return Pile([Color.info_minor(
@@ -155,7 +154,7 @@ class FilesystemView(BaseView):
 
         for disk in self.model.all_disks():
             disk_label = Text(disk.serial)
-            size = Text(_humanize_size(disk.size).rjust(9))
+            size = Text(humanize_size(disk.size).rjust(9))
             typ = Text(disk.desc())
             col3(disk_label, size, typ)
             if disk.fs() is not None:
@@ -185,7 +184,7 @@ class FilesystemView(BaseView):
                         label += fs.fstype
                 else:
                     label += "unformatted"
-                size = Text("{:>9} ({}%)".format(_humanize_size(partition.size), int(100*partition.size/disk.size)))
+                size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
                 if partition.available:
                     part_btn = menu_btn(label=label)
                     connect_signal(part_btn, 'click', self.click_partition, partition)
@@ -205,7 +204,7 @@ class FilesystemView(BaseView):
                     percent = int(100*free/size)
                     if percent == 0:
                         continue
-                    size = Text("{:>9} ({}%)".format(_humanize_size(free), percent))
+                    size = Text("{:>9} ({}%)".format(humanize_size(free), percent))
                     col2(disk_btn, size)
                 else:
                     disk_btn = menu_btn(label="ADD FIRST PARTITION")

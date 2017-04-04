@@ -33,7 +33,7 @@ class FS:
     is_mounted = attr.ib()
 
 
-def _humanize_size(size):
+def humanize_size(size):
     size = abs(size)
     if size == 0:
         return "0B"
@@ -41,33 +41,44 @@ def _humanize_size(size):
     return "%.3f%s" % (size / math.pow(1024, p), HUMAN_UNITS[int(p)])
 
 
-def _dehumanize_size(size):
+def dehumanize_size(size):
     # convert human 'size' to integer
     size_in = size
-    if size.endswith("B"):
+
+    if not size:
+        raise ValueError("input cannot be empty")
+
+    if not size[-1].isdigit():
+        suffix = size[-1].upper()
         size = size[:-1]
+    else:
+        suffix = None
 
-    # build mpliers based on HUMAN_UNITS
-    mpliers = {}
-    for (unit, exponent) in zip(HUMAN_UNITS, range(0, len(HUMAN_UNITS))):
-        mpliers[unit] = 2 ** (exponent * 10)
-
-    num = size
-    mplier = 'B'
-    for m in mpliers:
-        if size.endswith(m):
-            mplier = m
-            num = size[0:-len(m)]
+    parts = size.split('.')
+    if len(parts) > 2:
+        raise ValueError("{!r} is not valid input".format(size_in))
+    elif len(parts) == 2:
+        div = 10**len(parts[1])
+        size = parts[0] + parts[1]
+    else:
+        div = 1
 
     try:
-        num = float(num)
+        num = int(size)
     except ValueError:
-        raise ValueError("'{}' is not valid input.".format(size_in))
+        raise ValueError("{!r} is not valid input".format(size_in))
+
+    if suffix is not None:
+        if suffix not in HUMAN_UNITS:
+            raise ValueError("unrecognized suffix {!r} in {!r}".format(size_in[-1], size_in))
+        mult = 2**(10*HUMAN_UNITS.index(suffix))
+    else:
+        mult = 1
 
     if num < 0:
-        raise ValueError("'{}': cannot be negative".format(size_in))
+        raise ValueError("{!r}: cannot be negative".format(size_in))
 
-    return int(num * mpliers[mplier])
+    return num * mult // div
 
 
 def id_factory(name):
