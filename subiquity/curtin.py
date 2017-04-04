@@ -153,7 +153,6 @@ def curtin_write_network_config(netplan_config):
     with open(CURTIN_NETWORK_CONFIG_FILE, 'w') as conf:
         conf.write(datestr)
         conf.write(curtin_config)
-        conf.close()
 
 
 def curtin_find_curtin():
