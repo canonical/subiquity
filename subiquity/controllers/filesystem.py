@@ -22,8 +22,6 @@ from subiquitycore.ui.error import ErrorView
 
 from subiquity.curtin import (
     CURTIN_CONFIGS,
-    CURTIN_INSTALL_LOG,
-    CURTIN_POSTINSTALL_LOG,
     curtin_write_storage_actions,
     )
 from subiquity.models import (FilesystemModel, RaidModel)
@@ -85,7 +83,6 @@ class FilesystemController(BaseController):
         try:
             curtin_write_storage_actions(
                 CURTIN_CONFIGS['storage'],
-                CURTIN_INSTALL_LOG,
                 actions=self.model.render())
         except PermissionError:
             log.exception('Failed to write storage actions')
@@ -100,7 +97,6 @@ class FilesystemController(BaseController):
         try:
             curtin_write_storage_actions(
                 CURTIN_CONFIGS['preserved'],
-                CURTIN_POSTINSTALL_LOG,
                 actions=preserved_actions)
         except PermissionError:
             log.exception('Failed to write preserved actions')
