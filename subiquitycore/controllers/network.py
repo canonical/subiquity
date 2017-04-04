@@ -36,7 +36,7 @@ from subiquitycore.ui.views import (NetworkView,
                                     NetworkConfigureWLANView)
 from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.ui.dummy import DummyView
-from subiquitycore.controller import BaseController, view
+from subiquitycore.controller import BaseController
 from subiquitycore.utils import run_command_start, run_command_summarize
 
 log = logging.getLogger("subiquitycore.controller.network")
@@ -341,17 +341,9 @@ class NetworkController(BaseController):
         self.observer.wlan_listener.trigger_scan(dev.ifindex)
 
     def cancel(self):
-        if len(self.view_stack) <= 1:
-            self.signal.emit_signal('prev-screen')
-        else:
-            self.prev_view()
+        self.signal.emit_signal('prev-screen')
 
     def default(self):
-        self.view_stack = []
-        self.start()
-
-    @view
-    def start(self):
         title = "Network connections"
         excerpt = ("Configure at least one interface this server can use to talk to "
                    "other machines, and which preferably provides sufficient access for "
@@ -428,45 +420,37 @@ class NetworkController(BaseController):
         self.signal.emit_signal('network-config-written', self.netplan_path)
         self.signal.emit_signal('next-screen')
 
-    @view
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
         self.ui.set_body(NetworkSetDefaultRouteView(self.model, socket.AF_INET, self))
 
-    @view
     def set_default_v6_route(self):
         self.ui.set_header("Default route")
         self.ui.set_body(NetworkSetDefaultRouteView(self.model, socket.AF_INET6, self))
 
-    @view
     def bond_interfaces(self):
         self.ui.set_header("Bond interfaces")
         self.ui.set_body(NetworkBondInterfacesView(self.model, self))
 
-    @view
     def network_configure_interface(self, iface):
         self.ui.set_header("Network interface {}".format(iface))
         self.ui.set_body(NetworkConfigureInterfaceView(self.model, self, iface))
 
-    @view
     def network_configure_ipv4_interface(self, iface):
         self.ui.set_header("Network interface {} manual IPv4 "
                            "configuration".format(iface))
         self.ui.set_body(NetworkConfigureIPv4InterfaceView(self.model, self, iface))
 
-    @view
     def network_configure_wlan_interface(self, iface):
         self.ui.set_header("Network interface {} WIFI "
                            "configuration".format(iface))
         self.ui.set_body(NetworkConfigureWLANView(self.model, self, iface))
 
-    @view
     def network_configure_ipv6_interface(self, iface):
         self.ui.set_header("Network interface {} manual IPv6 "
                            "configuration".format(iface))
         self.ui.set_body(NetworkConfigureIPv6InterfaceView(self.model, self, iface))
 
-    @view
     def install_network_driver(self):
         self.ui.set_body(DummyView(self))
 

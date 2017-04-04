@@ -138,8 +138,7 @@ class NetworkConfigureWLANView(BaseView):
             self.dev = self.model.get_netdev_by_name(self.dev.name)
         except KeyError:
             # The interface is gone
-            self.controller.prev_view()
-            self.controller.prev_view()
+            self.controller.default()
             return
         self.inputs.contents = [ (obj, ('pack', None)) for obj in self._build_iface_inputs() ]
 
@@ -156,7 +155,7 @@ class NetworkConfigureWLANView(BaseView):
         else:
             psk = None
         self.dev.set_ssid_psk(ssid, psk)
-        self.controller.prev_view()
+        self.controller.network_configure_interface(self.dev.name)
 
-    def cancel(self, sender):
-        self.controller.prev_view()
+    def cancel(self, sender=None):
+        self.controller.network_configure_interface(self.dev.name)

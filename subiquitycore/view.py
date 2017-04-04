@@ -38,12 +38,15 @@ class BaseView(WidgetWrap):
         self._w = self.orig_w
         self.orig_w = None
 
+    def cancel(self):
+        pass
+
     def keypress(self, size, key):
         if key in ['ctrl x']:
             self.controller.signal.emit_signal('control-x-quit')
             return None
         key = super().keypress(size, key)
         if key == 'esc':
-            self.controller.cancel()
+            self.cancel()
             return None
         return key

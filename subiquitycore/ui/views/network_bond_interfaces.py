@@ -127,8 +127,8 @@ class NetworkBondInterfacesView(BaseView):
             return
 
         log.debug('bond: successful bond creation')
-        self.controller.prev_view()
+        self.controller.default()
 
     def cancel(self, button):
         log.debug('bond: button_cancel')
-        self.controller.prev_view()
+        self.controller.default()
