@@ -82,13 +82,6 @@ class NetworkConfigureWLANView(BaseView):
         self.orig_w = None
         super().__init__(ListBox(self.body))
 
-    def keypress(self, size, key):
-        if key == 'esc':
-            if self.orig_w is not None:
-                self.remove_overlay()
-                return
-        return super().keypress(size, key)
-
     def show_ssid_list(self, sender):
         self.show_overlay(NetworkList(self, self.dev.actual_ssids))
 
@@ -138,8 +131,7 @@ class NetworkConfigureWLANView(BaseView):
             self.dev = self.model.get_netdev_by_name(self.dev.name)
         except KeyError:
             # The interface is gone
-            self.controller.prev_view()
-            self.controller.prev_view()
+            self.controller.default()
             return
         self.inputs.contents = [ (obj, ('pack', None)) for obj in self._build_iface_inputs() ]
 
@@ -156,7 +148,7 @@ class NetworkConfigureWLANView(BaseView):
         else:
             psk = None
         self.dev.set_ssid_psk(ssid, psk)
-        self.controller.prev_view()
+        self.controller.network_configure_interface(self.dev.name)
 
-    def cancel(self, sender):
-        self.controller.prev_view()
+    def cancel(self, sender=None):
+        self.controller.network_configure_interface(self.dev.name)

@@ -139,7 +139,7 @@ class NetworkSetDefaultRouteView(BaseView):
             except ValueError:
                 # FIXME: raise UX error message
                 pass
-        self.controller.prev_view()
+        self.controller.default()
 
-    def cancel(self, button):
-        self.controller.prev_view()
+    def cancel(self, button=None):
+        self.controller.default()

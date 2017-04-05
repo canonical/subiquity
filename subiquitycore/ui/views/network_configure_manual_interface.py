@@ -146,8 +146,7 @@ class BaseNetworkConfigureManualView(BaseView):
             self.dev = self.model.get_netdev_by_name(self.dev.name)
         except KeyError:
             # The interface is gone
-            self.controller.prev_view()
-            self.controller.prev_view()
+            self.controller.default()
             return
 
     def _build_set_as_default_gw_button(self):
@@ -193,11 +192,11 @@ class BaseNetworkConfigureManualView(BaseView):
         self.dev.add_network(self.ip_version, result)
 
         # return
-        self.controller.prev_view()
+        self.controller.network_configure_interface(self.dev.name)
 
-    def cancel(self, sender):
+    def cancel(self, sender=None):
         self.model.default_gateway = None
-        self.controller.prev_view()
+        self.controller.network_configure_interface(self.dev.name)
 
 class NetworkConfigureIPv4InterfaceView(BaseNetworkConfigureManualView):
     ip_version = 4

@@ -243,11 +243,6 @@ class _HelpDisplay(WidgetWrap):
         self._closer = closer
         button = Color.button(PlainButton(label="Close", on_press=lambda btn:self._closer()))
         super().__init__(LineBox(Pile([Text(help_text), Padding.fixed_10(button)]), title="Help"))
-    def keypress(self, size, key):
-        if key == 'esc':
-            self._closer()
-        else:
-            return super().keypress(size, key)
 
 
 class Help(WidgetWrap):

@@ -100,7 +100,7 @@ class IdentityView(BaseView):
         ]
         return Pile(buttons)
 
-    def cancel(self, button):
+    def cancel(self, button=None):
         self.controller.cancel()
 
     def done(self, button):

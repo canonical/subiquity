@@ -63,5 +63,5 @@ class InstallpathView(BaseView):
     def confirm(self, result, sig):
         self.signal.emit_signal(sig)
 
-    def cancel(self, button):
+    def cancel(self, button=None):
         self.signal.emit_signal('prev-screen')
