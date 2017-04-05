@@ -61,7 +61,6 @@ class FilesystemController(BaseController):
     def reset(self):
         log.info("Resetting Filesystem model")
         self.model.reset()
-        self.view_stack = []
         self.default()
 
     def cancel(self):

@@ -102,14 +102,13 @@ class IdentityView(BaseView):
 
         self.form = IdentityForm()
         connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', self.cancel)
 
         self.ssh_import_confirmed = True
 
         body = [
             Padding.center_90(self.form.as_rows(self)),
             Padding.line_break(""),
-            Padding.fixed_10(self.form.buttons),
+            Padding.fixed_10(self.form.buttons[0]),
         ]
         super().__init__(ListBox(body))
 
@@ -136,6 +135,3 @@ class IdentityView(BaseView):
 
         log.debug("User input: {}".format(result))
         self.controller.create_user(result)
-
-    def cancel(self, button):
-        self.controller.cancel()
