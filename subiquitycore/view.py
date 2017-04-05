@@ -22,6 +22,11 @@ from urwid import Overlay, WidgetWrap
 
 
 class BaseView(WidgetWrap):
+
+    def __init__(self, w):
+        self.orig_w = None
+        super().__init__(w)
+
     def show_overlay(self, overlay_widget, **kw):
         self.orig_w = self._w
         args = dict(
@@ -47,6 +52,10 @@ class BaseView(WidgetWrap):
             return None
         key = super().keypress(size, key)
         if key == 'esc':
-            self.cancel()
-            return None
+            if self.orig_w is not None:
+                self.remove_overlay()
+                return None
+            else:
+                self.cancel()
+                return None
         return key

@@ -82,13 +82,6 @@ class NetworkConfigureWLANView(BaseView):
         self.orig_w = None
         super().__init__(ListBox(self.body))
 
-    def keypress(self, size, key):
-        if key == 'esc':
-            if self.orig_w is not None:
-                self.remove_overlay()
-                return
-        return super().keypress(size, key)
-
     def show_ssid_list(self, sender):
         self.show_overlay(NetworkList(self, self.dev.actual_ssids))
 
