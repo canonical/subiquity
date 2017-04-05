@@ -63,5 +63,5 @@ class DiskInfoView(BaseView):
         ''' Return to FilesystemView '''
         self.controller.partition_disk(self.disk)
 
-    def cancel(self, button):
+    def cancel(self, button=None):
         self.controller.partition_disk(self.disk)
