@@ -123,7 +123,11 @@ class FilesystemView(BaseView):
         cols.insert(0, (None, "MOUNT POINT", "SIZE", "TYPE", "DEVICE TYPE"))
         pl = []
         for _, a, b, c, d in cols:
-            pl.append(Columns([(longest_path, Text(a)), (9, Text(b)), (self.model.longest_fs_name, Text(c)), Text(d)], 4))
+            if b == "SIZE":
+                b = Text(b, align='center')
+            else:
+                b = Text(b, align='right')
+            pl.append(Columns([(longest_path, Text(a)), (9, b), (self.model.longest_fs_name, Text(c)), Text(d)], 4))
         return Pile(pl)
 
     def _build_buttons(self):
@@ -150,7 +154,7 @@ class FilesystemView(BaseView):
         def col1(col1):
             inputs.append(Columns([(40, col1)], 1))
 
-        col3(Text("DEVICE"), Text("SIZE"), Text("TYPE"))
+        col3(Text("DEVICE"), Text("SIZE", align="center"), Text("TYPE"))
 
         for disk in self.model.all_disks():
             disk_label = Text(disk.serial)
