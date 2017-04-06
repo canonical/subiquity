@@ -38,7 +38,16 @@ log = logging.getLogger("subiquitycore.controller.installprogress")
 
 
 class _Handler(server.BaseHTTPRequestHandler):
+
     def do_GET(self):
+        if self.path == "/report":
+            if self.server.crash_file is None:
+                self.send_response(404)
+                self.end_headers()
+                self.wfile.write(b'No crash report yet!\n')
+            else:
+                pass # Do stuff here!
+            return
         self.send_response(200)
         self.end_headers()
         self.wfile.write(("content of %s\n" % self.path).encode('utf-8'))
@@ -55,6 +64,7 @@ class BackgroundServer:
     def start(self):
         """Return URL to pass to curtin."""
         self._httpd = server.HTTPServer(("", self.port), _Handler)
+        self._httpd.crash_file = None
         port = self._httpd.server_address[1]
         self._server_thread = threading.Thread(target=self._httpd.serve_forever)
         self._server_thread.setDaemon(True)
@@ -97,6 +107,7 @@ class InstallProgressController(BaseController):
         else:
             port = 8000
         self.server = BackgroundServer(port, self.call_from_thread)
+        self.server_url = self.server.start()
         log.debug("serving on %s", self.server.start())
         if self.opts.dry_run:
             self.root = os.path.abspath('.subiquity')
