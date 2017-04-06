@@ -50,6 +50,8 @@ class InstallProgressController(BaseController):
         ('network-config-written',   'network_config_written'),
     ]
 
+    root = '/var/log/installer'
+
     def __init__(self, common):
         super().__init__(common)
         self.model = InstallProgressModel()
@@ -58,6 +60,8 @@ class InstallProgressController(BaseController):
         self.postinstall_written = False
         self.tail_proc = None
         self.current_log_file = None
+        if self.opts.dry_run:
+            self.root = os.path.abspath('.subiquity')
 
     def network_config_written(self, path):
         curtin_write_network_config(self._curtin_config('network'), open(path).read())
@@ -79,10 +83,10 @@ class InstallProgressController(BaseController):
             self.curtin_start_postinstall()
 
     def _curtin_config(self, config):
-        return '/tmp/subiquity-config-{}.yaml'.format(config)
+        return os.path.join(self.root, 'subiquity-config-{}.yaml'.format(config))
 
     def _curtin_logfile(self, stage):
-        return '/tmp/subiquity-curtin-{}.log'.format(stage)
+        return os.path.join(self.root, 'subiquity-curtin-{}.log'.format(stage))
 
     def curtin_error(self):
         log.debug('curtin_error')
