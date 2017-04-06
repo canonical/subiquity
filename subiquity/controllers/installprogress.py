@@ -16,7 +16,7 @@
 import fcntl
 import logging
 import os
-import yaml
+import subprocess
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
@@ -80,6 +80,14 @@ class InstallProgressController(BaseController):
         else:
             self.default()
 
+    def run_command_logged(self, cmd, logfile_location):
+        with open(logfile_location, 'wb', buffering=0) as logfile:
+            log.debug("running %s", cmd)
+            cp = subprocess.run(
+                cmd, stdout=logfile, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+            log.debug("completed %s", cmd)
+        return cp.returncode
+
     def curtin_start_install(self):
         log.debug('Curtin Install: calling curtin with '
                   'storage/net/postinstall config')
@@ -89,7 +97,7 @@ class InstallProgressController(BaseController):
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
                 "bash", "-c",
-                "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; } > %s 2>&1"%CURTIN_INSTALL_LOG]
+                "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; }"]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [CURTIN_CONFIGS['storage'],
@@ -97,16 +105,13 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
-        self.run_in_bg(lambda: utils.run_command(curtin_cmd), self.curtin_install_completed)
+        self.run_in_bg(lambda: self.run_command_logged(curtin_cmd, CURTIN_INSTALL_LOG), self.curtin_install_completed)
 
     def curtin_install_completed(self, fut):
-        result = fut.result()
-        log.debug('curtin_install: result: {}'.format(result))
+        returncode = fut.result()
+        log.debug('curtin_install: returncode: {}'.format(returncode))
         self.stop_tail_proc()
-        if result['status'] > 0:
-            msg = ("Problem with curtin "
-                   "install: {}".format(result))
-            log.error(msg)
+        if returncode > 0:
             self.install_state = InstallState.ERROR_INSTALL
             self.curtin_error()
             return
@@ -135,7 +140,7 @@ class InstallProgressController(BaseController):
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
                 "bash", "-c",
-                "{ i=0;while [ $i -le 10 ];do i=$((i+1)); echo postinstall line $i; sleep 1; done; } > %s 2>&1"%CURTIN_POSTINSTALL_LOG]
+                "{ i=0;while [ $i -le 10 ];do i=$((i+1)); echo postinstall line $i; sleep 1; done; }"]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [
@@ -145,15 +150,13 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
-        self.run_in_bg(lambda: utils.run_command(curtin_cmd), self.curtin_postinstall_completed)
+        self.run_in_bg(lambda: self.run_command_logged(curtin_cmd, CURTIN_POSTINSTALL_LOG), self.curtin_postinstall_completed)
 
     def curtin_postinstall_completed(self, fut):
-        result = fut.result()
+        returncode = fut.result()
+        log.debug('curtin_postinstall: returncode: {}'.format(returncode))
         self.stop_tail_proc()
-        if result['status'] > 0:
-            msg = ("Problem with curtin "
-                   "post-install: {}".format(result))
-            log.error(msg)
+        if returncode > 0:
             self.install_state = InstallState.ERROR_POSTINSTALL
             self.curtin_error()
             return
