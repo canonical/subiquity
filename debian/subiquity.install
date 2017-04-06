@@ -2,3 +2,4 @@ bin/subiquity-tui                      usr/share/subiquity
 bin/subiquity-debug                    usr/share/subiquity
 bin/subiquity-loadkeys                 usr/share/subiquity
 usr/share/subiquity/subiquity
+hooks/source_subiquity.py              usr/share/apport/package-hooks
