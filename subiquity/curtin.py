@@ -56,6 +56,10 @@ POST_INSTALL_CONFIG = {
             'path': 'etc/cloud/ds-identify.cfg',
             'content': 'policy: enabled\n',
             },
+        'workaround_curtin_bug': {
+            'path': 'root/curtin-postinstall.log',
+            'content': '',
+            },
         },
     'save_install_config': '/root/curtin-postinstall-cfg.yaml',
     'save_install_log': '/root/curtin-postinstall.log',
@@ -133,7 +137,11 @@ def curtin_write_network_config(path, netplan_config):
             'nonet': {
                 'path': 'etc/cloud/cloud.cfg.d/subiquity-disable-cloudinit-networking.cfg',
                 'content': 'network: {config: disabled}\n',
-            }
+            },
+            'workaround_curtin_bug': {
+                'path': 'root/curtin-install.log',
+                'content': '',
+            },
         },
         'network_commands': {'builtin': []},
     }
