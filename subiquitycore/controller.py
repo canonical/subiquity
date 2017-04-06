@@ -17,6 +17,7 @@
 from abc import ABC, abstractmethod
 import logging
 import os
+import queue
 
 log = logging.getLogger("subiquitycore.controller")
 
@@ -34,6 +35,21 @@ class BaseController(ABC):
         self.prober = common['prober']
         self.controllers = common['controllers']
         self.pool = common['pool']
+
+        self.rp, self.wp = os.pipe()
+        self.q = queue.Queue()
+        self.loop.watch_file(self.rp, self._in_main_thread)
+
+    def _in_main_thread(self, ignored):
+        (f, a, k) = self.q.get()
+        try:
+            f(*a, **k)
+        except:
+            log.exception("{}(*{},**{}) failed".format(f, a, k))
+
+    def call_from_thread(self, f, *args, **kw):
+        self.q.put((f, args, kw))
+        os.write(self.wp, b'x')
 
     def register_signals(self):
         """Defines signals associated with controller from model."""

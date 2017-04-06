@@ -15,9 +15,12 @@
 
 import copy
 import fcntl
+from http import server
 import logging
 import os
+import socketserver
 import subprocess
+import threading
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
@@ -32,6 +35,35 @@ from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
+
+
+class _Handler(server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(("content of %s\n" % self.path).encode('utf-8'))
+
+    def log_message(self, format, *args):
+        log.debug(format, *args)
+
+class BackgroundServer:
+    def __init__(self, port, run_in_main_thread):
+        self.port = port
+        self.run_in_main_thread = run_in_main_thread
+        self._server_thread = None
+
+    def start(self):
+        """Return URL to pass to curtin."""
+        self._httpd = server.HTTPServer(("", self.port), _Handler)
+        port = self._httpd.server_address[1]
+        self._server_thread = threading.Thread(target=self._httpd.serve_forever)
+        self._server_thread.setDaemon(True)
+        self._server_thread.start()
+        return "http://localhost:{}/".format(port)
+
+    def stop(self):
+        self._httpd.shutdown()
+        self._server_thread.join()
 
 
 class InstallState:
@@ -60,6 +92,12 @@ class InstallProgressController(BaseController):
         self.postinstall_written = False
         self.tail_proc = None
         self.current_log_file = None
+        if self.opts.dry_run:
+            port = 0
+        else:
+            port = 8000
+        self.server = BackgroundServer(port, self.call_from_thread)
+        log.debug("serving on %s", self.server.start())
         if self.opts.dry_run:
             self.root = os.path.abspath('.subiquity')
 
