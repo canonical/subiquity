@@ -20,10 +20,6 @@ from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.ui.error import ErrorView
 
-from subiquity.curtin import (
-    CURTIN_CONFIGS,
-    curtin_write_storage_actions,
-    )
 from subiquity.models import (FilesystemModel, RaidModel)
 from subiquity.models.filesystem import humanize_size
 from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
@@ -78,34 +74,8 @@ class FilesystemController(BaseController):
 
     def finish(self):
         log.info("Rendering curtin config from user choices")
-        try:
-            curtin_write_storage_actions(
-                CURTIN_CONFIGS['storage'],
-                actions=self.model.render())
-        except PermissionError:
-            log.exception('Failed to write storage actions')
-            self.filesystem_error('curtin_write_storage_actions')
-            return None
 
-        log.info("Rendering preserved config for post install")
-        preserved_actions = []
-        for a in self.model.render():
-            a['preserve'] = True
-            preserved_actions.append(a)
-        try:
-            curtin_write_storage_actions(
-                CURTIN_CONFIGS['preserved'],
-                actions=preserved_actions)
-        except PermissionError:
-            log.exception('Failed to write preserved actions')
-            self.filesystem_error('curtin_write_preserved_actions')
-            return None
-
-        # mark that we've writting out curtin config
-        self.signal.emit_signal('installprogress:wrote-install')
-
-        # start curtin install in background
-        self.signal.emit_signal('installprogress:curtin-install')
+        self.signal.emit_signal('fs-config-complete', self.model.render())
 
         # switch to next screen
         self.signal.emit_signal('next-screen')

@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import fcntl
 import logging
 import os
@@ -21,14 +22,14 @@ import subprocess
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
 
-from subiquity.curtin import (CURTIN_CONFIGS,
-                              curtin_install_cmd,
-                              curtin_write_network_config)
+from subiquity.curtin import (
+    curtin_install_cmd,
+    curtin_write_network_config,
+    curtin_write_postinst_config,
+    curtin_write_storage_actions,
+    )
 from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView
-
-CURTIN_INSTALL_LOG = '/tmp/subiquity-curtin-install.log'
-CURTIN_POSTINSTALL_LOG = '/tmp/subiquity-curtin-postinstall.log'
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
 
@@ -44,10 +45,9 @@ class InstallState:
 
 class InstallProgressController(BaseController):
     signals = [
-        ('installprogress:curtin-install',     'curtin_start_install'),
-        ('installprogress:wrote-install',      'curtin_wrote_install'),
-        ('installprogress:wrote-postinstall',  'curtin_wrote_postinstall'),
-        ('network-config-written',             'curtin_wrote_network_config'),
+        ('fs-config-complete',       'fs_config_complete'),
+        ('identity-config-complete', 'identity_config_complete'),
+        ('network-config-written',   'network_config_written'),
     ]
 
     def __init__(self, common):
@@ -59,16 +59,30 @@ class InstallProgressController(BaseController):
         self.tail_proc = None
         self.current_log_file = None
 
-    def curtin_wrote_network_config(self, path):
-        curtin_write_network_config(open(path).read())
+    def network_config_written(self, path):
+        curtin_write_network_config(self._curtin_config('network'), open(path).read())
 
-    def curtin_wrote_install(self):
-        pass
+    def fs_config_complete(self, actions):
+        log.info("Rendering curtin config from user choices")
+        curtin_write_storage_actions(self._curtin_config('storage'), actions)
+        log.info("Rendering preserved config for post install")
+        preserved_actions = copy.deepcopy(actions)
+        for a in preserved_actions:
+            a['preserve'] = True
+        curtin_write_storage_actions(self._curtin_config('preserved-storage'), preserved_actions)
+        self.curtin_start_install()
 
-    def curtin_wrote_postinstall(self):
+    def identity_config_complete(self, userinfo):
+        curtin_write_postinst_config(self._curtin_config('postinstall'), userinfo)
         self.postinstall_written = True
         if self.install_state == InstallState.DONE_INSTALL:
             self.curtin_start_postinstall()
+
+    def _curtin_config(self, config):
+        return '/tmp/subiquity-config-{}.yaml'.format(config)
+
+    def _curtin_logfile(self, stage):
+        return '/tmp/subiquity-curtin-{}.log'.format(stage)
 
     def curtin_error(self):
         log.debug('curtin_error')
@@ -101,12 +115,11 @@ class InstallProgressController(BaseController):
                 "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; }"]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
-            configs = [CURTIN_CONFIGS['storage'],
-                       CURTIN_CONFIGS['network']]
+            configs = [self._curtin_config('storage'), self._curtin_config('network')]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
-        self.current_log_file = CURTIN_INSTALL_LOG
+        self.current_log_file = self._curtin_logfile('install')
         self.run_in_bg(lambda: self.run_command_logged(curtin_cmd, self.current_log_file), self.curtin_install_completed)
 
     def curtin_install_completed(self, fut):
@@ -135,6 +148,7 @@ class InstallProgressController(BaseController):
             raise Exception('AIEEE!')
 
         self.install_state = InstallState.RUNNING_POSTINSTALL
+        self.current_log_file = self._curtin_logfile('postinstall')
         if self.progress_view is not None:
             self.progress_view.clear_log_tail()
             self.progress_view.set_status("Running postinstall step")
@@ -146,14 +160,10 @@ class InstallProgressController(BaseController):
                 "{ i=0;while [ $i -le 10 ];do i=$((i+1)); echo postinstall line $i; sleep 1; done; }"]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
-            configs = [
-                CURTIN_CONFIGS['postinstall'],
-                CURTIN_CONFIGS['preserved'],
-            ]
+            configs = [self._curtin_config('postinstall'), self._curtin_config('preserved-storage')]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
-        self.current_log_file = CURTIN_POSTINSTALL_LOG
         self.run_in_bg(lambda: self.run_command_logged(curtin_cmd, self.current_log_file), self.curtin_postinstall_completed)
 
     def curtin_postinstall_completed(self, fut):
