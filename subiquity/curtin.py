@@ -25,7 +25,7 @@ log = logging.getLogger("subiquity.curtin")
 
 TMPDIR = '/tmp'
 CURTIN_SEARCH_PATH = ['/usr/local/curtin/bin', '/usr/bin']
-CURTIN_INSTALL_PATH = ['/media/root-ro', '/']
+CURTIN_INSTALL_PATH = ['/media/root-ro', '/rofs', '/']
 CURTIN_INSTALL_LOG = '/tmp/subiquity-curtin-install.log'
 CURTIN_POSTINSTALL_LOG = '/tmp/subiquity-curtin-postinstall.log'
 CONF_PREFIX = os.path.join(TMPDIR, 'subiquity-config-')
@@ -79,6 +79,9 @@ POST_INSTALL_LIST = [
     ("    12_postinst_userdata: [curtin, in-target, --, sh, '-c',"
      "\"/bin/echo -e '#cloud-config\\n\\n{hostinfo}\\nusers:\\n{users}' > "
      "/var/lib/cloud/seed/nocloud-net/user-data\"]"),
+    ("    13_postinst_enable_cloud-init: [curtin, in-target, --, sh, '-c',"
+     '"/bin/echo -e policy: enabled '
+     '> /etc/cloud/ds-identify.cfg"]'),
 ]
 POST_INSTALL = '\n' + "\n".join(POST_INSTALL_LIST) + '\n'
 
@@ -91,7 +94,7 @@ def curtin_userinfo_to_config(userinfo):
         '    groups: admin\\n' + \
         '    lock-passwd: false\\n'
     if 'ssh_import_id' in userinfo:
-        user_template += '    ssh-import-id: [{ssh_import_id}]\\n'
+        user_template += '    ssh-import-id: [ "{ssh_import_id}" ]\\n'
 
     return user_template.format(**userinfo)
 
