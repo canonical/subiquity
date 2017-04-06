@@ -143,7 +143,7 @@ class Application:
         try:
             self.common['loop'].set_alarm_in(0.05, self.next_screen)
             controllers_mod = __import__('%s.controllers' % self.project, None, None, [''])
-            for k in self.common['controllers']:
+            for k in self.controllers:
                 log.debug("Importing controller: {}".format(k))
                 klass = getattr(controllers_mod, k+"Controller")
                 self.common['controllers'][k] = klass(self.common)
