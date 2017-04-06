@@ -20,11 +20,9 @@ configuration.
 
 """
 import logging
-import os
-import re
 from urwid import connect_signal, Text
 
-from subiquitycore.ui.container import Columns, ListBox
+from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.form import (
     Form,
     FormField,
@@ -114,8 +112,8 @@ class AddPartitionView(BaseView):
         partition_box = Padding.center_50(ListBox(body))
         super().__init__(partition_box)
 
-    def cancel(self, button):
-        self.controller.prev_view()
+    def cancel(self, button=None):
+        self.controller.partition_disk(self.disk)
 
     def done(self, result):
 

@@ -46,10 +46,11 @@ class AddFormatForm(Form):
 
 
 class AddFormatView(BaseView):
-    def __init__(self, model, controller, volume):
+    def __init__(self, model, controller, volume, back):
         self.model = model
         self.controller = controller
         self.volume = volume
+        self.back = back
 
         self.form = AddFormatForm(model)
         if self.volume.fs() is not None:
@@ -71,8 +72,8 @@ class AddFormatView(BaseView):
         format_box = Padding.center_50(ListBox(body))
         super().__init__(format_box)
 
-    def cancel(self, button):
-        self.controller.prev_view()
+    def cancel(self, button=None):
+        self.back()
 
     def done(self, result):
         """ format spec
@@ -97,4 +98,4 @@ class AddFormatView(BaseView):
             result['fstype'] = None
 
         log.debug("Add Format Result: {}".format(result))
-        self.controller.add_format_handler(self.volume, result)
+        self.controller.add_format_handler(self.volume, result, self.back)

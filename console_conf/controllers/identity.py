@@ -89,6 +89,8 @@ The {keytype} host key fingerprints is:
 
 def host_key_info():
     fingerprints = host_key_fingerprints()
+    if len(fingerprints) == 0:
+        return []
     if len(fingerprints) == 1:
         [(keytype, fingerprint)] = fingerprints
         return single_host_key_tmpl.format(keytype=keytype, fingerprint=fingerprint)

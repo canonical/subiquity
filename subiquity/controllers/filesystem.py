@@ -16,7 +16,7 @@
 import logging
 import os
 
-from subiquitycore.controller import BaseController, view
+from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.ui.error import ErrorView
 
@@ -48,7 +48,6 @@ class FilesystemController(BaseController):
         self.raid_model = RaidModel()
         self.model.probe()  # probe before we complete
 
-    @view
     def default(self, reset=False):
         # FIXME: Is this the best way to zero out this list for a reset?
         if reset:
@@ -64,7 +63,6 @@ class FilesystemController(BaseController):
     def reset(self):
         log.info("Resetting Filesystem model")
         self.model.reset()
-        self.view_stack = []
         self.default()
 
     def cancel(self):
@@ -113,7 +111,6 @@ class FilesystemController(BaseController):
         self.signal.emit_signal('next-screen')
 
     # Filesystem/Disk partition -----------------------------------------------
-    @view
     def partition_disk(self, disk):
         log.debug("In disk partition view, using {} as the disk.".format(disk.path))
         title = ("Partition, format, and mount {}".format(disk.path))
@@ -125,7 +122,6 @@ class FilesystemController(BaseController):
 
         self.ui.set_body(dp_view)
 
-    @view
     def add_disk_partition(self, disk):
         log.debug("Adding partition to {}".format(disk))
         footer = ("Select whole disk, or partition, to format and mount.")
@@ -166,9 +162,9 @@ class FilesystemController(BaseController):
                 self.model.add_mount(fs, spec['mountpoint'])
 
         log.info("Successfully added partition")
-        self.prev_view()
+        self.partition_disk(disk)
 
-    def add_format_handler(self, volume, spec):
+    def add_format_handler(self, volume, spec, back):
         log.debug('add_format_handler')
         if spec['fstype'] is not None:
             fs = self.model.add_filesystem(volume, spec['fstype'])
@@ -178,7 +174,7 @@ class FilesystemController(BaseController):
             if fs is None:
                 raise Exception("{} is not formatted".format(volume.path))
             self.model.add_mount(fs, spec['mountpoint'])
-        self.prev_view()
+        back()
 
     def connect_iscsi_disk(self, *args, **kwargs):
         # title = ("Disk and filesystem setup")
@@ -199,7 +195,6 @@ class FilesystemController(BaseController):
         #                               self.signal))
         self.ui.set_body(DummyView(self.signal))
 
-    @view
     def create_volume_group(self, *args, **kwargs):
         title = ("Create Logical Volume Group (\"LVM2\") disk")
         footer = ("ENTER on a disk will show detailed "
@@ -210,7 +205,6 @@ class FilesystemController(BaseController):
         self.ui.set_footer(footer)
         self.ui.set_body(LVMVolumeGroupView(self.model, self.signal))
 
-    @view
     def create_raid(self, *args, **kwargs):
         title = ("Create software RAID (\"MD\") disk")
         footer = ("ENTER on a disk will show detailed "
@@ -224,7 +218,6 @@ class FilesystemController(BaseController):
         self.ui.set_body(RaidView(self.model,
                                   self.signal))
 
-    @view
     def create_bcache(self, *args, **kwargs):
         title = ("Create hierarchical storage (\"bcache\") disk")
         footer = ("ENTER on a disk will show detailed "
@@ -242,17 +235,15 @@ class FilesystemController(BaseController):
         self.model.add_raid_device(result)
         self.signal.prev_signal()
 
-    @view
     def format_entire(self, disk):
         log.debug("format_entire {}".format(disk))
         header = ("Format and/or mount {}".format(disk.path))
         footer = ("Format or mount whole disk.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
-        afv_view = AddFormatView(self.model, self, disk)
+        afv_view = AddFormatView(self.model, self, disk, lambda : self.partition_disk(disk))
         self.ui.set_body(afv_view)
 
-    @view
     def format_mount_partition(self, partition):
         log.debug("format_entire {}".format(partition))
         if partition.fs() is not None:
@@ -263,7 +254,7 @@ class FilesystemController(BaseController):
             footer = ("Format and mount partition.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
-        afv_view = AddFormatView(self.model, self, partition)
+        afv_view = AddFormatView(self.model, self, partition, self.default)
         self.ui.set_body(afv_view)
 
     def show_disk_information_next(self, disk):

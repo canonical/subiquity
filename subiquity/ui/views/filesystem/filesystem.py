@@ -203,7 +203,7 @@ class FilesystemView(BaseView):
                                      user_data=sig)))
         return Pile(opts)
 
-    def cancel(self, button):
+    def cancel(self, button=None):
         self.controller.cancel()
 
     def reset(self, button):

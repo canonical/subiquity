@@ -24,7 +24,7 @@ log = logging.getLogger("subiquity.curtin")
 
 TMPDIR = '/tmp'
 CURTIN_SEARCH_PATH = ['/usr/local/curtin/bin', '/usr/bin']
-CURTIN_INSTALL_PATH = ['/media/root-ro', '/']
+CURTIN_INSTALL_PATH = ['/media/root-ro', '/rofs', '/']
 CURTIN_INSTALL_LOG = '/tmp/subiquity-curtin-install.log'
 CURTIN_POSTINSTALL_LOG = '/tmp/subiquity-curtin-postinstall.log'
 CONF_PREFIX = os.path.join(TMPDIR, 'subiquity-config-')
@@ -59,11 +59,15 @@ POST_INSTALL_CONFIG = {
     'write_files': {
         'postinst_metadata': {
             'path': 'var/lib/cloud/seed/nocloud-net/meta-data',
-            'content': 'instance-id: inst-3011',
+            'content': 'instance-id: inst-3011\n',
             },
         'postinst_userdata': {
             'path': 'var/lib/cloud/seed/nocloud-net/user-data',
             # 'content' gets filled in later
+            },
+        'postinst_enable_cloudinit': {
+            'path': 'etc/cloud/ds-identify.cfg',
+            'content': 'policy: enabled\n',
             },
         }
     }

@@ -115,7 +115,7 @@ class NetworkConfigureInterfaceView(BaseView):
             self.dev = self.model.get_netdev_by_name(self.dev.name)
         except KeyError:
             # The interface is gone
-            self.controller.prev_view()
+            self.controller.default()
             return
         if self.dev.type == 'wlan':
             self.wifi_info.contents = [ (obj, ('pack', None)) for obj in _build_wifi_info(self.dev) ]
@@ -155,5 +155,8 @@ class NetworkConfigureInterfaceView(BaseView):
     def show_ipv6_configuration(self, btn):
         self.controller.network_configure_ipv6_interface(self.dev.name)
 
+    def cancel(self):
+        self.controller.default()
+
     def done(self, result):
-        self.controller.prev_view()
+        self.controller.default()

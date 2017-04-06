@@ -150,7 +150,7 @@ class DiskPartitionView(BaseView):
 
     def done(self, result):
         ''' Return to FilesystemView '''
-        self.controller.prev_view()
+        self.controller.default()
 
-    def cancel(self, button):
-        self.controller.prev_view()
+    def cancel(self, button=None):
+        self.controller.default()
