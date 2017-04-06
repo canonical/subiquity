@@ -57,6 +57,8 @@ POST_INSTALL_CONFIG = {
             'content': 'policy: enabled\n',
             },
         },
+    'save_install_config': '/root/curtin-postinstall-cfg.yaml',
+    'save_install_log': '/root/curtin-postinstall.log',
     }
 
 
