@@ -153,6 +153,9 @@ class Disk:
     def size(self):
         return self._info.size - (2<<20) # The first and last megabyte of the disk are not usable.
 
+    def desc(self):
+        return "local disk"
+
     @property
     def used(self):
         if self._fs is not None:
@@ -182,6 +185,9 @@ class Partition:
     _fs = attr.ib(default=None, repr=False) # Filesystem
     def fs(self):
         return self._fs
+
+    def desc(self):
+        return "partition of {}".format(self.device.desc())
 
     @property
     def available(self):
@@ -242,10 +248,13 @@ class FilesystemModel(object):
     ]
 
     fs_by_name = {}
+    longest_fs_name = 0
     for t in supported_filesystems:
         if len(t) > 2:
             fs = t[2]
             if fs.label is not None:
+                if len(fs.label) > longest_fs_name:
+                    longest_fs_name = len(fs.label)
                 fs_by_name[fs.label] = fs
 
     def __init__(self, prober, opts):
@@ -310,7 +319,7 @@ class FilesystemModel(object):
             self._disks[disk.path] = disk
 
     def all_disks(self):
-        return [disk for (path, disk) in sorted(self._available_disks.items())]
+        return sorted(self._available_disks.values(), key=lambda x:x.serial)
 
     def get_disk(self, path):
         return self._available_disks.get(path)
