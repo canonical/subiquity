@@ -18,7 +18,6 @@ import fcntl
 from http import server
 import logging
 import os
-import socketserver
 import subprocess
 import threading
 
@@ -102,13 +101,10 @@ class InstallProgressController(BaseController):
         self.postinstall_written = False
         self.tail_proc = None
         self.current_log_file = None
-        if self.opts.dry_run:
-            port = 0
-        else:
-            port = 8000
-        self.server = BackgroundServer(port, self.call_from_thread)
-        self.server_url = self.server.start()
-        log.debug("serving on %s", self.server.start())
+        self.server = BackgroundServer(0, self.call_from_thread)
+        self.server.start()
+        self.server_port = self.server._httpd.server_address[1]
+        log.debug("listening on %s", self.server_port)
         if self.opts.dry_run:
             self.root = os.path.abspath('.subiquity')
 
@@ -144,9 +140,27 @@ class InstallProgressController(BaseController):
         self.ui.set_footer("An error has occurred.", 100)
         if self.progress_view is not None:
             self.progress_view.set_status(('info_error', "An error has occurred"))
-            self.progress_view.show_complete()
+            self.progress_view.show_error()
+            self.run_in_bg(lambda :utils.run_command(['apport-cli', '--save=/tmp/crash', 'subiquity']),
+                               self._subiquity_complete)
         else:
             self.default()
+
+    def _subiquity_complete(self, fut):
+        result = fut.result()
+        if result['status'] > 0:
+            log.debug("Error running apport:\nstdout:\n%s\nstderr:\n%s", result['output'], result['err'])
+            self.progress_view.apport_status_text.set_text("Error running apport, see log for more.")
+        else:
+            ips = []
+            lines = ["Download the crash file from:"]
+            net_model = self.controllers['Network'].model
+            for dev in net_model.get_all_netdevs():
+                ips.extend(dev.actual_global_ip_addresses)
+            for ip in ips:
+                lines.append("http://{}:{}/report".format(ip, self.server_port))
+
+            self.progress_view.apport_status_text.set_text("\n".join(lines))
 
     def run_command_logged(self, cmd, logfile_location):
         with open(logfile_location, 'wb', buffering=0) as logfile:
@@ -165,7 +179,7 @@ class InstallProgressController(BaseController):
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
                 "bash", "-c",
-                "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; }"]
+                "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; false; }"]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [self._curtin_config('storage'), self._curtin_config('network')]
