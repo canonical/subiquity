@@ -76,8 +76,7 @@ class ProgressView(BaseView):
     def show_error(self):
         self.apport_status_text = Text("Collecting information for bug report", align="center")
         self.pile.contents[0:0] = [
-            (self.apport_status_text, self.pile.options('pack')),
-            (Text(""), self.pile.options('pack'))]
+            (self.apport_status_text, self.pile.options('pack'))]
         self.show_complete()
 
     def reboot(self, btn):

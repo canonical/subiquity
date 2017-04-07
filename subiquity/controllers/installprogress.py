@@ -18,6 +18,7 @@ import fcntl
 from http import server
 import logging
 import os
+import shutil
 import subprocess
 import threading
 
@@ -45,7 +46,14 @@ class _Handler(server.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(b'No crash report yet!\n')
             else:
-                pass # Do stuff here!
+                f = open(self.server.crash_file, 'rb')
+                fs = os.fstat(f.fileno())
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain")
+                self.send_header("Content-Length", str(fs.st_size))
+                self.send_header("Content-Disposition", 'attachment; filename="subiquity.crash"')
+                self.end_headers()
+                shutil.copyfileobj(f, self.wfile)
             return
         self.send_response(200)
         self.end_headers()
@@ -142,23 +150,28 @@ class InstallProgressController(BaseController):
             self.progress_view.set_status(('info_error', "An error has occurred"))
             self.progress_view.show_error()
             self.run_in_bg(lambda :utils.run_command(['apport-cli', '--save=/tmp/crash', 'subiquity']),
-                               self._subiquity_complete)
+                           lambda fut:self._apport_complete(fut, "/tmp/crash"))
         else:
             self.default()
 
-    def _subiquity_complete(self, fut):
+    def _apport_complete(self, fut, filename):
         result = fut.result()
         if result['status'] > 0:
             log.debug("Error running apport:\nstdout:\n%s\nstderr:\n%s", result['output'], result['err'])
             self.progress_view.apport_status_text.set_text("Error running apport, see log for more.")
         else:
+            self.server._httpd.crash_file = filename
             ips = []
             lines = ["Download the crash file from:"]
             net_model = self.controllers['Network'].model
             for dev in net_model.get_all_netdevs():
                 ips.extend(dev.actual_global_ip_addresses)
             for ip in ips:
+                if ip.version == 6:
+                    ip = "[{}]".format(ip)
                 lines.append("http://{}:{}/report".format(ip, self.server_port))
+            lines.append("You can file a bug by running")
+            lines.append("$ ubuntu-bug -c subiquity.crash")
 
             self.progress_view.apport_status_text.set_text("\n".join(lines))
 
