@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 '''
-Mountall apport hook.
+subiquity apport hook.
 '''
 
 import apport.hookutils
