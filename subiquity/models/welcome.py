@@ -23,13 +23,10 @@ class WelcomeModel(object):
     """ Model representing language selection
     """
 
-    supported_languages = ['English',
-                           'Belgian',
-                           'German',
-                           'Italian']
+    supported_languages = ['English']
     selected_language = None
 
-    def get_menu(self):
+    def get_languages(self):
         return self.supported_languages
 
     def __repr__(self):
