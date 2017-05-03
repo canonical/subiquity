@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2017 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,19 +13,4 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-
-from subiquitycore.core import Application
-
-log = logging.getLogger('console_conf.core')
-
-
-class ConsoleConf(Application):
-
-    project = "console_conf"
-    controllers = [
-        "Welcome",
-        "Network",
-        "Proxy",
-        "Identity",
-    ]
+from .proxy import ProxyModel

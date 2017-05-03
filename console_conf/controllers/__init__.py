@@ -19,3 +19,4 @@ from .welcome import WelcomeController  # NOQA
 from subiquitycore.controllers.network import NetworkController  # NOQA
 from subiquitycore.controllers.login import LoginController  # NOQA
 from .identity import IdentityController  # NOQA
+from .proxy import ProxyController  # NOQA

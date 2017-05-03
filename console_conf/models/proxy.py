@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2017 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -15,17 +15,14 @@
 
 import logging
 
-from subiquitycore.core import Application
+log = logging.getLogger("console_conf.models.proxy")
 
-log = logging.getLogger('console_conf.core')
+class ProxyModel:
+    def __init__(self, opts):
+        self.opts = opts
 
+    def set_proxy(self, new_proxy):
+        pass
 
-class ConsoleConf(Application):
-
-    project = "console_conf"
-    controllers = [
-        "Welcome",
-        "Network",
-        "Proxy",
-        "Identity",
-    ]
+    def get_proxy(self):
+        return ""
