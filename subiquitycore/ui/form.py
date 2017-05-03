@@ -119,6 +119,9 @@ class BoundFormField(object):
             v = self.value
         except ValueError as e:
             return str(e)
+        r = self.field.validate(v)
+        if r is not None:
+            return r
         if self.field.validator is not None:
             r = self.field.validator(v)
             if r is not None:

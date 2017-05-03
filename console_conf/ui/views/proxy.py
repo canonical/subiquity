@@ -14,37 +14,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from urllib.parse import urlparse
 
-from urwid import Text
-from subiquitycore.ui.buttons import done_btn, cancel_btn
-from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.interactive import StringEditor
-from subiquitycore.ui.utils import Padding, Color
+from urwid import connect_signal
+
+from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.form import StringField, Form
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.ui.views.proxy")
 
 
-'''
-+---------------------------------------------------+
-|                                                   |
-| Enter the email address of the account in the     |
-| store                                             |
-|                                                   |
-|                   +-------------------------+     |
-|    Email address: |                         |     |
-|                   +-------------------------+     |
-|                                                   |
-|                                                   |
-|                         +--------+                |
-|                         | Done   |                |
-|                         +--------+                |
-|                         | Cancel |                |
-|                         +--------+                |
-|                                                   |
-+---------------------------------------------------+
-'''
+class URLField(StringField):
+    def validate(self, value):
+        log.debug('validating %r', value)
+        if value == "":
+            return None
+        parsed = urlparse(value)
+        log.debug('validating %r', parsed)
+        if not parsed.scheme or not parsed.netloc:
+            return "This does not look like a URL"
 
+class ProxyForm(Form):
+    proxy = URLField("Proxy URL:")
 
 class ProxyView(BaseView):
 
@@ -52,16 +45,15 @@ class ProxyView(BaseView):
         self.model = model
         self.controller = controller
         self.opts = opts
-        self.proxy = StringEditor()
-        self.proxy.set_edit_text(model.get_proxy())
-        self.error = Text("", align="center")
+        self.form = ProxyForm()
+        self.form.proxy.value = model.get_proxy()
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
 
         body = [
-            Padding.center_90(self._build_model_inputs()),
+            Padding.center_79(self.form.as_rows(self)),
             Padding.line_break(""),
-            Padding.center_90(Color.info_error(self.error)),
-            Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons()),
+            Padding.fixed_10(self.form.buttons)
         ]
         super().__init__(ListBox(body))
 
@@ -73,30 +65,8 @@ class ProxyView(BaseView):
         else:
             return key
 
-    def _build_model_inputs(self):
-        sl = [
-            Columns(
-                [
-                    ("weight", 0.2, Text("Proxy URL:", align="right")),
-                    ("weight", 0.3, Color.string_input(self.proxy)),
-                ],
-                dividechars=4
-            ),
-        ]
-        return Pile(sl)
-
-    def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
-
-        buttons = [
-            Color.button(done),
-            Color.button(cancel),
-        ]
-        return Pile(buttons)
-
     def cancel(self, button=None):
         self.controller.cancel()
 
     def done(self, button):
-        self.controller.done(self.proxy.value)
+        self.controller.done(self.form.proxy.value)

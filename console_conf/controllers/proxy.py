@@ -22,7 +22,6 @@ from console_conf.ui.views import ProxyView
 
 log = logging.getLogger('console_conf.controllers.identity')
 
-
 class ProxyController(BaseController):
 
     def __init__(self, common):
@@ -31,7 +30,7 @@ class ProxyController(BaseController):
 
     def default(self):
         title = "Proxy setup"
-        excerpt = "Set up a http/https proxy, if required."
+        excerpt = "Set up a http/https proxy, if required. Leave blank if not."
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
