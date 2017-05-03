@@ -60,7 +60,9 @@ class ProxyView(BaseView):
     def keypress(self, size, key):
         key = super().keypress(size, key)
         if key == 'enter':
-            self.done(None)
+            self.form.proxy.validate()
+            if not self.form.proxy.in_error:
+                self.done(None)
             return None
         else:
             return key
