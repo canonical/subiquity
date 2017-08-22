@@ -2,25 +2,7 @@
 
 set -eux
 
-# So you want to test a change you're making to subiquity in a real
-# ISO rather than dry-run mode. Easy!
-#
-# 1. Build your change into a snap:
-#
-#    $ snapcraft snap
-#
-# 2. Grab the current version of the installer:
-#
-#    $ urlbase=http://cdimage.ubuntu.com/ubuntu-server/daily-live/current
-#    $ isoname=$(distro-info -d)-live-$(dpkg --print-architecture).iso
-#    $ zsync ${urlbase}/${isoname}.zsync
-#
-# 3. Run this script to replace the subiquity in the downloaded image with your
-#    fresh one:
-#
-#    $ sudo ./scripts/inject-subquity-snap.sh ${isoname} subquity_*.snap custom.iso
-#
-# 4. Profit!! (Or, more likely, boot custom.iso in kvm)
+# inject-subquity-snap.sh $old_iso $subiquity_snap $new_iso
 
 OLD_ISO=$(readlink -f $1)
 SUBIQUITY_SNAP_PATH=$(readlink -f $2)
