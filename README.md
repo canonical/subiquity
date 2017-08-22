@@ -69,3 +69,5 @@ do this:
    ```
    $ kvm -m 1024 -hda target.img -serial stdio
    ```
+
+The first three steps are bundled into the script ./scripts/test-this-branch.sh.
