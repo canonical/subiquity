@@ -15,7 +15,7 @@ development.  After checking out subiquity you can start it:
 `make dryrun`
 
 All of the features are present in dry-run mode.  The installer will emit its
-backend configuration files to /tmp/subiquity-config-* but it won't attempt to
+backend configuration files to /tmp/subiquity-config-\* but it won't attempt to
 run any installer commands (which would fail without root privileges).  Further,
 subiquity can load other machine profiles in case you want to test out the
 installer without having access to the machine.  A few sample machine
@@ -29,7 +29,7 @@ Machine profiles are generated from the probert tool.  To collect a machine prof
 
 `PYTHONPATH=probert ./probert/bin/probert --all > mymachine.json`
 
-# Making an install image.
+# Testing changes in KVM
 
-To try out subiquity for real, it is necessary to make an image and run it in a
-VM. See installer/README.md for instructions on how to do this.
+To try out your changes for real, it is necessary to install them into an
+image. See the comments in scripts/inject-subiquity-snap.sh for how to do this.
