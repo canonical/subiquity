@@ -2,7 +2,7 @@
 
 set -eux
 
-# inject-subquity-snap.sh $old_iso $subiquity_snap $new_iso
+# inject-subiquity-snap.sh $old_iso $subiquity_snap $new_iso
 
 OLD_ISO=$(readlink -f $1)
 SUBIQUITY_SNAP_PATH=$(readlink -f $2)

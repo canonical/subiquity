@@ -54,7 +54,7 @@ do this:
    that has your version of subiquity:
 
    ```
-   $ sudo ./scripts/inject-subquity-snap.sh ${isoname} subquity_test.snap custom.iso
+   $ sudo ./scripts/inject-subiquity-snap.sh ${isoname} subiquity_test.snap custom.iso
    ```
 
 4. Boot the new iso in KVM:
