@@ -18,14 +18,16 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.ui.utils import Padding, Color
+
 from subiquitycore.ui.buttons import (
     PlainButton,
     )
 from subiquitycore.ui.container import ListBox
 from subiquitycore.view import BaseView
 
-text = """The installer can guide you through partitioning a disk or, if
-you prefer, you can do it manually. If you choose guided partitioning you
+text = """The installer can guide you through partitioning a disk or, if \
+you prefer, you can do it manually. If you choose guided partitioning you \
 will still have a chance to review and modify the results."""
 
 
@@ -37,7 +39,11 @@ class GuidedFilesystemView(BaseView):
         connect_signal(guided, 'click', self.guided)
         manual = PlainButton(label="Manual")
         connect_signal(manual, 'click', self.manual)
-        lb = ListBox([Text(text), guided, manual])
+        lb = ListBox([
+            Padding.center_70(Text(text)),
+            Padding.center_70(Text("")),
+            Padding.center_10(Color.button(guided)),
+            Padding.center_10(Color.button(manual))])
         super().__init__(lb)
 
     def manual(self, btn):
