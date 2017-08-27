@@ -26,10 +26,17 @@ from subiquity.curtin import (
     )
 from subiquity.models import (FilesystemModel, RaidModel)
 from subiquity.models.filesystem import humanize_size
-from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
-                                AddFormatView, FilesystemView,
-                                DiskInfoView, RaidView, BcacheView,
-                                LVMVolumeGroupView)
+from subiquity.ui.views import (
+    AddFormatView,
+    AddPartitionView,
+    BcacheView,
+    DiskInfoView,
+    DiskPartitionView,
+    FilesystemView,
+    GuidedFilesystemView,
+    LVMVolumeGroupView,
+    RaidView,
+    )
 
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
@@ -54,6 +61,14 @@ class FilesystemController(BaseController):
             log.info("Resetting Filesystem model")
             self.model.reset()
 
+        title = "Filesystem setup"
+        footer = ("XXX")
+        self.ui.set_header(title)
+        self.ui.set_footer(footer, 30)
+        self.ui.set_body(GuidedFilesystemView(self.model, self))
+
+    def manual(self):
+        # FIXME: Is this the best way to zero out this list for a reset?
         title = "Filesystem setup"
         footer = ("Select available disks to format and mount")
         self.ui.set_header(title)

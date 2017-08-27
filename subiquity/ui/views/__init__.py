@@ -17,7 +17,8 @@ from .filesystem import (FilesystemView,  # NOQA
                          AddPartitionView,
                          AddFormatView,
                          DiskPartitionView,
-                         DiskInfoView)
+                         DiskInfoView,
+                         GuidedFilesystemView)
 from .bcache import BcacheView  # NOQA
 from .raid import RaidView  # NOQA
 from .ceph import CephDiskView  # NOQA
