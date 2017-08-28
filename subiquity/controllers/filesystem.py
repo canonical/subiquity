@@ -61,12 +61,14 @@ class FilesystemController(BaseController):
         if reset:
             log.info("Resetting Filesystem model")
             self.model.reset()
-
-        title = "Filesystem setup"
-        footer = ("Choose guided or manual partitioning")
-        self.ui.set_header(title)
-        self.ui.set_footer(footer, 30)
-        self.ui.set_body(GuidedFilesystemView(self.model, self))
+        if self.model.any_configuration_done():
+            self.manual()
+        else:
+            title = "Filesystem setup"
+            footer = ("Choose guided or manual partitioning")
+            self.ui.set_header(title)
+            self.ui.set_footer(footer, 30)
+            self.ui.set_body(GuidedFilesystemView(self.model, self))
 
     def manual(self):
         title = "Filesystem setup"

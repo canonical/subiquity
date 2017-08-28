@@ -125,7 +125,7 @@ class NetworkView(BaseView):
         ]
         # FIXME determine which UX widget should have focus
         self.lb = ListBox(self.body)
-        self.lb.set_focus(4)  # _build_buttons
+        self.lb.set_focus_path([6, 0])  # _build_buttons
         super().__init__(self.lb)
 
     def _build_buttons(self):

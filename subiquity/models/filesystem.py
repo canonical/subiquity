@@ -363,6 +363,9 @@ class FilesystemModel(object):
             r[m.path] = m.device.volume.path
         return r
 
+    def any_configuration_done(self):
+        return len(self._disks) > 0
+
     def can_install(self):
         # Do we need to check that there is a disk with the boot flag?
         return '/' in self.get_mountpoint_to_devpath_mapping() and self.bootable()
