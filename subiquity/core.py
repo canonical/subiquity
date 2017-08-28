@@ -24,9 +24,9 @@ class Subiquity(Application):
 
     project = "subiquity"
     controllers = [
-#            "Welcome",
-#            "Installpath",
-#            "Network",
+            "Welcome",
+            "Installpath",
+            "Network",
             "Filesystem",
             "Identity",
             "InstallProgress",
