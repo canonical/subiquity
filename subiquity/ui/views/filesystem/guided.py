@@ -21,10 +21,14 @@ from urwid import (
 from subiquitycore.ui.utils import Padding, Color
 
 from subiquitycore.ui.buttons import (
+    menu_btn,
     PlainButton,
     )
-from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.view import BaseView
+
+from subiquity.models.filesystem import humanize_size
+
 
 text = """The installer can guide you through partitioning a disk or, if \
 you prefer, you can do it manually. If you choose guided partitioning you \
@@ -42,8 +46,8 @@ class GuidedFilesystemView(BaseView):
         lb = ListBox([
             Padding.center_70(Text(text)),
             Padding.center_70(Text("")),
-            Padding.center_10(Color.button(guided)),
-            Padding.center_10(Color.button(manual))])
+            Padding.fixed_10(Color.button(guided)),
+            Padding.fixed_10(Color.button(manual))])
         super().__init__(lb)
 
     def manual(self, btn):
@@ -51,3 +55,37 @@ class GuidedFilesystemView(BaseView):
 
     def guided(self, btn):
         self.controller.guided()
+
+class GuidedDiskSelectionView(BaseView):
+
+    def __init__(self, model, controller):
+        self.model = model
+        self.controller = controller
+        cancel = PlainButton(label="Cancel")
+        connect_signal(cancel, 'click', self.cancel)
+        disks = []
+        for disk in self.model.all_disks():
+            if disk.available:
+                disk_btn = menu_btn("%-40s %s"%(disk.serial, humanize_size(disk.size).rjust(9)))
+                connect_signal(disk_btn, 'click', self.choose_disk, disk)
+                disks.append(Color.menu_button(disk_btn))
+        lb = ListBox([
+            Padding.center_70(Text("Choose the disk to install to:")),
+            Padding.center_70(Text("")),
+            Padding.center_70(Pile(disks)),
+            Padding.center_70(Text("")),
+            Padding.fixed_10(Color.button(cancel))])
+        super().__init__(lb)
+
+    def cancel(self, btn):
+        self.controller.default()
+
+    def choose_disk(self, btn, disk):
+        result = {
+            "partnum": 1,
+            "bytes": disk.free,
+            "fstype": "ext4",
+            "mountpoint": "/",
+        }
+        self.controller.do_add_disk_partition(disk, result)
+        self.controller.manual()

@@ -131,7 +131,6 @@ class AddPartitionView(BaseView):
 
         result = {
             "partnum": self.form.partnum.value,
-            "raw_size": self.form.size.value,
             "bytes": size,
             "fstype": fstype.label,
             "mountpoint": mount,

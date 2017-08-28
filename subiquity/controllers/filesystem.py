@@ -33,6 +33,7 @@ from subiquity.ui.views import (
     DiskInfoView,
     DiskPartitionView,
     FilesystemView,
+    GuidedDiskSelectionView,
     GuidedFilesystemView,
     LVMVolumeGroupView,
     RaidView,
@@ -68,12 +69,18 @@ class FilesystemController(BaseController):
         self.ui.set_body(GuidedFilesystemView(self.model, self))
 
     def manual(self):
-        # FIXME: Is this the best way to zero out this list for a reset?
         title = "Filesystem setup"
         footer = ("Select available disks to format and mount")
         self.ui.set_header(title)
         self.ui.set_footer(footer, 30)
         self.ui.set_body(FilesystemView(self.model, self))
+
+    def guided(self):
+        title = "Filesystem setup"
+        footer = ("Select available disks to format and mount")
+        self.ui.set_header(title)
+        self.ui.set_footer(footer, 30)
+        self.ui.set_body(GuidedDiskSelectionView(self.model, self))
 
     def reset(self):
         log.info("Resetting Filesystem model")
@@ -144,7 +151,7 @@ class FilesystemController(BaseController):
         adp_view = AddPartitionView(self.model, self, disk)
         self.ui.set_body(adp_view)
 
-    def add_disk_partition_handler(self, disk, spec):
+    def do_add_disk_partition(self, disk, spec):
         log.debug('spec: {}'.format(spec))
         log.debug('disk.freespace: {}'.format(disk.free))
 
@@ -177,6 +184,9 @@ class FilesystemController(BaseController):
                 self.model.add_mount(fs, spec['mountpoint'])
 
         log.info("Successfully added partition")
+
+    def add_disk_partition_handler(self, disk, spec):
+        self.do_add_disk_partition(disk, spec)
         self.partition_disk(disk)
 
     def add_format_handler(self, volume, spec, back):
