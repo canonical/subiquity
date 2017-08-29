@@ -35,6 +35,9 @@ class WelcomeView(BaseView):
         self.model = model
         self.controller = controller
         super().__init__(ListBox([
+            Text(""),
+            Padding.center_79(Color.info_error(Text("This is a test!!!", align="center"))),
+            Text(""),
             Padding.center_50(self._build_model_inputs()),
             Text(""),
             Padding.center_79(Text("(More language choices will appear in time)"))]))
