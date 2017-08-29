@@ -1,5 +1,5 @@
 name: subiquity
-version: "0.0.35"
+version: git
 summary: Ubuntu installer
 description: The Ubuntu server installer
 confinement: classic
@@ -22,17 +22,14 @@ parts:
       - pyyaml
       - pyudev
       - attrs
-    source: https://github.com/CanonicalLtd/subiquity.git
-    source-branch: cyphermox/snap
-    source-type: git
+    source: .
   wrappers:
     plugin: dump
-    source: https://github.com/CanonicalLtd/subiquity.git
-    source-type: git
+    source: .
     organize:
       'bin/console-conf-tui': usr/bin/console-conf
       'bin/subiquity-tui': usr/bin/subiquity
-    snap:
+    prime:
       - usr/bin
   probert:
     plugin: python
