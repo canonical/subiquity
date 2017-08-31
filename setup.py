@@ -23,6 +23,8 @@ Ubuntu Server Installer
 """
 
 from setuptools import setup, find_packages
+from DistUtilsExtra.command import build_extra
+from DistUtilsExtra.command import build_i18n
 
 import os
 import sys
@@ -43,4 +45,6 @@ setup(name='subiquity',
       url='https://github.com/CanonicalLtd/subiquity',
       license="AGPLv3+",
       packages=find_packages(exclude=["tests"]),
+      cmdclass={'build': build_extra.build_extra,
+                'build_i18n': build_i18n.build_i18n, },
       data_files=[])
