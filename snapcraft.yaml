@@ -15,14 +15,22 @@ apps:
 parts:
   subiquity:
     plugin: python
-    build-packages: [python-setuptools]
-    stage-packages: [curtin]
+    build-packages: [python3-distutils-extra]
+    stage-packages: [python3-distutils-extra, curtin]
     python-packages:
       - urwid
       - pyyaml
       - pyudev
       - attrs
     source: .
+    # snapcraft python plugin is crazy, fix everything
+    install: |
+      (cd $SNAPCRAFT_PART_INSTALL/lib/python3.*/site-packages && rm -rf easy_install.py pip* pkg_resources setuptools* wheel*)
+      (cd $SNAPCRAFT_PART_INSTALL/usr/lib/python3/dist-packages && rm -rf attr attrs* urwid* subiquitycore subiquity* pyudev* probert* console_conf*)
+      mv $SNAPCRAFT_PART_INSTALL/lib/python3.*/site-packages/* $SNAPCRAFT_PART_INSTALL/usr/lib/python3/dist-packages
+      rm -rf $SNAPCRAFT_PART_INSTALL/lib/python3.*
+      mv $SNAPCRAFT_PART_INSTALL/share/locale $SNAPCRAFT_PART_INSTALL/usr/share/
+      rmdir $SNAPCRAFT_PART_INSTALL/share
   wrappers:
     plugin: dump
     source: .
