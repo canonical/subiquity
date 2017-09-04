@@ -23,9 +23,11 @@ parts:
       - pyudev
       - attrs
     source: .
+    source-type: git
   wrappers:
     plugin: dump
     source: .
+    source-type: git
     organize:
       'bin/console-conf-tui': usr/bin/console-conf
       'bin/subiquity-tui': usr/bin/subiquity
