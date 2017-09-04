@@ -254,7 +254,7 @@ class Form(object, metaclass=MetaForm):
 
     opts = {}
 
-    def __init__(self):
+    def __init__(self, initial={}):
         self.done_btn = Toggleable(done_btn(), 'button')
         self.cancel_btn = Toggleable(cancel_btn(), 'button')
         connect_signal(self.done_btn.base_widget, 'click', self._click_done)
@@ -265,6 +265,8 @@ class Form(object, metaclass=MetaForm):
             bf = field.bind(self)
             setattr(self, bf.field.name, bf)
             self._fields.append(bf)
+            if field.name in initial:
+                bf.value = initial[field.name]
 
     def _click_done(self, sender):
         emit_signal(self, 'submit', self)
@@ -304,3 +306,9 @@ class Form(object, metaclass=MetaForm):
             self.buttons.focus_position = 1
         else:
             self.buttons.contents[0][0].enable()
+
+    def as_data(self):
+        data = {}
+        for field in self._fields:
+            data[field.field.name] = field.value
+        return data

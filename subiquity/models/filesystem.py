@@ -147,7 +147,13 @@ class Disk:
 
     @property
     def next_partnum(self):
-        return len(self._partitions) + 1
+        partnums = set()
+        for p in self._partitions:
+            partnums.add(p.number)
+        i = 1
+        while i in partnums:
+            i += 1
+        return i
 
     @property
     def size(self):

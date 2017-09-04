@@ -49,15 +49,14 @@ class FSTypeField(FormField):
         return Selector(opts=form.model.supported_filesystems)
 
 
-class AddPartitionForm(Form):
+class PartitionForm(Form):
 
-    def __init__(self, model, disk):
+    def __init__(self, model, max_size, initial={}):
         self.model = model
-        self.disk = disk
-        self.size_str = humanize_size(disk.free)
-        super().__init__()
+        self.max_size = max_size
+        self.size_str = humanize_size(max_size)
+        super().__init__(initial)
         self.size.caption = "Size (max {})".format(self.size_str)
-        self.partnum.value = self.disk.next_partnum
         connect_signal(self.fstype.widget, 'select', self.select_fstype)
 
     def select_fstype(self, sender, fs):
@@ -68,25 +67,31 @@ class AddPartitionForm(Form):
     fstype = FSTypeField("Format")
     mount = MountField("Mount")
 
-    def validate_size(self):
-        v = self.size.value
-        if not v:
-            return
+    def clean_size(self, val):
+        if not val:
+            return self.max_size
         suffixes = ''.join(HUMAN_UNITS) + ''.join(HUMAN_UNITS).lower()
-        if v[-1] not in suffixes:
+        if val[-1] not in suffixes:
             unit = self.size_str[-1]
-            v += unit
-            self.size.value = v
-        try:
-            sz = dehumanize_size(v)
-        except ValueError as v:
-            return str(v)
-        if sz > self.disk.free:
-            self.size.value = self.size_str
+            val += unit
+            self.size.widget.value = val
+        sz = dehumanize_size(val)
+        if sz > self.max_size:
             self.size.show_extra(Color.info_minor(Text("Capped partition size at %s"%(self.size_str,), align="center")))
+            self.size.widget.value = self.size_str
+            return self.max_size
+        return sz
+
+    def clean_mount(self, val):
+        if self.fstype.value.is_mounted:
+            return val
+        else:
+            return None
 
     def validate_mount(self):
-        return self.model.validate_mount(self.mount.value)
+        mount = self.mount.value
+        if mount is not None:
+            return self.model.validate_mount(mount)
 
 
 class AddPartitionView(BaseView):
@@ -97,7 +102,7 @@ class AddPartitionView(BaseView):
         self.controller = controller
         self.disk = disk
 
-        self.form = AddPartitionForm(model, self.disk)
+        self.form = PartitionForm(model, disk.free, initial={'partnum': disk.next_partnum})
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
@@ -113,29 +118,6 @@ class AddPartitionView(BaseView):
     def cancel(self, button=None):
         self.controller.partition_disk(self.disk)
 
-    def done(self, result):
-
-        fstype = self.form.fstype.value
-
-        if fstype.is_mounted:
-            mount = self.form.mount.value
-        else:
-            mount = None
-
-        if self.form.size.value:
-            size = dehumanize_size(self.form.size.value)
-            if size > self.disk.free:
-                size = self.disk.free
-        else:
-            size = self.disk.free
-
-        result = {
-            "partnum": self.form.partnum.value,
-            "raw_size": self.form.size.value,
-            "bytes": size,
-            "fstype": fstype.label,
-            "mountpoint": mount,
-        }
-
-        log.debug("Add Partition Result: {}".format(result))
-        self.controller.add_disk_partition_handler(self.disk, result)
+    def done(self, form):
+        log.debug("Add Partition Result: {}".format(form.as_data()))
+        self.controller.add_disk_partition_handler(self.disk, form.as_data())

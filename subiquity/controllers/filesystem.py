@@ -150,16 +150,16 @@ class FilesystemController(BaseController):
             # the offset and bios/grub partition
             # XXX should probably only do this if the partition is now too big to fit on the disk?
             log.debug("Adjusting request down:" +
-                      "{} - {} = {}".format(spec['bytes'], part.size,
-                                            spec['bytes'] - part.size))
-            spec['bytes'] -= part.size
+                      "{} - {} = {}".format(spec['size'], part.size,
+                                            spec['size'] - part.size))
+            spec['size'] -= part.size
             spec['partnum'] = 2
 
-        part = self.model.add_partition(disk=disk, partnum=spec["partnum"], size=spec["bytes"])
+        part = self.model.add_partition(disk=disk, partnum=spec["partnum"], size=spec["size"])
         if spec['fstype'] is not None:
-            fs = self.model.add_filesystem(part, spec['fstype'])
-            if spec['mountpoint']:
-                self.model.add_mount(fs, spec['mountpoint'])
+            fs = self.model.add_filesystem(part, spec['fstype'].label)
+            if spec['mount']:
+                self.model.add_mount(fs, spec['mount'])
 
         log.info("Successfully added partition")
         self.partition_disk(disk)
