@@ -2,9 +2,6 @@
 import os
 import re
 
-import gettext
-gettext.install('subiquity')
-
 from urwid import connect_signal, Padding, Pile, WidgetWrap
 
 from subiquitycore.ui.form import FormField
