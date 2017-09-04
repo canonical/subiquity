@@ -22,21 +22,17 @@ import re
 
 from urwid import (
     ACTIVATE,
-    AttrWrap,
-    connect_signal,
     Edit,
-    Filler,
     IntEdit,
     LineBox,
-    PopUpLauncher,
     SelectableIcon,
     Text,
-    TOP,
     WidgetWrap,
     )
 
 from subiquitycore.ui.buttons import PlainButton
 from subiquitycore.ui.container import Pile
+from subiquitycore.ui.selector import Selector
 from subiquitycore.ui.utils import Color, Padding
 
 log = logging.getLogger("subiquitycore.ui.input")
@@ -109,125 +105,6 @@ class IntegerEditor(WidgetWrap):
     @value.setter
     def value(self, val):
         return self._edit.set_edit_text(str(val))
-
-
-class _PopUpButton(SelectableIcon):
-    """It looks a bit like a radio button, but it just emits 'click' on activation."""
-
-    signals = ['click']
-
-    states = {
-        True: "(+) ",
-        False: "( ) ",
-        }
-
-    def __init__(self, option, state):
-        p = self.states[state]
-        super().__init__(p + option, len(p))
-
-    def keypress(self, size, key):
-        if self._command_map[key] != ACTIVATE:
-            return key
-        self._emit('click')
-
-
-class _PopUpSelectDialog(WidgetWrap):
-    """A list of PopUpButtons with a box around them."""
-
-    def __init__(self, parent, cur_index):
-        self.parent = parent
-        group = []
-        for i, option in enumerate(self.parent._options):
-            if option[1]:
-                btn = _PopUpButton(option[0], state=i==cur_index)
-                connect_signal(btn, 'click', self.click, i)
-                group.append(AttrWrap(btn, 'menu_button', 'menu_button focus'))
-            else:
-                btn = Text("    " + option[0])
-                group.append(AttrWrap(btn, 'info_minor'))
-        pile = Pile(group)
-        pile.set_focus(group[cur_index])
-        fill = Filler(pile, valign=TOP)
-        super().__init__(LineBox(fill))
-
-    def click(self, btn, index):
-        self.parent.index = index
-        self.parent.close_pop_up()
-
-    def keypress(self, size, key):
-        if key == 'esc':
-            self.parent.close_pop_up()
-        else:
-            return super().keypress(size, key)
-
-class SelectorError(Exception):
-    pass
-
-class Selector(PopUpLauncher):
-    """A widget that allows the user to chose between options by popping up this list of options.
-
-    (A bit like <select> in an HTML form).
-    """
-
-    _prefix = "(+) "
-
-    signals = ['select']
-
-    def __init__(self, opts, index=0):
-        self._options = []
-        for opt in opts:
-            if not isinstance(opt, tuple):
-                if not isinstance(opt, str):
-                    raise SelectorError("invalid option %r", opt)
-                opt = (opt, True, opt)
-            elif len(opt) == 1:
-                opt = (opt[0], True, opt[0])
-            elif len(opt) == 2:
-                opt = (opt[0], opt[1], opt[0])
-            elif len(opt) != 3:
-                raise SelectorError("invalid option %r", opt)
-            self._options.append(opt)
-        self._button = SelectableIcon(self._prefix, len(self._prefix))
-        self._set_index(index)
-        super().__init__(self._button)
-
-    def keypress(self, size, key):
-        if self._command_map[key] != ACTIVATE:
-            return key
-        self.open_pop_up()
-
-    def _set_index(self, val):
-        self._button.set_text(self._prefix + self._options[val][0])
-        self._index = val
-
-    @property
-    def index(self):
-        return self._index
-
-    @index.setter
-    def index(self, val):
-        self._emit('select', self._options[val][2])
-        self._set_index(val)
-
-    @property
-    def value(self):
-        return self._options[self._index][2]
-
-    @value.setter
-    def value(self, val):
-        for i, (label, enabled, value) in enumerate(self._options):
-            if value == val:
-                self.index = i
-                return
-        raise AttributeError("cannot set value to %r", val)
-
-    def create_pop_up(self):
-        return _PopUpSelectDialog(self, self.index)
-
-    def get_pop_up_parameters(self):
-        width = max([len(o[0]) for o in self._options]) \
-          + len(self._prefix) +  3 # line on left, space, line on right
-        return {'left':-1, 'top':-self.index-1, 'overlay_width':width, 'overlay_height':len(self._options) + 2}
 
 
 class YesNo(Selector):
