@@ -197,14 +197,18 @@ class FilesystemController(BaseController):
 
     def add_format_handler(self, volume, spec, back):
         log.debug('add_format_handler')
+        old_fs = volume.fs()
+        if old_fs is not None:
+            self.model._filesystems.remove(old_fs)
+            volume._fs = None
+            mount = old_fs.mount()
+            if mount is not None:
+                old_fs._mount = None
+                self.model._mounts.remove(mount)
         if spec['fstype'] is not None:
             fs = self.model.add_filesystem(volume, spec['fstype'].label)
-        else:
-            fs = volume.fs()
-        if spec['mount']:
-            if fs is None:
-                raise Exception("{} is not formatted".format(volume.path))
-            self.model.add_mount(fs, spec['mount'])
+            if spec['mount']:
+                self.model.add_mount(fs, spec['mount'])
         back()
 
     def connect_iscsi_disk(self, *args, **kwargs):
