@@ -36,13 +36,12 @@ OTHER = object()
 LEAVE_UNMOUNTED = object()
 
 class MountSelector(WidgetWrap):
-    def __init__(self, model):
-        mounts = model.get_mountpoint_to_devpath_mapping()
+    def __init__(self, mountpoint_to_devpath_mapping):
         opts = []
         first_opt = None
         max_len = max(map(len, common_mountpoints))
         for i, mnt in enumerate(common_mountpoints):
-            devpath = None#mounts.get(mnt)
+            devpath = mountpoint_to_devpath_mapping.get(mnt)
             if devpath is None:
                 if first_opt is None:
                     first_opt = i
@@ -99,7 +98,7 @@ class MountSelector(WidgetWrap):
 class MountField(FormField):
 
     def _make_widget(self, form):
-        return MountSelector(form.model)
+        return MountSelector(form.mountpoint_to_devpath_mapping)
 
     def clean(self, value):
         if value is None:

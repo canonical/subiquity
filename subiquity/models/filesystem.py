@@ -374,17 +374,6 @@ class FilesystemModel(object):
         # Do we need to check that there is a disk with the boot flag?
         return '/' in self.get_mountpoint_to_devpath_mapping() and self.bootable()
 
-    def validate_mount(self, mountpoint):
-        if mountpoint is None:
-            return
-        # /usr/include/linux/limits.h:PATH_MAX
-        if len(mountpoint) > 4095:
-            return 'Path exceeds PATH_MAX'
-        mnts = self.get_mountpoint_to_devpath_mapping()
-        dev = mnts.get(mountpoint)
-        if dev is not None:
-            return "%s is already mounted at %s"%(dev, mountpoint)
-
     def bootable(self):
         ''' true if one disk has a boot partition '''
         for p in self._partitions:

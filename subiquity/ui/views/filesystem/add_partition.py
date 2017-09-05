@@ -34,9 +34,10 @@ from subiquitycore.ui.interactive import Selector
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
-    humanize_size,
-    dehumanize_size,
+    FilesystemModel,
     HUMAN_UNITS,
+    dehumanize_size,
+    humanize_size,
     )
 from subiquity.ui.mount import MountField
 
@@ -46,13 +47,13 @@ log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 
 class FSTypeField(FormField):
     def _make_widget(self, form):
-        return Selector(opts=form.model.supported_filesystems)
+        return Selector(opts=FilesystemModel.supported_filesystems)
 
 
 class PartitionForm(Form):
 
-    def __init__(self, model, max_size, initial={}):
-        self.model = model
+    def __init__(self, mountpoint_to_devpath_mapping, max_size, initial={}):
+        self.mountpoint_to_devpath_mapping = mountpoint_to_devpath_mapping
         super().__init__(initial)
         if max_size is not None:
             self.max_size = max_size
@@ -94,13 +95,30 @@ class PartitionForm(Form):
 
     def validate_mount(self):
         mount = self.mount.value
-        if mount is not None:
-            return self.model.validate_mount(mount)
+        if mount is None:
+            return
+        # /usr/include/linux/limits.h:PATH_MAX
+        if len(mount) > 4095:
+            return 'Path exceeds PATH_MAX'
+        dev = self.mountpoint_to_devpath_mapping.get(mount)
+        if dev is not None:
+            return "%s is already mounted at %s"%(dev, mount)
 
 
 class PartitionFormatView(BaseView):
-    def __init__(self, size, initial, back):
-        self.form = PartitionForm(self.model, size, initial)
+    def __init__(self, size, existing, initial, back):
+
+        mountpoint_to_devpath_mapping = self.model.get_mountpoint_to_devpath_mapping()
+        if existing is not None:
+            fs = existing.fs()
+            if fs is not None:
+                initial['fstype'] = self.model.fs_by_name[fs.fstype]
+                mount = fs.mount()
+                if mount is not None:
+                    initial['mount'] = mount.path
+                    if mount.path in mountpoint_to_devpath_mapping:
+                        del mountpoint_to_devpath_mapping[mount.path]
+        self.form = PartitionForm(mountpoint_to_devpath_mapping, size, initial)
         self.back = back
 
         connect_signal(self.form, 'submit', self.done)
@@ -136,13 +154,7 @@ class PartitionView(PartitionFormatView):
                 'partnum': partition.number,
                 'size': humanize_size(partition.size),
                 }
-            fs = partition.fs()
-            if fs is not None:
-                initial['fstype'] = self.model.fs_by_name[fs.fstype]
-                mount = fs.mount()
-                if mount is not None:
-                    initial['mount'] = mount.path
-        super().__init__(max_size, initial, lambda : self.controller.partition_disk(disk))
+        super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
@@ -154,15 +166,7 @@ class FormatEntireView(PartitionFormatView):
         self.model = model
         self.controller = controller
         self.volume = volume
-
-        initial = {}
-        fs = self.volume.fs()
-        if fs is not None:
-            initial['fstype'] = self.model.fs_by_name[fs.fstype]
-            mount = fs.mount()
-            if mount is not None:
-                initial['mount'] = mount.path
-        super().__init__(None, initial, back)
+        super().__init__(None, volume, {}, back)
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
