@@ -161,17 +161,15 @@ class FilesystemView(BaseView):
             size = Text(humanize_size(disk.size).rjust(9))
             typ = Text(disk.desc())
             col3(disk_label, size, typ)
-            if disk.fs() is not None:
+            fs = disk.fs()
+            if fs is not None:
                 label = "entire device, "
-                fs = disk.fs()
-                if fs is not None:
-                    if fs.mount():
-                        label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
-                    else:
-                        label += fs.fstype
+                fs_obj = self.model.fs_by_name[fs.fstype]
+                if fs.mount():
+                    label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
                 else:
-                    label += "unformatted"
-                if not fs.mount():
+                    label += fs.fstype
+                if fs_obj.label and fs_obj.is_mounted and not fs.mount():
                     disk_btn = menu_btn(label=label)
                     connect_signal(disk_btn, 'click', self.click_disk, disk)
                     disk_btn = Color.menu_button(disk_btn)
@@ -198,23 +196,25 @@ class FilesystemView(BaseView):
                     part_btn = Color.info_minor(Text("  " + label))
                     size = Color.info_minor(size)
                     col2(part_btn, size)
-            if disk.available:
-                if disk.used > 0:
-                    disk_btn = menu_btn(label="FREE SPACE")
-                    connect_signal(disk_btn, 'click', self.click_disk, disk)
-                    disk_btn = Color.menu_button(disk_btn)
-                    size = disk.size
-                    free = disk.free
-                    percent = int(100*free/size)
-                    if percent == 0:
-                        continue
-                    size = Text("{:>9} ({}%)".format(humanize_size(free), percent))
-                    col2(disk_btn, size)
-                else:
-                    disk_btn = menu_btn(label="ADD FIRST PARTITION")
-                    connect_signal(disk_btn, 'click', self.click_disk, disk)
-                    disk_btn = Color.menu_button(disk_btn)
-                    col2(disk_btn, Text(""))
+            size = disk.size
+            free = disk.free
+            percent = int(100*free/size)
+            if disk.available and disk.used > 0 and percent > 0:
+                disk_btn = menu_btn(label="ADD/EDIT PARTITIONS")
+                connect_signal(disk_btn, 'click', self.click_disk, disk)
+                disk_btn = Color.menu_button(disk_btn)
+                size = Text("{:>9} ({}%) free".format(humanize_size(free), percent))
+                col2(disk_btn, size)
+            elif disk.available and percent > 0:
+                disk_btn = menu_btn(label="ADD FIRST PARTITION")
+                connect_signal(disk_btn, 'click', self.click_disk, disk)
+                disk_btn = Color.menu_button(disk_btn)
+                col2(disk_btn, Text(""))
+            else:
+                disk_btn = menu_btn(label="EDIT PARTITIONS")
+                connect_signal(disk_btn, 'click', self.click_disk, disk)
+                disk_btn = Color.menu_button(disk_btn)
+                col2(disk_btn, Text(""))
 
         if len(inputs) == 1:
             return Pile([Color.info_minor(
@@ -223,10 +223,7 @@ class FilesystemView(BaseView):
         return Pile(inputs)
 
     def click_disk(self, sender, disk):
-        if disk.fs() is not None:
-            self.controller.format_entire(disk)
-        else:
-            self.controller.partition_disk(disk)
+        self.controller.partition_disk(disk)
 
     def click_partition(self, sender, partition):
         self.controller.format_mount_partition(partition)
