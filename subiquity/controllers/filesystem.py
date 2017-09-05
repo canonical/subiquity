@@ -26,10 +26,16 @@ from subiquity.curtin import (
     )
 from subiquity.models import (FilesystemModel, RaidModel)
 from subiquity.models.filesystem import humanize_size
-from subiquity.ui.views import (DiskPartitionView, AddPartitionView,
-                                AddFormatView, FilesystemView,
-                                DiskInfoView, RaidView, BcacheView,
-                                LVMVolumeGroupView)
+from subiquity.ui.views import (
+    BcacheView,
+    DiskInfoView,
+    DiskPartitionView,
+    FilesystemView,
+    FormatEntireView,
+    LVMVolumeGroupView,
+    PartitionView,
+    RaidView,
+    )
 
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
@@ -126,12 +132,37 @@ class FilesystemController(BaseController):
         log.debug("Adding partition to {}".format(disk))
         footer = ("Select whole disk, or partition, to format and mount.")
         self.ui.set_footer(footer)
-        adp_view = AddPartitionView(self.model, self, disk)
+        adp_view = PartitionView(self.model, self, disk)
         self.ui.set_body(adp_view)
 
-    def add_disk_partition_handler(self, disk, spec):
+    def edit_partition(self, disk, partition):
+        log.debug("Editing partition {}".format(partition))
+        footer = ("Edit partition details format and mount.")
+        self.ui.set_footer(footer)
+        adp_view = PartitionView(self.model, self, disk, partition)
+        self.ui.set_body(adp_view)
+
+    def partition_disk_handler(self, disk, partition, spec):
         log.debug('spec: {}'.format(spec))
         log.debug('disk.freespace: {}'.format(disk.free))
+
+        if partition is not None:
+            partition.number = spec['partnum']
+            partition.size = spec['size']
+            old_fs = partition.fs()
+            if old_fs is not None:
+                self.model._filesystems.remove(old_fs)
+                partition._fs = None
+                mount = old_fs.mount()
+                if mount is not None:
+                    old_fs._mount = None
+                    self.model._mounts.remove(mount)
+            if spec['fstype'] is not None:
+                fs = self.model.add_filesystem(partition, spec['fstype'].label)
+                if spec['mount']:
+                  self.model.add_mount(fs, spec['mount'])
+            self.partition_disk(disk)
+            return
 
         system_bootable = self.model.bootable()
         log.debug('model has bootable device? {}'.format(system_bootable))
@@ -241,7 +272,7 @@ class FilesystemController(BaseController):
         footer = ("Format or mount whole disk.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
-        afv_view = AddFormatView(self.model, self, disk, lambda : self.partition_disk(disk))
+        afv_view = FormatEntireView(self.model, self, disk, lambda : self.partition_disk(disk))
         self.ui.set_body(afv_view)
 
     def format_mount_partition(self, partition):
@@ -254,7 +285,7 @@ class FilesystemController(BaseController):
             footer = ("Format and mount partition.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
-        afv_view = AddFormatView(self.model, self, partition, self.default)
+        afv_view = FormatEntireView(self.model, self, partition, self.default)
         self.ui.set_body(afv_view)
 
     def show_disk_information_next(self, disk):

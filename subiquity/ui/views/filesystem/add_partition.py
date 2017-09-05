@@ -101,6 +101,7 @@ class PartitionForm(Form):
 class PartitionFormatView(BaseView):
     def __init__(self, size, initial, back):
         self.form = PartitionForm(self.model, size, initial)
+        self.back = back
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
@@ -117,32 +118,51 @@ class PartitionFormatView(BaseView):
         self.back()
 
 
-class AddPartitionView(PartitionFormatView):
+class PartitionView(PartitionFormatView):
 
-    def __init__(self, model, controller, disk):
-        log.debug('AddPartitionView: selected_disk=[{}]'.format(disk.path))
+    def __init__(self, model, controller, disk, partition=None):
+        log.debug('PartitionView: selected_disk=[{}]'.format(disk.path))
         self.model = model
         self.controller = controller
         self.disk = disk
-        super().__init__(disk.free, {'partnum': disk.next_partnum}, lambda : self.controller.partition_disk(disk))
+        self.partition = partition
+
+        max_size = disk.free
+        if partition is None:
+            initial = {'partnum': disk.next_partnum}
+        else:
+            max_size += partition.size
+            initial = {
+                'partnum': partition.number,
+                'size': humanize_size(partition.size),
+                }
+            fs = partition.fs()
+            if fs is not None:
+                initial['fstype'] = self.model.fs_by_name[fs.fstype]
+                mount = fs.mount()
+                if mount is not None:
+                    initial['mount'] = mount.path
+        super().__init__(max_size, initial, lambda : self.controller.partition_disk(disk))
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
-        self.controller.add_disk_partition_handler(self.disk, form.as_data())
+        self.controller.partition_disk_handler(self.disk, self.partition, form.as_data())
 
 
-class AddFormatView(PartitionFormatView):
+class FormatEntireView(PartitionFormatView):
     def __init__(self, model, controller, volume, back):
         self.model = model
         self.controller = controller
         self.volume = volume
-        self.back = back
 
         initial = {}
         fs = self.volume.fs()
         if fs is not None:
             initial['fstype'] = self.model.fs_by_name[fs.fstype]
-        super().__init__(None, initial, self.back)
+            mount = fs.mount()
+            if mount is not None:
+                initial['mount'] = mount.path
+        super().__init__(None, initial, back)
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))

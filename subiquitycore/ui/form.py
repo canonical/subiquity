@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 from urwid import (
     AttrMap,
     connect_signal,
@@ -34,6 +36,8 @@ from subiquitycore.ui.interactive import (
     StringEditor,
     )
 from subiquitycore.ui.utils import Color
+
+log = logging.getLogger("subiquitycore.ui.form")
 
 class Toggleable(delegate_to_widget_mixin('_original_widget'), WidgetDecoration):
 

@@ -20,7 +20,7 @@ configuration.
 
 """
 
-from .add_partition import AddFormatView, AddPartitionView
+from .add_partition import FormatEntireView, PartitionView
 from .disk_info import DiskInfoView
 from .disk_partition import DiskPartitionView
 from .filesystem import FilesystemView

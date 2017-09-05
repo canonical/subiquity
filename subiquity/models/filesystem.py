@@ -245,6 +245,7 @@ class FilesystemModel(object):
         ('ext4', True, FS('ext4', True)),
         ('xfs', True, FS('xfs', True)),
         ('btrfs', True, FS('btrfs', True)),
+        ('fat32', True, FS('fat32', True)),
         ('---', False),
         ('swap', True, FS('swap', False)),
         #('bcache cache', True, FS('bcache cache', False)),
