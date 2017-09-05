@@ -98,15 +98,9 @@ class PartitionForm(Form):
             return self.model.validate_mount(mount)
 
 
-class AddPartitionView(BaseView):
-
-    def __init__(self, model, controller, disk):
-        log.debug('AddPartitionView: selected_disk=[{}]'.format(disk.path))
-        self.model = model
-        self.controller = controller
-        self.disk = disk
-
-        self.form = PartitionForm(model, disk.free, initial={'partnum': disk.next_partnum})
+class PartitionFormatView(BaseView):
+    def __init__(self, size, initial, back):
+        self.form = PartitionForm(self.model, size, initial)
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
@@ -120,14 +114,24 @@ class AddPartitionView(BaseView):
         super().__init__(partition_box)
 
     def cancel(self, button=None):
-        self.controller.partition_disk(self.disk)
+        self.back()
+
+
+class AddPartitionView(PartitionFormatView):
+
+    def __init__(self, model, controller, disk):
+        log.debug('AddPartitionView: selected_disk=[{}]'.format(disk.path))
+        self.model = model
+        self.controller = controller
+        self.disk = disk
+        super().__init__(disk.free, {'partnum': disk.next_partnum}, lambda : self.controller.partition_disk(disk))
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
         self.controller.add_disk_partition_handler(self.disk, form.as_data())
 
 
-class AddFormatView(BaseView):
+class AddFormatView(PartitionFormatView):
     def __init__(self, model, controller, volume, back):
         self.model = model
         self.controller = controller
@@ -138,22 +142,7 @@ class AddFormatView(BaseView):
         fs = self.volume.fs()
         if fs is not None:
             initial['fstype'] = self.model.fs_by_name[fs.fstype]
-        self.form = PartitionForm(model, None, initial)
-
-        connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', self.cancel)
-
-        body = [
-            Padding.line_break(""),
-            self.form.as_rows(self),
-            Padding.line_break(""),
-            Padding.fixed_10(self.form.buttons)
-        ]
-        format_box = Padding.center_50(ListBox(body))
-        super().__init__(format_box)
-
-    def cancel(self, button=None):
-        self.back()
+        super().__init__(None, initial, self.back)
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
