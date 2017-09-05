@@ -115,7 +115,7 @@ class FilesystemView(BaseView):
             cols.append((m.path, path, humanize_size(m.device.volume.size), m.device.fstype, m.device.volume.desc()))
         for fs in self.model._filesystems:
             if fs.fstype == 'swap':
-                cols.append((None, 'SWAP', humanize_size(fs.volume.size), fs.fstype, fs.device.volume.desc()))
+                cols.append((None, 'SWAP', humanize_size(fs.volume.size), fs.fstype, fs.volume.desc()))
 
         if len(cols) == 0:
             return Pile([Color.info_minor(
