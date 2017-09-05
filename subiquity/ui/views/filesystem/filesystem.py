@@ -80,11 +80,11 @@ class FilesystemView(BaseView):
         self.body = [
             Text("FILE SYSTEM SUMMARY"),
             Text(""),
-            self._build_filesystem_list(),
+            Padding.push_4(self._build_filesystem_list()),
             Text(""),
             Text("AVAILABLE DEVICES"),
             Text(""),
-            self._build_available_inputs(),
+            Padding.push_4(self._build_available_inputs()),
             Text(""),
             #self._build_menu(),
             #Text(""),
@@ -94,7 +94,7 @@ class FilesystemView(BaseView):
             #Text(""),
             Padding.fixed_10(self._build_buttons()),
         ]
-        super().__init__(Padding.center_90(ListBox(self.body)))
+        super().__init__(Padding.center_95(ListBox(self.body)))
         log.debug('FileSystemView init complete()')
 
     def _build_used_disks(self):
