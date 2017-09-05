@@ -53,10 +53,14 @@ class PartitionForm(Form):
 
     def __init__(self, model, max_size, initial={}):
         self.model = model
-        self.max_size = max_size
-        self.size_str = humanize_size(max_size)
         super().__init__(initial)
-        self.size.caption = "Size (max {})".format(self.size_str)
+        if max_size is not None:
+            self.max_size = max_size
+            self.size_str = humanize_size(max_size)
+            self.size.caption = "Size (max {})".format(self.size_str)
+        else:
+            self.remove_field('partnum')
+            self.remove_field('size')
         connect_signal(self.fstype.widget, 'select', self.select_fstype)
 
     def select_fstype(self, sender, fs):
@@ -121,3 +125,36 @@ class AddPartitionView(BaseView):
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
         self.controller.add_disk_partition_handler(self.disk, form.as_data())
+
+
+class AddFormatView(BaseView):
+    def __init__(self, model, controller, volume, back):
+        self.model = model
+        self.controller = controller
+        self.volume = volume
+        self.back = back
+
+        initial = {}
+        fs = self.volume.fs()
+        if fs is not None:
+            initial['fstype'] = self.model.fs_by_name[fs.fstype]
+        self.form = PartitionForm(model, None, initial)
+
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+
+        body = [
+            Padding.line_break(""),
+            self.form.as_rows(self),
+            Padding.line_break(""),
+            Padding.fixed_10(self.form.buttons)
+        ]
+        format_box = Padding.center_50(ListBox(body))
+        super().__init__(format_box)
+
+    def cancel(self, button=None):
+        self.back()
+
+    def done(self, form):
+        log.debug("Add Partition Result: {}".format(form.as_data()))
+        self.controller.add_format_handler(self.volume, form.as_data(), self.back)
