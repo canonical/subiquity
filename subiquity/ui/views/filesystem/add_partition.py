@@ -22,6 +22,7 @@ configuration.
 import logging
 from urwid import connect_signal, Text
 
+from subiquitycore.ui.buttons import PlainButton
 from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.form import (
     Form,
@@ -124,13 +125,15 @@ class PartitionFormatView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        body = [
+        partition_box = Padding.center_50(ListBox(self.make_body()))
+        super().__init__(partition_box)
+
+    def make_body(self):
+        return [
             self.form.as_rows(self),
             Padding.line_break(""),
             Padding.fixed_10(self.form.buttons),
         ]
-        partition_box = Padding.center_50(ListBox(body))
-        super().__init__(partition_box)
 
     def cancel(self, button=None):
         self.back()
@@ -155,6 +158,21 @@ class PartitionView(PartitionFormatView):
                 'size': humanize_size(partition.size),
                 }
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
+
+    def make_body(self):
+        body = super().make_body()
+        if self.partition is not None:
+            delete_btn = PlainButton("Delete")
+            connect_signal(delete_btn, 'click', self.delete)
+            body[-2:-2] = [
+                Text(""),
+                Padding.fixed_10(Color.info_error(delete_btn)),
+                ]
+            pass
+        return body
+
+    def delete(self, sender):
+        self.controller.delete_partition(self.partition)
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
