@@ -1,0 +1,29 @@
+# Russian translation for ubiquity
+# Copyright (C) 2017 Canonical Ltd, and Rosetta Contributors 2017
+# This file is distributed under the same license as the subiquity package.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: subiquity\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-09-04 16:26+0100\n"
+"PO-Revision-Date: 2017-09-04 14:44+0100\n"
+"Last-Translator: Dimitri Ledkov <xnox@ubuntu.com>\n"
+"Language-Team: Russian <ru@li.org>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../subiquity/ui/mount.py:54
+msgid "other"
+msgstr "другое"
+
+#: ../subiquity/ui/mount.py:56
+msgid "leave unmounted"
+msgstr ""
+
+#: ../subiquity/controllers/welcome.py:31
+msgid "Please choose your preferred language"
+msgstr "Выберите предпочитаемый язык"

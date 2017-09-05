@@ -15,8 +15,8 @@ apps:
 parts:
   subiquity:
     plugin: python
-    build-packages: [python-setuptools]
-    stage-packages: [curtin]
+    build-packages: [python3-distutils-extra]
+    stage-packages: [python3-distutils-extra, curtin]
     python-packages:
       - urwid
       - pyyaml

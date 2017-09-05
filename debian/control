@@ -9,6 +9,7 @@ Build-Depends: bzr,
                git,
                python3,
                python3-setuptools,
+               python3-distutils-extra,
                python3-yaml,
                python3-attr
 Standards-Version: 3.9.5
