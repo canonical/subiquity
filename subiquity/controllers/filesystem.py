@@ -157,7 +157,7 @@ class FilesystemController(BaseController):
                 if mount is not None:
                     old_fs._mount = None
                     self.model._mounts.remove(mount)
-            if spec['fstype'] is not None:
+            if spec['fstype'].label is not None:
                 fs = self.model.add_filesystem(partition, spec['fstype'].label)
                 if spec['mount']:
                   self.model.add_mount(fs, spec['mount'])
@@ -205,7 +205,7 @@ class FilesystemController(BaseController):
             if mount is not None:
                 old_fs._mount = None
                 self.model._mounts.remove(mount)
-        if spec['fstype'] is not None:
+        if spec['fstype'].label is not None:
             fs = self.model.add_filesystem(volume, spec['fstype'].label)
             if spec['mount']:
                 self.model.add_mount(fs, spec['mount'])
