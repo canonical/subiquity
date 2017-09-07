@@ -348,7 +348,7 @@ class NetworkController(BaseController):
         excerpt = ("Configure at least one interface this server can use to talk to "
                    "other machines, and which preferably provides sufficient access for "
                    "updates.")
-        footer = ("Additional networking info here")
+        footer = ("Select an interface to configure it or select Done to continue")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 20)
         self.ui.set_body(NetworkView(self.model, self))
@@ -434,21 +434,25 @@ class NetworkController(BaseController):
 
     def network_configure_interface(self, iface):
         self.ui.set_header("Network interface {}".format(iface))
+        self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureInterfaceView(self.model, self, iface))
 
     def network_configure_ipv4_interface(self, iface):
         self.ui.set_header("Network interface {} manual IPv4 "
                            "configuration".format(iface))
+        self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureIPv4InterfaceView(self.model, self, iface))
 
     def network_configure_wlan_interface(self, iface):
         self.ui.set_header("Network interface {} WIFI "
                            "configuration".format(iface))
+        self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureWLANView(self.model, self, iface))
 
     def network_configure_ipv6_interface(self, iface):
         self.ui.set_header("Network interface {} manual IPv6 "
                            "configuration".format(iface))
+        self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureIPv6InterfaceView(self.model, self, iface))
 
     def install_network_driver(self):
