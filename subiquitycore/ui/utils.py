@@ -155,9 +155,9 @@ def apply_style_map(cls):
     for k in STYLE_NAMES:
         kf = k + ' focus'
         if kf in STYLE_NAMES:
-            setattr(cls, k, partialmethod(AttrMap, attr_map=k[0], focus_map=kf))
+            setattr(cls, k, partialmethod(AttrMap, attr_map=k, focus_map=kf))
         else:
-            setattr(cls, k, partialmethod(AttrMap, attr_map=k[0]))
+            setattr(cls, k, partialmethod(AttrMap, attr_map=k))
     return cls
 
 

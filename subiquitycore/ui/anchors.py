@@ -31,13 +31,19 @@ class Header(WidgetWrap):
         widgets = [Text("")]
         if title is not None:
             widgets.append(
-                Padding.center_79(Color.body(Text(title))))
+                Padding.center_79(Text(title)))
             widgets.append(Text(""))
+        w = Color.frame_header(Pile(widgets))
         if excerpt is not None:
-            widgets.append(
-                Padding.center_79(Color.body(Text(excerpt))))
-            widgets.append(Text(""))
-        super().__init__(Pile(widgets))
+            widgets = [
+                Text(""),
+                Padding.center_79(Text(excerpt)),
+                Text(""),
+            ]
+        else:
+            widgets = [Text("")]
+        w = Pile([w] + widgets)
+        super().__init__(w)
 
 
 class Footer(WidgetWrap):
@@ -48,7 +54,7 @@ class Footer(WidgetWrap):
     """
 
     def __init__(self, message="", completion=0):
-        message_widget = Padding.center_79(Color.body(Text(message)))
+        message_widget = Padding.center_79(Text(message))
         progress_bar = Padding.center_60(
             ProgressBar(normal='progress_incomplete',
                         complete='progress_complete',
@@ -59,7 +65,7 @@ class Footer(WidgetWrap):
         ]
         if completion > 0:
             status.insert(0, progress_bar)
-        super().__init__(Pile(status))
+        super().__init__(Color.frame_footer(Pile(status)))
 
 
 class Body(WidgetWrap):
