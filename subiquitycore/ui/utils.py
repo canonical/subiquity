@@ -18,7 +18,6 @@
 from urwid import Padding as _Padding
 from urwid import AttrMap, Text
 from functools import partialmethod
-from subiquitycore.palette import STYLES
 
 
 def apply_padders(cls):
@@ -124,6 +123,26 @@ class Padding:
     """
     line_break = partialmethod(Text)
 
+# This makes assumptions about the style names defined by both
+# subiquity and console_conf. The fix is to stop using the Color class
+# below, I think.
+STYLE_NAMES = set([
+    'frame_header',
+    'frame_footer',
+    'body',
+    'menu_button',
+    'menu_button focus',
+    'button',
+    'button focus',
+    'info_primary',
+    'info_major',
+    'info_minor',
+    'info_error',
+    'string_input',
+    'string_input focus',
+    'progress_incomplete',
+    'progress_complete',
+])
 
 def apply_style_map(cls):
     """ Applies AttrMap attributes to Color class
@@ -133,15 +152,12 @@ def apply_style_map(cls):
       Color.frame_header(Text("I'm text in the Orange frame header"))
       Color.body(Text("Im text in wrapped with the body color"))
     """
-    style_names = set()
-    for k in STYLES:
-        style_names.add(k[0])
-    for k in STYLES:
-        kf = k[0] + ' focus'
-        if k[0] + ' focus' in style_names:
-            setattr(cls, k[0], partialmethod(AttrMap, attr_map=k[0], focus_map=kf))
+    for k in STYLE_NAMES:
+        kf = k + ' focus'
+        if kf in STYLE_NAMES:
+            setattr(cls, k, partialmethod(AttrMap, attr_map=k[0], focus_map=kf))
         else:
-            setattr(cls, k[0], partialmethod(AttrMap, attr_map=k[0]))
+            setattr(cls, k, partialmethod(AttrMap, attr_map=k[0]))
     return cls
 
 

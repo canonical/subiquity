@@ -19,7 +19,6 @@ import logging
 import urwid
 
 from subiquitycore.signals import Signal
-from subiquitycore.palette import STYLES, STYLES_MONO
 from subiquitycore.prober import Prober, ProberException
 
 log = logging.getLogger('subiquitycore.core')
@@ -122,7 +121,7 @@ class Application:
 
     def run(self):
         if not hasattr(self, 'loop'):
-            palette = STYLES
+            palette = self.STYLES
             additional_opts = {
                 'screen': urwid.raw_display.Screen(),
                 'unhandled_input': self.header_hotkeys,
@@ -130,7 +129,7 @@ class Application:
                 'pop_ups': True,
             }
             if self.common['opts'].run_on_serial:
-                palette = STYLES_MONO
+                palette = self.STYLES_MONO
             else:
                 additional_opts['screen'].set_terminal_properties(colors=256)
                 additional_opts['screen'].reset_default_terminal_palette()
