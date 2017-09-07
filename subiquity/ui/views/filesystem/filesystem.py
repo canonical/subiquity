@@ -85,16 +85,25 @@ class FilesystemView(BaseView):
             Text("AVAILABLE DEVICES"),
             Text(""),
             self._build_available_inputs(),
-            Text(""),
             #self._build_menu(),
             #Text(""),
             #Text("USED DISKS"),
             #Text(""),
             #self._build_used_disks(),
             #Text(""),
-            Padding.fixed_10(self._build_buttons()),
         ]
-        super().__init__(Padding.center_90(ListBox(self.body)))
+        self.lb = Padding.center_90(ListBox(self.body))
+        self.footer = Pile([
+                Text(""),
+                Padding.fixed_10(self._build_buttons()),
+                Text(""),
+                ])
+        self.frame = Pile([
+            self.lb,
+            ('pack', self.footer)])
+        if self.model.can_install():
+            self.frame.focus_position = 1
+        super().__init__(self.frame)
         log.debug('FileSystemView init complete()')
 
     def _build_used_disks(self):
