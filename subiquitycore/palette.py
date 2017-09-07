@@ -13,84 +13,48 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Palette Loader """
+""" Palette definitions """
 
-
-def apply_default_colors(cls):
-    color_map = {'dark_magenta': 'dark magenta',
-                 'light_magenta': 'light magenta',
-                 'light_green': 'light green',
-                 'dark_green': 'dark green',
-                 'white': 'white',
-                 'black': 'black',
-                 'light_gray': 'light gray',
-                 'dark_gray': 'dark gray',
-                 'dark_red': 'dark red',
-                 'light_red': 'light red'}
-    for k, v in color_map.items():
-        setattr(cls, k, v)
-    return cls
-
-
-@apply_default_colors
-class Palette:
-    pass
+dark_magenta = 'dark magenta'
+light_magenta = 'light magenta'
+light_green = 'light green'
+dark_green = 'dark green'
+white = 'white'
+black = 'black'
+light_gray = 'light gray'
+dark_gray = 'dark gray'
+dark_red = 'dark red'
+light_red = 'light red'
 
 STYLES = [
-    ('frame_header', '', '', '',
-     Palette.white, ''),
-    ('frame_footer', '', '', '',
-     Palette.white, ''),
-    ('body', '', '', '',
-     Palette.white, ''),
-    ('menu_button', '', '',
-     '', Palette.white, ''),
-    ('menu_button focus', '', '', '',
-     Palette.black, Palette.light_gray),
-    ('button', '', '',
-     '', Palette.white, ''),
-    ('button focus', '', '', '',
-     Palette.black, Palette.dark_green),
-    ('info_primary', '', '', '',
-     Palette.white, ''),
-    ('info_major', '', '', '',
-     Palette.light_gray, ''),
-    ('info_minor', '', '', '',
-     Palette.dark_gray, ''),
-    ('info_error', '', '', '',
-     Palette.dark_red, ''),
-    ('string_input', '', '', '',
-     Palette.black, Palette.light_gray),
-    ('string_input focus', '', '', '',
-     Palette.white, Palette.dark_gray),
-    ('progress_incomplete', '', '', '',
-     Palette.white, Palette.dark_magenta),
-    ('progress_complete', '', '', '',
-     Palette.white, Palette.light_magenta)
+    ('frame_header',        '', '', '', white,      ''),
+    ('frame_footer',        '', '', '', white,      ''),
+    ('body',                '', '', '', white,      ''),
+    ('menu_button',         '', '', '', white,      ''),
+    ('menu_button focus',   '', '', '', black,      light_gray),
+    ('button',              '', '', '', white,      ''),
+    ('button focus',        '', '', '', black,      dark_green),
+    ('info_primary',        '', '', '', white,      ''),
+    ('info_major',          '', '', '', light_gray, ''),
+    ('info_minor',          '', '', '', dark_gray,  ''),
+    ('info_error',          '', '', '', dark_red,   ''),
+    ('string_input',        '', '', '', black,      light_gray),
+    ('string_input focus',  '', '', '', white,      dark_gray),
+    ('progress_incomplete', '', '', '', white,      dark_magenta),
+    ('progress_complete',   '', '', '', white,      light_magenta)
 ]
 
-
-STYLES_MONO = [('frame_header', Palette.white, Palette.black,
-                '', '', ''),
-               ('frame_footer', Palette.white, Palette.black,
-                '', '', ''),
-               ('body', Palette.white, Palette.black,
-                '', '', ''),
-               ('info_minor', Palette.white, Palette.black,
-                '', '', ''),
-               ('menu_button', '', '',
-                '', Palette.white, ''),
-               ('menu_button focus', '', '', '',
-                Palette.white, ''),
-               ('button', Palette.white, Palette.black,
-                '', '', ''),
-               ('button focus', Palette.white, Palette.black,
-                '', '', ''),
-               ('string_input', '', '', '',
-                Palette.white, ''),
-               ('string_input focus', '', '', '',
-                Palette.white, ''),
-               ('progress_incomplete', '', '', '',
-                '', Palette.black),
-               ('progress_complete', '', '', '',
-                '', Palette.white)]
+STYLES_MONO = [
+    ('frame_header',        white, black, '', '',    ''),
+    ('frame_footer',        white, black, '', '',    ''),
+    ('body',                white, black, '', '',    ''),
+    ('info_minor',          white, black, '', '',    ''),
+    ('menu_button',         '',    '',    '', white, ''),
+    ('menu_button focus',   '',    '',    '', white, ''),
+    ('button',              white, black, '', '',    ''),
+    ('button focus',        white, black, '', '',    ''),
+    ('string_input',        '',    '',    '', white, ''),
+    ('string_input focus',  '',    '',    '', white, ''),
+    ('progress_incomplete', '',    '',    '', '',    black),
+    ('progress_complete',   '',    '',    '', '',    white),
+]
