@@ -116,8 +116,8 @@ class NetworkView(BaseView):
         self.additional_options = Pile(self._build_additional_options())
         self.body = [
             Padding.center_90(self.model_inputs),
-            Padding.line_break(""),
             Padding.center_79(self.additional_options),
+            Padding.line_break(""),
         ]
         self.lb = ListBox(self.body)
         self.footer = Pile([
@@ -236,7 +236,10 @@ class NetworkView(BaseView):
 
         from urwid import Padding
         buttons = [ Padding(button, align='left', width=max_btn_len + 6) for button in buttons ]
-        return labels + buttons
+        r = labels + buttons
+        if len(r) > 0:
+            r[0:0] = [Text("")]
+        return r
 
     def additional_menu_select(self, result, sig):
         self.controller.signal.emit_signal(sig)
