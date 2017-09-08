@@ -15,35 +15,42 @@
 
 """ Palette definitions """
 
-dark_magenta = 'dark magenta'
-light_magenta = 'light magenta'
-light_green = 'light green'
-dark_green = 'dark green'
-white = 'white'
-black = 'black'
-light_gray = 'light gray'
-dark_gray = 'dark gray'
-dark_red = 'dark red'
-light_red = 'light red'
-orange = "#f60"
+black = 'black'                  # index 0
+dark_red = 'dark red'            # index 1
+dark_green = 'dark green'        # index 2
+brown = 'brown'                  # index 3
+dark_blue = 'dark blue'          # index 4 # This is overwritten to ubuntu orange at startup
+dark_magenta = 'dark magenta'    # index 5
+dark_cyan = 'dark cyan'          # index 6
+light_gray = 'light gray'        # index 7
+dark_gray = 'dark gray'          # index 8
+light_red = 'light red'          # index 9
+light_green = 'light green'      # index 10
+yellow = 'yellow'                # index 11
+light_blue = 'light blue'        # index 12
+light_magenta = 'light magenta'  # index 13
+light_cyan = 'light cyan'        # index 14
+white = 'white'                  # index 15
+
+orange = "#e51"
 warm_gray = "g15"
 
 STYLES = [
-    ('frame_header',        '', '', '', white,      orange),
-    ('frame_footer',        '', '', '', white,      warm_gray),
-    ('body',                '', '', '', white,      ''),
-    ('menu_button',         '', '', '', white,      ''),
-    ('menu_button focus',   '', '', '', black,      light_gray),
-    ('button',              '', '', '', white,      ''),
-    ('button focus',        '', '', '', black,      dark_green),
-    ('info_primary',        '', '', '', white,      ''),
-    ('info_major',          '', '', '', light_gray, ''),
-    ('info_minor',          '', '', '', dark_gray,  ''),
-    ('info_error',          '', '', '', dark_red,   ''),
-    ('string_input',        '', '', '', black,      light_gray),
-    ('string_input focus',  '', '', '', white,      dark_gray),
-    ('progress_incomplete', '', '', '', white,      dark_magenta),
-    ('progress_complete',   '', '', '', white,      light_magenta)
+    ('frame_header',        white,      dark_blue,     '', white,      orange),
+    ('frame_footer',        white,      dark_gray,     '', white,      warm_gray),
+    ('body',                white,      '',            '', white,      ''),
+    ('menu_button',         white,      '',            '', white,      ''),
+    ('menu_button focus',   black,      light_gray,    '', black,      light_gray),
+    ('button',              white,      '',            '', white,      ''),
+    ('button focus',        black,      dark_green,    '', black,      dark_green),
+    ('info_primary',        white,      '',            '', white,      ''),
+    ('info_major',          light_gray, '',            '', light_gray, ''),
+    ('info_minor',          dark_gray,  '',            '', dark_gray,  ''),
+    ('info_error',          dark_red,   '',            '', dark_red,   ''),
+    ('string_input',        black,      light_gray,    '', black,      light_gray),
+    ('string_input focus',  white,      dark_gray,     '', white,      dark_gray),
+    ('progress_incomplete', white,      dark_magenta,  '', white,      dark_magenta),
+    ('progress_complete',   white,      light_magenta, '', white,      light_magenta)
 ]
 
 STYLES_MONO = [
