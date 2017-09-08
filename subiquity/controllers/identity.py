@@ -34,7 +34,7 @@ class IdentityController(BaseController):
 
     def default(self):
         title = "Profile setup"
-        excerpt = ("Input your username and password to log in to the system.")
+        excerpt = ("Enter the username and password (or ssh identity) you will use to log in to the system.")
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)
