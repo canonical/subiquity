@@ -83,9 +83,9 @@ class GuidedDiskSelectionView(BaseView):
     def choose_disk(self, btn, disk):
         result = {
             "partnum": 1,
-            "bytes": disk.free,
-            "fstype": "ext4",
-            "mountpoint": "/",
+            "size": disk.free,
+            "fstype": self.model.fs_by_name["ext4"],
+            "mount": "/",
         }
-        self.controller.do_add_disk_partition(disk, result)
+        self.controller.partition_disk_handler(disk, None, result)
         self.controller.manual()
