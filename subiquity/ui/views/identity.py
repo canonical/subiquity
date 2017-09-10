@@ -79,6 +79,8 @@ class IdentityForm(Form):
             return "Username too long, must be < " + str(USERNAME_MAXLEN)
 
     def validate_password(self):
+        # XXX we should not require a password if an ssh identity is provided
+        # Form doesn't support form-wide validation yet though, oops.
         if len(self.password.value) < 1:
             return "Password must be set"
 
@@ -108,7 +110,7 @@ class IdentityView(BaseView):
         body = [
             Padding.center_90(self.form.as_rows(self)),
             Padding.line_break(""),
-            Padding.fixed_10(self.form.buttons[0]),
+            Padding.fixed_10(self.form.done_btn),
         ]
         super().__init__(ListBox(body))
 

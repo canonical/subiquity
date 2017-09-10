@@ -22,6 +22,8 @@ log = logging.getLogger('console_conf.core')
 
 class Subiquity(Application):
 
+    from subiquity.palette import STYLES, STYLES_MONO
+
     project = "subiquity"
     controllers = [
             "Welcome",

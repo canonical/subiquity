@@ -139,7 +139,7 @@ class FilesystemController(BaseController):
         log.debug("In disk partition view, using {} as the disk.".format(disk.serial))
         title = ("Partition, format, and mount {}".format(disk.serial))
         footer = ("Partition the disk, or format the entire device "
-                  "without partitions.")
+                  "without partitions")
         self.ui.set_header(title)
         self.ui.set_footer(footer)
         dp_view = DiskPartitionView(self.model, self, disk)

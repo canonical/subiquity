@@ -15,6 +15,8 @@
 
 import logging
 
+import lsb_release
+
 from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
 
@@ -39,7 +41,7 @@ class InstallpathController(BaseController):
         self.model = InstallpathModel()
 
     def installpath(self):
-        title = "17.04"
+        title = "Ubuntu %s"%(lsb_release.get_distro_information()['RELEASE'],)
         excerpt = ("Welcome to Ubuntu! The world's favorite platform "
                    "for clouds, clusters, and amazing internet things. "
                    "This is the installer for Ubuntu on servers and "

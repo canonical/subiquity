@@ -14,12 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from concurrent import futures
+import fcntl
 import logging
+import sys
 
 import urwid
 
 from subiquitycore.signals import Signal
-from subiquitycore.palette import STYLES, STYLES_MONO
 from subiquitycore.prober import Prober, ProberException
 
 log = logging.getLogger('subiquitycore.core')
@@ -28,6 +29,33 @@ log = logging.getLogger('subiquitycore.core')
 class ApplicationError(Exception):
     """ Basecontroller exception """
     pass
+
+# The next little bit is cribbed from
+# https://github.com/EvanPurkhiser/linux-vt-setcolors/blob/master/setcolors.c:
+
+# From uapi/linux/kd.h:
+KDGKBTYPE = 0x4B33  # get keyboard type
+GIO_CMAP  = 0x4B70	# gets colour palette on VGA+
+PIO_CMAP  = 0x4B71	# sets colour palette on VGA+
+
+
+def setup_ubuntu_orange():
+    """Overwrite color 4 (usually "dark blue") to Ubuntu orange."""
+    buf = bytearray(16*3)
+    fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, buf)
+    buf[4*3+0] = 0xe9
+    buf[4*3+1] = 0x54
+    buf[4*3+2] = 0x20
+    fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, buf)
+
+def is_linux_tty():
+    try:
+        r = fcntl.ioctl(sys.stdout.fileno(), KDGKBTYPE, ' ')
+    except IOError as e:
+        log.debug("KDGKBTYPE failed %r", e)
+        return False
+    log.debug("KDGKBTYPE returned %r", r)
+    return r == b'\x02'
 
 
 class Application:
@@ -122,7 +150,7 @@ class Application:
 
     def run(self):
         if not hasattr(self, 'loop'):
-            palette = STYLES
+            palette = self.STYLES
             additional_opts = {
                 'screen': urwid.raw_display.Screen(),
                 'unhandled_input': self.header_hotkeys,
@@ -130,7 +158,10 @@ class Application:
                 'pop_ups': True,
             }
             if self.common['opts'].run_on_serial:
-                palette = STYLES_MONO
+                palette = self.STYLES_MONO
+            elif is_linux_tty():
+                log.debug("setting up ubuntu orange")
+                setup_ubuntu_orange()
             else:
                 additional_opts['screen'].set_terminal_properties(colors=256)
                 additional_opts['screen'].reset_default_terminal_palette()

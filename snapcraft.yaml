@@ -16,7 +16,7 @@ parts:
   subiquity:
     plugin: python
     build-packages: [python-setuptools]
-    stage-packages: [curtin]
+    stage-packages: [curtin, lsb-release]
     python-packages:
       - urwid
       - pyyaml
