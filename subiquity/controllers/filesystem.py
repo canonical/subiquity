@@ -32,6 +32,8 @@ from subiquity.ui.views import (
     DiskPartitionView,
     FilesystemView,
     FormatEntireView,
+    GuidedDiskSelectionView,
+    GuidedFilesystemView,
     LVMVolumeGroupView,
     PartitionView,
     RaidView,
@@ -59,12 +61,28 @@ class FilesystemController(BaseController):
         if reset:
             log.info("Resetting Filesystem model")
             self.model.reset()
+        if self.model.any_configuration_done():
+            self.manual()
+        else:
+            title = "Filesystem setup"
+            footer = ("Choose guided or manual partitioning")
+            self.ui.set_header(title)
+            self.ui.set_footer(footer, 30)
+            self.ui.set_body(GuidedFilesystemView(self.model, self))
 
+    def manual(self):
         title = "Filesystem setup"
         footer = ("Select available disks to format and mount")
         self.ui.set_header(title)
         self.ui.set_footer(footer, 30)
         self.ui.set_body(FilesystemView(self.model, self))
+
+    def guided(self):
+        title = "Filesystem setup"
+        footer = ("Choose the installation target")
+        self.ui.set_header(title)
+        self.ui.set_footer(footer, 30)
+        self.ui.set_body(GuidedDiskSelectionView(self.model, self))
 
     def reset(self):
         log.info("Resetting Filesystem model")

@@ -94,7 +94,10 @@ class FilesystemView(BaseView):
             #Text(""),
             Padding.fixed_10(self._build_buttons()),
         ]
-        super().__init__(Padding.center_95(ListBox(self.body)))
+        w = ListBox(self.body)
+        if self.model.can_install():
+            w.set_focus_path([len(self.body)-1, 0])
+        super().__init__(Padding.center_95(w))
         log.debug('FileSystemView init complete()')
 
     def _build_used_disks(self):
