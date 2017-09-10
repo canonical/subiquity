@@ -147,7 +147,13 @@ class Disk:
 
     @property
     def next_partnum(self):
-        return len(self._partitions) + 1
+        partnums = set()
+        for p in self._partitions:
+            partnums.add(p.number)
+        i = 1
+        while i in partnums:
+            i += 1
+        return i
 
     @property
     def size(self):
@@ -239,6 +245,7 @@ class FilesystemModel(object):
         ('ext4', True, FS('ext4', True)),
         ('xfs', True, FS('xfs', True)),
         ('btrfs', True, FS('btrfs', True)),
+        ('fat32', True, FS('fat32', True)),
         ('---', False),
         ('swap', True, FS('swap', False)),
         #('bcache cache', True, FS('bcache cache', False)),
@@ -363,20 +370,12 @@ class FilesystemModel(object):
             r[m.path] = m.device.volume.path
         return r
 
+    def any_configuration_done(self):
+        return len(self._disks) > 0
+
     def can_install(self):
         # Do we need to check that there is a disk with the boot flag?
         return '/' in self.get_mountpoint_to_devpath_mapping() and self.bootable()
-
-    def validate_mount(self, mountpoint):
-        if mountpoint is None:
-            return
-        # /usr/include/linux/limits.h:PATH_MAX
-        if len(mountpoint) > 4095:
-            return 'Path exceeds PATH_MAX'
-        mnts = self.get_mountpoint_to_devpath_mapping()
-        dev = mnts.get(mountpoint)
-        if dev is not None:
-            return "%s is already mounted at %s"%(dev, mountpoint)
 
     def bootable(self):
         ''' true if one disk has a boot partition '''
