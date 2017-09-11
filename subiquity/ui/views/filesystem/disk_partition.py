@@ -49,7 +49,7 @@ class DiskPartitionView(BaseView):
 
         buttons = [
             Color.button(done),
-            Color.button(cancel)
+            Color.amberbutton(cancel)
         ]
         return Pile(buttons)
 

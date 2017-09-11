@@ -57,7 +57,7 @@ class FilesystemConfirmationView(WidgetWrap):
         self.controller = controller
         pile = Pile([
             UrwidPadding(Text(confirmation_text), left=2, right=2),
-            Padding.fixed_15(Color.button(cancel_btn(label="No", on_press=self.cancel))),
+            Padding.fixed_15(Color.amberbutton(cancel_btn(label="No", on_press=self.cancel))),
             Padding.fixed_15(Color.button(continue_btn(on_press=self.ok))),
             Text(""),
             ])
@@ -148,8 +148,8 @@ class FilesystemView(BaseView):
             buttons.append(
                 Color.button(done_btn(on_press=self.done)))
 
-        buttons.append(Color.button(reset_btn(on_press=self.reset)))
-        buttons.append(Color.button(cancel_btn(on_press=self.cancel)))
+        buttons.append(Color.amberbutton(reset_btn(on_press=self.reset)))
+        buttons.append(Color.redbutton(cancel_btn(on_press=self.cancel)))
 
         return Pile(buttons)
 

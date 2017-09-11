@@ -44,7 +44,7 @@ class InstallpathView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button(cancel_btn(on_press=self.cancel)),
+            Color.amberbutton(cancel_btn(on_press=self.cancel)),
         ]
         return Pile(self.buttons)
 

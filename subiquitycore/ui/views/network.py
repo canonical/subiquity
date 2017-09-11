@@ -132,7 +132,7 @@ class NetworkView(BaseView):
         super().__init__(self.frame)
 
     def _build_buttons(self):
-        cancel = Color.button(cancel_btn(on_press=self.cancel))
+        cancel = Color.amberbutton(cancel_btn(on_press=self.cancel))
         done = Color.button(done_btn(on_press=self.done))
         self.default_focus = done
 

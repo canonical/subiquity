@@ -43,6 +43,10 @@ STYLES = [
     ('menu_button focus',   black,      light_gray,    '', black,      light_gray),
     ('button',              white,      '',            '', white,      ''),
     ('button focus',        black,      dark_green,    '', black,      dark_green),
+    ('redbutton',           white,      '',            '', white,      ''),
+    ('redbutton focus',     black,      dark_red,      '', black,      dark_red),
+    ('amberbutton',         white,      '',            '', white,      ''),
+    ('amberbutton focus',   black,      yellow,        '', black,      yellow),
     ('info_primary',        white,      '',            '', white,      ''),
     ('info_major',          light_gray, '',            '', light_gray, ''),
     ('info_minor',          dark_gray,  '',            '', dark_gray,  ''),
@@ -50,7 +54,7 @@ STYLES = [
     ('string_input',        black,      light_gray,    '', black,      light_gray),
     ('string_input focus',  white,      dark_gray,     '', white,      dark_gray),
     ('progress_incomplete', white,      dark_magenta,  '', white,      dark_magenta),
-    ('progress_complete',   white,      light_magenta, '', white,      light_magenta)
+    ('progress_complete',   white,      dark_blue,     '', white,      orange)
 ]
 
 STYLES_MONO = [
@@ -62,6 +66,10 @@ STYLES_MONO = [
     ('menu_button focus',   '',    '',    '', white, ''),
     ('button',              white, black, '', '',    ''),
     ('button focus',        white, black, '', '',    ''),
+    ('redbutton',           white, black, '', '',    ''),
+    ('redbutton focus',     white, black, '', '',    ''),
+    ('amberbutton',         white, black, '', '',    ''),
+    ('amberbutton focus',   white, black, '', '',    ''),
     ('string_input',        '',    '',    '', white, ''),
     ('string_input focus',  '',    '',    '', white, ''),
     ('progress_incomplete', '',    '',    '', '',    black),

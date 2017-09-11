@@ -21,6 +21,7 @@ from urwid import (
 from subiquitycore.ui.utils import Padding, Color
 
 from subiquitycore.ui.buttons import (
+    cancel_btn,
     menu_btn,
     PlainButton,
     )
@@ -61,8 +62,7 @@ class GuidedDiskSelectionView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        cancel = PlainButton(label="Cancel")
-        connect_signal(cancel, 'click', self.cancel)
+        cancel = Color.amberbutton(cancel_btn(on_press=self.cancel))
         disks = []
         for disk in self.model.all_disks():
             if disk.available:

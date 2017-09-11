@@ -65,7 +65,7 @@ class ProgressView(BaseView):
             Color.button(confirm_btn(label="Reboot Now", on_press=self.reboot)))
 
         z = Padding.fixed_20(
-            Color.button(confirm_btn(label="Quit Installer", on_press=self.quit)))
+            Color.amberbutton(confirm_btn(label="Quit Installer", on_press=self.quit)))
 
         new_focus = len(self.pile.contents)
         self.pile.contents.append((w, self.pile.options('pack')))
