@@ -17,6 +17,7 @@
 from abc import ABC, abstractmethod
 import logging
 import os
+import queue
 
 log = logging.getLogger("subiquitycore.controller")
 
@@ -34,6 +35,8 @@ class BaseController(ABC):
         self.prober = common['prober']
         self.controllers = common['controllers']
         self.pool = common['pool']
+        self._run_in_main_thread_pipe = self.loop.watch_pipe(self._in_main_thread)
+        self._run_in_main_thread_queue = queue.Queue()
 
     def register_signals(self):
         """Defines signals associated with controller from model."""
@@ -41,6 +44,18 @@ class BaseController(ABC):
         for sig, cb in self.signals:
             signals.append((sig, getattr(self, cb)))
         self.signal.connect_signals(signals)
+
+    def run_in_main_thread(self, func, *args, **kw):
+        self._run_in_main_thread_queue.put((func, args, kw))
+        os.write(self._run_in_main_thread_pipe, b'x')
+
+    def _in_main_thread(self, data):
+        for i in range(len(data)):
+            f, a, k = self._run_in_main_thread_queue.get()
+            try:
+                f(*a, **k)
+            except:
+                log.exception("%s(*%s, **%s) failed in main thread", f, a, k)
 
     def run_in_bg(self, func, callback):
         """Run func() in a thread and call callback on UI thread.
@@ -50,14 +65,8 @@ class BaseController(ABC):
         exception will be logged.
         """
         fut = self.pool.submit(func)
-        def in_main_thread(ignored):
-            try:
-                callback(fut)
-            except:
-                log.exception("callback %s after calling %s failed", callback, func)
-        pipe = self.loop.watch_pipe(in_main_thread)
         def in_random_thread(ignored):
-            os.write(pipe, b'x')
+            self.run_in_main_thread(lambda: callback(fut))
         fut.add_done_callback(in_random_thread)
 
     @abstractmethod

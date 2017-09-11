@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import fcntl
+import json
 import logging
 from http import server
 import os
@@ -22,7 +23,6 @@ import socket
 import socketserver
 import threading
 
-import yaml
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
@@ -31,56 +31,44 @@ from subiquity.curtin import (CURTIN_CONFIGS,
                               CURTIN_INSTALL_LOG,
                               CURTIN_POSTINSTALL_LOG,
                               curtin_install_cmd,
-                              curtin_write_network_config)
+                              curtin_write_network_config,
+                              curtin_write_reporting_config)
 from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView
 
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
 
+
 class _ReportingHandler(server.SimpleHTTPRequestHandler):
     address_family = socket.AF_INET6
 
-    def log_request(self, code, size=None):
-        lines = [
-            "== %s %s ==" % (self.command, self.path),
-            str(self.headers).replace('\r', '')]
-        if self._message:
-            lines.append(self._message)
-        log.debug('\n'.join(lines))
-
     def do_GET(self):
-        self._message = None
         self.send_response(200)
         self.end_headers()
-        self.wfile.write("content of %s\n" % self.path)
+        self.wfile.write(b"OK")
 
     def do_POST(self):
         length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(length).decode('utf-8')
-        #try:
-        #    self._message = render_event_string(post_data)
-        #except Exception as e:
-        #    self._message = '\n'.join(
-        #        ["failed printing event: %s" % e, post_data])
+        post_data = json.loads(self.rfile.read(length).decode('utf-8'))
+        log.debug("curtin event %s", post_data)
+        self.server.event_cb(post_data)
+        self.do_GET()
 
-        msg = "received post to %s" % self.path
-        self.send_response(200)
-        self.send_header("Content-type", "text/plain")
-        self.end_headers()
-        self.wfile.write(msg.encode('utf-8'))
 
 class _HTTPServerV6(socketserver.TCPServer):
     address_family = socket.AF_INET6
 
+
 class ReportingListener:
-    def __init__(self, run_in_main_thread):
-        self.run_in_main_thread = run_in_main_thread
+    def __init__(self, event_cb):
+        self.event_cb = event_cb
         self._server_thread = None
 
     def start(self):
         """Return URL to pass to curtin."""
         self._httpd = _HTTPServerV6(("::", 0), _ReportingHandler)
+        self._httpd.event_cb = self.event_cb
         port = self._httpd.server_address[1]
         self._server_thread = threading.Thread(target=self._httpd.serve_forever)
         self._server_thread.start()
@@ -90,6 +78,7 @@ class ReportingListener:
         self._httpd.shutdown()
         self._server_thread.join()
 
+
 class InstallState:
     NOT_STARTED = 0
     RUNNING_INSTALL = 1
@@ -98,6 +87,7 @@ class InstallState:
     DONE_POSTINSTALL = 4
     ERROR_INSTALL = -1
     ERROR_POSTINSTALL = -2
+
 
 class InstallProgressController(BaseController):
     signals = [
@@ -114,6 +104,8 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.NOT_STARTED
         self.postinstall_written = False
         self.tail_proc = None
+        self.reporting_listener = ReportingListener(
+            lambda event:self.run_in_main_thread(self.curtin_event(event)))
 
     def curtin_wrote_network_config(self, path):
         curtin_write_network_config(open(path).read())
@@ -145,11 +137,19 @@ class InstallProgressController(BaseController):
             log.debug("completed %s", cmd)
         return cp.returncode
 
+    def curtin_event(self, event):
+        self.ui.set_footer(event.get("name", "event-name??"))
+
     def curtin_start_install(self):
         log.debug('Curtin Install: calling curtin with '
                   'storage/net/postinstall config')
 
         self.install_state = InstallState.RUNNING_INSTALL
+
+        reporting_url = self.reporting_listener.start()
+
+        curtin_write_reporting_config(reporting_url)
+
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
@@ -157,8 +157,11 @@ class InstallProgressController(BaseController):
                 "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; }"]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
-            configs = [CURTIN_CONFIGS['storage'],
-                       CURTIN_CONFIGS['network']]
+            configs = [
+                CURTIN_CONFIGS['storage'],
+                CURTIN_CONFIGS['network'],
+                CURTIN_CONFIGS['reporting'],
+                ]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
@@ -203,7 +206,8 @@ class InstallProgressController(BaseController):
             configs = [
                 CURTIN_CONFIGS['postinstall'],
                 CURTIN_CONFIGS['preserved'],
-            ]
+                CURTIN_CONFIGS['reporting'],
+                ]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
