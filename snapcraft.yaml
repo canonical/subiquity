@@ -15,7 +15,7 @@ apps:
 parts:
   subiquity:
     plugin: python
-    build-packages: [python-setuptools, pkg-config]
+    build-packages: [python-setuptools, pkg-config, lsb-release]
     stage-packages: [curtin, lsb-release]
     python-packages:
       - urwid
