@@ -111,7 +111,7 @@ class InstallProgressController(BaseController):
         self.postinstall_written = False
         self.tail_proc = None
         self.reporting_listener = ReportingListener(
-            lambda event:self.run_in_main_thread(self.curtin_event(event)))
+            lambda event:self.run_in_main_thread(self.curtin_event, event))
 
     def curtin_wrote_network_config(self, path):
         curtin_write_network_config(open(path).read())
