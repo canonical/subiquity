@@ -2,6 +2,7 @@
 
 import json
 import logging
+import random
 import sys
 import time
 
@@ -39,6 +40,4 @@ for line in open(json_file):
     d = json.loads(line.strip())
     ev = FakeEvent(d)
     events.report_event(ev)
-    #print(ev.as_string())
-    sys.stdout.flush()
-    time.sleep(0.5)
+    time.sleep(random.expovariate(2))

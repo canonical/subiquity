@@ -77,6 +77,7 @@ class ReportingListener:
         self._httpd.event_cb = self.event_cb
         port = self._httpd.server_address[1]
         self._server_thread = threading.Thread(target=self._httpd.serve_forever)
+        self._server_thread.setDaemon(True)
         self._server_thread.start()
         return "http://[::1]:{}/".format(port)
 
@@ -112,6 +113,7 @@ class InstallProgressController(BaseController):
         self.tail_proc = None
         self.reporting_listener = ReportingListener(
             lambda event:self.run_in_main_thread(self.curtin_event, event))
+        self.curtin_event_stack = []
 
     def curtin_wrote_network_config(self, path):
         curtin_write_network_config(open(path).read())
@@ -144,7 +146,19 @@ class InstallProgressController(BaseController):
         return cp.returncode
 
     def curtin_event(self, event):
-        self.ui.set_footer(event.get("description", "curtin description??"))
+        event_type = event.get("event_type")
+        if event_type not in ['start', 'finish']:
+            return
+        if event_type == 'start':
+            desc = event.get("description", "description??")
+            self.curtin_event_stack.append(desc)
+        if event_type == 'finish':
+            self.curtin_event_stack.pop()
+            if self.curtin_event_stack:
+                desc = self.curtin_event_stack[-1]
+            else:
+                desc = ""
+        self.ui.set_footer("Running install... %s" % (desc,))
 
     def curtin_start_install(self):
         log.debug('Curtin Install: calling curtin with '
