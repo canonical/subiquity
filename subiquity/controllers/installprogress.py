@@ -152,15 +152,16 @@ class InstallProgressController(BaseController):
 
         self.install_state = InstallState.RUNNING_INSTALL
 
-        reporting_url = self.reporting_listener.start()
+        self.reporting_url = self.reporting_listener.start()
 
-        curtin_write_reporting_config(reporting_url)
+        curtin_write_reporting_config(self.reporting_url)
 
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
-                "bash", "-c",
-                "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; }"]
+                "python3", "scripts/replay-curtin-log.py",
+                self.reporting_url, "examples/curtin-events-install.json",
+                ]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [
@@ -205,8 +206,9 @@ class InstallProgressController(BaseController):
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
-                "bash", "-c",
-                "{ i=0;while [ $i -le 10 ];do i=$((i+1)); echo postinstall line $i; sleep 1; done; }"]
+                "python3", "scripts/replay-curtin-log.py",
+                self.reporting_url, "examples/curtin-events-postinstall.json",
+                ]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [
