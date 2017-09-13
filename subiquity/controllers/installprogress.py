@@ -144,7 +144,7 @@ class InstallProgressController(BaseController):
         return cp.returncode
 
     def curtin_event(self, event):
-        self.ui.set_footer(event.get("name", "event-name??"))
+        self.ui.set_footer(event.get("description", "curtin description??"))
 
     def curtin_start_install(self):
         log.debug('Curtin Install: calling curtin with '
