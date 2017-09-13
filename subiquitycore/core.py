@@ -17,6 +17,7 @@ from concurrent import futures
 import fcntl
 import logging
 import sys
+import os
 
 import urwid
 
@@ -37,16 +38,24 @@ class ApplicationError(Exception):
 KDGKBTYPE = 0x4B33  # get keyboard type
 GIO_CMAP  = 0x4B70	# gets colour palette on VGA+
 PIO_CMAP  = 0x4B71	# sets colour palette on VGA+
+UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
 
 
-def setup_ubuntu_orange():
+def setup_ubuntu_orange(additional_opts):
     """Overwrite color 4 (usually "dark blue") to Ubuntu orange."""
-    buf = bytearray(16*3)
-    fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, buf)
-    buf[4*3+0] = 0xe9
-    buf[4*3+1] = 0x54
-    buf[4*3+2] = 0x20
-    fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, buf)
+    if is_linux_tty():
+        buf = bytearray(16*3)
+        fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, buf)
+        buf[4*3+0] = UO_R
+        buf[4*3+1] = UO_G
+        buf[4*3+2] = UO_B
+        fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, buf)
+    elif os.environ['TERM'] == 'fbterm':
+        print('\033[3;4;%i;%i;%i}' % (UO_R, UO_G, UO_B), flush=True)
+    else:
+        additional_opts['screen'].set_terminal_properties(colors=256)
+        additional_opts['screen'].reset_default_terminal_palette()
+
 
 def is_linux_tty():
     try:
@@ -159,12 +168,8 @@ class Application:
             }
             if self.common['opts'].run_on_serial:
                 palette = self.STYLES_MONO
-            elif is_linux_tty():
-                log.debug("setting up ubuntu orange")
-                setup_ubuntu_orange()
             else:
-                additional_opts['screen'].set_terminal_properties(colors=256)
-                additional_opts['screen'].reset_default_terminal_palette()
+                setup_ubuntu_orange(additional_opts)
 
             self.common['loop'] = urwid.MainLoop(
                 self.common['ui'], palette, **additional_opts)

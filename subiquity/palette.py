@@ -46,7 +46,7 @@ STYLES = [
     ('redbutton',           white,      '',            '', white,      ''),
     ('redbutton focus',     black,      dark_red,      '', black,      dark_red),
     ('amberbutton',         white,      '',            '', white,      ''),
-    ('amberbutton focus',   black,      yellow,        '', black,      yellow),
+    ('amberbutton focus',   black,      dark_cyan,     '', black,      dark_cyan),
     ('info_primary',        white,      '',            '', white,      ''),
     ('info_major',          light_gray, '',            '', light_gray, ''),
     ('info_minor',          dark_gray,  '',            '', dark_gray,  ''),
