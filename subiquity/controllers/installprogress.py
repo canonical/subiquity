@@ -44,10 +44,7 @@ class _ReportingHandler(server.BaseHTTPRequestHandler):
     address_family = socket.AF_INET6
 
     def log_request(self, code, size=None):
-        lines = [
-            "== %s %s ==" % (self.command, self.path),
-            str(self.headers).replace('\r', '')]
-        log.debug('\n'.join(lines))
+        pass
 
     def do_GET(self):
         self.send_response(200)
