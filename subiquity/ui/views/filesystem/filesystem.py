@@ -45,8 +45,9 @@ from subiquity.models.filesystem import humanize_size
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
 
 
-confirmation_text = """
-Selecting Continue below will result of the loss of data on the disks selected to be formatted.
+confirmation_text = """\
+Selecting Continue below will begin the installation process and \
+result in the loss of data on the disks selected to be formatted.
 
 Are you sure you want to continue?
 """
