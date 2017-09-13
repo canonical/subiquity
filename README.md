@@ -1,5 +1,13 @@
-# subiquity
-> Ubuntu Server Installer
+# subiquity & console-conf
+> Ubuntu Server Installer & Snappy first boot experience
+
+The repository contains the source for the new server installer (the
+"subiquity" part, aka "ubuquity for servers") and for the snappy first
+boot experience (the "console-conf" part).
+
+We track bugs in Launchpad at
+https://bugs.launchpad.net/subiquity. Snappy first boot issues can
+also be discussed in the forum at https://forum.snapcraft.io.
 
 # Acquire subiquity from source
 
@@ -7,7 +15,7 @@
 
 `cd subiquity && make install_deps`
 
-# Testing out the Text-UI (TUI)
+# Testing out the installer Text-UI (TUI)
 SUbiquity's text UI is is available for testing without actually installing
 anything to a system or a VM.  Subiquity developers make use of this for rapid
 development.  After checking out subiquity you can start it:
