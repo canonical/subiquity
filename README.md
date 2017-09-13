@@ -69,7 +69,7 @@ do this:
 
    ```
    $ qemu-img create -f raw target.img 10G
-   $ kvm -m 1024 -cdrom custom.iso -hda target.img -serial stdio
+   $ kvm -m 1024 -boot d -cdrom custom.iso -hda target.img -serial stdio
    ```
 
 5. Finally, boot the installed image:
