@@ -34,18 +34,18 @@ def plain_btn(label, color, on_press=None, user_arg=None):
     return AttrWrap(button, color, color + ' focus')
 
 
-start_btn = partial(plain_btn, "Start", "save_button")
-save_btn = partial(plain_btn, "Save", "save_button")
-finish_btn = partial(plain_btn, "Finish", "save_button")
-ok_btn = partial(plain_btn, "OK", "save_button")
-confirm_btn = partial(plain_btn, "Confirm", "save_button")
-done_btn = partial(plain_btn, "Done", "save_button")
-continue_btn = partial(plain_btn, "Continue", "save_button")
+start_btn = partial(plain_btn, label="Start", color="save_button")
+save_btn = partial(plain_btn, label="Save", color="save_button")
+finish_btn = partial(plain_btn, label="Finish", color="save_button")
+ok_btn = partial(plain_btn, label="OK", color="save_button")
+confirm_btn = partial(plain_btn, label="Confirm", color="save_button")
+done_btn = partial(plain_btn, label="Done", color="save_button")
+continue_btn = partial(plain_btn, label="Continue", color="save_button")
 
-reset_btn = partial(plain_btn, "Reset", "reset_button")
+reset_btn = partial(plain_btn, label="Reset", color="reset_button")
 
-cancel_btn = partial(plain_btn, "Cancel", "cancel_button")
-back_btn = partial(plain_btn, "Back", "cancel_button")
+cancel_btn = partial(plain_btn, label="Cancel", color="cancel_button")
+back_btn = partial(plain_btn, label="Back", color="cancel_button")
 
 danger_btn = partial(plain_btn, color="danger_button")
 
