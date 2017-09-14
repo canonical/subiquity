@@ -137,6 +137,8 @@ class NetworkView(BaseView):
         self.default_focus = done
 
         buttons = [done, cancel]
+        self.done_button = done
+        self.cancel_button = cancel
         return Pile(buttons, focus_item=done)
 
     def _build_model_inputs(self):

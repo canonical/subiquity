@@ -350,8 +350,9 @@ class NetworkController(BaseController):
                    "updates.")
         footer = ("Select an interface to configure it or select Done to continue")
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer, 20)
-        self.ui.set_body(NetworkView(self.model, self))
+        nv = NetworkView(self.model, self)
+        self.ui.set_body(nv)
+        self.ui.set_footer(footer, 20, leftbutton=nv.cancel_button, rightbutton=nv.done_button)
 
     @property
     def netplan_path(self):

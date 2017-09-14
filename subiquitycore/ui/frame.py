@@ -15,8 +15,9 @@
 
 """ Base Frame Widget """
 
-from urwid import Frame, WidgetWrap
+from urwid import WidgetWrap
 from subiquitycore.ui.anchors import Header, Footer, Body
+from subiquitycore.ui.container import Pile
 import logging
 
 
@@ -29,17 +30,21 @@ class SubiquityUI(WidgetWrap):
         self.header = header if header else Header()
         self.body = body if body else Body()
         self.footer = footer if footer else Footer()
-        self.frame = Frame(self.body, header=self.header, footer=self.footer)
+        self.frame = Pile([
+            ('pack', self.header),
+            self.body,
+            ('pack', self.footer),
+            ])
         super().__init__(self.frame)
 
     def keypress(self, size, key):
         return super().keypress(size, key)
 
     def set_header(self, title=None, excerpt=None):
-        self.frame.header = Header(title, excerpt)
+        self.frame.contents[0] = (Header(title, excerpt), self.frame.options('pack'))
 
-    def set_footer(self, message, completion=0):
-        self.frame.footer = Footer(message, completion)
+    def set_footer(self, message, completion=0, leftbutton=None, rightbutton=None):
+        self.frame.contents[2] = (Footer(message, completion, leftbutton, rightbutton), self.frame.options('pack'))
 
     def set_body(self, widget):
-        self.frame.body = widget
+        self.frame.contents[1] = (widget, self.frame.options())

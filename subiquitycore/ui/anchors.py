@@ -13,7 +13,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import WidgetWrap, Pile, Text, ProgressBar
+from urwid import (
+    Filler,
+    ProgressBar,
+    Text,
+    WidgetWrap,
+    )
+
+from subiquitycore.ui.container import Columns, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.ui.lists import SimpleList
 
@@ -46,6 +53,28 @@ class Header(WidgetWrap):
         super().__init__(w)
 
 
+
+#
+#   +--------+     [ progress bar     ]   +----------+
+#   | BACK   |                            | CONTINUE |
+#   +--------+          message           +----------+
+#
+
+# Pile([
+#   Text(""),
+#   Columns([
+#     (fixed, 1, Text("")),
+#     (fixed, 10, Button(left)),
+#     Pile([
+#       ProgressBar,
+#       Text(""),
+#       Text(message),])
+#     (fixed, 10, Button(right)),
+#     (fixed, 1, Text("")),
+#     ], dividechars=1)
+#   Text(""),
+#   ])
+
 class Footer(WidgetWrap):
     """ Footer widget
 
@@ -53,19 +82,30 @@ class Footer(WidgetWrap):
 
     """
 
-    def __init__(self, message="", completion=0):
+    def __init__(self, message="", completion=0, leftbutton=None, rightbutton=None):
         message_widget = Padding.center_79(Text(message))
         progress_bar = Padding.center_60(
             ProgressBar(normal='progress_incomplete',
                         complete='progress_complete',
                         current=completion, done=100))
-        status = [
-            Padding.line_break(""),
-            message_widget,
-        ]
-        if completion > 0:
-            status.insert(0, progress_bar)
-        super().__init__(Color.frame_footer(Pile(status)))
+        if leftbutton is None:
+            leftbutton = Text("")
+        else:
+            leftbutton.base_widget.set_label("\n" + leftbutton.base_widget.label + "\n")
+        if rightbutton is None:
+            rightbutton = Text("")
+        super().__init__(Color.frame_footer(Pile([
+            Text(""),
+            Columns([
+                (10, Padding.fixed_10(leftbutton)),
+                Pile([
+                    progress_bar,
+                    (2, Filler(message_widget, valign='bottom')),
+                    ]),
+                (10, Padding.fixed_10(rightbutton)),
+                ], dividechars=1),
+            Text(""),
+            ])))
 
 
 class Body(WidgetWrap):
