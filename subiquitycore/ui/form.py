@@ -34,7 +34,7 @@ from subiquitycore.ui.interactive import (
     IntegerEditor,
     StringEditor,
     )
-from subiquitycore.ui.utils import Color, connect_signal
+from subiquitycore.ui.utils import Color
 
 log = logging.getLogger("subiquitycore.ui.form")
 
@@ -261,10 +261,8 @@ class Form(object, metaclass=MetaForm):
     opts = {}
 
     def __init__(self, initial={}):
-        self.done_btn = Toggleable(done_btn())
-        self.cancel_btn = Toggleable(cancel_btn())
-        connect_signal(self.done_btn, 'click', self._click_done)
-        connect_signal(self.cancel_btn, 'click', self._click_cancel)
+        self.done_btn = Toggleable(done_btn(on_press=self._click_done))
+        self.cancel_btn = Toggleable(cancel_btn(on_press=self._click_cancel))
         self.buttons = Pile([self.done_btn, self.cancel_btn])
         self._fields = []
         for field in self._unbound_fields:

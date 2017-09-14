@@ -16,7 +16,6 @@
 """ UI utilities """
 
 from urwid import (
-    connect_signal as _connect_signal,
     AttrMap,
     Padding as _Padding,
     Text,
@@ -188,8 +187,3 @@ class Color:
 
     """
     pass
-
-
-def connect_signal(obj, name, callback, user_arg=None, weak_args=None, user_args=None):
-    obj = getattr(obj, 'base_widget', obj)
-    return _connect_signal(obj, name, callback, user_arg, weak_args, user_args)

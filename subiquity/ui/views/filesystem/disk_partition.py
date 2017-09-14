@@ -19,7 +19,7 @@ from urwid import BoxAdapter, Text
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import done_btn, cancel_btn, menu_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.utils import connect_signal, Padding
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
@@ -67,11 +67,10 @@ class DiskPartitionView(BaseView):
             else:
                 fstype = part.fs().fstype
                 mountpoint = part.fs().mount().path
-            part_btn = menu_btn(label)
             if part.type == 'disk':
-                connect_signal(part_btn, 'click', self._click_disk)
+                part_btn = menu_btn(label, on_press=self._click_disk)
             else:
-                connect_signal(part_btn, 'click', self._click_part, part)
+                part_btn = menu_btn(label, on_press=self._click_part, user_arg=part)
             return Columns([
                 (25, part_btn),
                 (9, Text(size, align="right")),
@@ -89,8 +88,7 @@ class DiskPartitionView(BaseView):
                 label = "Add another partition"
             else:
                 label = "Add first partition"
-            add_btn = menu_btn(label)
-            connect_signal(add_btn, 'click', self.add_partition)
+            add_btn = menu_btn(label, on_press=self.add_partition)
             partitioned_disks.append(Columns([
                 (25, add_btn),
                 (9, Text(free_space, align="right")),

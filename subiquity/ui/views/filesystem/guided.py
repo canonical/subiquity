@@ -17,7 +17,7 @@ from urwid import (
     Text,
     )
 
-from subiquitycore.ui.utils import Color, connect_signal, Padding
+from subiquitycore.ui.utils import Padding
 
 from subiquitycore.ui.buttons import (
     cancel_btn,
@@ -70,8 +70,9 @@ class GuidedDiskSelectionView(BaseView):
         disks = []
         for disk in self.model.all_disks():
             if disk.available:
-                disk_btn = menu_btn("%-40s %s"%(disk.serial, humanize_size(disk.size).rjust(9)))
-                connect_signal(disk_btn, 'click', self.choose_disk, disk)
+                disk_btn = menu_btn(
+                    "%-40s %s"%(disk.serial, humanize_size(disk.size).rjust(9)),
+                    on_press=self.choose_disk, user_arg=disk)
                 disks.append(disk_btn)
         lb = ListBox([
             Padding.center_70(Text("Choose the disk to install to:")),

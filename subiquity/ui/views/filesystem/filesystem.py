@@ -35,7 +35,7 @@ from subiquitycore.ui.buttons import (
     reset_btn,
     )
 from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.utils import Color, connect_signal, Padding
+from subiquitycore.ui.utils import Color, Padding
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
@@ -178,8 +178,7 @@ class FilesystemView(BaseView):
                 else:
                     label += fs.fstype
                 if fs_obj.label and fs_obj.is_mounted and not fs.mount():
-                    disk_btn = menu_btn(label=label)
-                    connect_signal(disk_btn, 'click', self.click_disk, disk)
+                    disk_btn = menu_btn(label=label, on_press=self.click_disk, user_arg=disk)
                     disk_btn = disk_btn
                 else:
                     disk_btn = Color.info_minor(Text("  " + label))
@@ -196,8 +195,7 @@ class FilesystemView(BaseView):
                     label += "unformatted"
                 size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
                 if partition.available:
-                    part_btn = menu_btn(label=label)
-                    connect_signal(part_btn, 'click', self.click_partition, partition)
+                    part_btn = menu_btn(label=label, on_press=self.click_partition, user_arg=partition)
                     col2(part_btn, size)
                 else:
                     part_btn = Color.info_minor(Text("  " + label))
@@ -207,18 +205,17 @@ class FilesystemView(BaseView):
             free = disk.free
             percent = int(100*free/size)
             if disk.available and disk.used > 0 and percent > 0:
-                disk_btn = menu_btn(label="ADD/EDIT PARTITIONS")
-                connect_signal(disk_btn, 'click', self.click_disk, disk)
-                size = Text("{:>9} ({}%) free".format(humanize_size(free), percent))
-                col2(disk_btn, size)
+                label = "ADD/EDIT PARTITIONS"
+                size = "{:>9} ({}%) free".format(humanize_size(free), percent)
             elif disk.available and percent > 0:
-                disk_btn = menu_btn(label="ADD FIRST PARTITION")
-                connect_signal(disk_btn, 'click', self.click_disk, disk)
-                col2(disk_btn, Text(""))
+                label = "ADD FIRST PARTITION"
+                size = ""
             else:
-                disk_btn = menu_btn(label="EDIT PARTITIONS")
-                connect_signal(disk_btn, 'click', self.click_disk, disk)
-                col2(disk_btn, Text(""))
+                label = "EDIT PARTITIONS"
+                size = ""
+            col2(
+                menu_btn(label=label, on_press=self.click_disk, user_arg=disk),
+                Text(size))
 
         if len(inputs) == 1:
             return Pile([Color.info_minor(
