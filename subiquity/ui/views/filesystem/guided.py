@@ -14,16 +14,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from urwid import (
-    connect_signal,
     Text,
     )
 
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Color, connect_signal, Padding
 
 from subiquitycore.ui.buttons import (
     cancel_btn,
     menu_btn,
-    PlainButton,
+    ok_btn,
     )
 from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.view import BaseView
@@ -40,15 +39,16 @@ class GuidedFilesystemView(BaseView):
 
     def __init__(self, model, controller):
         self.controller = controller
-        guided = PlainButton(label="Guided")
-        connect_signal(guided, 'click', self.guided)
-        manual = PlainButton(label="Manual")
-        connect_signal(manual, 'click', self.manual)
+        guided = ok_btn("Guided", on_press=self.guided)
+        manual = ok_btn("Manual", on_press=self.manual)
+        cancel = cancel_btn(on_press=self.cancel)
         lb = ListBox([
             Padding.center_70(Text(text)),
             Padding.center_70(Text("")),
-            Padding.fixed_10(Color.button(guided)),
-            Padding.fixed_10(Color.button(manual))])
+            Padding.fixed_10(guided),
+            Padding.fixed_10(manual),
+            Padding.fixed_10(cancel),
+            ])
         super().__init__(lb)
 
     def manual(self, btn):
@@ -57,24 +57,29 @@ class GuidedFilesystemView(BaseView):
     def guided(self, btn):
         self.controller.guided()
 
+    def cancel(self, btn):
+        self.controller.cancel()
+
+
 class GuidedDiskSelectionView(BaseView):
 
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        cancel = Color.amberbutton(cancel_btn(on_press=self.cancel))
+        cancel = cancel_btn(on_press=self.cancel)
         disks = []
         for disk in self.model.all_disks():
             if disk.available:
                 disk_btn = menu_btn("%-40s %s"%(disk.serial, humanize_size(disk.size).rjust(9)))
                 connect_signal(disk_btn, 'click', self.choose_disk, disk)
-                disks.append(Color.menu_button(disk_btn))
+                disks.append(disk_btn)
         lb = ListBox([
             Padding.center_70(Text("Choose the disk to install to:")),
             Padding.center_70(Text("")),
             Padding.center_70(Pile(disks)),
             Padding.center_70(Text("")),
-            Padding.fixed_10(Color.button(cancel))])
+            Padding.fixed_10(cancel),
+            ])
         super().__init__(lb)
 
     def cancel(self, btn):

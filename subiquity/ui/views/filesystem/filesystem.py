@@ -21,7 +21,6 @@ configuration.
 """
 import logging
 from urwid import (
-    connect_signal,
     LineBox,
     Padding as UrwidPadding,
     Text,
@@ -30,13 +29,13 @@ from urwid import (
 
 from subiquitycore.ui.buttons import (
     cancel_btn,
-    continue_btn,
+    danger_btn,
     done_btn,
     menu_btn,
     reset_btn,
     )
 from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Color, connect_signal, Padding
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
@@ -57,8 +56,8 @@ class FilesystemConfirmationView(WidgetWrap):
         self.controller = controller
         pile = Pile([
             UrwidPadding(Text(confirmation_text), left=2, right=2),
-            Padding.fixed_15(Color.amberbutton(cancel_btn(label="No", on_press=self.cancel))),
-            Padding.fixed_15(Color.button(continue_btn(on_press=self.ok))),
+            Padding.fixed_15(cancel_btn(label="No", on_press=self.cancel)),
+            Padding.fixed_15(danger_btn(label="Continue", on_press=self.ok)),
             Text(""),
             ])
         lb = LineBox(pile, title="Confirm destructive action")
@@ -146,10 +145,10 @@ class FilesystemView(BaseView):
         # don't enable done botton if we can't install
         if self.model.can_install():
             buttons.append(
-                Color.button(done_btn(on_press=self.done)))
+                done_btn(on_press=self.done))
 
-        buttons.append(Color.amberbutton(reset_btn(on_press=self.reset)))
-        buttons.append(Color.redbutton(cancel_btn(on_press=self.cancel)))
+        buttons.append(reset_btn(on_press=self.reset))
+        buttons.append(cancel_btn(on_press=self.cancel))
 
         return Pile(buttons)
 
@@ -181,7 +180,7 @@ class FilesystemView(BaseView):
                 if fs_obj.label and fs_obj.is_mounted and not fs.mount():
                     disk_btn = menu_btn(label=label)
                     connect_signal(disk_btn, 'click', self.click_disk, disk)
-                    disk_btn = Color.menu_button(disk_btn)
+                    disk_btn = disk_btn
                 else:
                     disk_btn = Color.info_minor(Text("  " + label))
                 col1(disk_btn)
@@ -199,7 +198,6 @@ class FilesystemView(BaseView):
                 if partition.available:
                     part_btn = menu_btn(label=label)
                     connect_signal(part_btn, 'click', self.click_partition, partition)
-                    part_btn = Color.menu_button(part_btn)
                     col2(part_btn, size)
                 else:
                     part_btn = Color.info_minor(Text("  " + label))
@@ -211,18 +209,15 @@ class FilesystemView(BaseView):
             if disk.available and disk.used > 0 and percent > 0:
                 disk_btn = menu_btn(label="ADD/EDIT PARTITIONS")
                 connect_signal(disk_btn, 'click', self.click_disk, disk)
-                disk_btn = Color.menu_button(disk_btn)
                 size = Text("{:>9} ({}%) free".format(humanize_size(free), percent))
                 col2(disk_btn, size)
             elif disk.available and percent > 0:
                 disk_btn = menu_btn(label="ADD FIRST PARTITION")
                 connect_signal(disk_btn, 'click', self.click_disk, disk)
-                disk_btn = Color.menu_button(disk_btn)
                 col2(disk_btn, Text(""))
             else:
                 disk_btn = menu_btn(label="EDIT PARTITIONS")
                 connect_signal(disk_btn, 'click', self.click_disk, disk)
-                disk_btn = Color.menu_button(disk_btn)
                 col2(disk_btn, Text(""))
 
         if len(inputs) == 1:
@@ -252,10 +247,9 @@ class FilesystemView(BaseView):
 
         for opt, sig in fs_menu:
             if len(avail_disks) > 1:
-                opts.append(Color.menu_button(
-                            menu_btn(label=opt,
+                opts.append(menu_btn(label=opt,
                                      on_press=self.on_fs_menu_press,
-                                     user_data=sig)))
+                                     user_data=sig))
         return Pile(opts)
 
     def cancel(self, button=None):
