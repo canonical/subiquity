@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from urwid import Button, Text
+from functools import partial
 
-from subiquitycore.ui.utils import Color
+from urwid import AttrWrap, Button, connect_signal, Text
 
 class PlainButton(Button):
     button_left = Text("[")
@@ -27,32 +27,30 @@ class MenuSelectButton(Button):
     button_right = Text(">")
 
 
-def start_btn(label="Start"):
-    return Color.save_button(PlainButton(label=label))
+def plain_btn(label, color, on_press=None, user_arg=None):
+    button = PlainButton(label=label)
+    if on_press is not None:
+        connect_signal(button, 'click', on_press, user_arg)
+    return AttrWrap(button, color, color + ' focus')
 
-def cancel_btn(label="Cancel"):
-    return Color.cancel_button(PlainButton(label=label))
 
-def save_btn(label="Save"):
-    return Color.save_button(PlainButton(label=label))
+start_btn = partial(plain_btn, "Start", "save_button")
+save_btn = partial(plain_btn, "Save", "save_button")
+finish_btn = partial(plain_btn, "Finish", "save_button")
+ok_btn = partial(plain_btn, "OK", "save_button")
+confirm_btn = partial(plain_btn, "Confirm", "save_button")
+done_btn = partial(plain_btn, "Done", "save_button")
+continue_btn = partial(plain_btn, "Continue", "save_button")
 
-def finish_btn(label="Finish"):
-    return save_btn(label)
+reset_btn = partial(plain_btn, "Reset", "reset_button")
 
-def ok_btn(label="OK"):
-    return save_btn(label)
+cancel_btn = partial(plain_btn, "Cancel", "cancel_button")
+back_btn = partial(plain_btn, "Back", "cancel_button")
 
-def confirm_btn(label="Confirm"):
-    return save_btn(label)
+danger_btn = partial(plain_btn, color="danger_button")
 
-def done_btn(label="Done"):
-    return save_btn(label)
-
-def continue_btn(label="Continue"):
-    return save_btn(label)
-
-def reset_btn(label="Reset"):
-    return Color.reset_button(PlainButton(label=label))
-
-def menu_btn(label):
-    return Color.menu_button(MenuSelectButton(label=label))
+def menu_btn(label, on_press=None, user_arg=None):
+    button = MenuSelectButton(label=label)
+    if on_press is not None:
+        connect_signal(button, 'click', on_press, user_arg)
+    return AttrWrap(button, 'menu_button', 'menu_button focus')

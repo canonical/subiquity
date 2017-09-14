@@ -44,7 +44,7 @@ class InstallpathView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.amberbutton(cancel_btn(on_press=self.cancel)),
+            cancel_btn(on_press=self.cancel),
         ]
         return Pile(self.buttons)
 
@@ -52,10 +52,9 @@ class InstallpathView(BaseView):
         sl = []
         for ipath, sig in self.model.get_menu():
             log.debug("Building inputs: {}".format(ipath))
-            sl.append(Color.menu_button(
-                menu_btn(label=ipath,
-                         on_press=self.confirm,
-                         user_data=sig)))
+            sl.append(
+                menu_btn(
+                    label=ipath, on_press=self.confirm, user_arg=sig))
 
         return BoxAdapter(SimpleList(sl),
                           height=len(sl))
