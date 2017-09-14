@@ -14,8 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from urwid import Button, Text
-from functools import partial
 
+from subiquitycore.ui.utils import Color
 
 class PlainButton(Button):
     button_left = Text("[")
@@ -27,12 +27,32 @@ class MenuSelectButton(Button):
     button_right = Text(">")
 
 
-start_btn = partial(PlainButton, label="Start", on_press=None)
-confirm_btn = partial(PlainButton, label="Confirm", on_press=None)
-cancel_btn = partial(PlainButton, label="Cancel", on_press=None)
-done_btn = partial(PlainButton, label="Done", on_press=None)
-finish_btn = partial(PlainButton, label="Finish", on_press=None)
-ok_btn = partial(PlainButton, label="OK", on_press=None)
-continue_btn = partial(PlainButton, label="Continue", on_press=None)
-reset_btn = partial(PlainButton, label="Reset", on_press=None)
-menu_btn = partial(MenuSelectButton, on_press=None)
+def start_btn(label="Start"):
+    return Color.save_button(PlainButton(label=label))
+
+def cancel_btn(label="Cancel"):
+    return Color.cancel_button(PlainButton(label=label))
+
+def save_btn(label="Save"):
+    return Color.save_button(PlainButton(label=label))
+
+def finish_btn(label="Finish"):
+    return save_btn(label)
+
+def ok_btn(label="OK"):
+    return save_btn(label)
+
+def confirm_btn(label="Confirm"):
+    return save_btn(label)
+
+def done_btn(label="Done"):
+    return save_btn(label)
+
+def continue_btn(label="Continue"):
+    return save_btn(label)
+
+def reset_btn(label="Reset"):
+    return Color.reset_button(PlainButton(label=label))
+
+def menu_btn(label):
+    return Color.menu_button(MenuSelectButton(label=label))

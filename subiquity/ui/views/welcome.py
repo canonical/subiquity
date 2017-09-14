@@ -23,7 +23,7 @@ from urwid import BoxAdapter, Text
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import menu_btn, ok_btn
 from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import connect_signal, Padding, Color
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.views.welcome")
@@ -47,12 +47,14 @@ class WelcomeView(BaseView):
 
     def _build_model_inputs(self):
         sl = []
-        for lang in self.model.get_languages():
-            sl.append(Color.menu_button(menu_btn(label=lang, on_press=self.confirm)))
+        for lang, code in self.model.get_languages():
+            btn = menu_btn(label=lang)
+            connect_signal(btn, 'click', self.confirm, code)
+            sl.append(btn)
 
         return BoxAdapter(SimpleList(sl), height=len(sl))
 
-    def confirm(self, result):
-        self.model.selected_language = result.label
+    def confirm(self, sender, code):
+        self.model.selected_language = code
         log.debug('calling installpath')
         self.controller.done()
