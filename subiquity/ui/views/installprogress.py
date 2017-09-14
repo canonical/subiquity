@@ -21,9 +21,9 @@ from urwid import (
     )
 
 from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import confirm_btn
+from subiquitycore.ui.buttons import cancel_btn, confirm_btn
 from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Padding
 
 log = logging.getLogger("subiquity.views.installprogress")
 
@@ -62,10 +62,10 @@ class ProgressView(BaseView):
 
     def show_complete(self):
         w = Padding.fixed_20(
-            Color.button(confirm_btn(label="Reboot Now", on_press=self.reboot)))
+            confirm_btn(label="Reboot Now", on_press=self.reboot))
 
         z = Padding.fixed_20(
-            Color.amberbutton(confirm_btn(label="Quit Installer", on_press=self.quit)))
+            cancel_btn(label="Quit Installer", on_press=self.quit))
 
         new_focus = len(self.pile.contents)
         self.pile.contents.append((w, self.pile.options('pack')))

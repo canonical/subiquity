@@ -132,8 +132,8 @@ class NetworkView(BaseView):
         super().__init__(self.frame)
 
     def _build_buttons(self):
-        cancel = Color.amberbutton(cancel_btn(on_press=self.cancel))
-        done = Color.button(done_btn(on_press=self.done))
+        cancel = cancel_btn(on_press=self.cancel)
+        done = done_btn(on_press=self.done)
         self.default_focus = done
 
         buttons = [done, cancel]
@@ -157,8 +157,7 @@ class NetworkView(BaseView):
             col_2 = []
 
             col_1.append(
-                Color.menu_button(
-                    menu_btn(label=dev.name, on_press=self.on_net_dev_press)))
+                    menu_btn(label=dev.name, on_press=self.on_net_dev_press))
 
             if dev.type == 'wlan':
                 col_2.extend(_build_wifi_info(dev))
@@ -229,10 +228,10 @@ class NetworkView(BaseView):
                 max_btn_len = len(opt)
 
             buttons.append(
-                Color.menu_button(
-                    menu_btn(label=opt,
-                             on_press=self.additional_menu_select,
-                             user_data=sig)))
+                menu_btn(
+                    label=opt,
+                    on_press=self.additional_menu_select,
+                    user_data=sig))
 
         from urwid import Padding
         buttons = [ Padding(button, align='left', width=max_btn_len + 6) for button in buttons ]
