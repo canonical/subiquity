@@ -44,12 +44,12 @@ from subiquity.models.filesystem import humanize_size
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
 
 
-confirmation_text = """\
+confirmation_text = _("""\
 Selecting Continue below will begin the installation process and \
 result in the loss of data on the disks selected to be formatted.
 
 Are you sure you want to continue?
-"""
+""")
 
 class FilesystemConfirmationView(WidgetWrap):
     def __init__(self, parent, controller):
@@ -57,11 +57,11 @@ class FilesystemConfirmationView(WidgetWrap):
         self.controller = controller
         pile = Pile([
             UrwidPadding(Text(confirmation_text), left=2, right=2),
-            Padding.fixed_15(cancel_btn(label="No", on_press=self.cancel)),
+            Padding.fixed_15(cancel_btn(label=_("No"), on_press=self.cancel)),
             Padding.fixed_15(danger_btn(on_press=self.ok)),
             Text(""),
             ])
-        lb = LineBox(pile, title="Confirm destructive action")
+        lb = LineBox(pile, title=_("Confirm destructive action"))
         super().__init__(Padding.center_75(lb))
 
     def ok(self, sender):
@@ -78,11 +78,11 @@ class FilesystemView(BaseView):
         self.controller = controller
         self.items = []
         self.body = [
-            Text("FILE SYSTEM SUMMARY"),
+            Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
             Padding.push_4(self._build_filesystem_list()),
             Text(""),
-            Text("AVAILABLE DEVICES"),
+            Text(_("AVAILABLE DEVICES")),
             Text(""),
             Padding.push_4(self._build_available_inputs()),
             #self._build_menu(),
@@ -206,13 +206,13 @@ class FilesystemView(BaseView):
             free = disk.free
             percent = int(100*free/size)
             if disk.available and disk.used > 0 and percent > 0:
-                label = "ADD/EDIT PARTITIONS"
+                label = _("ADD/EDIT PARTITIONS")
                 size = "{:>9} ({}%) free".format(humanize_size(free), percent)
             elif disk.available and percent > 0:
-                label = "ADD FIRST PARTITION"
+                label = _("ADD FIRST PARTITION")
                 size = ""
             else:
-                label = "EDIT PARTITIONS"
+                label = _("EDIT PARTITIONS")
                 size = ""
             col2(
                 menu_btn(label=label, on_press=self.click_disk, user_arg=disk),
@@ -220,7 +220,7 @@ class FilesystemView(BaseView):
 
         if len(inputs) == 1:
             return Pile([Color.info_minor(
-                Text("No disks available."))])
+                Text(_("No disks available.")))])
 
         return Pile(inputs)
 

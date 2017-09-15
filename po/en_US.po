@@ -1,0 +1,558 @@
+# English translation for subiquity
+# Copyright (C) 2017 Canonical Ltd, and Rosetta Contributors 2017
+# This file is distributed under the same license as the subiquity package.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: subiquity\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-09-15 18:29+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../subiquity/controllers/filesystem.py:67
+#: ../subiquity/controllers/filesystem.py:74
+#: ../subiquity/controllers/filesystem.py:81
+msgid "Filesystem setup"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:68
+msgid "Choose guided or manual partitioning"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:75
+msgid "Select available disks to format and mount"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:82
+msgid "Choose the installation target"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:96
+msgid "Filesystem error"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:97
+msgid "Error while installing Ubuntu"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:98
+msgid "Failed to obtain write permissions to /tmp"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:140
+msgid "Partition, format, and mount {}"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:141
+msgid "Partition the disk, or format the entire device without partitions"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:151
+msgid "Select whole disk, or partition, to format and mount."
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:158
+msgid "Edit partition details format and mount."
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:265
+msgid "Create Logical Volume Group (\"LVM2\") disk"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:266
+#: ../subiquity/controllers/filesystem.py:276
+#: ../subiquity/controllers/filesystem.py:289
+msgid "ENTER on a disk will show detailed information for that disk"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:268
+msgid ""
+"Use SPACE to select disks to form your LVM2 volume group, and then specify "
+"the Volume Group name. "
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:275
+msgid "Create software RAID (\"MD\") disk"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:278
+msgid ""
+"Use SPACE to select disks to form your RAID array, and then specify the RAID "
+"parameters. Multiple-disk arrays work best when all the disks in an array "
+"are the same size and speed."
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:288
+msgid "Create hierarchical storage (\"bcache\") disk"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:291
+msgid ""
+"Use SPACE to select a cache disk and a backing disk to form your bcache "
+"device."
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:306
+msgid "Format and/or mount {}"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:307
+msgid "Format or mount whole disk."
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:316
+msgid "Mount partition {} of {}"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:317
+msgid "Mount partition."
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:319
+msgid "Format and mount partition {} of {}"
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:320
+msgid "Format and mount partition."
+msgstr ""
+
+#: ../subiquity/controllers/filesystem.py:385
+msgid "Select next or previous disks with n and p"
+msgstr ""
+
+#: ../subiquity/controllers/identity.py:36
+msgid "Profile setup"
+msgstr ""
+
+#: ../subiquity/controllers/identity.py:37
+msgid ""
+"Enter the username and password (or ssh identity) you will use to log in to "
+"the system."
+msgstr ""
+
+#: ../subiquity/controllers/installpath.py:45
+msgid ""
+"Welcome to Ubuntu! The world's favorite platform for clouds, clusters, and "
+"amazing internet things. This is the installer for Ubuntu on servers and "
+"internet devices."
+msgstr ""
+
+#: ../subiquity/controllers/installpath.py:49
+msgid "Use UP, DOWN arrow keys, and ENTER, to navigate options"
+msgstr ""
+
+#: ../subiquity/controllers/installprogress.py:74
+msgid "An error occurred during installation"
+msgstr ""
+
+#: ../subiquity/controllers/installprogress.py:75
+msgid "Please report this error in Launchpad"
+msgstr ""
+
+#: ../subiquity/controllers/installprogress.py:76
+msgid "An error has occurred."
+msgstr ""
+
+#: ../subiquity/controllers/installprogress.py:137
+#: ../subiquity/controllers/installprogress.py:228
+msgid "Running postinstall step"
+msgstr ""
+
+#: ../subiquity/controllers/installprogress.py:165
+msgid "Installation complete!"
+msgstr ""
+
+#: ../subiquity/controllers/installprogress.py:167
+msgid "Finished install!"
+msgstr ""
+
+#: ../subiquity/controllers/installprogress.py:215
+msgid "Installing system"
+msgstr ""
+
+#: ../subiquity/controllers/installprogress.py:216
+msgid "Please wait for the installation to finish."
+msgstr ""
+
+#: ../subiquity/controllers/installprogress.py:217
+msgid "Thank you for using Ubuntu!"
+msgstr ""
+
+#: ../subiquity/controllers/installprogress.py:226
+msgid "Running install step"
+msgstr ""
+
+#: ../subiquity/controllers/welcome.py:31
+msgid "Please choose your preferred language"
+msgstr ""
+
+#: ../subiquity/controllers/welcome.py:32
+msgid "Use UP, DOWN and ENTER keys to select your language."
+msgstr ""
+
+#: ../subiquitycore/controllers/network.py:347
+msgid "Network connections"
+msgstr ""
+
+#: ../subiquitycore/controllers/network.py:348
+msgid ""
+"Configure at least one interface this server can use to talk to other "
+"machines, and which preferably provides sufficient access for updates."
+msgstr ""
+
+#: ../subiquitycore/controllers/network.py:351
+msgid "Select an interface to configure it or select Done to continue"
+msgstr ""
+
+#: ../subiquitycore/ui/buttons.py:37
+msgid "Start"
+msgstr ""
+
+#: ../subiquitycore/ui/buttons.py:38
+msgid "Save"
+msgstr ""
+
+#: ../subiquitycore/ui/buttons.py:39
+msgid "Finish"
+msgstr ""
+
+#: ../subiquitycore/ui/buttons.py:40
+msgid "OK"
+msgstr ""
+
+#: ../subiquitycore/ui/buttons.py:41
+msgid "Confirm"
+msgstr ""
+
+#: ../subiquitycore/ui/buttons.py:42
+msgid "Done"
+msgstr ""
+
+#: ../subiquitycore/ui/buttons.py:43
+#: ../subiquity/ui/views/filesystem/filesystem.py:60
+msgid "Continue"
+msgstr ""
+
+#: ../subiquitycore/ui/buttons.py:45
+msgid "Reset"
+msgstr ""
+
+#: ../subiquitycore/ui/buttons.py:47
+msgid "Cancel"
+msgstr ""
+
+#: ../subiquitycore/ui/buttons.py:48
+msgid "Back"
+msgstr ""
+
+#: ../subiquitycore/ui/interactive.py:114
+msgid "Yes"
+msgstr ""
+
+#: ../subiquitycore/ui/interactive.py:114
+#: ../subiquity/ui/views/filesystem/filesystem.py:59
+msgid "No"
+msgstr ""
+
+#: ../subiquitycore/ui/interactive.py:121
+msgid "Close"
+msgstr ""
+
+#: ../subiquitycore/ui/interactive.py:122
+msgid "Help"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_interface.py:66
+msgid "Use a static IPv4 configuration"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_interface.py:69
+msgid "Use DHCPv4 on this interface"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_interface.py:72
+#: ../subiquitycore/ui/views/network_configure_interface.py:91
+msgid "Do not use"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_interface.py:85
+msgid "Use a static IPv6 configuration"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_interface.py:88
+msgid "Use DHCPv6 on this interface"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_interface.py:102
+msgid "Configure WIFI settings"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:67
+msgid "Subnet:"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:68
+msgid "Address:"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:69
+msgid "Gateway:"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:70
+msgid "Name servers:"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:70
+msgid "IP addresses, comma separated"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
+msgid "Search domains:"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
+msgid "Domains, comma separated"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:122
+#, python-format
+msgid "CIDR e.g. %s"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:158
+msgid "Set this as default gateway"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:161
+msgid "This will be your default gateway"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:51
+msgid "Applying network config"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:65
+#, python-format
+msgid "Associated to '%s', will associate to '%s'"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:67
+#, python-format
+msgid "Associated to '%s'"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:69
+#, python-format
+msgid "No access point configured, but associated to '%s'"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:72
+#, python-format
+msgid "Will associate to '%s'"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:74
+msgid "No access point configured"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:94
+#, python-format
+msgid "Will use DHCP for IPv%s, currently has address%%s:"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:95
+#, python-format
+msgid "Will use DHCP for IPv%s"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:98
+#, python-format
+msgid "Using static address%%s for IPv%s:"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:99
+#, python-format
+msgid "Will use static address%%s for IPv%s:"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:101
+#, python-format
+msgid "Currently has address%s:"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:104
+#, python-format
+msgid "Has no IPv%s configuration, currently has address%%s:"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:106
+#, python-format
+msgid "IPv%s is not configured"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:165
+msgid "Not connected"
+msgstr ""
+
+#: ../subiquitycore/ui/views/network.py:204
+#, python-format
+msgid "  IPv4 default route %s."
+msgstr ""
+
+#: ../subiquity/models/installpath.py:31
+msgid "Install Ubuntu"
+msgstr ""
+
+#: ../subiquity/ui/mount.py:53
+msgid "other"
+msgstr ""
+
+#: ../subiquity/ui/mount.py:55
+msgid "leave unmounted"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:47
+msgid ""
+"\n"
+"Selecting Continue below will result of the loss of data on the disks "
+"selected to be formatted.\n"
+"\n"
+"Are you sure you want to continue?\n"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:63
+msgid "Confirm destructive action"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:80
+msgid "FILE SYSTEM SUMMARY"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:84
+msgid "AVAILABLE DEVICES"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:208
+msgid "ADD/EDIT PARTITIONS"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:211
+msgid "ADD FIRST PARTITION"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:214
+msgid "EDIT PARTITIONS"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:222
+msgid "No disks available."
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/guided.py:33
+msgid ""
+"The installer can guide you through partitioning a disk or, if you prefer, "
+"you can do it manually. If you choose guided partitioning you will still "
+"have a chance to review and modify the results."
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/guided.py:42
+msgid "Guided"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/guided.py:43
+msgid "Manual"
+msgstr ""
+
+#: ../subiquity/ui/views/filesystem/guided.py:78
+msgid "Choose the disk to install to:"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:49
+msgid "Your name:"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:51
+msgid "Your server's name:"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:52
+msgid "The name it uses when it talks to other computers."
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:53
+msgid "Pick a username:"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:54
+msgid "Choose a password:"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:55
+msgid "Confirm your password:"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:57
+msgid "Import SSH identity:"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:58
+msgid ""
+"Input your SSH user id from Ubuntu SSO (sso:email), Launchpad (lp:username) "
+"or Github (gh:username)."
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:63
+msgid "Real name must not be empty."
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:65
+msgid "Realname too long, must be < "
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:69
+msgid "Server name must not be empty"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:72
+msgid "Server name too long, must be < "
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:76
+msgid "Username missing"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:79
+msgid "Username too long, must be < "
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:85
+msgid "Password must be set"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:89
+msgid "Passwords do not match"
+msgstr ""
+
+#: ../subiquity/ui/views/identity.py:94
+msgid "SSH id too long, must be < "
+msgstr ""
+
+#: ../subiquity/ui/views/installprogress.py:65
+msgid "Reboot Now"
+msgstr ""
+
+#: ../subiquity/ui/views/installprogress.py:68
+msgid "Quit Installer"
+msgstr ""
+
+#: ../subiquity/ui/views/welcome.py:40
+msgid "(More language choices will appear in time)"
+msgstr ""

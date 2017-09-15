@@ -33,8 +33,8 @@ class IdentityController(BaseController):
         self.model = IdentityModel(self.opts)
 
     def default(self):
-        title = "Profile setup"
-        excerpt = ("Enter the username and password (or ssh identity) you will use to log in to the system.")
+        title = _("Profile setup")
+        excerpt = _("Enter the username and password (or ssh identity) you will use to log in to the system.")
         footer = ""
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 40)

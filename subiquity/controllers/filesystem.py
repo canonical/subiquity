@@ -64,22 +64,22 @@ class FilesystemController(BaseController):
         if self.model.any_configuration_done():
             self.manual()
         else:
-            title = "Filesystem setup"
-            footer = ("Choose guided or manual partitioning")
+            title = _("Filesystem setup")
+            footer = (_("Choose guided or manual partitioning"))
             self.ui.set_header(title)
             self.ui.set_footer(footer, 30)
             self.ui.set_body(GuidedFilesystemView(self.model, self))
 
     def manual(self):
-        title = "Filesystem setup"
-        footer = ("Select available disks to format and mount")
+        title = _("Filesystem setup")
+        footer = (_("Select available disks to format and mount"))
         self.ui.set_header(title)
         self.ui.set_footer(footer, 30)
         self.ui.set_body(FilesystemView(self.model, self))
 
     def guided(self):
-        title = "Filesystem setup"
-        footer = ("Choose the installation target")
+        title = _("Filesystem setup")
+        footer = (_("Choose the installation target"))
         self.ui.set_header(title)
         self.ui.set_footer(footer, 30)
         self.ui.set_body(GuidedDiskSelectionView(self.model, self))
@@ -93,9 +93,9 @@ class FilesystemController(BaseController):
         self.signal.emit_signal('prev-screen')
 
     def filesystem_error(self, error_fname):
-        title = "Filesystem error"
-        footer = ("Error while installing Ubuntu")
-        error_msg = "Failed to obtain write permissions to /tmp"
+        title = _("Filesystem error")
+        footer = (_("Error while installing Ubuntu"))
+        error_msg = _("Failed to obtain write permissions to /tmp")
         self.ui.set_header(title)
         self.ui.set_footer(footer, 30)
         self.ui.set_body(ErrorView(self.signal, error_msg))
@@ -137,9 +137,9 @@ class FilesystemController(BaseController):
     # Filesystem/Disk partition -----------------------------------------------
     def partition_disk(self, disk):
         log.debug("In disk partition view, using {} as the disk.".format(disk.serial))
-        title = ("Partition, format, and mount {}".format(disk.serial))
-        footer = ("Partition the disk, or format the entire device "
-                  "without partitions")
+        title = (_("Partition, format, and mount {}").format(disk.serial))
+        footer = (_("Partition the disk, or format the entire device "
+                  "without partitions"))
         self.ui.set_header(title)
         self.ui.set_footer(footer)
         dp_view = DiskPartitionView(self.model, self, disk)
@@ -148,14 +148,14 @@ class FilesystemController(BaseController):
 
     def add_disk_partition(self, disk):
         log.debug("Adding partition to {}".format(disk))
-        footer = ("Select whole disk, or partition, to format and mount.")
+        footer = _("Select whole disk, or partition, to format and mount.")
         self.ui.set_footer(footer)
         adp_view = PartitionView(self.model, self, disk)
         self.ui.set_body(adp_view)
 
     def edit_partition(self, disk, partition):
         log.debug("Editing partition {}".format(partition))
-        footer = ("Edit partition details format and mount.")
+        footer = _("Edit partition details format and mount.")
         self.ui.set_footer(footer)
         adp_view = PartitionView(self.model, self, disk, partition)
         self.ui.set_body(adp_view)
@@ -262,20 +262,20 @@ class FilesystemController(BaseController):
         self.ui.set_body(DummyView(self.signal))
 
     def create_volume_group(self, *args, **kwargs):
-        title = ("Create Logical Volume Group (\"LVM2\") disk")
-        footer = ("ENTER on a disk will show detailed "
+        title = _("Create Logical Volume Group (\"LVM2\") disk")
+        footer = _("ENTER on a disk will show detailed "
                   "information for that disk")
-        excerpt = ("Use SPACE to select disks to form your LVM2 volume group, "
+        excerpt = _("Use SPACE to select disks to form your LVM2 volume group, "
                    "and then specify the Volume Group name. ")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
         self.ui.set_body(LVMVolumeGroupView(self.model, self.signal))
 
     def create_raid(self, *args, **kwargs):
-        title = ("Create software RAID (\"MD\") disk")
-        footer = ("ENTER on a disk will show detailed "
+        title = _("Create software RAID (\"MD\") disk")
+        footer = _("ENTER on a disk will show detailed "
                   "information for that disk")
-        excerpt = ("Use SPACE to select disks to form your RAID array, "
+        excerpt = _("Use SPACE to select disks to form your RAID array, "
                    "and then specify the RAID parameters. Multiple-disk "
                    "arrays work best when all the disks in an array are "
                    "the same size and speed.")
@@ -285,10 +285,10 @@ class FilesystemController(BaseController):
                                   self.signal))
 
     def create_bcache(self, *args, **kwargs):
-        title = ("Create hierarchical storage (\"bcache\") disk")
-        footer = ("ENTER on a disk will show detailed "
+        title = _("Create hierarchical storage (\"bcache\") disk")
+        footer = _("ENTER on a disk will show detailed "
                   "information for that disk")
-        excerpt = ("Use SPACE to select a cache disk and a backing disk"
+        excerpt = _("Use SPACE to select a cache disk and a backing disk"
                    " to form your bcache device.")
 
         self.ui.set_header(title, excerpt)
@@ -303,8 +303,8 @@ class FilesystemController(BaseController):
 
     def format_entire(self, disk):
         log.debug("format_entire {}".format(disk.serial))
-        header = ("Format and/or mount {}".format(disk.serial))
-        footer = ("Format or mount whole disk.")
+        header = (_("Format and/or mount {}").format(disk.serial))
+        footer = _("Format or mount whole disk.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
         afv_view = FormatEntireView(self.model, self, disk, lambda : self.partition_disk(disk))
@@ -313,11 +313,11 @@ class FilesystemController(BaseController):
     def format_mount_partition(self, partition):
         log.debug("format_entire {}".format(partition))
         if partition.fs() is not None:
-            header = ("Mount partition {} of {}".format(partition.number, partition.device.serial))
-            footer = ("Mount partition.")
+            header = (_("Mount partition {} of {}").format(partition.number, partition.device.serial))
+            footer = _("Mount partition.")
         else:
-            header = ("Format and mount partition {} of {}".format(partition.number, partition.device.serial))
-            footer = ("Format and mount partition.")
+            header = (_("Format and mount partition {} of {}").format(partition.number, partition.device.serial))
+            footer = _("Format and mount partition.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
         afv_view = FormatEntireView(self.model, self, partition, self.default)
@@ -382,7 +382,7 @@ class FilesystemController(BaseController):
         result = template.format(**dinfo)
         log.debug('calling DiskInfoView()')
         disk_info_view = DiskInfoView(self.model, self, disk, result)
-        footer = ('Select next or previous disks with n and p')
+        footer = _('Select next or previous disks with n and p')
         self.ui.set_footer(footer, 30)
         self.ui.set_body(disk_info_view)
 

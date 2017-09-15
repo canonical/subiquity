@@ -62,10 +62,10 @@ class ProgressView(BaseView):
 
     def show_complete(self):
         w = Padding.fixed_20(
-            ok_btn(label="Reboot Now", on_press=self.reboot))
+            ok_btn(label=_("Reboot Now"), on_press=self.reboot))
 
         z = Padding.fixed_20(
-            cancel_btn(label="Quit Installer", on_press=self.quit))
+            cancel_btn(label=_("Quit Installer"), on_press=self.quit))
 
         new_focus = len(self.pile.contents)
         self.pile.contents.append((w, self.pile.options('pack')))

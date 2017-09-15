@@ -13,8 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import gettext
 import logging
-
+from subiquitycore import i18n
 
 log = logging.getLogger('subiquity.models.welcome')
 
@@ -23,13 +24,26 @@ class WelcomeModel(object):
     """ Model representing language selection
     """
 
-    supported_languages = [
-        ('English', 'en_US'),
-        ]
+    supported_languages = [('en_US', 'English'), ('ru_RU', 'Russian')]
     selected_language = None
 
     def get_languages(self):
-        return self.supported_languages
+        languages = []
+        for code, name in self.supported_languages:
+            label = name
+            native = name
+            if gettext.find('iso_639_3'):
+                cur_lang = gettext.translation('iso_639_3')
+                label = cur_lang.gettext(name).capitalize()
+            if gettext.find('iso_639_3', languages=[code]):
+                native_lang = gettext.translation('iso_639_3', languages=[code])
+                native = native_lang.gettext(name).capitalize()
+            languages.append((code, label, native))
+        return languages
+
+    def switch_language(self, code):
+        self.selected_language = code
+        i18n.switch_language(code)
 
     def __repr__(self):
         return "<Selected: {}>".format(self.selected_language)

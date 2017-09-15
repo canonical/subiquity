@@ -64,11 +64,11 @@ class NetworkConfigForm(Form):
         self.ip_address_cls = fam['address_cls']
         self.ip_network_cls = fam['network_cls']
 
-    subnet = IPField("Subnet:", has_mask=True)
-    address = IPField("Address:")
-    gateway = IPField("Gateway:")
-    nameservers = StringField("Name servers:", help="IP addresses, comma separated")
-    searchdomains = StringField("Search domains:", help="Domains, comma separated")
+    subnet = IPField(_("Subnet:"), has_mask=True)
+    address = IPField(_("Address:"))
+    gateway = IPField(_("Gateway:"))
+    nameservers = StringField(_("Name servers:"), help=_("IP addresses, comma separated"))
+    searchdomains = StringField(_("Search domains:"), help=_("Domains, comma separated"))
 
     def clean_subnet(self, subnet):
         log.debug("clean_subnet %r", subnet)
@@ -119,7 +119,7 @@ class BaseNetworkConfigureManualView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        self.form.subnet.help = "CIDR e.g. %s"%(self.example_address,)
+        self.form.subnet.help = _("CIDR e.g. %s"%(self.example_address,))
         configured_addresses = self.dev.configured_ip_addresses_for_version(self.ip_version)
         if configured_addresses:
             addr = ipaddress.ip_interface(configured_addresses[0])
@@ -155,10 +155,10 @@ class BaseNetworkConfigureManualView(BaseView):
         self.is_gateway = self.model.v4_gateway_dev == self.dev.name
 
         if not self.is_gateway and len(devs) > 1:
-            btn = menu_btn(label="Set this as default gateway",
+            btn = menu_btn(label=_("Set this as default gateway"),
                            on_press=self.set_default_gateway)
         else:
-            btn = Text("This will be your default gateway")
+            btn = Text(_("This will be your default gateway"))
 
         return [btn]
 

@@ -28,7 +28,7 @@ class InstallpathModel(object):
 
     # TODO: Re-enable once available
     install_paths = [
-        ('Install Ubuntu',               'installpath:install-ubuntu'),
+        (_('Install Ubuntu'),             'installpath:install-ubuntu'),
         # ('Install MAAS Region Server',  'installpath:maas-region-server'),
         # ('Install MAAS Cluster Server', 'installpath:maas-cluster-server'),
         # ('Test installation media',     'installpath:test-media'),

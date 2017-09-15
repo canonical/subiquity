@@ -111,7 +111,7 @@ class YesNo(Selector):
     """ Yes/No selector
     """
     def __init__(self):
-        opts = ['Yes', 'No']
+        opts = [_('Yes'), _('No')]
         super().__init__(opts)
 
 
@@ -119,7 +119,7 @@ class _HelpDisplay(WidgetWrap):
     def __init__(self, closer, help_text):
         self._closer = closer
         button = close_btn(on_press=lambda btn:self._closer())
-        super().__init__(LineBox(Pile([Text(help_text), Padding.fixed_10(button)]), title="Help"))
+        super().__init__(LineBox(Pile([Text(help_text), Padding.fixed_10(button)]), title=_("Help")))
 
 
 class Help(WidgetWrap):

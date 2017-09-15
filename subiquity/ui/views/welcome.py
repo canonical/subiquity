@@ -19,7 +19,7 @@ Welcome provides user with language selection
 
 """
 import logging
-from urwid import BoxAdapter, Text
+from urwid import BoxAdapter, Text, connect_signal
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import menu_btn
 from subiquitycore.ui.container import ListBox
@@ -37,16 +37,16 @@ class WelcomeView(BaseView):
         super().__init__(ListBox([
             Padding.center_50(self._build_model_inputs()),
             Text(""),
-            Padding.center_79(Text("(More language choices will appear in time)"))]))
+            Padding.center_79(Text(_("(More language choices will appear in time)")))]))
 
     def _build_model_inputs(self):
         sl = []
-        for lang, code in self.model.get_languages():
-            sl.append(menu_btn(label=lang, on_press=self.confirm, user_arg=code))
+        for code, label, native in self.model.get_languages():
+            sl.append(menu_btn(label=native, on_press=self.confirm, user_arg=code))
 
         return BoxAdapter(SimpleList(sl), height=len(sl))
 
     def confirm(self, sender, code):
-        self.model.selected_language = code
+        self.model.switch_language(code)
         log.debug('calling installpath')
         self.controller.done()
