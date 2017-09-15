@@ -29,6 +29,8 @@ class MenuSelectButton(Button):
 
 def plain_btn(label, color, on_press=None, user_arg=None):
     button = PlainButton(label=label)
+    if "\n" in label:
+        button._label.get_cursor_coords = lambda size: (0,1)
     if on_press is not None:
         connect_signal(button, 'click', on_press, user_arg)
     return AttrWrap(button, color, color + ' focus')
