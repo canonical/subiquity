@@ -258,7 +258,7 @@ class Form(object, metaclass=MetaForm):
 
     signals = ['submit', 'cancel']
 
-    ok_label = "\nDone\n"
+    ok_label = "\nDONE\n"
 
     def __init__(self, initial={}):
         self.done_btn = Toggleable(done_btn(label=self.ok_label, on_press=self._click_done))

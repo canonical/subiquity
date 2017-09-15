@@ -83,8 +83,8 @@ class Footer(WidgetWrap):
     """
 
     def __init__(self, message="", completion=0, leftbutton=None, rightbutton=None):
-        message_widget = Padding.center_79(Text(message))
-        progress_bar = Padding.center_60(
+        message_widget = Text(message)
+        progress_bar = Padding.center_80(
             ProgressBar(normal='progress_incomplete',
                         complete='progress_complete',
                         current=completion, done=100))
@@ -96,12 +96,12 @@ class Footer(WidgetWrap):
             Text(""),
             Columns([
                 (1, Text("")),
-                (10, Padding.fixed_10(leftbutton)),
+                (12, leftbutton),
                 Pile([
                     progress_bar,
                     (2, Filler(message_widget, valign='bottom')),
                     ]),
-                (10, Padding.fixed_10(rightbutton)),
+                (12, rightbutton),
                 (1, Text("")),
                 ], dividechars=1),
             Text(""),

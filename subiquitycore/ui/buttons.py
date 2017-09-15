@@ -18,6 +18,10 @@ from functools import partial
 from urwid import AttrWrap, Button, connect_signal, Text
 
 class PlainButton(Button):
+    button_left = Text("[")
+    button_right = Text("]")
+
+class BigButton(Button):
     button_left = Text("")
     button_right = Text("")
 
@@ -28,9 +32,11 @@ class MenuSelectButton(Button):
 
 
 def plain_btn(label, color, on_press=None, user_arg=None):
-    button = PlainButton(label=label)
     if "\n" in label:
+        button = BigButton(label=label)
         button._label.get_cursor_coords = lambda size: (0,1)
+    else:
+        button = PlainButton(label=label)
     if on_press is not None:
         connect_signal(button, 'click', on_press, user_arg)
     return AttrWrap(button, color, color + ' focus')
@@ -41,15 +47,20 @@ save_btn = partial(plain_btn, label="Save", color="save_button")
 finish_btn = partial(plain_btn, label="Finish", color="save_button")
 ok_btn = partial(plain_btn, label="OK", color="save_button")
 confirm_btn = partial(plain_btn, label="Confirm", color="save_button")
-done_btn = partial(plain_btn, label="\nDone\n", color="save_button")
+done_btn = partial(plain_btn, label="Done", color="save_button")
 continue_btn = partial(plain_btn, label="Continue", color="save_button")
+
+prev_btn = partial(plain_btn, label="Done", color="save_button")
 
 reset_btn = partial(plain_btn, label="Reset", color="reset_button")
 
-cancel_btn = partial(plain_btn, label="\nCancel\n", color="cancel_button")
-back_btn = partial(plain_btn, label="\nBack\n", color="cancel_button")
+cancel_btn = partial(plain_btn, label="Cancel", color="cancel_button")
+back_btn = partial(plain_btn, label="Back", color="cancel_button")
 
 danger_btn = partial(plain_btn, color="danger_button")
+
+prev_btn = partial(plain_btn, label="\nBACK\n", color="cancel_button")
+next_btn = partial(plain_btn, label="\nCONTINUE\n", color="save_button")
 
 def menu_btn(label, on_press=None, user_arg=None):
     button = MenuSelectButton(label=label)

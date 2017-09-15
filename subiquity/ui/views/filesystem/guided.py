@@ -20,10 +20,9 @@ from urwid import (
 from subiquitycore.ui.utils import Padding
 
 from subiquitycore.ui.buttons import (
-    back_btn,
-    cancel_btn,
     menu_btn,
     ok_btn,
+    prev_btn,
     )
 from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.view import BaseView
@@ -42,7 +41,7 @@ class GuidedFilesystemView(BaseView):
         self.controller = controller
         guided = ok_btn(label="Guided", on_press=self.guided)
         manual = ok_btn(label="Manual", on_press=self.manual)
-        self.left_button = back_btn(on_press=self.cancel)
+        self.left_button = prev_btn(on_press=self.cancel)
         lb = ListBox([
             Padding.center_70(Text(text)),
             Padding.center_70(Text("")),
@@ -66,7 +65,7 @@ class GuidedDiskSelectionView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.left_button = cancel_btn(on_press=self.cancel)
+        self.left_button = prev_btn(on_press=self.cancel)
         disks = []
         for disk in self.model.all_disks():
             if disk.available:

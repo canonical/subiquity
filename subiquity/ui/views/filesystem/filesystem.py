@@ -28,11 +28,11 @@ from urwid import (
     )
 
 from subiquitycore.ui.buttons import (
-    back_btn,
     cancel_btn,
     danger_btn,
-    done_btn,
     menu_btn,
+    next_btn,
+    prev_btn,
     reset_btn,
     )
 from subiquitycore.ui.container import Columns, ListBox, Pile
@@ -145,11 +145,11 @@ class FilesystemView(BaseView):
         buttons = []
 
         # don't enable done botton if we can't install
-        done = Toggleable(done_btn(on_press=self.done))
+        done = Toggleable(next_btn(on_press=self.done))
         if not self.model.can_install():
             done.disable()
         self.right_button = done
-        self.left_button = back_btn(on_press=self.cancel)
+        self.left_button = prev_btn(on_press=self.cancel)
 
         buttons.append(reset_btn(on_press=self.reset))
 
