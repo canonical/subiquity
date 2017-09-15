@@ -64,6 +64,7 @@ class NetworkConfigForm(Form):
         self.ip_address_cls = fam['address_cls']
         self.ip_network_cls = fam['network_cls']
 
+    ok_label = _("Save")
     subnet = IPField(_("Subnet:"), has_mask=True)
     address = IPField(_("Address:"))
     gateway = IPField(_("Gateway:"))

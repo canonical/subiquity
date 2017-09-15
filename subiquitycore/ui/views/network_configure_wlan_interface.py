@@ -35,6 +35,8 @@ class NetworkList(WidgetWrap):
 
 class WLANForm(Form):
 
+    ok_label = _("Save")
+
     ssid = StringField(caption="Network Name:")
     psk = PasswordField(caption="Password:")
 

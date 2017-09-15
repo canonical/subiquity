@@ -28,6 +28,7 @@ from urwid import (
     )
 
 from subiquitycore.ui.buttons import (
+    back_btn,
     cancel_btn,
     danger_btn,
     done_btn,
@@ -144,12 +145,13 @@ class FilesystemView(BaseView):
         buttons = []
 
         # don't enable done botton if we can't install
+        # XXX should enable/disable button rather than having it appear/disappear I think
         if self.model.can_install():
             buttons.append(
                 done_btn(on_press=self.done))
 
         buttons.append(reset_btn(on_press=self.reset))
-        buttons.append(cancel_btn(on_press=self.cancel))
+        buttons.append(back_btn(on_press=self.cancel))
 
         return Pile(buttons)
 

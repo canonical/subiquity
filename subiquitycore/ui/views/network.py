@@ -29,7 +29,7 @@ from urwid import (
     WidgetWrap,
     )
 
-from subiquitycore.ui.buttons import cancel_btn, menu_btn, done_btn
+from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn, menu_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
@@ -132,11 +132,11 @@ class NetworkView(BaseView):
         super().__init__(self.frame)
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
+        back = back_btn(on_press=self.cancel)
         done = done_btn(on_press=self.done)
         self.default_focus = done
 
-        buttons = [done, cancel]
+        buttons = [done, back]
         return Pile(buttons, focus_item=done)
 
     def _build_model_inputs(self):
