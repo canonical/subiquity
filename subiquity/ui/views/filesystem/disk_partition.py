@@ -14,12 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from urwid import BoxAdapter, connect_signal, Text
+from urwid import BoxAdapter, Text
 
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import done_btn, cancel_btn, menu_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
@@ -48,8 +48,8 @@ class DiskPartitionView(BaseView):
         done = done_btn(on_press=self.done)
 
         buttons = [
-            Color.button(done),
-            Color.amberbutton(cancel)
+            done,
+            cancel,
         ]
         return Pile(buttons)
 
@@ -67,13 +67,12 @@ class DiskPartitionView(BaseView):
             else:
                 fstype = part.fs().fstype
                 mountpoint = part.fs().mount().path
-            part_btn = menu_btn(label)
             if part.type == 'disk':
-                connect_signal(part_btn, 'click', self._click_disk)
+                part_btn = menu_btn(label, on_press=self._click_disk)
             else:
-                connect_signal(part_btn, 'click', self._click_part, part)
+                part_btn = menu_btn(label, on_press=self._click_part, user_arg=part)
             return Columns([
-                (25, Color.menu_button(part_btn)),
+                (25, part_btn),
                 (9, Text(size, align="right")),
                 Text(fstype),
                 Text(mountpoint),
@@ -89,10 +88,9 @@ class DiskPartitionView(BaseView):
                 label = "Add another partition"
             else:
                 label = "Add first partition"
-            add_btn = menu_btn(label)
-            connect_signal(add_btn, 'click', self.add_partition)
+            add_btn = menu_btn(label, on_press=self.add_partition)
             partitioned_disks.append(Columns([
-                (25, Color.menu_button(add_btn)),
+                (25, add_btn),
                 (9, Text(free_space, align="right")),
                 Text("free space"),
             ], 2))
@@ -101,8 +99,8 @@ class DiskPartitionView(BaseView):
             text = ("Format or create swap on entire "
                     "device (unusual, advanced)")
             partitioned_disks.append(Text(""))
-            partitioned_disks.append(Color.menu_button(
-                menu_btn(label=text, on_press=self.format_entire)))
+            partitioned_disks.append(
+                menu_btn(label=text, on_press=self.format_entire))
 
         return BoxAdapter(SimpleList(partitioned_disks),
                           height=len(partitioned_disks))
@@ -117,10 +115,9 @@ class DiskPartitionView(BaseView):
         """ Runs hdparm against device and displays its output
         """
         text = ("Show disk information")
-        return Color.menu_button(
-            menu_btn(
+        return menu_btn(
                 label=text,
-                on_press=self.show_disk_info))
+                on_press=self.show_disk_info)
 
     def show_disk_info(self, result):
         self.controller.show_disk_information(self.disk)

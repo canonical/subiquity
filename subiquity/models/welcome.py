@@ -23,7 +23,9 @@ class WelcomeModel(object):
     """ Model representing language selection
     """
 
-    supported_languages = ['English']
+    supported_languages = [
+        ('English', 'en_US'),
+        ]
     selected_language = None
 
     def get_languages(self):

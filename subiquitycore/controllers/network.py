@@ -352,7 +352,7 @@ class NetworkController(BaseController):
         self.ui.set_header(title, excerpt)
         nv = NetworkView(self.model, self)
         self.ui.set_body(nv)
-        self.ui.set_footer(footer, 20, leftbutton=nv.cancel_button, rightbutton=nv.done_button)
+        self.ui.set_footer(footer, 20, leftbutton=nv.left_button, rightbutton=nv.right_button)
 
     @property
     def netplan_path(self):

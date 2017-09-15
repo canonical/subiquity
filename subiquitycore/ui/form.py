@@ -17,7 +17,6 @@ import logging
 
 from urwid import (
     AttrMap,
-    connect_signal,
     delegate_to_widget_mixin,
     emit_signal,
     MetaSignals,
@@ -39,23 +38,26 @@ from subiquitycore.ui.utils import Color
 
 log = logging.getLogger("subiquitycore.ui.form")
 
+
 class Toggleable(delegate_to_widget_mixin('_original_widget'), WidgetDecoration):
 
-    def __init__(self, original, active_color):
+    def __init__(self, original):
+        if not isinstance(original, AttrMap):
+            raise RuntimeError("Toggleable must be passed an AttrMap, not %s", original)
         self.original = original
-        self.active_color = active_color
         self.enabled = False
         self.enable()
 
     def enable(self):
         if not self.enabled:
-            self.original_widget = AttrMap(self.original, self.active_color, self.active_color + ' focus')
+            self.original_widget = self.original
             self.enabled = True
 
     def disable(self):
         if self.enabled:
-            self.original_widget = WidgetDisable(Color.info_minor(self.original))
+            self.original_widget = WidgetDisable(Color.info_minor(self.original.original_widget))
             self.enabled = False
+
 
 class _Validator(WidgetWrap):
 
@@ -256,13 +258,11 @@ class Form(object, metaclass=MetaForm):
 
     signals = ['submit', 'cancel']
 
-    opts = {}
+    ok_label = "Done"
 
     def __init__(self, initial={}):
-        self.done_btn = Toggleable(done_btn(), 'button')
-        self.cancel_btn = Toggleable(cancel_btn(), 'button')
-        connect_signal(self.done_btn.base_widget, 'click', self._click_done)
-        connect_signal(self.cancel_btn.base_widget, 'click', self._click_cancel)
+        self.done_btn = Toggleable(done_btn(label=self.ok_label, on_press=self._click_done))
+        self.cancel_btn = Toggleable(cancel_btn(on_press=self._click_cancel))
         self.buttons = Pile([self.done_btn, self.cancel_btn])
         self._fields = []
         for field in self._unbound_fields:

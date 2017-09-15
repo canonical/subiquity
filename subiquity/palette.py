@@ -36,25 +36,29 @@ orange = "#e51"
 warm_gray = "g15"
 
 STYLES = [
-    ('frame_header',        white,      dark_blue,     '', white,      orange),
-    ('frame_footer',        white,      dark_gray,     '', white,      warm_gray),
-    ('body',                white,      '',            '', white,      ''),
-    ('menu_button',         white,      '',            '', white,      ''),
-    ('menu_button focus',   black,      light_gray,    '', black,      light_gray),
-    ('button',              white,      '',            '', white,      ''),
-    ('button focus',        black,      dark_green,    '', black,      dark_green),
-    ('redbutton',           white,      '',            '', white,      ''),
-    ('redbutton focus',     black,      dark_red,      '', black,      dark_red),
-    ('amberbutton',         white,      '',            '', white,      ''),
-    ('amberbutton focus',   black,      dark_cyan,     '', black,      dark_cyan),
-    ('info_primary',        white,      '',            '', white,      ''),
-    ('info_major',          light_gray, '',            '', light_gray, ''),
-    ('info_minor',          dark_gray,  '',            '', dark_gray,  ''),
-    ('info_error',          dark_red,   '',            '', dark_red,   ''),
-    ('string_input',        black,      light_gray,    '', black,      light_gray),
-    ('string_input focus',  white,      dark_gray,     '', white,      dark_gray),
-    ('progress_incomplete', white,      dark_magenta,  '', white,      dark_magenta),
-    ('progress_complete',   white,      dark_blue,     '', white,      orange)
+    ('frame_header',        white,       dark_blue,     '', white,       orange),
+    ('frame_footer',        white,       dark_gray,     '', white,       warm_gray),
+    ('body',                white,       '',            '', white,       ''),
+    ('menu_button',         white,       '',            '', white,       ''),
+    ('menu_button focus',   black,       light_gray,    '', black,       light_gray),
+    ('button',              white,       '',            '', white,       ''),
+    ('button focus',        black,       dark_green,    '', black,       dark_green),
+    ('danger_button',       white,       '',            '', white,       ''),
+    ('danger_button focus', black,       dark_red,      '', black,       dark_red),
+    ('cancel_button',       white,       '',            '', white,       ''), # also for "back" buttons
+    ('cancel_button focus', black,       dark_cyan,     '', black,       dark_cyan),
+    ('reset_button',        white,       '',            '', white,       ''),
+    ('reset_button focus',  black,       dark_cyan,     '', black,       dark_cyan),
+    ('save_button',         light_green, '',            '', light_green, ''), # also for "ok" buttons
+    ('save_button focus',   black,       dark_green,    '', black,       dark_green),
+    ('info_primary',        white,       '',            '', white,       ''),
+    ('info_major',          light_gray,  '',            '', light_gray,  ''),
+    ('info_minor',          dark_gray,   '',            '', dark_gray,   ''),
+    ('info_error',          dark_red,    '',            '', dark_red,    ''),
+    ('string_input',        black,       light_gray,    '', black,       light_gray),
+    ('string_input focus',  white,       dark_gray,     '', white,       dark_gray),
+    ('progress_incomplete', white,       dark_magenta,  '', white,       dark_magenta),
+    ('progress_complete',   white,       dark_blue,     '', white,       orange)
 ]
 
 STYLES_MONO = [
@@ -66,10 +70,6 @@ STYLES_MONO = [
     ('menu_button focus',   '',    '',    '', white, ''),
     ('button',              white, black, '', '',    ''),
     ('button focus',        white, black, '', '',    ''),
-    ('redbutton',           white, black, '', '',    ''),
-    ('redbutton focus',     white, black, '', '',    ''),
-    ('amberbutton',         white, black, '', '',    ''),
-    ('amberbutton focus',   white, black, '', '',    ''),
     ('string_input',        '',    '',    '', white, ''),
     ('string_input focus',  '',    '',    '', white, ''),
     ('progress_incomplete', '',    '',    '', '',    black),

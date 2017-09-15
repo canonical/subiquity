@@ -22,7 +22,7 @@ configuration.
 import logging
 from urwid import connect_signal, Text
 
-from subiquitycore.ui.buttons import PlainButton
+from subiquitycore.ui.buttons import danger_btn
 from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.form import (
     Form,
@@ -107,6 +107,9 @@ class PartitionForm(Form):
 
 
 class PartitionFormatView(BaseView):
+
+    form_cls = PartitionForm
+
     def __init__(self, size, existing, initial, back):
 
         mountpoint_to_devpath_mapping = self.model.get_mountpoint_to_devpath_mapping()
@@ -119,7 +122,7 @@ class PartitionFormatView(BaseView):
                     initial['mount'] = mount.path
                     if mount.path in mountpoint_to_devpath_mapping:
                         del mountpoint_to_devpath_mapping[mount.path]
-        self.form = PartitionForm(mountpoint_to_devpath_mapping, size, initial)
+        self.form = self.form_cls(mountpoint_to_devpath_mapping, size, initial)
         self.back = back
 
         connect_signal(self.form, 'submit', self.done)
@@ -151,19 +154,21 @@ class PartitionView(PartitionFormatView):
         max_size = disk.free
         if partition is None:
             initial = {'partnum': disk.next_partnum}
+            label = "Create"
         else:
             max_size += partition.size
             initial = {
                 'partnum': partition.number,
                 'size': humanize_size(partition.size),
                 }
+            label = "Save"
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
+        self.form.buttons[0].set_label(label)
 
     def make_body(self):
         body = super().make_body()
         if self.partition is not None:
-            delete_btn = PlainButton("Delete")
-            connect_signal(delete_btn, 'click', self.delete)
+            delete_btn = danger_btn("Delete", on_press=self.delete)
             body[-2:-2] = [
                 Text(""),
                 Padding.fixed_10(Color.info_error(delete_btn)),

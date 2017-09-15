@@ -15,8 +15,11 @@
 
 """ UI utilities """
 
-from urwid import Padding as _Padding
-from urwid import AttrMap, Text
+from urwid import (
+    AttrMap,
+    Padding as _Padding,
+    Text,
+    )
 from functools import partialmethod
 
 
@@ -134,10 +137,14 @@ STYLE_NAMES = set([
     'menu_button focus',
     'button',
     'button focus',
-    'redbutton',
-    'redbutton focus',
-    'amberbutton',
-    'amberbutton focus',
+    'danger_button',
+    'danger_button focus',
+    'cancel_button',
+    'cancel_button focus',
+    'reset_button',
+    'reset_button focus',
+    'save_button',
+    'save_button focus',
     'info_primary',
     'info_major',
     'info_minor',

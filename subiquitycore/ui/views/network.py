@@ -29,7 +29,7 @@ from urwid import (
     WidgetWrap,
     )
 
-from subiquitycore.ui.buttons import cancel_btn, menu_btn, done_btn
+from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn, menu_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
@@ -120,9 +120,10 @@ class NetworkView(BaseView):
             Padding.line_break(""),
         ]
         self.lb = ListBox(self.body)
+        self._build_buttons()
         self.footer = Pile([
                 Text(""),
-                Padding.fixed_10(self._build_buttons()),
+                #Padding.fixed_10(self._build_buttons()),
                 Text(""),
                 ])
         self.frame = Pile([
@@ -132,13 +133,13 @@ class NetworkView(BaseView):
         super().__init__(self.frame)
 
     def _build_buttons(self):
-        cancel = Color.amberbutton(cancel_btn(on_press=self.cancel))
-        done = Color.button(done_btn(on_press=self.done))
+        back = back_btn(on_press=self.cancel)
+        done = done_btn(on_press=self.done)
         self.default_focus = done
 
-        buttons = [done, cancel]
-        self.done_button = done
-        self.cancel_button = cancel
+        buttons = [done, back]
+        self.right_button = done
+        self.left_button = back
         return Pile(buttons, focus_item=done)
 
     def _build_model_inputs(self):
@@ -159,8 +160,7 @@ class NetworkView(BaseView):
             col_2 = []
 
             col_1.append(
-                Color.menu_button(
-                    menu_btn(label=dev.name, on_press=self.on_net_dev_press)))
+                    menu_btn(label=dev.name, on_press=self.on_net_dev_press))
 
             if dev.type == 'wlan':
                 col_2.extend(_build_wifi_info(dev))
@@ -231,10 +231,10 @@ class NetworkView(BaseView):
                 max_btn_len = len(opt)
 
             buttons.append(
-                Color.menu_button(
-                    menu_btn(label=opt,
-                             on_press=self.additional_menu_select,
-                             user_data=sig)))
+                menu_btn(
+                    label=opt,
+                    on_press=self.additional_menu_select,
+                    user_data=sig))
 
         from urwid import Padding
         buttons = [ Padding(button, align='left', width=max_btn_len + 6) for button in buttons ]
