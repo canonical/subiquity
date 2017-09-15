@@ -58,7 +58,7 @@ class FilesystemConfirmationView(WidgetWrap):
         pile = Pile([
             UrwidPadding(Text(confirmation_text), left=2, right=2),
             Padding.fixed_15(cancel_btn(label="No", on_press=self.cancel)),
-            Padding.fixed_15(danger_btn(label="Continue", on_press=self.ok)),
+            Padding.fixed_15(danger_btn(on_press=self.ok)),
             Text(""),
             ])
         lb = LineBox(pile, title="Confirm destructive action")

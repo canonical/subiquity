@@ -22,9 +22,9 @@ import logging
 
 from urwid import Text
 
-from subiquitycore.ui.buttons import finish_btn
+from subiquitycore.ui.buttons import done_btn
 from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquitycore.views.login")
@@ -46,7 +46,7 @@ class LoginView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button(finish_btn(on_press=self.done)),
+            done_btn(on_press=self.done),
         ]
         return Pile(self.buttons)
 

@@ -62,16 +62,14 @@ class NetworkConfigureInterfaceView(BaseView):
     def _build_ipv4_method_buttons(self):
         button_padding = 70
 
-        buttons = []
-        btn = menu_btn(label="Use a static IPv4 configuration",
-                       on_press=self.show_ipv4_configuration)
-        buttons.append(Color.menu_button(btn))
-        btn = menu_btn(label="Use DHCPv4 on this interface",
-                       on_press=self.enable_dhcp4)
-        buttons.append(Color.menu_button(btn))
-        btn = menu_btn(label="Do not use",
-                       on_press=self.clear_ipv4)
-        buttons.append(Color.menu_button(btn))
+        buttons = [
+            menu_btn(label="Use a static IPv4 configuration",
+                    on_press=self.show_ipv4_configuration),
+            menu_btn(label="Use DHCPv4 on this interface",
+                    on_press=self.enable_dhcp4),
+            menu_btn(label="Do not use",
+                    on_press=self.clear_ipv4),
+        ]
 
         padding = getattr(Padding, 'left_{}'.format(button_padding))
         buttons = [ padding(button) for button in buttons ]
@@ -81,16 +79,14 @@ class NetworkConfigureInterfaceView(BaseView):
     def _build_ipv6_method_buttons(self):
         button_padding = 70
 
-        buttons = []
-        btn = menu_btn(label="Use a static IPv6 configuration",
-                       on_press=self.show_ipv6_configuration)
-        buttons.append(Color.menu_button(btn))
-        btn = menu_btn(label="Use DHCPv6 on this interface",
-                       on_press=self.enable_dhcp6)
-        buttons.append(Color.menu_button(btn))
-        btn = menu_btn(label="Do not use",
-                       on_press=self.clear_ipv6)
-        buttons.append(Color.menu_button(btn))
+        buttons = [
+            menu_btn(label="Use a static IPv6 configuration",
+                    on_press=self.show_ipv6_configuration),
+            menu_btn(label="Use DHCPv6 on this interface",
+                    on_press=self.enable_dhcp6),
+            menu_btn(label="Do not use",
+                    on_press=self.clear_ipv6),
+        ]
 
         padding = getattr(Padding, 'left_{}'.format(button_padding))
         buttons = [ padding(button) for button in buttons ]
@@ -100,13 +96,11 @@ class NetworkConfigureInterfaceView(BaseView):
 
     def _build_wifi_config(self):
         btn = menu_btn(label="Configure WIFI settings", on_press=self.show_wlan_configuration)
-        return [Padding.left_70(Color.menu_button(btn))]
+        return [Padding.left_70(btn)]
 
     def _build_buttons(self):
-        done = done_btn(on_press=self.done)
-
         buttons = [
-            Color.button(done),
+            done_btn(on_press=self.done)
         ]
         return Pile(buttons)
 

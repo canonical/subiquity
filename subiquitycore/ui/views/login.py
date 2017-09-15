@@ -20,7 +20,7 @@ Login provides user with language selection
 """
 import logging
 from urwid import Text
-from subiquitycore.ui.buttons import finish_btn
+from subiquitycore.ui.buttons import done_btn
 from subiquitycore.ui.container import Pile, ListBox
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
@@ -46,7 +46,7 @@ class LoginView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button(finish_btn(on_press=self.done)),
+            done_btn(on_press=self.done),
         ]
         return Pile(self.buttons)
 

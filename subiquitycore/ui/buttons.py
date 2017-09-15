@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2017 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,44 +13,34 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from functools import partial
+from urwid import AttrMap, Button, Text
 
-from urwid import AttrWrap, Button, connect_signal, Text
+def _stylized_button(left, right, stocklabel, style):
+    class Btn(Button):
+        button_left = Text(left)
+        button_right = Text(right)
 
-class PlainButton(Button):
-    button_left = Text("[")
-    button_right = Text("]")
+    class StyleAttrMap(AttrMap):
+        def __init__(self, *args, **kwargs):
+            label = kwargs.pop('label', stocklabel)
+            btn = Btn(label, *args, **kwargs)
+            super().__init__(btn, style + '_button', style + '_button focus')
+    return StyleAttrMap
 
-
-class MenuSelectButton(Button):
-    button_left = Text("")
-    button_right = Text(">")
-
-
-def plain_btn(label, color, on_press=None, user_arg=None):
-    button = PlainButton(label=label)
-    if on_press is not None:
-        connect_signal(button, 'click', on_press, user_arg)
-    return AttrWrap(button, color, color + ' focus')
-
-
-start_btn = partial(plain_btn, label="Start", color="save_button")
-save_btn = partial(plain_btn, label="Save", color="save_button")
-finish_btn = partial(plain_btn, label="Finish", color="save_button")
-ok_btn = partial(plain_btn, label="OK", color="save_button")
-confirm_btn = partial(plain_btn, label="Confirm", color="save_button")
-done_btn = partial(plain_btn, label="Done", color="save_button")
-continue_btn = partial(plain_btn, label="Continue", color="save_button")
-
-reset_btn = partial(plain_btn, label="Reset", color="reset_button")
-
-cancel_btn = partial(plain_btn, label="Cancel", color="cancel_button")
-back_btn = partial(plain_btn, label="Back", color="cancel_button")
-
-danger_btn = partial(plain_btn, color="danger_button")
+def stylized_button(stocklabel, style):
+    return _stylized_button('[', ']', stocklabel, style)
 
 def menu_btn(label, on_press=None, user_arg=None):
-    button = MenuSelectButton(label=label)
-    if on_press is not None:
-        connect_signal(button, 'click', on_press, user_arg)
-    return AttrWrap(button, 'menu_button', 'menu_button focus')
+    MenuBtn=_stylized_button('', '>', label, 'menu')
+    return MenuBtn(on_press=on_press, user_data=user_arg)
+
+ok_btn = stylized_button("OK", "save")
+done_btn = stylized_button("Done", "save")
+
+reset_btn = stylized_button("Reset", "reset")
+
+cancel_btn = stylized_button("Cancel", "cancel")
+close_btn = stylized_button("Close", "cancel")
+
+danger_btn = stylized_button("Continue", "danger")
+delete_btn = stylized_button("Delete", "danger")

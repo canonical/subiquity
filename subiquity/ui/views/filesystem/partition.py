@@ -22,7 +22,7 @@ configuration.
 import logging
 from urwid import connect_signal, Text
 
-from subiquitycore.ui.buttons import danger_btn
+from subiquitycore.ui.buttons import delete_btn
 from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.form import (
     Form,
@@ -162,10 +162,10 @@ class PartitionView(PartitionFormatView):
     def make_body(self):
         body = super().make_body()
         if self.partition is not None:
-            delete_btn = danger_btn("Delete", on_press=self.delete)
+            btn = delete_btn(on_press=self.delete)
             body[-2:-2] = [
                 Text(""),
-                Padding.fixed_10(Color.info_error(delete_btn)),
+                Padding.fixed_10(btn),
                 ]
             pass
         return body
