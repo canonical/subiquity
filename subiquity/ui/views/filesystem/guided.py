@@ -20,6 +20,7 @@ from urwid import (
 from subiquitycore.ui.utils import Padding
 
 from subiquitycore.ui.buttons import (
+    back_btn,
     cancel_btn,
     menu_btn,
     ok_btn,
@@ -41,13 +42,13 @@ class GuidedFilesystemView(BaseView):
         self.controller = controller
         guided = ok_btn(label="Guided", on_press=self.guided)
         manual = ok_btn(label="Manual", on_press=self.manual)
-        cancel = cancel_btn(on_press=self.cancel)
+        back = back_btn(on_press=self.cancel)
         lb = ListBox([
             Padding.center_70(Text(text)),
             Padding.center_70(Text("")),
             Padding.fixed_10(guided),
             Padding.fixed_10(manual),
-            Padding.fixed_10(cancel),
+            Padding.fixed_10(back),
             ])
         super().__init__(lb)
 
@@ -57,7 +58,7 @@ class GuidedFilesystemView(BaseView):
     def guided(self, btn):
         self.controller.guided()
 
-    def cancel(self, btn):
+    def cancel(self, btn=None):
         self.controller.cancel()
 
 
@@ -83,7 +84,7 @@ class GuidedDiskSelectionView(BaseView):
             ])
         super().__init__(lb)
 
-    def cancel(self, btn):
+    def cancel(self, btn=None):
         self.controller.default()
 
     def choose_disk(self, btn, disk):
