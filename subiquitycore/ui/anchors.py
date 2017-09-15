@@ -90,19 +90,19 @@ class Footer(WidgetWrap):
                         current=completion, done=100))
         if leftbutton is None:
             leftbutton = Text("")
-        else:
-            leftbutton.base_widget.set_label("\n" + leftbutton.base_widget.label + "\n")
         if rightbutton is None:
             rightbutton = Text("")
         super().__init__(Color.frame_footer(Pile([
             Text(""),
             Columns([
+                (1, Text("")),
                 (10, Padding.fixed_10(leftbutton)),
                 Pile([
                     progress_bar,
                     (2, Filler(message_widget, valign='bottom')),
                     ]),
                 (10, Padding.fixed_10(rightbutton)),
+                (1, Text("")),
                 ], dividechars=1),
             Text(""),
             ])))

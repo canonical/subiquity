@@ -35,18 +35,14 @@ class InstallpathView(BaseView):
         self.model = model
         self.signal = signal
         self.items = []
+        self._build_buttons()
         self.body = [
             Padding.center_79(self._build_model_inputs()),
-            Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons()),
         ]
         super().__init__(ListBox(self.body))
 
     def _build_buttons(self):
-        self.buttons = [
-            back_btn(on_press=self.cancel),
-        ]
-        return Pile(self.buttons)
+        self.left_button = back_btn(on_press=self.cancel)
 
     def _build_model_inputs(self):
         sl = []

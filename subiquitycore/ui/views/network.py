@@ -121,16 +121,7 @@ class NetworkView(BaseView):
         ]
         self.lb = ListBox(self.body)
         self._build_buttons()
-        self.footer = Pile([
-                Text(""),
-                #Padding.fixed_10(self._build_buttons()),
-                Text(""),
-                ])
-        self.frame = Pile([
-            self.lb,
-            ('pack', self.footer)])
-        self.frame.focus_position = 1
-        super().__init__(self.frame)
+        super().__init__(self.lb)
 
     def _build_buttons(self):
         back = back_btn(on_press=self.cancel)

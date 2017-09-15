@@ -18,8 +18,8 @@ from functools import partial
 from urwid import AttrWrap, Button, connect_signal, Text
 
 class PlainButton(Button):
-    button_left = Text("[")
-    button_right = Text("]")
+    button_left = Text("")
+    button_right = Text("")
 
 
 class MenuSelectButton(Button):
@@ -39,13 +39,13 @@ save_btn = partial(plain_btn, label="Save", color="save_button")
 finish_btn = partial(plain_btn, label="Finish", color="save_button")
 ok_btn = partial(plain_btn, label="OK", color="save_button")
 confirm_btn = partial(plain_btn, label="Confirm", color="save_button")
-done_btn = partial(plain_btn, label="Done", color="save_button")
+done_btn = partial(plain_btn, label="\nDone\n", color="save_button")
 continue_btn = partial(plain_btn, label="Continue", color="save_button")
 
 reset_btn = partial(plain_btn, label="Reset", color="reset_button")
 
-cancel_btn = partial(plain_btn, label="Cancel", color="cancel_button")
-back_btn = partial(plain_btn, label="Back", color="cancel_button")
+cancel_btn = partial(plain_btn, label="\nCancel\n", color="cancel_button")
+back_btn = partial(plain_btn, label="\nBack\n", color="cancel_button")
 
 danger_btn = partial(plain_btn, color="danger_button")
 

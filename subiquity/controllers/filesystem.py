@@ -67,22 +67,19 @@ class FilesystemController(BaseController):
             title = "Filesystem setup"
             footer = ("Choose guided or manual partitioning")
             self.ui.set_header(title)
-            self.ui.set_footer(footer, 30)
-            self.ui.set_body(GuidedFilesystemView(self.model, self))
+            self.ui.set_body(GuidedFilesystemView(self.model, self), footer, 30)
 
     def manual(self):
         title = "Filesystem setup"
         footer = ("Select available disks to format and mount")
         self.ui.set_header(title)
-        self.ui.set_footer(footer, 30)
-        self.ui.set_body(FilesystemView(self.model, self))
+        self.ui.set_body(FilesystemView(self.model, self), footer, 30)
 
     def guided(self):
         title = "Filesystem setup"
         footer = ("Choose the installation target")
         self.ui.set_header(title)
-        self.ui.set_footer(footer, 30)
-        self.ui.set_body(GuidedDiskSelectionView(self.model, self))
+        self.ui.set_body(GuidedDiskSelectionView(self.model, self), footer, 30)
 
     def reset(self):
         log.info("Resetting Filesystem model")

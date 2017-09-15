@@ -38,6 +38,9 @@ class SubiquityUI(WidgetWrap):
         super().__init__(self.frame)
 
     def keypress(self, size, key):
+        if key in ['ctrl x']:
+            self.frame.contents[1][0].controller.signal.emit_signal('control-x-quit')
+            return None
         return super().keypress(size, key)
 
     def set_header(self, title=None, excerpt=None):
@@ -46,5 +49,8 @@ class SubiquityUI(WidgetWrap):
     def set_footer(self, message, completion=0, leftbutton=None, rightbutton=None):
         self.frame.contents[2] = (Footer(message, completion, leftbutton, rightbutton), self.frame.options('pack'))
 
-    def set_body(self, widget):
+    def set_body(self, widget, footer_msg=None, completion=0):
         self.frame.contents[1] = (widget, self.frame.options())
+        self.frame.focus_position = 1
+        if footer_msg is not None:
+            self.set_footer(footer_msg, completion, widget.left_button, widget.right_button)
