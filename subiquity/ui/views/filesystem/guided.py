@@ -57,7 +57,7 @@ class GuidedFilesystemView(BaseView):
     def guided(self, btn):
         self.controller.guided()
 
-    def cancel(self, btn):
+    def cancel(self, btn=None):
         self.controller.cancel()
 
 
@@ -83,7 +83,7 @@ class GuidedDiskSelectionView(BaseView):
             ])
         super().__init__(lb)
 
-    def cancel(self, btn):
+    def cancel(self, btn=None):
         self.controller.default()
 
     def choose_disk(self, btn, disk):
