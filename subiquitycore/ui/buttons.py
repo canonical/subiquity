@@ -22,7 +22,7 @@ def _stylized_button(left, right, stocklabel, style):
 
     class StyleAttrMap(AttrMap):
         def __init__(self, *args, **kwargs):
-            label = kwargs.pop('label', stocklabel)
+            label = kwargs.pop('label', _(stocklabel))
             btn = Btn(label, *args, **kwargs)
             super().__init__(btn, style + '_button', style + '_button focus')
     return StyleAttrMap
@@ -39,6 +39,7 @@ done_btn = stylized_button("Done", "save")
 
 reset_btn = stylized_button("Reset", "reset")
 
+back_btn = stylized_button("Back", "cancel")
 cancel_btn = stylized_button("Cancel", "cancel")
 close_btn = stylized_button("Close", "cancel")
 

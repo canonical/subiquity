@@ -1,0 +1,19 @@
+[encoding: UTF-8]
+subiquity/controllers/filesystem.py
+subiquity/controllers/identity.py
+subiquity/controllers/installpath.py
+subiquity/controllers/installprogress.py
+subiquity/controllers/welcome.py
+subiquitycore/controllers/network.py
+subiquitycore/ui/buttons.py
+subiquitycore/ui/interactive.py
+subiquitycore/ui/views/network_configure_interface.py
+subiquitycore/ui/views/network_configure_manual_interface.py
+subiquitycore/ui/views/network.py
+subiquity/models/installpath.py
+subiquity/ui/mount.py
+subiquity/ui/views/filesystem/filesystem.py
+subiquity/ui/views/filesystem/guided.py
+subiquity/ui/views/identity.py
+subiquity/ui/views/installprogress.py
+subiquity/ui/views/welcome.py

@@ -344,11 +344,11 @@ class NetworkController(BaseController):
         self.signal.emit_signal('prev-screen')
 
     def default(self):
-        title = "Network connections"
-        excerpt = ("Configure at least one interface this server can use to talk to "
+        title = _("Network connections")
+        excerpt = _("Configure at least one interface this server can use to talk to "
                    "other machines, and which preferably provides sufficient access for "
                    "updates.")
-        footer = ("Select an interface to configure it or select Done to continue")
+        footer = _("Select an interface to configure it or select Done to continue")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 20)
         self.ui.set_body(NetworkView(self.model, self))

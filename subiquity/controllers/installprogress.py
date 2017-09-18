@@ -71,9 +71,9 @@ class InstallProgressController(BaseController):
 
     def curtin_error(self):
         log.debug('curtin_error')
-        title = ('An error occurred during installation')
-        self.ui.set_header(title, 'Please report this error in Launchpad')
-        self.ui.set_footer("An error has occurred.", 100)
+        title = _('An error occurred during installation')
+        self.ui.set_header(title, _('Please report this error in Launchpad'))
+        self.ui.set_footer(_("An error has occurred."), 100)
         if self.progress_view is not None:
             self.progress_view.set_status(('info_error', "An error has occurred"))
             self.progress_view.show_complete()
@@ -134,7 +134,7 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.RUNNING_POSTINSTALL
         if self.progress_view is not None:
             self.progress_view.clear_log_tail()
-            self.progress_view.set_status("Running postinstall step")
+            self.progress_view.set_status(_("Running postinstall step"))
             self.start_tail_proc()
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
@@ -162,9 +162,9 @@ class InstallProgressController(BaseController):
             return
         log.debug('After curtin postinstall OK')
         self.install_state = InstallState.DONE_POSTINSTALL
-        self.ui.set_header("Installation complete!", "")
+        self.ui.set_header(_("Installation complete!"), "")
         self.ui.set_footer("", 100)
-        self.progress_view.set_status("Finished install!")
+        self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
 
     def update_log_tail(self):
@@ -212,9 +212,9 @@ class InstallProgressController(BaseController):
 
     def default(self):
         log.debug('show_progress called')
-        title = ("Installing system")
-        excerpt = ("Please wait for the installation to finish.")
-        footer = ("Thank you for using Ubuntu!")
+        title = _("Installing system")
+        excerpt = _("Please wait for the installation to finish.")
+        footer = _("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 90)
         self.progress_view = ProgressView(self.model, self)
@@ -223,9 +223,9 @@ class InstallProgressController(BaseController):
             self.ui.set_body(self.progress_view)
             return
         if self.install_state < InstallState.RUNNING_POSTINSTALL:
-            self.progress_view.set_status("Running install step")
+            self.progress_view.set_status(_("Running install step"))
         else:
-            self.progress_view.set_status("Running postinstall step")
+            self.progress_view.set_status(_("Running postinstall step"))
         self.ui.set_body(self.progress_view)
 
         self.start_tail_proc()

@@ -6,9 +6,11 @@ Build-Depends: bzr,
                debhelper (>= 9),
                dh-python,
                dh-systemd,
+               iso-codes,
                git,
                python3,
                python3-setuptools,
+               python3-distutils-extra,
                python3-yaml,
                python3-attr
 Standards-Version: 3.9.5
@@ -23,6 +25,7 @@ Depends: curtin,
          python3,
          python3-attr,
          subiquitycore,
+         iso-codes,
          ${misc:Depends},
          ${python3:Depends}
 Description: Ubuntu Server Installer

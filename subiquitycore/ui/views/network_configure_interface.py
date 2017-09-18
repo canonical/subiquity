@@ -63,11 +63,11 @@ class NetworkConfigureInterfaceView(BaseView):
         button_padding = 70
 
         buttons = [
-            menu_btn(label="Use a static IPv4 configuration",
+            menu_btn(label=_("Use a static IPv4 configuration"),
                     on_press=self.show_ipv4_configuration),
-            menu_btn(label="Use DHCPv4 on this interface",
+            menu_btn(label=_("Use DHCPv4 on this interface"),
                     on_press=self.enable_dhcp4),
-            menu_btn(label="Do not use",
+            menu_btn(label=_("Do not use"),
                     on_press=self.clear_ipv4),
         ]
 
@@ -80,11 +80,11 @@ class NetworkConfigureInterfaceView(BaseView):
         button_padding = 70
 
         buttons = [
-            menu_btn(label="Use a static IPv6 configuration",
+            menu_btn(label=_("Use a static IPv6 configuration"),
                     on_press=self.show_ipv6_configuration),
-            menu_btn(label="Use DHCPv6 on this interface",
+            menu_btn(label=_("Use DHCPv6 on this interface"),
                     on_press=self.enable_dhcp6),
-            menu_btn(label="Do not use",
+            menu_btn(label=_("Do not use"),
                     on_press=self.clear_ipv6),
         ]
 
@@ -95,7 +95,7 @@ class NetworkConfigureInterfaceView(BaseView):
 
 
     def _build_wifi_config(self):
-        btn = menu_btn(label="Configure WIFI settings", on_press=self.show_wlan_configuration)
+        btn = menu_btn(label=_("Configure WIFI settings"), on_press=self.show_wlan_configuration)
         return [Padding.left_70(btn)]
 
     def _build_buttons(self):
