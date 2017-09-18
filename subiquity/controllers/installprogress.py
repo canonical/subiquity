@@ -18,7 +18,6 @@ import logging
 import os
 import random
 import subprocess
-import sys
 
 from systemd import journal
 
@@ -63,7 +62,7 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.NOT_STARTED
         self.postinstall_written = False
         self.tail_proc = None
-        self.reporting_forwarding_proc = None
+        self.journald_forwarder_proc = None
         self.curtin_event_stack = []
 
     def curtin_wrote_network_config(self, path):
@@ -224,9 +223,10 @@ class InstallProgressController(BaseController):
 
     def start_journald_forwarder(self):
         log.debug("starting curtin journald forwarder")
-        script = './bin/curtin-journald-forwarder'
-        if not os.path.exists(script):
-            script = 'curtin-journald-forwarder'
+        if "SNAP" in os.environ:
+            script = os.path.join(os.environ["SNAP"], 'usr/bin/curtin-journald-forwarder')
+        else:
+            script = './bin/curtin-journald-forwarder'
         self.journald_forwarder_proc = utils.run_command_start([script])
         self.reporting_url = self.journald_forwarder_proc.stdout.readline().decode('utf-8').strip()
         log.debug("curtin journald forwarder listening on %s", self.reporting_url)

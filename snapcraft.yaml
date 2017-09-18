@@ -22,6 +22,7 @@ parts:
       - pyyaml
       - pyudev
       - attrs
+      - systemd-python
     source: .
     source-type: git
   wrappers:
