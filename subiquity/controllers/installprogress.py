@@ -14,9 +14,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import fcntl
+import json
 import logging
+from http import server
 import os
 import subprocess
+import socket
+import socketserver
+import threading
+
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
@@ -25,12 +31,56 @@ from subiquity.curtin import (CURTIN_CONFIGS,
                               CURTIN_INSTALL_LOG,
                               CURTIN_POSTINSTALL_LOG,
                               curtin_install_cmd,
-                              curtin_write_network_config)
+                              curtin_write_network_config,
+                              curtin_write_reporting_config)
 from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView
 
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
+
+
+class _ReportingHandler(server.BaseHTTPRequestHandler):
+    address_family = socket.AF_INET6
+
+    def log_request(self, code, size=None):
+        pass
+
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def do_POST(self):
+        length = int(self.headers['Content-Length'])
+        post_data = json.loads(self.rfile.read(length).decode('utf-8'))
+        log.debug("curtin event %s", post_data)
+        self.server.event_cb(post_data)
+        self.do_GET()
+
+
+class _HTTPServerV6(socketserver.TCPServer):
+    address_family = socket.AF_INET6
+
+
+class ReportingListener:
+    def __init__(self, event_cb):
+        self.event_cb = event_cb
+        self._server_thread = None
+
+    def start(self):
+        """Return URL to pass to curtin."""
+        self._httpd = _HTTPServerV6(("::", 0), _ReportingHandler)
+        self._httpd.event_cb = self.event_cb
+        port = self._httpd.server_address[1]
+        self._server_thread = threading.Thread(target=self._httpd.serve_forever)
+        self._server_thread.setDaemon(True)
+        self._server_thread.start()
+        return "http://[::1]:{}/".format(port)
+
+    def stop(self):
+        self._httpd.shutdown()
+        self._server_thread.join()
 
 
 class InstallState:
@@ -41,6 +91,7 @@ class InstallState:
     DONE_POSTINSTALL = 4
     ERROR_INSTALL = -1
     ERROR_POSTINSTALL = -2
+
 
 class InstallProgressController(BaseController):
     signals = [
@@ -57,6 +108,9 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.NOT_STARTED
         self.postinstall_written = False
         self.tail_proc = None
+        self.reporting_listener = ReportingListener(
+            lambda event:self.run_in_main_thread(self.curtin_event, event))
+        self.curtin_event_stack = []
 
     def curtin_wrote_network_config(self, path):
         curtin_write_network_config(open(path).read())
@@ -88,20 +142,44 @@ class InstallProgressController(BaseController):
             log.debug("completed %s", cmd)
         return cp.returncode
 
+    def curtin_event(self, event):
+        event_type = event.get("event_type")
+        if event_type not in ['start', 'finish']:
+            return
+        if event_type == 'start':
+            desc = event.get("description", "description??")
+            self.curtin_event_stack.append(desc)
+        if event_type == 'finish':
+            self.curtin_event_stack.pop()
+            if self.curtin_event_stack:
+                desc = self.curtin_event_stack[-1]
+            else:
+                desc = ""
+        self.ui.set_footer("Running install... %s" % (desc,))
+
     def curtin_start_install(self):
         log.debug('Curtin Install: calling curtin with '
                   'storage/net/postinstall config')
 
         self.install_state = InstallState.RUNNING_INSTALL
+
+        self.reporting_url = self.reporting_listener.start()
+
+        curtin_write_reporting_config(self.reporting_url)
+
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
-                "bash", "-c",
-                "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; }"]
+                "python3", "scripts/replay-curtin-log.py",
+                self.reporting_url, "examples/curtin-events-install.json",
+                ]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
-            configs = [CURTIN_CONFIGS['storage'],
-                       CURTIN_CONFIGS['network']]
+            configs = [
+                CURTIN_CONFIGS['storage'],
+                CURTIN_CONFIGS['network'],
+                CURTIN_CONFIGS['reporting'],
+                ]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
@@ -139,14 +217,16 @@ class InstallProgressController(BaseController):
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
-                "bash", "-c",
-                "{ i=0;while [ $i -le 10 ];do i=$((i+1)); echo postinstall line $i; sleep 1; done; }"]
+                "python3", "scripts/replay-curtin-log.py",
+                self.reporting_url, "examples/curtin-events-postinstall.json",
+                ]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [
                 CURTIN_CONFIGS['postinstall'],
                 CURTIN_CONFIGS['preserved'],
-            ]
+                CURTIN_CONFIGS['reporting'],
+                ]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
