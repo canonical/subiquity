@@ -262,20 +262,20 @@ class FilesystemController(BaseController):
         self.ui.set_body(DummyView(self.signal))
 
     def create_volume_group(self, *args, **kwargs):
-        title = _("Create Logical Volume Group (\"LVM2\") disk")
-        footer = _("ENTER on a disk will show detailed "
+        title = ("Create Logical Volume Group (\"LVM2\") disk")
+        footer = ("ENTER on a disk will show detailed "
                   "information for that disk")
-        excerpt = _("Use SPACE to select disks to form your LVM2 volume group, "
+        excerpt = ("Use SPACE to select disks to form your LVM2 volume group, "
                    "and then specify the Volume Group name. ")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
         self.ui.set_body(LVMVolumeGroupView(self.model, self.signal))
 
     def create_raid(self, *args, **kwargs):
-        title = _("Create software RAID (\"MD\") disk")
-        footer = _("ENTER on a disk will show detailed "
+        title = ("Create software RAID (\"MD\") disk")
+        footer = ("ENTER on a disk will show detailed "
                   "information for that disk")
-        excerpt = _("Use SPACE to select disks to form your RAID array, "
+        excerpt = ("Use SPACE to select disks to form your RAID array, "
                    "and then specify the RAID parameters. Multiple-disk "
                    "arrays work best when all the disks in an array are "
                    "the same size and speed.")
@@ -285,10 +285,10 @@ class FilesystemController(BaseController):
                                   self.signal))
 
     def create_bcache(self, *args, **kwargs):
-        title = _("Create hierarchical storage (\"bcache\") disk")
-        footer = _("ENTER on a disk will show detailed "
+        title = ("Create hierarchical storage (\"bcache\") disk")
+        footer = ("ENTER on a disk will show detailed "
                   "information for that disk")
-        excerpt = _("Use SPACE to select a cache disk and a backing disk"
+        excerpt = ("Use SPACE to select a cache disk and a backing disk"
                    " to form your bcache device.")
 
         self.ui.set_header(title, excerpt)
