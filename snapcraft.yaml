@@ -31,6 +31,7 @@ parts:
     organize:
       'bin/console-conf-tui': usr/bin/console-conf
       'bin/subiquity-tui': usr/bin/subiquity
+      'bin/curtin-journald-forwarder': usr/bin/curtin-journald-forwarder
     prime:
       - usr/bin
   probert:
