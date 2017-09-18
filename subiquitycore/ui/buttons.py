@@ -39,6 +39,7 @@ done_btn = stylized_button("Done", "save")
 
 reset_btn = stylized_button("Reset", "reset")
 
+back_btn = stylized_button("Back", "cancel")
 cancel_btn = stylized_button("Cancel", "cancel")
 close_btn = stylized_button("Close", "cancel")
 

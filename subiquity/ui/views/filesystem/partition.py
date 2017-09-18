@@ -154,14 +154,14 @@ class PartitionView(PartitionFormatView):
         max_size = disk.free
         if partition is None:
             initial = {'partnum': disk.next_partnum}
-            label = "Create"
+            label = _("Create")
         else:
             max_size += partition.size
             initial = {
                 'partnum': partition.number,
                 'size': humanize_size(partition.size),
                 }
-            label = "Save"
+            label = _("Save")
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
         self.form.buttons[0].set_label(label)
 
