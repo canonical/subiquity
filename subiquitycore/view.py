@@ -23,6 +23,8 @@ from urwid import Overlay, WidgetWrap
 
 class BaseView(WidgetWrap):
 
+    left_button = right_button = None
+
     def __init__(self, w):
         self.orig_w = None
         super().__init__(w)

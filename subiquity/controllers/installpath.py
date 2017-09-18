@@ -50,8 +50,7 @@ class InstallpathController(BaseController):
                   "navigate options")
 
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer, 10)
-        self.ui.set_body(InstallpathView(self.model, self.signal))
+        self.ui.set_body(InstallpathView(self.model, self.signal), footer, 10)
 
     default = installpath
 

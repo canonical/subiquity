@@ -31,9 +31,8 @@ class WelcomeController(BaseController):
         excerpt = "Please choose your preferred language"
         footer = ("Use UP, DOWN and ENTER keys to select your language.")
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
         view = WelcomeView(self.model, self)
-        self.ui.set_body(view)
+        self.ui.set_body(view, footer)
 
     def done(self):
         self.signal.emit_signal('next-screen')

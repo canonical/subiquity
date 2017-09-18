@@ -34,6 +34,7 @@ white = 'white'                  # index 15
 
 orange = "#e51"
 warm_gray = "g15"
+cool_gray = "g50"
 
 STYLES = [
     ('frame_header',        white,       dark_blue,     '', white,       orange),
@@ -45,11 +46,11 @@ STYLES = [
     ('button focus',        black,       dark_green,    '', black,       dark_green),
     ('danger_button',       white,       '',            '', white,       ''),
     ('danger_button focus', black,       dark_red,      '', black,       dark_red),
-    ('cancel_button',       white,       '',            '', white,       ''), # also for "back" buttons
+    ('cancel_button',       dark_cyan,   light_gray,    '', dark_cyan,   cool_gray), # also for "back" buttons
     ('cancel_button focus', black,       dark_cyan,     '', black,       dark_cyan),
     ('reset_button',        white,       '',            '', white,       ''),
     ('reset_button focus',  black,       dark_cyan,     '', black,       dark_cyan),
-    ('save_button',         light_green, '',            '', light_green, ''), # also for "ok" buttons
+    ('save_button',         light_green, '',            '', light_green, cool_gray), # also for "ok" buttons
     ('save_button focus',   black,       dark_green,    '', black,       dark_green),
     ('info_primary',        white,       '',            '', white,       ''),
     ('info_major',          light_gray,  '',            '', light_gray,  ''),

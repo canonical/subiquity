@@ -37,8 +37,7 @@ class IdentityController(BaseController):
         excerpt = ("Enter the username and password (or ssh identity) you will use to log in to the system.")
         footer = ""
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer, 40)
-        self.ui.set_body(IdentityView(self.model, self, self.opts))
+        self.ui.set_body(IdentityView(self.model, self, self.opts), footer, 40)
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')

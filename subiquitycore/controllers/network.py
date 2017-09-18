@@ -273,7 +273,7 @@ class SubiquityObserver(UdevObserver):
             self.default_route_waiter = waiter
 
     def refresh(self):
-        v = self.ui.frame.body
+        v = self.ui.frame.contents[1][0]
         if hasattr(v, 'refresh_model_inputs'):
             v.refresh_model_inputs()
 
@@ -350,8 +350,9 @@ class NetworkController(BaseController):
                    "updates.")
         footer = ("Select an interface to configure it or select Done to continue")
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer, 20)
-        self.ui.set_body(NetworkView(self.model, self))
+        nv = NetworkView(self.model, self)
+        self.ui.set_body(nv)
+        self.ui.set_footer(footer, 20, leftbutton=nv.left_button, rightbutton=nv.right_button)
 
     @property
     def netplan_path(self):
@@ -404,7 +405,7 @@ class NetworkController(BaseController):
             self.cs.cancel()
             self.task_error('canceled')
         self.acw = ApplyingConfigWidget(len(tasks), cancel)
-        self.ui.frame.body.show_overlay(self.acw)
+        self.ui.frame.contents[1][0].show_overlay(self.acw)
 
         self.cs = TaskSequence(self.run_in_bg, tasks, self)
         self.cs.run()
@@ -413,8 +414,8 @@ class NetworkController(BaseController):
         self.acw.advance()
 
     def task_error(self, stage, info=None):
-        self.ui.frame.body.remove_overlay()
-        self.ui.frame.body.show_network_error(stage, info)
+        self.ui.frame.contents[1][0].remove_overlay()
+        self.ui.frame.contents[1][0].show_network_error(stage, info)
 
     def tasks_finished(self):
         self.signal.emit_signal('network-config-written', self.netplan_path)

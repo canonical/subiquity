@@ -107,10 +107,10 @@ class IdentityView(BaseView):
 
         self.ssh_import_confirmed = True
 
+        self.right_button = self.form.done_btn
+
         body = [
             Padding.center_90(self.form.as_rows(self)),
-            Padding.line_break(""),
-            Padding.fixed_10(self.form.done_btn),
         ]
         super().__init__(ListBox(body))
 
