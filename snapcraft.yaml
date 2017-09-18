@@ -16,7 +16,7 @@ parts:
   subiquity:
     plugin: python
     build-packages: [pkg-config, lsb-release, python3-distutils-extra]
-    stage-packages: [curtin, lsb-release, python3-distutils-extra]
+    stage-packages: [curtin, lsb-release, python3-distutils-extra, iso-codes]
     python-packages:
       - urwid
       - pyyaml
