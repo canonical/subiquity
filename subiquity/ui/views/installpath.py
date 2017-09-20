@@ -23,7 +23,7 @@ from urwid import BoxAdapter
 
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import back_btn, menu_btn
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.utils import Padding, button_pile
 from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.view import BaseView
 
@@ -38,7 +38,7 @@ class InstallpathView(BaseView):
         self.body = [
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons()),
+            self._build_buttons(),
         ]
         super().__init__(ListBox(self.body))
 
@@ -46,7 +46,7 @@ class InstallpathView(BaseView):
         self.buttons = [
             back_btn(on_press=self.cancel),
         ]
-        return Pile(self.buttons)
+        return button_pile(self.buttons)
 
     def _build_model_inputs(self):
         sl = []

@@ -33,7 +33,7 @@ from urwid import (
 from subiquitycore.ui.buttons import close_btn
 from subiquitycore.ui.container import Pile
 from subiquitycore.ui.selector import Selector
-from subiquitycore.ui.utils import Color, Padding
+from subiquitycore.ui.utils import Color, Padding, button_pile
 
 log = logging.getLogger("subiquitycore.ui.input")
 
@@ -118,8 +118,8 @@ class YesNo(Selector):
 class _HelpDisplay(WidgetWrap):
     def __init__(self, closer, help_text):
         self._closer = closer
-        button = close_btn(on_press=lambda btn:self._closer())
-        super().__init__(LineBox(Pile([Text(help_text), Padding.fixed_10(button)]), title=_("Help")))
+        buttons = [close_btn(on_press=lambda btn:self._closer())]
+        super().__init__(LineBox(Pile([Text(help_text), button_pile(buttons)]), title=_("Help")))
 
 
 class Help(WidgetWrap):

@@ -77,7 +77,7 @@ class GuidedDiskSelectionView(BaseView):
             Padding.center_70(Text("")),
             Padding.center_70(Pile(disks)),
             Padding.center_70(Text("")),
-            Padding.fixed_10(cancel),
+            button_pile([cancel]),
             ])
         super().__init__(lb)
 
