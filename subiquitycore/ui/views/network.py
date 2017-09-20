@@ -47,7 +47,7 @@ class ApplyingConfigWidget(WidgetWrap):
                         complete='progress_complete',
                         current=0, done=step_count)
         box = LineBox(Pile([self.bar,
-                            Padding.fixed_10(button)]),
+                            button_pile([button])]),
                       title=_("Applying network config"))
         super().__init__(box)
 

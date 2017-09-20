@@ -39,7 +39,7 @@ class DiskPartitionView(BaseView):
             Padding.line_break(""),
             Padding.center_79(self.show_disk_info_w()),
             Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons()),
+            self._build_buttons(),
         ]
         super().__init__(ListBox(self.body))
 
