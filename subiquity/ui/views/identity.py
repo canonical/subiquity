@@ -28,7 +28,7 @@ from subiquitycore.ui.form import (
     StringField,
     )
 from subiquitycore.ui.container import ListBox
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
 
 
@@ -110,7 +110,7 @@ class IdentityView(BaseView):
         body = [
             Padding.center_90(self.form.as_rows(self)),
             Padding.line_break(""),
-            Padding.fixed_10(self.form.done_btn),
+            button_pile([self.form.done_btn]),
         ]
         super().__init__(ListBox(body))
 

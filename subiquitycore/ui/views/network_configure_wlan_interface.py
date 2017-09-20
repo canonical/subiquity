@@ -76,7 +76,7 @@ class NetworkConfigureWLANView(BaseView):
             Padding.line_break(""),
             Padding.center_79(Color.info_error(self.error)),
             Padding.line_break(""),
-            Padding.fixed_10(Pile([self.form.done_btn, self.form.cancel_btn])),
+            self.form.buttons,
         ]
         self.orig_w = None
         super().__init__(ListBox(self.body))

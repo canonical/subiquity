@@ -18,8 +18,8 @@ from urwid import BoxAdapter, Text
 
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import done_btn, cancel_btn, menu_btn
-from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.container import Columns, ListBox
+from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
@@ -51,7 +51,7 @@ class DiskPartitionView(BaseView):
             done,
             cancel,
         ]
-        return Pile(buttons)
+        return button_pile(buttons)
 
     def _build_model_inputs(self):
         partitioned_disks = []

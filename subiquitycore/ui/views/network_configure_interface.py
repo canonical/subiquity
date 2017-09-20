@@ -16,7 +16,7 @@
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, menu_btn
 from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import Color, Padding
+from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.ui.views.network import _build_gateway_ip_info_for_version, _build_wifi_info
 import logging
 
@@ -55,7 +55,7 @@ class NetworkConfigureInterfaceView(BaseView):
             Padding.center_79(self.ipv6_info),
             Padding.center_79(self.ipv6_method),
             Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons())
+            self._build_buttons(),
         ])
         return body
 
@@ -102,7 +102,7 @@ class NetworkConfigureInterfaceView(BaseView):
         buttons = [
             done_btn(on_press=self.done)
         ]
-        return Pile(buttons)
+        return button_pile(buttons)
 
     def refresh_model_inputs(self):
         try:

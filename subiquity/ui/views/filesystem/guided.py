@@ -17,8 +17,7 @@ from urwid import (
     Text,
     )
 
-from subiquitycore.ui.utils import Padding
-
+from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
@@ -46,9 +45,7 @@ class GuidedFilesystemView(BaseView):
         lb = ListBox([
             Padding.center_70(Text(text)),
             Padding.center_70(Text("")),
-            Padding.fixed_10(guided),
-            Padding.fixed_10(manual),
-            Padding.fixed_10(back),
+            button_pile([guided, manual, back]),
             ])
         super().__init__(lb)
 

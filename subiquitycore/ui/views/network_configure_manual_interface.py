@@ -21,7 +21,7 @@ from urwid import connect_signal, Text
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import menu_btn
 from subiquitycore.ui.container import ListBox
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.ui.interactive import RestrictedEditor, StringEditor
 from subiquitycore.ui.form import Form, FormField, StringField
 
@@ -138,7 +138,7 @@ class BaseNetworkConfigureManualView(BaseView):
             #Padding.line_break(""),
             #Padding.center_79(self.set_as_default_gw_button),
             Padding.line_break(""),
-            Padding.fixed_10(self.form.buttons)
+            self.form.buttons,
         ]
         super().__init__(ListBox(body))
 

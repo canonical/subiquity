@@ -23,7 +23,7 @@ from urwid import (
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, ok_btn
 from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.utils import button_pile, Padding
 
 log = logging.getLogger("subiquity.views.installprogress")
 
@@ -61,15 +61,13 @@ class ProgressView(BaseView):
         self.linebox.set_title(text)
 
     def show_complete(self):
-        w = Padding.fixed_20(
-            ok_btn(label=_("Reboot Now"), on_press=self.reboot))
-
-        z = Padding.fixed_20(
-            cancel_btn(label=_("Quit Installer"), on_press=self.quit))
+        buttons = button_pile([
+            ok_btn(label=_("Reboot Now"), on_press=self.reboot),
+            cancel_btn(label=_("Quit Installer"), on_press=self.quit),
+            ])
 
         new_focus = len(self.pile.contents)
-        self.pile.contents.append((w, self.pile.options('pack')))
-        self.pile.contents.append((z, self.pile.options('pack')))
+        self.pile.contents.append((buttons, self.pile.options('pack')))
         self.pile.contents.append((Text(""), self.pile.options('pack')))
         self.pile.focus_position = new_focus
 

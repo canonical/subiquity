@@ -36,7 +36,7 @@ from subiquitycore.ui.buttons import (
     reset_btn,
     )
 from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.utils import Color, Padding
+from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
@@ -58,8 +58,9 @@ class FilesystemConfirmationView(WidgetWrap):
         self.controller = controller
         pile = Pile([
             UrwidPadding(Text(confirmation_text), left=2, right=2),
-            Padding.fixed_15(cancel_btn(label=_("No"), on_press=self.cancel)),
-            Padding.fixed_15(danger_btn(on_press=self.ok)),
+            button_pile([
+                cancel_btn(label=_("No"), on_press=self.cancel),
+                danger_btn(on_press=self.ok)]),
             Text(""),
             ])
         lb = LineBox(pile, title=_("Confirm destructive action"))
@@ -96,7 +97,7 @@ class FilesystemView(BaseView):
         self.lb = Padding.center_95(ListBox(self.body))
         self.footer = Pile([
                 Text(""),
-                Padding.fixed_10(self._build_buttons()),
+                self._build_buttons(),
                 Text(""),
                 ])
         self.frame = Pile([
@@ -153,7 +154,7 @@ class FilesystemView(BaseView):
         buttons.append(reset_btn(on_press=self.reset))
         buttons.append(back_btn(on_press=self.cancel))
 
-        return Pile(buttons)
+        return button_pile(buttons)
 
     def _build_available_inputs(self):
         inputs = []

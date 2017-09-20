@@ -34,7 +34,7 @@ from subiquitycore.ui.interactive import (
     IntegerEditor,
     StringEditor,
     )
-from subiquitycore.ui.utils import Color
+from subiquitycore.ui.utils import button_pile, Color
 
 log = logging.getLogger("subiquitycore.ui.form")
 
@@ -263,7 +263,7 @@ class Form(object, metaclass=MetaForm):
     def __init__(self, initial={}):
         self.done_btn = Toggleable(done_btn(label=self.ok_label, on_press=self._click_done))
         self.cancel_btn = Toggleable(cancel_btn(on_press=self._click_cancel))
-        self.buttons = Pile([self.done_btn, self.cancel_btn])
+        self.buttons = button_pile([self.done_btn, self.cancel_btn])
         self._fields = []
         for field in self._unbound_fields:
             bf = field.bind(self)
@@ -306,10 +306,10 @@ class Form(object, metaclass=MetaForm):
                 in_error = True
                 break
         if in_error:
-            self.buttons.contents[0][0].disable()
-            self.buttons.focus_position = 1
+            self.buttons.base_widget.contents[0][0].disable()
+            self.buttons.base_widget.focus_position = 1
         else:
-            self.buttons.contents[0][0].enable()
+            self.buttons.base_widget.contents[0][0].enable()
 
     def as_data(self):
         data = {}

@@ -18,8 +18,7 @@ from urwid import Text
 
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import done_btn
-from subiquitycore.ui.container import Pile
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
 
 
@@ -36,11 +35,11 @@ class DiskInfoView(BaseView):
         body = []
         for h in hdinfo:
             body.append(Text(h))
-        body.append(Padding.fixed_10(self._build_buttons()))
+        body.append(self._build_buttons())
         super().__init__(Padding.center_79(SimpleList(body)))
 
     def _build_buttons(self):
-        return Pile([done_btn(on_press=self.done)])
+        return button_pile([done_btn(on_press=self.done)])
 
     def keypress(self, size, key):
         if key in ['tab', 'n', 'N', 'j', 'J']:

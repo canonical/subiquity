@@ -135,7 +135,7 @@ class PartitionFormatView(BaseView):
         return [
             self.form.as_rows(self),
             Padding.line_break(""),
-            Padding.fixed_10(self.form.buttons),
+            self.form.buttons,
         ]
 
     def cancel(self, button=None):
