@@ -15,12 +15,16 @@
 
 """ UI utilities """
 
+from functools import partialmethod
+
+from subiquitycore.ui.container import Pile
+
 from urwid import (
     AttrMap,
+    Button,
     Padding as _Padding,
     Text,
     )
-from functools import partialmethod
 
 
 def apply_padders(cls):
@@ -187,3 +191,14 @@ class Color:
 
     """
     pass
+
+
+def button_pile(buttons):
+    max_label = 10
+    for button in buttons:
+        button = button.base_widget
+        if not isinstance(button, Button):
+            raise RuntimeError("button_pile takes a list of buttons, not %s", button)
+        max_label = max(len(button.label), max_label)
+    width = max_label + 4
+    return _Padding(Pile(buttons), min_width=width, width=width, align='center')
