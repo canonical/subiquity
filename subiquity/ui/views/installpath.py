@@ -22,8 +22,8 @@ import logging
 from urwid import BoxAdapter
 
 from subiquitycore.ui.lists import SimpleList
-from subiquitycore.ui.buttons import menu_btn, cancel_btn
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.buttons import back_btn, menu_btn
+from subiquitycore.ui.utils import Padding
 from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.view import BaseView
 
@@ -44,7 +44,7 @@ class InstallpathView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            cancel_btn(on_press=self.cancel),
+            back_btn(on_press=self.cancel),
         ]
         return Pile(self.buttons)
 

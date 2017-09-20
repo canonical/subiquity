@@ -30,7 +30,7 @@ from urwid import (
     WidgetWrap,
     )
 
-from subiquitycore.ui.buttons import PlainButton
+from subiquitycore.ui.buttons import close_btn
 from subiquitycore.ui.container import Pile
 from subiquitycore.ui.selector import Selector
 from subiquitycore.ui.utils import Color, Padding
@@ -111,15 +111,15 @@ class YesNo(Selector):
     """ Yes/No selector
     """
     def __init__(self):
-        opts = ['Yes', 'No']
+        opts = [_('Yes'), _('No')]
         super().__init__(opts)
 
 
 class _HelpDisplay(WidgetWrap):
     def __init__(self, closer, help_text):
         self._closer = closer
-        button = Color.button(PlainButton(label="Close", on_press=lambda btn:self._closer()))
-        super().__init__(LineBox(Pile([Text(help_text), Padding.fixed_10(button)]), title="Help"))
+        button = close_btn(on_press=lambda btn:self._closer())
+        super().__init__(LineBox(Pile([Text(help_text), Padding.fixed_10(button)]), title=_("Help")))
 
 
 class Help(WidgetWrap):

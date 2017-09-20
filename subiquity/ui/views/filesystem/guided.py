@@ -20,6 +20,7 @@ from urwid import (
 from subiquitycore.ui.utils import Padding
 
 from subiquitycore.ui.buttons import (
+    back_btn,
     cancel_btn,
     menu_btn,
     ok_btn,
@@ -30,24 +31,24 @@ from subiquitycore.view import BaseView
 from subiquity.models.filesystem import humanize_size
 
 
-text = """The installer can guide you through partitioning a disk or, if \
+text = _("""The installer can guide you through partitioning a disk or, if \
 you prefer, you can do it manually. If you choose guided partitioning you \
-will still have a chance to review and modify the results."""
+will still have a chance to review and modify the results.""")
 
 
 class GuidedFilesystemView(BaseView):
 
     def __init__(self, model, controller):
         self.controller = controller
-        guided = ok_btn(label="Guided", on_press=self.guided)
-        manual = ok_btn(label="Manual", on_press=self.manual)
-        cancel = cancel_btn(on_press=self.cancel)
+        guided = ok_btn(label=_("Guided"), on_press=self.guided)
+        manual = ok_btn(label=_("Manual"), on_press=self.manual)
+        back = back_btn(on_press=self.cancel)
         lb = ListBox([
             Padding.center_70(Text(text)),
             Padding.center_70(Text("")),
             Padding.fixed_10(guided),
             Padding.fixed_10(manual),
-            Padding.fixed_10(cancel),
+            Padding.fixed_10(back),
             ])
         super().__init__(lb)
 
@@ -75,7 +76,7 @@ class GuidedDiskSelectionView(BaseView):
                     on_press=self.choose_disk, user_arg=disk)
                 disks.append(disk_btn)
         lb = ListBox([
-            Padding.center_70(Text("Choose the disk to install to:")),
+            Padding.center_70(Text(_("Choose the disk to install to:"))),
             Padding.center_70(Text("")),
             Padding.center_70(Pile(disks)),
             Padding.center_70(Text("")),

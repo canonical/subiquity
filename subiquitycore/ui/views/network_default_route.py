@@ -78,30 +78,26 @@ class NetworkSetDefaultRouteView(BaseView):
         log.debug('gateway providers: {}'.format(providers))
         items = []
         items.append(Padding.center_79(
-            Color.menu_button(menu_btn(label="None", on_press=self.done))))
+            menu_btn(label="None", on_press=self.done)))
         for (gw, ifaces) in providers.items():
             if gw is None:
                 continue
             items.append(Padding.center_79(
-                Color.menu_button(menu_btn(
+                menu_btn(
                     label="{gw} ({ifaces})".format(
                         gw=gw,
                         ifaces=(",".join(ifaces))),
-                    on_press=self.done))))
+                    on_press=self.done)))
 
         items.append(Padding.center_79(
-            Color.menu_button(
-                menu_btn(label="Specify the default route manually",
-                         on_press=self.show_edit_default_route))))
+            menu_btn(label="Specify the default route manually",
+                    on_press=self.show_edit_default_route)))
         return items
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
-
         buttons = [
-            Color.button(done),
-            Color.button(cancel)
+            done_btn(on_press=self.done),
+            cancel_btn(on_press=self.cancel),
         ]
         return Pile(buttons)
 

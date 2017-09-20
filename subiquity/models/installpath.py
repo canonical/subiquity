@@ -26,14 +26,16 @@ class InstallpathModel(object):
     ('UI Text seen by user', <signal name>, <callback function string>)
     """
 
-    # TODO: Re-enable once available
-    install_paths = [
-        ('Install Ubuntu',               'installpath:install-ubuntu'),
-        # ('Install MAAS Region Server',  'installpath:maas-region-server'),
-        # ('Install MAAS Cluster Server', 'installpath:maas-cluster-server'),
-        # ('Test installation media',     'installpath:test-media'),
-        # ('Test machine memory',         'installpath:test-memory')
-    ]
+    def _refresh_install_paths(self):
+        # TODO: Re-enable once available
+        self.install_paths = [
+            (_('Install Ubuntu'),             'installpath:install-ubuntu'),
+            # ('Install MAAS Region Server',  'installpath:maas-region-server'),
+            # ('Install MAAS Cluster Server', 'installpath:maas-cluster-server'),
+            # ('Test installation media',     'installpath:test-media'),
+            # ('Test machine memory',         'installpath:test-memory')
+        ]
 
     def get_menu(self):
+        self._refresh_install_paths()
         return self.install_paths

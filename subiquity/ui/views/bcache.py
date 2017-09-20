@@ -114,12 +114,9 @@ class BcacheView(BaseView):
 
     def _build_buttons(self):
         log.debug('bcache: _build_buttons')
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
-
         buttons = [
-            Color.button(done),
-            Color.button(cancel)
+            done_btn(on_press=self.done),
+            cancel_btn(on_press=self.cancel),
         ]
         return Pile(buttons)
 

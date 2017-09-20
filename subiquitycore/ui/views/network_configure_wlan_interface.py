@@ -20,10 +20,7 @@ class NetworkList(WidgetWrap):
     def __init__(self, parent, ssids):
         self.parent = parent
         button = cancel_btn(on_press=self.do_cancel)
-        ssid_list = [
-            Color.menu_button(
-                Button(label=ssid, on_press=self.do_network))
-            for ssid in ssids]
+        ssid_list = [menu_btn(label=ssid, on_press=self.do_network) for ssid in ssids]
         p = Pile([BoxAdapter(ListBox(ssid_list), height=10), Padding.fixed_10(button)])
         box = LineBox(p, title="Select a network")
         super().__init__(box)
@@ -37,6 +34,8 @@ class NetworkList(WidgetWrap):
 
 
 class WLANForm(Form):
+
+    ok_label = _("Save")
 
     ssid = StringField(caption="Network Name:")
     psk = PasswordField(caption="Password:")
@@ -95,8 +94,7 @@ class NetworkConfigureWLANView(BaseView):
 
     def _build_iface_inputs(self):
         if len(self.dev.actual_ssids) > 0:
-            networks_btn = Color.menu_button(
-                menu_btn("Choose a visible network", on_press=self.show_ssid_list))
+            networks_btn = menu_btn("Choose a visible network", on_press=self.show_ssid_list)
         else:
             networks_btn = Color.info_minor(Columns(
                 [
@@ -106,8 +104,7 @@ class NetworkConfigureWLANView(BaseView):
                 ], dividechars=1))
 
         if not self.dev.scan_state:
-            scan_btn = Color.menu_button(
-                menu_btn("Scan for networks", on_press=self.start_scan))
+            scan_btn = menu_btn("Scan for networks", on_press=self.start_scan)
         else:
             scan_btn = Color.info_minor(Columns(
                 [

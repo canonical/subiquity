@@ -68,12 +68,9 @@ class CephDiskView(BaseView):
         return Pile(items)
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
-
         buttons = [
-            Color.button(done),
-            Color.button(cancel)
+            done_btn(on_press=self.done),
+            cancel_btn(on_press=self.cancel),
         ]
         return Pile(buttons)
 

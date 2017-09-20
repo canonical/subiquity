@@ -29,7 +29,7 @@ from urwid import (
     WidgetWrap,
     )
 
-from subiquitycore.ui.buttons import cancel_btn, menu_btn, done_btn
+from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn, menu_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import Padding, Color
 from subiquitycore.view import BaseView
@@ -48,7 +48,7 @@ class ApplyingConfigWidget(WidgetWrap):
                         current=0, done=step_count)
         box = LineBox(Pile([self.bar,
                             Padding.fixed_10(button)]),
-                      title="Applying network config")
+                      title=_("Applying network config"))
         super().__init__(box)
 
     def advance(self):
@@ -62,16 +62,16 @@ def _build_wifi_info(dev):
     if dev.actual_ssid is not None:
         if dev.configured_ssid is not None:
             if dev.actual_ssid != dev.configured_ssid:
-                r.append(Text("Associated to '%s', will associate to '%s'"%(dev.actual_ssid, dev.configured_ssid)))
+                r.append(Text(_("Associated to '%s', will associate to '%s'" % (dev.actual_ssid, dev.configured_ssid))))
             else:
-                r.append(Text("Associated to '" + dev.actual_ssid + "'"))
+                r.append(Text(_("Associated to '%s'" % dev.actual_ssid)))
         else:
-            r.append(Text("No access point configured, but associated to '%s'"%(dev.actual_ssid,)))
+            r.append(Text(_("No access point configured, but associated to '%s'" % dev.actual_ssid)))
     else:
         if dev.configured_ssid is not None:
-            r.append(Text("Will associate to '" + dev.configured_ssid + "'"))
+            r.append(Text(_("Will associate to '%s'" % dev.configured_ssid)))
         else:
-            r.append(Text("No access point configured"))
+            r.append(Text(_("No access point configured")))
     return r
 
 def _format_address_list(label, addresses):
@@ -91,19 +91,19 @@ def _build_gateway_ip_info_for_version(dev, version):
     configured_ip_addresses = dev.configured_ip_addresses_for_version(version)
     if dev.dhcp_for_version(version):
         if dev.actual_ip_addresses:
-            return _format_address_list("Will use DHCP for IPv%s, currently has address%%s:"%(version,), actual_ip_addresses)
-        return [Text("Will use DHCP for IPv%s"%(version,))]
+            return _format_address_list(_("Will use DHCP for IPv%s, currently has address%%s:" % version), actual_ip_addresses)
+        return [Text(_("Will use DHCP for IPv%s" % version))]
     elif configured_ip_addresses:
         if sorted(actual_ip_addresses) == sorted(configured_ip_addresses):
-            return _format_address_list("Using static address%%s for IPv%s:"%(version,), actual_ip_addresses)
-        p = _format_address_list("Will use static address%%s for IPv%s:"%(version,), configured_ip_addresses)
+            return _format_address_list(_("Using static address%%s for IPv%s:" % version), actual_ip_addresses)
+        p = _format_address_list(_("Will use static address%%s for IPv%s:" % version), configured_ip_addresses)
         if actual_ip_addresses:
-            p.extend(_format_address_list("Currently has address%s:", actual_ip_addresses))
+            p.extend(_format_address_list(_("Currently has address%s:"), actual_ip_addresses))
         return p
     elif actual_ip_addresses:
-        return _format_address_list("Has no IPv%s configuration, currently has address%%s:"%(version,), actual_ip_addresses)
+        return _format_address_list(_("Has no IPv%s configuration, currently has address%%s:" % version), actual_ip_addresses)
     else:
-        return [Text("IPv%s is not configured"%(version,))]
+        return [Text(_("IPv%s is not configured" % version))]
 
 
 class NetworkView(BaseView):
@@ -132,11 +132,11 @@ class NetworkView(BaseView):
         super().__init__(self.frame)
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
+        back = back_btn(on_press=self.cancel)
         done = done_btn(on_press=self.done)
         self.default_focus = done
 
-        buttons = [done, cancel]
+        buttons = [done, back]
         return Pile(buttons, focus_item=done)
 
     def _build_model_inputs(self):
@@ -162,7 +162,7 @@ class NetworkView(BaseView):
             if dev.type == 'wlan':
                 col_2.extend(_build_wifi_info(dev))
             if len(dev.actual_ip_addresses) == 0 and dev.type == 'eth' and not dev.is_connected:
-                col_2.append(Color.info_primary(Text("Not connected")))
+                col_2.append(Color.info_primary(Text(_("Not connected"))))
             col_2.extend(_build_gateway_ip_info_for_version(dev, 4))
             col_2.extend(_build_gateway_ip_info_for_version(dev, 6))
 
@@ -170,8 +170,10 @@ class NetworkView(BaseView):
             template = ''
             if dev.hwaddr:
                 template += '{} '.format(dev.hwaddr)
+            ## TODO is this to translate?
             if dev.is_bond_slave:
                 template += '(Bonded) '
+            ## TODO to check if this is affected by translations
             if not dev.vendor.lower().startswith('unknown'):
                 vendor = textwrap.wrap(dev.vendor, 15)[0]
                 template += '{} '.format(vendor)
@@ -199,7 +201,7 @@ class NetworkView(BaseView):
             v4_route_source = "via " + self.model.default_v4_gateway
 
             default_v4_route_w = Color.info_minor(
-                Text("  IPv4 default route " + v4_route_source + "."))
+                Text(_("  IPv4 default route %s." % v4_route_source)))
             labels.append(default_v4_route_w)
 
         if self.model.default_v6_gateway is not None:

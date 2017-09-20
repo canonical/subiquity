@@ -19,6 +19,7 @@ import sys
 import logging
 import signal
 
+from subiquitycore.i18n import *
 from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION
 from subiquitycore.core import ApplicationError

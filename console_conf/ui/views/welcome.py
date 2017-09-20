@@ -21,7 +21,7 @@ Welcome provides user with language selection
 import logging
 from subiquitycore.ui.buttons import ok_btn
 from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.views.welcome")
@@ -37,7 +37,7 @@ class WelcomeView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            Color.button(ok_btn(on_press=self.confirm)),
+            ok_btn(on_press=self.confirm),
         ]
         return Pile(self.buttons)
 

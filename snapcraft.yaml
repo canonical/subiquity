@@ -15,14 +15,22 @@ apps:
 parts:
   subiquity:
     plugin: python
-    build-packages: [python-setuptools, pkg-config, lsb-release, libsystemd-dev]
-    stage-packages: [curtin, lsb-release]
+    build-packages:
+      - libsystemd-dev
+      - lsb-release
+      - pkg-config
+      - python3-distutils-extra
+    stage-packages:
+      - curtin
+      - iso-codes
+      - lsb-release
+      - python3-distutils-extra
     python-packages:
-      - urwid
-      - pyyaml
-      - pyudev
       - attrs
+      - pyudev
+      - pyyaml
       - systemd-python
+      - urwid
     source: .
     source-type: git
   wrappers:
