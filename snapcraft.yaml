@@ -15,13 +15,22 @@ apps:
 parts:
   subiquity:
     plugin: python
-    build-packages: [pkg-config, lsb-release, python3-distutils-extra]
-    stage-packages: [curtin, lsb-release, python3-distutils-extra, iso-codes]
+    build-packages:
+      - libsystemd-dev
+      - lsb-release
+      - pkg-config
+      - python3-distutils-extra
+    stage-packages:
+      - curtin
+      - iso-codes
+      - lsb-release
+      - python3-distutils-extra
     python-packages:
-      - urwid
-      - pyyaml
-      - pyudev
       - attrs
+      - pyudev
+      - pyyaml
+      - systemd-python
+      - urwid
     source: .
     source-type: git
   wrappers:
@@ -31,6 +40,7 @@ parts:
     organize:
       'bin/console-conf-tui': usr/bin/console-conf
       'bin/subiquity-tui': usr/bin/subiquity
+      'bin/curtin-journald-forwarder': usr/bin/curtin-journald-forwarder
     prime:
       - usr/bin
   probert:

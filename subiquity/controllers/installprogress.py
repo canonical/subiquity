@@ -16,7 +16,10 @@
 import fcntl
 import logging
 import os
+import random
 import subprocess
+
+from systemd import journal
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
@@ -25,7 +28,8 @@ from subiquity.curtin import (CURTIN_CONFIGS,
                               CURTIN_INSTALL_LOG,
                               CURTIN_POSTINSTALL_LOG,
                               curtin_install_cmd,
-                              curtin_write_network_config)
+                              curtin_write_network_config,
+                              curtin_write_reporting_config)
 from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView
 
@@ -42,6 +46,7 @@ class InstallState:
     ERROR_INSTALL = -1
     ERROR_POSTINSTALL = -2
 
+
 class InstallProgressController(BaseController):
     signals = [
         ('installprogress:curtin-install',     'curtin_start_install'),
@@ -57,6 +62,8 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.NOT_STARTED
         self.postinstall_written = False
         self.tail_proc = None
+        self.journald_forwarder_proc = None
+        self.curtin_event_stack = []
 
     def curtin_wrote_network_config(self, path):
         curtin_write_network_config(open(path).read())
@@ -88,20 +95,59 @@ class InstallProgressController(BaseController):
             log.debug("completed %s", cmd)
         return cp.returncode
 
+    def curtin_event(self):
+        if self.journal_reader.process() != journal.APPEND:
+            return
+        event = self.journal_reader.get_next()
+        event_type = event.get("CURTIN_EVENT_TYPE")
+        if random.randrange(1000) == 0 or len(event) > 0:
+            log.debug("got curtin event from journald: %r", event)
+        if event_type not in ['start', 'finish']:
+            return
+        if event_type == 'start':
+            desc = event["MESSAGE"]
+            self.curtin_event_stack.append(desc)
+        if event_type == 'finish':
+            if not self.curtin_event_stack:
+                return
+            self.curtin_event_stack.pop()
+            if self.curtin_event_stack:
+                desc = self.curtin_event_stack[-1]
+            else:
+                desc = ""
+        self.ui.set_footer("Running install... %s" % (desc,))
+
+    def start_event_listener(self):
+        self.journal_reader = journal.Reader()
+        self.journal_reader.seek_tail()
+        self.journal_reader.add_match("SYSLOG_IDENTIFIER=curtin_event")
+        self.journal_reader_handle = self.loop.watch_file(self.journal_reader.fileno(), self.curtin_event)
+
     def curtin_start_install(self):
         log.debug('Curtin Install: calling curtin with '
                   'storage/net/postinstall config')
 
         self.install_state = InstallState.RUNNING_INSTALL
+
+        self.start_journald_forwarder()
+
+        self.start_event_listener()
+
+        curtin_write_reporting_config(self.reporting_url)
+
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
-                "bash", "-c",
-                "{ i=0;while [ $i -le 25 ];do i=$((i+1)); echo install line $i; sleep 1; done; }"]
+                "python3", "scripts/replay-curtin-log.py",
+                self.reporting_url, "examples/curtin-events-install.json",
+                ]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
-            configs = [CURTIN_CONFIGS['storage'],
-                       CURTIN_CONFIGS['network']]
+            configs = [
+                CURTIN_CONFIGS['storage'],
+                CURTIN_CONFIGS['network'],
+                CURTIN_CONFIGS['reporting'],
+                ]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
@@ -139,14 +185,16 @@ class InstallProgressController(BaseController):
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
-                "bash", "-c",
-                "{ i=0;while [ $i -le 10 ];do i=$((i+1)); echo postinstall line $i; sleep 1; done; }"]
+                "python3", "scripts/replay-curtin-log.py",
+                self.reporting_url, "examples/curtin-events-postinstall.json",
+                ]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             configs = [
                 CURTIN_CONFIGS['postinstall'],
                 CURTIN_CONFIGS['preserved'],
-            ]
+                CURTIN_CONFIGS['reporting'],
+                ]
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
@@ -173,10 +221,20 @@ class InstallProgressController(BaseController):
         tail = self.tail_proc.stdout.read().decode('utf-8', 'replace')
         self.progress_view.add_log_tail(tail)
 
+    def start_journald_forwarder(self):
+        log.debug("starting curtin journald forwarder")
+        if "SNAP" in os.environ:
+            script = os.path.join(os.environ["SNAP"], 'usr/bin/curtin-journald-forwarder')
+        else:
+            script = './bin/curtin-journald-forwarder'
+        self.journald_forwarder_proc = utils.run_command_start([script])
+        self.reporting_url = self.journald_forwarder_proc.stdout.readline().decode('utf-8').strip()
+        log.debug("curtin journald forwarder listening on %s", self.reporting_url)
+
     def start_tail_proc(self):
         if self.install_state == InstallState.ERROR_INSTALL:
             install_log = CURTIN_INSTALL_LOG
-        elif self.install_state == InstallState.ERROR_INSTALL:
+        elif self.install_state == InstallState.ERROR_POSTINSTALL:
             install_log = CURTIN_POSTINSTALL_LOG
         elif self.install_state < InstallState.RUNNING_POSTINSTALL:
             install_log = CURTIN_INSTALL_LOG
