@@ -95,8 +95,11 @@ class TabCyclingMixin:
         else:
             return key
 
+enter_advancing_command_map = urwid.command_map.copy()
+enter_advancing_command_map['enter'] = 'next selectable'
 
 class TabCyclingPile(TabCyclingMixin, urwid.Pile):
+    _command_map = enter_advancing_command_map
     pass
 
 class TabCyclingColumns(TabCyclingMixin, urwid.Columns):
@@ -104,6 +107,7 @@ class TabCyclingColumns(TabCyclingMixin, urwid.Columns):
 
 
 class TabCyclingListBox(urwid.ListBox):
+    _command_map = enter_advancing_command_map
     # It feels like it ought to be possible to write TabCyclingMixin
     # so it works for a ListBox as well, but it seems to be just
     # awkward enough to make the repeated code the easier and clearer
