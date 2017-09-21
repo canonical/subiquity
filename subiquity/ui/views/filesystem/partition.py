@@ -163,7 +163,7 @@ class PartitionView(PartitionFormatView):
                 }
             label = _("Save")
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
-        self.form.buttons[0].set_label(label)
+        self.form.buttons.base_widget[0].set_label(label)
 
     def make_body(self):
         body = super().make_body()
