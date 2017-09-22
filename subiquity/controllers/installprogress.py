@@ -25,8 +25,6 @@ from subiquitycore import utils
 from subiquitycore.controller import BaseController
 
 from subiquity.curtin import (CURTIN_CONFIGS,
-                              CURTIN_INSTALL_LOG,
-                              CURTIN_POSTINSTALL_LOG,
                               curtin_install_cmd,
                               curtin_write_network_config,
                               curtin_write_reporting_config)
@@ -61,9 +59,9 @@ class InstallProgressController(BaseController):
         self.progress_view = None
         self.install_state = InstallState.NOT_STARTED
         self.postinstall_written = False
-        self.tail_proc = None
         self.journald_forwarder_proc = None
         self.curtin_event_stack = []
+        self.curtin_output_buffer = []
 
     def curtin_wrote_network_config(self, path):
         curtin_write_network_config(open(path).read())
@@ -87,18 +85,15 @@ class InstallProgressController(BaseController):
         else:
             self.default()
 
-    def run_command_logged(self, cmd, logfile_location):
-        with open(logfile_location, 'wb', buffering=0) as logfile:
+    def run_command_logged_to_journal(self, cmd):
+        with journal.stream("curtin_output") as logfile:
             log.debug("running %s", cmd)
             cp = subprocess.run(
                 cmd, stdout=logfile, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
             log.debug("completed %s", cmd)
         return cp.returncode
 
-    def curtin_event(self):
-        if self.journal_reader.process() != journal.APPEND:
-            return
-        event = self.journal_reader.get_next()
+    def curtin_event(self, event):
         event_type = event.get("CURTIN_EVENT_TYPE")
         if random.randrange(1000) == 0 or len(event) > 0:
             log.debug("got curtin event from journald: %r", event)
@@ -117,11 +112,23 @@ class InstallProgressController(BaseController):
                 desc = ""
         self.ui.set_footer("Running install... %s" % (desc,))
 
-    def start_event_listener(self):
-        self.journal_reader = journal.Reader()
-        self.journal_reader.seek_tail()
-        self.journal_reader.add_match("SYSLOG_IDENTIFIER=curtin_event")
-        self.journal_reader_handle = self.loop.watch_file(self.journal_reader.fileno(), self.curtin_event)
+    def curtin_output(self, event):
+        output = event['MESSAGE']
+        if self.progress_view is not None:
+            self.progress_view.add_log_tail(output)
+        else:
+            self.curtin_output_buffer.append(output)
+
+    def start_journald_listener(self, identifier, callback):
+        reader = journal.Reader()
+        reader.seek_tail()
+        reader.add_match("SYSLOG_IDENTIFIER={}".format(identifier))
+        def watch():
+            if reader.process() != journal.APPEND:
+                return
+            for event in reader:
+                callback(event)
+        self.loop.watch_file(reader.fileno(), watch)
 
     def curtin_start_install(self):
         log.debug('Curtin Install: calling curtin with '
@@ -131,7 +138,8 @@ class InstallProgressController(BaseController):
 
         self.start_journald_forwarder()
 
-        self.start_event_listener()
+        self.start_journald_listener("curtin_event", self.curtin_event)
+        self.start_journald_listener("curtin_output", self.curtin_output)
 
         curtin_write_reporting_config(self.reporting_url)
 
@@ -151,13 +159,12 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
-        self.run_in_bg(lambda: self.run_command_logged(curtin_cmd, CURTIN_INSTALL_LOG), self.curtin_install_completed)
+        self.run_in_bg(lambda: self.run_command_logged_to_journal(curtin_cmd), self.curtin_install_completed)
 
     def curtin_install_completed(self, fut):
         returncode = fut.result()
         log.debug('curtin_install: returncode: {}'.format(returncode))
-        self.stop_tail_proc()
-        if returncode > 0:
+        if returncode != 0:
             self.install_state = InstallState.ERROR_INSTALL
             self.curtin_error()
             return
@@ -178,10 +185,10 @@ class InstallProgressController(BaseController):
             raise Exception('AIEEE!')
 
         self.install_state = InstallState.RUNNING_POSTINSTALL
+        self.curtin_output_buffer = []
         if self.progress_view is not None:
             self.progress_view.clear_log_tail()
             self.progress_view.set_status(_("Running postinstall step"))
-            self.start_tail_proc()
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             curtin_cmd = [
@@ -198,12 +205,11 @@ class InstallProgressController(BaseController):
             curtin_cmd = curtin_install_cmd(configs)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
-        self.run_in_bg(lambda: self.run_command_logged(curtin_cmd, CURTIN_POSTINSTALL_LOG), self.curtin_postinstall_completed)
+        self.run_in_bg(lambda: self.run_command_logged_to_journal(curtin_cmd), self.curtin_postinstall_completed)
 
     def curtin_postinstall_completed(self, fut):
         returncode = fut.result()
         log.debug('curtin_postinstall: returncode: {}'.format(returncode))
-        self.stop_tail_proc()
         if returncode > 0:
             self.install_state = InstallState.ERROR_POSTINSTALL
             self.curtin_error()
@@ -215,12 +221,6 @@ class InstallProgressController(BaseController):
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
 
-    def update_log_tail(self):
-        if self.tail_proc is None:
-            return
-        tail = self.tail_proc.stdout.read().decode('utf-8', 'replace')
-        self.progress_view.add_log_tail(tail)
-
     def start_journald_forwarder(self):
         log.debug("starting curtin journald forwarder")
         if "SNAP" in os.environ:
@@ -230,31 +230,6 @@ class InstallProgressController(BaseController):
         self.journald_forwarder_proc = utils.run_command_start([script])
         self.reporting_url = self.journald_forwarder_proc.stdout.readline().decode('utf-8').strip()
         log.debug("curtin journald forwarder listening on %s", self.reporting_url)
-
-    def start_tail_proc(self):
-        if self.install_state == InstallState.ERROR_INSTALL:
-            install_log = CURTIN_INSTALL_LOG
-        elif self.install_state == InstallState.ERROR_POSTINSTALL:
-            install_log = CURTIN_POSTINSTALL_LOG
-        elif self.install_state < InstallState.RUNNING_POSTINSTALL:
-            install_log = CURTIN_INSTALL_LOG
-        else:
-            install_log = CURTIN_POSTINSTALL_LOG
-        self.progress_view.clear_log_tail()
-        tail_cmd = ['tail', '-n', '1000', '-F', install_log]
-        log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
-        self.tail_proc = utils.run_command_start(tail_cmd)
-        stdout_fileno = self.tail_proc.stdout.fileno()
-        fcntl.fcntl(
-            stdout_fileno, fcntl.F_SETFL,
-            fcntl.fcntl(stdout_fileno, fcntl.F_GETFL) | os.O_NONBLOCK)
-        self.tail_watcher_handle = self.loop.watch_file(stdout_fileno, self.update_log_tail)
-
-    def stop_tail_proc(self):
-        if self.tail_proc is not None:
-            self.loop.remove_watch_file(self.tail_watcher_handle)
-            self.tail_proc.terminate()
-            self.tail_proc = None
 
     def reboot(self):
         if self.opts.dry_run:
@@ -276,6 +251,8 @@ class InstallProgressController(BaseController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer, 90)
         self.progress_view = ProgressView(self.model, self)
+        self.progress_view.add_log_tail("\n".join(self.curtin_output_buffer))
+        self.curtin_output_buffer = []
         if self.install_state < 0:
             self.curtin_error()
             self.ui.set_body(self.progress_view)
@@ -285,5 +262,3 @@ class InstallProgressController(BaseController):
         else:
             self.progress_view.set_status(_("Running postinstall step"))
         self.ui.set_body(self.progress_view)
-
-        self.start_tail_proc()
