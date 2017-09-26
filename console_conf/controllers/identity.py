@@ -171,7 +171,7 @@ class IdentityController(BaseController):
         excerpt = "Enter an email address from your account in the store."
         footer = ""
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer, 40)
+        self.ui.set_footer(footer)
         self.ui.set_body(IdentityView(self.model, self, self.opts, self.loop))
         device_owner = get_device_owner()
         if device_owner is not None:

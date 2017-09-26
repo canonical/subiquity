@@ -350,7 +350,7 @@ class NetworkController(BaseController):
                    "updates.")
         footer = _("Select an interface to configure it or select Done to continue")
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer, 20)
+        self.ui.set_footer(footer)
         self.ui.set_body(NetworkView(self.model, self))
 
     @property

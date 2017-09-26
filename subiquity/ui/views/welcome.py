@@ -19,7 +19,7 @@ Welcome provides user with language selection
 
 """
 import logging
-from urwid import BoxAdapter, Text, connect_signal
+from urwid import BoxAdapter, Text
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import menu_btn
 from subiquitycore.ui.container import ListBox

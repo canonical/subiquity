@@ -33,3 +33,7 @@ class Subiquity(Application):
             "Identity",
             "InstallProgress",
     ]
+
+    def __init__(self, ui, opts):
+        super().__init__(ui, opts)
+        self.common['ui'].progress_completion += 1

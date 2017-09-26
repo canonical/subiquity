@@ -25,11 +25,13 @@ log = logging.getLogger('subiquitycore.ui.frame')
 
 class SubiquityUI(WidgetWrap):
 
-    def __init__(self, header=None, body=None, footer=None):
-        self.header = header if header else Header()
-        self.body = body if body else Body()
-        self.footer = footer if footer else Footer()
+    def __init__(self):
+        self.header = Header()
+        self.body = Body()
+        self.footer = Footer("", 0, 0)
         self.frame = Frame(self.body, header=self.header, footer=self.footer)
+        self.progress_current = 0
+        self.progress_completion = 0
         super().__init__(self.frame)
 
     def keypress(self, size, key):
@@ -38,8 +40,8 @@ class SubiquityUI(WidgetWrap):
     def set_header(self, title=None, excerpt=None):
         self.frame.header = Header(title, excerpt)
 
-    def set_footer(self, message, completion=0):
-        self.frame.footer = Footer(message, completion)
+    def set_footer(self, message):
+        self.frame.footer = Footer(message, self.progress_current, self.progress_completion)
 
     def set_body(self, widget):
         self.frame.body = widget

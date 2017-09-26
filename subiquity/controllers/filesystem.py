@@ -67,21 +67,21 @@ class FilesystemController(BaseController):
             title = _("Filesystem setup")
             footer = (_("Choose guided or manual partitioning"))
             self.ui.set_header(title)
-            self.ui.set_footer(footer, 30)
+            self.ui.set_footer(footer)
             self.ui.set_body(GuidedFilesystemView(self.model, self))
 
     def manual(self):
         title = _("Filesystem setup")
         footer = (_("Select available disks to format and mount"))
         self.ui.set_header(title)
-        self.ui.set_footer(footer, 30)
+        self.ui.set_footer(footer)
         self.ui.set_body(FilesystemView(self.model, self))
 
     def guided(self):
         title = _("Filesystem setup")
         footer = (_("Choose the installation target"))
         self.ui.set_header(title)
-        self.ui.set_footer(footer, 30)
+        self.ui.set_footer(footer)
         self.ui.set_body(GuidedDiskSelectionView(self.model, self))
 
     def reset(self):
@@ -97,7 +97,7 @@ class FilesystemController(BaseController):
         footer = (_("Error while installing Ubuntu"))
         error_msg = _("Failed to obtain write permissions to /tmp")
         self.ui.set_header(title)
-        self.ui.set_footer(footer, 30)
+        self.ui.set_footer(footer)
         self.ui.set_body(ErrorView(self.signal, error_msg))
 
     def finish(self):
@@ -383,7 +383,7 @@ class FilesystemController(BaseController):
         log.debug('calling DiskInfoView()')
         disk_info_view = DiskInfoView(self.model, self, disk, result)
         footer = _('Select next or previous disks with n and p')
-        self.ui.set_footer(footer, 30)
+        self.ui.set_footer(footer)
         self.ui.set_body(disk_info_view)
 
     def is_uefi(self):
