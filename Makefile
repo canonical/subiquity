@@ -46,4 +46,4 @@ probert:
     fi
 
 clean:
-        ./debian/rules clean
+	./debian/rules clean
