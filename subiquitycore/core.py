@@ -103,6 +103,7 @@ class Application:
             "loop": None,
             "pool": futures.ThreadPoolExecutor(1),
         }
+        ui.progress_completion = len(self.controllers)
         self.common['controllers'] = dict.fromkeys(self.controllers)
         self.controller_index = -1
 
@@ -128,6 +129,7 @@ class Application:
         self.controller_index += 1
         if self.controller_index >= len(self.controllers):
             self.exit()
+        self.common['ui'].progress_current += 1
         controller_name = self.controllers[self.controller_index]
         log.debug("moving to screen %s", controller_name)
         next_controller = self.common['controllers'][controller_name]
@@ -139,6 +141,7 @@ class Application:
         self.controller_index -= 1
         if self.controller_index >= len(self.controllers):
             self.exit()
+        self.common['ui'].progress_current -= 1
         controller_name = self.controllers[self.controller_index]
         next_controller = self.common['controllers'][controller_name]
         next_controller.default()
@@ -179,7 +182,7 @@ class Application:
         try:
             self.common['loop'].set_alarm_in(0.05, self.next_screen)
             controllers_mod = __import__('%s.controllers' % self.project, None, None, [''])
-            for k in self.common['controllers']:
+            for k in self.controllers:
                 log.debug("Importing controller: {}".format(k))
                 klass = getattr(controllers_mod, k+"Controller")
                 self.common['controllers'][k] = klass(self.common)

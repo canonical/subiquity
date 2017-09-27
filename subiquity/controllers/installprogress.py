@@ -80,7 +80,7 @@ class InstallProgressController(BaseController):
         log.debug('curtin_error')
         title = _('An error occurred during installation')
         self.ui.set_header(title, _('Please report this error in Launchpad'))
-        self.ui.set_footer(_("An error has occurred."), 100)
+        self.ui.set_footer(_("An error has occurred."))
         if self.progress_view is not None:
             self.progress_view.set_status(('info_error', "An error has occurred"))
             self.progress_view.show_complete()
@@ -210,8 +210,9 @@ class InstallProgressController(BaseController):
             return
         log.debug('After curtin postinstall OK')
         self.install_state = InstallState.DONE_POSTINSTALL
+        self.ui.progress_current += 1
         self.ui.set_header(_("Installation complete!"), "")
-        self.ui.set_footer("", 100)
+        self.ui.set_footer("")
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
 
@@ -274,7 +275,7 @@ class InstallProgressController(BaseController):
         excerpt = _("Please wait for the installation to finish.")
         footer = _("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer, 90)
+        self.ui.set_footer(footer)
         self.progress_view = ProgressView(self.model, self)
         if self.install_state < 0:
             self.curtin_error()
