@@ -95,10 +95,7 @@ class InstallProgressController(BaseController):
             log.debug("completed %s", cmd)
         return cp.returncode
 
-    def curtin_event(self):
-        if self.journal_reader.process() != journal.APPEND:
-            return
-        event = self.journal_reader.get_next()
+    def curtin_event(self, event):
         event_type = event.get("CURTIN_EVENT_TYPE")
         if random.randrange(1000) == 0 or len(event) > 0:
             log.debug("got curtin event from journald: %r", event)
@@ -117,11 +114,16 @@ class InstallProgressController(BaseController):
                 desc = ""
         self.ui.set_footer("Running install... %s" % (desc,))
 
-    def start_event_listener(self):
-        self.journal_reader = journal.Reader()
-        self.journal_reader.seek_tail()
-        self.journal_reader.add_match("SYSLOG_IDENTIFIER=curtin_event")
-        self.journal_reader_handle = self.loop.watch_file(self.journal_reader.fileno(), self.curtin_event)
+    def start_journald_listener(self, identifier, callback):
+        reader = journal.Reader()
+        reader.seek_tail()
+        reader.add_match("SYSLOG_IDENTIFIER={}".format(identifier))
+        def watch():
+            if reader.process() != journal.APPEND:
+                return
+            for event in reader:
+                callback(event)
+        self.loop.watch_file(reader.fileno(), watch)
 
     def curtin_start_install(self):
         log.debug('Curtin Install: calling curtin with '
@@ -131,7 +133,7 @@ class InstallProgressController(BaseController):
 
         self.start_journald_forwarder()
 
-        self.start_event_listener()
+        self.start_journald_listener("curtin_event", self.curtin_event)
 
         curtin_write_reporting_config(self.reporting_url)
 
