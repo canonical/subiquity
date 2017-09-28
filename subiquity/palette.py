@@ -32,34 +32,78 @@ light_magenta = 'light magenta'  # index 13
 light_cyan = 'light cyan'        # index 14
 white = 'white'                  # index 15
 
+
+URWID_16_NAMES = [
+    'black',
+    'dark red',
+    'dark green',
+    'brown',
+    'dark blue',
+    'dark magenta',
+    'dark cyan',
+    'light gray',
+]
+
+URWID16 = {}
+URWID256 = {}
+
+PALETTE = bytearray(16*3)
+
+colors = {
+    0: ("bg",        (0x00, 0x00, 0x00)),
+    1: ("orange",    (0xe9, 0x54, 0x20)),
+    2: ("danger",    (0xff, 0x00, 0x00)),
+    3: ("good",      (0x00, 0xff, 0x00)),
+    4: ("neutral",   (0x00, 0xff, 0xff)),
+    5: ("gray",      (0x7f, 0x7f, 0x7f)),
+    6: ("aubergine", (0x77, 0x21, 0x6f)),
+    7: ("fg",        (0xff, 0xff, 0xff)),
+}
+
+for i, (c, (r, g, b)) in colors.items():
+    URWID16[c] = URWID_16_NAMES[i]
+    PALETTE[i*3+0] = r
+    PALETTE[i*3+1] = g
+    PALETTE[i*3+2] = b
+    URWID256[c] = '#{}{}{}'.format(hex(r//16)[-1], hex(g//16)[-1], hex(b//16)[-1])
+
 orange = "#e51"
 warm_gray = "g15"
 
 STYLES = [
-    ('frame_header',        white,       dark_blue,     '', white,       orange),
-    ('frame_footer',        white,       dark_gray,     '', white,       warm_gray),
-    ('body',                white,       '',            '', white,       ''),
-    ('menu_button',         white,       '',            '', white,       ''),
-    ('menu_button focus',   black,       light_gray,    '', black,       light_gray),
-    ('button',              white,       '',            '', white,       ''),
-    ('button focus',        black,       dark_green,    '', black,       dark_green),
-    ('danger_button',       white,       '',            '', white,       ''),
-    ('danger_button focus', black,       dark_red,      '', black,       dark_red),
-    ('cancel_button',       white,       '',            '', white,       ''), # also for "back" buttons
-    ('cancel_button focus', black,       dark_cyan,     '', black,       dark_cyan),
-    ('reset_button',        white,       '',            '', white,       ''),
-    ('reset_button focus',  black,       dark_cyan,     '', black,       dark_cyan),
-    ('save_button',         light_green, '',            '', light_green, ''), # also for "ok" buttons
-    ('save_button focus',   black,       dark_green,    '', black,       dark_green),
-    ('info_primary',        white,       '',            '', white,       ''),
-    ('info_major',          light_gray,  '',            '', light_gray,  ''),
-    ('info_minor',          dark_gray,   '',            '', dark_gray,   ''),
-    ('info_error',          dark_red,    '',            '', dark_red,    ''),
-    ('string_input',        black,       light_gray,    '', black,       light_gray),
-    ('string_input focus',  white,       dark_gray,     '', white,       dark_gray),
-    ('progress_incomplete', white,       dark_magenta,  '', white,       dark_magenta),
-    ('progress_complete',   white,       dark_blue,     '', white,       orange)
+    ('frame_header',        'fg',      'orange'),
+    ('frame_footer',        'fg',      'gray'),
+    ('body',                'fg',      'bg'),
+    ('menu_button',         'good',    'bg'),
+    ('button',              'fg',      'bg'),
+    ('danger_button',       'danger',  'bg'),
+    ('cancel_button',       'neutral', 'bg'),
+    ('reset_button',        'neutral', 'bg'),
+    ('save_button',         'good',    'bg'),
+    ('info_primary',        'fg',      'bg'),
+    ('info_minor',          'gray',    'bg'),
+    ('info_error',          'danger',  'bg'),
+    ('string_input',        'bg',      'gray'),
+    ('string_input focus',  'bg',      'gray'),
+    ('progress_incomplete', 'fg',      'aubergine'),
+    ('progress_complete',   'fg',      'orange'),
 ]
+
+focus_styles = set([
+    'button',
+    'menu_button',
+    'danger_button',
+    'cancel_button',
+    'reset_button',
+    'save_button',
+    ])
+
+for i in range(len(STYLES)):
+    name, fg, bg = STYLES[i]
+    STYLES[i] = (name, URWID16[fg], URWID16[bg], '', URWID256[fg], URWID256[bg])
+    if name in focus_styles:
+        STYLES.append(
+            (name + ' focus', URWID16[bg], URWID16[fg], '', URWID256[bg], URWID256[fg]))
 
 STYLES_MONO = [
     ('frame_header',        white, black, '', '',    ''),

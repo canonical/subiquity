@@ -17,6 +17,7 @@
 
 from urwid import Frame, WidgetWrap
 from subiquitycore.ui.anchors import Header, Footer, Body
+from subiquitycore.ui.utils import Color
 import logging
 
 
@@ -32,7 +33,7 @@ class SubiquityUI(WidgetWrap):
         self.frame = Frame(self.body, header=self.header, footer=self.footer)
         self.progress_current = 0
         self.progress_completion = 0
-        super().__init__(self.frame)
+        super().__init__(Color.body(self.frame))
 
     def keypress(self, size, key):
         return super().keypress(size, key)

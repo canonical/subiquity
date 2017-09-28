@@ -41,15 +41,10 @@ PIO_CMAP  = 0x4B71	# sets colour palette on VGA+
 UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
 
 
-def setup_ubuntu_orange(additional_opts):
+def setup_ubuntu_orange(pal, additional_opts):
     """Overwrite color 4 (usually "dark blue") to Ubuntu orange."""
     if is_linux_tty():
-        buf = bytearray(16*3)
-        fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, buf)
-        buf[4*3+0] = UO_R
-        buf[4*3+1] = UO_G
-        buf[4*3+2] = UO_B
-        fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, buf)
+        fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, pal)
     elif os.environ['TERM'] == 'fbterm':
         print('\033[3;4;%i;%i;%i}' % (UO_R, UO_G, UO_B), flush=True)
     else:
@@ -172,7 +167,7 @@ class Application:
             if self.common['opts'].run_on_serial:
                 palette = self.STYLES_MONO
             else:
-                setup_ubuntu_orange(additional_opts)
+                setup_ubuntu_orange(self.PALETTE, additional_opts)
 
             self.common['loop'] = urwid.MainLoop(
                 self.common['ui'], palette, **additional_opts)
