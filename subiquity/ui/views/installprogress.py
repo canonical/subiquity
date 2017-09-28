@@ -60,11 +60,14 @@ class ProgressView(BaseView):
     def set_status(self, text):
         self.linebox.set_title(text)
 
-    def show_complete(self):
-        buttons = button_pile([
+    def show_complete(self, include_exit=False):
+        buttons = [
             ok_btn(label=_("Reboot Now"), on_press=self.reboot),
-            cancel_btn(label=_("Quit Installer"), on_press=self.quit),
-            ])
+            ]
+        if include_exit:
+            buttons.append(
+                cancel_btn(label=_("Exit To Shell"), on_press=self.quit))
+        buttons = button_pile(buttons)
 
         new_focus = len(self.pile.contents)
         self.pile.contents.append((buttons, self.pile.options('pack')))

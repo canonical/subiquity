@@ -83,7 +83,7 @@ class InstallProgressController(BaseController):
         self.ui.set_footer(_("An error has occurred."))
         if self.progress_view is not None:
             self.progress_view.set_status(('info_error', "An error has occurred"))
-            self.progress_view.show_complete()
+            self.progress_view.show_complete(True)
         else:
             self.default()
 
