@@ -125,6 +125,7 @@ class NetworkView(BaseView):
                 self._build_buttons(),
                 Text(""),
                 ])
+        self.error_showing = False
         self.frame = Pile([
             self.lb,
             ('pack', self.footer)])
@@ -252,6 +253,7 @@ class NetworkView(BaseView):
         self.controller.network_configure_interface(result.label)
 
     def show_network_error(self, action, info=None):
+        self.error_showing = True
         self.footer.contents[0:0] = [
             (Text(""), self.footer.options()),
             (Color.info_error(self.error), self.footer.options()),
@@ -271,6 +273,8 @@ class NetworkView(BaseView):
                                 "please verify your settings.")
 
     def done(self, result):
+        if self.error_showing:
+            self.footer.contents[0:2] = []
         self.controller.network_finish(self.model.render())
 
     def cancel(self, button=None):
