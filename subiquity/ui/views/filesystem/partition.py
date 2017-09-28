@@ -64,6 +64,7 @@ class PartitionForm(Form):
             self.remove_field('partnum')
             self.remove_field('size')
         connect_signal(self.fstype.widget, 'select', self.select_fstype)
+        self.select_fstype(None, self.fstype.widget.value)
 
     def select_fstype(self, sender, fs):
         self.mount.enabled = fs.is_mounted
