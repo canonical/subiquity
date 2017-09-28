@@ -141,6 +141,14 @@ class Disk:
         d.model = info.model
         return d
 
+    def reset(self):
+        self.wipe = None
+        self.preserve = False
+        self.name = ''
+        self.grub_device = ''
+        self._partitions = []
+        self._fs = None
+
     @property
     def available(self):
         return self.used < self.size
@@ -276,7 +284,7 @@ class FilesystemModel(object):
         self._partitions = []
         self._mounts = []
         for k, d in self._available_disks.items():
-            self._available_disks[k] = Disk.from_info(d._info)
+            self._available_disks[k].reset()
 
     def render(self):
         r = []

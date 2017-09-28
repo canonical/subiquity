@@ -56,19 +56,12 @@ class FilesystemController(BaseController):
         self.raid_model = RaidModel()
         self.model.probe()  # probe before we complete
 
-    def default(self, reset=False):
-        # FIXME: Is this the best way to zero out this list for a reset?
-        if reset:
-            log.info("Resetting Filesystem model")
-            self.model.reset()
-        if self.model.any_configuration_done():
-            self.manual()
-        else:
-            title = _("Filesystem setup")
-            footer = (_("Choose guided or manual partitioning"))
-            self.ui.set_header(title)
-            self.ui.set_footer(footer)
-            self.ui.set_body(GuidedFilesystemView(self.model, self))
+    def default(self):
+        title = _("Filesystem setup")
+        footer = (_("Choose guided or manual partitioning"))
+        self.ui.set_header(title)
+        self.ui.set_footer(footer)
+        self.ui.set_body(GuidedFilesystemView(self.model, self))
 
     def manual(self):
         title = _("Filesystem setup")
@@ -87,7 +80,7 @@ class FilesystemController(BaseController):
     def reset(self):
         log.info("Resetting Filesystem model")
         self.model.reset()
-        self.default()
+        self.manual()
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
@@ -320,7 +313,7 @@ class FilesystemController(BaseController):
             footer = _("Format and mount partition.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
-        afv_view = FormatEntireView(self.model, self, partition, self.default)
+        afv_view = FormatEntireView(self.model, self, partition, self.manual)
         self.ui.set_body(afv_view)
 
     def show_disk_information_next(self, disk):

@@ -254,7 +254,7 @@ class FilesystemView(BaseView):
         return Pile(opts)
 
     def cancel(self, button=None):
-        self.controller.cancel()
+        self.controller.default()
 
     def reset(self, button):
         self.controller.reset()
