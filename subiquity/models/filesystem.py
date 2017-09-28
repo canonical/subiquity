@@ -262,7 +262,7 @@ class FilesystemModel(object):
             if fs.label is not None:
                 if len(fs.label) > longest_fs_name:
                     longest_fs_name = len(fs.label)
-                fs_by_name[fs.label] = fs
+            fs_by_name[fs.label] = fs
 
     def __init__(self, prober, opts):
         self.prober = prober

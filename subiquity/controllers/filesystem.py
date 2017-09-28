@@ -218,7 +218,7 @@ class FilesystemController(BaseController):
             spec['partnum'] = 2
 
         part = self.model.add_partition(disk=disk, partnum=spec["partnum"], size=spec["size"])
-        if spec['fstype'] is not None:
+        if spec['fstype'].label is not None:
             fs = self.model.add_filesystem(part, spec['fstype'].label)
             if spec['mount']:
                 self.model.add_mount(fs, spec['mount'])

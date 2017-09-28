@@ -123,6 +123,8 @@ class PartitionFormatView(BaseView):
                     initial['mount'] = mount.path
                     if mount.path in mountpoint_to_devpath_mapping:
                         del mountpoint_to_devpath_mapping[mount.path]
+            else:
+                initial['fstype'] = self.model.fs_by_name[None]
         self.form = self.form_cls(mountpoint_to_devpath_mapping, size, initial)
         self.back = back
 
