@@ -252,11 +252,11 @@ class SubiquityObserver(UdevObserver):
         self.model.update_link(ifindex)
 
     def route_change(self, action, data):
+        super().route_change(action, data)
         if data['dst'] != b'default':
             return
         if data['table'] != 254:
             return
-        super().route_change(action, data)
         ifindex = data['ifindex']
         if action == "NEW":
             self.default_routes.add(ifindex)
