@@ -1,4 +1,4 @@
-# Russian translation for subiquity
+# Latvian translation for subiquity
 # Copyright (c) 2017 Rosetta Contributors and Canonical Ltd 2017
 # This file is distributed under the same license as the subiquity package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
@@ -8,9 +8,9 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2017-09-16 01:08+0100\n"
-"PO-Revision-Date: 2017-09-17 14:08+0000\n"
+"PO-Revision-Date: 2017-09-17 14:15+0000\n"
 "Last-Translator: Dimitri John Ledkov <launchpad@surgut.co.uk>\n"
-"Language-Team: Russian <ru@li.org>\n"
+"Language-Team: Latvian <lv@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -159,7 +159,7 @@ msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:76
 msgid "An error has occurred."
-msgstr "Произошла ошибка."
+msgstr "Notika kļūda."
 
 #: ../subiquity/controllers/installprogress.py:137
 #: ../subiquity/controllers/installprogress.py:228
@@ -176,7 +176,7 @@ msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:215
 msgid "Installing system"
-msgstr "Установка системы"
+msgstr "Instalēju sistēmu"
 
 #: ../subiquity/controllers/installprogress.py:216
 msgid "Please wait for the installation to finish."
@@ -200,7 +200,7 @@ msgstr ""
 
 #: ../subiquitycore/controllers/network.py:347
 msgid "Network connections"
-msgstr "Сетевые соединения"
+msgstr ""
 
 #: ../subiquitycore/controllers/network.py:348
 msgid ""
@@ -214,61 +214,61 @@ msgstr ""
 
 #: ../subiquitycore/ui/buttons.py:37
 msgid "Start"
-msgstr "Начать"
+msgstr "Sākt"
 
 #: ../subiquitycore/ui/buttons.py:38
 msgid "Save"
-msgstr "Сохранить"
+msgstr "Saglabāt"
 
 #: ../subiquitycore/ui/buttons.py:39
 msgid "Finish"
-msgstr "Закончить"
+msgstr "Pabeigt"
 
 #: ../subiquitycore/ui/buttons.py:40
 msgid "OK"
-msgstr "Да"
+msgstr "Labi"
 
 #: ../subiquitycore/ui/buttons.py:41
 msgid "Confirm"
-msgstr "Подтвердить"
+msgstr "Apstiprināt"
 
 #: ../subiquitycore/ui/buttons.py:42
 msgid "Done"
-msgstr "Готово"
+msgstr "Gatavs"
 
 #: ../subiquitycore/ui/buttons.py:43
 #: ../subiquity/ui/views/filesystem/filesystem.py:60
 msgid "Continue"
-msgstr "Продолжить"
+msgstr "Turpināt"
 
 #: ../subiquitycore/ui/buttons.py:45
 msgid "Reset"
-msgstr "Сбросить"
+msgstr "Atstatīt"
 
 #: ../subiquitycore/ui/buttons.py:47
 msgid "Cancel"
-msgstr "Отменить"
+msgstr "Atcelt"
 
 #: ../subiquitycore/ui/buttons.py:48
 msgid "Back"
-msgstr "Назад"
+msgstr "Atpakaļ"
 
 #: ../subiquitycore/ui/interactive.py:114
 msgid "Yes"
-msgstr "Да"
+msgstr "Jā"
 
 #: ../subiquitycore/ui/interactive.py:114
 #: ../subiquity/ui/views/filesystem/filesystem.py:59
 msgid "No"
-msgstr "Нет"
+msgstr "Nē"
 
 #: ../subiquitycore/ui/interactive.py:121
 msgid "Close"
-msgstr "Закрыть"
+msgstr "Aizvērt"
 
 #: ../subiquitycore/ui/interactive.py:122
 msgid "Help"
-msgstr "Помощь"
+msgstr "Palīdzība"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:66
 msgid "Use a static IPv4 configuration"
@@ -301,11 +301,11 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:68
 msgid "Address:"
-msgstr "Адрес:"
+msgstr "Adrese:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:69
 msgid "Gateway:"
-msgstr "Шлюз:"
+msgstr "Vārteja:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:70
 msgid "Name servers:"
@@ -317,7 +317,7 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
 msgid "Search domains:"
-msgstr "Домены поиска:"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
 msgid "Domains, comma separated"
@@ -401,7 +401,7 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network.py:165
 msgid "Not connected"
-msgstr "Нет соединения"
+msgstr "Nav savienots"
 
 #: ../subiquitycore/ui/views/network.py:204
 #, python-format
@@ -410,11 +410,11 @@ msgstr ""
 
 #: ../subiquity/models/installpath.py:31
 msgid "Install Ubuntu"
-msgstr "Установить Ubuntu"
+msgstr "Instalēt Ubuntu"
 
 #: ../subiquity/ui/mount.py:53
 msgid "other"
-msgstr "прочее"
+msgstr "cits"
 
 #: ../subiquity/ui/mount.py:55
 msgid "leave unmounted"
@@ -455,7 +455,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:222
 msgid "No disks available."
-msgstr "Нет доступных дисков."
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:33
 msgid ""
@@ -470,7 +470,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:43
 msgid "Manual"
-msgstr "Вручную"
+msgstr "Manuālā"
 
 #: ../subiquity/ui/views/filesystem/guided.py:78
 msgid "Choose the disk to install to:"
@@ -478,7 +478,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:49
 msgid "Your name:"
-msgstr "Ваше имя:"
+msgstr "Jūsu vārds:"
 
 #: ../subiquity/ui/views/identity.py:51
 msgid "Your server's name:"
@@ -486,19 +486,19 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:52
 msgid "The name it uses when it talks to other computers."
-msgstr "Имя, используемое при связи с другими компьютерами."
+msgstr "Šo nosaukumu izmanto saziņā ar citiem datoriem."
 
 #: ../subiquity/ui/views/identity.py:53
 msgid "Pick a username:"
-msgstr "Введите имя пользователя:"
+msgstr "Izvēlieties lietotājvārdu:"
 
 #: ../subiquity/ui/views/identity.py:54
 msgid "Choose a password:"
-msgstr "Задайте пароль:"
+msgstr "Izvēlieties paroli:"
 
 #: ../subiquity/ui/views/identity.py:55
 msgid "Confirm your password:"
-msgstr "Подтвердите пароль:"
+msgstr "Apstipriniet paroli:"
 
 #: ../subiquity/ui/views/identity.py:57
 msgid "Import SSH identity:"
@@ -540,7 +540,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:89
 msgid "Passwords do not match"
-msgstr "Пароли не совпадают"
+msgstr "Paroles nesakrīt"
 
 #: ../subiquity/ui/views/identity.py:94
 msgid "SSH id too long, must be < "
@@ -548,7 +548,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:65
 msgid "Reboot Now"
-msgstr "Перезагрузить сейчас"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:68
 msgid "Quit Installer"
