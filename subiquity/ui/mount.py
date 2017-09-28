@@ -66,7 +66,7 @@ class MountSelector(WidgetWrap):
         if show and not self._other_showing:
             self._w.contents.append((Padding(self._other, left=4), self._w.options('pack')))
             self._other_showing = True
-        elif self._other_showing:
+        elif not show and self._other_showing:
             del self._w.contents[-1]
             self._other_showing = False
 
