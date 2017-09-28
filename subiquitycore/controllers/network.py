@@ -258,7 +258,7 @@ class SubiquityObserver(UdevObserver):
         if data['table'] != 254:
             return
         ifindex = data['ifindex']
-        if action == "NEW":
+        if action == "NEW" or action == "CHANGE":
             self.default_routes.add(ifindex)
             if self.default_route_waiter:
                 self.default_route_waiter()
