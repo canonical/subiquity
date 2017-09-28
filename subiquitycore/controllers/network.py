@@ -282,6 +282,7 @@ class SubiquityObserver(UdevObserver):
         if code != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
             self.loop.set_alarm_in(0.1, lambda loop, ud:self.data_ready(fd))
+            return
         super().data_ready(fd)
         self.refresh()
 
