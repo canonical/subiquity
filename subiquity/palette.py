@@ -75,7 +75,7 @@ STYLES = [
     ('frame_footer',        'fg',      'gray'),
     ('body',                'fg',      'bg'),
     ('menu_button',         'good',    'bg'),
-    ('button',              'fg',      'bg'),
+    ('button',              'good',    'bg'),
     ('danger_button',       'danger',  'bg'),
     ('cancel_button',       'neutral', 'bg'),
     ('reset_button',        'neutral', 'bg'),
@@ -84,7 +84,7 @@ STYLES = [
     ('info_minor',          'gray',    'bg'),
     ('info_error',          'danger',  'bg'),
     ('string_input',        'bg',      'gray'),
-    ('string_input focus',  'bg',      'gray'),
+    ('string_input focus',  'bg',      'fg'),
     ('progress_incomplete', 'fg',      'aubergine'),
     ('progress_complete',   'fg',      'orange'),
 ]
