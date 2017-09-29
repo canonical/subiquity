@@ -252,13 +252,13 @@ class SubiquityObserver(UdevObserver):
         self.model.update_link(ifindex)
 
     def route_change(self, action, data):
+        super().route_change(action, data)
         if data['dst'] != b'default':
             return
         if data['table'] != 254:
             return
-        super().route_change(action, data)
         ifindex = data['ifindex']
-        if action == "NEW":
+        if action == "NEW" or action == "CHANGE":
             self.default_routes.add(ifindex)
             if self.default_route_waiter:
                 self.default_route_waiter()
@@ -282,6 +282,7 @@ class SubiquityObserver(UdevObserver):
         if code != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
             self.loop.set_alarm_in(0.1, lambda loop, ud:self.data_ready(fd))
+            return
         super().data_ready(fd)
         self.refresh()
 
