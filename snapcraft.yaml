@@ -7,6 +7,8 @@ confinement: classic
 apps:
   subiquity:
     command: usr/bin/subiquity
+  subiquity-loadkeys:
+    command: usr/bin/subiquity-loadkeys
   console-conf:
     command: usr/bin/console-conf
   probert:
