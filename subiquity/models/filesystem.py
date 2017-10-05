@@ -318,12 +318,11 @@ class FilesystemModel(object):
 
     def probe(self):
         storage = self.prober.get_storage()
-        VALID_MAJORS = ['8', '253']
         currently_mounted = self._get_system_mounted_disks()
         for path, data in storage.items():
             if path in currently_mounted:
                 continue
-            if data['DEVTYPE'] == 'disk' and data['MAJOR'] in VALID_MAJORS:
+            if data['DEVTYPE'] == 'disk' and not data["DEVPATH"].startswith('/devices/virtual'):
                 #log.debug('disk={}\n{}'.format(
                 #    path, json.dumps(data, indent=4, sort_keys=True)))
                 info = self.prober.get_storage_info(path)
