@@ -17,6 +17,7 @@ import logging
 
 from urwid import (
     AttrMap,
+    connect_signal,
     delegate_to_widget_mixin,
     emit_signal,
     MetaSignals,
@@ -102,12 +103,31 @@ class BoundFormField(object):
         self._enabled = True
         self.showing_extra = False
         self.widget = widget
+        if 'change' in getattr(widget, 'signals', []):
+            connect_signal(widget, 'change', self._change)
 
     def clean(self, value):
         cleaner = getattr(self.form, "clean_" + self.field.name, None)
         if cleaner is not None:
             value = cleaner(value)
         return value
+
+    def _change(self, sender, new_val):
+        if self.in_error:
+            self.showing_extra = False
+            # the validator will likely inspect self.value to decide
+            # if the new input is valid. So self.value had better
+            # return the new value and we stuff it into tmpval to do
+            # this. It's a bit of a hack but oh well...
+            self.tmpval = new_val
+            r = self._validate()
+            del self.tmpval
+            if r is not None:
+                return
+            self.in_error = False
+            if not self.showing_extra:
+                self.help_text.set_text(self.help)
+            self.form.validated()
 
     def _validate(self):
         if not self._enabled:
@@ -142,7 +162,7 @@ class BoundFormField(object):
 
     @property
     def value(self):
-        return self.clean(self.widget.value)
+        return self.clean(getattr(self, 'tmpval', self.widget.value))
 
     @value.setter
     def value(self, val):
