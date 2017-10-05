@@ -14,19 +14,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import re
 
 from urwid import connect_signal
 
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     StringEditor,
-    UsernameEditor,
     )
 from subiquitycore.ui.form import (
     simple_field,
     Form,
     FormField,
     StringField,
+    WantsToKnowFromField,
     )
 from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.utils import button_pile, Padding
@@ -55,6 +56,16 @@ class RealnameEditor(StringEditor):
 class RealnameField(FormField):
     def _make_widget(self, form):
         return RealnameEditor(form)
+
+
+class UsernameEditor(StringEditor, WantsToKnowFromField):
+    def valid_char(self, ch):
+        if len(ch) == 1 and not re.match('[a-z0-9_-]', ch):
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error", "The only characters permitted in this field are a-z, 0-9, _ and -"))
+            return False
+        else:
+            return super().valid_char(ch)
 
 UsernameField = simple_field(UsernameEditor)
 PasswordField = simple_field(PasswordEditor)
@@ -87,12 +98,18 @@ class IdentityForm(Form):
         if len(self.hostname.value) > HOSTNAME_MAXLEN:
             return _("Server name too long, must be < ") + str(HOSTNAME_MAXLEN)
 
+        if not re.match(r'[a-z_][a-z0-9_-]*', self.username.value):
+            return _("Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
+
     def validate_username(self):
         if len(self.username.value) < 1:
             return _("Username missing")
 
         if len(self.username.value) > USERNAME_MAXLEN:
             return _("Username too long, must be < ") + str(USERNAME_MAXLEN)
+
+        if not re.match(r'[a-z_][a-z0-9_-]*', self.username.value):
+            return _("Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
 
     def validate_password(self):
         # XXX we should not require a password if an ssh identity is provided
