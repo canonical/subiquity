@@ -19,12 +19,13 @@ from urwid import connect_signal
 
 from subiquitycore.ui.interactive import (
     PasswordEditor,
-    RealnameEditor,
+    StringEditor,
     UsernameEditor,
     )
 from subiquitycore.ui.form import (
     simple_field,
     Form,
+    FormField,
     StringField,
     )
 from subiquitycore.ui.container import ListBox
@@ -39,7 +40,22 @@ REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
 
-RealnameField = simple_field(RealnameEditor)
+class RealnameEditor(StringEditor):
+    def __init__(self, form):
+        self.form = form
+        super().__init__()
+    def valid_char(self, ch):
+        if len(ch) == 1 and ch in ':,=':
+            self.form.realname.in_error = True
+            self.form.realname.show_extra(("info_error", "The characters : , and = are not permitted in this field"))
+            return False
+        else:
+            return super().valid_char(ch)
+
+class RealnameField(FormField):
+    def _make_widget(self, form):
+        return RealnameEditor(form)
+
 UsernameField = simple_field(UsernameEditor)
 PasswordField = simple_field(PasswordEditor)
 
