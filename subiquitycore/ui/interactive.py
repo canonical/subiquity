@@ -64,7 +64,7 @@ class RestrictedEditor(StringEditor):
         return len(ch) == 1 and self.matcher.match(ch) is not None
 
 
-RealnameEditor = partial(RestrictedEditor, r'[a-zA-Z0-9_\- ]')
+RealnameEditor = partial(RestrictedEditor, r'[^:,=]')
 EmailEditor = partial(RestrictedEditor, r'[-a-zA-Z0-9_.@+=]')
 
 
