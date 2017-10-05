@@ -21,19 +21,12 @@ import logging
 import re
 
 from urwid import (
-    ACTIVATE,
     Edit,
     IntEdit,
-    LineBox,
-    SelectableIcon,
-    Text,
     WidgetWrap,
     )
 
-from subiquitycore.ui.buttons import close_btn
-from subiquitycore.ui.container import Pile
 from subiquitycore.ui.selector import Selector
-from subiquitycore.ui.utils import Color, Padding, button_pile
 
 log = logging.getLogger("subiquitycore.ui.input")
 
@@ -113,24 +106,3 @@ class YesNo(Selector):
     def __init__(self):
         opts = [_('Yes'), _('No')]
         super().__init__(opts)
-
-
-class _HelpDisplay(WidgetWrap):
-    def __init__(self, closer, help_text):
-        self._closer = closer
-        buttons = [close_btn(on_press=lambda btn:self._closer())]
-        super().__init__(LineBox(Pile([Text(help_text), button_pile(buttons)]), title=_("Help")))
-
-
-class Help(WidgetWrap):
-
-    def __init__(self, view, help_text):
-        self._view = view
-        self._help_text = help_text
-        self._button = Padding.fixed_3(Color.button(SelectableIcon("[?]", 1)))
-        super().__init__(self._button)
-
-    def keypress(self, size, key):
-        if self._command_map[key] != ACTIVATE:
-            return key
-        self._view.show_overlay(_HelpDisplay(self._view.remove_overlay, self._help_text))

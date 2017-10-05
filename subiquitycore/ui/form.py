@@ -29,7 +29,6 @@ from urwid import (
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.container import Columns, Pile
 from subiquitycore.ui.interactive import (
-    Help,
     PasswordEditor,
     IntegerEditor,
     StringEditor,
@@ -134,28 +133,25 @@ class BoundFormField(object):
             return validator()
 
     def validate(self):
-        self.hide_extra()
+        # cleaning/validation can call show_extra to add an
+        # informative message. We record this by having show_extra to
+        # set showing_extra so we don't immediately replace this
+        # message with the widget's help in the case that validation
+        # succeeds.
+        self.showing_extra = False
         r = self._validate()
         if r is None:
             self.in_error = False
+            if not self.showing_extra:
+                self.help_text.set_text(self.help)
         else:
             self.in_error = True
-            extra = Color.info_error(Text(r, align="center"))
-            self.show_extra(extra)
+            self.show_extra(('info_error', r))
         self.form.validated()
 
-    def hide_extra(self):
-        if self.showing_extra:
-            del self.pile.contents[1]
-            self.showing_extra = False
-
-    def show_extra(self, extra):
-        t = (extra, self.pile.options('pack'))
-        if self.showing_extra:
-            self.pile.contents[1] = t
-        else:
-            self.pile.contents[1:1] = [t]
+    def show_extra(self, extra_markup):
         self.showing_extra = True
+        self.help_text.set_text(extra_markup)
 
     @property
     def value(self):
@@ -169,12 +165,16 @@ class BoundFormField(object):
     def help(self):
         if self._help is not None:
             return self._help
-        else:
+        elif self.field.help is not None:
             return self.field.help
+        else:
+            return ""
 
     @help.setter
     def help(self, val):
         self._help = val
+        if self.pile is not None:
+            self.pile[1].set_text(val)
 
     @property
     def caption(self):
@@ -193,14 +193,9 @@ class BoundFormField(object):
             input = Color.string_input(_Validator(self, self.widget))
         else:
             input = self.widget
-        if self.help is not None:
-            help = Help(self.parent_view, self.help)
-        else:
-            help = Text("")
         cols = [
                     (self._longest_caption, text),
-                    input,
-                    (3, help),
+                    input
                 ]
         cols = Columns(cols, dividechars=2)
         if self._enabled:
@@ -213,7 +208,12 @@ class BoundFormField(object):
             raise RuntimeError("do not call as_row more than once!")
         self.parent_view = view
         self._longest_caption = longest_caption
-        self.pile = Pile([self._cols()])
+        self.help_text = Text(self.help, align="center")
+        cols = [
+                    (self._longest_caption, Text("")),
+                    self.help_text,
+                ]
+        self.pile = Pile([self._cols(), Columns(cols, dividechars=2)])
         return self.pile
 
     @property

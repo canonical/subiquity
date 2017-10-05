@@ -84,7 +84,7 @@ class PartitionForm(Form):
             self.size.widget.value = val
         sz = dehumanize_size(val)
         if sz > self.max_size:
-            self.size.show_extra(Color.info_minor(Text("Capped partition size at %s"%(self.size_str,), align="center")))
+            self.size.show_extra(('info_minor', "Capped partition size at %s"%(self.size_str,)))
             self.size.widget.value = self.size_str
             return self.max_size
         return sz
