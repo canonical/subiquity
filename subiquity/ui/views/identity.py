@@ -104,6 +104,7 @@ class IdentityView(BaseView):
 
         self.form = IdentityForm()
         connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form.confirm_password.widget, 'change', self._check_password)
 
         self.ssh_import_confirmed = True
 
@@ -113,6 +114,13 @@ class IdentityView(BaseView):
             button_pile([self.form.done_btn]),
         ]
         super().__init__(ListBox(body))
+
+    def _check_password(self, sender, new_text):
+        password = self.form.password.value
+        if not password.startswith(new_text):
+            self.form.confirm_password.show_extra(("info_error", "Passwords do not match"))
+        else:
+            self.form.confirm_password.show_extra('')
 
     def done(self, result):
         cpassword = self.model.encrypt_password(self.form.password.value)
