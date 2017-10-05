@@ -30,8 +30,8 @@ from subiquitycore.ui.form import (
     IntegerField,
     StringField,
     )
-from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.ui.interactive import Selector
+from subiquitycore.ui.interactive import Selector, StringEditor
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
@@ -50,6 +50,31 @@ class FSTypeField(FormField):
     def _make_widget(self, form):
         return Selector(opts=FilesystemModel.supported_filesystems)
 
+class SizeWidget(StringEditor):
+    def __init__(self, form):
+        self.form = form
+        super().__init__()
+
+    def lost_focus(self):
+        val = self.value
+        if not val:
+            return
+        suffixes = ''.join(HUMAN_UNITS) + ''.join(HUMAN_UNITS).lower()
+        if val[-1] not in suffixes:
+            unit = self.form.size_str[-1]
+            val += unit
+            self.value = val
+        try:
+            sz = self.form.size.value
+        except ValueError:
+            return
+        if sz > self.form.max_size:
+            self.form.size.show_extra(('info_minor', "Capped partition size at %s"%(self.form.size_str,)))
+            self.value = self.form.size_str
+
+class SizeField(FormField):
+    def _make_widget(self, form):
+        return SizeWidget(form)
 
 class PartitionForm(Form):
 
@@ -70,7 +95,7 @@ class PartitionForm(Form):
         self.mount.enabled = fs.is_mounted
 
     partnum = IntegerField("Partition number")
-    size = StringField()
+    size = SizeField()
     fstype = FSTypeField("Format")
     mount = MountField("Mount")
 
@@ -79,15 +104,8 @@ class PartitionForm(Form):
             return self.max_size
         suffixes = ''.join(HUMAN_UNITS) + ''.join(HUMAN_UNITS).lower()
         if val[-1] not in suffixes:
-            unit = self.size_str[-1]
-            val += unit
-            self.size.widget.value = val
-        sz = dehumanize_size(val)
-        if sz > self.max_size:
-            self.size.show_extra(('info_minor', "Capped partition size at %s"%(self.size_str,)))
-            self.size.widget.value = self.size_str
-            return self.max_size
-        return sz
+            val += self.size_str[-1]
+        return dehumanize_size(val)
 
     def clean_mount(self, val):
         if self.fstype.value.is_mounted:

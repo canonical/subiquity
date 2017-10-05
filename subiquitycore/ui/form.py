@@ -65,6 +65,10 @@ class _Validator(WidgetWrap):
         super().__init__(w)
 
     def lost_focus(self):
+        self.field.showing_extra = False
+        lf = getattr(self._w, 'lost_focus', None)
+        if lf is not None:
+            lf()
         self.field.validate()
 
 
@@ -122,7 +126,6 @@ class BoundFormField(object):
         # set showing_extra so we don't immediately replace this
         # message with the widget's help in the case that validation
         # succeeds.
-        self.showing_extra = False
         r = self._validate()
         if r is None:
             self.in_error = False
