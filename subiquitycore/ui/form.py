@@ -72,10 +72,8 @@ class FormField(object):
 
     next_index = 0
 
-    def __init__(self, caption=None, cleaner=None, validator=None, help=None):
+    def __init__(self, caption=None, help=None):
         self.caption = caption
-        self.cleaner = cleaner
-        self.validator = validator
         self.help = help
         self.index = FormField.next_index
         FormField.next_index += 1
@@ -86,15 +84,6 @@ class FormField(object):
     def bind(self, form):
         widget = self._make_widget(form)
         return BoundFormField(self, form, widget)
-
-    def clean(self, value):
-        if self.cleaner is not None:
-            return self.cleaner(value)
-        else:
-            return value
-
-    def validate(self, value):
-        pass
 
 
 class BoundFormField(object):
@@ -111,7 +100,6 @@ class BoundFormField(object):
         self.widget = widget
 
     def clean(self, value):
-        value = self.field.clean(value)
         cleaner = getattr(self.form, "clean_" + self.field.name, None)
         if cleaner is not None:
             value = cleaner(value)
@@ -121,13 +109,9 @@ class BoundFormField(object):
         if not self._enabled:
             return
         try:
-            v = self.value
+            self.value
         except ValueError as e:
             return str(e)
-        if self.field.validator is not None:
-            r = self.field.validator(v)
-            if r is not None:
-                return r
         validator = getattr(self.form, "validate_" + self.field.name, None)
         if validator is not None:
             return validator()
