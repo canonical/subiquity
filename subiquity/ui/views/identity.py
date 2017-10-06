@@ -16,21 +16,31 @@
 import logging
 import re
 
-from urwid import connect_signal
+from urwid import (
+    connect_signal,
+    Text,
+    WidgetWrap,
+    SelectableIcon,
+    PopUpLauncher,
+    )
 
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     StringEditor,
     )
+from subiquitycore.ui.container import (
+    Columns,
+    ListBox,
+    Pile,
+    )
 from subiquitycore.ui.form import (
     simple_field,
     Form,
     FormField,
-    StringField,
-    WantsToKnowFromField,
+    WantsToKnowFormField,
     )
-from subiquitycore.ui.container import ListBox
-from subiquitycore.ui.utils import button_pile, Padding
+from subiquitycore.ui.selector import Selector
+from subiquitycore.ui.utils import button_pile, Padding, Color
 from subiquitycore.view import BaseView
 
 
@@ -58,7 +68,7 @@ class RealnameField(FormField):
         return RealnameEditor(form)
 
 
-class UsernameEditor(StringEditor, WantsToKnowFromField):
+class UsernameEditor(StringEditor, WantsToKnowFormField):
     def valid_char(self, ch):
         if len(ch) == 1 and not re.match('[a-z0-9_-]', ch):
             self.bff.in_error = True
@@ -71,6 +81,49 @@ UsernameField = simple_field(UsernameEditor)
 PasswordField = simple_field(PasswordEditor)
 
 
+class SSHImport(WidgetWrap, WantsToKnowFormField):
+
+    _helps = {
+        None: _("You can import your SSH keys from Github, Launchpad or Ubuntu One."),
+        "gh": _("Enter your github username."),
+        "lp": _("Enter your Launchpad username."),
+        "sso": _("Enter an email address associated with your Ubuntu One account."),
+        }
+
+    def __init__(self):
+        choices = [
+            (_("No"), True, None),
+            (_("from Github"), True, "gh"),
+            (_("from Launchpad"), True, "lp"),
+            (_("from Ubuntu One account"), True, "sso"),
+            ]
+        self.selector = Selector(choices)
+        connect_signal(self.selector, 'select', self._select)
+        width = max([len(o.label) for o in self.selector._options]) + 5
+        self.username = UsernameEditor()
+        self.cols = Columns([(width, self.selector), Color.body(Text(""))])
+        super().__init__(self.cols)
+
+    def set_bound_form_field(self, bff):
+        self.bff = bff
+        self.username.set_bound_form_field(bff)
+
+    def _select(self, sender, val):
+        if val is not None:
+            self.cols.contents[1] = (self.username, self.cols.options())
+            self.cols.focus_position = 1
+        else:
+            self.username.set_edit_text("")
+            self.cols.contents[1] = (Color.body(Text("")), self.cols.options())
+        self.bff.help = self._helps[val]
+
+    @property
+    def value(self):
+        return self.selector.value
+
+
+SSHImportField = simple_field(SSHImport)
+
 class IdentityForm(Form):
 
     realname = RealnameField(_("Your name:"))
@@ -80,10 +133,9 @@ class IdentityForm(Form):
     username = UsernameField(_("Pick a username:"))
     password = PasswordField(_("Choose a password:"))
     confirm_password = PasswordField(_("Confirm your password:"))
-    ssh_import_id = StringField(
+    ssh_import_id = SSHImportField(
         _("Import SSH identity:"),
-        help=(_("Input your SSH user id from Ubuntu SSO (sso:email), "
-              "Launchpad (lp:username) or Github (gh:username).")))
+        help=SSHImport._helps[None])
 
     def validate_realname(self):
         if len(self.realname.value) < 1:
@@ -123,6 +175,8 @@ class IdentityForm(Form):
         self.password.validate()
 
     def validate_ssh_import_id(self):
+        if self.ssh_import_id.value is None:
+            return
         if len(self.ssh_import_id.value) > SSH_IMPORT_MAXLEN:
             return _("SSH id too long, must be < ") + str(SSH_IMPORT_MAXLEN)
 

@@ -91,8 +91,10 @@ class FormField(object):
         return BoundFormField(self, form, widget)
 
 
-class WantsToKnowFromField(object):
+class WantsToKnowFormField(object):
     """A marker class."""
+    def set_bound_form_field(self, bff):
+        self.bff = bff
 
 class BoundFormField(object):
 
@@ -108,8 +110,8 @@ class BoundFormField(object):
         self.widget = widget
         if 'change' in getattr(widget, 'signals', []):
             connect_signal(widget, 'change', self._change)
-        if isinstance(widget, WantsToKnowFromField):
-            widget.bff = self
+        if isinstance(widget, WantsToKnowFormField):
+            widget.set_bound_form_field(self)
 
     def clean(self, value):
         cleaner = getattr(self.form, "clean_" + self.field.name, None)
@@ -186,7 +188,7 @@ class BoundFormField(object):
     def help(self, val):
         self._help = val
         if self.pile is not None:
-            self.pile[1].set_text(val)
+            self.pile[1][1].set_text(val)
 
     @property
     def caption(self):
