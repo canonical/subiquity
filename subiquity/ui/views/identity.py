@@ -20,8 +20,6 @@ from urwid import (
     connect_signal,
     Text,
     WidgetWrap,
-    SelectableIcon,
-    PopUpLauncher,
     )
 
 from subiquitycore.ui.interactive import (
@@ -31,12 +29,10 @@ from subiquitycore.ui.interactive import (
 from subiquitycore.ui.container import (
     Columns,
     ListBox,
-    Pile,
     )
 from subiquitycore.ui.form import (
     simple_field,
     Form,
-    FormField,
     WantsToKnowFormField,
     )
 from subiquitycore.ui.selector import Selector
@@ -51,22 +47,14 @@ REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
 
-class RealnameEditor(StringEditor):
-    def __init__(self, form):
-        self.form = form
-        super().__init__()
+class RealnameEditor(StringEditor, WantsToKnowFormField):
     def valid_char(self, ch):
         if len(ch) == 1 and ch in ':,=':
-            self.form.realname.in_error = True
-            self.form.realname.show_extra(("info_error", "The characters : , and = are not permitted in this field"))
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error", "The characters : , and = are not permitted in this field"))
             return False
         else:
             return super().valid_char(ch)
-
-class RealnameField(FormField):
-    def _make_widget(self, form):
-        return RealnameEditor(form)
-
 
 class UsernameEditor(StringEditor, WantsToKnowFormField):
     def valid_char(self, ch):
@@ -77,9 +65,9 @@ class UsernameEditor(StringEditor, WantsToKnowFormField):
         else:
             return super().valid_char(ch)
 
+RealnameField = simple_field(RealnameEditor)
 UsernameField = simple_field(UsernameEditor)
 PasswordField = simple_field(PasswordEditor)
-
 
 class SSHImport(WidgetWrap, WantsToKnowFormField):
 
@@ -179,8 +167,6 @@ class IdentityForm(Form):
             return _("Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
 
     def validate_password(self):
-        # XXX we should not require a password if an ssh identity is provided
-        # Form doesn't support form-wide validation yet though, oops.
         if len(self.password.value) < 1:
             return _("Password must be set")
 
