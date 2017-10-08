@@ -83,6 +83,8 @@ PasswordField = simple_field(PasswordEditor)
 
 class SSHImport(WidgetWrap, WantsToKnowFormField):
 
+    signals = ['change']
+
     _helps = {
         None: _("You can import your SSH keys from Github, Launchpad or Ubuntu One."),
         "gh": _("Enter your github username."),
@@ -99,27 +101,42 @@ class SSHImport(WidgetWrap, WantsToKnowFormField):
             ]
         self.selector = Selector(choices)
         connect_signal(self.selector, 'select', self._select)
-        width = max([len(o.label) for o in self.selector._options]) + 5
         self.username = UsernameEditor()
-        self.cols = Columns([(width, self.selector), Color.body(Text(""))])
+        connect_signal(self.username, 'change', self._change)
+        self.cols = Columns([
+            self.selector,
+            (1, Text("")),
+            (2, Color.body(Text(""))),
+            Color.body(Text(""))])
         super().__init__(self.cols)
+
+    def _change(self, sender, val):
+        self._emit('change', val)
 
     def set_bound_form_field(self, bff):
         self.bff = bff
         self.username.set_bound_form_field(bff)
+        # Get things set up for the initial selection.
+        self._select(self.selector, None)
 
     def _select(self, sender, val):
+        label = sender.option_by_value(val).label
+        self.cols.contents[0] = (self.cols.contents[0][0], self.cols.options('given', len(label) + 4))
         if val is not None:
-            self.cols.contents[1] = (self.username, self.cols.options())
-            self.cols.focus_position = 1
+            self.cols.contents[3] = (self.username, self.cols.options())
+            self.cols[1].set_text(":")
+            self.cols.focus_position = 3
         else:
             self.username.set_edit_text("")
-            self.cols.contents[1] = (Color.body(Text("")), self.cols.options())
+            self.cols[1].set_text("")
+            self.cols.contents[3] = (Color.body(Text("")), self.cols.options())
         self.bff.help = self._helps[val]
 
     @property
     def value(self):
-        return self.selector.value
+        v = self.selector.value
+        if v is not None:
+            return v + ":" + self.username.value
 
 
 SSHImportField = simple_field(SSHImport)
@@ -133,9 +150,7 @@ class IdentityForm(Form):
     username = UsernameField(_("Pick a username:"))
     password = PasswordField(_("Choose a password:"))
     confirm_password = PasswordField(_("Confirm your password:"))
-    ssh_import_id = SSHImportField(
-        _("Import SSH identity:"),
-        help=SSHImport._helps[None])
+    ssh_import_id = SSHImportField(_("Import SSH identity:"))
 
     def validate_realname(self):
         if len(self.realname.value) < 1:
