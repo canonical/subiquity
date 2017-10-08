@@ -23,6 +23,7 @@ from urwid import (
     )
 
 from subiquitycore.ui.interactive import (
+    EmailEditor,
     PasswordEditor,
     StringEditor,
     )
@@ -90,6 +91,7 @@ class SSHImport(WidgetWrap, WantsToKnowFormField):
         self.selector = Selector(choices)
         connect_signal(self.selector, 'select', self._select)
         self.username = UsernameEditor()
+        self.email = EmailEditor()
         connect_signal(self.username, 'change', self._change)
         self.cols = Columns([
             self.selector,
@@ -111,7 +113,11 @@ class SSHImport(WidgetWrap, WantsToKnowFormField):
         label = sender.option_by_value(val).label
         self.cols.contents[0] = (self.cols.contents[0][0], self.cols.options('given', len(label) + 4))
         if val is not None:
-            self.cols.contents[3] = (self.username, self.cols.options())
+            if val == 'sso':
+                editor = self.email
+            else:
+                editor = self.username
+            self.cols.contents[3] = (editor, self.cols.options())
             self.cols[1].set_text(":")
             self.cols.focus_position = 3
         else:
