@@ -387,7 +387,7 @@ class FilesystemModel(object):
     def bootable(self):
         ''' true if one disk has a boot partition '''
         for p in self._partitions:
-            if p.flag == 'bios_grub':
+            if p.flag == 'bios_grub' or p.flag == 'boot':
                 return True
         return False
 
