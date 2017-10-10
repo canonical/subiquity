@@ -20,7 +20,7 @@ configuration.
 
 """
 import logging
-from urwid import connect_signal, Text
+from urwid import connect_signal, Text, WidgetDisable
 
 from subiquitycore.ui.buttons import delete_btn
 from subiquitycore.ui.container import ListBox
@@ -167,11 +167,16 @@ class PartitionView(PartitionFormatView):
             label = _("Save")
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
         self.form.buttons.base_widget[0].set_label(label)
+        if partition is not None and partition.flag == "boot":
+            self.form.mount.enabled = False
+            self.form.fstype.enabled = False
 
     def make_body(self):
         body = super().make_body()
         if self.partition is not None:
             btn = delete_btn(on_press=self.delete)
+            if self.partition.flag == "boot":
+                btn = WidgetDisable(Color.info_minor(btn.original_widget))
             body[-2:-2] = [
                 Text(""),
                 Padding.fixed_10(btn),
