@@ -47,7 +47,7 @@ URWID_16_NAMES = [
 URWID16 = {}
 URWID256 = {}
 
-PALETTE = bytearray(16*3)
+PALETTE = bytearray(8*3)
 
 colors = {
     0: ("bg",        (0x00, 0x00, 0x00)),
