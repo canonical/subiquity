@@ -17,6 +17,7 @@ import logging
 
 from urwid import (
     AttrMap,
+    connect_signal,
     delegate_to_widget_mixin,
     emit_signal,
     MetaSignals,
@@ -29,7 +30,6 @@ from urwid import (
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.container import Columns, Pile
 from subiquitycore.ui.interactive import (
-    Help,
     PasswordEditor,
     IntegerEditor,
     StringEditor,
@@ -66,6 +66,10 @@ class _Validator(WidgetWrap):
         super().__init__(w)
 
     def lost_focus(self):
+        self.field.showing_extra = False
+        lf = getattr(self._w, 'lost_focus', None)
+        if lf is not None:
+            lf()
         self.field.validate()
 
 
@@ -73,10 +77,8 @@ class FormField(object):
 
     next_index = 0
 
-    def __init__(self, caption=None, cleaner=None, validator=None, help=None):
+    def __init__(self, caption=None, help=None):
         self.caption = caption
-        self.cleaner = cleaner
-        self.validator = validator
         self.help = help
         self.index = FormField.next_index
         FormField.next_index += 1
@@ -88,15 +90,11 @@ class FormField(object):
         widget = self._make_widget(form)
         return BoundFormField(self, form, widget)
 
-    def clean(self, value):
-        if self.cleaner is not None:
-            return self.cleaner(value)
-        else:
-            return value
 
-    def validate(self, value):
-        pass
-
+class WantsToKnowFormField(object):
+    """A marker class."""
+    def set_bound_form_field(self, bff):
+        self.bff = bff
 
 class BoundFormField(object):
 
@@ -110,56 +108,68 @@ class BoundFormField(object):
         self._enabled = True
         self.showing_extra = False
         self.widget = widget
+        if 'change' in getattr(widget, 'signals', []):
+            connect_signal(widget, 'change', self._change)
+        if isinstance(widget, WantsToKnowFormField):
+            widget.set_bound_form_field(self)
 
     def clean(self, value):
-        value = self.field.clean(value)
         cleaner = getattr(self.form, "clean_" + self.field.name, None)
         if cleaner is not None:
             value = cleaner(value)
         return value
 
+    def _change(self, sender, new_val):
+        if self.in_error:
+            self.showing_extra = False
+            # the validator will likely inspect self.value to decide
+            # if the new input is valid. So self.value had better
+            # return the new value and we stuff it into tmpval to do
+            # this. It's a bit of a hack but oh well...
+            self.tmpval = new_val
+            r = self._validate()
+            del self.tmpval
+            if r is not None:
+                return
+            self.in_error = False
+            if not self.showing_extra:
+                self.help_text.set_text(self.help)
+            self.form.validated()
+
     def _validate(self):
         if not self._enabled:
             return
         try:
-            v = self.value
+            self.value
         except ValueError as e:
             return str(e)
-        if self.field.validator is not None:
-            r = self.field.validator(v)
-            if r is not None:
-                return r
         validator = getattr(self.form, "validate_" + self.field.name, None)
         if validator is not None:
             return validator()
 
     def validate(self):
-        self.hide_extra()
+        # cleaning/validation can call show_extra to add an
+        # informative message. We record this by having show_extra to
+        # set showing_extra so we don't immediately replace this
+        # message with the widget's help in the case that validation
+        # succeeds.
         r = self._validate()
         if r is None:
             self.in_error = False
+            if not self.showing_extra:
+                self.help_text.set_text(self.help)
         else:
             self.in_error = True
-            extra = Color.info_error(Text(r, align="center"))
-            self.show_extra(extra)
+            self.show_extra(('info_error', r))
         self.form.validated()
 
-    def hide_extra(self):
-        if self.showing_extra:
-            del self.pile.contents[1]
-            self.showing_extra = False
-
-    def show_extra(self, extra):
-        t = (extra, self.pile.options('pack'))
-        if self.showing_extra:
-            self.pile.contents[1] = t
-        else:
-            self.pile.contents[1:1] = [t]
+    def show_extra(self, extra_markup):
         self.showing_extra = True
+        self.help_text.set_text(extra_markup)
 
     @property
     def value(self):
-        return self.clean(self.widget.value)
+        return self.clean(getattr(self, 'tmpval', self.widget.value))
 
     @value.setter
     def value(self, val):
@@ -169,12 +179,16 @@ class BoundFormField(object):
     def help(self):
         if self._help is not None:
             return self._help
-        else:
+        elif self.field.help is not None:
             return self.field.help
+        else:
+            return ""
 
     @help.setter
     def help(self, val):
         self._help = val
+        if self.pile is not None:
+            self.pile[1][1].set_text(val)
 
     @property
     def caption(self):
@@ -193,14 +207,9 @@ class BoundFormField(object):
             input = Color.string_input(_Validator(self, self.widget))
         else:
             input = self.widget
-        if self.help is not None:
-            help = Help(self.parent_view, self.help)
-        else:
-            help = Text("")
         cols = [
                     (self._longest_caption, text),
-                    input,
-                    (3, help),
+                    input
                 ]
         cols = Columns(cols, dividechars=2)
         if self._enabled:
@@ -213,7 +222,12 @@ class BoundFormField(object):
             raise RuntimeError("do not call as_row more than once!")
         self.parent_view = view
         self._longest_caption = longest_caption
-        self.pile = Pile([self._cols()])
+        self.help_text = Text(self.help, align="center")
+        cols = [
+                    (self._longest_caption, Text("")),
+                    self.help_text,
+                ]
+        self.pile = Pile([self._cols(), Columns(cols, dividechars=2)])
         return self.pile
 
     @property

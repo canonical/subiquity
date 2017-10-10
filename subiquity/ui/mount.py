@@ -2,8 +2,9 @@
 import os
 import re
 
-from urwid import connect_signal, Padding, Pile, WidgetWrap
+from urwid import connect_signal, Padding, Text, WidgetWrap
 
+from subiquitycore.ui.container import Columns, Pile
 from subiquitycore.ui.form import FormField
 from subiquitycore.ui.interactive import Selector, StringEditor
 
@@ -55,7 +56,7 @@ class MountSelector(WidgetWrap):
         opts.append((_('leave unmounted'), True, LEAVE_UNMOUNTED))
         self._selector = Selector(opts, first_opt)
         connect_signal(self._selector, 'select', self._select_mount)
-        self._other = _MountEditor(edit_text='/')
+        self._other = _MountEditor()
         super().__init__(Pile([self._selector]))
         self._other_showing = False
         if self._selector.value is OTHER:
@@ -64,7 +65,7 @@ class MountSelector(WidgetWrap):
 
     def _showhide_other(self, show):
         if show and not self._other_showing:
-            self._w.contents.append((Padding(self._other, left=4), self._w.options('pack')))
+            self._w.contents.append((Padding(Columns([(1, Text("/")), self._other]), left=4), self._w.options('pack')))
             self._other_showing = True
         elif not show and self._other_showing:
             del self._w.contents[-1]
@@ -80,7 +81,7 @@ class MountSelector(WidgetWrap):
         if self._selector.value is LEAVE_UNMOUNTED:
             return None
         elif self._selector.value is OTHER:
-            return self._other.value
+            return "/" + self._other.value
         else:
             return self._selector.value
 
@@ -92,17 +93,12 @@ class MountSelector(WidgetWrap):
             self._selector.value = val
         else:
             self._selector.value = OTHER
-            self._other.value = val
+            if not val.startswith('/'):
+                raise ValueError("%s does not start with /", val)
+            self._other.value = val[1:]
 
 
 class MountField(FormField):
 
     def _make_widget(self, form):
         return MountSelector(form.mountpoint_to_devpath_mapping)
-
-    def clean(self, value):
-        if value is None:
-            return value
-        if not value.startswith('/'):
-            raise ValueError('Does not start with /')
-        return os.path.realpath(value)

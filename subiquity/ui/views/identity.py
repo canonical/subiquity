@@ -14,21 +14,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import re
 
-from urwid import connect_signal
+from urwid import (
+    connect_signal,
+    Text,
+    WidgetWrap,
+    )
 
 from subiquitycore.ui.interactive import (
+    EmailEditor,
     PasswordEditor,
-    RealnameEditor,
-    UsernameEditor,
+    StringEditor,
+    )
+from subiquitycore.ui.container import (
+    Columns,
+    ListBox,
     )
 from subiquitycore.ui.form import (
     simple_field,
     Form,
-    StringField,
+    WantsToKnowFormField,
     )
-from subiquitycore.ui.container import ListBox
-from subiquitycore.ui.utils import button_pile, Padding
+from subiquitycore.ui.selector import Selector
+from subiquitycore.ui.utils import button_pile, Padding, Color
 from subiquitycore.view import BaseView
 
 
@@ -39,10 +48,92 @@ REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
 
+class RealnameEditor(StringEditor, WantsToKnowFormField):
+    def valid_char(self, ch):
+        if len(ch) == 1 and ch in ':,=':
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error", "The characters : , and = are not permitted in this field"))
+            return False
+        else:
+            return super().valid_char(ch)
+
+class UsernameEditor(StringEditor, WantsToKnowFormField):
+    def valid_char(self, ch):
+        if len(ch) == 1 and not re.match('[a-z0-9_-]', ch):
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error", "The only characters permitted in this field are a-z, 0-9, _ and -"))
+            return False
+        else:
+            return super().valid_char(ch)
+
 RealnameField = simple_field(RealnameEditor)
 UsernameField = simple_field(UsernameEditor)
 PasswordField = simple_field(PasswordEditor)
 
+class SSHImport(WidgetWrap, WantsToKnowFormField):
+
+    signals = ['change']
+
+    _helps = {
+        None: _("You can import your SSH keys from Github, Launchpad or Ubuntu One."),
+        "gh": _("Enter your github username."),
+        "lp": _("Enter your Launchpad username."),
+        "sso": _("Enter an email address associated with your Ubuntu One account."),
+        }
+
+    def __init__(self):
+        choices = [
+            (_("No"), True, None),
+            (_("from Github"), True, "gh"),
+            (_("from Launchpad"), True, "lp"),
+            (_("from Ubuntu One account"), True, "sso"),
+            ]
+        self.selector = Selector(choices)
+        connect_signal(self.selector, 'select', self._select)
+        self.username = UsernameEditor()
+        self.email = EmailEditor()
+        connect_signal(self.username, 'change', self._change)
+        self.cols = Columns([
+            self.selector,
+            (1, Text("")),
+            (2, Color.body(Text(""))),
+            Color.body(Text(""))])
+        super().__init__(self.cols)
+
+    def _change(self, sender, val):
+        self._emit('change', val)
+
+    def set_bound_form_field(self, bff):
+        self.bff = bff
+        self.username.set_bound_form_field(bff)
+        # Get things set up for the initial selection.
+        self._select(self.selector, None)
+
+    def _select(self, sender, val):
+        label = sender.option_by_value(val).label
+        self.cols.contents[0] = (self.cols.contents[0][0], self.cols.options('given', len(label) + 4))
+        if val is not None:
+            if val == 'sso':
+                editor = self.email
+            else:
+                editor = self.username
+            self.cols.contents[3] = (editor, self.cols.options())
+            self.cols[1].set_text(":")
+            self.cols.focus_position = 3
+        else:
+            self.username.set_edit_text("")
+            self.cols[1].set_text("")
+            self.cols.contents[3] = (Color.body(Text("")), self.cols.options())
+        self.bff.help = self._helps[val]
+
+    @property
+    def value(self):
+        v = self.selector.value
+        if v is not None:
+            return v + ":" + self.username.value
+
+
+SSHImportField = simple_field(SSHImport)
 
 class IdentityForm(Form):
 
@@ -53,10 +144,7 @@ class IdentityForm(Form):
     username = UsernameField(_("Pick a username:"))
     password = PasswordField(_("Choose a password:"))
     confirm_password = PasswordField(_("Confirm your password:"))
-    ssh_import_id = StringField(
-        _("Import SSH identity:"),
-        help=(_("Input your SSH user id from Ubuntu SSO (sso:email), "
-              "Launchpad (lp:username) or Github (gh:username).")))
+    ssh_import_id = SSHImportField(_("Import SSH identity:"))
 
     def validate_realname(self):
         if len(self.realname.value) < 1:
@@ -71,6 +159,9 @@ class IdentityForm(Form):
         if len(self.hostname.value) > HOSTNAME_MAXLEN:
             return _("Server name too long, must be < ") + str(HOSTNAME_MAXLEN)
 
+        if not re.match(r'[a-z_][a-z0-9_-]*', self.hostname.value):
+            return _("Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
+
     def validate_username(self):
         if len(self.username.value) < 1:
             return _("Username missing")
@@ -78,9 +169,10 @@ class IdentityForm(Form):
         if len(self.username.value) > USERNAME_MAXLEN:
             return _("Username too long, must be < ") + str(USERNAME_MAXLEN)
 
+        if not re.match(r'[a-z_][a-z0-9_-]*', self.username.value):
+            return _("Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
+
     def validate_password(self):
-        # XXX we should not require a password if an ssh identity is provided
-        # Form doesn't support form-wide validation yet though, oops.
         if len(self.password.value) < 1:
             return _("Password must be set")
 
@@ -90,6 +182,8 @@ class IdentityForm(Form):
         self.password.validate()
 
     def validate_ssh_import_id(self):
+        if self.ssh_import_id.value is None:
+            return
         if len(self.ssh_import_id.value) > SSH_IMPORT_MAXLEN:
             return _("SSH id too long, must be < ") + str(SSH_IMPORT_MAXLEN)
 
@@ -104,6 +198,7 @@ class IdentityView(BaseView):
 
         self.form = IdentityForm()
         connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form.confirm_password.widget, 'change', self._check_password)
 
         self.ssh_import_confirmed = True
 
@@ -113,6 +208,13 @@ class IdentityView(BaseView):
             button_pile([self.form.done_btn]),
         ]
         super().__init__(ListBox(body))
+
+    def _check_password(self, sender, new_text):
+        password = self.form.password.value
+        if not password.startswith(new_text):
+            self.form.confirm_password.show_extra(("info_error", "Passwords do not match"))
+        else:
+            self.form.confirm_password.show_extra('')
 
     def done(self, result):
         cpassword = self.model.encrypt_password(self.form.password.value)
