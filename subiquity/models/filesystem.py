@@ -322,7 +322,10 @@ class FilesystemModel(object):
         for path, data in storage.items():
             if path in currently_mounted:
                 continue
-            if data['DEVTYPE'] == 'disk' and not data["DEVPATH"].startswith('/devices/virtual'):
+            if data['DEVTYPE'] == 'disk' \
+              and not data["DEVPATH"].startswith('/devices/virtual') \
+              and data["MAJOR"] != "2" \
+              and data['attrs'].get('ro') != "1":
                 #log.debug('disk={}\n{}'.format(
                 #    path, json.dumps(data, indent=4, sort_keys=True)))
                 info = self.prober.get_storage_info(path)
