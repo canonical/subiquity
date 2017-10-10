@@ -294,7 +294,7 @@ class FilesystemModel(object):
             r.append(asdict(p))
         for f in self._filesystems:
             r.append(asdict(f))
-        for m in self._mounts:
+        for m in sorted(self._mounts, key=lambda m:len(m.path)):
             r.append(asdict(m))
         return r
 
@@ -318,12 +318,14 @@ class FilesystemModel(object):
 
     def probe(self):
         storage = self.prober.get_storage()
-        VALID_MAJORS = ['8', '253']
         currently_mounted = self._get_system_mounted_disks()
         for path, data in storage.items():
             if path in currently_mounted:
                 continue
-            if data['DEVTYPE'] == 'disk' and data['MAJOR'] in VALID_MAJORS:
+            if data['DEVTYPE'] == 'disk' \
+              and not data["DEVPATH"].startswith('/devices/virtual') \
+              and data["MAJOR"] != "2" \
+              and data['attrs'].get('ro') != "1":
                 #log.debug('disk={}\n{}'.format(
                 #    path, json.dumps(data, indent=4, sort_keys=True)))
                 info = self.prober.get_storage_info(path)
@@ -388,7 +390,7 @@ class FilesystemModel(object):
     def bootable(self):
         ''' true if one disk has a boot partition '''
         for p in self._partitions:
-            if p.flag == 'bios_grub':
+            if p.flag == 'bios_grub' or p.flag == 'boot':
                 return True
         return False
 

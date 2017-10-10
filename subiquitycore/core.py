@@ -44,7 +44,10 @@ UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
 def setup_ubuntu_orange(pal, additional_opts):
     """Overwrite color 4 (usually "dark blue") to Ubuntu orange."""
     if is_linux_tty():
-        fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, pal)
+        curpal = bytearray(16*3)
+        fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
+        curpal[:8] = pal
+        fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
     elif os.environ['TERM'] == 'fbterm':
         print('\033[3;4;%i;%i;%i}' % (UO_R, UO_G, UO_B), flush=True)
     else:

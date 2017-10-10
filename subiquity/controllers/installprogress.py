@@ -18,6 +18,7 @@ import logging
 import os
 import random
 import subprocess
+import sys
 
 from systemd import journal
 
@@ -226,7 +227,7 @@ class InstallProgressController(BaseController):
 
     def start_journald_forwarder(self):
         log.debug("starting curtin journald forwarder")
-        if "SNAP" in os.environ:
+        if "SNAP" in os.environ and sys.executable.startswith(os.environ["SNAP"]):
             script = os.path.join(os.environ["SNAP"], 'usr/bin/curtin-journald-forwarder')
         else:
             script = './bin/curtin-journald-forwarder'

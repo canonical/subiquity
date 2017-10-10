@@ -193,7 +193,7 @@ class FilesystemController(BaseController):
         if not system_bootable and len(disk.partitions()) == 0:
             if self.is_uefi():
                 log.debug('Adding EFI partition first')
-                part = self.model.add_partition(disk=disk, partnum=1, size=UEFI_GRUB_SIZE_BYTES, flag='bios_grub')
+                part = self.model.add_partition(disk=disk, partnum=1, size=UEFI_GRUB_SIZE_BYTES, flag='boot')
                 fs = self.model.add_filesystem(part, 'fat32')
                 self.model.add_mount(fs, '/boot/efi')
             else:
