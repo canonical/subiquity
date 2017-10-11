@@ -56,7 +56,7 @@ parts:
       - user-setup
     prepare: |
       echo "get passwd/user-default-groups" | \
-        debconf-communicate user-setup |
+        debconf-communicate user-setup | \
         cut -d ' ' -f 2- > users-and-groups
   probert:
     plugin: python
