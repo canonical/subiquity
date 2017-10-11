@@ -76,12 +76,17 @@ POST_INSTALL_CONFIG = {
 
 
 def curtin_userinfo_to_config(userinfo):
+    users_and_groups_path = os.path.join(os.environ.get("SNAP", "/does-not-exist"), "users-and-groups")
+    if os.path.exists(users_and_groups_path):
+        groups = open(users_and_groups_path).read().split()
+    else:
+        groups = ['admin']
     user = {
         'name': userinfo['username'],
         'gecos': userinfo['realname'],
         'passwd': userinfo['password'],
         'shell': '/bin/bash',
-        'groups': 'admin',
+        'groups': groups,
         'lock-passwd': False,
         }
     if 'ssh_import_id' in userinfo:

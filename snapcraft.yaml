@@ -50,6 +50,14 @@ parts:
       'bin/started': usr/bin/started
     prime:
       - usr/bin
+  users-and-groups:
+    plugin: dump
+    build-packages:
+      - user-setup
+    prepare: |
+      echo "get passwd/user-default-groups" | \
+        debconf-communicate user-setup |
+        cut -d ' ' -f 2- > users-and-groups
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
