@@ -81,6 +81,7 @@ def curtin_userinfo_to_config(userinfo):
         groups = open(users_and_groups_path).read().split()
     else:
         groups = ['admin']
+    groups.append('sudo')
     user = {
         'name': userinfo['username'],
         'gecos': userinfo['realname'],
