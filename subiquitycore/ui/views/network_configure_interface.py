@@ -34,8 +34,10 @@ class NetworkConfigureInterfaceView(BaseView):
     def _build_widgets(self):
         self.ipv4_info = Pile(_build_gateway_ip_info_for_version(self.dev, 4))
         self.ipv4_method = Pile(self._build_ipv4_method_buttons())
+        self._set_ipv4_prefixes()
         self.ipv6_info = Pile(_build_gateway_ip_info_for_version(self.dev, 6))
         self.ipv6_method = Pile(self._build_ipv6_method_buttons())
+        self._set_ipv6_prefixes()
         if self.dev.type == 'wlan':
             self.wifi_info = Pile(_build_wifi_info(self.dev))
             self.wifi_method = Pile(self._build_wifi_config())
@@ -59,18 +61,47 @@ class NetworkConfigureInterfaceView(BaseView):
         ])
         return body
 
+    def _set_ipv4_prefixes(self):
+        if len(self.dev.configured_ip_addresses_for_version(4)) > 0:
+            active = 0
+        elif self.dev.dhcp4:
+            active = 1
+        else:
+            active = 2
+        for i in range(len(self.ipv4_method.contents)):
+            b = self.ipv4_method[i]
+            if i == active:
+                p = "(*) "
+            else:
+                p = "( ) "
+            b.set_label(p + b.label[4:])
+
+    def _set_ipv6_prefixes(self):
+        if len(self.dev.configured_ip_addresses_for_version(6)) > 0:
+            active = 0
+        elif self.dev.dhcp6:
+            active = 1
+        else:
+            active = 2
+        for i in range(len(self.ipv6_method.contents)):
+            b = self.ipv6_method[i]
+            if i == active:
+                p = "(*) "
+            else:
+                p = "( ) "
+            b.set_label(p + b.label[4:])
+
     def _build_ipv4_method_buttons(self):
         button_padding = 70
 
         buttons = [
-            menu_btn(label=_("Use a static IPv4 configuration"),
+            menu_btn(label="    %s" % _("Use a static IPv4 configuration"),
                     on_press=self.show_ipv4_configuration),
-            menu_btn(label=_("Use DHCPv4 on this interface"),
+            menu_btn(label="    %s" % _("Use DHCPv4 on this interface"),
                     on_press=self.enable_dhcp4),
-            menu_btn(label=_("Do not use"),
+            menu_btn(label="    %s" % _("Do not use"),
                     on_press=self.clear_ipv4),
         ]
-
         padding = getattr(Padding, 'left_{}'.format(button_padding))
         buttons = [ padding(button) for button in buttons ]
 
@@ -80,11 +111,11 @@ class NetworkConfigureInterfaceView(BaseView):
         button_padding = 70
 
         buttons = [
-            menu_btn(label=_("Use a static IPv6 configuration"),
+            menu_btn(label="    %s" % _("Use a static IPv6 configuration"),
                     on_press=self.show_ipv6_configuration),
-            menu_btn(label=_("Use DHCPv6 on this interface"),
+            menu_btn(label="    %s" % _("Use DHCPv6 on this interface"),
                     on_press=self.enable_dhcp6),
-            menu_btn(label=_("Do not use"),
+            menu_btn(label="    %s" % _("Do not use"),
                     on_press=self.clear_ipv6),
         ]
 
@@ -120,12 +151,14 @@ class NetworkConfigureInterfaceView(BaseView):
         self.dev.remove_ip_networks_for_version(4)
         self.dev.remove_nameservers()
         self.model.set_default_v4_gateway(None, None)
+        self._set_ipv4_prefixes()
         self.refresh_model_inputs()
 
     def clear_ipv6(self, btn):
         self.dev.remove_ip_networks_for_version(6)
         self.dev.remove_nameservers()
         self.model.set_default_v6_gateway(None, None)
+        self._set_ipv6_prefixes()
         self.refresh_model_inputs()
 
     def enable_dhcp4(self, btn):
@@ -133,12 +166,14 @@ class NetworkConfigureInterfaceView(BaseView):
         self.dev.remove_nameservers()
         self.dev.dhcp4 = True
         self.refresh_model_inputs()
+        self._set_ipv4_prefixes()
 
     def enable_dhcp6(self, btn):
         self.clear_ipv6(btn)
         self.dev.remove_nameservers()
         self.dev.dhcp6 = True
         self.refresh_model_inputs()
+        self._set_ipv6_prefixes()
 
     def show_wlan_configuration(self, btn):
         self.controller.network_configure_wlan_interface(self.dev.name)
