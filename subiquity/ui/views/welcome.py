@@ -35,9 +35,7 @@ class WelcomeView(BaseView):
         self.model = model
         self.controller = controller
         super().__init__(ListBox([
-            Padding.center_50(self._build_model_inputs()),
-            Text(""),
-            Padding.center_79(Text(_("(More language choices will appear in time)")))]))
+            Padding.center_50(self._build_model_inputs())]))
 
     def _build_model_inputs(self):
         sl = []
