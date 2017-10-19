@@ -230,6 +230,55 @@ class FocusTrackingListBox(TabCyclingListBox):
     def gained_focus(self):
         _maybe_call(self.focus, 'gained_focus')
 
+
 Columns = FocusTrackingColumns
 Pile = FocusTrackingPile
-ListBox = FocusTrackingListBox
+
+
+class ScrollBarListBox(FocusTrackingListBox):
+
+    def __init__(self, walker=None):
+        def f(char, attr):
+            return urwid.AttrMap(urwid.SolidFill(char), attr)
+        self.bar = Pile([
+            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'frame_footer')),
+            ('weight', 1, f("\N{FULL BLOCK}", 'info_error')),
+            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'frame_footer')),
+            ])
+        self.scrollbox = urwid.Columns([self, (1, self.bar)])
+        self.in_render = False
+        super().__init__(walker)
+
+    def render(self, size, focus=False):
+        visible = self.ends_visible(size, focus)
+        if len(visible) == 2 or self.in_render:
+            return super().render(size, focus)
+        else:
+            maxcol, maxrow = size
+            maxcol -= 1
+            offset, inset = self.get_focus_offset_inset(size)
+            seen_focus = False
+            height = height_before_focus = 0
+            focus_widget, focus_pos = self.body.get_focus()
+            for widget in self.body:
+                rows = widget.rows((maxcol,))
+                if widget is focus_widget:
+                    seen_focus = True
+                elif not seen_focus:
+                    height_before_focus += rows
+                height += rows
+            top = height_before_focus + inset - offset
+            bottom = height - top - maxrow
+            self.bar.contents[:] = [
+                (self.bar.contents[0][0], self.bar.options('weight', top)),
+                (self.bar.contents[1][0], self.bar.options('weight', maxrow)),
+                (self.bar.contents[2][0], self.bar.options('weight', bottom)),
+                ]
+            self.in_render = True
+            try:
+                return self.scrollbox.render(size, focus)
+            finally:
+                self.in_render = False
+
+
+ListBox = ScrollBarListBox
