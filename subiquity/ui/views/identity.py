@@ -30,6 +30,7 @@ from subiquitycore.ui.interactive import (
 from subiquitycore.ui.container import (
     Columns,
     ListBox,
+    Pile,
     )
 from subiquitycore.ui.form import (
     simple_field,
@@ -202,12 +203,16 @@ class IdentityView(BaseView):
 
         self.ssh_import_confirmed = True
 
-        body = [
-            Padding.center_90(self.form.as_rows(self)),
-            Padding.line_break(""),
-            button_pile([self.form.done_btn]),
-        ]
-        super().__init__(ListBox(body))
+        body = Pile([
+            ('pack', Text("")),
+            Padding.center_90(ListBox([self.form.as_rows(self)])),
+            ('pack', Pile([
+                ('pack', Text("")),
+                button_pile([self.form.done_btn]),
+                ('pack', Text("")),
+                ])),
+            ])
+        super().__init__(body)
 
     def _check_password(self, sender, new_text):
         password = self.form.password.value
