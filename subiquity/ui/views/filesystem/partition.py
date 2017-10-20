@@ -23,15 +23,14 @@ import logging
 from urwid import connect_signal, Text, WidgetDisable
 
 from subiquitycore.ui.buttons import delete_btn
-from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.form import (
     Form,
     FormField,
     IntegerField,
-    StringField,
     )
 from subiquitycore.ui.interactive import Selector, StringEditor
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.utils import Color, Padding, button_pile
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
@@ -150,13 +149,19 @@ class PartitionFormatView(BaseView):
         connect_signal(self.form, 'cancel', self.cancel)
 
         partition_box = Padding.center_50(ListBox(self.make_body()))
-        super().__init__(partition_box)
+        super().__init__(Pile([
+            ('pack', Text("")),
+            partition_box,
+            ('pack', Pile([
+                ('pack', Text("")),
+                self.form.buttons,
+                ('pack', Text("")),
+                ])),
+            ]))
 
     def make_body(self):
         return [
             self.form.as_rows(self),
-            Padding.line_break(""),
-            self.form.buttons,
         ]
 
     def cancel(self, button=None):
@@ -195,10 +200,10 @@ class PartitionView(PartitionFormatView):
             btn = delete_btn(on_press=self.delete)
             if self.partition.flag == "boot":
                 btn = WidgetDisable(Color.info_minor(btn.original_widget))
-            body[-2:-2] = [
+            body.extend([
                 Text(""),
-                Padding.fixed_10(btn),
-                ]
+                button_pile([btn]),
+                ])
             pass
         return body
 

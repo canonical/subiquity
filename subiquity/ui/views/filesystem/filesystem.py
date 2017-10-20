@@ -101,10 +101,11 @@ class FilesystemView(BaseView):
                 Text(""),
                 ])
         self.frame = Pile([
+            ('pack', Text("")),
             self.lb,
             ('pack', self.footer)])
         if self.model.can_install():
-            self.frame.focus_position = 1
+            self.frame.focus_position = 2
         super().__init__(self.frame)
         log.debug('FileSystemView init complete()')
 

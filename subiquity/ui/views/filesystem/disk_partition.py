@@ -18,7 +18,7 @@ from urwid import BoxAdapter, Text
 
 from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import done_btn, cancel_btn, menu_btn
-from subiquitycore.ui.container import Columns, ListBox
+from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
 
@@ -34,14 +34,20 @@ class DiskPartitionView(BaseView):
         self.controller = controller
         self.disk = disk
 
-        self.body = [
-            Padding.center_79(self._build_model_inputs()),
-            Padding.line_break(""),
-            Padding.center_79(self.show_disk_info_w()),
-            Padding.line_break(""),
-            self._build_buttons(),
-        ]
-        super().__init__(ListBox(self.body))
+        self.body = Pile([
+            ('pack', Text("")),
+            Padding.center_79(ListBox(
+                self._build_model_inputs() + [
+                Text(""),
+                self.show_disk_info_w(),
+                ])),
+            ('pack', Pile([
+                ('pack', Text("")),
+                self._build_buttons(),
+                ('pack', Text("")),
+                ])),
+            ])
+        super().__init__(self.body)
 
     def _build_buttons(self):
         cancel = cancel_btn(on_press=self.cancel)
@@ -102,8 +108,7 @@ class DiskPartitionView(BaseView):
             partitioned_disks.append(
                 menu_btn(label=text, on_press=self.format_entire))
 
-        return BoxAdapter(SimpleList(partitioned_disks),
-                          height=len(partitioned_disks))
+        return partitioned_disks
 
     def _click_part(self, sender, part):
         self.controller.edit_partition(self.disk, part)
