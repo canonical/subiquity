@@ -69,10 +69,13 @@ class ProgressView(BaseView):
                 cancel_btn(label=_("Exit To Shell"), on_press=self.quit))
         buttons = button_pile(buttons)
 
-        new_focus = len(self.pile.contents)
-        self.pile.contents.append((buttons, self.pile.options('pack')))
-        self.pile.contents.append((Text(""), self.pile.options('pack')))
-        self.pile.focus_position = new_focus
+        new_pile = Pile([
+                ('pack', Text("")),
+                buttons,
+                ('pack', Text("")),
+            ])
+        self.pile.contents[-1] = (new_pile, self.pile.options('pack'))
+        self.pile.focus_position = len(self.pile.contents) - 1
 
     def reboot(self, btn):
         self.controller.reboot()
