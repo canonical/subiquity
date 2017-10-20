@@ -115,11 +115,11 @@ class NetworkView(BaseView):
         self.model_inputs = Pile(self._build_model_inputs())
         self.additional_options = Pile(self._build_additional_options())
         self.body = [
-            Padding.center_90(self.model_inputs),
+            self.model_inputs,
             Padding.center_79(self.additional_options),
             Padding.line_break(""),
         ]
-        self.lb = ListBox(self.body)
+        self.lb = Padding.center_90(ListBox(self.body))
         self.footer = Pile([
                 Text(""),
                 self._build_buttons(),
