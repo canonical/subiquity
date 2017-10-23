@@ -71,15 +71,18 @@ class NetworkConfigureWLANView(BaseView):
         self.inputs = Pile(self._build_iface_inputs())
 
         self.error = Text("")
-        self.body = [
-            Padding.center_79(self.inputs),
-            Padding.line_break(""),
-            Padding.center_79(Color.info_error(self.error)),
-            Padding.line_break(""),
-            self.form.buttons,
-        ]
+        self.body = Pile([
+            ('pack', Text("")),
+            ListBox([Padding.center_79(self.inputs)]),
+            ('pack', Pile([
+                ('pack', Text("")),
+                Padding.center_79(Color.info_error(self.error)),
+                self.form.buttons,
+                ('pack', Text("")),
+                ])),
+            ])
         self.orig_w = None
-        super().__init__(ListBox(self.body))
+        super().__init__(self.body)
 
     def show_ssid_list(self, sender):
         self.show_overlay(NetworkList(self, self.dev.actual_ssids))

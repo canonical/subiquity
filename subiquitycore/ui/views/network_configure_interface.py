@@ -13,12 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
+from urwid import Text
+
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, menu_btn
 from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.ui.views.network import _build_gateway_ip_info_for_version, _build_wifi_info
-import logging
 
 log = logging.getLogger('subiquitycore.network.network_configure_interface')
 
@@ -29,7 +32,15 @@ class NetworkConfigureInterfaceView(BaseView):
         self.controller = controller
         self.dev = self.model.get_netdev_by_name(name)
         self._build_widgets()
-        super().__init__(ListBox(self._build_body()))
+        super().__init__(Pile([
+            ('pack', Text("")),
+            ListBox(self._build_body()),
+            ('pack', Pile([
+                ('pack', Text("")),
+                self._build_buttons(),
+                ('pack', Text("")),
+                ])),
+            ]))
 
     def _build_widgets(self):
         self.ipv4_info = Pile(_build_gateway_ip_info_for_version(self.dev, 4))
@@ -57,7 +68,6 @@ class NetworkConfigureInterfaceView(BaseView):
             Padding.center_79(self.ipv6_info),
             Padding.center_79(self.ipv6_method),
             Padding.line_break(""),
-            self._build_buttons(),
         ])
         return body
 

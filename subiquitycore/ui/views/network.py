@@ -127,9 +127,10 @@ class NetworkView(BaseView):
                 ])
         self.error_showing = False
         self.frame = Pile([
+            ('pack', Text("")),
             self.lb,
             ('pack', self.footer)])
-        self.frame.focus_position = 1
+        self.frame.focus_position = 2
         super().__init__(self.frame)
 
     def _build_buttons(self):

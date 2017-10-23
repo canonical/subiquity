@@ -43,6 +43,7 @@ class GuidedFilesystemView(BaseView):
         manual = ok_btn(label=_("Manual"), on_press=self.manual)
         back = back_btn(on_press=self.cancel)
         lb = ListBox([
+            Padding.center_70(Text("")),
             Padding.center_70(Text(text)),
             Padding.center_70(Text("")),
             button_pile([guided, manual, back]),
@@ -72,6 +73,7 @@ class GuidedDiskSelectionView(BaseView):
                 on_press=self.choose_disk, user_arg=disk)
             disks.append(disk_btn)
         lb = ListBox([
+            Padding.center_70(Text("")),
             Padding.center_70(Text(_("Choose the disk to install to:"))),
             Padding.center_70(Text("")),
             Padding.center_70(Pile(disks)),

@@ -33,17 +33,13 @@ class Header(WidgetWrap):
             widgets.append(
                 Padding.center_79(Text(title)))
             widgets.append(Text(""))
-        w = Color.frame_header(Pile(widgets))
+        widgets = [Color.frame_header(Pile(widgets))]
         if excerpt is not None:
-            widgets = [
+            widgets.extend([
                 Text(""),
                 Padding.center_79(Text(excerpt)),
-                Text(""),
-            ]
-        else:
-            widgets = [Text("")]
-        w = Pile([w] + widgets)
-        super().__init__(w)
+            ])
+        super().__init__(Pile(widgets))
 
 
 class StepsProgressBar(ProgressBar):
