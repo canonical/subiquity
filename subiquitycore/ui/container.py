@@ -241,9 +241,9 @@ class ScrollBarListBox(FocusTrackingListBox):
         def f(char, attr):
             return urwid.AttrMap(urwid.SolidFill(char), attr)
         self.bar = Pile([
-            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'frame_footer')),
-            ('weight', 1, f("\N{FULL BLOCK}", 'info_error')),
-            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'frame_footer')),
+            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'scrollbar_bg')),
+            ('weight', 1, f("\N{FULL BLOCK}", 'scrollbar_fg')),
+            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'scrollbar_bg')),
             ])
         super().__init__(walker)
 
