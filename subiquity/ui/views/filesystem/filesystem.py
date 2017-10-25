@@ -64,7 +64,7 @@ class FilesystemConfirmationView(WidgetWrap):
             Text(""),
             ])
         lb = LineBox(pile, title=_("Confirm destructive action"))
-        super().__init__(Padding.center_75(lb))
+        super().__init__(lb)
 
     def ok(self, sender):
         self.controller.finish()
@@ -261,4 +261,4 @@ class FilesystemView(BaseView):
         self.controller.reset()
 
     def done(self, button):
-        self.show_overlay(FilesystemConfirmationView(self, self.controller))
+        self.show_overlay(FilesystemConfirmationView(self, self.controller), min_width=0)
