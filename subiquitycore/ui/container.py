@@ -245,23 +245,20 @@ class ScrollBarListBox(FocusTrackingListBox):
             ('weight', 1, f("\N{FULL BLOCK}", 'info_error')),
             ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'frame_footer')),
             ])
-        self.scrollbox = urwid.Columns([self, (1, self.bar)])
-        self.in_render = False
         super().__init__(walker)
 
     def render(self, size, focus=False):
         visible = self.ends_visible(size, focus)
-        if len(visible) == 2 or self.in_render:
+        if len(visible) == 2:
             return super().render(size, focus)
         else:
             maxcol, maxrow = size
-            maxcol -= 1
-            offset, inset = self.get_focus_offset_inset((maxcol, maxrow))
+            offset, inset = self.get_focus_offset_inset((maxcol - 1, maxrow))
             seen_focus = False
             height = height_before_focus = 0
             focus_widget, focus_pos = self.body.get_focus()
             for widget in self.body:
-                rows = widget.rows((maxcol,))
+                rows = widget.rows((maxcol - 1,))
                 if widget is focus_widget:
                     seen_focus = True
                 elif not seen_focus:
@@ -278,11 +275,11 @@ class ScrollBarListBox(FocusTrackingListBox):
                 (self.bar.contents[1][0], boxopt),
                 (self.bar.contents[2][0], self.bar.options('weight', bottom)),
                 ]
-            self.in_render = True
-            try:
-                return self.scrollbox.render(size, focus)
-            finally:
-                self.in_render = False
+            canvases = [
+                (super().render((maxcol - 1, maxrow), focus), self.focus_position, True, maxcol - 1),
+                (self.bar.render((1, maxrow)), None, False, 1)
+                ]
+            return urwid.CanvasJoin(canvases)
 
 
 ListBox = ScrollBarListBox
