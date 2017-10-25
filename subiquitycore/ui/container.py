@@ -256,7 +256,7 @@ class ScrollBarListBox(FocusTrackingListBox):
         else:
             maxcol, maxrow = size
             maxcol -= 1
-            offset, inset = self.get_focus_offset_inset(size)
+            offset, inset = self.get_focus_offset_inset((maxcol, maxrow))
             seen_focus = False
             height = height_before_focus = 0
             focus_widget, focus_pos = self.body.get_focus()
@@ -269,9 +269,13 @@ class ScrollBarListBox(FocusTrackingListBox):
                 height += rows
             top = height_before_focus + inset - offset
             bottom = height - top - maxrow
+            if maxrow*maxrow < height:
+                boxopt = self.bar.options('given', 1)
+            else:
+                boxopt = self.bar.options('weight', maxrow)
             self.bar.contents[:] = [
                 (self.bar.contents[0][0], self.bar.options('weight', top)),
-                (self.bar.contents[1][0], self.bar.options('weight', maxrow)),
+                (self.bar.contents[1][0], boxopt),
                 (self.bar.contents[2][0], self.bar.options('weight', bottom)),
                 ]
             self.in_render = True
