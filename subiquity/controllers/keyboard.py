@@ -28,8 +28,9 @@ class KeyboardController(BaseController):
 
     def default(self):
         title = "Keyboard configuration"
+        excerpt = 'Please select your keyboard layout below, or select "Identify keyboard" to detect your layout automatically.'
         footer = _("Use UP, DOWN and ENTER keys to select your keyboard.")
-        self.ui.set_header(title)
+        self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
         view = KeyboardView(self.model, self, self.opts)
         self.ui.set_body(view)
