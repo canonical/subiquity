@@ -20,6 +20,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.ui.buttons import other_btn
 from subiquitycore.ui.container import (
     ListBox,
     Pile,
@@ -29,7 +30,7 @@ from subiquitycore.ui.form import (
     FormField,
     )
 from subiquitycore.ui.selector import Option, Selector
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.ui.views.keyboard")
@@ -46,8 +47,10 @@ class ChoiceField(FormField):
 
 class KeyboardForm(Form):
 
-    layout = ChoiceField(_("Layout"), choices=["dummy"])
-    variant = ChoiceField(_("Variant"), choices=["dummy"])
+    cancel_label = _("Back")
+
+    layout = ChoiceField(_("Layout:"), choices=["dummy"])
+    variant = ChoiceField(_("Variant:"), choices=["dummy"])
 
 
 class KeyboardView(BaseView):
@@ -71,9 +74,10 @@ class KeyboardView(BaseView):
         self.form.layout.widget.value = us_keyboard
 
         self._rows = self.form.as_rows(self)
+        identify_btn = other_btn(label=_("Identify keyboard"))
         pile = Pile([
             ('pack', Text("")),
-            Padding.center_90(ListBox([self._rows])),
+            Padding.center_90(ListBox([self._rows, Text(""), button_pile([identify_btn])])),
             ('pack', Pile([
                 Text(""),
                 self.form.buttons,

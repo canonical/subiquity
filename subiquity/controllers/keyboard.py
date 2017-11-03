@@ -38,5 +38,4 @@ class KeyboardController(BaseController):
         self.signal.emit_signal('next-screen')
 
     def cancel(self):
-        # Can't go back from here!
-        pass
+        self.signal.emit_signal('prev-screen')
