@@ -14,21 +14,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import re
 
 from urwid import (
     connect_signal,
+    Text,
     )
 
 from subiquitycore.ui.container import (
     ListBox,
+    Pile,
     )
 from subiquitycore.ui.form import (
     Form,
     FormField,
     )
 from subiquitycore.ui.selector import Option, Selector
-from subiquitycore.ui.utils import button_pile, Padding
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.ui.views.keyboard")
@@ -45,8 +46,8 @@ class ChoiceField(FormField):
 
 class KeyboardForm(Form):
 
-    layout = ChoiceField(choices=["dummy"])
-    variant = ChoiceField(choices=["dummy"])
+    layout = ChoiceField(_("Layout"), choices=["dummy"])
+    variant = ChoiceField(_("Variant"), choices=["dummy"])
 
 
 class KeyboardView(BaseView):
@@ -63,18 +64,41 @@ class KeyboardView(BaseView):
                 us_keyboard = keyboard
             opts.append(Option((keyboard.desc, True, keyboard)))
         opts.sort(key=lambda o:o.label)
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+        connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget._options = opts
         self.form.layout.widget.value = us_keyboard
-        connect_signal(self.form, 'submit', self.done)
 
-        body = [
-            Padding.center_90(self.form.as_rows(self)),
-            Padding.line_break(""),
-            self.form.buttons,
-        ]
-        super().__init__(ListBox(body))
+        self._rows = self.form.as_rows(self)
+        pile = Pile([
+            ('pack', Text("")),
+            Padding.center_90(ListBox([self._rows])),
+            ('pack', Pile([
+                Text(""),
+                self.form.buttons,
+                Text(""),
+                ])),
+            ])
+        pile.focus_position = 2
+        super().__init__(pile)
 
     def done(self, result):
-        pass
+        self.controller.done()
+
+    def cancel(self, result):
+        self.controller.cancel()
+
+    def select_layout(self, sender, keyboard):
+        log.debug("%s", keyboard)
+        opts = []
+        for code, desc in keyboard.variants:
+            opts.append(Option((desc, True, code)))
+        opts.sort(key=lambda o:o.label)
+        opts.insert(0, Option(("default", True, None)))
+        self.form.variant.widget._options = opts
+        self.form.variant.widget.index = 0
+        self.form.variant.enabled = len(opts) > 1
+
 
 
