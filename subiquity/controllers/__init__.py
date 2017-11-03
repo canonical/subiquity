@@ -20,4 +20,5 @@ from .identity import IdentityController  # NOQA
 from .installpath import InstallpathController  # NOQA
 from .installprogress import InstallProgressController  # NOQA
 from .filesystem import FilesystemController  # NOQA
+from .keyboard import KeyboardController  # NOQA
 from .welcome import WelcomeController  # NOQA

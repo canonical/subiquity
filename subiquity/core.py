@@ -32,6 +32,7 @@ class Subiquity(Application):
 
     controllers = [
             "Welcome",
+            "Keyboard",
             "Network",
             "Filesystem",
             "Identity",

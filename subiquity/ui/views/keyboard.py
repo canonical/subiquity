@@ -37,6 +37,7 @@ log = logging.getLogger("subiquity.ui.views.keyboard")
 class ChoiceField(FormField):
 
     def __init__(self, caption=None, help=None, choices=[]):
+        super().__init__(caption, help)
         self.choices = choices
 
     def _make_widget(self, form):
@@ -44,8 +45,8 @@ class ChoiceField(FormField):
 
 class KeyboardForm(Form):
 
-    layout = ChoiceField()
-    variant = ChoiceField()
+    layout = ChoiceField(choices=["dummy"])
+    variant = ChoiceField(choices=["dummy"])
 
 
 class KeyboardView(BaseView):
@@ -60,16 +61,16 @@ class KeyboardView(BaseView):
         for keyboard in model.keyboards:
             if keyboard.code == "us":
                 us_keyboard = keyboard
-            opts.append(Option(keyboard.desc, True, keyboard))
+            opts.append(Option((keyboard.desc, True, keyboard)))
         opts.sort(key=lambda o:o.label)
         self.form.layout.widget._options = opts
         self.form.layout.widget.value = us_keyboard
         connect_signal(self.form, 'submit', self.done)
 
         body = [
-            Padding.center_90(self.form.as_rows()),
+            Padding.center_90(self.form.as_rows(self)),
             Padding.line_break(""),
-            button_pile([self.form.buttons]),
+            self.form.buttons,
         ]
         super().__init__(ListBox(body))
 

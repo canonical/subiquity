@@ -29,6 +29,7 @@ class SubiquityModel:
 
     def __init__(self, common):
         self.locale = LocaleModel()
+        self.keyboard = KeyboardModel()
         self.network = NetworkModel()
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
