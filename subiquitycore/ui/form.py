@@ -104,6 +104,7 @@ class BoundFormField(object):
         self.form = form
         self.in_error = False
         self._help = None
+        self.help_text = Text("", align="center")
         self._caption = None
         self.pile = None
         self._enabled = True
@@ -223,7 +224,7 @@ class BoundFormField(object):
             raise RuntimeError("do not call as_row more than once!")
         self.parent_view = view
         self._longest_caption = longest_caption
-        self.help_text = Text(self.help, align="center")
+        self.help_text.set_text(self.help)
         cols = [
                     (self._longest_caption, Text("")),
                     self.help_text,
@@ -286,6 +287,9 @@ class Form(object, metaclass=MetaForm):
             self._fields.append(bf)
             if field.name in initial:
                 bf.value = initial[field.name]
+        for bf in self._fields:
+            bf.validate()
+        self.validated()
 
     def _click_done(self, sender):
         emit_signal(self, 'submit', self)
