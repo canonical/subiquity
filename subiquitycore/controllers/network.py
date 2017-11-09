@@ -405,7 +405,7 @@ class NetworkController(BaseController):
             self.cs.cancel()
             self.task_error('canceled')
         self.acw = ApplyingConfigWidget(len(tasks), cancel)
-        self.ui.frame.body.show_overlay(self.acw)
+        self.ui.frame.body.show_overlay(self.acw, min_width=60)
 
         self.cs = TaskSequence(self.run_in_bg, tasks, self)
         self.cs.run()

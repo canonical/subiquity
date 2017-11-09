@@ -87,6 +87,8 @@ STYLES = [
     ('string_input focus',  'bg',      'fg'),
     ('progress_incomplete', 'fg',      'aubergine'),
     ('progress_complete',   'fg',      'orange'),
+    ('scrollbar_fg',        'orange',  'bg'),
+    ('scrollbar_bg',        'fg',      'bg'),
 ]
 
 focus_styles = set([

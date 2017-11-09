@@ -230,6 +230,78 @@ class FocusTrackingListBox(TabCyclingListBox):
     def gained_focus(self):
         _maybe_call(self.focus, 'gained_focus')
 
+
 Columns = FocusTrackingColumns
 Pile = FocusTrackingPile
-ListBox = FocusTrackingListBox
+
+
+class ScrollBarListBox(FocusTrackingListBox):
+
+    def __init__(self, walker=None):
+        def f(char, attr):
+            return urwid.AttrMap(urwid.SolidFill(char), attr)
+        self.bar = Pile([
+            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'scrollbar_bg')),
+            ('weight', 1, f("\N{FULL BLOCK}", 'scrollbar_fg')),
+            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'scrollbar_bg')),
+            ])
+        super().__init__(walker)
+
+    def render(self, size, focus=False):
+        visible = self.ends_visible(size, focus)
+        if len(visible) == 2:
+            return super().render(size, focus)
+        else:
+            # This implementation assumes that the number of rows is
+            # not too large (and in particular is finite). That's the
+            # case for all the listboxes we have in subiquity today.
+            maxcol, maxrow = size
+
+            offset, inset = self.get_focus_offset_inset((maxcol - 1, maxrow))
+
+            seen_focus = False
+            height = height_before_focus = 0
+            focus_widget, focus_pos = self.body.get_focus()
+            # Scan through the rows calculating total height and the
+            # height of the rows before the focus widget.
+            for widget in self.body:
+                rows = widget.rows((maxcol - 1,))
+                if widget is focus_widget:
+                    seen_focus = True
+                elif not seen_focus:
+                    height_before_focus += rows
+                height += rows
+
+            # Calculate the number of rows off the top and bottom of
+            # the listbox.
+            if 'top' in visible:
+                top = 0
+            else:
+                top = height_before_focus + inset - offset
+            if 'bottom' in visible:
+                bottom = 0
+            else:
+                bottom = height - top - maxrow
+
+            # Prevent the box from being squished to 0 rows (if it
+            # gets ('weight', maxrow) gets round(maxrow / (top +
+            # maxrow + bottom)) and that being < 1 simplifies to the
+            # below).
+            if maxrow*maxrow < height:
+                boxopt = self.bar.options('given', 1)
+            else:
+                boxopt = self.bar.options('weight', maxrow)
+
+            self.bar.contents[:] = [
+                (self.bar.contents[0][0], self.bar.options('weight', top)),
+                (self.bar.contents[1][0], boxopt),
+                (self.bar.contents[2][0], self.bar.options('weight', bottom)),
+                ]
+            canvases = [
+                (super().render((maxcol - 1, maxrow), focus), self.focus_position, True, maxcol - 1),
+                (self.bar.render((1, maxrow)), None, False, 1)
+                ]
+            return urwid.CanvasJoin(canvases)
+
+
+ListBox = ScrollBarListBox

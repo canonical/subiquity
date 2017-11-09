@@ -34,7 +34,7 @@ class NetworkConfigureInterfaceView(BaseView):
         self._build_widgets()
         super().__init__(Pile([
             ('pack', Text("")),
-            ListBox(self._build_body()),
+            Padding.center_79(ListBox(self._build_body())),
             ('pack', Pile([
                 ('pack', Text("")),
                 self._build_buttons(),
@@ -57,16 +57,16 @@ class NetworkConfigureInterfaceView(BaseView):
         body = []
         if self.dev.type == 'wlan':
             body.extend([
-                Padding.center_79(self.wifi_info),
-                Padding.center_79(self.wifi_method),
+                self.wifi_info,
+                self.wifi_method,
                 Padding.line_break(""),
                 ])
         body.extend([
-            Padding.center_79(self.ipv4_info),
-            Padding.center_79(self.ipv4_method),
+            self.ipv4_info,
+            self.ipv4_method,
             Padding.line_break(""),
-            Padding.center_79(self.ipv6_info),
-            Padding.center_79(self.ipv6_method),
+            self.ipv6_info,
+            self.ipv6_method,
             Padding.line_break(""),
         ])
         return body

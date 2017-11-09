@@ -38,10 +38,10 @@ class DiskPartitionView(BaseView):
             ('pack', Text("")),
             Padding.center_79(ListBox(
                 self._build_model_inputs() + [
-                Text(""),
-                self.show_disk_info_w(),
                 ])),
             ('pack', Pile([
+                Text(""),
+                ('pack', Padding.center_79(self.show_disk_info_w())),
                 ('pack', Text("")),
                 self._build_buttons(),
                 ('pack', Text("")),
