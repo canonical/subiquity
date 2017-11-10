@@ -32,6 +32,7 @@ add_overlay() {
     mountpoint=$2
     work=$(mktemp -dp $tmpdir)
     upper=$(mktemp -dp $tmpdir)
+    chmod go+rx $work $upper
     mount -t overlay overlay -o lowerdir=$lower,upperdir=$upper,workdir=$work $mountpoint
     add_mount $mountpoint
 }
