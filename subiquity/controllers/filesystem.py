@@ -24,7 +24,6 @@ from subiquity.curtin import (
     CURTIN_CONFIGS,
     curtin_write_storage_actions,
     )
-from subiquity.models import (FilesystemModel, RaidModel)
 from subiquity.models.filesystem import humanize_size
 from subiquity.ui.views import (
     BcacheView,
@@ -50,10 +49,9 @@ class FilesystemController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
-        self.model = FilesystemModel(self.prober, self.opts)
+        self.model = self.base_model.filesystem
         # self.iscsi_model = IscsiDiskModel()
         # self.ceph_model = CephDiskModel()
-        self.raid_model = RaidModel()
         self.model.probe()  # probe before we complete
 
     def default(self):

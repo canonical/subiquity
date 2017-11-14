@@ -34,6 +34,7 @@ class BaseController(ABC):
         self.prober = common['prober']
         self.controllers = common['controllers']
         self.pool = common['pool']
+        self.base_model = common['base_model']
 
     def register_signals(self):
         """Defines signals associated with controller from model."""

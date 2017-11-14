@@ -13,31 +13,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
+from subiquitycore.models.identity import IdentityModel
+from subiquitycore.models.network import NetworkModel
 
-from subiquitycore.core import Application
-
-from subiquity.models.subiquity import SubiquityModel
-
-log = logging.getLogger('console_conf.core')
+from .filesystem import FilesystemModel
+from .locale import LocaleModel
 
 
-class Subiquity(Application):
+class SubiquityModel:
+    """The overall model for subiquity."""
 
-    from subiquity.palette import PALETTE, STYLES, STYLES_MONO
-
-    project = "subiquity"
-
-    model_class = SubiquityModel
-
-    controllers = [
-            "Welcome",
-            "Network",
-            "Filesystem",
-            "Identity",
-            "InstallProgress",
-    ]
-
-    def __init__(self, ui, opts):
-        super().__init__(ui, opts)
-        self.common['ui'].progress_completion += 1
+    def __init__(self, common):
+        self.locale = LocaleModel()
+        self.network = NetworkModel()
+        self.filesystem = FilesystemModel(common['prober'])
+        self.identity = IdentityModel()

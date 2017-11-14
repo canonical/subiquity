@@ -17,13 +17,12 @@ import gettext
 import logging
 from subiquitycore import i18n
 
-log = logging.getLogger('subiquity.models.welcome')
-
+log = logging.getLogger('subiquity.models.locale')
 
 class LocaleModel(object):
     """ Model representing locale selection
 
-    Only supports language selection for now.
+    XXX Only represents *language* selection for now.
     """
 
     supported_languages = [
@@ -33,6 +32,7 @@ class LocaleModel(object):
         ('lv_LV', 'Latvian'),
         ('ru_RU', 'Russian'),
     ]
+
     selected_language = None
 
     def get_languages(self):

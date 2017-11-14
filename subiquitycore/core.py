@@ -179,6 +179,8 @@ class Application:
             log.debug("Running event loop: {}".format(
                 self.common['loop'].event_loop))
 
+            self.common['base_model'] = self.model_class(self.common)
+
         try:
             self.common['loop'].set_alarm_in(0.05, self.next_screen)
             controllers_mod = __import__('%s.controllers' % self.project, None, None, [''])

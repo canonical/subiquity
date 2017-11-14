@@ -272,9 +272,8 @@ class FilesystemModel(object):
                     longest_fs_name = len(fs.label)
             fs_by_name[fs.label] = fs
 
-    def __init__(self, prober, opts):
+    def __init__(self, prober):
         self.prober = prober
-        self.opts = opts
         self._available_disks = {} # keyed by path, eg /dev/sda
         self.reset()
 

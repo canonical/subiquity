@@ -20,7 +20,7 @@ import lsb_release
 from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
 
-from subiquity.models import InstallpathModel
+from subiquity.models.installpath import InstallpathModel
 from subiquity.ui.views import InstallpathView
 
 log = logging.getLogger('subiquity.controller.installpath')

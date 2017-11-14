@@ -58,8 +58,7 @@ class IdentityModel(object):
     """ Model representing user identity
     """
 
-    def __init__(self, opts):
-        self.opts = opts
+    def __init__(self):
         self._user = None
 
     def add_user(self, result):

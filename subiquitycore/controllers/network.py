@@ -225,6 +225,7 @@ def sanitize_config(config):
                 ap_config['password'] = '<REDACTED>'
     return config
 
+
 class SubiquityNetworkEventReceiver(NetworkEventReceiver):
     def __init__(self, model):
         self.model = model
@@ -299,6 +300,7 @@ class NetworkController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
+        self.model = self.base_model.network
         if self.opts.dry_run:
             self.root = os.path.abspath(".subiquity")
             self.tried_once = False
@@ -310,7 +312,7 @@ class NetworkController(BaseController):
             os.makedirs(netplan_dir)
             with open(netplan_path, 'w') as fp:
                 fp.write(default_netplan)
-        self.model = NetworkModel(self.root)
+        self.model.parse_netplan_configs(self.root)
 
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
         self.observer, fds = self.prober.probe_network(self.network_event_receiver)
@@ -369,7 +371,7 @@ class NetworkController(BaseController):
             w.write("# This is the network config written by '{}'\n".format(self.opts.project))
             w.write(yaml.dump(config))
         os.rename(tmppath, netplan_path)
-        self.model.parse_netplan_configs()
+        self.model.parse_netplan_configs(self.root)
         if self.opts.dry_run:
             tasks = [
                 ('one', BackgroundProcess(['sleep', '0.1'])),
