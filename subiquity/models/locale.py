@@ -20,8 +20,10 @@ from subiquitycore import i18n
 log = logging.getLogger('subiquity.models.welcome')
 
 
-class WelcomeModel(object):
-    """ Model representing language selection
+class LocaleModel(object):
+    """ Model representing locale selection
+
+    Only supports language selection for now.
     """
 
     supported_languages = [

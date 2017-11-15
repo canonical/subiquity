@@ -16,15 +16,15 @@
 
 from subiquitycore.controller import BaseController
 
+from subiquity.models import LocaleModel
 from subiquity.ui.views import WelcomeView
-from subiquity.models import WelcomeModel
 
 
 class WelcomeController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
-        self.model = WelcomeModel()
+        self.model = LocaleModel()
 
     def default(self):
         title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
