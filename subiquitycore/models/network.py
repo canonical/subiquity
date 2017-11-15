@@ -153,7 +153,7 @@ class Networkdev:
 
     @property
     def model(self):
-        return self._net_info.vendor
+        return self._net_info.model
 
     @property
     def is_connected(self):
@@ -262,17 +262,17 @@ class Networkdev:
     @property
     def actual_ssid(self):
         if self._net_info.ssid:
-            return self._net_info.ssid.decode('utf-8', 'replace')
+            return self._net_info.ssid
         else:
             return None
 
     @property
     def actual_ssids(self):
-        return [ssid.decode('utf-8', 'replace') for ssid in self._net_info.ssids]
+        return self._net_info.wlan['visible_ssids']
 
     @property
     def scan_state(self):
-        return self._net_info.scan_state
+        return self._net_info.wlan['scan_state']
 
     @property
     def configured_ssid(self):
