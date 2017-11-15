@@ -24,7 +24,7 @@ import subprocess
 
 import yaml
 
-from probert.network import UdevObserver
+from probert.network import NetworkEventReceiver
 
 from subiquitycore.models import NetworkModel
 from subiquitycore.ui.views import (NetworkView,
@@ -141,9 +141,9 @@ class PythonSleep(BackgroundTask):
 
 class WaitForDefaultRouteTask(BackgroundTask):
 
-    def __init__(self, timeout, udev_observer):
+    def __init__(self, timeout, event_receiver):
         self.timeout = timeout
-        self.udev_observer = udev_observer
+        self.event_receiver = event_receiver
 
     def __repr__(self):
         return 'WaitForDefaultRouteTask(%r)'%(self.timeout,)
@@ -154,7 +154,7 @@ class WaitForDefaultRouteTask(BackgroundTask):
     def start(self):
         self.fail_r, self.fail_w = os.pipe()
         self.success_r, self.success_w = os.pipe()
-        self.udev_observer.add_default_route_waiter(self.got_route)
+        self.event_receiver.add_default_route_waiter(self.got_route)
 
     def run(self):
         try:
@@ -225,20 +225,11 @@ def sanitize_config(config):
                 ap_config['password'] = '<REDACTED>'
     return config
 
-class SubiquityObserver(UdevObserver):
-    def __init__(self, model, ui, loop):
-        UdevObserver.__init__(self)
+class SubiquityNetworkEventReceiver(NetworkEventReceiver):
+    def __init__(self, model):
         self.model = model
-        self.ui = ui
-        self.loop = loop
         self.default_route_waiter = None
         self.default_routes = set()
-
-    def start(self):
-        fds = super().start()
-        for fd in fds:
-            self.loop.watch_file(fd, partial(self.data_ready, fd))
-        return fds
 
     def new_link(self, ifindex, link):
         self.model.new_link(ifindex, link)
@@ -271,20 +262,6 @@ class SubiquityObserver(UdevObserver):
             waiter()
         else:
             self.default_route_waiter = waiter
-
-    def refresh(self):
-        v = self.ui.frame.body
-        if hasattr(v, 'refresh_model_inputs'):
-            v.refresh_model_inputs()
-
-    def data_ready(self, fd):
-        code = subprocess.call(['udevadm', 'settle', '-t', '0'])
-        if code != 0:
-            log.debug("waiting 0.1 to let udev event queue settle")
-            self.loop.set_alarm_in(0.1, lambda loop, ud:self.data_ready(fd))
-            return
-        super().data_ready(fd)
-        self.refresh()
 
 
 default_netplan = '''
@@ -335,11 +312,24 @@ class NetworkController(BaseController):
                 fp.write(default_netplan)
         self.model = NetworkModel(self.root)
 
-        self.observer = SubiquityObserver(self.model, self.ui, self.loop)
-        self.observer.start()
+        self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
+        self.observer, fds = self.prober.probe_network(self.network_event_receiver)
+        for fd in fds:
+            self.loop.watch_file(fd, partial(self._data_ready, fd))
+
+    def _data_ready(self, fd):
+        code = subprocess.call(['udevadm', 'settle', '-t', '0'])
+        if code != 0:
+            log.debug("waiting 0.1 to let udev event queue settle")
+            self.loop.set_alarm_in(0.1, lambda loop, ud:self.data_ready(fd))
+            return
+        self.observer.data_ready(fd)
+        v = self.ui.frame.body
+        if hasattr(v, 'refresh_model_inputs'):
+            v.refresh_model_inputs()
 
     def start_scan(self, dev):
-        self.observer.wlan_listener.trigger_scan(dev.ifindex)
+        self.observer.trigger_scan(dev.ifindex)
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
@@ -391,14 +381,14 @@ class NetworkController(BaseController):
                 # least test that what we wrote is acceptable to netplan.
                 tasks.append(('generate', BackgroundProcess(['netplan', 'generate', '--root', self.root])))
             if not self.tried_once:
-                tasks.append(('timeout', WaitForDefaultRouteTask(3, self.observer)))
+                tasks.append(('timeout', WaitForDefaultRouteTask(3, self.network_event_receiver)))
                 tasks.append(('fail', BackgroundProcess(['false'])))
                 self.tried_once = True
         else:
             tasks = [
                 ('generate', BackgroundProcess(['/lib/netplan/generate'])),
                 ('apply', BackgroundProcess(['netplan', 'apply'])),
-                ('timeout', WaitForDefaultRouteTask(30, self.observer)),
+                ('timeout', WaitForDefaultRouteTask(30, self.network_event_receiver)),
                 ]
 
         def cancel():

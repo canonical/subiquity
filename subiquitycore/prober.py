@@ -16,6 +16,7 @@
 import logging
 import yaml
 import os
+from probert.network import (StoredDataObserver, UdevObserver)
 from probert.storage import (Storage,
                              StorageInfo)
 
@@ -30,15 +31,17 @@ class ProberException(Exception):
 class Prober():
     def __init__(self, opts):
         self.opts = opts
+
         self.probe_data = {}
+        self.saved_config = None
 
         if self.opts.machine_config:
             log.debug('User specified machine_config: {}'.format(
                       self.opts.machine_config))
-            if os.path.exists(self.opts.machine_config):
-                self.probe_data = \
-                    self._load_machine_config(self.opts.machine_config)
-        log.debug('Prober() init finished, data:{}'.format(self.probe_data))
+            self.saved_config = \
+              self._load_machine_config(self.opts.machine_config)
+            self.probe_data = self.saved_config
+        log.debug('Prober() init finished, data:{}'.format(self.saved_config))
 
     def _load_machine_config(self, machine_config):
         with open(machine_config) as mc:
@@ -50,6 +53,14 @@ class Prober():
                 raise ProberException(err)
 
         return data
+
+    def probe_network(self, receiver):
+        if self.opts.machine_config:
+            observer = StoredDataObserver(
+                self.saved_config['network'], receiver)
+        else:
+            observer = UdevObserver(receiver)
+        return observer, observer.start()
 
     def get_storage(self):
         ''' Load a StorageInfo class.  Probe if it's not present '''
