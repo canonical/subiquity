@@ -36,8 +36,7 @@ class MyLineBox(LineBox):
 
 
 class ProgressView(BaseView):
-    def __init__(self, model, controller):
-        self.model = model
+    def __init__(self, controller):
         self.controller = controller
         self.listwalker = SimpleFocusListWalker([])
         self.listbox = ListBox(self.listwalker)

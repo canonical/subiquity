@@ -320,6 +320,7 @@ class FilesystemModel(object):
         storage = self.prober.get_storage()
         currently_mounted = self._get_system_mounted_disks()
         for path, data in storage.items():
+            log.debug("fs probe %s", path)
             if path in currently_mounted:
                 continue
             if data['DEVTYPE'] == 'disk' \

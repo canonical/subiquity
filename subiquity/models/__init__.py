@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .installpath import InstallpathModel  # NOQA
-from .installprogress import InstallProgressModel  # NOQA
 from .filesystem import FilesystemModel  # NOQA
 from .raid import RaidModel  # NOQA
 from .locale import LocaleModel

@@ -31,7 +31,6 @@ from subiquity.curtin import (CURTIN_CONFIGS,
                               curtin_install_cmd,
                               curtin_write_network_config,
                               curtin_write_reporting_config)
-from subiquity.models import InstallProgressModel
 from subiquity.ui.views import ProgressView
 
 
@@ -58,7 +57,6 @@ class InstallProgressController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
-        self.model = InstallProgressModel()
         self.progress_view = None
         self.install_state = InstallState.NOT_STARTED
         self.postinstall_written = False
@@ -279,7 +277,7 @@ class InstallProgressController(BaseController):
         footer = _("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
-        self.progress_view = ProgressView(self.model, self)
+        self.progress_view = ProgressView(self)
         if self.install_state < 0:
             self.curtin_error()
             self.ui.set_body(self.progress_view)
