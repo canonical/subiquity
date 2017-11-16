@@ -2,11 +2,15 @@
 
 set -eux
 
+cmds=
 interactive=no
-while getopts ":i" opt; do
+while getopts ":ic:" opt; do
     case "${opt}" in
         i)
             interactive=yes
+            ;;
+        c)
+            cmds=$OPTARG
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -85,6 +89,9 @@ cp $SUBIQUITY_SNAP_PATH new_installer/var/lib/snapd/seed/snaps/
 mkdir new_iso
 add_overlay old_iso new_iso
 
+if [ -n "$cmds" ]; then
+    bash -c "$cmds"
+fi
 if [ "$interactive" = "yes" ]; then
     bash
 fi
