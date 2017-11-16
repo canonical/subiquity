@@ -2,6 +2,20 @@
 
 set -eux
 
+interactive=no
+while getopts ":i" opt; do
+    case "${opt}" in
+        i)
+            interactive=yes
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
 # inject-subiquity-snap.sh $old_iso $subiquity_snap $new_iso
 
 OLD_ISO=$(readlink -f $1)
@@ -70,6 +84,11 @@ cp $SUBIQUITY_SNAP_PATH new_installer/var/lib/snapd/seed/snaps/
 
 mkdir new_iso
 add_overlay old_iso new_iso
+
+if [ "$interactive" = "yes" ]; then
+    bash
+fi
+
 rm new_iso/casper/installer.squashfs
 mksquashfs new_installer new_iso/casper/installer.squashfs
 
