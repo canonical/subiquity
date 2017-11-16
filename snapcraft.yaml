@@ -32,7 +32,6 @@ parts:
       - python3-distutils-extra
     python-packages:
       - attrs
-      - pyudev
       - pyyaml
       - systemd-python
       - urwid
@@ -63,3 +62,4 @@ parts:
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
     source: https://github.com/CanonicalLtd/probert.git
     source-type: git
+    requirements: requirements.txt

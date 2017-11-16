@@ -1,5 +1,4 @@
 urwid==1.2.1
-pyudev==0.16.1
 nose-cov
 nose
 flake8
