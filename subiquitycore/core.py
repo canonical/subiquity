@@ -20,6 +20,7 @@ import sys
 import os
 
 import urwid
+import yaml
 
 from subiquitycore.signals import Signal
 from subiquitycore.prober import Prober, ProberException
@@ -93,6 +94,11 @@ class Application:
 
         opts.project = self.project
 
+        answers = {}
+        if opts.answers is not None:
+            answers = yaml.safe_load(open(opts.answers).read())
+            log.debug("Loaded answers %s", answers)
+
         self.common = {
             "ui": ui,
             "opts": opts,
@@ -100,6 +106,7 @@ class Application:
             "prober": prober,
             "loop": None,
             "pool": futures.ThreadPoolExecutor(1),
+            "answers": answers,
         }
         if opts.screens:
             self.controllers = [c for c in self.controllers if c in opts.screens]

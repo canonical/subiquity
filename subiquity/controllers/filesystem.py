@@ -50,6 +50,10 @@ class FilesystemController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.filesystem
+        self.answers = self.all_answers.get("Filesystem", {})
+        self.answers.setdefault('guided', False)
+        self.answers.setdefault('guided-index', 0)
+        self.answers.setdefault('manual', False)
         # self.iscsi_model = IscsiDiskModel()
         # self.ceph_model = CephDiskModel()
         self.model.probe()  # probe before we complete
@@ -60,6 +64,10 @@ class FilesystemController(BaseController):
         self.ui.set_header(title)
         self.ui.set_footer(footer)
         self.ui.set_body(GuidedFilesystemView(self.model, self))
+        if self.answers['guided']:
+            self.guided()
+        elif self.answers['manual']:
+            self.manual()
 
     def manual(self):
         title = _("Filesystem setup")
@@ -67,13 +75,20 @@ class FilesystemController(BaseController):
         self.ui.set_header(title)
         self.ui.set_footer(footer)
         self.ui.set_body(FilesystemView(self.model, self))
+        if self.answers['guided']:
+            self.finish()
 
     def guided(self):
         title = _("Filesystem setup")
         footer = (_("Choose the installation target"))
         self.ui.set_header(title)
         self.ui.set_footer(footer)
-        self.ui.set_body(GuidedDiskSelectionView(self.model, self))
+        v = GuidedDiskSelectionView(self.model, self)
+        self.ui.set_body(v)
+        if self.answers['guided']:
+            index = self.answers['guided-index']
+            disk = self.model.all_disks()[index]
+            v.choose_disk(None, disk)
 
     def reset(self):
         log.info("Resetting Filesystem model")

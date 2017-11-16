@@ -64,6 +64,7 @@ def parse_options(argv):
                         dest='uefi',
                         help='run in uefi support mode')
     parser.add_argument('--screens', action='append', dest='screens', default=[])
+    parser.add_argument('--answers')
     return parser.parse_args(argv)
 
 

@@ -57,6 +57,8 @@ class InstallProgressController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
+        self.answers = self.all_answers.get('InstallProgress', {})
+        self.answers.setdefault('reboot', False)
         self.progress_view = None
         self.install_state = InstallState.NOT_STARTED
         self.postinstall_written = False
@@ -216,6 +218,8 @@ class InstallProgressController(BaseController):
         self.ui.set_footer("")
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
+        if self.answers['reboot']:
+            self.loop.set_alarm_in(0.01, lambda loop, userdata: self.reboot())
 
     def update_log_tail(self):
         if self.tail_proc is None:
