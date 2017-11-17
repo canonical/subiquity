@@ -323,7 +323,7 @@ class NetworkController(BaseController):
         code = subprocess.call(['udevadm', 'settle', '-t', '0'])
         if code != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
-            self.loop.set_alarm_in(0.1, lambda loop, ud:self.data_ready(fd))
+            self.loop.set_alarm_in(0.1, lambda loop, ud:self._data_ready(fd))
             return
         self.observer.data_ready(fd)
         v = self.ui.frame.body
