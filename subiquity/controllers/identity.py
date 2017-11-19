@@ -40,18 +40,18 @@ class IdentityController(BaseController):
         self.ui.set_footer(footer)
         self.ui.set_body(IdentityView(self.model, self, self.opts))
         if 'realname' in self.answers and \
-          'username' in self.answers and \
-          'password' in self.answers and \
-          'hostname' in self.answers:
-          d = {
-              'realname': self.answers['realname'],
-              'username': self.answers['username'],
-              'hostname': self.answers['hostname'],
-              'password': self.answers['password'],
-              'confirm_password': self.answers['password'],
-              'ssh_import_id': self.answers.get('ssh-import-id', ''),
-              }
-          self.create_user(d)
+            'username' in self.answers and \
+            'password' in self.answers and \
+            'hostname' in self.answers:
+            d = {
+                'realname': self.answers['realname'],
+                'username': self.answers['username'],
+                'hostname': self.answers['hostname'],
+                'password': self.answers['password'],
+                'confirm_password': self.answers['password'],
+                'ssh_import_id': self.answers.get('ssh-import-id', ''),
+                }
+            self.create_user(d)
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
