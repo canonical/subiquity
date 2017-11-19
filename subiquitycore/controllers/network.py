@@ -301,6 +301,7 @@ class NetworkController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.network
+        self.answers = self.all_answers.get("Network", {})
         if self.opts.dry_run:
             self.root = os.path.abspath(".subiquity")
             self.tried_once = False
@@ -345,6 +346,8 @@ class NetworkController(BaseController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
         self.ui.set_body(NetworkView(self.model, self))
+        if self.answers.get('accept-default', False):
+            self.network_finish(self.model.render())
 
     @property
     def netplan_path(self):
@@ -408,6 +411,8 @@ class NetworkController(BaseController):
     def task_error(self, stage, info=None):
         self.ui.frame.body.remove_overlay()
         self.ui.frame.body.show_network_error(stage, info)
+        if self.answers.get('accept-default', False):
+            self.network_finish(self.model.render())
 
     def tasks_finished(self):
         self.signal.emit_signal('network-config-written', self.netplan_path)

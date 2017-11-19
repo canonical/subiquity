@@ -30,6 +30,7 @@ class IdentityController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.identity
+        self.answers = self.all_answers.get('Identity')
 
     def default(self):
         title = _("Profile setup")
@@ -38,6 +39,19 @@ class IdentityController(BaseController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
         self.ui.set_body(IdentityView(self.model, self, self.opts))
+        if 'realname' in self.answers and \
+          'username' in self.answers and \
+          'password' in self.answers and \
+          'hostname' in self.answers:
+          d = {
+              'realname': self.answers['realname'],
+              'username': self.answers['username'],
+              'hostname': self.answers['hostname'],
+              'password': self.answers['password'],
+              'confirm_password': self.answers['password'],
+              'ssh_import_id': self.answers.get('ssh-import-id', ''),
+              }
+          self.create_user(d)
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')

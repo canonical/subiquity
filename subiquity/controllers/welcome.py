@@ -13,17 +13,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 
 from subiquitycore.controller import BaseController
 
 from subiquity.ui.views import WelcomeView
 
+log = logging.getLogger('subiquity.controllers.welcome')
 
 class WelcomeController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.locale
+        self.answers = self.all_answers.get("Welcome", {})
+        log.debug("Welcome: answers=%s", self.answers)
 
     def default(self):
         title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
@@ -33,6 +37,9 @@ class WelcomeController(BaseController):
         self.ui.set_footer(footer)
         view = WelcomeView(self.model, self)
         self.ui.set_body(view)
+        if 'lang' in self.answers:
+            self.model.switch_language(self.answers['lang'])
+            self.done()
 
     def done(self):
         self.signal.emit_signal('next-screen')
