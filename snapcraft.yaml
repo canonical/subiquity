@@ -57,6 +57,8 @@ parts:
       echo "get passwd/user-default-groups" | \
         debconf-communicate user-setup | \
         cut -d ' ' -f 2- > users-and-groups
+    stage:
+      - users-and-groups
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
