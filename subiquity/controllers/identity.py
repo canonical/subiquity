@@ -19,7 +19,6 @@ import logging
 from subiquitycore.controller import BaseController
 from subiquitycore.user import create_user
 
-from subiquity.curtin import curtin_write_postinst_config
 from subiquity.ui.views import IdentityView
 
 log = logging.getLogger('subiquity.controllers.identity')
@@ -60,14 +59,13 @@ class IdentityController(BaseController):
         log.debug("User input: {}".format(result))
         self.model.add_user(result)
         try:
-            curtin_write_postinst_config(result)
             create_user(result, dryrun=self.opts.dry_run)
         except PermissionError:
             log.exception('Failed to write curtin post-install config')
             self.signal.emit_signal('filesystem:error',
                                     'curtin_write_postinst_config', result)
             return None
-        self.signal.emit_signal('installprogress:wrote-postinstall')
+        self.signal.emit_signal('installprogress:identity-config-done')
         # show next view
         self.signal.emit_signal('next-screen')
 
