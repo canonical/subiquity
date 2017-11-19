@@ -30,7 +30,7 @@ class IdentityController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.identity
-        self.answers = self.all_answers.get('Identity')
+        self.answers = self.all_answers.get('Identity', {})
 
     def default(self):
         title = _("Profile setup")
