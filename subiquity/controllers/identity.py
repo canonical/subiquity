@@ -70,27 +70,3 @@ class IdentityController(BaseController):
         self.signal.emit_signal('installprogress:wrote-postinstall')
         # show next view
         self.signal.emit_signal('next-screen')
-
-        # None of the commented out code below is actually called. Maybe it should be?
-
-    ## def identity_done(self):
-    ##     self.login()
-
-    ## def login(self):
-    ##     log.debug("Identity login view")
-    ##     title = ("Configuration Complete")
-    ##     footer = ("View configured user and device access methods")
-    ##     self.ui.set_header(title)
-    ##     self.ui.set_footer(footer)
-
-    ##     net_model = self.controllers['Network'].model
-    ##     configured_ifaces = net_model.get_configured_interfaces()
-    ##     login_view = LoginView(self.model, self, configured_ifaces)
-
-    ##     self.ui.set_body(login_view)
-
-    ## def login_done(self):
-    ##     # mark ourselves complete
-    ##     utils.disable_subiquity()
-
-    ##     self.signal.emit_signal('next-screen')
