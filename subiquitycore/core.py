@@ -65,41 +65,58 @@ def is_linux_tty():
     log.debug("KDGKBTYPE returned %r", r)
     return r == b'\x02'
 
-URWID_16_NAMES = [
-    'black',
-    'dark red',
-    'dark green',
-    'brown',
-    'dark blue',
-    'dark magenta',
-    'dark cyan',
-    'light gray',
-]
 
 
 def setup_screen(colors, styles):
-    _our_names_to_urwid_names = {}
-    _colors = []
-    _urwid_name_to_rgb = {}
+    """Return a palette and screen to be passed to MainLoop.
 
-    for i, (c, rgb) in enumerate(colors):
-        _our_names_to_urwid_names[c] = URWID_16_NAMES[i]
-        _urwid_name_to_rgb[URWID_16_NAMES[i]] = rgb
-        _colors.append(rgb)
+    colors is a list of exactly 8 tuples (name, (r, g, b))
+
+    styles is a list of tuples (stylename, fg_color, bg_color) where
+    fg_color and bg_color are defined in 'colors'
+    """
+    # The part that makes this "fun" is that urwid insists on referring
+    # to the basic colors by their "standard" names but we overwrite
+    # these colors to mean different things.  So we convert styles into
+    # an urwid palette by mapping the names in colors to the standard
+    # name, and then either overwrite the first 8 colors to be the
+    # colors from 'colors' (on the linux vt) or use a custom screen
+    # class that displays maps the standard color name to the value
+    # specified in colors using 24-bit control codes.
+    if len(colors) != 8:
+        raise Exception("setup_screen must be passed a list of exactly 8 colors")
+    urwid_8_names = (
+        'black',
+        'dark red',
+        'dark green',
+        'brown',
+        'dark blue',
+        'dark magenta',
+        'dark cyan',
+        'light gray',
+    )
+    our_name_to_urwid_name = {}
+
+    for (our_name, _), urwid_name in zip(colors, urwid_8_names):
+        our_name_to_urwid_name[our_name] = urwid_name
 
     palette = []
     for name, fg, bg in styles:
-        palette.append((name, _our_names_to_urwid_names[fg], _our_names_to_urwid_names[bg]))
+        palette.append(
+            (name, our_name_to_urwid_name[fg], our_name_to_urwid_name[bg]))
 
     if is_linux_tty():
         curpal = bytearray(16*3)
         fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
         for i in range(8):
             for j in range(3):
-                curpal[i*3+j] = _colors[i][j]
+                curpal[i*3+j] = colors[i][1][j]
         fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
         return urwid.raw_display.Screen(), palette
     else:
+        _urwid_name_to_rgb = {}
+        for i, n in enumerate(urwid_8_names):
+            _urwid_name_to_rgb[n] = colors[i][1]
         return ISO_8613_3_Screen(_urwid_name_to_rgb), palette
 
 
