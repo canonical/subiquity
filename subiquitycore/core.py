@@ -17,7 +17,6 @@ from concurrent import futures
 import fcntl
 import logging
 import sys
-import os
 
 import urwid
 import yaml
@@ -42,21 +41,23 @@ PIO_CMAP  = 0x4B71	# sets colour palette on VGA+
 UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
 
 
-def setup_ubuntu_orange(pal, additional_opts):
-    """Overwrite color 4 (usually "dark blue") to Ubuntu orange."""
-    if is_linux_tty():
-        curpal = bytearray(16*3)
-        fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
-        curpal[:8] = pal
-        fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
-    elif os.environ['TERM'] == 'fbterm':
-        print('\033[3;4;%i;%i;%i}' % (UO_R, UO_G, UO_B), flush=True)
-    else:
-        additional_opts['screen'].set_terminal_properties(colors=256)
-        entries = []
-        for i in range(8):
-            entries.append((i+16, pal[i*3+0], pal[i*3+1], pal[i*3+2]))
-        additional_opts['screen'].modify_terminal_palette(entries)
+class ISO_8613_3_Screen(urwid.raw_display.Screen):
+
+    def __init__(self, pal):
+        from subiquity.palette import URWID_16_NAMES
+        d = {}
+        for i, n in enumerate(URWID_16_NAMES):
+            d[n] = pal[i]
+        self._fg_to_rgb = d.copy()
+        self._fg_to_rgb['default'] = pal[0]
+        self._bg_to_rgb = d.copy()
+        self._bg_to_rgb['default'] = pal[7]
+        super().__init__()
+
+    def _attrspec_to_escape(self, a):
+        f_r, f_g, f_b = self._fg_to_rgb[a.foreground]
+        b_r, b_g, b_b = self._bg_to_rgb[a.background]
+        return "\x1b[38;2;{};{};{};48;2;{};{};{}m".format(f_r, f_g, f_b, b_r, b_g, b_b)
 
 
 def is_linux_tty():
@@ -67,6 +68,19 @@ def is_linux_tty():
         return False
     log.debug("KDGKBTYPE returned %r", r)
     return r == b'\x02'
+
+
+def setup_screen(pal):
+    if is_linux_tty():
+        curpal = bytearray(16*3)
+        fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
+        for i in range(8):
+            for j in range(3):
+                curpal[i*3+j] = pal[i][j]
+        fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
+        return urwid.raw_display.Screen()
+    else:
+        return ISO_8613_3_Screen(pal)
 
 
 class Application:
@@ -173,16 +187,17 @@ class Application:
     def run(self):
         if not hasattr(self, 'loop'):
             palette = self.STYLES
+            if self.common['opts'].run_on_serial:
+                palette = self.STYLES_MONO
+                screen = urwid.raw_display.Screen()
+            else:
+                screen = setup_screen(self.PALETTE)
             additional_opts = {
-                'screen': urwid.raw_display.Screen(),
+                'screen': screen,
                 'unhandled_input': self.header_hotkeys,
                 'handle_mouse': False,
                 'pop_ups': True,
             }
-            if self.common['opts'].run_on_serial:
-                palette = self.STYLES_MONO
-            else:
-                setup_ubuntu_orange(self.PALETTE, additional_opts)
 
             self.common['loop'] = urwid.MainLoop(
                 self.common['ui'], palette, **additional_opts)

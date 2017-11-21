@@ -45,30 +45,25 @@ URWID_16_NAMES = [
 ]
 
 URWID16 = {}
-URWID256 = {}
 
-PALETTE = bytearray(8*3)
+PALETTE = []
 
-colors = {
-    0: ("bg",        (0x00, 0x00, 0x00)),
-    1: ("orange",    (0xe9, 0x54, 0x20)),
-    2: ("danger",    (0xff, 0x00, 0x00)),
-    3: ("good",      (0x00, 0xff, 0x00)),
-    4: ("neutral",   (0x00, 0xff, 0xff)),
-    5: ("gray",      (0x7f, 0x7f, 0x7f)),
-    6: ("aubergine", (0x77, 0x21, 0x6f)),
-    7: ("fg",        (0xff, 0xff, 0xff)),
-}
+COLORS = [
+    ("bg",        (0x00, 0x00, 0x00)),
+    ("orange",    (0xe9, 0x54, 0x20)),
+    ("danger",    (0xff, 0x00, 0x00)),
+    ("good",      (0x00, 0xff, 0x00)),
+    ("neutral",   (0x00, 0xff, 0xff)),
+    ("gray",      (0x7f, 0x7f, 0x7f)),
+    ("aubergine", (0x77, 0x21, 0x6f)),
+    ("fg",        (0xff, 0xff, 0xff)),
+]
 
-for i, (c, (r, g, b)) in colors.items():
+
+for i, (c, rgb) in enumerate(COLORS):
     URWID16[c] = URWID_16_NAMES[i]
-    PALETTE[i*3+0] = r
-    PALETTE[i*3+1] = g
-    PALETTE[i*3+2] = b
-    URWID256[c] = 'h' + str(i+16)
+    PALETTE.append(rgb)
 
-orange = "#e51"
-warm_gray = "g15"
 
 STYLES = [
     ('frame_header',        'fg',      'orange'),
@@ -102,22 +97,22 @@ focus_styles = set([
 
 for i in range(len(STYLES)):
     name, fg, bg = STYLES[i]
-    STYLES[i] = (name, URWID16[fg], URWID16[bg], '', URWID256[fg], URWID256[bg])
+    STYLES[i] = (name, URWID16[fg], URWID16[bg])
     if name in focus_styles:
         STYLES.append(
-            (name + ' focus', URWID16[bg], URWID16[fg], '', URWID256[bg], URWID256[fg]))
+            (name + ' focus', URWID16[bg], URWID16[fg]))
 
 STYLES_MONO = [
-    ('frame_header',        white, black, '', '',    ''),
-    ('frame_footer',        white, black, '', '',    ''),
-    ('body',                white, black, '', '',    ''),
-    ('info_minor',          white, black, '', '',    ''),
-    ('menu_button',         '',    '',    '', white, ''),
-    ('menu_button focus',   '',    '',    '', white, ''),
-    ('button',              white, black, '', '',    ''),
-    ('button focus',        white, black, '', '',    ''),
-    ('string_input',        '',    '',    '', white, ''),
-    ('string_input focus',  '',    '',    '', white, ''),
-    ('progress_incomplete', '',    '',    '', '',    black),
-    ('progress_complete',   '',    '',    '', '',    white),
+    ('frame_header',        white, black),
+    ('frame_footer',        white, black),
+    ('body',                white, black),
+    ('info_minor',          white, black),
+    ('menu_button',         '',    ''),
+    ('menu_button focus',   '',    ''),
+    ('button',              white, black),
+    ('button focus',        white, black),
+    ('string_input',        '',    ''),
+    ('string_input focus',  '',    ''),
+    ('progress_incomplete', '',    ''),
+    ('progress_complete',   '',    ''),
 ]
