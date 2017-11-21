@@ -218,9 +218,6 @@ class Application:
     def exit(self):
         raise urwid.ExitMainLoop()
 
-    def header_hotkeys(self, key):
-        return False
-
     def run(self):
         if not hasattr(self, 'loop'):
             if self.common['opts'].run_on_serial:
@@ -228,15 +225,10 @@ class Application:
                 screen = urwid.raw_display.Screen()
             else:
                 screen, palette = setup_screen(self.COLORS, self.STYLES)
-            additional_opts = {
-                'screen': screen,
-                'unhandled_input': self.header_hotkeys,
-                'handle_mouse': False,
-                'pop_ups': True,
-            }
 
             self.common['loop'] = urwid.MainLoop(
-                self.common['ui'], palette, **additional_opts)
+                self.common['ui'], palette=palette, screen=screen,
+                handle_mouse=False, pop_ups=True)
             log.debug("Running event loop: {}".format(
                 self.common['loop'].event_loop))
 
