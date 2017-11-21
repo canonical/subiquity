@@ -32,9 +32,9 @@ STYLES = [
     ('frame_footer',        'fg',      'brand'),
     ('body',                'fg',      'bg'),
 
-    ('done_button',         'good',    'bg'),
-    ('danger_button',       'danger',  'bg'),
-    ('other_button',        'gray',    'bg'),
+    ('done_button',         'fg',      'bg'),
+    ('danger_button',       'fg',      'bg'),
+    ('other_button',        'fg',      'bg'),
     ('done_button focus',   'fg',      'good'),
     ('danger_button focus', 'fg',      'danger'),
     ('other_button focus',  'fg',      'gray'),
