@@ -43,15 +43,11 @@ UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
 
 class ISO_8613_3_Screen(urwid.raw_display.Screen):
 
-    def __init__(self, pal):
-        from subiquity.palette import URWID_16_NAMES
-        d = {}
-        for i, n in enumerate(URWID_16_NAMES):
-            d[n] = pal[i]
-        self._fg_to_rgb = d.copy()
-        self._fg_to_rgb['default'] = pal[0]
-        self._bg_to_rgb = d.copy()
-        self._bg_to_rgb['default'] = pal[7]
+    def __init__(self, _urwid_name_to_rgb):
+        self._fg_to_rgb = _urwid_name_to_rgb.copy()
+        self._fg_to_rgb['default'] = _urwid_name_to_rgb['light gray']
+        self._bg_to_rgb = _urwid_name_to_rgb.copy()
+        self._bg_to_rgb['default'] = _urwid_name_to_rgb['black']
         super().__init__()
 
     def _attrspec_to_escape(self, a):
@@ -69,18 +65,42 @@ def is_linux_tty():
     log.debug("KDGKBTYPE returned %r", r)
     return r == b'\x02'
 
+URWID_16_NAMES = [
+    'black',
+    'dark red',
+    'dark green',
+    'brown',
+    'dark blue',
+    'dark magenta',
+    'dark cyan',
+    'light gray',
+]
 
-def setup_screen(pal):
+
+def setup_screen(colors, styles):
+    _our_names_to_urwid_names = {}
+    _colors = []
+    _urwid_name_to_rgb = {}
+
+    for i, (c, rgb) in enumerate(colors):
+        _our_names_to_urwid_names[c] = URWID_16_NAMES[i]
+        _urwid_name_to_rgb[URWID_16_NAMES[i]] = rgb
+        _colors.append(rgb)
+
+    palette = []
+    for name, fg, bg in styles:
+        palette.append((name, _our_names_to_urwid_names[fg], _our_names_to_urwid_names[bg]))
+
     if is_linux_tty():
         curpal = bytearray(16*3)
         fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
         for i in range(8):
             for j in range(3):
-                curpal[i*3+j] = pal[i][j]
+                curpal[i*3+j] = _colors[i][j]
         fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
-        return urwid.raw_display.Screen()
+        return urwid.raw_display.Screen(), palette
     else:
-        return ISO_8613_3_Screen(pal)
+        return ISO_8613_3_Screen(_urwid_name_to_rgb), palette
 
 
 class Application:
@@ -186,12 +206,11 @@ class Application:
 
     def run(self):
         if not hasattr(self, 'loop'):
-            palette = self.STYLES
             if self.common['opts'].run_on_serial:
                 palette = self.STYLES_MONO
                 screen = urwid.raw_display.Screen()
             else:
-                screen = setup_screen(self.PALETTE)
+                screen, palette = setup_screen(self.COLORS, self.STYLES)
             additional_opts = {
                 'screen': screen,
                 'unhandled_input': self.header_hotkeys,

@@ -15,38 +15,6 @@
 
 """ Palette definitions """
 
-black = 'black'                  # index 0
-dark_red = 'dark red'            # index 1
-dark_green = 'dark green'        # index 2
-brown = 'brown'                  # index 3
-dark_blue = 'dark blue'          # index 4 # This is overwritten to ubuntu orange at startup
-dark_magenta = 'dark magenta'    # index 5
-dark_cyan = 'dark cyan'          # index 6
-light_gray = 'light gray'        # index 7
-dark_gray = 'dark gray'          # index 8
-light_red = 'light red'          # index 9
-light_green = 'light green'      # index 10
-yellow = 'yellow'                # index 11
-light_blue = 'light blue'        # index 12
-light_magenta = 'light magenta'  # index 13
-light_cyan = 'light cyan'        # index 14
-white = 'white'                  # index 15
-
-
-URWID_16_NAMES = [
-    'black',
-    'dark red',
-    'dark green',
-    'brown',
-    'dark blue',
-    'dark magenta',
-    'dark cyan',
-    'light gray',
-]
-
-URWID16 = {}
-
-PALETTE = []
 
 COLORS = [
     ("bg",        (0x00, 0x00, 0x00)),
@@ -58,12 +26,6 @@ COLORS = [
     ("aubergine", (0x77, 0x21, 0x6f)),
     ("fg",        (0xff, 0xff, 0xff)),
 ]
-
-
-for i, (c, rgb) in enumerate(COLORS):
-    URWID16[c] = URWID_16_NAMES[i]
-    PALETTE.append(rgb)
-
 
 STYLES = [
     ('frame_header',        'fg',      'orange'),
@@ -97,22 +59,20 @@ focus_styles = set([
 
 for i in range(len(STYLES)):
     name, fg, bg = STYLES[i]
-    STYLES[i] = (name, URWID16[fg], URWID16[bg])
     if name in focus_styles:
-        STYLES.append(
-            (name + ' focus', URWID16[bg], URWID16[fg]))
+        STYLES.append((name + ' focus', bg, fg))
 
 STYLES_MONO = [
-    ('frame_header',        white, black),
-    ('frame_footer',        white, black),
-    ('body',                white, black),
-    ('info_minor',          white, black),
-    ('menu_button',         '',    ''),
-    ('menu_button focus',   '',    ''),
-    ('button',              white, black),
-    ('button focus',        white, black),
-    ('string_input',        '',    ''),
-    ('string_input focus',  '',    ''),
-    ('progress_incomplete', '',    ''),
-    ('progress_complete',   '',    ''),
+    ('frame_header',        'white', 'black'),
+    ('frame_footer',        'white', 'black'),
+    ('body',                'white', 'black'),
+    ('info_minor',          'white', 'black'),
+    ('menu_button',         '',      ''),
+    ('menu_button focus',   '',      ''),
+    ('button',              'white', 'black'),
+    ('button focus',        'white', 'black'),
+    ('string_input',        '',      ''),
+    ('string_input focus',  '',      ''),
+    ('progress_incomplete', '',      ''),
+    ('progress_complete',   '',      ''),
 ]
