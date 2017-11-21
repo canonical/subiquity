@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import uuid
 import yaml
 
 from subiquitycore.models.identity import IdentityModel
@@ -62,10 +63,11 @@ class SubiquityModel:
         # boots.
         # (mwhudson does not entirely know what the above means!)
         userdata = '#cloud-config\n' + yaml.dump(self._cloud_init_config())
+        metadata = yaml.dump({'instance-id': str(uuid.uuid4())})
         return {
             'postinst_metadata': {
                 'path': 'var/lib/cloud/seed/nocloud-net/meta-data',
-                'content': 'instance-id: inst-3011\n',
+                'content': metadata,
                 },
             'postinst_userdata': {
                 'path': 'var/lib/cloud/seed/nocloud-net/user-data',
