@@ -95,15 +95,11 @@ def setup_screen(colors, styles):
         'dark cyan',
         'light gray',
     )
-    our_name_to_urwid_name = {}
+    urwid_name = dict(zip([c[0] for c in colors], urwid_8_names))
 
-    for (our_name, _), urwid_name in zip(colors, urwid_8_names):
-        our_name_to_urwid_name[our_name] = urwid_name
-
-    palette = []
+    urwid_palette = []
     for name, fg, bg in styles:
-        palette.append(
-            (name, our_name_to_urwid_name[fg], our_name_to_urwid_name[bg]))
+        urwid_palette.append((name, urwid_name[fg], urwid_name[bg]))
 
     if is_linux_tty():
         curpal = bytearray(16*3)
@@ -112,12 +108,12 @@ def setup_screen(colors, styles):
             for j in range(3):
                 curpal[i*3+j] = colors[i][1][j]
         fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
-        return urwid.raw_display.Screen(), palette
+        return urwid.raw_display.Screen(), urwid_palette
     else:
         _urwid_name_to_rgb = {}
         for i, n in enumerate(urwid_8_names):
             _urwid_name_to_rgb[n] = colors[i][1]
-        return ISO_8613_3_Screen(_urwid_name_to_rgb), palette
+        return ISO_8613_3_Screen(_urwid_name_to_rgb), urwid_palette
 
 
 class Application:
