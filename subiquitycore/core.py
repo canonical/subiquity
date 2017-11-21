@@ -53,7 +53,10 @@ def setup_ubuntu_orange(pal, additional_opts):
         print('\033[3;4;%i;%i;%i}' % (UO_R, UO_G, UO_B), flush=True)
     else:
         additional_opts['screen'].set_terminal_properties(colors=256)
-        additional_opts['screen'].reset_default_terminal_palette()
+        entries = []
+        for i in range(8):
+            entries.append((i+16, pal[i*3+0], pal[i*3+1], pal[i*3+2]))
+        additional_opts['screen'].modify_terminal_palette(entries)
 
 
 def is_linux_tty():

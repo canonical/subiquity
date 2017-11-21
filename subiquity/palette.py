@@ -65,7 +65,7 @@ for i, (c, (r, g, b)) in colors.items():
     PALETTE[i*3+0] = r
     PALETTE[i*3+1] = g
     PALETTE[i*3+2] = b
-    URWID256[c] = '#{}{}{}'.format(hex(r//16)[-1], hex(g//16)[-1], hex(b//16)[-1])
+    URWID256[c] = 'h' + str(i+16)
 
 orange = "#e51"
 warm_gray = "g15"
