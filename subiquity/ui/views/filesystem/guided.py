@@ -39,9 +39,9 @@ class GuidedFilesystemView(BaseView):
 
     def __init__(self, model, controller):
         self.controller = controller
-        guided = ok_btn(label=_("Use An Entire Disk"), on_press=self.guided)
-        manual = ok_btn(label=_("Manual"), on_press=self.manual)
-        back = back_btn(on_press=self.cancel)
+        guided = ok_btn(_("Use An Entire Disk"), on_press=self.guided)
+        manual = ok_btn(_("Manual"), on_press=self.manual)
+        back = back_btn(_("Back"), on_press=self.cancel)
         lb = ListBox([
             Padding.center_70(Text("")),
             Padding.center_70(Text(text)),
@@ -65,7 +65,7 @@ class GuidedDiskSelectionView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        cancel = cancel_btn(on_press=self.cancel)
+        cancel = cancel_btn("Cancel", on_press=self.cancel)
         disks = []
         for disk in self.model.all_disks():
             disk_btn = menu_btn(

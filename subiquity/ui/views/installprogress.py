@@ -64,11 +64,11 @@ class ProgressView(BaseView):
 
     def show_complete(self, include_exit=False):
         buttons = [
-            ok_btn(label=_("Reboot Now"), on_press=self.reboot),
+            ok_btn(_("Reboot Now"), on_press=self.reboot),
             ]
         if include_exit:
             buttons.append(
-                cancel_btn(label=_("Exit To Shell"), on_press=self.quit))
+                cancel_btn(_("Exit To Shell"), on_press=self.quit))
         buttons = button_pile(buttons)
 
         new_pile = Pile([

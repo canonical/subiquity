@@ -42,7 +42,7 @@ class ApplyingConfigWidget(WidgetWrap):
 
     def __init__(self, step_count, cancel_func):
         self.cancel_func = cancel_func
-        button = cancel_btn(on_press=self.do_cancel)
+        button = cancel_btn(_("Cancel"), on_press=self.do_cancel)
         self.bar = ProgressBar(normal='progress_incomplete',
                         complete='progress_complete',
                         current=0, done=step_count)
@@ -134,8 +134,8 @@ class NetworkView(BaseView):
         super().__init__(self.frame)
 
     def _build_buttons(self):
-        back = back_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        back = back_btn(_("Back"), on_press=self.cancel)
+        done = done_btn(_("Done"), on_press=self.done)
 
         buttons = button_pile([done, back])
 

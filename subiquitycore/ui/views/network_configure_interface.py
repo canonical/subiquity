@@ -141,7 +141,7 @@ class NetworkConfigureInterfaceView(BaseView):
 
     def _build_buttons(self):
         buttons = [
-            done_btn(on_press=self.done)
+            done_btn(_("Done"), on_press=self.done)
         ]
         return button_pile(buttons)
 

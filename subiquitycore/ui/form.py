@@ -275,8 +275,8 @@ class Form(object, metaclass=MetaForm):
     ok_label = _("Done")
 
     def __init__(self, initial={}):
-        self.done_btn = Toggleable(done_btn(label=self.ok_label, on_press=self._click_done))
-        self.cancel_btn = Toggleable(cancel_btn(on_press=self._click_cancel))
+        self.done_btn = Toggleable(done_btn(self.ok_label, on_press=self._click_done))
+        self.cancel_btn = Toggleable(cancel_btn(_("Cancel"), on_press=self._click_cancel))
         self.buttons = button_pile([self.done_btn, self.cancel_btn])
         self._fields = []
         for field in self._unbound_fields:

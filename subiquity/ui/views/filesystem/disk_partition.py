@@ -50,8 +50,8 @@ class DiskPartitionView(BaseView):
         super().__init__(self.body)
 
     def _build_buttons(self):
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
+        cancel = cancel_btn(_("Cancel"), on_press=self.cancel)
+        done = done_btn(_("Done"), on_press=self.done)
 
         buttons = [
             done,
