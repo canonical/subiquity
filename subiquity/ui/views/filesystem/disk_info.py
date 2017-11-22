@@ -39,7 +39,7 @@ class DiskInfoView(BaseView):
         super().__init__(Padding.center_79(SimpleList(body)))
 
     def _build_buttons(self):
-        return button_pile([done_btn(on_press=self.done)])
+        return button_pile([done_btn(_("Done"), on_press=self.done)])
 
     def keypress(self, size, key):
         if key in ['tab', 'n', 'N', 'j', 'J']:

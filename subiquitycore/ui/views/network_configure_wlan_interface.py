@@ -19,7 +19,7 @@ class NetworkList(WidgetWrap):
 
     def __init__(self, parent, ssids):
         self.parent = parent
-        button = cancel_btn(on_press=self.do_cancel)
+        button = cancel_btn(_("Cancel"), on_press=self.do_cancel)
         ssid_list = [menu_btn(label=ssid, on_press=self.do_network) for ssid in ssids]
         p = Pile([BoxAdapter(ListBox(ssid_list), height=10), Padding.fixed_10(button)])
         box = LineBox(p, title="Select a network")

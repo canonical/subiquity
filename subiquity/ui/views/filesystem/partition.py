@@ -197,7 +197,7 @@ class PartitionView(PartitionFormatView):
     def make_body(self):
         body = super().make_body()
         if self.partition is not None:
-            btn = delete_btn(on_press=self.delete)
+            btn = delete_btn(_("Delete"), on_press=self.delete)
             if self.partition.flag == "boot":
                 btn = WidgetDisable(Color.info_minor(btn.original_widget))
             body.extend([

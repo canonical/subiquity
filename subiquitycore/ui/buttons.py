@@ -15,33 +15,30 @@
 
 from urwid import AttrMap, Button, Text
 
-def _stylized_button(left, right, stocklabel, style):
+def _stylized_button(left, right, style):
     class Btn(Button):
         button_left = Text(left)
         button_right = Text(right)
 
     class StyleAttrMap(AttrMap):
-        def __init__(self, *args, **kwargs):
-            label = kwargs.pop('label', _(stocklabel))
-            btn = Btn(label, *args, **kwargs)
+        def __init__(self, label, on_press=None, user_arg=None):
+            btn = Btn(label, on_press=on_press, user_data=user_arg)
             super().__init__(btn, style + '_button', style + '_button focus')
     return StyleAttrMap
 
-def stylized_button(stocklabel, style):
-    return _stylized_button('[', ']', stocklabel, style)
+def action_button(style):
+    return _stylized_button('[', ']', style)
 
-def menu_btn(label, on_press=None, user_arg=None):
-    MenuBtn=_stylized_button('', '>', label, 'menu')
-    return MenuBtn(on_press=on_press, user_data=user_arg)
+menu_btn = _stylized_button("", ">", "menu")
 
-ok_btn = stylized_button("OK", "save")
-done_btn = stylized_button("Done", "save")
+ok_btn = action_button("save")
+done_btn = action_button("save")
 
-reset_btn = stylized_button("Reset", "reset")
+reset_btn = action_button("reset")
 
-back_btn = stylized_button("Back", "cancel")
-cancel_btn = stylized_button("Cancel", "cancel")
-close_btn = stylized_button("Close", "cancel")
+back_btn = action_button("cancel")
+cancel_btn = action_button("cancel")
+close_btn = action_button("cancel")
 
-danger_btn = stylized_button("Continue", "danger")
-delete_btn = stylized_button("Delete", "danger")
+danger_btn = action_button("danger")
+delete_btn = action_button("danger")

@@ -59,8 +59,8 @@ class FilesystemConfirmationView(WidgetWrap):
         pile = Pile([
             UrwidPadding(Text(confirmation_text), left=2, right=2),
             button_pile([
-                cancel_btn(label=_("No"), on_press=self.cancel),
-                danger_btn(on_press=self.ok)]),
+                cancel_btn(_("No"), on_press=self.cancel),
+                danger_btn(_("Continue"), on_press=self.ok)]),
             Text(""),
             ])
         lb = LineBox(pile, title=_("Confirm destructive action"))
@@ -150,10 +150,10 @@ class FilesystemView(BaseView):
         # XXX should enable/disable button rather than having it appear/disappear I think
         if self.model.can_install():
             buttons.append(
-                done_btn(on_press=self.done))
+                done_btn(_("Done"), on_press=self.done))
 
-        buttons.append(reset_btn(on_press=self.reset))
-        buttons.append(back_btn(on_press=self.cancel))
+        buttons.append(reset_btn(_("Reset"), on_press=self.reset))
+        buttons.append(back_btn(_("Back"), on_press=self.cancel))
 
         return button_pile(buttons)
 
