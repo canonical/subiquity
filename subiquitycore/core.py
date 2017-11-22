@@ -17,7 +17,6 @@ from concurrent import futures
 import fcntl
 import logging
 import sys
-import os
 
 import urwid
 import yaml
@@ -42,21 +41,19 @@ PIO_CMAP  = 0x4B71	# sets colour palette on VGA+
 UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
 
 
-def setup_ubuntu_orange(pal, additional_opts):
-    """Overwrite color 4 (usually "dark blue") to Ubuntu orange."""
-    if is_linux_tty():
-        curpal = bytearray(16*3)
-        fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
-        curpal[:8] = pal
-        fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
-    elif os.environ['TERM'] == 'fbterm':
-        print('\033[3;4;%i;%i;%i}' % (UO_R, UO_G, UO_B), flush=True)
-    else:
-        additional_opts['screen'].set_terminal_properties(colors=256)
-        entries = []
-        for i in range(8):
-            entries.append((i+16, pal[i*3+0], pal[i*3+1], pal[i*3+2]))
-        additional_opts['screen'].modify_terminal_palette(entries)
+class ISO_8613_3_Screen(urwid.raw_display.Screen):
+
+    def __init__(self, _urwid_name_to_rgb):
+        self._fg_to_rgb = _urwid_name_to_rgb.copy()
+        self._fg_to_rgb['default'] = _urwid_name_to_rgb['light gray']
+        self._bg_to_rgb = _urwid_name_to_rgb.copy()
+        self._bg_to_rgb['default'] = _urwid_name_to_rgb['black']
+        super().__init__()
+
+    def _attrspec_to_escape(self, a):
+        f_r, f_g, f_b = self._fg_to_rgb[a.foreground]
+        b_r, b_g, b_b = self._bg_to_rgb[a.background]
+        return "\x1b[38;2;{};{};{};48;2;{};{};{}m".format(f_r, f_g, f_b, b_r, b_g, b_b)
 
 
 def is_linux_tty():
@@ -67,6 +64,56 @@ def is_linux_tty():
         return False
     log.debug("KDGKBTYPE returned %r", r)
     return r == b'\x02'
+
+
+
+def setup_screen(colors, styles):
+    """Return a palette and screen to be passed to MainLoop.
+
+    colors is a list of exactly 8 tuples (name, (r, g, b))
+
+    styles is a list of tuples (stylename, fg_color, bg_color) where
+    fg_color and bg_color are defined in 'colors'
+    """
+    # The part that makes this "fun" is that urwid insists on referring
+    # to the basic colors by their "standard" names but we overwrite
+    # these colors to mean different things.  So we convert styles into
+    # an urwid palette by mapping the names in colors to the standard
+    # name, and then either overwrite the first 8 colors to be the
+    # colors from 'colors' (on the linux vt) or use a custom screen
+    # class that displays maps the standard color name to the value
+    # specified in colors using 24-bit control codes.
+    if len(colors) != 8:
+        raise Exception("setup_screen must be passed a list of exactly 8 colors")
+    urwid_8_names = (
+        'black',
+        'dark red',
+        'dark green',
+        'brown',
+        'dark blue',
+        'dark magenta',
+        'dark cyan',
+        'light gray',
+    )
+    urwid_name = dict(zip([c[0] for c in colors], urwid_8_names))
+
+    urwid_palette = []
+    for name, fg, bg in styles:
+        urwid_palette.append((name, urwid_name[fg], urwid_name[bg]))
+
+    if is_linux_tty():
+        curpal = bytearray(16*3)
+        fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
+        for i in range(8):
+            for j in range(3):
+                curpal[i*3+j] = colors[i][1][j]
+        fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
+        return urwid.raw_display.Screen(), urwid_palette
+    else:
+        _urwid_name_to_rgb = {}
+        for i, n in enumerate(urwid_8_names):
+            _urwid_name_to_rgb[n] = colors[i][1]
+        return ISO_8613_3_Screen(_urwid_name_to_rgb), urwid_palette
 
 
 class Application:
@@ -167,25 +214,17 @@ class Application:
     def exit(self):
         raise urwid.ExitMainLoop()
 
-    def header_hotkeys(self, key):
-        return False
-
     def run(self):
         if not hasattr(self, 'loop'):
-            palette = self.STYLES
-            additional_opts = {
-                'screen': urwid.raw_display.Screen(),
-                'unhandled_input': self.header_hotkeys,
-                'handle_mouse': False,
-                'pop_ups': True,
-            }
             if self.common['opts'].run_on_serial:
                 palette = self.STYLES_MONO
+                screen = urwid.raw_display.Screen()
             else:
-                setup_ubuntu_orange(self.PALETTE, additional_opts)
+                screen, palette = setup_screen(self.COLORS, self.STYLES)
 
             self.common['loop'] = urwid.MainLoop(
-                self.common['ui'], palette, **additional_opts)
+                self.common['ui'], palette=palette, screen=screen,
+                handle_mouse=False, pop_ups=True)
             log.debug("Running event loop: {}".format(
                 self.common['loop'].event_loop))
 

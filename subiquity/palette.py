@@ -15,60 +15,17 @@
 
 """ Palette definitions """
 
-black = 'black'                  # index 0
-dark_red = 'dark red'            # index 1
-dark_green = 'dark green'        # index 2
-brown = 'brown'                  # index 3
-dark_blue = 'dark blue'          # index 4 # This is overwritten to ubuntu orange at startup
-dark_magenta = 'dark magenta'    # index 5
-dark_cyan = 'dark cyan'          # index 6
-light_gray = 'light gray'        # index 7
-dark_gray = 'dark gray'          # index 8
-light_red = 'light red'          # index 9
-light_green = 'light green'      # index 10
-yellow = 'yellow'                # index 11
-light_blue = 'light blue'        # index 12
-light_magenta = 'light magenta'  # index 13
-light_cyan = 'light cyan'        # index 14
-white = 'white'                  # index 15
 
-
-URWID_16_NAMES = [
-    'black',
-    'dark red',
-    'dark green',
-    'brown',
-    'dark blue',
-    'dark magenta',
-    'dark cyan',
-    'light gray',
+COLORS = [
+    ("bg",        (0x00, 0x00, 0x00)),
+    ("orange",    (0xe9, 0x54, 0x20)),
+    ("danger",    (0xff, 0x00, 0x00)),
+    ("good",      (0x00, 0xff, 0x00)),
+    ("neutral",   (0x00, 0xff, 0xff)),
+    ("gray",      (0x7f, 0x7f, 0x7f)),
+    ("aubergine", (0x77, 0x21, 0x6f)),
+    ("fg",        (0xff, 0xff, 0xff)),
 ]
-
-URWID16 = {}
-URWID256 = {}
-
-PALETTE = bytearray(8*3)
-
-colors = {
-    0: ("bg",        (0x00, 0x00, 0x00)),
-    1: ("orange",    (0xe9, 0x54, 0x20)),
-    2: ("danger",    (0xff, 0x00, 0x00)),
-    3: ("good",      (0x00, 0xff, 0x00)),
-    4: ("neutral",   (0x00, 0xff, 0xff)),
-    5: ("gray",      (0x7f, 0x7f, 0x7f)),
-    6: ("aubergine", (0x77, 0x21, 0x6f)),
-    7: ("fg",        (0xff, 0xff, 0xff)),
-}
-
-for i, (c, (r, g, b)) in colors.items():
-    URWID16[c] = URWID_16_NAMES[i]
-    PALETTE[i*3+0] = r
-    PALETTE[i*3+1] = g
-    PALETTE[i*3+2] = b
-    URWID256[c] = 'h' + str(i+16)
-
-orange = "#e51"
-warm_gray = "g15"
 
 STYLES = [
     ('frame_header',        'fg',      'orange'),
@@ -102,22 +59,20 @@ focus_styles = set([
 
 for i in range(len(STYLES)):
     name, fg, bg = STYLES[i]
-    STYLES[i] = (name, URWID16[fg], URWID16[bg], '', URWID256[fg], URWID256[bg])
     if name in focus_styles:
-        STYLES.append(
-            (name + ' focus', URWID16[bg], URWID16[fg], '', URWID256[bg], URWID256[fg]))
+        STYLES.append((name + ' focus', bg, fg))
 
 STYLES_MONO = [
-    ('frame_header',        white, black, '', '',    ''),
-    ('frame_footer',        white, black, '', '',    ''),
-    ('body',                white, black, '', '',    ''),
-    ('info_minor',          white, black, '', '',    ''),
-    ('menu_button',         '',    '',    '', white, ''),
-    ('menu_button focus',   '',    '',    '', white, ''),
-    ('button',              white, black, '', '',    ''),
-    ('button focus',        white, black, '', '',    ''),
-    ('string_input',        '',    '',    '', white, ''),
-    ('string_input focus',  '',    '',    '', white, ''),
-    ('progress_incomplete', '',    '',    '', '',    black),
-    ('progress_complete',   '',    '',    '', '',    white),
+    ('frame_header',        'white', 'black'),
+    ('frame_footer',        'white', 'black'),
+    ('body',                'white', 'black'),
+    ('info_minor',          'white', 'black'),
+    ('menu_button',         '',      ''),
+    ('menu_button focus',   '',      ''),
+    ('button',              'white', 'black'),
+    ('button focus',        'white', 'black'),
+    ('string_input',        '',      ''),
+    ('string_input focus',  '',      ''),
+    ('progress_incomplete', '',      ''),
+    ('progress_complete',   '',      ''),
 ]

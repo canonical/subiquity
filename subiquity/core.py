@@ -24,7 +24,7 @@ log = logging.getLogger('console_conf.core')
 
 class Subiquity(Application):
 
-    from subiquity.palette import PALETTE, STYLES, STYLES_MONO
+    from subiquity.palette import COLORS, STYLES, STYLES_MONO
 
     project = "subiquity"
 
