@@ -219,7 +219,7 @@ class FocusTrackingListBox(TabCyclingListBox):
         self.body.set_focus_changed_callback(self._focus_changed)
 
     def _focus_changed(self, new_focus):
-        log.debug("_focus_changed %s", self)
+        #log.debug("_focus_changed %s", self)
         _maybe_call(self.focus, 'lost_focus')
         _maybe_call(self.body[new_focus], 'gained_focus')
         self._invalidate()

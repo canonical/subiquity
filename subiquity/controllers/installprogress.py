@@ -95,8 +95,8 @@ class InstallProgressController(BaseController):
 
     def curtin_event(self, event):
         event_type = event.get("CURTIN_EVENT_TYPE")
-        if random.randrange(1000) == 0 or len(event) > 0:
-            log.debug("got curtin event from journald: %r", event)
+        #if random.randrange(1000) == 0 or len(event) > 0:
+        #    log.debug("got curtin event from journald: %r", event)
         if event_type not in ['start', 'finish']:
             return
         if event_type == 'start':
