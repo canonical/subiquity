@@ -21,7 +21,7 @@ from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
-    menu_btn,
+    forward_btn,
     ok_btn,
     )
 from subiquitycore.ui.container import ListBox, Pile
@@ -68,7 +68,7 @@ class GuidedDiskSelectionView(BaseView):
         cancel = cancel_btn("Cancel", on_press=self.cancel)
         disks = []
         for disk in self.model.all_disks():
-            disk_btn = menu_btn(
+            disk_btn = forward_btn(
                 "%-40s %s"%(disk.serial, humanize_size(disk.size).rjust(9)),
                 on_press=self.choose_disk, user_arg=disk)
             disks.append(disk_btn)

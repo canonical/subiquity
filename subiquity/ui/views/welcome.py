@@ -21,7 +21,7 @@ Welcome provides user with language selection
 import logging
 from urwid import Text
 from subiquitycore.ui.lists import SimpleList
-from subiquitycore.ui.buttons import menu_btn
+from subiquitycore.ui.buttons import forward_btn
 from subiquitycore.ui.container import Pile
 from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
@@ -43,7 +43,7 @@ class WelcomeView(BaseView):
     def _build_model_inputs(self):
         sl = []
         for code, label, native in self.model.get_languages():
-            sl.append(menu_btn(label=native, on_press=self.confirm, user_arg=code))
+            sl.append(forward_btn(label=native, on_press=self.confirm, user_arg=code))
 
         return SimpleList(sl)
 
