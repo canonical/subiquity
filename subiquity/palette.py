@@ -17,62 +17,69 @@
 
 
 COLORS = [
-    ("bg",        (0x00, 0x00, 0x00)),
+    ("bg",        (0x11, 0x11, 0x11)),
     ("orange",    (0xe9, 0x54, 0x20)),
-    ("danger",    (0xff, 0x00, 0x00)),
-    ("good",      (0x00, 0xff, 0x00)),
-    ("neutral",   (0x00, 0xff, 0xff)),
-    ("gray",      (0x7f, 0x7f, 0x7f)),
-    ("aubergine", (0x77, 0x21, 0x6f)),
+    ("danger",    (0xc7, 0x16, 0x2b)),
+    ("good",      (0x0e, 0x84, 0x20)),
+    ("neutral",   (0x00, 0x7a, 0xa6)),
+    ("gray",      (0x66, 0x66, 0x66)),
+    ("brand",     (0x33, 0x33, 0x33)),
     ("fg",        (0xff, 0xff, 0xff)),
 ]
 
 STYLES = [
     ('frame_header',        'fg',      'orange'),
-    ('frame_footer',        'fg',      'gray'),
+    ('frame_footer',        'fg',      'brand'),
     ('body',                'fg',      'bg'),
-    ('menu_button',         'good',    'bg'),
-    ('button',              'good',    'bg'),
-    ('danger_button',       'danger',  'bg'),
-    ('cancel_button',       'neutral', 'bg'),
-    ('reset_button',        'neutral', 'bg'),
-    ('save_button',         'good',    'bg'),
+
+    ('done_button',         'fg',      'bg'),
+    ('danger_button',       'fg',      'bg'),
+    ('other_button',        'fg',      'bg'),
+    ('done_button focus',   'fg',      'good'),
+    ('danger_button focus', 'fg',      'danger'),
+    ('other_button focus',  'fg',      'gray'),
+
+    ('menu_button',         'fg',      'bg'),
+    ('menu_button focus',   'fg',      'gray'),
+
     ('info_primary',        'fg',      'bg'),
     ('info_minor',          'gray',    'bg'),
     ('info_error',          'danger',  'bg'),
-    ('string_input',        'bg',      'gray'),
-    ('string_input focus',  'bg',      'fg'),
-    ('progress_incomplete', 'fg',      'aubergine'),
-    ('progress_complete',   'fg',      'orange'),
-    ('scrollbar_fg',        'orange',  'bg'),
+
+    ('string_input',        'bg',      'fg'),
+    ('string_input focus',  'fg',      'gray'),
+
+    ('progress_incomplete', 'fg',      'gray'),
+    ('progress_complete',   'fg',      'neutral'),
+    ('scrollbar_fg',        'neutral', 'bg'),
     ('scrollbar_bg',        'fg',      'bg'),
 ]
 
-focus_styles = set([
-    'button',
-    'menu_button',
-    'danger_button',
-    'cancel_button',
-    'reset_button',
-    'save_button',
-    ])
-
-for i in range(len(STYLES)):
-    name, fg, bg = STYLES[i]
-    if name in focus_styles:
-        STYLES.append((name + ' focus', bg, fg))
 
 STYLES_MONO = [
-    ('frame_header',        'white', 'black'),
-    ('frame_footer',        'white', 'black'),
-    ('body',                'white', 'black'),
-    ('info_minor',          'white', 'black'),
-    ('menu_button',         '',      ''),
-    ('menu_button focus',   '',      ''),
-    ('button',              'white', 'black'),
-    ('button focus',        'white', 'black'),
-    ('string_input',        '',      ''),
-    ('string_input focus',  '',      ''),
-    ('progress_incomplete', '',      ''),
-    ('progress_complete',   '',      ''),
+    ('frame_header',        'white',   'black'),
+    ('frame_footer',        'white',   'black'),
+    ('body',                'white',   'black'),
+
+    ('done_button',         'white',   'black'),
+    ('danger_button',       'white',   'black'),
+    ('other_button',        'white',   'black'),
+    ('done_button focus',   'black',   'white'),
+    ('danger_button focus', 'black',   'white'),
+    ('other_button focus',  'black',   'white'),
+
+    ('menu_button',         'white',   'black'),
+    ('menu_button focus',   'black',   'white'),
+
+    ('info_primary',        'white',   'black'),
+    ('info_minor',          'white',   'black'),
+    ('info_error',          'white',   'black'),
+
+    ('string_input',        'white',   'black'),
+    ('string_input focus',  'black',   'white'),
+
+    ('progress_incomplete', 'white',   'black'),
+    ('progress_complete',   'black',   'white'),
+    ('scrollbar_fg',        'white',   'black'),
+    ('scrollbar_bg',        'white',   'black'),
 ]

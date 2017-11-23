@@ -30,15 +30,17 @@ def action_button(style):
     return _stylized_button('[', ']', style)
 
 menu_btn = _stylized_button("", ">", "menu")
-
-ok_btn = action_button("save")
-done_btn = action_button("save")
-
-reset_btn = action_button("reset")
-
-back_btn = action_button("cancel")
-cancel_btn = action_button("cancel")
-close_btn = action_button("cancel")
-
+forward_btn = _stylized_button("", ">", "done")
+done_btn = action_button("done")
 danger_btn = action_button("danger")
-delete_btn = action_button("danger")
+other_btn = action_button("other")
+
+ok_btn = done_btn
+
+delete_btn = danger_btn
+
+back_btn = other_btn
+cancel_btn = other_btn
+reset_btn = other_btn
+
+
