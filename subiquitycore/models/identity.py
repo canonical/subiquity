@@ -60,12 +60,18 @@ class IdentityModel(object):
 
     def __init__(self):
         self._user = None
+        self._hostname = None
 
     def add_user(self, result):
         if result:
             self._user = LocalUser(result)
+            self._hostname = result['hostname']
         else:
             self._user = None
+
+    @property
+    def hostname(self):
+        return self._hostname
 
     @property
     def user(self):
