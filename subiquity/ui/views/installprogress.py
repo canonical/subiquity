@@ -55,6 +55,7 @@ class ProgressView(BaseView):
             self.listwalker.append(Text(line))
         if at_end:
             self.listbox.set_focus(len(self.listwalker) - 1)
+            self.listbox.set_focus_valign('bottom')
 
     def clear_log_tail(self):
         self.listwalker[:] = []
