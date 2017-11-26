@@ -245,7 +245,7 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
 
     def route_change(self, action, data):
         super().route_change(action, data)
-        if data['dst'] != b'default':
+        if data['dst'] != 'default':
             return
         if data['table'] != 254:
             return
