@@ -2,9 +2,11 @@ urwid==1.2.1
 nose-cov
 nose
 flake8
-python3-parted
-yaml
+PyYAML
 testtools
 mock
-attr
+attrs
 systemd
+jsonschema
+pyudev
+-e git+https://github.com/CanonicalLtd/probert#egg=probert
