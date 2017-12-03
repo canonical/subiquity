@@ -37,7 +37,7 @@ will still have a chance to review and modify the results.""")
 
 class GuidedFilesystemView(BaseView):
 
-    def __init__(self, model, controller):
+    def __init__(self, controller):
         self.controller = controller
         guided = ok_btn(_("Use An Entire Disk"), on_press=self.guided)
         manual = ok_btn(_("Manual"), on_press=self.manual)

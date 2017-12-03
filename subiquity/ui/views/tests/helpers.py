@@ -38,6 +38,13 @@ def get_focus_path(w):
     path = []
     while True:
         path.append(w)
+        if isinstance(w, urwid.ListBox) and w.set_focus_pending == "first selectable":
+            for w2 in w.body:
+                if w2.selectable():
+                    w = w2
+                    break
+            else:
+                break
         if w.focus is not None:
             w = w.focus
         elif hasattr(w, '_wrapped_widget'):

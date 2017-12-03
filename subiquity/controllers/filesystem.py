@@ -59,7 +59,7 @@ class FilesystemController(BaseController):
         footer = (_("Choose guided or manual partitioning"))
         self.ui.set_header(title)
         self.ui.set_footer(footer)
-        self.ui.set_body(GuidedFilesystemView(self.model, self))
+        self.ui.set_body(GuidedFilesystemView(self))
         if self.answers['guided']:
             self.guided()
         elif self.answers['manual']:
