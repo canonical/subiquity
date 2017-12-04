@@ -3,6 +3,11 @@ sudo: required
 services:
   - docker
 
+env:
+  - IMAGE=ubuntu:xenial
+  - IMAGE=ubuntu:artful
+  - IMAGE=ubuntu:bionic
+
 language: bash
 
 # Travis still doesn't support anything newer than trusty so we pull
@@ -10,7 +15,7 @@ language: bash
 # bionic or whatever as well but this is a start...
 
 before_install:
-  - docker pull ubuntu:xenial
+  - docker pull $IMAGE
   - cid=`docker run --tty --detach --workdir /subiquity -v $(pwd):/subiquity ubuntu:xenial`
   - docker exec $cid apt-get update
   - docker exec $cid apt-get -y dist-upgrade
