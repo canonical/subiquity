@@ -210,7 +210,7 @@ class IdentityView(BaseView):
                 ('pack', Text("")),
                 button_pile([self.form.done_btn]),
                 ('pack', Text("")),
-                ])),
+                ], focus_item=1)),
             ])
         super().__init__(body)
 

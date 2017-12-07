@@ -18,6 +18,9 @@ class IdentityViewTests(unittest.TestCase):
         controller.signal = mock.create_autospec(spec=Signal)
         return IdentityView(model, controller, {})
 
+    def enter_valid_data(self, view):
+        view.form.realname.value = view.form.hostname.value = view.form.username.value = view.form.password.value = view.form.confirm_password.value = 'w'
+
     def test_done_initially_disabled(self):
         view = self.make_view()
         self.assertFalse(view.form.done_btn.enabled)
@@ -30,3 +33,15 @@ class IdentityViewTests(unittest.TestCase):
                 return
         else:
             self.fail("Realname widget not focus")
+
+    def test_can_tab_to_done_when_valid(self):
+        view = self.make_view()
+        self.enter_valid_data(view)
+        self.assertTrue(view.form.done_btn.enabled)
+        for i in range(10):
+            helpers.keypress(view, 'tab', size=(80, 24))
+            focus_path = helpers.get_focus_path(view)
+            for w in reversed(focus_path):
+                if w is view.form.done_btn:
+                    return
+        self.fail("could not tab to done button")
