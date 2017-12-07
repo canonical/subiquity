@@ -3,11 +3,11 @@ from unittest import mock
 
 from subiquitycore.models.identity import IdentityModel
 from subiquitycore.signals import Signal
+from subiquitycore.testing import view_helpers
 
 from subiquity.controllers.identity import IdentityController
 from subiquity.ui.views.identity import IdentityView
 
-from subiquity.ui.views.tests import helpers
 
 
 class IdentityViewTests(unittest.TestCase):
@@ -27,7 +27,7 @@ class IdentityViewTests(unittest.TestCase):
 
     def test_initial_focus(self):
         view = self.make_view()
-        focus_path = helpers.get_focus_path(view)
+        focus_path = view_helpers.get_focus_path(view)
         for w in reversed(focus_path):
             if w is view.form.realname.widget:
                 return
@@ -39,8 +39,8 @@ class IdentityViewTests(unittest.TestCase):
         self.enter_valid_data(view)
         self.assertTrue(view.form.done_btn.enabled)
         for i in range(10):
-            helpers.keypress(view, 'tab', size=(80, 24))
-            focus_path = helpers.get_focus_path(view)
+            view_helpers.keypress(view, 'tab', size=(80, 24))
+            focus_path = view_helpers.get_focus_path(view)
             for w in reversed(focus_path):
                 if w is view.form.done_btn:
                     return

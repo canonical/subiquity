@@ -59,10 +59,10 @@ class NetworkConfigForm(Form):
 
     def __init__(self, ip_version):
         self.ip_version = ip_version
-        super().__init__()
         fam = ip_families[ip_version]
         self.ip_address_cls = fam['address_cls']
         self.ip_network_cls = fam['network_cls']
+        super().__init__()
 
     ok_label = _("Save")
     subnet = IPField(_("Subnet:"), has_mask=True)

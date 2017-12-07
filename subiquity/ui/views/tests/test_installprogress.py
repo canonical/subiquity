@@ -1,11 +1,10 @@
 import unittest
 from unittest import mock
 
+from subiquitycore.testing import view_helpers
 
 from subiquity.controllers.installprogress import InstallProgressController
 from subiquity.ui.views.installprogress import ProgressView
-
-from subiquity.ui.views.tests import helpers
 
 
 class IdentityViewTests(unittest.TestCase):
@@ -16,7 +15,7 @@ class IdentityViewTests(unittest.TestCase):
 
     def test_initial_focus(self):
         view = self.make_view()
-        for w in reversed(helpers.get_focus_path(view)):
+        for w in reversed(view_helpers.get_focus_path(view)):
             if w is view.listbox:
                 return
         else:
@@ -24,10 +23,10 @@ class IdentityViewTests(unittest.TestCase):
 
     def test_show_complete(self):
         view = self.make_view()
-        btn = helpers.find_button_matching(view, "^Reboot Now$")
+        btn = view_helpers.find_button_matching(view, "^Reboot Now$")
         self.assertIs(btn, None)
         view.show_complete()
-        btn = helpers.find_button_matching(view, "^Reboot Now$")
+        btn = view_helpers.find_button_matching(view, "^Reboot Now$")
         self.assertIsNot(btn, None)
-        helpers.click(btn)
+        view_helpers.click(btn)
         view.controller.reboot.assert_called_once_with()
