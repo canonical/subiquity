@@ -16,7 +16,7 @@ language: bash
 
 before_install:
   - docker pull $IMAGE
-  - cid=`docker run --tty --detach --workdir /subiquity -v $(pwd):/subiquity ubuntu:xenial`
+  - cid=`docker run --tty --detach --workdir /subiquity -v $(pwd):/subiquity $IMAGE`
   - docker exec $cid apt-get update
   - docker exec $cid apt-get -y dist-upgrade
   - docker exec $cid apt-get install -y --no-install-recommends libnl-3-dev libnl-genl-3-dev libnl-route-3-dev libsystemd-dev python3-distutils-extra pkg-config python3.5 python3-pip git lsb-release python3-setuptools gcc python3-dev python3-wheel
