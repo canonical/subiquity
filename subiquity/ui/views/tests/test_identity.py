@@ -9,6 +9,17 @@ from subiquity.controllers.identity import IdentityController
 from subiquity.ui.views.identity import IdentityView
 
 
+valid_data = {
+    'realname': 'Real Name',
+    'hostname': 'host-name',
+    'username': 'username',
+    'password': 'password',
+    'confirm_password': 'password'
+    }
+
+def enter_data(form, data):
+    for k, v in data.items():
+        getattr(form, k).value = v
 
 class IdentityViewTests(unittest.TestCase):
 
@@ -17,13 +28,6 @@ class IdentityViewTests(unittest.TestCase):
         controller = mock.create_autospec(spec=IdentityController)
         controller.signal = mock.create_autospec(spec=Signal)
         return IdentityView(model, controller, {})
-
-    def enter_valid_data(self, view):
-        view.form.realname.value = view.form.hostname.value = view.form.username.value = view.form.password.value = view.form.confirm_password.value = 'w'
-
-    def test_done_initially_disabled(self):
-        view = self.make_view()
-        self.assertFalse(view.form.done_btn.enabled)
 
     def test_initial_focus(self):
         view = self.make_view()
@@ -34,11 +38,40 @@ class IdentityViewTests(unittest.TestCase):
         else:
             self.fail("Realname widget not focus")
 
-    def test_can_tab_to_done_when_valid(self):
+    def test_done_initially_disabled(self):
         view = self.make_view()
-        self.enter_valid_data(view)
+        self.assertFalse(view.form.done_btn.enabled)
+
+    def test_done_enabled_when_valid(self):
+        view = self.make_view()
+        enter_data(view.form, valid_data)
         self.assertTrue(view.form.done_btn.enabled)
-        for i in range(10):
+
+    def test_click_done(self):
+        view = self.make_view()
+        enter_data(view.form, valid_data)
+        CRYPTED = '<crypted>'
+        view.model.encrypt_password.side_effect = lambda p: CRYPTED
+        expected = valid_data.copy()
+        expected['password'] = expected['confirm_password'] = CRYPTED
+
+        done_btn = view_helpers.find_button_matching(view, "^Done$")
+        view_helpers.click(done_btn)
+
+        view.controller.create_user.assert_called_once_with(expected)
+
+    def test_can_tab_to_done_when_valid(self):
+        # Urwid doesn't distinguish very well between widgets that are
+        # not currently selectable and widgets that can never be
+        # selectable. The "button pile" of the identity view is
+        # initially not selectable but becomes selectable when valid
+        # data is entered. This test checks that urwid notices this :)
+        # by simulating lots of presses of the tab key and checking if
+        # the done button has been focused.
+        view = self.make_view()
+        enter_data(view.form, valid_data)
+
+        for i in range(100):
             view_helpers.keypress(view, 'tab', size=(80, 24))
             focus_path = view_helpers.get_focus_path(view)
             for w in reversed(focus_path):
