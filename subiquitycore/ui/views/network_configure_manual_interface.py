@@ -65,6 +65,7 @@ class NetworkConfigForm(Form):
         super().__init__()
 
     ok_label = _("Save")
+
     subnet = IPField(_("Subnet:"), has_mask=True)
     address = IPField(_("Address:"))
     gateway = IPField(_("Gateway:"))
@@ -189,7 +190,7 @@ class BaseNetworkConfigureManualView(BaseView):
             'network': str(self.form.subnet.value),
             'address': str(self.form.address.value),
             'gateway': gateway,
-            'nameservers': map(str, self.form.nameservers.value),
+            'nameservers': list(map(str, self.form.nameservers.value)),
             'searchdomains': self.form.searchdomains.value,
         }
         self.dev.remove_ip_networks_for_version(self.ip_version)

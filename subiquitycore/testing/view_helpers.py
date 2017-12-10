@@ -54,3 +54,7 @@ def get_focus_path(w):
         else:
             break
     return path
+
+def enter_data(form, data):
+    for k, v in data.items():
+        getattr(form, k).value = v

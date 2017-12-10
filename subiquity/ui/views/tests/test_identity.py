@@ -17,10 +17,6 @@ valid_data = {
     'confirm_password': 'password'
     }
 
-def enter_data(form, data):
-    for k, v in data.items():
-        getattr(form, k).value = v
-
 class IdentityViewTests(unittest.TestCase):
 
     def make_view(self):
@@ -44,12 +40,12 @@ class IdentityViewTests(unittest.TestCase):
 
     def test_done_enabled_when_valid(self):
         view = self.make_view()
-        enter_data(view.form, valid_data)
+        view_helpers.enter_data(view.form, valid_data)
         self.assertTrue(view.form.done_btn.enabled)
 
     def test_click_done(self):
         view = self.make_view()
-        enter_data(view.form, valid_data)
+        view_helpers.enter_data(view.form, valid_data)
         CRYPTED = '<crypted>'
         view.model.encrypt_password.side_effect = lambda p: CRYPTED
         expected = valid_data.copy()
@@ -69,7 +65,7 @@ class IdentityViewTests(unittest.TestCase):
         # by simulating lots of presses of the tab key and checking if
         # the done button has been focused.
         view = self.make_view()
-        enter_data(view.form, valid_data)
+        view_helpers.enter_data(view.form, valid_data)
 
         for i in range(100):
             view_helpers.keypress(view, 'tab', size=(80, 24))
