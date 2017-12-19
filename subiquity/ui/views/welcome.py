@@ -42,7 +42,7 @@ class WelcomeView(BaseView):
 
     def _build_model_inputs(self):
         sl = []
-        for code, label, native in self.model.get_languages():
+        for code, native in self.model.get_languages():
             sl.append(forward_btn(label=native, on_press=self.confirm, user_arg=code))
 
         return SimpleList(sl)

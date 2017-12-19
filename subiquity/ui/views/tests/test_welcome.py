@@ -21,7 +21,7 @@ class WelcomeViewTests(unittest.TestCase):
     def test_basic(self):
         # Clicking the button for a language calls "switch_language"
         # on the model and "done" on the controller.
-        view = self.make_view_with_languages([('code', 'lang', 'native')])
+        view = self.make_view_with_languages([('code', 'native')])
         but = view_helpers.find_button_matching(view, "^native$")
         view_helpers.click(but)
         view.model.switch_language.assert_called_once_with("code")
@@ -31,8 +31,8 @@ class WelcomeViewTests(unittest.TestCase):
         # The initial focus for the view is the button for the first
         # language.
         view = self.make_view_with_languages([
-            ('code1', 'lang1', 'native1'),
-            ('code2', 'lang2', 'native2'),
+            ('code1', 'native1'),
+            ('code2', 'native2'),
             ])
         for w in reversed(view_helpers.get_focus_path(view)):
             if isinstance(w, urwid.Button):

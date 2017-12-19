@@ -38,15 +38,11 @@ class LocaleModel(object):
     def get_languages(self):
         languages = []
         for code, name in self.supported_languages:
-            label = name
             native = name
-            if gettext.find('iso_639_3'):
-                cur_lang = gettext.translation('iso_639_3')
-                label = cur_lang.gettext(name).capitalize()
             if gettext.find('iso_639_3', languages=[code]):
                 native_lang = gettext.translation('iso_639_3', languages=[code])
                 native = native_lang.gettext(name).capitalize()
-            languages.append((code, label, native))
+            languages.append((code, native))
         return languages
 
     def switch_language(self, code):
