@@ -4,13 +4,17 @@ set -eux
 
 cmds=
 interactive=no
-while getopts ":ic:" opt; do
+edit_filesystem=no
+while getopts ":ifc:" opt; do
     case "${opt}" in
         i)
             interactive=yes
             ;;
         c)
             cmds=$OPTARG
+            ;;
+        f)
+            edit_filesystem=yes
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -89,11 +93,24 @@ cp $SUBIQUITY_SNAP_PATH new_installer/var/lib/snapd/seed/snaps/
 mkdir new_iso
 add_overlay old_iso new_iso
 
+if [ "$edit_filesystem" = "yes" ]; then
+    mkdir old_filesystem new_filesystem
+    mount -t squashfs old_iso/casper/filesystem.squashfs old_filesystem
+    add_mount old_filesystem
+    add_overlay old_filesystem new_filesystem
+fi
+
+
 if [ -n "$cmds" ]; then
     bash -c "$cmds"
 fi
 if [ "$interactive" = "yes" ]; then
     bash
+fi
+
+if [ "$edit_filesystem" = "yes" ]; then
+    rm new_iso/casper/filesystem.squashfs
+    mksquashfs new_filesystem new_iso/casper/filesystem.squashfs
 fi
 
 rm new_iso/casper/installer.squashfs
