@@ -90,7 +90,7 @@ class KeyboardView(BaseView):
     def done(self, result):
         self.controller.done()
 
-    def cancel(self, result):
+    def cancel(self, result=None):
         self.controller.cancel()
 
     def select_layout(self, sender, keyboard):

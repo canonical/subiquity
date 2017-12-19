@@ -21,6 +21,7 @@ from subiquitycore.models.identity import IdentityModel
 from subiquitycore.models.network import NetworkModel
 
 from .filesystem import FilesystemModel
+from .keyboard import KeyboardModel
 from .locale import LocaleModel
 
 
