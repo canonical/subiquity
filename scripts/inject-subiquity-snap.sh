@@ -34,14 +34,15 @@ NEW_ISO=$(readlink -f $3)
 tmpdir=$(mktemp -d)
 cd $tmpdir
 
-MOUNTS=()
+_MOUNTS=()
 
-add_mount() {
-    MOUNTS=($1 ${MOUNTS[@]+"${MOUNTS[@]}"})
+mount () {
+    command mount "$@"
+    _MOUNTS=(${!#} ${_MOUNTS[@]+"${_MOUNTS[@]}"})
 }
 
 cleanup () {
-    for m in ${MOUNTS[@]+"${MOUNTS[@]}"}; do
+    for m in ${_MOUNTS[@]+"${_MOUNTS[@]}"}; do
         umount $m
     done
     rm -rf $tmpdir
@@ -56,18 +57,15 @@ add_overlay() {
     upper=$(mktemp -dp $tmpdir)
     chmod go+rx $work $upper
     mount -t overlay overlay -o lowerdir=$lower,upperdir=$upper,workdir=$work $mountpoint
-    add_mount $mountpoint
 }
 
 mkdir old_iso
 
 mount -t iso9660 -o loop $OLD_ISO old_iso
-add_mount old_iso
 
 mkdir old_installer
 
 mount -t squashfs old_iso/casper/installer.squashfs old_installer
-add_mount old_installer
 
 mkdir new_installer
 add_overlay old_installer new_installer
@@ -96,7 +94,6 @@ add_overlay old_iso new_iso
 if [ "$edit_filesystem" = "yes" ]; then
     mkdir old_filesystem new_filesystem
     mount -t squashfs old_iso/casper/filesystem.squashfs old_filesystem
-    add_mount old_filesystem
     add_overlay old_filesystem new_filesystem
 fi
 
