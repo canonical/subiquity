@@ -96,7 +96,7 @@ class KeyboardView(BaseView):
     def select_layout(self, sender, keyboard):
         log.debug("%s", keyboard)
         opts = []
-        for code, desc in keyboard.variants:
+        for code, desc, langs in keyboard.variants:
             opts.append(Option((desc, True, code)))
         opts.sort(key=lambda o:o.label)
         opts.insert(0, Option(("default", True, None)))
