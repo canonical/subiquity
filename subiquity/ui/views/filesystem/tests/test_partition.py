@@ -9,6 +9,7 @@ from subiquitycore.testing import view_helpers
 
 from subiquity.controllers.filesystem import FilesystemController
 from subiquity.models.filesystem import (
+    dehumanize_size,
     Disk,
     FilesystemModel,
     Partition,
@@ -43,6 +44,41 @@ class PartitionViewTests(unittest.TestCase):
         view = self.make_view()
         self.assertIsNone(view_helpers.find_button_matching(view, "Delete"))
 
-    def test_delete_present_for_partition(self):
+    def test_delete_not_disabled_for_ordinary_partition(self):
         view = self.make_view(Partition(size=50))
-        self.assertIsNotNone(view_helpers.find_button_matching(view, "Delete"))
+        but, path = view_helpers.find_button_matching(view, "Delete", return_path=True)
+        self.assertIsNotNone(but)
+        for w in path:
+            if isinstance(w, urwid.WidgetDisable):
+                self.fail("Delete button is disabled")
+
+    def test_delete_disabled_for_boot_partition(self):
+        view = self.make_view(Partition(size=50, flag="boot"))
+        but, path = view_helpers.find_button_matching(view, "Delete", return_path=True)
+        self.assertIsNotNone(but)
+        for w in path:
+            if isinstance(w, urwid.WidgetDisable):
+                return
+        else:
+            self.fail("Delete button not disabled")
+
+    def test_click_delete_button(self):
+        partition = Partition(size=50)
+        view = self.make_view(partition)
+        but = view_helpers.find_button_matching(view, "Delete")
+        view_helpers.click(but)
+        view.controller.delete_partition.assert_called_once_with(partition)
+
+    def test_create_partition(self):
+        valid_data = {
+            'partnum':1,
+            'size':"1M",
+            'fstype':FilesystemModel.fs_by_name["ext4"],
+            }
+        view = self.make_view()
+        view_helpers.enter_data(view.form, valid_data)
+        view_helpers.click(view.form.done_btn.base_widget)
+        valid_data['mount'] = '/'
+        valid_data['size'] = dehumanize_size(valid_data['size'])
+        view.controller.partition_disk_handler.assert_called_once_with(
+            view.disk, None, valid_data)

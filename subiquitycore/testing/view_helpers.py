@@ -2,31 +2,36 @@ import re
 
 import urwid
 
-def find_with_pred(w, pred):
-    def _walk(w):
+def find_with_pred(w, pred, return_path=False):
+    def _walk(w, path):
         if pred(w):
-            return w
+            return w, path
         if hasattr(w, '_wrapped_widget'):
-            return _walk(w._wrapped_widget)
+            return _walk(w._wrapped_widget, (w,) + path)
         if hasattr(w, 'original_widget'):
-            return _walk(w.original_widget)
+            return _walk(w.original_widget, (w,) + path)
         if isinstance(w, urwid.ListBox):
             for w in w.body:
-                r = _walk(w)
+                r, p = _walk(w, (w,) + path)
                 if r:
-                    return r
+                    return r, p
         elif hasattr(w, 'contents'):
             contents = w.contents
             for w, _ in contents:
-                r = _walk(w)
+                r, p = _walk(w, (w,) + path)
                 if r:
-                    return r
-    return _walk(w)
+                    return r, p
+        return None, None
+    r, p = _walk(w, ())
+    if return_path:
+        return r, p
+    else:
+        return r
 
-def find_button_matching(w, pat):
+def find_button_matching(w, pat, return_path=False):
     def pred(w):
         return isinstance(w, urwid.Button) and re.match(pat, w.label)
-    return find_with_pred(w, pred)
+    return find_with_pred(w, pred, return_path)
 
 def click(but):
     but._emit('click')
