@@ -5,7 +5,9 @@ set -eux
 cmds=
 interactive=no
 edit_filesystem=no
-while getopts ":ifc:" opt; do
+source_installer=old_iso/casper/installer.squashfs
+source_filesystem=
+while getopts ":ifc:s:n:" opt; do
     case "${opt}" in
         i)
             interactive=yes
@@ -15,6 +17,12 @@ while getopts ":ifc:" opt; do
             ;;
         f)
             edit_filesystem=yes
+            ;;
+        s)
+            source_installer="$(readlink -f "${OPTARG}")"
+            ;;
+        n)
+            source_filesystem="$(readlink -f "${OPTARG}")"
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -26,10 +34,10 @@ shift $((OPTIND-1))
 
 # inject-subiquity-snap.sh $old_iso $subiquity_snap $new_iso
 
-OLD_ISO="$(readlink -f $1)"
-SUBIQUITY_SNAP_PATH="$(readlink -f $2)"
+OLD_ISO="$(readlink -f "${1}")"
+SUBIQUITY_SNAP_PATH="$(readlink -f "${2}")"
 SUBIQUITY_SNAP="$(basename $SUBIQUITY_SNAP_PATH)"
-NEW_ISO="$(readlink -f $3)"
+NEW_ISO="$(readlink -f "${3}")"
 
 tmpdir="$(mktemp -d)"
 cd "${tmpdir}"
@@ -61,10 +69,9 @@ add_overlay() {
     do_mount -t overlay overlay -o lowerdir="${lower}",upperdir="${upper}",workdir="${work}" "${mountpoint}"
 }
 
-do_mount -t iso9660 -o loop "${OLD_ISO}" old_iso
-do_mount -t squashfs old_iso/casper/installer.squashfs old_installer
+do_mount -t iso9660 -o loop,ro "${OLD_ISO}" old_iso
+do_mount -t squashfs "${source_installer}" old_installer
 add_overlay old_installer new_installer
-
 
 CORE_SNAP="$(cd old_installer/var/lib/snapd/seed/snaps/; ls -1 core*.snap)"
 
@@ -86,7 +93,7 @@ cp "${SUBIQUITY_SNAP_PATH}" new_installer/var/lib/snapd/seed/snaps/
 add_overlay old_iso new_iso
 
 if [ "$edit_filesystem" = "yes" ]; then
-    do_mount -t squashfs old_iso/casper/filesystem.squashfs old_filesystem
+    do_mount -t squashfs ${source_filesystem:-old_iso/casper/filesystem.squashfs} old_filesystem
     add_overlay old_filesystem new_filesystem
 fi
 
@@ -101,6 +108,9 @@ fi
 if [ "$edit_filesystem" = "yes" ]; then
     rm new_iso/casper/filesystem.squashfs
     mksquashfs new_filesystem new_iso/casper/filesystem.squashfs
+elif [ -n "${source_filesystem}" ]; then
+    rm new_iso/casper/filesystem.squashfs
+    cp "${source_filesystem}" new_iso/casper/filesystem.squashfs
 fi
 
 rm new_iso/casper/installer.squashfs
@@ -116,5 +126,3 @@ xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
 	-isohybrid-gpt-basdat -isohybrid-apm-hfsplus \
 	-isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin  \
 	new_iso/boot new_iso
-
-
