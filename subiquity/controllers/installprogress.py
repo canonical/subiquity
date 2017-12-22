@@ -37,15 +37,13 @@ from subiquity.ui.views import ProgressView
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
 
+TARGET = '/target'
 
 class InstallState:
     NOT_STARTED = 0
-    RUNNING_INSTALL = 1
-    DONE_INSTALL = 2
-    RUNNING_POSTINSTALL = 3
-    DONE_POSTINSTALL = 4
-    ERROR_INSTALL = -1
-    ERROR_POSTINSTALL = -2
+    RUNNING = 1
+    DONE = 2
+    ERROR = -1
 
 
 class InstallProgressController(BaseController):
@@ -60,18 +58,19 @@ class InstallProgressController(BaseController):
         self.answers.setdefault('reboot', False)
         self.progress_view = None
         self.install_state = InstallState.NOT_STARTED
-        self.postinstall_written = False
         self.tail_proc = None
         self.journald_forwarder_proc = None
         self.curtin_event_stack = []
+        self._identity_config_done = False
 
     def filesystem_config_done(self):
         self.curtin_start_install()
 
     def identity_config_done(self):
-        self.postinstall_written = True
-        if self.install_state == InstallState.DONE_INSTALL:
-            self.curtin_start_postinstall()
+        if self.install_state == InstallState.DONE:
+            self.curtin_configure_cloud_init()
+        else:
+            self._identity_config_done = True
 
     def curtin_error(self):
         log.debug('curtin_error')
@@ -127,37 +126,34 @@ class InstallProgressController(BaseController):
             conf.write(datestr)
             conf.write(yaml.dump(config))
 
-    def _get_curtin_command(self, install_step):
-        config_file_name = 'subiquity-curtin-%s.conf' % (install_step,)
+    def _get_curtin_command(self):
+        config_file_name = 'subiquity-curtin-install.conf'
 
         if self.opts.dry_run:
-            config_location = os.path.join('.subiquity/', config_file_name)
             log.debug("Installprogress: this is a dry-run")
+            config_location = os.path.join('.subiquity/', config_file_name)
             curtin_cmd = [
                 "python3", "scripts/replay-curtin-log.py",
-                self.reporting_url, "examples/curtin-events-%s.json" % (install_step,),
+                self.reporting_url, "examples/curtin-events.json",
                 ]
         else:
-            config_location = os.path.join('/tmp', config_file_name)
             log.debug("Installprogress: this is the *REAL* thing")
-            configs = [config_location]
-            curtin_cmd = curtin_install_cmd(configs)
+            config_location = os.path.join('/var/log/installer', config_file_name)
+            curtin_cmd = curtin_install_cmd(config_location)
 
         self._write_config(
             config_location,
-            self.base_model.render(
-                install_step=install_step, reporting_url=self.reporting_url))
+            self.base_model.render(target=TARGET, reporting_url=self.reporting_url))
 
         return curtin_cmd
 
     def curtin_start_install(self):
-        log.debug('Curtin Install: calling curtin with '
-                  'storage/net/postinstall config')
-        self.install_state = InstallState.RUNNING_INSTALL
+        log.debug('Curtin Install: starting curtin')
+        self.install_state = InstallState.RUNNING
         self.start_journald_forwarder()
         self.start_journald_listener("curtin_event", self.curtin_event)
 
-        curtin_cmd = self._get_curtin_command("install")
+        curtin_cmd = self._get_curtin_command()
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
         env = os.environ.copy()
@@ -171,52 +167,22 @@ class InstallProgressController(BaseController):
         returncode = fut.result()
         log.debug('curtin_install: returncode: {}'.format(returncode))
         if returncode > 0:
-            self.install_state = InstallState.ERROR_INSTALL
+            self.install_state = InstallState.ERROR
             self.curtin_error()
             return
-        self.stop_tail_proc()
-        self.install_state = InstallState.DONE_INSTALL
+        self.install_state = InstallState.DONE
         log.debug('After curtin install OK')
-        if self.postinstall_written:
-            self.curtin_start_postinstall()
+        if self._identity_config_done:
+            self.loop.set_alarm_in(0.01, lambda loop, userdata: self.curtin_configure_cloud_init())
 
     def cancel(self):
         pass
 
-    def curtin_start_postinstall(self):
-        log.debug('Curtin Post Install: calling curtin '
-                  'with postinstall config')
-
-        if not self.postinstall_written:
-            log.error('Attempting to spawn curtin install without a config')
-            raise Exception('AIEEE!')
-
-        self.install_state = InstallState.RUNNING_POSTINSTALL
-        if self.progress_view is not None:
-            self.progress_view.clear_log_tail()
-            self.progress_view.set_status(_("Running postinstall step"))
-            self.start_tail_proc()
-
-        curtin_cmd = self._get_curtin_command("postinstall")
-
-        log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
-        env = os.environ.copy()
-        if 'SNAP' in env:
-            del env['SNAP']
-        self.run_in_bg(
-            lambda: self.run_command_logged(curtin_cmd, CURTIN_POSTINSTALL_LOG, env),
-            self.curtin_postinstall_completed)
-
-    def curtin_postinstall_completed(self, fut):
-        returncode = fut.result()
-        log.debug('curtin_postinstall: returncode: {}'.format(returncode))
-        self.stop_tail_proc()
-        if returncode > 0:
-            self.install_state = InstallState.ERROR_POSTINSTALL
-            self.curtin_error()
-            return
-        log.debug('After curtin postinstall OK')
-        self.install_state = InstallState.DONE_POSTINSTALL
+    def curtin_configure_cloud_init(self):
+        # If we need to do anything that takes time here (like running
+        # dpkg-reconfigure maas-rack-controller, for example...) we
+        # should switch to doing that work in a background thread.
+        self.base_model.configure_cloud_init(TARGET)
         self.ui.progress_current += 1
         self.ui.set_header(_("Installation complete!"), "")
         self.ui.set_footer("")
@@ -242,16 +208,8 @@ class InstallProgressController(BaseController):
         log.debug("curtin journald forwarder listening on %s", self.reporting_url)
 
     def start_tail_proc(self):
-        if self.install_state == InstallState.ERROR_INSTALL:
-            install_log = CURTIN_INSTALL_LOG
-        elif self.install_state == InstallState.ERROR_POSTINSTALL:
-            install_log = CURTIN_POSTINSTALL_LOG
-        elif self.install_state < InstallState.RUNNING_POSTINSTALL:
-            install_log = CURTIN_INSTALL_LOG
-        else:
-            install_log = CURTIN_POSTINSTALL_LOG
         self.progress_view.clear_log_tail()
-        tail_cmd = ['tail', '-n', '1000', '-F', install_log]
+        tail_cmd = ['tail', '-n', '1000', '-F', CURTIN_INSTALL_LOG]
         log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
         self.tail_proc = utils.run_command_start(tail_cmd)
         stdout_fileno = self.tail_proc.stdout.fileno()
@@ -271,6 +229,7 @@ class InstallProgressController(BaseController):
             log.debug('dry-run enabled, skipping reboot, quiting instead')
             self.signal.emit_signal('quit')
         else:
+            # Should probably run curtin -c $CONFIG unmount -t TARGET first.
             utils.run_command(["/sbin/reboot"])
 
     def quit(self):
@@ -291,9 +250,6 @@ class InstallProgressController(BaseController):
             self.curtin_error()
             self.ui.set_body(self.progress_view)
             return
-        if self.install_state < InstallState.RUNNING_POSTINSTALL:
-            self.progress_view.set_status(_("Running install step"))
-        else:
-            self.progress_view.set_status(_("Running postinstall step"))
+        self.progress_view.set_status(_("Running install step"))
         self.ui.set_body(self.progress_view)
 
