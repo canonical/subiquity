@@ -18,6 +18,7 @@ import logging
 from urwid import (
     connect_signal,
     Text,
+    WidgetWrap,
     )
 
 from subiquitycore.ui.buttons import other_btn
@@ -32,6 +33,8 @@ from subiquitycore.ui.form import (
 from subiquitycore.ui.selector import Option, Selector
 from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
+
+from subiquity.ui.views.keyboard_detector import KeyboardDetector
 
 log = logging.getLogger("subiquity.ui.views.keyboard")
 
@@ -51,6 +54,39 @@ class KeyboardForm(Form):
 
     layout = ChoiceField(_("Layout:"), choices=["dummy"])
     variant = ChoiceField(_("Variant:"), choices=["dummy"])
+
+
+class AutoDetectIntro(WidgetWrap):
+    def __init__(self, cb):
+        super().__init__(other_btn(label="OK", on_press=lambda sender: cb(0)))
+
+class Detector:
+
+    def __init__(self, kview):
+        self.keyboard_view = kview
+        self.keyboard_detector = KeyboardDetector()
+
+    def start(self):
+        o = AutoDetectIntro(self._do_step)
+        self.keyboard_view.show_overlay(o)
+
+    def _do_step(self, result):
+        self.keyboard_view.remove_overlay()
+        try:
+            r = self.keyboard_detector.read_step(result)
+        except Exception:
+            o = AutoDetectionFailed(self.keyboard_view)
+        else:
+            if r == KeyboardDetector.RESULT:
+                self.keyboard_view.found_keyboard(self.keyboard_detector.result)
+                return
+            elif r == KeyboardDetector.PRESS_KEY:
+                o = AutoDetectPressKey(self._do_step, self.keyboard_detector.symbols, self.keyboard_detector.keycodes)
+            elif r == KeyboardDetector.KEY_PRESENT or r == KeyboardDetector.KEY_PRESENT_P:
+                o = AutoDetectKeyPresent(self._do_step, self.keyboard_detector.symbols)
+            else:
+                o = AutoDetectionFailed(self.keyboard_view)
+        self.keyboard_view.show_overlay(o)
 
 
 class KeyboardView(BaseView):
@@ -74,7 +110,7 @@ class KeyboardView(BaseView):
         self.form.layout.widget.value = us_keyboard
 
         self._rows = self.form.as_rows(self)
-        identify_btn = other_btn(label=_("Identify keyboard"))
+        identify_btn = other_btn(label=_("Identify keyboard"), on_press=self.detect)
         pile = Pile([
             ('pack', Text("")),
             Padding.center_90(ListBox([self._rows, Text(""), button_pile([identify_btn])])),
@@ -86,6 +122,10 @@ class KeyboardView(BaseView):
             ])
         pile.focus_position = 2
         super().__init__(pile)
+
+    def detect(self, sender):
+        detector = Detector(self)
+        detector.start()
 
     def done(self, result):
         self.controller.done()
