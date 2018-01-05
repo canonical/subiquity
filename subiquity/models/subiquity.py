@@ -21,6 +21,7 @@ from subiquitycore.models.identity import IdentityModel
 from subiquitycore.models.network import NetworkModel
 
 from .filesystem import FilesystemModel
+from .installpath import InstallpathModel
 from .locale import LocaleModel
 
 
@@ -29,6 +30,7 @@ class SubiquityModel:
 
     def __init__(self, common):
         self.locale = LocaleModel()
+        self.installpath = InstallpathModel()
         self.network = NetworkModel()
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
@@ -52,10 +54,12 @@ class SubiquityModel:
         if user.ssh_import_id is not None:
             user_info['ssh_import_id'] = [user.ssh_import_id]
         # XXX this should set up the locale too.
-        return {
+        config = {
             'users': [user_info],
             'hostname': self.identity.hostname,
         }
+        config.update(self.installpath.render_cloudinit())
+        return config
 
     def _write_files_config(self):
         # TODO, this should be moved to the in-target cloud-config seed so on first
@@ -102,6 +106,7 @@ class SubiquityModel:
             }
         if install_step == "install":
             config.update(self.network.render())
+            config.update(self.installpath.render())
         else:
             config['write_files'] = self._write_files_config()
 

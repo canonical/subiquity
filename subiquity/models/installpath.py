@@ -26,16 +26,42 @@ class InstallpathModel(object):
     ('UI Text seen by user', <signal name>, <callback function string>)
     """
 
+    path = None
+    packages = {}
+    debconf = {}
+
     def _refresh_install_paths(self):
-        # TODO: Re-enable once available
         self.install_paths = [
-            (_('Install Ubuntu'),             'installpath:install-ubuntu'),
-            # ('Install MAAS Region Server',  'installpath:maas-region-server'),
-            # ('Install MAAS Cluster Server', 'installpath:maas-cluster-server'),
-            # ('Test installation media',     'installpath:test-media'),
-            # ('Test machine memory',         'installpath:test-memory')
+            (_('Install Ubuntu'),                 'installpath:install-ubuntu'),
+            (_('Install MAAS Region Controller'), 'installpath:maas-region'),
+            (_('Install MAAS Rack Controller'),   'installpath:maas-rack'),
         ]
 
     def get_menu(self):
         self._refresh_install_paths()
         return self.install_paths
+
+    def update(self, results):
+        if self.path == 'ubuntu':
+            self.packages = {}
+            self.debconf = {}
+        elif self.path == 'region':
+            self.packages = {'packages': ['maas']}
+            self.debconf['debconf_selections'] = {
+                'maas-username': 'maas-region-controller maas/username string %s' % results['username'],
+                'maas-password': 'maas-region-controller maas/password password %s' % results['password'],
+                }
+        elif self.path == 'rack':
+            self.packages = {'packages': ['maas-rack-controller']}
+            self.debconf['debconf_selections'] = {
+                'maas-url': 'maas-rack-controller maas-rack-controller/maas-url string %s' % results['url'],
+                'maas-secret': 'maas-rack-controller maas-rack-controller/shared-secret password %s' % results['secret'],
+                }
+        else:
+            raise ValueError("invalid Installpath %s" % self.path)
+
+    def render(self):
+        return self.debconf
+
+    def render_cloudinit(self):
+        return self.packages
