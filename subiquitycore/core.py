@@ -16,6 +16,8 @@
 from concurrent import futures
 import fcntl
 import logging
+import os
+import struct
 import sys
 
 import urwid
@@ -31,14 +33,21 @@ class ApplicationError(Exception):
     """ Basecontroller exception """
     pass
 
-# The next little bit is cribbed from
-# https://github.com/EvanPurkhiser/linux-vt-setcolors/blob/master/setcolors.c:
-
 # From uapi/linux/kd.h:
 KDGKBTYPE = 0x4B33  # get keyboard type
+
 GIO_CMAP  = 0x4B70	# gets colour palette on VGA+
 PIO_CMAP  = 0x4B71	# sets colour palette on VGA+
 UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
+
+K_RAW       = 0x00
+K_XLATE     = 0x01
+K_MEDIUMRAW = 0x02
+K_UNICODE   = 0x03
+K_OFF       = 0x04
+
+KDGKBMODE = 0x4B44 # gets current keyboard mode
+KDSKBMODE = 0x4B45 # sets current keyboard mode 
 
 
 class ISO_8613_3_Screen(urwid.raw_display.Screen):
@@ -116,6 +125,57 @@ def setup_screen(colors, styles):
         return ISO_8613_3_Screen(_urwid_name_to_rgb), urwid_palette
 
 
+
+class InputFilter:
+
+    def __init__(self, timelimit=10):
+        self._timelimit = timelimit
+        self.filtering = False
+        self._h = None
+        self._fd = os.open("/proc/self/fd/0", os.O_RDWR)
+
+    def _set_alarm(self):
+        if self._h is not None:
+            self._loop.remove_alarm(self._h)
+        self._h = self._loop.set_alarm_in(self._timelimit, lambda *a,**kw:self.stop_filtering())
+
+    def start_filtering(self):
+        self.filtering = True
+        o = bytearray(4)
+        fcntl.ioctl(self._fd, KDGKBMODE, o)
+        self._old_mode = struct.unpack('i', o)[0]
+        fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
+
+    def stop_filtering(self):
+        if self._h is not None:
+            self._loop.remove_alarm(self._h)
+        self.filtering = False
+        fcntl.ioctl(self._fd, KDSKBMODE, self._old_mode)
+
+    def filter(self, keys, codes):
+        self._set_alarm()
+        if self.filtering:
+            i = 0
+            r = []
+            n = len(codes)
+            while i < len(codes):
+                if codes[i] & 0x80:
+                    p = 'release '
+                else:
+                    p = 'press '
+                if i + 2 < n and (codes[i] & 0x7f) == 0 and (codes[i + 1] & 0x80) != 0 and (codes[i + 2] & 0x80) != 0:
+                    kc = ((codes[i + 1] & 0x7f) << 7) | (codes[i + 2] & 0x7f)
+                    i += 3
+                else:
+                    kc = codes[i] & 0x7f
+                    i += 1
+                r.append(p + str(kc))
+            return r
+        else:
+            return keys
+
+
+
 class Application:
 
     # A concrete subclass must set project and controllers attributes, e.g.:
@@ -159,6 +219,7 @@ class Application:
             "loop": None,
             "pool": futures.ThreadPoolExecutor(1),
             "answers": answers,
+            "input_filter": InputFilter(),
         }
         if opts.screens:
             self.controllers = [c for c in self.controllers if c in opts.screens]
@@ -227,9 +288,10 @@ class Application:
             self.common['loop'] = urwid.MainLoop(
                 self.common['ui'], palette=palette, screen=screen,
                 handle_mouse=False, pop_ups=True)
+
             log.debug("Running event loop: {}".format(
                 self.common['loop'].event_loop))
-
+            self.common['input_filter']._loop = self.common['loop']
             self.common['base_model'] = self.model_class(self.common)
 
         try:

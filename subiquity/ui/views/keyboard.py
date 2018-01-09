@@ -17,11 +17,12 @@ import logging
 
 from urwid import (
     connect_signal,
+    LineBox,
     Text,
     WidgetWrap,
     )
 
-from subiquitycore.ui.buttons import other_btn
+from subiquitycore.ui.buttons import ok_btn, other_btn
 from subiquitycore.ui.container import (
     ListBox,
     Pile,
@@ -56,9 +57,19 @@ class KeyboardForm(Form):
     variant = ChoiceField(_("Variant:"), choices=["dummy"])
 
 
-class AutoDetectIntro(WidgetWrap):
+class AutoDetectBase(WidgetWrap):
     def __init__(self, cb):
-        super().__init__(other_btn(label="OK", on_press=lambda sender: cb(0)))
+        lb = LineBox(
+            Pile([
+                Text("Auto detection beginning"),
+                Text(""),
+                button_pile([ok_btn(label="OK", on_press=lambda sender: cb(0))]),
+                ]),
+            "Keyboard auto-detection")
+        super().__init__(lb)
+
+class AutoDetectIntro(WidgetWrap):
+    pass
 
 class Detector:
 
