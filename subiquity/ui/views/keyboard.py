@@ -24,6 +24,7 @@ from urwid import (
 
 from subiquitycore.ui.buttons import ok_btn, other_btn
 from subiquitycore.ui.container import (
+    Columns,
     ListBox,
     Pile,
     )
@@ -58,18 +59,95 @@ class KeyboardForm(Form):
 
 
 class AutoDetectBase(WidgetWrap):
-    def __init__(self, cb):
-        lb = LineBox(
-            Pile([
+    def __init__(self, *args):
+        lb = LineBox(self.make_body(*args), "Keyboard auto-detection")
+        super().__init__(lb)
+    def start(self):
+        pass
+    def stop(self):
+        pass
+
+class AutoDetectIntro(AutoDetectBase):
+    def make_body(self, cb):
+        return Pile([
                 Text("Auto detection beginning"),
                 Text(""),
                 button_pile([ok_btn(label="OK", on_press=lambda sender: cb(0))]),
-                ]),
-            "Keyboard auto-detection")
-        super().__init__(lb)
+                ])
 
-class AutoDetectIntro(WidgetWrap):
-    pass
+class AutoDetectFailed(AutoDetectBase):
+    def make_body(self, cb):
+        return Pile([
+                Text("Keybaord auto detection failed, sorry"),
+                Text(""),
+                button_pile([ok_btn(label="OK", on_press=lambda sender: cb())]),
+                ])
+
+class AutoDetectComplete(AutoDetectBase):
+    def make_body(self, cb, result, view):
+        variant = None
+        model = result
+        if ':' in result:
+            model, variant = result.split(":", 1)
+        for kb in view.model.keyboards:
+            if kb.code == model:
+                break
+        else:
+            xxx
+        view.form.layout.widget.value = kb
+        return Pile([
+                Text("Keybaord auto detection completed"),
+                Text(""),
+                Text("Your keyboard was detected as %s" % kb.desc),
+                Text(""),
+                button_pile([ok_btn(label="OK", on_press=lambda sender: cb(kb))]),
+                ])
+
+class AutoDetectPressKey(AutoDetectBase):
+    def selectable(self):
+        return True
+    def __init__(self, input_filter, *args):
+        self.input_filter = input_filter
+        log.debug("? %r", args)
+        super().__init__(*args)
+    def make_body(self, cb, symbols, keycodes):
+        self.keycodes = keycodes
+        self.cb = cb
+        return Pile([
+            Text("press one of these"),
+            Text(""),
+            Columns([Text(s) for s in symbols], dividechars=1),
+            ])
+    def start(self):
+        self.input_filter.start_filtering()
+    def stop(self):
+        self.input_filter.stop_filtering()
+    def keypress(self, size, key):
+        log.debug('keypress %r %r', size, key)
+        if key.startswith('release '):
+            return
+        elif key.startswith('press '):
+            code = int(key[len('press '):])
+            if code not in self.keycodes:
+                return
+            v = self.keycodes[code]
+        else:
+            import random
+            v = random.choice(list(self.keycodes.values()))
+        self.cb(v)
+
+class AutoDetectKeyPresent(AutoDetectBase):
+    def make_body(self, cb, symbols, yes, no):
+        self.cb = cb
+        return Pile([
+            Text("Is the following key present on your keyboard?"),
+            Text(""),
+            Columns([Text(s) for s in symbols], dividechars=1),
+            button_pile([
+                ok_btn(label="Yes", on_press=lambda sender: cb(yes)),
+                other_btn(label="No", on_press=lambda sender: cb(no)),
+                ]),
+            ])
 
 class Detector:
 
@@ -81,22 +159,40 @@ class Detector:
         o = AutoDetectIntro(self._do_step)
         self.keyboard_view.show_overlay(o)
 
-    def _do_step(self, result):
+    def abort(self):
+        overlay = self.keyboard_view._w.top_w
+        overlay.stop()
         self.keyboard_view.remove_overlay()
+
+    def _do_step(self, result):
+        self.abort()
         try:
             r = self.keyboard_detector.read_step(result)
         except Exception:
-            o = AutoDetectionFailed(self.keyboard_view)
+            o = AutoDetectFailed(self.abort)
         else:
             if r == KeyboardDetector.RESULT:
-                self.keyboard_view.found_keyboard(self.keyboard_detector.result)
-                return
+                o = AutoDetectComplete(
+                    self.keyboard_view.found_keyboard,
+                    self.keyboard_detector.result,
+                    self.keyboard_view)
             elif r == KeyboardDetector.PRESS_KEY:
-                o = AutoDetectPressKey(self._do_step, self.keyboard_detector.symbols, self.keyboard_detector.keycodes)
+                log.debug("PRESS_KEY %r %r", self.keyboard_detector.symbols, self.keyboard_detector.keycodes)
+                o = AutoDetectPressKey(
+                    self.keyboard_view.controller.input_filter,
+                    self._do_step,
+                    self.keyboard_detector.symbols,
+                    self.keyboard_detector.keycodes)
             elif r == KeyboardDetector.KEY_PRESENT or r == KeyboardDetector.KEY_PRESENT_P:
-                o = AutoDetectKeyPresent(self._do_step, self.keyboard_detector.symbols)
+                o = AutoDetectKeyPresent(
+                    self._do_step,
+                    self.keyboard_detector.symbols,
+                    self.keyboard_detector.present,
+                    self.keyboard_detector.not_present,
+                    )
             else:
-                o = AutoDetectionFailed(self.keyboard_view)
+                o = AutoDetectFailed(self.abort)
+        o.start()
         self.keyboard_view.show_overlay(o)
 
 
@@ -137,6 +233,9 @@ class KeyboardView(BaseView):
     def detect(self, sender):
         detector = Detector(self)
         detector.start()
+
+    def found_keyboard(self, result):
+        log.debug("found_keyboard %s", result)
 
     def done(self, result):
         self.controller.done()

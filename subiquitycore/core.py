@@ -47,7 +47,7 @@ K_UNICODE   = 0x03
 K_OFF       = 0x04
 
 KDGKBMODE = 0x4B44 # gets current keyboard mode
-KDSKBMODE = 0x4B45 # sets current keyboard mode 
+KDSKBMODE = 0x4B45 # sets current keyboard mode
 
 
 class ISO_8613_3_Screen(urwid.raw_display.Screen):
@@ -131,15 +131,10 @@ class InputFilter:
     def __init__(self, timelimit=10):
         self._timelimit = timelimit
         self.filtering = False
-        self._h = None
         self._fd = os.open("/proc/self/fd/0", os.O_RDWR)
 
-    def _set_alarm(self):
-        if self._h is not None:
-            self._loop.remove_alarm(self._h)
-        self._h = self._loop.set_alarm_in(self._timelimit, lambda *a,**kw:self.stop_filtering())
-
     def start_filtering(self):
+        log.debug("start_filtering")
         self.filtering = True
         o = bytearray(4)
         fcntl.ioctl(self._fd, KDGKBMODE, o)
@@ -147,13 +142,12 @@ class InputFilter:
         fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
 
     def stop_filtering(self):
-        if self._h is not None:
-            self._loop.remove_alarm(self._h)
+        log.debug("stop_filtering")
         self.filtering = False
         fcntl.ioctl(self._fd, KDSKBMODE, self._old_mode)
 
     def filter(self, keys, codes):
-        self._set_alarm()
+        log.debug("filter %s keys %s codes %s", self.filtering, keys, codes)
         if self.filtering:
             i = 0
             r = []
@@ -170,10 +164,26 @@ class InputFilter:
                     kc = codes[i] & 0x7f
                     i += 1
                 r.append(p + str(kc))
+            log.debug("filter keys r %s", r)
             return r
         else:
             return keys
 
+
+class DummyInputFilter:
+
+    def __init__(self, timelimit=10):
+        self._timelimit = timelimit
+        self.filtering = False
+
+    def start_filtering(self):
+        self.filtering = True
+
+    def stop_filtering(self):
+        self.filtering = False
+
+    def filter(self, keys, codes):
+        return keys
 
 
 class Application:
@@ -211,6 +221,11 @@ class Application:
             if not opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
 
+        if is_linux_tty():
+            log.debug("is_linux_tty")
+            input_filter = InputFilter()
+        else:
+            input_filter = DummyInputFilter()
         self.common = {
             "ui": ui,
             "opts": opts,
@@ -219,7 +234,7 @@ class Application:
             "loop": None,
             "pool": futures.ThreadPoolExecutor(1),
             "answers": answers,
-            "input_filter": InputFilter(),
+            "input_filter": input_filter,
         }
         if opts.screens:
             self.controllers = [c for c in self.controllers if c in opts.screens]
@@ -287,7 +302,7 @@ class Application:
 
             self.common['loop'] = urwid.MainLoop(
                 self.common['ui'], palette=palette, screen=screen,
-                handle_mouse=False, pop_ups=True)
+                handle_mouse=False, pop_ups=True, input_filter=self.common['input_filter'].filter)
 
             log.debug("Running event loop: {}".format(
                 self.common['loop'].event_loop))
