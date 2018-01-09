@@ -19,6 +19,8 @@ import logging
 import os
 import struct
 import sys
+import termios
+import tty
 
 import urwid
 import yaml
@@ -139,12 +141,22 @@ class InputFilter:
         o = bytearray(4)
         fcntl.ioctl(self._fd, KDGKBMODE, o)
         self._old_mode = struct.unpack('i', o)[0]
+        self._old_settings = termios.tcgetattr(self._fd)
+        new_settings = termios.tcgetattr(self._fd)
+        new_settings[tty.IFLAG] = 0
+        new_settings[tty.LFLAG] = new_settings[tty.LFLAG] & ~(termios.ECHO | termios.ICANON | termios.ISIG)
+        new_settings[tty.CC][termios.VMIN] = 0
+        new_settings[tty.CC][termios.VTIME] = 0
+        termios.tcsetattr(self._fd, termios.TCSAFLUSH, new_settings)
+        log.debug("old mode was %s, setting mode to %s", self._old_mode, K_MEDIUMRAW)
         fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
 
     def stop_filtering(self):
         log.debug("stop_filtering")
         self.filtering = False
+        log.debug("setting mode back to %s", self._old_mode)
         fcntl.ioctl(self._fd, KDSKBMODE, self._old_mode)
+        termios.tcsetattr(self._fd, termios.TCSANOW, self._old_settings)
 
     def filter(self, keys, codes):
         log.debug("filter %s keys %s codes %s", self.filtering, keys, codes)

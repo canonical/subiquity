@@ -86,19 +86,35 @@ class AutoDetectFailed(AutoDetectBase):
 class AutoDetectComplete(AutoDetectBase):
     def make_body(self, cb, result, view):
         variant = None
+        kb_var = None
         model = result
         if ':' in result:
             model, variant = result.split(":", 1)
+        log.debug("%s %s", model, variant)
         for kb in view.model.keyboards:
             if kb.code == model:
+                if variant is None:
+                    break
+                for v in kb.variants:
+                    if v[0] == variant:
+                        kb_var = v[1]
                 break
         else:
             xxx
         view.form.layout.widget.value = kb
+        view.form.variant.widget.value = variant
+        var_desc = []
+        if kb_var is not None:
+            var_desc = [Text("    Variant: " + kb_var)]
         return Pile([
-                Text("Keybaord auto detection completed"),
+                Text("Keyboard auto detection completed"),
                 Text(""),
-                Text("Your keyboard was detected as %s" % kb.desc),
+                Text("Your keyboard was detected as:"),
+                Text(""),
+                Text("    Layout: " + kb.desc),
+            ] + var_desc + [
+                Text(""),
+                Text("If this is correct, select Done on the next screen. If not you can select another layout or run the automated detection again."),
                 Text(""),
                 button_pile([ok_btn(label="OK", on_press=lambda sender: cb(kb))]),
                 ])
@@ -172,6 +188,7 @@ class Detector:
             o = AutoDetectFailed(self.abort)
         else:
             if r == KeyboardDetector.RESULT:
+                log.debug("RESULT %r", self.keyboard_detector.result)
                 o = AutoDetectComplete(
                     self.keyboard_view.found_keyboard,
                     self.keyboard_detector.result,
@@ -184,6 +201,7 @@ class Detector:
                     self.keyboard_detector.symbols,
                     self.keyboard_detector.keycodes)
             elif r == KeyboardDetector.KEY_PRESENT or r == KeyboardDetector.KEY_PRESENT_P:
+                log.debug("PRESENT %r", self.keyboard_detector.symbols)
                 o = AutoDetectKeyPresent(
                     self._do_step,
                     self.keyboard_detector.symbols,
@@ -235,7 +253,9 @@ class KeyboardView(BaseView):
         detector.start()
 
     def found_keyboard(self, result):
+        self.remove_overlay()
         log.debug("found_keyboard %s", result)
+        self._w.focus_position = 2
 
     def done(self, result):
         self.controller.done()
