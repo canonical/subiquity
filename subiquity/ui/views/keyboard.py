@@ -108,42 +108,32 @@ class AutoDetectFailed(AutoDetectBase):
 
 class AutoDetectResult(AutoDetectBase):
 
+    preamble = """\
+Keyboard auto detection completed.
+
+Your keyboard was detected as:
+"""
+    postamble = """\
+
+If this is correct, select Done on the next screen. If not you can select \
+another layout or run the automated detection again.
+
+"""
+
     def ok(self, sender):
-        self.keyboard_detector.keyboard_view.found_keyboard(self.step.result)
+        self.keyboard_detector.keyboard_view.found_layout(self.step.result)
 
     def make_body(self):
-        variant = None
-        kb_var = None
-        model = self.step.result
-        if ':' in self.step.result:
-            model, variant = self.step.result.split(":", 1)
-        log.debug("%s %s", model, variant)
-        view = self.keyboard_detector.keyboard_view
-        for kb in view.model.keyboards:
-            if kb.code == model:
-                if variant is None:
-                    break
-                for v in kb.variants:
-                    if v[0] == variant:
-                        kb_var = v[1]
-                break
-        else:
-            xxx
-        view.form.layout.widget.value = kb
-        view.form.variant.widget.value = variant
+        model = self.keyboard_detector.keyboard_view.model
+        layout, variant = model.lookup(self.step.result)
         var_desc = []
-        if kb_var is not None:
-            var_desc = [Text("    Variant: " + kb_var)]
+        if variant is not None:
+            var_desc = [Text("    Variant: " + variant.desc)]
         return Pile([
-                Text("Keyboard auto detection completed"),
-                Text(""),
-                Text("Your keyboard was detected as:"),
-                Text(""),
-                Text("    Layout: " + kb.desc),
+                Text(self.preamble),
+                Text("    Layout: " + layout.desc),
             ] + var_desc + [
-                Text(""),
-                Text("If this is correct, select Done on the next screen. If not you can select another layout or run the automated detection again."),
-                Text(""),
+                Text(self.postamble),
                 button_pile([ok_btn(label="OK", on_press=self.ok)]),
                 ])
 
@@ -269,17 +259,17 @@ class KeyboardView(BaseView):
 
         self.form = KeyboardForm()
         opts = []
-        us_keyboard = None
-        for keyboard in model.keyboards:
-            if keyboard.code == "us":
-                us_keyboard = keyboard
-            opts.append(Option((keyboard.desc, True, keyboard)))
+        us_layout = None
+        for layout in model.layouts:
+            if layout.code == "us":
+                us_layout = layout
+            opts.append(Option((layout.desc, True, layout)))
         opts.sort(key=lambda o:o.label)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget._options = opts
-        self.form.layout.widget.value = us_keyboard
+        self.form.layout.widget.value = us_layout
 
         self._rows = self.form.as_rows(self)
         identify_btn = other_btn(label=_("Identify keyboard"), on_press=self.detect)
@@ -299,9 +289,12 @@ class KeyboardView(BaseView):
         detector = Detector(self)
         detector.start()
 
-    def found_keyboard(self, result):
+    def found_layout(self, result):
         self.remove_overlay()
-        log.debug("found_keyboard %s", result)
+        log.debug("found_layout %s", result)
+        layout, variant = self.model.lookup(result)
+        self.form.layout.widget.value = layout
+        self.form.variant.widget.value = variant
         self._w.focus_position = 2
 
     def done(self, result):
@@ -310,16 +303,13 @@ class KeyboardView(BaseView):
     def cancel(self, result=None):
         self.controller.cancel()
 
-    def select_layout(self, sender, keyboard):
-        log.debug("%s", keyboard)
+    def select_layout(self, sender, layout):
+        log.debug("%s", layout)
         opts = []
-        for code, desc, langs in keyboard.variants:
-            opts.append(Option((desc, True, code)))
+        for variant in layout.variants:
+            opts.append(Option((variant.desc, True, variant)))
         opts.sort(key=lambda o:o.label)
         opts.insert(0, Option(("default", True, None)))
         self.form.variant.widget._options = opts
         self.form.variant.widget.index = 0
         self.form.variant.enabled = len(opts) > 1
-
-
-

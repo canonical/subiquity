@@ -33,6 +33,7 @@ class StepResult(Step):
 
 
 class PC105Tree:
+    """Parses the pc105.tree file into subclasses of Step"""
 
     def __init__(self):
         self.steps = {}
