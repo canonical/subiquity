@@ -36,12 +36,7 @@ from subiquitycore.ui.selector import Option, Selector
 from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
 
-from subiquity.ui.views.keyboard_detector import (
-    DetectorStepPressKey,
-    DetectorStepKeyPresent,
-    DetectorStepResult,
-    KeyboardDetector
-    )
+from subiquity.ui.views import pc105
 
 log = logging.getLogger("subiquity.ui.views.keyboard")
 
@@ -111,7 +106,7 @@ class AutoDetectFailed(AutoDetectBase):
                 button_pile([ok_btn(label="OK", on_press=self.ok)]),
                 ])
 
-class AutoDetectComplete(AutoDetectBase):
+class AutoDetectResult(AutoDetectBase):
 
     def ok(self, sender):
         self.keyboard_detector.keyboard_view.found_keyboard(self.step.result)
@@ -216,8 +211,8 @@ class Detector:
 
     def __init__(self, kview):
         self.keyboard_view = kview
-        self.keyboard_detector = KeyboardDetector()
-        self.keyboard_detector.read_steps()
+        self.pc105tree = pc105.PC105Tree()
+        self.pc105tree.read_steps()
         self.seen_steps = []
 
     def start(self):
@@ -230,9 +225,9 @@ class Detector:
         self.keyboard_view.remove_overlay()
 
     step_cls_to_view_cls = {
-        DetectorStepResult: AutoDetectComplete,
-        DetectorStepPressKey: AutoDetectPressKey,
-        DetectorStepKeyPresent: AutoDetectKeyPresent,
+        pc105.StepResult: AutoDetectResult,
+        pc105.StepPressKey: AutoDetectPressKey,
+        pc105.StepKeyPresent: AutoDetectKeyPresent,
         }
 
     def backup(self):
@@ -254,9 +249,8 @@ class Detector:
 
         log.debug("moving to step %s", step_index)
         try:
-            step = self.keyboard_detector.steps[step_index]
+            step = self.pc105tree.steps[step_index]
         except KeyError:
-            raise
             view = AutoDetectFailed(self, None)
         else:
             self.seen_steps.append(step_index)

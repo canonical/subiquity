@@ -1,6 +1,6 @@
 
 
-class DetectorStep:
+class Step:
     def __repr__(self):
         kvs = []
         for k, v in self.__dict__.items():
@@ -10,7 +10,7 @@ class DetectorStep:
         pass
 
 
-class DetectorStepPressKey(DetectorStep):
+class StepPressKey(Step):
     def __init__(self):
         self.symbols = []
         self.keycodes = {}
@@ -18,7 +18,7 @@ class DetectorStepPressKey(DetectorStep):
         if len(self.symbols) == 0 or len(self.keycodes) == 0:
             raise Exception
 
-class DetectorStepKeyPresent(DetectorStep):
+class StepKeyPresent(Step):
     def __init__(self, symbol):
         self.symbol = symbol
         self.yes = None
@@ -27,12 +27,12 @@ class DetectorStepKeyPresent(DetectorStep):
         if self.yes is None or self.no is None:
             raise Exception
 
-class DetectorStepResult(DetectorStep):
+class StepResult(Step):
     def __init__(self, result):
         self.result = result
 
 
-class KeyboardDetector:
+class PC105Tree:
 
     def __init__(self):
         self.steps = {}
@@ -46,14 +46,14 @@ class KeyboardDetector:
             elif line.startswith('PRESS '):
                 # Ask the user to press a character on the keyboard.
                 if step is None:
-                    step = DetectorStepPressKey()
-                elif not isinstance(step, DetectorStepPressKey):
+                    step = StepPressKey()
+                elif not isinstance(step, StepPressKey):
                     raise Exception
                 step.symbols.append(line[6:].strip())
             elif line.startswith('CODE '):
                 # Direct the evaluating code to process step ## next if the
                 # user has pressed a key which returned that keycode.
-                if not isinstance(step, DetectorStepPressKey):
+                if not isinstance(step, StepPressKey):
                     raise Exception
                 keycode = int(line[5:line.find(' ', 5)])
                 s = int(line[line.find(' ', 5) + 1:])
@@ -62,32 +62,32 @@ class KeyboardDetector:
                 # Ask the user whether that character is present on their
                 # keyboard.
                 if step is None:
-                    step = DetectorStepKeyPresent(line[5:].strip())
+                    step = StepKeyPresent(line[5:].strip())
                 else:
                     raise Exception
             elif line.startswith('FINDP '):
                 # Equivalent to FIND, except that the user is asked to consider
                 # only the primary symbols (i.e. Plain and Shift).
                 if step is None:
-                    step = DetectorStepKeyPresent(line[6:].strip())
+                    step = StepKeyPresent(line[6:].strip())
                 else:
                     raise Exception
             elif line.startswith('YES '):
                 # Direct the evaluating code to process step ## next if the
                 # user does have this key.
-                if not isinstance(step, DetectorStepKeyPresent):
+                if not isinstance(step, StepKeyPresent):
                     raise Exception
                 step.yes = int(line[4:].strip())
             elif line.startswith('NO '):
                 # Direct the evaluating code to process step ## next if the
                 # user does not have this key.
-                if not isinstance(step, DetectorStepKeyPresent):
+                if not isinstance(step, StepKeyPresent):
                     raise Exception
                 step.no = int(line[3:].strip())
             elif line.startswith('MAP '):
                 # This step uniquely identifies a keymap.
                 if step is None:
-                    step = DetectorStepResult(line[4:].strip())
+                    step = StepResult(line[4:].strip())
                 else:
                     raise Exception
             else:
