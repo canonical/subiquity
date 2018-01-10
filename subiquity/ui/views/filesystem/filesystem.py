@@ -105,6 +105,7 @@ class FilesystemView(BaseView):
             self.lb,
             ('pack', self.footer)])
         if self.model.can_install():
+            self.lb.original_widget._select_last_selectable()
             self.frame.focus_position = 2
         super().__init__(self.frame)
         log.debug('FileSystemView init complete()')

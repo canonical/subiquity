@@ -130,6 +130,7 @@ class NetworkView(BaseView):
             ('pack', Text("")),
             self.lb,
             ('pack', self.footer)])
+        self.lb.original_widget._select_last_selectable()
         self.frame.focus_position = 2
         super().__init__(self.frame)
 
