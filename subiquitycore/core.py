@@ -159,7 +159,6 @@ class InputFilter:
         termios.tcsetattr(self._fd, termios.TCSANOW, self._old_settings)
 
     def filter(self, keys, codes):
-        log.debug("filter %s keys %s codes %s", self.filtering, keys, codes)
         if self.filtering:
             i = 0
             r = []
@@ -176,7 +175,6 @@ class InputFilter:
                     kc = codes[i] & 0x7f
                     i += 1
                 r.append(p + str(kc))
-            log.debug("filter keys r %s", r)
             return r
         else:
             return keys
