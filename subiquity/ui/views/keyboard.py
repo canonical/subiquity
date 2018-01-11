@@ -273,15 +273,17 @@ class KeyboardView(BaseView):
 
         self._rows = self.form.as_rows(self)
         identify_btn = other_btn(label=_("Identify keyboard"), on_press=self.detect)
+        lb = ListBox([self._rows, Text(""), button_pile([identify_btn])])
         pile = Pile([
             ('pack', Text("")),
-            Padding.center_90(ListBox([self._rows, Text(""), button_pile([identify_btn])])),
+            Padding.center_90(lb),
             ('pack', Pile([
                 Text(""),
                 self.form.buttons,
                 Text(""),
                 ])),
             ])
+        lb._select_last_selectable()
         pile.focus_position = 2
         super().__init__(pile)
 
