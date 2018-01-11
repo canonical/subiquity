@@ -1,4 +1,9 @@
+
+import os
+
 from lxml import etree
+
+from subiquitycore.utils import run_command
 
 
 class Layout:
@@ -10,6 +15,7 @@ class Layout:
     def __repr__(self):
         return "Layout({}, {}) {} {}".format(self.code, self.desc, self.variants, self.languages)
 
+
 class Variant:
     def __init__(self, code, desc):
         self.code = code
@@ -19,9 +25,23 @@ class Variant:
         return "Variant({}, {}) {}".format(self.code, self.desc, self.languages)
 
 
+etc_default_keyboard_template = """\
+# KEYBOARD CONFIGURATION FILE
+
+# Consult the keyboard(5) manual page.
+
+XKBMODEL="pc105"
+XKBLAYOUT="{layout}"
+XKBVARIANT="{variant}"
+XKBOPTIONS=""
+
+BACKSPACE="guess"
+"""
+
 class KeyboardModel:
-    def __init__(self):
-        self.layouts = [] # Keyboard objects
+    def __init__(self, root):
+        self.layouts = [] # Layout objects
+        self.root = root
 
     def parse(self, fname):
         t = etree.parse(fname)
@@ -53,6 +73,15 @@ class KeyboardModel:
                         return layout, variant
         raise Exception("%s not found" % (code,))
 
+    def set_keyboard(self, layout, variant):
+        path = os.path.join(self.root, 'etc', 'default', 'keyboard')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        content = etc_default_keyboard_template.format(layout=layout, variant=variant)
+        with open(path, 'w') as fp:
+            fp.write(content)
+        if self.root == '/':
+            run_command(['setupcon', '--save', '--force'])
+
 
 def main(args):
     lang = args[1]
@@ -64,6 +93,7 @@ def main(args):
         for name, _, langs in keyboard.variants:
             if lang in langs:
                 print(keyboard.code, name, langs)
+
 
 if __name__ == "__main__":
     import sys

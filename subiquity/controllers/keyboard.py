@@ -35,7 +35,8 @@ class KeyboardController(BaseController):
         view = KeyboardView(self.model, self, self.opts)
         self.ui.set_body(view)
 
-    def done(self):
+    def done(self, layout, variant):
+        self.model.set_keyboard(layout, variant)
         self.signal.emit_signal('next-screen')
 
     def cancel(self):

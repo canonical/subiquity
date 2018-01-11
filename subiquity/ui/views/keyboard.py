@@ -300,7 +300,11 @@ class KeyboardView(BaseView):
         self._w.focus_position = 2
 
     def done(self, result):
-        self.controller.done()
+        layout = self.form.layout.widget.value.code
+        variant = ''
+        if self.form.variant.widget.value is not None:
+            variant = self.form.variant.widget.value.code
+        self.controller.done(layout, variant)
 
     def cancel(self, result=None):
         self.controller.cancel()

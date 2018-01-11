@@ -29,8 +29,11 @@ class SubiquityModel:
     """The overall model for subiquity."""
 
     def __init__(self, common):
+        root = '/'
+        if common['opts'].dry_run:
+            root = os.path.abspath(".subiquity")
         self.locale = LocaleModel()
-        self.keyboard = KeyboardModel()
+        self.keyboard = KeyboardModel(root)
         self.network = NetworkModel()
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
