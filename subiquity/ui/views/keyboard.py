@@ -259,17 +259,22 @@ class KeyboardView(BaseView):
 
         self.form = KeyboardForm()
         opts = []
-        us_layout = None
+        cur_layout = None
+        cur_variant = None
         for layout in model.layouts:
-            if layout.code == "us":
-                us_layout = layout
+            if layout.code == model.layout:
+                cur_layout = layout
+                for variant  in layout.variants:
+                    if variant.code == model.variant:
+                        cur_variant = variant
             opts.append(Option((layout.desc, True, layout)))
         opts.sort(key=lambda o:o.label)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget._options = opts
-        self.form.layout.widget.value = us_layout
+        self.form.layout.widget.value = cur_layout
+        self.form.variant.widget.value = cur_variant
 
         self._rows = self.form.as_rows(self)
         identify_btn = other_btn(label=_("Identify keyboard"), on_press=self.detect)

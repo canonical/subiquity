@@ -1,10 +1,13 @@
 
+import logging
 import os
+import re
 
 from lxml import etree
 
 from subiquitycore.utils import run_command
 
+log = logging.getLogger("subiquity.models.keyboard")
 
 class Layout:
     def __init__(self, code, desc):
@@ -42,6 +45,26 @@ class KeyboardModel:
     def __init__(self, root):
         self.layouts = [] # Layout objects
         self.root = root
+        self.layout = 'us'
+        self.variant = ''
+        if os.path.exists(self.config_path):
+            content = open(self.config_path).read()
+            pat_tmpl = '(?m)^\s*%s=(.*)$'
+            log.debug("%r", content)
+            layout_match = re.search(pat_tmpl%("XKBLAYOUT",), content)
+            if layout_match:
+                log.debug("%s", layout_match)
+                self.layout = layout_match.group(1).strip('"')
+            variant_match = re.search(pat_tmpl%("XKBVARIANT",), content)
+            if variant_match:
+                log.debug("%s", variant_match)
+                self.variant = variant_match.group(1).strip('"')
+                if self.variant == '':
+                    self.variant = None
+
+    @property
+    def config_path(self):
+        return os.path.join(self.root, 'etc', 'default', 'keyboard')
 
     def parse(self, fname):
         t = etree.parse(fname)
@@ -74,7 +97,7 @@ class KeyboardModel:
         raise Exception("%s not found" % (code,))
 
     def set_keyboard(self, layout, variant):
-        path = os.path.join(self.root, 'etc', 'default', 'keyboard')
+        path = os.path.join(self.config_path)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         content = etc_default_keyboard_template.format(layout=layout, variant=variant)
         with open(path, 'w') as fp:
