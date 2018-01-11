@@ -66,6 +66,10 @@ class KeyboardModel:
     def config_path(self):
         return os.path.join(self.root, 'etc', 'default', 'keyboard')
 
+    @property
+    def config_content(self):
+        return etc_default_keyboard_template.format(layout=self.layout, variant=self.variant)
+
     def parse(self, fname):
         t = etree.parse(fname)
         for layout_elem in t.xpath("//layoutList/layout"):
@@ -99,9 +103,10 @@ class KeyboardModel:
     def set_keyboard(self, layout, variant):
         path = os.path.join(self.config_path)
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        content = etc_default_keyboard_template.format(layout=layout, variant=variant)
+        self.layout = layout
+        self.variant = variant
         with open(path, 'w') as fp:
-            fp.write(content)
+            fp.write(self.config_content)
         if self.root == '/':
             run_command(['setupcon', '--save', '--force'])
 

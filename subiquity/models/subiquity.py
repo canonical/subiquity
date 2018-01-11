@@ -107,6 +107,12 @@ class SubiquityModel:
             }
         if install_step == "install":
             config.update(self.network.render())
+            config['write_files'] = {
+                'etc_default_keyboard': {
+                    'path': 'etc/default/keyboard',
+                    'content': self.keyboard.config_content,
+                    },
+                }
         else:
             config['write_files'] = self._write_files_config()
 
