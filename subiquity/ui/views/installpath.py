@@ -40,35 +40,34 @@ log = logging.getLogger('subiquity.installpath')
 
 
 class InstallpathView(BaseView):
-    def __init__(self, model, signal):
+    def __init__(self, model, controller):
         self.model = model
-        self.signal = signal
+        self.controller = controller
         self.items = []
         back = back_btn(_("Back"), on_press=self.cancel)
         self.body = [
-            Text(""),
-            Padding.center_79(self._build_model_inputs()),
-            Padding.line_break(""),
-            button_pile([back]),
+            ('pack', Text("")),
+            Padding.center_79(self._build_choices()),
+            ('pack', Text("")),
+            ('pack', button_pile([back])),
+            ('pack', Text("")),
         ]
-        super().__init__(ListBox(self.body))
+        super().__init__(Pile(self.body))
 
-    def _build_model_inputs(self):
-        sl = []
-        for ipath, sig in self.model.get_menu():
-            log.debug("Building inputs: {}".format(ipath))
-            sl.append(
+    def _build_choices(self):
+        choices = []
+        for label, path in self.model.paths:
+            log.debug("Building inputs: {}".format(path))
+            choices.append(
                 menu_btn(
-                    label=ipath, on_press=self.confirm, user_arg=sig))
+                    label=label, on_press=self.confirm, user_arg=path))
+        return ListBox(choices)
 
-        return BoxAdapter(SimpleList(sl),
-                          height=len(sl))
-
-    def confirm(self, result, sig):
-        self.signal.emit_signal(sig)
+    def confirm(self, sender, path):
+        self.controller.choose_path(path)
 
     def cancel(self, button=None):
-        self.signal.emit_signal('prev-screen')
+        self.controller.cancel()
 
 class URLEditor(StringEditor, WantsToKnowFormField):
     pass
@@ -133,12 +132,12 @@ class MAASView(BaseView):
         self.signal = controller.signal
         self.items = []
 
-        if self.model.path == "region":
+        if self.model.path == "maas_region":
             self.form = RegionForm()
-        elif self.model.path == "rack":
+        elif self.model.path == "maas_rack":
             self.form = RackForm()
         else:
-            raise ValueError("invalid MAAS form %s" % form)
+            raise ValueError("invalid MAAS form %s" % self.model.path)
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)

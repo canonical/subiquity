@@ -47,21 +47,23 @@ class InstallpathController(BaseController):
 
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
-        self.ui.set_body(InstallpathView(self.model, self.signal))
+        self.ui.set_body(InstallpathView(self.model, self))
 
     default = installpath
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
 
+    def choose_path(self, path):
+        self.model.path = path
+        getattr(self, 'install_' + path)()
+
     def install_ubuntu(self):
-        self.model.path = 'ubuntu'
         log.debug("Installing Ubuntu path chosen.")
         self.signal.emit_signal('next-screen')
 
     def install_maas_region(self):
         # show region questions, seed model
-        self.model.path = 'region'
         title = "Metal as a Service (MAAS) Regional Controller Setup"
         excerpt = _(
             "MAAS runs a software-defined data centre - it turns a "
@@ -77,7 +79,6 @@ class InstallpathController(BaseController):
 
     def install_maas_rack(self):
         # show cack questions, seed model
-        self.model.path = 'rack'
         title = "Metal as a Service (MAAS) Rack Controller Setup"
         excerpt = _(
             "The MAAS rack controller (maas-rackd) provides highly available, fast "

@@ -30,28 +30,25 @@ class InstallpathModel(object):
     packages = {}
     debconf = {}
 
-    def _refresh_install_paths(self):
-        self.install_paths = [
-            (_('Install Ubuntu'),                 'installpath:install-ubuntu'),
-            (_('Install MAAS Region Controller'), 'installpath:maas-region'),
-            (_('Install MAAS Rack Controller'),   'installpath:maas-rack'),
+    @property
+    def paths(self):
+        return [
+            (_('Install Ubuntu'),                 'ubuntu'),
+            (_('Install MAAS Region Controller'), 'maas_region'),
+            (_('Install MAAS Rack Controller'),   'maas_rack'),
         ]
-
-    def get_menu(self):
-        self._refresh_install_paths()
-        return self.install_paths
 
     def update(self, results):
         if self.path == 'ubuntu':
             self.packages = {}
             self.debconf = {}
-        elif self.path == 'region':
+        elif self.path == 'maas_region':
             self.packages = {'packages': ['maas']}
             self.debconf['debconf_selections'] = {
                 'maas-username': 'maas-region-controller maas/username string %s' % results['username'],
                 'maas-password': 'maas-region-controller maas/password password %s' % results['password'],
                 }
-        elif self.path == 'rack':
+        elif self.path == 'maas_rack':
             self.packages = {'packages': ['maas-rack-controller']}
             self.debconf['debconf_selections'] = {
                 'maas-url': 'maas-rack-controller maas-rack-controller/maas-url string %s' % results['url'],
