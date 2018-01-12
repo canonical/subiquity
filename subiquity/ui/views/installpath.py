@@ -46,6 +46,7 @@ class InstallpathView(BaseView):
         self.items = []
         back = back_btn(_("Back"), on_press=self.cancel)
         self.body = [
+            Text(""),
             Padding.center_79(self._build_model_inputs()),
             Padding.line_break(""),
             button_pile([back]),
@@ -157,6 +158,5 @@ class MAASView(BaseView):
         log.debug("User input: {}".format(result.as_data()))
         self.controller.setup_maas(result.as_data())
 
-    def cancel(self, result):
-        self.model.update(result)
+    def cancel(self, result=None):
         self.controller.default()
