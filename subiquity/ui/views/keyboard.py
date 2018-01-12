@@ -287,8 +287,15 @@ class KeyboardView(BaseView):
         self.form.variant.widget.value = cur_variant
 
         self._rows = self.form.as_rows(self)
-        identify_btn = other_btn(label=_("Identify keyboard"), on_press=self.detect)
-        lb = ListBox([self._rows, Text(""), button_pile([identify_btn])])
+
+        lb_contents = [self._rows]
+        if not self.opts.run_on_serial:
+            lb_contents.extend([
+                Text(""),
+                button_pile([
+                    other_btn(label=_("Identify keyboard"), on_press=self.detect)]),
+                ])
+        lb = ListBox(lb_contents)
         pile = Pile([
             ('pack', Text("")),
             Padding.center_90(lb),
