@@ -71,6 +71,10 @@ class KeyboardModel:
         return etc_default_keyboard_template.format(layout=self.layout, variant=self.variant)
 
     def parse(self, fname):
+        # Rather than parsing base.xml this should parse a kbdnames.gz
+        # file as ubiquity does (which contains localized names of the
+        # layouts and variants). This requires work to generate such a
+        # file at snap build time and can wait for the next branch :-)
         t = etree.parse(fname)
         for layout_elem in t.xpath("//layoutList/layout"):
             c = layout_elem.find("configItem")
