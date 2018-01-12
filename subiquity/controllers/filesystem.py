@@ -15,12 +15,13 @@
 
 import logging
 import os
+import re
 
 from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.ui.error import ErrorView
 
-from subiquity.models.filesystem import humanize_size
+from subiquity.models.filesystem import humanize_size, dehumanize_size
 from subiquity.ui.views import (
     BcacheView,
     DiskInfoView,
@@ -50,6 +51,7 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', False)
+        self.answers.setdefault('volumes', None)
         # self.iscsi_model = IscsiDiskModel()
         # self.ceph_model = CephDiskModel()
         self.model.probe()  # probe before we complete
@@ -62,8 +64,56 @@ class FilesystemController(BaseController):
         self.ui.set_body(GuidedFilesystemView(self))
         if self.answers['guided']:
             self.guided()
+        elif self.answers['volumes']:
+            self.part_answers()
         elif self.answers['manual']:
             self.manual()
+
+    def part_answers(self):
+        log.debug("Partitions configure in answers")
+        for disks in self.answers['volumes']:
+            for d, parts in disks.items():
+                disk = None
+                r_disk = re.compile('disk-[0-9]$')
+                r_devpath = re.compile('^(/dev/)+([a-z])+([0-9n-])*')
+                # case 1: /dev/sdX
+                # case 2: /dev/nvmeXnX
+                # case 3: /dev/dm-X
+                if r_disk.match(d) is not None:
+                    index = d.strip('disk-')
+                    disk = self.model.all_disks()[int(index)]
+                elif r_devpath.match(d) is not None:
+                    disk = self.model.get_disk(d)
+
+                if disk is not None:
+                    partnum = 0
+                    for p in parts:
+                        if None is p['size']:
+                            log.debug("darren disk.free:{}".format(disk.free))
+                            size = dehumanize_size(str(disk.free))
+                        else:
+                            log.debug("darren psize:{} type:{}".format(p['size'], type(p['size'])))
+                            size = dehumanize_size(str(p['size']))
+                        flag = p['flag'] # Check it which only accept 'boot' and 'bios_boot'. 'raid', 'lvm'?
+                        fstype = self.model.fs_by_name[p['filesystem']] # Check the "supported_filesystems"?
+                        mount = p['mount'] # Check the valid path
+                        # 1. if not val.startswith('/'):
+                        #    raise ValueError("%s does not start with /", val)
+                        # 2. if not leave umounted
+                        # 3. /usr/include/linux/limits.h:PATH_MAX
+                        #        if len(mount) > 4095:
+                        #           return 'Path exceeds PATH_MAX'
+                        # 4. already mounted?
+                        partnum += 1
+                        part = self.model.add_partition(disk=disk, partnum=partnum, size=size, flag=flag)
+                        spec = {
+                            "partnum": partnum,
+                            "size": size,
+                            "fstype": fstype,
+                            "mount": mount,
+                        }
+                        self.partition_disk_handler(disk, part, spec)
+        self.manual()
 
     def manual(self):
         title = _("Filesystem setup")
@@ -71,7 +121,7 @@ class FilesystemController(BaseController):
         self.ui.set_header(title)
         self.ui.set_footer(footer)
         self.ui.set_body(FilesystemView(self.model, self))
-        if self.answers['guided']:
+        if self.answers['guided'] or self.answers['volumes']:
             self.finish()
 
     def guided(self):
