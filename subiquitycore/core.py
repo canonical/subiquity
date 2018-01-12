@@ -128,19 +128,33 @@ def setup_screen(colors, styles):
 
 
 
-class InputFilter:
+class KeyCodesFilter:
+    """input_filter that can pass (medium) raw keycodes to the application
 
-    def __init__(self, timelimit=10):
-        self._timelimit = timelimit
-        self.filtering = False
+    See http://lct.sourceforge.net/lct/x60.html for terminology.
+
+    Call enter_keycodes_mode()/exit_keycodes_mode() to switch into and
+    out of keycodes mode. In keycodes mode, the only events passed to
+    the application are "press $N" / "release $N" where $N is the
+    keycode the user pressed or released.
+
+    Much of this is cribbed from the source of the "showkeys" utility.
+    """
+
+    def __init__(self):
         self._fd = os.open("/proc/self/fd/0", os.O_RDWR)
+        self.filtering = False
 
-    def start_filtering(self):
-        log.debug("start_filtering")
+    def enter_keycodes_mode(self):
+        log.debug("enter_keycodes_mode")
         self.filtering = True
+        # Read the old keyboard mode (it will proably always be K_UNICODE but well).
         o = bytearray(4)
         fcntl.ioctl(self._fd, KDGKBMODE, o)
         self._old_mode = struct.unpack('i', o)[0]
+        # Make some changes to the terminal settings.
+        # If you don't do this, sometimes writes to the terminal hang (and no,
+        # I don't know exactly why).
         self._old_settings = termios.tcgetattr(self._fd)
         new_settings = termios.tcgetattr(self._fd)
         new_settings[tty.IFLAG] = 0
@@ -148,22 +162,27 @@ class InputFilter:
         new_settings[tty.CC][termios.VMIN] = 0
         new_settings[tty.CC][termios.VTIME] = 0
         termios.tcsetattr(self._fd, termios.TCSAFLUSH, new_settings)
+        # Finally, set the meyboard mode to K_MEDIUMRAW, which causes
+        # the keyboard driver in the kernel to pass us keycodes.
         log.debug("old mode was %s, setting mode to %s", self._old_mode, K_MEDIUMRAW)
         fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
 
-    def stop_filtering(self):
-        log.debug("stop_filtering")
+    def exit_keycodes_mode(self):
+        log.debug("exit_keycodes_mode")
         self.filtering = False
         log.debug("setting mode back to %s", self._old_mode)
         fcntl.ioctl(self._fd, KDSKBMODE, self._old_mode)
         termios.tcsetattr(self._fd, termios.TCSANOW, self._old_settings)
 
     def filter(self, keys, codes):
+        # Luckily urwid passes us the raw results from read() we can
+        # turn into keycodes.
         if self.filtering:
             i = 0
             r = []
             n = len(codes)
             while i < len(codes):
+                # This is straight from showkeys.c.
                 if codes[i] & 0x80:
                     p = 'release '
                 else:
@@ -180,17 +199,13 @@ class InputFilter:
             return keys
 
 
-class DummyInputFilter:
+class DummyKeycodesFilter:
 
-    def __init__(self, timelimit=10):
-        self._timelimit = timelimit
-        self.filtering = False
+    def enter_keycodes_mode(self):
+        pass
 
-    def start_filtering(self):
-        self.filtering = True
-
-    def stop_filtering(self):
-        self.filtering = False
+    def exit_keycodes_mode(self):
+        pass
 
     def filter(self, keys, codes):
         return keys
@@ -233,9 +248,10 @@ class Application:
 
         if is_linux_tty():
             log.debug("is_linux_tty")
-            input_filter = InputFilter()
+            input_filter = KeyCodesFilter()
         else:
-            input_filter = DummyInputFilter()
+            input_filter = DummyKeycodesFilter()
+
         self.common = {
             "ui": ui,
             "opts": opts,
@@ -316,9 +332,7 @@ class Application:
 
             log.debug("Running event loop: {}".format(
                 self.common['loop'].event_loop))
-            self.common['input_filter']._loop = self.common['loop']
             self.common['base_model'] = self.model_class(self.common)
-
         try:
             self.common['loop'].set_alarm_in(0.05, self.next_screen)
             controllers_mod = __import__('%s.controllers' % self.project, None, None, [''])

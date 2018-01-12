@@ -41,23 +41,6 @@ from subiquity.ui.views import pc105
 log = logging.getLogger("subiquity.ui.views.keyboard")
 
 
-class ChoiceField(FormField):
-
-    def __init__(self, caption=None, help=None, choices=[]):
-        super().__init__(caption, help)
-        self.choices = choices
-
-    def _make_widget(self, form):
-        return Selector(self.choices)
-
-class KeyboardForm(Form):
-
-    cancel_label = _("Back")
-
-    layout = ChoiceField(_("Layout:"), choices=["dummy"])
-    variant = ChoiceField(_("Variant:"), choices=["dummy"])
-
-
 class AutoDetectBase(WidgetWrap):
     def __init__(self, keyboard_detector, step):
         self.keyboard_detector = keyboard_detector
@@ -137,6 +120,7 @@ another layout or run the automated detection again.
                 button_pile([ok_btn(label="OK", on_press=self.ok)]),
                 ])
 
+
 class AutoDetectPressKey(AutoDetectBase):
 
     def selectable(self):
@@ -144,7 +128,7 @@ class AutoDetectPressKey(AutoDetectBase):
 
     def make_body(self):
         return Pile([
-            Text("press one of these"),
+            Text(_("Please press one of the following keys:")),
             Text(""),
             Columns([Text(s, align="center") for s in self.step.symbols], dividechars=1),
             Text(""),
@@ -155,14 +139,16 @@ class AutoDetectPressKey(AutoDetectBase):
         return self.keyboard_detector.keyboard_view.controller.input_filter
 
     def start(self):
-        self.input_filter.start_filtering()
+        self.input_filter.enter_keycodes_mode()
 
     def stop(self):
-        self.input_filter.stop_filtering()
+        self.input_filter.exit_keycodes_mode()
 
     def keypress(self, size, key):
         log.debug('keypress %r %r', size, key)
         if key.startswith('release '):
+            # Escape is key 1 on keyboards and all layouts except
+            # amigas and very old Macs so this seems safe enough.
             if key == 'release 1':
                 return super().keypress(size, 'esc')
             else:
@@ -173,9 +159,13 @@ class AutoDetectPressKey(AutoDetectBase):
                 return
             v = self.step.keycodes[code]
         else:
+            # If we're not on a linux tty, the filtering won't have
+            # happened and so there's no way to get the keycodes. Do
+            # something literally random instead.
             import random
             v = random.choice(list(self.step.keycodes.values()))
         self.keyboard_detector.do_step(v)
+
 
 class AutoDetectKeyPresent(AutoDetectBase):
 
@@ -249,6 +239,23 @@ class Detector:
 
         view.start()
         self.keyboard_view.show_overlay(view)
+
+
+class ChoiceField(FormField):
+
+    def __init__(self, caption=None, help=None, choices=[]):
+        super().__init__(caption, help)
+        self.choices = choices
+
+    def _make_widget(self, form):
+        return Selector(self.choices)
+
+class KeyboardForm(Form):
+
+    cancel_label = _("Back")
+
+    layout = ChoiceField(_("Layout:"), choices=["dummy"])
+    variant = ChoiceField(_("Variant:"), choices=["dummy"])
 
 
 class KeyboardView(BaseView):
