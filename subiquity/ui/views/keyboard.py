@@ -33,7 +33,7 @@ from subiquitycore.ui.form import (
     FormField,
     )
 from subiquitycore.ui.selector import Option, Selector
-from subiquitycore.ui.utils import button_pile, Padding
+from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
 from subiquity.ui.views import pc105
@@ -127,11 +127,13 @@ class AutoDetectPressKey(AutoDetectBase):
         return True
 
     def make_body(self):
+        self.error_text = Text("", align="center")
         return Pile([
             Text(_("Please press one of the following keys:")),
             Text(""),
             Columns([Text(s, align="center") for s in self.step.symbols], dividechars=1),
             Text(""),
+            Color.info_error(self.error_text),
             ])
 
     @property
@@ -156,6 +158,7 @@ class AutoDetectPressKey(AutoDetectBase):
         elif key.startswith('press '):
             code = int(key[len('press '):])
             if code not in self.step.keycodes:
+                self.error_text.set_text("Input was not recognized, try again")
                 return
             v = self.step.keycodes[code]
         else:
