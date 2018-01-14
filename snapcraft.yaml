@@ -63,6 +63,15 @@ parts:
         cut -d ' ' -f 2- > users-and-groups
     stage:
       - users-and-groups
+  kbdnames:
+    plugin: dump
+    build-packages:
+      - console-setup
+      - xkb-data-i18n
+    prepare: |
+      /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl | gzip -9 > kbdnames.gz
+    stage:
+      - kbdnames.gz
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
