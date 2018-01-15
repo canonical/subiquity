@@ -125,19 +125,25 @@ class FilesystemController(BaseController):
                 partnum = 0
                 for p in parts:
                     # if size leaves as empty, using remain space as partition size
-                    if None is p['size']:
+                    if 'size' not in p or None is p['size']:
                         size = dehumanize_size(str(disk.free))
                     else:
                         size = dehumanize_size(str(p['size']))
 
-                    flag = p['flag']
+                    if 'flag' in p:
+                        flag = p['flag']
+                    else:
+                        flag = None
 
                     try:
                         fstype = self.model.fs_by_name[p['filesystem']]
                     except KeyError:
                         fstype = None
 
-                    mount = p['mount']
+                    if 'mount' in p:
+                        mount = p['mount']
+                    else:
+                        mount = None
 
                     if not self._validate_volumes_input(disk, size, flag, fstype, mount):
                         self._force_manual(reason='Invalid partition attributes: size:{}, flag:{}, mount:{}'.format(size, flag, fstype, mount))

@@ -10,17 +10,13 @@ Filesystem:
               filesystem: fat32
               filesystem-label: boot
               mount: /boot/efi
-            - size: 
-              flag: 
-              filesystem: ext4
+            - filesystem: ext4
               filesystem-label: rootfs
               mount: /
       - /dev/sdh:
             - size: 100G
-              flag: 
               filesystem: ext4
               filesystem-label:
-              mount: /home
             - size: 0
               flag:
               filesystem: ext4
