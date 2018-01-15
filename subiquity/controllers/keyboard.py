@@ -33,8 +33,16 @@ class KeyboardController(BaseController):
 
     def language_selected(self, code):
         log.debug("language_selected %s", code)
+        if not self.model.has_language(code):
+            code = code.split('_')[0]
+        if not self.model.has_language(code):
+            code = 'C'
+        log.debug("loading launguage %s", code)
+        self.model.load_language(code)
 
     def default(self):
+        if self.model.current_lang is None:
+            self.model.load_language('C')
         title = "Keyboard configuration"
         if self.opts.run_on_serial:
             excerpt = 'Please select the layout of the keyboard directly attached to the system, if any.'

@@ -111,10 +111,10 @@ another layout or run the automated detection again.
         layout, variant = model.lookup(self.step.result)
         var_desc = []
         if variant is not None:
-            var_desc = [Text("    Variant: " + variant.desc)]
+            var_desc = [Text("    Variant: " + variant)]
         return Pile([
                 Text(self.preamble),
-                Text("    Layout: " + layout.desc),
+                Text("    Layout: " + layout),
             ] + var_desc + [
                 Text(self.postamble),
                 button_pile([ok_btn(label="OK", on_press=self.ok)]),
@@ -269,22 +269,15 @@ class KeyboardView(BaseView):
 
         self.form = KeyboardForm()
         opts = []
-        cur_layout = None
-        cur_variant = None
-        for layout in model.layouts:
-            if layout.code == model.layout:
-                cur_layout = layout
-                for variant  in layout.variants:
-                    if variant.code == model.variant:
-                        cur_variant = variant
-            opts.append(Option((layout.desc, True, layout)))
+        for layout, desc in model.layouts.items():
+            opts.append(Option((desc, True, layout)))
         opts.sort(key=lambda o:o.label)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget._options = opts
-        self.form.layout.widget.value = cur_layout
-        self.form.variant.widget.value = cur_variant
+        self.form.layout.widget.value = model.layout
+        self.form.variant.widget.value = model.variant
 
         self._rows = self.form.as_rows(self)
 
@@ -316,7 +309,10 @@ class KeyboardView(BaseView):
     def found_layout(self, result):
         self.remove_overlay()
         log.debug("found_layout %s", result)
-        layout, variant = self.model.lookup(result)
+        if ':' in result:
+            layout, variant = result.split(':')
+        else:
+            layout, variant = result, None
         self.form.layout.widget.value = layout
         self.form.variant.widget.value = variant
         self._w.focus_position = 2
@@ -334,8 +330,8 @@ class KeyboardView(BaseView):
     def select_layout(self, sender, layout):
         log.debug("%s", layout)
         opts = []
-        for variant in layout.variants:
-            opts.append(Option((variant.desc, True, variant)))
+        for variant, variant_desc in self.model.variants[layout].items():
+            opts.append(Option((variant_desc, True, variant)))
         opts.sort(key=lambda o:o.label)
         opts.insert(0, Option(("default", True, None)))
         self.form.variant.widget._options = opts
