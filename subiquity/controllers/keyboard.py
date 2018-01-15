@@ -13,18 +13,26 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 
 from subiquitycore.controller import BaseController
 
 from subiquity.ui.views import KeyboardView
 
+log = logging.getLogger('subiquity.controllers.keyboard')
 
 class KeyboardController(BaseController):
+
+    signals = [
+        ('l10n:language-selected', 'language_selected'),
+        ]
 
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.keyboard
-        self.model.parse("/usr/share/X11/xkb/rules/base.xml")
+
+    def language_selected(self, code):
+        log.debug("language_selected %s", code)
 
     def default(self):
         title = "Keyboard configuration"
