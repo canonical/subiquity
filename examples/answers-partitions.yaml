@@ -3,9 +3,6 @@ Welcome:
 Network:
   accept-default: yes
 Filesystem:
-    #guided: yes
-    #guided-index: 0
-  manual: yes
   volumes:
       - disk-0:
             - size: 768M
@@ -29,24 +26,24 @@ Filesystem:
               filesystem: ext4
               filesystem-label:
               mount: /var/
-      - /dev/dm-0:
-            - size: 100G
-              flag:
-              filesystem: ext4
-              filesystem-label:
-              mount: /tmp
-      - /dev/nvme0n1:
-            - size: 100G
-              flag:
-              filesystem: ext4
-              filesystem-label:
-              mount: /tmp
-      - /dev/0ab-3:
-            - size: 100G
-              flag:
-              filesystem: ext4
-              filesystem-label:
-              mount: /tmp
+      #- /dev/dm-0:
+      #      - size: 100G
+      #        flag:
+      #        filesystem: ext4
+      #        filesystem-label:
+      #        mount: /tmp
+      #- /dev/nvme0n1:
+      #      - size: 100G
+      #        flag:
+      #        filesystem: ext4
+      #        filesystem-label:
+      #        mount: /tmp
+      #- /dev/0ab-3:
+      #      - size: 100G
+      #        flag:
+      #        filesystem: ext4
+      #        filesystem-label:
+      #        mount: /tmp
 Identity:
   realname: Ubuntu
   username: ubuntu
