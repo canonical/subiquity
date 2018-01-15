@@ -69,50 +69,92 @@ class FilesystemController(BaseController):
         elif self.answers['manual']:
             self.manual()
 
+    def _validate_volumes_input(self, disk, size, flag, fstype, mount):
+        if size is not None and size > disk.free:
+            log.debug('Partition size({}) greater than free size({})'.format(size, disk.free))
+            return False
+        if flag is not None and flag != 'boot' and flag != 'bios_grub':
+            log.debug('Not supported flag:{}'.format(flag))
+            return False
+        if fstype is None:
+            log.debug('Unknown filesystem:{}'.format(p['filesystem']))
+            return False
+        if mount is None:
+            return True
+        else:
+            r = re.compile('^(/)+[a-zA-Z0-9_/\.\-]?')
+            if r.match(mount) is None:
+                log.debug('Invalid mount path:{}'.format(mount))
+                return False
+            # /usr/include/linux/limits.h:PATH_MAX
+            if len(mount) > 4095:
+                log.debug('Path exceeds PATH_MAX(4096)')
+                return False
+            mountpoint_to_devpath_mapping = self.model.get_mountpoint_to_devpath_mapping()
+            dev = mountpoint_to_devpath_mapping.get(mount)
+            if dev is not None:
+                log.debug('{} is already mounted at {}'.format(dev, mount))
+                return False
+        return True
+
+    def _force_manual(self, reason):
+        log.debug('Force manual, {}'.format(reason))
+        self.answers['volumes'] = False
+        self.reset()
+
     def part_answers(self):
         log.debug("Partitions configure in answers")
         for disks in self.answers['volumes']:
             for d, parts in disks.items():
                 disk = None
                 r_disk = re.compile('disk-[0-9]$')
-                r_devpath = re.compile('^(/dev/)+([a-z])+([0-9n-])*')
                 # case 1: /dev/sdX
                 # case 2: /dev/nvmeXnX
                 # case 3: /dev/dm-X
+                r_devpath = re.compile('^(/dev/)+([a-z])+([0-9n-])*')
                 if r_disk.match(d) is not None:
                     index = d.strip('disk-')
                     disk = self.model.all_disks()[int(index)]
                 elif r_devpath.match(d) is not None:
                     disk = self.model.get_disk(d)
 
-                if disk is not None:
-                    partnum = 0
-                    for p in parts:
-                        if None is p['size']:
-                            log.debug("darren disk.free:{}".format(disk.free))
-                            size = dehumanize_size(str(disk.free))
-                        else:
-                            log.debug("darren psize:{} type:{}".format(p['size'], type(p['size'])))
-                            size = dehumanize_size(str(p['size']))
-                        flag = p['flag'] # Check it which only accept 'boot' and 'bios_boot'. 'raid', 'lvm'?
-                        fstype = self.model.fs_by_name[p['filesystem']] # Check the "supported_filesystems"?
-                        mount = p['mount'] # Check the valid path
-                        # 1. if not val.startswith('/'):
-                        #    raise ValueError("%s does not start with /", val)
-                        # 2. if not leave umounted
-                        # 3. /usr/include/linux/limits.h:PATH_MAX
-                        #        if len(mount) > 4095:
-                        #           return 'Path exceeds PATH_MAX'
-                        # 4. already mounted?
-                        partnum += 1
-                        part = self.model.add_partition(disk=disk, partnum=partnum, size=size, flag=flag)
-                        spec = {
-                            "partnum": partnum,
-                            "size": size,
-                            "fstype": fstype,
-                            "mount": mount,
-                        }
-                        self.partition_disk_handler(disk, part, spec)
+                if disk is None:
+                    self._force_manual(reason='Unknown volume: {}'.format(d))
+                    return
+
+                partnum = 0
+                for p in parts:
+                    # if size leaves as empty, using remain space as partition size
+                    if None is p['size']:
+                        size = dehumanize_size(str(disk.free))
+                    else:
+                        size = dehumanize_size(str(p['size']))
+
+                    flag = p['flag']
+
+                    try:
+                        fstype = self.model.fs_by_name[p['filesystem']]
+                    except KeyError:
+                        fstype = None
+
+                    mount = p['mount']
+
+                    if not self._validate_volumes_input(disk, size, flag, fstype, mount):
+                        self._force_manual(reason='Invalid partition attributes: size:{}, flag:{}, mount:{}'.format(size, flag, fstype, mount))
+                        return
+
+                    partnum += 1
+                    part = self.model.add_partition(disk=disk, partnum=partnum, size=size, flag=flag)
+                    spec = {
+                        "partnum": partnum,
+                        "size": size,
+                        "fstype": fstype,
+                        "mount": mount,
+                    }
+                    self.partition_disk_handler(disk, part, spec)
+        if not self.model.can_install():
+            self._force_manual(reason='The partitions not installable:{}'.format(self.model._partitions))
+            return
         self.manual()
 
     def manual(self):
