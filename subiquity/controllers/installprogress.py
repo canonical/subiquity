@@ -17,7 +17,6 @@ import datetime
 import fcntl
 import logging
 import os
-import random
 import subprocess
 import sys
 
@@ -85,18 +84,16 @@ class InstallProgressController(BaseController):
         else:
             self.default()
 
-    def run_command_logged(self, cmd, logfile_location):
+    def run_command_logged(self, cmd, logfile_location, env):
         with open(logfile_location, 'wb', buffering=0) as logfile:
             log.debug("running %s", cmd)
             cp = subprocess.run(
-                cmd, stdout=logfile, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+                cmd, env=env, stdout=logfile, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
             log.debug("completed %s", cmd)
         return cp.returncode
 
     def curtin_event(self, event):
         event_type = event.get("CURTIN_EVENT_TYPE")
-        #if random.randrange(1000) == 0 or len(event) > 0:
-        #    log.debug("got curtin event from journald: %r", event)
         if event_type not in ['start', 'finish']:
             return
         if event_type == 'start':
@@ -163,16 +160,21 @@ class InstallProgressController(BaseController):
         curtin_cmd = self._get_curtin_command("install")
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
-        self.run_in_bg(lambda: self.run_command_logged(curtin_cmd, CURTIN_INSTALL_LOG), self.curtin_install_completed)
+        env = os.environ.copy()
+        if 'SNAP' in env:
+            del env['SNAP']
+        self.run_in_bg(
+            lambda: self.run_command_logged(curtin_cmd, CURTIN_INSTALL_LOG, env),
+            self.curtin_install_completed)
 
     def curtin_install_completed(self, fut):
         returncode = fut.result()
         log.debug('curtin_install: returncode: {}'.format(returncode))
-        self.stop_tail_proc()
         if returncode > 0:
             self.install_state = InstallState.ERROR_INSTALL
             self.curtin_error()
             return
+        self.stop_tail_proc()
         self.install_state = InstallState.DONE_INSTALL
         log.debug('After curtin install OK')
         if self.postinstall_written:
@@ -198,7 +200,12 @@ class InstallProgressController(BaseController):
         curtin_cmd = self._get_curtin_command("postinstall")
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
-        self.run_in_bg(lambda: self.run_command_logged(curtin_cmd, CURTIN_POSTINSTALL_LOG), self.curtin_postinstall_completed)
+        env = os.environ.copy()
+        if 'SNAP' in env:
+            del env['SNAP']
+        self.run_in_bg(
+            lambda: self.run_command_logged(curtin_cmd, CURTIN_POSTINSTALL_LOG, env),
+            self.curtin_postinstall_completed)
 
     def curtin_postinstall_completed(self, fut):
         returncode = fut.result()
@@ -279,6 +286,7 @@ class InstallProgressController(BaseController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
         self.progress_view = ProgressView(self)
+        self.start_tail_proc()
         if self.install_state < 0:
             self.curtin_error()
             self.ui.set_body(self.progress_view)
@@ -289,4 +297,3 @@ class InstallProgressController(BaseController):
             self.progress_view.set_status(_("Running postinstall step"))
         self.ui.set_body(self.progress_view)
 
-        self.start_tail_proc()

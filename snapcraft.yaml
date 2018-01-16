@@ -27,7 +27,6 @@ parts:
       - python3-distutils-extra
       - python3-urwid
     stage-packages:
-      - curtin
       - libsystemd0
       - iso-codes
       - lsb-release
