@@ -94,7 +94,7 @@ class KeyboardModel:
             layout_code, variant_code = code.split(":", 1)
             return self.layouts.get(layout_code, '?'), self._variants.get(variant_code, '?')
         else:
-            return self.layouts.get(layout_code, '?'), None
+            return self.layouts.get(code, '?'), None
 
     def set_keyboard(self, layout, variant):
         path = os.path.join(self.config_path)
