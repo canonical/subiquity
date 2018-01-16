@@ -49,6 +49,8 @@ parts:
       'bin/subiquity-loadkeys': usr/bin/subiquity-loadkeys
       'bin/curtin-journald-forwarder': usr/bin/curtin-journald-forwarder
       'bin/started': usr/bin/started
+    stage:
+      - usr/bin
     prime:
       - usr/bin
   users-and-groups:
