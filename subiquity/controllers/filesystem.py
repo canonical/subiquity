@@ -69,16 +69,34 @@ class FilesystemController(BaseController):
         elif self.answers['manual']:
             self.manual()
 
-    def _validate_volumes_input(self, disk, size, flag, fstype, mount):
+    def _validate_volumes_input(self, disk, size, flag, fstype, fslabel, mount):
         if size is not None and size > disk.free:
             log.debug('Partition size({}) greater than free size({})'.format(size, disk.free))
             return False
+
         if flag is not None and flag != 'boot' and flag != 'bios_grub':
             log.debug('Not supported flag:{}'.format(flag))
             return False
-        if fstype is None:
-            log.debug('Unknown filesystem:{}'.format(p['filesystem']))
+
+        if fslabel is not None:
+            if fstype == 'ext4' and len(fslabel) > 16:
+                return False
+            elif fstype == 'fat32' and len(fslabel) > 11:
+                return False
+            elif fstype == 'btrfs' and len(fslabel) > 256:
+                return False
+            elif fstype == 'swap' and len(fslabel) > 15:
+                return False
+            elif fstype == 'xfs' and len(fslabel) > 12:
+                return False
+
+        if fstype is None and mount is not None:
+            log.debug('Mounted partition({}) but without filesystem'.format(mount))
             return False
+        elif fstype == 'swap' and mount is not None:
+            log.debug('swap partition is not allow to be mounted')
+            return False
+
         if mount is None:
             return True
         else:
@@ -88,7 +106,7 @@ class FilesystemController(BaseController):
                 return False
             # /usr/include/linux/limits.h:PATH_MAX
             if len(mount) > 4095:
-                log.debug('Path exceeds PATH_MAX(4096)')
+                log.debug('Path exceeds PATH_MAX')
                 return False
             mountpoint_to_devpath_mapping = self.model.get_mountpoint_to_devpath_mapping()
             dev = mountpoint_to_devpath_mapping.get(mount)
@@ -145,8 +163,15 @@ class FilesystemController(BaseController):
                     else:
                         mount = None
 
-                    if not self._validate_volumes_input(disk, size, flag, fstype, mount):
-                        self._force_manual(reason='Invalid partition attributes: size:{}, flag:{}, mount:{}'.format(size, flag, fstype, mount))
+                    if 'filesystem-label' in p:
+                        fslabel = p['filesystem-label']
+                    else:
+                        fslabel = None
+
+                    if not self._validate_volumes_input(disk, size, flag, fstype, fslabel, mount):
+                        self._force_manual(reason=
+                                'Invalid partition attributes: size:{}, flag:{}, fstype: {}, fslabel: {}, mount:{}'
+                                .format(size, flag, fstype, fslabel, mount))
                         return
 
                     partnum += 1
@@ -155,6 +180,7 @@ class FilesystemController(BaseController):
                         "partnum": partnum,
                         "size": size,
                         "fstype": fstype,
+                        "fslabel": fslabel,
                         "mount": mount,
                     }
                     self.partition_disk_handler(disk, part, spec)
@@ -261,7 +287,11 @@ class FilesystemController(BaseController):
                     old_fs._mount = None
                     self.model._mounts.remove(mount)
             if spec['fstype'].label is not None:
-                fs = self.model.add_filesystem(partition, spec['fstype'].label)
+                if 'fslabel' in spec:
+                    fslabel = spec['fslabel']
+                else:
+                    fslabel = ""
+                fs = self.model.add_filesystem(partition, spec['fstype'].label, fslabel=fslabel)
                 if spec['mount']:
                   self.model.add_mount(fs, spec['mount'])
             self.partition_disk(disk)
