@@ -25,16 +25,18 @@ parts:
       - lsb-release
       - pkg-config
       - python3-distutils-extra
+      - python3-urwid
     stage-packages:
       - curtin
       - iso-codes
       - lsb-release
       - python3-distutils-extra
+      - python3-urwid
     python-packages:
       - attrs
       - pyyaml
       - systemd-python
-      - urwid
+      #- urwid
     source: .
     source-type: git
   wrappers:
