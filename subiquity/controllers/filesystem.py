@@ -73,11 +73,9 @@ class FilesystemController(BaseController):
         if size is not None and size > disk.free:
             log.debug('Partition size({}) greater than free size({})'.format(size, disk.free))
             return False
-
         if flag is not None and flag != 'boot' and flag != 'bios_grub':
             log.debug('Not supported flag:{}'.format(flag))
             return False
-
         if fslabel is not None:
             if fstype == 'ext4' and len(fslabel) > 16:
                 return False
@@ -89,14 +87,12 @@ class FilesystemController(BaseController):
                 return False
             elif fstype == 'xfs' and len(fslabel) > 12:
                 return False
-
         if fstype is None and mount is not None:
             log.debug('Mounted partition({}) but without filesystem'.format(mount))
             return False
         elif fstype == 'swap' and mount is not None:
             log.debug('swap partition is not allow to be mounted')
             return False
-
         if mount is None:
             return True
         else:
@@ -135,11 +131,9 @@ class FilesystemController(BaseController):
                     disk = self.model.all_disks()[int(index)]
                 elif r_devpath.match(d) is not None:
                     disk = self.model.get_disk(d)
-
                 if disk is None:
                     self._force_manual(reason='Unknown volume: {}'.format(d))
                     return
-
                 partnum = 0
                 for p in parts:
                     # if size leaves as empty, using remain space as partition size
@@ -147,33 +141,27 @@ class FilesystemController(BaseController):
                         size = dehumanize_size(str(disk.free))
                     else:
                         size = dehumanize_size(str(p['size']))
-
                     if 'flag' in p:
                         flag = p['flag']
                     else:
                         flag = None
-
                     try:
                         fstype = self.model.fs_by_name[p['filesystem']]
                     except KeyError:
                         fstype = None
-
                     if 'mount' in p:
                         mount = p['mount']
                     else:
                         mount = None
-
                     if 'filesystem-label' in p:
                         fslabel = p['filesystem-label']
                     else:
                         fslabel = None
-
                     if not self._validate_volumes_input(disk, size, flag, fstype, fslabel, mount):
                         self._force_manual(reason=
                                 'Invalid partition attributes: size:{}, flag:{}, fstype: {}, fslabel: {}, mount:{}'
                                 .format(size, flag, fstype, fslabel, mount))
                         return
-
                     partnum += 1
                     part = self.model.add_partition(disk=disk, partnum=partnum, size=size, flag=flag)
                     spec = {

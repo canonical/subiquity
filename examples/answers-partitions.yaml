@@ -34,6 +34,7 @@ Filesystem:
       #        filesystem: ext4
       #        filesystem-label:
       #        mount: /tmp
+      # Fail case
       #- /dev/0ab-3:
       #      - size: 100G
       #        flag:
