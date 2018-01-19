@@ -15,12 +15,13 @@
 
 import logging
 import os
+import re
 
 from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.ui.error import ErrorView
 
-from subiquity.models.filesystem import humanize_size
+from subiquity.models.filesystem import humanize_size, dehumanize_size
 from subiquity.ui.views import (
     BcacheView,
     DiskInfoView,
@@ -50,6 +51,7 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', False)
+        self.answers.setdefault('volumes', None)
         # self.iscsi_model = IscsiDiskModel()
         # self.ceph_model = CephDiskModel()
         self.model.probe()  # probe before we complete
@@ -62,8 +64,118 @@ class FilesystemController(BaseController):
         self.ui.set_body(GuidedFilesystemView(self))
         if self.answers['guided']:
             self.guided()
+        elif self.answers['volumes']:
+            self.part_answers()
         elif self.answers['manual']:
             self.manual()
+
+    def _validate_volumes_input(self, disk, size, flag, fstype, fslabel, mount):
+        if size is not None and size > disk.free:
+            log.debug('Partition size({}) greater than free size({})'.format(size, disk.free))
+            return False
+        if flag is not None and flag != 'boot' and flag != 'bios_grub':
+            log.debug('Not supported flag:{}'.format(flag))
+            return False
+        if fslabel is not None:
+            if fstype == 'ext4' and len(fslabel) > 16:
+                return False
+            elif fstype == 'fat32' and len(fslabel) > 11:
+                return False
+            elif fstype == 'btrfs' and len(fslabel) > 256:
+                return False
+            elif fstype == 'swap' and len(fslabel) > 15:
+                return False
+            elif fstype == 'xfs' and len(fslabel) > 12:
+                return False
+        if fstype is None and mount is not None:
+            log.debug('Mounted partition({}) but without filesystem'.format(mount))
+            return False
+        elif fstype == 'swap' and mount is not None:
+            log.debug('swap partition is not allow to be mounted')
+            return False
+        if mount is None:
+            return True
+        else:
+            r = re.compile('^(/)+[a-zA-Z0-9_/\.\-]?')
+            if r.match(mount) is None:
+                log.debug('Invalid mount path:{}'.format(mount))
+                return False
+            # /usr/include/linux/limits.h:PATH_MAX
+            if len(mount) > 4095:
+                log.debug('Path exceeds PATH_MAX')
+                return False
+            mountpoint_to_devpath_mapping = self.model.get_mountpoint_to_devpath_mapping()
+            dev = mountpoint_to_devpath_mapping.get(mount)
+            if dev is not None:
+                log.debug('{} is already mounted at {}'.format(dev, mount))
+                return False
+        return True
+
+    def _force_manual(self, reason):
+        log.debug('Force manual, {}'.format(reason))
+        self.answers['volumes'] = False
+        self.reset()
+
+    def part_answers(self):
+        log.debug("Partitions configure in answers")
+        for disks in self.answers['volumes']:
+            for d, parts in disks.items():
+                disk = None
+                r_disk = re.compile('disk-[0-9]$')
+                # case 1: /dev/sdX
+                # case 2: /dev/nvmeXnX
+                # case 3: /dev/dm-X
+                r_devpath = re.compile('^(/dev/)+([a-z])+([0-9n-])*')
+                if r_disk.match(d) is not None:
+                    index = d.strip('disk-')
+                    disk = self.model.all_disks()[int(index)]
+                elif r_devpath.match(d) is not None:
+                    disk = self.model.get_disk(d)
+                if disk is None:
+                    self._force_manual(reason='Unknown volume: {}'.format(d))
+                    return
+                partnum = 0
+                for p in parts:
+                    # if size leaves as empty, using remain space as partition size
+                    if 'size' not in p or None is p['size']:
+                        size = dehumanize_size(str(disk.free))
+                    else:
+                        size = dehumanize_size(str(p['size']))
+                    if 'flag' in p:
+                        flag = p['flag']
+                    else:
+                        flag = None
+                    try:
+                        fstype = self.model.fs_by_name[p['filesystem']]
+                    except KeyError:
+                        fstype = None
+                    if 'mount' in p:
+                        mount = p['mount']
+                    else:
+                        mount = None
+                    if 'filesystem-label' in p:
+                        fslabel = p['filesystem-label']
+                    else:
+                        fslabel = None
+                    if not self._validate_volumes_input(disk, size, flag, fstype, fslabel, mount):
+                        self._force_manual(reason=
+                                'Invalid partition attributes: size:{}, flag:{}, fstype: {}, fslabel: {}, mount:{}'
+                                .format(size, flag, fstype, fslabel, mount))
+                        return
+                    partnum += 1
+                    part = self.model.add_partition(disk=disk, partnum=partnum, size=size, flag=flag)
+                    spec = {
+                        "partnum": partnum,
+                        "size": size,
+                        "fstype": fstype,
+                        "fslabel": fslabel,
+                        "mount": mount,
+                    }
+                    self.partition_disk_handler(disk, part, spec)
+        if not self.model.can_install():
+            self._force_manual(reason='The partitions not installable:{}'.format(self.model._partitions))
+            return
+        self.manual()
 
     def manual(self):
         title = _("Filesystem setup")
@@ -71,7 +183,7 @@ class FilesystemController(BaseController):
         self.ui.set_header(title)
         self.ui.set_footer(footer)
         self.ui.set_body(FilesystemView(self.model, self))
-        if self.answers['guided']:
+        if self.answers['guided'] or self.answers['volumes']:
             self.finish()
 
     def guided(self):
@@ -163,7 +275,11 @@ class FilesystemController(BaseController):
                     old_fs._mount = None
                     self.model._mounts.remove(mount)
             if spec['fstype'].label is not None:
-                fs = self.model.add_filesystem(partition, spec['fstype'].label)
+                if 'fslabel' in spec:
+                    fslabel = spec['fslabel']
+                else:
+                    fslabel = ""
+                fs = self.model.add_filesystem(partition, spec['fstype'].label, fslabel=fslabel)
                 if spec['mount']:
                   self.model.add_mount(fs, spec['mount'])
             self.partition_disk(disk)

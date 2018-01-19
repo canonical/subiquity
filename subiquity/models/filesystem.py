@@ -354,7 +354,7 @@ class FilesystemModel(object):
         self._partitions.append(p)
         return p
 
-    def add_filesystem(self, volume, fstype):
+    def add_filesystem(self, volume, fstype, fslabel=""):
         log.debug("adding %s to %s", fstype, volume)
         if not volume.available:
             if not (isinstance(volume, Partition) and volume.flag == 'bios_grub' and fstype == 'fat32'):
@@ -363,7 +363,7 @@ class FilesystemModel(object):
             self._use_disk(volume)
         if volume._fs is not None:
             raise Exception("%s is already formatted")
-        volume._fs = fs = Filesystem(volume=volume, fstype=fstype)
+        volume._fs = fs = Filesystem(volume=volume, fstype=fstype, label=fslabel)
         self._filesystems.append(fs)
         return fs
 

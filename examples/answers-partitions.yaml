@@ -1,0 +1,53 @@
+Welcome:
+  lang: en_US
+Network:
+  accept-default: yes
+Filesystem:
+  volumes:
+      - disk-0:
+            - size: 768M
+              flag: boot
+              filesystem: fat32
+              filesystem-label: boot
+              mount: /boot/efi
+            - filesystem: ext4
+              filesystem-label: rootfs
+              mount: /
+      - /dev/sdh:
+            - size: 100G
+              filesystem: ext4
+              filesystem-label:
+            - size: 0
+              flag:
+              filesystem: ext4
+              filesystem-label:
+              mount: /var/
+      #- /dev/dm-0:
+      #      - size: 100G
+      #        flag:
+      #        filesystem: ext4
+      #        filesystem-label:
+      #        mount: /tmp
+      #- /dev/nvme0n1:
+      #      - size: 100G
+      #        flag:
+      #        filesystem: ext4
+      #        filesystem-label:
+      #        mount: /tmp
+      # Fail case
+      #- /dev/0ab-3:
+      #      - size: 100G
+      #        flag:
+      #        filesystem: ext4
+      #        filesystem-label:
+      #        mount: /tmp
+Identity:
+  realname: Ubuntu
+  username: ubuntu
+  hostname: ubuntu-server
+  # ubuntu
+  password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+InstallProgress:
+  reboot: yes
+
+
