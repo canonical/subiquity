@@ -127,8 +127,21 @@ class InstallProgressController(BaseController):
             conf.write(datestr)
             conf.write(yaml.dump(config))
 
-    def _get_curtin_command(self, install_step):
+    def _get_curtin_command(self, install_step, storage_conf=None):
+        configs = []
         config_file_name = 'subiquity-curtin-%s.conf' % (install_step,)
+
+        if storage_conf is not None:
+            if install_step == "install":
+                configs.append(storage_conf)
+            elif install_step == "postinstall":
+                storage_post_conf = '/tmp/subiquity-config-storage-postinstall.yaml'
+                storage_data = yaml.safe_load(open(storage_conf).read())
+                for v in storage_data['storage']['config']:
+                    v.update({'preserve': True})
+                with open(storage_post_conf, 'w') as outfile:
+                    yaml.dump(storage_data, outfile)
+                configs.append(storage_post_conf)
 
         if self.opts.dry_run:
             config_location = os.path.join('.subiquity/', config_file_name)
@@ -140,13 +153,13 @@ class InstallProgressController(BaseController):
         else:
             config_location = os.path.join('/tmp', config_file_name)
             log.debug("Installprogress: this is the *REAL* thing")
-            configs = [config_location]
+            configs.append(config_location)
             curtin_cmd = curtin_install_cmd(configs)
 
         self._write_config(
             config_location,
             self.base_model.render(
-                install_step=install_step, reporting_url=self.reporting_url))
+                install_step=install_step, reporting_url=self.reporting_url, storage_conf=storage_conf))
 
         return curtin_cmd
 
@@ -157,7 +170,7 @@ class InstallProgressController(BaseController):
         self.start_journald_forwarder()
         self.start_journald_listener("curtin_event", self.curtin_event)
 
-        curtin_cmd = self._get_curtin_command("install")
+        curtin_cmd = self._get_curtin_command("install", storage_conf=self.opts.storage_conf)
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
         env = os.environ.copy()
@@ -197,7 +210,7 @@ class InstallProgressController(BaseController):
             self.progress_view.set_status(_("Running postinstall step"))
             self.start_tail_proc()
 
-        curtin_cmd = self._get_curtin_command("postinstall")
+        curtin_cmd = self._get_curtin_command("postinstall", storage_conf=self.opts.storage_conf)
 
         log.debug('Curtin postinstall cmd: {}'.format(curtin_cmd))
         env = os.environ.copy()

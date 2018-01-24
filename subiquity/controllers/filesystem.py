@@ -60,7 +60,9 @@ class FilesystemController(BaseController):
         self.ui.set_header(title)
         self.ui.set_footer(footer)
         self.ui.set_body(GuidedFilesystemView(self))
-        if self.answers['guided']:
+        if self.opts.storage_conf is not None:
+            self.finish()
+        elif self.answers['guided']:
             self.guided()
         elif self.answers['manual']:
             self.manual()

@@ -66,12 +66,14 @@ def parse_options(argv):
                         help='run in uefi support mode')
     parser.add_argument('--screens', action='append', dest='screens', default=[])
     parser.add_argument('--answers')
+    parser.add_argument('--storage', dest='storage_conf')
     return parser.parse_args(argv)
 
 
 LOGDIR = "/var/log/installer/"
 
 AUTO_ANSWERS_FILE = "/subiquity_config/answers.yaml"
+STORAGE_CONFIG_FILE = "/subiquity_config/subiquity-config-storage.yaml"
 
 def main():
     opts = parse_options(sys.argv[1:])
@@ -95,6 +97,10 @@ def main():
     if opts.answers is None and os.path.exists(AUTO_ANSWERS_FILE):
         logger.debug("Autoloading answers from %s", AUTO_ANSWERS_FILE)
         opts.answers = AUTO_ANSWERS_FILE
+
+    if opts.storage_conf is None and os.path.exists(STORAGE_CONFIG_FILE):
+        logger.debug("Storage config file from %s", STORAGE_CONFIG_FILE)
+        opts.storage_conf = STORAGE_CONFIG_FILE
 
     ui = SubiquityUI()
 
