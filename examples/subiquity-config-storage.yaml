@@ -1,0 +1,11 @@
+storage:
+  config:
+  - {id: disk-0, type: disk, ptable: gpt, serial: QEMU_HARDDISK_QM00001, path: /dev/sda,
+    model: QEMU_HARDDISK}
+  - {id: part-0, type: partition, number: 1, device: disk-0, size: 805306368, flag: boot}
+  - {id: part-1, type: partition, number: 2, device: disk-0, size: 3487563776}
+  - {id: fs-0, type: format, fstype: fat32, volume: part-0, label: ESP}
+  - {id: fs-1, type: format, fstype: ext4, volume: part-1, label: rootfs}
+  - {id: mount-1, type: mount, device: fs-1, path: /}
+  - {id: mount-0, type: mount, device: fs-0, path: /boot/efi}
+  version: 1

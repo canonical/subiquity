@@ -79,27 +79,30 @@ class SubiquityModel:
                 },
             }
 
-    def render(self, install_step, reporting_url=None):
-        disk_actions = self.filesystem.render()
-        if install_step == "postinstall":
-            for a in disk_actions:
-                a['preserve'] = True
+    def render(self, install_step, reporting_url=None, storage_conf=None):
         config = {
-            'partitioning_commands': {
-                'builtin': 'curtin block-meta custom',
-                },
-
-            'reporting': {
+	   'reporting': {
                 'subiquity': {
                     'type': 'print',
                     },
                 },
-
-            'storage': {
-                'version': 1,
-                'config': disk_actions,
-                },
             }
+        if storage_conf is None:
+            disk_actions = self.filesystem.render()
+            if install_step == "postinstall":
+                for a in disk_actions:
+                    a['preserve'] = True
+            config.update({
+                'partitioning_commands': {
+                    'builtin': 'curtin block-meta custom',
+                    },
+
+                'storage': {
+                    'version': 1,
+                    'config': disk_actions,
+                    },
+            })
+
         if install_step == "install":
             config.update(self.network.render())
         else:
