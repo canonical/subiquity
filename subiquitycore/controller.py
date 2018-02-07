@@ -36,6 +36,7 @@ class BaseController(ABC):
         self.pool = common['pool']
         self.base_model = common['base_model']
         self.all_answers = common['answers']
+        self.input_filter = common['input_filter']
 
     def register_signals(self):
         """Defines signals associated with controller from model."""

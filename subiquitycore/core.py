@@ -16,7 +16,11 @@
 from concurrent import futures
 import fcntl
 import logging
+import os
+import struct
 import sys
+import termios
+import tty
 
 import urwid
 import yaml
@@ -31,14 +35,22 @@ class ApplicationError(Exception):
     """ Basecontroller exception """
     pass
 
-# The next little bit is cribbed from
-# https://github.com/EvanPurkhiser/linux-vt-setcolors/blob/master/setcolors.c:
-
 # From uapi/linux/kd.h:
 KDGKBTYPE = 0x4B33  # get keyboard type
+
 GIO_CMAP  = 0x4B70	# gets colour palette on VGA+
 PIO_CMAP  = 0x4B71	# sets colour palette on VGA+
 UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
+
+# /usr/include/linux/kd.h
+K_RAW       = 0x00
+K_XLATE     = 0x01
+K_MEDIUMRAW = 0x02
+K_UNICODE   = 0x03
+K_OFF       = 0x04
+
+KDGKBMODE = 0x4B44 # gets current keyboard mode
+KDSKBMODE = 0x4B45 # sets current keyboard mode
 
 
 class ISO_8613_3_Screen(urwid.raw_display.Screen):
@@ -116,6 +128,92 @@ def setup_screen(colors, styles):
         return ISO_8613_3_Screen(_urwid_name_to_rgb), urwid_palette
 
 
+
+class KeyCodesFilter:
+    """input_filter that can pass (medium) raw keycodes to the application
+
+    See http://lct.sourceforge.net/lct/x60.html for terminology.
+
+    Call enter_keycodes_mode()/exit_keycodes_mode() to switch into and
+    out of keycodes mode. In keycodes mode, the only events passed to
+    the application are "press $N" / "release $N" where $N is the
+    keycode the user pressed or released.
+
+    Much of this is cribbed from the source of the "showkeys" utility.
+    """
+
+    def __init__(self):
+        self._fd = os.open("/proc/self/fd/0", os.O_RDWR)
+        self.filtering = False
+
+    def enter_keycodes_mode(self):
+        log.debug("enter_keycodes_mode")
+        self.filtering = True
+        # Read the old keyboard mode (it will proably always be K_UNICODE but well).
+        o = bytearray(4)
+        fcntl.ioctl(self._fd, KDGKBMODE, o)
+        self._old_mode = struct.unpack('i', o)[0]
+        # Make some changes to the terminal settings.
+        # If you don't do this, sometimes writes to the terminal hang (and no,
+        # I don't know exactly why).
+        self._old_settings = termios.tcgetattr(self._fd)
+        new_settings = termios.tcgetattr(self._fd)
+        new_settings[tty.IFLAG] = 0
+        new_settings[tty.LFLAG] = new_settings[tty.LFLAG] & ~(termios.ECHO | termios.ICANON | termios.ISIG)
+        new_settings[tty.CC][termios.VMIN] = 0
+        new_settings[tty.CC][termios.VTIME] = 0
+        termios.tcsetattr(self._fd, termios.TCSAFLUSH, new_settings)
+        # Finally, set the keyboard mode to K_MEDIUMRAW, which causes
+        # the keyboard driver in the kernel to pass us keycodes.
+        log.debug("old mode was %s, setting mode to %s", self._old_mode, K_MEDIUMRAW)
+        fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
+
+    def exit_keycodes_mode(self):
+        log.debug("exit_keycodes_mode")
+        self.filtering = False
+        log.debug("setting mode back to %s", self._old_mode)
+        fcntl.ioctl(self._fd, KDSKBMODE, self._old_mode)
+        termios.tcsetattr(self._fd, termios.TCSANOW, self._old_settings)
+
+    def filter(self, keys, codes):
+        # Luckily urwid passes us the raw results from read() we can
+        # turn into keycodes.
+        if self.filtering:
+            i = 0
+            r = []
+            n = len(codes)
+            while i < len(codes):
+                # This is straight from showkeys.c.
+                if codes[i] & 0x80:
+                    p = 'release '
+                else:
+                    p = 'press '
+                if i + 2 < n and (codes[i] & 0x7f) == 0 and (codes[i + 1] & 0x80) != 0 and (codes[i + 2] & 0x80) != 0:
+                    kc = ((codes[i + 1] & 0x7f) << 7) | (codes[i + 2] & 0x7f)
+                    i += 3
+                else:
+                    kc = codes[i] & 0x7f
+                    i += 1
+                r.append(p + str(kc))
+            return r
+        else:
+            return keys
+
+
+class DummyKeycodesFilter:
+    # A dummy implementation of the same interface as KeyCodesFilter
+    # we can use when not running in a linux tty.
+
+    def enter_keycodes_mode(self):
+        pass
+
+    def exit_keycodes_mode(self):
+        pass
+
+    def filter(self, keys, codes):
+        return keys
+
+
 class Application:
 
     # A concrete subclass must set project and controllers attributes, e.g.:
@@ -151,6 +249,12 @@ class Application:
             if not opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
 
+        if is_linux_tty():
+            log.debug("is_linux_tty")
+            input_filter = KeyCodesFilter()
+        else:
+            input_filter = DummyKeycodesFilter()
+
         self.common = {
             "ui": ui,
             "opts": opts,
@@ -159,6 +263,7 @@ class Application:
             "loop": None,
             "pool": futures.ThreadPoolExecutor(1),
             "answers": answers,
+            "input_filter": input_filter,
         }
         if opts.screens:
             self.controllers = [c for c in self.controllers if c in opts.screens]
@@ -226,12 +331,11 @@ class Application:
 
             self.common['loop'] = urwid.MainLoop(
                 self.common['ui'], palette=palette, screen=screen,
-                handle_mouse=False, pop_ups=True)
+                handle_mouse=False, pop_ups=True, input_filter=self.common['input_filter'].filter)
+
             log.debug("Running event loop: {}".format(
                 self.common['loop'].event_loop))
-
             self.common['base_model'] = self.model_class(self.common)
-
         try:
             self.common['loop'].set_alarm_in(0.05, self.next_screen)
             controllers_mod = __import__('%s.controllers' % self.project, None, None, [''])

@@ -25,6 +25,9 @@ class LocaleModel(object):
     XXX Only represents *language* selection for now.
     """
 
+    def __init__(self, signal):
+        self.signal = signal
+
     supported_languages = [
         ('en_US', 'English'),
         ('ca_EN', 'Catalan'),
@@ -47,6 +50,7 @@ class LocaleModel(object):
 
     def switch_language(self, code):
         self.selected_language = code
+        self.signal.emit_signal('l10n:language-selected', code)
         i18n.switch_language(code)
 
     def __repr__(self):

@@ -21,6 +21,7 @@ from subiquitycore.models.identity import IdentityModel
 from subiquitycore.models.network import NetworkModel
 
 from .filesystem import FilesystemModel
+from .keyboard import KeyboardModel
 from .locale import LocaleModel
 
 
@@ -28,7 +29,11 @@ class SubiquityModel:
     """The overall model for subiquity."""
 
     def __init__(self, common):
-        self.locale = LocaleModel()
+        root = '/'
+        if common['opts'].dry_run:
+            root = os.path.abspath(".subiquity")
+        self.locale = LocaleModel(common['signal'])
+        self.keyboard = KeyboardModel(root)
         self.network = NetworkModel()
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
@@ -102,6 +107,12 @@ class SubiquityModel:
             }
         if install_step == "install":
             config.update(self.network.render())
+            config['write_files'] = {
+                'etc_default_keyboard': {
+                    'path': 'etc/default/keyboard',
+                    'content': self.keyboard.config_content,
+                    },
+                }
         else:
             config['write_files'] = self._write_files_config()
 
