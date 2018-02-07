@@ -30,6 +30,7 @@ class KeyboardController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.keyboard
+        self.answers = self.all_answers.get("Keyboard", {})
 
     def language_selected(self, code):
         log.debug("language_selected %s", code)
@@ -53,6 +54,10 @@ class KeyboardController(BaseController):
         self.ui.set_footer(footer)
         view = KeyboardView(self.model, self, self.opts)
         self.ui.set_body(view)
+        if 'layout' in self.answers:
+            layout = self.answers['layout']
+            variant = self.answers.get('variant')
+            self.done(layout, variant)
 
     def done(self, layout, variant):
         self.model.set_keyboard(layout, variant)
