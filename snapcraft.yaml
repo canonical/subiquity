@@ -69,7 +69,7 @@ parts:
       - console-setup
       - xkb-data-i18n
     prepare: |
-      /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl | gzip -9 > kbdnames.gz
+      /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl > kbdnames.txt
     stage:
       - kbdnames.gz
   probert:

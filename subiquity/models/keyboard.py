@@ -28,7 +28,7 @@ class KeyboardModel:
         self.root = root
         self.layout = 'us'
         self.variant = ''
-        self._kbnames_file = os.path.join(os.environ.get("SNAP", '.'), 'kbdnames.gz')
+        self._kbnames_file = os.path.join(os.environ.get("SNAP", '.'), 'kbdnames.txt')
         self._clear()
         if os.path.exists(self.config_path):
             content = open(self.config_path).read()
@@ -63,12 +63,8 @@ class KeyboardModel:
 
         self._clear()
 
-        raw = gzip.open(self._kbnames_file)
-        try:
-            with io.TextIOWrapper(raw) as kbdnames:
-                self._load_file(code, kbdnames)
-        finally:
-            raw.close()
+        with open(self._kbnames_file) as kbdnames:
+            self._load_file(code, kbdnames)
         self.current_lang = code
 
     def _clear(self):
