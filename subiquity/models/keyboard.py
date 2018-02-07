@@ -88,7 +88,7 @@ class KeyboardModel:
     def lookup(self, code):
         if ':' in code:
             layout_code, variant_code = code.split(":", 1)
-            return self.layouts.get(layout_code, '?'), self._variants.get(variant_code, '?')
+            return self.layouts.get(layout_code, '?'), self.variants.get(layout_code).get(variant_code, '?')
         else:
             return self.layouts.get(code, '?'), None
 

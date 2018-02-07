@@ -56,7 +56,7 @@ class KeyboardController(BaseController):
         self.ui.set_body(view)
         if 'layout' in self.answers:
             layout = self.answers['layout']
-            variant = self.answers.get('variant')
+            variant = self.answers.get('variant', '')
             self.done(layout, variant)
 
     def done(self, layout, variant):
