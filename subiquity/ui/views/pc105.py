@@ -1,4 +1,21 @@
+# Copyright 2018 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# The keyboard autodetection process is driven by the data in
+# /usr/share/console-setup/pc105.tree. This code parses that data into
+# subclasses of Step.
 
 class Step:
     def __repr__(self):
@@ -11,6 +28,7 @@ class Step:
 
 
 class StepPressKey(Step):
+    # "Press one of the following keys"
     def __init__(self):
         self.symbols = []
         self.keycodes = {}
@@ -19,6 +37,7 @@ class StepPressKey(Step):
             raise Exception
 
 class StepKeyPresent(Step):
+    # "Is this symbol present on your keyboard"
     def __init__(self, symbol):
         self.symbol = symbol
         self.yes = None
@@ -28,12 +47,14 @@ class StepKeyPresent(Step):
             raise Exception
 
 class StepResult(Step):
+    # "This is the autodetected layout"
     def __init__(self, result):
         self.result = result
 
 
 class PC105Tree:
     """Parses the pc105.tree file into subclasses of Step"""
+    # This is adapted (quite heavily) from the code in ubiquity.
 
     def __init__(self):
         self.steps = {}

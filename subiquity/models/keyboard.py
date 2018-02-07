@@ -93,7 +93,7 @@ class KeyboardModel:
             return self.layouts.get(code, '?'), None
 
     def set_keyboard(self, layout, variant):
-        path = os.path.join(self.config_path)
+        path = self.config_path
         os.makedirs(os.path.dirname(path), exist_ok=True)
         self.layout = layout
         self.variant = variant
@@ -101,20 +101,3 @@ class KeyboardModel:
             fp.write(self.config_content)
         if self.root == '/':
             run_command(['setupcon', '--save', '--force'])
-
-
-def main(args):
-    lang = args[1]
-    m = KeyboardModel()
-    m.parse("/usr/share/X11/xkb/rules/base.xml")
-    for keyboard in m.keyboards:
-        if lang in keyboard.languages:
-            print(keyboard.code, keyboard.languages)
-        for name, _, langs in keyboard.variants:
-            if lang in langs:
-                print(keyboard.code, name, langs)
-
-
-if __name__ == "__main__":
-    import sys
-    main(sys.argv)

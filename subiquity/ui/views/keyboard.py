@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2018 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -43,9 +43,10 @@ log = logging.getLogger("subiquity.ui.views.keyboard")
 
 class AutoDetectBase(WidgetWrap):
     def __init__(self, keyboard_detector, step):
+        # step is an instance of pc105.Step
         self.keyboard_detector = keyboard_detector
         self.step = step
-        lb = LineBox(self.make_body(), "Keyboard auto-detection")
+        lb = LineBox(self.make_body(), _("Keyboard auto-detection"))
         super().__init__(lb)
     def start(self):
         pass
@@ -68,11 +69,11 @@ class AutoDetectIntro(AutoDetectBase):
 
     def make_body(self):
         return Pile([
-                Text("Keyboard detection starting. You will be asked a series of questions about your keyboard. Press escape at any time to go back to the previous screen."),
+                Text(_("Keyboard detection starting. You will be asked a series of questions about your keyboard. Press escape at any time to go back to the previous screen.")),
                 Text(""),
                 button_pile([
-                    ok_btn(label="OK", on_press=self.ok),
-                    ok_btn(label="Cancel", on_press=self.cancel),
+                    ok_btn(label=_("OK"), on_press=self.ok),
+                    ok_btn(label=_("Cancel"), on_press=self.cancel),
                     ]),
                 ])
 
@@ -84,24 +85,24 @@ class AutoDetectFailed(AutoDetectBase):
 
     def make_body(self):
         return Pile([
-                Text("Keybaord auto detection failed, sorry"),
+                Text(_("Keyboard auto detection failed, sorry")),
                 Text(""),
                 button_pile([ok_btn(label="OK", on_press=self.ok)]),
                 ])
 
 class AutoDetectResult(AutoDetectBase):
 
-    preamble = """\
+    preamble = _("""\
 Keyboard auto detection completed.
 
 Your keyboard was detected as:
-"""
-    postamble = """\
+""")
+    postamble = _("""\
 
 If this is correct, select Done on the next screen. If not you can select \
 another layout or run the automated detection again.
 
-"""
+""")
 
     def ok(self, sender):
         self.keyboard_detector.keyboard_view.found_layout(self.step.result)
@@ -111,17 +112,21 @@ another layout or run the automated detection again.
         layout, variant = model.lookup(self.step.result)
         var_desc = []
         if variant is not None:
-            var_desc = [Text("    Variant: " + variant)]
+            var_desc = [Text(_("    Variant: ") + variant)]
         return Pile([
                 Text(self.preamble),
-                Text("    Layout: " + layout),
+                Text(_("    Layout: ") + layout),
             ] + var_desc + [
                 Text(self.postamble),
-                button_pile([ok_btn(label="OK", on_press=self.ok)]),
+                button_pile([ok_btn(label=_("OK"), on_press=self.ok)]),
                 ])
 
 
 class AutoDetectPressKey(AutoDetectBase):
+    # This is the tricky case. We need access to the "keycodes" not
+    # the characters that the current keyboard set up maps the
+    # keycodes to. The heavy lifting is done by the InputFilter class
+    # in subiquitycore.core.
 
     def selectable(self):
         return True
@@ -149,7 +154,7 @@ class AutoDetectPressKey(AutoDetectBase):
     def keypress(self, size, key):
         log.debug('keypress %r %r', size, key)
         if key.startswith('release '):
-            # Escape is key 1 on keyboards and all layouts except
+            # Escape is key 1 on all keyboards and all layouts except
             # amigas and very old Macs so this seems safe enough.
             if key == 'release 1':
                 return super().keypress(size, 'esc')
@@ -158,7 +163,7 @@ class AutoDetectPressKey(AutoDetectBase):
         elif key.startswith('press '):
             code = int(key[len('press '):])
             if code not in self.step.keycodes:
-                self.error_text.set_text("Input was not recognized, try again")
+                self.error_text.set_text(_("Input was not recognized, try again"))
                 return
             v = self.step.keycodes[code]
         else:
@@ -180,17 +185,19 @@ class AutoDetectKeyPresent(AutoDetectBase):
 
     def make_body(self):
         return Pile([
-            Text("Is the following key present on your keyboard?"),
+            Text(_("Is the following key present on your keyboard?")),
             Text(""),
             Text(self.step.symbol, align="center"),
             Text(""),
             button_pile([
-                ok_btn(label="Yes", on_press=self.yes),
-                other_btn(label="No", on_press=self.no),
+                ok_btn(label=_("Yes"), on_press=self.yes),
+                other_btn(label=_("No"), on_press=self.no),
                 ]),
             ])
 
+
 class Detector:
+    # Encapsulates the state of the autodetection process.
 
     def __init__(self, kview):
         self.keyboard_view = kview
@@ -262,6 +269,7 @@ class KeyboardForm(Form):
 
 
 class KeyboardView(BaseView):
+
     def __init__(self, model, controller, opts):
         self.model = model
         self.controller = controller

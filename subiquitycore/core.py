@@ -42,6 +42,7 @@ GIO_CMAP  = 0x4B70	# gets colour palette on VGA+
 PIO_CMAP  = 0x4B71	# sets colour palette on VGA+
 UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
 
+# /usr/include/linux/kd.h
 K_RAW       = 0x00
 K_XLATE     = 0x01
 K_MEDIUMRAW = 0x02
@@ -162,7 +163,7 @@ class KeyCodesFilter:
         new_settings[tty.CC][termios.VMIN] = 0
         new_settings[tty.CC][termios.VTIME] = 0
         termios.tcsetattr(self._fd, termios.TCSAFLUSH, new_settings)
-        # Finally, set the meyboard mode to K_MEDIUMRAW, which causes
+        # Finally, set the keyboard mode to K_MEDIUMRAW, which causes
         # the keyboard driver in the kernel to pass us keycodes.
         log.debug("old mode was %s, setting mode to %s", self._old_mode, K_MEDIUMRAW)
         fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
@@ -200,6 +201,8 @@ class KeyCodesFilter:
 
 
 class DummyKeycodesFilter:
+    # A dummy implementation of the same interface as KeyCodesFilter
+    # we can use when not running in a linux tty.
 
     def enter_keycodes_mode(self):
         pass
