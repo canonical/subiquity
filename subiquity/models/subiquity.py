@@ -88,7 +88,7 @@ class SubiquityModel:
                 'target': target,
                 'unmount': 'disabled',
                 'save_install_config': '/var/log/installer/curtin-install-cfg.yaml',
-                'save_install_logs': '/var/log/installer/curtin-install.log',
+                'save_install_log': '/var/log/installer/curtin-install.log',
                 },
 
             'partitioning_commands': {
