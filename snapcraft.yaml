@@ -13,9 +13,10 @@ apps:
     command: usr/bin/console-conf
   probert:
     command: bin/probert
-  started:
-    command: usr/bin/started
-    daemon: oneshot
+  subiquity-service:
+    command: usr/bin/subiquity-service
+    daemon: simple
+    #?? restart-condition: always
 
 parts:
   subiquity:
@@ -48,7 +49,7 @@ parts:
       'bin/subiquity-tui': usr/bin/subiquity
       'bin/subiquity-loadkeys': usr/bin/subiquity-loadkeys
       'bin/curtin-journald-forwarder': usr/bin/curtin-journald-forwarder
-      'bin/started': usr/bin/started
+      'bin/subiquity-service': usr/bin/subiquity-service
     stage:
       - usr/bin
     prime:
