@@ -29,6 +29,7 @@ class InstallpathController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.installpath
+        self.answers = self.all_answers.get("Installpath", {})
 
     def installpath(self):
         title = "Ubuntu %s"%(lsb_release.get_distro_information()['RELEASE'],)
@@ -42,6 +43,14 @@ class InstallpathController(BaseController):
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
         self.ui.set_body(InstallpathView(self.model, self))
+        if 'path' in self.answers:
+            path = self.answers['path']
+            self.model.path = path
+            if path == 'ubuntu':
+                self.install_ubuntu()
+            else:
+                self.model.update(self.answers)
+                self.signal.emit_signal('next-screen')
 
     default = installpath
 
