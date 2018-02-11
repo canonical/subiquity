@@ -42,10 +42,16 @@ class WelcomeView(BaseView):
 
     def _build_model_inputs(self):
         sl = []
-        for code, native in self.model.get_languages():
+        current_index = None
+        for i, (code, native) in enumerate(self.model.get_languages()):
+            if code == self.model.selected_language:
+                current_index = i
             sl.append(forward_btn(label=native, on_press=self.confirm, user_arg=code))
 
-        return SimpleList(sl)
+        lb = SimpleList(sl)
+        if current_index is not None:
+            lb._w.focus_position = current_index
+        return lb
 
     def confirm(self, sender, code):
         self.model.switch_language(code)
