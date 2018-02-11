@@ -25,12 +25,6 @@ log = logging.getLogger('subiquity.controller.installpath')
 
 
 class InstallpathController(BaseController):
-    signals = [
-        ('menu:installpath:main',       'installpath'),
-        ('installpath:install-ubuntu',  'install_ubuntu'),
-        ('installpath:maas-region',     'install_maas_region'),
-        ('installpath:maas-rack',       'install_maas_rack'),
-    ]
 
     def __init__(self, common):
         super().__init__(common)
