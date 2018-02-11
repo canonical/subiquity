@@ -22,6 +22,7 @@ from subiquitycore.models.network import NetworkModel
 
 from .filesystem import FilesystemModel
 from .installpath import InstallpathModel
+from .keyboard import KeyboardModel
 from .locale import LocaleModel
 
 
@@ -29,7 +30,11 @@ class SubiquityModel:
     """The overall model for subiquity."""
 
     def __init__(self, common):
-        self.locale = LocaleModel()
+        root = '/'
+        if common['opts'].dry_run:
+            root = os.path.abspath(".subiquity")
+        self.locale = LocaleModel(common['signal'])
+        self.keyboard = KeyboardModel(root)
         self.installpath = InstallpathModel()
         self.network = NetworkModel()
         self.filesystem = FilesystemModel(common['prober'])
@@ -61,34 +66,35 @@ class SubiquityModel:
         config.update(self.installpath.render_cloudinit())
         return config
 
-    def _write_files_config(self):
+    def _cloud_init_files(self):
         # TODO, this should be moved to the in-target cloud-config seed so on first
         # boot of the target, it reconfigures datasource_list to none for subsequent
         # boots.
         # (mwhudson does not entirely know what the above means!)
         userdata = '#cloud-config\n' + yaml.dump(self._cloud_init_config())
         metadata = yaml.dump({'instance-id': str(uuid.uuid4())})
-        return {
-            'postinst_metadata': {
-                'path': 'var/lib/cloud/seed/nocloud-net/meta-data',
-                'content': metadata,
-                },
-            'postinst_userdata': {
-                'path': 'var/lib/cloud/seed/nocloud-net/user-data',
-                'content': userdata,
-                },
-            'postinst_enable_cloudinit': {
-                'path': 'etc/cloud/ds-identify.cfg',
-                'content': 'policy: enabled\n',
-                },
-            }
+        return [
+            ('var/lib/cloud/seed/nocloud-net/meta-data', metadata),
+            ('var/lib/cloud/seed/nocloud-net/user-data', userdata),
+            ('etc/cloud/ds-identify.cfg', 'policy: enabled\n'),
+            ]
 
-    def render(self, install_step, reporting_url=None):
-        disk_actions = self.filesystem.render()
-        if install_step == "postinstall":
-            for a in disk_actions:
-                a['preserve'] = True
+    def configure_cloud_init(self, target):
+        for path, content in self._cloud_init_files():
+            path = os.path.join(target, path)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(os.path.join(target, path), 'w') as fp:
+                fp.write(content)
+
+    def render(self, target, reporting_url=None):
         config = {
+            'install': {
+                'target': target,
+                'unmount': 'disabled',
+                'save_install_config': '/var/log/installer/curtin-install-cfg.yaml',
+                'save_install_log': '/var/log/installer/curtin-install.log',
+                },
+
             'partitioning_commands': {
                 'builtin': 'curtin block-meta custom',
                 },
@@ -101,14 +107,19 @@ class SubiquityModel:
 
             'storage': {
                 'version': 1,
-                'config': disk_actions,
+                'config': self.filesystem.render(),
+                },
+
+            'write_files': {
+                'etc_default_keyboard': {
+                    'path': 'etc/default/keyboard',
+                    'content': self.keyboard.config_content,
+                    },
                 },
             }
-        if install_step == "install":
-            config.update(self.network.render())
-            config.update(self.installpath.render())
-        else:
-            config['write_files'] = self._write_files_config()
+
+        config.update(self.network.render())
+        config.update(self.installpath.render())
 
         if reporting_url is not None:
             config['reporting']['subiquity'] = {

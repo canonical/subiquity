@@ -54,17 +54,12 @@ def curtin_find_install_path():
             return p
 
 
-def curtin_install_cmd(configs):
+def curtin_install_cmd(config):
     '''
-    curtin -vvv --showtrace install -c $CONFIGS cp:///
+    curtin -vvv --showtrace install -c $CONFIG cp:///
     '''
-    curtin = curtin_find_curtin()
-    install_path = curtin_find_install_path()
 
-    install_cmd = [curtin, '-vvv', '--showtrace']
-    for c in configs:
-        install_cmd += ['-c', '{}'.format(c)]
-    install_cmd += ['install', 'cp://{}'.format(install_path)]
-    log.info('curtin install command: {}'.format(" ".join(install_cmd)))
-
-    return install_cmd
+    return [
+        curtin_find_curtin(),
+        '-vvv', '--showtrace', '-c', config,
+        'install', 'cp://' + curtin_find_install_path()]

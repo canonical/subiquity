@@ -25,16 +25,18 @@ parts:
       - lsb-release
       - pkg-config
       - python3-distutils-extra
+      - python3-urwid
     stage-packages:
-      - curtin
+      - libsystemd0
       - iso-codes
       - lsb-release
       - python3-distutils-extra
+      - python3-urwid
     python-packages:
       - attrs
       - pyyaml
       - systemd-python
-      - urwid
+      #- urwid
     source: .
     source-type: git
   wrappers:
@@ -47,6 +49,8 @@ parts:
       'bin/subiquity-loadkeys': usr/bin/subiquity-loadkeys
       'bin/curtin-journald-forwarder': usr/bin/curtin-journald-forwarder
       'bin/started': usr/bin/started
+    stage:
+      - usr/bin
     prime:
       - usr/bin
   users-and-groups:
@@ -59,6 +63,15 @@ parts:
         cut -d ' ' -f 2- > users-and-groups
     stage:
       - users-and-groups
+  kbdnames:
+    plugin: dump
+    build-packages:
+      - console-setup
+      - xkb-data-i18n
+    prepare: |
+      /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl > kbdnames.txt
+    stage:
+      - kbdnames.txt
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]

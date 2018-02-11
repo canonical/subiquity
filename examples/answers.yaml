@@ -1,5 +1,7 @@
 Welcome:
   lang: en_US
+Keyboard:
+  layout: us
 Network:
   accept-default: yes
 Filesystem:
