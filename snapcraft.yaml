@@ -16,7 +16,7 @@ apps:
   subiquity-service:
     command: usr/bin/subiquity-service
     daemon: simple
-    #?? restart-condition: always
+    restart-condition: always
 
 parts:
   subiquity:
