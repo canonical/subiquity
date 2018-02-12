@@ -82,7 +82,7 @@ class SubiquityModel:
             with open(path, 'w') as fp:
                 fp.write(content)
 
-    def render(self, target, reporting_url=None):
+    def render(self, target):
         config = {
             'install': {
                 'target': target,

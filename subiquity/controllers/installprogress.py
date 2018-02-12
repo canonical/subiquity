@@ -59,7 +59,6 @@ class InstallProgressController(BaseController):
         self.progress_view = None
         self.install_state = InstallState.NOT_STARTED
         self.tail_proc = None
-        self.journald_forwarder_proc = None
         self.curtin_event_stack = []
         self._identity_config_done = False
 
@@ -133,8 +132,7 @@ class InstallProgressController(BaseController):
             log.debug("Installprogress: this is a dry-run")
             config_location = os.path.join('.subiquity/', config_file_name)
             curtin_cmd = [
-                "python3", "scripts/replay-curtin-log.py",
-                self.reporting_url, "examples/curtin-events.json",
+                "python3", "scripts/replay-curtin-log.py", "examples/curtin-events.json",
                 ]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
@@ -143,14 +141,13 @@ class InstallProgressController(BaseController):
 
         self._write_config(
             config_location,
-            self.base_model.render(target=TARGET, reporting_url=self.reporting_url))
+            self.base_model.render(target=TARGET))
 
         return curtin_cmd
 
     def curtin_start_install(self):
         log.debug('Curtin Install: starting curtin')
         self.install_state = InstallState.RUNNING
-        self.start_journald_forwarder()
         self.start_journald_listener("curtin_event", self.curtin_event)
 
         curtin_cmd = self._get_curtin_command()
@@ -200,16 +197,6 @@ class InstallProgressController(BaseController):
             return
         tail = self.tail_proc.stdout.read().decode('utf-8', 'replace')
         self.progress_view.add_log_tail(tail)
-
-    def start_journald_forwarder(self):
-        log.debug("starting curtin journald forwarder")
-        if "SNAP" in os.environ and sys.executable.startswith(os.environ["SNAP"]):
-            script = os.path.join(os.environ["SNAP"], 'usr/bin/curtin-journald-forwarder')
-        else:
-            script = './bin/curtin-journald-forwarder'
-        self.journald_forwarder_proc = utils.run_command_start([script])
-        self.reporting_url = self.journald_forwarder_proc.stdout.readline().decode('utf-8').strip()
-        log.debug("curtin journald forwarder listening on %s", self.reporting_url)
 
     def start_tail_proc(self):
         self.progress_view.clear_log_tail()

@@ -2,14 +2,11 @@
 
 import json
 import logging
-import random
 import sys
 import time
 
 from curtin import reporter
 from curtin.reporter import events
-
-url = sys.argv[1]
 
 logger = logging.getLogger('')
 logger.setLevel('DEBUG')
@@ -17,13 +14,20 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(logging.Formatter("%(asctime)s %(name)s:%(lineno)d %(message)s"))
 logger.addHandler(handler)
 
-json_file = sys.argv[2]
+json_file = sys.argv[1]
 
-c = {'subiquity': {'type': 'webhook', 'endpoint': url}, 'print': {'type': 'print'}}
+c = {'subiquity': {'type': 'journald'}, 'print': {'type': 'print'}}
 
 reporter.update_configuration(c)
 
-ev_dict = {"origin": "curtin", "event_type": "start", "level": "DEBUG", "timestamp": 1505187478.3402257, "name": "cmd-install", "description": "curtin command install"}
+## ev_dict = {
+##     "origin": "curtin",
+##     "event_type": "start",
+##     "level": "DEBUG",
+##     "timestamp": 1505187478.3402257,
+##     "name": "cmd-install",
+##     "description": "curtin command install"
+##     }
 
 class FakeEvent:
     def __init__(self, ev_dict):
