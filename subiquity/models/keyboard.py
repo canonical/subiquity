@@ -63,7 +63,7 @@ class KeyboardModel:
 
         self._clear()
 
-        with open(self._kbnames_file) as kbdnames:
+        with open(self._kbnames_file, encoding='utf-8') as kbdnames:
             self._load_file(code, kbdnames)
         self.current_lang = code
 
