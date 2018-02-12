@@ -29,7 +29,8 @@ from subiquitycore.ui.form import (
     FormField,
     IntegerField,
     )
-from subiquitycore.ui.interactive import Selector, StringEditor
+from subiquitycore.ui.interactive import StringEditor
+from subiquitycore.ui.selector import Option, Selector
 from subiquitycore.ui.utils import Color, Padding, button_pile
 from subiquitycore.view import BaseView
 
@@ -134,7 +135,8 @@ class PartitionFormatView(BaseView):
         if existing is not None:
             fs = existing.fs()
             if fs is not None:
-                initial['fstype'] = self.model.fs_by_name[fs.fstype]
+                if existing.flag != "boot":
+                    initial['fstype'] = self.model.fs_by_name[fs.fstype]
                 mount = fs.mount()
                 if mount is not None:
                     initial['mount'] = mount.path
@@ -191,6 +193,9 @@ class PartitionView(PartitionFormatView):
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
         self.form.buttons.base_widget[0].set_label(label)
         if partition is not None and partition.flag == "boot":
+            opts = [Option(("fat32", True, self.model.fs_by_name["fat32"]))]
+            self.form.fstype.widget._options = opts
+            self.form.fstype.widget.index = 0
             self.form.mount.enabled = False
             self.form.fstype.enabled = False
 
