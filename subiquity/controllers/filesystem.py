@@ -110,8 +110,8 @@ class FilesystemController(BaseController):
 
     # Filesystem/Disk partition -----------------------------------------------
     def partition_disk(self, disk):
-        log.debug("In disk partition view, using {} as the disk.".format(disk.serial))
-        title = (_("Partition, format, and mount {}").format(disk.serial))
+        log.debug("In disk partition view, using {} as the disk.".format(disk.label))
+        title = (_("Partition, format, and mount {}").format(disk.label))
         footer = (_("Partition the disk, or format the entire device "
                   "without partitions"))
         self.ui.set_header(title)
@@ -276,8 +276,8 @@ class FilesystemController(BaseController):
         self.signal.prev_signal()
 
     def format_entire(self, disk):
-        log.debug("format_entire {}".format(disk.serial))
-        header = (_("Format and/or mount {}").format(disk.serial))
+        log.debug("format_entire {}".format(disk.label))
+        header = (_("Format and/or mount {}").format(disk.label))
         footer = _("Format or mount whole disk.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
@@ -287,10 +287,10 @@ class FilesystemController(BaseController):
     def format_mount_partition(self, partition):
         log.debug("format_entire {}".format(partition))
         if partition.fs() is not None:
-            header = (_("Mount partition {} of {}").format(partition.number, partition.device.serial))
+            header = (_("Mount partition {} of {}").format(partition.number, partition.device.label))
             footer = _("Mount partition.")
         else:
-            header = (_("Format and mount partition {} of {}").format(partition.number, partition.device.serial))
+            header = (_("Format and mount partition {} of {}").format(partition.number, partition.device.label))
             footer = _("Format and mount partition.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
@@ -342,6 +342,12 @@ class FilesystemController(BaseController):
             'vendor': disk._info.vendor,
             'rotational': 'true' if rotational == '1' else 'false',
         }
+        if dinfo['serial'] is None:
+            dinfo['serial'] = 'unknown'
+        if dinfo['model'] is None:
+            dinfo['model'] = 'unknown'
+        if dinfo['vendor'] is None:
+            dinfo['vendor'] = 'unknown'
 
         template = """\n
 {devname}:\n

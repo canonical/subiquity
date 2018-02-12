@@ -100,7 +100,8 @@ def asdict(inst):
         if v:
             if hasattr(v, 'id'):
                 v = v.id
-            r[field.name] = v
+            if v is not None:
+                r[field.name] = v
     return r
 
 # This code is not going to make much sense unless you have read
@@ -169,6 +170,12 @@ class Disk:
 
     def desc(self):
         return "local disk"
+
+    @property
+    def label(self):
+        if self.serial is not None:
+            return self.serial
+        return self.path
 
     @property
     def used(self):
@@ -336,7 +343,7 @@ class FilesystemModel(object):
             self._disks[disk.path] = disk
 
     def all_disks(self):
-        return sorted(self._available_disks.values(), key=lambda x:x.serial)
+        return sorted(self._available_disks.values(), key=lambda x:x.label)
 
     def get_disk(self, path):
         return self._available_disks.get(path)
