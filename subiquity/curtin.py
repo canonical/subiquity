@@ -23,7 +23,6 @@ import yaml
 log = logging.getLogger("subiquity.curtin")
 
 CURTIN_SEARCH_PATH = ['/usr/local/curtin/bin', '/usr/bin']
-CURTIN_INSTALL_PATH = ['/media/root-ro', '/rofs', '/']
 CURTIN_INSTALL_LOG = '/tmp/subiquity-curtin-install.log'
 CURTIN_POSTINSTALL_LOG = '/tmp/subiquity-curtin-postinstall.log'
 
@@ -47,19 +46,5 @@ def curtin_find_curtin():
     return '/bin/false'
 
 
-def curtin_find_install_path():
-    for p in CURTIN_INSTALL_PATH:
-        if os.path.exists(p):
-            log.debug('install path set: {}'.format(p))
-            return p
-
-
 def curtin_install_cmd(config):
-    '''
-    curtin -vvv --showtrace install -c $CONFIG cp:///
-    '''
-
-    return [
-        curtin_find_curtin(),
-        '-vvv', '--showtrace', '-c', config,
-        'install', 'cp://' + curtin_find_install_path()]
+    return [curtin_find_curtin(), '-vvv', '--showtrace', '-c', config, 'install']

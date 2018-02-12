@@ -91,6 +91,10 @@ class SubiquityModel:
                 'save_install_log': '/var/log/installer/curtin-install.log',
                 },
 
+            'sources': [
+                'cp:///rofs',
+                ],
+
             'partitioning_commands': {
                 'builtin': 'curtin block-meta custom',
                 },
