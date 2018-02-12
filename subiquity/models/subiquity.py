@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
 import os
 import uuid
 import yaml
@@ -23,6 +24,14 @@ from subiquitycore.models.network import NetworkModel
 from .filesystem import FilesystemModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
+
+
+def setup_yaml():
+    """ http://stackoverflow.com/a/8661021 """
+    represent_dict_order = lambda self, data:  self.represent_mapping('tag:yaml.org,2002:map', data.items())
+    yaml.add_representer(OrderedDict, represent_dict_order)
+
+setup_yaml()
 
 
 class SubiquityModel:
@@ -94,6 +103,8 @@ class SubiquityModel:
             'sources': [
                 'cp:///rofs',
                 ],
+
+            'verbosity': 3,
 
             'partitioning_commands': {
                 'builtin': 'curtin block-meta custom',

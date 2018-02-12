@@ -18,7 +18,6 @@ import fcntl
 import logging
 import os
 import subprocess
-import sys
 
 import yaml
 
@@ -27,17 +26,13 @@ from systemd import journal
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
 
-from subiquity.curtin import (
-    CURTIN_INSTALL_LOG,
-    CURTIN_POSTINSTALL_LOG,
-    curtin_install_cmd,
-    )
 from subiquity.ui.views import ProgressView
 
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
 
 TARGET = '/target'
+CURTIN_INSTALL_LOG = '/tmp/subiquity-curtin-install.log'
 
 class InstallState:
     NOT_STARTED = 0
@@ -137,7 +132,7 @@ class InstallProgressController(BaseController):
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             config_location = os.path.join('/var/log/installer', config_file_name)
-            curtin_cmd = curtin_install_cmd(config_location)
+            curtin_cmd = ['curtin', '--showtrace', '-c', config_file_name, 'install']
 
         self._write_config(
             config_location,
