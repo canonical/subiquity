@@ -1,0 +1,404 @@
+{
+    "storage": {
+        "/dev/sr0": {
+            "DEVLINKS": "/dev/dvd /dev/disk/by-uuid/2018-02-11-21-54-54-00 /dev/disk/by-path/pci-0000:00:01.1-ata-2 /dev/disk/by-id/ata-QEMU_DVD-ROM_QM00003 /dev/disk/by-label/Ubuntu\\x20custom\\x20amd64 /dev/cdrom",
+            "DEVNAME": "/dev/sr0",
+            "DEVPATH": "/devices/pci0000:00/0000:00:01.1/ata2/host1/target1:0:0/1:0:0:0/block/sr0",
+            "DEVTYPE": "disk",
+            "ID_ATA": "1",
+            "ID_BUS": "ata",
+            "ID_CDROM": "1",
+            "ID_CDROM_DVD": "1",
+            "ID_CDROM_MEDIA": "1",
+            "ID_CDROM_MEDIA_CD": "1",
+            "ID_CDROM_MEDIA_SESSION_COUNT": "1",
+            "ID_CDROM_MEDIA_TRACK_COUNT": "1",
+            "ID_CDROM_MEDIA_TRACK_COUNT_DATA": "1",
+            "ID_CDROM_MRW": "1",
+            "ID_CDROM_MRW_W": "1",
+            "ID_FOR_SEAT": "block-pci-0000_00_01_1-ata-2",
+            "ID_FS_BOOT_SYSTEM_ID": "EL\\x20TORITO\\x20SPECIFICATION",
+            "ID_FS_LABEL": "Ubuntu_custom_amd64",
+            "ID_FS_LABEL_ENC": "Ubuntu\\x20custom\\x20amd64",
+            "ID_FS_TYPE": "iso9660",
+            "ID_FS_USAGE": "filesystem",
+            "ID_FS_UUID": "2018-02-11-21-54-54-00",
+            "ID_FS_UUID_ENC": "2018-02-11-21-54-54-00",
+            "ID_FS_VERSION": "Joliet Extension",
+            "ID_MODEL": "QEMU_DVD-ROM",
+            "ID_MODEL_ENC": "QEMU\\x20DVD-ROM\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20\\x20",
+            "ID_PART_TABLE_TYPE": "dos",
+            "ID_PART_TABLE_UUID": "47f4b99e",
+            "ID_PATH": "pci-0000:00:01.1-ata-2",
+            "ID_PATH_TAG": "pci-0000_00_01_1-ata-2",
+            "ID_REVISION": "2.5+",
+            "ID_SERIAL": "QEMU_DVD-ROM_QM00003",
+            "ID_SERIAL_SHORT": "QM00003",
+            "ID_TYPE": "cd",
+            "MAJOR": "11",
+            "MINOR": "0",
+            "SUBSYSTEM": "block",
+            "SYSTEMD_MOUNT_DEVICE_BOUND": "1",
+            "TAGS": ":uaccess:seat:systemd:",
+            "USEC_INITIALIZED": "11730833",
+            "attrs": {
+                "alignment_offset": "0",
+                "bdi": null,
+                "capability": "119",
+                "dev": "11:0",
+                "device": null,
+                "discard_alignment": "0",
+                "events": "media_change eject_request",
+                "events_async": "",
+                "events_poll_msecs": "-1",
+                "ext_range": "1",
+                "inflight": "       0        0",
+                "range": "1",
+                "removable": "1",
+                "ro": "0",
+                "size": "2675965952",
+                "stat": "    2896        5   391108    34592        0        0        0        0        0    25672    34584",
+                "subsystem": "block",
+                "uevent": "MAJOR=11\nMINOR=0\nDEVNAME=sr0\nDEVTYPE=disk"
+            }
+        },
+        "/dev/vda": {
+            "DEVLINKS": "/dev/disk/by-path/virtio-pci-0000:00:04.0 /dev/disk/by-path/pci-0000:00:04.0",
+            "DEVNAME": "/dev/vda",
+            "DEVPATH": "/devices/pci0000:00/0000:00:04.0/virtio0/block/vda",
+            "DEVTYPE": "disk",
+            "ID_PATH": "pci-0000:00:04.0",
+            "ID_PATH_TAG": "pci-0000_00_04_0",
+            "MAJOR": "252",
+            "MINOR": "0",
+            "SUBSYSTEM": "block",
+            "TAGS": ":systemd:",
+            "USEC_INITIALIZED": "11803694",
+            "attrs": {
+                "alignment_offset": "0",
+                "bdi": null,
+                "cache_type": "write back",
+                "capability": "50",
+                "dev": "252:0",
+                "device": null,
+                "discard_alignment": "0",
+                "ext_range": "256",
+                "inflight": "       0        0",
+                "range": "16",
+                "removable": "0",
+                "ro": "0",
+                "serial": "",
+                "size": "10737418240",
+                "stat": "     169        0     8360       28        0        0        0        0        0       12       28",
+                "subsystem": "block",
+                "uevent": "MAJOR=252\nMINOR=0\nDEVNAME=vda\nDEVTYPE=disk"
+            }
+        },
+        "/dev/fd0": {
+            "DEVNAME": "/dev/fd0",
+            "DEVPATH": "/devices/platform/floppy.0/block/fd0",
+            "DEVTYPE": "disk",
+            "MAJOR": "2",
+            "MINOR": "0",
+            "SUBSYSTEM": "block",
+            "TAGS": ":systemd:",
+            "USEC_INITIALIZED": "11781982",
+            "attrs": {
+                "alignment_offset": "0",
+                "bdi": null,
+                "capability": "11",
+                "dev": "2:0",
+                "device": null,
+                "discard_alignment": "0",
+                "events": "",
+                "events_async": "",
+                "events_poll_msecs": "-1",
+                "ext_range": "1",
+                "inflight": "       0        0",
+                "range": "1",
+                "removable": "1",
+                "ro": "0",
+                "size": "4096",
+                "stat": "       0        0        0        0        0        0        0        0        0        0        0",
+                "subsystem": "block",
+                "uevent": "MAJOR=2\nMINOR=0\nDEVNAME=fd0\nDEVTYPE=disk"
+            }
+        }
+    },
+    "network": {
+        "links": [
+            {
+                "addresses": [
+                    {
+                        "source": "dhcp",
+                        "family": 2,
+                        "address": "10.0.2.15/24",
+                        "scope": "global"
+                    },
+                    {
+                        "source": "static",
+                        "family": 10,
+                        "address": "fe80::5054:ff:fe12:3456/64",
+                        "scope": "link"
+                    }
+                ],
+                "udev_data": {
+                    "DEVPATH": "/devices/pci0000:00/0000:00:03.0/net/ens3",
+                    "ID_BUS": "pci",
+                    "ID_MM_CANDIDATE": "1",
+                    "ID_MODEL_FROM_DATABASE": "82540EM Gigabit Ethernet Controller (QEMU Virtual Machine)",
+                    "ID_MODEL_ID": "0x100e",
+                    "ID_NET_NAME_MAC": "enx525400123456",
+                    "ID_NET_NAME_PATH": "enp0s3",
+                    "ID_NET_NAME_SLOT": "ens3",
+                    "ID_PATH": "pci-0000:00:03.0",
+                    "ID_PATH_TAG": "pci-0000_00_03_0",
+                    "ID_PCI_CLASS_FROM_DATABASE": "Network controller",
+                    "ID_PCI_SUBCLASS_FROM_DATABASE": "Ethernet controller",
+                    "ID_VENDOR_FROM_DATABASE": "Intel Corporation",
+                    "ID_VENDOR_ID": "0x8086",
+                    "IFINDEX": "2",
+                    "INTERFACE": "ens3",
+                    "SUBSYSTEM": "net",
+                    "SYSTEMD_ALIAS": "/sys/subsystem/net/devices/ens3",
+                    "TAGS": ":systemd:",
+                    "USEC_INITIALIZED": "12195180",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "52:54:00:12:34:56",
+                        "broadcast": "ff:ff:ff:ff:ff:ff",
+                        "carrier": "1",
+                        "carrier_changes": "2",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "device": null,
+                        "dormant": "0",
+                        "duplex": "full",
+                        "flags": "0x1003",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "2",
+                        "iflink": "2",
+                        "link_mode": "0",
+                        "mtu": "1500",
+                        "name_assign_type": "4",
+                        "netdev_group": "0",
+                        "operstate": "up",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": "1000",
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "1",
+                        "uevent": "INTERFACE=ens3\nIFINDEX=2"
+                    }
+                },
+                "type": "eth",
+                "netlink_data": {
+                    "ifindex": 2,
+                    "flags": 69699,
+                    "arptype": 1,
+                    "family": 0,
+                    "name": "ens3"
+                },
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "slaves": [],
+                    "mode": null
+                },
+                "bridge": {
+                    "is_bridge": false,
+                    "is_port": false,
+                    "interfaces": [],
+                    "options": {}
+                }
+            },
+            {
+                "addresses": [
+                    {
+                        "source": "static",
+                        "family": 2,
+                        "address": "127.0.0.1/8",
+                        "scope": "host"
+                    },
+                    {
+                        "source": "static",
+                        "family": 10,
+                        "address": "::1/128",
+                        "scope": "host"
+                    }
+                ],
+                "udev_data": {
+                    "DEVPATH": "/devices/virtual/net/lo",
+                    "ID_MM_CANDIDATE": "1",
+                    "IFINDEX": "1",
+                    "INTERFACE": "lo",
+                    "SUBSYSTEM": "net",
+                    "USEC_INITIALIZED": "27499603",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "00:00:00:00:00:00",
+                        "broadcast": "00:00:00:00:00:00",
+                        "carrier": "1",
+                        "carrier_changes": "0",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "dormant": "0",
+                        "duplex": null,
+                        "flags": "0x9",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "1",
+                        "iflink": "1",
+                        "link_mode": "0",
+                        "mtu": "65536",
+                        "name_assign_type": null,
+                        "netdev_group": "0",
+                        "operstate": "unknown",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": null,
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "772",
+                        "uevent": "INTERFACE=lo\nIFINDEX=1"
+                    }
+                },
+                "type": "lo",
+                "netlink_data": {
+                    "ifindex": 1,
+                    "flags": 65609,
+                    "arptype": 772,
+                    "family": 0,
+                    "name": "lo"
+                },
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "slaves": [],
+                    "mode": null
+                },
+                "bridge": {
+                    "is_bridge": false,
+                    "is_port": false,
+                    "interfaces": [],
+                    "options": {}
+                }
+            }
+        ],
+        "routes": [
+            {
+                "family": 2,
+                "type": 1,
+                "table": 254,
+                "dst": "default",
+                "ifindex": 2
+            },
+            {
+                "family": 2,
+                "type": 1,
+                "table": 254,
+                "dst": "10.0.2.0/24",
+                "ifindex": 2
+            },
+            {
+                "family": 2,
+                "type": 1,
+                "table": 254,
+                "dst": "10.0.2.2",
+                "ifindex": 2
+            },
+            {
+                "family": 2,
+                "type": 3,
+                "table": 255,
+                "dst": "10.0.2.0",
+                "ifindex": 2
+            },
+            {
+                "family": 2,
+                "type": 2,
+                "table": 255,
+                "dst": "10.0.2.15",
+                "ifindex": 2
+            },
+            {
+                "family": 2,
+                "type": 3,
+                "table": 255,
+                "dst": "10.0.2.255",
+                "ifindex": 2
+            },
+            {
+                "family": 2,
+                "type": 3,
+                "table": 255,
+                "dst": "127.0.0.0",
+                "ifindex": 1
+            },
+            {
+                "family": 2,
+                "type": 2,
+                "table": 255,
+                "dst": "127.0.0.0/8",
+                "ifindex": 1
+            },
+            {
+                "family": 2,
+                "type": 2,
+                "table": 255,
+                "dst": "127.0.0.1",
+                "ifindex": 1
+            },
+            {
+                "family": 2,
+                "type": 3,
+                "table": 255,
+                "dst": "127.255.255.255",
+                "ifindex": 1
+            },
+            {
+                "family": 10,
+                "type": 2,
+                "table": 254,
+                "dst": "::1",
+                "ifindex": 1
+            },
+            {
+                "family": 10,
+                "type": 1,
+                "table": 254,
+                "dst": "fe80::/64",
+                "ifindex": 2
+            },
+            {
+                "family": 10,
+                "type": 2,
+                "table": 255,
+                "dst": "::1",
+                "ifindex": 1
+            },
+            {
+                "family": 10,
+                "type": 2,
+                "table": 255,
+                "dst": "fe80::5054:ff:fe12:3456",
+                "ifindex": 1
+            },
+            {
+                "family": 10,
+                "type": 1,
+                "table": 255,
+                "dst": "ff00::/8",
+                "ifindex": 2
+            }
+        ]
+    }
+}
