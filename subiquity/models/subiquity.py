@@ -79,7 +79,7 @@ class SubiquityModel:
         for path, content in self._cloud_init_files():
             path = os.path.join(target, path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(os.path.join(target, path), 'w') as fp:
+            with open(path, 'w') as fp:
                 fp.write(content)
 
     def render(self, target, reporting_url=None):

@@ -182,7 +182,11 @@ class InstallProgressController(BaseController):
         # If we need to do anything that takes time here (like running
         # dpkg-reconfigure maas-rack-controller, for example...) we
         # should switch to doing that work in a background thread.
-        self.base_model.configure_cloud_init(TARGET)
+        if self.opts.dry_run:
+            target = '.subiquity'
+        else:
+            target = TARGET
+        self.base_model.configure_cloud_init(target)
         self.ui.progress_current += 1
         self.ui.set_header(_("Installation complete!"), "")
         self.ui.set_footer("")
