@@ -69,7 +69,7 @@ class GuidedDiskSelectionView(BaseView):
         disks = []
         for disk in self.model.all_disks():
             disk_btn = forward_btn(
-                "%-40s %s"%(disk.serial, humanize_size(disk.size).rjust(9)),
+                "%-40s %s"%(disk.label, humanize_size(disk.size).rjust(9)),
                 on_press=self.choose_disk, user_arg=disk)
             disks.append(disk_btn)
         lb = ListBox([

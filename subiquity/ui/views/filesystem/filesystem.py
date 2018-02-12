@@ -171,7 +171,7 @@ class FilesystemView(BaseView):
         col3(Text("DEVICE"), Text("SIZE", align="center"), Text("TYPE"))
 
         for disk in self.model.all_disks():
-            disk_label = Text(disk.serial)
+            disk_label = Text(disk.label)
             size = Text(humanize_size(disk.size).rjust(9))
             typ = Text(disk.desc())
             col3(disk_label, size, typ)
