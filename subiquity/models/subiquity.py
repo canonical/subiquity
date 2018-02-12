@@ -97,7 +97,7 @@ class SubiquityModel:
 
             'reporting': {
                 'subiquity': {
-                    'type': 'print',
+                    'type': 'journald',
                     },
                 },
 
@@ -116,9 +116,4 @@ class SubiquityModel:
 
         config.update(self.network.render())
 
-        if reporting_url is not None:
-            config['reporting']['subiquity'] = {
-                'type': 'webhook',
-                'endpoint': reporting_url,
-                }
         return config
