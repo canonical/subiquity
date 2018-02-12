@@ -6,7 +6,7 @@ PyYAML
 testtools
 mock
 attrs
-systemd
+systemd-python
 jsonschema
 pyudev
 -e git+https://github.com/CanonicalLtd/probert#egg=probert
