@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import sys
 import time
 
@@ -40,12 +41,14 @@ class FakeEvent:
     def as_dict(self):
         return self._ev_dict
 
+scale_factor = float(os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "4"))
+
 prev_ev = None
 for line in open(json_file):
     d = json.loads(line.strip())
     ev = FakeEvent(d)
     if prev_ev is not None:
         events.report_event(prev_ev)
-        time.sleep(min((ev.timestamp - prev_ev.timestamp)/4, 2))
+        time.sleep(min((ev.timestamp - prev_ev.timestamp), 8)/scale_factor)
     prev_ev = ev
 events.report_event(prev_ev)
