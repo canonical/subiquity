@@ -67,7 +67,7 @@ class InstallProgressController(BaseController):
 
     def identity_config_done(self):
         if self.install_state == InstallState.DONE:
-            self.curtin_configure_cloud_init()
+            self.postinstall_configuration()
         else:
             self._identity_config_done = True
 
@@ -170,15 +170,19 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.DONE
         log.debug('After curtin install OK')
         if self._identity_config_done:
-            self.loop.set_alarm_in(0.01, lambda loop, userdata: self.curtin_configure_cloud_init())
+            self.loop.set_alarm_in(0.01, lambda loop, userdata: self.postinstall_configuration())
 
     def cancel(self):
         pass
 
-    def curtin_configure_cloud_init(self):
+    def postinstall_configuration(self):
         # If we need to do anything that takes time here (like running
         # dpkg-reconfigure maas-rack-controller, for example...) we
         # should switch to doing that work in a background thread.
+        self.configure_cloud_init()
+        self.copy_logs_to_target()
+
+    def configure_cloud_init(self):
         if self.opts.dry_run:
             target = '.subiquity'
         else:
@@ -191,6 +195,18 @@ class InstallProgressController(BaseController):
         self.progress_view.show_complete()
         if self.answers['reboot']:
             self.loop.set_alarm_in(0.01, lambda loop, userdata: self.reboot())
+
+    def copy_logs_to_target(self):
+        if self.opts.dry_run:
+            return
+        utils.run_command(['cp', '-aT', '/var/log/installer', '/target/var/log/installer'])
+        try:
+            with open('/target/var/log/installer/installer-journal.txt', 'w') as output:
+                subprocess.run(
+                    ['journalctl'],
+                    stdout=output, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+        except Exception:
+            log.exception("saving journal failed")
 
     def update_log_tail(self):
         if self.tail_proc is None:
