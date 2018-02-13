@@ -178,5 +178,6 @@ def disable_subiquity():
     log.info('disabling subiquity service')
     run_command(["mkdir", "-p", "/run/subiquity"])
     run_command(["touch", "/run/subiquity/complete"])
-    run_command(["systemctl", "stop", "--no-block", "subiquity*.service"])
+    run_command(["systemctl", "start", "--no-block", "getty@tty1.service"])
+    run_command(["systemctl", "stop", "--no-block", "snap.subiquity.subiquity-service.service", "serial-subiquity@*.service"])
     return
