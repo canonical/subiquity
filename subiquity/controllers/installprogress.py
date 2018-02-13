@@ -54,6 +54,8 @@ class InstallProgressController(BaseController):
         self.progress_view = None
         self.install_state = InstallState.NOT_STARTED
         self.tail_proc = None
+        self.journal_listener_handle = None
+        self.last_footer = ""
         self.curtin_event_stack = []
         self._identity_config_done = False
 
@@ -100,7 +102,8 @@ class InstallProgressController(BaseController):
                 desc = self.curtin_event_stack[-1]
             else:
                 desc = ""
-        self.ui.set_footer("Running install... %s" % (desc,))
+        self.last_footer = "Running install... %s" % (desc,)
+        self.ui.set_footer(self.last_footer)
 
     def start_journald_listener(self, identifier, callback):
         reader = journal.Reader()
@@ -111,7 +114,7 @@ class InstallProgressController(BaseController):
                 return
             for event in reader:
                 callback(event)
-        self.loop.watch_file(reader.fileno(), watch)
+        return self.loop.watch_file(reader.fileno(), watch)
 
     def _write_config(self, path, config):
         with open(path, 'w') as conf:
@@ -143,7 +146,7 @@ class InstallProgressController(BaseController):
     def curtin_start_install(self):
         log.debug('Curtin Install: starting curtin')
         self.install_state = InstallState.RUNNING
-        self.start_journald_listener("curtin_event", self.curtin_event)
+        self.journal_listener_handle = self.start_journald_listener("curtin_event", self.curtin_event)
 
         curtin_cmd = self._get_curtin_command()
 
@@ -158,17 +161,23 @@ class InstallProgressController(BaseController):
     def curtin_install_completed(self, fut):
         returncode = fut.result()
         log.debug('curtin_install: returncode: {}'.format(returncode))
+        self.loop.remove_watch_file(self.journal_listener_handle)
         if returncode > 0:
             self.install_state = InstallState.ERROR
             self.curtin_error()
             return
         self.install_state = InstallState.DONE
         log.debug('After curtin install OK')
-        if self._identity_config_done:
-            self.loop.set_alarm_in(0.01, lambda loop, userdata: self.postinstall_configuration())
+        self.loop.set_alarm_in(0.01, lambda loop, userdata: self.install_complete())
 
     def cancel(self):
         pass
+
+    def install_complete(self):
+        self.ui.progress_current += 1
+        self.ui.set_footer("Install complete")
+        if self._identity_config_done:
+            self.postinstall_configuration()
 
     def postinstall_configuration(self):
         # If we need to do anything that takes time here (like running
@@ -177,19 +186,20 @@ class InstallProgressController(BaseController):
         self.configure_cloud_init()
         self.copy_logs_to_target()
 
+        if self.progress_view is not None:
+            self.ui.set_header(_("Installation complete!"), "")
+            self.progress_view.set_status(_("Finished install!"))
+            self.progress_view.show_complete()
+
+        if self.answers['reboot']:
+            self.loop.set_alarm_in(0.01, lambda loop, userdata: self.reboot())
+
     def configure_cloud_init(self):
         if self.opts.dry_run:
             target = '.subiquity'
         else:
             target = TARGET
         self.base_model.configure_cloud_init(target)
-        self.ui.progress_current += 1
-        self.ui.set_header(_("Installation complete!"), "")
-        self.ui.set_footer("")
-        self.progress_view.set_status(_("Finished install!"))
-        self.progress_view.show_complete()
-        if self.answers['reboot']:
-            self.loop.set_alarm_in(0.01, lambda loop, userdata: self.reboot())
 
     def copy_logs_to_target(self):
         if self.opts.dry_run:
@@ -243,15 +253,18 @@ class InstallProgressController(BaseController):
         log.debug('show_progress called')
         title = _("Installing system")
         excerpt = _("Please wait for the installation to finish.")
-        footer = _("Thank you for using Ubuntu!")
         self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
         self.progress_view = ProgressView(self)
         self.start_tail_proc()
-        if self.install_state < 0:
-            self.curtin_error()
-            self.ui.set_body(self.progress_view)
-            return
-        self.progress_view.set_status(_("Running install step"))
         self.ui.set_body(self.progress_view)
+        if self.install_state == InstallState.ERROR:
+            self.curtin_error()
+        elif self.install_state == InstallState.RUNNING:
+            self.progress_view.set_status(_("Running install step"))
+            self.ui.set_footer(self.last_footer)
+        elif self.install_state == InstallState.DONE:
+            self.ui.set_header(_("Installation complete!"), "")
+            self.progress_view.set_status(_("Finished install!"))
+            self.ui.set_footer("Install complete")
+            self.progress_view.show_complete()
 
