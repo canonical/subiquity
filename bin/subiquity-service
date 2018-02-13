@@ -1,0 +1,8 @@
+#!/bin/sh
+/bin/dmesg -n 1
+loadkeys - <<EOF
+ string F91 = "\033[Z"
+ keycode 15 = Tab F91
+EOF
+export SNAP_REXEC=0
+/sbin/agetty -n --noclear -l /snap/bin/subiquity tty1 $TERM
