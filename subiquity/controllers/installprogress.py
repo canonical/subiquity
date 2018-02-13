@@ -135,7 +135,7 @@ class InstallProgressController(BaseController):
         else:
             log.debug("Installprogress: this is the *REAL* thing")
             config_location = os.path.join('/var/log/installer', config_file_name)
-            curtin_cmd = ['curtin', '--showtrace', '-c', config_file_name, 'install']
+            curtin_cmd = ['curtin', '--showtrace', '-c', config_location, 'install']
 
         self._write_config(
             config_location,
