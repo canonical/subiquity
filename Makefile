@@ -19,7 +19,11 @@ install_deps:
 	sudo apt-get install python3-urwid python3-pyudev python3-nose python3-flake8 python3-yaml \
 		python3-coverage python3-dev pkg-config libnl-genl-3-dev libnl-route-3-dev
 
-dryrun: probert
+
+i18n:
+	python3 setup.py build
+
+dryrun: probert i18n
 	$(MAKE) ui-view DRYRUN="--dry-run --uefi"
 
 ui-view:
