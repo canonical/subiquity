@@ -30,7 +30,7 @@ installer without having access to the machine.  A few sample machine
 profiles are available in the repository at ./examples/ and
 can be loaded via the MACHINE make variable:
 
-`make dryrun MACHINE=examples/desktop.json`
+`make dryrun MACHINE=examples/mwhudson.json`
 
 # Generating machine profiles
 Machine profiles are generated from the probert tool.  To collect a machine profile:
@@ -54,7 +54,7 @@ do this:
 
    ```
    $ urlbase=http://cdimage.ubuntu.com/ubuntu-server/daily-live/current
-   $ isoname=$(distro-info -d)-live-$(dpkg --print-architecture).iso
+   $ isoname=$(distro-info -d)-live-server-$(dpkg --print-architecture).iso
    $ zsync ${urlbase}/${isoname}.zsync
    ```
 
