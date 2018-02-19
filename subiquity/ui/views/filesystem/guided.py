@@ -30,9 +30,11 @@ from subiquitycore.view import BaseView
 from subiquity.models.filesystem import humanize_size
 
 
-text = _("""The installer can guide you through partitioning a disk or, if \
-you prefer, you can do it manually. If you choose guided partitioning you \
-will still have a chance to review and modify the results.""")
+text = _("""The installer can guide you through partitioning an entire disk \
+or, if you prefer, you can do it manually.
+
+If you choose to partition an entire disk you will still have a chance to \
+review and modify the results.""")
 
 
 class GuidedFilesystemView(BaseView):
