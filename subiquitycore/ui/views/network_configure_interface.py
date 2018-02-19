@@ -112,6 +112,8 @@ class NetworkConfigureInterfaceView(BaseView):
             menu_btn(label="    %s" % _("Do not use"),
                     on_press=self.clear_ipv4),
         ]
+        for btn in buttons:
+            btn.original_widget._label._cursor_position = 1
         padding = getattr(Padding, 'left_{}'.format(button_padding))
         buttons = [ padding(button) for button in buttons ]
 
@@ -128,6 +130,9 @@ class NetworkConfigureInterfaceView(BaseView):
             menu_btn(label="    %s" % _("Do not use"),
                     on_press=self.clear_ipv6),
         ]
+
+        for btn in buttons:
+            btn.original_widget._label._cursor_position = 1
 
         padding = getattr(Padding, 'left_{}'.format(button_padding))
         buttons = [ padding(button) for button in buttons ]
