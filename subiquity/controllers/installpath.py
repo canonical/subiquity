@@ -18,27 +18,18 @@ import logging
 import lsb_release
 
 from subiquitycore.controller import BaseController
-from subiquitycore.ui.dummy import DummyView
 
-from subiquity.models.installpath import InstallpathModel
-from subiquity.ui.views import InstallpathView
+from subiquity.ui.views import InstallpathView, MAASView
 
 log = logging.getLogger('subiquity.controller.installpath')
 
 
 class InstallpathController(BaseController):
-    signals = [
-        ('menu:installpath:main',           'installpath'),
-        ('installpath:install-ubuntu',      'install_ubuntu'),
-        # ('installpath:maas-region-server',  'install_maas_region_server'),
-        # ('installpath:maas-cluster-server', 'install_maas_cluster_server'),
-        # ('installpath:test-media',        'test_media'),
-        # ('installpath:test-memory',       'test_memory')
-    ]
 
     def __init__(self, common):
         super().__init__(common)
-        self.model = InstallpathModel()
+        self.model = self.base_model.installpath
+        self.answers = self.all_answers.get("Installpath", {})
 
     def installpath(self):
         title = "Ubuntu %s"%(lsb_release.get_distro_information()['RELEASE'],)
@@ -51,25 +42,62 @@ class InstallpathController(BaseController):
 
         self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
-        self.ui.set_body(InstallpathView(self.model, self.signal))
+        self.ui.set_body(InstallpathView(self.model, self))
+        if 'path' in self.answers:
+            path = self.answers['path']
+            self.model.path = path
+            if path == 'ubuntu':
+                self.install_ubuntu()
+            else:
+                self.model.update(self.answers)
+                self.signal.emit_signal('next-screen')
 
     default = installpath
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
 
+    def choose_path(self, path):
+        self.model.path = path
+        getattr(self, 'install_' + path)()
+
     def install_ubuntu(self):
         log.debug("Installing Ubuntu path chosen.")
         self.signal.emit_signal('next-screen')
 
-    def install_maas_region_server(self):
-        self.ui.set_body(DummyView(self.signal))
+    def install_maas_region(self):
+        # show region questions, seed model
+        title = "Metal as a Service (MAAS) Regional Controller Setup"
+        excerpt = _(
+            "MAAS runs a software-defined data centre - it turns a "
+            "collection of physical servers and switches into a bare "
+            "metal cloud with full open source IP address management "
+            "(IPAM) and instant provisioning on demand. By choosing "
+            "to install MAAS, a MAAS Region Controller API server and "
+            "PostgreSQL database will be installed."
+            )
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer("")
+        self.ui.set_body(MAASView(self.model, self))
 
-    def install_maas_cluster_server(self):
-        self.ui.set_body(DummyView(self.signal))
+    def install_maas_rack(self):
+        # show cack questions, seed model
+        title = "Metal as a Service (MAAS) Rack Controller Setup"
+        excerpt = _(
+            "The MAAS rack controller (maas-rackd) provides highly available, fast "
+            "and local broadcast services to the machines provisioned by MAAS. You "
+            "need a MAAS rack controller attached to each fabric (which is a set of "
+            "trunked switches). You can attach multiple rack controllers to these "
+            "physical networks for high availability, with secondary rack controllers "
+            "automatically stepping to provide these services if the primary rack "
+            "controller fails. By choosing to install a MAAS Rack controller, you will "
+            "have to connect it to a Region controller to service your machines."
+            )
 
-    def test_media(self):
-        self.ui.set_body(DummyView(self.signal))
+        self.ui.set_header(title, excerpt)
+        self.ui.set_footer("")
+        self.ui.set_body(MAASView(self.model, self))
 
-    def test_memory(self):
-        self.ui.set_body(DummyView(self.signal))
+    def setup_maas(self, result):
+        self.model.update(result)
+        self.signal.emit_signal('next-screen')

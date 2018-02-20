@@ -22,6 +22,7 @@ from subiquitycore.models.identity import IdentityModel
 from subiquitycore.models.network import NetworkModel
 
 from .filesystem import FilesystemModel
+from .installpath import InstallpathModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
 
@@ -43,6 +44,7 @@ class SubiquityModel:
             root = os.path.abspath(".subiquity")
         self.locale = LocaleModel(common['signal'])
         self.keyboard = KeyboardModel(root)
+        self.installpath = InstallpathModel()
         self.network = NetworkModel()
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
@@ -66,10 +68,12 @@ class SubiquityModel:
         if user.ssh_import_id is not None:
             user_info['ssh_import_id'] = [user.ssh_import_id]
         # XXX this should set up the locale too.
-        return {
+        config = {
             'users': [user_info],
             'hostname': self.identity.hostname,
         }
+        config.update(self.installpath.render_cloudinit())
+        return config
 
     def _cloud_init_files(self):
         # TODO, this should be moved to the in-target cloud-config seed so on first
@@ -130,5 +134,6 @@ class SubiquityModel:
             }
 
         config.update(self.network.render())
+        config.update(self.installpath.render())
 
         return config
