@@ -105,7 +105,7 @@ class BoundFormField(object):
         self.form = form
         self.in_error = False
         self._help = None
-        self.help_text = Text("", align="center")
+        self.help_text = Text("")
         self._caption = None
         self.pile = None
         self._enabled = True
@@ -331,6 +331,8 @@ class Form(object, metaclass=MetaForm):
         rows = []
         for field in self._fields:
             rows.append(field.as_row(view, longest_caption))
+            rows.append(Text(""))
+        del rows[-1:]
         return rows
 
     def validated(self):
