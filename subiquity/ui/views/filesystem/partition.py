@@ -80,14 +80,14 @@ class PartitionForm(Form):
 
     def __init__(self, mountpoint_to_devpath_mapping, max_size, initial={}):
         self.mountpoint_to_devpath_mapping = mountpoint_to_devpath_mapping
+        self.max_size = max_size
         if max_size is not None:
-            self.max_size = max_size
             self.size_str = humanize_size(max_size)
             self.size.caption = "Size (max {})".format(self.size_str)
-        else:
+        super().__init__(initial)
+        if max_size is None:
             self.remove_field('partnum')
             self.remove_field('size')
-        super().__init__(initial)
         connect_signal(self.fstype.widget, 'select', self.select_fstype)
         self.select_fstype(None, self.fstype.widget.value)
 
