@@ -18,13 +18,14 @@ import logging
 from urwid import Text
 
 from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import done_btn, menu_btn
+from subiquitycore.ui.buttons import done_btn, menu_btn, _stylized_button
 from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.ui.views.network import _build_gateway_ip_info_for_version, _build_wifi_info
 
 log = logging.getLogger('subiquitycore.network.network_configure_interface')
 
+choice_btn = _stylized_button("", "", "menu")
 
 class NetworkConfigureInterfaceView(BaseView):
     def __init__(self, model, controller, name):
@@ -107,11 +108,13 @@ class NetworkConfigureInterfaceView(BaseView):
         buttons = [
             menu_btn(label="    %s" % _("Use a static IPv4 configuration"),
                     on_press=self.show_ipv4_configuration),
-            menu_btn(label="    %s" % _("Use DHCPv4 on this interface"),
+            choice_btn(label="    %s" % _("Use DHCPv4 on this interface"),
                     on_press=self.enable_dhcp4),
-            menu_btn(label="    %s" % _("Do not use"),
+            choice_btn(label="    %s" % _("Do not use"),
                     on_press=self.clear_ipv4),
         ]
+        for btn in buttons:
+            btn.original_widget._label._cursor_position = 1
         padding = getattr(Padding, 'left_{}'.format(button_padding))
         buttons = [ padding(button) for button in buttons ]
 
@@ -123,11 +126,14 @@ class NetworkConfigureInterfaceView(BaseView):
         buttons = [
             menu_btn(label="    %s" % _("Use a static IPv6 configuration"),
                     on_press=self.show_ipv6_configuration),
-            menu_btn(label="    %s" % _("Use DHCPv6 on this interface"),
+            choice_btn(label="    %s" % _("Use DHCPv6 on this interface"),
                     on_press=self.enable_dhcp6),
-            menu_btn(label="    %s" % _("Do not use"),
+            choice_btn(label="    %s" % _("Do not use"),
                     on_press=self.clear_ipv6),
         ]
+
+        for btn in buttons:
+            btn.original_widget._label._cursor_position = 1
 
         padding = getattr(Padding, 'left_{}'.format(button_padding))
         buttons = [ padding(button) for button in buttons ]
