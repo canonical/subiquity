@@ -56,9 +56,9 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.NOT_STARTED
         self.tail_proc = None
         self.journal_listener_handle = None
-        self.last_footer = ""
-        self.curtin_event_stack = []
         self._identity_config_done = False
+        self._event_indent = ""
+        self._event_log = []
         self._syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
 
     def filesystem_config_done(self):
@@ -90,19 +90,28 @@ class InstallProgressController(BaseController):
         return cp.returncode
 
     def curtin_event(self, event):
+        #log.debug("curtin_event received %r", event)
         event_type = event.get("CURTIN_EVENT_TYPE")
         if event_type not in ['start', 'finish']:
             return
         if event_type == 'start':
-            self.footer_description.set_text(event.get("CURTIN_MESSAGE"))
+            message = event.get("CURTIN_MESSAGE", "??")
+            if self.progress_view is None:
+                self.footer_description.set_text(message)
+                self._event_log.append(self._event_indent + message)
+                log.debug("_event_log %r", self._event_log)
+            else:
+                self.progress_view.add_event(self._event_indent + message)
+            self._event_indent += "  "
             self.footer_spinner.start()
         if event_type == 'finish':
+            self._event_indent = self._event_indent[:-2]
             self.footer_spinner.stop()
 
     def start_journald_listener(self, identifier, callback):
         reader = journal.Reader()
-        reader.seek_tail()
         reader.add_match("SYSLOG_IDENTIFIER={}".format(identifier))
+        #reader.seek_tail()
         def watch():
             if reader.process() != journal.APPEND:
                 return
@@ -142,7 +151,7 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.RUNNING
         self.footer_description = urwid.Text("starting...")
         self.footer_spinner = Spinner(self.loop)
-        self.ui.set_footer(urwid.Columns([('pack', urwid.Text("Installing:")), ('pack', self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
+        self.ui.set_footer(urwid.Columns([('pack', urwid.Text("Install in progress:")), ('pack', self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
 
         self.journal_listener_handle = self.start_journald_listener(self._syslog_identifier, self.curtin_event)
 
@@ -215,10 +224,9 @@ class InstallProgressController(BaseController):
         if self.tail_proc is None:
             return
         tail = self.tail_proc.stdout.read().decode('utf-8', 'replace')
-        self.progress_view.add_log_tail(tail)
+        #self.progress_view.add_log_tail(tail)
 
     def start_tail_proc(self):
-        self.progress_view.clear_log_tail()
         tail_cmd = ['tail', '-n', '1000', '-F', CURTIN_INSTALL_LOG]
         log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
         self.tail_proc = utils.run_command_start(tail_cmd)
@@ -252,13 +260,16 @@ class InstallProgressController(BaseController):
         title = _("Installing system")
         excerpt = _("Please wait for the installation to finish.")
         self.ui.set_header(title, excerpt)
-        self.progress_view = ProgressView(self)
+        self.progress_view = ProgressView(self, self.footer_spinner)
+        for event in self._event_log:
+            self.progress_view.add_event(event)
         self.start_tail_proc()
         self.ui.set_body(self.progress_view)
         if self.install_state == InstallState.ERROR:
             self.curtin_error()
         elif self.install_state == InstallState.RUNNING:
-            self.progress_view.set_status(_("Running install step"))
+            self.progress_view.set_status(_("Install in progress"))
+            self.ui.set_footer("Thank you for using Ubuntu!")
         elif self.install_state == InstallState.DONE:
             self.ui.set_header(_("Installation complete!"), "")
             self.progress_view.set_status(_("Finished install!"))

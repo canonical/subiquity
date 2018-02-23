@@ -22,7 +22,7 @@ from urwid import (
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, ok_btn
-from subiquitycore.ui.container import ListBox, Pile
+from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import button_pile, Padding
 
 log = logging.getLogger("subiquity.views.installprogress")
@@ -59,8 +59,9 @@ class Spinner(Text):
 
 
 class ProgressView(BaseView):
-    def __init__(self, controller):
+    def __init__(self, controller, spinner):
         self.controller = controller
+        self.spinner = spinner
         self.listwalker = SimpleFocusListWalker([])
         self.listbox = ListBox(self.listwalker)
         self.linebox = MyLineBox(self.listbox)
@@ -72,16 +73,14 @@ class ProgressView(BaseView):
         self.pile = Pile(body)
         super().__init__(self.pile)
 
-    def add_log_tail(self, text):
+    def add_event(self, text):
         at_end = len(self.listwalker) == 0 or self.listbox.focus_position == len(self.listwalker) - 1
-        for line in text.splitlines():
-            self.listwalker.append(Text(line))
+        if len(self.listwalker) > 0:
+            self.listwalker[-1] = self.listwalker[-1][0]
+        self.listwalker.append(Columns([('pack', Text(text)), ('pack', self.spinner)], dividechars=1))
         if at_end:
             self.listbox.set_focus(len(self.listwalker) - 1)
             self.listbox.set_focus_valign('bottom')
-
-    def clear_log_tail(self):
-        self.listwalker[:] = []
 
     def set_status(self, text):
         self.linebox.set_title(text)
