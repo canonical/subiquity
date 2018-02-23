@@ -171,7 +171,6 @@ class InstallProgressController(BaseController):
     def curtin_install_completed(self, fut):
         returncode = fut.result()
         log.debug('curtin_install: returncode: {}'.format(returncode))
-        self.loop.remove_watch_file(self.journal_listener_handle)
         if returncode > 0:
             self.install_state = InstallState.ERROR
             self.curtin_error()
