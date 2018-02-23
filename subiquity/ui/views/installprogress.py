@@ -34,6 +34,29 @@ class MyLineBox(LineBox):
         else:
             return ""
 
+class Spinner(Text):
+    def __init__(self, loop):
+        self.loop = loop
+        self.spin_index = 0
+        self.spin_text = r'-\|/'
+        super().__init__('')
+        self.handle = None
+
+    def _advance(self, sender=None, user_data=None):
+        self.spin_index = (self.spin_index + 1)%len(self.spin_text)
+        self.set_text(self.spin_text[self.spin_index])
+        self.handle = self.loop.set_alarm_in(0.1, self._advance)
+
+    def start(self):
+        self.stop()
+        self._advance()
+
+    def stop(self):
+        self.set_text('')
+        if self.handle is not None:
+            self.loop.remove_alarm(self.handle)
+            self.handle = None
+
 
 class ProgressView(BaseView):
     def __init__(self, controller):

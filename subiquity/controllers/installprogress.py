@@ -19,6 +19,7 @@ import logging
 import os
 import subprocess
 
+import urwid
 import yaml
 
 from systemd import journal
@@ -26,7 +27,7 @@ from systemd import journal
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
 
-from subiquity.ui.views import ProgressView
+from subiquity.ui.views.installprogress import ProgressView, Spinner
 
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
@@ -92,18 +93,10 @@ class InstallProgressController(BaseController):
         if event_type not in ['start', 'finish']:
             return
         if event_type == 'start':
-            desc = event["MESSAGE"]
-            self.curtin_event_stack.append(desc)
+            self.footer_description.set_text(event.get("CURTIN_MESSAGE"))
+            self.footer_spinner.start()
         if event_type == 'finish':
-            if not self.curtin_event_stack:
-                return
-            self.curtin_event_stack.pop()
-            if self.curtin_event_stack:
-                desc = self.curtin_event_stack[-1]
-            else:
-                desc = ""
-        self.last_footer = "Running install... %s" % (desc,)
-        self.ui.set_footer(self.last_footer)
+            self.footer_spinner.stop()
 
     def start_journald_listener(self, identifier, callback):
         reader = journal.Reader()
@@ -146,6 +139,10 @@ class InstallProgressController(BaseController):
     def curtin_start_install(self):
         log.debug('Curtin Install: starting curtin')
         self.install_state = InstallState.RUNNING
+        self.footer_description = urwid.Text("starting...")
+        self.footer_spinner = Spinner(self.loop)
+        self.ui.set_footer(urwid.Columns([('pack', urwid.Text("Installing:")), ('pack', self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
+
         self.journal_listener_handle = self.start_journald_listener("curtin_event", self.curtin_event)
 
         curtin_cmd = self._get_curtin_command()
@@ -261,10 +258,8 @@ class InstallProgressController(BaseController):
             self.curtin_error()
         elif self.install_state == InstallState.RUNNING:
             self.progress_view.set_status(_("Running install step"))
-            self.ui.set_footer(self.last_footer)
         elif self.install_state == InstallState.DONE:
             self.ui.set_header(_("Installation complete!"), "")
             self.progress_view.set_status(_("Finished install!"))
-            self.ui.set_footer("Install complete")
             self.progress_view.show_complete()
 
