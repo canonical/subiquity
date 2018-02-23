@@ -90,7 +90,11 @@ class InstallProgressController(BaseController):
         return cp.returncode
 
     def curtin_event(self, event):
-        #log.debug("curtin_event received %r", event)
+        e = {}
+        for k, v in event.items():
+            if k.startswith("CURTIN_"):
+                e[k] = v
+        log.debug("curtin_event received %r", e)
         event_type = event.get("CURTIN_EVENT_TYPE")
         if event_type not in ['start', 'finish']:
             return
@@ -99,7 +103,6 @@ class InstallProgressController(BaseController):
             if self.progress_view is None:
                 self.footer_description.set_text(message)
                 self._event_log.append(self._event_indent + message)
-                log.debug("_event_log %r", self._event_log)
             else:
                 self.progress_view.add_event(self._event_indent + message)
             self._event_indent += "  "
