@@ -59,6 +59,7 @@ class InstallProgressController(BaseController):
         self.last_footer = ""
         self.curtin_event_stack = []
         self._identity_config_done = False
+        self._syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
 
     def filesystem_config_done(self):
         self.curtin_start_install()
@@ -123,7 +124,7 @@ class InstallProgressController(BaseController):
             log.debug("Installprogress: this is a dry-run")
             config_location = os.path.join('.subiquity/', config_file_name)
             curtin_cmd = [
-                "python3", "scripts/replay-curtin-log.py", "examples/curtin-events.json",
+                "python3", "scripts/replay-curtin-log.py", "examples/curtin-events.json", self._syslog_identifier,
                 ]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
@@ -132,7 +133,7 @@ class InstallProgressController(BaseController):
 
         self._write_config(
             config_location,
-            self.base_model.render(target=TARGET))
+            self.base_model.render(target=TARGET, syslog_identifier=self._syslog_identifier))
 
         return curtin_cmd
 
@@ -143,7 +144,7 @@ class InstallProgressController(BaseController):
         self.footer_spinner = Spinner(self.loop)
         self.ui.set_footer(urwid.Columns([('pack', urwid.Text("Installing:")), ('pack', self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
 
-        self.journal_listener_handle = self.start_journald_listener("curtin_event", self.curtin_event)
+        self.journal_listener_handle = self.start_journald_listener(self._syslog_identifier, self.curtin_event)
 
         curtin_cmd = self._get_curtin_command()
 
