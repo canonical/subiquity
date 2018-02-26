@@ -367,8 +367,7 @@ class FilesystemController(BaseController):
         self.ui.set_body(disk_info_view)
 
     def is_uefi(self):
-        if self.opts.dry_run and self.opts.uefi:
-            log.debug('forcing is_uefi True beacuse of options')
-            return True
+        if self.opts.dry_run:
+            return self.opts.uefi
 
         return os.path.exists('/sys/firmware/efi')

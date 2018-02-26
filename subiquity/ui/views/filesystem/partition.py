@@ -192,18 +192,22 @@ class PartitionView(PartitionFormatView):
             label = _("Save")
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
         self.form.buttons.base_widget[0].set_label(label)
-        if partition is not None and partition.flag == "boot":
-            opts = [Option(("fat32", True, self.model.fs_by_name["fat32"]))]
-            self.form.fstype.widget._options = opts
-            self.form.fstype.widget.index = 0
-            self.form.mount.enabled = False
-            self.form.fstype.enabled = False
+        if partition is not None:
+            if partition.flag == "boot":
+                opts = [Option(("fat32", True, self.model.fs_by_name["fat32"]))]
+                self.form.fstype.widget._options = opts
+                self.form.fstype.widget.index = 0
+                self.form.mount.enabled = False
+                self.form.fstype.enabled = False
+            elif partition.flag == "bios_grub":
+                self.form.mount.enabled = False
+                self.form.fstype.enabled = False
 
     def make_body(self):
         body = super().make_body()
         if self.partition is not None:
             btn = delete_btn(_("Delete"), on_press=self.delete)
-            if self.partition.flag == "boot":
+            if self.partition.flag == "boot" or self.partition.flag == "bios_grub":
                 btn = WidgetDisable(Color.info_minor(btn.original_widget))
             body.extend([
                 Text(""),
