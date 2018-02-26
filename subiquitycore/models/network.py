@@ -341,6 +341,23 @@ def valid_ipv4_address(addr):
     return ip
 
 
+def _sanitize_inteface_config(iface_config):
+    for ap, ap_config in iface_config.get('access-points', {}).items():
+        if 'password' in ap_config:
+            ap_config['password'] = '<REDACTED>'
+
+def sanitize_interface_config(iface_config):
+    iface_config = copy.deepcopy(iface_config)
+    _sanitize_inteface_config(iface_config)
+    return iface_config
+
+def sanitize_config(config):
+    """Return a copy of config with passwords redacted."""
+    config = copy.deepcopy(config)
+    for iface, iface_config in config.get('network', {}).get('wifis', {}).items():
+        _sanitize_inteface_config(iface_config)
+    return config
+
 class NetworkModel(object):
     """ Model representing network interfaces
     """
@@ -399,7 +416,7 @@ class NetworkModel(object):
         if link.is_virtual:
             return
         config = self.config.config_for_device(link)
-        log.debug("new_link %s %s with config %s", ifindex, link.name, config)
+        log.debug("new_link %s %s with config %s", ifindex, link.name, sanitize_interface_config(config))
         self.devices[ifindex] = Networkdev(link, config)
         self.devices_by_name[link.name] = Networkdev(link, config)
 

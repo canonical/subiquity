@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import copy
 from functools import partial
 import logging
 import os
@@ -26,7 +25,7 @@ import yaml
 
 from probert.network import NetworkEventReceiver
 
-from subiquitycore.models import NetworkModel
+from subiquitycore.models.network import sanitize_config
 from subiquitycore.ui.views import (NetworkView,
                                     NetworkSetDefaultRouteView,
                                     NetworkBondInterfacesView,
@@ -214,16 +213,6 @@ class TaskSequence:
         if self.canceled:
             return
         self.watcher.task_error(self.stage, info)
-
-
-def sanitize_config(config):
-    """Return a copy of config with passwords redacted."""
-    config = copy.deepcopy(config)
-    for iface, iface_config in config.get('network', {}).get('wifis', {}).items():
-        for ap, ap_config in iface_config.get('access-points', {}).items():
-            if 'password' in ap_config:
-                ap_config['password'] = '<REDACTED>'
-    return config
 
 
 class SubiquityNetworkEventReceiver(NetworkEventReceiver):
