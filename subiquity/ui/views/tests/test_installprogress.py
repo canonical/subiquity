@@ -11,15 +11,16 @@ class IdentityViewTests(unittest.TestCase):
 
     def make_view(self):
         controller = mock.create_autospec(spec=InstallProgressController)
+        controller.loop = None
         return ProgressView(controller)
 
     def test_initial_focus(self):
         view = self.make_view()
         for w in reversed(view_helpers.get_focus_path(view)):
-            if w is view.listbox:
+            if w is view.event_listbox:
                 return
         else:
-            self.fail("listbox widget not focus")
+            self.fail("event listbox widget not focus")
 
     def test_show_complete(self):
         view = self.make_view()

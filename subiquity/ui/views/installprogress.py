@@ -59,9 +59,9 @@ class Spinner(Text):
 
 
 class ProgressView(BaseView):
-    def __init__(self, controller, spinner):
+    def __init__(self, controller):
         self.controller = controller
-        self.spinner = spinner
+        self.spinner = Spinner(controller.loop)
 
         self.event_listwalker = SimpleFocusListWalker([])
         self.event_listbox = ListBox(self.event_listwalker)

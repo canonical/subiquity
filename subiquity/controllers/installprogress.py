@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-import fcntl
 import logging
 import os
 import subprocess
@@ -27,7 +26,7 @@ from systemd import journal
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
 
-from subiquity.ui.views.installprogress import ProgressView, Spinner
+from subiquity.ui.views.installprogress import ProgressView
 
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
@@ -71,6 +70,8 @@ class InstallProgressController(BaseController):
 
     def curtin_error(self):
         log.debug('curtin_error')
+        self.install_state = InstallState.ERROR
+        self.progress_view.spinner.stop()
         self.progress_view.set_status(('info_error', "An error has occurred"))
         self.progress_view.show_complete(True)
         self.default()
@@ -156,8 +157,8 @@ class InstallProgressController(BaseController):
         log.debug('Curtin Install: starting curtin')
         self.install_state = InstallState.RUNNING
         self.footer_description = urwid.Text("starting...")
-        self.footer_spinner = Spinner(self.loop)
-        self.progress_view = ProgressView(self, self.footer_spinner)
+        self.progress_view = ProgressView(self)
+        self.footer_spinner = self.progress_view.spinner
 
         self.ui.set_footer(urwid.Columns([('pack', urwid.Text("Install in progress:")), (self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
 
@@ -176,8 +177,7 @@ class InstallProgressController(BaseController):
     def curtin_install_completed(self, fut):
         returncode = fut.result()
         log.debug('curtin_install: returncode: {}'.format(returncode))
-        if returncode > 0:
-            self.install_state = InstallState.ERROR
+        if returncode != 0:
             self.curtin_error()
             return
         self.install_state = InstallState.DONE
