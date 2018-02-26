@@ -66,7 +66,7 @@ class ProgressView(BaseView):
         self.event_listwalker = SimpleFocusListWalker([])
         self.event_listbox = ListBox(self.event_listwalker)
         self.event_linebox = MyLineBox(self.event_listbox)
-        self.event_buttons = button_pile([other_btn("View full log")])
+        self.event_buttons = button_pile([other_btn("View full log", on_press=self.view_log)])
         event_body = [
             ('pack', Text("")),
             ('weight', 1, Padding.center_79(self.event_linebox)),
@@ -75,6 +75,15 @@ class ProgressView(BaseView):
             ('pack', Text("")),
         ]
         self.event_pile = Pile(event_body)
+
+        self.log_listwalker = SimpleFocusListWalker([])
+        self.log_listbox = ListBox(self.log_listwalker)
+        log_linebox = MyLineBox(self.log_listbox, _("Full installer output"))
+        log_body = [
+            ('weight', 1, log_linebox),
+            ('pack', button_pile([other_btn(_("Close"), on_press=self.close_log)])),
+            ]
+        self.log_pile = Pile(log_body)
 
         super().__init__(self.event_pile)
 
@@ -88,7 +97,11 @@ class ProgressView(BaseView):
             self.event_listbox.set_focus_valign('bottom')
 
     def add_log_line(self, text):
-        pass
+        at_end = len(self.log_listwalker) == 0 or self.log_listbox.focus_position == len(self.log_listwalker) - 1
+        self.log_listwalker.append(Text(text))
+        if at_end:
+            self.log_listbox.set_focus(len(self.log_listwalker) - 1)
+            self.log_listbox.set_focus_valign('bottom')
 
     def set_status(self, text):
         self.event_linebox.set_title(text)
@@ -113,3 +126,9 @@ class ProgressView(BaseView):
 
     def quit(self, btn):
         self.controller.quit()
+
+    def view_log(self, btn):
+        self._w = self.log_pile
+
+    def close_log(self, btn):
+        self._w = self.event_pile
