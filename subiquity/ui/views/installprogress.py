@@ -82,6 +82,9 @@ class ProgressView(BaseView):
             self.listbox.set_focus(len(self.listwalker) - 1)
             self.listbox.set_focus_valign('bottom')
 
+    def add_log_line(self, text):
+        pass
+
     def set_status(self, text):
         self.linebox.set_title(text)
 
