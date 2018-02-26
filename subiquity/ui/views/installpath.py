@@ -20,10 +20,9 @@ Provides high level options for Ubuntu install
 """
 import logging
 import re
-from urwid import connect_signal, BoxAdapter, Text
+from urwid import connect_signal, Text
 
-from subiquitycore.ui.lists import SimpleList
-from subiquitycore.ui.buttons import back_btn, menu_btn
+from subiquitycore.ui.buttons import back_btn, forward_btn
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.utils import Padding, button_pile
 from subiquitycore.ui.container import ListBox, Pile
@@ -59,7 +58,7 @@ class InstallpathView(BaseView):
         for label, path in self.model.paths:
             log.debug("Building inputs: {}".format(path))
             choices.append(
-                menu_btn(
+                forward_btn(
                     label=label, on_press=self.confirm, user_arg=path))
         return ListBox(choices)
 
