@@ -21,7 +21,7 @@ from urwid import (
     )
 
 from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import cancel_btn, ok_btn
+from subiquitycore.ui.buttons import cancel_btn, ok_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import button_pile, Padding
 
@@ -62,48 +62,51 @@ class ProgressView(BaseView):
     def __init__(self, controller, spinner):
         self.controller = controller
         self.spinner = spinner
-        self.listwalker = SimpleFocusListWalker([])
-        self.listbox = ListBox(self.listwalker)
-        self.linebox = MyLineBox(self.listbox)
-        body = [
+
+        self.event_listwalker = SimpleFocusListWalker([])
+        self.event_listbox = ListBox(self.event_listwalker)
+        self.event_linebox = MyLineBox(self.event_listbox)
+        self.event_buttons = button_pile([other_btn("View full log")])
+        event_body = [
             ('pack', Text("")),
-            ('weight', 1, Padding.center_79(self.linebox)),
+            ('weight', 1, Padding.center_79(self.event_linebox)),
+            ('pack', Text("")),
+            ('pack', self.event_buttons),
             ('pack', Text("")),
         ]
-        self.pile = Pile(body)
-        super().__init__(self.pile)
+        self.event_pile = Pile(event_body)
+
+        super().__init__(self.event_pile)
 
     def add_event(self, text):
-        at_end = len(self.listwalker) == 0 or self.listbox.focus_position == len(self.listwalker) - 1
-        if len(self.listwalker) > 0:
-            self.listwalker[-1] = self.listwalker[-1][0]
-        self.listwalker.append(Columns([('pack', Text(text)), ('pack', self.spinner)], dividechars=1))
+        at_end = len(self.event_listwalker) == 0 or self.event_listbox.focus_position == len(self.event_listwalker) - 1
+        if len(self.event_listwalker) > 0:
+            self.event_listwalker[-1] = self.event_listwalker[-1][0]
+        self.event_listwalker.append(Columns([('pack', Text(text)), ('pack', self.spinner)], dividechars=1))
         if at_end:
-            self.listbox.set_focus(len(self.listwalker) - 1)
-            self.listbox.set_focus_valign('bottom')
+            self.event_listbox.set_focus(len(self.event_listwalker) - 1)
+            self.event_listbox.set_focus_valign('bottom')
 
     def add_log_line(self, text):
         pass
 
     def set_status(self, text):
-        self.linebox.set_title(text)
+        self.event_linebox.set_title(text)
 
     def show_complete(self, include_exit=False):
-        buttons = [
-            ok_btn(_("Reboot Now"), on_press=self.reboot),
-            ]
+        p = self.event_buttons.original_widget
+        p.contents.append(
+            (ok_btn(_("Reboot Now"), on_press=self.reboot), p.options('pack')))
         if include_exit:
-            buttons.append(
-                cancel_btn(_("Exit To Shell"), on_press=self.quit))
-        buttons = button_pile(buttons)
+            p.contents.append(
+                (cancel_btn(_("Exit To Shell"), on_press=self.quit), p.options('pack')))
 
-        new_pile = Pile([
-                ('pack', Text("")),
-                buttons,
-                ('pack', Text("")),
-            ])
-        self.pile.contents[-1] = (new_pile, self.pile.options('pack'))
-        self.pile.focus_position = len(self.pile.contents) - 1
+        w = 0
+        for b, o in p.contents:
+            w = max(len(b.base_widget.label), w)
+        self.event_buttons.width = self.event_buttons.min_width = w + 4
+        self.event_pile.focus_position = 3
+        p.focus_position = 1
 
     def reboot(self, btn):
         self.controller.reboot()
