@@ -154,7 +154,7 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.RUNNING
         self.footer_description = urwid.Text("starting...")
         self.footer_spinner = Spinner(self.loop)
-        self.ui.set_footer(urwid.Columns([('pack', urwid.Text("Install in progress:")), ('pack', self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
+        self.ui.set_footer(urwid.Columns([('pack', urwid.Text("Install in progress:")), (self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
 
         self.journal_listener_handle = self.start_journald_listener(self._syslog_identifier, self.curtin_event)
 
