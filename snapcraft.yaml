@@ -28,6 +28,7 @@ parts:
       - python3-distutils-extra
       - python3-urwid
     stage-packages:
+      - libc6
       - libsystemd0
       - iso-codes
       - lsb-release
@@ -50,6 +51,7 @@ parts:
       'bin/subiquity-loadkeys': usr/bin/subiquity-loadkeys
       'bin/curtin-journald-forwarder': usr/bin/curtin-journald-forwarder
       'bin/subiquity-service': usr/bin/subiquity-service
+    stage-packages: [libc6]
     stage:
       - usr/bin
     prime:
@@ -62,6 +64,7 @@ parts:
       echo "get passwd/user-default-groups" | \
         debconf-communicate user-setup | \
         cut -d ' ' -f 2- > users-and-groups
+    stage-packages: [libc6]
     stage:
       - users-and-groups
   kbdnames:
@@ -69,6 +72,7 @@ parts:
     build-packages:
       - console-setup
       - xkb-data-i18n
+    stage-packages: [libc6]
     prepare: |
       /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl > kbdnames.txt
     stage:
@@ -76,6 +80,7 @@ parts:
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
+    stage-packages: [libc6, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
     source: https://github.com/CanonicalLtd/probert.git
     source-type: git
     requirements: requirements.txt
