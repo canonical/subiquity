@@ -1,27 +1,11 @@
 sudo: required
 
-services:
-  - docker
-
 env:
   - IMAGE=ubuntu:xenial
   - IMAGE=ubuntu:artful
-  - IMAGE=ubuntu:bionic
+  - IMAGE=ubuntu-daily:bionic
 
 language: bash
 
-# Travis still doesn't support anything newer than trusty so we pull
-# docker tricks to run things on Xenial. Maybe we should run things on
-# bionic or whatever as well but this is a start...
-
-before_install:
-  - docker pull $IMAGE
-  - cid=`docker run --tty --detach --workdir /subiquity -v $(pwd):/subiquity $IMAGE`
-  - docker exec $cid apt-get update
-  - docker exec $cid apt-get -y dist-upgrade
-  - docker exec $cid apt-get install -y --no-install-recommends libnl-3-dev libnl-genl-3-dev libnl-route-3-dev libsystemd-dev python3-distutils-extra pkg-config python3.5 python3-pip git lsb-release python3-setuptools gcc python3-dev python3-wheel curtin
-  - docker exec $cid pip3 install -r requirements.txt
-  - docker exec $cid python3 setup.py build
 script:
-  - docker exec $cid python3 -m unittest discover
-  - docker exec $cid timeout 60 sh -c 'LANG=C.UTF-8 PYTHONPATH=. python3 bin/subiquity-tui --dry-run --answers examples/answers.yaml --dry-run --machine-config examples/mwhudson.json'
+  - sudo ./scripts/test-in-lxd.sh $IMAGE
