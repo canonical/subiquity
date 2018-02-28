@@ -95,7 +95,7 @@ class SubiquityModel:
             with open(path, 'w') as fp:
                 fp.write(content)
 
-    def render(self, target):
+    def render(self, target, syslog_identifier):
         config = {
             'install': {
                 'target': target,
@@ -117,6 +117,7 @@ class SubiquityModel:
             'reporting': {
                 'subiquity': {
                     'type': 'journald',
+                    'identifier': syslog_identifier,
                     },
                 },
 

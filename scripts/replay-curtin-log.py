@@ -17,7 +17,7 @@ logger.addHandler(handler)
 
 json_file = sys.argv[1]
 
-c = {'subiquity': {'type': 'journald'}, 'print': {'type': 'print'}}
+c = {'subiquity': {'type': 'journald', 'identifier': sys.argv[2]}, 'print': {'type': 'print'}}
 
 reporter.update_configuration(c)
 

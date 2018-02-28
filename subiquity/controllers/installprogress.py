@@ -14,11 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-import fcntl
 import logging
 import os
 import subprocess
 
+import urwid
 import yaml
 
 from systemd import journal
@@ -26,13 +26,12 @@ from systemd import journal
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
 
-from subiquity.ui.views import ProgressView
+from subiquity.ui.views.installprogress import ProgressView
 
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
 
 TARGET = '/target'
-CURTIN_INSTALL_LOG = '/tmp/subiquity-curtin-install.log'
 
 class InstallState:
     NOT_STARTED = 0
@@ -52,12 +51,13 @@ class InstallProgressController(BaseController):
         self.answers = self.all_answers.get('InstallProgress', {})
         self.answers.setdefault('reboot', False)
         self.progress_view = None
+        self.progress_view_showing = False
         self.install_state = InstallState.NOT_STARTED
-        self.tail_proc = None
         self.journal_listener_handle = None
-        self.last_footer = ""
-        self.curtin_event_stack = []
         self._identity_config_done = False
+        self._event_indent = ""
+        self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
+        self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
 
     def filesystem_config_done(self):
         self.curtin_start_install()
@@ -70,45 +70,55 @@ class InstallProgressController(BaseController):
 
     def curtin_error(self):
         log.debug('curtin_error')
-        title = _('An error occurred during installation')
-        self.ui.set_header(title, _('Please report this error in Launchpad'))
-        self.ui.set_footer(_("An error has occurred."))
-        if self.progress_view is not None:
-            self.progress_view.set_status(('info_error', "An error has occurred"))
-            self.progress_view.show_complete(True)
-        else:
-            self.default()
+        self.install_state = InstallState.ERROR
+        self.progress_view.spinner.stop()
+        self.progress_view.set_status(('info_error', "An error has occurred"))
+        self.progress_view.show_complete(True)
+        self.default()
 
-    def run_command_logged(self, cmd, logfile_location, env):
-        with open(logfile_location, 'wb', buffering=0) as logfile:
-            log.debug("running %s", cmd)
-            cp = subprocess.run(
-                cmd, env=env, stdout=logfile, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
-            log.debug("completed %s", cmd)
+    def run_command_logged(self, cmd, env):
+        log.debug("running %s", cmd)
+        cmd = ['systemd-cat', '--level-prefix=false', '--identifier=' + self._log_syslog_identifier] + cmd
+        cp = subprocess.run(cmd, env=env)
+        log.debug("completed %s", cmd)
         return cp.returncode
 
+    def _journal_event(self, event):
+        if event['SYSLOG_IDENTIFIER'] == self._event_syslog_identifier:
+            self.curtin_event(event)
+        elif event['SYSLOG_IDENTIFIER'] == self._log_syslog_identifier:
+            self.curtin_log(event)
+
     def curtin_event(self, event):
+        e = {}
+        for k, v in event.items():
+            if k.startswith("CURTIN_"):
+                e[k] = v
+        log.debug("curtin_event received %r", e)
         event_type = event.get("CURTIN_EVENT_TYPE")
         if event_type not in ['start', 'finish']:
             return
         if event_type == 'start':
-            desc = event["MESSAGE"]
-            self.curtin_event_stack.append(desc)
+            message = event.get("CURTIN_MESSAGE", "??")
+            if not self.progress_view_showing is None:
+                self.footer_description.set_text(message)
+            self.progress_view.add_event(self._event_indent + message)
+            self._event_indent += "  "
+            self.footer_spinner.start()
         if event_type == 'finish':
-            if not self.curtin_event_stack:
-                return
-            self.curtin_event_stack.pop()
-            if self.curtin_event_stack:
-                desc = self.curtin_event_stack[-1]
-            else:
-                desc = ""
-        self.last_footer = "Running install... %s" % (desc,)
-        self.ui.set_footer(self.last_footer)
+            self._event_indent = self._event_indent[:-2]
+            self.footer_spinner.stop()
 
-    def start_journald_listener(self, identifier, callback):
+    def curtin_log(self, event):
+        self.progress_view.add_log_line(event['MESSAGE'])
+
+    def start_journald_listener(self, identifiers, callback):
         reader = journal.Reader()
-        reader.seek_tail()
-        reader.add_match("SYSLOG_IDENTIFIER={}".format(identifier))
+        args = []
+        for identifier in identifiers:
+            args.append("SYSLOG_IDENTIFIER={}".format(identifier))
+        reader.add_match(*args)
+        #reader.seek_tail()
         def watch():
             if reader.process() != journal.APPEND:
                 return
@@ -130,7 +140,7 @@ class InstallProgressController(BaseController):
             log.debug("Installprogress: this is a dry-run")
             config_location = os.path.join('.subiquity/', config_file_name)
             curtin_cmd = [
-                "python3", "scripts/replay-curtin-log.py", "examples/curtin-events.json",
+                "python3", "scripts/replay-curtin-log.py", "examples/curtin-events.json", self._event_syslog_identifier,
                 ]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
@@ -139,14 +149,20 @@ class InstallProgressController(BaseController):
 
         self._write_config(
             config_location,
-            self.base_model.render(target=TARGET))
+            self.base_model.render(target=TARGET, syslog_identifier=self._event_syslog_identifier))
 
         return curtin_cmd
 
     def curtin_start_install(self):
         log.debug('Curtin Install: starting curtin')
         self.install_state = InstallState.RUNNING
-        self.journal_listener_handle = self.start_journald_listener("curtin_event", self.curtin_event)
+        self.footer_description = urwid.Text("starting...")
+        self.progress_view = ProgressView(self)
+        self.footer_spinner = self.progress_view.spinner
+
+        self.ui.set_footer(urwid.Columns([('pack', urwid.Text("Install in progress:")), (self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
+
+        self.journal_listener_handle = self.start_journald_listener([self._event_syslog_identifier, self._log_syslog_identifier], self._journal_event)
 
         curtin_cmd = self._get_curtin_command()
 
@@ -155,15 +171,13 @@ class InstallProgressController(BaseController):
         if 'SNAP' in env:
             del env['SNAP']
         self.run_in_bg(
-            lambda: self.run_command_logged(curtin_cmd, CURTIN_INSTALL_LOG, env),
+            lambda: self.run_command_logged(curtin_cmd, env),
             self.curtin_install_completed)
 
     def curtin_install_completed(self, fut):
         returncode = fut.result()
         log.debug('curtin_install: returncode: {}'.format(returncode))
-        self.loop.remove_watch_file(self.journal_listener_handle)
-        if returncode > 0:
-            self.install_state = InstallState.ERROR
+        if returncode != 0:
             self.curtin_error()
             return
         self.install_state = InstallState.DONE
@@ -175,7 +189,8 @@ class InstallProgressController(BaseController):
 
     def install_complete(self):
         self.ui.progress_current += 1
-        self.ui.set_footer("Install complete")
+        if not self.progress_view_showing:
+            self.ui.set_footer("Install complete")
         if self._identity_config_done:
             self.postinstall_configuration()
 
@@ -186,10 +201,9 @@ class InstallProgressController(BaseController):
         self.configure_cloud_init()
         self.copy_logs_to_target()
 
-        if self.progress_view is not None:
-            self.ui.set_header(_("Installation complete!"), "")
-            self.progress_view.set_status(_("Finished install!"))
-            self.progress_view.show_complete()
+        self.ui.set_header(_("Installation complete!"))
+        self.progress_view.set_status(_("Finished install!"))
+        self.progress_view.show_complete()
 
         if self.answers['reboot']:
             self.loop.set_alarm_in(0.01, lambda loop, userdata: self.reboot())
@@ -213,29 +227,6 @@ class InstallProgressController(BaseController):
         except Exception:
             log.exception("saving journal failed")
 
-    def update_log_tail(self):
-        if self.tail_proc is None:
-            return
-        tail = self.tail_proc.stdout.read().decode('utf-8', 'replace')
-        self.progress_view.add_log_tail(tail)
-
-    def start_tail_proc(self):
-        self.progress_view.clear_log_tail()
-        tail_cmd = ['tail', '-n', '1000', '-F', CURTIN_INSTALL_LOG]
-        log.debug('tail cmd: {}'.format(" ".join(tail_cmd)))
-        self.tail_proc = utils.run_command_start(tail_cmd)
-        stdout_fileno = self.tail_proc.stdout.fileno()
-        fcntl.fcntl(
-            stdout_fileno, fcntl.F_SETFL,
-            fcntl.fcntl(stdout_fileno, fcntl.F_GETFL) | os.O_NONBLOCK)
-        self.tail_watcher_handle = self.loop.watch_file(stdout_fileno, self.update_log_tail)
-
-    def stop_tail_proc(self):
-        if self.tail_proc is not None:
-            self.loop.remove_watch_file(self.tail_watcher_handle)
-            self.tail_proc.terminate()
-            self.tail_proc = None
-
     def reboot(self):
         if self.opts.dry_run:
             log.debug('dry-run enabled, skipping reboot, quiting instead')
@@ -250,21 +241,15 @@ class InstallProgressController(BaseController):
         self.signal.emit_signal('quit')
 
     def default(self):
-        log.debug('show_progress called')
-        title = _("Installing system")
-        excerpt = _("Please wait for the installation to finish.")
-        self.ui.set_header(title, excerpt)
-        self.progress_view = ProgressView(self)
-        self.start_tail_proc()
+        self.progress_view_showing = True
         self.ui.set_body(self.progress_view)
-        if self.install_state == InstallState.ERROR:
-            self.curtin_error()
-        elif self.install_state == InstallState.RUNNING:
-            self.progress_view.set_status(_("Running install step"))
-            self.ui.set_footer(self.last_footer)
+        if self.install_state == InstallState.RUNNING:
+            self.ui.set_header(_("Installing system"))
+            self.ui.set_footer(_("Thank you for using Ubuntu!"))
         elif self.install_state == InstallState.DONE:
-            self.ui.set_header(_("Installation complete!"), "")
-            self.progress_view.set_status(_("Finished install!"))
-            self.ui.set_footer("Install complete")
-            self.progress_view.show_complete()
+            self.ui.set_header(_("Install complete!"))
+            self.ui.set_footer(_("Thank you for using Ubuntu!"))
+        elif self.install_state == InstallState.ERROR:
+            self.ui.set_header(_('An error occurred during installation'))
+            self.ui.set_footer(_('Please report this error in Launchpad'))
 
