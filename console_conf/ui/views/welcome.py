@@ -19,9 +19,12 @@ Welcome provides user with language selection
 
 """
 import logging
+
+from urwid import Text
+
 from subiquitycore.ui.buttons import ok_btn
 from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.utils import button_pile
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.views.welcome")
@@ -30,16 +33,11 @@ log = logging.getLogger("console_conf.views.welcome")
 class WelcomeView(BaseView):
     def __init__(self, controller):
         self.controller = controller
-        self.body = [
-            Padding.fixed_10(self._build_buttons())
-        ]
-        super().__init__(ListBox(self.body))
-
-    def _build_buttons(self):
-        self.buttons = [
-            ok_btn("OK", on_press=self.confirm),
-        ]
-        return Pile(self.buttons)
+        super().__init__(Pile([
+            ListBox([Text('')]), # need to have a listbox or something else "stretchy" here or urwid complains.
+            ('pack', button_pile([ok_btn("OK", on_press=self.confirm)])),
+            ('pack', Text("")),
+            ], focus_item=1))
 
     def confirm(self, result):
         self.controller.done()
