@@ -92,8 +92,8 @@ class IdentityView(BaseView):
 
     def _build_buttons(self):
         buttons = [
-            done_btn(on_press=self.done),
-            cancel_btn(on_press=self.cancel),
+            done_btn("Done", on_press=self.done),
+            cancel_btn("Cancel", on_press=self.cancel),
         ]
         return Pile(buttons)
 

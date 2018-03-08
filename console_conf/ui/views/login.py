@@ -46,7 +46,7 @@ class LoginView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            done_btn(on_press=self.done),
+            done_btn("Done", on_press=self.done),
         ]
         return Pile(self.buttons)
 
