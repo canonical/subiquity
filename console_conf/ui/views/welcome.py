@@ -37,7 +37,7 @@ class WelcomeView(BaseView):
 
     def _build_buttons(self):
         self.buttons = [
-            ok_btn(on_press=self.confirm),
+            ok_btn("OK", on_press=self.confirm),
         ]
         return Pile(self.buttons)
 

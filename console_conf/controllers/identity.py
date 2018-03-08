@@ -164,7 +164,7 @@ class IdentityController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
-        self.model = IdentityModel(self.opts)
+        self.model = self.base_model.identity
 
     def default(self):
         title = "Profile setup"
