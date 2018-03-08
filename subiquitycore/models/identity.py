@@ -65,7 +65,7 @@ class IdentityModel(object):
     def add_user(self, result):
         if result:
             self._user = LocalUser(result)
-            self._hostname = result['hostname']
+            self._hostname = result.get('hostname')
         else:
             self._user = None
 

@@ -24,7 +24,7 @@ from urwid import Text
 
 from subiquitycore.ui.buttons import done_btn
 from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquitycore.views.login")
@@ -37,18 +37,23 @@ class LoginView(BaseView):
         self.controller = controller
         self.netdevs = netdevs
         self.items = []
-        self.body = [
-            Padding.center_79(self._build_model_inputs()),
-            Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons())
-        ]
-        super().__init__(ListBox(self.body))
+
+        super().__init__(
+            Pile([
+                ('pack', Text("")),
+                Padding.center_79(ListBox(self._build_model_inputs())),
+                ('pack', Pile([
+                    ('pack', Text("")),
+                    button_pile(self._build_buttons()),
+                    ('pack', Text("")),
+                    ])),
+                ]))
+
 
     def _build_buttons(self):
-        self.buttons = [
-            done_btn(on_press=self.done),
+        return [
+            done_btn("Done", on_press=self.done),
         ]
-        return Pile(self.buttons)
 
     def _build_model_inputs(self):
         local_tpl = (
@@ -78,7 +83,7 @@ class LoginView(BaseView):
             ssh_iface = "    ssh %s@%s" % (user.username, ip)
             sl.append(Text(ssh_iface))
 
-        return Pile(sl)
+        return sl
 
     def confirm(self, result):
         self.done()

@@ -19,7 +19,6 @@ import os
 import sys
 
 from subiquitycore.controller import BaseController
-from subiquitycore.models import IdentityModel
 from subiquitycore.utils import disable_console_conf, run_command
 
 from console_conf.ui.views import IdentityView, LoginView
@@ -164,7 +163,7 @@ class IdentityController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
-        self.model = IdentityModel(self.opts)
+        self.model = self.base_model.identity
 
     def default(self):
         title = "Profile setup"

@@ -19,7 +19,7 @@ from urwid import Text
 from subiquitycore.ui.buttons import done_btn, cancel_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.interactive import EmailEditor
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Padding, Color, button_pile
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.views.identity")
@@ -59,16 +59,22 @@ class IdentityView(BaseView):
         self.progress = Text("", align="center")
 
         body = [
-            Padding.center_90(self._build_model_inputs()),
-            Padding.line_break(""),
-            Padding.center_79(Color.info_minor(Text("If you do not have an account, visit https://login.ubuntu.com to create one."))),
-            Padding.line_break(""),
-            Padding.center_90(Color.info_error(self.error)),
-            Padding.center_90(self.progress),
-            Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons()),
-        ]
-        super().__init__(ListBox(body))
+            ('pack', Text("")),
+            ListBox([
+                self._build_model_inputs(),
+                Padding.line_break(""),
+                Padding.center_79(Color.info_minor(Text("If you do not have an account, visit https://login.ubuntu.com to create one."))),
+                Padding.line_break(""),
+                Padding.center_90(Color.info_error(self.error)),
+                Padding.center_90(self.progress),
+                ]),
+            ('pack', Pile([
+                ('pack', Text("")),
+                button_pile(self._build_buttons()),
+                ('pack', Text("")),
+                ])),
+            ]
+        super().__init__(Pile(body))
 
     def keypress(self, size, key):
         key = super().keypress(size, key)
@@ -79,23 +85,21 @@ class IdentityView(BaseView):
             return key
 
     def _build_model_inputs(self):
-        sl = [
-            Columns(
+        sl = Padding.center_79(Columns(
                 [
                     ("weight", 0.2, Text("Email address:", align="right")),
                     ("weight", 0.3, Color.string_input(self.email)),
                 ],
                 dividechars=4
-            ),
-        ]
-        return Pile(sl)
+            ))
+        return sl
 
     def _build_buttons(self):
         buttons = [
-            done_btn(on_press=self.done),
-            cancel_btn(on_press=self.cancel),
+            done_btn("Done", on_press=self.done),
+            cancel_btn("Cancel", on_press=self.cancel),
         ]
-        return Pile(buttons)
+        return buttons
 
     def cancel(self, button=None):
         self.controller.cancel()
