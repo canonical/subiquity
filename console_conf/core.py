@@ -24,12 +24,12 @@ log = logging.getLogger('console_conf.core')
 
 class ConsoleConf(Application):
 
-    from subiquity.palette import COLORS, STYLES, STYLES_MONO
+    from console_conf.palette import COLORS, STYLES, STYLES_MONO
 
     project = "console_conf"
 
     model_class = ConsoleConfModel
-    
+
     controllers = [
         "Welcome",
         "Network",

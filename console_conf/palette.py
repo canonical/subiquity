@@ -15,46 +15,69 @@
 
 """ Palette definitions """
 
-dark_magenta = 'dark magenta'
-light_magenta = 'light magenta'
-light_green = 'light green'
-dark_green = 'dark green'
-white = 'white'
-black = 'black'
-light_gray = 'light gray'
-dark_gray = 'dark gray'
-dark_red = 'dark red'
-light_red = 'light red'
+COLORS = [
+    ("bg",        (0x11, 0x11, 0x11)),
+    ("orange",    (0xe9, 0x54, 0x20)),
+    ("danger",    (0xc7, 0x16, 0x2b)),
+    ("good",      (0x0e, 0x84, 0x20)),
+    ("neutral",   (0x00, 0x7a, 0xa6)),
+    ("gray",      (0x66, 0x66, 0x66)),
+    ("brand",     (0x33, 0x33, 0x33)),
+    ("fg",        (0xff, 0xff, 0xff)),
+]
 
 STYLES = [
-    ('frame_header',        '', '', '', white,      ''),
-    ('frame_footer',        '', '', '', white,      ''),
-    ('body',                '', '', '', white,      ''),
-    ('menu_button',         '', '', '', white,      ''),
-    ('menu_button focus',   '', '', '', black,      light_gray),
-    ('button',              '', '', '', white,      ''),
-    ('button focus',        '', '', '', black,      dark_green),
-    ('info_primary',        '', '', '', white,      ''),
-    ('info_major',          '', '', '', light_gray, ''),
-    ('info_minor',          '', '', '', dark_gray,  ''),
-    ('info_error',          '', '', '', dark_red,   ''),
-    ('string_input',        '', '', '', black,      light_gray),
-    ('string_input focus',  '', '', '', white,      dark_gray),
-    ('progress_incomplete', '', '', '', white,      dark_magenta),
-    ('progress_complete',   '', '', '', white,      light_magenta)
+    ('frame_header',        'fg',      'orange'),
+    ('frame_footer',        'fg',      'brand'),
+    ('body',                'fg',      'bg'),
+
+    ('done_button',         'fg',      'bg'),
+    ('danger_button',       'fg',      'bg'),
+    ('other_button',        'fg',      'bg'),
+    ('done_button focus',   'fg',      'good'),
+    ('danger_button focus', 'fg',      'danger'),
+    ('other_button focus',  'fg',      'gray'),
+
+    ('menu_button',         'fg',      'bg'),
+    ('menu_button focus',   'fg',      'gray'),
+
+    ('info_primary',        'fg',      'bg'),
+    ('info_minor',          'gray',    'bg'),
+    ('info_error',          'danger',  'bg'),
+
+    ('string_input',        'bg',      'fg'),
+    ('string_input focus',  'fg',      'gray'),
+
+    ('progress_incomplete', 'fg',      'gray'),
+    ('progress_complete',   'fg',      'neutral'),
+    ('scrollbar_fg',        'neutral', 'bg'),
+    ('scrollbar_bg',        'fg',      'bg'),
 ]
 
 STYLES_MONO = [
-    ('frame_header',        white, black, '', '',    ''),
-    ('frame_footer',        white, black, '', '',    ''),
-    ('body',                white, black, '', '',    ''),
-    ('info_minor',          white, black, '', '',    ''),
-    ('menu_button',         '',    '',    '', white, ''),
-    ('menu_button focus',   '',    '',    '', white, ''),
-    ('button',              white, black, '', '',    ''),
-    ('button focus',        white, black, '', '',    ''),
-    ('string_input',        '',    '',    '', white, ''),
-    ('string_input focus',  '',    '',    '', white, ''),
-    ('progress_incomplete', '',    '',    '', '',    black),
-    ('progress_complete',   '',    '',    '', '',    white),
+    ('frame_header',        'white',   'black'),
+    ('frame_footer',        'white',   'black'),
+    ('body',                'white',   'black'),
+
+    ('done_button',         'white',   'black'),
+    ('danger_button',       'white',   'black'),
+    ('other_button',        'white',   'black'),
+    ('done_button focus',   'black',   'white'),
+    ('danger_button focus', 'black',   'white'),
+    ('other_button focus',  'black',   'white'),
+
+    ('menu_button',         'white',   'black'),
+    ('menu_button focus',   'black',   'white'),
+
+    ('info_primary',        'white',   'black'),
+    ('info_minor',          'white',   'black'),
+    ('info_error',          'white',   'black'),
+
+    ('string_input',        'white',   'black'),
+    ('string_input focus',  'black',   'white'),
+
+    ('progress_incomplete', 'white',   'black'),
+    ('progress_complete',   'black',   'white'),
+    ('scrollbar_fg',        'white',   'black'),
+    ('scrollbar_bg',        'white',   'black'),
 ]
