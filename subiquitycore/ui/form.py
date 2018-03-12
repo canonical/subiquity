@@ -331,7 +331,7 @@ class Form(object, metaclass=MetaForm):
         rows = []
         for field in self._fields:
             rows.append(field.as_row(view, longest_caption))
-        return Pile(rows)
+        return rows
 
     def validated(self):
         in_error = False

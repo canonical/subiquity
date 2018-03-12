@@ -161,11 +161,11 @@ class IdentityView(BaseView):
 
         self.ssh_import_confirmed = True
 
-        self.form_rows = self.form.as_rows(self)
+        self.form_rows = ListBox(self.form.as_rows(self))
 
         body = Pile([
             ('pack', Text("")),
-            Padding.center_90(ListBox([self.form_rows])),
+            Padding.center_90(self.form_rows),
             ('pack', Pile([
                 ('pack', Text("")),
                 button_pile([self.form.done_btn]),
@@ -187,7 +187,7 @@ class IdentityView(BaseView):
         iu.caption = _ssh_import_captions[val]
         iu.enabled = val is not None
         if val is not None:
-            self.form_rows.focus_position += 1
+            self.form_rows.body.focus += 1
 
     def done(self, result):
         cpassword = self.model.encrypt_password(self.form.password.value)
