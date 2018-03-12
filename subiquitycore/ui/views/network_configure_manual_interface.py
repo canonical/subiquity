@@ -121,7 +121,7 @@ class BaseNetworkConfigureManualView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        self.form.subnet.help = _("CIDR e.g. %s"%(self.example_address,))
+        self.form.subnet.help = _("Example: %s"%(self.example_address,))
         configured_addresses = self.dev.configured_ip_addresses_for_version(self.ip_version)
         if configured_addresses:
             addr = ipaddress.ip_interface(configured_addresses[0])
