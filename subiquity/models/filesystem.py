@@ -401,6 +401,10 @@ class FilesystemModel(object):
                 return True
         return False
 
+    def swapfile_ok(self):
+        for m in self._mounts:
+            if m.path == '/':
+                return m.device.fstype != 'btrfs'
 
 ## class AttrDict(dict):
 ##     __getattr__ = dict.__getitem__
