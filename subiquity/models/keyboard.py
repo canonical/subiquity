@@ -101,6 +101,6 @@ class KeyboardModel:
             fp.write(self.config_content)
         if self.root == '/':
             run_command(['setupcon', '--save', '--force'])
-            run_command(['subiquity.subiquity-loadkeys'])
+            run_command(['/snap/bin/subiquity.subiquity-loadkeys'])
         else:
             run_command(['sleep', '1'])
