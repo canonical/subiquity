@@ -135,7 +135,7 @@ class PartitionFormatView(BaseView):
         if existing is not None:
             fs = existing.fs()
             if fs is not None:
-                if existing.flag != "boot":
+                if getattr(existing, 'flag', None) != "boot":
                     initial['fstype'] = self.model.fs_by_name[fs.fstype]
                 mount = fs.mount()
                 if mount is not None:
