@@ -206,12 +206,11 @@ class Detector:
         self.seen_steps = []
 
     def start(self):
-        o = AutoDetectIntro(self, None)
-        self.keyboard_view.show_overlay(o)
+        self.overlay = AutoDetectIntro(self, None)
+        self.keyboard_view.show_overlay(self.overlay)
 
     def abort(self):
-        overlay = self.keyboard_view._w.top_w
-        overlay.stop()
+        self.overlay.stop()
         self.keyboard_view.remove_overlay()
 
     step_cls_to_view_cls = {
@@ -241,14 +240,14 @@ class Detector:
         try:
             step = self.pc105tree.steps[step_index]
         except KeyError:
-            view = AutoDetectFailed(self, None)
+            self.overlay = AutoDetectFailed(self, None)
         else:
             self.seen_steps.append(step_index)
             log.debug("step: %s", repr(step))
-            view = self.step_cls_to_view_cls[type(step)](self, step)
+            self.overlay = self.step_cls_to_view_cls[type(step)](self, step)
 
-        view.start()
-        self.keyboard_view.show_overlay(view)
+        self.overlay.start()
+        self.keyboard_view.show_overlay(self.overlay)
 
 
 class ChoiceField(FormField):

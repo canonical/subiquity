@@ -18,7 +18,7 @@
 Contains some default key navigations
 """
 
-from urwid import Overlay, WidgetWrap
+from urwid import Columns, Overlay, Pile, Text, WidgetWrap
 
 
 class BaseView(WidgetWrap):
@@ -37,7 +37,16 @@ class BaseView(WidgetWrap):
             height='pack'
             )
         args.update(kw)
-        self._w = Overlay(top_w=overlay_widget, bottom_w=self._w, **args)
+        top = Pile([
+            ('pack', Text("")),
+            Columns([
+                (3, Text("")),
+                overlay_widget,
+                (3, Text(""))
+                ]),
+            ('pack', Text("")),
+            ])
+        self._w = Overlay(top_w=top, bottom_w=self._w, **args)
 
     def remove_overlay(self):
         self._w = self.orig_w
