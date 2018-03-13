@@ -36,13 +36,18 @@ class BaseView(WidgetWrap):
             valign='middle',
             height='pack'
             )
+        PADDING = 3
+        # Don't expect callers to account for the padding if they pass a fixed width.
+        if 'width' in kw:
+            if isinstance(kw['width'], int):
+                kw['width'] += 2*PADDING
         args.update(kw)
         top = Pile([
             ('pack', Text("")),
             Columns([
-                (3, Text("")),
+                (PADDING, Text("")),
                 overlay_widget,
-                (3, Text(""))
+                (PADDING, Text(""))
                 ]),
             ('pack', Text("")),
             ])

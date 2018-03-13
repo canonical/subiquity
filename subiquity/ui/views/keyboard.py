@@ -36,6 +36,7 @@ from subiquitycore.ui.selector import Option, Selector
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
+from subiquity.ui.spinner import Spinner
 from subiquity.ui.views import pc105
 
 log = logging.getLogger("subiquity.ui.views.keyboard")
@@ -249,6 +250,21 @@ class Detector:
         self.overlay.start()
         self.keyboard_view.show_overlay(self.overlay)
 
+class ApplyingConfig(WidgetWrap):
+    def __init__(self, loop):
+        spinner = Spinner(loop, style='dots')
+        spinner.start()
+        text = _("Applying config")
+        # | text |
+        # 12    34
+        self.width = len(text) + 4
+        super().__init__(
+            LineBox(
+                Pile([
+                    ('pack', Text(' ' + text)),
+                    ('pack', spinner),
+                    ])))
+
 
 class ChoiceField(FormField):
 
@@ -333,6 +349,8 @@ class KeyboardView(BaseView):
         variant = ''
         if self.form.variant.widget.value is not None:
             variant = self.form.variant.widget.value
+        ac = ApplyingConfig(self.controller.loop)
+        self.show_overlay(ac, width=ac.width, min_width=None)
         self.controller.done(layout, variant)
 
     def cancel(self, result=None):
