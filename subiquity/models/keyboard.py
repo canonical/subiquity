@@ -101,3 +101,5 @@ class KeyboardModel:
             fp.write(self.config_content)
         if self.root == '/':
             run_command(['setupcon', '--save', '--force'])
+        else:
+            run_command(['sleep', '1'])

@@ -60,7 +60,11 @@ class KeyboardController(BaseController):
             self.done(layout, variant)
 
     def done(self, layout, variant):
-        self.model.set_keyboard(layout, variant)
+        self.run_in_bg(
+            lambda: self.model.set_keyboard(layout, variant),
+            self._done)
+
+    def _done(self, fut):
         self.signal.emit_signal('next-screen')
 
     def cancel(self):
