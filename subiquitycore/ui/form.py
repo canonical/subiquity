@@ -202,6 +202,8 @@ class BoundFormField(object):
     @caption.setter
     def caption(self, val):
         self._caption = val
+        if self.pile:
+            self.pile[0][0].set_text(val)
 
     def _cols(self):
         text = Text(self.caption, align="right")
