@@ -134,6 +134,9 @@ class SubiquityModel:
                 },
             }
 
+        if not self.filesystem.swapfile_ok():
+            config['swap'] = {'size': 0}
+
         config.update(self.network.render())
         config.update(self.installpath.render())
 
