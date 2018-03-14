@@ -136,7 +136,7 @@ class BaseNetworkConfigureManualView(BaseView):
         #self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
         body = Pile([
             ('pack', Text("")),
-            Padding.center_79(ListBox([self.form.as_rows(self)])),
+            Padding.center_79(ListBox(self.form.as_rows(self))),
             #Padding.line_break(""),
             #Padding.center_79(self.set_as_default_gw_button),
             ('pack', Pile([

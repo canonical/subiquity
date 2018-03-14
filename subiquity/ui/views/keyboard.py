@@ -297,9 +297,7 @@ class KeyboardView(BaseView):
             # Don't crash on pre-existing invalid config.
             pass
 
-        self._rows = self.form.as_rows(self)
-
-        lb_contents = [self._rows]
+        lb_contents = self.form.as_rows(self)
         if not self.opts.run_on_serial:
             lb_contents.extend([
                 Text(""),
@@ -316,7 +314,6 @@ class KeyboardView(BaseView):
                 Text(""),
                 ])),
             ])
-        lb._select_last_selectable()
         pile.focus_position = 2
         super().__init__(pile)
 

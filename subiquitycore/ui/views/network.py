@@ -112,14 +112,14 @@ class NetworkView(BaseView):
         self.controller = controller
         self.items = []
         self.error = Text("", align='center')
-        self.model_inputs = Pile(self._build_model_inputs())
+        self.model_inputs = self._build_model_inputs()
         self.additional_options = Pile(self._build_additional_options())
-        self.body = [
-            self.model_inputs,
+        self.body = self.model_inputs + [
             Padding.center_79(self.additional_options),
             Padding.line_break(""),
         ]
         self.lb = Padding.center_90(ListBox(self.body))
+        self.lb.original_widget.focus_position = 1
         self.footer = Pile([
                 Text(""),
                 self._build_buttons(),
@@ -130,7 +130,6 @@ class NetworkView(BaseView):
             ('pack', Text("")),
             self.lb,
             ('pack', self.footer)])
-        self.lb.original_widget._select_last_selectable()
         self.frame.focus_position = 2
         super().__init__(self.frame)
 

@@ -162,9 +162,7 @@ class PartitionFormatView(BaseView):
             ]))
 
     def make_body(self):
-        return [
-            self.form.as_rows(self),
-        ]
+        return self.form.as_rows(self)
 
     def cancel(self, button=None):
         self.back()
@@ -213,7 +211,6 @@ class PartitionView(PartitionFormatView):
                 Text(""),
                 button_pile([btn]),
                 ])
-            pass
         return body
 
     def delete(self, sender):

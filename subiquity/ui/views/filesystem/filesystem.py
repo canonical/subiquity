@@ -79,22 +79,25 @@ class FilesystemView(BaseView):
         self.model = model
         self.controller = controller
         self.items = []
-        self.body = [
+        body = [
             Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
             Padding.push_4(self._build_filesystem_list()),
             Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
-            Padding.push_4(self._build_available_inputs()),
+            ] + [Padding.push_4(p) for p in self._build_available_inputs()]
+
+        #+ [
             #self._build_menu(),
             #Text(""),
             #Text("USED DISKS"),
             #Text(""),
             #self._build_used_disks(),
             #Text(""),
-        ]
-        self.lb = Padding.center_95(ListBox(self.body))
+        #]
+
+        self.lb = Padding.center_95(ListBox(body))
         self.footer = Pile([
                 Text(""),
                 self._build_buttons(),
@@ -105,7 +108,6 @@ class FilesystemView(BaseView):
             self.lb,
             ('pack', self.footer)])
         if self.model.can_install():
-            self.lb.original_widget._select_last_selectable()
             self.frame.focus_position = 2
         super().__init__(self.frame)
         log.debug('FileSystemView init complete()')
@@ -159,7 +161,7 @@ class FilesystemView(BaseView):
         return button_pile(buttons)
 
     def _build_available_inputs(self):
-        inputs = []
+        r = []
 
         def col3(col1, col2, col3):
             inputs.append(Columns([(40, col1), (10, col2), (10, col3)], 2))
@@ -168,9 +170,12 @@ class FilesystemView(BaseView):
         def col1(col1):
             inputs.append(Columns([(40, col1)], 1))
 
+        inputs = []
         col3(Text("DEVICE"), Text("SIZE", align="center"), Text("TYPE"))
+        r.append(Pile(inputs))
 
         for disk in self.model.all_disks():
+            inputs = []
             disk_label = Text(disk.label)
             size = Text(humanize_size(disk.size).rjust(9))
             typ = Text(disk.desc())
@@ -222,12 +227,13 @@ class FilesystemView(BaseView):
             col2(
                 menu_btn(label=label, on_press=self.click_disk, user_arg=disk),
                 Text(size))
+            r.append(Pile(inputs))
 
         if len(inputs) == 1:
             return Pile([Color.info_minor(
                 Text(_("No disks available.")))])
 
-        return Pile(inputs)
+        return r
 
     def click_disk(self, sender, disk):
         self.controller.partition_disk(disk)
