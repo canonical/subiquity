@@ -35,6 +35,7 @@ from subiquitycore.ui.interactive import (
     IntegerEditor,
     StringEditor,
     )
+from subiquitycore.ui.selector import Selector
 from subiquitycore.ui.utils import button_pile, Color
 
 log = logging.getLogger("subiquitycore.ui.form")
@@ -256,6 +257,17 @@ def simple_field(widget_maker):
 StringField = simple_field(StringEditor)
 PasswordField = simple_field(PasswordEditor)
 IntegerField = simple_field(IntegerEditor)
+
+
+class ChoiceField(FormField):
+
+    def __init__(self, caption=None, help=None, choices=[]):
+        super().__init__(caption, help)
+        self.choices = choices
+
+    def _make_widget(self, form):
+        return Selector(self.choices)
+
 
 class MetaForm(MetaSignals):
 

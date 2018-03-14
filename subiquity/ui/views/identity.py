@@ -31,8 +31,9 @@ from subiquitycore.ui.container import (
     Pile,
     )
 from subiquitycore.ui.form import (
-    simple_field,
+    ChoiceField,
     Form,
+    simple_field,
     WantsToKnowFormField,
     )
 from subiquitycore.ui.selector import Selector
@@ -69,49 +70,16 @@ RealnameField = simple_field(RealnameEditor)
 UsernameField = simple_field(UsernameEditor)
 PasswordField = simple_field(PasswordEditor)
 
-class SSHImport(WidgetWrap, WantsToKnowFormField):
-
-    _helps = {
-        None: "",
-        "gh": _("Enter your github username."),
-        "lp": _("Enter your Launchpad username."),
-        }
-    _captions = {
-        None: _("Import Username:"),
-        "gh": _("Github username:"),
-        "lp": _("Launchpad username:"),
-        }
-
-    def __init__(self):
-        choices = [
-            (_("No"), True, None),
-            (_("from Github"), True, "gh"),
-            (_("from Launchpad"), True, "lp"),
-            #(_("from Ubuntu One account"), True, "sso"),
-            ]
-        self.selector = Selector(choices)
-        connect_signal(self.selector, 'select', self._select)
-        super().__init__(self.selector)
-
-    def set_bound_form_field(self, bff):
-        self.bff = bff
-        # Get things set up for the initial selection.
-        self._select(self.selector, None)
-
-    def _select(self, sender, val):
-        w = self.bff.form.import_username
-        w.help = self._helps[val]
-        w.caption = self._captions[val]
-        w.enabled = val is not None
-        if val is not None:
-            self.bff.rows.focus_position += 1
-
-    @property
-    def value(self):
-        return self.selector.value
-
-
-SSHImportField = simple_field(SSHImport)
+_ssh_import_helps = {
+    None: "",
+    "gh": _("Enter your github username."),
+    "lp": _("Enter your Launchpad username."),
+    }
+_ssh_import_captions = {
+    None: _("Import Username:"),
+    "gh": _("Github username:"),
+    "lp": _("Launchpad username:"),
+    }
 
 class IdentityForm(Form):
 
@@ -122,10 +90,16 @@ class IdentityForm(Form):
     username = UsernameField(_("Pick a username:"))
     password = PasswordField(_("Choose a password:"))
     confirm_password = PasswordField(_("Confirm your password:"))
-    ssh_import_id = SSHImportField(
+    ssh_import_id = ChoiceField(
         _("Import SSH identity:"),
+        choices=[
+            (_("No"), True, None),
+            (_("from Github"), True, "gh"),
+            (_("from Launchpad"), True, "lp"),
+            #(_("from Ubuntu One account"), True, "sso"),
+            ],
         help=_("You can import your SSH keys from Github, Launchpad or Ubuntu One."))
-    import_username = UsernameField(SSHImport._captions[None])
+    import_username = UsernameField(_ssh_import_captions[None])
 
     def validate_realname(self):
         if len(self.realname.value) < 1:
@@ -182,16 +156,16 @@ class IdentityView(BaseView):
         self.form = IdentityForm()
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form.confirm_password.widget, 'change', self._check_password)
+        connect_signal(self.form.ssh_import_id.widget, 'select', self._select_ssh_import_id)
         self.form.import_username.enabled = False
 
         self.ssh_import_confirmed = True
 
-        rows = self.form.as_rows(self)
-        self.form.ssh_import_id.rows = rows
+        self.form_rows = self.form.as_rows(self)
 
         body = Pile([
             ('pack', Text("")),
-            Padding.center_90(ListBox([rows])),
+            Padding.center_90(ListBox([self.form_rows])),
             ('pack', Pile([
                 ('pack', Text("")),
                 button_pile([self.form.done_btn]),
@@ -206,6 +180,14 @@ class IdentityView(BaseView):
             self.form.confirm_password.show_extra(("info_error", "Passwords do not match"))
         else:
             self.form.confirm_password.show_extra('')
+
+    def _select_ssh_import_id(self, sender, val):
+        iu = self.form.import_username
+        iu.help = _ssh_import_helps[val]
+        iu.caption = _ssh_import_captions[val]
+        iu.enabled = val is not None
+        if val is not None:
+            self.form_rows.focus_position += 1
 
     def done(self, result):
         cpassword = self.model.encrypt_password(self.form.password.value)
