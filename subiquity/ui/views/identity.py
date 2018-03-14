@@ -187,7 +187,7 @@ class IdentityView(BaseView):
         iu.caption = _ssh_import_captions[val]
         iu.enabled = val is not None
         if val is not None:
-            self.form_rows.body.focus += 1
+            self.form_rows.body.focus += 2
 
     def done(self, result):
         cpassword = self.model.encrypt_password(self.form.password.value)
