@@ -23,22 +23,21 @@ from urwid import (
     )
 
 from subiquitycore.ui.interactive import (
-    EmailEditor,
     PasswordEditor,
     StringEditor,
     )
 from subiquitycore.ui.container import (
-    Columns,
     ListBox,
     Pile,
     )
 from subiquitycore.ui.form import (
-    simple_field,
+    ChoiceField,
     Form,
+    simple_field,
     WantsToKnowFormField,
     )
 from subiquitycore.ui.selector import Selector
-from subiquitycore.ui.utils import button_pile, Padding, Color
+from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
 
 
@@ -71,70 +70,16 @@ RealnameField = simple_field(RealnameEditor)
 UsernameField = simple_field(UsernameEditor)
 PasswordField = simple_field(PasswordEditor)
 
-class SSHImport(WidgetWrap, WantsToKnowFormField):
-
-    signals = ['change']
-
-    _helps = {
-        None: _("You can import your SSH keys from Github, Launchpad or Ubuntu One."),
-        "gh": _("Enter your github username."),
-        "lp": _("Enter your Launchpad username."),
-        "sso": _("Enter an email address associated with your Ubuntu One account."),
-        }
-
-    def __init__(self):
-        choices = [
-            (_("No"), True, None),
-            (_("from Github"), True, "gh"),
-            (_("from Launchpad"), True, "lp"),
-            (_("from Ubuntu One account"), True, "sso"),
-            ]
-        self.selector = Selector(choices)
-        connect_signal(self.selector, 'select', self._select)
-        self.username = UsernameEditor()
-        self.email = EmailEditor()
-        connect_signal(self.username, 'change', self._change)
-        self.cols = Columns([
-            self.selector,
-            (1, Text("")),
-            (2, Color.body(Text(""))),
-            Color.body(Text(""))])
-        super().__init__(self.cols)
-
-    def _change(self, sender, val):
-        self._emit('change', val)
-
-    def set_bound_form_field(self, bff):
-        self.bff = bff
-        self.username.set_bound_form_field(bff)
-        # Get things set up for the initial selection.
-        self._select(self.selector, None)
-
-    def _select(self, sender, val):
-        label = sender.option_by_value(val).label
-        self.cols.contents[0] = (self.cols.contents[0][0], self.cols.options('given', len(label) + 4))
-        if val is not None:
-            if val == 'sso':
-                editor = self.email
-            else:
-                editor = self.username
-            self.cols.contents[3] = (editor, self.cols.options())
-            self.cols[1].set_text(":")
-            self.cols.focus_position = 3
-        else:
-            self.username.set_edit_text("")
-            self.cols[1].set_text("")
-            self.cols.contents[3] = (Color.body(Text("")), self.cols.options())
-        self.bff.help = self._helps[val]
-
-    @property
-    def value(self):
-        v = self.selector.value
-        if v is not None:
-            return v + ":" + self.username.value
-
-
-SSHImportField = simple_field(SSHImport)
+_ssh_import_helps = {
+    None: "",
+    "gh": _("Enter your github username."),
+    "lp": _("Enter your Launchpad username."),
+    }
+_ssh_import_captions = {
+    None: _("Import Username:"),
+    "gh": _("Github username:"),
+    "lp": _("Launchpad username:"),
+    }
 
 class IdentityForm(Form):
 
@@ -145,7 +90,16 @@ class IdentityForm(Form):
     username = UsernameField(_("Pick a username:"))
     password = PasswordField(_("Choose a password:"))
     confirm_password = PasswordField(_("Confirm your password:"))
-    ssh_import_id = SSHImportField(_("Import SSH identity:"))
+    ssh_import_id = ChoiceField(
+        _("Import SSH identity:"),
+        choices=[
+            (_("No"), True, None),
+            (_("from Github"), True, "gh"),
+            (_("from Launchpad"), True, "lp"),
+            #(_("from Ubuntu One account"), True, "sso"),
+            ],
+        help=_("You can import your SSH keys from Github, Launchpad or Ubuntu One."))
+    import_username = UsernameField(_ssh_import_captions[None])
 
     def validate_realname(self):
         if len(self.realname.value) < 1:
@@ -182,10 +136,12 @@ class IdentityForm(Form):
             return _("Passwords do not match")
         self.password.validate()
 
-    def validate_ssh_import_id(self):
+    def validate_import_username(self):
         if self.ssh_import_id.value is None:
             return
-        if len(self.ssh_import_id.value) > SSH_IMPORT_MAXLEN:
+        if len(self.import_username.value) == 0:
+            return _("This field must not be blank.")
+        if len(self.import_username.value) > SSH_IMPORT_MAXLEN:
             return _("SSH id too long, must be < ") + str(SSH_IMPORT_MAXLEN)
 
 
@@ -200,12 +156,16 @@ class IdentityView(BaseView):
         self.form = IdentityForm()
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form.confirm_password.widget, 'change', self._check_password)
+        connect_signal(self.form.ssh_import_id.widget, 'select', self._select_ssh_import_id)
+        self.form.import_username.enabled = False
 
         self.ssh_import_confirmed = True
 
+        self.form_rows = self.form.as_rows(self)
+
         body = Pile([
             ('pack', Text("")),
-            Padding.center_90(ListBox([self.form.as_rows(self)])),
+            Padding.center_90(ListBox([self.form_rows])),
             ('pack', Pile([
                 ('pack', Text("")),
                 button_pile([self.form.done_btn]),
@@ -220,6 +180,14 @@ class IdentityView(BaseView):
             self.form.confirm_password.show_extra(("info_error", "Passwords do not match"))
         else:
             self.form.confirm_password.show_extra('')
+
+    def _select_ssh_import_id(self, sender, val):
+        iu = self.form.import_username
+        iu.help = _ssh_import_helps[val]
+        iu.caption = _ssh_import_captions[val]
+        iu.enabled = val is not None
+        if val is not None:
+            self.form_rows.focus_position += 1
 
     def done(self, result):
         cpassword = self.model.encrypt_password(self.form.password.value)
@@ -236,7 +204,8 @@ class IdentityView(BaseView):
         # if user specifed a value, allow user to validate fingerprint
         if self.form.ssh_import_id.value:
             if self.ssh_import_confirmed is True:
-                result.update({'ssh_import_id': self.form.ssh_import_id.value})
+                ssh_import_id = self.form.ssh_import_id.value + ":" + self.form.import_username.value
+                result.update({'ssh_import_id': ssh_import_id})
             else:
                 self.emit_signal('identity:confirm-ssh-id',
                                  self.form.ssh_import_id.value)

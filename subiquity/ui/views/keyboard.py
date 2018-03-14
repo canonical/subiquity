@@ -29,10 +29,10 @@ from subiquitycore.ui.container import (
     Pile,
     )
 from subiquitycore.ui.form import (
+    ChoiceField,
     Form,
-    FormField,
     )
-from subiquitycore.ui.selector import Option, Selector
+from subiquitycore.ui.selector import Option
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
@@ -265,15 +265,6 @@ class ApplyingConfig(WidgetWrap):
                     ('pack', spinner),
                     ])))
 
-
-class ChoiceField(FormField):
-
-    def __init__(self, caption=None, help=None, choices=[]):
-        super().__init__(caption, help)
-        self.choices = choices
-
-    def _make_widget(self, form):
-        return Selector(self.choices)
 
 class KeyboardForm(Form):
 
