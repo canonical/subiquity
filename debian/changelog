@@ -1,3 +1,9 @@
+subiquity (0.0.30) UNRELEASED; urgency=medium
+
+  * Losts of new things.
+
+ -- Michael Hudson-Doyle <mwhudson@debian.org>  Fri, 16 Mar 2018 14:54:48 +1300
+
 subiquity (0.0.29) zesty; urgency=medium
 
   * Fix a crash when widgets disappear (e.g. when a NIC is unplugged). 
