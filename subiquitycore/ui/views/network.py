@@ -112,14 +112,11 @@ class NetworkView(BaseView):
         self.controller = controller
         self.items = []
         self.error = Text("", align='center')
-        self.model_inputs = self._build_model_inputs()
         self.additional_options = Pile(self._build_additional_options())
-        self.body = self.model_inputs + [
+        self.listbox = ListBox(self._build_model_inputs() + [
             Padding.center_79(self.additional_options),
             Padding.line_break(""),
-        ]
-        self.lb = Padding.center_90(ListBox(self.body))
-        self.lb.original_widget.focus_position = 1
+        ])
         self.footer = Pile([
                 Text(""),
                 self._build_buttons(),
@@ -128,7 +125,7 @@ class NetworkView(BaseView):
         self.error_showing = False
         self.frame = Pile([
             ('pack', Text("")),
-            self.lb,
+            Padding.center_90(self.listbox),
             ('pack', self.footer)])
         self.frame.focus_position = 2
         super().__init__(self.frame)
@@ -193,7 +190,11 @@ class NetworkView(BaseView):
         return iface_menus
 
     def refresh_model_inputs(self):
-        self.model_inputs.contents = [ (obj, ('pack', None)) for obj in self._build_model_inputs() ]
+        widgets = self._build_model_inputs() + [
+            Padding.center_79(self.additional_options),
+            Padding.line_break(""),
+        ]
+        self.listbox.body[:] = widgets
         self.additional_options.contents = [ (obj, ('pack', None)) for obj in self._build_additional_options() ]
 
     def _build_additional_options(self):
