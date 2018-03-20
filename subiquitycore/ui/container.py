@@ -355,17 +355,26 @@ class FocusTrackingListBox(TabCyclingListBox):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.body.set_focus_changed_callback(self._focus_changed)
+        self._in_set_focus_complete = False
 
     def _focus_changed(self, new_focus):
-        _maybe_call(self.focus, 'lost_focus')
-        _maybe_call(self.body[new_focus], 'gained_focus')
-        self._invalidate()
+        if not self._in_set_focus_complete:
+            _maybe_call(self.focus, 'lost_focus')
+            _maybe_call(self.body[new_focus], 'gained_focus')
+            self._invalidate()
 
     def lost_focus(self):
         _maybe_call(self.focus, 'lost_focus')
 
     def gained_focus(self):
         _maybe_call(self.focus, 'gained_focus')
+
+    def _set_focus_complete(self, size, focus):
+        self._in_set_focus_complete = True
+        try:
+            super()._set_focus_complete(size, focus)
+        finally:
+            self._in_set_focus_complete = False
 
 
 Columns = FocusTrackingColumns
