@@ -120,6 +120,12 @@ enter_advancing_command_map['enter no wrap'] = 'next selectable'
 class TabCyclingPile(urwid.Pile):
     _command_map = enter_advancing_command_map
 
+    def selectable(self):
+        for w, _ in self.contents:
+            if w.selectable():
+                return True
+        return False
+
     def _select_first_selectable(self):
         """Select first selectable child (possibily recursively)."""
         for i, (w, o) in enumerate(self.contents):
