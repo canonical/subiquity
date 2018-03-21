@@ -298,6 +298,8 @@ class FilesystemModel(object):
             if f.fstype == 'swap':
                 if isinstance(f.volume, Partition):
                     f.volume.flag = "swap"
+                if f.mount() is None:
+                    self.add_mount(f, "")
         for d in self._disks.values():
             r.append(asdict(d))
         for p in self._partitions:
