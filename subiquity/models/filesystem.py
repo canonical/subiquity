@@ -294,6 +294,10 @@ class FilesystemModel(object):
 
     def render(self):
         r = []
+        for f in self._filesystems:
+            if f.fstype == 'swap':
+                if isinstance(f.volume, Partition):
+                    f.volume.flag = "swap"
         for d in self._disks.values():
             r.append(asdict(d))
         for p in self._partitions:
