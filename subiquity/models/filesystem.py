@@ -407,10 +407,15 @@ class FilesystemModel(object):
                 return True
         return False
 
-    def swapfile_ok(self):
+    def add_swapfile(self):
         for m in self._mounts:
             if m.path == '/':
-                return m.device.fstype != 'btrfs'
+                if m.device.fstype == 'btrfs':
+                    return False
+        for fs in self._filesystems:
+            if fs.fstype == "swap":
+                return False
+        return True
 
 ## class AttrDict(dict):
 ##     __getattr__ = dict.__getitem__
