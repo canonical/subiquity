@@ -5,4 +5,4 @@ loadkeys - <<EOF
  keycode 15 = Tab F91
 EOF
 export SNAP_REXEC=0
-/sbin/agetty -n --noclear -l /snap/bin/subiquity tty1 $TERM
+/sbin/agetty -n --noclear -l $SNAP/usr/bin/python3 -o $SNAP/usr/bin/subiquity tty1 $TERM
