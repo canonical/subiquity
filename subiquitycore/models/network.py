@@ -380,7 +380,8 @@ class NetworkModel(object):
         6: 'balance-alb',
     }
 
-    def __init__(self):
+    def __init__(self, support_wlan=True):
+        self.support_wlan = support_wlan
         self.devices = {} # Maps ifindex to Networkdev
         self.devices_by_name = {} # Maps interface names to Networkdev
         self.default_v4_gateway = None
@@ -410,6 +411,8 @@ class NetworkModel(object):
 
     def new_link(self, ifindex, link):
         if link.type in NETDEV_IGNORED_IFACE_TYPES:
+            return
+        if not self.support_wlan and link.type == "wlan":
             return
         if link.name in NETDEV_IGNORED_IFACE_NAMES:
             return
