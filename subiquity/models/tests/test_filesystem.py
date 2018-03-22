@@ -1,7 +1,23 @@
 
 import unittest
 
-from subiquity.models.filesystem import dehumanize_size
+from subiquity.models.filesystem import dehumanize_size, humanize_size
+
+class TestHumanizeSize(unittest.TestCase):
+
+
+    basics = [
+        ('1.000M', 2**20),
+        ('1.500M', 2**20+2**19),
+        ('1.500M', 2**20+2**19),
+        ('1023.000M', 1023*2**20),
+        ('1.000G', 1024*2**20),
+        ]
+
+    def test_basics(self):
+        for string, integer in self.basics:
+            with self.subTest(input=string):
+                self.assertEqual(string, humanize_size(integer))
 
 class TestDehumanizeSize(unittest.TestCase):
 

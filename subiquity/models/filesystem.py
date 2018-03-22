@@ -34,11 +34,14 @@ class FS:
 
 
 def humanize_size(size):
-    size = abs(size)
     if size == 0:
         return "0B"
-    p = math.floor(math.log(size, 2) / 10)
-    return "%.3f%s" % (size / math.pow(1024, p), HUMAN_UNITS[int(p)])
+    p = int(math.floor(math.log(size, 2) / 10))
+    # We want to truncate the non-integral part, not round to nearest.
+    s = "{:.17f}".format(size / 2**(10*p))
+    i = s.index('.')
+    s = s[:i+4]
+    return s + HUMAN_UNITS[int(p)]
 
 
 def dehumanize_size(size):
