@@ -294,6 +294,12 @@ class FilesystemModel(object):
 
     def render(self):
         r = []
+        for f in self._filesystems:
+            if f.fstype == 'swap':
+                if isinstance(f.volume, Partition):
+                    f.volume.flag = "swap"
+                if f.mount() is None:
+                    self.add_mount(f, "")
         for d in self._disks.values():
             r.append(asdict(d))
         for p in self._partitions:
@@ -401,10 +407,15 @@ class FilesystemModel(object):
                 return True
         return False
 
-    def swapfile_ok(self):
+    def add_swapfile(self):
         for m in self._mounts:
             if m.path == '/':
-                return m.device.fstype != 'btrfs'
+                if m.device.fstype == 'btrfs':
+                    return False
+        for fs in self._filesystems:
+            if fs.fstype == "swap":
+                return False
+        return True
 
 ## class AttrDict(dict):
 ##     __getattr__ = dict.__getitem__
