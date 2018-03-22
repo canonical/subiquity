@@ -169,7 +169,7 @@ class Disk:
 
     @property
     def size(self):
-        return self._info.size - (2<<20) # The first and last megabyte of the disk are not usable.
+        return align_down(self._info.size) - (2<<20) # The first and last megabyte of the disk are not usable.
 
     def desc(self):
         return "local disk"
@@ -255,6 +255,9 @@ class Mount:
 
 def align_up(size, block_size=1 << 20):
     return (size + block_size - 1) & ~(block_size - 1)
+
+def align_down(size, block_size=1 << 20):
+    return size & ~(block_size - 1)
 
 
 class FilesystemModel(object):
