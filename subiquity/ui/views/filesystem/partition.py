@@ -110,7 +110,10 @@ class PartitionForm(Form):
         suffixes = ''.join(HUMAN_UNITS) + ''.join(HUMAN_UNITS).lower()
         if val[-1] not in suffixes:
             val += self.size_str[-1]
-        return dehumanize_size(val)
+        if val == self.size_str:
+            return self.max_size
+        else:
+            return dehumanize_size(val)
 
     def clean_mount(self, val):
         if self.fstype.value.is_mounted:
