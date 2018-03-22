@@ -26,8 +26,8 @@ class PartitionViewTests(unittest.TestCase):
         model.fs_by_name = FilesystemModel.fs_by_name
         info = mock.create_autospec(spec=StorageInfo)
         info.name = 'disk-name'
-        info.size = 100
-        info.free = 50
+        info.size = 100*(2**20)
+        info.free = 50*(2**20)
         disk = Disk.from_info(info)
         return PartitionView(model, controller, disk, partition)
 
@@ -45,7 +45,7 @@ class PartitionViewTests(unittest.TestCase):
         self.assertIsNone(view_helpers.find_button_matching(view, "Delete"))
 
     def test_delete_not_disabled_for_ordinary_partition(self):
-        view = self.make_view(Partition(size=50))
+        view = self.make_view(Partition(size=50*(2**20)))
         but, path = view_helpers.find_button_matching(view, "Delete", return_path=True)
         self.assertIsNotNone(but)
         for w in path:
@@ -53,7 +53,7 @@ class PartitionViewTests(unittest.TestCase):
                 self.fail("Delete button is disabled")
 
     def test_delete_disabled_for_boot_partition(self):
-        view = self.make_view(Partition(size=50, flag="boot"))
+        view = self.make_view(Partition(size=50*(2**20), flag="boot"))
         but, path = view_helpers.find_button_matching(view, "Delete", return_path=True)
         self.assertIsNotNone(but)
         for w in path:
@@ -63,7 +63,7 @@ class PartitionViewTests(unittest.TestCase):
             self.fail("Delete button not disabled")
 
     def test_click_delete_button(self):
-        partition = Partition(size=50)
+        partition = Partition(size=50*(2**20))
         view = self.make_view(partition)
         but = view_helpers.find_button_matching(view, "Delete")
         view_helpers.click(but)

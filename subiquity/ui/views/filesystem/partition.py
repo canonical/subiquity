@@ -35,6 +35,7 @@ from subiquitycore.ui.utils import Color, Padding, button_pile
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
+    align_up,
     FilesystemModel,
     HUMAN_UNITS,
     dehumanize_size,
@@ -71,6 +72,10 @@ class SizeWidget(StringEditor):
         if sz > self.form.max_size:
             self.form.size.show_extra(('info_minor', "Capped partition size at %s"%(self.form.size_str,)))
             self.value = self.form.size_str
+        elif align_up(sz) != sz:
+            sz_str = humanize_size(align_up(sz))
+            self.form.size.show_extra(('info_minor', "Rounded size up to %s"%(sz_str,)))
+            self.value = sz_str
 
 class SizeField(FormField):
     def _make_widget(self, form):
@@ -105,7 +110,10 @@ class PartitionForm(Form):
         suffixes = ''.join(HUMAN_UNITS) + ''.join(HUMAN_UNITS).lower()
         if val[-1] not in suffixes:
             val += self.size_str[-1]
-        return dehumanize_size(val)
+        if val == self.size_str:
+            return self.max_size
+        else:
+            return dehumanize_size(val)
 
     def clean_mount(self, val):
         if self.fstype.value.is_mounted:

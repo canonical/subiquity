@@ -20,7 +20,7 @@ from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.ui.error import ErrorView
 
-from subiquity.models.filesystem import humanize_size
+from subiquity.models.filesystem import align_up, humanize_size
 from subiquity.ui.views import (
     BcacheView,
     DiskInfoView,
@@ -153,7 +153,9 @@ class FilesystemController(BaseController):
 
         if partition is not None:
             partition.number = spec['partnum']
-            partition.size = spec['size']
+            partition.size = align_up(spec['size'])
+            if disk.free < 0:
+                raise Exception("partition size too large")
             old_fs = partition.fs()
             if old_fs is not None:
                 self.model._filesystems.remove(old_fs)
