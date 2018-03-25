@@ -87,7 +87,7 @@ class DiskPartitionView(BaseView):
             partitioned_disks.append(format_volume("entire disk", self.disk))
         else:
             for part in self.disk.partitions():
-                partitioned_disks.append(format_volume("Partition {}".format(part.number), part))
+                partitioned_disks.append(format_volume("Partition {}".format(part._number), part))
         if self.disk.free > 0:
             free_space = humanize_size(self.disk.free)
             if len(self.disk.partitions()) > 0:
