@@ -203,6 +203,8 @@ class PartitionView(PartitionFormatView):
             elif partition.flag == "bios_grub":
                 self.form.mount.enabled = False
                 self.form.fstype.enabled = False
+                self.form.size.enabled = False
+                self._w.focus_position = 2
 
     def make_body(self):
         body = super().make_body()
