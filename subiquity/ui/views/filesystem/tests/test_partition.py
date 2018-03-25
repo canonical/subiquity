@@ -35,7 +35,7 @@ class PartitionViewTests(unittest.TestCase):
         view = self.make_view()
         focus_path = view_helpers.get_focus_path(view)
         for w in reversed(focus_path):
-            if w is view.form.partnum.widget:
+            if w is view.form.size.widget:
                 return
         else:
             self.fail("Guided button not focus")
@@ -71,7 +71,6 @@ class PartitionViewTests(unittest.TestCase):
 
     def test_create_partition(self):
         valid_data = {
-            'partnum':1,
             'size':"1M",
             'fstype':FilesystemModel.fs_by_name["ext4"],
             }

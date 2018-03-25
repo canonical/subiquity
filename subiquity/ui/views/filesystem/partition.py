@@ -91,7 +91,6 @@ class PartitionForm(Form):
             self.size.caption = "Size (max {})".format(self.size_str)
         super().__init__(initial)
         if max_size is None:
-            self.remove_field('partnum')
             self.remove_field('size')
         connect_signal(self.fstype.widget, 'select', self.select_fstype)
         self.select_fstype(None, self.fstype.widget.value)
@@ -99,7 +98,6 @@ class PartitionForm(Form):
     def select_fstype(self, sender, fs):
         self.mount.enabled = fs.is_mounted
 
-    partnum = IntegerField("Partition number")
     size = SizeField()
     fstype = FSTypeField("Format")
     mount = MountField("Mount")
@@ -186,15 +184,12 @@ class PartitionView(PartitionFormatView):
         self.partition = partition
 
         max_size = disk.free
+        initial = {}
         if partition is None:
-            initial = {'partnum': disk.next_partnum}
             label = _("Create")
         else:
             max_size += partition.size
-            initial = {
-                'partnum': partition.number,
-                'size': humanize_size(partition.size),
-                }
+            initial['size'] = humanize_size(partition.size)
             label = _("Save")
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
         self.form.buttons.base_widget[0].set_label(label)

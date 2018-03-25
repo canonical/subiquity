@@ -158,16 +158,6 @@ class Disk:
         return self.used < self.size
 
     @property
-    def next_partnum(self):
-        partnums = set()
-        for p in self._partitions:
-            partnums.add(p.number)
-        i = 1
-        while i in partnums:
-            i += 1
-        return i
-
-    @property
     def size(self):
         return align_down(self._info.size) - (2<<20) # The first and last megabyte of the disk are not usable.
 
@@ -199,7 +189,6 @@ class Partition:
 
     id = attr.ib(default=id_factory("part"))
     type = attr.ib(default="partition")
-    number = attr.ib(default=0)
     device = attr.ib(default=None) # Disk
     size = attr.ib(default=None)
     wipe = attr.ib(default=None)
@@ -224,9 +213,14 @@ class Partition:
             return fs_obj.is_mounted
         return False
 
+
+    @property
+    def _number(self):
+        return self.device._partitions.index(self) + 1
+
     @property
     def path(self):
-        return "%s%s"%(self.device.path, self.number)
+        return "%s%s"%(self.device.path, self._number)
 
 
 @attr.s
@@ -360,7 +354,7 @@ class FilesystemModel(object):
     def get_disk(self, path):
         return self._available_disks.get(path)
 
-    def add_partition(self, disk, partnum, size, flag=""):
+    def add_partition(self, disk, size, flag=""):
         if size > disk.free:
             raise Exception("%s > %s", size, disk.free)
         real_size = align_up(size)
@@ -368,7 +362,7 @@ class FilesystemModel(object):
         self._use_disk(disk)
         if disk._fs is not None:
             raise Exception("%s is already formatted" % (disk.path,))
-        p = Partition(device=disk, number=partnum, size=real_size, flag=flag)
+        p = Partition(device=disk, size=real_size, flag=flag)
         disk._partitions.append(p)
         self._partitions.append(p)
         return p

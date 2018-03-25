@@ -195,7 +195,7 @@ class FilesystemView(BaseView):
                     disk_btn = Color.info_minor(Text("  " + label))
                 col1(disk_btn)
             for partition in disk.partitions():
-                label = "partition {}, ".format(partition.number)
+                label = "partition {}, ".format(partition._number)
                 fs = partition.fs()
                 if fs is not None:
                     if fs.mount():

@@ -152,7 +152,6 @@ class FilesystemController(BaseController):
         log.debug('disk.freespace: {}'.format(disk.free))
 
         if partition is not None:
-            partition.number = spec['partnum']
             partition.size = align_up(spec['size'])
             if disk.free < 0:
                 raise Exception("partition size too large")
@@ -176,12 +175,12 @@ class FilesystemController(BaseController):
         if not system_bootable and len(disk.partitions()) == 0:
             if self.is_uefi():
                 log.debug('Adding EFI partition first')
-                part = self.model.add_partition(disk=disk, partnum=1, size=UEFI_GRUB_SIZE_BYTES, flag='boot')
+                part = self.model.add_partition(disk=disk, size=UEFI_GRUB_SIZE_BYTES, flag='boot')
                 fs = self.model.add_filesystem(part, 'fat32')
                 self.model.add_mount(fs, '/boot/efi')
             else:
                 log.debug('Adding grub_bios gpt partition first')
-                part = self.model.add_partition(disk=disk, partnum=1, size=BIOS_GRUB_SIZE_BYTES, flag='bios_grub')
+                part = self.model.add_partition(disk=disk, size=BIOS_GRUB_SIZE_BYTES, flag='bios_grub')
             disk.grub_device = True
 
             # adjust downward the partition size to accommodate
@@ -191,9 +190,8 @@ class FilesystemController(BaseController):
                       "{} - {} = {}".format(spec['size'], part.size,
                                             spec['size'] - part.size))
             spec['size'] -= part.size
-            spec['partnum'] = 2
 
-        part = self.model.add_partition(disk=disk, partnum=spec["partnum"], size=spec["size"])
+        part = self.model.add_partition(disk=disk, size=spec["size"])
         if spec['fstype'].label is not None:
             fs = self.model.add_filesystem(part, spec['fstype'].label)
             if spec['mount']:
@@ -287,12 +285,12 @@ class FilesystemController(BaseController):
         self.ui.set_body(afv_view)
 
     def format_mount_partition(self, partition):
-        log.debug("format_entire {}".format(partition))
+        log.debug("format_mount_partition {}".format(partition))
         if partition.fs() is not None:
-            header = (_("Mount partition {} of {}").format(partition.number, partition.device.label))
+            header = (_("Mount partition {} of {}").format(partition._number, partition.device.label))
             footer = _("Mount partition.")
         else:
-            header = (_("Format and mount partition {} of {}").format(partition.number, partition.device.label))
+            header = (_("Format and mount partition {} of {}").format(partition._number, partition.device.label))
             footer = _("Format and mount partition.")
         self.ui.set_header(header)
         self.ui.set_footer(footer)
