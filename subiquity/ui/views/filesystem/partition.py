@@ -209,6 +209,20 @@ class PartitionView(PartitionFormatView):
     def make_body(self):
         body = super().make_body()
         if self.partition is not None:
+            if self.partition.flag == "boot":
+                body[0:0] = [
+                    Text(_("""\
+As the system being installed has booted using UEFI, a fat32 partition with the "EFI system partition" flag is required. You can edit the partition's size -- but probably shouldn't -- and no other details.""")),
+                    Text(""),
+                    ]
+            elif self.partition.flag == "bios_grub":
+                body[0:0] = [
+                    Text(_("""\
+As the system being installed has been booted using an MBR, grub will be installed onto the target disk's MBR.
+
+However, on a disk with a gpt partition table, there is not enough space after the MBR for grub to store its second stage core.img, so a small un-formatted partition at the start of the disk is needed. It will not contain a filesystem or be mounted anywhere on the system and nothing about it can be edited. """)),
+                    Text(""),
+                    ]
             btn = delete_btn(_("Delete"), on_press=self.delete)
             if self.partition.flag == "boot" or self.partition.flag == "bios_grub":
                 btn = WidgetDisable(Color.info_minor(btn.original_widget))
