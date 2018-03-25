@@ -183,13 +183,13 @@ class FilesystemController(BaseController):
                 part = self.model.add_partition(disk=disk, size=BIOS_GRUB_SIZE_BYTES, flag='bios_grub')
             disk.grub_device = True
 
-            # adjust downward the partition size to accommodate
-            # the offset and bios/grub partition
-            # XXX should probably only do this if the partition is now too big to fit on the disk?
-            log.debug("Adjusting request down:" +
-                      "{} - {} = {}".format(spec['size'], part.size,
-                                            spec['size'] - part.size))
-            spec['size'] -= part.size
+            # adjust downward the partition size (if necessary) to accommodate
+            # bios/grub partition
+            if spec['size'] > disk.free:
+                log.debug("Adjusting request down:" +
+                        "{} - {} = {}".format(spec['size'], part.size,
+                                                disk.free))
+                spec['size'] = disk.free
 
         part = self.model.add_partition(disk=disk, size=spec["size"])
         if spec['fstype'].label is not None:
