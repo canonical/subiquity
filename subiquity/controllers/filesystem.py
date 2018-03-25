@@ -216,6 +216,9 @@ class FilesystemController(BaseController):
                 self.model.add_mount(fs, spec['mount'])
         back()
 
+    def make_boot_disk(self, disk):
+        self.partition_disk(disk)
+
     def connect_iscsi_disk(self, *args, **kwargs):
         # title = ("Disk and filesystem setup")
         # excerpt = ("Connect to iSCSI cluster")

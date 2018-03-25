@@ -14,10 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from urwid import BoxAdapter, Text
+from urwid import Text
 
-from subiquitycore.ui.lists import SimpleList
-from subiquitycore.ui.buttons import done_btn, cancel_btn, menu_btn
+from subiquitycore.ui.buttons import done_btn, cancel_btn, menu_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
@@ -100,6 +99,14 @@ class DiskPartitionView(BaseView):
                 (9, Text(free_space, align="right")),
                 Text("free space"),
             ], 2))
+        if self.model.bootable():
+            for p in self.disk.partitions():
+                if p.flag in ('bios_grub', 'boot'):
+                    break
+            else:
+                partitioned_disks.append(Text(""))
+                partitioned_disks.append(
+                    button_pile([other_btn(label=_("Make boot disk"), on_press=self.make_boot_disk)]))
         if len(self.disk.partitions()) == 0 and \
            self.disk.available:
             text = ("Format or create swap on entire "
@@ -132,6 +139,9 @@ class DiskPartitionView(BaseView):
 
     def format_entire(self, result):
         self.controller.format_entire(self.disk)
+
+    def make_boot_disk(self, sender):
+        self.controller.make_boot_disk(self.disk)
 
     def done(self, result):
         ''' Return to FilesystemView '''
