@@ -214,11 +214,13 @@ class FilesystemView(BaseView):
                     col2(part_btn, size)
             size = disk.size
             free = disk.free
-            percent = int(100*free/size)
-            if disk.available and disk.used > 0 and percent > 0:
+            percent = str(int(100*free/size))
+            if percent == "0":
+                percent = "%.2f"%(100*free/size,)
+            if disk.available and disk.used > 0:
                 label = _("Add/Edit Partitions")
                 size = "{:>9} ({}%) free".format(humanize_size(free), percent)
-            elif disk.available and percent > 0:
+            elif disk.available and disk.used == 0:
                 label = _("Add First Partition")
                 size = ""
             else:
