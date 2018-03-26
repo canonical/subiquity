@@ -335,7 +335,8 @@ class ToggleQuestion(WidgetWrap):
             LineBox(
                 UrwidPadding(
                     pile,
-                    left=1, right=1)))
+                    left=1, right=1),
+                _("Select layout toggle")))
 
     def ok(self, sender):
         self.parent.remove_overlay()
