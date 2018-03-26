@@ -274,6 +274,19 @@ class KeyboardForm(Form):
     variant = ChoiceField(_("Variant:"), choices=["dummy"])
 
 
+class SwitchQuestion(WidgetWrap):
+    def __init__(self, parent):
+        self.parent = parent
+        super().__init__(
+            LineBox(
+                Pile([
+                    Text(_("yo, choose a latin layout")),
+                    button_pile([ok_btn(label=_("OK"), on_press=self.ok)]),
+                    ])))
+    def ok(self, sender):
+        self.parent.remove_overlay()
+
+
 class KeyboardView(BaseView):
 
     def __init__(self, model, controller, opts):
@@ -337,6 +350,13 @@ class KeyboardView(BaseView):
         variant = ''
         if self.form.variant.widget.value is not None:
             variant = self.form.variant.widget.value
+        new_layout, new_variant = self.model.adjust_layout(layout, variant)
+        if (new_layout, new_variant) != (layout, variant):
+            self.show_overlay(SwitchQuestion(self))
+            return
+        self.really_done(layout, variant)
+
+    def really_done(self, layout, variant):
         ac = ApplyingConfig(self.controller.loop)
         self.show_overlay(ac, width=ac.width, min_width=None)
         self.controller.done(layout, variant)

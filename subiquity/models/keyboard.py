@@ -104,3 +104,34 @@ class KeyboardModel:
             run_command(['/snap/bin/subiquity.subiquity-loadkeys'])
         else:
             run_command(['sleep', '1'])
+
+    def adjust_layout(self, layout, variant):
+        if layout == 'rs':
+            if variant.startswith('latin'):
+                return 'rs', variant
+            else:
+                if variant == 'yz':
+                    return 'rs,rs', 'latinyz,' + variant
+                elif variant == 'alternatequotes':
+                    return 'rs,rs', 'latinalternatequotes,' + variant
+                else:
+                    return 'rs,rs', 'latin,' + variant
+        elif layout == 'jp':
+            if variant in ('106', 'common', 'OADG109A', 'nicola_f_bs', ''):
+                return 'jp', variant
+            else:
+                return 'jp,jp', ',' + variant
+        elif layout == 'lt':
+            if variant == 'us':
+                return 'lt,lt', 'us,'
+            else:
+                return 'lt,lt', variant + ',us'
+        elif layout == 'me':
+            if variant == 'basic' or variant.startswith('latin'):
+                return 'me', variant
+            else:
+                return 'me,me', variant + ',us'
+        elif layout in ('af', 'am', 'ara', 'ben', 'bd', 'bg', 'bt', 'by', 'et', 'ge', 'gh', 'gr', 'guj', 'guru', 'il', ''in'', 'iq', 'ir', 'iku', 'kan', 'kh', 'kz', 'la', 'lao', 'lk', 'kg', 'ma', 'mk', 'mm', 'mn', 'mv', 'mal', 'np', 'ori', 'pk', 'ru', 'scc', 'sy', 'syr', 'tel', 'th', 'tj', 'tam', 'tib', 'ua', 'ug', 'uz'):
+            return 'us,' + layout, ',' + variant
+        else:
+            return layout, variant
