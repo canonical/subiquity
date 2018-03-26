@@ -437,10 +437,17 @@ class KeyboardView(BaseView):
     def select_layout(self, sender, layout):
         log.debug("%s", layout)
         opts = []
-        for variant, variant_desc in self.model.variants[layout].items():
+        default_i = -1
+        for i, (variant, variant_desc) in enumerate(self.model.variants[layout].items()):
+            if variant == "":
+                default_i = i
             opts.append(Option((variant_desc, True, variant)))
         opts.sort(key=lambda o:o.label)
-        opts.insert(0, Option(("default", True, None)))
+        if default_i < 0:
+            opts.insert(0, Option(("default", True, "")))
         self.form.variant.widget._options = opts
-        self.form.variant.widget.index = 0
+        if default_i < 0:
+            self.form.variant.widget.index = 0
+        else:
+            self.form.variant.widget.index = default_i
         self.form.variant.enabled = len(opts) > 1

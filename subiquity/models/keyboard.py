@@ -26,7 +26,7 @@ BACKSPACE="guess"
 @attr.s
 class KeyboardSetting:
     layout = attr.ib()
-    variant = attr.ib(default=None)
+    variant = attr.ib(default='')
     toggle = attr.ib(default=None)
 
     def render(self):
@@ -34,8 +34,6 @@ class KeyboardSetting:
         if self.toggle:
             options = "grp:" + self.toggle
         variant = self.variant
-        if variant is None:
-            variant = ''
         return etc_default_keyboard_template.format(
             layout=self.layout, variant=variant, options=options)
 
