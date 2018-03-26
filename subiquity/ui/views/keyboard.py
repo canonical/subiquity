@@ -309,6 +309,12 @@ class ToggleQuestion(WidgetWrap):
         self.setting = setting
         self.selector = Selector(toggle_options)
         self.selector.value = 'alt_shift_toggle'
+        if self.parent.model.setting.toggle:
+            try:
+               self.selector.value = self.parent.model.setting.toggle
+            except AttributeError:
+                pass
+
         pile = Pile([
             ListBox([
                 Text(_(toggle_text)),

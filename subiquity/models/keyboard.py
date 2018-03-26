@@ -39,6 +39,49 @@ class KeyboardSetting:
         return etc_default_keyboard_template.format(
             layout=self.layout, variant=variant, options=options)
 
+    @classmethod
+    def from_config(cls, XKBLAYOUT, XKBVARIANT, XKBOPTIONS):
+        toggle = None
+        if ',' in XKBLAYOUT:
+            layout1, layout2 = XKBLAYOUT.split(',', 1)
+            for option in XKBOPTIONS.split(','):
+                if option.startswith('grp:'):
+                    toggle = option[4:]
+        else:
+            layout1, layout2 = XKBLAYOUT, ''
+        if ',' in XKBVARIANT:
+            variant1, variant2 = XKBVARIANT.split(',', 1)
+        else:
+            variant1, variant2 = XKBVARIANT, ''
+        if XKBLAYOUT == 'lt,lt':
+            layout = layout1
+            variant = variant1
+        elif XKBLAYOUT in ('rs,rs', 'us,rs', 'jp,jp', 'us,jp'):
+            layout = layout2
+            variant = variant2
+        elif layout1 == 'us' and layout2 in standard_non_latin_layouts:
+            layout = layout2
+            variant = variant2
+        elif ',' in XKBLAYOUT:
+            # Something unrecognized
+            layout = 'us'
+            variant = ''
+        else:
+            layout = XKBLAYOUT
+            variant = XKBVARIANT
+        return cls(layout=layout, variant=variant, toggle=toggle)
+
+
+# Non-latin keyboard layouts that are handled in a uniform way
+standard_non_latin_layouts = set(
+    ('af', 'am', 'ara', 'ben', 'bd', 'bg', 'bt', 'by', 'et', 'ge',
+    'gh', 'gr', 'guj', 'guru', 'il', ''in'', 'iq', 'ir', 'iku', 'kan',
+    'kh', 'kz', 'la', 'lao', 'lk', 'kg', 'ma', 'mk', 'mm', 'mn', 'mv',
+    'mal', 'np', 'ori', 'pk', 'ru', 'scc', 'sy', 'syr', 'tel', 'th',
+    'tj', 'tam', 'tib', 'ua', 'ug', 'uz')
+    )
+
+
 class KeyboardModel:
     def __init__(self, root):
         self.root = root
@@ -47,19 +90,17 @@ class KeyboardModel:
         self._clear()
         if os.path.exists(self.config_path):
             content = open(self.config_path).read()
-            pat_tmpl = '(?m)^\s*%s=(.*)$'
-            log.debug("%r", content)
-            layout_match = re.search(pat_tmpl%("XKBLAYOUT",), content)
-            if layout_match:
-                log.debug("%s", layout_match)
-                self.setting.layout = layout_match.group(1).strip('"')
-            variant_match = re.search(pat_tmpl%("XKBVARIANT",), content)
-            if variant_match:
-                log.debug("%s", variant_match)
-                variant = variant_match.group(1).strip('"')
-                if variant == '':
-                    variant = None
-                self.setting.variant = variant
+            def optval(opt, default):
+                match = re.search('(?m)^\s*%s=(.*)$'%(opt,), content)
+                if match:
+                    r = match.group(1).strip('"')
+                    if r != '':
+                        return r
+                return default
+            XKBLAYOUT = optval("XKBLAYOUT", "us")
+            XKBVARIANT = optval("XKBVARIANT", "")
+            XKBOPTIONS = optval("XKBOPTIONS", "")
+            self.setting = KeyboardSetting.from_config(XKBLAYOUT, XKBVARIANT, XKBOPTIONS)
 
     @property
     def config_path(self):
@@ -143,7 +184,7 @@ class KeyboardModel:
                 return setting
             else:
                 return KeyboardSetting(layout='me,me', variant=setting.variant + ',us')
-        elif setting.layout in ('af', 'am', 'ara', 'ben', 'bd', 'bg', 'bt', 'by', 'et', 'ge', 'gh', 'gr', 'guj', 'guru', 'il', ''in'', 'iq', 'ir', 'iku', 'kan', 'kh', 'kz', 'la', 'lao', 'lk', 'kg', 'ma', 'mk', 'mm', 'mn', 'mv', 'mal', 'np', 'ori', 'pk', 'ru', 'scc', 'sy', 'syr', 'tel', 'th', 'tj', 'tam', 'tib', 'ua', 'ug', 'uz'):
+        elif setting.layout in standard_non_latin_layouts:
             return KeyboardSetting(layout='us,' + setting.layout, variant=',' + setting.variant)
         else:
             return setting
