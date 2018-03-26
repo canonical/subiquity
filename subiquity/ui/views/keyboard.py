@@ -17,9 +17,9 @@ import logging
 
 from urwid import (
     connect_signal,
-    BoxAdapter,
     LineBox,
     Padding as UrwidPadding,
+    SolidFill,
     Text,
     WidgetWrap,
     )
@@ -313,22 +313,22 @@ class ToggleQuestion(WidgetWrap):
             ListBox([
                 Text(_(toggle_text)),
                 ]),
-            ('pack', Text("")),
+            (1, SolidFill(" ")),
             ('pack', Padding.center_79(Columns([
                 ('pack', Text(_("Shortcut: "))),
                 Color.string_input(selector),
                 ]))),
-            ('pack', Text("")),
+            (1, SolidFill(" ")),
             ('pack', button_pile([
                 ok_btn(label=_("OK"), on_press=self.ok),
                 cancel_btn(label=_("Cancel"), on_press=self.cancel),
                 ])),
             ])
+        pile.focus_position = 4
         super().__init__(
             LineBox(
                 UrwidPadding(
-                    # Don't like having a fixed height box adapter here but urwid has beaten me for now.
-                    BoxAdapter(pile, height=10),
+                    pile,
                     left=1, right=1)))
 
     def ok(self, sender):
@@ -412,7 +412,7 @@ class KeyboardView(BaseView):
             variant = self.form.variant.widget.value
         new_layout, new_variant = self.model.adjust_layout(layout, variant)
         if (new_layout, new_variant) != (layout, variant):
-            self.show_overlay(ToggleQuestion(self, layout, variant))
+            self.show_overlay(ToggleQuestion(self, layout, variant), height=('relative', 100))
             return
         self.really_done(layout, variant)
 

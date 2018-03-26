@@ -18,7 +18,7 @@
 Contains some default key navigations
 """
 
-from urwid import Columns, Overlay, Pile, Text, WidgetWrap
+from urwid import Columns, Overlay, Pile, SolidFill, Text, WidgetWrap
 
 
 class BaseView(WidgetWrap):
@@ -42,14 +42,20 @@ class BaseView(WidgetWrap):
             if isinstance(kw['width'], int):
                 kw['width'] += 2*PADDING
         args.update(kw)
+        if 'height' in kw:
+            f = SolidFill(" ")
+            p = 1
+        else:
+            f = Text("")
+            p = 'pack'
         top = Pile([
-            ('pack', Text("")),
+            (p, f),
             Columns([
-                (PADDING, Text("")),
+                (PADDING, f),
                 overlay_widget,
-                (PADDING, Text(""))
+                (PADDING, f)
                 ]),
-            ('pack', Text("")),
+            (p, f),
             ])
         self._w = Overlay(top_w=top, bottom_w=self._w, **args)
 
