@@ -217,6 +217,11 @@ class FilesystemController(BaseController):
         back()
 
     def make_boot_disk(self, disk):
+        for p in self.model._partitions:
+            if p.flag in ("bios_grub", "boot"):
+                p.device._partitions.remove(p)
+                disk._partitions.insert(0, p)
+                p.device = disk
         self.partition_disk(disk)
 
     def connect_iscsi_disk(self, *args, **kwargs):
