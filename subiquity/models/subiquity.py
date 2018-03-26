@@ -129,7 +129,7 @@ class SubiquityModel:
             'write_files': {
                 'etc_default_keyboard': {
                     'path': 'etc/default/keyboard',
-                    'content': self.keyboard.config_content,
+                    'content': self.keyboard.setting.render(),
                     },
                 },
             }
