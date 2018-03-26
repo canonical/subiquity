@@ -220,6 +220,9 @@ class FilesystemController(BaseController):
         for p in self.model._partitions:
             if p.flag in ("bios_grub", "boot"):
                 p.device._partitions.remove(p)
+                if disk.free < p.size:
+                    largest_part = max((p.size, p) for p in disk._partitions)[1]
+                    largest_part.size -= (p.size - disk.free)
                 disk._partitions.insert(0, p)
                 p.device = disk
         self.partition_disk(disk)
