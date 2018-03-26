@@ -76,7 +76,7 @@ class KeyboardSetting:
             return self
 
     @classmethod
-    def from_config(cls, config_file):
+    def from_config_file(cls, config_file):
         content = open(config_file).read()
         def optval(opt, default):
             match = re.search('(?m)^\s*%s=(.*)$'%(opt,), content)
@@ -89,34 +89,40 @@ class KeyboardSetting:
         XKBVARIANT = optval("XKBVARIANT", "")
         XKBOPTIONS = optval("XKBOPTIONS", "")
         toggle = None
-        if ',' in XKBLAYOUT:
-            layout1, layout2 = XKBLAYOUT.split(',', 1)
-            for option in XKBOPTIONS.split(','):
-                if option.startswith('grp:'):
-                    toggle = option[4:]
+        for option in XKBOPTIONS.split(','):
+            if option.startswith('grp:'):
+                toggle = option[4:]
+        return cls(layout=XKBLAYOUT, variant=XKBVARIANT, toggle=toggle)
+
+    def for_ui(self):
+        """
+        Attempt to guess a setting the user chose which resulted in the current config. 
+        Basically the inverse of latinizable().
+        """
+        if ',' in self.layout:
+            layout1, layout2 = self.layout.split(',', 1)
         else:
-            layout1, layout2 = XKBLAYOUT, ''
-        if ',' in XKBVARIANT:
-            variant1, variant2 = XKBVARIANT.split(',', 1)
+            layout1, layout2 = self.layout, ''
+        if ',' in self.variant:
+            variant1, variant2 = self.variant.split(',', 1)
         else:
-            variant1, variant2 = XKBVARIANT, ''
-        if XKBLAYOUT == 'lt,lt':
+            variant1, variant2 = self.variant, ''
+        if self.layout == 'lt,lt':
             layout = layout1
             variant = variant1
-        elif XKBLAYOUT in ('rs,rs', 'us,rs', 'jp,jp', 'us,jp'):
+        elif self.layout in ('rs,rs', 'us,rs', 'jp,jp', 'us,jp'):
             layout = layout2
             variant = variant2
         elif layout1 == 'us' and layout2 in standard_non_latin_layouts:
             layout = layout2
             variant = variant2
-        elif ',' in XKBLAYOUT:
+        elif ',' in self.layout:
             # Something unrecognized
             layout = 'us'
             variant = ''
         else:
-            layout = XKBLAYOUT
-            variant = XKBVARIANT
-        return cls(layout=layout, variant=variant, toggle=toggle)
+            return self
+        return KeyboardSetting(layout=layout, variant=variant)
 
 
 # Non-latin keyboard layouts that are handled in a uniform way
@@ -135,7 +141,7 @@ class KeyboardModel:
         self._kbnames_file = os.path.join(os.environ.get("SNAP", '.'), 'kbdnames.txt')
         self._clear()
         if os.path.exists(self.config_path):
-            self.setting = KeyboardSetting.from_config(self.config_path)
+            self.setting = KeyboardSetting.from_config_file(self.config_path)
         else:
             self.setting = KeyboardSetting(layout='us')
 
@@ -193,4 +199,3 @@ class KeyboardModel:
             run_command(['/snap/bin/subiquity.subiquity-loadkeys'])
         else:
             run_command(['sleep', '1'])
-

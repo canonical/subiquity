@@ -370,9 +370,10 @@ class KeyboardView(BaseView):
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget._options = opts
+        setting = model.setting.for_ui()
         try:
-            self.form.layout.widget.value = model.setting.layout
-            self.form.variant.widget.value = model.setting.variant
+            self.form.layout.widget.value = setting.layout
+            self.form.variant.widget.value = setting.variant
         except AttributeError:
             # Don't crash on pre-existing invalid config.
             pass
