@@ -17,12 +17,18 @@ import logging
 
 from urwid import (
     connect_signal,
+    BoxAdapter,
     LineBox,
+    Padding as UrwidPadding,
     Text,
     WidgetWrap,
     )
 
-from subiquitycore.ui.buttons import ok_btn, other_btn
+from subiquitycore.ui.buttons import (
+    cancel_btn,
+    ok_btn,
+    other_btn,
+    )
 from subiquitycore.ui.container import (
     Columns,
     ListBox,
@@ -32,7 +38,7 @@ from subiquitycore.ui.form import (
     ChoiceField,
     Form,
     )
-from subiquitycore.ui.selector import Option
+from subiquitycore.ui.selector import Selector, Option
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
@@ -266,25 +272,79 @@ class ApplyingConfig(WidgetWrap):
                     ])))
 
 
+toggle_text = _("""\
+You will need a way to toggle the keyboard between the national layout and the standard Latin layout.
+
+Right Alt or Caps Lock keys are often chosen for ergonomic reasons (in the latter case, use the combination Shift+Caps Lock for normal Caps toggle). Alt+Shift is also a popular combination; it will however lose its usual behavior in Emacs and other programs that use it for specific needs.
+
+Not all listed keys are present on all keyboards. """)
+
+
+toggle_options = [
+    (_('Caps Lock'),               True, 'caps_toggle'),
+    (_('Right Alt (AltGr)'),       True, 'toggle'),
+    (_('Right Control'),           True, 'rctrl_toggle'),
+    (_('Right Shift'),             True, 'rshift_toggle'),
+    (_('Right Logo key'),          True, 'rwin_toggle'),
+    (_('Menu key'),                True, 'menu_toggle'),
+    (_('Alt+Shift'),               True, 'alt_shift_toggle'),
+    (_('Control+Shift'),           True, 'ctrl_shift_toggle'),
+    (_('Control+Alt'),             True, 'ctrl_alt_toggle'),
+    (_('Alt+Caps Lock'),           True, 'alt_caps_toggle'),
+    (_('Left Control+Left Shift'), True, 'lctrl_lshift_toggle'),
+    (_('Left Alt'),                True, 'lalt_toggle'),
+    (_('Left Control'),            True, 'lctrl_toggle'),
+    (_('Left Shift'),              True, 'lshift_toggle'),
+    (_('Left Logo key'),           True, 'lwin_toggle'),
+    (_('Scroll Lock key'),         True, 'sclk_toggle'),
+    (_('No toggling'),             True, None),
+    ]
+
+
+class ToggleQuestion(WidgetWrap):
+
+    def __init__(self, parent, layout, variant):
+        self.parent = parent
+        self.layout = layout
+        self.variant = variant
+        selector = Selector(toggle_options)
+        selector.value = 'alt_shift_toggle'
+        pile = Pile([
+            ListBox([
+                Text(_(toggle_text)),
+                ]),
+            ('pack', Text("")),
+            ('pack', Padding.center_79(Columns([
+                ('pack', Text(_("Shortcut: "))),
+                Color.string_input(selector),
+                ]))),
+            ('pack', Text("")),
+            ('pack', button_pile([
+                ok_btn(label=_("OK"), on_press=self.ok),
+                cancel_btn(label=_("Cancel"), on_press=self.cancel),
+                ])),
+            ])
+        super().__init__(
+            LineBox(
+                UrwidPadding(
+                    # Don't like having a fixed height box adapter here but urwid has beaten me for now.
+                    BoxAdapter(pile, height=10),
+                    left=1, right=1)))
+
+    def ok(self, sender):
+        self.parent.remove_overlay()
+        self.parent.really_done(self.layout, self.variant)
+
+    def cancel(self, sender):
+        self.parent.remove_overlay()
+
+
 class KeyboardForm(Form):
 
     cancel_label = _("Back")
 
     layout = ChoiceField(_("Layout:"), choices=["dummy"])
     variant = ChoiceField(_("Variant:"), choices=["dummy"])
-
-
-class SwitchQuestion(WidgetWrap):
-    def __init__(self, parent):
-        self.parent = parent
-        super().__init__(
-            LineBox(
-                Pile([
-                    Text(_("yo, choose a latin layout")),
-                    button_pile([ok_btn(label=_("OK"), on_press=self.ok)]),
-                    ])))
-    def ok(self, sender):
-        self.parent.remove_overlay()
 
 
 class KeyboardView(BaseView):
@@ -352,7 +412,7 @@ class KeyboardView(BaseView):
             variant = self.form.variant.widget.value
         new_layout, new_variant = self.model.adjust_layout(layout, variant)
         if (new_layout, new_variant) != (layout, variant):
-            self.show_overlay(SwitchQuestion(self))
+            self.show_overlay(ToggleQuestion(self, layout, variant))
             return
         self.really_done(layout, variant)
 
