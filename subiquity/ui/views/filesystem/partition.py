@@ -72,7 +72,7 @@ class SizeWidget(StringEditor):
         if sz > self.form.max_size:
             self.form.size.show_extra(('info_minor', "Capped partition size at %s"%(self.form.size_str,)))
             self.value = self.form.size_str
-        elif align_up(sz) != sz:
+        elif align_up(sz) != sz and humanize_size(align_up(sz)) != self.form.size.value:
             sz_str = humanize_size(align_up(sz))
             self.form.size.show_extra(('info_minor', "Rounded size up to %s"%(sz_str,)))
             self.value = sz_str
@@ -156,7 +156,7 @@ class PartitionFormatView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        partition_box = Padding.center_50(ListBox(self.make_body()))
+        partition_box = Padding.center_79(ListBox(self.make_body()))
         super().__init__(Pile([
             ('pack', Text("")),
             partition_box,
