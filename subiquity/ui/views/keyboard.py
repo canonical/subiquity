@@ -418,7 +418,7 @@ class KeyboardView(BaseView):
         if self.form.variant.widget.value is not None:
             variant = self.form.variant.widget.value
         setting = KeyboardSetting(layout=layout, variant=variant)
-        new_setting = self.model.adjust_setting(setting)
+        new_setting = setting.latinizable()
         if new_setting != setting:
             self.show_overlay(ToggleQuestion(self, new_setting), height=('relative', 100))
             return

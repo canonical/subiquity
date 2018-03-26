@@ -39,8 +39,55 @@ class KeyboardSetting:
         return etc_default_keyboard_template.format(
             layout=self.layout, variant=variant, options=options)
 
+    def latinizable(self):
+        """
+        If this setting does not allow the typing of latin characters,
+        return a setting that can be switched to one that can.
+        """
+        if self.layout == 'rs':
+            if self.variant.startswith('latin'):
+                return self
+            else:
+                if self.variant == 'yz':
+                    new_variant = 'latinyz'
+                elif self.variant == 'alternatequotes':
+                    new_variant = 'latinalternatequotes'
+                else:
+                    new_variant = 'latin'
+                return KeyboardSetting(layout='rs,rs', variant=new_variant + ',' + self.variant)
+        elif self.layout == 'jp':
+            if self.variant in ('106', 'common', 'OADG109A', 'nicola_f_bs', ''):
+                return self
+            else:
+                return KeyboardSetting(layout='jp,jp', variant=',' + self.variant)
+        elif self.layout == 'lt':
+            if self.variant == 'us':
+                return KeyboardSetting(layout='lt,lt', variant='us,')
+            else:
+                return KeyboardSetting(layout='lt,lt', variant=self.variant + ',us')
+        elif self.layout == 'me':
+            if self.variant == 'basic' or self.variant.startswith('latin'):
+                return self
+            else:
+                return KeyboardSetting(layout='me,me', variant=self.variant + ',us')
+        elif self.layout in standard_non_latin_layouts:
+            return KeyboardSetting(layout='us,' + self.layout, variant=',' + self.variant)
+        else:
+            return self
+
     @classmethod
-    def from_config(cls, XKBLAYOUT, XKBVARIANT, XKBOPTIONS):
+    def from_config(cls, config_file):
+        content = open(config_file).read()
+        def optval(opt, default):
+            match = re.search('(?m)^\s*%s=(.*)$'%(opt,), content)
+            if match:
+                r = match.group(1).strip('"')
+                if r != '':
+                    return r
+            return default
+        XKBLAYOUT = optval("XKBLAYOUT", "us")
+        XKBVARIANT = optval("XKBVARIANT", "")
+        XKBOPTIONS = optval("XKBOPTIONS", "")
         toggle = None
         if ',' in XKBLAYOUT:
             layout1, layout2 = XKBLAYOUT.split(',', 1)
@@ -85,22 +132,12 @@ standard_non_latin_layouts = set(
 class KeyboardModel:
     def __init__(self, root):
         self.root = root
-        self.setting = KeyboardSetting(layout='us')
         self._kbnames_file = os.path.join(os.environ.get("SNAP", '.'), 'kbdnames.txt')
         self._clear()
         if os.path.exists(self.config_path):
-            content = open(self.config_path).read()
-            def optval(opt, default):
-                match = re.search('(?m)^\s*%s=(.*)$'%(opt,), content)
-                if match:
-                    r = match.group(1).strip('"')
-                    if r != '':
-                        return r
-                return default
-            XKBLAYOUT = optval("XKBLAYOUT", "us")
-            XKBVARIANT = optval("XKBVARIANT", "")
-            XKBOPTIONS = optval("XKBOPTIONS", "")
-            self.setting = KeyboardSetting.from_config(XKBLAYOUT, XKBVARIANT, XKBOPTIONS)
+            self.setting = KeyboardSetting.from_config(self.config_path)
+        else:
+            self.setting = KeyboardSetting(layout='us')
 
     @property
     def config_path(self):
@@ -157,34 +194,3 @@ class KeyboardModel:
         else:
             run_command(['sleep', '1'])
 
-    def adjust_setting(self, setting):
-        if setting.layout == 'rs':
-            if setting.variant.startswith('latin'):
-                return setting
-            else:
-                if setting.variant == 'yz':
-                    new_variant = 'latinyz'
-                elif setting.variant == 'alternatequotes':
-                    new_variant = 'latinalternatequotes'
-                else:
-                    new_variant = 'latin'
-                return KeyboardSetting(layout='rs,rs', variant=new_variant + ',' + setting.variant)
-        elif setting.layout == 'jp':
-            if setting.variant in ('106', 'common', 'OADG109A', 'nicola_f_bs', ''):
-                return setting
-            else:
-                return KeyboardSetting(layout='jp,jp', variant=',' + setting.variant)
-        elif setting.layout == 'lt':
-            if setting.variant == 'us':
-                return KeyboardSetting(layout='lt,lt', variant='us,')
-            else:
-                return KeyboardSetting(layout='lt,lt', variant=setting.variant + ',us')
-        elif setting.layout == 'me':
-            if setting.variant == 'basic' or setting.variant.startswith('latin'):
-                return setting
-            else:
-                return KeyboardSetting(layout='me,me', variant=setting.variant + ',us')
-        elif setting.layout in standard_non_latin_layouts:
-            return KeyboardSetting(layout='us,' + setting.layout, variant=',' + setting.variant)
-        else:
-            return setting
