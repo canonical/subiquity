@@ -42,6 +42,7 @@ from subiquitycore.ui.selector import Selector, Option
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
+from subiquity.models.keyboard import KeyboardSetting
 from subiquity.ui.spinner import Spinner
 from subiquity.ui.views import pc105
 
@@ -303,12 +304,11 @@ toggle_options = [
 
 class ToggleQuestion(WidgetWrap):
 
-    def __init__(self, parent, layout, variant):
+    def __init__(self, parent, setting):
         self.parent = parent
-        self.layout = layout
-        self.variant = variant
-        selector = Selector(toggle_options)
-        selector.value = 'alt_shift_toggle'
+        self.setting = setting
+        self.selector = Selector(toggle_options)
+        self.selector.value = 'alt_shift_toggle'
         pile = Pile([
             ListBox([
                 Text(_(toggle_text)),
@@ -316,7 +316,7 @@ class ToggleQuestion(WidgetWrap):
             (1, SolidFill(" ")),
             ('pack', Padding.center_79(Columns([
                 ('pack', Text(_("Shortcut: "))),
-                Color.string_input(selector),
+                Color.string_input(self.selector),
                 ]))),
             (1, SolidFill(" ")),
             ('pack', button_pile([
@@ -333,7 +333,8 @@ class ToggleQuestion(WidgetWrap):
 
     def ok(self, sender):
         self.parent.remove_overlay()
-        self.parent.really_done(self.layout, self.variant)
+        self.setting.toggle = self.selector.value
+        self.parent.really_done(self.setting)
 
     def cancel(self, sender):
         self.parent.remove_overlay()
@@ -364,8 +365,8 @@ class KeyboardView(BaseView):
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget._options = opts
         try:
-            self.form.layout.widget.value = model.layout
-            self.form.variant.widget.value = model.variant
+            self.form.layout.widget.value = model.setting.layout
+            self.form.variant.widget.value = model.setting.variant
         except AttributeError:
             # Don't crash on pre-existing invalid config.
             pass
@@ -410,16 +411,17 @@ class KeyboardView(BaseView):
         variant = ''
         if self.form.variant.widget.value is not None:
             variant = self.form.variant.widget.value
-        new_layout, new_variant = self.model.adjust_layout(layout, variant)
-        if (new_layout, new_variant) != (layout, variant):
-            self.show_overlay(ToggleQuestion(self, layout, variant), height=('relative', 100))
+        setting = KeyboardSetting(layout=layout, variant=variant)
+        new_setting = self.model.adjust_setting(setting)
+        if new_setting != setting:
+            self.show_overlay(ToggleQuestion(self, new_setting), height=('relative', 100))
             return
-        self.really_done(layout, variant)
+        self.really_done(setting)
 
-    def really_done(self, layout, variant):
+    def really_done(self, setting):
         ac = ApplyingConfig(self.controller.loop)
         self.show_overlay(ac, width=ac.width, min_width=None)
-        self.controller.done(layout, variant)
+        self.controller.done(setting)
 
     def cancel(self, result=None):
         self.controller.cancel()

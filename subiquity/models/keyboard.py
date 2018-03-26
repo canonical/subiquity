@@ -1,10 +1,10 @@
 
 from collections import defaultdict
-import gzip
-import io
 import logging
 import os
 import re
+
+import attr
 
 from subiquitycore.utils import run_command
 
@@ -18,16 +18,31 @@ etc_default_keyboard_template = """\
 XKBMODEL="pc105"
 XKBLAYOUT="{layout}"
 XKBVARIANT="{variant}"
-XKBOPTIONS=""
+XKBOPTIONS="{options}"
 
 BACKSPACE="guess"
 """
 
+@attr.s
+class KeyboardSetting:
+    layout = attr.ib()
+    variant = attr.ib(default=None)
+    toggle = attr.ib(default=None)
+
+    def render(self):
+        options = ""
+        if self.toggle:
+            options = "grp:" + self.toggle
+        variant = self.variant
+        if variant is None:
+            variant = ''
+        return etc_default_keyboard_template.format(
+            layout=self.layout, variant=variant, options=options)
+
 class KeyboardModel:
     def __init__(self, root):
         self.root = root
-        self.layout = 'us'
-        self.variant = ''
+        self.setting = KeyboardSetting(layout='us')
         self._kbnames_file = os.path.join(os.environ.get("SNAP", '.'), 'kbdnames.txt')
         self._clear()
         if os.path.exists(self.config_path):
@@ -37,21 +52,18 @@ class KeyboardModel:
             layout_match = re.search(pat_tmpl%("XKBLAYOUT",), content)
             if layout_match:
                 log.debug("%s", layout_match)
-                self.layout = layout_match.group(1).strip('"')
+                self.setting.layout = layout_match.group(1).strip('"')
             variant_match = re.search(pat_tmpl%("XKBVARIANT",), content)
             if variant_match:
                 log.debug("%s", variant_match)
-                self.variant = variant_match.group(1).strip('"')
-                if self.variant == '':
-                    self.variant = None
+                variant = variant_match.group(1).strip('"')
+                if variant == '':
+                    variant = None
+                self.setting.variant = variant
 
     @property
     def config_path(self):
         return os.path.join(self.root, 'etc', 'default', 'keyboard')
-
-    @property
-    def config_content(self):
-        return etc_default_keyboard_template.format(layout=self.layout, variant=self.variant)
 
     def has_language(self, code):
         self.load_language(code)
@@ -88,50 +100,50 @@ class KeyboardModel:
     def lookup(self, code):
         if ':' in code:
             layout_code, variant_code = code.split(":", 1)
-            return self.layouts.get(layout_code, '?'), self.variants.get(layout_code).get(variant_code, '?')
+            return self.layouts.get(layout_code, '?'), self.variants.get(layout_code, {}).get(variant_code, '?')
         else:
             return self.layouts.get(code, '?'), None
 
-    def set_keyboard(self, layout, variant):
+    def set_keyboard(self, setting):
         path = self.config_path
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        self.layout = layout
-        self.variant = variant
+        self.setting = setting
         with open(path, 'w') as fp:
-            fp.write(self.config_content)
+            fp.write(self.setting.render())
         if self.root == '/':
             run_command(['setupcon', '--save', '--force'])
             run_command(['/snap/bin/subiquity.subiquity-loadkeys'])
         else:
             run_command(['sleep', '1'])
 
-    def adjust_layout(self, layout, variant):
-        if layout == 'rs':
-            if variant.startswith('latin'):
-                return 'rs', variant
+    def adjust_setting(self, setting):
+        if setting.layout == 'rs':
+            if setting.variant.startswith('latin'):
+                return setting
             else:
-                if variant == 'yz':
-                    return 'rs,rs', 'latinyz,' + variant
-                elif variant == 'alternatequotes':
-                    return 'rs,rs', 'latinalternatequotes,' + variant
+                if setting.variant == 'yz':
+                    new_variant = 'latinyz'
+                elif setting.variant == 'alternatequotes':
+                    new_variant = 'latinalternatequotes'
                 else:
-                    return 'rs,rs', 'latin,' + variant
-        elif layout == 'jp':
-            if variant in ('106', 'common', 'OADG109A', 'nicola_f_bs', ''):
-                return 'jp', variant
+                    new_variant = 'latin'
+                return KeyboardSetting(layout='rs,rs', variant=new_variant + ',' + setting.variant)
+        elif setting.layout == 'jp':
+            if setting.variant in ('106', 'common', 'OADG109A', 'nicola_f_bs', ''):
+                return setting
             else:
-                return 'jp,jp', ',' + variant
-        elif layout == 'lt':
-            if variant == 'us':
-                return 'lt,lt', 'us,'
+                return KeyboardSetting(layout='jp,jp', variant=',' + setting.variant)
+        elif setting.layout == 'lt':
+            if setting.variant == 'us':
+                return KeyboardSetting(layout='lt,lt', variant='us,')
             else:
-                return 'lt,lt', variant + ',us'
-        elif layout == 'me':
-            if variant == 'basic' or variant.startswith('latin'):
-                return 'me', variant
+                return KeyboardSetting(layout='lt,lt', variant=setting.variant + ',us')
+        elif setting.layout == 'me':
+            if setting.variant == 'basic' or setting.variant.startswith('latin'):
+                return setting
             else:
-                return 'me,me', variant + ',us'
-        elif layout in ('af', 'am', 'ara', 'ben', 'bd', 'bg', 'bt', 'by', 'et', 'ge', 'gh', 'gr', 'guj', 'guru', 'il', ''in'', 'iq', 'ir', 'iku', 'kan', 'kh', 'kz', 'la', 'lao', 'lk', 'kg', 'ma', 'mk', 'mm', 'mn', 'mv', 'mal', 'np', 'ori', 'pk', 'ru', 'scc', 'sy', 'syr', 'tel', 'th', 'tj', 'tam', 'tib', 'ua', 'ug', 'uz'):
-            return 'us,' + layout, ',' + variant
+                return KeyboardSetting(layout='me,me', variant=setting.variant + ',us')
+        elif setting.layout in ('af', 'am', 'ara', 'ben', 'bd', 'bg', 'bt', 'by', 'et', 'ge', 'gh', 'gr', 'guj', 'guru', 'il', ''in'', 'iq', 'ir', 'iku', 'kan', 'kh', 'kz', 'la', 'lao', 'lk', 'kg', 'ma', 'mk', 'mm', 'mn', 'mv', 'mal', 'np', 'ori', 'pk', 'ru', 'scc', 'sy', 'syr', 'tel', 'th', 'tj', 'tam', 'tib', 'ua', 'ug', 'uz'):
+            return KeyboardSetting(layout='us,' + setting.layout, variant=',' + setting.variant)
         else:
-            return layout, variant
+            return setting
