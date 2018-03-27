@@ -37,7 +37,7 @@ from subiquity.ui.views import (
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
 
-BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
+BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024   # 1MiB
 UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 
