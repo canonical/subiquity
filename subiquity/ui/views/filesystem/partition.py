@@ -206,6 +206,7 @@ class PartitionView(PartitionFormatView):
             initial['size'] = humanize_size(partition.size)
             if partition.flag == "bios_grub":
                 label = None
+                initial['mount'] = None
             else:
                 label = _("Save")
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
