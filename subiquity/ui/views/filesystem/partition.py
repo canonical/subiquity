@@ -20,6 +20,7 @@ configuration.
 
 """
 import logging
+
 from urwid import connect_signal, Text, WidgetDisable
 
 from subiquitycore.ui.buttons import delete_btn
@@ -174,6 +175,19 @@ class PartitionFormatView(BaseView):
         self.back()
 
 
+bios_grub_partition_description = _("""\
+Required bootloader partition
+
+GRUB will be installed onto the target disk's MBR.
+
+However, on a disk with a GPT partition table, there is not enough space after the MBR for GRUB to store its second-stage core.img, so a small unformatted partition is needed at the start of the disk. It will not contain a filesystem and will not be mounted, and cannot be edited here.""")
+
+boot_partition_description = _("""\
+Required bootloader partition
+
+This is the ESP / "EFI system partition" required by UEFI. Grub will be installed onto this partition, which must be formatted as fat32. The only aspect of this partition that can be edited is the size.""")
+
+
 class PartitionView(PartitionFormatView):
 
     def __init__(self, model, controller, disk, partition=None):
@@ -211,16 +225,12 @@ class PartitionView(PartitionFormatView):
         if self.partition is not None:
             if self.partition.flag == "boot":
                 body[0:0] = [
-                    Text(_("""\
-As the system being installed has booted using UEFI, a fat32 partition with the "EFI system partition" flag is required. You can edit the partition's size -- but probably shouldn't -- and no other details.""")),
+                    Text(_(boot_partition_description)),
                     Text(""),
                     ]
             elif self.partition.flag == "bios_grub":
                 body[0:0] = [
-                    Text(_("""\
-As the system being installed has been booted using an MBR, grub will be installed onto the target disk's MBR.
-
-However, on a disk with a gpt partition table, there is not enough space after the MBR for grub to store its second stage core.img, so a small un-formatted partition at the start of the disk is needed. It will not contain a filesystem or be mounted anywhere on the system and nothing about it can be edited. """)),
+                    Text(_(bios_grub_partition_description)),
                     Text(""),
                     ]
             btn = delete_btn(_("Delete"), on_press=self.delete)
