@@ -202,6 +202,8 @@ class FilesystemView(BaseView):
                         label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
                     else:
                         label += fs.fstype
+                elif partition.flag == "bios_grub":
+                    label += "bios_grub"
                 else:
                     label += "unformatted"
                 size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
