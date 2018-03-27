@@ -106,7 +106,7 @@ class DiskPartitionView(BaseView):
             else:
                 partitioned_disks.append(Text(""))
                 partitioned_disks.append(
-                    button_pile([other_btn(label=_("Make boot disk"), on_press=self.make_boot_disk)]))
+                    button_pile([other_btn(label=_("Select as boot disk"), on_press=self.make_boot_disk)]))
         if len(self.disk.partitions()) == 0 and \
            self.disk.available:
             text = ("Format or create swap on entire "
