@@ -219,9 +219,13 @@ class FilesystemController(BaseController):
     def make_boot_disk(self, disk):
         for p in self.model._partitions:
             if p.flag in ("bios_grub", "boot"):
+                full = p.device.free == 0
                 p.device._partitions.remove(p)
+                if full:
+                    largest_part = max((part.size, part) for part in p.device._partitions)[1]
+                    largest_part.size += p.size
                 if disk.free < p.size:
-                    largest_part = max((p.size, p) for p in disk._partitions)[1]
+                    largest_part = max((part.size, part) for part in disk._partitions)[1]
                     largest_part.size -= (p.size - disk.free)
                 disk._partitions.insert(0, p)
                 p.device = disk
