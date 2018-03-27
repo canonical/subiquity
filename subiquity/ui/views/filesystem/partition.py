@@ -204,9 +204,16 @@ class PartitionView(PartitionFormatView):
         else:
             max_size += partition.size
             initial['size'] = humanize_size(partition.size)
-            label = _("Save")
+            if partition.flag == "bios_grub":
+                label = None
+            else:
+                label = _("Save")
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
-        self.form.buttons.base_widget[0].set_label(label)
+        if label is not None:
+            self.form.buttons.base_widget[0].set_label(label)
+        else:
+            del self.form.buttons.base_widget.contents[0]
+            self.form.buttons.base_widget[0].set_label(_("OK"))
         if partition is not None:
             if partition.flag == "boot":
                 opts = [Option(("fat32", True, self.model.fs_by_name["fat32"]))]
