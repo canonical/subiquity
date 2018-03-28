@@ -18,11 +18,17 @@ import logging
 from urwid import (
     connect_signal,
     LineBox,
+    Padding as UrwidPadding,
+    SolidFill,
     Text,
     WidgetWrap,
     )
 
-from subiquitycore.ui.buttons import ok_btn, other_btn
+from subiquitycore.ui.buttons import (
+    cancel_btn,
+    ok_btn,
+    other_btn,
+    )
 from subiquitycore.ui.container import (
     Columns,
     ListBox,
@@ -32,10 +38,11 @@ from subiquitycore.ui.form import (
     ChoiceField,
     Form,
     )
-from subiquitycore.ui.selector import Option
+from subiquitycore.ui.selector import Selector, Option
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
+from subiquity.models.keyboard import KeyboardSetting
 from subiquity.ui.spinner import Spinner
 from subiquity.ui.views import pc105
 
@@ -266,6 +273,80 @@ class ApplyingConfig(WidgetWrap):
                     ])))
 
 
+toggle_text = _("""\
+You will need a way to toggle the keyboard between the national layout and the standard Latin layout.
+
+Right Alt or Caps Lock keys are often chosen for ergonomic reasons (in the latter case, use the combination Shift+Caps Lock for normal Caps toggle). Alt+Shift is also a popular combination; it will however lose its usual behavior in Emacs and other programs that use it for specific needs.
+
+Not all listed keys are present on all keyboards. """)
+
+
+toggle_options = [
+    (_('Caps Lock'),               True, 'caps_toggle'),
+    (_('Right Alt (AltGr)'),       True, 'toggle'),
+    (_('Right Control'),           True, 'rctrl_toggle'),
+    (_('Right Shift'),             True, 'rshift_toggle'),
+    (_('Right Logo key'),          True, 'rwin_toggle'),
+    (_('Menu key'),                True, 'menu_toggle'),
+    (_('Alt+Shift'),               True, 'alt_shift_toggle'),
+    (_('Control+Shift'),           True, 'ctrl_shift_toggle'),
+    (_('Control+Alt'),             True, 'ctrl_alt_toggle'),
+    (_('Alt+Caps Lock'),           True, 'alt_caps_toggle'),
+    (_('Left Control+Left Shift'), True, 'lctrl_lshift_toggle'),
+    (_('Left Alt'),                True, 'lalt_toggle'),
+    (_('Left Control'),            True, 'lctrl_toggle'),
+    (_('Left Shift'),              True, 'lshift_toggle'),
+    (_('Left Logo key'),           True, 'lwin_toggle'),
+    (_('Scroll Lock key'),         True, 'sclk_toggle'),
+    (_('No toggling'),             True, None),
+    ]
+
+
+class ToggleQuestion(WidgetWrap):
+
+    def __init__(self, parent, setting):
+        self.parent = parent
+        self.setting = setting
+        self.selector = Selector(toggle_options)
+        self.selector.value = 'alt_shift_toggle'
+        if self.parent.model.setting.toggle:
+            try:
+               self.selector.value = self.parent.model.setting.toggle
+            except AttributeError:
+                pass
+
+        pile = Pile([
+            ListBox([
+                Text(_(toggle_text)),
+                ]),
+            (1, SolidFill(" ")),
+            ('pack', Padding.center_79(Columns([
+                ('pack', Text(_("Shortcut: "))),
+                Color.string_input(self.selector),
+                ]))),
+            (1, SolidFill(" ")),
+            ('pack', button_pile([
+                ok_btn(label=_("OK"), on_press=self.ok),
+                cancel_btn(label=_("Cancel"), on_press=self.cancel),
+                ])),
+            ])
+        pile.focus_position = 4
+        super().__init__(
+            LineBox(
+                UrwidPadding(
+                    pile,
+                    left=1, right=1),
+                _("Select layout toggle")))
+
+    def ok(self, sender):
+        self.parent.remove_overlay()
+        self.setting.toggle = self.selector.value
+        self.parent.really_done(self.setting)
+
+    def cancel(self, sender):
+        self.parent.remove_overlay()
+
+
 class KeyboardForm(Form):
 
     cancel_label = _("Back")
@@ -290,9 +371,10 @@ class KeyboardView(BaseView):
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget._options = opts
+        setting = model.setting.for_ui()
         try:
-            self.form.layout.widget.value = model.layout
-            self.form.variant.widget.value = model.variant
+            self.form.layout.widget.value = setting.layout
+            self.form.variant.widget.value = setting.variant
         except AttributeError:
             # Don't crash on pre-existing invalid config.
             pass
@@ -337,9 +419,17 @@ class KeyboardView(BaseView):
         variant = ''
         if self.form.variant.widget.value is not None:
             variant = self.form.variant.widget.value
+        setting = KeyboardSetting(layout=layout, variant=variant)
+        new_setting = setting.latinizable()
+        if new_setting != setting:
+            self.show_overlay(ToggleQuestion(self, new_setting), height=('relative', 100))
+            return
+        self.really_done(setting)
+
+    def really_done(self, setting):
         ac = ApplyingConfig(self.controller.loop)
         self.show_overlay(ac, width=ac.width, min_width=None)
-        self.controller.done(layout, variant)
+        self.controller.done(setting)
 
     def cancel(self, result=None):
         self.controller.cancel()
@@ -347,10 +437,17 @@ class KeyboardView(BaseView):
     def select_layout(self, sender, layout):
         log.debug("%s", layout)
         opts = []
-        for variant, variant_desc in self.model.variants[layout].items():
+        default_i = -1
+        for i, (variant, variant_desc) in enumerate(self.model.variants[layout].items()):
+            if variant == "":
+                default_i = i
             opts.append(Option((variant_desc, True, variant)))
         opts.sort(key=lambda o:o.label)
-        opts.insert(0, Option(("default", True, None)))
+        if default_i < 0:
+            opts.insert(0, Option(("default", True, "")))
         self.form.variant.widget._options = opts
-        self.form.variant.widget.index = 0
+        if default_i < 0:
+            self.form.variant.widget.index = 0
+        else:
+            self.form.variant.widget.index = default_i
         self.form.variant.enabled = len(opts) > 1

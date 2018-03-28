@@ -17,6 +17,7 @@ import logging
 
 from subiquitycore.controller import BaseController
 
+from subiquity.models.keyboard import KeyboardSetting
 from subiquity.ui.views import KeyboardView
 
 log = logging.getLogger('subiquity.controllers.keyboard')
@@ -57,15 +58,15 @@ class KeyboardController(BaseController):
         if 'layout' in self.answers:
             layout = self.answers['layout']
             variant = self.answers.get('variant', '')
-            self.done(layout, variant)
+            self.done(KeyboardSetting(layout=layout, variant=variant))
 
-    def done(self, layout, variant):
+    def done(self, setting):
         self.run_in_bg(
-            lambda: self.model.set_keyboard(layout, variant),
+            lambda: self.model.set_keyboard(setting),
             self._done)
 
     def _done(self, fut):
-        self.signal.emit_signal('next-screen')
+        self.loop.set_alarm_in(0.0, lambda loop, ud: self.signal.emit_signal('next-screen'))
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
