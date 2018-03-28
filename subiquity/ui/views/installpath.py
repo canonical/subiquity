@@ -106,7 +106,7 @@ class RackForm(Form):
             "localhost or 127.0.0.1 are not useful values here." ))
 
     secret = PasswordField(
-        _("MAAS Rack Controller shared secret:"),
+        _("MAAS shared secret:"),
         help=_(
             "The secret can be found in /var/lib/maas/secret "
             "on the region controller. " ))
