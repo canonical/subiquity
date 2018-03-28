@@ -277,7 +277,7 @@ class FilesystemModel(object):
                 if len(fs.label) > longest_fs_name:
                     longest_fs_name = len(fs.label)
             fs_by_name[fs.label] = fs
-    fs_by_name['fat32'] = FS('fat322', True)
+    fs_by_name['fat32'] = FS('fat32', True)
 
     def __init__(self, prober):
         self.prober = prober

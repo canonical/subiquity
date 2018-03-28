@@ -20,6 +20,7 @@ configuration.
 
 """
 import logging
+
 from urwid import connect_signal, Text, WidgetDisable
 
 from subiquitycore.ui.buttons import delete_btn
@@ -72,7 +73,7 @@ class SizeWidget(StringEditor):
         if sz > self.form.max_size:
             self.form.size.show_extra(('info_minor', "Capped partition size at %s"%(self.form.size_str,)))
             self.value = self.form.size_str
-        elif align_up(sz) != sz:
+        elif align_up(sz) != sz and humanize_size(align_up(sz)) != self.form.size.value:
             sz_str = humanize_size(align_up(sz))
             self.form.size.show_extra(('info_minor', "Rounded size up to %s"%(sz_str,)))
             self.value = sz_str
@@ -156,7 +157,7 @@ class PartitionFormatView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        partition_box = Padding.center_50(ListBox(self.make_body()))
+        partition_box = Padding.center_79(ListBox(self.make_body()))
         super().__init__(Pile([
             ('pack', Text("")),
             partition_box,
@@ -172,6 +173,19 @@ class PartitionFormatView(BaseView):
 
     def cancel(self, button=None):
         self.back()
+
+
+bios_grub_partition_description = _("""\
+Required bootloader partition
+
+GRUB will be installed onto the target disk's MBR.
+
+However, on a disk with a GPT partition table, there is not enough space after the MBR for GRUB to store its second-stage core.img, so a small unformatted partition is needed at the start of the disk. It will not contain a filesystem and will not be mounted, and cannot be edited here.""")
+
+boot_partition_description = _("""\
+Required bootloader partition
+
+This is the ESP / "EFI system partition" required by UEFI. Grub will be installed onto this partition, which must be formatted as fat32. The only aspect of this partition that can be edited is the size.""")
 
 
 class PartitionView(PartitionFormatView):
@@ -190,9 +204,17 @@ class PartitionView(PartitionFormatView):
         else:
             max_size += partition.size
             initial['size'] = humanize_size(partition.size)
-            label = _("Save")
+            if partition.flag == "bios_grub":
+                label = None
+                initial['mount'] = None
+            else:
+                label = _("Save")
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
-        self.form.buttons.base_widget[0].set_label(label)
+        if label is not None:
+            self.form.buttons.base_widget[0].set_label(label)
+        else:
+            del self.form.buttons.base_widget.contents[0]
+            self.form.buttons.base_widget[0].set_label(_("OK"))
         if partition is not None:
             if partition.flag == "boot":
                 opts = [Option(("fat32", True, self.model.fs_by_name["fat32"]))]
@@ -203,10 +225,22 @@ class PartitionView(PartitionFormatView):
             elif partition.flag == "bios_grub":
                 self.form.mount.enabled = False
                 self.form.fstype.enabled = False
+                self.form.size.enabled = False
+                self._w.focus_position = 2
 
     def make_body(self):
         body = super().make_body()
         if self.partition is not None:
+            if self.partition.flag == "boot":
+                body[0:0] = [
+                    Text(_(boot_partition_description)),
+                    Text(""),
+                    ]
+            elif self.partition.flag == "bios_grub":
+                body[0:0] = [
+                    Text(_(bios_grub_partition_description)),
+                    Text(""),
+                    ]
             btn = delete_btn(_("Delete"), on_press=self.delete)
             if self.partition.flag == "boot" or self.partition.flag == "bios_grub":
                 btn = WidgetDisable(Color.info_minor(btn.original_widget))

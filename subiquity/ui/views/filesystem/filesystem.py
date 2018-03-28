@@ -202,6 +202,8 @@ class FilesystemView(BaseView):
                         label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
                     else:
                         label += fs.fstype
+                elif partition.flag == "bios_grub":
+                    label += "bios_grub"
                 else:
                     label += "unformatted"
                 size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
@@ -214,11 +216,13 @@ class FilesystemView(BaseView):
                     col2(part_btn, size)
             size = disk.size
             free = disk.free
-            percent = int(100*free/size)
-            if disk.available and disk.used > 0 and percent > 0:
+            percent = str(int(100*free/size))
+            if percent == "0":
+                percent = "%.2f"%(100*free/size,)
+            if disk.available and disk.used > 0:
                 label = _("Add/Edit Partitions")
                 size = "{:>9} ({}%) free".format(humanize_size(free), percent)
-            elif disk.available and percent > 0:
+            elif disk.available and disk.used == 0:
                 label = _("Add First Partition")
                 size = ""
             else:

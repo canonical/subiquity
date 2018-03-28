@@ -37,7 +37,7 @@ from subiquity.ui.views import (
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
 
-BIOS_GRUB_SIZE_BYTES = 2 * 1024 * 1024   # 2MiB
+BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024   # 1MiB
 UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 
@@ -183,13 +183,13 @@ class FilesystemController(BaseController):
                 part = self.model.add_partition(disk=disk, size=BIOS_GRUB_SIZE_BYTES, flag='bios_grub')
             disk.grub_device = True
 
-            # adjust downward the partition size to accommodate
-            # the offset and bios/grub partition
-            # XXX should probably only do this if the partition is now too big to fit on the disk?
-            log.debug("Adjusting request down:" +
-                      "{} - {} = {}".format(spec['size'], part.size,
-                                            spec['size'] - part.size))
-            spec['size'] -= part.size
+            # adjust downward the partition size (if necessary) to accommodate
+            # bios/grub partition
+            if spec['size'] > disk.free:
+                log.debug("Adjusting request down:" +
+                        "{} - {} = {}".format(spec['size'], part.size,
+                                                disk.free))
+                spec['size'] = disk.free
 
         part = self.model.add_partition(disk=disk, size=spec["size"])
         if spec['fstype'].label is not None:
@@ -215,6 +215,21 @@ class FilesystemController(BaseController):
             if spec['mount']:
                 self.model.add_mount(fs, spec['mount'])
         back()
+
+    def make_boot_disk(self, disk):
+        for p in self.model._partitions:
+            if p.flag in ("bios_grub", "boot"):
+                full = p.device.free == 0
+                p.device._partitions.remove(p)
+                if full:
+                    largest_part = max((part.size, part) for part in p.device._partitions)[1]
+                    largest_part.size += p.size
+                if disk.free < p.size:
+                    largest_part = max((part.size, part) for part in disk._partitions)[1]
+                    largest_part.size -= (p.size - disk.free)
+                disk._partitions.insert(0, p)
+                p.device = disk
+        self.partition_disk(disk)
 
     def connect_iscsi_disk(self, *args, **kwargs):
         # title = ("Disk and filesystem setup")
