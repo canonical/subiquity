@@ -33,7 +33,7 @@ class InstallpathController(BaseController):
 
     def installpath(self):
         title = "Ubuntu %s"%(lsb_release.get_distro_information()['RELEASE'],)
-        excerpt = _("Welcome to Ubuntu! The world's favorite platform "
+        excerpt = _("Welcome to Ubuntu! The world's favourite platform "
                    "for clouds, clusters, and amazing internet things. "
                    "This is the installer for Ubuntu on servers and "
                    "internet devices.")
@@ -67,14 +67,13 @@ class InstallpathController(BaseController):
 
     def install_maas_region(self):
         # show region questions, seed model
-        title = "Metal as a Service (MAAS) Regional Controller Setup"
+        title = "MAAS Region Controller Setup"
         excerpt = _(
-            "MAAS runs a software-defined data centre - it turns a "
-            "collection of physical servers and switches into a bare "
-            "metal cloud with full open source IP address management "
-            "(IPAM) and instant provisioning on demand. By choosing "
-            "to install MAAS, a MAAS Region Controller API server and "
-            "PostgreSQL database will be installed."
+            "MAAS is Metal As A Service. Running on Ubuntu, it lets you "
+            "treat physical servers like virtual machines (instances) "
+            "in the cloud. Rather than having to manage each server "
+            "individually, MAAS turns your bare metal into an elastic "
+            "cloud-like resource. \n\nFor further details, see https://maas.io/."
             )
         self.ui.set_header(title, excerpt)
         self.ui.set_footer("")
@@ -82,16 +81,12 @@ class InstallpathController(BaseController):
 
     def install_maas_rack(self):
         # show cack questions, seed model
-        title = "Metal as a Service (MAAS) Rack Controller Setup"
+        title = "MAAS Rack Controller Setup"
         excerpt = _(
-            "The MAAS rack controller (maas-rackd) provides highly available, fast "
-            "and local broadcast services to the machines provisioned by MAAS. You "
-            "need a MAAS rack controller attached to each fabric (which is a set of "
-            "trunked switches). You can attach multiple rack controllers to these "
-            "physical networks for high availability, with secondary rack controllers "
-            "automatically stepping to provide these services if the primary rack "
-            "controller fails. By choosing to install a MAAS Rack controller, you will "
-            "have to connect it to a Region controller to service your machines."
+            "A MAAS rack controller provides services to machines provisioned "
+            "by MAAS in the fabric (group of trunked switches) it is attached "
+            "to. The rack controller requires the accessible URL of a MAAS "
+            "region controller."
             )
 
         self.ui.set_header(title, excerpt)

@@ -76,11 +76,11 @@ URLField = simple_field(URLEditor)
 class RegionForm(Form):
 
     username = UsernameField(
-        _("Pick a MAAS username:"),
-        help=_("MAAS requires an administrative account to be created before you can use MAAS."))
+        _("Pick a username for the admin account:"),
+        help=_("Enter the administrative username."))
     password = PasswordField(
         _("Choose a password:"),
-        help=_("Please enter the password for the MAAS administrator's account."))
+        help=_("Please enter the password for this account."))
 
     def validate_username(self):
         if len(self.username.value) < 1:
@@ -102,17 +102,14 @@ class RackForm(Form):
     url = URLField(
         _("Ubuntu MAAS Region API address:"),
         help=_(
-            "The MAAS rack controller and nodes need to contact "
-            "the MAAS region controller API. Set the URL at which "
-            "they can reach the MAAS API remotely, e.g. \"http://192.168.1.1:5240/MAAS\" "
-            "Since nodes must be able to access this URL, localhost or 127.0.0.1 are not "
-            "useful values here."))
+            "e.g. \"http://192.168.1.1:5240/MAAS\". "
+            "localhost or 127.0.0.1 are not useful values here." ))
+
     secret = PasswordField(
-        _("MAAS Rack Controller shared secret:"),
+        _("MAAS shared secret:"),
         help=_(
-            "The MAAS rack controller needs to contact the MAAS region "
-            "controller with the shared secret found in /var/lib/maas/secret "
-            "on the region controller."))
+            "The secret can be found in /var/lib/maas/secret "
+            "on the region controller. " ))
 
     def validate_url(self):
         if len(self.url.value) < 1:
