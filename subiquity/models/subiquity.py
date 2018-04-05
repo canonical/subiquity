@@ -116,8 +116,7 @@ class SubiquityModel:
 
             'pollinate': {
                 'user_agent': {
-                    'subiquity-version': os.environ.get("SNAP_VERSION", 'dry-run'),
-                    'subiquity-revision': os.environ.get("SNAP_REVISION", 'dry-run'),
+                    'subiquity': "%s_%s"%(os.environ.get("SNAP_VERSION", 'dry-run'), os.environ.get("SNAP_REVISION", 'dry-run')),
                     },
                 },
 
