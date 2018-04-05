@@ -114,6 +114,13 @@ class SubiquityModel:
                 'builtin': 'curtin block-meta custom',
                 },
 
+            'pollinate': {
+                'user_agent': {
+                    'subiquity-version': os.environ.get("SNAP_VERSION", 'dry-run'),
+                    'subiquity-revision': os.environ.get("SNAP_REVISION", 'dry-run'),
+                    },
+                },
+
             'reporting': {
                 'subiquity': {
                     'type': 'journald',
