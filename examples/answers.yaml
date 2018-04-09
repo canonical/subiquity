@@ -6,6 +6,8 @@ Installpath:
   path: ubuntu
 Network:
   accept-default: yes
+Proxy:
+  proxy: ""
 Filesystem:
   guided: yes
   guided-index: 0

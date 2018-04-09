@@ -259,6 +259,12 @@ PasswordField = simple_field(PasswordEditor)
 IntegerField = simple_field(IntegerEditor)
 
 
+class URLEditor(StringEditor, WantsToKnowFormField):
+    pass
+
+URLField = simple_field(URLEditor)
+
+
 class ChoiceField(FormField):
 
     def __init__(self, caption=None, help=None, choices=[]):

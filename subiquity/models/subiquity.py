@@ -25,6 +25,7 @@ from .filesystem import FilesystemModel
 from .installpath import InstallpathModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
+from .proxy import ProxyModel
 
 
 def setup_yaml():
@@ -48,6 +49,7 @@ class SubiquityModel:
         self.network = NetworkModel(support_wlan=False)
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
+        self.proxy = ProxyModel()
 
     def _cloud_init_config(self):
         user = self.identity.user
@@ -139,6 +141,12 @@ class SubiquityModel:
                     },
                 },
             }
+
+        if self.proxy.proxy != "":
+            config['proxy'] = {
+                'http_proxy': self.proxy.proxy,
+                'https_proxy': self.proxy.proxy,
+                }
 
         if not self.filesystem.add_swapfile():
             config['swap'] = {'size': 0}

@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2018 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -15,32 +15,10 @@
 
 import logging
 
-from subiquitycore.core import Application
-
-from subiquity.models.subiquity import SubiquityModel
-
-log = logging.getLogger('console_conf.core')
+log = logging.getLogger('subiquitycore.models.proxy')
 
 
-class Subiquity(Application):
+class ProxyModel(object):
 
-    from subiquity.palette import COLORS, STYLES, STYLES_MONO
-
-    project = "subiquity"
-
-    model_class = SubiquityModel
-
-    controllers = [
-            "Welcome",
-            "Keyboard",
-            "Installpath",
-            "Network",
-            "Proxy",
-            "Filesystem",
-            "Identity",
-            "InstallProgress",
-    ]
-
-    def __init__(self, ui, opts):
-        super().__init__(ui, opts)
-        self.common['ui'].progress_completion += 1
+    def __init__(self):
+        self.proxy = ""
