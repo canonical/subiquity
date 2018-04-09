@@ -166,12 +166,12 @@ class IdentityView(BaseView):
         body = Pile([
             ('pack', Text("")),
             Padding.center_90(self.form_rows),
-            ('pack', Pile([
-                ('pack', Text("")),
-                button_pile([self.form.done_btn]),
-                ('pack', Text("")),
-                ], focus_item=1)),
+            #('pack', Pile([
+            ('pack', Text("")),
+            ('pack', button_pile([self.form.done_btn])),
+            ('pack', Text("")),
             ])
+            #])
         super().__init__(body)
 
     def _check_password(self, sender, new_text):

@@ -141,12 +141,10 @@ class MAASView(BaseView):
         body = Pile([
             ('pack', Text("")),
             Padding.center_90(ListBox(self.form.as_rows(self))),
-            ('pack', Pile([
-                ('pack', Text("")),
-                self.form.buttons,
-                ('pack', Text("")),
-                ], focus_item=1)),
-            ])
+            ('pack', Text("")),
+            ('pack', self.form.buttons),
+            ('pack', Text("")),
+            ], focus_item=3)
         super().__init__(body)
 
     def done(self, result):

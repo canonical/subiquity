@@ -40,23 +40,16 @@ class DiskPartitionView(BaseView):
                 Text(""),
                 self.show_disk_info_w(),
                 ])),
-            ('pack', Pile([
-                ('pack', Text("")),
-                self._build_buttons(),
-                ('pack', Text("")),
-                ])),
+            ('pack', Text("")),
+            ('pack', self._build_buttons()),
+            ('pack', Text("")),
             ])
         super().__init__(self.body)
 
     def _build_buttons(self):
         cancel = cancel_btn(_("Cancel"), on_press=self.cancel)
         done = done_btn(_("Done"), on_press=self.done)
-
-        buttons = [
-            done,
-            cancel,
-        ]
-        return button_pile(buttons)
+        return button_pile([done, cancel])
 
     def _build_model_inputs(self):
         partitioned_disks = []

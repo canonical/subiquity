@@ -71,18 +71,19 @@ class GuidedDiskSelectionView(BaseView):
         disks = []
         for disk in self.model.all_disks():
             disk_btn = forward_btn(
-                "%-40s %s"%(disk.label, humanize_size(disk.size).rjust(9)),
+                "%-42s %s"%(disk.label, humanize_size(disk.size).rjust(9)),
                 on_press=self.choose_disk, user_arg=disk)
             disks.append(disk_btn)
-        lb = ListBox([
-            Padding.center_70(Text("")),
-            Padding.center_70(Text(_("Choose the disk to install to:"))),
-            Padding.center_70(Text("")),
-            Padding.center_70(Pile(disks)),
-            Padding.center_70(Text("")),
-            button_pile([cancel]),
+        body = Pile([
+            ('pack', Text("")),
+            ('pack', Padding.center_70(Text(_("Choose the disk to install to:")))),
+            ('pack', Text("")),
+            Padding.center_70(ListBox(disks)),
+            ('pack', Text("")),
+            ('pack', button_pile([cancel])),
+            ('pack', Text("")),
             ])
-        super().__init__(lb)
+        super().__init__(body)
 
     def cancel(self, btn=None):
         self.controller.default()

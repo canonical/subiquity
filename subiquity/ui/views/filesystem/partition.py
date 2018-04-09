@@ -161,11 +161,9 @@ class PartitionFormatView(BaseView):
         super().__init__(Pile([
             ('pack', Text("")),
             partition_box,
-            ('pack', Pile([
-                ('pack', Text("")),
-                self.form.buttons,
-                ('pack', Text("")),
-                ])),
+            ('pack', Text("")),
+            ('pack', self.form.buttons),
+            ('pack', Text("")),
             ]))
 
     def make_body(self):

@@ -133,12 +133,7 @@ class NetworkView(BaseView):
     def _build_buttons(self):
         back = back_btn(_("Back"), on_press=self.cancel)
         done = done_btn(_("Done"), on_press=self.done)
-
-        buttons = button_pile([done, back])
-
-        buttons.base_widget.focus_position = 0
-
-        return buttons
+        return button_pile([done, back])
 
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()

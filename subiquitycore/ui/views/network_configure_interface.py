@@ -36,11 +36,9 @@ class NetworkConfigureInterfaceView(BaseView):
         super().__init__(Pile([
             ('pack', Text("")),
             Padding.center_79(ListBox(self._build_body())),
-            ('pack', Pile([
-                ('pack', Text("")),
-                self._build_buttons(),
-                ('pack', Text("")),
-                ])),
+            ('pack', Text("")),
+            ('pack', self._build_buttons()),
+            ('pack', Text("")),
             ]))
 
     def _build_widgets(self):

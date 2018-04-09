@@ -390,13 +390,11 @@ class KeyboardView(BaseView):
         pile = Pile([
             ('pack', Text("")),
             Padding.center_90(lb),
-            ('pack', Pile([
-                Text(""),
-                self.form.buttons,
-                Text(""),
-                ])),
+            ('pack', Text("")),
+            ('pack', self.form.buttons),
+            ('pack', Text("")),
             ])
-        pile.focus_position = 2
+        pile.focus_position = 3
         super().__init__(pile)
 
     def detect(self, sender):

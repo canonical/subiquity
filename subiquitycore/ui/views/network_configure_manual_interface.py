@@ -139,11 +139,9 @@ class BaseNetworkConfigureManualView(BaseView):
             Padding.center_79(ListBox(self.form.as_rows(self))),
             #Padding.line_break(""),
             #Padding.center_79(self.set_as_default_gw_button),
-            ('pack', Pile([
-                ('pack', Text("")),
-                self.form.buttons,
-                ('pack', Text("")),
-                ])),
+            ('pack', Text("")),
+            ('pack', self.form.buttons),
+            ('pack', Text("")),
             ])
         super().__init__(body)
 
