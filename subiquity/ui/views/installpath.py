@@ -24,7 +24,7 @@ from urwid import connect_signal, Text
 
 from subiquitycore.ui.buttons import back_btn, forward_btn
 from subiquitycore.ui.interactive import StringEditor
-from subiquitycore.ui.utils import Padding, button_pile
+from subiquitycore.ui.utils import Padding, button_pile, screen
 from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.view import BaseView
 from subiquity.ui.views.identity import UsernameField, PasswordField, USERNAME_MAXLEN
@@ -138,14 +138,7 @@ class MAASView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        body = Pile([
-            ('pack', Text("")),
-            Padding.center_90(ListBox(self.form.as_rows(self))),
-            ('pack', Text("")),
-            ('pack', self.form.buttons),
-            ('pack', Text("")),
-            ], focus_item=3)
-        super().__init__(body)
+        super().__init__(screen(self.form.as_rows(self), self.form.buttons, focus_buttons=False))
 
     def done(self, result):
         log.debug("User input: {}".format(result.as_data()))

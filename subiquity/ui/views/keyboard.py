@@ -39,7 +39,7 @@ from subiquitycore.ui.form import (
     Form,
     )
 from subiquitycore.ui.selector import Selector, Option
-from subiquitycore.ui.utils import button_pile, Color, Padding
+from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
 from subiquity.models.keyboard import KeyboardSetting
@@ -386,16 +386,7 @@ class KeyboardView(BaseView):
                 button_pile([
                     other_btn(label=_("Identify keyboard"), on_press=self.detect)]),
                 ])
-        lb = ListBox(lb_contents)
-        pile = Pile([
-            ('pack', Text("")),
-            Padding.center_90(lb),
-            ('pack', Text("")),
-            ('pack', self.form.buttons),
-            ('pack', Text("")),
-            ])
-        pile.focus_position = 3
-        super().__init__(pile)
+        super().__init__(screen(lb_contents, self.form.buttons))
 
     def detect(self, sender):
         detector = Detector(self)

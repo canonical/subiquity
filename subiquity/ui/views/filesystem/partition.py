@@ -24,15 +24,13 @@ import logging
 from urwid import connect_signal, Text, WidgetDisable
 
 from subiquitycore.ui.buttons import delete_btn
-from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.form import (
     Form,
     FormField,
-    IntegerField,
     )
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.selector import Option, Selector
-from subiquitycore.ui.utils import Color, Padding, button_pile
+from subiquitycore.ui.utils import Color, button_pile, screen
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
@@ -136,7 +134,7 @@ class PartitionFormatView(BaseView):
 
     form_cls = PartitionForm
 
-    def __init__(self, size, existing, initial, back):
+    def __init__(self, size, existing, initial, back, focus_buttons=False):
 
         mountpoint_to_devpath_mapping = self.model.get_mountpoint_to_devpath_mapping()
         if existing is not None:
@@ -157,14 +155,7 @@ class PartitionFormatView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        partition_box = Padding.center_79(ListBox(self.make_body()))
-        super().__init__(Pile([
-            ('pack', Text("")),
-            partition_box,
-            ('pack', Text("")),
-            ('pack', self.form.buttons),
-            ('pack', Text("")),
-            ]))
+        super().__init__(screen(self.make_body(), self.form.buttons, focus_buttons=focus_buttons))
 
     def make_body(self):
         return self.form.as_rows(self)
@@ -207,7 +198,7 @@ class PartitionView(PartitionFormatView):
                 initial['mount'] = None
             else:
                 label = _("Save")
-        super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk))
+        super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk), focus_buttons=label is None)
         if label is not None:
             self.form.buttons.base_widget[0].set_label(label)
         else:
@@ -224,7 +215,6 @@ class PartitionView(PartitionFormatView):
                 self.form.mount.enabled = False
                 self.form.fstype.enabled = False
                 self.form.size.enabled = False
-                self._w.focus_position = 2
 
     def make_body(self):
         body = super().make_body()

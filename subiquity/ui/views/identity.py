@@ -18,8 +18,6 @@ import re
 
 from urwid import (
     connect_signal,
-    Text,
-    WidgetWrap,
     )
 
 from subiquitycore.ui.interactive import (
@@ -28,7 +26,6 @@ from subiquitycore.ui.interactive import (
     )
 from subiquitycore.ui.container import (
     ListBox,
-    Pile,
     )
 from subiquitycore.ui.form import (
     ChoiceField,
@@ -36,8 +33,7 @@ from subiquitycore.ui.form import (
     simple_field,
     WantsToKnowFormField,
     )
-from subiquitycore.ui.selector import Selector
-from subiquitycore.ui.utils import button_pile, Padding
+from subiquitycore.ui.utils import button_pile, screen
 from subiquitycore.view import BaseView
 
 
@@ -161,18 +157,12 @@ class IdentityView(BaseView):
 
         self.ssh_import_confirmed = True
 
-        self.form_rows = ListBox(self.form.as_rows(self))
-
-        body = Pile([
-            ('pack', Text("")),
-            Padding.center_90(self.form_rows),
-            #('pack', Pile([
-            ('pack', Text("")),
-            ('pack', button_pile([self.form.done_btn])),
-            ('pack', Text("")),
-            ])
-            #])
-        super().__init__(body)
+        super().__init__(
+            screen(
+                self.form.as_rows(self),
+                button_pile([self.form.done_btn]),
+                focus_buttons=False))
+        self.form_rows = self._w[1]
 
     def _check_password(self, sender, new_text):
         password = self.form.password.value

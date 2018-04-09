@@ -17,7 +17,7 @@
 
 from functools import partialmethod
 
-from subiquitycore.ui.container import Pile
+from subiquitycore.ui.container import ListBox, Pile
 
 from urwid import (
     AttrMap,
@@ -202,3 +202,28 @@ def button_pile(buttons):
         max_label = max(len(button.label), max_label)
     width = max_label + 4
     return _Padding(Pile(buttons), min_width=width, width=width, align='center')
+
+def screen(rows, buttons, focus_buttons=True):
+    """Helper to create a common screen layout.
+
+    The commonest screen layout in subiquity is:
+
+        [ 1 line padding ]
+        Listbox()
+        [ 1 line padding ]
+        a button_pile
+        [ 1 line padding ]
+
+    This helper makes creating this a 1-liner.
+    """
+    screen = Pile([
+        ('pack', Text("")),
+        Padding.center_79(ListBox(rows)),
+        ('pack', Text("")),
+        ('pack', buttons),
+        ('pack', Text("")),
+        ])
+    if focus_buttons:
+        screen.focus_position = 3
+    return screen
+

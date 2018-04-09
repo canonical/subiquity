@@ -20,8 +20,7 @@ from urwid import connect_signal, Text
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import menu_btn
-from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.utils import screen
 from subiquitycore.ui.interactive import RestrictedEditor, StringEditor
 from subiquitycore.ui.form import Form, FormField, StringField
 
@@ -133,17 +132,8 @@ class BaseNetworkConfigureManualView(BaseView):
         self.form.nameservers.value = ', '.join(self.dev.configured_nameservers)
         self.form.searchdomains.value = ', '.join(self.dev.configured_searchdomains)
         self.error = Text("", align='center')
-        #self.set_as_default_gw_button = Pile(self._build_set_as_default_gw_button())
-        body = Pile([
-            ('pack', Text("")),
-            Padding.center_79(ListBox(self.form.as_rows(self))),
-            #Padding.line_break(""),
-            #Padding.center_79(self.set_as_default_gw_button),
-            ('pack', Text("")),
-            ('pack', self.form.buttons),
-            ('pack', Text("")),
-            ])
-        super().__init__(body)
+
+        super().__init__(screen(self.form.as_rows(self), self.form.buttons, focus_buttons=False))
 
     def refresh_model_inputs(self):
         try:
