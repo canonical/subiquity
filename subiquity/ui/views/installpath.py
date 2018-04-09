@@ -138,7 +138,7 @@ class MAASView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(screen(self.form.as_rows(self), self.form.buttons, focus_buttons=False))
+        super().__init__(self.form.as_screen(self, focus_buttons=False))
 
     def done(self, result):
         log.debug("User input: {}".format(result.as_data()))

@@ -133,7 +133,7 @@ class BaseNetworkConfigureManualView(BaseView):
         self.form.searchdomains.value = ', '.join(self.dev.configured_searchdomains)
         self.error = Text("", align='center')
 
-        super().__init__(screen(self.form.as_rows(self), self.form.buttons, focus_buttons=False))
+        super().__init__(self.form.as_screen(self, focus_buttons=False))
 
     def refresh_model_inputs(self):
         try:

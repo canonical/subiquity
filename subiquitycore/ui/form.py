@@ -36,7 +36,7 @@ from subiquitycore.ui.interactive import (
     StringEditor,
     )
 from subiquitycore.ui.selector import Selector
-from subiquitycore.ui.utils import button_pile, Color
+from subiquitycore.ui.utils import button_pile, Color, screen
 
 log = logging.getLogger("subiquitycore.ui.form")
 
@@ -334,6 +334,9 @@ class Form(object, metaclass=MetaForm):
             rows.append(Text(""))
         del rows[-1:]
         return rows
+
+    def as_screen(self, view, focus_buttons=True):
+        return screen(self.as_rows(self), self.buttons, focus_buttons=focus_buttons)
 
     def validated(self):
         in_error = False
