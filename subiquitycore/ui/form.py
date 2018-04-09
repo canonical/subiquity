@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from urllib.parse import urlparse
 
 from urwid import (
     AttrMap,
@@ -260,7 +261,28 @@ IntegerField = simple_field(IntegerEditor)
 
 
 class URLEditor(StringEditor, WantsToKnowFormField):
-    pass
+    def __init__(self, allowed_schemes=frozenset(['http', 'https'])):
+        self.allowed_schemes = allowed_schemes
+        super().__init__()
+
+    @StringEditor.value.getter
+    def value(self):
+        v = self.get_edit_text()
+        if v == "":
+            return v
+        parsed = urlparse(v)
+        if parsed.scheme not in self.allowed_schemes:
+            schemes = []
+            for s in sorted(self.allowed_schemes):
+                schemes.append(s)
+            if len(schemes) > 2:
+                schemes = ", ".join(schemes[:-1]) + _(", or ") + schemes[-1]
+            elif len(schemes) == 2:
+                schemes = schemes[0] + _(" or ") + schemes[1]
+            else:
+                schemes = schemes[0]
+            raise ValueError(_("This field must be a %s URL.") % schemes)
+        return v
 
 URLField = simple_field(URLEditor)
 
