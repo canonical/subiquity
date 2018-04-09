@@ -30,13 +30,17 @@ from subiquitycore.ui.form import (
 
 log = logging.getLogger('subiquity.installpath')
 
+proxy_help = _("""\
+If you need to use a HTTP proxy to access the outside world, enter the \
+proxy information here. Otherwise, leave this blank.
+
+The proxy information should be given in the standard form of \
+"http://[[user][:pass]@]host[:port]/".""")
+
 
 class ProxyForm(Form):
 
-    url = URLField(
-        _("Proxy address:"),
-        help=_(
-            "The address of the proxy."))
+    url = URLField(_("Proxy address:"), help=proxy_help)
 
 
 class ProxyView(BaseView):
