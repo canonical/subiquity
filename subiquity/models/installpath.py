@@ -14,9 +14,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+import uuid
 
 
 log = logging.getLogger("subiquity.models.installpath")
+
+SECRET_PATH = '/run/maas.secret'
+
+
+def maas_prep_secret(secret, confirm=False):
+    # Ensure that the file has sensible permissions.
+    with open(SECRET_PATH, "w") as secret_f:
+        os.fchmod(secret_f.fileno(), 0o640)
+    if confirm:
+        secret += '\n' + secret
+    with open(SECRET_PATH, "w") as secret_f:
+        secret_f.write(secret)
 
 
 class InstallpathModel(object):
@@ -27,38 +41,42 @@ class InstallpathModel(object):
     """
 
     path = None
-    packages = {}
-    debconf = {}
+    source = ''
+    cmds = {}
 
     @property
     def paths(self):
         return [
-            (_('Install Ubuntu'),                 'ubuntu'),
-            (_('Install MAAS Region Controller'), 'maas_region'),
-            (_('Install MAAS Rack Controller'),   'maas_rack'),
+            (_('Install Ubuntu'),                               'ubuntu'),
+            (_('Install Ubuntu with a MAAS Region Controller'), 'maas_region'),
+            (_('Install Ubuntu with a MAAS Rack Controller'),   'maas_rack'),
         ]
 
     def update(self, results):
         if self.path == 'ubuntu':
-            self.packages = {}
-            self.debconf = {}
+            self.source = '/media/filesystem'
+            self.cmds = {}
         elif self.path == 'maas_region':
-            self.packages = {'packages': ['maas']}
-            self.debconf['debconf_selections'] = {
-                'maas-username': 'maas-region-controller maas/username string %s' % results['username'],
-                'maas-password': 'maas-region-controller maas/password password %s' % results['password'],
-                }
+            maas_prep_secret(results['secret'], confirm=True)
+            user = results['username']
+            email = '%s@maas' % user
+            self.source = '/media/region'
+            self.cmds['late_commands'] = {
+                '91-maas': ['sh', '-c', 'curtin in-target -- invoke-rc.d --force postgresql restart || true'],
+                '92-maas': ['sh', '-c', 'curtin in-target -- maas-region createadmin --username %s --email %s <%s' % (user, email, SECRET_PATH)],
+                '93-maas': ['sh', '-c', 'curtin in-target -- invoke-rc.d --force postgresql stop || true'],
+            }
         elif self.path == 'maas_rack':
-            self.packages = {'packages': ['maas-rack-controller']}
-            self.debconf['debconf_selections'] = {
-                'maas-url': 'maas-rack-controller maas-rack-controller/maas-url string %s' % results['url'],
-                'maas-secret': 'maas-rack-controller maas-rack-controller/shared-secret password %s' % results['secret'],
-                }
+            maas_prep_secret(results['secret'])
+            url = results['url']
+            rackuuid = str(uuid.uuid4())
+            self.source = '/media/rack'
+            self.cmds['late_commands'] = {
+                '91-maas': ['curtin', 'in-target', '--', 'maas-rack', 'config', '--uuid', rackuuid, '--region-url', url],
+                '92-maas': ['sh', '-c', 'curtin in-target -- maas-rack install-shared-secret <%s' % SECRET_PATH],
+            }
         else:
             raise ValueError("invalid Installpath %s" % self.path)
 
     def render(self):
-        return self.debconf
-
-    def render_cloudinit(self):
-        return self.packages
+        return self.cmds

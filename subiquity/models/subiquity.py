@@ -104,9 +104,9 @@ class SubiquityModel:
                 'save_install_log': '/var/log/installer/curtin-install.log',
                 },
 
-            'sources': {
-                'rofs': 'cp:///rofs',
-                },
+            'sources': [
+                'cp://%s' % self.installpath.source,
+                ],
 
             'verbosity': 3,
 
