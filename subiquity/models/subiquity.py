@@ -111,7 +111,7 @@ class SubiquityModel:
                 },
 
             'sources': {
-                'rofs': 'cp:///rofs',
+                'rofs': 'cp://%s' % self.installpath.source,
                 },
 
             'verbosity': 3,
