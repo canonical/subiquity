@@ -72,7 +72,6 @@ class SubiquityModel:
             'users': [user_info],
             'hostname': self.identity.hostname,
         }
-        config.update(self.installpath.render_cloudinit())
         return config
 
     def _cloud_init_files(self):
