@@ -32,6 +32,8 @@ class LocaleModel(object):
         ('hu_HU', 'Hungarian'),
         ('lv_LV', 'Latvian'),
         ('ru_RU', 'Russian'),
+        ('el_GR', 'Greek, Modern (1453-)'),
+        ('pl_PL', 'Polish'),
     ]
     selected_language = None
 
