@@ -28,12 +28,16 @@ class LocaleModel(object):
 
     supported_languages = [
         ('en_US', 'English'),
+        ('ast_ES', 'Asturian'),
         ('ca_EN', 'Catalan'),
+        ('hr_HR', 'Croatian'),
+        ('de_DE', 'German'),
+        ('el_GR', 'Greek, Modern (1453-)'),
         ('hu_HU', 'Hungarian'),
         ('lv_LV', 'Latvian'),
-        ('ru_RU', 'Russian'),
-        ('el_GR', 'Greek, Modern (1453-)'),
         ('pl_PL', 'Polish'),
+        ('ru_RU', 'Russian'),
+        ('es_ES', 'Spanish'),
     ]
     selected_language = None
 
