@@ -54,10 +54,15 @@ class RealnameEditor(StringEditor, WantsToKnowFormField):
             return super().valid_char(ch)
 
 class UsernameEditor(StringEditor, WantsToKnowFormField):
+    def __init__(self):
+        self.valid_char_pat = r'[-a-z0-9_]'
+        self.error_invalid_char = "The only characters permitted in this field are a-z, 0-9, _ and -"
+        super().__init__()
+
     def valid_char(self, ch):
-        if len(ch) == 1 and not re.match('[a-z0-9_-]', ch):
+        if len(ch) == 1 and not re.match(self.valid_char_pat, ch):
             self.bff.in_error = True
-            self.bff.show_extra(("info_error", "The only characters permitted in this field are a-z, 0-9, _ and -"))
+            self.bff.show_extra(("info_error", self.error_invalid_char))
             return False
         else:
             return super().valid_char(ch)
@@ -66,15 +71,26 @@ RealnameField = simple_field(RealnameEditor)
 UsernameField = simple_field(UsernameEditor)
 PasswordField = simple_field(PasswordEditor)
 
-_ssh_import_helps = {
-    None: "",
-    "gh": _("Enter your github username."),
-    "lp": _("Enter your Launchpad username."),
-    }
-_ssh_import_captions = {
-    None: _("Import Username:"),
-    "gh": _("Github username:"),
-    "lp": _("Launchpad username:"),
+_ssh_import_data = {
+    None: {
+        'caption': _("Import Username:"),
+        'help': "",
+        'valid_char': '.',
+        'error_invalid_char': '',
+        'regex': '.*',
+        },
+    'gh': {
+        'caption': _("Github Username:"),
+        'help': "Enter your Github username.",
+        'valid_char': r'[a-zA-Z0-9\-]',
+        'error_invalid_char': 'A Github username may only contain alphanumeric characters or hyphens.',
+        },
+    'lp': {
+        'caption': _("Launchpad Username:"),
+        'help': "Enter your Launchpad username.",
+        'valid_char': r'[a-z0-9\+\.\-]',
+        'error_invalid_char': 'A Launchpad username may only contain lower-case alphanumeric characters, hyphens, plus, or periods.',
+        },
     }
 
 class IdentityForm(Form):
@@ -94,8 +110,8 @@ class IdentityForm(Form):
             (_("from Launchpad"), True, "lp"),
             #(_("from Ubuntu One account"), True, "sso"),
             ],
-        help=_("You can import your SSH keys from Github, Launchpad or Ubuntu One."))
-    import_username = UsernameField(_ssh_import_captions[None])
+        help=_("You can import your SSH keys from Github or Launchpad."))
+    import_username = UsernameField(_ssh_import_data[None]['caption'])
 
     def validate_realname(self):
         if len(self.realname.value) < 1:
@@ -132,13 +148,32 @@ class IdentityForm(Form):
             return _("Passwords do not match")
         self.password.validate()
 
+    # validation of the import username does not read from
+    # ssh_import_id.value because it is sometimes done from the
+    # 'select' signal of the import id selector, which is called
+    # before the import id selector's value has actually changed. so
+    # the signal handler stuffs the value here before doing
+    # validation (yes, this is a hack).
+    ssh_import_id_value = None
     def validate_import_username(self):
-        if self.ssh_import_id.value is None:
+        if self.ssh_import_id_value is None:
             return
-        if len(self.import_username.value) == 0:
+        username = self.import_username.value
+        if len(username) == 0:
             return _("This field must not be blank.")
-        if len(self.import_username.value) > SSH_IMPORT_MAXLEN:
+        if len(username) > SSH_IMPORT_MAXLEN:
             return _("SSH id too long, must be < ") + str(SSH_IMPORT_MAXLEN)
+        if self.ssh_import_id_value == 'lp':
+            lp_regex = r"^[a-z0-9][a-z0-9\+\.\-]+$"
+            if not re.match(lp_regex, self.import_username.value):
+                return _("""\
+A Launchpad username must be at least two characters long and start with a letter or number. \
+All letters must be lower-case. The characters +, - and . are also allowed after the first character.""")
+        elif self.ssh_import_id_value == 'gh':
+            if username.startswith('-') or username.endswith('-') or '--' in username or not re.match('^[a-zA-Z0-9\-]+$', username):
+                return _("A Github username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.")
+
+
 
 
 class IdentityView(BaseView):
@@ -173,11 +208,16 @@ class IdentityView(BaseView):
 
     def _select_ssh_import_id(self, sender, val):
         iu = self.form.import_username
-        iu.help = _ssh_import_helps[val]
-        iu.caption = _ssh_import_captions[val]
+        data = _ssh_import_data[val]
+        iu.help = data['help']
+        iu.caption = data['caption']
+        iu.widget.valid_char_pat = data['valid_char']
+        iu.widget.error_invalid_char = data['error_invalid_char']
         iu.enabled = val is not None
         if val is not None:
             self.form_rows.body.focus += 2
+        self.form.ssh_import_id_value = val
+        iu.validate()
 
     def done(self, result):
         cpassword = self.model.encrypt_password(self.form.password.value)
