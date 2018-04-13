@@ -71,6 +71,7 @@ class SubiquityModel:
         config = {
             'users': [user_info],
             'hostname': self.identity.hostname,
+            'locale': self.locale.selected_language + '.UTF-8',
         }
         config.update(self.installpath.render_cloudinit())
         return config
