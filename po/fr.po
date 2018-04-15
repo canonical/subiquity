@@ -1,4 +1,4 @@
-# Hungarian translation for subiquity
+# French translation for subiquity
 # Copyright (c) 2017 Rosetta Contributors and Canonical Ltd 2017
 # This file is distributed under the same license as the subiquity package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
@@ -8,9 +8,9 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2018-04-12 11:10+1200\n"
-"PO-Revision-Date: 2017-09-20 11:12+0000\n"
-"Last-Translator: Balint Reczey <balint.reczey@canonical.com>\n"
-"Language-Team: Hungarian <hu@li.org>\n"
+"PO-Revision-Date: 2017-10-15 09:56+0000\n"
+"Last-Translator: Jean-Marc <Unknown>\n"
+"Language-Team: French <fr@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,90 +21,88 @@ msgstr ""
 #: ../subiquity/controllers/filesystem.py:69
 #: ../subiquity/controllers/filesystem.py:78
 msgid "Filesystem setup"
-msgstr "Fájlrendszer beállítása"
+msgstr "Configuration du système de fichiers"
 
 #: ../subiquity/controllers/filesystem.py:59
 msgid "Choose guided or manual partitioning"
-msgstr "Válasszon irányított vagy kézi partícionálást"
+msgstr "Choisir le partitionnement guidé ou manuel"
 
 #: ../subiquity/controllers/filesystem.py:70
 msgid "Select available disks to format and mount"
-msgstr "Válassza ki az elérhető lemezeket a formázáshoz és a csatoláshoz"
+msgstr "Sélectionner un disque disponible et son point de montage"
 
 #: ../subiquity/controllers/filesystem.py:79
 msgid "Choose the installation target"
-msgstr "Válassza ki a telepítési célt"
+msgstr "Choisir la cible d'installation"
 
 #: ../subiquity/controllers/filesystem.py:98
 msgid "Filesystem error"
-msgstr "Fájlrendszer hiba"
+msgstr "Erreur du système de fichier"
 
 #: ../subiquity/controllers/filesystem.py:99
 msgid "Error while installing Ubuntu"
-msgstr "Hiba tötént az Ubuntu telepítése közben"
+msgstr "Une erreur est survenue lors de l'installation d'Ubuntu"
 
 #: ../subiquity/controllers/filesystem.py:100
 msgid "Failed to obtain write permissions to /tmp"
-msgstr "Nem írható a /tmp könyvtár"
+msgstr "Impossible d'obtenir des permissions d'écriture sur /tmp"
 
 #: ../subiquity/controllers/filesystem.py:114
 msgid "Partition, format, and mount {}"
-msgstr "{} particionálása, formázása és csatolása"
+msgstr "Partition, formatage et point de montage {}"
 
 #: ../subiquity/controllers/filesystem.py:115
 msgid "Partition the disk, or format the entire device without partitions"
-msgstr "Lemez particionálása vagy a teljes eszköz formázása egy partícióként"
+msgstr "Partitionner ou formater le disque en entier sans partitions"
 
 #: ../subiquity/controllers/filesystem.py:125
 msgid "Select whole disk, or partition, to format and mount."
 msgstr ""
-"Az egész lemez vagy partíció kiválasztása a formázáshoz és a csatoláshoz."
+"Sélectionner le disque entier ou la partition pour le formatage et montage"
 
 #: ../subiquity/controllers/filesystem.py:132
 msgid "Edit partition details format and mount."
-msgstr "A partíció formázási és csatolási beállításainak szerkesztése"
+msgstr "Modifier le format et point de montage"
 
 #: ../subiquity/controllers/filesystem.py:295
 msgid "Format and/or mount {}"
-msgstr "Az {} partíció formázása és felcsatolása {}"
+msgstr "Formater et/ou monter {}"
 
 #: ../subiquity/controllers/filesystem.py:296
 msgid "Format or mount whole disk."
-msgstr "Az egész lemez formázása és csatolása."
+msgstr "Formater ou monter le disque entier."
 
 #: ../subiquity/controllers/filesystem.py:305
 msgid "Mount partition {} of {}"
-msgstr "A {} partíció csatolása a {} lemezről"
+msgstr "Monter la partition {} de {}"
 
 #: ../subiquity/controllers/filesystem.py:306
 msgid "Mount partition."
-msgstr "Partíció csatolása."
+msgstr "Monter la partition."
 
 #: ../subiquity/controllers/filesystem.py:308
 msgid "Format and mount partition {} of {}"
-msgstr "A {} partíció formázása és csatolása a {} lemezről"
+msgstr "Formater et monter la partition {} de {}"
 
 #: ../subiquity/controllers/filesystem.py:309
 msgid "Format and mount partition."
-msgstr "Partíció formázása és csatolása."
+msgstr "Formater et monter la partition."
 
 #: ../subiquity/controllers/filesystem.py:380
 msgid "Select next or previous disks with n and p"
-msgstr ""
-"Az N és P billentyűket használhatja a következő vagy az előző lemez "
-"kiválasztására"
+msgstr "Sélectionnez précédent ou suivant avec p et n"
 
 #: ../subiquity/controllers/identity.py:34
 msgid "Profile setup"
-msgstr "Profilbeállítás"
+msgstr "Configuration du profil"
 
 #: ../subiquity/controllers/identity.py:35
 msgid ""
 "Enter the username and password (or ssh identity) you will use to log in to "
 "the system."
 msgstr ""
-"Adja meg a rendszerbe való bejelentkezéshez használt felhasználónevet és "
-"jelszót (vagy ssh-azonosítót)."
+"Entrez le nom d'utilisateur et le mot de passe (ou l'identité SSH) à "
+"utiliser pour vous connecter au système."
 
 #: ../subiquity/controllers/installpath.py:36
 msgid ""
@@ -116,7 +114,8 @@ msgstr ""
 #: ../subiquity/controllers/installpath.py:40
 msgid "Use UP, DOWN arrow keys, and ENTER, to navigate options"
 msgstr ""
-"Használja a  FEL, LE nyílbillentyűket és az ENTER billentyűt a navigáláshoz"
+"Utilisez les flèches HAUT et BAS pour naviguer entre les options, et ENTRÉE "
+"pour confirmer."
 
 #: ../subiquity/controllers/installpath.py:72
 msgid ""
@@ -137,20 +136,20 @@ msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:204
 msgid "Installation complete!"
-msgstr "A telepítés befejeződött!"
+msgstr "L'installation est terminée!"
 
 #: ../subiquity/controllers/installprogress.py:205
 msgid "Finished install!"
-msgstr "A telepítés befejeződött!"
+msgstr "L'installation est finie!"
 
 #: ../subiquity/controllers/installprogress.py:247
 msgid "Installing system"
-msgstr "Alaprendszer telepítése folyamatban"
+msgstr "Installation du système"
 
 #: ../subiquity/controllers/installprogress.py:248
 #: ../subiquity/controllers/installprogress.py:251
 msgid "Thank you for using Ubuntu!"
-msgstr "Köszönjük, hogy az Ubuntut választotta!"
+msgstr "Merci d'utiliser Ubuntu!"
 
 #: ../subiquity/controllers/installprogress.py:250
 msgid "Install complete!"
@@ -158,110 +157,113 @@ msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:253
 msgid "An error occurred during installation"
-msgstr "Hiba történt a telepítés során"
+msgstr "Une erreur est survenue durant l'installation"
 
 #: ../subiquity/controllers/installprogress.py:254
 msgid "Please report this error in Launchpad"
-msgstr "Kérjük, jelentse ezt a hibát a Launchpadon"
+msgstr "Veuillez signaler cette erreur sur Launchpad"
 
 #: ../subiquity/controllers/welcome.py:34
 msgid "Please choose your preferred language"
-msgstr "Kérem válassza ki a kívánt nyelvet"
+msgstr "Veuillez choisir la langue d'installation"
 
 #: ../subiquity/controllers/welcome.py:35
 msgid "Use UP, DOWN and ENTER keys to select your language."
-msgstr "Használja a FEL, LE és ENTER gombokat a nyelv kiválasztásához."
+msgstr ""
+"Utilisez les flèches HAUT et BAS, et ENTRÉE pour sélectionner la langue "
+"d'installation"
 
 #: ../subiquitycore/controllers/network.py:330
 msgid "Network connections"
-msgstr "Hálózati kapcsolatok"
+msgstr "Connections réseau"
 
 #: ../subiquitycore/controllers/network.py:331
 msgid ""
 "Configure at least one interface this server can use to talk to other "
 "machines, and which preferably provides sufficient access for updates."
 msgstr ""
-"Állítson be legalább egy olyan hálózati eszközt, amelyeken a szerver más "
-"gépekhez csatlakozhat, és amely lehetőleg alkalmas a frissítések elérésére."
+"Configurez au moins une interface pour que ce serveur puisse communiquer "
+"avec les autres machines sur le réseau, préférablement un réseau avec accès "
+"aux mises à jour."
 
 #: ../subiquitycore/controllers/network.py:334
 msgid "Select an interface to configure it or select Done to continue"
 msgstr ""
-"Válasszon ki egy interfészt a konfiguráláshoz, vagy válassza a Kész "
-"lehetőséget a folytatáshoz"
+"Selectionnez une interface à configurer ou sélectionnez Terminé pour "
+"continuer."
 
 #: ../subiquitycore/ui/interactive.py:107
 msgid "Yes"
-msgstr "Igen"
+msgstr "Oui"
 
 #: ../subiquitycore/ui/interactive.py:107
 #: ../subiquity/ui/views/filesystem/filesystem.py:62
 #: ../subiquity/ui/views/identity.py:92
 msgid "No"
-msgstr "Nem"
+msgstr "Non"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:107
 msgid "Use a static IPv4 configuration"
-msgstr "Statikus IPv4 konfiguráció használata"
+msgstr "Utiliser une IP statique"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:109
 msgid "Use DHCPv4 on this interface"
-msgstr "A DHCPv4 használata ezen a hálózati eszközön"
+msgstr "Utiliser DHCPv4 sur cette interface"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:111
 #: ../subiquitycore/ui/views/network_configure_interface.py:129
 msgid "Do not use"
-msgstr "Ne használja"
+msgstr "Ne pas utiliser"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:125
 msgid "Use a static IPv6 configuration"
-msgstr "Statikus IPv6 konfiguráció használata"
+msgstr "Utiliser une addresse IPv6 statique"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:127
 msgid "Use DHCPv6 on this interface"
-msgstr "A DHCPv6 használata ezen a hálózati eszközön"
+msgstr "Utiliser DHCPv6 sur cette interface"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:143
 msgid "Configure WIFI settings"
-msgstr "A WIFI beállítások konfigurálása"
+msgstr "Configurer la connection sans-fil"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:148
 #: ../subiquitycore/ui/views/network.py:135
 #: ../subiquity/ui/views/filesystem/filesystem.py:156
 msgid "Done"
-msgstr "Kész"
+msgstr "Terminé"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:66
 msgid "Save"
-msgstr "Save"
+msgstr "Sauvegarder"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:68
 msgid "Subnet:"
-msgstr "Alhálózat:"
+msgstr "Masque de sous-réseau:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:69
 msgid "Address:"
-msgstr "Cím:"
+msgstr "Adresse :"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:70
 msgid "Gateway:"
-msgstr "Átjáró:"
+msgstr "Passerelle :"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
 msgid "Name servers:"
-msgstr "Névszerverek:"
+msgstr "Serveurs DNS :"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
 msgid "IP addresses, comma separated"
-msgstr "IP címek, vesszővel elválasztva"
+msgstr "Adresses IP, séparées par des virgules"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:72
 msgid "Search domains:"
-msgstr "Keresési tartomány (domain):"
+msgstr "Domaines de recherche :"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:72
 msgid "Domains, comma separated"
-msgstr "Domainek, vesszővel elválasztva"
+msgstr "Noms de domaines, séparés par des virgules"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:123
 #, python-format
@@ -270,101 +272,97 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
 msgid "Set this as default gateway"
-msgstr "Alapértelmezett átjáróként beállít"
+msgstr "Utiliser comme passerelle par défaut"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:155
 msgid "This will be your default gateway"
-msgstr "Ez lesz az alapértelmezett átjáró"
+msgstr "Cette connection sera utilisée comme passerelle par défaut"
 
 #: ../subiquitycore/ui/views/network.py:45
 msgid "Cancel"
-msgstr "Mégsem"
+msgstr "Annuler"
 
 #: ../subiquitycore/ui/views/network.py:51
 msgid "Applying network config"
-msgstr "Hálózati konfiguráció alkalmazása"
+msgstr "Application de la configuration réseau"
 
 #: ../subiquitycore/ui/views/network.py:65
 #, python-format
 msgid "Associated to '%s', will associate to '%s'"
-msgstr ""
-"Pillanatnyilag a '%s' hálózathoz csatlakoztatva, de a '%s' hálózat van "
-"konfigurálva a későbbi csatlakozáshoz"
+msgstr "Associé à '%s', sera réassocié à '%s'"
 
 #: ../subiquitycore/ui/views/network.py:67
 #, python-format
 msgid "Associated to '%s'"
-msgstr "A '%s' hálózathoz csatlakoztatva"
+msgstr "Associé à '%s'"
 
 #: ../subiquitycore/ui/views/network.py:69
 #, python-format
 msgid "No access point configured, but associated to '%s'"
-msgstr ""
-"Pillanatnyilag a '%s' hálózathoz csatlakoztatva, de nincs hálózat "
-"konfigurálva a későbbi csatlakozáshoz"
+msgstr "Aucun point d'accès configuré, mais associé à '%s'"
 
 #: ../subiquitycore/ui/views/network.py:72
 #, python-format
 msgid "Will associate to '%s'"
-msgstr "A '%s' hálózat van konfigurálva a későbbi csatlakozáshoz"
+msgstr "Sera associé à '%s'"
 
 #: ../subiquitycore/ui/views/network.py:74
 msgid "No access point configured"
-msgstr "Nincs drótnélküli hálózat konfigurálva"
+msgstr "Aucun point d'accès configuré"
 
 #: ../subiquitycore/ui/views/network.py:94
 #, python-format
 msgid "Will use DHCP for IPv%s, currently has address%%s:"
-msgstr "Az IPv%s-hoz DHCP-t fog használni, jelenleg %%s a címe:"
+msgstr "Utilisera DHCP pour IPv%s, l'adresse courante est:"
 
 #: ../subiquitycore/ui/views/network.py:95
 #, python-format
 msgid "Will use DHCP for IPv%s"
-msgstr "Az IPv%s-hoz DHCP-t fog használni"
+msgstr "Utilisera DHCP pour IPv%s"
 
 #: ../subiquitycore/ui/views/network.py:98
 #, python-format
 msgid "Using static address%%s for IPv%s:"
-msgstr "A %%s statikus IPv%s cím van pillanatnyilag használatban:"
+msgstr "Utilise l'adresse statique suivante pour IPv%s:"
 
 #: ../subiquitycore/ui/views/network.py:99
 #, python-format
 msgid "Will use static address%%s for IPv%s:"
-msgstr "A %%s statikus IPv%s cím használata a későbbiekben:"
+msgstr "Utilisera l'adresse statique suivante pour IPv%s:"
 
 #: ../subiquitycore/ui/views/network.py:101
 #, python-format
 msgid "Currently has address%s:"
-msgstr "Jelenleg a (z) %s az IP cím:"
+msgstr "Utilise l'adresse%s:"
 
 #: ../subiquitycore/ui/views/network.py:104
 #, python-format
 msgid "Has no IPv%s configuration, currently has address%%s:"
-msgstr "Nincs IPv% s konfiguráció, jelenleg a %%s címe van:"
+msgstr "Aucune configuration IPv%s, utilise présentement l'adresse:"
 
 #: ../subiquitycore/ui/views/network.py:106
 #, python-format
 msgid "IPv%s is not configured"
-msgstr "Az IPv%s nincs konfigurálva"
+msgstr "IPv%s n'est pas configuré"
 
 #: ../subiquitycore/ui/views/network.py:134
 #: ../subiquity/ui/views/filesystem/filesystem.py:159
 #: ../subiquity/ui/views/filesystem/guided.py:46
 msgid "Back"
-msgstr "Vissza"
+msgstr "Retour"
 
 #: ../subiquitycore/ui/views/network.py:161
 msgid "Not connected"
-msgstr "Nincs csatlakozva"
+msgstr "Aucune connection"
 
 #: ../subiquitycore/ui/views/network.py:204
 #, python-format
 msgid "  IPv4 default route %s."
-msgstr "  Az IPv4 alapértelmezett útvonal %s."
+msgstr "  Passerelle par défaut IPv4: %s."
 
 #: ../subiquity/models/installpath.py:36
 msgid "Install Ubuntu"
-msgstr "Az Ubuntu telepítése"
+msgstr "Installer Ubuntu"
 
 #: ../subiquity/models/installpath.py:37
 msgid "Install MAAS Region Controller"
@@ -376,11 +374,11 @@ msgstr ""
 
 #: ../subiquity/ui/mount.py:54
 msgid "other"
-msgstr "egyéb"
+msgstr "autre"
 
 #: ../subiquity/ui/mount.py:56
 msgid "leave unmounted"
-msgstr "ne csatlakoztassa"
+msgstr "laisser sans point de montage"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:48
 msgid ""
@@ -392,23 +390,23 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:63
 msgid "Continue"
-msgstr "Tovább"
+msgstr "Continuer"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:66
 msgid "Confirm destructive action"
-msgstr "Destruktív művelet jóváhagyása"
+msgstr "Confirmer l'action"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:83
 msgid "FILE SYSTEM SUMMARY"
-msgstr "FILERENDSZER ÁTTEKINTŐ"
+msgstr "SOMMAIRE DU SYSTÈME DE FICHIERS"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:87
 msgid "AVAILABLE DEVICES"
-msgstr "ELÉRHETŐ ESZKÖZÖK"
+msgstr "DISQUES DISPONIBLES"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:158
 msgid "Reset"
-msgstr "Alaphelyzet"
+msgstr "Rétablir"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:223
 msgid "Add/Edit Partitions"
@@ -424,7 +422,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:238
 msgid "No disks available."
-msgstr "Egy lemez sem érhető el."
+msgstr "Aucun disque disponible."
 
 #: ../subiquity/ui/views/filesystem/guided.py:33
 msgid ""
@@ -441,11 +439,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:45
 msgid "Manual"
-msgstr "Kézi"
+msgstr "Manuel"
 
 #: ../subiquity/ui/views/filesystem/guided.py:79
 msgid "Choose the disk to install to:"
-msgstr "Válassza ki a telepítés céllemezét:"
+msgstr "Choisir le disque où installer:"
 
 #: ../subiquity/ui/views/identity.py:71
 msgid "Enter your github username."
@@ -469,31 +467,31 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:82
 msgid "Your name:"
-msgstr "Az Ön neve:"
+msgstr "Votre nom :"
 
 #: ../subiquity/ui/views/identity.py:84
 msgid "Your server's name:"
-msgstr "A kiszolgáló (szerver) neve:"
+msgstr "Le nom de cette machine:"
 
 #: ../subiquity/ui/views/identity.py:85
 msgid "The name it uses when it talks to other computers."
-msgstr "A más számítógépekkel való kommunikációban használt név."
+msgstr "Le nom qu’il utilise pour communiquer avec d’autres ordinateurs."
 
 #: ../subiquity/ui/views/identity.py:86
 msgid "Pick a username:"
-msgstr "Válasszon egy felhasználónevet:"
+msgstr "Choisir un nom d’utilisateur :"
 
 #: ../subiquity/ui/views/identity.py:87
 msgid "Choose a password:"
-msgstr "Válasszon jelszót:"
+msgstr "Choisir un mot de passe :"
 
 #: ../subiquity/ui/views/identity.py:88
 msgid "Confirm your password:"
-msgstr "Jelszó megerősítése:"
+msgstr "Confirmer votre mot de passe:"
 
 #: ../subiquity/ui/views/identity.py:90
 msgid "Import SSH identity:"
-msgstr "SSH azonosító importálása:"
+msgstr "Importer une identité SSH:"
 
 #: ../subiquity/ui/views/identity.py:93
 msgid "from Github"
@@ -509,19 +507,20 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:102
 msgid "Real name must not be empty."
-msgstr "A valódi név nem hagyható üresen."
+msgstr "Le nom réel ne doit pas être vide."
 
 #: ../subiquity/ui/views/identity.py:104
 msgid "Realname too long, must be < "
-msgstr "A valódi név túl hosszú, nem lehett hosszabb, mint "
+msgstr "Le nom réel est trop long, doit être moins de   caractères "
 
 #: ../subiquity/ui/views/identity.py:108
 msgid "Server name must not be empty"
-msgstr "A kiszolgáló neve nem hagyható üresen"
+msgstr "Le nom de la machine ne doit pas être vide"
 
 #: ../subiquity/ui/views/identity.py:111
 msgid "Server name too long, must be < "
-msgstr "A kiszolgáló neve túl hosszú, nem lehett hosszabb, mint "
+msgstr ""
+"Le nom de la machine est trop long, doit être moins de    charactères. "
 
 #: ../subiquity/ui/views/identity.py:114
 msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
@@ -529,11 +528,12 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:118
 msgid "Username missing"
-msgstr "A felhasználó neve nem hagyható üresen"
+msgstr "Le nom d'utilisateur est manquant"
 
 #: ../subiquity/ui/views/identity.py:121
 msgid "Username too long, must be < "
-msgstr "A felhasználó neve túl hosszú, nem lehett hosszabb, mint "
+msgstr ""
+"Le nom d'utilisateur est trop long, doit être moins de   caractères. "
 
 #: ../subiquity/ui/views/identity.py:124
 msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
@@ -541,11 +541,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:128
 msgid "Password must be set"
-msgstr "A jelszó nem hagyható üresen"
+msgstr "Le mot de passe doit être défini"
 
 #: ../subiquity/ui/views/identity.py:132
 msgid "Passwords do not match"
-msgstr "A jelszavak nem egyeznek"
+msgstr "Les mots de passe ne correspondent pas."
 
 #: ../subiquity/ui/views/identity.py:139
 msgid "This field must not be blank."
@@ -553,7 +553,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:141
 msgid "SSH id too long, must be < "
-msgstr "Az SSH aznonosító túl hosszú, nem lehet hosszabb, mint "
+msgstr "L'identité SSH est trop longue, doit être moins de   caractères. "
 
 #: ../subiquity/ui/views/installprogress.py:60
 msgid "Full installer output"
@@ -561,11 +561,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:63
 msgid "Close"
-msgstr "Bezár"
+msgstr "Fermer"
 
 #: ../subiquity/ui/views/installprogress.py:91
 msgid "Reboot Now"
-msgstr "Újraindítás most"
+msgstr "Redémarrer maintenant"
 
 #: ../subiquity/ui/views/installprogress.py:94
 msgid "Exit To Shell"
@@ -576,77 +576,105 @@ msgstr ""
 #~ "parameters. Multiple-disk arrays work best when all the disks in an array "
 #~ "are the same size and speed."
 #~ msgstr ""
-#~ "A SPACE billentyű segítségével válassza ki a lemezeket a RAID tömb "
-#~ "létrehozásához, majd adja meg a RAID paramétereket. A többlemezes tömbök "
-#~ "akkor nyújtják a legjobb teljesítményt, ha a tömb összes lemezének azonos a "
-#~ "mérete és a sebessége."
+#~ "Appuyez sur ESPACE pour sélectionner un disque et former un groupe RAID, "
+#~ "puis spécifier les paramètres. Des groupes RAID de plusieurs disques "
+#~ "fonctionnent mieux quand tous les disques du groupe sont de la même taille "
+#~ "et de la même vitesse."
 
 #~ msgid "Create software RAID (\"MD\") disk"
-#~ msgstr "Szoftveres RAID (\"MD \") lemez létrehozása"
+#~ msgstr "Créer un RAID logique"
 
 #~ msgid ""
 #~ "Use SPACE to select a cache disk and a backing disk to form your bcache "
 #~ "device."
 #~ msgstr ""
-#~ "A bcache eszköz létrehozásához a SPACE billentyű segítségével válassza ki a "
-#~ "lemezt, amely cache-két működik és a lemezt, mely az adatokat tárolja."
+#~ "Appuyez sur ESPACE pour sélectionner un dique en cache et son disque de "
+#~ "support pour former un système bcache."
 
 #~ msgid "Create hierarchical storage (\"bcache\") disk"
-#~ msgstr "Hierarchikus tároló (\"bcache\") lemez létrehozása"
+#~ msgstr "Créer un disque en espace hiérarchique (\"bcache\")"
 
 #~ msgid "Create Logical Volume Group (\"LVM2\") disk"
-#~ msgstr "Logikai kötetcsoport lemez (\" LVM2 \") létrehozása"
+#~ msgstr "Créer un volume logique LVM2"
 
 #~ msgid ""
 #~ "Use SPACE to select disks to form your LVM2 volume group, and then specify "
 #~ "the Volume Group name. "
 #~ msgstr ""
-#~ "A SPACE billentyű segítségével válassza ki a lemezeket az LVM2 kötetcsoport "
-#~ "létrehozásához, majd adja meg a kötetcsoport nevét "
+#~ "Appuyez sur ESPACE pour sélectionner un disque et former un groupe de "
+#~ "volumes LVM2 et spécifier son nom. "
 
 #~ msgid "ENTER on a disk will show detailed information for that disk"
-#~ msgstr ""
-#~ "Az ENTER billentyű lenyomásával kérhet részletes információkat a lemezről"
+#~ msgstr "Appuyez sur ENTRÉE pour afficher les détails du disque"
 
 #~ msgid ""
 #~ "Welcome to Ubuntu! The world's favorite platform for clouds, clusters, and "
 #~ "amazing internet things. This is the installer for Ubuntu on servers and "
 #~ "internet devices."
 #~ msgstr ""
-#~ "Üdvözli az Ubuntu! A világ kedvenc platformja a felhők, a nagy teljesítményű "
-#~ "számítógépes rendszerek és a lenyűgöző internetes eszközök számára. Ez az "
-#~ "Ubuntu szerverek és internetes eszközök számára készített telepítője."
+#~ "Bienvenue à Ubuntu! La plateforme préférée mondialement pour l'infonuagique, "
+#~ "les serveurs en grappe, et les systèmes embarqués. Cet installateur vous "
+#~ "permettra d'installer Ubuntu sur votre serveur."
 
 #~ msgid "Please wait for the installation to finish."
-#~ msgstr "Kérjük várjon, amíg a telepítés befejeződik."
+#~ msgstr "Veuillez patienter pendant que l'installation se termine."
 
 #~ msgid "Running postinstall step"
-#~ msgstr "A postinstall lépés futtatása"
+#~ msgstr "Finalisation de l'installation"
 
 #~ msgid "An error has occurred."
-#~ msgstr "Hiba történt."
+#~ msgstr "Une erreur est survenue."
 
 #~ msgid "Running install step"
-#~ msgstr "Telepítés"
+#~ msgstr "Application des étapes d'installation"
 
-#~ msgid "Finish"
-#~ msgstr "Befejezés"
+#~ msgid "Confirm"
+#~ msgstr "Confirmer"
 
 #~ msgid "Start"
-#~ msgstr "Státusz"
+#~ msgstr "Commencer"
+
+#~ msgid "Finish"
+#~ msgstr "Terminer"
 
 #~ msgid "OK"
-#~ msgstr "Sikerült"
+#~ msgstr "Valider"
 
 #~ msgid "Help"
-#~ msgstr "Súgó"
+#~ msgstr "Aide"
 
 #, python-format
 #~ msgid "CIDR e.g. %s"
-#~ msgstr "CIDR, például %s"
+#~ msgstr "CIDR, par exemple %s"
+
+#~ msgid "Guided"
+#~ msgstr "Guidé"
+
+#~ msgid ""
+#~ "The installer can guide you through partitioning a disk or, if you prefer, "
+#~ "you can do it manually. If you choose guided partitioning you will still "
+#~ "have a chance to review and modify the results."
+#~ msgstr ""
+#~ "L'installeur peut vous guider pour partitionner les disques, ou, si vous "
+#~ "préférez, vous pouvez le faire manuellement. Si vous choisissez le "
+#~ "partitionnement automatique, vous pourrez quand même valider et modifier le "
+#~ "résultat."
+
+#~ msgid ""
+#~ "Input your SSH user id from Ubuntu SSO (sso:email), Launchpad (lp:username) "
+#~ "or Github (gh:username)."
+#~ msgstr ""
+#~ "Entrer votre nom d'utilisateur SSH à partir d'une connection Ubuntu SSO "
+#~ "(sso:courriel), de Launchpad (lp:utilisateur), ou Github (gh:utilisateur)."
+
+#~ msgid "(More language choices will appear in time)"
+#~ msgstr "(Plus de choix de langues seront éventuellement disponibles)"
+
+#~ msgid "Quit Installer"
+#~ msgstr "Quitter"
 
 #~ msgid "EDIT PARTITIONS"
-#~ msgstr "PARTÍCIÓK SZERKESZTÉSE"
+#~ msgstr "MODIFIER LES PARTITIONS"
 
 #~ msgid ""
 #~ "\n"
@@ -656,41 +684,13 @@ msgstr ""
 #~ "Are you sure you want to continue?\n"
 #~ msgstr ""
 #~ "\n"
-#~ "A lenti Folytatás kiválasztása a formázott lemezek adatainak elvesztésével "
-#~ "jár.\n"
+#~ "La sélection de Continuer si-dessous entraînera la perte des données "
+#~ "présentes sur les disques configurés pour être formatés.\n"
 #~ "\n"
-#~ "Biztos, hogy folytatni akarja?\n"
+#~ "Désirez-vous continuer?\n"
 
 #~ msgid "ADD/EDIT PARTITIONS"
-#~ msgstr "PARTÍCIÓK LÉTREHOZÁSA/SZERKESZTÉSE"
+#~ msgstr "AJOUTER/SUPPRIMER DES PARTITIONS"
 
 #~ msgid "ADD FIRST PARTITION"
-#~ msgstr "ELSŐ PARTÍCIÓ HOZZÁADÁSA"
-
-#~ msgid "Guided"
-#~ msgstr "Irányított"
-
-#~ msgid ""
-#~ "The installer can guide you through partitioning a disk or, if you prefer, "
-#~ "you can do it manually. If you choose guided partitioning you will still "
-#~ "have a chance to review and modify the results."
-#~ msgstr ""
-#~ "A telepítő végigvezetheti egy lemez particionálásán, de a particionálás "
-#~ "kézzel is végezhető. Az irányított particionálás után is lehetőség lesz az "
-#~ "eredmény átnézésére és testreszabására"
-
-#~ msgid ""
-#~ "Input your SSH user id from Ubuntu SSO (sso:email), Launchpad (lp:username) "
-#~ "or Github (gh:username)."
-#~ msgstr ""
-#~ "Írja be SSH felhasználói azonosítóját az Ubuntu SSO-ból (sso: email), "
-#~ "Launchpad (lp: felhasználónév) vagy Github (gh: felhasználónév)."
-
-#~ msgid "(More language choices will appear in time)"
-#~ msgstr "(A későbbiekben még több nyelv lesz elérhető)"
-
-#~ msgid "Quit Installer"
-#~ msgstr "Kilépés a telepítőből"
-
-#~ msgid "Confirm"
-#~ msgstr "Megerősít"
+#~ msgstr "AJOUTER LA PREMIÈRE PARTITION"
