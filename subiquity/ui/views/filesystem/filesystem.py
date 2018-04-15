@@ -49,6 +49,9 @@ confirmation_text = _("""\
 Selecting Continue below will begin the installation process and \
 result in the loss of data on the disks selected to be formatted.
 
+You will not be able to return to this or a previous screen once \
+the installation has started.
+
 Are you sure you want to continue?
 """)
 
