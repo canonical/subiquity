@@ -217,7 +217,8 @@ class IdentityView(BaseView):
         if val is not None:
             self.form_rows.body.focus += 2
         self.form.ssh_import_id_value = val
-        iu.validate()
+        if iu.value != "":
+            iu.validate()
 
     def done(self, result):
         cpassword = self.model.encrypt_password(self.form.password.value)
