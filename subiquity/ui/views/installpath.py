@@ -23,15 +23,13 @@ import re
 from urwid import connect_signal, Text
 
 from subiquitycore.ui.buttons import back_btn, forward_btn
-from subiquitycore.ui.interactive import StringEditor
-from subiquitycore.ui.utils import Padding, button_pile, screen
+from subiquitycore.ui.utils import Padding, button_pile
 from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.view import BaseView
 from subiquity.ui.views.identity import UsernameField, PasswordField, USERNAME_MAXLEN
 from subiquitycore.ui.form import (
-    simple_field,
     Form,
-    WantsToKnowFormField,
+    URLField,
 )
 
 
@@ -67,11 +65,6 @@ class InstallpathView(BaseView):
 
     def cancel(self, button=None):
         self.controller.cancel()
-
-class URLEditor(StringEditor, WantsToKnowFormField):
-    pass
-
-URLField = simple_field(URLEditor)
 
 class RegionForm(Form):
 
