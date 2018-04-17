@@ -18,17 +18,14 @@
 Contains some default key navigations
 """
 
-from urwid import Columns, Overlay, Pile, SolidFill, Text, WidgetWrap
+from subiquitycore.ui.stretchy import StretchyOverlay
+
+from urwid import Columns, Overlay, Pile, Text, WidgetWrap
 
 
 class BaseView(WidgetWrap):
 
-    def __init__(self, w):
-        self.orig_w = None
-        super().__init__(w)
-
     def show_overlay(self, overlay_widget, **kw):
-        self.orig_w = self._w
         args = dict(
             align='center',
             width=('relative', 60),
@@ -42,26 +39,22 @@ class BaseView(WidgetWrap):
             if isinstance(kw['width'], int):
                 kw['width'] += 2*PADDING
         args.update(kw)
-        if 'height' in kw:
-            f = SolidFill(" ")
-            p = 1
-        else:
-            f = Text("")
-            p = 'pack'
         top = Pile([
-            (p, f),
+            ('pack', Text("")),
             Columns([
-                (PADDING, f),
+                (PADDING, Text("")),
                 overlay_widget,
-                (PADDING, f)
+                (PADDING, Text(""))
                 ]),
-            (p, f),
+            ('pack', Text("")),
             ])
         self._w = Overlay(top_w=top, bottom_w=self._w, **args)
 
+    def show_stretchy_overlay(self, stretchy):
+        self._w = StretchyOverlay(self._w, stretchy)
+
     def remove_overlay(self):
-        self._w = self.orig_w
-        self.orig_w = None
+        self._w = self._w.bottom_w
 
     def cancel(self):
         pass

@@ -20,12 +20,7 @@ configuration.
 
 """
 import logging
-from urwid import (
-    LineBox,
-    Padding as UrwidPadding,
-    Text,
-    WidgetWrap,
-    )
+from urwid import Text
 
 from subiquitycore.ui.buttons import (
     back_btn,
@@ -36,6 +31,7 @@ from subiquitycore.ui.buttons import (
     reset_btn,
     )
 from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
@@ -52,22 +48,24 @@ result in the loss of data on the disks selected to be formatted.
 You will not be able to return to this or a previous screen once \
 the installation has started.
 
-Are you sure you want to continue?
-""")
+Are you sure you want to continue?""")
 
-class FilesystemConfirmationView(WidgetWrap):
+class FilesystemConfirmation(Stretchy):
     def __init__(self, parent, controller):
         self.parent = parent
         self.controller = controller
-        pile = Pile([
-            UrwidPadding(Text(confirmation_text), left=2, right=2),
+        widgets = [
+            Text(confirmation_text),
+            Text(""),
             button_pile([
                 cancel_btn(_("No"), on_press=self.cancel),
                 danger_btn(_("Continue"), on_press=self.ok)]),
-            Text(""),
-            ])
-        lb = LineBox(pile, title=_("Confirm destructive action"))
-        super().__init__(lb)
+            ]
+        super().__init__(
+            _("Confirm destructive action"),
+            widgets,
+            stretchy_index=0,
+            focus_index=2)
 
     def ok(self, sender):
         self.controller.finish()
@@ -275,4 +273,4 @@ class FilesystemView(BaseView):
         self.controller.reset()
 
     def done(self, button):
-        self.show_overlay(FilesystemConfirmationView(self, self.controller), min_width=0)
+        self.show_stretchy_overlay(FilesystemConfirmation(self, self.controller))

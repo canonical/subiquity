@@ -18,8 +18,6 @@ import logging
 from urwid import (
     connect_signal,
     LineBox,
-    Padding as UrwidPadding,
-    SolidFill,
     Text,
     WidgetWrap,
     )
@@ -31,7 +29,6 @@ from subiquitycore.ui.buttons import (
     )
 from subiquitycore.ui.container import (
     Columns,
-    ListBox,
     Pile,
     )
 from subiquitycore.ui.form import (
@@ -39,6 +36,9 @@ from subiquitycore.ui.form import (
     Form,
     )
 from subiquitycore.ui.selector import Selector, Option
+from subiquitycore.ui.stretchy import (
+    Stretchy,
+    )
 from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
@@ -302,7 +302,7 @@ toggle_options = [
     ]
 
 
-class ToggleQuestion(WidgetWrap):
+class ToggleQuestion(Stretchy):
 
     def __init__(self, parent, setting):
         self.parent = parent
@@ -315,28 +315,24 @@ class ToggleQuestion(WidgetWrap):
             except AttributeError:
                 pass
 
-        pile = Pile([
-            ListBox([
-                Text(_(toggle_text)),
-                ]),
-            (1, SolidFill(" ")),
-            ('pack', Padding.center_79(Columns([
+        widgets = [
+            Text(_(toggle_text)),
+            Text(""),
+            Padding.center_79(Columns([
                 ('pack', Text(_("Shortcut: "))),
                 Color.string_input(self.selector),
-                ]))),
-            (1, SolidFill(" ")),
-            ('pack', button_pile([
+                ])),
+            Text(""),
+            button_pile([
                 ok_btn(label=_("OK"), on_press=self.ok),
                 cancel_btn(label=_("Cancel"), on_press=self.cancel),
-                ])),
-            ])
-        pile.focus_position = 4
+                ]),
+            ]
         super().__init__(
-            LineBox(
-                UrwidPadding(
-                    pile,
-                    left=1, right=1),
-                _("Select layout toggle")))
+            _("Select layout toggle"),
+            widgets,
+            stretchy_index=0,
+            focus_index=4)
 
     def ok(self, sender):
         self.parent.remove_overlay()
@@ -411,7 +407,7 @@ class KeyboardView(BaseView):
         setting = KeyboardSetting(layout=layout, variant=variant)
         new_setting = setting.latinizable()
         if new_setting != setting:
-            self.show_overlay(ToggleQuestion(self, new_setting), height=('relative', 100))
+            self.show_stretchy_overlay(ToggleQuestion(self, new_setting))
             return
         self.really_done(setting)
 
