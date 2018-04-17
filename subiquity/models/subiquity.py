@@ -69,11 +69,11 @@ class SubiquityModel:
             }
         if user.ssh_import_id is not None:
             user_info['ssh_import_id'] = [user.ssh_import_id]
-        # XXX this should set up the locale too.
         config = {
-            'users': [user_info],
             'hostname': self.identity.hostname,
             'locale': self.locale.selected_language + '.UTF-8',
+            'resize_rootfs': False,
+            'users': [user_info],
         }
         config.update(self.installpath.render_cloudinit())
         return config
