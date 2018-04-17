@@ -70,6 +70,9 @@ class SubiquityModel:
         if user.ssh_import_id is not None:
             user_info['ssh_import_id'] = [user.ssh_import_id]
         config = {
+            'growpart': {
+                'mode': 'off',
+                },
             'hostname': self.identity.hostname,
             'locale': self.locale.selected_language + '.UTF-8',
             'resize_rootfs': False,
