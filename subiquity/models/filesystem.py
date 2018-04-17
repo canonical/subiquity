@@ -123,7 +123,7 @@ class Disk:
     serial = attr.ib(default=None)
     path = attr.ib(default=None)
     model = attr.ib(default=None)
-    wipe = attr.ib(default=None)
+    wipe = attr.ib(default='superblock')
     preserve = attr.ib(default=False)
     name = attr.ib(default="")
     grub_device = attr.ib(default=False)
@@ -146,7 +146,6 @@ class Disk:
         return d
 
     def reset(self):
-        self.wipe = None
         self.preserve = False
         self.name = ''
         self.grub_device = ''
