@@ -217,7 +217,7 @@ class IdentityView(BaseView):
         if val is not None:
             self.form_rows.body.focus += 2
         self.form.ssh_import_id_value = val
-        if iu.value != "":
+        if iu.value != "" or val is None:
             iu.validate()
 
     def done(self, result):
