@@ -1,16 +1,16 @@
-# French translation for subiquity
-# Copyright (c) 2017 Rosetta Contributors and Canonical Ltd 2017
+# Hebrew translation for subiquity
+# Copyright (c) 2018 Rosetta Contributors and Canonical Ltd 2018
 # This file is distributed under the same license as the subiquity package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2018-04-12 11:10+1200\n"
-"PO-Revision-Date: 2018-04-12 05:36+0000\n"
-"Last-Translator: Jean-Marc <Unknown>\n"
-"Language-Team: French <fr@li.org>\n"
+"PO-Revision-Date: 2018-04-12 12:11+0000\n"
+"Last-Translator: Yaron <sh.yaron@gmail.com>\n"
+"Language-Team: Hebrew <he@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,88 +21,86 @@ msgstr ""
 #: ../subiquity/controllers/filesystem.py:69
 #: ../subiquity/controllers/filesystem.py:78
 msgid "Filesystem setup"
-msgstr "Configuration du système de fichiers"
+msgstr "הגדרת מערכת קבצים"
 
 #: ../subiquity/controllers/filesystem.py:59
 msgid "Choose guided or manual partitioning"
-msgstr "Choisir le partitionnement guidé ou manuel"
+msgstr "נא לבחור בחלוקה מודרכת או ידנית למחיצות"
 
 #: ../subiquity/controllers/filesystem.py:70
 msgid "Select available disks to format and mount"
-msgstr "Sélectionner un disque disponible et son point de montage"
+msgstr "בחירה מבין הכוננים הזמינים לפרמוט ועיגון"
 
 #: ../subiquity/controllers/filesystem.py:79
 msgid "Choose the installation target"
-msgstr "Choisir la cible d'installation"
+msgstr "נא לבחור את יעד ההתקנה"
 
 #: ../subiquity/controllers/filesystem.py:98
 msgid "Filesystem error"
-msgstr "Erreur du système de fichier"
+msgstr "שגיאת מערכת קבצים"
 
 #: ../subiquity/controllers/filesystem.py:99
 msgid "Error while installing Ubuntu"
-msgstr "Une erreur est survenue lors de l'installation d'Ubuntu"
+msgstr "שגיאה בעת התקנת אובונטו"
 
 #: ../subiquity/controllers/filesystem.py:100
 msgid "Failed to obtain write permissions to /tmp"
-msgstr "Impossible d'obtenir des permissions d'écriture sur /tmp"
+msgstr "השגת ההרשאות ל־‎/tmp נכשלה"
 
 #: ../subiquity/controllers/filesystem.py:114
 msgid "Partition, format, and mount {}"
-msgstr "Partition, formatage et point de montage {}"
+msgstr "חלוקה למחיצות, פרמוט ועיגון של {}"
 
 #: ../subiquity/controllers/filesystem.py:115
 msgid "Partition the disk, or format the entire device without partitions"
-msgstr "Partitionner ou formater le disque en entier sans partitions"
+msgstr "חלוקת הכונן למחיצות או פרמוט ההתקן כולו ללא מחיצות"
 
 #: ../subiquity/controllers/filesystem.py:125
 msgid "Select whole disk, or partition, to format and mount."
-msgstr ""
-"Sélectionner le disque entier ou la partition pour le formatage et montage"
+msgstr "נא לבחור את כל הכונן, או מחיצה לפרמוט ועיגון."
 
 #: ../subiquity/controllers/filesystem.py:132
 msgid "Edit partition details format and mount."
-msgstr "Modifier le format et point de montage"
+msgstr "עריכת פרטי המחיצה ועיגון."
 
 #: ../subiquity/controllers/filesystem.py:295
 msgid "Format and/or mount {}"
-msgstr "Formater et/ou monter {}"
+msgstr "פרמוט ו/או עיגון של {}"
 
 #: ../subiquity/controllers/filesystem.py:296
 msgid "Format or mount whole disk."
-msgstr "Formater ou monter le disque entier."
+msgstr "פרמוט או עיגון של כונן מלא."
 
 #: ../subiquity/controllers/filesystem.py:305
 msgid "Mount partition {} of {}"
-msgstr "Monter la partition {} de {}"
+msgstr "עיגון מחיצה {} מתוך {}"
 
 #: ../subiquity/controllers/filesystem.py:306
 msgid "Mount partition."
-msgstr "Monter la partition."
+msgstr "עיגון מחיצה."
 
 #: ../subiquity/controllers/filesystem.py:308
 msgid "Format and mount partition {} of {}"
-msgstr "Formater et monter la partition {} de {}"
+msgstr "פרמוט ועיגון מחיצה {} מתוך {}"
 
 #: ../subiquity/controllers/filesystem.py:309
 msgid "Format and mount partition."
-msgstr "Formater et monter la partition."
+msgstr "פרמוט ועיגון מחיצה."
 
 #: ../subiquity/controllers/filesystem.py:380
 msgid "Select next or previous disks with n and p"
-msgstr "Sélectionnez précédent ou suivant avec p et n"
+msgstr "נא לבחור את הכוננים הבאים או הקודמים עם n‏ (next) ועם p‏ (previous)"
 
 #: ../subiquity/controllers/identity.py:34
 msgid "Profile setup"
-msgstr "Configuration du profil"
+msgstr "הגדרת פרופיל"
 
 #: ../subiquity/controllers/identity.py:35
 msgid ""
 "Enter the username and password (or ssh identity) you will use to log in to "
 "the system."
 msgstr ""
-"Entrez le nom d'utilisateur et le mot de passe (ou l'identité SSH) à "
-"utiliser pour vous connecter au système."
+"נא להקליד את שם המשתמש והססמה (או זהות ssh) שמשמשים אותך לכניסה למערכת."
 
 #: ../subiquity/controllers/installpath.py:36
 msgid ""
@@ -110,12 +108,12 @@ msgid ""
 "amazing internet things. This is the installer for Ubuntu on servers and "
 "internet devices."
 msgstr ""
+"ברוך בואך לאובונטו! הפלטפורמה האהובה בעולם לסביבות ענן, קלאסטרים ודברים "
+"מדהימים באינטרנט. זו תכנית ההתקנה עבור אובונטו לשרתים והתקני אינטרנט."
 
 #: ../subiquity/controllers/installpath.py:40
 msgid "Use UP, DOWN arrow keys, and ENTER, to navigate options"
-msgstr ""
-"Utilisez les flèches HAUT et BAS pour naviguer entre les options, et ENTRÉE "
-"pour confirmer."
+msgstr "יש להשתמש בחצים: למעלה, למטה וב־Enter כדי לנווט בין האפשרויות"
 
 #: ../subiquity/controllers/installpath.py:72
 msgid ""
@@ -126,6 +124,12 @@ msgid ""
 "\n"
 "For further details, see https://maas.io/."
 msgstr ""
+"MAAS פירושו Metal As A Service (ברזלים כספקי שירות). כשהשירות הזה פעיל על "
+"אובונטו, הוא מאפשר לך להתייחס לשרתים פיזיים משל היו מכונות וירטואליות בענן. "
+"במקום לנהל כל שרת בנפרד, עם MAAS החומרה הפיזית שלך הופכת להיות משאב ענן "
+"גמיש. \n"
+"\n"
+"לפרטים נוספים, ניתן לבקר באתר https://maas.io/‎."
 
 #: ../subiquity/controllers/installpath.py:86
 msgid ""
@@ -133,252 +137,250 @@ msgid ""
 "the fabric (group of trunked switches) it is attached to. The rack "
 "controller requires the accessible URL of a MAAS region controller."
 msgstr ""
+"פקד ארון (rack controller) של MAAS מספק שירותים למכונות בפיקוח של MAAS במארג "
+"(קבוצה של סוויצ׳ים שמחוברים זה לזה) אליו הוא מחובר. פקד הארון דורש את הכתובת "
+"החיצונית של הפקד האזורי של MAAS."
 
 #: ../subiquity/controllers/installprogress.py:204
 msgid "Installation complete!"
-msgstr "L'installation est terminée!"
+msgstr "ההתקנה הושלמה!"
 
 #: ../subiquity/controllers/installprogress.py:205
 msgid "Finished install!"
-msgstr "L'installation est finie!"
+msgstr "ההתקנה הסתיימה!"
 
 #: ../subiquity/controllers/installprogress.py:247
 msgid "Installing system"
-msgstr "Installation du système"
+msgstr "המערכת בהליכי התקנה"
 
 #: ../subiquity/controllers/installprogress.py:248
 #: ../subiquity/controllers/installprogress.py:251
 msgid "Thank you for using Ubuntu!"
-msgstr "Merci d'utiliser Ubuntu!"
+msgstr "תודה לך על השימוש באובונטו!"
 
 #: ../subiquity/controllers/installprogress.py:250
 msgid "Install complete!"
-msgstr "Installation terminée !"
+msgstr "ההתקנה הושלמה!"
 
 #: ../subiquity/controllers/installprogress.py:253
 msgid "An error occurred during installation"
-msgstr "Une erreur est survenue durant l'installation"
+msgstr "אירעה שגיאה במהלך ההתקנה"
 
 #: ../subiquity/controllers/installprogress.py:254
 msgid "Please report this error in Launchpad"
-msgstr "Veuillez signaler cette erreur sur Launchpad"
+msgstr "נא לדווח על התקלה הזאת ב־Launchpad"
 
 #: ../subiquity/controllers/welcome.py:34
 msgid "Please choose your preferred language"
-msgstr "Veuillez choisir la langue d'installation"
+msgstr "נא לבחור את השפה המועדפת עליך"
 
 #: ../subiquity/controllers/welcome.py:35
 msgid "Use UP, DOWN and ENTER keys to select your language."
-msgstr ""
-"Utilisez les flèches HAUT et BAS, et ENTRÉE pour sélectionner la langue "
-"d'installation"
+msgstr "יש להשתמש בחצים: למעלה, למטה וב־Enter כדי לבחור את השפה שלך."
 
 #: ../subiquitycore/controllers/network.py:330
 msgid "Network connections"
-msgstr "Connections réseau"
+msgstr "חיבורי רשת"
 
 #: ../subiquitycore/controllers/network.py:331
 msgid ""
 "Configure at least one interface this server can use to talk to other "
 "machines, and which preferably provides sufficient access for updates."
 msgstr ""
-"Configurez au moins une interface pour que ce serveur puisse communiquer "
-"avec les autres machines sur le réseau, préférablement un réseau avec accès "
-"aux mises à jour."
+"עליך להגדיר לפחות מנשק אחד בשרת הזה כדי לאפשר תקשורת עם התקנים אחרים ועדיף "
+"שגם יאפשר גישה מספקת לעדכונים."
 
 #: ../subiquitycore/controllers/network.py:334
 msgid "Select an interface to configure it or select Done to continue"
-msgstr ""
-"Selectionnez une interface à configurer ou sélectionnez Terminé pour "
-"continuer."
+msgstr "נא לבחור מנשק כדי להגדיר אותו או ללחוץ על סיום כדי להמשיך"
 
 #: ../subiquitycore/ui/interactive.py:107
 msgid "Yes"
-msgstr "Oui"
+msgstr "כן"
 
 #: ../subiquitycore/ui/interactive.py:107
 #: ../subiquity/ui/views/filesystem/filesystem.py:62
 #: ../subiquity/ui/views/identity.py:92
 msgid "No"
-msgstr "Non"
+msgstr "לא"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:107
 msgid "Use a static IPv4 configuration"
-msgstr "Utiliser une IP statique"
+msgstr "תצורת IPv4 קבועה"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:109
 msgid "Use DHCPv4 on this interface"
-msgstr "Utiliser DHCPv4 sur cette interface"
+msgstr "שימוש ב־DHCPv4 במנשק זה"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:111
 #: ../subiquitycore/ui/views/network_configure_interface.py:129
 msgid "Do not use"
-msgstr "Ne pas utiliser"
+msgstr "לא להשתמש"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:125
 msgid "Use a static IPv6 configuration"
-msgstr "Utiliser une addresse IPv6 statique"
+msgstr "תצורת IPv6 קבועה"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:127
 msgid "Use DHCPv6 on this interface"
-msgstr "Utiliser DHCPv6 sur cette interface"
+msgstr "שימוש ב־DHCPv6 במנשק זה"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:143
 msgid "Configure WIFI settings"
-msgstr "Configurer la connection sans-fil"
+msgstr "הגדרת חיבור אלחוטי"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:148
 #: ../subiquitycore/ui/views/network.py:135
 #: ../subiquity/ui/views/filesystem/filesystem.py:156
 msgid "Done"
-msgstr "Terminé"
+msgstr "סיום"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:66
 msgid "Save"
-msgstr "Sauvegarder"
+msgstr "שמירה"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:68
 msgid "Subnet:"
-msgstr "Masque de sous-réseau:"
+msgstr "רשת משנה:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:69
 msgid "Address:"
-msgstr "Adresse :"
+msgstr "כתובת:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:70
 msgid "Gateway:"
-msgstr "Passerelle :"
+msgstr "שער גישה:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
 msgid "Name servers:"
-msgstr "Serveurs DNS :"
+msgstr "שרתי שמות:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
 msgid "IP addresses, comma separated"
-msgstr "Adresses IP, séparées par des virgules"
+msgstr "כתובות IP, מופרדות בפסיקים"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:72
 msgid "Search domains:"
-msgstr "Domaines de recherche :"
+msgstr "שמות מתחם לחיפוש:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:72
 msgid "Domains, comma separated"
-msgstr "Noms de domaines, séparés par des virgules"
+msgstr "שמות מתחם לחיפוש, מופרדים בפסיקים"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:123
 #, python-format
 msgid "Example: %s"
-msgstr "Exemple : %s"
+msgstr "למשל: %s"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
 msgid "Set this as default gateway"
-msgstr "Utiliser comme passerelle par défaut"
+msgstr "הגדרה כשער גישה כבררת מחדל"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:155
 msgid "This will be your default gateway"
-msgstr "Cette connection sera utilisée comme passerelle par défaut"
+msgstr "זה יהיה שער הגישה כבררת המחדל שלך"
 
 #: ../subiquitycore/ui/views/network.py:45
 msgid "Cancel"
-msgstr "Annuler"
+msgstr "ביטול"
 
 #: ../subiquitycore/ui/views/network.py:51
 msgid "Applying network config"
-msgstr "Application de la configuration réseau"
+msgstr "תצורת הרשת חלה"
 
 #: ../subiquitycore/ui/views/network.py:65
 #, python-format
 msgid "Associated to '%s', will associate to '%s'"
-msgstr "Associé à '%s', sera réassocié à '%s'"
+msgstr "משויך אל ‚%s’, ישויך אל ‚%s’"
 
 #: ../subiquitycore/ui/views/network.py:67
 #, python-format
 msgid "Associated to '%s'"
-msgstr "Associé à '%s'"
+msgstr "משויך אל ‚%s’"
 
 #: ../subiquitycore/ui/views/network.py:69
 #, python-format
 msgid "No access point configured, but associated to '%s'"
-msgstr "Aucun point d'accès configuré, mais associé à '%s'"
+msgstr "לא הוגדרה נקודת גישה, אבל משוייך אל ‚%s’"
 
 #: ../subiquitycore/ui/views/network.py:72
 #, python-format
 msgid "Will associate to '%s'"
-msgstr "Sera associé à '%s'"
+msgstr "ישוייך אל ‚%s’"
 
 #: ../subiquitycore/ui/views/network.py:74
 msgid "No access point configured"
-msgstr "Aucun point d'accès configuré"
+msgstr "לא הוגדרה נקודת גישה"
 
 #: ../subiquitycore/ui/views/network.py:94
 #, python-format
 msgid "Will use DHCP for IPv%s, currently has address%%s:"
-msgstr "Utilisera DHCP pour IPv%s, l'adresse courante est:"
+msgstr "יעשה שימוש ב־DHCP עבור IPv%s, כרגע עם הכתובת%%s:"
 
 #: ../subiquitycore/ui/views/network.py:95
 #, python-format
 msgid "Will use DHCP for IPv%s"
-msgstr "Utilisera DHCP pour IPv%s"
+msgstr "ישתמש ב־DHCP עבור IPv%s"
 
 #: ../subiquitycore/ui/views/network.py:98
 #, python-format
 msgid "Using static address%%s for IPv%s:"
-msgstr "Utilise l'adresse statique suivante pour IPv%s:"
+msgstr "שימוש בכתובת%%s קבועה עבור IPv%s:"
 
 #: ../subiquitycore/ui/views/network.py:99
 #, python-format
 msgid "Will use static address%%s for IPv%s:"
-msgstr "Utilisera l'adresse statique suivante pour IPv%s:"
+msgstr "ישתמש בכתובת%%s קבועה עבור IPv%s:"
 
 #: ../subiquitycore/ui/views/network.py:101
 #, python-format
 msgid "Currently has address%s:"
-msgstr "Utilise l'adresse%s:"
+msgstr "כרגע עם הכתובת%s:"
 
 #: ../subiquitycore/ui/views/network.py:104
 #, python-format
 msgid "Has no IPv%s configuration, currently has address%%s:"
-msgstr "Aucune configuration IPv%s, utilise présentement l'adresse:"
+msgstr "אין תצורת IPv%s, כרגע עם הכתובת%%s:"
 
 #: ../subiquitycore/ui/views/network.py:106
 #, python-format
 msgid "IPv%s is not configured"
-msgstr "IPv%s n'est pas configuré"
+msgstr "אין הגדרת IPv%s"
 
 #: ../subiquitycore/ui/views/network.py:134
 #: ../subiquity/ui/views/filesystem/filesystem.py:159
 #: ../subiquity/ui/views/filesystem/guided.py:46
 msgid "Back"
-msgstr "Retour"
+msgstr "חזרה"
 
 #: ../subiquitycore/ui/views/network.py:161
 msgid "Not connected"
-msgstr "Aucune connection"
+msgstr "אין חיבור"
 
 #: ../subiquitycore/ui/views/network.py:204
 #, python-format
 msgid "  IPv4 default route %s."
-msgstr "  Passerelle par défaut IPv4: %s."
+msgstr "  נתיב  IPv4 כבררת המחדל %s."
 
 #: ../subiquity/models/installpath.py:36
 msgid "Install Ubuntu"
-msgstr "Installer Ubuntu"
+msgstr "התקנת אובונטו"
 
 #: ../subiquity/models/installpath.py:37
 msgid "Install MAAS Region Controller"
-msgstr ""
+msgstr "התקנת פקד אזורי (Region Controller) של MASS"
 
 #: ../subiquity/models/installpath.py:38
 msgid "Install MAAS Rack Controller"
-msgstr ""
+msgstr "התקנת פקד ארון (Rack Controller) של MAAS"
 
 #: ../subiquity/ui/mount.py:54
 msgid "other"
-msgstr "autre"
+msgstr "אחר"
 
 #: ../subiquity/ui/mount.py:56
 msgid "leave unmounted"
-msgstr "laisser sans point de montage"
+msgstr "להשאיר ללא עגינה"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:48
 msgid ""
@@ -387,42 +389,46 @@ msgid ""
 "\n"
 "Are you sure you want to continue?\n"
 msgstr ""
+"בחירתך להמשיך תתחיל בתהליך ההתקנה ואולי אף לאבדן מידע על הכוננים שנבחרו "
+"לפרמוט.\n"
+"\n"
+"להמשיך?\n"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:63
 msgid "Continue"
-msgstr "Continuer"
+msgstr "להמשיך"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:66
 msgid "Confirm destructive action"
-msgstr "Confirmer l'action"
+msgstr "אישור פעולה הרסנית"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:83
 msgid "FILE SYSTEM SUMMARY"
-msgstr "SOMMAIRE DU SYSTÈME DE FICHIERS"
+msgstr "תקציר מערכת קבצים"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:87
 msgid "AVAILABLE DEVICES"
-msgstr "DISQUES DISPONIBLES"
+msgstr "התקנים זמינים"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:158
 msgid "Reset"
-msgstr "Rétablir"
+msgstr "איפוס"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:223
 msgid "Add/Edit Partitions"
-msgstr "Ajouter/modifier des partitions"
+msgstr "הוספה/עריכה של מחיצות"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:226
 msgid "Add First Partition"
-msgstr "Ajouter la première partition"
+msgstr "הוספת המחיצה הראשונה"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:229
 msgid "Edit Partitions"
-msgstr "Modifier les partitions"
+msgstr "עריכת מחיצות"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:238
 msgid "No disks available."
-msgstr "Aucun disque disponible."
+msgstr "אין כוננים זמינים."
 
 #: ../subiquity/ui/views/filesystem/guided.py:33
 msgid ""
@@ -432,145 +438,147 @@ msgid ""
 "If you choose to partition an entire disk you will still have a chance to "
 "review and modify the results."
 msgstr ""
+"תכנית ההתקנה תנחה אותך בתהליך חלוקת הכונן למחיצות, אם העדפתך שונה, ניתן "
+"לעשות זאת גם ידנית.\n"
+"\n"
+"בחירה בחלוקת הכונן כולו למחיצות עדיין תאפשר לך לסקור ולשנות את התוצאות."
 
 #: ../subiquity/ui/views/filesystem/guided.py:44
 msgid "Use An Entire Disk"
-msgstr "Utiliser un disque entier"
+msgstr "ניצול מלוא הכונן"
 
 #: ../subiquity/ui/views/filesystem/guided.py:45
 msgid "Manual"
-msgstr "Manuel"
+msgstr "ידני"
 
 #: ../subiquity/ui/views/filesystem/guided.py:79
 msgid "Choose the disk to install to:"
-msgstr "Choisir le disque où installer:"
+msgstr "נא לבחור כונן לביצוע ההתקנה אליו:"
 
 #: ../subiquity/ui/views/identity.py:71
 msgid "Enter your github username."
-msgstr "Saisir votre nom d'utilisateur Github"
+msgstr "נא להקליד את שם המשתמש שלך ב־github."
 
 #: ../subiquity/ui/views/identity.py:72
 msgid "Enter your Launchpad username."
-msgstr "Saisir votre nom d'utilisateur Launchpad"
+msgstr "נא להקליד את שם המשתמש שלך ב־Launchpad."
 
 #: ../subiquity/ui/views/identity.py:75
 msgid "Import Username:"
-msgstr "Importer le nom d'utilisateur :"
+msgstr "יבוא שם משתמש:"
 
 #: ../subiquity/ui/views/identity.py:76
 msgid "Github username:"
-msgstr "Nom d'utilisateur Github :"
+msgstr "שם משתמש ב־Github:"
 
 #: ../subiquity/ui/views/identity.py:77
 msgid "Launchpad username:"
-msgstr "Nom d'utilisateur Launchpad :"
+msgstr "שם משתמש ב־Launchpad:"
 
 #: ../subiquity/ui/views/identity.py:82
 msgid "Your name:"
-msgstr "Votre nom :"
+msgstr "השם שלך:"
 
 #: ../subiquity/ui/views/identity.py:84
 msgid "Your server's name:"
-msgstr "Le nom de cette machine:"
+msgstr "שם השרת שלך:"
 
 #: ../subiquity/ui/views/identity.py:85
 msgid "The name it uses when it talks to other computers."
-msgstr "Le nom qu’il utilise pour communiquer avec d’autres ordinateurs."
+msgstr "השם בו ייעשה שימוש לטובת תקשורת עם מחשבים אחרים."
 
 #: ../subiquity/ui/views/identity.py:86
 msgid "Pick a username:"
-msgstr "Choisir un nom d’utilisateur :"
+msgstr "נא לבחור שם משתמש:"
 
 #: ../subiquity/ui/views/identity.py:87
 msgid "Choose a password:"
-msgstr "Choisir un mot de passe :"
+msgstr "נא לבחור ססמה:"
 
 #: ../subiquity/ui/views/identity.py:88
 msgid "Confirm your password:"
-msgstr "Confirmer votre mot de passe:"
+msgstr "אימות הססמה שלך:"
 
 #: ../subiquity/ui/views/identity.py:90
 msgid "Import SSH identity:"
-msgstr "Importer une identité SSH:"
+msgstr "יבוא זהות SSH:"
 
 #: ../subiquity/ui/views/identity.py:93
 msgid "from Github"
-msgstr "depuis Github"
+msgstr "מ־Github"
 
 #: ../subiquity/ui/views/identity.py:94
 msgid "from Launchpad"
-msgstr "depuis Launchpad"
+msgstr "מ־Launchpad"
 
 #: ../subiquity/ui/views/identity.py:97
 msgid "You can import your SSH keys from Github, Launchpad or Ubuntu One."
-msgstr ""
-"Vous pouvez importer vos clés SSH depuis Github, Launchpad ou Ubuntu One."
+msgstr "ניתן לייבא את מפתחות ה־SSH שלך מ־Github,‏ Launchpad או Ubuntu One."
 
 #: ../subiquity/ui/views/identity.py:102
 msgid "Real name must not be empty."
-msgstr "Le nom réel ne doit pas être vide."
+msgstr "השם האמתי לא יכול להישאר ריק"
 
 #: ../subiquity/ui/views/identity.py:104
 msgid "Realname too long, must be < "
-msgstr "Le nom réel est trop long, doit être moins de   caractères "
+msgstr "השם האמתי ארוך מדי, עליו להיות < "
 
 #: ../subiquity/ui/views/identity.py:108
 msgid "Server name must not be empty"
-msgstr "Le nom de la machine ne doit pas être vide"
+msgstr "שם השרת לא יכול להישאר ריק"
 
 #: ../subiquity/ui/views/identity.py:111
 msgid "Server name too long, must be < "
-msgstr ""
-"Le nom de la machine est trop long, doit être moins de    charactères. "
+msgstr "שם השרת ארוך מדי, עליו להיות < "
 
 #: ../subiquity/ui/views/identity.py:114
 msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 msgstr ""
-"Le nom d'hôte doit correspondre à NAME_REGEX, c'est-à-dire [a-z_] [a-z0-9_-]*"
+"שם המארח חייב להתאים להגדרת ביטויים רגולריים לשמות - NAME_REGEX, למשל: ‎[a-"
+"z_][a-z0-9_-]*‎"
 
 #: ../subiquity/ui/views/identity.py:118
 msgid "Username missing"
-msgstr "Le nom d'utilisateur est manquant"
+msgstr "שם המשתמש חסר"
 
 #: ../subiquity/ui/views/identity.py:121
 msgid "Username too long, must be < "
-msgstr ""
-"Le nom d'utilisateur est trop long, doit être moins de   caractères. "
+msgstr "שם המשתמש ארוך מדי, עליו להיות < "
 
 #: ../subiquity/ui/views/identity.py:124
 msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 msgstr ""
-"Le nom d'utilisateur doit correspondre à NAME_REGEX, c'est-à-dire [a-z_][a-"
-"z0-9_-]*"
+"שם המשתמש חייב להתאים להגדרת ביטויים רגולריים לשמות - NAME_REGEX, למשל: ‎[a-"
+"z_][a-z0-9_-]*‎"
 
 #: ../subiquity/ui/views/identity.py:128
 msgid "Password must be set"
-msgstr "Le mot de passe doit être défini"
+msgstr "יש להגדיר ססמה"
 
 #: ../subiquity/ui/views/identity.py:132
 msgid "Passwords do not match"
-msgstr "Les mots de passe ne correspondent pas."
+msgstr "הססמאות אינן תואמות"
 
 #: ../subiquity/ui/views/identity.py:139
 msgid "This field must not be blank."
-msgstr "Ce champ ne doit pas être vide."
+msgstr "שדה זה לא יכול להישאר ריק."
 
 #: ../subiquity/ui/views/identity.py:141
 msgid "SSH id too long, must be < "
-msgstr "L'identité SSH est trop longue, doit être moins de   caractères. "
+msgstr "מזהה ה־SSH ארוך מדי, עליו להיות < "
 
 #: ../subiquity/ui/views/installprogress.py:60
 msgid "Full installer output"
-msgstr ""
+msgstr "פלט תכנית ההתקנה המלא"
 
 #: ../subiquity/ui/views/installprogress.py:63
 msgid "Close"
-msgstr "Fermer"
+msgstr "סגירה"
 
 #: ../subiquity/ui/views/installprogress.py:91
 msgid "Reboot Now"
-msgstr "Redémarrer maintenant"
+msgstr "הפעלה מחדש כעת"
 
 #: ../subiquity/ui/views/installprogress.py:94
 msgid "Exit To Shell"
-msgstr ""
+msgstr "יציאה למעטפת"

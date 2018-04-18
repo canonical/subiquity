@@ -31,10 +31,13 @@ class LocaleModel(object):
         ('ast_ES', 'Asturian'),
         ('ca_EN', 'Catalan'),
         ('hr_HR', 'Croatian'),
+        ('nl_NL', 'Dutch'),
         ('de_DE', 'German'),
         ('el_GR', 'Greek, Modern (1453-)'),
+        ('he_IL', 'Hebrew'),
         ('hu_HU', 'Hungarian'),
         ('lv_LV', 'Latvian'),
+        ('nb_NO', 'Norsk bokmål'), # iso_639_3 for nb does not translate Norwgian
         ('pl_PL', 'Polish'),
         ('ru_RU', 'Russian'),
         ('es_ES', 'Spanish'),

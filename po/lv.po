@@ -14,8 +14,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2018-04-11 23:24+0000\n"
-"X-Generator: Launchpad (build 18609)\n"
+"X-Launchpad-Export-Date: 2018-04-18 07:56+0000\n"
+"X-Generator: Launchpad (build 18617)\n"
 
 #: ../subiquity/controllers/filesystem.py:58
 #: ../subiquity/controllers/filesystem.py:69
@@ -556,21 +556,3 @@ msgstr ""
 #: ../subiquity/ui/views/installprogress.py:94
 msgid "Exit To Shell"
 msgstr ""
-
-#~ msgid "An error has occurred."
-#~ msgstr "Notika kļūda."
-
-#~ msgid "Confirm"
-#~ msgstr "Apstiprināt"
-
-#~ msgid "Start"
-#~ msgstr "Sākt"
-
-#~ msgid "Finish"
-#~ msgstr "Pabeigt"
-
-#~ msgid "OK"
-#~ msgstr "Labi"
-
-#~ msgid "Help"
-#~ msgstr "Palīdzība"

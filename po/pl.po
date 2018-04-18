@@ -8,14 +8,14 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2018-04-12 11:10+1200\n"
-"PO-Revision-Date: 2018-04-03 10:50+0000\n"
+"PO-Revision-Date: 2018-04-13 11:02+0000\n"
 "Last-Translator: Piotr Skwarna <Unknown>\n"
 "Language-Team: Polish <pl@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2018-04-11 23:24+0000\n"
-"X-Generator: Launchpad (build 18609)\n"
+"X-Launchpad-Export-Date: 2018-04-18 07:56+0000\n"
+"X-Generator: Launchpad (build 18617)\n"
 
 #: ../subiquity/controllers/filesystem.py:58
 #: ../subiquity/controllers/filesystem.py:69
@@ -150,7 +150,7 @@ msgstr "Dziekujemy za używanie Ubuntu!"
 
 #: ../subiquity/controllers/installprogress.py:250
 msgid "Install complete!"
-msgstr ""
+msgstr "Instalacja ukończona!"
 
 #: ../subiquity/controllers/installprogress.py:253
 msgid "An error occurred during installation"
@@ -261,7 +261,7 @@ msgstr "Domeny, oddzielone przecinkami"
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:123
 #, python-format
 msgid "Example: %s"
-msgstr ""
+msgstr "Przykład: %s"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
 msgid "Set this as default gateway"
@@ -403,15 +403,15 @@ msgstr "Przywróć"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:223
 msgid "Add/Edit Partitions"
-msgstr ""
+msgstr "Dodaj/Edytuj partycje"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:226
 msgid "Add First Partition"
-msgstr ""
+msgstr "Dodaj pierwszą partycję"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:229
 msgid "Edit Partitions"
-msgstr ""
+msgstr "Edytuj partycję"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:238
 msgid "No disks available."
@@ -428,7 +428,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:44
 msgid "Use An Entire Disk"
-msgstr ""
+msgstr "Użyj całego dysku"
 
 #: ../subiquity/ui/views/filesystem/guided.py:45
 msgid "Manual"
@@ -440,11 +440,11 @@ msgstr "Wybierz dysk do instalacji:"
 
 #: ../subiquity/ui/views/identity.py:71
 msgid "Enter your github username."
-msgstr ""
+msgstr "podaj swoj login github"
 
 #: ../subiquity/ui/views/identity.py:72
 msgid "Enter your Launchpad username."
-msgstr ""
+msgstr "podaj swoj login Lanuchpad"
 
 #: ../subiquity/ui/views/identity.py:75
 msgid "Import Username:"
@@ -452,11 +452,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:76
 msgid "Github username:"
-msgstr ""
+msgstr "Github login:"
 
 #: ../subiquity/ui/views/identity.py:77
 msgid "Launchpad username:"
-msgstr ""
+msgstr "Launchpad login:"
 
 #: ../subiquity/ui/views/identity.py:82
 msgid "Your name:"
@@ -561,124 +561,3 @@ msgstr "Uruchom ponownie"
 #: ../subiquity/ui/views/installprogress.py:94
 msgid "Exit To Shell"
 msgstr ""
-
-#~ msgid "Create software RAID (\"MD\") disk"
-#~ msgstr "Stwórz programowy RAID (\"MD\")"
-
-#~ msgid ""
-#~ "Use SPACE to select disks to form your RAID array, and then specify the RAID "
-#~ "parameters. Multiple-disk arrays work best when all the disks in an array "
-#~ "are the same size and speed."
-#~ msgstr ""
-#~ "Użyj SPACJI aby wybrać dysk do stworzenia macierzy RAID i ustawic parametry. "
-#~ "Wieldyskowe macierze RAID działają najlepiej gdy wszystkie dyski maja taką "
-#~ "sama wielkośc i szybkość"
-
-#~ msgid "Create Logical Volume Group (\"LVM2\") disk"
-#~ msgstr "Stwórz logiczny wolument (\"LVM2\")"
-
-#~ msgid ""
-#~ "Use SPACE to select disks to form your LVM2 volume group, and then specify "
-#~ "the Volume Group name. "
-#~ msgstr "Użyj SPACJI aby wybrać dyski ustawić nazwę loicznego wolumenu LMV2 "
-
-#~ msgid "ENTER on a disk will show detailed information for that disk"
-#~ msgstr "Naciśnij ENTER na dysku zeby pokazać detale"
-
-#~ msgid ""
-#~ "Welcome to Ubuntu! The world's favorite platform for clouds, clusters, and "
-#~ "amazing internet things. This is the installer for Ubuntu on servers and "
-#~ "internet devices."
-#~ msgstr ""
-#~ "Witaj w Ubuntu! Najpopularniejsza na świecie platforme dla rozwiązań "
-#~ "chmurowych, klastrów i niesamowitych rzeczy związanych z interntem. To jest "
-#~ "instalator Ubuntu dla serwerów i urządzeń sieciowych."
-
-#~ msgid "Please wait for the installation to finish."
-#~ msgstr "Czekaj na ukończenie instalacji."
-
-#~ msgid "Running postinstall step"
-#~ msgstr "Uruchamianie kroków po instalacyjnych"
-
-#~ msgid "An error has occurred."
-#~ msgstr "Wystąpił błąd."
-
-#~ msgid "Confirm"
-#~ msgstr "Zatwierdź"
-
-#~ msgid "Start"
-#~ msgstr "Rozpocznij"
-
-#~ msgid "Finish"
-#~ msgstr "Zakończ"
-
-#~ msgid "OK"
-#~ msgstr "OK"
-
-#~ msgid "Help"
-#~ msgstr "Pomoc"
-
-#, python-format
-#~ msgid "CIDR e.g. %s"
-#~ msgstr "CIDR e.g. %s"
-
-#~ msgid "EDIT PARTITIONS"
-#~ msgstr "EDYTYH PARTYCJĘ"
-
-#~ msgid "ADD/EDIT PARTITIONS"
-#~ msgstr "DODAJ/EDYTUJ PARTYCJĘ"
-
-#~ msgid "ADD FIRST PARTITION"
-#~ msgstr "DODAJ PIERWSZA PARTYCJĘ"
-
-#~ msgid "Quit Installer"
-#~ msgstr "Wyjdź z instalatora"
-
-#~ msgid "Running install step"
-#~ msgstr "Uruchamianie kroków instalacji"
-
-#~ msgid "Guided"
-#~ msgstr "Kierowany"
-
-#~ msgid ""
-#~ "The installer can guide you through partitioning a disk or, if you prefer, "
-#~ "you can do it manually. If you choose guided partitioning you will still "
-#~ "have a chance to review and modify the results."
-#~ msgstr ""
-#~ "Instalator poprowadzi Cię przez partycjonowanie dysku lub, jeśli wolisz, "
-#~ "możesz zrobić to ręcznie. Jeśli zdecydujesz się na partycjonowanie z "
-#~ "przewodnikiem, nadal będziesz mieć możliwość przejrzenia i zmodyfikowania "
-#~ "wyników."
-
-#~ msgid "Create hierarchical storage (\"bcache\") disk"
-#~ msgstr "Utwórz dysk hierarchicznej pamięci masowej (\"bcache\")"
-
-#~ msgid ""
-#~ "\n"
-#~ "Selecting Continue below will result of the loss of data on the disks "
-#~ "selected to be formatted.\n"
-#~ "\n"
-#~ "Are you sure you want to continue?\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Wybranie opcji Kontynuuj poniżej spowoduje utratę danych na dyskach "
-#~ "wybranych do sformatowania.\n"
-#~ "\n"
-#~ "Czy chesz kontynuować ?\n"
-
-#~ msgid ""
-#~ "Use SPACE to select a cache disk and a backing disk to form your bcache "
-#~ "device."
-#~ msgstr ""
-#~ "Użyj SPACE, aby wybrać dysk pamięci podręcznej i dysk pomocniczy, aby "
-#~ "utworzyć urządzenie bcache."
-
-#~ msgid ""
-#~ "Input your SSH user id from Ubuntu SSO (sso:email), Launchpad (lp:username) "
-#~ "or Github (gh:username)."
-#~ msgstr ""
-#~ "Wprowadź identyfikator użytkownika SSH z SSO Ubuntu (sso: email), Launchpad "
-#~ "(lp: nazwa użytkownika) lub Github (gh: nazwa użytkownika)."
-
-#~ msgid "(More language choices will appear in time)"
-#~ msgstr "(Więcej opcji językowych pojawi się w czasie)"

@@ -14,8 +14,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2018-04-11 23:24+0000\n"
-"X-Generator: Launchpad (build 18609)\n"
+"X-Launchpad-Export-Date: 2018-04-18 07:56+0000\n"
+"X-Generator: Launchpad (build 18617)\n"
 
 #: ../subiquity/controllers/filesystem.py:58
 #: ../subiquity/controllers/filesystem.py:69
@@ -558,17 +558,3 @@ msgstr ""
 #: ../subiquity/ui/views/installprogress.py:94
 msgid "Exit To Shell"
 msgstr ""
-
-#~ msgid "Create software RAID (\"MD\") disk"
-#~ msgstr "CREATE legt software RAID (\"MD\") disk an"
-
-#~ msgid "Create Logical Volume Group (\"LVM2\") disk"
-#~ msgstr "Logical Volume Group (\"LVM2\") Platte anlegen"
-
-#~ msgid ""
-#~ "Use SPACE to select disks to form your LVM2 volume group, and then specify "
-#~ "the Volume Group name. "
-#~ msgstr "Nutze SPACE "
-
-#~ msgid "ENTER on a disk will show detailed information for that disk"
-#~ msgstr "ENTER auf einer Platte zeigt detaillierte Informationen dieser an"

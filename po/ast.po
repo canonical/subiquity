@@ -15,8 +15,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2018-04-11 23:24+0000\n"
-"X-Generator: Launchpad (build 18609)\n"
+"X-Launchpad-Export-Date: 2018-04-18 07:56+0000\n"
+"X-Generator: Launchpad (build 18617)\n"
 "Language: as\n"
 
 #: ../subiquity/controllers/filesystem.py:58
@@ -560,78 +560,3 @@ msgstr "Reaniciar agora"
 #: ../subiquity/ui/views/installprogress.py:94
 msgid "Exit To Shell"
 msgstr ""
-
-#~ msgid ""
-#~ "Use SPACE to select disks to form your LVM2 volume group, and then specify "
-#~ "the Volume Group name. "
-#~ msgstr ""
-#~ "Usa ESPACIU pa esbillar los discos del grupu de volúmenes LVM2 y darréu "
-#~ "especificar el nome del grupu de volúmenes "
-
-#~ msgid "ENTER on a disk will show detailed information for that disk"
-#~ msgstr "INTRO nun discu va amosar la información detallada d'esi discu"
-
-#~ msgid ""
-#~ "Welcome to Ubuntu! The world's favorite platform for clouds, clusters, and "
-#~ "amazing internet things. This is the installer for Ubuntu on servers and "
-#~ "internet devices."
-#~ msgstr ""
-#~ "¡Afáyate n'Ubuntu! La plataforma favorita del mundu pa ñubes, clústeres y "
-#~ "coses ablucantes d'internet. Esto ye l'instalador pa Ubuntu en sirvidores y "
-#~ "preseos d'internet."
-
-#~ msgid "An error has occurred."
-#~ msgstr "Asocedió un fallu na instalación."
-
-#~ msgid "Please wait for the installation to finish."
-#~ msgstr "Espera que la instalación fine, por favor."
-
-#~ msgid "Finish"
-#~ msgstr "Finar"
-
-#~ msgid "OK"
-#~ msgstr "Aceutar"
-
-#~ msgid "Confirm"
-#~ msgstr "Confirmar"
-
-#~ msgid "Help"
-#~ msgstr "Ayuda"
-
-#~ msgid ""
-#~ "\n"
-#~ "Selecting Continue below will result of the loss of data on the disks "
-#~ "selected to be formatted.\n"
-#~ "\n"
-#~ "Are you sure you want to continue?\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Esbillar Siguir va dar resultáu a una perda de datos nos discos esbillaos "
-#~ "que van formatiase.\n"
-
-#~ msgid "ADD/EDIT PARTITIONS"
-#~ msgstr "AMIESTU/EDICIÓN DE PARTICIONES"
-
-#~ msgid "ADD FIRST PARTITION"
-#~ msgstr "AMIESTU DE PRIMER PARTICIÓN"
-
-#~ msgid "EDIT PARTITIONS"
-#~ msgstr "EDICIÓN DE PARTICIONES"
-
-#~ msgid ""
-#~ "The installer can guide you through partitioning a disk or, if you prefer, "
-#~ "you can do it manually. If you choose guided partitioning you will still "
-#~ "have a chance to review and modify the results."
-#~ msgstr ""
-#~ "L'instalador pue guiate pente'l particionáu d'un discu o, si lo prefieres, "
-#~ "facelo a mano. Si escueyes el particionáu guiáu, entá vas tener la "
-#~ "oportunidá de revisar y modificar los resultaos."
-
-#~ msgid "Guided"
-#~ msgstr "Guiáu"
-
-#~ msgid "Quit Installer"
-#~ msgstr "Colar del instalador"
-
-#~ msgid "(More language choices will appear in time)"
-#~ msgstr "(Col tiempu van apaecer más llingües)"

@@ -8,14 +8,14 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2018-04-12 11:10+1200\n"
-"PO-Revision-Date: 2018-03-16 15:54+0000\n"
+"PO-Revision-Date: 2018-04-12 10:15+0000\n"
 "Last-Translator: gogo <trebelnik2@gmail.com>\n"
 "Language-Team: Croatian <hr@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2018-04-11 23:24+0000\n"
-"X-Generator: Launchpad (build 18609)\n"
+"X-Launchpad-Export-Date: 2018-04-18 07:56+0000\n"
+"X-Generator: Launchpad (build 18617)\n"
 "Language: hr\n"
 
 #: ../subiquity/controllers/filesystem.py:58
@@ -110,6 +110,9 @@ msgid ""
 "amazing internet things. This is the installer for Ubuntu on servers and "
 "internet devices."
 msgstr ""
+"Dobrodošli u Ubuntu! Najomiljeniju svjetsku platformu za oblake, klastere i "
+"ostale internetske stvari. Ovo je instalacijski program Ubuntua za "
+"poslužitelje i internetske uređaje."
 
 #: ../subiquity/controllers/installpath.py:40
 msgid "Use UP, DOWN arrow keys, and ENTER, to navigate options"
@@ -124,6 +127,12 @@ msgid ""
 "\n"
 "For further details, see https://maas.io/."
 msgstr ""
+"MAAS je Metal As A Service. Pokreće ga Ubuntu, omogućuje vam da rukujete "
+"fizičkim uređajima kao da su virtualni strojevi (primjercima) u oblaku. "
+"Umjesto da upravljate svakim strojem pojedinačno, MAAS pretvara vaš rijedak "
+"metal u elastičan resurs u oblaku.. \n"
+"\n"
+"Za više pojedinosti, posjetite https://maas.io/."
 
 #: ../subiquity/controllers/installpath.py:86
 msgid ""
@@ -131,6 +140,10 @@ msgid ""
 "the fabric (group of trunked switches) it is attached to. The rack "
 "controller requires the accessible URL of a MAAS region controller."
 msgstr ""
+"MAAS kontroler s ugradbenim kućištem pruža usluge strojevima omogućenima od "
+"strane MAAS-a tvornički (grupa povezanih preklopnika) priključenima. "
+"Kontroler s ugradbenim kućištem zahtijeva dostupni URL MAAS kontrolera "
+"regije."
 
 #: ../subiquity/controllers/installprogress.py:204
 msgid "Installation complete!"
@@ -151,7 +164,7 @@ msgstr "Hvala vam na odabiru Ubuntua!"
 
 #: ../subiquity/controllers/installprogress.py:250
 msgid "Install complete!"
-msgstr ""
+msgstr "Instalacija završena!"
 
 #: ../subiquity/controllers/installprogress.py:253
 msgid "An error occurred during installation"
@@ -262,7 +275,7 @@ msgstr "Domene, zarezom odvojene"
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:123
 #, python-format
 msgid "Example: %s"
-msgstr ""
+msgstr "Primjer: %s"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
 msgid "Set this as default gateway"
@@ -360,11 +373,11 @@ msgstr "Instaliraj Ubuntu"
 
 #: ../subiquity/models/installpath.py:37
 msgid "Install MAAS Region Controller"
-msgstr ""
+msgstr "Instaliraj MAAS kontroler regije"
 
 #: ../subiquity/models/installpath.py:38
 msgid "Install MAAS Rack Controller"
-msgstr ""
+msgstr "Instaliraj MAAS kontroler s ugradbenim kućištem"
 
 #: ../subiquity/ui/mount.py:54
 msgid "other"
@@ -381,6 +394,10 @@ msgid ""
 "\n"
 "Are you sure you want to continue?\n"
 msgstr ""
+"Odabirom 'Nastavi' ispod će započeti postupak instalacije i dovesti će do "
+"gubitka podataka na diskovima odabranim za formatiranje.\n"
+"\n"
+"Sigurno želite nastaviti?\n"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:63
 msgid "Continue"
@@ -404,15 +421,15 @@ msgstr "Poništi"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:223
 msgid "Add/Edit Partitions"
-msgstr ""
+msgstr "Dodaj/Uredi particije"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:226
 msgid "Add First Partition"
-msgstr ""
+msgstr "Dodaj  prvu particiju"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:229
 msgid "Edit Partitions"
-msgstr ""
+msgstr "Uredi particije"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:238
 msgid "No disks available."
@@ -426,10 +443,15 @@ msgid ""
 "If you choose to partition an entire disk you will still have a chance to "
 "review and modify the results."
 msgstr ""
+"Instalacijski program vas može voditi u particioniranju cijelog diska, ako "
+"želite to možete obaviti i ručno.\n"
+"\n"
+"Ako odaberete particioniranje cijelog diska još uvijek ćete imati šansu "
+"pregledati i promijeniti rezultate."
 
 #: ../subiquity/ui/views/filesystem/guided.py:44
 msgid "Use An Entire Disk"
-msgstr ""
+msgstr "Koristi cijeli disk"
 
 #: ../subiquity/ui/views/filesystem/guided.py:45
 msgid "Manual"
@@ -441,23 +463,23 @@ msgstr "Odaberite disk za instalaciju:"
 
 #: ../subiquity/ui/views/identity.py:71
 msgid "Enter your github username."
-msgstr ""
+msgstr "Upišite svoje github korisničko ime."
 
 #: ../subiquity/ui/views/identity.py:72
 msgid "Enter your Launchpad username."
-msgstr ""
+msgstr "Upišite svoje Launchpad korisničko ime."
 
 #: ../subiquity/ui/views/identity.py:75
 msgid "Import Username:"
-msgstr ""
+msgstr "Uvezi korisničko ime:"
 
 #: ../subiquity/ui/views/identity.py:76
 msgid "Github username:"
-msgstr ""
+msgstr "Github korisničko ime:"
 
 #: ../subiquity/ui/views/identity.py:77
 msgid "Launchpad username:"
-msgstr ""
+msgstr "Launchpad korisničko ime:"
 
 #: ../subiquity/ui/views/identity.py:82
 msgid "Your name:"
@@ -489,15 +511,16 @@ msgstr "Uvezi SSH identitet:"
 
 #: ../subiquity/ui/views/identity.py:93
 msgid "from Github"
-msgstr ""
+msgstr "iz Githuba"
 
 #: ../subiquity/ui/views/identity.py:94
 msgid "from Launchpad"
-msgstr ""
+msgstr "iz Launchpada"
 
 #: ../subiquity/ui/views/identity.py:97
 msgid "You can import your SSH keys from Github, Launchpad or Ubuntu One."
 msgstr ""
+"Možete uvesti svoje SSH ključeve iz Githuba, Launchpada ili Ubuntuonea"
 
 #: ../subiquity/ui/views/identity.py:102
 msgid "Real name must not be empty."
@@ -518,6 +541,7 @@ msgstr "Naziv poslužitelja je predugačak, mora biti < "
 #: ../subiquity/ui/views/identity.py:114
 msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 msgstr ""
+"Naziv računala mora sadržavati NAZIV_UOBIČAJENI-IZRAZ, npr. [a-z_][a-z0-9_-]*"
 
 #: ../subiquity/ui/views/identity.py:118
 msgid "Username missing"
@@ -530,6 +554,7 @@ msgstr "Korisničko ime je predugačko, mora biti < "
 #: ../subiquity/ui/views/identity.py:124
 msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 msgstr ""
+"Korisničko ime mora sadržavati NAZIV_UOBIČAJENI-IZRAZ, npr. [a-z_][a-z0-9_-]*"
 
 #: ../subiquity/ui/views/identity.py:128
 msgid "Password must be set"
@@ -541,7 +566,7 @@ msgstr "Lozinke se ne podudaraju"
 
 #: ../subiquity/ui/views/identity.py:139
 msgid "This field must not be blank."
-msgstr ""
+msgstr "Polje ne smije ostati prazno."
 
 #: ../subiquity/ui/views/identity.py:141
 msgid "SSH id too long, must be < "
@@ -549,7 +574,7 @@ msgstr "SSH id je predugačak, mora biti < "
 
 #: ../subiquity/ui/views/installprogress.py:60
 msgid "Full installer output"
-msgstr ""
+msgstr "Potpuni prikaz instalcije"
 
 #: ../subiquity/ui/views/installprogress.py:63
 msgid "Close"
@@ -561,127 +586,4 @@ msgstr "Ponovo pokreni odmah"
 
 #: ../subiquity/ui/views/installprogress.py:94
 msgid "Exit To Shell"
-msgstr ""
-
-#~ msgid ""
-#~ "Welcome to Ubuntu! The world's favorite platform for clouds, clusters, and "
-#~ "amazing internet things. This is the installer for Ubuntu on servers and "
-#~ "internet devices."
-#~ msgstr ""
-#~ "Dobrodošli u Ubuntu! Najomiljeniju platformu na svijetu za oblake, klastere "
-#~ "i ostale nevjerojatne internetske sadržaje. Ovo je instalacijski program za "
-#~ "Ubuntu na poslužiteljima i internetskim uređajima."
-
-#~ msgid ""
-#~ "The installer can guide you through partitioning a disk or, if you prefer, "
-#~ "you can do it manually. If you choose guided partitioning you will still "
-#~ "have a chance to review and modify the results."
-#~ msgstr ""
-#~ "Instalacijski program vas može voditi kroz stvaranje particija diska ili ako "
-#~ "želite particije stvorite ručno. Ako odaberete navođeno stvaranje particija "
-#~ "još uvijek ćete imati priliku za pregled i promjenu postavki stvaranja "
-#~ "particija."
-
-#~ msgid "ADD FIRST PARTITION"
-#~ msgstr "DODAJ PRVU PARTICIJU"
-
-#~ msgid "Create Logical Volume Group (\"LVM2\") disk"
-#~ msgstr "Stvori disk Grupe Logičkih Uređaja (\"LVM2\")"
-
-#~ msgid "ENTER on a disk will show detailed information for that disk"
-#~ msgstr "ENTER na disku će prikazati opširnije informacije diska"
-
-#~ msgid ""
-#~ "Use SPACE to select disks to form your LVM2 volume group, and then specify "
-#~ "the Volume Group name. "
-#~ msgstr ""
-#~ "Koristite SPACE kako bi odabrali disk za oblikovanje vaše LVM2 grupe uređaja "
-#~ "i zatim odaberite naziv Grupe Logičkih Uređaja. "
-
-#~ msgid "Create software RAID (\"MD\") disk"
-#~ msgstr "Stvori softverski RAID (\"MD\") disk"
-
-#~ msgid ""
-#~ "Use SPACE to select disks to form your RAID array, and then specify the RAID "
-#~ "parameters. Multiple-disk arrays work best when all the disks in an array "
-#~ "are the same size and speed."
-#~ msgstr ""
-#~ "Koristite SPACE kako bi odabrali diskove za oblikovanje vašeg RAID polja i "
-#~ "zatim odredite RAID parametre. Polja s više diskova rade najbolje kada su "
-#~ "svi diskovi u polju iste veličine i brzine."
-
-#~ msgid "Create hierarchical storage (\"bcache\") disk"
-#~ msgstr "Stvorite disk hijerarhijske pohrane (\"bcache\")"
-
-#~ msgid ""
-#~ "Use SPACE to select a cache disk and a backing disk to form your bcache "
-#~ "device."
-#~ msgstr ""
-#~ "Koristite SPACE za odabir diska međuspremanja i diska sigurnosnog kopiranja "
-#~ "iz vašeg uređaja hijerarhijske pohrane."
-
-#~ msgid "An error has occurred."
-#~ msgstr "Greška se dogodila."
-
-#~ msgid "Running postinstall step"
-#~ msgstr "Pokretanje koraka naknadne instalacije"
-
-#~ msgid "Please wait for the installation to finish."
-#~ msgstr "Malo pričekajte da se instalacija završi."
-
-#~ msgid "Running install step"
-#~ msgstr "Pokretanje koraka instalacije"
-
-#~ msgid "Start"
-#~ msgstr "Pokreni"
-
-#~ msgid "Finish"
-#~ msgstr "Završi"
-
-#~ msgid "OK"
-#~ msgstr "U redu"
-
-#~ msgid "Confirm"
-#~ msgstr "Potvrdi"
-
-#~ msgid "Help"
-#~ msgstr "Pomoć"
-
-#, python-format
-#~ msgid "CIDR e.g. %s"
-#~ msgstr "CIDR npr. %s"
-
-#~ msgid ""
-#~ "\n"
-#~ "Selecting Continue below will result of the loss of data on the disks "
-#~ "selected to be formatted.\n"
-#~ "\n"
-#~ "Are you sure you want to continue?\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Odabitom 'Nastavi' ispod će rezultirati gubitkom podataka na diskovima "
-#~ "odabranim za formatiranje.\n"
-#~ "\n"
-#~ "Sigurno želite nastaviti?\n"
-
-#~ msgid "ADD/EDIT PARTITIONS"
-#~ msgstr "DODAJ/UREDI PARTICIJE"
-
-#~ msgid "EDIT PARTITIONS"
-#~ msgstr "UREDI PARTICIJE"
-
-#~ msgid "Guided"
-#~ msgstr "Navođeno"
-
-#~ msgid ""
-#~ "Input your SSH user id from Ubuntu SSO (sso:email), Launchpad (lp:username) "
-#~ "or Github (gh:username)."
-#~ msgstr ""
-#~ "Upišite svoj SSH id korisnika iz Ubuntu SSO (sso:e-pošta), Launchpada "
-#~ "(lp:korisničko_ime) ili Githuba (gh:korisničko_ime)."
-
-#~ msgid "Quit Installer"
-#~ msgstr "Zatvori instalacijski program"
-
-#~ msgid "(More language choices will appear in time)"
-#~ msgstr "(veći izbor jezika će se pojaviti naknadno)"
+msgstr "Izađi u ljusku"

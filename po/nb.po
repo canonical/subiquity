@@ -1,16 +1,16 @@
-# French translation for subiquity
-# Copyright (c) 2017 Rosetta Contributors and Canonical Ltd 2017
+# Norwegian Bokmal translation for subiquity
+# Copyright (c) 2018 Rosetta Contributors and Canonical Ltd 2018
 # This file is distributed under the same license as the subiquity package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2018-04-12 11:10+1200\n"
-"PO-Revision-Date: 2018-04-12 05:36+0000\n"
-"Last-Translator: Jean-Marc <Unknown>\n"
-"Language-Team: French <fr@li.org>\n"
+"PO-Revision-Date: 2018-04-12 12:42+0000\n"
+"Last-Translator: Åka Sikrom <Unknown>\n"
+"Language-Team: Norwegian Bokmal <nb@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,88 +21,87 @@ msgstr ""
 #: ../subiquity/controllers/filesystem.py:69
 #: ../subiquity/controllers/filesystem.py:78
 msgid "Filesystem setup"
-msgstr "Configuration du système de fichiers"
+msgstr "Oppsett av filsystem"
 
 #: ../subiquity/controllers/filesystem.py:59
 msgid "Choose guided or manual partitioning"
-msgstr "Choisir le partitionnement guidé ou manuel"
+msgstr "Velg veiledet eller manuell partisjonering"
 
 #: ../subiquity/controllers/filesystem.py:70
 msgid "Select available disks to format and mount"
-msgstr "Sélectionner un disque disponible et son point de montage"
+msgstr "Velg formatering og montering av disker"
 
 #: ../subiquity/controllers/filesystem.py:79
 msgid "Choose the installation target"
-msgstr "Choisir la cible d'installation"
+msgstr "Velg installasjonsmål"
 
 #: ../subiquity/controllers/filesystem.py:98
 msgid "Filesystem error"
-msgstr "Erreur du système de fichier"
+msgstr "Filsystem-feil"
 
 #: ../subiquity/controllers/filesystem.py:99
 msgid "Error while installing Ubuntu"
-msgstr "Une erreur est survenue lors de l'installation d'Ubuntu"
+msgstr "Feil under installasjon av Ubuntu"
 
 #: ../subiquity/controllers/filesystem.py:100
 msgid "Failed to obtain write permissions to /tmp"
-msgstr "Impossible d'obtenir des permissions d'écriture sur /tmp"
+msgstr "Klarte ikke å hente skrivetillatelse til /tmp"
 
 #: ../subiquity/controllers/filesystem.py:114
 msgid "Partition, format, and mount {}"
-msgstr "Partition, formatage et point de montage {}"
+msgstr "Partisjoner, formater og monter {}"
 
 #: ../subiquity/controllers/filesystem.py:115
 msgid "Partition the disk, or format the entire device without partitions"
-msgstr "Partitionner ou formater le disque en entier sans partitions"
+msgstr "Partisjoner disken, eller formater hele enheten uten partisjoner"
 
 #: ../subiquity/controllers/filesystem.py:125
 msgid "Select whole disk, or partition, to format and mount."
-msgstr ""
-"Sélectionner le disque entier ou la partition pour le formatage et montage"
+msgstr "Velg disk eller partisjon som skal formateres og monteres."
 
 #: ../subiquity/controllers/filesystem.py:132
 msgid "Edit partition details format and mount."
-msgstr "Modifier le format et point de montage"
+msgstr "Rediger partisjonsdetaljer til formatering og montering."
 
 #: ../subiquity/controllers/filesystem.py:295
 msgid "Format and/or mount {}"
-msgstr "Formater et/ou monter {}"
+msgstr "Formater og eller monter {}"
 
 #: ../subiquity/controllers/filesystem.py:296
 msgid "Format or mount whole disk."
-msgstr "Formater ou monter le disque entier."
+msgstr "Formater eller monter disk."
 
 #: ../subiquity/controllers/filesystem.py:305
 msgid "Mount partition {} of {}"
-msgstr "Monter la partition {} de {}"
+msgstr "Monter partisjon {} av {}"
 
 #: ../subiquity/controllers/filesystem.py:306
 msgid "Mount partition."
-msgstr "Monter la partition."
+msgstr "Monter partisjon."
 
 #: ../subiquity/controllers/filesystem.py:308
 msgid "Format and mount partition {} of {}"
-msgstr "Formater et monter la partition {} de {}"
+msgstr "Formater og monter partisjon {} av {}"
 
 #: ../subiquity/controllers/filesystem.py:309
 msgid "Format and mount partition."
-msgstr "Formater et monter la partition."
+msgstr "Formater og monter partisjon"
 
 #: ../subiquity/controllers/filesystem.py:380
 msgid "Select next or previous disks with n and p"
-msgstr "Sélectionnez précédent ou suivant avec p et n"
+msgstr "Velg neste eller forrige enhet med n og p"
 
 #: ../subiquity/controllers/identity.py:34
 msgid "Profile setup"
-msgstr "Configuration du profil"
+msgstr "Profiloppsett"
 
 #: ../subiquity/controllers/identity.py:35
 msgid ""
 "Enter the username and password (or ssh identity) you will use to log in to "
 "the system."
 msgstr ""
-"Entrez le nom d'utilisateur et le mot de passe (ou l'identité SSH) à "
-"utiliser pour vous connecter au système."
+"Skriv inn brukernavn og passord (eller ssh-identitet) du vil bruke til å "
+"logge inn på systemet."
 
 #: ../subiquity/controllers/installpath.py:36
 msgid ""
@@ -110,12 +109,13 @@ msgid ""
 "amazing internet things. This is the installer for Ubuntu on servers and "
 "internet devices."
 msgstr ""
+"Velkommen til Ubuntu, plattformen for skytjenester, tjenerklynger og "
+"fantastiske internett-ting. Dette er installasjonsprogrammet for Ubuntu på "
+"tjenermaskiner og andre internett-ting."
 
 #: ../subiquity/controllers/installpath.py:40
 msgid "Use UP, DOWN arrow keys, and ENTER, to navigate options"
-msgstr ""
-"Utilisez les flèches HAUT et BAS pour naviguer entre les options, et ENTRÉE "
-"pour confirmer."
+msgstr "Bruk OPP-, NED- og ENTER-knappene for å bevege deg mellom ulike valg"
 
 #: ../subiquity/controllers/installpath.py:72
 msgid ""
@@ -126,6 +126,13 @@ msgid ""
 "\n"
 "For further details, see https://maas.io/."
 msgstr ""
+"MAAS står for «Metal As A Service» (maskin levert som en tjeneste). Med "
+"Ubuntu kan du behandle fysiske tjenermaskiner på samme måte som virtuelle "
+"tjenere/instanser i en skytjeneste. Med MAAS gjør du om ren maskinvare til "
+"fleksible sky-liknende ressurser, i stedet for å måtte håndtere hver enkelt "
+"maskin individuelt.\n"
+"\n"
+"Se https://maas.io/ (på engelsk) for mer info."
 
 #: ../subiquity/controllers/installpath.py:86
 msgid ""
@@ -133,232 +140,232 @@ msgid ""
 "the fabric (group of trunked switches) it is attached to. The rack "
 "controller requires the accessible URL of a MAAS region controller."
 msgstr ""
+"En MAAS-hyllekontrollenhet tilbyr tjenester til maskiner i «fabrikken» (dvs. "
+"gruppa med maskiner) som de inngår i. Kontrollenheten krever at du har URL-"
+"en til en MAAS-regionkontrollenhet tilgjengelig."
 
 #: ../subiquity/controllers/installprogress.py:204
 msgid "Installation complete!"
-msgstr "L'installation est terminée!"
+msgstr "Installasjon fullført."
 
 #: ../subiquity/controllers/installprogress.py:205
 msgid "Finished install!"
-msgstr "L'installation est finie!"
+msgstr "Installasjon fullført."
 
 #: ../subiquity/controllers/installprogress.py:247
 msgid "Installing system"
-msgstr "Installation du système"
+msgstr "Installerer system"
 
 #: ../subiquity/controllers/installprogress.py:248
 #: ../subiquity/controllers/installprogress.py:251
 msgid "Thank you for using Ubuntu!"
-msgstr "Merci d'utiliser Ubuntu!"
+msgstr "Takk for at du bruker Ubuntu!"
 
 #: ../subiquity/controllers/installprogress.py:250
 msgid "Install complete!"
-msgstr "Installation terminée !"
+msgstr "Installasjon fullført."
 
 #: ../subiquity/controllers/installprogress.py:253
 msgid "An error occurred during installation"
-msgstr "Une erreur est survenue durant l'installation"
+msgstr "Det oppstod en feil under installasjon"
 
 #: ../subiquity/controllers/installprogress.py:254
 msgid "Please report this error in Launchpad"
-msgstr "Veuillez signaler cette erreur sur Launchpad"
+msgstr "Vi ber om at du rapporterer denne feilen via Launchpad"
 
 #: ../subiquity/controllers/welcome.py:34
 msgid "Please choose your preferred language"
-msgstr "Veuillez choisir la langue d'installation"
+msgstr "Velg foretrukket språk"
 
 #: ../subiquity/controllers/welcome.py:35
 msgid "Use UP, DOWN and ENTER keys to select your language."
-msgstr ""
-"Utilisez les flèches HAUT et BAS, et ENTRÉE pour sélectionner la langue "
-"d'installation"
+msgstr "Bruk PIL OPP, PIL NED og ENTER for å velge språk."
 
 #: ../subiquitycore/controllers/network.py:330
 msgid "Network connections"
-msgstr "Connections réseau"
+msgstr "Nettverkstilkoblinger"
 
 #: ../subiquitycore/controllers/network.py:331
 msgid ""
 "Configure at least one interface this server can use to talk to other "
 "machines, and which preferably provides sufficient access for updates."
 msgstr ""
-"Configurez au moins une interface pour que ce serveur puisse communiquer "
-"avec les autres machines sur le réseau, préférablement un réseau avec accès "
-"aux mises à jour."
+"Sett opp minst ett grensesnitt som denne tjeneren kan bruke til å snakke med "
+"andre maskiner. Grensesnittet bør ha tilgang til offentlig Internett slik at "
+"det kan hente oppdateringer."
 
 #: ../subiquitycore/controllers/network.py:334
 msgid "Select an interface to configure it or select Done to continue"
 msgstr ""
-"Selectionnez une interface à configurer ou sélectionnez Terminé pour "
-"continuer."
+"Velg et grensesnitt som skal settes opp, eller trykk Ferdig for å fortsette"
 
 #: ../subiquitycore/ui/interactive.py:107
 msgid "Yes"
-msgstr "Oui"
+msgstr "Ja"
 
 #: ../subiquitycore/ui/interactive.py:107
 #: ../subiquity/ui/views/filesystem/filesystem.py:62
 #: ../subiquity/ui/views/identity.py:92
 msgid "No"
-msgstr "Non"
+msgstr "Nei"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:107
 msgid "Use a static IPv4 configuration"
-msgstr "Utiliser une IP statique"
+msgstr "Bruk statisk IPv4-oppsett"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:109
 msgid "Use DHCPv4 on this interface"
-msgstr "Utiliser DHCPv4 sur cette interface"
+msgstr "Bruk DHCPv4 på dette grensesnittet"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:111
 #: ../subiquitycore/ui/views/network_configure_interface.py:129
 msgid "Do not use"
-msgstr "Ne pas utiliser"
+msgstr "Ikke bruk"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:125
 msgid "Use a static IPv6 configuration"
-msgstr "Utiliser une addresse IPv6 statique"
+msgstr "Bruk statisk IPv6-oppsett"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:127
 msgid "Use DHCPv6 on this interface"
-msgstr "Utiliser DHCPv6 sur cette interface"
+msgstr "Bruk DHCPv6 på dette grensesnittet"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:143
 msgid "Configure WIFI settings"
-msgstr "Configurer la connection sans-fil"
+msgstr "Sett opp trådløst nettverk"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:148
 #: ../subiquitycore/ui/views/network.py:135
 #: ../subiquity/ui/views/filesystem/filesystem.py:156
 msgid "Done"
-msgstr "Terminé"
+msgstr "Ferdig"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:66
 msgid "Save"
-msgstr "Sauvegarder"
+msgstr "Lagre"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:68
 msgid "Subnet:"
-msgstr "Masque de sous-réseau:"
+msgstr "Subnett:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:69
 msgid "Address:"
-msgstr "Adresse :"
+msgstr "Adresse:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:70
 msgid "Gateway:"
-msgstr "Passerelle :"
+msgstr "Ruter:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
 msgid "Name servers:"
-msgstr "Serveurs DNS :"
+msgstr "Navnetjenere:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
 msgid "IP addresses, comma separated"
-msgstr "Adresses IP, séparées par des virgules"
+msgstr "IP-adresser, adskilt med komma"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:72
 msgid "Search domains:"
-msgstr "Domaines de recherche :"
+msgstr "Søkedomener:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:72
 msgid "Domains, comma separated"
-msgstr "Noms de domaines, séparés par des virgules"
+msgstr "Domener, adskilt med komma"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:123
 #, python-format
 msgid "Example: %s"
-msgstr "Exemple : %s"
+msgstr "Eksempel: %s"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
 msgid "Set this as default gateway"
-msgstr "Utiliser comme passerelle par défaut"
+msgstr "Bruk dette som forvalgt ruter"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:155
 msgid "This will be your default gateway"
-msgstr "Cette connection sera utilisée comme passerelle par défaut"
+msgstr "Dette blir brukt som forvalgt ruter"
 
 #: ../subiquitycore/ui/views/network.py:45
 msgid "Cancel"
-msgstr "Annuler"
+msgstr "Avbryt"
 
 #: ../subiquitycore/ui/views/network.py:51
 msgid "Applying network config"
-msgstr "Application de la configuration réseau"
+msgstr "Tar i bruk nettverksoppsett"
 
 #: ../subiquitycore/ui/views/network.py:65
 #, python-format
 msgid "Associated to '%s', will associate to '%s'"
-msgstr "Associé à '%s', sera réassocié à '%s'"
+msgstr "Koblet til «%s». Forsøker å koble til «%s»"
 
 #: ../subiquitycore/ui/views/network.py:67
 #, python-format
 msgid "Associated to '%s'"
-msgstr "Associé à '%s'"
+msgstr "Koblet til «%s»"
 
 #: ../subiquitycore/ui/views/network.py:69
 #, python-format
 msgid "No access point configured, but associated to '%s'"
-msgstr "Aucun point d'accès configuré, mais associé à '%s'"
+msgstr "Ingen aksesspunkt er satt opp, men du er koblet til «%s»"
 
 #: ../subiquitycore/ui/views/network.py:72
 #, python-format
 msgid "Will associate to '%s'"
-msgstr "Sera associé à '%s'"
+msgstr "Prøver å koble til «%s»"
 
 #: ../subiquitycore/ui/views/network.py:74
 msgid "No access point configured"
-msgstr "Aucun point d'accès configuré"
+msgstr "Ingen aksesspunkt er satt opp"
 
 #: ../subiquitycore/ui/views/network.py:94
 #, python-format
 msgid "Will use DHCP for IPv%s, currently has address%%s:"
-msgstr "Utilisera DHCP pour IPv%s, l'adresse courante est:"
+msgstr "Prøver å bruke DHCP på IPv%s. Gjeldende adresse%%s:"
 
 #: ../subiquitycore/ui/views/network.py:95
 #, python-format
 msgid "Will use DHCP for IPv%s"
-msgstr "Utilisera DHCP pour IPv%s"
+msgstr "Prøver å bruke DHCP på IPv%s"
 
 #: ../subiquitycore/ui/views/network.py:98
 #, python-format
 msgid "Using static address%%s for IPv%s:"
-msgstr "Utilise l'adresse statique suivante pour IPv%s:"
+msgstr "Bruker statisk adresse%%s på IPv%s:"
 
 #: ../subiquitycore/ui/views/network.py:99
 #, python-format
 msgid "Will use static address%%s for IPv%s:"
-msgstr "Utilisera l'adresse statique suivante pour IPv%s:"
+msgstr "Prøver å bruke statisk adresse%%s på IPv%s:"
 
 #: ../subiquitycore/ui/views/network.py:101
 #, python-format
 msgid "Currently has address%s:"
-msgstr "Utilise l'adresse%s:"
+msgstr "Har adresse%s:"
 
 #: ../subiquitycore/ui/views/network.py:104
 #, python-format
 msgid "Has no IPv%s configuration, currently has address%%s:"
-msgstr "Aucune configuration IPv%s, utilise présentement l'adresse:"
+msgstr "Har ingen IPv%s-oppsett. Har adresse%%s:"
 
 #: ../subiquitycore/ui/views/network.py:106
 #, python-format
 msgid "IPv%s is not configured"
-msgstr "IPv%s n'est pas configuré"
+msgstr "IPv%s er ikke satt opp"
 
 #: ../subiquitycore/ui/views/network.py:134
 #: ../subiquity/ui/views/filesystem/filesystem.py:159
 #: ../subiquity/ui/views/filesystem/guided.py:46
 msgid "Back"
-msgstr "Retour"
+msgstr "Tilbake"
 
 #: ../subiquitycore/ui/views/network.py:161
 msgid "Not connected"
-msgstr "Aucune connection"
+msgstr "Ikke tilkoblet"
 
 #: ../subiquitycore/ui/views/network.py:204
 #, python-format
 msgid "  IPv4 default route %s."
-msgstr "  Passerelle par défaut IPv4: %s."
+msgstr "  IPv4 forvalgt rute %s."
 
 #: ../subiquity/models/installpath.py:36
 msgid "Install Ubuntu"
@@ -366,19 +373,19 @@ msgstr "Installer Ubuntu"
 
 #: ../subiquity/models/installpath.py:37
 msgid "Install MAAS Region Controller"
-msgstr ""
+msgstr "Installer MAAS-regionkontroller"
 
 #: ../subiquity/models/installpath.py:38
 msgid "Install MAAS Rack Controller"
-msgstr ""
+msgstr "Installer MAAS-hyllekontroller"
 
 #: ../subiquity/ui/mount.py:54
 msgid "other"
-msgstr "autre"
+msgstr "andre"
 
 #: ../subiquity/ui/mount.py:56
 msgid "leave unmounted"
-msgstr "laisser sans point de montage"
+msgstr "ikke monter"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:48
 msgid ""
@@ -387,42 +394,46 @@ msgid ""
 "\n"
 "Are you sure you want to continue?\n"
 msgstr ""
+"Hvis du velger å fortsette, begynner installasjonsprosessen. Alle data på "
+"diskene du har valgt å formatere går tapt.\n"
+"\n"
+"Er du sikker på at du vil fortsette?\n"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:63
 msgid "Continue"
-msgstr "Continuer"
+msgstr "Fortsett"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:66
 msgid "Confirm destructive action"
-msgstr "Confirmer l'action"
+msgstr "Bekreft ødeleggende handling"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:83
 msgid "FILE SYSTEM SUMMARY"
-msgstr "SOMMAIRE DU SYSTÈME DE FICHIERS"
+msgstr "OPPSUMMERING AV FILSYSTEM"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:87
 msgid "AVAILABLE DEVICES"
-msgstr "DISQUES DISPONIBLES"
+msgstr "TILGJENGELIGE ENHETER"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:158
 msgid "Reset"
-msgstr "Rétablir"
+msgstr "Tilbakestill"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:223
 msgid "Add/Edit Partitions"
-msgstr "Ajouter/modifier des partitions"
+msgstr "Legg til/rediger partisjoner"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:226
 msgid "Add First Partition"
-msgstr "Ajouter la première partition"
+msgstr "Legg til første partisjon"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:229
 msgid "Edit Partitions"
-msgstr "Modifier les partitions"
+msgstr "Rediger partisjoner"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:238
 msgid "No disks available."
-msgstr "Aucun disque disponible."
+msgstr "Ingen lagringsenhet tilgjengelig."
 
 #: ../subiquity/ui/views/filesystem/guided.py:33
 msgid ""
@@ -432,145 +443,144 @@ msgid ""
 "If you choose to partition an entire disk you will still have a chance to "
 "review and modify the results."
 msgstr ""
+"Installasjonsprogrammet kan veilede deg gjennom partisjonering av en fysisk "
+"lagringsenhet. Du kan også gjøre det selv hvis du vil.\n"
+"\n"
+"Hvis du velger å partisjonere en hel fysisk enhet, får du fremdeles mulighet "
+"til å se over og endre oppsettet før du går videre."
 
 #: ../subiquity/ui/views/filesystem/guided.py:44
 msgid "Use An Entire Disk"
-msgstr "Utiliser un disque entier"
+msgstr "Bruk en hel fysisk enhet"
 
 #: ../subiquity/ui/views/filesystem/guided.py:45
 msgid "Manual"
-msgstr "Manuel"
+msgstr "Manuelt"
 
 #: ../subiquity/ui/views/filesystem/guided.py:79
 msgid "Choose the disk to install to:"
-msgstr "Choisir le disque où installer:"
+msgstr "Velg enhet å installere på:"
 
 #: ../subiquity/ui/views/identity.py:71
 msgid "Enter your github username."
-msgstr "Saisir votre nom d'utilisateur Github"
+msgstr "Skriv inn github-brukernavn."
 
 #: ../subiquity/ui/views/identity.py:72
 msgid "Enter your Launchpad username."
-msgstr "Saisir votre nom d'utilisateur Launchpad"
+msgstr "Skriv inn Launchpad-brukernavn"
 
 #: ../subiquity/ui/views/identity.py:75
 msgid "Import Username:"
-msgstr "Importer le nom d'utilisateur :"
+msgstr "Importer brukernavn:"
 
 #: ../subiquity/ui/views/identity.py:76
 msgid "Github username:"
-msgstr "Nom d'utilisateur Github :"
+msgstr "Github-brukernavn:"
 
 #: ../subiquity/ui/views/identity.py:77
 msgid "Launchpad username:"
-msgstr "Nom d'utilisateur Launchpad :"
+msgstr "Launchpad-brukernavn:"
 
 #: ../subiquity/ui/views/identity.py:82
 msgid "Your name:"
-msgstr "Votre nom :"
+msgstr "Navnet ditt:"
 
 #: ../subiquity/ui/views/identity.py:84
 msgid "Your server's name:"
-msgstr "Le nom de cette machine:"
+msgstr "Tjenermaskinens navn:"
 
 #: ../subiquity/ui/views/identity.py:85
 msgid "The name it uses when it talks to other computers."
-msgstr "Le nom qu’il utilise pour communiquer avec d’autres ordinateurs."
+msgstr "Navn som datamaskinen bruker når den snakker med andre maskiner."
 
 #: ../subiquity/ui/views/identity.py:86
 msgid "Pick a username:"
-msgstr "Choisir un nom d’utilisateur :"
+msgstr "Velg brukernavn:"
 
 #: ../subiquity/ui/views/identity.py:87
 msgid "Choose a password:"
-msgstr "Choisir un mot de passe :"
+msgstr "Velg passord:"
 
 #: ../subiquity/ui/views/identity.py:88
 msgid "Confirm your password:"
-msgstr "Confirmer votre mot de passe:"
+msgstr "Bekreft passord:"
 
 #: ../subiquity/ui/views/identity.py:90
 msgid "Import SSH identity:"
-msgstr "Importer une identité SSH:"
+msgstr "Importer SSH-identitet:"
 
 #: ../subiquity/ui/views/identity.py:93
 msgid "from Github"
-msgstr "depuis Github"
+msgstr "fra Github"
 
 #: ../subiquity/ui/views/identity.py:94
 msgid "from Launchpad"
-msgstr "depuis Launchpad"
+msgstr "fra Launchpad"
 
 #: ../subiquity/ui/views/identity.py:97
 msgid "You can import your SSH keys from Github, Launchpad or Ubuntu One."
-msgstr ""
-"Vous pouvez importer vos clés SSH depuis Github, Launchpad ou Ubuntu One."
+msgstr "Du kan importere SSH-nøkler fra Github, Launchpad eller Ubuntu One."
 
 #: ../subiquity/ui/views/identity.py:102
 msgid "Real name must not be empty."
-msgstr "Le nom réel ne doit pas être vide."
+msgstr "Du må skrive inn navnet ditt."
 
 #: ../subiquity/ui/views/identity.py:104
 msgid "Realname too long, must be < "
-msgstr "Le nom réel est trop long, doit être moins de   caractères "
+msgstr "Navnet ditt er for langt. Det må være < "
 
 #: ../subiquity/ui/views/identity.py:108
 msgid "Server name must not be empty"
-msgstr "Le nom de la machine ne doit pas être vide"
+msgstr "Du må velge et tjenernavn"
 
 #: ../subiquity/ui/views/identity.py:111
 msgid "Server name too long, must be < "
-msgstr ""
-"Le nom de la machine est trop long, doit être moins de    charactères. "
+msgstr "Valgt tjenernavn er for langt. Det må være < "
 
 #: ../subiquity/ui/views/identity.py:114
 msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
-msgstr ""
-"Le nom d'hôte doit correspondre à NAME_REGEX, c'est-à-dire [a-z_] [a-z0-9_-]*"
+msgstr "Vertsnavn må samsvare med NAME_REGEX, altså [a-z_][a-z0-9_-]*"
 
 #: ../subiquity/ui/views/identity.py:118
 msgid "Username missing"
-msgstr "Le nom d'utilisateur est manquant"
+msgstr "Brukernavn mangler"
 
 #: ../subiquity/ui/views/identity.py:121
 msgid "Username too long, must be < "
-msgstr ""
-"Le nom d'utilisateur est trop long, doit être moins de   caractères. "
+msgstr "Valgt brukernavn er for langt. Det må være < "
 
 #: ../subiquity/ui/views/identity.py:124
 msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
-msgstr ""
-"Le nom d'utilisateur doit correspondre à NAME_REGEX, c'est-à-dire [a-z_][a-"
-"z0-9_-]*"
+msgstr "Brukernavn må samsvare med NAME_REGEX, altså [a-z_][a-z0-9_-]*"
 
 #: ../subiquity/ui/views/identity.py:128
 msgid "Password must be set"
-msgstr "Le mot de passe doit être défini"
+msgstr "Du må velge passord"
 
 #: ../subiquity/ui/views/identity.py:132
 msgid "Passwords do not match"
-msgstr "Les mots de passe ne correspondent pas."
+msgstr "Passordene er ulike"
 
 #: ../subiquity/ui/views/identity.py:139
 msgid "This field must not be blank."
-msgstr "Ce champ ne doit pas être vide."
+msgstr "Dette feltet kan ikke stå tomt."
 
 #: ../subiquity/ui/views/identity.py:141
 msgid "SSH id too long, must be < "
-msgstr "L'identité SSH est trop longue, doit être moins de   caractères. "
+msgstr "Valgt SSH-id er for lang. Den må være < "
 
 #: ../subiquity/ui/views/installprogress.py:60
 msgid "Full installer output"
-msgstr ""
+msgstr "Fullstendig utdata"
 
 #: ../subiquity/ui/views/installprogress.py:63
 msgid "Close"
-msgstr "Fermer"
+msgstr "Lukk"
 
 #: ../subiquity/ui/views/installprogress.py:91
 msgid "Reboot Now"
-msgstr "Redémarrer maintenant"
+msgstr "Start på nytt nå"
 
 #: ../subiquity/ui/views/installprogress.py:94
 msgid "Exit To Shell"
-msgstr ""
+msgstr "Gå til kommandoskall"
