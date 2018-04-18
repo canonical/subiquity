@@ -65,7 +65,7 @@ class BaseView(WidgetWrap):
             return None
         key = super().keypress(size, key)
         if key == 'esc':
-            if self.orig_w is not None:
+            if hasattr(self._w, 'bottom_w'):
                 self.remove_overlay()
                 return None
             else:
