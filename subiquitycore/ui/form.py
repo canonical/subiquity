@@ -199,7 +199,7 @@ class BoundFormField(object):
         if self._caption is not None:
             return self._caption
         else:
-            return self.field.caption
+            return _(self.field.caption)
 
     @caption.setter
     def caption(self, val):
@@ -320,8 +320,8 @@ class Form(object, metaclass=MetaForm):
     cancel_label = _("Cancel")
 
     def __init__(self, initial={}):
-        self.done_btn = Toggleable(done_btn(self.ok_label, on_press=self._click_done))
-        self.cancel_btn = Toggleable(cancel_btn(self.cancel_label, on_press=self._click_cancel))
+        self.done_btn = Toggleable(done_btn(_(self.ok_label), on_press=self._click_done))
+        self.cancel_btn = Toggleable(cancel_btn(_(self.cancel_label), on_press=self._click_cancel))
         self.buttons = button_pile([self.done_btn, self.cancel_btn])
         self._fields = []
         for field in self._unbound_fields:
