@@ -48,7 +48,7 @@ class RealnameEditor(StringEditor, WantsToKnowFormField):
     def valid_char(self, ch):
         if len(ch) == 1 and ch in ':,=':
             self.bff.in_error = True
-            self.bff.show_extra(("info_error", "The characters : , and = are not permitted in this field"))
+            self.bff.show_extra(("info_error", _("The characters : , and = are not permitted in this field")))
             return False
         else:
             return super().valid_char(ch)
@@ -56,7 +56,7 @@ class RealnameEditor(StringEditor, WantsToKnowFormField):
 class UsernameEditor(StringEditor, WantsToKnowFormField):
     def __init__(self):
         self.valid_char_pat = r'[-a-z0-9_]'
-        self.error_invalid_char = "The only characters permitted in this field are a-z, 0-9, _ and -"
+        self.error_invalid_char = _("The only characters permitted in this field are a-z, 0-9, _ and -")
         super().__init__()
 
     def valid_char(self, ch):
@@ -202,17 +202,17 @@ class IdentityView(BaseView):
     def _check_password(self, sender, new_text):
         password = self.form.password.value
         if not password.startswith(new_text):
-            self.form.confirm_password.show_extra(("info_error", "Passwords do not match"))
+            self.form.confirm_password.show_extra(("info_error", _("Passwords do not match")))
         else:
             self.form.confirm_password.show_extra('')
 
     def _select_ssh_import_id(self, sender, val):
         iu = self.form.import_username
         data = _ssh_import_data[val]
-        iu.help = data['help']
-        iu.caption = data['caption']
+        iu.help = _(data['help'])
+        iu.caption = _(data['caption'])
         iu.widget.valid_char_pat = data['valid_char']
-        iu.widget.error_invalid_char = data['error_invalid_char']
+        iu.widget.error_invalid_char = _(data['error_invalid_char'])
         iu.enabled = val is not None
         if val is not None:
             self.form_rows.body.focus += 2

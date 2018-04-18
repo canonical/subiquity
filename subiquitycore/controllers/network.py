@@ -420,25 +420,22 @@ class NetworkController(BaseController):
         self.ui.set_body(NetworkBondInterfacesView(self.model, self))
 
     def network_configure_interface(self, iface):
-        self.ui.set_header("Network interface {}".format(iface))
+        self.ui.set_header(_("Network interface {}").format(iface))
         self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureInterfaceView(self.model, self, iface))
 
     def network_configure_ipv4_interface(self, iface):
-        self.ui.set_header("Network interface {} manual IPv4 "
-                           "configuration".format(iface))
+        self.ui.set_header(_("Network interface {} manual IPv4 configuration").format(iface))
         self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureIPv4InterfaceView(self.model, self, iface))
 
     def network_configure_wlan_interface(self, iface):
-        self.ui.set_header("Network interface {} WIFI "
-                           "configuration".format(iface))
+        self.ui.set_header(_("Network interface {} WIFI configuration").format(iface))
         self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureWLANView(self.model, self, iface))
 
     def network_configure_ipv6_interface(self, iface):
-        self.ui.set_header("Network interface {} manual IPv6 "
-                           "configuration".format(iface))
+        self.ui.set_header(_("Network interface {} manual IPv6 configuration").format(iface))
         self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureIPv6InterfaceView(self.model, self, iface))
 

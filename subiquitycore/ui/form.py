@@ -184,7 +184,7 @@ class BoundFormField(object):
         if self._help is not None:
             return self._help
         elif self.field.help is not None:
-            return self.field.help
+            return _(self.field.help)
         else:
             return ""
 

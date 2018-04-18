@@ -45,7 +45,7 @@ class ProgressView(BaseView):
         self.event_listwalker = SimpleFocusListWalker([])
         self.event_listbox = ListBox(self.event_listwalker)
         self.event_linebox = MyLineBox(self.event_listbox)
-        self.event_buttons = button_pile([other_btn("View full log", on_press=self.view_log)])
+        self.event_buttons = button_pile([other_btn(_("View full log"), on_press=self.view_log)])
         event_body = [
             ('pack', Text("")),
             ('weight', 1, Padding.center_79(self.event_linebox)),

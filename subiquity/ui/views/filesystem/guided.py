@@ -46,7 +46,7 @@ class GuidedFilesystemView(BaseView):
         back = back_btn(_("Back"), on_press=self.cancel)
         lb = ListBox([
             Padding.center_70(Text("")),
-            Padding.center_70(Text(text)),
+            Padding.center_70(Text(_(text))),
             Padding.center_70(Text("")),
             button_pile([guided, manual, back]),
             ])
@@ -67,7 +67,7 @@ class GuidedDiskSelectionView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        cancel = cancel_btn("Cancel", on_press=self.cancel)
+        cancel = cancel_btn(_("Cancel"), on_press=self.cancel)
         disks = []
         for disk in self.model.all_disks():
             disk_btn = forward_btn(

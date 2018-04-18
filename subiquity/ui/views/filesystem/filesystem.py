@@ -55,7 +55,7 @@ class FilesystemConfirmation(Stretchy):
         self.parent = parent
         self.controller = controller
         widgets = [
-            Text(confirmation_text),
+            Text(_(confirmation_text)),
             Text(""),
             button_pile([
                 cancel_btn(_("No"), on_press=self.cancel),
@@ -120,25 +120,26 @@ class FilesystemView(BaseView):
     def _build_filesystem_list(self):
         log.debug('FileSystemView: building part list')
         cols = []
-        longest_path = len("MOUNT POINT")
+        mount_point_text = _("MOUNT POINT")
+        longest_path = len(mount_point_text)
         for m in sorted(self.model._mounts, key=lambda m:m.path):
             path = m.path
             longest_path = max(longest_path, len(path))
-            for p, *_ in reversed(cols):
+            for p, *dummy in reversed(cols):
                 if path.startswith(p):
                     path = [('info_minor', p), path[len(p):]]
                     break
             cols.append((m.path, path, humanize_size(m.device.volume.size), m.device.fstype, m.device.volume.desc()))
         for fs in self.model._filesystems:
             if fs.fstype == 'swap':
-                cols.append((None, 'SWAP', humanize_size(fs.volume.size), fs.fstype, fs.volume.desc()))
+                cols.append((None, _('SWAP'), humanize_size(fs.volume.size), fs.fstype, fs.volume.desc()))
 
         if len(cols) == 0:
             return Pile([Color.info_minor(
-                Text("No disks or partitions mounted."))])
-        cols.insert(0, (None, "MOUNT POINT", "SIZE", "TYPE", "DEVICE TYPE"))
+                Text(_("No disks or partitions mounted.")))])
+        cols.insert(0, (None, mount_point_text, _("SIZE"), _("TYPE"), _("DEVICE TYPE")))
         pl = []
-        for _, a, b, c, d in cols:
+        for dummy, a, b, c, d in cols:
             if b == "SIZE":
                 b = Text(b, align='center')
             else:
@@ -172,7 +173,7 @@ class FilesystemView(BaseView):
             inputs.append(Columns([(40, col1)], 1))
 
         inputs = []
-        col3(Text("DEVICE"), Text("SIZE", align="center"), Text("TYPE"))
+        col3(Text(_("DEVICE")), Text(_("SIZE"), align="center"), Text(_("TYPE")))
         r.append(Pile(inputs))
 
         for disk in self.model.all_disks():
@@ -183,7 +184,7 @@ class FilesystemView(BaseView):
             col3(disk_label, size, typ)
             fs = disk.fs()
             if fs is not None:
-                label = "entire device, "
+                label = _("entire device, ")
                 fs_obj = self.model.fs_by_name[fs.fstype]
                 if fs.mount():
                     label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
@@ -196,7 +197,7 @@ class FilesystemView(BaseView):
                     disk_btn = Color.info_minor(Text("  " + label))
                 col1(disk_btn)
             for partition in disk.partitions():
-                label = "partition {}, ".format(partition._number)
+                label = _("partition {}, ").format(partition._number)
                 fs = partition.fs()
                 if fs is not None:
                     if fs.mount():
@@ -206,7 +207,7 @@ class FilesystemView(BaseView):
                 elif partition.flag == "bios_grub":
                     label += "bios_grub"
                 else:
-                    label += "unformatted"
+                    label += _("unformatted")
                 size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
                 if partition.available:
                     part_btn = menu_btn(label=label, on_press=self.click_partition, user_arg=partition)

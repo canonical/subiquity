@@ -119,13 +119,16 @@ another layout or run the automated detection again.
         model = self.keyboard_detector.keyboard_view.model
         layout, variant = model.lookup(self.step.result)
         var_desc = []
+        layout_text = _("Layout")
+        var_text = _("Variant")
+        width = max(len(layout_text), len(var_text), 12)
         if variant is not None:
-            var_desc = [Text(_("    Variant: ") + variant)]
+            var_desc = [Text("%*s: %s"%(width, var_text, variant))]
         return Pile([
-                Text(self.preamble),
-                Text(_("    Layout: ") + layout),
+                Text(_(self.preamble)),
+                Text("%*s: %s"%(width, layout_text, layout)),
             ] + var_desc + [
-                Text(self.postamble),
+                Text(_(self.postamble)),
                 button_pile([ok_btn(label=_("OK"), on_press=self.ok)]),
                 ])
 
