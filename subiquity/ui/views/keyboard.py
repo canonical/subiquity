@@ -394,7 +394,7 @@ class KeyboardView(BaseView):
         if ':' in result:
             layout, variant = result.split(':')
         else:
-            layout, variant = result, None
+            layout, variant = result, ""
         self.form.layout.widget.value = layout
         self.form.variant.widget.value = variant
         self._w.focus_position = 3
