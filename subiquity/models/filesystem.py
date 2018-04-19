@@ -161,7 +161,7 @@ class Disk:
         return align_down(self._info.size) - (2<<20) # The first and last megabyte of the disk are not usable.
 
     def desc(self):
-        return "local disk"
+        return _("local disk")
 
     @property
     def label(self):
@@ -199,7 +199,7 @@ class Partition:
         return self._fs
 
     def desc(self):
-        return "partition of {}".format(self.device.desc())
+        return _("partition of {}").format(self.device.desc())
 
     @property
     def available(self):
