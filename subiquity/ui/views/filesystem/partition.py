@@ -69,11 +69,11 @@ class SizeWidget(StringEditor):
         except ValueError:
             return
         if sz > self.form.max_size:
-            self.form.size.show_extra(('info_minor', "Capped partition size at %s"%(self.form.size_str,)))
+            self.form.size.show_extra(('info_minor', _("Capped partition size at %s")%(self.form.size_str,)))
             self.value = self.form.size_str
         elif align_up(sz) != sz and humanize_size(align_up(sz)) != self.form.size.value:
             sz_str = humanize_size(align_up(sz))
-            self.form.size.show_extra(('info_minor', "Rounded size up to %s"%(sz_str,)))
+            self.form.size.show_extra(('info_minor', _("Rounded size up to %s")%(sz_str,)))
             self.value = sz_str
 
 class SizeField(FormField):
@@ -87,7 +87,7 @@ class PartitionForm(Form):
         self.max_size = max_size
         if max_size is not None:
             self.size_str = humanize_size(max_size)
-            self.size.caption = "Size (max {})".format(self.size_str)
+            self.size.caption = _("Size (max {})").format(self.size_str)
         super().__init__(initial)
         if max_size is None:
             self.remove_field('size')
@@ -124,10 +124,10 @@ class PartitionForm(Form):
             return
         # /usr/include/linux/limits.h:PATH_MAX
         if len(mount) > 4095:
-            return 'Path exceeds PATH_MAX'
+            return _('Path exceeds PATH_MAX')
         dev = self.mountpoint_to_devpath_mapping.get(mount)
         if dev is not None:
-            return "%s is already mounted at %s"%(dev, mount)
+            return _("%s is already mounted at %s")%(dev, mount)
 
 
 class PartitionFormatView(BaseView):

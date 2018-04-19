@@ -74,7 +74,7 @@ class NetworkConfigForm(Form):
     def clean_subnet(self, subnet):
         log.debug("clean_subnet %r", subnet)
         if '/' not in subnet:
-            raise ValueError("should be in CIDR form (xx.xx.xx.xx/yy)")
+            raise ValueError(_("should be in CIDR form (xx.xx.xx.xx/yy)"))
         return self.ip_network_cls(subnet)
 
     def clean_address(self, address):
@@ -84,7 +84,7 @@ class NetworkConfigForm(Form):
         except ValueError:
             return
         if address not in subnet:
-            raise ValueError("'%s' is not contained in '%s'" % (address, subnet))
+            raise ValueError(_("'%s' is not contained in '%s'") % (address, subnet))
         return address
 
     def clean_gateway(self, gateway):

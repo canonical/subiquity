@@ -72,7 +72,7 @@ class InstallProgressController(BaseController):
         log.debug('curtin_error')
         self.install_state = InstallState.ERROR
         self.progress_view.spinner.stop()
-        self.progress_view.set_status(('info_error', "An error has occurred"))
+        self.progress_view.set_status(('info_error', _("An error has occurred")))
         self.progress_view.show_complete(True)
         self.default()
 
@@ -156,11 +156,11 @@ class InstallProgressController(BaseController):
     def curtin_start_install(self):
         log.debug('Curtin Install: starting curtin')
         self.install_state = InstallState.RUNNING
-        self.footer_description = urwid.Text("starting...")
+        self.footer_description = urwid.Text(_("starting..."))
         self.progress_view = ProgressView(self)
         self.footer_spinner = self.progress_view.spinner
 
-        self.ui.set_footer(urwid.Columns([('pack', urwid.Text("Install in progress:")), (self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
+        self.ui.set_footer(urwid.Columns([('pack', urwid.Text(_("Install in progress:"))), (self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
 
         self.journal_listener_handle = self.start_journald_listener([self._event_syslog_identifier, self._log_syslog_identifier], self._journal_event)
 
@@ -190,7 +190,7 @@ class InstallProgressController(BaseController):
     def install_complete(self):
         self.ui.progress_current += 1
         if not self.progress_view_showing:
-            self.ui.set_footer("Install complete")
+            self.ui.set_footer(_("Install complete"))
         if self._identity_config_done:
             self.postinstall_configuration()
 

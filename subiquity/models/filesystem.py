@@ -59,7 +59,7 @@ def dehumanize_size(size):
 
     parts = size.split('.')
     if len(parts) > 2:
-        raise ValueError("{!r} is not valid input".format(size_in))
+        raise ValueError(_("{!r} is not valid input").format(size_in))
     elif len(parts) == 2:
         div = 10**len(parts[1])
         size = parts[0] + parts[1]
@@ -69,7 +69,7 @@ def dehumanize_size(size):
     try:
         num = int(size)
     except ValueError:
-        raise ValueError("{!r} is not valid input".format(size_in))
+        raise ValueError(_("{!r} is not valid input").format(size_in))
 
     if suffix is not None:
         if suffix not in HUMAN_UNITS:
