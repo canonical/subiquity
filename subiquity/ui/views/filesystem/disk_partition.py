@@ -54,6 +54,15 @@ class DiskPartitionView(BaseView):
     def _build_model_inputs(self):
         partitioned_disks = []
 
+        if self.disk.free > 0:
+            if len(self.disk.partitions()) > 0:
+                final_label = _("Add another partition")
+            else:
+                final_label = _("Add first partition")
+            label_width = max(25, len(final_label) + 4)
+        else:
+            label_width = 25
+
         def format_volume(label, part):
             size = humanize_size(part.size)
             if part.fs() is None:
@@ -70,27 +79,23 @@ class DiskPartitionView(BaseView):
             else:
                 part_btn = menu_btn(label, on_press=self._click_part, user_arg=part)
             return Columns([
-                (25, part_btn),
+                (label_width, part_btn),
                 (9, Text(size, align="right")),
                 Text(fstype),
                 Text(mountpoint),
             ], 2)
         if self.disk.fs() is not None:
-            partitioned_disks.append(format_volume("entire disk", self.disk))
+            partitioned_disks.append(format_volume(_("entire disk"), self.disk))
         else:
             for part in self.disk.partitions():
-                partitioned_disks.append(format_volume("Partition {}".format(part._number), part))
+                partitioned_disks.append(format_volume(_("Partition {}").format(part._number), part))
         if self.disk.free > 0:
             free_space = humanize_size(self.disk.free)
-            if len(self.disk.partitions()) > 0:
-                label = "Add another partition"
-            else:
-                label = "Add first partition"
-            add_btn = menu_btn(label, on_press=self.add_partition)
+            add_btn = menu_btn(final_label, on_press=self.add_partition)
             partitioned_disks.append(Columns([
-                (25, add_btn),
+                (label_width, add_btn),
                 (9, Text(free_space, align="right")),
-                Text("free space"),
+                Text(_("free space")),
             ], 2))
         if self.model.bootable():
             for p in self.disk.partitions():
@@ -102,8 +107,7 @@ class DiskPartitionView(BaseView):
                     button_pile([other_btn(label=_("Select as boot disk"), on_press=self.make_boot_disk)]))
         if len(self.disk.partitions()) == 0 and \
            self.disk.available:
-            text = ("Format or create swap on entire "
-                    "device (unusual, advanced)")
+            text = _("Format or create swap on entire device (unusual, advanced)")
             partitioned_disks.append(Text(""))
             partitioned_disks.append(
                 menu_btn(label=text, on_press=self.format_entire))
@@ -119,7 +123,7 @@ class DiskPartitionView(BaseView):
     def show_disk_info_w(self):
         """ Runs hdparm against device and displays its output
         """
-        text = ("Show disk information")
+        text = _("Show disk information")
         return menu_btn(
                 label=text,
                 on_press=self.show_disk_info)

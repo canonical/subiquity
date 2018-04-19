@@ -137,14 +137,18 @@ class FilesystemView(BaseView):
         if len(cols) == 0:
             return Pile([Color.info_minor(
                 Text(_("No disks or partitions mounted.")))])
-        cols.insert(0, (None, mount_point_text, _("SIZE"), _("TYPE"), _("DEVICE TYPE")))
+        size_text = _("SIZE")
+        type_text = _("TYPE")
+        size_width = max(len(size_text), 9)
+        type_width = max(len(type_text), self.model.longest_fs_name)
+        cols.insert(0, (None, mount_point_text, size_text, type_text, _("DEVICE TYPE")))
         pl = []
         for dummy, a, b, c, d in cols:
             if b == "SIZE":
                 b = Text(b, align='center')
             else:
                 b = Text(b, align='right')
-            pl.append(Columns([(longest_path, Text(a)), (9, b), (self.model.longest_fs_name, Text(c)), Text(d)], 4))
+            pl.append(Columns([(longest_path, Text(a)), (size_width, b), (type_width, Text(c)), Text(d)], 4))
         return Pile(pl)
 
     def _build_buttons(self):
@@ -166,11 +170,11 @@ class FilesystemView(BaseView):
         r = []
 
         def col3(col1, col2, col3):
-            inputs.append(Columns([(40, col1), (10, col2), (10, col3)], 2))
+            inputs.append(Columns([(42, col1), (10, col2), col3], 2))
         def col2(col1, col2):
-            inputs.append(Columns([(40, col1), col2], 2))
+            inputs.append(Columns([(42, col1), col2], 2))
         def col1(col1):
-            inputs.append(Columns([(40, col1)], 1))
+            inputs.append(Columns([(42, col1)], 1))
 
         inputs = []
         col3(Text(_("DEVICE")), Text(_("SIZE"), align="center"), Text(_("TYPE")))
