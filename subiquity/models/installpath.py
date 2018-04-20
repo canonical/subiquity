@@ -30,7 +30,6 @@ class InstallpathModel(object):
     # update() is not run, upon selecting the default choice...
     source = '/media/filesystem'
     curtin = {}
-    cconfig = {}
 
     @property
     def paths(self):
@@ -44,7 +43,6 @@ class InstallpathModel(object):
         if self.path == 'ubuntu':
             self.source = '/media/filesystem'
             self.curtin = {}
-            self.cconfig = {}
         elif self.path == 'maas_region':
             self.source = '/media/region'
             self.curtin['debconf_selections'] = {
@@ -52,21 +50,23 @@ class InstallpathModel(object):
                 'maas-password': 'maas-region-controller maas/password password %s' % results['password'],
             }
             self.curtin['late_commands'] = {
-                '90-maas': ['rm', '-f', '/target/etc/maas/rackd.conf'],
-                '91-maas': ['rm', '-f', '/target/etc/maas/region.conf'],
-                '92-maas': ['curtin', 'in-target', '--', 'maas-rack', 'config', '--init'],
-                '93-maas': ['curtin', 'in-target', '--', 'dpkg-reconfigure', '-u', '-fnoninteractive', 'maas-rack-controller'],
+                '900-maas': ['rm', '-f', '/target/etc/maas/rackd.conf'],
+                '901-maas': ['rm', '-f', '/target/etc/maas/region.conf'],
+                '902-maas': ['curtin', 'in-target', '--', 'maas-rack', 'config', '--init'],
+                '903-maas': ['curtin', 'in-target', '--', 'dpkg-reconfigure', '-u', '-fnoninteractive', 'maas-rack-controller'],
+                '904-maas': ['mount', '-o', 'bind', '/proc', '/target/proc'],
+                '905-maas': ['mount', '-o', 'bind', '/sys', '/target/sys'],
+                '906-maas': ['mount', '-o', 'bind', '/dev', '/target/dev'],
+                '907-maas': ['mount', '-o', 'bind', '/target/bin/true', '/target/usr/sbin/invoke-rc.d'],
+                '908-maas': ['chroot', '/target', 'sh', '-c', 'pg_ctlcluster --skip-systemctl-redirect $(/bin/ls /var/lib/postgresql/) main start'],
+                '909-maas': ['chroot', '/target', 'sh', '-c', 'debconf -fnoninteractive -omaas-region-controller /var/lib/dpkg/info/maas-region-controller.config configure'],
+                '910-maas': ['chroot', '/target', 'sh', '-c', 'debconf -fnoninteractive -omaas-region-controller /var/lib/dpkg/info/maas-region-controller.postinst configure'],
+                '911-maas': ['chroot', '/target', 'sh', '-c', 'pg_ctlcluster --skip-systemctl-redirect $(/bin/ls /var/lib/postgresql/) main stop'],
+                '912-maas': ['umount', '/target/usr/sbin/invoke-rc.d'],
+                '913-maas': ['umount', '/target/dev'],
+                '914-maas': ['umount', '/target/sys'],
+                '915-maas': ['umount', '/target/proc'],
             }
-            # Ideally, we should be creating overlay on top of /media/region
-            # starting postgresql server
-            # and then executing this in said overlay
-            # stopping postgresql server
-            # and installing from the touched up overlay
-            # as configuring user account needs running postgresql database
-            self.cconfig['runcmd'] = [
-                "debconf -fnoninteractive -omaas-region-controller /var/lib/dpkg/info/maas-region-controller.config configure",
-                "debconf -fnoninteractive -omaas-region-controller /var/lib/dpkg/info/maas-region-controller.postinst configure",
-                ]
         elif self.path == 'maas_rack':
             self.source = '/media/rack'
             self.curtin['debconf_selections'] = {
@@ -81,12 +81,8 @@ class InstallpathModel(object):
                 # and it doesn't gracefully handle the case of db_go returning 30 skipped
                 '93-maas': ['curtin', 'in-target', '--', 'sh', '-c', 'debconf -fnoninteractive -omaas-rack-controller /var/lib/dpkg/info/maas-rack-controller.postinst configure || :'],
             }
-            self.cconfig = {}
         else:
             raise ValueError("invalid Installpath %s" % self.path)
 
     def render(self):
         return self.curtin
-
-    def render_cloudinit(self):
-        return self.cconfig

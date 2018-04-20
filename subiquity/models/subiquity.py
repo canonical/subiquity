@@ -78,7 +78,6 @@ class SubiquityModel:
             'resize_rootfs': False,
             'users': [user_info],
         }
-        config.update(self.installpath.render_cloudinit())
         return config
 
     def _cloud_init_files(self):
