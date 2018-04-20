@@ -34,8 +34,8 @@ class InstallpathModel(object):
     def paths(self):
         return [
             (_('Install Ubuntu'),                 'ubuntu'),
-            (_('Install MAAS Region Controller'), 'maas_region'),
-            (_('Install MAAS Rack Controller'),   'maas_rack'),
+            (_('Install MAAS bare-metal cloud (region)'), 'maas_region'),
+            (_('Install MAAS bare-metal cloud (rack)'),   'maas_rack'),
         ]
 
     def update(self, results):
