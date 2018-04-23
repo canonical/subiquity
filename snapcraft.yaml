@@ -71,6 +71,7 @@ parts:
     plugin: dump
     build-packages:
       - console-setup
+      - locales
       - xkb-data-i18n
     stage-packages: [libc6]
     prepare: |
