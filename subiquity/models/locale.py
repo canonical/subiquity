@@ -32,6 +32,7 @@ class LocaleModel(object):
         ('ca_EN', 'Catalan'),
         ('hr_HR', 'Croatian'),
         ('nl_NL', 'Dutch'),
+        ('fi_FI', 'Finnish'),
         ('de_DE', 'German'),
         ('el_GR', 'Greek, Modern (1453-)'),
 #        ('he_IL', 'Hebrew'), # disabled as it does not render correctly on a vt with default font
@@ -41,6 +42,7 @@ class LocaleModel(object):
         ('pl_PL', 'Polish'),
         ('ru_RU', 'Russian'),
         ('es_ES', 'Spanish'),
+        ('uk_UA', 'Ukrainian'),
     ]
     selected_language = None
 

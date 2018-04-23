@@ -1,16 +1,16 @@
-# Russian translation for subiquity
-# Copyright (c) 2017 Rosetta Contributors and Canonical Ltd 2017
+# Finnish translation for subiquity
+# Copyright (c) 2018 Rosetta Contributors and Canonical Ltd 2018
 # This file is distributed under the same license as the subiquity package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2018-04-20 13:27+1200\n"
-"PO-Revision-Date: 2017-09-17 14:08+0000\n"
-"Last-Translator: Dimitri John Ledkov <launchpad@surgut.co.uk>\n"
-"Language-Team: Russian <ru@li.org>\n"
+"PO-Revision-Date: 2018-04-22 17:46+0000\n"
+"Last-Translator: Jiri Grönroos <Unknown>\n"
+"Language-Team: Finnish <fi@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,11 +21,11 @@ msgstr ""
 #: ../subiquity/controllers/filesystem.py:69
 #: ../subiquity/controllers/filesystem.py:78
 msgid "Filesystem setup"
-msgstr ""
+msgstr "Tiedostojärjestelmän asetukset"
 
 #: ../subiquity/controllers/filesystem.py:59
 msgid "Choose guided or manual partitioning"
-msgstr ""
+msgstr "Valitse ohjattu tai manuaalinen osiointi"
 
 #: ../subiquity/controllers/filesystem.py:70
 msgid "Select available disks to format and mount"
@@ -37,11 +37,11 @@ msgstr ""
 
 #: ../subiquity/controllers/filesystem.py:98
 msgid "Filesystem error"
-msgstr ""
+msgstr "Tiedostojärjestelmän virhe"
 
 #: ../subiquity/controllers/filesystem.py:99
 msgid "Error while installing Ubuntu"
-msgstr ""
+msgstr "Virhe Ubuntua asennettaessa"
 
 #: ../subiquity/controllers/filesystem.py:100
 msgid "Failed to obtain write permissions to /tmp"
@@ -69,15 +69,15 @@ msgstr ""
 
 #: ../subiquity/controllers/filesystem.py:296
 msgid "Format or mount whole disk."
-msgstr ""
+msgstr "Alusta tai liitä koko levy."
 
 #: ../subiquity/controllers/filesystem.py:305
 msgid "Mount partition {} of {}"
-msgstr ""
+msgstr "Liitä osio {}/{}"
 
 #: ../subiquity/controllers/filesystem.py:306
 msgid "Mount partition."
-msgstr ""
+msgstr "Liitä osio."
 
 #: ../subiquity/controllers/filesystem.py:308
 msgid "Format and mount partition {} of {}"
@@ -85,7 +85,7 @@ msgstr ""
 
 #: ../subiquity/controllers/filesystem.py:309
 msgid "Format and mount partition."
-msgstr ""
+msgstr "Alusta ja liitä osio."
 
 #: ../subiquity/controllers/filesystem.py:380
 msgid "Select next or previous disks with n and p"
@@ -93,7 +93,7 @@ msgstr ""
 
 #: ../subiquity/controllers/identity.py:34
 msgid "Profile setup"
-msgstr ""
+msgstr "Profiilin asetukset"
 
 #: ../subiquity/controllers/identity.py:35
 msgid ""
@@ -131,7 +131,7 @@ msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:75
 msgid "An error has occurred"
-msgstr ""
+msgstr "Tapahtui virhe"
 
 #: ../subiquity/controllers/installprogress.py:159
 msgid "starting..."
@@ -143,11 +143,11 @@ msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:193
 msgid "Install complete"
-msgstr ""
+msgstr "Asennus valmis"
 
 #: ../subiquity/controllers/installprogress.py:204
 msgid "Installation complete!"
-msgstr ""
+msgstr "Asennus valmistui!"
 
 #: ../subiquity/controllers/installprogress.py:205
 msgid "Finished install!"
@@ -155,12 +155,12 @@ msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:247
 msgid "Installing system"
-msgstr "Установка системы"
+msgstr "Asennetaan järjestelmää"
 
 #: ../subiquity/controllers/installprogress.py:248
 #: ../subiquity/controllers/installprogress.py:251
 msgid "Thank you for using Ubuntu!"
-msgstr ""
+msgstr "Kiitos kun käytät Ubuntua!"
 
 #: ../subiquity/controllers/installprogress.py:250
 msgid "Install complete!"
@@ -168,15 +168,15 @@ msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:253
 msgid "An error occurred during installation"
-msgstr ""
+msgstr "Asennuksen aikana tapahtui virhe"
 
 #: ../subiquity/controllers/installprogress.py:254
 msgid "Please report this error in Launchpad"
-msgstr ""
+msgstr "Ilmoita tästä virheestä Launchpadille"
 
 #: ../subiquity/controllers/keyboard.py:48
 msgid "Keyboard configuration"
-msgstr ""
+msgstr "Näppäimistön asetukset"
 
 #: ../subiquity/controllers/keyboard.py:50
 msgid ""
@@ -206,7 +206,7 @@ msgstr ""
 
 #: ../subiquity/controllers/welcome.py:34
 msgid "Please choose your preferred language"
-msgstr ""
+msgstr "Valitse ensisijainen kieli"
 
 #: ../subiquity/controllers/welcome.py:35
 msgid "Use UP, DOWN and ENTER keys to select your language."
@@ -214,7 +214,7 @@ msgstr ""
 
 #: ../subiquitycore/controllers/network.py:330
 msgid "Network connections"
-msgstr "Сетевые соединения"
+msgstr "Verkkoyhteydet"
 
 #: ../subiquitycore/controllers/network.py:331
 msgid ""
@@ -228,7 +228,7 @@ msgstr ""
 
 #: ../subiquitycore/controllers/network.py:423
 msgid "Network interface {}"
-msgstr ""
+msgstr "Verkkoliitäntä {}"
 
 #: ../subiquitycore/controllers/network.py:428
 msgid "Network interface {} manual IPv4 configuration"
@@ -244,11 +244,11 @@ msgstr ""
 
 #: ../subiquitycore/ui/form.py:279
 msgid ", or "
-msgstr ""
+msgstr ", tai "
 
 #: ../subiquitycore/ui/form.py:281
 msgid " or "
-msgstr ""
+msgstr " tai "
 
 #: ../subiquitycore/ui/form.py:284
 #, python-format
@@ -262,7 +262,7 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/disk_partition.py:51
 #: ../subiquity/ui/views/filesystem/filesystem.py:162
 msgid "Done"
-msgstr "Готово"
+msgstr "Valmis"
 
 #: ../subiquitycore/ui/form.py:320
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:22
@@ -271,17 +271,17 @@ msgstr "Готово"
 #: ../subiquity/ui/views/filesystem/guided.py:70
 #: ../subiquity/ui/views/keyboard.py:84 ../subiquity/ui/views/keyboard.py:331
 msgid "Cancel"
-msgstr "Отменить"
+msgstr "Peru"
 
 #: ../subiquitycore/ui/interactive.py:107 ../subiquity/ui/views/keyboard.py:204
 msgid "Yes"
-msgstr "Да"
+msgstr "Kyllä"
 
 #: ../subiquitycore/ui/interactive.py:107
 #: ../subiquity/ui/views/filesystem/filesystem.py:61
 #: ../subiquity/ui/views/identity.py:108 ../subiquity/ui/views/keyboard.py:205
 msgid "No"
-msgstr "Нет"
+msgstr "Ei"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:107
 msgid "Use a static IPv4 configuration"
@@ -294,7 +294,7 @@ msgstr ""
 #: ../subiquitycore/ui/views/network_configure_interface.py:111
 #: ../subiquitycore/ui/views/network_configure_interface.py:129
 msgid "Do not use"
-msgstr ""
+msgstr "Älä käytä"
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:125
 msgid "Use a static IPv6 configuration"
@@ -306,13 +306,13 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_interface.py:143
 msgid "Configure WIFI settings"
-msgstr ""
+msgstr "Määritä wifi-asetukset"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:66
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:38
 #: ../subiquity/ui/views/filesystem/partition.py:200
 msgid "Save"
-msgstr "Сохранить"
+msgstr "Tallenna"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:68
 msgid "Subnet:"
@@ -320,15 +320,15 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:69
 msgid "Address:"
-msgstr "Адрес:"
+msgstr "Osoite:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:70
 msgid "Gateway:"
-msgstr "Шлюз:"
+msgstr "Yhdyskäytävä:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
 msgid "Name servers:"
-msgstr ""
+msgstr "Nimipalvelimet:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
 msgid "IP addresses, comma separated"
@@ -336,7 +336,7 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:72
 msgid "Search domains:"
-msgstr "Домены поиска:"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:72
 msgid "Domains, comma separated"
@@ -354,7 +354,7 @@ msgstr ""
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:123
 #, python-format
 msgid "Example: %s"
-msgstr ""
+msgstr "Esimerkki: %s"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
 msgid "Set this as default gateway"
@@ -433,11 +433,11 @@ msgstr ""
 #: ../subiquity/ui/views/installpath.py:44
 #: ../subiquity/ui/views/keyboard.py:351
 msgid "Back"
-msgstr "Назад"
+msgstr "Takaisin"
 
 #: ../subiquitycore/ui/views/network.py:161
 msgid "Not connected"
-msgstr "Нет соединения"
+msgstr "Ei yhdistetty"
 
 #: ../subiquitycore/ui/views/network.py:204
 #, python-format
@@ -458,7 +458,7 @@ msgstr ""
 
 #: ../subiquity/models/installpath.py:36
 msgid "Install Ubuntu"
-msgstr "Установить Ubuntu"
+msgstr "Asenna Ubuntu"
 
 #: ../subiquity/models/installpath.py:37
 msgid "Install MAAS bare-metal cloud (region)"
@@ -470,7 +470,7 @@ msgstr ""
 
 #: ../subiquity/ui/mount.py:54
 msgid "other"
-msgstr "прочее"
+msgstr ""
 
 #: ../subiquity/ui/mount.py:56
 msgid "leave unmounted"
@@ -486,11 +486,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/disk_partition.py:88
 msgid "entire disk"
-msgstr ""
+msgstr "koko levy"
 
 #: ../subiquity/ui/views/filesystem/disk_partition.py:91
 msgid "Partition {}"
-msgstr ""
+msgstr "Osio {}"
 
 #: ../subiquity/ui/views/filesystem/disk_partition.py:98
 msgid "free space"
@@ -521,7 +521,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:62
 msgid "Continue"
-msgstr "Продолжить"
+msgstr "Jatka"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:65
 msgid "Confirm destructive action"
@@ -537,7 +537,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:123
 msgid "MOUNT POINT"
-msgstr ""
+msgstr "LIITOSPISTE"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:135
 msgid "SWAP"
@@ -545,17 +545,17 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:139
 msgid "No disks or partitions mounted."
-msgstr ""
+msgstr "Ei levyjä tai osioita liitetty."
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:140
 #: ../subiquity/ui/views/filesystem/filesystem.py:180
 msgid "SIZE"
-msgstr ""
+msgstr "KOKO"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:141
 #: ../subiquity/ui/views/filesystem/filesystem.py:180
 msgid "TYPE"
-msgstr ""
+msgstr "TYYPPI"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:144
 msgid "DEVICE TYPE"
@@ -563,11 +563,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:164
 msgid "Reset"
-msgstr "Сбросить"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:180
 msgid "DEVICE"
-msgstr ""
+msgstr "LAITE"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:191
 msgid "entire device, "
@@ -579,11 +579,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:214
 msgid "unformatted"
-msgstr ""
+msgstr "alustamaton"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:229
 msgid "Add/Edit Partitions"
-msgstr ""
+msgstr "Lisää/muokkaa osioita"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:232
 msgid "Add First Partition"
@@ -591,11 +591,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:235
 msgid "Edit Partitions"
-msgstr ""
+msgstr "Muokkaa osioita"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:244
 msgid "No disks available."
-msgstr "Нет доступных дисков."
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:33
 msgid ""
@@ -608,11 +608,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:44
 msgid "Use An Entire Disk"
-msgstr ""
+msgstr "Käytä koko levyä"
 
 #: ../subiquity/ui/views/filesystem/guided.py:45
 msgid "Manual"
-msgstr "Вручную"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:79
 msgid "Choose the disk to install to:"
@@ -630,7 +630,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/partition.py:90
 msgid "Size (max {})"
-msgstr ""
+msgstr "Koko (enintään {})"
 
 #: ../subiquity/ui/views/filesystem/partition.py:127
 msgid "Path exceeds PATH_MAX"
@@ -664,17 +664,17 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/partition.py:192
 msgid "Create"
-msgstr ""
+msgstr "Luo"
 
 #: ../subiquity/ui/views/filesystem/partition.py:206
 #: ../subiquity/ui/views/keyboard.py:83 ../subiquity/ui/views/keyboard.py:132
 #: ../subiquity/ui/views/keyboard.py:330
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 #: ../subiquity/ui/views/filesystem/partition.py:232
 msgid "Delete"
-msgstr ""
+msgstr "Poista"
 
 #: ../subiquity/ui/views/identity.py:51
 msgid "The characters : , and = are not permitted in this field"
@@ -690,48 +690,48 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:83
 msgid "Github Username:"
-msgstr ""
+msgstr "Github-käyttäjätunnus:"
 
 #: ../subiquity/ui/views/identity.py:89
 msgid "Launchpad Username:"
-msgstr ""
+msgstr "Launchpad-käyttäjätunnus:"
 
 #: ../subiquity/ui/views/identity.py:98
 msgid "Your name:"
-msgstr "Ваше имя:"
+msgstr "Nimesi:"
 
 #: ../subiquity/ui/views/identity.py:100
 msgid "Your server's name:"
-msgstr ""
+msgstr "Palvelimesi nimi:"
 
 #: ../subiquity/ui/views/identity.py:101
 msgid "The name it uses when it talks to other computers."
-msgstr "Имя, используемое при связи с другими компьютерами."
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:102
 msgid "Pick a username:"
-msgstr "Введите имя пользователя:"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:103
 #: ../subiquity/ui/views/installpath.py:75
 msgid "Choose a password:"
-msgstr "Задайте пароль:"
+msgstr "Valitse salasana:"
 
 #: ../subiquity/ui/views/identity.py:104
 msgid "Confirm your password:"
-msgstr "Подтвердите пароль:"
+msgstr "Vahvista salasana:"
 
 #: ../subiquity/ui/views/identity.py:106
 msgid "Import SSH identity:"
-msgstr ""
+msgstr "Tuo SSH-identiteetti:"
 
 #: ../subiquity/ui/views/identity.py:109
 msgid "from Github"
-msgstr ""
+msgstr "Githubista"
 
 #: ../subiquity/ui/views/identity.py:110
 msgid "from Launchpad"
-msgstr ""
+msgstr "Launchpadilta"
 
 #: ../subiquity/ui/views/identity.py:113
 msgid "You can import your SSH keys from Github or Launchpad."
@@ -747,7 +747,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:124
 msgid "Server name must not be empty"
-msgstr ""
+msgstr "Palvelimen nimi ei voi olla tyhjä"
 
 #: ../subiquity/ui/views/identity.py:127
 msgid "Server name too long, must be < "
@@ -775,15 +775,15 @@ msgstr ""
 #: ../subiquity/ui/views/identity.py:144
 #: ../subiquity/ui/views/installpath.py:90
 msgid "Password must be set"
-msgstr ""
+msgstr "Salasana tulee olla asetettu"
 
 #: ../subiquity/ui/views/identity.py:148 ../subiquity/ui/views/identity.py:205
 msgid "Passwords do not match"
-msgstr "Пароли не совпадают"
+msgstr "Salasanat eivät vastaa toisiaan"
 
 #: ../subiquity/ui/views/identity.py:163
 msgid "This field must not be blank."
-msgstr ""
+msgstr "Tämä kenttä ei voi olla tyhjä."
 
 #: ../subiquity/ui/views/identity.py:165
 msgid "SSH id too long, must be < "
@@ -843,7 +843,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:48
 msgid "View full log"
-msgstr ""
+msgstr "Näytä koko loki"
 
 #: ../subiquity/ui/views/installprogress.py:60
 msgid "Full installer output"
@@ -851,11 +851,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:63
 msgid "Close"
-msgstr "Закрыть"
+msgstr "Sulje"
 
 #: ../subiquity/ui/views/installprogress.py:91
 msgid "Reboot Now"
-msgstr "Перезагрузить сейчас"
+msgstr "Käynnistä uudelleen nyt"
 
 #: ../subiquity/ui/views/installprogress.py:94
 msgid "Exit To Shell"
@@ -892,7 +892,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:122
 msgid "Layout"
-msgstr ""
+msgstr "Asettelu"
 
 #: ../subiquity/ui/views/keyboard.py:123
 msgid "Variant"
@@ -900,7 +900,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:148
 msgid "Please press one of the following keys:"
-msgstr ""
+msgstr "Paina yhtä seuraavista näppäimistä:"
 
 #: ../subiquity/ui/views/keyboard.py:177
 msgid "Input was not recognized, try again"
@@ -908,7 +908,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:199
 msgid "Is the following key present on your keyboard?"
-msgstr ""
+msgstr "Löytyykö seuraava näppäin näppäimistöstäsi?"
 
 #: ../subiquity/ui/views/keyboard.py:267
 msgid "Applying config"
@@ -929,19 +929,19 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:288
 msgid "Caps Lock"
-msgstr ""
+msgstr "Caps Lock"
 
 #: ../subiquity/ui/views/keyboard.py:289
 msgid "Right Alt (AltGr)"
-msgstr ""
+msgstr "Oikea Alt (AltGr)"
 
 #: ../subiquity/ui/views/keyboard.py:290
 msgid "Right Control"
-msgstr ""
+msgstr "Oikea Control"
 
 #: ../subiquity/ui/views/keyboard.py:291
 msgid "Right Shift"
-msgstr ""
+msgstr "Oikea Shift"
 
 #: ../subiquity/ui/views/keyboard.py:292
 msgid "Right Logo key"
@@ -949,39 +949,39 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:293
 msgid "Menu key"
-msgstr ""
+msgstr "Menu-näppäin"
 
 #: ../subiquity/ui/views/keyboard.py:294
 msgid "Alt+Shift"
-msgstr ""
+msgstr "Alt+Shift"
 
 #: ../subiquity/ui/views/keyboard.py:295
 msgid "Control+Shift"
-msgstr ""
+msgstr "Control+Shift"
 
 #: ../subiquity/ui/views/keyboard.py:296
 msgid "Control+Alt"
-msgstr ""
+msgstr "Control+Alt"
 
 #: ../subiquity/ui/views/keyboard.py:297
 msgid "Alt+Caps Lock"
-msgstr ""
+msgstr "Alt+Caps Lock"
 
 #: ../subiquity/ui/views/keyboard.py:298
 msgid "Left Control+Left Shift"
-msgstr ""
+msgstr "Vasen Control+Vasen Shift"
 
 #: ../subiquity/ui/views/keyboard.py:299
 msgid "Left Alt"
-msgstr ""
+msgstr "Vasen Alt"
 
 #: ../subiquity/ui/views/keyboard.py:300
 msgid "Left Control"
-msgstr ""
+msgstr "Vasen Control"
 
 #: ../subiquity/ui/views/keyboard.py:301
 msgid "Left Shift"
-msgstr ""
+msgstr "Vasen Shift"
 
 #: ../subiquity/ui/views/keyboard.py:302
 msgid "Left Logo key"
@@ -989,7 +989,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:303
 msgid "Scroll Lock key"
-msgstr ""
+msgstr "Scroll Lock -näppäin"
 
 #: ../subiquity/ui/views/keyboard.py:304
 msgid "No toggling"
@@ -1005,7 +1005,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:353
 msgid "Layout:"
-msgstr ""
+msgstr "Asettelu:"
 
 #: ../subiquity/ui/views/keyboard.py:354
 msgid "Variant:"
@@ -1013,7 +1013,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:386
 msgid "Identify keyboard"
-msgstr ""
+msgstr "Tunnista näppäimistö"
 
 #: ../subiquity/ui/views/proxy.py:33
 msgid ""
