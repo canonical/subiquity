@@ -191,6 +191,9 @@ class InstallProgressController(BaseController):
         self.ui.progress_current += 1
         if not self.progress_view_showing:
             self.ui.set_footer(_("Install complete"))
+        else:
+            # Re-set footer so progress bar updates.
+            self.ui.set_footer(_("Thank you for using Ubuntu!"))
         if self._identity_config_done:
             self.postinstall_configuration()
 
