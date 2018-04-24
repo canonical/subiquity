@@ -18,6 +18,7 @@
 Provides high level options for Ubuntu install
 
 """
+import binascii
 import logging
 import re
 from urwid import connect_signal, Text
@@ -26,10 +27,15 @@ from subiquitycore.ui.buttons import back_btn, forward_btn
 from subiquitycore.ui.utils import Padding, button_pile
 from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.view import BaseView
+from subiquitycore.ui.interactive import (
+    PasswordEditor,
+    )
 from subiquity.ui.views.identity import UsernameField, PasswordField, USERNAME_MAXLEN
 from subiquitycore.ui.form import (
     Form,
+    simple_field,
     URLField,
+    WantsToKnowFormField,
 )
 
 
@@ -90,6 +96,30 @@ class RegionForm(Form):
             return _("Password must be set")
 
 
+# Copied from MAAS:
+def to_bin(u):
+    """Convert ASCII-only unicode string to hex encoding."""
+    assert isinstance(u, str), "%r is not a unicode string" % (u,)
+    # Strip ASCII whitespace from u before converting.
+    return binascii.a2b_hex(u.encode("ascii").strip())
+
+
+class RackSecretEditor(PasswordEditor, WantsToKnowFormField):
+    def __init__(self):
+        self.valid_char_pat = r'[a-fA-F0-9]'
+        self.error_invalid_char = _("The secret can only contain hexadecimal characters, i.e. 0-9, a-f, A-F.")
+        super().__init__()
+
+    def valid_char(self, ch):
+        if len(ch) == 1 and not re.match(self.valid_char_pat, ch):
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error", self.error_invalid_char))
+            return False
+        else:
+            return super().valid_char(ch)
+
+RackSecretField = simple_field(RackSecretEditor)
+
 class RackForm(Form):
 
     url = URLField(
@@ -98,7 +128,7 @@ class RackForm(Form):
             "e.g. \"http://192.168.1.1:5240/MAAS\". "
             "localhost or 127.0.0.1 are not useful values here." ))
 
-    secret = PasswordField(
+    secret = RackSecretField(
         _("MAAS shared secret:"),
         help=_(
             "The secret can be found in /var/lib/maas/secret "
@@ -111,6 +141,10 @@ class RackForm(Form):
     def validate_secret(self):
         if len(self.secret.value) < 1:
             return _("Secret must be set")
+        try:
+            to_bin(self.secret.value)
+        except binascii.Error as error:
+            return _("Secret could not be decoded: %s")%(error,)
 
 
 class MAASView(BaseView):
