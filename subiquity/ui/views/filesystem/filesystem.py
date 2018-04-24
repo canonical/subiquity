@@ -186,6 +186,9 @@ class FilesystemView(BaseView):
             size = Text(humanize_size(disk.size).rjust(9))
             typ = Text(disk.desc())
             col3(disk_label, size, typ)
+            if disk.size < self.model.lower_size_limit:
+                r.append(Color.info_minor(Pile(inputs)))
+                continue
             fs = disk.fs()
             if fs is not None:
                 label = _("entire device, ")

@@ -158,7 +158,7 @@ class Disk:
 
     @property
     def size(self):
-        return align_down(self._info.size) - (2<<20) # The first and last megabyte of the disk are not usable.
+        return max(0, align_down(self._info.size) - (2<<20)) # The first and last megabyte of the disk are not usable.
 
     def desc(self):
         return _("local disk")
@@ -254,6 +254,8 @@ def align_down(size, block_size=1 << 20):
 
 
 class FilesystemModel(object):
+
+    lower_size_limit = 128*(1<<20)
 
     supported_filesystems = [
         ('ext4', True, FS('ext4', True)),

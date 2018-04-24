@@ -13,11 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 from urwid import (
     Text,
     )
 
-from subiquitycore.ui.utils import button_pile, Padding
+from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
@@ -28,6 +30,8 @@ from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
+
+log = logging.getLogger("subiquity.ui.views.filesystem.guided")
 
 
 text = _("""The installer can guide you through partitioning an entire disk \
@@ -70,9 +74,11 @@ class GuidedDiskSelectionView(BaseView):
         cancel = cancel_btn(_("Cancel"), on_press=self.cancel)
         disks = []
         for disk in self.model.all_disks():
-            disk_btn = forward_btn(
-                "%-42s %s"%(disk.label, humanize_size(disk.size).rjust(9)),
-                on_press=self.choose_disk, user_arg=disk)
+            label = "%-42s %s"%(disk.label, humanize_size(disk.size).rjust(9))
+            if disk.size >= model.lower_size_limit:
+                disk_btn = forward_btn(label, on_press=self.choose_disk, user_arg=disk)
+            else:
+                disk_btn = Color.info_minor(Text("  "+label))
             disks.append(disk_btn)
         body = Pile([
             ('pack', Text("")),
