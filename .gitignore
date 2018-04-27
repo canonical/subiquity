@@ -63,8 +63,5 @@ logs/*
 venv
 .pybuild
 
-# probert as its pulled externally
-probert
-
 # installer isos
 *.iso
