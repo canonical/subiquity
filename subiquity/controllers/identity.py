@@ -16,7 +16,6 @@
 import logging
 
 from subiquitycore.controller import BaseController
-from subiquitycore.user import create_user
 
 from subiquity.ui.views import IdentityView
 
@@ -47,21 +46,13 @@ class IdentityController(BaseController):
                 'confirm_password': self.answers['password'],
                 'ssh_import_id': self.answers.get('ssh-import-id', ''),
                 }
-            self.create_user(d)
+            self.done(d)
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
 
-    def create_user(self, result):
+    def done(self, result):
         log.debug("User input: {}".format(result))
         self.model.add_user(result)
-        try:
-            create_user(result, dryrun=self.opts.dry_run)
-        except PermissionError:
-            log.exception('Failed to write curtin post-install config')
-            self.signal.emit_signal('filesystem:error',
-                                    'curtin_write_postinst_config', result)
-            return None
         self.signal.emit_signal('installprogress:identity-config-done')
-        # show next view
         self.signal.emit_signal('next-screen')

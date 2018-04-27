@@ -49,12 +49,13 @@ class IdentityViewTests(unittest.TestCase):
         CRYPTED = '<crypted>'
         view.model.encrypt_password.side_effect = lambda p: CRYPTED
         expected = valid_data.copy()
-        expected['password'] = expected['confirm_password'] = CRYPTED
+        expected['password'] = CRYPTED
+        del expected['confirm_password']
 
         done_btn = view_helpers.find_button_matching(view, "^Done$")
         view_helpers.click(done_btn)
 
-        view.controller.create_user.assert_called_once_with(expected)
+        view.controller.done.assert_called_once_with(expected)
 
     def test_can_tab_to_done_when_valid(self):
         # Urwid doesn't distinguish very well between widgets that are
