@@ -8,7 +8,8 @@ from probert.tests.fakes import FAKE_PROBE_ALL_JSON
 class ProbertTestStorage(testtools.TestCase):
     def setUp(self):
         super(ProbertTestStorage, self).setUp()
-        self.results = json.load(open(FAKE_PROBE_ALL_JSON))
+        with open(FAKE_PROBE_ALL_JSON) as f:
+            self.results = json.load(f)
         self.storage = Storage(results=self.results)
 
     def test_storage_init(self):
@@ -92,7 +93,8 @@ class ProbertTestStorageInfo(testtools.TestCase):
     '''
     def setUp(self):
         super(ProbertTestStorageInfo, self).setUp()
-        self.results = json.load(open(FAKE_PROBE_ALL_JSON))
+        with open(FAKE_PROBE_ALL_JSON) as f:
+            self.results = json.load(f)
 
     def test_storageinfo_init(self):
         probe_data = {
