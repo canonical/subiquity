@@ -90,7 +90,7 @@ def _build_gateway_ip_info_for_version(dev, version):
     actual_ip_addresses = dev.actual_ip_addresses_for_version(version)
     configured_ip_addresses = dev.configured_ip_addresses_for_version(version)
     if dev.dhcp_for_version(version):
-        if dev.actual_ip_addresses:
+        if dev.actual_ip_addresses_for_version(version):
             return _format_address_list(_("Will use DHCP for IPv%s, currently has address%%s:" % version), actual_ip_addresses)
         return [Text(_("Will use DHCP for IPv%s" % version))]
     elif configured_ip_addresses:
