@@ -323,44 +323,53 @@ class Application:
 
     def run_scripts(self, scripts):
         from subiquitycore.testing import view_helpers
-        d = view_helpers.__dict__.copy()
+        loop = self.common['loop']
+
+        class ScriptState:
+            def __init__(self):
+                self.ns = view_helpers.__dict__.copy()
+                self.waiting = False
+                self.wait_count = 0
+                self.scripts = scripts
+
+        ss = ScriptState()
+
         def _run_script(*args):
-            scripts = d['scripts']
-            log.debug("running %s", scripts[0])
-            exec(scripts[0], d)
-            if d['waiting']:
+            log.debug("running %s", ss.scripts[0])
+            exec(ss.scripts[0], ss.ns)
+            if ss.waiting:
                 return
-            d['scripts'] = scripts[1:]
-            if d['scripts']:
-                self.common['loop'].set_alarm_in(0.01, _run_script)
+            ss.scripts = ss.scripts[1:]
+            if ss.scripts:
+                loop.set_alarm_in(0.01, _run_script)
+
         def c(pat):
             but = view_helpers.find_button_matching(self.common['ui'], '.*' + pat + '.*')
             if not but:
-                d['wait_count'] += 1
-                if d['wait_count'] > 10:
+                ss.wait_count += 1
+                if ss.wait_count > 10:
                     raise Exception("no button found matching %r after waiting for 10 secs"%(pat,))
                 wait(1, func=lambda : c(pat))
                 return
-            d['wait_count'] = 0
+            ss.wait_count = 0
             view_helpers.click(but)
+
         def wait(delay, func=None):
-            d['waiting'] = True
+            ss.waiting = True
             def next(loop, user_data):
-                d['waiting'] = False
+                ss.waiting = False
                 if func is not None:
                     func()
-                if not d['waiting']:
-                    scripts = d['scripts']
-                    d['scripts'] = scripts[1:]
-                    if d['scripts']:
+                if not ss.waiting:
+                    ss.scripts = ss.scripts[1:]
+                    if ss.scripts:
                         _run_script()
-            self.common['loop'].set_alarm_in(delay, next)
-        d['scripts'] = scripts
-        d['c'] = c
-        d['wait'] = wait
-        d['ui'] = self.common['ui']
-        d['waiting'] = False
-        d['wait_count'] = 0
+            loop.set_alarm_in(delay, next)
+
+        ss.ns['c'] = c
+        ss.ns['wait'] = wait
+        ss.ns['ui'] = self.common['ui']
+
         self.common['loop'].set_alarm_in(0.06, _run_script)
 
     def run(self):
