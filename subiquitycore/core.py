@@ -321,6 +321,13 @@ class Application:
     def exit(self):
         raise urwid.ExitMainLoop()
 
+    def run_scripts(self, loop, user_data):
+        scripts, d = user_data
+        script, scripts = scripts[0], scripts[1:]
+        exec(script, d)
+        if scripts:
+            self.common['loop'].set_alarm_in(0.05, self.run_scripts, (scripts, d))
+
     def run(self):
         if not hasattr(self, 'loop'):
             if self.common['opts'].run_on_serial:
@@ -338,6 +345,17 @@ class Application:
             self.common['base_model'] = self.model_class(self.common)
         try:
             self.common['loop'].set_alarm_in(0.05, self.next_screen)
+            if self.common['opts'].scripts:
+                from subiquitycore.testing import view_helpers
+                d = view_helpers.__dict__.copy()
+                def c(pat):
+                    but = view_helpers.find_button_matching(self.common['ui'], '.*' + pat + '.*')
+                    if not but:
+                        raise Exception("no button found matching %r"%(pat,))
+                    view_helpers.click(but)
+                d['c'] = c
+                d['ui'] = self.common['ui']
+                self.common['loop'].set_alarm_in(0.06, self.run_scripts, (self.common['opts'].scripts, d))
             controllers_mod = __import__('%s.controllers' % self.project, None, None, [''])
             for k in self.controllers:
                 log.debug("Importing controller: {}".format(k))
