@@ -322,6 +322,18 @@ class Application:
         raise urwid.ExitMainLoop()
 
     def run_scripts(self, scripts):
+        # run_scripts runs (or rather arranges to run, it's all async)
+        # a series of python snippets in a helpful namespace. This is
+        # all in aid of being able to test some part of the UI without
+        # having to click the same buttons over and over again to get
+        # the UI to the part you are working on.
+        #
+        # In the namespace are:
+        #  * everything from view_helpers
+        #  * wait, delay execution of subsequent scripts for a while
+        #  * c, a function that finds a button and clicks it. uses
+        #    wait, above to wait for the button to appear in case it
+        #    takes a while.
         from subiquitycore.testing import view_helpers
         loop = self.common['loop']
 
