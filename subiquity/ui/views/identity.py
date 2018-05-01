@@ -222,25 +222,21 @@ class IdentityView(BaseView):
 
     def done(self, result):
         cpassword = self.model.encrypt_password(self.form.password.value)
-        log.debug("*crypted* User input: {} {} {}".format(
-            self.form.username.value, cpassword, cpassword))
         result = {
             "hostname": self.form.hostname.value,
             "realname": self.form.realname.value,
             "username": self.form.username.value,
             "password": cpassword,
-            "confirm_password": cpassword,
         }
 
         # if user specifed a value, allow user to validate fingerprint
         if self.form.ssh_import_id.value:
-            if self.ssh_import_confirmed is True:
-                ssh_import_id = self.form.ssh_import_id.value + ":" + self.form.import_username.value
-                result.update({'ssh_import_id': ssh_import_id})
+            if self.ssh_import_confirmed:
+                result['ssh_import_id'] = self.form.ssh_import_id.value + ":" + self.form.import_username.value
             else:
-                self.emit_signal('identity:confirm-ssh-id',
-                                 self.form.ssh_import_id.value)
+                # XXX Not implemented yet
+                self.controller.confirm_ssh_import_id(result)
                 return
 
         log.debug("User input: {}".format(result))
-        self.controller.create_user(result)
+        self.controller.done(result)
