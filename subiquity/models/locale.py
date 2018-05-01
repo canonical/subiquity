@@ -33,6 +33,7 @@ class LocaleModel(object):
         ('hr_HR', 'Croatian'),
         ('nl_NL', 'Dutch'),
         ('fi_FI', 'Finnish'),
+        ('fr_FR', 'French'),
         ('de_DE', 'German'),
         ('el_GR', 'Greek, Modern (1453-)'),
 #        ('he_IL', 'Hebrew'), # disabled as it does not render correctly on a vt with default font
