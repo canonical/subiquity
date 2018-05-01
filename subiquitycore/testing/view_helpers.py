@@ -4,6 +4,8 @@ import urwid
 
 def find_with_pred(w, pred, return_path=False):
     def _walk(w, path):
+        if not isinstance(w, urwid.Widget):
+            raise RuntimeError("_walk walked to non-widget %r via %r" % (w, path))
         if pred(w):
             return w, path
         if hasattr(w, '_wrapped_widget'):
@@ -12,6 +14,11 @@ def find_with_pred(w, pred, return_path=False):
             return _walk(w.original_widget, (w,) + path)
         if isinstance(w, urwid.ListBox):
             for w in w.body:
+                r, p = _walk(w, (w,) + path)
+                if r:
+                    return r, p
+        elif isinstance(w, urwid.Frame):
+            for w, _ in w.contents.values():
                 r, p = _walk(w, (w,) + path)
                 if r:
                     return r, p
