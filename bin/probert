@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+# Copyright 2015 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import argparse
+import sys
+import json
+import logging
+from probert.log import setup_logger
+from probert import __version__ as VERSION
+from probert import prober
+
+
+def parse_options(argv):
+    parser = argparse.ArgumentParser(
+        description='probert - Hardware prober for all',
+        prog='probert')
+    parser.add_argument('--all', action='store_true',
+                        help='Probe all hardware types.')
+    parser.add_argument('--storage', action='store_true',
+                        help='Probe storage hardware.')
+    parser.add_argument('--network', action='store_true',
+                        help='Probe network hardware.')
+    return parser.parse_args(argv)
+
+
+def main():
+    opts = parse_options(sys.argv[1:])
+    setup_logger()
+    logger = logging.getLogger('probert')
+    logger.info("Starting probert v{}".format(VERSION))
+    logger.info("Arguments passed: {}".format(sys.argv))
+
+    p = prober.Prober()
+    if opts.all or (not opts.storage and not opts.network):
+        p.probe_all()
+    if opts.network:
+        p.probe_network()
+    if opts.storage:
+        p.probe_storage()
+    results = p.get_results()
+    print(json.dumps(results, indent=4, sort_keys=False))
+
+
+if __name__ == '__main__':
+    main()

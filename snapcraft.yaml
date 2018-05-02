@@ -12,7 +12,7 @@ apps:
   console-conf:
     command: usr/bin/console-conf
   probert:
-    command: bin/probert
+    command: usr/bin/probert
   subiquity-service:
     command: usr/bin/subiquity-service
     daemon: simple
@@ -27,8 +27,14 @@ parts:
       - pkg-config
       - python3-distutils-extra
       - python3-urwid
+      - libnl-3-dev
+      - libnl-genl-3-dev
+      - libnl-route-3-dev
     stage-packages:
       - libc6
+      - libnl-3-dev
+      - libnl-genl-3-dev
+      - libnl-route-3-dev
       - libsystemd0
       - iso-codes
       - lsb-release
@@ -38,6 +44,8 @@ parts:
       - attrs
       - pyyaml
       - systemd-python
+      - pyudev==0.21.0
+      - jsonschema==2.6.0
       #- urwid
     source: .
     source-type: git
@@ -51,6 +59,7 @@ parts:
       'bin/subiquity-loadkeys': usr/bin/subiquity-loadkeys
       'bin/curtin-journald-forwarder': usr/bin/curtin-journald-forwarder
       'bin/subiquity-service': usr/bin/subiquity-service
+      'bin/probert': usr/bin/probert
     stage-packages: [libc6]
     stage:
       - usr/bin
@@ -78,10 +87,3 @@ parts:
       /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl > kbdnames.txt
     stage:
       - kbdnames.txt
-  probert:
-    plugin: python
-    build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
-    stage-packages: [libc6, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
-    source: https://github.com/CanonicalLtd/probert.git
-    source-type: git
-    requirements: requirements.txt

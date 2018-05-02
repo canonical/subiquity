@@ -22,11 +22,12 @@ subiquity
 Ubuntu Server Installer
 """
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 from DistUtilsExtra.command import build_extra
 from DistUtilsExtra.command import build_i18n
 
 import os
+import subprocess
 import sys
 
 import subiquitycore
@@ -35,6 +36,12 @@ if sys.argv[-1] == 'clean':
     print("Cleaning up ...")
     os.system('rm -rf subiquity.egg-info build dist')
     sys.exit()
+
+def pkgconfig(package):
+    return {
+        'extra_compile_args': subprocess.check_output(['pkg-config', '--cflags', package]).decode('utf8').split(),
+        'extra_link_args': subprocess.check_output(['pkg-config', '--libs', package]).decode('utf8').split(),
+    }
 
 setup(name='subiquity',
       version=subiquitycore.__version__,
@@ -45,6 +52,16 @@ setup(name='subiquity',
       url='https://github.com/CanonicalLtd/subiquity',
       license="AGPLv3+",
       packages=find_packages(exclude=["tests"]),
+      ext_modules=[
+          Extension(
+            "probert._rtnetlink",
+            ['probert/_rtnetlinkmodule.c'],
+            **pkgconfig("libnl-route-3.0")),
+          Extension(
+            "probert._nl80211",
+            ['probert/_nl80211module.c'],
+            **pkgconfig("libnl-genl-3.0")),
+          ],
       cmdclass={'build': build_extra.build_extra,
                 'build_i18n': build_i18n.build_i18n, },
       data_files=[])
