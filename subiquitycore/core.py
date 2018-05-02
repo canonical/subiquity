@@ -321,6 +321,69 @@ class Application:
     def exit(self):
         raise urwid.ExitMainLoop()
 
+    def run_scripts(self, scripts):
+        # run_scripts runs (or rather arranges to run, it's all async)
+        # a series of python snippets in a helpful namespace. This is
+        # all in aid of being able to test some part of the UI without
+        # having to click the same buttons over and over again to get
+        # the UI to the part you are working on.
+        #
+        # In the namespace are:
+        #  * everything from view_helpers
+        #  * wait, delay execution of subsequent scripts for a while
+        #  * c, a function that finds a button and clicks it. uses
+        #    wait, above to wait for the button to appear in case it
+        #    takes a while.
+        from subiquitycore.testing import view_helpers
+        loop = self.common['loop']
+
+        class ScriptState:
+            def __init__(self):
+                self.ns = view_helpers.__dict__.copy()
+                self.waiting = False
+                self.wait_count = 0
+                self.scripts = scripts
+
+        ss = ScriptState()
+
+        def _run_script(*args):
+            log.debug("running %s", ss.scripts[0])
+            exec(ss.scripts[0], ss.ns)
+            if ss.waiting:
+                return
+            ss.scripts = ss.scripts[1:]
+            if ss.scripts:
+                loop.set_alarm_in(0.01, _run_script)
+
+        def c(pat):
+            but = view_helpers.find_button_matching(self.common['ui'], '.*' + pat + '.*')
+            if not but:
+                ss.wait_count += 1
+                if ss.wait_count > 10:
+                    raise Exception("no button found matching %r after waiting for 10 secs"%(pat,))
+                wait(1, func=lambda : c(pat))
+                return
+            ss.wait_count = 0
+            view_helpers.click(but)
+
+        def wait(delay, func=None):
+            ss.waiting = True
+            def next(loop, user_data):
+                ss.waiting = False
+                if func is not None:
+                    func()
+                if not ss.waiting:
+                    ss.scripts = ss.scripts[1:]
+                    if ss.scripts:
+                        _run_script()
+            loop.set_alarm_in(delay, next)
+
+        ss.ns['c'] = c
+        ss.ns['wait'] = wait
+        ss.ns['ui'] = self.common['ui']
+
+        self.common['loop'].set_alarm_in(0.06, _run_script)
+
     def run(self):
         if not hasattr(self, 'loop'):
             if self.common['opts'].run_on_serial:
@@ -338,6 +401,8 @@ class Application:
             self.common['base_model'] = self.model_class(self.common)
         try:
             self.common['loop'].set_alarm_in(0.05, self.next_screen)
+            if self.common['opts'].scripts:
+                self.run_scripts(self.common['opts'].scripts)
             controllers_mod = __import__('%s.controllers' % self.project, None, None, [''])
             for k in self.controllers:
                 log.debug("Importing controller: {}".format(k))
