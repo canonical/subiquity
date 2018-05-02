@@ -9,4 +9,4 @@ attrs
 systemd-python
 jsonschema
 pyudev
--e git+https://github.com/CanonicalLtd/probert#egg=probert
+-e git+https://github.com/CanonicalLtd/probert@670c7258014eef13a971be0bf12206d96f2829f3#egg=probert
