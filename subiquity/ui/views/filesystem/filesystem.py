@@ -242,9 +242,8 @@ class FilesystemView(BaseView):
                 Text(size))
             r.append(Pile(inputs))
 
-        if len(inputs) == 1:
-            return Pile([Color.info_minor(
-                Text(_("No disks available.")))])
+        if len(r) == 1:
+            return [Color.info_minor(Text(_("No disks available.")))]
 
         return r
 
