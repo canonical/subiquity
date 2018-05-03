@@ -23,7 +23,7 @@ import subprocess
 
 import yaml
 
-from probert.network import NetworkEventReceiver
+from probert.network import IFF_UP, NetworkEventReceiver
 
 from subiquitycore.models.network import sanitize_config
 from subiquitycore.ui.views import (NetworkView,
@@ -136,6 +136,37 @@ class PythonSleep(BackgroundTask):
 
     def cancel(self):
         os.write(self.w, b'x')
+
+
+class DownNetworkDevices(BackgroundTask):
+
+    def __init__(self, rtlistener, devs_to_down):
+        self.rtlistener = rtlistener
+        self.devs_to_down = devs_to_down
+
+    def __repr__(self):
+        return 'DownNetworkDevices(%s)'%([dev.name for dev in self.devs_to_down],)
+
+    def start(self):
+        for dev in self.devs_to_down:
+            try:
+                log.debug('downing %s', dev.name)
+                self.rtlistener.unset_link_flags(dev.ifindex, IFF_UP)
+            except RuntimeError:
+                # We don't actually care very much about this
+                log.exception('unset_link_flags failed for %s', dev.name)
+
+    def run(self):
+        return True
+
+    def end(self, observer, fut):
+        if fut.result():
+            observer.task_succeeded()
+        else:
+            observer.task_failed()
+
+    def cancel(self):
+        pass
 
 
 class WaitForDefaultRouteTask(BackgroundTask):
@@ -379,11 +410,20 @@ class NetworkController(BaseController):
                 tasks.append(('fail', BackgroundProcess(['false'])))
                 self.tried_once = True
         else:
-            tasks = [
-                ('generate', BackgroundProcess(['/lib/netplan/generate'])),
+            devs_to_down = []
+            for dev in self.model.get_all_netdevs():
+                if dev._configuration != self.model.config.config_for_device(dev._net_info):
+                    devs_to_down.append(dev)
+            tasks = []
+            if devs_to_down:
+                tasks.append([
+                    ('stop-networkd', BackgroundProcess(['systemctl', 'stop', 'systemd-networkd.service'])),
+                    ('down', DownNetworkDevices(self.observer.rtlistener, devs_to_down)),
+                    ])
+            tasks.append([
                 ('apply', BackgroundProcess(['netplan', 'apply'])),
                 ('timeout', WaitForDefaultRouteTask(30, self.network_event_receiver)),
-                ]
+                ])
 
         def cancel():
             self.cs.cancel()

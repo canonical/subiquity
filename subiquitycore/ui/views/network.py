@@ -255,14 +255,16 @@ class NetworkView(BaseView):
             (Text(""), self.footer.options()),
             (Color.info_error(self.error), self.footer.options()),
             ]
-        if action == 'generate':
-            self.error.set_text("Network configuration failed: %r" % (info,))
+        if action == 'stop-networkd':
+            self.error.set_text("Stopping systemd-networkd-failed: %r" % (info,))
         elif action == 'apply':
             self.error.set_text("Network configuration could not be applied; " + \
                                 "please verify your settings.")
         elif action == 'timeout':
             self.error.set_text("Network configuration timed out; " + \
                                 "please verify your settings.")
+        elif action == 'down':
+            self.error.set_text("Downing network interfaces failed.")
         elif action == 'canceled':
             self.error.set_text("Network configuration canceled.")
         else:
