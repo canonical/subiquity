@@ -416,11 +416,11 @@ class NetworkController(BaseController):
                     devs_to_down.append(dev)
             tasks = []
             if devs_to_down:
-                tasks.append([
+                tasks.extend([
                     ('stop-networkd', BackgroundProcess(['systemctl', 'stop', 'systemd-networkd.service'])),
                     ('down', DownNetworkDevices(self.observer.rtlistener, devs_to_down)),
                     ])
-            tasks.append([
+            tasks.extend([
                 ('apply', BackgroundProcess(['netplan', 'apply'])),
                 ('timeout', WaitForDefaultRouteTask(30, self.network_event_receiver)),
                 ])
