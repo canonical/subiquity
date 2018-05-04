@@ -20,7 +20,7 @@ configuration.
 
 """
 import logging
-from urwid import Text
+from urwid import CheckBox, connect_signal, Text
 
 from subiquitycore.ui.buttons import (
     back_btn,
@@ -31,11 +31,12 @@ from subiquitycore.ui.buttons import (
     reset_btn,
     )
 from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import humanize_size
+from subiquity.models.filesystem import humanize_size, Disk
 
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
@@ -83,6 +84,14 @@ class FilesystemView(BaseView):
         self.model = model
         self.controller = controller
         self.items = []
+
+        self.edit_btn = Toggleable(menu_btn(label=_("Edit"), on_press=self._click_edit))
+        self.part_btn = Toggleable(menu_btn(label=_("Partition"), on_press=self._click_partion))
+        self.raid_btn = Toggleable(menu_btn(label=_("Create RAID"), on_press=self._click_raid))
+        self._buttons = [self.edit_btn, self.part_btn, self.raid_btn]
+        for btn in self._buttons:
+            self._disable(btn)
+
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
@@ -90,7 +99,7 @@ class FilesystemView(BaseView):
             Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
-            ] + [Padding.push_4(p) for p in self._build_available_inputs()]
+            ] + self._build_available_inputs()
 
         #+ [
             #self._build_menu(),
@@ -100,6 +109,8 @@ class FilesystemView(BaseView):
             #self._build_used_disks(),
             #Text(""),
         #]
+
+        self._selected_devices = set()
 
         self.lb = Padding.center_95(ListBox(body))
         bottom = Pile([
@@ -169,18 +180,114 @@ class FilesystemView(BaseView):
 
         return button_pile(buttons)
 
+    def _checkbox_change(self, checkbox, new_state, device):
+        if new_state:
+            self._selected_devices.add(device)
+        else:
+            if device in self._selected_devices:
+                self._selected_devices.remove(device)
+        self._disable(self.edit_btn)
+        self._disable(self.part_btn)
+        self._disable(self.raid_btn)
+        if len(self._selected_devices) == 0:
+            return
+        elif len(self._selected_devices) == 1:
+            [dev] = self._selected_devices
+            if isinstance(dev, Disk):
+                self._enable(self.part_btn)
+            else:
+                self._enable(self.edit_btn)
+        else:
+            for dev in self._selected_devices:
+                if not dev.available:
+                    return
+            self._enable(self.raid_btn)
+
+
+    def _enable(self, btn):
+        btn.enable()
+        btn._original_widget.set_attr_map({None: 'menu'})
+
+    def _disable(self, btn):
+        btn.disable()
+        btn._original_widget._original_widget.set_attr_map({None: 'info_minor'})
+
+    def _build_disk_rows(self, disk):
+        disk_label = Text(disk.label)
+        disk_size = Text(humanize_size(disk.size).rjust(9))
+        disk_type = Text(disk.desc())
+        if len(disk.partitions()) == 0:
+            cb = CheckBox("")
+            connect_signal(cb, 'change', self._checkbox_change, disk)
+            return [Columns([
+                (4, cb),
+                (42, disk_label),
+                (10, disk_size),
+                disk_type,
+                ], 2)]
+        else:
+            r = [Columns([
+                (4, Text("")),
+                (42, disk_label),
+                (10, disk_size),
+                disk_type,
+                ], 2)]
+            for partition in disk.partitions():
+                part_label = _("  partition {}, ").format(partition._number)
+                fs = partition.fs()
+                if fs is not None:
+                    if fs.mount():
+                        part_label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
+                    else:
+                        part_label += fs.fstype
+                elif partition.flag == "bios_grub":
+                    part_label += "bios_grub"
+                else:
+                    part_label += _("unformatted")
+                part_label = Text(part_label)
+                part_size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
+                cb = CheckBox("")
+                connect_signal(cb, 'change', self._checkbox_change, partition)
+                r.append(Columns([
+                    (4, cb),
+                    (42, part_label),
+                    part_size,
+                    ], 2))
+            if disk.used < disk.free:
+                size = disk.size
+                free = disk.free
+                percent = str(int(100*free/size))
+                if percent == "0":
+                    percent = "%.2f"%(100*free/size,)
+                connect_signal(cb, 'change', self._checkbox_change, disk)
+                r.append(Columns([
+                    (4, cb),
+                    (42, Text(_("free space")),
+                    Text("{:>9} ({}%)".format(humanize_size(free)), percent)),
+                    ], 2))
+            return r
+
     def _build_available_inputs(self):
         r = []
 
-        def col3(col1, col2, col3):
-            inputs.append(Columns([(42, col1), (10, col2), col3], 2))
+        def _col0(check):
+            if check:
+                return (4, Checkbox(""))
+            else:
+                col0 = Text("")
+        def col3(col1, col2, col3, *, check=True):
+            if check:
+                col0 = Checkbox("")
+            else:
+                col0 = Text("")
+            r.append(Columns([(4, col0), (42, col1), (10, col2), col3], 2))
         def col2(col1, col2):
             inputs.append(Columns([(42, col1), col2], 2))
         def col1(col1):
             inputs.append(Columns([(42, col1)], 1))
 
         inputs = []
-        col3(Text(_("DEVICE")), Text(_("SIZE"), align="center"), Text(_("TYPE")))
+        col3(Text(_("DEVICE")), Text(_("SIZE"), align="center"), Text(_("TYPE")), check=False)
         r.append(Pile(inputs))
 
         for disk in self.model.all_disks():
@@ -188,67 +295,31 @@ class FilesystemView(BaseView):
             disk_label = Text(disk.label)
             size = Text(humanize_size(disk.size).rjust(9))
             typ = Text(disk.desc())
-            col3(disk_label, size, typ)
             if disk.size < self.model.lower_size_limit:
+                col3(disk_label, size, typ, check=False)
                 r.append(Color.info_minor(Pile(inputs)))
                 continue
-            fs = disk.fs()
-            if fs is not None:
-                label = _("entire device, ")
-                fs_obj = self.model.fs_by_name[fs.fstype]
-                if fs.mount():
-                    label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
-                else:
-                    label += fs.fstype
-                if fs_obj.label and fs_obj.is_mounted and not fs.mount():
-                    disk_btn = menu_btn(label=label, on_press=self.click_disk, user_arg=disk)
-                    disk_btn = disk_btn
-                else:
-                    disk_btn = Color.info_minor(Text("  " + label))
-                col1(disk_btn)
-            for partition in disk.partitions():
-                label = _("partition {}, ").format(partition._number)
-                fs = partition.fs()
-                if fs is not None:
-                    if fs.mount():
-                        label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
-                    else:
-                        label += fs.fstype
-                elif partition.flag == "bios_grub":
-                    label += "bios_grub"
-                else:
-                    label += _("unformatted")
-                size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
-                if partition.available:
-                    part_btn = menu_btn(label=label, on_press=self.click_partition, user_arg=partition)
-                    col2(part_btn, size)
-                else:
-                    part_btn = Color.info_minor(Text("  " + label))
-                    size = Color.info_minor(size)
-                    col2(part_btn, size)
-            size = disk.size
-            free = disk.free
-            percent = str(int(100*free/size))
-            if percent == "0":
-                percent = "%.2f"%(100*free/size,)
-            if disk.available and disk.used > 0:
-                label = _("Add/Edit Partitions")
-                size = "{:>9} ({}%) free".format(humanize_size(free), percent)
-            elif disk.available and disk.used == 0:
-                label = _("Add First Partition")
-                size = ""
-            else:
-                label = _("Edit Partitions")
-                size = ""
-            col2(
-                menu_btn(label=label, on_press=self.click_disk, user_arg=disk),
-                Text(size))
-            r.append(Pile(inputs))
+            r.extend(self._build_disk_rows(disk))
 
         if len(r) == 1:
             return [Color.info_minor(Text(_("No disks available.")))]
 
+        r.append(Text(""))
+
+        bp = button_pile(self._buttons)
+        bp.align = 'left'
+        r.append(bp)
+
         return r
+
+    def _click_edit(self, sender):
+        pass
+
+    def _click_partion(self, sender):
+        pass
+
+    def _click_raid(self, sender):
+        pass
 
     def click_disk(self, sender, disk):
         self.controller.partition_disk(disk)

@@ -27,7 +27,7 @@ HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
 log = logging.getLogger('subiquity.models.filesystem')
 
 
-@attr.s
+@attr.s(cmp=False)
 class FS:
     label = attr.ib()
     is_mounted = attr.ib()
@@ -114,7 +114,7 @@ def asdict(inst):
 # in the FilesystemModel or FilesystemController classes.
 
 
-@attr.s
+@attr.s(cmp=False)
 class Disk:
 
     id = attr.ib(default=id_factory("disk"))
@@ -183,7 +183,7 @@ class Disk:
         return self.size - self.used
 
 
-@attr.s
+@attr.s(cmp=False)
 class Partition:
 
     id = attr.ib(default=id_factory("part"))
@@ -222,7 +222,7 @@ class Partition:
         return "%s%s"%(self.device.path, self._number)
 
 
-@attr.s
+@attr.s(cmp=False)
 class Filesystem:
 
     id = attr.ib(default=id_factory("fs"))
@@ -238,7 +238,7 @@ class Filesystem:
         return self._mount
 
 
-@attr.s
+@attr.s(cmp=False)
 class Mount:
     id = attr.ib(default=id_factory("mount"))
     type = attr.ib(default="mount")
