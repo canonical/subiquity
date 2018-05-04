@@ -138,7 +138,7 @@ class FilesystemController(BaseController):
                 fs = self.model.add_filesystem(partition, spec['fstype'].label)
                 if spec['mount']:
                   self.model.add_mount(fs, spec['mount'])
-            self.partition_disk(disk)
+            self.manual()
             return
 
         system_bootable = self.model.bootable()
@@ -172,7 +172,7 @@ class FilesystemController(BaseController):
                 self.model.add_mount(fs, spec['mount'])
 
         log.info("Successfully added partition")
-        self.partition_disk(disk)
+        self.manual()
 
     def add_format_handler(self, volume, spec, back):
         log.debug('add_format_handler')

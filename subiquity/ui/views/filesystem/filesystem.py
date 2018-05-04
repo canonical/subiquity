@@ -259,11 +259,12 @@ class FilesystemView(BaseView):
                 percent = str(int(100*free/size))
                 if percent == "0":
                     percent = "%.2f"%(100*free/size,)
+                cb = CheckBox("")
                 connect_signal(cb, 'change', self._checkbox_change, disk)
                 r.append(Columns([
                     (4, cb),
-                    (42, Text(_("free space")),
-                    Text("{:>9} ({}%)".format(humanize_size(free)), percent)),
+                    (42, Text(_("  free space"))),
+                    Text("{:>9} ({}%)".format(humanize_size(free), percent)),
                     ], 2))
             return r
 
@@ -313,7 +314,9 @@ class FilesystemView(BaseView):
         return r
 
     def _click_edit(self, sender):
-        pass
+        [dev] = self._selected_devices
+        from .partition import PartitionView
+        self.show_stretchy_overlay(PartitionView(self, dev.device, dev))
 
     def _click_partition(self, sender):
         [dev] = self._selected_devices
