@@ -86,7 +86,7 @@ class FilesystemView(BaseView):
         self.items = []
 
         self.edit_btn = Toggleable(menu_btn(label=_("Edit"), on_press=self._click_edit))
-        self.part_btn = Toggleable(menu_btn(label=_("Partition"), on_press=self._click_partion))
+        self.part_btn = Toggleable(menu_btn(label=_("Partition"), on_press=self._click_partition))
         self.raid_btn = Toggleable(menu_btn(label=_("Create RAID"), on_press=self._click_raid))
         self._buttons = [self.edit_btn, self.part_btn, self.raid_btn]
         for btn in self._buttons:
@@ -315,8 +315,10 @@ class FilesystemView(BaseView):
     def _click_edit(self, sender):
         pass
 
-    def _click_partion(self, sender):
-        pass
+    def _click_partition(self, sender):
+        [dev] = self._selected_devices
+        from .partition import PartitionView
+        self.show_stretchy_overlay(PartitionView(self, dev))
 
     def _click_raid(self, sender):
         pass

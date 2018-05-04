@@ -30,8 +30,9 @@ from subiquitycore.ui.form import (
     )
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.selector import Option, Selector
-from subiquitycore.ui.utils import Color, button_pile, screen
-from subiquitycore.view import BaseView
+from subiquitycore.ui.container import Pile
+from subiquitycore.ui.stretchy import Stretchy
+from subiquitycore.ui.utils import Color, button_pile
 
 from subiquity.models.filesystem import (
     align_up,
@@ -131,12 +132,13 @@ class PartitionForm(Form):
             return _("%s is already mounted at %s")%(dev, mount)
 
 
-class PartitionFormatView(BaseView):
+class PartitionFormatView(Stretchy):
 
-    form_cls = PartitionForm
+    title = _("Partition")
 
-    def __init__(self, size, existing, initial, back, focus_buttons=False):
+    def __init__(self, parent, size, existing, initial, back, focus_buttons=False):
 
+        self.parent = parent
         mountpoint_to_devpath_mapping = self.model.get_mountpoint_to_devpath_mapping()
         if existing is not None:
             fs = existing.fs()
@@ -150,19 +152,24 @@ class PartitionFormatView(BaseView):
                         del mountpoint_to_devpath_mapping[mount.path]
             else:
                 initial['fstype'] = self.model.fs_by_name[None]
-        self.form = self.form_cls(mountpoint_to_devpath_mapping, size, initial)
-        self.back = back
+        self.form = PartitionForm(mountpoint_to_devpath_mapping, size, initial)
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(screen(self.make_body(), self.form.buttons, focus_buttons=focus_buttons))
+        widgets = [
+            Pile(self.make_body()),
+            Text(""),
+            self.form.buttons,
+            ]
+
+        super().__init__(self.title, widgets, 0, 0)
 
     def make_body(self):
         return self.form.as_rows()
 
     def cancel(self, button=None):
-        self.back()
+        self.parent.remove_overlay()
 
 
 bios_grub_partition_description = _("""\
@@ -180,10 +187,10 @@ This is the ESP / "EFI system partition" required by UEFI. Grub will be installe
 
 class PartitionView(PartitionFormatView):
 
-    def __init__(self, model, controller, disk, partition=None):
+    def __init__(self, parent, disk, partition=None):
         log.debug('PartitionView: selected_disk=[{}]'.format(disk.path))
-        self.model = model
-        self.controller = controller
+        self.model = parent.model
+        self.controller = parent.controller
         self.disk = disk
         self.partition = partition
         self.title = _("Partition, format, and mount {}").format(disk.label)
@@ -202,7 +209,7 @@ class PartitionView(PartitionFormatView):
             else:
                 self.footer = _("Edit partition details, format and mount.")
                 label = _("Save")
-        super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk), focus_buttons=label is None)
+        super().__init__(parent, max_size, partition, initial, lambda : self.controller.partition_disk(disk), focus_buttons=label is None)
         if label is not None:
             self.form.buttons.base_widget[0].set_label(label)
         else:
