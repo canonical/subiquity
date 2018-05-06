@@ -20,7 +20,6 @@ configuration.
 
 """
 
-from .disk_info import DiskInfoView
 from .disk_partition import DiskPartitionView
 from .filesystem import FilesystemView
 from .guided import GuidedDiskSelectionView, GuidedFilesystemView

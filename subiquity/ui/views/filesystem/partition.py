@@ -284,7 +284,7 @@ class AddPartitionStretchy(Stretchy):
         rows = self.form.as_rows()
         rows.extend([
             Text(""),
-            button_pile([menu_btn("Show disk info")]),
+            button_pile([menu_btn(label=_("Show disk information"), on_press=self.disk_info)]),
             ])
         widgets = [
             Pile(rows),
@@ -295,6 +295,10 @@ class AddPartitionStretchy(Stretchy):
         title = _("Adding partition to {}").format(self.disk.label)
 
         super().__init__(title, widgets, 0, 0)
+
+    def disk_info(self, sender):
+        from .disk_info import DiskInfoStretchy
+        self.parent.show_stretchy_overlay(DiskInfoStretchy(self.parent, self.disk))
 
     def cancel(self, button=None):
         self.parent.remove_overlay()

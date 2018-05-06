@@ -145,6 +145,42 @@ class Disk:
         d.model = info.model
         return d
 
+    def info_for_display(self):
+        bus = self._info.raw.get('ID_BUS', None)
+        major = self._info.raw.get('MAJOR', None)
+        if bus is None and major == '253':
+            bus = 'virtio'
+
+        devpath = self._info.raw.get('DEVPATH', self.path)
+        # XXX probert should be doing this!!
+        rotational = '1'
+        try:
+            dev = os.path.basename(devpath)
+            rfile = '/sys/class/block/{}/queue/rotational'.format(dev)
+            rotational = open(rfile, 'r').read().strip()
+        except (PermissionError, FileNotFoundError, IOError):
+            log.exception('WARNING: Failed to read file {}'.format(rfile))
+            pass
+
+        dinfo = {
+            'bus': bus,
+            'devname': self.path,
+            'devpath': devpath,
+            'model': self.model,
+            'serial': self.serial,
+            'size': self.size,
+            'humansize': humanize_size(self.size),
+            'vendor': self._info.vendor,
+            'rotational': 'true' if rotational == '1' else 'false',
+        }
+        if dinfo['serial'] is None:
+            dinfo['serial'] = 'unknown'
+        if dinfo['model'] is None:
+            dinfo['model'] = 'unknown'
+        if dinfo['vendor'] is None:
+            dinfo['vendor'] = 'unknown'
+        return dinfo
+
     def reset(self):
         self.preserve = False
         self.name = ''

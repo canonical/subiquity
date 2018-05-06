@@ -16,7 +16,6 @@
 from .filesystem import (FilesystemView,  # NOQA
                          PartitionView,
                          DiskPartitionView,
-                         DiskInfoView,
                          GuidedDiskSelectionView,
                          GuidedFilesystemView)
 from .bcache import BcacheView  # NOQA
