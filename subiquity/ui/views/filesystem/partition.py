@@ -23,7 +23,7 @@ import logging
 
 from urwid import connect_signal, Text, WidgetDisable
 
-from subiquitycore.ui.buttons import delete_btn
+from subiquitycore.ui.buttons import delete_btn, menu_btn
 from subiquitycore.ui.form import (
     Form,
     FormField,
@@ -158,7 +158,7 @@ class PartitionFormatView(Stretchy):
         connect_signal(self.form, 'cancel', self.cancel)
 
         widgets = [
-            Pile(self.make_body()),
+            Pile(self.form.as_rows()),
             Text(""),
             self.form.buttons,
             ]
@@ -166,7 +166,13 @@ class PartitionFormatView(Stretchy):
         focus_index = 0
         if focus_buttons:
             focus_index = 2
-        super().__init__(self.title, widgets, 0, focus_index)
+
+        if existing:
+            title = _("Partition")
+        else:
+            title = _("Add partition to {}".format(self.disk.label))
+
+        super().__init__(title, widgets, 0, focus_index)
 
     def make_body(self):
         return self.form.as_rows()
@@ -260,21 +266,39 @@ class PartitionView(PartitionFormatView):
         self.controller.partition_disk_handler(self.disk, self.partition, form.as_data())
 
 
-class FormatEntireView(PartitionFormatView):
+class AddPartitionStretchy(Stretchy):
 
-    def __init__(self, model, controller, volume, back):
-        self.model = model
-        self.controller = controller
-        self.volume = volume
-        if isinstance(volume, Disk):
-            self.title = _("Format and/or mount {}").format(disk.label)
-            self.footer = _("Format or mount whole disk.")
-        else:
-            self.title = _("Partition, format, and mount {}").format(volume.device.label)
-            self.footer = _("Edit partition details, format and mount.")
+    def __init__(self, parent, dev):
 
-        super().__init__(None, volume, {}, back)
+        self.disk = dev
+        self.model = parent.model
+        self.controller = parent.controller
+        self.parent = parent
+        max_size = dev.size
+        mountpoint_to_devpath_mapping = self.model.get_mountpoint_to_devpath_mapping()
+        self.form = PartitionForm(mountpoint_to_devpath_mapping, max_size, {})
+
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+
+        rows = self.form.as_rows()
+        rows.extend([
+            Text(""),
+            button_pile([menu_btn("Show disk info")]),
+            ])
+        widgets = [
+            Pile(rows),
+            Text(""),
+            self.form.buttons,
+            ]
+
+        title = _("Adding partition to {}").format(self.disk.label)
+
+        super().__init__(title, widgets, 0, 0)
+
+    def cancel(self, button=None):
+        self.parent.remove_overlay()
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
-        self.controller.add_format_handler(self.volume, form.as_data(), self.back)
+        self.controller.partition_disk_handler(self.disk, None, form.as_data())

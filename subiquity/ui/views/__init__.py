@@ -15,7 +15,6 @@
 
 from .filesystem import (FilesystemView,  # NOQA
                          PartitionView,
-                         FormatEntireView,
                          DiskPartitionView,
                          DiskInfoView,
                          GuidedDiskSelectionView,

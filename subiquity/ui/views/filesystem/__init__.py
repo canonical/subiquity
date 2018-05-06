@@ -24,4 +24,4 @@ from .disk_info import DiskInfoView
 from .disk_partition import DiskPartitionView
 from .filesystem import FilesystemView
 from .guided import GuidedDiskSelectionView, GuidedFilesystemView
-from .partition import FormatEntireView, PartitionView
+from .partition import PartitionView

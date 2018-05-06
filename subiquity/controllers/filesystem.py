@@ -26,7 +26,6 @@ from subiquity.ui.views import (
     DiskInfoView,
     DiskPartitionView,
     FilesystemView,
-    FormatEntireView,
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     LVMVolumeGroupView,

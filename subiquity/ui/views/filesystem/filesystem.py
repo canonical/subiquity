@@ -75,6 +75,9 @@ class FilesystemConfirmation(Stretchy):
         self.parent.remove_overlay()
 
 
+class NarrowCheckBox(CheckBox):
+    reserve_columns = 3
+
 class FilesystemView(BaseView):
     title = _("Filesystem setup")
     footer = _("Select available disks to format and mount")
@@ -217,17 +220,17 @@ class FilesystemView(BaseView):
         disk_size = Text(humanize_size(disk.size).rjust(9))
         disk_type = Text(disk.desc())
         if len(disk.partitions()) == 0:
-            cb = CheckBox("")
+            cb = NarrowCheckBox("")
             connect_signal(cb, 'change', self._checkbox_change, disk)
             return [Columns([
-                (4, cb),
+                (3, cb),
                 (42, disk_label),
                 (10, disk_size),
                 disk_type,
                 ], 2)]
         else:
             r = [Columns([
-                (4, Text("")),
+                (3, Text("")),
                 (42, disk_label),
                 (10, disk_size),
                 disk_type,
@@ -246,10 +249,10 @@ class FilesystemView(BaseView):
                     part_label += _("unformatted")
                 part_label = Text(part_label)
                 part_size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
-                cb = CheckBox("")
+                cb = NarrowCheckBox("")
                 connect_signal(cb, 'change', self._checkbox_change, partition)
                 r.append(Columns([
-                    (4, cb),
+                    (3, cb),
                     (42, part_label),
                     part_size,
                     ], 2))
@@ -259,10 +262,10 @@ class FilesystemView(BaseView):
                 percent = str(int(100*free/size))
                 if percent == "0":
                     percent = "%.2f"%(100*free/size,)
-                cb = CheckBox("")
+                cb = NarrowCheckBox("")
                 connect_signal(cb, 'change', self._checkbox_change, disk)
                 r.append(Columns([
-                    (4, cb),
+                    (3, cb),
                     (42, Text(_("  free space"))),
                     Text("{:>9} ({}%)".format(humanize_size(free), percent)),
                     ], 2))
@@ -271,24 +274,16 @@ class FilesystemView(BaseView):
     def _build_available_inputs(self):
         r = []
 
-        def _col0(check):
-            if check:
-                return (4, Checkbox(""))
-            else:
-                col0 = Text("")
-        def col3(col1, col2, col3, *, check=True):
-            if check:
-                col0 = Checkbox("")
-            else:
-                col0 = Text("")
-            r.append(Columns([(4, col0), (42, col1), (10, col2), col3], 2))
+        def col3(col1, col2, col3):
+            col0 = Text("")
+            r.append(Columns([(3, col0), (42, col1), (10, col2), col3], 2))
         def col2(col1, col2):
             inputs.append(Columns([(42, col1), col2], 2))
         def col1(col1):
             inputs.append(Columns([(42, col1)], 1))
 
         inputs = []
-        col3(Text(_("DEVICE")), Text(_("SIZE"), align="center"), Text(_("TYPE")), check=False)
+        col3(Text(_("DEVICE")), Text(_("SIZE"), align="center"), Text(_("TYPE")))
         r.append(Pile(inputs))
 
         for disk in self.model.all_disks():
@@ -297,7 +292,7 @@ class FilesystemView(BaseView):
             size = Text(humanize_size(disk.size).rjust(9))
             typ = Text(disk.desc())
             if disk.size < self.model.lower_size_limit:
-                col3(disk_label, size, typ, check=False)
+                col3(disk_label, size, typ)
                 r.append(Color.info_minor(Pile(inputs)))
                 continue
             r.extend(self._build_disk_rows(disk))
@@ -320,8 +315,8 @@ class FilesystemView(BaseView):
 
     def _click_partition(self, sender):
         [dev] = self._selected_devices
-        from .partition import PartitionView
-        self.show_stretchy_overlay(PartitionView(self, dev))
+        from .partition import AddPartitionStretchy
+        self.show_stretchy_overlay(AddPartitionStretchy(self, dev))
 
     def _click_raid(self, sender):
         pass
