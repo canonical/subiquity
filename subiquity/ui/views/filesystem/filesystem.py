@@ -242,6 +242,9 @@ class DeviceList(WidgetWrap):
 
     def _device_action(self, sender, action, device):
         log.debug('_device_action %s %s', action, device)
+        if action == DeviceAction.INFO:
+            from .disk_info import DiskInfoStretchy
+            self.parent.show_stretchy_overlay(DiskInfoStretchy(self.parent, device))
 
     def _action_menu_for_device(self, device):
         delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))

@@ -22,7 +22,6 @@ from subiquitycore.ui.dummy import DummyView
 from subiquity.models.filesystem import align_up, humanize_size
 from subiquity.ui.views import (
     BcacheView,
-    DiskInfoView,
     DiskPartitionView,
     FilesystemView,
     FormatEntireView,
@@ -284,57 +283,6 @@ class FilesystemController(BaseController):
         next_idx = (idx - 1) % len(available)
         next_device = available[next_idx]
         self.show_disk_information(next_device)
-
-    def show_disk_information(self, disk):
-        """ Show disk information, requires sudo/root
-        """
-        bus = disk._info.raw.get('ID_BUS', None)
-        major = disk._info.raw.get('MAJOR', None)
-        if bus is None and major == '253':
-            bus = 'virtio'
-
-        devpath = disk._info.raw.get('DEVPATH', disk.path)
-        rotational = '1'
-        try:
-            dev = os.path.basename(devpath)
-            rfile = '/sys/class/block/{}/queue/rotational'.format(dev)
-            rotational = open(rfile, 'r').read().strip()
-        except (PermissionError, FileNotFoundError, IOError):
-            log.exception('WARNING: Failed to read file {}'.format(rfile))
-            pass
-
-        dinfo = {
-            'bus': bus,
-            'devname': disk.path,
-            'devpath': devpath,
-            'model': disk.model,
-            'serial': disk.serial,
-            'size': disk.size,
-            'humansize': humanize_size(disk.size),
-            'vendor': disk._info.vendor,
-            'rotational': 'true' if rotational == '1' else 'false',
-        }
-        if dinfo['serial'] is None:
-            dinfo['serial'] = 'unknown'
-        if dinfo['model'] is None:
-            dinfo['model'] = 'unknown'
-        if dinfo['vendor'] is None:
-            dinfo['vendor'] = 'unknown'
-
-        template = """\n
-{devname}:\n
- Vendor: {vendor}
- Model: {model}
- SerialNo: {serial}
- Size: {humansize} ({size}B)
- Bus: {bus}
- Rotational: {rotational}
- Path: {devpath}
-"""
-        result = template.format(**dinfo)
-        log.debug('calling DiskInfoView()')
-        disk_info_view = DiskInfoView(self.model, self, disk, result)
-        self.ui.set_body(disk_info_view)
 
     def is_uefi(self):
         if self.opts.dry_run:

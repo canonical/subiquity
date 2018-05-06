@@ -17,7 +17,6 @@ from .filesystem import (FilesystemView,
                          PartitionView,
                          FormatEntireView,
                          DiskPartitionView,
-                         DiskInfoView,
                          GuidedDiskSelectionView,
                          GuidedFilesystemView)
 from .bcache import BcacheView
