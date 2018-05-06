@@ -42,7 +42,7 @@ Because you can't make a widget that behaves the way we want, this
 module gives a way of providing a list of widgets to display in a Pile
 and and nominating one of them to be made scrollable. A title, a list
 of widgets and index to be scrollable is bundled up into an object
-called a "stretchy" but is a bad name but at least easily greppable.
+called a "stretchy" which is a bad name but at least easily greppable.
 """
 
 
@@ -122,6 +122,9 @@ class StretchyOverlay(urwid.Widget):
             return (outercol, size[1]), False
 
         stretchy_ideal_rows = self.stretchy.stretchy_w.rows((innercol,), focus)
+
+        # XXX should reduce vertical padding here if it would help the
+        # stretchy widget fit.
 
         if maxrow - fixed_rows >= stretchy_ideal_rows:
             return (outercol, stretchy_ideal_rows + fixed_rows), False
