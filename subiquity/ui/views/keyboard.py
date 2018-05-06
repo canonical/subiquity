@@ -378,7 +378,7 @@ class KeyboardView(BaseView):
             # Don't crash on pre-existing invalid config.
             pass
 
-        lb_contents = self.form.as_rows(self)
+        lb_contents = self.form.as_rows()
         if not self.opts.run_on_serial:
             lb_contents.extend([
                 Text(""),

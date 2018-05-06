@@ -20,7 +20,6 @@ from urwid import connect_signal, Text
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import menu_btn
-from subiquitycore.ui.utils import screen
 from subiquitycore.ui.interactive import RestrictedEditor, StringEditor
 from subiquitycore.ui.form import Form, FormField, StringField
 
@@ -133,7 +132,7 @@ class BaseNetworkConfigureManualView(BaseView):
         self.form.searchdomains.value = ', '.join(self.dev.configured_searchdomains)
         self.error = Text("", align='center')
 
-        super().__init__(self.form.as_screen(self, focus_buttons=False))
+        super().__init__(self.form.as_screen(focus_buttons=False))
 
     def refresh_model_inputs(self):
         try:

@@ -194,7 +194,7 @@ class IdentityView(BaseView):
 
         super().__init__(
             screen(
-                self.form.as_rows(self),
+                self.form.as_rows(),
                 button_pile([self.form.done_btn]),
                 focus_buttons=False))
         self.form_rows = self._w[1]

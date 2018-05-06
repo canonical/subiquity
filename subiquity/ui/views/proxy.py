@@ -54,7 +54,7 @@ class ProxyView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen(self))
+        super().__init__(self.form.as_screen())
 
     def done(self, result):
         log.debug("User input: {}".format(result.as_data()))

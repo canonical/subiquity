@@ -158,7 +158,7 @@ class PartitionFormatView(BaseView):
         super().__init__(screen(self.make_body(), self.form.buttons, focus_buttons=focus_buttons))
 
     def make_body(self):
-        return self.form.as_rows(self)
+        return self.form.as_rows()
 
     def cancel(self, button=None):
         self.back()

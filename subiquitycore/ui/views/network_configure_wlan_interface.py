@@ -65,8 +65,8 @@ class NetworkConfigureWLANView(BaseView):
         if self.dev.configured_wifi_psk is not None:
             self.form.psk.value = self.dev.configured_wifi_psk
 
-        self.ssid_row = self.form.ssid.as_row(self, self.form.longest_caption)
-        self.psk_row = self.form.psk.as_row(self, self.form.longest_caption)
+        self.ssid_row = self.form.ssid.as_row(self.form.longest_caption)
+        self.psk_row = self.form.psk.as_row(self.form.longest_caption)
 
         self.inputs = Pile(self._build_iface_inputs())
 
