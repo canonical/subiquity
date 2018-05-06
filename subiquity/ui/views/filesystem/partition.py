@@ -163,7 +163,10 @@ class PartitionFormatView(Stretchy):
             self.form.buttons,
             ]
 
-        super().__init__(self.title, widgets, 0, 0)
+        focus_index = 0
+        if focus_buttons:
+            focus_index = 2
+        super().__init__(self.title, widgets, 0, focus_index)
 
     def make_body(self):
         return self.form.as_rows()
