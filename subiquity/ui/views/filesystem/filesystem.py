@@ -267,6 +267,10 @@ class DeviceList(WidgetWrap):
 
     def _device_action(self, sender, action, device):
         log.debug('_device_action %s %s', action, device)
+        if action == DeviceAction.INFO:
+            from .disk_info import DiskInfoStretchy
+            self.parent.show_stretchy_overlay(
+                DiskInfoStretchy(self.parent, device))
 
     def _partition_action(self, sender, action, part):
         log.debug('_partition_action %s %s', action, part)
