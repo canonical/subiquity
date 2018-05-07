@@ -169,7 +169,8 @@ class PartitionStretchy(Stretchy):
             max_size += self.partition.size
             fs = self.partition.fs()
             if fs is not None:
-                initial['fstype'] = self.model.fs_by_name[fs.fstype]
+                if partition.flag != "boot":
+                    initial['fstype'] = self.model.fs_by_name[fs.fstype]
                 mount = fs.mount()
                 if mount is not None:
                     initial['mount'] = mount.path
@@ -211,12 +212,12 @@ class PartitionStretchy(Stretchy):
                     Text(_(boot_partition_description)),
                     Text(""),
                     ])
-                focus_index = 2
             elif self.partition.flag == "bios_grub":
                 rows.extend([
                     Text(_(bios_grub_partition_description)),
                     Text(""),
                     ])
+                focus_index = 2
             d_btn = delete_btn(_("Delete"), on_press=self.delete)
             if self.partition.flag == "boot" or self.partition.flag == "bios_grub":
                 d_btn = WidgetDisable(Color.info_minor(d_btn.original_widget))

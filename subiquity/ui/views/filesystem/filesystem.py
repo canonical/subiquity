@@ -202,6 +202,8 @@ class FilesystemView(BaseView):
                 self._enable(self.edit_btn)
                 self._enable(self.part_btn)
             else:
+                if isinstance(dev, Partition) and dev.flag == "bios_grub":
+                    self.edit_btn.base_widget.set_label(_("Info"))
                 self._enable(self.edit_btn)
         else:
             for dev in self._selected_devices:
