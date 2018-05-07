@@ -99,8 +99,8 @@ class PartitionForm(Form):
         self.mount.enabled = fs.is_mounted
 
     size = SizeField()
-    fstype = FSTypeField("Format")
-    mount = MountField("Mount")
+    fstype = FSTypeField(_("Format:"))
+    mount = MountField(_("Mount:"))
 
     def clean_size(self, val):
         if not val:

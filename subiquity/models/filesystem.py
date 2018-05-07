@@ -164,6 +164,8 @@ class Disk:
     @property
     def available(self):
         # This should probably check self.fs() and self.raid() too, right?
+        if self.raid():
+            return False
         return self.used < self.size
 
     ok_for_raid = available
@@ -246,14 +248,29 @@ class Partition:
         return "%s%s"%(self.device.path, self._number)
 
 
-@attr.s
+@attr.s(cmp=False)
 class Raid:
     id = attr.ib(default=id_factory("raid"))
     type = attr.ib(default="raid")
     name = attr.ib(default=None)
     raidlevel = attr.ib(default=None) # 0, 1, 5, 6, 10
-    devices = attr.ib(default=attr.Factory(list)) # [Partion or Disk]
-    spare_devices = attr.ib(default=attr.Factory(list)) # [Partion or Disk]
+    devices = attr.ib(default=attr.Factory(list)) # [Partition or Disk]
+
+    _fs = attr.ib(default=None, repr=False) # Filesystem
+    def fs(self):
+        return self._fs
+
+    @property
+    def size(self):
+        # XXX obviously need to fix this
+        return 10*(2<<30)
+
+    @property
+    def label(self):
+        return self.name
+
+    def desc(self):
+        return _("software RAID{}").format(self.raidlevel)
 
 
 @attr.s(cmp=False)
@@ -392,6 +409,9 @@ class FilesystemModel(object):
     def all_partitions(self):
         return self._partitions
 
+    def all_raids(self):
+        return self._raids
+
     def get_disk(self, path):
         return self._available_disks.get(path)
 
@@ -408,19 +428,20 @@ class FilesystemModel(object):
         self._partitions.append(p)
         return p
 
-    def add_raid(self, name, level, devices, spare_devices):
-        r = Raid(name=name, raidlevel=level, devices=devices, spare_devices=spare_devices)
-        for d in devices:
+    def add_raid(self, result):
+        r = Raid(name=result['name'], raidlevel=result['level'].value, devices=result['devices'])
+        for d in result['devices']:
             if isinstance(d, Disk):
                 self._use_disk(d)
             d._raid = r
         self._raids.append(r)
+        return r
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
-        if not volume.available:
-            if not (isinstance(volume, Partition) and volume.flag == 'bios_grub' and fstype == 'fat32'):
-                raise Exception("{} is not available".format(volume))
+        #if not volume.available:
+        #    if not (isinstance(volume, Partition) and volume.flag == 'bios_grub' and fstype == 'fat32'):
+        #        raise Exception("{} is not available".format(volume))
         if isinstance(volume, Disk):
             self._use_disk(volume)
         if volume._fs is not None:
@@ -439,7 +460,10 @@ class FilesystemModel(object):
     def get_mountpoint_to_devpath_mapping(self):
         r = {}
         for m in self._mounts:
-            r[m.path] = m.device.volume.path
+            if isinstance(m.device.volume, Raid):
+                r[m.path] = m.device.volume.name
+            else:
+                r[m.path] = m.device.volume.path
         return r
 
     def any_configuration_done(self):

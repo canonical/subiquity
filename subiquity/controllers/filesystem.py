@@ -245,10 +245,15 @@ class FilesystemController(BaseController):
         self.ui.set_body(BcacheView(self.model,
                                     self.signal))
 
-    def add_raid_dev(self, result):
+    def add_raid(self, result):
         log.debug('add_raid_dev: result={}'.format(result))
-        self.model.add_raid_device(result)
-        self.signal.prev_signal()
+        raid = self.model.add_raid(result)
+        if result['fstype'].label is not None:
+            fs = self.model.add_filesystem(raid, result['fstype'].label)
+            if result['mount']:
+                self.model.add_mount(fs, result['mount'])
+        self.manual()
+
 
     def format_entire(self, disk):
         log.debug("format_entire {}".format(disk.label))
