@@ -39,7 +39,10 @@ from subiquitycore.ui.stretchy import (
 
 from .filesystem.partition import FSTypeField
 from ..mount import MountField
-from subiquity.models.filesystem import humanize_size
+from subiquity.models.filesystem import (
+    get_raid_size,
+    humanize_size,
+    )
 
 log = logging.getLogger('subiquity.ui.raid')
 
@@ -119,7 +122,7 @@ class RaidStretchy(Stretchy):
         super().__init__(title, [Pile(self.form.as_rows()), Text(""), self.form.buttons], 0, 0)
 
     def _select_level(self, sender, new_level):
-        self.form.size.value = humanize_size(self.devices[0].size)
+        self.form.size.value = humanize_size(get_raid_size(new_level.value, self.devices))
 
     def done(self, sender):
         result = self.form.as_data()

@@ -84,6 +84,24 @@ def dehumanize_size(size):
     return num * mult // div
 
 
+def get_raid_size(level, devices):
+    min_size = min(dev.size for dev in devices)
+    if min_size <= 0:
+        return 0
+    if level == 0:
+        return min_size * len(devices)
+    elif level == 1:
+        return min_size
+    elif level == 5:
+        return min_size * (len(devices) - 1)
+    elif level == 6:
+        return min_size * (len(devices) - 2)
+    elif level == 10:
+        return min_size * (len(devices) // 2)
+    else:
+        raise ValueError("unknown raid level %s"%level)
+
+
 def id_factory(name):
     i = 0
     def factory():
@@ -298,15 +316,14 @@ class Raid:
 
     @property
     def size(self):
-        # XXX obviously need to fix this
-        return 10*(2<<30)
+        return get_raid_size(self.raidlevel, self.devices)
 
     @property
     def label(self):
         return self.name
 
     def desc(self):
-        return _("software RAID{}").format(self.raidlevel)
+        return _("software RAID {}").format(self.raidlevel)
 
 
 @attr.s(cmp=False)

@@ -90,7 +90,7 @@ class FilesystemView(BaseView):
 
         self.edit_btn = Toggleable(menu_btn(label=_("Edit"), on_press=self._click_edit))
         self.part_btn = Toggleable(menu_btn(label=_("Partition"), on_press=self._click_partition))
-        self.raid_btn = Toggleable(menu_btn(label=_("Create RAID"), on_press=self._click_raid))
+        self.raid_btn = Toggleable(menu_btn(label=_("Create software RAID (MD)"), on_press=self._click_raid))
         self._buttons = [self.edit_btn, self.part_btn, self.raid_btn]
         for btn in self._buttons:
             self._disable(btn)
