@@ -161,12 +161,12 @@ class Disk:
     def empty(self):
         return len(self.partitions()) == 0 and self.fs() is None and self.raid() is None
 
-    ok_for_raid = empty
-
     @property
     def available(self):
         # This should probably check self.fs() and self.raid() too, right?
         return self.used < self.size
+
+    ok_for_raid = available
 
     @property
     def size(self):
@@ -222,9 +222,9 @@ class Partition:
 
     @property
     def ok_for_raid(self):
-        if self.flag == 'bios_grub':
+        if self.flag == 'bios_grub' or self.flag == 'boot':
             return False
-        return self.fs() is None and self.raid() is None
+        return True
 
     @property
     def available(self):

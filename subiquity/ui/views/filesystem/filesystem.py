@@ -207,7 +207,7 @@ class FilesystemView(BaseView):
                 self._enable(self.edit_btn)
         else:
             for dev in self._selected_devices:
-                if not dev.available:
+                if not dev.ok_for_raid:
                     return
             self._enable(self.raid_btn)
 
