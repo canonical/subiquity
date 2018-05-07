@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .filesystem import (FilesystemView,  # NOQA
-                         PartitionView,
                          DiskPartitionView,
                          GuidedDiskSelectionView,
                          GuidedFilesystemView)

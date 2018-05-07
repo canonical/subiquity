@@ -20,7 +20,7 @@ from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.ui.error import ErrorView
 
-from subiquity.models.filesystem import align_up, humanize_size
+from subiquity.models.filesystem import align_up
 from subiquity.ui.views import (
     BcacheView,
     DiskPartitionView,
@@ -28,7 +28,6 @@ from subiquity.ui.views import (
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     LVMVolumeGroupView,
-    PartitionView,
     RaidView,
     )
 
@@ -92,16 +91,6 @@ class FilesystemController(BaseController):
         dp_view = DiskPartitionView(self.model, self, disk)
 
         self.ui.set_body(dp_view)
-
-    def add_disk_partition(self, disk):
-        log.debug("Adding partition to {}".format(disk))
-        adp_view = PartitionView(self.model, self, disk)
-        self.ui.set_body(adp_view)
-
-    def edit_partition(self, disk, partition):
-        log.debug("Editing partition {}".format(partition))
-        adp_view = PartitionView(self.model, self, disk, partition)
-        self.ui.set_body(adp_view)
 
     def delete_partition(self, part):
         old_fs = part.fs()

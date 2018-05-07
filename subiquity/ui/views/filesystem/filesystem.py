@@ -36,7 +36,7 @@ from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import humanize_size, Disk
+from subiquity.models.filesystem import humanize_size, Disk, Partition
 
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
@@ -192,11 +192,14 @@ class FilesystemView(BaseView):
         self._disable(self.edit_btn)
         self._disable(self.part_btn)
         self._disable(self.raid_btn)
+        self.edit_btn.base_widget.set_label(_("Edit"))
         if len(self._selected_devices) == 0:
             return
         elif len(self._selected_devices) == 1:
             [dev] = self._selected_devices
             if isinstance(dev, Disk):
+                self.edit_btn.base_widget.set_label(_("Info"))
+                self._enable(self.edit_btn)
                 self._enable(self.part_btn)
             else:
                 self._enable(self.edit_btn)
@@ -205,7 +208,6 @@ class FilesystemView(BaseView):
                 if not dev.available:
                     return
             self._enable(self.raid_btn)
-
 
     def _enable(self, btn):
         btn.enable()
@@ -310,13 +312,17 @@ class FilesystemView(BaseView):
 
     def _click_edit(self, sender):
         [dev] = self._selected_devices
-        from .partition import PartitionView
-        self.show_stretchy_overlay(PartitionView(self, dev.device, dev))
+        if isinstance(dev, Partition):
+            from .partition import PartitionStretchy
+            self.show_stretchy_overlay(PartitionStretchy(self, dev.device, dev))
+        else:
+            from .disk_info import DiskInfoStretchy
+            self.show_stretchy_overlay(DiskInfoStretchy(self, dev))
 
     def _click_partition(self, sender):
         [dev] = self._selected_devices
-        from .partition import AddPartitionStretchy
-        self.show_stretchy_overlay(AddPartitionStretchy(self, dev))
+        from .partition import PartitionStretchy
+        self.show_stretchy_overlay(PartitionStretchy(self, dev))
 
     def _click_raid(self, sender):
         pass

@@ -23,4 +23,3 @@ configuration.
 from .disk_partition import DiskPartitionView
 from .filesystem import FilesystemView
 from .guided import GuidedDiskSelectionView, GuidedFilesystemView
-from .partition import PartitionView

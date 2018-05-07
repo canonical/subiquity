@@ -46,7 +46,7 @@ class DiskInfoStretchy(Stretchy):
             button_pile([done_btn(_("Done"), on_press=self.cancel)]),
             ]
         title = _("Info for {}").format(disk.label)
-        super().__init__(title, widgets, 0, 0)
+        super().__init__(title, widgets, 0, 2)
 
     def _build_buttons(self):
         return button_pile([done_btn(_("Done"), on_press=self.done)])
