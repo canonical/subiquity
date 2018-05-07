@@ -223,10 +223,11 @@ class PartitionStretchy(Stretchy):
                 d_btn = WidgetDisable(Color.info_minor(d_btn.original_widget))
             extra_buttons.append(d_btn)
         rows.extend(self.form.as_rows())
-        rows.extend([
-            Text(""),
-            button_pile(extra_buttons),
-            ])
+        if extra_buttons:
+            rows.extend([
+                Text(""),
+                button_pile(extra_buttons),
+                ])
         widgets = [
             Pile(rows),
             Text(""),

@@ -52,8 +52,8 @@ class BaseView(WidgetWrap):
             ])
         self._w = Overlay(top_w=top, bottom_w=self._w, **args)
 
-    def show_stretchy_overlay(self, stretchy):
-        self._w = StretchyOverlay(self._w, stretchy)
+    def show_stretchy_overlay(self, stretchy, width=80):
+        self._w = StretchyOverlay(width, self._w, stretchy)
 
     def remove_overlay(self):
         self._w = self._w.bottom_w

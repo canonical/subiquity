@@ -36,7 +36,7 @@ from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import humanize_size, Disk, Partition
+from subiquity.models.filesystem import humanize_size, Disk, Partition, Raid
 
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
@@ -343,6 +343,9 @@ class FilesystemView(BaseView):
         if isinstance(dev, Partition):
             from .partition import PartitionStretchy
             self.show_stretchy_overlay(PartitionStretchy(self, dev.device, dev))
+        elif isinstance(dev, Raid):
+            from ..raid import RaidStretchy
+            self.show_stretchy_overlay(RaidStretchy(self, dev))
         else:
             from .disk_info import DiskInfoStretchy
             self.show_stretchy_overlay(DiskInfoStretchy(self, dev))

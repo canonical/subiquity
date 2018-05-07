@@ -438,7 +438,7 @@ class FilesystemModel(object):
 
     def probe(self):
         storage = self.prober.get_storage()
-        currently_mounted = self._get_system_mounted_disks()
+        currently_mounted = {}#self._get_system_mounted_disks()
         for path, data in storage.items():
             log.debug("fs probe %s", path)
             if path in currently_mounted:
@@ -446,6 +446,7 @@ class FilesystemModel(object):
             if data['DEVTYPE'] == 'disk' \
               and not data["DEVPATH"].startswith('/devices/virtual') \
               and data["MAJOR"] != "2" \
+              and data["MAJOR"] != "11" \
               and data['attrs'].get('ro') != "1":
                 #log.debug('disk={}\n{}'.format(
                 #    path, json.dumps(data, indent=4, sort_keys=True)))

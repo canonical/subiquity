@@ -71,7 +71,8 @@ class Stretchy:
 class StretchyOverlay(urwid.Widget):
     _selectable = True
     _sizing = frozenset([urwid.BOX])
-    def __init__(self, bottom_w, stretchy):
+    def __init__(self, width, bottom_w, stretchy):
+        self.width = width
         self.bottom_w = bottom_w
         self.stretchy = stretchy
         self.listbox = ListBox([stretchy.stretchy_w])
@@ -101,7 +102,7 @@ class StretchyOverlay(urwid.Widget):
         # Returns the size of the top widget and whether the scollbar will be shown.
 
         maxcol, maxrow = size # we are a BOX widget
-        outercol = min(maxcol, 80)
+        outercol = min(maxcol, self.width)
         innercol = outercol - 10 # (3 outer padding, 1 line, 2 inner padding) x 2
         fixed_rows = 6 # lines at top and bottom and padding
 
@@ -123,7 +124,7 @@ class StretchyOverlay(urwid.Widget):
 
         stretchy_ideal_rows = self.stretchy.stretchy_w.rows((innercol,), focus)
 
-        # XXX should reduce vertical padding here if it would help the
+        # XXX maybe reduce vertical padding here if it would help the
         # stretchy widget fit.
 
         if maxrow - fixed_rows >= stretchy_ideal_rows:

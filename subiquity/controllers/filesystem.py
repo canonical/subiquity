@@ -102,7 +102,7 @@ class FilesystemController(BaseController):
                 self.model._mounts.remove(mount)
         part.device.partitions().remove(part)
         self.model._partitions.remove(part)
-        self.partition_disk(part.device)
+        self.manual()
 
     def partition_disk_handler(self, disk, partition, spec):
         log.debug('spec: {}'.format(spec))
