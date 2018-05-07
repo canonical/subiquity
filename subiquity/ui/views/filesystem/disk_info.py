@@ -26,6 +26,7 @@ log = logging.getLogger('subiquity.ui.filesystem.disk_info')
 
 
 class DiskInfoStretchy(Stretchy):
+    # XXX add "select as boot disk" here
     def __init__(self, parent, disk):
         log.debug('DiskInfoView: {}'.format(disk))
         self.parent = parent
