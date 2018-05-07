@@ -14,120 +14,85 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from urwid import Text, CheckBox
 
-from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import cancel_btn, done_btn
-from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.interactive import (StringEditor, IntegerEditor,
-                                          Selector)
-from subiquitycore.ui.utils import Color, Padding
+import attr
+
+from urwid import (
+    connect_signal,
+    )
+
+from subiquitycore.ui.form import (
+    ChoiceField,
+    Form,
+    IntegerField,
+    StringField,
+    )
+from subiquitycore.ui.selector import (
+    Option,
+    )
+from subiquitycore.ui.stretchy import (
+    Stretchy,
+    )
 
 from subiquity.models.filesystem import humanize_size
 
 log = logging.getLogger('subiquity.ui.raid')
 
+@attr.s
+class RaidLevel:
+    name = attr.ib()
+    value = attr.ib()
+    min_devices = attr.ib()
 
-class RaidView(BaseView):
-    def __init__(self, model, signal):
+
+levels = [
+    RaidLevel(_("0 (striped)"), 0, 2),
+    RaidLevel(_("1 (mirrored)"), 1, 2),
+    RaidLevel(_("5"), 5, 3),
+    RaidLevel(_("6"), 6, 4),
+    RaidLevel(_("10"), 10, 72),
+    ]
+
+
+class RaidForm(Form):
+
+    name = StringField(_("Name:"))
+    level = ChoiceField(_("RAID Level:"), choices=["dummy"])
+    size = IntegerField(_("Size:"))
+
+
+class RaidStretchy(Stretchy):
+    def __init__(self, parent, model, controller, devices):
         self.model = model
-        self.signal = signal
-        self.raid_level = Selector(self.model.raid_levels)
-        self.hot_spares = IntegerEditor()
-        self.chunk_size = StringEditor(edit_text="4K")
-        self.selected_disks = []
-        body = [
-            Padding.center_50(self._build_disk_selection()),
-            Padding.line_break(""),
-            Padding.center_50(self._build_raid_configuration()),
-            Padding.line_break(""),
-            Padding.fixed_10(self._build_buttons())
-        ]
-        super().__init__(ListBox(body))
+        self.controller = controller
+        self.devices = devices
 
-    def _build_disk_selection(self):
-        log.debug('raid: _build_disk_selection')
-        items = [
-            Text("DISK SELECTION")
-        ]
+        self.form = RaidForm()
 
-        # raid can use empty whole disks, or empty partitions
-        avail_disks = self.model.get_empty_disk_names()
-        avail_parts = self.model.get_empty_partition_names()
-        avail_devs = sorted(avail_disks + avail_parts)
-        if len(avail_devs) == 0:
-            return items.append(
-                [Color.info_minor(Text("No available disks."))])
+        connect_signal(self.form.level.widget, 'select', self._select_level)
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
 
-        for dname in avail_devs:
-            device = self.model.get_disk(dname)
-            if device.path != dname:
-                # we've got a partition
-                raiddev = device.get_partition(dname)
-            else:
-                raiddev = device
+        opts = []
+        for level in levels:
+            enabled = len(devices) >= level.min_devices
+            opts.append(Option((_(level.name), enabled, level)))
+        self.form.level.widget._options = opts
+        self.form.level.widget.index = 0
 
-            disk_sz = humanize_size(raiddev.size)
-            disk_string = "{}     {},     {}".format(dname,
-                                                     disk_sz,
-                                                     device.model)
-            log.debug('raid: disk_string={}'.format(disk_string))
-            self.selected_disks.append(CheckBox(disk_string))
+        self.form.size.enabled = False
 
-        items += self.selected_disks
+        super().__init__(self.form.as_screen(self, focus_buttons=False))
 
-        return Pile(items)
 
-    def _build_raid_configuration(self):
-        log.debug('raid: _build_raid_config')
-        items = [
-            Text("RAID CONFIGURATION"),
-            Columns(
-                [
-                    ("weight", 0.2, Text("RAID Level", align="right")),
-                    ("weight", 0.3, Color.string_input(self.raid_level))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Hot spares",
-                                         align="right")),
-                    ("weight", 0.3, Color.string_input(self.hot_spares))
-                ],
-                dividechars=4
-            ),
-            Columns(
-                [
-                    ("weight", 0.2, Text("Chunk size", align="right")),
-                    ("weight", 0.3, Color.string_input(self.chunk_size))
-                ],
-                dividechars=4
-            )
-        ]
-        return Pile(items)
-
-    def _build_buttons(self):
-        log.debug('raid: _build_buttons')
-        cancel = cancel_btn(on_press=self.cancel)
-        done = done_btn(on_press=self.done)
-
-        buttons = [
-            Color.button(done),
-            Color.button(cancel)
-        ]
-        return Pile(buttons)
+    def _select_level(self, sender, new_level):
+        self.form.size.value = humanize_size(self.devices[0].size)
 
     def done(self, result):
-        result = {
-            'devices': [x.get_label() for x in self.selected_disks if x.state],
-            'raid_level': self.raid_level.value,
-            'hot_spares': self.hot_spares.value,
-            'chunk_size': self.chunk_size.value,
-        }
         log.debug('raid_done: result = {}'.format(result))
-        self.signal.emit_signal('filesystem:add-raid-dev', result)
+        result = self.form.as_data()
+        result['devices'] = self.devices
+        self.controller.add_raid()
 
     def cancel(self, button):
-        log.debug('raid: button_cancel')
-        self.signal.prev_signal()
+        self.parent.remove_overlay()

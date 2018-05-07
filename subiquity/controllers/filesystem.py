@@ -28,7 +28,6 @@ from subiquity.ui.views import (
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     LVMVolumeGroupView,
-    RaidView,
     )
 
 
