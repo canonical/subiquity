@@ -106,11 +106,11 @@ class FilesystemView(BaseView):
             Text(""),
             Padding.push_3(self._build_filesystem_list()),
             Text(""),
-            Text(_("AVAILABLE DEVICES")),
+            Text(_("AVAILABLE DEVICES AND PARTITIONS")),
             Text(""),
             ] + self._build_available_inputs() + [
             Text(""),
-            Text(_("USED DEVICES")),
+            Text(_("USED DEVICES AND PARTITIONS")),
             Text(""),
             ] + self._build_used_inputs()
 
@@ -257,8 +257,11 @@ class FilesystemView(BaseView):
                 ], 1))
             return r
         has_unavailable_partition = False
+        has_available_partition = False
         for partition in dev.partitions():
-            if not partition.available:
+            if partition.available:
+                has_available_partition = True
+            else:
                 has_unavailable_partition = True
             if available != partition.available:
                 continue
@@ -297,6 +300,8 @@ class FilesystemView(BaseView):
                 (42, Text(_("  free space"))),
                 Text("{:>9} ({}%)".format(humanize_size(free), percent)),
                 ], 1))
+        elif available and len(dev.partitions()) > 0 and not has_available_partition:
+            return []
         return r
 
     def _build_available_inputs(self):
