@@ -116,11 +116,15 @@ class FilesystemView(BaseView):
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
-            Padding.push_4(self._build_filesystem_list()),
+            Padding.push_3(self._build_filesystem_list()),
             Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
-            ] + self._build_available_inputs()
+            ] + self._build_available_inputs() + [
+            Text(""),
+            Text(_("USED DEVICES")),
+            Text(""),
+            ] + self._build_used_inputs()
 
         #+ [
             #self._build_menu(),
