@@ -87,6 +87,12 @@ class BlockDevicePicker(Stretchy):
             disk_sz = humanize_size(device.size)
             disk_string = "{:{}} {}".format(device.label, max_label_width, disk_sz)
             device_widgets.append(CheckBox(disk_string, state=checked))
+            if device.fs() is not None:
+                fs = device.fs()
+                text = _("    formatted as: {}").format(fs.fstype)
+                if fs.mount():
+                    text += _(", mounted at: {}").format(fs.mount().path)
+                device_widgets.append(Color.info_minor(Text(text)))
         self.pile = Pile(device_widgets)
         widgets = [
             self.pile,
@@ -108,7 +114,7 @@ class BlockDevicePicker(Stretchy):
         for i in range(len(self.devices)):
             dev, was_checked = self.devices[i]
             w, o = self.pile.contents[i]
-            if w.state:
+            if isinstance(w, CheckBox) and w.state:
                 selected_devs.append(dev)
         self.chooser._emit('select', selected_devs)
         self.chooser.value = selected_devs
@@ -239,7 +245,7 @@ class RaidStretchy(Stretchy):
                 }
             i = [i for i, l in enumerate(levels) if l.value == raid.raidlevel][0]
 
-        all_devices = []
+        all_devices = list(initial['devices'])
         for dev in self.parent.model.all_devices():
             if dev.ok_for_raid:
                 all_devices.append(dev)

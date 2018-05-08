@@ -231,6 +231,12 @@ class Disk:
 
     @property
     def available(self):
+        if self._fs is not None:
+            if self._fs._mount is not None:
+                fs_obj = FilesystemModel.fs_by_name[self._fs.fstype]
+                return fs_obj.is_mounted
+            else:
+                return False
         return self.used < self.size
 
     ok_for_raid = empty
@@ -311,6 +317,8 @@ class Partition:
     def available(self):
         if self.flag == 'bios_grub':
             return False
+        if self._raid is not None:
+            return False
         if self._fs is None:
             return True
         if self._fs._mount is None:
@@ -345,9 +353,9 @@ class Raid:
         if action == "edit":
             return True
         if action == "partition":
-            return True
+            return self.available
         if action == "format":
-            return True
+            return self.empty
         if action == 'delete':
             return True
 
@@ -360,6 +368,12 @@ class Raid:
 
     @property
     def available(self):
+        if self._fs is not None:
+            if self._fs._mount is None:
+                fs_obj = FilesystemModel.fs_by_name[self._fs.fstype]
+                return fs_obj.is_mounted
+            else:
+                return False
         return self.used < self.size
 
     @property

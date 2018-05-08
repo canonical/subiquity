@@ -50,11 +50,11 @@ class _ActionMenuDialog(WidgetWrap):
 
     def __init__(self, parent):
         self.parent = parent
-        #close = Button("(close)")
-        #connect_signal(close, "click", self.close)
-        #del close.base_widget._w.contents[2] # something of a hack...
-        #group = [close]
-        group = []
+        close = Button("(close)")
+        connect_signal(close, "click", self.close)
+        del close.base_widget._w.contents[2] # something of a hack...
+        group = [close]
+        #group = []
         for i, option in enumerate(self.parent._options):
             if option.enabled:
                 if option.value == 'delete':
@@ -121,4 +121,4 @@ class ActionMenu(PopUpLauncher):
 
     def get_pop_up_parameters(self):
         width = max([markup_length(o.label) for o in self._options]) + 5
-        return {'left':0, 'top':1, 'overlay_width':width, 'overlay_height':len(self._options) + 2}
+        return {'left':0, 'top':1, 'overlay_width':width, 'overlay_height':len(self._options) + 3}
