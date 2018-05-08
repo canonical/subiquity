@@ -111,7 +111,7 @@ class FilesystemView(BaseView):
 
         self.raid_btn = Toggleable(menu_btn(label=_("Create software RAID (MD)"), on_press=self._click_raid))
         self._buttons = [self.raid_btn]
-        self._disable(self.raid_btn)
+        #self._disable(self.raid_btn)
 
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
@@ -224,22 +224,43 @@ class FilesystemView(BaseView):
             if action == 'edit':
                 from .partition import PartitionStretchy
                 self.show_stretchy_overlay(PartitionStretchy(self, obj.device, obj))
-            if action == 'delete':
+            elif action == 'delete':
                 pass
+        elif isinstance(obj, Raid):
+            if action == 'edit':
+                from ..raid import RaidStretchy
+                self.show_stretchy_overlay(RaidStretchy(self, obj))
 
-    def _build_disk_rows(self, disk):
-        disk_label = Text(disk.label)
-        disk_size = Text(humanize_size(disk.size).rjust(9))
-        disk_type = Text(disk.desc())
-        action_menu = ActionMenu([(_(label), disk.supports_action(action), action) for label, action in device_actions])
-        connect_signal(action_menu, 'action', self._action, disk)
+    def _build_device_rows(self, dev):
+        label = Text(dev.label)
+        size = Text(humanize_size(dev.size).rjust(9))
+        typ = Text(dev.desc())
+        action_menu = ActionMenu([(_(label), dev.supports_action(action), action) for label, action in device_actions])
+        connect_signal(action_menu, 'action', self._action, dev)
         r = [Columns([
             (3, action_menu),
-            (42, disk_label),
-            (10, disk_size),
-            disk_type,
+            (42, label),
+            (10, size),
+            typ,
             ], 1)]
-        for partition in disk.partitions():
+        if dev.fs() is not None or dev.raid() is not None:
+            label = _("entire device")
+            if dev.fs() is not None:
+                label += ", "
+                fs = dev.fs()
+                fs_obj = self.model.fs_by_name[fs.fstype]
+                if fs.mount():
+                    label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
+                else:
+                    label += fs.fstype
+            if dev.raid() is not None:
+                label += _(" is part of {}").format(dev.raid().name)
+            r.append(Columns([
+                (3, Text("")),
+                Color.info_minor(Text(label)),
+                ], 1))
+            return r
+        for partition in dev.partitions():
             part_label = _("  partition {}, ").format(partition._number)
             fs = partition.fs()
             if fs is not None:
@@ -247,12 +268,14 @@ class FilesystemView(BaseView):
                     part_label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
                 else:
                     part_label += fs.fstype
+            elif partition.raid() is not None:
+                part_label += _("part of {}").format(partition.raid().name)
             elif partition.flag == "bios_grub":
                 part_label += "bios_grub"
             else:
                 part_label += _("unformatted")
             part_label = Text(part_label)
-            part_size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
+            part_size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/dev.size)))
             action_menu = ActionMenu([(_(label), partition.supports_action(action), action) for label, action in device_actions])
             connect_signal(action_menu, 'action', self._action, partition)
             r.append(Columns([
@@ -260,42 +283,20 @@ class FilesystemView(BaseView):
                 (42, part_label),
                 part_size,
                 ], 1))
-        if 0 < disk.used < disk.free:
-            size = disk.size
-            free = disk.free
+        if 0 < dev.used < dev.size:
+            size = dev.size
+            free = dev.free
             percent = str(int(100*free/size))
             if percent == "0":
                 percent = "%.2f"%(100*free/size,)
             action_menu = ActionMenu([(_(label), empty_supports_action(action), action) for label, action in device_actions])
-            connect_signal(action_menu, 'action', self._action, disk)
+            connect_signal(action_menu, 'action', self._action, dev)
             r.append(Columns([
                 (3, action_menu),
                 (42, Text(_("  free space"))),
                 Text("{:>9} ({}%)".format(humanize_size(free), percent)),
                 ], 1))
         return r
-
-    def _build_raid_rows(self, raid):
-        raid_label = raid.label + ", "
-        raid_size = Text(humanize_size(raid.size).rjust(9))
-        raid_type = Text(raid.desc())
-        if raid.fs():
-            fs = raid.fs()
-            if fs is not None:
-                if fs.mount():
-                    raid_label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
-                else:
-                    raid_label += fs.fstype
-            else:
-                raid_label += _("unformatted")
-        action_menu = ActionMenu([(_(label), empty_supports_action(action), action) for label, action in device_actions])
-        connect_signal(action_menu, 'action', self._action, raid)
-        return [Columns([
-                (3, action_menu),
-                (42, Text(raid_label)),
-                (10, raid_size),
-                raid_type,
-                ], 1)]
 
     def _build_available_inputs(self):
         r = []
@@ -312,9 +313,7 @@ class FilesystemView(BaseView):
         col3(Text(_("DEVICE")), Text(_("SIZE"), align="center"), Text(_("TYPE")))
         r.append(Pile(inputs))
 
-        for disk in self.model.all_disks():
-            if disk.raid():
-                continue
+        for disk in self.model.all_devices():
             if disk.size < self.model.lower_size_limit:
                 disk_label = Text(disk.label)
                 size = Text(humanize_size(disk.size).rjust(9))
@@ -322,10 +321,7 @@ class FilesystemView(BaseView):
                 col3(disk_label, size, typ)
                 r.append(Color.info_minor(Pile(inputs)))
                 continue
-            r.extend(self._build_disk_rows(disk))
-
-        for raid in self.model.all_raids():
-            r.extend(self._build_raid_rows(raid))
+            r.extend(self._build_device_rows(disk))
 
         if len(r) == 1:
             return [Color.info_minor(Text(_("No disks available.")))]
@@ -338,32 +334,9 @@ class FilesystemView(BaseView):
 
         return r
 
-    def _click_edit(self, sender):
-        [dev] = self._selected_devices
-        if isinstance(dev, Partition):
-            from .partition import PartitionStretchy
-            self.show_stretchy_overlay(PartitionStretchy(self, dev.device, dev))
-        elif isinstance(dev, Raid):
-            from ..raid import RaidStretchy
-            self.show_stretchy_overlay(RaidStretchy(self, dev))
-        else:
-            from .disk_info import DiskInfoStretchy
-            self.show_stretchy_overlay(DiskInfoStretchy(self, dev))
-
-    def _click_partition(self, sender):
-        [dev] = self._selected_devices
-        from .partition import PartitionStretchy
-        self.show_stretchy_overlay(PartitionStretchy(self, dev))
-
     def _click_raid(self, sender):
         from ..raid import RaidStretchy
-        self.show_stretchy_overlay(RaidStretchy(self, list(self._selected_devices)))
-
-    def click_disk(self, sender, disk):
-        self.controller.partition_disk(disk)
-
-    def click_partition(self, sender, partition):
-        self.controller.format_mount_partition(partition)
+        self.show_stretchy_overlay(RaidStretchy(self, []))
 
     def _build_menu(self):
         log.debug('FileSystemView: building menu')

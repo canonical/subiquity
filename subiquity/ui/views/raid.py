@@ -240,9 +240,13 @@ class RaidStretchy(Stretchy):
             i = [i for i, l in enumerate(levels) if l.value == raid.raidlevel][0]
 
         all_devices = []
-        for dev in self.parent.model.all_disks() + self.parent.model.all_partitions():
+        for dev in self.parent.model.all_devices():
             if dev.ok_for_raid:
                 all_devices.append(dev)
+            else:
+                for p in dev.partitions():
+                    if p.ok_for_raid:
+                        all_devices.append(p)
 
         self.form = RaidForm(mountpoint_to_devpath_mapping, all_devices, self, initial)
 

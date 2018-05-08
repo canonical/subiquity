@@ -85,6 +85,8 @@ def dehumanize_size(size):
 
 
 def get_raid_size(level, devices):
+    if len(devices) == 0:
+        return 0
     min_size = min(dev.size for dev in devices)
     if min_size <= 0:
         return 0
@@ -337,12 +339,24 @@ class Raid:
     _fs = attr.ib(default=None, repr=False) # Filesystem
     _raid = attr.ib(default=None, repr=False) # Filesystem
 
+    def supports_action(self, action):
+        if action == "info":
+            return False
+        if action == "edit":
+            return True
+        if action == "partition":
+            return True
+        if action == "format":
+            return True
+        if action == 'delete':
+            return True
+
     def partitions(self):
         return self._partitions
     def fs(self):
         return self._fs
     def raid(self):
-        return self._fs
+        return self._raid
 
     @property
     def available(self):
