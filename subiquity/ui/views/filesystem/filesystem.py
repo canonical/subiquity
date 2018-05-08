@@ -84,6 +84,7 @@ device_actions = [
     (_("Edit"), 'edit'),
     (_("Add Partition"), 'partition'),
     (_("Format / Mount"), 'format'),
+    (_("Delete"), 'delete'),
     ]
 
 def empty_supports_action(action):
@@ -94,6 +95,8 @@ def empty_supports_action(action):
     if action == "partition":
         return True
     if action == "format":
+        return False
+    if action == "delete":
         return False
 
 class FilesystemView(BaseView):
@@ -218,8 +221,11 @@ class FilesystemView(BaseView):
             elif action == 'format':
                 pass
         elif isinstance(obj, Partition):
-            from .partition import PartitionStretchy
-            self.show_stretchy_overlay(PartitionStretchy(self, obj.device, obj))
+            if action == 'edit':
+                from .partition import PartitionStretchy
+                self.show_stretchy_overlay(PartitionStretchy(self, obj.device, obj))
+            if action == 'delete':
+                pass
 
     def _build_disk_rows(self, disk):
         disk_label = Text(disk.label)

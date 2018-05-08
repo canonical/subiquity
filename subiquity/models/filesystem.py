@@ -166,6 +166,8 @@ class Disk:
             return self.available
         if action == "format":
             return self.empty
+        if action == "delete":
+            return False
 
     _info = attr.ib(default=None)
 
@@ -223,16 +225,13 @@ class Disk:
 
     @property
     def empty(self):
-        return len(self.partitions()) == 0 and self.fs() is None and self.raid() is None
+        return self.used == 0
 
     @property
     def available(self):
-        # This should probably check self.fs() and self.raid() too, right?
-        if self.raid():
-            return False
         return self.used < self.size
 
-    ok_for_raid = available
+    ok_for_raid = empty
 
     @property
     def size(self):
@@ -250,6 +249,8 @@ class Disk:
     @property
     def used(self):
         if self._fs is not None:
+            return self.size
+        if self._raid is not None:
             return self.size
         r = 0
         for p in self._partitions:
@@ -301,6 +302,8 @@ class Partition:
             return False
         if action == "format":
             return False
+        if action == 'delete':
+            return self.flag != 'bios_grub' and self.flag != 'boot'
 
     @property
     def available(self):
@@ -330,13 +333,45 @@ class Raid:
     raidlevel = attr.ib(default=None) # 0, 1, 5, 6, 10
     devices = attr.ib(default=attr.Factory(list)) # [Partition or Disk]
 
+    _partitions = attr.ib(default=attr.Factory(list), repr=False) # [Partition]
     _fs = attr.ib(default=None, repr=False) # Filesystem
+    _raid = attr.ib(default=None, repr=False) # Filesystem
+
+    def partitions(self):
+        return self._partitions
     def fs(self):
         return self._fs
+    def raid(self):
+        return self._fs
+
+    @property
+    def available(self):
+        return self.used < self.size
+
+    @property
+    def empty(self):
+        return self.used == 0
+
+    ok_for_raid = empty
 
     @property
     def size(self):
         return get_raid_size(self.raidlevel, self.devices)
+
+    @property
+    def used(self):
+        if self._fs is not None:
+            return self.size
+        if self._raid is not None:
+            return self.size
+        r = 0
+        for p in self._partitions:
+            r += p.size
+        return r
+
+    @property
+    def free(self):
+        return self.size - self.used
 
     @property
     def label(self):
@@ -480,11 +515,11 @@ class FilesystemModel(object):
     def all_disks(self):
         return sorted(self._available_disks.values(), key=lambda x:x.label)
 
-    def all_partitions(self):
-        return self._partitions
-
     def all_raids(self):
         return self._raids
+
+    def all_devices(self):
+        return self.all_disks() + self.all_raids()
 
     def get_disk(self, path):
         return self._available_disks.get(path)
