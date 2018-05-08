@@ -157,6 +157,16 @@ class Disk:
     def raid(self):
         return self._raid
 
+    def supports_action(self, action):
+        if action == "info":
+            return True
+        if action == "edit":
+            return False
+        if action == "partition":
+            return self.available
+        if action == "format":
+            return self.empty
+
     _info = attr.ib(default=None)
 
     @classmethod
@@ -281,6 +291,16 @@ class Partition:
         if self.flag == 'bios_grub' or self.flag == 'boot':
             return False
         return True
+
+    def supports_action(self, action):
+        if action == "info":
+            return False
+        if action == "edit":
+            return True
+        if action == "partition":
+            return False
+        if action == "format":
+            return False
 
     @property
     def available(self):

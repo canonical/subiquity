@@ -22,6 +22,7 @@ configuration.
 import logging
 from urwid import CheckBox, connect_signal, Text
 
+from subiquitycore.ui.actionmenu import ActionMenu
 from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
@@ -78,6 +79,23 @@ class FilesystemConfirmation(Stretchy):
 class NarrowCheckBox(CheckBox):
     reserve_columns = 3
 
+device_actions = [
+    (_("Information"), 'info'),
+    (_("Edit"), 'edit'),
+    (_("Add Partition"), 'partition'),
+    (_("Format / Mount"), 'format'),
+    ]
+
+def empty_supports_action(action):
+    if action == "info":
+        return False
+    if action == "edit":
+        return False
+    if action == "partition":
+        return True
+    if action == "format":
+        return False
+
 class FilesystemView(BaseView):
     title = _("Filesystem setup")
     footer = _("Select available disks to format and mount")
@@ -88,12 +106,9 @@ class FilesystemView(BaseView):
         self.controller = controller
         self.items = []
 
-        self.edit_btn = Toggleable(menu_btn(label=_("Edit"), on_press=self._click_edit))
-        self.part_btn = Toggleable(menu_btn(label=_("Partition"), on_press=self._click_partition))
         self.raid_btn = Toggleable(menu_btn(label=_("Create software RAID (MD)"), on_press=self._click_raid))
-        self._buttons = [self.edit_btn, self.part_btn, self.raid_btn]
-        for btn in self._buttons:
-            self._disable(btn)
+        self._buttons = [self.raid_btn]
+        self._disable(self.raid_btn)
 
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
@@ -183,34 +198,6 @@ class FilesystemView(BaseView):
 
         return button_pile(buttons)
 
-    def _checkbox_change(self, checkbox, new_state, device):
-        if new_state:
-            self._selected_devices.add(device)
-        else:
-            if device in self._selected_devices:
-                self._selected_devices.remove(device)
-        self._disable(self.edit_btn)
-        self._disable(self.part_btn)
-        self._disable(self.raid_btn)
-        self.edit_btn.base_widget.set_label(_("Edit"))
-        if len(self._selected_devices) == 0:
-            return
-        elif len(self._selected_devices) == 1:
-            [dev] = self._selected_devices
-            if isinstance(dev, Disk):
-                self.edit_btn.base_widget.set_label(_("Info"))
-                self._enable(self.edit_btn)
-                self._enable(self.part_btn)
-            else:
-                if isinstance(dev, Partition) and dev.flag == "bios_grub":
-                    self.edit_btn.base_widget.set_label(_("Info"))
-                self._enable(self.edit_btn)
-        else:
-            for dev in self._selected_devices:
-                if not dev.ok_for_raid:
-                    return
-            self._enable(self.raid_btn)
-
     def _enable(self, btn):
         btn.enable()
         btn._original_widget.set_attr_map({None: 'menu'})
@@ -219,61 +206,68 @@ class FilesystemView(BaseView):
         btn.disable()
         btn._original_widget._original_widget.set_attr_map({None: 'info_minor'})
 
+    def _action(self, sender, action, obj):
+        log.debug("_action %r %r", action, obj)
+        if isinstance(obj, Disk):
+            if action == 'info':
+                from .disk_info import DiskInfoStretchy
+                self.show_stretchy_overlay(DiskInfoStretchy(self, obj))
+            elif action == 'partition':
+                from .partition import PartitionStretchy
+                self.show_stretchy_overlay(PartitionStretchy(self, obj))
+            elif action == 'format':
+                pass
+        elif isinstance(obj, Partition):
+            from .partition import PartitionStretchy
+            self.show_stretchy_overlay(PartitionStretchy(self, obj.device, obj))
+
     def _build_disk_rows(self, disk):
         disk_label = Text(disk.label)
         disk_size = Text(humanize_size(disk.size).rjust(9))
         disk_type = Text(disk.desc())
-        if len(disk.partitions()) == 0:
-            cb = NarrowCheckBox("")
-            connect_signal(cb, 'change', self._checkbox_change, disk)
-            return [Columns([
-                (3, cb),
-                (42, disk_label),
-                (10, disk_size),
-                disk_type,
-                ], 1)]
-        else:
-            r = [Columns([
-                (3, Text("")),
-                (42, disk_label),
-                (10, disk_size),
-                disk_type,
-                ], 1)]
-            for partition in disk.partitions():
-                part_label = _("  partition {}, ").format(partition._number)
-                fs = partition.fs()
-                if fs is not None:
-                    if fs.mount():
-                        part_label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
-                    else:
-                        part_label += fs.fstype
-                elif partition.flag == "bios_grub":
-                    part_label += "bios_grub"
+        action_menu = ActionMenu([(_(label), disk.supports_action(action), action) for label, action in device_actions])
+        connect_signal(action_menu, 'action', self._action, disk)
+        r = [Columns([
+            (3, action_menu),
+            (42, disk_label),
+            (10, disk_size),
+            disk_type,
+            ], 1)]
+        for partition in disk.partitions():
+            part_label = _("  partition {}, ").format(partition._number)
+            fs = partition.fs()
+            if fs is not None:
+                if fs.mount():
+                    part_label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
                 else:
-                    part_label += _("unformatted")
-                part_label = Text(part_label)
-                part_size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
-                cb = NarrowCheckBox("")
-                connect_signal(cb, 'change', self._checkbox_change, partition)
-                r.append(Columns([
-                    (3, cb),
-                    (42, part_label),
-                    part_size,
-                    ], 1))
-            if disk.used < disk.free:
-                size = disk.size
-                free = disk.free
-                percent = str(int(100*free/size))
-                if percent == "0":
-                    percent = "%.2f"%(100*free/size,)
-                cb = NarrowCheckBox("")
-                connect_signal(cb, 'change', self._checkbox_change, disk)
-                r.append(Columns([
-                    (3, cb),
-                    (42, Text(_("  free space"))),
-                    Text("{:>9} ({}%)".format(humanize_size(free), percent)),
-                    ], 1))
-            return r
+                    part_label += fs.fstype
+            elif partition.flag == "bios_grub":
+                part_label += "bios_grub"
+            else:
+                part_label += _("unformatted")
+            part_label = Text(part_label)
+            part_size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
+            action_menu = ActionMenu([(_(label), partition.supports_action(action), action) for label, action in device_actions])
+            connect_signal(action_menu, 'action', self._action, partition)
+            r.append(Columns([
+                (3, action_menu),
+                (42, part_label),
+                part_size,
+                ], 1))
+        if 0 < disk.used < disk.free:
+            size = disk.size
+            free = disk.free
+            percent = str(int(100*free/size))
+            if percent == "0":
+                percent = "%.2f"%(100*free/size,)
+            action_menu = ActionMenu([(_(label), empty_supports_action(action), action) for label, action in device_actions])
+            connect_signal(action_menu, 'action', self._action, disk)
+            r.append(Columns([
+                (3, action_menu),
+                (42, Text(_("  free space"))),
+                Text("{:>9} ({}%)".format(humanize_size(free), percent)),
+                ], 1))
+        return r
 
     def _build_raid_rows(self, raid):
         raid_label = raid.label + ", "
@@ -288,10 +282,10 @@ class FilesystemView(BaseView):
                     raid_label += fs.fstype
             else:
                 raid_label += _("unformatted")
-        cb = NarrowCheckBox("")
-        connect_signal(cb, 'change', self._checkbox_change, raid)
+        action_menu = ActionMenu([(_(label), empty_supports_action(action), action) for label, action in device_actions])
+        connect_signal(action_menu, 'action', self._action, raid)
         return [Columns([
-                (3, cb),
+                (3, action_menu),
                 (42, Text(raid_label)),
                 (10, raid_size),
                 raid_type,
