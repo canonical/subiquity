@@ -68,7 +68,7 @@ class SubiquityModel:
             'lock-passwd': False,
             }
         if user.ssh_key is not None:
-            user_info['ssh_authorized_keys'] = user.ssh_key.splitlines()
+            user_info['ssh_authorized_keys'] = user.ssh_key.replace('\r', '').splitlines()
         config = {
             'growpart': {
                 'mode': 'off',

@@ -26,6 +26,7 @@ from urwid import (
 
 from subiquitycore.ui.buttons import (
     cancel_btn,
+    ok_btn,
     )
 from subiquitycore.ui.interactive import (
     PasswordEditor,
@@ -201,6 +202,28 @@ class FetchingSSHKeys(WidgetWrap):
         self.parent.remove_overlay()
 
 
+class ConfirmSSHKeys(WidgetWrap):
+    def __init__(self, parent, result, ssh_key, fingerprint):
+        self.parent = parent
+        self.result = result
+        self.ssh_key = ssh_key
+        self.fingerprint = fingerprint
+        ok = ok_btn(label=_("Yes"), on_press=self.ok)
+        cancel = cancel_btn(label=_("No"), on_press=self.cancel)
+        super().__init__(
+            LineBox(
+                Pile([
+                    ('pack', Text('Key ok?')),
+                    ('pack', Text(fingerprint)),
+                    ('pack', button_pile([ok, cancel])),
+                    ]),
+                title=_("Confirm SSH keys")))
+    def cancel(self, sender):
+        self.parent.remove_overlay()
+    def ok(self, sender):
+        self.result['ssh_key'] = self.ssh_key
+        self.parent.controller.done(self.result)
+
 class IdentityView(BaseView):
     def __init__(self, model, controller, opts):
         self.model = model
@@ -260,3 +283,7 @@ class IdentityView(BaseView):
         else:
             log.debug("User input: {}".format(result))
             self.controller.done(result)
+
+    def confirm_ssh_keys(self, result, ssh_key, fingerprint):
+        self.remove_overlay()
+        self.show_overlay(ConfirmSSHKeys(self, result, ssh_key, fingerprint))

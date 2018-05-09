@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import subprocess
 
 from subiquitycore.controller import BaseController
 from subiquitycore.utils import run_command_start, run_command_summarize
@@ -60,25 +61,38 @@ class IdentityController(BaseController):
             pass # It's OK if the process has already terminated.
         self._fetching_proc = None
 
-    def _fetch_ssh_keys(self, result, p):
+    def _fetch_ssh_keys(self, result, p, ssh_import_id):
         stdout, stderr = p.communicate()
         if p != self._fetching_proc:
             log.debug("_fetch_ssh_keys cancelled")
             return None
         status = run_command_summarize(p, stdout, stderr)
-        result['ssh_key'] = status['output']
-        return result
+        if status['status'] != 0:
+            # Do better here!
+            return None
+        ssh_key = status['output']
+        p = subprocess.Popen(
+            ['ssh-keygen', '-lf-'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        stdout, stderr = p.communicate(input=ssh_key.encode('latin-1'))
+        if p.returncode != 0:
+            # Do better here!
+            return None
+        fingerprint = stdout.decode('utf-8')
+        fingerprint = fingerprint.replace("# ssh-import-id {} ".format(ssh_import_id), "")
+        return True, result, ssh_key, fingerprint
 
     def _fetched_ssh_keys(self, fut):
         result = fut.result()
         log.debug("_fetched_ssh_keys %s", result)
         if result is not None:
-            self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
+            ok, result, ssh_key, fingerprint = result
+            if ok:
+                self.ui.frame.body.confirm_ssh_keys(result, ssh_key, fingerprint)
 
     def fetch_ssh_keys(self, result, ssh_import_id):
         self._fetching_proc = run_command_start(['ssh-import-id', '-o-', ssh_import_id])
         self.run_in_bg(
-            lambda: self._fetch_ssh_keys(result, self._fetching_proc),
+            lambda: self._fetch_ssh_keys(result, self._fetching_proc, ssh_import_id),
             self._fetched_ssh_keys)
 
     def done(self, result):
