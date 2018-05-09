@@ -27,11 +27,13 @@ from urwid import (
 from subiquitycore.ui.buttons import (
     cancel_btn,
     ok_btn,
+    other_btn,
     )
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     StringEditor,
     )
+from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.form import (
     ChoiceField,
     Form,
@@ -224,6 +226,23 @@ class ConfirmSSHKeys(WidgetWrap):
         self.result['ssh_key'] = self.ssh_key
         self.parent.controller.done(self.result)
 
+class FetchingSSHKeysFailed(Stretchy):
+    def __init__(self, parent, msg, stderr):
+        self.parent = parent
+        ok = other_btn(label=_("Close"), on_press=self.close)
+        widgets = [
+            Text(msg),
+            Text(stderr),
+            Text(""),
+            button_pile([ok]),
+            ]
+        super().__init__(
+            "",
+            widgets,
+            1, 3)
+    def close(self, sender):
+        self.parent.remove_overlay()
+
 class IdentityView(BaseView):
     def __init__(self, model, controller, opts):
         self.model = model
@@ -287,3 +306,7 @@ class IdentityView(BaseView):
     def confirm_ssh_keys(self, result, ssh_key, fingerprint):
         self.remove_overlay()
         self.show_overlay(ConfirmSSHKeys(self, result, ssh_key, fingerprint))
+
+    def fetching_ssh_keys_failed(self, msg, stderr):
+        self.remove_overlay()
+        self.show_stretchy_overlay(FetchingSSHKeysFailed(self, msg, stderr))

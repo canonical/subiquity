@@ -71,15 +71,16 @@ class IdentityController(BaseController):
             return None
         status = run_command_summarize(p, stdout, stderr)
         if status['status'] != 0:
-            # Do better here!
-            return None
+            if not stderr:
+                stderr = stdout
+            return False, _("Importing keys failed"), stderr
         ssh_key = status['output']
         p = subprocess.Popen(
             ['ssh-keygen', '-lf-'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
         stdout, stderr = p.communicate(input=ssh_key.encode('latin-1'))
         if p.returncode != 0:
             # Do better here!
-            return None
+            return False, _("ssh-keygen failed"), stderr.decode('utf-8')
         fingerprint = stdout.decode('utf-8')
         fingerprint = fingerprint.replace("# ssh-import-id {} ".format(ssh_import_id), "")
         return True, result, ssh_key, fingerprint
@@ -88,13 +89,17 @@ class IdentityController(BaseController):
         result = fut.result()
         log.debug("_fetched_ssh_keys %s", result)
         if result is not None:
-            ok, result, ssh_key, fingerprint = result
+            ok, rest = result[0], result[1:]
             if ok:
-                 if self.answers.get('accept-ssh-key'):
+                rest = result, ssh_key, fingerprint
+                if self.answers.get('accept-ssh-key'):
                     result['ssh_key'] = ssh_key
                     self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
-                 else:
+                else:
                     self.ui.frame.body.confirm_ssh_keys(result, ssh_key, fingerprint)
+            else:
+                msg, stderr = rest
+                self.ui.frame.body.fetching_ssh_keys_failed(msg, stderr)
 
     def fetch_ssh_keys(self, result, ssh_import_id):
         self._fetching_proc = run_command_start(['ssh-import-id', '-o-', ssh_import_id])
