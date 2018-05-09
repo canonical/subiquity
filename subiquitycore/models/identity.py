@@ -28,7 +28,7 @@ class User(object):
     realname = attr.ib()
     username = attr.ib()
     password = attr.ib()
-    ssh_import_id = attr.ib(default=None)
+    ssh_key = attr.ib(default=None)
 
 
 class IdentityModel(object):

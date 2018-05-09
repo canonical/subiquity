@@ -18,14 +18,18 @@ import re
 
 from urwid import (
     connect_signal,
+    LineBox,
+    Pile,
+    Text,
+    WidgetWrap,
     )
 
+from subiquitycore.ui.buttons import (
+    cancel_btn,
+    )
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     StringEditor,
-    )
-from subiquitycore.ui.container import (
-    ListBox,
     )
 from subiquitycore.ui.form import (
     ChoiceField,
@@ -36,6 +40,7 @@ from subiquitycore.ui.form import (
 from subiquitycore.ui.utils import button_pile, screen
 from subiquitycore.view import BaseView
 
+from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.identity")
 
@@ -174,6 +179,24 @@ All letters must be lower-case. The characters +, - and . are also allowed after
                 return _("A Github username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.")
 
 
+class FetchingSSHKeys(WidgetWrap):
+    def __init__(self, parent):
+        self.parent = parent
+        spinner = Spinner(parent.controller.loop, style='dots')
+        spinner.start()
+        text = _("Fetching SSH keys...")
+        button = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        # | text |
+        # 12    34
+        self.width = len(text) + 4
+        super().__init__(
+            LineBox(
+                Pile([
+                    ('pack', Text(' ' + text)),
+                    ('pack', spinner),
+                    ])))
+    def cancel(self):
+        self.parent.remove_overlay()
 
 
 class IdentityView(BaseView):
@@ -221,22 +244,19 @@ class IdentityView(BaseView):
             iu.validate()
 
     def done(self, result):
-        cpassword = self.model.encrypt_password(self.form.password.value)
         result = {
             "hostname": self.form.hostname.value,
             "realname": self.form.realname.value,
             "username": self.form.username.value,
-            "password": cpassword,
+            "password": self.model.encrypt_password(self.form.password.value),
         }
 
         # if user specifed a value, allow user to validate fingerprint
         if self.form.ssh_import_id.value:
-            if self.ssh_import_confirmed:
-                result['ssh_import_id'] = self.form.ssh_import_id.value + ":" + self.form.import_username.value
-            else:
-                # XXX Not implemented yet
-                self.controller.confirm_ssh_import_id(result)
-                return
-
-        log.debug("User input: {}".format(result))
-        self.controller.done(result)
+            fsk = FetchingSSHKeys(self)
+            self.show_overlay(fsk, width=fsk.width, min_width=None)
+            ssh_import_id = self.form.ssh_import_id.value + ":" + self.form.import_username.value
+            self.controller.fetch_ssh_keys(result, ssh_import_id)
+        else:
+            log.debug("User input: {}".format(result))
+            self.controller.done(result)

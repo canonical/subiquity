@@ -16,6 +16,7 @@
 import logging
 
 from subiquitycore.controller import BaseController
+from subiquitycore.utils import run_command
 
 from subiquity.ui.views import IdentityView
 
@@ -43,12 +44,26 @@ class IdentityController(BaseController):
                 'username': self.answers['username'],
                 'hostname': self.answers['hostname'],
                 'password': self.answers['password'],
-                'ssh_import_id': self.answers.get('ssh-import-id', ''),
+                #'ssh_import_id': self.answers.get('ssh-import-id', ''),
                 }
             self.done(d)
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
+
+    def _fetch_ssh_keys(self, result, ssh_import_id):
+        status = run_command(['ssh-import-id', '-o-', ssh_import_id])
+        result['ssh_key'] = status['output']
+        return result
+
+    def _fetched_ssh_keys(self, fut):
+        result = fut.result()
+        self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
+
+    def fetch_ssh_keys(self, result, ssh_import_id):
+        self.run_in_bg(
+            lambda: self._fetch_ssh_keys(result, ssh_import_id),
+            self._fetched_ssh_keys)
 
     def done(self, result):
         log.debug("User input: {}".format(result))
