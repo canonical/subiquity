@@ -45,9 +45,12 @@ class IdentityController(BaseController):
                 'username': self.answers['username'],
                 'hostname': self.answers['hostname'],
                 'password': self.answers['password'],
-                #'ssh_import_id': self.answers.get('ssh-import-id', ''),
                 }
-            self.done(d)
+            if 'ssh_import_id' in self.answers:
+                ssh_import_id = self.answers['ssh_import_id']
+                self.fetch_ssh_keys(d, ssh_import_id)
+            else:
+                self.done(d)
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
@@ -87,7 +90,11 @@ class IdentityController(BaseController):
         if result is not None:
             ok, result, ssh_key, fingerprint = result
             if ok:
-                self.ui.frame.body.confirm_ssh_keys(result, ssh_key, fingerprint)
+                 if self.answers.get('accept-ssh-key'):
+                    result['ssh_key'] = ssh_key
+                    self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
+                 else:
+                    self.ui.frame.body.confirm_ssh_keys(result, ssh_key, fingerprint)
 
     def fetch_ssh_keys(self, result, ssh_import_id):
         self._fetching_proc = run_command_start(['ssh-import-id', '-o-', ssh_import_id])
