@@ -43,7 +43,6 @@ class IdentityController(BaseController):
                 'username': self.answers['username'],
                 'hostname': self.answers['hostname'],
                 'password': self.answers['password'],
-                'confirm_password': self.answers['password'],
                 'ssh_import_id': self.answers.get('ssh-import-id', ''),
                 }
             self.done(d)

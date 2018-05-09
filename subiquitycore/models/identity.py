@@ -14,44 +14,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
+import attr
+
 from subiquitycore.utils import crypt_password
 
 
 log = logging.getLogger('subiquitycore.models.identity')
 
 
-class LocalUser(object):
-    def __init__(self, result):
-        self._realname = result.get('realname')
-        self._username = result.get('username')
-        self._password = result.get('password')
-        self._cpassword = result.get('confirm_password')
-        self._ssh_import_id = None
-        if 'ssh_import_id' in result:
-            self._ssh_import_id = result.get('ssh_import_id')
-
-    @property
-    def realname(self):
-        return self._realname
-
-    @property
-    def username(self):
-        return self._username
-
-    @property
-    def password(self):
-        return self._password
-
-    @property
-    def cpassword(self):
-        return self._cpassword
-
-    @property
-    def ssh_import_id(self):
-        return self._ssh_import_id
-
-    def __repr__(self):
-        return "%s <%s>" % (self._realname, self._username)
+@attr.s
+class User(object):
+    realname = attr.ib()
+    username = attr.ib()
+    password = attr.ib()
+    ssh_import_id = attr.ib(default=None)
 
 
 class IdentityModel(object):
@@ -63,11 +40,9 @@ class IdentityModel(object):
         self._hostname = None
 
     def add_user(self, result):
-        if result:
-            self._user = LocalUser(result)
-            self._hostname = result.get('hostname')
-        else:
-            self._user = None
+        result = result.copy()
+        self._hostname = result.pop('hostname')
+        self._user = User(**result)
 
     @property
     def hostname(self):
@@ -81,4 +56,4 @@ class IdentityModel(object):
         return crypt_password(passinput)
 
     def __repr__(self):
-        return "<LocalUser: {}>".format(self.user)
+        return "<LocalUser: {} {}>".format(self.user, self.hostname)
