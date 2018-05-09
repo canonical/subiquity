@@ -194,8 +194,10 @@ class FetchingSSHKeys(WidgetWrap):
                 Pile([
                     ('pack', Text(' ' + text)),
                     ('pack', spinner),
+                    ('pack', button_pile([button])),
                     ])))
-    def cancel(self):
+    def cancel(self, sender):
+        self.parent.controller._fetch_cancel()
         self.parent.remove_overlay()
 
 
@@ -212,8 +214,6 @@ class IdentityView(BaseView):
         connect_signal(self.form.confirm_password.widget, 'change', self._check_password)
         connect_signal(self.form.ssh_import_id.widget, 'select', self._select_ssh_import_id)
         self.form.import_username.enabled = False
-
-        self.ssh_import_confirmed = True
 
         super().__init__(
             screen(

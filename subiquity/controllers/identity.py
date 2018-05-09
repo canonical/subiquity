@@ -16,7 +16,7 @@
 import logging
 
 from subiquitycore.controller import BaseController
-from subiquitycore.utils import run_command
+from subiquitycore.utils import run_command_start, run_command_summarize
 
 from subiquity.ui.views import IdentityView
 
@@ -51,18 +51,34 @@ class IdentityController(BaseController):
     def cancel(self):
         self.signal.emit_signal('prev-screen')
 
-    def _fetch_ssh_keys(self, result, ssh_import_id):
-        status = run_command(['ssh-import-id', '-o-', ssh_import_id])
+    def _fetch_cancel(self):
+        if self._fetching_proc is None:
+            return
+        try:
+            self._fetching_proc.terminate()
+        except ProcessLookupError:
+            pass # It's OK if the process has already terminated.
+        self._fetching_proc = None
+
+    def _fetch_ssh_keys(self, result, p):
+        stdout, stderr = p.communicate()
+        if p != self._fetching_proc:
+            log.debug("_fetch_ssh_keys cancelled")
+            return None
+        status = run_command_summarize(p, stdout, stderr)
         result['ssh_key'] = status['output']
         return result
 
     def _fetched_ssh_keys(self, fut):
         result = fut.result()
-        self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
+        log.debug("_fetched_ssh_keys %s", result)
+        if result is not None:
+            self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
 
     def fetch_ssh_keys(self, result, ssh_import_id):
+        self._fetching_proc = run_command_start(['ssh-import-id', '-o-', ssh_import_id])
         self.run_in_bg(
-            lambda: self._fetch_ssh_keys(result, ssh_import_id),
+            lambda: self._fetch_ssh_keys(result, self._fetching_proc),
             self._fetched_ssh_keys)
 
     def done(self, result):
