@@ -71,19 +71,16 @@ class IdentityController(BaseController):
             return None
         status = run_command_summarize(p, stdout, stderr)
         if status['status'] != 0:
-            if not stderr:
-                stderr = stdout
-            return False, _("Importing keys failed"), stderr
-        ssh_key = status['output']
+            return False, _("Importing keys failed"), stdout
+        key_material = status['output'].replace('\r', '')
         p = subprocess.Popen(
             ['ssh-keygen', '-lf-'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-        stdout, stderr = p.communicate(input=ssh_key.encode('latin-1'))
+        stdout, stderr = p.communicate(input=key_material.encode('latin-1'))
         if p.returncode != 0:
             # Do better here!
             return False, _("ssh-keygen failed"), stderr.decode('utf-8')
-        fingerprint = stdout.decode('utf-8')
-        fingerprint = fingerprint.replace("# ssh-import-id {} ".format(ssh_import_id), "")
-        return True, result, ssh_key, fingerprint
+        fingerprints = stdout.decode('utf-8').replace("# ssh-import-id {} ".format(ssh_import_id), "").strip().splitlines()
+        return True, result, key_material, fingerprints
 
     def _fetched_ssh_keys(self, fut):
         result = fut.result()
@@ -91,12 +88,12 @@ class IdentityController(BaseController):
         if result is not None:
             ok, rest = result[0], result[1:]
             if ok:
-                rest = result, ssh_key, fingerprint
+                result, key_material, fingerprints = rest
                 if self.answers.get('accept-ssh-key'):
-                    result['ssh_key'] = ssh_key
+                    result['ssh_keys'] = key_material.splitlines()
                     self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
                 else:
-                    self.ui.frame.body.confirm_ssh_keys(result, ssh_key, fingerprint)
+                    self.ui.frame.body.confirm_ssh_keys(result, key_material, fingerprints)
             else:
                 msg, stderr = rest
                 self.ui.frame.body.fetching_ssh_keys_failed(msg, stderr)

@@ -204,26 +204,38 @@ class FetchingSSHKeys(WidgetWrap):
         self.parent.remove_overlay()
 
 
-class ConfirmSSHKeys(WidgetWrap):
-    def __init__(self, parent, result, ssh_key, fingerprint):
+class ConfirmSSHKeys(Stretchy):
+    def __init__(self, parent, result, key_material, fingerprints):
         self.parent = parent
         self.result = result
-        self.ssh_key = ssh_key
-        self.fingerprint = fingerprint
+        self.key_material = key_material
+
         ok = ok_btn(label=_("Yes"), on_press=self.ok)
         cancel = cancel_btn(label=_("No"), on_press=self.cancel)
+
+        if len(fingerprints) > 1:
+            title = _("Confirm SSH keys")
+            header = _('Keys with the following fingerprints were fetched. Do you want to use them?')
+        else:
+            title = _("Confirm SSH key")
+            header = _('A key with the following fingerprint was fetched. Do you want to use it?')
+
+        fingerprints = Pile([Text(fingerprint) for fingerprint in fingerprints])
+
         super().__init__(
-            LineBox(
-                Pile([
-                    ('pack', Text('Key ok?')),
-                    ('pack', Text(fingerprint)),
-                    ('pack', button_pile([ok, cancel])),
-                    ]),
-                title=_("Confirm SSH keys")))
+            title,
+            [
+                Text(header),
+                Text(""),
+                fingerprints,
+                Text(""),
+                button_pile([ok, cancel]),
+            ], 2, 4)
+
     def cancel(self, sender):
         self.parent.remove_overlay()
     def ok(self, sender):
-        self.result['ssh_key'] = self.ssh_key
+        self.result['ssh_keys'] = self.key_material.splitlines()
         self.parent.controller.done(self.result)
 
 class FetchingSSHKeysFailed(Stretchy):
@@ -303,9 +315,9 @@ class IdentityView(BaseView):
             log.debug("User input: {}".format(result))
             self.controller.done(result)
 
-    def confirm_ssh_keys(self, result, ssh_key, fingerprint):
+    def confirm_ssh_keys(self, result, ssh_key, fingerprints):
         self.remove_overlay()
-        self.show_overlay(ConfirmSSHKeys(self, result, ssh_key, fingerprint))
+        self.show_stretchy_overlay(ConfirmSSHKeys(self, result, ssh_key, fingerprints))
 
     def fetching_ssh_keys_failed(self, msg, stderr):
         self.remove_overlay()

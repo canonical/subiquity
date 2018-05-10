@@ -67,8 +67,8 @@ class SubiquityModel:
             'groups': groups,
             'lock-passwd': False,
             }
-        if user.ssh_key is not None:
-            user_info['ssh_authorized_keys'] = user.ssh_key.replace('\r', '').splitlines()
+        if user.ssh_keys:
+            user_info['ssh_authorized_keys'] = user.ssh_keys
         config = {
             'growpart': {
                 'mode': 'off',
