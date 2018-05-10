@@ -72,7 +72,7 @@ class IdentityController(BaseController):
         status = run_command_summarize(p, stdout, stderr)
         if status['status'] != 0:
             return False, _("Importing keys failed"), stdout
-        key_material = status['output'].replace('\r', '')
+        key_material = status['output'].replace('\r', '').strip()
         p = subprocess.Popen(
             ['ssh-keygen', '-lf-'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
         stdout, stderr = p.communicate(input=key_material.encode('latin-1'))
