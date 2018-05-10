@@ -18,7 +18,6 @@ Identity:
   # ubuntu
   password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
   ssh_import_id: lp:mwhudson
-  accept-ssh-key: true
 InstallProgress:
   reboot: yes
 

@@ -89,7 +89,7 @@ class IdentityController(BaseController):
             ok, rest = result[0], result[1:]
             if ok:
                 result, key_material, fingerprints = rest
-                if self.answers.get('accept-ssh-key'):
+                if 'ssh_import_id' in self.answers:
                     result['ssh_keys'] = key_material.splitlines()
                     self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
                 else:
