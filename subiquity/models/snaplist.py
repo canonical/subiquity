@@ -13,6 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
+import os
+
 import attr
 
 @attr.s(cmp=False)
@@ -40,10 +43,21 @@ class SnapListModel:
         pass
 
     def get_snap_list(self):
-        return [
-            Snap("etcd", "Resilient key-value store by CoreOS", "tvansteenburgh", "Etcd is a high availability key-value store, implementing the RAFT algorithm to deal with failover within the etcd cluster.  Popular in the Docker community as a shared store of small but important data in a distributed application."),
-            ]
-
+        opd = os.path.dirname
+        opj = os.path.join
+        snap_data_dir = opj(opd(opd(opd(__file__))), 'examples', 'snaps')
+        snap_find_output = opj(snap_data_dir, 'find-output.json')
+        with open(snap_find_output) as fp:
+            data = json.load(fp)
+        r = []
+        for s in data['result']:
+            kw = {}
+            kw['name'] = s['name']
+            kw['summary'] = s['summary']
+            kw['publisher'] = s['developer']
+            kw['description'] = s['description']
+            r.append(SnapInfo(**kw))
+        return r
 
     def set_installed_list(self, to_install):
         self.to_install = to_install

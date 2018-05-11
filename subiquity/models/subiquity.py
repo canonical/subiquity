@@ -26,6 +26,7 @@ from .installpath import InstallpathModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
 from .proxy import ProxyModel
+from .snaplist import SnapListModel
 
 
 def setup_yaml():
@@ -50,6 +51,7 @@ class SubiquityModel:
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
         self.proxy = ProxyModel()
+        self.snaplist = SnapListModel(common)
 
     def _cloud_init_config(self):
         user = self.identity.user

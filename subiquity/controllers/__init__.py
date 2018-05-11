@@ -22,4 +22,5 @@ from .installprogress import InstallProgressController  # NOQA
 from .filesystem import FilesystemController  # NOQA
 from .keyboard import KeyboardController  # NOQA
 from .proxy import ProxyController  # NOQA
+from .snaplist import SnapListController
 from .welcome import WelcomeController  # NOQA
