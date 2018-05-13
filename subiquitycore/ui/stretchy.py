@@ -80,6 +80,9 @@ class StretchyOverlay(urwid.Widget):
                 return ('weight', 1, self.listbox)
             else:
                 return ('pack', w)
+
+        inner_pile = Pile([entry(i, w) for (i, w) in enumerate(stretchy.widgets)])
+        inner_pile.focus_position = stretchy.focus_index
         # this Filler/Padding/LineBox/Filler/Padding construction
         # seems ridiculous but it works.
         self.top_w = urwid.Filler(
@@ -87,9 +90,7 @@ class StretchyOverlay(urwid.Widget):
                 urwid.LineBox(
                     urwid.Filler(
                         urwid.Padding(
-                            Pile(
-                                [entry(i, w) for (i, w) in enumerate(stretchy.widgets)],
-                                focus_item=stretchy.widgets[stretchy.focus_index]),
+                            inner_pile,
                             left=2, right=2),
                         top=1, bottom=1, height=('relative', 100)),
                     title=stretchy.title),
@@ -129,7 +130,7 @@ class StretchyOverlay(urwid.Widget):
 
     def keypress(self, size, key):
         top_size, scrollbar_visible = self._top_size(size, True)
-        self.listbox._selectable = scrollbar_visible
+        self.listbox._selectable = scrollbar_visible or self.stretchy.stretchy_w.selectable()
         return self.top_w.keypress(top_size, key)
 
     def render(self, size, focus):
