@@ -31,7 +31,6 @@ class SnapListController(BaseController):
     def default(self):
         self.ui.set_header(
             _("Featured Server Snaps"),
-            _("These are popular snaps in server environments. Select or deselect with SPACE, press ENTER to see more details of the package, publisher and versions available."),
             )
         self.ui.set_body(SnapListView(self.model, self))
 

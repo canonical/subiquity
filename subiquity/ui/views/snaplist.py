@@ -16,18 +16,61 @@
 import logging
 
 from urwid import (
+    BOX,
     CheckBox,
     Text,
+    Widget,
+    WidgetWrap,
     )
 
-from subiquitycore.ui.buttons import ok_btn, cancel_btn
-from subiquitycore.ui.container import Columns
-from subiquitycore.ui.utils import button_pile, Color, screen
+from subiquitycore.ui.buttons import ok_btn, cancel_btn, other_btn
+from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
 
 log = logging.getLogger("subiquity.views.welcome")
 
+class SnapInfoView(Widget):
+    _selectable = True
+    _sizing = frozenset([BOX])
+    def __init__(self, parent, snap):
+        channels = [Columns([
+            CheckBox("latest/stable:"),
+            Text("2.3.3"),
+            Text("41MB")],
+            dividechars=1)]
+        self.pile = Pile([
+            ('pack', Text("")),
+            ('pack', Padding.center_79(Text(snap.summary))),
+            ('pack', Text("")),
+            Padding.center_79(ListBox([Text(snap.description)])),
+            ('pack', Text("")),
+            Padding.center_79(ListBox(channels)),
+            ('pack', Text("")),
+            ('pack', button_pile([other_btn(label=_("Close"), on_press=self.cancel)])),
+            ('pack', Text("")),
+            ])
+    def cancel(self, sender=None):
+        self.parent.screen = self.parent.main_screen
+    def keypress(self, size, key):
+        return self.pile.keypress(size, key)
+    def render(self, size, focus):
+        return self.pile.render(size, focus)
+
+class SnapListRow(WidgetWrap):
+    def __init__(self, parent, snap, max_name_len, max_publisher_len):
+        self.parent = parent
+        self.snap = snap
+        super().__init__(Color.menu_button(Columns([
+                (max_name_len+4, CheckBox(snap.name)),
+                Text(snap.summary, wrap='clip'),
+                ], dividechars=1)))
+    def keypress(self, size, key):
+        if key.startswith("enter"):
+            self.parent._w = self.parent.snap_info_screen(self.snap)
+            return
+        return super().keypress(size, key)
 
 class SnapListView(BaseView):
 
@@ -37,18 +80,32 @@ class SnapListView(BaseView):
         self.to_install = []
         body = []
         snaps = self.model.get_snap_list()
-        name_len = max([len(snap.name) for snap in snaps])
+        self.name_len = max([len(snap.name) for snap in snaps])
+        self.publisher_len = max([len(snap.publisher) for snap in snaps])
         for snap in snaps:
-            body.append(Color.menu_button(Columns([
-                (name_len+4, CheckBox(snap.name)),
-                Text(snap.summary, wrap='clip'),
-                ], dividechars=1)))
+            body.append(SnapListRow(self, snap, self.name_len, self.publisher_len))
         ok = ok_btn(label=_("OK"), on_press=self.done)
         cancel = cancel_btn(label=_("Cancel"), on_press=self.done)
-        super().__init__(screen(body, button_pile([ok, cancel])))
+        self.main_screen = screen(
+            body, button_pile([ok, cancel]),
+            focus_buttons=False,
+            excerpt=_("These are popular snaps in server environments. Select or deselect with SPACE, press ENTER to see more details of the package, publisher and versions available."))
+        self.snap_screens = {}
+        super().__init__(self.main_screen)
+
+    def snap_info_screen(self, snap):
+        if snap.name in self.snap_screens:
+            return self.snap_screens[snap.name]
+
+
+        screen = self.snap_screens[snap.name] = SnapInfoView(self, snap)
+        return screen
 
     def done(self, sender=None):
         self.controller.done(self.to_install)
 
     def cancel(self, sender=None):
-        self.controller.cancel()
+        if self._w is self.main_screen:
+            self.controller.cancel()
+        else:
+            self._w = self.main_screen
