@@ -67,7 +67,7 @@ class SnapInfoView(Widget):
                 ], dividechars=1))
         self.description = Text(snap.description.replace('\r', '').strip())
         self.lb_description = Padding.center_79(ListBox([self.description]))
-        self.lb_channels = Padding.center_79(ListBox(self.channels))
+        self.lb_channels = Padding.center_79(NoTabCyclingListBox(self.channels))
         self.pile = Pile([
             ('pack', Text("")),
             ('pack', Padding.center_79(Text("{} - {}".format(snap.name, snap.publisher)))),
@@ -96,6 +96,7 @@ class SnapInfoView(Widget):
         rows_wanted_channels = len(self.channels)
         if rows_wanted_channels + rows_wanted_description < rows_available:
             self.pile.contents[self.description_index] = (self.lb_description, self.pile.options('given', rows_wanted_description))
+            self.lb_description.original_widget._selectable = False
             if self.needs_focus:
                 self.pile.focus_position = self.channels_index
                 self.needs_focus = False
@@ -103,6 +104,10 @@ class SnapInfoView(Widget):
             channel_rows = min(rows_wanted_channels, int(rows_available/3))
             description_rows = rows_available - channel_rows
             self.pile.contents[self.description_index] = (self.lb_description, self.pile.options('given', description_rows))
+            if description_rows >= rows_wanted_description:
+                self.lb_description.original_widget._selectable = False
+            else:
+                self.lb_description.original_widget._selectable = True
             if self.needs_focus:
                 if description_rows >= rows_wanted_description:
                     self.pile.focus_position = self.channels_index
