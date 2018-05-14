@@ -35,22 +35,31 @@ log = logging.getLogger("subiquity.views.snaplist")
 class SnapInfoView(Widget):
     _selectable = True
     _sizing = frozenset([BOX])
-    description_index = 3
-    channels_index = 5
+    description_index = 5
+    channels_index = 7
     def __init__(self, parent, snap):
         self.parent = parent
         self.channels = []
         self.needs_focus = True
+        max_channel_name = max(len(csi.channel_name) for csi in snap.channels)
+        max_version = max(len(csi.version) for csi in snap.channels)
         for csi in snap.channels:
+            notes = '-'
+            if csi.confinement != "strict":
+                notes = csi.confinement
             self.channels.append(Columns([
-                CheckBox("{}:".format(csi.channel_name)),
-                Text("{} ({})".format(csi.version, csi.revision)),
-                Text(humanize_size(csi.size)),
+                (max_channel_name+5, CheckBox("{}:".format(csi.channel_name))),
+                (max_version, Text(csi.version)),
+                ('pack', Text("({})".format(csi.revision))),
+                ('pack', Text(humanize_size(csi.size))),
+                ('pack', Text(notes)),
                 ], dividechars=1))
         self.description = Text(snap.description.replace('\r', '').strip())
         self.lb_description = Padding.center_79(ListBox([self.description]))
         self.lb_channels = Padding.center_79(ListBox(self.channels))
         self.pile = Pile([
+            ('pack', Text("")),
+            ('pack', Padding.center_79(Text("{} - {}".format(snap.name, snap.publisher)))),
             ('pack', Text("")),
             ('pack', Padding.center_79(Text(snap.summary))),
             ('pack', Text("")),
