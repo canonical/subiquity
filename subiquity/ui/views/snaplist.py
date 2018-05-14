@@ -32,6 +32,17 @@ from subiquity.models.filesystem import humanize_size
 
 log = logging.getLogger("subiquity.views.snaplist")
 
+class NoTabCyclingListBox(ListBox):
+    def keypress(self, size, key):
+        if not key.startswith("enter") and self._command_map[key] in ('next selectable', 'prev selectable'):
+            return key
+        else:
+            return super().keypress(size, key)
+    def _select_first_selectable(self):
+        return
+    def _select_last_selectable(self):
+        return
+
 class SnapInfoView(Widget):
     _selectable = True
     _sizing = frozenset([BOX])
@@ -129,7 +140,7 @@ class SnapListView(BaseView):
         ok = ok_btn(label=_("OK"), on_press=self.done)
         cancel = cancel_btn(label=_("Cancel"), on_press=self.done)
         self.main_screen = screen(
-            body, button_pile([ok, cancel]),
+            NoTabCyclingListBox(body), button_pile([ok, cancel]),
             focus_buttons=False,
             excerpt=_("These are popular snaps in server environments. Select or deselect with SPACE, press ENTER to see more details of the package, publisher and versions available."))
         self.snap_screens = {}

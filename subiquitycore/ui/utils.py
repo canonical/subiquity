@@ -216,6 +216,8 @@ def screen(rows, buttons, focus_buttons=True, excerpt=None):
 
     This helper makes creating this a 1-liner.
     """
+    if isinstance(rows, list):
+        rows = ListBox(rows)
     body = []
     if excerpt is not None:
         body = [
@@ -224,7 +226,7 @@ def screen(rows, buttons, focus_buttons=True, excerpt=None):
             ]
     body.extend([
         ('pack', Text("")),
-        Padding.center_79(ListBox(rows)),
+        Padding.center_79(rows),
         ('pack', Text("")),
         ('pack', buttons),
         ('pack', Text("")),
