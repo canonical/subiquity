@@ -28,34 +28,67 @@ from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
+from subiquity.models.filesystem import humanize_size
 
-log = logging.getLogger("subiquity.views.welcome")
+log = logging.getLogger("subiquity.views.snaplist")
 
 class SnapInfoView(Widget):
     _selectable = True
     _sizing = frozenset([BOX])
+    description_index = 3
+    channels_index = 5
     def __init__(self, parent, snap):
-        channels = [Columns([
-            CheckBox("latest/stable:"),
-            Text("2.3.3"),
-            Text("41MB")],
-            dividechars=1)]
+        self.parent = parent
+        self.channels = []
+        self.needs_focus = True
+        for csi in snap.channels:
+            self.channels.append(Columns([
+                CheckBox("{}:".format(csi.channel_name)),
+                Text("{} ({})".format(csi.version, csi.revision)),
+                Text(humanize_size(csi.size)),
+                ], dividechars=1))
+        self.description = Text(snap.description.replace('\r', '').strip())
+        self.lb_description = Padding.center_79(ListBox([self.description]))
+        self.lb_channels = Padding.center_79(ListBox(self.channels))
         self.pile = Pile([
             ('pack', Text("")),
             ('pack', Padding.center_79(Text(snap.summary))),
             ('pack', Text("")),
-            Padding.center_79(ListBox([Text(snap.description)])),
+            self.lb_description,
             ('pack', Text("")),
-            Padding.center_79(ListBox(channels)),
+            ('weight', 1, self.lb_channels),
             ('pack', Text("")),
             ('pack', button_pile([other_btn(label=_("Close"), on_press=self.cancel)])),
             ('pack', Text("")),
             ])
     def cancel(self, sender=None):
-        self.parent.screen = self.parent.main_screen
+        self.parent._w = self.parent.main_screen
     def keypress(self, size, key):
         return self.pile.keypress(size, key)
     def render(self, size, focus):
+        maxcol, maxrow = size
+        rows_available = maxrow
+        pack_option = self.pile.options('pack')
+        for w, o in self.pile.contents:
+            if o == pack_option:
+                rows_available -= w.rows((maxcol,), focus)
+        rows_wanted_description = Padding.center_79(self.description).rows((maxcol,), False)
+        rows_wanted_channels = len(self.channels)
+        if rows_wanted_channels + rows_wanted_description < rows_available:
+            self.pile.contents[self.description_index] = (self.lb_description, self.pile.options('given', rows_wanted_description))
+            if self.needs_focus:
+                self.pile.focus_position = self.channels_index
+                self.needs_focus = False
+        else:
+            channel_rows = min(rows_wanted_channels, int(rows_available/3))
+            description_rows = rows_available - channel_rows
+            self.pile.contents[self.description_index] = (self.lb_description, self.pile.options('given', description_rows))
+            if self.needs_focus:
+                if description_rows >= rows_wanted_description:
+                    self.pile.focus_position = self.channels_index
+                else:
+                    self.pile.focus_position = self.description_index
+                self.needs_focus = False
         return self.pile.render(size, focus)
 
 class SnapListRow(WidgetWrap):

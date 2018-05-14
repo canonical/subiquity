@@ -29,12 +29,12 @@ class SnapInfo:
 
 @attr.s(cmp=False)
 class ChannelSnapInfo:
+    channel_name = attr.ib()
     revision = attr.ib()
     confinement = attr.ib()
     version = attr.ib()
-    channel = attr.ib()
-    epoch = attr.ib()
     size = attr.ib()
+
 
 class SnapListModel:
     """The overall model for subiquity."""
@@ -51,12 +51,32 @@ class SnapListModel:
             data = json.load(fp)
         r = []
         for s in data['result']:
-            kw = {}
-            kw['name'] = s['name']
-            kw['summary'] = s['summary']
-            kw['publisher'] = s['developer']
-            kw['description'] = s['description']
-            r.append(SnapInfo(**kw))
+            snap = SnapInfo(
+                name=s['name'],
+                summary=s['summary'],
+                publisher=s['developer'],
+                description=s['description'],
+                )
+            r.append(snap)
+            snap_info_output = opj(snap_data_dir, 'info-{}.json'.format(snap.name))
+            if os.path.exists(snap_info_output):
+                with open(snap_info_output) as fp:
+                    info = json.load(fp)['result'][0]
+                channel_map = info['channels']
+                for track in info['tracks']:
+                    for risk in ["stable", "candidate", "beta", "edge"]:
+                        channel_name = '{}/{}'.format(track, risk)
+                        if channel_name in channel_map:
+                            channel_data = channel_map[channel_name]
+                            if track == "latest":
+                                channel_name = risk
+                            snap.channels.append(ChannelSnapInfo(
+                                channel_name=channel_name,
+                                revision=channel_data['revision'],
+                                confinement=channel_data['confinement'],
+                                version=channel_data['version'],
+                                size=channel_data['size'],
+                            ))
         return r
 
     def set_installed_list(self, to_install):
