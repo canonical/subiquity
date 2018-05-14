@@ -13,10 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import glob
-import json
 import logging
-import os
 from urllib.parse import quote_plus
 
 import attr
@@ -49,28 +46,6 @@ class SnapListModel:
     def __init__(self, common):
         self._snap_info = []
         self._snaps_by_name = {}
-        #self._from_snapd()
-        #self._from_sample_data()
-
-    def _from_sample_data(self):
-        opd = os.path.dirname
-        opj = os.path.join
-        snap_data_dir = opj(opd(opd(opd(__file__))), 'examples', 'snaps')
-        snap_find_output = opj(snap_data_dir, 'find-output.json')
-        with open(snap_find_output) as fp:
-            self._load_find_data(json.load(fp))
-        snap_info_glob = opj(snap_data_dir, 'info-*.json')
-        for snap_info_file in glob.glob(snap_info_glob):
-            with open(snap_info_file) as fp:
-                self._load_info_data(json.load(fp))
-
-    def _from_snapd(self):
-        sock = "/run/snapd.socket"
-        url = "http+unix://{}/v2/find?section=games".format(quote_plus(sock))
-        import requests_unixsocket
-        session = requests_unixsocket.Session()
-        r = session.get(url)
-        return r.json()
 
     def _from_snapd_info(self, name):
         sock = "/run/snapd.socket"
@@ -80,7 +55,7 @@ class SnapListModel:
         r = session.get(url)
         return r.json()
 
-    def _load_find_data(self, data):
+    def load_find_data(self, data):
         for s in data['result']:
             snap = SnapInfo(
                 name=s['name'],
@@ -91,7 +66,7 @@ class SnapListModel:
             self._snap_info.append(snap)
             self._snaps_by_name[s['name']] = snap
 
-    def _load_info_data(self, data):
+    def load_info_data(self, data):
         info = data['result'][0]
         snap = self._snaps_by_name.get(info['name'], None)
         if snap is None:
@@ -111,9 +86,10 @@ class SnapListModel:
                         version=channel_data['version'],
                         size=channel_data['size'],
                     ))
+        return snap
 
     def get_snap_list(self):
-        return self._snap_info
+        return self._snap_info[:]
 
     def set_installed_list(self, to_install):
         self.to_install = to_install
