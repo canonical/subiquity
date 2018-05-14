@@ -123,6 +123,9 @@ class SnapListController(BaseController):
         self.ui.set_header(
             _("Featured Server Snaps"),
             )
+        #if len(self.model.get_snap_list()) == 0:
+        #    self.done({})
+        #    return
         self.ui.set_body(SnapListView(self.model, self))
 
     def info_for_snap(self, snap, callback):
