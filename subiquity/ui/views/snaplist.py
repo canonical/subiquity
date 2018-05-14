@@ -49,8 +49,9 @@ class SnapInfoView(Widget):
     _sizing = frozenset([BOX])
     description_index = 5
     channels_index = 7
-    def __init__(self, parent, snap):
+    def __init__(self, parent, snap, cur_risk):
         self.parent = parent
+        self.snap = snap
         self.channels = []
         self.needs_focus = True
         channel_width = max(len(csi.channel_name) for csi in snap.channels) \
@@ -61,8 +62,14 @@ class SnapInfoView(Widget):
             notes = '-'
             if csi.confinement != "strict":
                 notes = csi.confinement
+            btn = RadioButton(
+                radio_group,
+                "{}:".format(csi.channel_name),
+                state=csi.channel_name == cur_risk,
+                on_state_change=self.state_change,
+                user_data=csi.channel_name)
             self.channels.append(Columns([
-                (channel_width, RadioButton(radio_group, "{}:".format(csi.channel_name), state=False)),
+                (channel_width, btn),
                 (max_version, Text(csi.version)),
                 ('pack', Text("({})".format(csi.revision))),
                 ('pack', Text(humanize_size(csi.size))),
@@ -81,11 +88,15 @@ class SnapInfoView(Widget):
             ('pack', Text("")),
             ('weight', 1, self.lb_channels),
             ('pack', Text("")),
-            ('pack', button_pile([other_btn(label=_("Close"), on_press=self.cancel)])),
+            ('pack', button_pile([other_btn(label=_("Close"), on_press=self.close)])),
             ('pack', Text("")),
             ])
-    def cancel(self, sender=None):
+    def close(self, sender=None):
         self.parent._w = self.parent.main_screen
+    def state_change(self, sender, state, risk):
+        if state:
+            self.parent.snap_rows[self.snap.name].box.set_state(True)
+            self.parent.to_install[self.snap.name] = risk
     def keypress(self, size, key):
         return self.pile.keypress(size, key)
     def render(self, size, focus):
@@ -98,53 +109,55 @@ class SnapInfoView(Widget):
         rows_wanted_description = Padding.center_79(self.description).rows((maxcol,), False)
         rows_wanted_channels = len(self.channels)
         if rows_wanted_channels + rows_wanted_description < rows_available:
-            self.pile.contents[self.description_index] = (self.lb_description, self.pile.options('given', rows_wanted_description))
-            self.lb_description.original_widget._selectable = False
-            if self.needs_focus:
-                self.pile.focus_position = self.channels_index
-                self.needs_focus = False
+            description_rows = rows_wanted_description
         else:
             channel_rows = min(rows_wanted_channels, int(rows_available/3))
             description_rows = rows_available - channel_rows
-            self.pile.contents[self.description_index] = (self.lb_description, self.pile.options('given', description_rows))
-            if description_rows >= rows_wanted_description:
-                self.lb_description.original_widget._selectable = False
-            else:
-                self.lb_description.original_widget._selectable = True
-            if self.needs_focus:
-                if description_rows >= rows_wanted_description:
-                    self.pile.focus_position = self.channels_index
-                else:
-                    self.pile.focus_position = self.description_index
-                self.needs_focus = False
+        self.pile.contents[self.description_index] = (self.lb_description, self.pile.options('given', description_rows))
+        if description_rows >= rows_wanted_description:
+            self.lb_description.original_widget._selectable = False
+        else:
+            self.lb_description.original_widget._selectable = True
+        if self.needs_focus:
+            self.pile._select_first_selectable()
+            self.needs_focus = False
         return self.pile.render(size, focus)
 
 class SnapListRow(WidgetWrap):
     def __init__(self, parent, snap, max_name_len, max_publisher_len):
         self.parent = parent
         self.snap = snap
+        self.box = CheckBox(snap.name, on_state_change=self.state_change)
         super().__init__(Color.menu_button(Columns([
-                (max_name_len+4, CheckBox(snap.name)),
+                (max_name_len+4, self.box),
                 Text(snap.summary, wrap='clip'),
                 ], dividechars=1)))
     def keypress(self, size, key):
         if key.startswith("enter"):
-            self.parent._w = self.parent.snap_info_screen(self.snap)
+            self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name))
             return
         return super().keypress(size, key)
+    def state_change(self, sender, new_state):
+        if new_state:
+            self.parent.to_install[self.snap.name] = 'stable'
+        else:
+            self.parent.to_install.pop(self.snap.name, None)
 
 class SnapListView(BaseView):
 
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.to_install = []
+        self.to_install = {} # {snap_name: risk}
         body = []
         snaps = self.model.get_snap_list()
         self.name_len = max([len(snap.name) for snap in snaps])
         self.publisher_len = max([len(snap.publisher) for snap in snaps])
+        self.snap_rows = {}
         for snap in snaps:
-            body.append(SnapListRow(self, snap, self.name_len, self.publisher_len))
+            row = SnapListRow(self, snap, self.name_len, self.publisher_len)
+            self.snap_rows[snap.name] = row
+            body.append(row)
         ok = ok_btn(label=_("OK"), on_press=self.done)
         cancel = cancel_btn(label=_("Cancel"), on_press=self.done)
         self.main_screen = screen(
@@ -154,15 +167,8 @@ class SnapListView(BaseView):
         self.snap_screens = {}
         super().__init__(self.main_screen)
 
-    def snap_info_screen(self, snap):
-        if snap.name in self.snap_screens:
-            return self.snap_screens[snap.name]
-
-
-        screen = self.snap_screens[snap.name] = SnapInfoView(self, snap)
-        return screen
-
     def done(self, sender=None):
+        log.debug("snaps to install %s", self.to_install)
         self.controller.done(self.to_install)
 
     def cancel(self, sender=None):
