@@ -59,6 +59,8 @@ class SnapInfoView(Widget):
         channel_width = max(len(csi.channel_name) for csi in snap.channels) \
           + RadioButton.reserve_columns + 1
         max_version = max(len(csi.version) for csi in snap.channels)
+        max_revision = max(len(str(csi.revision)) for csi in snap.channels) + 2
+        max_size = max(len(humanize_size(csi.size)) for csi in snap.channels)
         radio_group = []
         for csi in snap.channels:
             notes = '-'
@@ -73,8 +75,8 @@ class SnapInfoView(Widget):
             self.channels.append(Columns([
                 (channel_width, btn),
                 (max_version, Text(csi.version)),
-                ('pack', Text("({})".format(csi.revision))),
-                ('pack', Text(humanize_size(csi.size))),
+                (max_revision, Text("({})".format(csi.revision))),
+                (max_size, Text(humanize_size(csi.size))),
                 ('pack', Text(notes)),
                 ], dividechars=1))
         self.description = Text(snap.description.replace('\r', '').strip())
@@ -110,11 +112,14 @@ class SnapInfoView(Widget):
                 rows_available -= w.rows((maxcol,), focus)
         rows_wanted_description = Padding.center_79(self.description).rows((maxcol,), False)
         rows_wanted_channels = len(self.channels)
-        if rows_wanted_channels + rows_wanted_description < rows_available:
+        if rows_wanted_channels + rows_wanted_description <= rows_available:
             description_rows = rows_wanted_description
         else:
-            channel_rows = min(rows_wanted_channels, int(rows_available/3))
-            description_rows = rows_available - channel_rows
+            if rows_wanted_description < 2*rows_available/3:
+                description_rows = rows_wanted_description
+            else:
+                channel_rows = min(rows_wanted_channels, int(rows_available/3))
+                description_rows = rows_available - channel_rows
         self.pile.contents[self.description_index] = (self.lb_description, self.pile.options('given', description_rows))
         if description_rows >= rows_wanted_description:
             self.lb_description.original_widget._selectable = False

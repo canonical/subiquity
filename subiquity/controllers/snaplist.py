@@ -60,7 +60,7 @@ class SnapdSnapInfoLoader:
         self.run_in_bg(self._bg_fetch_list, self._fetched_list)
 
     def _bg_fetch_list(self):
-        return self.session.get(self.url_base + 'section=games')
+        return self.session.get(self.url_base + 'section=developers')
 
     def _fetched_list(self, fut):
         self.model.load_find_data(fut.result().json())
