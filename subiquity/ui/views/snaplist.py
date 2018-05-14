@@ -18,6 +18,7 @@ import logging
 from urwid import (
     BOX,
     CheckBox,
+    LineBox,
     RadioButton,
     Text,
     Widget,
@@ -30,6 +31,7 @@ from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
+from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.snaplist")
 
@@ -123,6 +125,26 @@ class SnapInfoView(Widget):
             self.needs_focus = False
         return self.pile.render(size, focus)
 
+class FetchingInfo(WidgetWrap):
+    def __init__(self, parent, snap, loop):
+        self.parent = parent
+        self.spinner = Spinner(loop, style='dots')
+        self.spinner.start()
+        text = _("Fetching info for {}").format(snap.name)
+        # | text |
+        # 12    34
+        self.width = len(text) + 4
+        super().__init__(
+            LineBox(
+                Pile([
+                    ('pack', Text(' ' + text)),
+                    ('pack', self.spinner),
+                    ('pack', button_pile([cancel_btn(label=_("Cancel"), on_press=self.close)])),
+                    ])))
+    def close(self, sender=None):
+        self.spinner.stop()
+        self.parent.remove_overlay()
+
 class SnapListRow(WidgetWrap):
     def __init__(self, parent, snap, max_name_len, max_publisher_len):
         self.parent = parent
@@ -134,8 +156,17 @@ class SnapListRow(WidgetWrap):
                 ], dividechars=1)))
     def keypress(self, size, key):
         if key.startswith("enter"):
-            self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name))
-            return
+            if self.snap.channels:
+                self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name))
+                return
+            else:
+                fi = FetchingInfo(self.parent, self.snap, self.parent.controller.loop)
+                self.parent.show_overlay(fi, width=fi.width)
+                def cb():
+                    fi.close()
+                    self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name))
+                self.parent.controller.info_for_snap(self.snap, cb)
+                return
         return super().keypress(size, key)
     def state_change(self, sender, new_state):
         if new_state:

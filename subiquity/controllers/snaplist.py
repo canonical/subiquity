@@ -54,6 +54,8 @@ class SnapdSnapInfoLoader:
         self.url_base = "http+unix://{}/v2/find?".format(quote_plus(sock))
         self.session = requests_unixsocket.Session()
         self.pending_info_snaps = []
+        self.next_snap = None
+        self.next_callbacks = []
 
     def start(self):
         self.run_in_bg(self._bg_fetch_list, self._fetched_list)
@@ -67,13 +69,29 @@ class SnapdSnapInfoLoader:
         log.debug("fetched list of %s snaps", len(self.pending_info_snaps))
         self._fetch_next_info()
 
+    def fetch_info_for_snap(self, snap, callback):
+        if snap == self.next_snap:
+            self.next_callbacks.append(callback)
+            return
+        if snap in self.pending_info_snaps:
+            self.pending_info_snaps.remove(snap)
+        def _fetched_info(fut):
+            log.debug("fetched info on %r", snap.name)
+            data = fut.result().json()
+            self.model.load_info_data(data)
+            callback()
+        self.run_in_bg(lambda: self._bg_fetch_next_info(snap), _fetched_info)
+
     def _fetch_next_info(self):
         if not self.pending_info_snaps:
             return
-        next_snap = self.pending_info_snaps.pop(0)
-        self.run_in_bg(lambda: self._bg_fetch_next_info(next_snap), self._fetched_info)
+        self.next_snap = self.pending_info_snaps.pop(0)
+        log.debug('starting fetch for %s', self.next_snap.name)
+        self.run_in_bg(lambda: self._bg_fetch_next_info(self.next_snap), self._fetched_info)
 
     def _bg_fetch_next_info(self, snap):
+        import time
+        time.sleep(5)
         return self.session.get(self.url_base + 'name=' + snap.name)
 
     def _fetched_info(self, fut):
@@ -83,6 +101,10 @@ class SnapdSnapInfoLoader:
             log.debug("fetched info on %r", snap.name)
         else:
             log.debug("fetched info on mystery snap %s", data)
+        for f in self.next_callbacks:
+            f()
+        self.next_callbacks = []
+        self.next_snap = None
         self._fetch_next_info()
 
 
@@ -99,6 +121,9 @@ class SnapListController(BaseController):
             _("Featured Server Snaps"),
             )
         self.ui.set_body(SnapListView(self.model, self))
+
+    def info_for_snap(self, snap, callback):
+        self.loader.fetch_info_for_snap(snap, callback)
 
     def done(self, snaps_to_install):
         self.signal.emit_signal("next-screen")
