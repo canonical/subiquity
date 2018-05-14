@@ -15,9 +15,15 @@
 
 import glob
 import json
+import logging
 import os
+from urllib.parse import quote_plus
 
 import attr
+
+
+log = logging.getLogger("subiquity.models.snaplist")
+
 
 @attr.s(cmp=False)
 class SnapInfo:
@@ -43,7 +49,8 @@ class SnapListModel:
     def __init__(self, common):
         self._snap_info = []
         self._snaps_by_name = {}
-        self._from_sample_data()
+        self._from_snapd()
+        #self._from_sample_data()
 
     def _from_sample_data(self):
         opd = os.path.dirname
@@ -58,7 +65,14 @@ class SnapListModel:
                 self._load_info_data(json.load(fp))
 
     def _from_snapd(self):
-        pass
+        sock = "/run/snapd.socket"
+        url = "http+unix://{}/v2/find?section=games".format(quote_plus(sock))
+        import requests_unixsocket
+        session = requests_unixsocket.Session()
+        r = session.get(url)
+        self._load_find_data(r.json())
+        log.debug("%s", r.json())
+
 
     def _load_find_data(self, data):
         for s in data['result']:
@@ -73,7 +87,9 @@ class SnapListModel:
 
     def _load_info_data(self, data):
         info = data['result'][0]
-        snap = self._snaps_by_name[info['name']]
+        snap = self._snaps_by_name.get(info['name'], None)
+        if snap is None:
+            return
         channel_map = info['channels']
         for track in info['tracks']:
             for risk in ["stable", "candidate", "beta", "edge"]:
