@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import glob
 import json
 import os
 
@@ -40,16 +41,26 @@ class SnapListModel:
     """The overall model for subiquity."""
 
     def __init__(self, common):
-        pass
+        self._snap_info = []
+        self._snaps_by_name = {}
+        self._from_sample_data()
 
-    def get_snap_list(self):
+    def _from_sample_data(self):
         opd = os.path.dirname
         opj = os.path.join
         snap_data_dir = opj(opd(opd(opd(__file__))), 'examples', 'snaps')
         snap_find_output = opj(snap_data_dir, 'find-output.json')
         with open(snap_find_output) as fp:
-            data = json.load(fp)
-        r = []
+            self._load_find_data(json.load(fp))
+        snap_info_glob = opj(snap_data_dir, 'info-*.json')
+        for snap_info_file in glob.glob(snap_info_glob):
+            with open(snap_info_file) as fp:
+                self._load_info_data(json.load(fp))
+
+    def _from_snapd(self):
+        pass
+
+    def _load_find_data(self, data):
         for s in data['result']:
             snap = SnapInfo(
                 name=s['name'],
@@ -57,27 +68,30 @@ class SnapListModel:
                 publisher=s['developer'],
                 description=s['description'],
                 )
-            r.append(snap)
-            snap_info_output = opj(snap_data_dir, 'info-{}.json'.format(snap.name))
-            if os.path.exists(snap_info_output):
-                with open(snap_info_output) as fp:
-                    info = json.load(fp)['result'][0]
-                channel_map = info['channels']
-                for track in info['tracks']:
-                    for risk in ["stable", "candidate", "beta", "edge"]:
-                        channel_name = '{}/{}'.format(track, risk)
-                        if channel_name in channel_map:
-                            channel_data = channel_map[channel_name]
-                            if track == "latest":
-                                channel_name = risk
-                            snap.channels.append(ChannelSnapInfo(
-                                channel_name=channel_name,
-                                revision=channel_data['revision'],
-                                confinement=channel_data['confinement'],
-                                version=channel_data['version'],
-                                size=channel_data['size'],
-                            ))
-        return r
+            self._snap_info.append(snap)
+            self._snaps_by_name[s['name']] = snap
+
+    def _load_info_data(self, data):
+        info = data['result'][0]
+        snap = self._snaps_by_name[info['name']]
+        channel_map = info['channels']
+        for track in info['tracks']:
+            for risk in ["stable", "candidate", "beta", "edge"]:
+                channel_name = '{}/{}'.format(track, risk)
+                if channel_name in channel_map:
+                    channel_data = channel_map[channel_name]
+                    if track == "latest":
+                        channel_name = risk
+                    snap.channels.append(ChannelSnapInfo(
+                        channel_name=channel_name,
+                        revision=channel_data['revision'],
+                        confinement=channel_data['confinement'],
+                        version=channel_data['version'],
+                        size=channel_data['size'],
+                    ))
+
+    def get_snap_list(self):
+        return self._snap_info
 
     def set_installed_list(self, to_install):
         self.to_install = to_install
