@@ -68,6 +68,8 @@ class SnapdSnapInfoLoader:
         self._fetch_next_info()
 
     def _fetch_next_info(self):
+        if not self.pending_info_snaps:
+            return
         next_snap = self.pending_info_snaps.pop(0)
         self.run_in_bg(lambda: self._bg_fetch_next_info(next_snap), self._fetched_info)
 
@@ -81,8 +83,7 @@ class SnapdSnapInfoLoader:
             log.debug("fetched info on %r", snap.name)
         else:
             log.debug("fetched info on mystery snap %s", data)
-        if self.pending_info_snaps:
-            self._fetch_next_info()
+        self._fetch_next_info()
 
 
 class SnapListController(BaseController):
@@ -92,24 +93,6 @@ class SnapListController(BaseController):
         self.model = self.base_model.snaplist
         self.loader = SnapdSnapInfoLoader(self.model, self.run_in_bg, '/run/snapd.socket')
         self.loader.start()
-
-    def _got_find_data(self, fut):
-        data = fut.result()
-        self.model._load_find_data(data)
-        snap_names = []
-        for snap in self.model.get_snap_list():
-            snap_names.append(snap.name)
-        self._load_next_info(snap_names)
-
-    def _load_next_info(self, snap_names):
-        self.run_in_bg(
-            lambda: self.model._from_snapd_info(snap_names[0]),
-            lambda fut:self._got_info(fut, snap_names[1:]))
-
-    def _got_info(self, fut, remaining):
-        self.model._load_info_data(fut.result())
-        if remaining:
-            self._load_next_info(remaining)
 
     def default(self):
         self.ui.set_header(
