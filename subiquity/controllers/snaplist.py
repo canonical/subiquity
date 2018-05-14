@@ -74,24 +74,20 @@ class SnapdSnapInfoLoader:
             return
         if snap in self.pending_info_snaps:
             self.pending_info_snaps.remove(snap)
+        self._fetch_info_for_snap(snap, callback)
+
+    def _fetch_info_for_snap(self, snap, callback):
         self.ongoing[snap] = [callback]
-        def _fetched_info(fut):
-            log.debug("fetched info on %r", snap.name)
-            data = fut.result().json()
-            self.model.load_info_data(data)
-            for f in self.ongoing[snap]:
-                f()
-            del self.ongoing[snap]
         log.debug('starting fetch for %s', snap.name)
-        self.run_in_bg(lambda: self._bg_fetch_next_info(snap), _fetched_info)
+        self.run_in_bg(
+            lambda: self._bg_fetch_next_info(snap),
+            self._fetched_info)
 
     def _fetch_next_info(self):
         if not self.pending_info_snaps:
             return
         snap = self.pending_info_snaps.pop(0)
-        self.ongoing[snap] = []
-        log.debug('starting fetch for %s', snap.name)
-        self.run_in_bg(lambda: self._bg_fetch_next_info(snap), self._fetched_info)
+        self._fetch_info_for_snap(snap, self._fetch_next_info)
 
     def _bg_fetch_next_info(self, snap):
         import time
@@ -108,7 +104,6 @@ class SnapdSnapInfoLoader:
         for f in self.ongoing[snap]:
             f()
         del self.ongoing[snap]
-        self._fetch_next_info()
 
 
 class SnapListController(BaseController):
