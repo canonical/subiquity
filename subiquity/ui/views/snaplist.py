@@ -130,6 +130,7 @@ class FetchingInfo(WidgetWrap):
         self.parent = parent
         self.spinner = Spinner(loop, style='dots')
         self.spinner.start()
+        self.closed = False
         text = _("Fetching info for {}").format(snap.name)
         # | text |
         # 12    34
@@ -142,6 +143,9 @@ class FetchingInfo(WidgetWrap):
                     ('pack', button_pile([cancel_btn(label=_("Cancel"), on_press=self.close)])),
                     ])))
     def close(self, sender=None):
+        if self.closed:
+            return
+        self.closed = True
         self.spinner.stop()
         self.parent.remove_overlay()
 
@@ -163,8 +167,9 @@ class SnapListRow(WidgetWrap):
                 fi = FetchingInfo(self.parent, self.snap, self.parent.controller.loop)
                 self.parent.show_overlay(fi, width=fi.width)
                 def cb():
-                    fi.close()
-                    self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name))
+                    if not fi.closed:
+                        fi.close()
+                        self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name))
                 self.parent.controller.info_for_snap(self.snap, cb)
                 return
         return super().keypress(size, key)

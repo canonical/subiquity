@@ -54,8 +54,7 @@ class SnapdSnapInfoLoader:
         self.url_base = "http+unix://{}/v2/find?".format(quote_plus(sock))
         self.session = requests_unixsocket.Session()
         self.pending_info_snaps = []
-        self.next_snap = None
-        self.next_callbacks = []
+        self.ongoing = {} # {snap:[callbacks]}
 
     def start(self):
         self.run_in_bg(self._bg_fetch_list, self._fetched_list)
@@ -70,24 +69,29 @@ class SnapdSnapInfoLoader:
         self._fetch_next_info()
 
     def fetch_info_for_snap(self, snap, callback):
-        if snap == self.next_snap:
-            self.next_callbacks.append(callback)
+        if snap in self.ongoing:
+            self.ongoing[snap].append(callback)
             return
         if snap in self.pending_info_snaps:
             self.pending_info_snaps.remove(snap)
+        self.ongoing[snap] = [callback]
         def _fetched_info(fut):
             log.debug("fetched info on %r", snap.name)
             data = fut.result().json()
             self.model.load_info_data(data)
-            callback()
+            for f in self.ongoing[snap]:
+                f()
+            del self.ongoing[snap]
+        log.debug('starting fetch for %s', snap.name)
         self.run_in_bg(lambda: self._bg_fetch_next_info(snap), _fetched_info)
 
     def _fetch_next_info(self):
         if not self.pending_info_snaps:
             return
-        self.next_snap = self.pending_info_snaps.pop(0)
-        log.debug('starting fetch for %s', self.next_snap.name)
-        self.run_in_bg(lambda: self._bg_fetch_next_info(self.next_snap), self._fetched_info)
+        snap = self.pending_info_snaps.pop(0)
+        self.ongoing[snap] = []
+        log.debug('starting fetch for %s', snap.name)
+        self.run_in_bg(lambda: self._bg_fetch_next_info(snap), self._fetched_info)
 
     def _bg_fetch_next_info(self, snap):
         import time
@@ -101,10 +105,9 @@ class SnapdSnapInfoLoader:
             log.debug("fetched info on %r", snap.name)
         else:
             log.debug("fetched info on mystery snap %s", data)
-        for f in self.next_callbacks:
+        for f in self.ongoing[snap]:
             f()
-        self.next_callbacks = []
-        self.next_snap = None
+        del self.ongoing[snap]
         self._fetch_next_info()
 
 
