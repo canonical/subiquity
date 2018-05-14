@@ -18,6 +18,7 @@ import logging
 from urwid import (
     BOX,
     CheckBox,
+    RadioButton,
     Text,
     Widget,
     WidgetWrap,
@@ -52,14 +53,16 @@ class SnapInfoView(Widget):
         self.parent = parent
         self.channels = []
         self.needs_focus = True
-        max_channel_name = max(len(csi.channel_name) for csi in snap.channels)
+        channel_width = max(len(csi.channel_name) for csi in snap.channels) \
+          + RadioButton.reserve_columns + 1
         max_version = max(len(csi.version) for csi in snap.channels)
+        radio_group = []
         for csi in snap.channels:
             notes = '-'
             if csi.confinement != "strict":
                 notes = csi.confinement
             self.channels.append(Columns([
-                (max_channel_name+5, CheckBox("{}:".format(csi.channel_name))),
+                (channel_width, RadioButton(radio_group, "{}:".format(csi.channel_name), state=False)),
                 (max_version, Text(csi.version)),
                 ('pack', Text("({})".format(csi.revision))),
                 ('pack', Text(humanize_size(csi.size))),
