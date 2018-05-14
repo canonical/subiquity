@@ -27,6 +27,27 @@ class SnapListController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.snaplist
+        self.run_in_bg(
+            self.model._from_snapd,
+            self._got_find_data)
+
+    def _got_find_data(self, fut):
+        data = fut.result()
+        self.model._load_find_data(data)
+        snap_names = []
+        for snap in self.model.get_snap_list():
+            snap_names.append(snap.name)
+        self._load_next_info(snap_names)
+
+    def _load_next_info(self, snap_names):
+        self.run_in_bg(
+            lambda: self.model._from_snapd_info(snap_names[0]),
+            lambda fut:self._got_info(fut, snap_names[1:]))
+
+    def _got_info(self, fut, remaining):
+        self.model._load_info_data(fut.result())
+        if remaining:
+            self._load_next_info(remaining)
 
     def default(self):
         self.ui.set_header(

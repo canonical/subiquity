@@ -49,7 +49,7 @@ class SnapListModel:
     def __init__(self, common):
         self._snap_info = []
         self._snaps_by_name = {}
-        self._from_snapd()
+        #self._from_snapd()
         #self._from_sample_data()
 
     def _from_sample_data(self):
@@ -70,9 +70,15 @@ class SnapListModel:
         import requests_unixsocket
         session = requests_unixsocket.Session()
         r = session.get(url)
-        self._load_find_data(r.json())
-        log.debug("%s", r.json())
+        return r.json()
 
+    def _from_snapd_info(self, name):
+        sock = "/run/snapd.socket"
+        url = "http+unix://{}/v2/find?name={}".format(quote_plus(sock), name)
+        import requests_unixsocket
+        session = requests_unixsocket.Session()
+        r = session.get(url)
+        return r.json()
 
     def _load_find_data(self, data):
         for s in data['result']:
