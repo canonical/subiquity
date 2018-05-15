@@ -20,6 +20,7 @@ from urwid import (
     CheckBox,
     LineBox,
     RadioButton,
+    SelectableIcon,
     Text,
     Widget,
     WidgetWrap,
@@ -34,6 +35,20 @@ from subiquity.models.filesystem import humanize_size
 from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.snaplist")
+
+class StarCheckBox(CheckBox):
+    states = {
+        True: SelectableIcon("*", 0),
+        False: SelectableIcon(" ", 0),
+        }
+    reserve_columns = 2
+
+class StarRadioButton(RadioButton):
+    states = {
+        True: SelectableIcon("*", 0),
+        False: SelectableIcon(" ", 0),
+        }
+    reserve_columns = 2
 
 class NoTabCyclingListBox(ListBox):
     def keypress(self, size, key):
@@ -57,7 +72,7 @@ class SnapInfoView(Widget):
         self.channels = []
         self.needs_focus = True
         channel_width = max(len(csi.channel_name) for csi in snap.channels) \
-          + RadioButton.reserve_columns + 1
+          + StarRadioButton.reserve_columns + 1
         max_version = max(len(csi.version) for csi in snap.channels)
         max_revision = max(len(str(csi.revision)) for csi in snap.channels) + 2
         max_size = max(len(humanize_size(csi.size)) for csi in snap.channels)
@@ -66,19 +81,19 @@ class SnapInfoView(Widget):
             notes = '-'
             if csi.confinement != "strict":
                 notes = csi.confinement
-            btn = RadioButton(
+            btn = StarRadioButton(
                 radio_group,
                 "{}:".format(csi.channel_name),
                 state=csi.channel_name == cur_risk,
                 on_state_change=self.state_change,
                 user_data=csi.channel_name)
-            self.channels.append(Columns([
+            self.channels.append(Color.menu_button(Columns([
                 (channel_width, btn),
                 (max_version, Text(csi.version)),
                 (max_revision, Text("({})".format(csi.revision))),
                 (max_size, Text(humanize_size(csi.size))),
                 ('pack', Text(notes)),
-                ], dividechars=1))
+                ], dividechars=1)))
         self.description = Text(snap.description.replace('\r', '').strip())
         self.lb_description = Padding.center_79(ListBox([self.description]))
         self.lb_channels = Padding.center_79(NoTabCyclingListBox(self.channels))
@@ -158,10 +173,10 @@ class SnapListRow(WidgetWrap):
     def __init__(self, parent, snap, max_name_len, max_publisher_len):
         self.parent = parent
         self.snap = snap
-        self.box = CheckBox(snap.name, on_state_change=self.state_change)
-        self.name_and_publisher_width = max_name_len + 4 + max_publisher_len + 2
+        self.box = StarCheckBox(snap.name, on_state_change=self.state_change)
+        self.name_and_publisher_width = max_name_len + self.box.reserve_columns + max_publisher_len + 2
         self.two_column = Color.menu_button(Columns([
-                (max_name_len+4, self.box),
+                (max_name_len+self.box.reserve_columns, self.box),
                 Text(snap.summary, wrap='clip'),
                 ], dividechars=1))
         self.three_column = Color.menu_button(Columns([
