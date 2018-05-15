@@ -77,6 +77,7 @@ class SnapdSnapInfoLoader:
             response = fut.result()
             response.raise_for_status()
         except requests.exceptions.RequestException:
+            log.exception("loading list of snaps failed")
             self.state = "failed"
         else:
             self.state = "loading info"
@@ -117,6 +118,7 @@ class SnapdSnapInfoLoader:
             response = fut.result()
             response.raise_for_status()
         except requests.exceptions.RequestException:
+            log.exception("loading list of snaps failed")
             self.state = "failed"
         else:
             data = response.json()
@@ -155,7 +157,7 @@ class SnapListController(BaseController):
     def network_config_done(self, netplan_path):
         self._maybe_start_new_loader()
 
-    def proxy_config_done(self, proxy):
+    def proxy_config_done(self):
         log.debug("restarting snapd to pick up proxy config")
         if self.opts.dry_run:
             cmd = ['sleep', '0.5']
