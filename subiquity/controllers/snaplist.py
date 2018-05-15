@@ -49,6 +49,7 @@ class SampleDataSnapInfoLoader:
 class SnapdSnapInfoLoader:
 
     def __init__(self, model, run_in_bg, sock):
+        self.state = "not running"
         self.model = model
         self.run_in_bg = run_in_bg
         self.url_base = "http+unix://{}/v2/find?".format(quote_plus(sock))
@@ -57,12 +58,18 @@ class SnapdSnapInfoLoader:
         self.ongoing = {} # {snap:[callbacks]}
 
     def start(self):
+        self.state = "loading list"
         self.run_in_bg(self._bg_fetch_list, self._fetched_list)
+
+    def stop(self):
+        self.state = "stopped"
 
     def _bg_fetch_list(self):
         return self.session.get(self.url_base + 'section=developers')
 
     def _fetched_list(self, fut):
+        if self.state == "stopped":
+            return
         self.model.load_find_data(fut.result().json())
         self.pending_info_snaps = self.model.get_snap_list()
         log.debug("fetched list of %s snaps", len(self.pending_info_snaps))
@@ -85,6 +92,7 @@ class SnapdSnapInfoLoader:
 
     def _fetch_next_info(self):
         if not self.pending_info_snaps:
+            self.state = "loaded"
             return
         snap = self.pending_info_snaps.pop(0)
         self._fetch_info_for_snap(snap, self._fetch_next_info)
@@ -95,6 +103,8 @@ class SnapdSnapInfoLoader:
         return self.session.get(self.url_base + 'name=' + snap.name)
 
     def _fetched_info(self, fut):
+        if self.state == "stopped":
+            return
         data = fut.result().json()
         snap = self.model.load_info_data(data)
         if snap is not None:
