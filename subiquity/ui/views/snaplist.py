@@ -190,11 +190,35 @@ class SnapListView(BaseView):
         self.model = model
         self.controller = controller
         self.to_install = {} # {snap_name: risk}
-        body = []
+        if self.controller.loader.state == "loading list":
+            spinner = Spinner(controller.loop, style='dots')
+            spinner.start()
+            ok = ok_btn(label=_("Continue"), on_press=self.done)
+            cancel = cancel_btn(label=_("Cancel"), on_press=self.done)
+            p = button_pile([ok, cancel])
+            def cb():
+                spinner.stop()
+                if self.controller.loader.state == "failed":
+                    body = [Text(_("Loading server snaps from the store failed, sorry."))]
+                    self._w = screen(body, button_pile([ok, cancel]))
+                else:
+                    self.make_main_screen()
+                    self._w = self.main_screen
+            self.controller.loader.ongoing[None].append(cb)
+            body = [spinner]
+            super().__init__(screen(
+                body, button_pile([ok, cancel]),
+                excerpt=_("Loading server snaps from store, please wait...")))
+        else:
+            self.make_main_screen()
+            super().__init__(self.main_screen)
+
+    def make_main_screen(self):
         snaps = self.model.get_snap_list()
         self.name_len = max([len(snap.name) for snap in snaps])
         self.publisher_len = max([len(snap.publisher) for snap in snaps])
         self.snap_rows = {}
+        body = []
         for snap in snaps:
             row = SnapListRow(self, snap, self.name_len, self.publisher_len)
             self.snap_rows[snap.name] = row
@@ -205,8 +229,6 @@ class SnapListView(BaseView):
             NoTabCyclingListBox(body), button_pile([ok, cancel]),
             focus_buttons=False,
             excerpt=_("These are popular snaps in server environments. Select or deselect with SPACE, press ENTER to see more details of the package, publisher and versions available."))
-        self.snap_screens = {}
-        super().__init__(self.main_screen)
 
     def done(self, sender=None):
         log.debug("snaps to install %s", self.to_install)
