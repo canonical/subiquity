@@ -41,10 +41,11 @@ class InstallState:
     ERROR = -1
 
 
+
 raw_lxc_config = '''\
 lxc.hook.version = 1
-lxc.hook.pre-start = 'mount --bind /target {storage_pool_loc}/containers/{container_name}/rootfs'
-lxc.hook.post-stop = 'umount {storage_pool_loc}/containers/{container_name}/rootfs'
+lxc.hook.pre-start = 'sh -c "mkdir -p $LXC_ROOTFS_PATH && mount --bind /target $LXC_ROOTFS_PATH"'
+lxc.hook.post-stop = 'sh -c "umount $LXC_ROOTFS_PATH"'
 '''
 
 class ContainerManager(object):
@@ -59,7 +60,7 @@ class ContainerManager(object):
                 },
             'config': {
                 'security.privileged': '1',
-                'raw.lxc': raw_lxc_config.format(storage_pool_loc=self.storage_pool_loc, container_name=self.container_name),
+                'raw.lxc': raw_lxc_config,
                 },
             'name': self.container_name,
             })
@@ -111,12 +112,12 @@ class ContainerManager(object):
     def initialize_lxd(self):
         p = subprocess.Popen(
             ["lxd", "init", "--preseed"], stdin=subprocess.PIPE)
-        p.communicate(stdin=self.preseed())
+        p.communicate(input=self.preseed().encode('ascii'))
         log.debug(p.returncode)
 
     def create_container(self):
         p = subprocess.Popen(
-            ["lxc", "query", "--wait", "--request", "POST", "--data", self.container_config(), "1.0/containers"],
+            ["lxc", "query", "--wait", "--request", "POST", "--data", self.container_config(), "/1.0/containers"],
             stdin=subprocess.DEVNULL)
         p.communicate()
         log.debug(p.returncode)
