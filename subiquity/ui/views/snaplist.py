@@ -159,10 +159,17 @@ class SnapListRow(WidgetWrap):
         self.parent = parent
         self.snap = snap
         self.box = CheckBox(snap.name, on_state_change=self.state_change)
-        super().__init__(Color.menu_button(Columns([
+        self.name_and_publisher_width = max_name_len + 4 + max_publisher_len + 2
+        self.two_column = Color.menu_button(Columns([
                 (max_name_len+4, self.box),
                 Text(snap.summary, wrap='clip'),
-                ], dividechars=1)))
+                ], dividechars=1))
+        self.three_column = Color.menu_button(Columns([
+                (max_name_len+4, self.box),
+                (max_publisher_len, Text(snap.publisher)),
+                Text(snap.summary, wrap='clip'),
+                ], dividechars=1))
+        super().__init__(self.two_column)
     def keypress(self, size, key):
         if key.startswith("enter"):
             if self.snap.channels:
@@ -183,6 +190,12 @@ class SnapListRow(WidgetWrap):
             self.parent.to_install[self.snap.name] = 'stable'
         else:
             self.parent.to_install.pop(self.snap.name, None)
+    def render(self, size, focus):
+        maxcol = size[0]
+        if maxcol - self.name_and_publisher_width >= 40:
+            return self.three_column.render(size, focus)
+        else:
+            return self.two_column.render(size, focus)
 
 class SnapListView(BaseView):
 
