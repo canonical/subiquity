@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+import json
 import logging
 import os
 import subprocess
@@ -38,6 +39,87 @@ class InstallState:
     RUNNING = 1
     DONE = 2
     ERROR = -1
+
+
+raw_lxc_config = '''\
+lxc.hook.version = 1
+lxc.hook.pre-start = 'mount --bind /target {storage_pool_loc}/containers/{container_name}/rootfs'
+lxc.hook.post-stop = 'umount {storage_pool_loc}/containers/{container_name}/rootfs'
+'''
+
+class ContainerManager(object):
+    def __init__(self):
+        self.container_name = 'target'
+        self.nic_name = 'lxd-nic'
+
+    def container_config(self):
+        return json.dumps({
+            'source': {
+                "type": "none",
+                },
+            'config': {
+                'security.privileged': '1',
+                'raw.lxc': raw_lxc_config.format(storage_pool_loc=self.storage_pool_loc, container_name=self.container_name),
+                },
+            'name': self.container_name,
+            })
+
+    def preseed(self):
+        return yaml.dump({
+            'networks': [{
+                'name': 'lxdbr0',
+                'type': 'bridge',
+                'config': {
+                    'ipv4.address': 'auto',
+                    'ipv6.address': 'auto',
+                    },
+                }],
+            'storage_pools': [{
+                'name': 'default',
+                'driver': 'dir',
+                }],
+            'profiles': [{
+                'name': 'default',
+                'devices': {
+                    'root': {
+                        'type': 'disk',
+                        'pool': 'default',
+                        'path': '/',
+                        },
+                    self.nic_name: {
+                        'type': 'nic',
+                        'nictype': 'bridged',
+                        'parent': 'lxdbr0',
+                        'name': self.nic_name,
+                        },
+                    },
+                }],
+            })
+
+    def netplan_for_container(self):
+        return yaml.dump({
+            'network': {
+                'version': 2,
+                'ethernets': {
+                    self.nic_name: {
+                        'dhcp4': True,
+                        },
+                    },
+                },
+            })
+
+    def initialize_lxd(self):
+        p = subprocess.Popen(
+            ["lxd", "init", "--preseed"], stdin=subprocess.PIPE)
+        p.communicate(stdin=self.preseed())
+        log.debug(p.returncode)
+
+    def create_container(self):
+        p = subprocess.Popen(
+            ["lxc", "query", "--wait", "--request", "POST", "--data", self.container_config(), "1.0/containers"],
+            stdin=subprocess.DEVNULL)
+        p.communicate()
+        log.debug(p.returncode)
 
 
 class InstallProgressController(BaseController):
