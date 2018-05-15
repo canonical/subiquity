@@ -77,7 +77,6 @@ class SnapdSnapInfoLoader:
         self.state = "stopped"
 
     def _bg_fetch_list(self):
-        import time; time.sleep(2)
         return self.session.get(self.url_base + 'section=developers', timeout=60)
 
     def _fetched_list(self, fut):
