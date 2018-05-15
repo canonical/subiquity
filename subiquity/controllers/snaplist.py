@@ -23,6 +23,7 @@ import requests.exceptions
 import requests_unixsocket
 
 from subiquitycore.controller import BaseController
+from subiquitycore import utils
 
 from subiquity.ui.views.snaplist import SnapListView
 
@@ -60,6 +61,7 @@ class SnapdSnapInfoLoader:
 
     def start(self):
         self.state = "loading list"
+        log.debug("loading list of snaps")
         self.run_in_bg(self._bg_fetch_list, self._fetched_list)
 
     def stop(self):
@@ -130,11 +132,38 @@ class SnapdSnapInfoLoader:
 
 class SnapListController(BaseController):
 
+    signals = [
+        ('network-config-written', 'network_config_done'),
+        ('network-proxy-set', 'proxy_config_done'),
+    ]
+
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.snaplist
+        self.loader = None
+        self._maybe_start_new_loader()
+
+    def _maybe_start_new_loader(self):
+        if self.loader:
+            if self.loader.state != "failed":
+                return
+            else:
+                self.loader.stop()
         self.loader = SnapdSnapInfoLoader(self.model, self.run_in_bg, '/run/snapd.socket')
         self.loader.start()
+
+    def network_config_done(self, netplan_path):
+        self._maybe_start_new_loader()
+
+    def proxy_config_done(self, proxy):
+        log.debug("restarting snapd to pick up proxy config")
+        if self.opts.dry_run:
+            cmd = ['sleep', '0.5']
+        else:
+            cmd = ['systemctl', 'restart', 'snapd.service']
+        self.run_in_bg(
+            lambda: utils.run_command(cmd),
+            lambda fut: self._maybe_start_new_loader())
 
     def default(self):
         self.ui.set_header(
