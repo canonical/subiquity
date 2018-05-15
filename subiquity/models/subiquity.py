@@ -142,6 +142,10 @@ class SubiquityModel:
                     'path': 'etc/default/keyboard',
                     'content': self.keyboard.setting.render(),
                     },
+                'etc_environment': {
+                    'path': 'etc/environment',
+                    'content': self.proxy.etc_environment_content(),
+                    },
                 },
             }
 

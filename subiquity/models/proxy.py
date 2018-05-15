@@ -22,3 +22,16 @@ class ProxyModel(object):
 
     def __init__(self):
         self.proxy = ""
+
+    def etc_environment_content(self):
+        env_lines = []
+        with open("/etc/environment") as fp:
+            for line in fp:
+                if line.startswith('http_proxy=') or line.startswith('https_proxy='):
+                    continue
+                if not line.endswith('\n'):
+                    line += '\n'
+                env_lines.append(line)
+        env_lines.append("http_proxy={}\n".format(self.proxy))
+        env_lines.append("https_proxy={}\n".format(self.proxy))
+        return ''.join(env_lines)

@@ -16,6 +16,7 @@
 import logging
 
 from subiquitycore.controller import BaseController
+from subiquitycore import utils
 
 from subiquity.ui.views.proxy import ProxyView
 
@@ -42,4 +43,11 @@ class ProxyController(BaseController):
 
     def done(self, proxy):
         self.model.proxy = proxy
+        if proxy:
+            new_env_path = '/etc/environment'
+            if self.opts.dry_run:
+                new_env_path = '.subiquity' + new_env_path
+            with open(new_env_path, 'w') as fp:
+                fp.write(self.model.etc_environment_content())
+            self.signal.emit_signal('network-proxy-set')
         self.signal.emit_signal('next-screen')
