@@ -19,6 +19,7 @@ import logging
 import os
 from urllib.parse import quote_plus
 
+import requests.exceptions
 import requests_unixsocket
 
 from subiquitycore.controller import BaseController
@@ -70,10 +71,17 @@ class SnapdSnapInfoLoader:
     def _fetched_list(self, fut):
         if self.state == "stopped":
             return
-        self.model.load_find_data(fut.result().json())
-        self.pending_info_snaps = self.model.get_snap_list()
-        log.debug("fetched list of %s snaps", len(self.pending_info_snaps))
-        self._fetch_next_info()
+        try:
+            response = fut.result()
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            self.state = "failed"
+        else:
+            self.state = "loading info"
+            self.model.load_find_data(response.json())
+            self.pending_info_snaps = self.model.get_snap_list()
+            log.debug("fetched list of %s snaps", len(self.pending_info_snaps))
+            self._fetch_next_info()
 
     def fetch_info_for_snap(self, snap, callback):
         if snap in self.ongoing:
@@ -105,15 +113,21 @@ class SnapdSnapInfoLoader:
     def _fetched_info(self, fut):
         if self.state == "stopped":
             return
-        data = fut.result().json()
-        snap = self.model.load_info_data(data)
-        if snap is not None:
-            log.debug("fetched info on %r", snap.name)
+        try:
+            response = fut.result()
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            self.state = "failed"
         else:
-            log.debug("fetched info on mystery snap %s", data)
-        for f in self.ongoing[snap]:
-            f()
-        del self.ongoing[snap]
+            data = response.json()
+            snap = self.model.load_info_data(data)
+            if snap is not None:
+                log.debug("fetched info on %r", snap.name)
+            else:
+                log.debug("fetched info on mystery snap %s", data)
+            for cb in self.ongoing[snap]:
+                cb()
+            del self.ongoing[snap]
 
 
 class SnapListController(BaseController):
