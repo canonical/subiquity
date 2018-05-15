@@ -106,8 +106,6 @@ class SnapdSnapInfoLoader:
         self._fetch_info_for_snap(snap, self._fetch_next_info)
 
     def _bg_fetch_next_info(self, snap):
-        import time
-        time.sleep(5)
         return self.session.get(self.url_base + 'name=' + snap.name, timeout=60)
 
     def _fetched_info(self, fut):
