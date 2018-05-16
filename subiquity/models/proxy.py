@@ -17,21 +17,18 @@ import logging
 
 log = logging.getLogger('subiquitycore.models.proxy')
 
+dropin_template = '''\
+[Service]
+Environment="HTTP_PROXY={proxy}"
+Environment="HTTPS_PROXY={proxy}"
+EOF
+'''
+
 
 class ProxyModel(object):
 
     def __init__(self):
         self.proxy = ""
 
-    def etc_environment_content(self):
-        env_lines = []
-        with open("/etc/environment") as fp:
-            for line in fp:
-                if line.startswith('http_proxy=') or line.startswith('https_proxy='):
-                    continue
-                if not line.endswith('\n'):
-                    line += '\n'
-                env_lines.append(line)
-        env_lines.append("http_proxy={}\n".format(self.proxy))
-        env_lines.append("https_proxy={}\n".format(self.proxy))
-        return ''.join(env_lines)
+    def proxy_systemd_dropin(self):
+        return dropin_template.format(self.proxy)

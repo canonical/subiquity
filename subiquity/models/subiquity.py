@@ -102,6 +102,11 @@ class SubiquityModel:
 
     def render(self, target, syslog_identifier):
         config = {
+            'apt': {
+                'http_proxy': self.proxy.proxy,
+                'https_proxy': self.proxy.proxy,
+                },
+
             'install': {
                 'target': target,
                 'unmount': 'disabled',
@@ -125,6 +130,11 @@ class SubiquityModel:
                     },
                 },
 
+            'proxy': {
+                'http_proxy': self.proxy.proxy,
+                'https_proxy': self.proxy.proxy,
+                },
+
             'reporting': {
                 'subiquity': {
                     'type': 'journald',
@@ -142,17 +152,17 @@ class SubiquityModel:
                     'path': 'etc/default/keyboard',
                     'content': self.keyboard.setting.render(),
                     },
-                'etc_environment': {
+                'snapd_dropin': {
                     'path': 'etc/environment',
                     'content': self.proxy.etc_environment_content(),
                     },
                 },
             }
 
-        if self.proxy.proxy != "":
-            config['proxy'] = {
-                'http_proxy': self.proxy.proxy,
-                'https_proxy': self.proxy.proxy,
+        if self.proxy.proxy:
+            config['write_files']['snapd_dropin'] = {
+                    'path': 'etc/systemd/system/snapd.service.d/snap_proxy.conf',
+                    'content': self.proxy.proxy_systemd_dropin(),
                 }
 
         if not self.filesystem.add_swapfile():
