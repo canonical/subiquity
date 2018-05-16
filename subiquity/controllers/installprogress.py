@@ -207,6 +207,16 @@ class InstallProgressController(BaseController):
         elif event['SYSLOG_IDENTIFIER'] == self._log_syslog_identifier:
             self.curtin_log(event)
 
+    def _install_event_start(self, message):
+        self.footer_description.set_text(message)
+        self.progress_view.add_event(self._event_indent + message)
+        self._event_indent += "  "
+        self.footer_spinner.start()
+
+    def _install_event_finish(self):
+        self._event_indent = self._event_indent[:-2]
+        self.footer_spinner.stop()
+
     def curtin_event(self, event):
         e = {}
         for k, v in event.items():
@@ -217,15 +227,9 @@ class InstallProgressController(BaseController):
         if event_type not in ['start', 'finish']:
             return
         if event_type == 'start':
-            message = event.get("CURTIN_MESSAGE", "??")
-            if not self.progress_view_showing is None:
-                self.footer_description.set_text(message)
-            self.progress_view.add_event(self._event_indent + message)
-            self._event_indent += "  "
-            self.footer_spinner.start()
+            self._install_event_start(event.get("CURTIN_MESSAGE", "??"))
         if event_type == 'finish':
-            self._event_indent = self._event_indent[:-2]
-            self.footer_spinner.stop()
+            self._install_event_finish()
 
     def curtin_log(self, event):
         self.progress_view.add_log_line(event['MESSAGE'])
@@ -319,13 +323,19 @@ class InstallProgressController(BaseController):
         self.configure_cloud_init()
         self.copy_logs_to_target()
 
-        self.run_in_bg(self._bg_postinstall_configuration, self.postinstall_complete)
+        self._install_event_start("post install configuration")
+        self._install_event_start("starting container")
 
-    def _bg_postinstall_configuration(self):
-        self.cm.start_container()
-        self.cm.wait_for_cloudinit()
+        self.run_in_bg(self.cm.start_container, self._container_started)
+
+    def _container_started(self, fut):
+        self._install_event_finish()
+        self._install_event_start("waiting for boot to complete")
+        self.run_in_bg(self.cm.wait_for_cloudinit, self.postinstall_configuration)
 
     def postinstall_complete(self, fut):
+        self._install_event_finish()
+        self._install_event_finish()
         self.ui.set_header(_("Installation complete!"))
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
