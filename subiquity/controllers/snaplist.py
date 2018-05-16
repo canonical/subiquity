@@ -168,11 +168,16 @@ class SnapListController(BaseController):
     def proxy_config_done(self):
         log.debug("restarting snapd to pick up proxy config")
         if self.opts.dry_run:
-            cmd = ['sleep', '0.5']
+            cmds = [['sleep', '0.5']]
         else:
-            cmd = ['systemctl', 'restart', 'snapd.service']
+            with open('/etc/systemd/system/snapd.service.d/snap_proxy.conf', 'w') as fp:
+                fp.write('self.proxy.proxy_systemd_dropin()')
+            cmds = [
+                ['systemctl', 'daemon-reload'],
+                ['systemctl', 'restart', 'snapd.service'],
+                ]
         self.run_in_bg(
-            lambda: utils.run_command(cmd),
+            lambda: [utils.run_command(cmd) for cmd in cmds],
             lambda fut: self._maybe_start_new_loader())
 
     def default(self):
