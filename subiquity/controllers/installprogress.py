@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import subprocess
+import time
 
 import urwid
 import yaml
@@ -122,6 +123,35 @@ class ContainerManager(object):
         p.communicate()
         log.debug(p.returncode)
 
+    def start(self):
+        p = subprocess.Popen(
+            ["lxc", "start", self.container_name],
+            stdin=subprocess.DEVNULL)
+        p.communicate()
+        log.debug(p.returncode)
+
+    def run(self, cmd):
+        p = subprocess.Popen(
+            ["lxc", "exec", self.container_name, "--"] + cmd,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        stdout, stderr = p.communicate()
+        log.debug(p.returncode)
+        return stdout.decode('latin-1')
+
+    def wait_for_cloudinit(self):
+        return self.run(["cloud-init", "status", "--wait"]),
+
+    def enable_networking(self):
+        self.run(["mkdir",  "-p", "/run/netplan"])
+        p = subprocess.Popen(
+            ["lxc", "file", "push", "-", self.container_name + "/run/netplan/tmp.yaml"],
+            stdin=subprocess.PIPE)
+        p.communicate(input=self.netplan_for_container().encode('ascii'))
+        log.debug(p.returncode)
+        self.run(["netplan", "apply"])
+        while 'default' not in self.run(["ip", "route"]):
+            time.sleep(0.1)
+
 
 class InstallProgressController(BaseController):
     signals = [
@@ -141,6 +171,9 @@ class InstallProgressController(BaseController):
         self._event_indent = ""
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
+        self.cm = ContainerManager()
+        if not self.opts.dry_run:
+            
 
     def filesystem_config_done(self):
         self.curtin_start_install()
