@@ -111,43 +111,44 @@ class ContainerManager(object):
             })
 
     def initialize_lxd(self):
-        p = subprocess.Popen(
-            ["lxd", "init", "--preseed"], stdin=subprocess.PIPE)
-        p.communicate(input=self.preseed().encode('ascii'))
-        log.debug(p.returncode)
+        subprocess.run(
+            ["lxd", "init", "--preseed"],
+            input=self.preseed().encode('ascii'),
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            check=True)
 
     def create_container(self):
-        p = subprocess.Popen(
+        subprocess.run(
             ["lxc", "query", "--wait", "--request", "POST", "--data", self.container_config(), "/1.0/containers"],
-            stdin=subprocess.DEVNULL)
-        p.communicate()
-        log.debug(p.returncode)
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            check=True)
 
-    def start(self):
-        p = subprocess.Popen(
+    def start_container(self):
+        subprocess.run(
             ["lxc", "start", self.container_name],
-            stdin=subprocess.DEVNULL)
-        p.communicate()
-        log.debug(p.returncode)
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            check=True)
 
     def run(self, cmd):
-        p = subprocess.Popen(
+        p = subprocess.run(
             ["lxc", "exec", self.container_name, "--"] + cmd,
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        stdout, stderr = p.communicate()
-        log.debug(p.returncode)
-        return stdout.decode('latin-1')
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            check=True)
+        return p.stdout
 
     def wait_for_cloudinit(self):
         return self.run(["cloud-init", "status", "--wait"]),
 
     def enable_networking(self):
         self.run(["mkdir",  "-p", "/run/netplan"])
-        p = subprocess.Popen(
+        subprocess.run(
             ["lxc", "file", "push", "-", self.container_name + "/run/netplan/tmp.yaml"],
-            stdin=subprocess.PIPE)
-        p.communicate(input=self.netplan_for_container().encode('ascii'))
-        log.debug(p.returncode)
+            input=self.netplan_for_container().encode('ascii'),
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            check=True)
         self.run(["netplan", "apply"])
         while 'default' not in self.run(["ip", "route"]):
             time.sleep(0.1)
@@ -173,7 +174,11 @@ class InstallProgressController(BaseController):
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
         self.cm = ContainerManager()
         if not self.opts.dry_run:
-            
+            self.run_in_bg(self._bg_setup_lxd, lambda fut:None)
+
+    def _bg_setup_lxd(self):
+        self.cm.initialize_lxd()
+        self.cm.create_container()
 
     def filesystem_config_done(self):
         self.curtin_start_install()
@@ -314,6 +319,13 @@ class InstallProgressController(BaseController):
         self.configure_cloud_init()
         self.copy_logs_to_target()
 
+        self.run_in_bg(self._bg_postinstall_configuration, self.postinstall_complete)
+
+    def _bg_postinstall_configuration(self):
+        self.cm.start_container()
+        self.cm.wait_for_cloudinit()
+
+    def postinstall_complete(self, fut):
         self.ui.set_header(_("Installation complete!"))
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
