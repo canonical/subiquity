@@ -27,6 +27,11 @@ from systemd import journal
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
+from subiquitycore.tasksequence import (
+    BackgroundTask,
+    TaskSequence,
+    TaskWatcher,
+    )
 
 from subiquity.ui.views.installprogress import ProgressView
 
@@ -152,6 +157,30 @@ class ContainerManager(object):
         self.run(["netplan", "apply"])
         while 'default' not in self.run(["ip", "route"]):
             time.sleep(0.1)
+
+
+class InstallTask(BackgroundTask):
+
+    def __init__(self, controller, step_name, func, *args, **kw):
+        self.controller = controller
+        self.step_name = step_name
+        self.func = func
+        self.args = args
+        self.kw = kw
+
+    def start(self):
+        self.controller._install_event_start(self.step_name)
+
+    def run(self):
+        self.func(*self.args, **self.kw)
+
+    def end(self, observer, fut):
+        self.controller._install_event_finish()
+        observer.task_succeeded()
+
+    def cancel(self):
+        pass
+
 
 class PretendContainerManager:
 
@@ -339,24 +368,32 @@ class InstallProgressController(BaseController):
         pass
 
     def postinstall_configuration(self):
-        # If we need to do anything that takes time here (like running
-        # dpkg-reconfigure maas-rack-controller, for example...) we
-        # should switch to doing that work in a background thread.
         self.configure_cloud_init()
         self.copy_logs_to_target()
 
-        self._install_event_start("post install configuration")
-        self._install_event_start("starting container")
-
-        self.run_in_bg(self.cm.start_container, self._container_started)
+        self._install_event_start("applying final configuration")
+        controller = self
+        class w(TaskWatcher):
+            def task_complete(self, stage):
+                pass
+            def task_error(self, stage, info=None):
+                pass
+            def tasks_finished(self):
+                controller.loop.set_alarm_in(0.0, lambda loop, ud: controller.postinstall_complete())
+        tasks = [
+            ('start', InstallTask(self, "starting container", self.cm.start_container)),
+            ('wait', InstallTask(self, "waiting for cloud-init", self.cm.wait_for_cloudinit)),
+            ]
+        # will add tasks to install snaps here in due course
+        ts = TaskSequence(self.run_in_bg, tasks, w())
+        ts.run()
 
     def _container_started(self, fut):
         self._install_event_finish()
         self._install_event_start("waiting for boot to complete")
         self.run_in_bg(self.cm.wait_for_cloudinit, self.postinstall_complete)
 
-    def postinstall_complete(self, fut):
-        self._install_event_finish()
+    def postinstall_complete(self):
         self._install_event_finish()
         self.ui.set_header(_("Installation complete!"))
         self.progress_view.set_status(_("Finished install!"))
