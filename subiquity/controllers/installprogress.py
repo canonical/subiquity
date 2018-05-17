@@ -246,7 +246,7 @@ class InstallProgressController(BaseController):
         self.progress_view.show_complete(True)
         self.default()
 
-    def _bg_run_command_logged(self, cmd, env):
+    def _bg_run_command_logged(self, cmd, env=None):
         cmd = ['systemd-cat', '--level-prefix=false', '--identifier=' + self._log_syslog_identifier] + cmd
         return utils.run_command(cmd, env=env)
 
@@ -371,7 +371,11 @@ class InstallProgressController(BaseController):
         self.configure_cloud_init()
         self.copy_logs_to_target()
 
-        self._install_event_start("applying final configuration")
+        self.run_in_bg(
+            lambda: self._bg_run_command_logged(["tail", "-F", "/var/log/cloud-init-output.log"]),
+            lambda fut: None)
+
+        self._install_event_start("finalizing system configuration")
         controller = self
         class w(TaskWatcher):
             def task_complete(self, stage):
@@ -382,7 +386,7 @@ class InstallProgressController(BaseController):
                 controller.loop.set_alarm_in(0.0, lambda loop, ud: controller.postinstall_complete())
         tasks = [
             ('start', InstallTask(self, "starting container", self.cm.start_container)),
-            ('wait', InstallTask(self, "waiting for cloud-init", self.cm.wait_for_cloudinit)),
+            ('wait', InstallTask(self, "applying configuration", self.cm.wait_for_cloudinit)),
             ]
         # will add tasks to install snaps here in due course
         ts = TaskSequence(self.run_in_bg, tasks, w())
