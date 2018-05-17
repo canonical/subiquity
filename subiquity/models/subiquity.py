@@ -152,10 +152,6 @@ class SubiquityModel:
                     'path': 'etc/default/keyboard',
                     'content': self.keyboard.setting.render(),
                     },
-                'snapd_dropin': {
-                    'path': 'etc/environment',
-                    'content': self.proxy.etc_environment_content(),
-                    },
                 },
             }
 
