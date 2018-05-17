@@ -183,6 +183,7 @@ class WaitForCurtinEventsTask(BackgroundTask):
         except:
             observer.task_failed()
         else:
+            self.controller._install_event_start("finalizing system configuration")
             observer.task_succeeded()
 
 class InstallTask(BackgroundTask):
@@ -406,7 +407,6 @@ class InstallProgressController(BaseController):
             lambda: self._bg_run_command_logged(["tail", "-F", "/target/var/log/cloud-init-output.log"]),
             lambda fut: None)
 
-        self._install_event_start("finalizing system configuration")
         controller = self
         class w(TaskWatcher):
             def task_complete(self, stage):
