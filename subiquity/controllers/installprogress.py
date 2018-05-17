@@ -153,6 +153,24 @@ class ContainerManager(object):
         while 'default' not in self.run(["ip", "route"]):
             time.sleep(0.1)
 
+class PretendContainerManager:
+
+    def initialize_lxd(self):
+        log,debug("initialize_lxd")
+        time.sleep(4)
+
+    def create_container(self):
+        log,debug("create_container")
+        time.sleep(1)
+
+    def start_container(self):
+        log.debug("start_container")
+        time.sleep(1)
+
+    def wait_for_cloudinit(self):
+        log.debug("wait_for_cloudinit")
+        time.sleep(20)
+
 
 class InstallProgressController(BaseController):
     signals = [
@@ -172,9 +190,11 @@ class InstallProgressController(BaseController):
         self._event_indent = ""
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
-        self.cm = ContainerManager()
-        if not self.opts.dry_run:
-            self.run_in_bg(self._bg_setup_lxd, lambda fut:None)
+        if self.opts.dry_run:
+            self.cm = PretendContainerManager()
+        else:
+            self.cm = ContainerManager()
+        self.run_in_bg(self._bg_setup_lxd, lambda fut:None)
 
     def _bg_setup_lxd(self):
         self.cm.initialize_lxd()
