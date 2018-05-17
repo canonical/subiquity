@@ -244,14 +244,15 @@ class FetchingSSHKeysFailed(Stretchy):
         ok = other_btn(label=_("Close"), on_press=self.close)
         widgets = [
             Text(msg),
-            Text(stderr),
+            Text(""),
+            Text(stderr.strip('\n')),
             Text(""),
             button_pile([ok]),
             ]
         super().__init__(
             "",
             widgets,
-            1, 3)
+            2, 4)
     def close(self, sender):
         self.parent.remove_overlay()
 

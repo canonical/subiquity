@@ -75,54 +75,58 @@ class IdentityController(BaseController):
             pass # It's OK if the process has already terminated.
         self._fetching_proc = None
 
-    def _fetch_ssh_keys(self, result, proc, ssh_import_id):
+    def _bg_fetch_ssh_keys(self, user_spec, proc, ssh_import_id):
         stdout, stderr = proc.communicate()
         log_proc_ended(proc)
         if proc != self._fetching_proc:
             log.debug("_fetch_ssh_keys cancelled")
             return None
         if proc.returncode != 0:
-            raise FetchSSHKeysFailure(_("Importing keys failed:"), stderr.decode('latin-1'))
-        key_material = stdout.decode('latin-1').replace('\r', '').strip()
-        p = subprocess.Popen(
-            ['ssh-keygen', '-lf-'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
-        log_proc_started(p)
-        stdout, stderr = p.communicate(input=key_material.encode('latin-1'))
-        log_proc_ended(p)
+            raise FetchSSHKeysFailure(_("Importing keys failed:"), stderr)
+        key_material = stdout.replace('\r', '').strip()
+
+        p = subprocess.run(
+            ['ssh-keygen', '-lf-'],
+            encoding='utf-8',
+            input=key_material,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if p.returncode != 0:
-            return FetchSSHKeysFailure(_("ssh-keygen failed to show fingerprint of downloaded keys:"), stderr.decode('utf-8'))
-        fingerprints = stdout.decode('utf-8').replace("# ssh-import-id {} ".format(ssh_import_id), "").strip().splitlines()
-        return result, key_material, fingerprints
+            return FetchSSHKeysFailure(_("ssh-keygen failed to show fingerprint of downloaded keys:"), p.stderr)
+        fingerprints = p.stdout.replace("# ssh-import-id {} ".format(ssh_import_id), "").strip().splitlines()
+
+        return user_spec, key_material, fingerprints
 
     def _fetched_ssh_keys(self, fut):
         try:
             result = fut.result()
         except FetchSSHKeysFailure as e:
+            log.debug("fetching ssh keys failed %s", e)
             self.ui.frame.body.fetching_ssh_keys_failed(e.message, e.output)
         else:
             log.debug("_fetched_ssh_keys %s", result)
             if result is None:
                 # Happens if the fetch is cancelled.
                 return
-            result, key_material, fingerprints = result
+            user_spec, key_material, fingerprints = result
             if 'ssh_import_id' in self.answers:
-                result['ssh_keys'] = key_material.splitlines()
-                self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
+                user_spec['ssh_keys'] = key_material.splitlines()
+                self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(user_spec))
             else:
                 self.ui.frame.body.confirm_ssh_keys(result, key_material, fingerprints)
 
-    def fetch_ssh_keys(self, result, ssh_import_id):
-        log.debug('fetching ssh keys for %s', ssh_import_id)
+    def fetch_ssh_keys(self, user_spec, ssh_import_id):
+        log.debug("User input: %s, fetching ssh keys for %s", user_spec, ssh_import_id)
         self._fetching_proc = subprocess.Popen(
             ['ssh-import-id', '-o-', ssh_import_id],
+            encoding='utf-8',
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         log_proc_started(self._fetching_proc)
         self.run_in_bg(
-            lambda: self._fetch_ssh_keys(result, self._fetching_proc, ssh_import_id),
+            lambda: self._bg_fetch_ssh_keys(user_spec, self._fetching_proc, ssh_import_id),
             self._fetched_ssh_keys)
 
-    def done(self, result):
-        log.debug("User input: {}".format(result))
-        self.model.add_user(result)
+    def done(self, user_spec):
+        log.debug("User input: {}".format(user_spec))
+        self.model.add_user(user_spec)
         self.signal.emit_signal('installprogress:identity-config-done')
         self.signal.emit_signal('next-screen')
