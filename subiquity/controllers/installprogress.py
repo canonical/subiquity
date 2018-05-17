@@ -161,6 +161,27 @@ class ContainerManager(object):
             time.sleep(0.1)
 
 
+class WaitForCurtinEventsTask(BackgroundTask):
+
+    def __init__(self, controller):
+        self.controller = controller
+
+    def start(self):
+        pass
+
+    def run(self):
+        while self.controller._event_indent:
+            time.sleep(1)
+
+    def end(self, observer, fut):
+        try:
+            fut.result()
+        except:
+            observer.task_failed()
+        else:
+            self.controller._install_event_finish()
+            observer.task_succeeded()
+
 class InstallTask(BackgroundTask):
 
     def __init__(self, controller, step_name, func, *args, **kw):
@@ -192,11 +213,11 @@ class InstallTask(BackgroundTask):
 class PretendContainerManager:
 
     def initialize_lxd(self):
-        log,debug("initialize_lxd")
+        log.debug("initialize_lxd")
         time.sleep(4)
 
     def create_container(self):
-        log,debug("create_container")
+        log.debug("create_container")
         time.sleep(1)
 
     def start_container(self):
@@ -379,7 +400,7 @@ class InstallProgressController(BaseController):
         self.copy_logs_to_target()
 
         self.run_in_bg(
-            lambda: self._bg_run_command_logged(["tail", "-F", "/var/log/cloud-init-output.log"]),
+            lambda: self._bg_run_command_logged(["tail", "-F", "/target/var/log/cloud-init-output.log"]),
             lambda fut: None)
 
         self._install_event_start("finalizing system configuration")
@@ -392,6 +413,7 @@ class InstallProgressController(BaseController):
             def tasks_finished(self):
                 controller.loop.set_alarm_in(0.0, lambda loop, ud: controller.postinstall_complete())
         tasks = [
+            ('drain', WaitForCurtinEventsTask(self)),
             ('start', InstallTask(self, "starting container", self.cm.start_container)),
             ('wait', InstallTask(self, "applying configuration", self.cm.wait_for_cloudinit)),
             ]
