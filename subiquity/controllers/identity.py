@@ -23,6 +23,17 @@ from subiquity.ui.views import IdentityView
 
 log = logging.getLogger('subiquity.controllers.identity')
 
+def log_proc_started(proc):
+    log.debug("running %s", proc.args)
+
+def log_proc_ended(proc):
+    log.debug("%s terminated with code %s", proc.args, proc.returncode)
+
+
+class FetchSSHKeysFailure(Exception):
+    def __init__(self, message, output):
+        self.message = message
+        self.output = output
 
 class IdentityController(BaseController):
 
@@ -64,42 +75,48 @@ class IdentityController(BaseController):
             pass # It's OK if the process has already terminated.
         self._fetching_proc = None
 
-    def _fetch_ssh_keys(self, result, p, ssh_import_id):
-        stdout, stderr = p.communicate()
-        if p != self._fetching_proc:
+    def _fetch_ssh_keys(self, result, proc, ssh_import_id):
+        stdout, stderr = proc.communicate()
+        log_proc_ended(proc)
+        if proc != self._fetching_proc:
             log.debug("_fetch_ssh_keys cancelled")
             return None
-        status = run_command_summarize(p, stdout, stderr)
-        if status['status'] != 0:
-            return False, _("Importing keys failed"), stdout
-        key_material = status['output'].replace('\r', '').strip()
+        if proc.returncode != 0:
+            raise FetchSSHKeysFailure(_("Importing keys failed:"), stderr.decode('latin-1'))
+        key_material = stdout.decode('latin-1').replace('\r', '').strip()
         p = subprocess.Popen(
             ['ssh-keygen', '-lf-'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+        log_proc_started(p)
         stdout, stderr = p.communicate(input=key_material.encode('latin-1'))
+        log_proc_ended(p)
         if p.returncode != 0:
-            # Do better here!
-            return False, _("ssh-keygen failed"), stderr.decode('utf-8')
+            return FetchSSHKeysFailure(_("ssh-keygen failed to show fingerprint of downloaded keys:"), stderr.decode('utf-8'))
         fingerprints = stdout.decode('utf-8').replace("# ssh-import-id {} ".format(ssh_import_id), "").strip().splitlines()
-        return True, result, key_material, fingerprints
+        return result, key_material, fingerprints
 
     def _fetched_ssh_keys(self, fut):
-        result = fut.result()
-        log.debug("_fetched_ssh_keys %s", result)
-        if result is not None:
-            ok, rest = result[0], result[1:]
-            if ok:
-                result, key_material, fingerprints = rest
-                if 'ssh_import_id' in self.answers:
-                    result['ssh_keys'] = key_material.splitlines()
-                    self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
-                else:
-                    self.ui.frame.body.confirm_ssh_keys(result, key_material, fingerprints)
+        try:
+            result = fut.result()
+        except FetchSSHKeysFailure as e:
+            self.ui.frame.body.fetching_ssh_keys_failed(e.message, e.output)
+        else:
+            log.debug("_fetched_ssh_keys %s", result)
+            if result is None:
+                # Happens if the fetch is cancelled.
+                return
+            result, key_material, fingerprints = result
+            if 'ssh_import_id' in self.answers:
+                result['ssh_keys'] = key_material.splitlines()
+                self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(result))
             else:
-                msg, stderr = rest
-                self.ui.frame.body.fetching_ssh_keys_failed(msg, stderr)
+                self.ui.frame.body.confirm_ssh_keys(result, key_material, fingerprints)
 
     def fetch_ssh_keys(self, result, ssh_import_id):
-        self._fetching_proc = run_command_start(['ssh-import-id', '-o-', ssh_import_id])
+        log.debug('fetching ssh keys for %s', ssh_import_id)
+        self._fetching_proc = subprocess.Popen(
+            ['ssh-import-id', '-o-', ssh_import_id],
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        log_proc_started(self._fetching_proc)
         self.run_in_bg(
             lambda: self._fetch_ssh_keys(result, self._fetching_proc, ssh_import_id),
             self._fetched_ssh_keys)
