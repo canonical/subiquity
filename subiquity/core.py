@@ -19,7 +19,7 @@ from subiquitycore.core import Application
 
 from subiquity.models.subiquity import SubiquityModel
 
-log = logging.getLogger('console_conf.core')
+log = logging.getLogger('subiquity.core')
 
 
 class Subiquity(Application):
