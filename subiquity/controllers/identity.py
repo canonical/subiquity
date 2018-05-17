@@ -17,11 +17,11 @@ import logging
 import subprocess
 
 from subiquitycore.controller import BaseController
-from subiquitycore.utils import run_command_start, run_command_summarize
 
 from subiquity.ui.views import IdentityView
 
 log = logging.getLogger('subiquity.controllers.identity')
+
 
 def log_proc_started(proc):
     log.debug("running %s", proc.args)
