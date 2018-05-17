@@ -54,7 +54,9 @@ lxc.hook.pre-start = 'sh -c "mkdir -p $LXC_ROOTFS_PATH && mount --bind /target $
 lxc.hook.post-stop = 'sh -c "umount $LXC_ROOTFS_PATH"'
 '''
 
+
 class ContainerManager(object):
+
     def __init__(self):
         self.container_name = 'target'
         self.nic_name = 'lxd-nic'
@@ -116,28 +118,28 @@ class ContainerManager(object):
             })
 
     def initialize_lxd(self):
-        subprocess.run(
+        utils.run_command(
             ["lxd", "init", "--preseed"],
             input=self.preseed().encode('ascii'),
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             check=True)
 
     def create_container(self):
-        subprocess.run(
+        utils.run_command(
             ["lxc", "query", "--wait", "--request", "POST", "--data", self.container_config(), "/1.0/containers"],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             check=True)
 
     def start_container(self):
-        subprocess.run(
+        utils.run_command(
             ["lxc", "start", self.container_name],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             check=True)
 
     def run(self, cmd):
-        p = subprocess.run(
+        p = utils.run_command(
             ["lxc", "exec", self.container_name, "--"] + cmd,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -149,7 +151,7 @@ class ContainerManager(object):
 
     def enable_networking(self):
         self.run(["mkdir",  "-p", "/run/netplan"])
-        subprocess.run(
+        utils.run_command
             ["lxc", "file", "push", "-", self.container_name + "/run/netplan/tmp.yaml"],
             input=self.netplan_for_container().encode('ascii'),
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -175,8 +177,13 @@ class InstallTask(BackgroundTask):
         self.func(*self.args, **self.kw)
 
     def end(self, observer, fut):
-        self.controller._install_event_finish()
-        observer.task_succeeded()
+        try:
+            fut.result()
+        except:
+            observer.task_failed()
+        else:
+            self.controller._install_event_finish()
+            observer.task_succeeded()
 
     def cancel(self):
         pass
@@ -381,7 +388,7 @@ class InstallProgressController(BaseController):
             def task_complete(self, stage):
                 pass
             def task_error(self, stage, info=None):
-                pass
+                controller.curtin_error()
             def tasks_finished(self):
                 controller.loop.set_alarm_in(0.0, lambda loop, ud: controller.postinstall_complete())
         tasks = [
@@ -391,11 +398,6 @@ class InstallProgressController(BaseController):
         # will add tasks to install snaps here in due course
         ts = TaskSequence(self.run_in_bg, tasks, w())
         ts.run()
-
-    def _container_started(self, fut):
-        self._install_event_finish()
-        self._install_event_start("waiting for boot to complete")
-        self.run_in_bg(self.cm.wait_for_cloudinit, self.postinstall_complete)
 
     def postinstall_complete(self):
         self._install_event_finish()
