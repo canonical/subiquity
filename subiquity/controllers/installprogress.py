@@ -165,13 +165,17 @@ class WaitForCurtinEventsTask(BackgroundTask):
 
     def __init__(self, controller):
         self.controller = controller
+        self.waited = 0
 
     def start(self):
         pass
 
     def run(self):
-        while self.controller._event_indent:
+        while self.controller._event_indent and self.waited < 10:
+            log.debug("_event_indent %r waiting", self.controller._event_indent)
             time.sleep(1)
+            self.waited += 1
+        log.debug("waited %s for events to drain", self.waited)
 
     def end(self, observer, fut):
         try:
@@ -179,7 +183,6 @@ class WaitForCurtinEventsTask(BackgroundTask):
         except:
             observer.task_failed()
         else:
-            self.controller._install_event_finish()
             observer.task_succeeded()
 
 class InstallTask(BackgroundTask):
@@ -292,8 +295,8 @@ class InstallProgressController(BaseController):
         self.footer_spinner.start()
 
     def _install_event_finish(self):
-        log.debug("_install_event_finish")
         self._event_indent = self._event_indent[:-2]
+        log.debug("_install_event_finish %r", self._event_indent)
         self.footer_spinner.stop()
 
     def curtin_event(self, event):
