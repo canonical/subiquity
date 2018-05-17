@@ -208,12 +208,14 @@ class InstallProgressController(BaseController):
             self.curtin_log(event)
 
     def _install_event_start(self, message):
+        log.debug("_install_event_start %s", message)
         self.footer_description.set_text(message)
         self.progress_view.add_event(self._event_indent + message)
         self._event_indent += "  "
         self.footer_spinner.start()
 
     def _install_event_finish(self):
+        log.debug("_install_event_finish")
         self._event_indent = self._event_indent[:-2]
         self.footer_spinner.stop()
 
