@@ -331,7 +331,7 @@ class InstallProgressController(BaseController):
     def _container_started(self, fut):
         self._install_event_finish()
         self._install_event_start("waiting for boot to complete")
-        self.run_in_bg(self.cm.wait_for_cloudinit, self.postinstall_configuration)
+        self.run_in_bg(self.cm.wait_for_cloudinit, self.postinstall_complete)
 
     def postinstall_complete(self, fut):
         self._install_event_finish()
