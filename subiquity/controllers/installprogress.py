@@ -163,7 +163,7 @@ class WaitForCurtinEventsTask(BackgroundTask):
     def start(self):
         pass
 
-    def run(self):
+    def _bg_run(self):
         while self.controller._event_indent and self.waited < 10:
             log.debug("_event_indent %r waiting", self.controller._event_indent)
             time.sleep(1)
@@ -174,6 +174,7 @@ class WaitForCurtinEventsTask(BackgroundTask):
         try:
             fut.result()
         except:
+            log.exception("WaitForCurtinEventsTask failed:")
             observer.task_failed()
         else:
             self.controller._install_event_start("finalizing system configuration")
@@ -191,13 +192,14 @@ class InstallTask(BackgroundTask):
     def start(self):
         self.controller._install_event_start(self.step_name)
 
-    def run(self):
+    def _bg_run(self):
         self.func(*self.args, **self.kw)
 
     def end(self, observer, fut):
         try:
             fut.result()
         except:
+            log.exception("InstallTask failed:")
             observer.task_failed()
         else:
             self.controller._install_event_finish()
@@ -223,7 +225,7 @@ class PretendContainerManager:
 
     def wait_for_cloudinit(self):
         log.debug("wait_for_cloudinit")
-        time.sleep(20)
+        time.sleep(4)
 
 
 class InstallProgressController(BaseController):
@@ -407,7 +409,7 @@ class InstallProgressController(BaseController):
             def task_error(self, stage, info=None):
                 controller.curtin_error()
             def tasks_finished(self):
-                controller.loop.set_alarm_in(0.0, lambda loop, ud: controller.postinstall_complete())
+                controller.postinstall_complete()
         tasks = [
             ('drain', WaitForCurtinEventsTask(self)),
             ('start', InstallTask(self, "starting container", self.cm.start_container)),
