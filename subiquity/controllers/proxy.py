@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 
 from subiquitycore.controller import BaseController
 
@@ -42,4 +43,6 @@ class ProxyController(BaseController):
 
     def done(self, proxy):
         self.model.proxy = proxy
+        os.environ['http_proxy'] = os.environ['https_proxy'] = proxy
+        self.signal.emit_signal('network-proxy-set')
         self.signal.emit_signal('next-screen')

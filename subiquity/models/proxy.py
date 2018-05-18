@@ -17,8 +17,18 @@ import logging
 
 log = logging.getLogger('subiquitycore.models.proxy')
 
+dropin_template = '''\
+[Service]
+Environment="HTTP_PROXY={proxy}"
+Environment="HTTPS_PROXY={proxy}"
+EOF
+'''
+
 
 class ProxyModel(object):
 
     def __init__(self):
         self.proxy = ""
+
+    def proxy_systemd_dropin(self):
+        return dropin_template.format(self.proxy)
