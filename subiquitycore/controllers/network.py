@@ -51,7 +51,7 @@ class BackgroundTask:
         """
         raise NotImplementedError(self.start)
 
-    def run(self):
+    def _bg_run(self):
         """Run the task.
 
         This is called on an arbitrary thread so don't do UI stuff!
@@ -89,7 +89,7 @@ class BackgroundProcess(BackgroundTask):
     def start(self):
         self.proc = run_command_start(self.cmd)
 
-    def run(self):
+    def _bg_run(self):
         stdout, stderr = self.proc.communicate()
         return run_command_summarize(self.proc, stdout, stderr)
 
@@ -121,7 +121,7 @@ class PythonSleep(BackgroundTask):
     def start(self):
         pass
 
-    def run(self):
+    def _bg_run(self):
         r, _, _ = select.select([self.r], [], [], self.duration)
         if not r:
             return True
@@ -156,7 +156,7 @@ class DownNetworkDevices(BackgroundTask):
                 # We don't actually care very much about this
                 log.exception('unset_link_flags failed for %s', dev.name)
 
-    def run(self):
+    def _bg_run(self):
         return True
 
     def end(self, observer, fut):
@@ -186,7 +186,7 @@ class WaitForDefaultRouteTask(BackgroundTask):
         self.success_r, self.success_w = os.pipe()
         self.event_receiver.add_default_route_waiter(self.got_route)
 
-    def run(self):
+    def _bg_run(self):
         try:
             r, _, _ = select.select([self.fail_r, self.success_r], [], [], self.timeout)
             return self.success_r in r
@@ -229,7 +229,7 @@ class TaskSequence:
         self.tasks = self.tasks[1:]
         log.debug('running %s for stage %s', self.curtask, self.stage)
         self.curtask.start()
-        self.run_in_bg(self.curtask.run, lambda fut:self.curtask.end(self, fut))
+        self.run_in_bg(self.curtask._bg_run, lambda fut:self.curtask.end(self, fut))
 
     def task_succeeded(self):
         if self.canceled:

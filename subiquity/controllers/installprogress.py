@@ -76,7 +76,7 @@ class InstallProgressController(BaseController):
         self.progress_view.show_complete(True)
         self.default()
 
-    def run_command_logged(self, cmd, env):
+    def _bg_run_command_logged(self, cmd, env):
         log.debug("running %s", cmd)
         cmd = ['systemd-cat', '--level-prefix=false', '--identifier=' + self._log_syslog_identifier] + cmd
         cp = subprocess.run(cmd, env=env)
@@ -171,7 +171,7 @@ class InstallProgressController(BaseController):
         if 'SNAP' in env:
             del env['SNAP']
         self.run_in_bg(
-            lambda: self.run_command_logged(curtin_cmd, env),
+            lambda: self._bg_run_command_logged(curtin_cmd, env),
             self.curtin_install_completed)
 
     def curtin_install_completed(self, fut):
