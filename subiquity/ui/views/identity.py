@@ -257,6 +257,9 @@ class FetchingSSHKeysFailed(Stretchy):
         self.parent.remove_overlay()
 
 class IdentityView(BaseView):
+    title = _("Profile setup")
+    excerpt = _("Enter the username and password (or ssh identity) you will use to log in to the system.")
+
     def __init__(self, model, controller, opts):
         self.model = model
         self.controller = controller
@@ -273,7 +276,8 @@ class IdentityView(BaseView):
         super().__init__(
             screen(
                 self.form.as_rows(),
-                button_pile([self.form.done_btn]),
+                [self.form.done_btn],
+                excerpt=_(self.excerpt),
                 focus_buttons=False))
         self.form_rows = self._w[1]
 
