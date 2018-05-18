@@ -55,10 +55,6 @@ class FilesystemController(BaseController):
         self.model.probe()  # probe before we complete
 
     def default(self):
-        title = _("Filesystem setup")
-        footer = (_("Choose guided or manual partitioning"))
-        self.ui.set_header(title)
-        self.ui.set_footer(footer)
         self.ui.set_body(GuidedFilesystemView(self))
         if self.answers['guided']:
             self.guided()
@@ -66,19 +62,11 @@ class FilesystemController(BaseController):
             self.manual()
 
     def manual(self):
-        title = _("Filesystem setup")
-        footer = (_("Select available disks to format and mount"))
-        self.ui.set_header(title)
-        self.ui.set_footer(footer)
         self.ui.set_body(FilesystemView(self.model, self))
         if self.answers['guided']:
             self.finish()
 
     def guided(self):
-        title = _("Filesystem setup")
-        footer = (_("Choose the installation target"))
-        self.ui.set_header(title)
-        self.ui.set_footer(footer)
         v = GuidedDiskSelectionView(self.model, self)
         self.ui.set_body(v)
         if self.answers['guided']:
@@ -94,14 +82,6 @@ class FilesystemController(BaseController):
     def cancel(self):
         self.signal.emit_signal('prev-screen')
 
-    def filesystem_error(self, error_fname):
-        title = _("Filesystem error")
-        footer = (_("Error while installing Ubuntu"))
-        error_msg = _("Failed to obtain write permissions to /tmp")
-        self.ui.set_header(title)
-        self.ui.set_footer(footer)
-        self.ui.set_body(ErrorView(self.signal, error_msg))
-
     def finish(self):
         # start curtin install in background
         self.signal.emit_signal('installprogress:filesystem-config-done')
@@ -111,26 +91,17 @@ class FilesystemController(BaseController):
     # Filesystem/Disk partition -----------------------------------------------
     def partition_disk(self, disk):
         log.debug("In disk partition view, using {} as the disk.".format(disk.label))
-        title = (_("Partition, format, and mount {}").format(disk.label))
-        footer = (_("Partition the disk, or format the entire device "
-                  "without partitions"))
-        self.ui.set_header(title)
-        self.ui.set_footer(footer)
         dp_view = DiskPartitionView(self.model, self, disk)
 
         self.ui.set_body(dp_view)
 
     def add_disk_partition(self, disk):
         log.debug("Adding partition to {}".format(disk))
-        footer = _("Select whole disk, or partition, to format and mount.")
-        self.ui.set_footer(footer)
         adp_view = PartitionView(self.model, self, disk)
         self.ui.set_body(adp_view)
 
     def edit_partition(self, disk, partition):
         log.debug("Editing partition {}".format(partition))
-        footer = _("Edit partition details format and mount.")
-        self.ui.set_footer(footer)
         adp_view = PartitionView(self.model, self, disk, partition)
         self.ui.set_body(adp_view)
 
@@ -295,23 +266,11 @@ class FilesystemController(BaseController):
 
     def format_entire(self, disk):
         log.debug("format_entire {}".format(disk.label))
-        header = (_("Format and/or mount {}").format(disk.label))
-        footer = _("Format or mount whole disk.")
-        self.ui.set_header(header)
-        self.ui.set_footer(footer)
         afv_view = FormatEntireView(self.model, self, disk, lambda : self.partition_disk(disk))
         self.ui.set_body(afv_view)
 
     def format_mount_partition(self, partition):
         log.debug("format_mount_partition {}".format(partition))
-        if partition.fs() is not None:
-            header = (_("Mount partition {} of {}").format(partition._number, partition.device.label))
-            footer = _("Mount partition.")
-        else:
-            header = (_("Format and mount partition {} of {}").format(partition._number, partition.device.label))
-            footer = _("Format and mount partition.")
-        self.ui.set_header(header)
-        self.ui.set_footer(footer)
         afv_view = FormatEntireView(self.model, self, partition, self.manual)
         self.ui.set_body(afv_view)
 
@@ -380,8 +339,6 @@ class FilesystemController(BaseController):
         result = template.format(**dinfo)
         log.debug('calling DiskInfoView()')
         disk_info_view = DiskInfoView(self.model, self, disk, result)
-        footer = _('Select next or previous disks with n and p')
-        self.ui.set_footer(footer)
         self.ui.set_body(disk_info_view)
 
     def is_uefi(self):

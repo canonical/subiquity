@@ -75,6 +75,9 @@ class FilesystemConfirmation(Stretchy):
 
 
 class FilesystemView(BaseView):
+    title = _("Filesystem setup")
+    footer = _("Select available disks to format and mount")
+
     def __init__(self, model, controller):
         log.debug('FileSystemView init start()')
         self.model = model
@@ -99,7 +102,7 @@ class FilesystemView(BaseView):
         #]
 
         self.lb = Padding.center_95(ListBox(body))
-        self.footer = Pile([
+        bottom = Pile([
                 Text(""),
                 self._build_buttons(),
                 Text(""),
@@ -107,7 +110,7 @@ class FilesystemView(BaseView):
         self.frame = Pile([
             ('pack', Text("")),
             self.lb,
-            ('pack', self.footer)])
+            ('pack', bottom)])
         if self.model.can_install():
             self.frame.focus_position = 2
         super().__init__(self.frame)

@@ -28,10 +28,14 @@ log = logging.getLogger('subiquity.ui.filesystem.disk_partition')
 
 
 class DiskPartitionView(BaseView):
+    footer = (_("Partition the disk, or format the entire device "
+              "without partitions"))
+
     def __init__(self, model, controller, disk):
         self.model = model
         self.controller = controller
         self.disk = disk
+        self.title = _("Partition, format, and mount {}").format(disk.label)
 
         self.body = Pile([
             ('pack', Text("")),
