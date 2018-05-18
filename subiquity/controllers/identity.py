@@ -14,20 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import subprocess
 
 from subiquitycore.controller import BaseController
+from subiquitycore import utils
 
 from subiquity.ui.views import IdentityView
 
 log = logging.getLogger('subiquity.controllers.identity')
-
-
-def log_proc_started(proc):
-    log.debug("running %s", proc.args)
-
-def log_proc_ended(proc):
-    log.debug("%s terminated with code %s", proc.args, proc.returncode)
 
 
 class FetchSSHKeysFailure(Exception):
@@ -77,7 +70,7 @@ class IdentityController(BaseController):
 
     def _bg_fetch_ssh_keys(self, user_spec, proc, ssh_import_id):
         stdout, stderr = proc.communicate()
-        log_proc_ended(proc)
+        log.debug("ssh-import-id exited with code %s", proc.returncode)
         if proc != self._fetching_proc:
             log.debug("_fetch_ssh_keys cancelled")
             return None
@@ -85,14 +78,10 @@ class IdentityController(BaseController):
             raise FetchSSHKeysFailure(_("Importing keys failed:"), stderr)
         key_material = stdout.replace('\r', '').strip()
 
-        p = subprocess.run(
-            ['ssh-keygen', '-lf-'],
-            encoding='utf-8',
-            input=key_material,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if p.returncode != 0:
+        cp = utils.run_command(['ssh-keygen', '-lf-'], input=key_material)
+        if cp.returncode != 0:
             return FetchSSHKeysFailure(_("ssh-keygen failed to show fingerprint of downloaded keys:"), p.stderr)
-        fingerprints = p.stdout.replace("# ssh-import-id {} ".format(ssh_import_id), "").strip().splitlines()
+        fingerprints = cp.stdout.replace("# ssh-import-id {} ".format(ssh_import_id), "").strip().splitlines()
 
         return user_spec, key_material, fingerprints
 
@@ -116,11 +105,7 @@ class IdentityController(BaseController):
 
     def fetch_ssh_keys(self, user_spec, ssh_import_id):
         log.debug("User input: %s, fetching ssh keys for %s", user_spec, ssh_import_id)
-        self._fetching_proc = subprocess.Popen(
-            ['ssh-import-id', '-o-', ssh_import_id],
-            encoding='utf-8',
-            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        log_proc_started(self._fetching_proc)
+        self._fetching_proc = utils.start_command(['ssh-import-id', '-o-', ssh_import_id])
         self.run_in_bg(
             lambda: self._bg_fetch_ssh_keys(user_spec, self._fetching_proc, ssh_import_id),
             self._fetched_ssh_keys)
