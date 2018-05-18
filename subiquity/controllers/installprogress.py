@@ -182,12 +182,6 @@ class InstallProgressController(BaseController):
             return
         self.install_state = InstallState.DONE
         log.debug('After curtin install OK')
-        self.loop.set_alarm_in(0.01, lambda loop, userdata: self.install_complete())
-
-    def cancel(self):
-        pass
-
-    def install_complete(self):
         self.ui.progress_current += 1
         if not self.progress_view_showing:
             self.ui.set_footer(_("Install complete"))
@@ -196,6 +190,9 @@ class InstallProgressController(BaseController):
             self.ui.set_footer(_("Thank you for using Ubuntu!"))
         if self._identity_config_done:
             self.postinstall_configuration()
+
+    def cancel(self):
+        pass
 
     def postinstall_configuration(self):
         # If we need to do anything that takes time here (like running
@@ -209,7 +206,7 @@ class InstallProgressController(BaseController):
         self.progress_view.show_complete()
 
         if self.answers['reboot']:
-            self.loop.set_alarm_in(0.01, lambda loop, userdata: self.reboot())
+            self.reboot()
 
     def configure_cloud_init(self):
         if self.opts.dry_run:

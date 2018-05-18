@@ -445,7 +445,7 @@ class NetworkController(BaseController):
 
     def tasks_finished(self):
         self.signal.emit_signal('network-config-written', self.netplan_path)
-        self.loop.set_alarm_in(0.0, lambda loop, ud: self.signal.emit_signal('next-screen'))
+        self.signal.emit_signal('next-screen')
 
     def set_default_v4_route(self):
         self.ui.set_header("Default route")
