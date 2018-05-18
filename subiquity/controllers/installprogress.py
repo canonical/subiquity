@@ -120,29 +120,23 @@ class ContainerManager(object):
     def initialize_lxd(self):
         utils.run_command(
             ["lxd", "init", "--preseed"],
-            input=self.preseed().encode('ascii'),
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            input=self.preseed(),
             check=True)
 
     def create_container(self):
         utils.run_command(
             ["lxc", "query", "--wait", "--request", "POST", "--data", self.container_config(), "/1.0/containers"],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             check=True)
 
     def start_container(self):
         utils.run_command(
             ["lxc", "start", self.container_name],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             check=True)
 
     def run(self, cmd):
         p = utils.run_command(
             ["lxc", "exec", self.container_name, "--"] + cmd,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            stderr=subprocess.STDOUT,
             check=True)
         return p.stdout
 
@@ -151,10 +145,9 @@ class ContainerManager(object):
 
     def enable_networking(self):
         self.run(["mkdir",  "-p", "/run/netplan"])
-        utils.run_command
+        utils.run_command(
             ["lxc", "file", "push", "-", self.container_name + "/run/netplan/tmp.yaml"],
-            input=self.netplan_for_container().encode('ascii'),
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            input=self.netplan_for_container(),
             check=True)
         self.run(["netplan", "apply"])
         while 'default' not in self.run(["ip", "route"]):
