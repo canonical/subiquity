@@ -112,7 +112,7 @@ def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PI
         kw['stdin'] = subprocess.DEVNULL
     log.debug("run_command called: %s", cmd)
     try:
-        cp = subprocess.run(cmd, input=input, encoding=encoding, env=_clean_env(env), **kw)
+        cp = subprocess.run(cmd, input=input, stdout=stdout, stderr=stderr, encoding=encoding, env=_clean_env(env), **kw)
     except subprocess.CalledProcessError as e:
         log.debug("run_command %s", str(e))
         raise
