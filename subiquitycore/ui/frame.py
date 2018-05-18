@@ -38,11 +38,7 @@ class SubiquityUI(WidgetWrap):
     def keypress(self, size, key):
         return super().keypress(size, key)
 
-    def set_header(self, title=None, excerpt=None):
-        self.frame.header = Header(title, excerpt)
-
-    def set_footer(self, message):
-        self.frame.footer = Footer(message, self.progress_current, self.progress_completion)
-
     def set_body(self, widget):
+        self.frame.header = Header(_(widget.title))
         self.frame.body = widget
+        self.frame.footer = Footer(_(widget.footer), self.progress_current, self.progress_completion)

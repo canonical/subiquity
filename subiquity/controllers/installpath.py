@@ -32,16 +32,6 @@ class InstallpathController(BaseController):
         self.answers = self.all_answers.get("Installpath", {})
 
     def installpath(self):
-        title = "Ubuntu %s"%(lsb_release.get_distro_information()['RELEASE'],)
-        excerpt = _("Welcome to Ubuntu! The world's favourite platform "
-                   "for clouds, clusters, and amazing internet things. "
-                   "This is the installer for Ubuntu on servers and "
-                   "internet devices.")
-        footer = _("Use UP, DOWN arrow keys, and ENTER, to "
-                  "navigate options")
-
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
         self.ui.set_body(InstallpathView(self.model, self))
         if 'path' in self.answers:
             path = self.answers['path']
@@ -75,9 +65,7 @@ class InstallpathController(BaseController):
             "individually, MAAS turns your bare metal into an elastic "
             "cloud-like resource. \n\nFor further details, see https://maas.io/."
             )
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer("")
-        self.ui.set_body(MAASView(self.model, self))
+        self.ui.set_body(MAASView(self.model, self, title, excerpt))
 
     def install_maas_rack(self):
         # show cack questions, seed model
@@ -89,9 +77,7 @@ class InstallpathController(BaseController):
             "region controller."
             )
 
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer("")
-        self.ui.set_body(MAASView(self.model, self))
+        self.ui.set_body(MAASView(self.model, self, title, excerpt))
 
     def setup_maas(self, result):
         self.model.update(result)

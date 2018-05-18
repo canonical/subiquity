@@ -358,13 +358,6 @@ class NetworkController(BaseController):
         self.signal.emit_signal('prev-screen')
 
     def default(self):
-        title = _("Network connections")
-        excerpt = _("Configure at least one interface this server can use to talk to "
-                   "other machines, and which preferably provides sufficient access for "
-                   "updates.")
-        footer = _("Select an interface to configure it or select Done to continue")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
         self.ui.set_body(NetworkView(self.model, self))
         if self.answers.get('accept-default', False):
             self.network_finish(self.model.render())
@@ -448,35 +441,27 @@ class NetworkController(BaseController):
         self.signal.emit_signal('next-screen')
 
     def set_default_v4_route(self):
-        self.ui.set_header("Default route")
+        #self.ui.set_header("Default route")
         self.ui.set_body(NetworkSetDefaultRouteView(self.model, socket.AF_INET, self))
 
     def set_default_v6_route(self):
-        self.ui.set_header("Default route")
+        #self.ui.set_header("Default route")
         self.ui.set_body(NetworkSetDefaultRouteView(self.model, socket.AF_INET6, self))
 
     def bond_interfaces(self):
-        self.ui.set_header("Bond interfaces")
+        #self.ui.set_header("Bond interfaces")
         self.ui.set_body(NetworkBondInterfacesView(self.model, self))
 
     def network_configure_interface(self, iface):
-        self.ui.set_header(_("Network interface {}").format(iface))
-        self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureInterfaceView(self.model, self, iface))
 
     def network_configure_ipv4_interface(self, iface):
-        self.ui.set_header(_("Network interface {} manual IPv4 configuration").format(iface))
-        self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureIPv4InterfaceView(self.model, self, iface))
 
     def network_configure_wlan_interface(self, iface):
-        self.ui.set_header(_("Network interface {} WIFI configuration").format(iface))
-        self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureWLANView(self.model, self, iface))
 
     def network_configure_ipv6_interface(self, iface):
-        self.ui.set_header(_("Network interface {} manual IPv6 configuration").format(iface))
-        self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureIPv6InterfaceView(self.model, self, iface))
 
     def install_network_driver(self):

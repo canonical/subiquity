@@ -25,6 +25,8 @@ from urwid import Columns, Overlay, Pile, Text, WidgetWrap
 
 class BaseView(WidgetWrap):
 
+    footer = ""
+
     def show_overlay(self, overlay_widget, **kw):
         args = dict(
             align='center',

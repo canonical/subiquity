@@ -28,10 +28,12 @@ log = logging.getLogger('subiquitycore.network.network_configure_interface')
 choice_btn = _stylized_button("", "", "menu")
 
 class NetworkConfigureInterfaceView(BaseView):
+
     def __init__(self, model, controller, name):
         self.model = model
         self.controller = controller
         self.dev = self.model.get_netdev_by_name(name)
+        self.title = _("Network interface {}").format(name)
         self._build_widgets()
         super().__init__(Pile([
             ('pack', Text("")),

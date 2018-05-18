@@ -362,8 +362,10 @@ class Form(object, metaclass=MetaForm):
         del rows[-1:]
         return rows
 
-    def as_screen(self, focus_buttons=True):
-        return screen(self.as_rows(), self.buttons, focus_buttons=focus_buttons)
+    def as_screen(self, focus_buttons=True, excerpt=None):
+        return screen(
+            self.as_rows(), self.buttons,
+            focus_buttons=focus_buttons, excerpt=excerpt)
 
     def validated(self):
         in_error = False
