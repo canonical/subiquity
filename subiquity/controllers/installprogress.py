@@ -76,7 +76,7 @@ class InstallProgressController(BaseController):
         self.progress_view.show_complete(True)
         self.default()
 
-    def run_command_logged(self, cmd, env):
+    def _bg_run_command_logged(self, cmd, env):
         log.debug("running %s", cmd)
         cmd = ['systemd-cat', '--level-prefix=false', '--identifier=' + self._log_syslog_identifier] + cmd
         cp = subprocess.run(cmd, env=env)
@@ -171,7 +171,7 @@ class InstallProgressController(BaseController):
         if 'SNAP' in env:
             del env['SNAP']
         self.run_in_bg(
-            lambda: self.run_command_logged(curtin_cmd, env),
+            lambda: self._bg_run_command_logged(curtin_cmd, env),
             self.curtin_install_completed)
 
     def curtin_install_completed(self, fut):
@@ -182,12 +182,6 @@ class InstallProgressController(BaseController):
             return
         self.install_state = InstallState.DONE
         log.debug('After curtin install OK')
-        self.loop.set_alarm_in(0.01, lambda loop, userdata: self.install_complete())
-
-    def cancel(self):
-        pass
-
-    def install_complete(self):
         self.ui.progress_current += 1
         if not self.progress_view_showing:
             self.ui.set_footer(_("Install complete"))
@@ -196,6 +190,9 @@ class InstallProgressController(BaseController):
             self.ui.set_footer(_("Thank you for using Ubuntu!"))
         if self._identity_config_done:
             self.postinstall_configuration()
+
+    def cancel(self):
+        pass
 
     def postinstall_configuration(self):
         # If we need to do anything that takes time here (like running
@@ -209,7 +206,7 @@ class InstallProgressController(BaseController):
         self.progress_view.show_complete()
 
         if self.answers['reboot']:
-            self.loop.set_alarm_in(0.01, lambda loop, userdata: self.reboot())
+            self.reboot()
 
     def configure_cloud_init(self):
         if self.opts.dry_run:

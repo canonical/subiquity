@@ -66,7 +66,7 @@ class KeyboardController(BaseController):
             self._done)
 
     def _done(self, fut):
-        self.loop.set_alarm_in(0.0, lambda loop, ud: self.signal.emit_signal('next-screen'))
+        self.signal.emit_signal('next-screen')
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
