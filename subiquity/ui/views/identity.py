@@ -18,15 +18,22 @@ import re
 
 from urwid import (
     connect_signal,
+    LineBox,
+    Pile,
+    Text,
+    WidgetWrap,
     )
 
+from subiquitycore.ui.buttons import (
+    cancel_btn,
+    ok_btn,
+    other_btn,
+    )
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     StringEditor,
     )
-from subiquitycore.ui.container import (
-    ListBox,
-    )
+from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.form import (
     ChoiceField,
     Form,
@@ -36,6 +43,7 @@ from subiquitycore.ui.form import (
 from subiquitycore.ui.utils import button_pile, screen
 from subiquitycore.view import BaseView
 
+from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.identity")
 
@@ -174,7 +182,79 @@ All letters must be lower-case. The characters +, - and . are also allowed after
                 return _("A Github username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.")
 
 
+class FetchingSSHKeys(WidgetWrap):
+    def __init__(self, parent):
+        self.parent = parent
+        spinner = Spinner(parent.controller.loop, style='dots')
+        spinner.start()
+        text = _("Fetching SSH keys...")
+        button = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        # | text |
+        # 12    34
+        self.width = len(text) + 4
+        super().__init__(
+            LineBox(
+                Pile([
+                    ('pack', Text(' ' + text)),
+                    ('pack', spinner),
+                    ('pack', button_pile([button])),
+                    ])))
+    def cancel(self, sender):
+        self.parent.controller._fetch_cancel()
+        self.parent.remove_overlay()
 
+
+class ConfirmSSHKeys(Stretchy):
+    def __init__(self, parent, result, key_material, fingerprints):
+        self.parent = parent
+        self.result = result
+        self.key_material = key_material
+
+        ok = ok_btn(label=_("Yes"), on_press=self.ok)
+        cancel = cancel_btn(label=_("No"), on_press=self.cancel)
+
+        if len(fingerprints) > 1:
+            title = _("Confirm SSH keys")
+            header = _('Keys with the following fingerprints were fetched. Do you want to use them?')
+        else:
+            title = _("Confirm SSH key")
+            header = _('A key with the following fingerprint was fetched. Do you want to use it?')
+
+        fingerprints = Pile([Text(fingerprint) for fingerprint in fingerprints])
+
+        super().__init__(
+            title,
+            [
+                Text(header),
+                Text(""),
+                fingerprints,
+                Text(""),
+                button_pile([ok, cancel]),
+            ], 2, 4)
+
+    def cancel(self, sender):
+        self.parent.remove_overlay()
+    def ok(self, sender):
+        self.result['ssh_keys'] = self.key_material.splitlines()
+        self.parent.controller.done(self.result)
+
+class FetchingSSHKeysFailed(Stretchy):
+    def __init__(self, parent, msg, stderr):
+        self.parent = parent
+        ok = other_btn(label=_("Close"), on_press=self.close)
+        widgets = [
+            Text(msg),
+            Text(""),
+            Text(stderr.strip('\n')),
+            Text(""),
+            button_pile([ok]),
+            ]
+        super().__init__(
+            "",
+            widgets,
+            2, 4)
+    def close(self, sender):
+        self.parent.remove_overlay()
 
 class IdentityView(BaseView):
     def __init__(self, model, controller, opts):
@@ -189,8 +269,6 @@ class IdentityView(BaseView):
         connect_signal(self.form.confirm_password.widget, 'change', self._check_password)
         connect_signal(self.form.ssh_import_id.widget, 'select', self._select_ssh_import_id)
         self.form.import_username.enabled = False
-
-        self.ssh_import_confirmed = True
 
         super().__init__(
             screen(
@@ -221,22 +299,27 @@ class IdentityView(BaseView):
             iu.validate()
 
     def done(self, result):
-        cpassword = self.model.encrypt_password(self.form.password.value)
         result = {
             "hostname": self.form.hostname.value,
             "realname": self.form.realname.value,
             "username": self.form.username.value,
-            "password": cpassword,
+            "password": self.model.encrypt_password(self.form.password.value),
         }
 
         # if user specifed a value, allow user to validate fingerprint
         if self.form.ssh_import_id.value:
-            if self.ssh_import_confirmed:
-                result['ssh_import_id'] = self.form.ssh_import_id.value + ":" + self.form.import_username.value
-            else:
-                # XXX Not implemented yet
-                self.controller.confirm_ssh_import_id(result)
-                return
+            fsk = FetchingSSHKeys(self)
+            self.show_overlay(fsk, width=fsk.width, min_width=None)
+            ssh_import_id = self.form.ssh_import_id.value + ":" + self.form.import_username.value
+            self.controller.fetch_ssh_keys(result, ssh_import_id)
+        else:
+            log.debug("User input: {}".format(result))
+            self.controller.done(result)
 
-        log.debug("User input: {}".format(result))
-        self.controller.done(result)
+    def confirm_ssh_keys(self, result, ssh_key, fingerprints):
+        self.remove_overlay()
+        self.show_stretchy_overlay(ConfirmSSHKeys(self, result, ssh_key, fingerprints))
+
+    def fetching_ssh_keys_failed(self, msg, stderr):
+        self.remove_overlay()
+        self.show_stretchy_overlay(FetchingSSHKeysFailed(self, msg, stderr))
