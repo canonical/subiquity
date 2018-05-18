@@ -51,20 +51,20 @@ def host_key_fingerprints():
     Returns a sequence of (key-type, fingerprint) pairs.
     """
     config = run_command(['sshd', '-T'])
-    if config['status'] != 0:
+    if config.returncode != 0:
         log.debug("sshd -T failed %r", config['err'])
         return []
     keyfiles = []
-    for line in config['output'].splitlines():
+    for line in config.output.splitlines():
         if line.startswith('hostkey '):
             keyfiles.append(line.split(None, 1)[1])
     info = []
     for keyfile in keyfiles:
-        result = run_command(['ssh-keygen', '-lf', keyfile])
-        if result['status'] != 0:
-            log.debug("ssh-keygen -lf %s failed %r", keyfile, result['err'])
+        cp = run_command(['ssh-keygen', '-lf', keyfile])
+        if cp.returncode != 0:
+            log.debug("ssh-keygen -lf %s failed %r", keyfile, cp.stderr)
             continue
-        parts = result['output'].strip().split()
+        parts = cp.stdout.strip().split()
         length, fingerprint, host, keytype = parts
         keytype = keytype.strip('()')
         info.append((keytype, fingerprint))
@@ -176,7 +176,7 @@ class IdentityController(BaseController):
         if device_owner is not None:
             self.model.add_user(device_owner)
             key_file = os.path.join(device_owner['homedir'], ".ssh/authorized_keys")
-            self.model.user.fingerprints = run_command(['ssh-keygen', '-lf', key_file])['output'].replace('\r', '').splitlines()
+            self.model.user.fingerprints = run_command(['ssh-keygen', '-lf', key_file]).stdout.replace('\r', '').splitlines()
             self.login()
 
     def identity_done(self, email):
@@ -190,13 +190,13 @@ class IdentityController(BaseController):
         else:
             self.ui.frame.body.progress.set_text("Contacting store...")
             self.loop.draw_screen()
-            result = run_command(["snap", "create-user", "--sudoer", "--json", email])
+            cp = run_command(["snap", "create-user", "--sudoer", "--json", email])
             self.ui.frame.body.progress.set_text("")
-            if result['status'] != 0:
-                self.ui.frame.body.error.set_text("Creating user failed:\n" + result['err'])
+            if cp.returncode != 0:
+                self.ui.frame.body.error.set_text("Creating user failed:\n" + cp.stderr)
                 return
             else:
-                data = json.loads(result['output'])
+                data = json.loads(cp.stdout)
                 result = {
                     'realname': email,
                     'username': data['username'],

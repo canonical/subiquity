@@ -19,7 +19,7 @@ import logging
 import os
 import random
 import yaml
-from subprocess import Popen, PIPE
+import subprocess
 
 log = logging.getLogger("subiquitycore.utils")
 SYS_CLASS_NET = "/sys/class/net/"
@@ -92,63 +92,42 @@ def environment_check(check):
     return env_ok
 
 
-def run_command_start(command, timeout=None, shell=False):
-    log.debug('run_command called: {}'.format(command))
-    cmd_env = os.environ.copy()
-    # set consistent locale
-    cmd_env['LC_ALL'] = 'C'
-    if timeout:
-        command = "timeout %ds %s" % (timeout, command)
-
-    try:
-        log.debug('trying Popen...')
-        # dummy stdin fd as per:
-        # http://stackoverflow.com/ +
-        # questions/27022810/urwid-watch-file-blocks-keypress
-        r, w = os.pipe()
-        p = Popen(command, shell=shell,
-                  stdin=r, stdout=PIPE, stderr=PIPE,
-                  bufsize=-1, env=cmd_env, close_fds=True)
-        os.close(w)
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            log.debug('error!')
-            return dict(ret=127, output="", err="")
-        else:
-            log.debug('error raise!')
-            raise e
-    return p
+def _clean_env(env):
+    if env is None:
+        env = os.environ.copy()
+    else:
+        env = env.copy()
+    # Do we always want to do this?
+    env['LC_ALL'] = 'C'
+    # Maaaybe want to remove SNAP here too.
+    return env
 
 
-def run_command_summarize(p, stdout, stderr):
-    if p.returncode == 126 or p.returncode == 127:
-        stdout = bytes()
-    if not stderr:
-        stderr = bytes()
-    rv = dict(status=p.returncode,
-              output=stdout.decode('utf-8'),
-              err=stderr.decode('utf-8'))
-    log.debug('run_command returning: {}'.format(rv))
-    return rv
+def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', errors='replace', env=None, **kw):
+    """A wrapper around subprocess.run with logging and different defaults.
 
-
-def run_command(command, timeout=None, shell=False):
-    """ Execute command through system shell
-    :param command: command to run
-    :param timeout: (optional) use 'timeout' to limit time. default 300
-    :type command: str
-    :returns: {status: returncode, output: stdout, err: stderr}
-    :rtype: dict
-    .. code::
-        # Get output of juju status
-        cmd_dict = utils.get_command_output('juju status')
+    We never ever want a subprocess to inherit our file descriptors!
     """
-    p = run_command_start(command, timeout, shell)
-    log.debug('calling communicate()')
-    if isinstance(p, dict): # only in error cases
-        return p
-    stdout, stderr = p.communicate()
-    return run_command_summarize(p, stdout, stderr)
+    if input is None:
+        kw['stdin'] = subprocess.DEVNULL
+    log.debug("run_command called: %s", cmd)
+    try:
+        cp = subprocess.run(cmd, input=input, encoding=encoding, env=_clean_env(env), **kw)
+    except subprocess.CalledProcessError as e:
+        log.debug("run_command %s", str(e))
+        raise
+    else:
+        log.debug("run_command %s exited with code %s", cp.args, cp.returncode)
+        return cp
+
+
+def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', errors='replace', env=None, **kw):
+    """A wrapper around subprocess.Popen with logging and different defaults.
+
+    We never ever want a subprocess to inherit our file descriptors!
+    """
+    log.debug('start_command called: %s', cmd)
+    return subprocess.Popen(cmd, stdin=stdin, stdout=stdout, stderr=stderr, encoding=encoding, env=_clean_env(env), **kw)
 
 
 # FIXME: replace with passlib and update package deps

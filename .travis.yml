@@ -1,9 +1,8 @@
 sudo: required
 
 env:
-  - IMAGE=ubuntu:xenial
   - IMAGE=ubuntu:artful
-  - IMAGE=ubuntu-daily:bionic
+  - IMAGE=ubuntu:bionic
 
 language: bash
 
