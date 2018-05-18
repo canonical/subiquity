@@ -77,11 +77,8 @@ class InstallProgressController(BaseController):
         self.default()
 
     def _bg_run_command_logged(self, cmd, env):
-        log.debug("running %s", cmd)
         cmd = ['systemd-cat', '--level-prefix=false', '--identifier=' + self._log_syslog_identifier] + cmd
-        cp = subprocess.run(cmd, env=env)
-        log.debug("completed %s", cmd)
-        return cp.returncode
+        return utils.run_command(cmd, env=env)
 
     def _journal_event(self, event):
         if event['SYSLOG_IDENTIFIER'] == self._event_syslog_identifier:
@@ -175,9 +172,9 @@ class InstallProgressController(BaseController):
             self.curtin_install_completed)
 
     def curtin_install_completed(self, fut):
-        returncode = fut.result()
-        log.debug('curtin_install: returncode: {}'.format(returncode))
-        if returncode != 0:
+        cp = fut.result()
+        log.debug('curtin_install completed: %s', cp.returncode)
+        if cp.returncode != 0:
             self.curtin_error()
             return
         self.install_state = InstallState.DONE
@@ -221,9 +218,9 @@ class InstallProgressController(BaseController):
         utils.run_command(['cp', '-aT', '/var/log/installer', '/target/var/log/installer'])
         try:
             with open('/target/var/log/installer/installer-journal.txt', 'w') as output:
-                subprocess.run(
+                utils.run_command(
                     ['journalctl'],
-                    stdout=output, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+                    stdout=output, stderr=subprocess.STDOUT)
         except Exception:
             log.exception("saving journal failed")
 

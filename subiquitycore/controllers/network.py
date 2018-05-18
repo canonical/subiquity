@@ -36,7 +36,7 @@ from subiquitycore.ui.views import (NetworkView,
 from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
-from subiquitycore.utils import run_command_start, run_command_summarize
+from subiquitycore.utils import run_command, start_command
 
 log = logging.getLogger("subiquitycore.controller.network")
 
@@ -87,18 +87,18 @@ class BackgroundProcess(BackgroundTask):
         return 'BackgroundProcess(%r)'%(self.cmd,)
 
     def start(self):
-        self.proc = run_command_start(self.cmd)
+        self.proc = start_command(self.cmd)
 
     def _bg_run(self):
         stdout, stderr = self.proc.communicate()
-        return run_command_summarize(self.proc, stdout, stderr)
+        return subprocess.CompletedProcess(self.proc.args, self.proc.returncode, stdout, stderr)
 
     def end(self, observer, fut):
-        result = fut.result()
-        if result['status'] == 0:
+        cp = fut.result()
+        if cp.returncode == 0:
             observer.task_succeeded()
         else:
-            observer.task_failed(result['err'])
+            observer.task_failed(cp.stderr)
 
     def cancel(self):
         if self.proc is None:
@@ -341,8 +341,8 @@ class NetworkController(BaseController):
             self.loop.watch_file(fd, partial(self._data_ready, fd))
 
     def _data_ready(self, fd):
-        code = subprocess.call(['udevadm', 'settle', '-t', '0'])
-        if code != 0:
+        cp = run_command(['udevadm', 'settle', '-t', '0'])
+        if cp.returncode != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
             self.loop.set_alarm_in(0.1, lambda loop, ud:self._data_ready(fd))
             return
