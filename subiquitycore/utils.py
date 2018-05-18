@@ -110,24 +110,24 @@ def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PI
     """
     if input is None:
         kw['stdin'] = subprocess.DEVNULL
-    log.debug("run_command %s", cmd)
+    log.debug("run_command called: %s", cmd)
     try:
         cp = subprocess.run(cmd, input=input, encoding=encoding, env=_clean_env(env), **kw)
     except subprocess.CalledProcessError as e:
-        log.debug("%s", str(e))
+        log.debug("run_command %s", str(e))
         raise
     else:
-        log.debug("%s exited with code %s", cp.args, cp.returncode)
+        log.debug("run_command %s exited with code %s", cp.args, cp.returncode)
         return cp
 
 
-def start_command(command, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', env=None, **kw):
+def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', env=None, **kw):
     """A wrapper around subprocess.Popen with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
     """
-    log.debug('start_command called: {}'.format(command))
-    return subprocess.Popen(command, stdin=stdin, stdout=stdout, stderr=stderr, encoding=encoding, env=_clean_env(env), **kw)
+    log.debug('start_command called: %s', cmd)
+    return subprocess.Popen(cmd, stdin=stdin, stdout=stdout, stderr=stderr, encoding=encoding, env=_clean_env(env), **kw)
 
 
 # FIXME: replace with passlib and update package deps
