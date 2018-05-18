@@ -414,3 +414,9 @@ class Application:
         except:
             log.exception("Exception in controller.run():")
             raise
+        finally:
+            # concurrent.futures.ThreadPoolExecutor tries to join all
+            # threads before exiting. We don't want that and this
+            # ghastly hack prevents it.
+            from concurrent.futures import thread
+            thread._threads_queues = {}
