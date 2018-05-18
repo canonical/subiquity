@@ -103,7 +103,7 @@ def _clean_env(env):
     return env
 
 
-def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', env=None, **kw):
+def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', errors='replace', env=None, **kw):
     """A wrapper around subprocess.run with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
@@ -121,7 +121,7 @@ def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PI
         return cp
 
 
-def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', env=None, **kw):
+def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', errors='replace', env=None, **kw):
     """A wrapper around subprocess.Popen with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
