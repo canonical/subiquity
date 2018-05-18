@@ -27,19 +27,14 @@ class Header(WidgetWrap):
     :returns: Header()
     """
 
-    def __init__(self, title=None, excerpt=None):
-        widgets = [Text("")]
-        if title is not None:
-            widgets.append(
-                Padding.center_79(Text(title)))
-            widgets.append(Text(""))
-        widgets = [Color.frame_header(Pile(widgets))]
-        if excerpt is not None:
-            widgets.extend([
-                Text(""),
-                Padding.center_79(Text(excerpt)),
-            ])
-        super().__init__(Pile(widgets))
+    def __init__(self, title):
+        super().__init__(
+            Color.frame_header(
+                Pile([
+                    Text(""),
+                    Padding.center_79(Text(title)),
+                    Text(""),
+                ])))
 
 
 class StepsProgressBar(ProgressBar):

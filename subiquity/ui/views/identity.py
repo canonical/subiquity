@@ -29,6 +29,9 @@ from subiquitycore.ui.buttons import (
     ok_btn,
     other_btn,
     )
+from subiquitycore.ui.container import (
+    ListBox,
+    )
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     StringEditor,
@@ -273,13 +276,14 @@ class IdentityView(BaseView):
         connect_signal(self.form.ssh_import_id.widget, 'select', self._select_ssh_import_id)
         self.form.import_username.enabled = False
 
+
+        self.form_rows = ListBox(self.form.as_rows())
         super().__init__(
             screen(
-                self.form.as_rows(),
+                self.form_rows,
                 [self.form.done_btn],
                 excerpt=_(self.excerpt),
                 focus_buttons=False))
-        self.form_rows = self._w[1]
 
     def _check_password(self, sender, new_text):
         password = self.form.password.value
