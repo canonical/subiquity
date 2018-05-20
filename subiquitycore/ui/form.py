@@ -28,7 +28,6 @@ from urwid import (
     WidgetWrap,
     )
 
-from subiquitycore.i18n import *
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.container import Columns, Pile
 from subiquitycore.ui.interactive import (
