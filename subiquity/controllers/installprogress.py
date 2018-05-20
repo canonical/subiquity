@@ -119,9 +119,7 @@ class ContainerManager(object):
             })
 
     def initialize_lxd(self):
-        cp = utils.run_command(
-            ["lxc", "query", "/1.0/storage-pools"],
-            check=True)
+        cp = utils.run_command(["lxc", "query", "/1.0/storage-pools"], check=True)
         pools = json.loads(cp.stdout)
         if len(pools) == 0:
             utils.run_command(
@@ -135,9 +133,7 @@ class ContainerManager(object):
             check=True)
 
     def start_container(self):
-        utils.run_command(
-            ["lxc", "start", self.container_name],
-            check=True)
+        utils.run_command(["lxc", "start", self.container_name], check=True)
 
     def run(self, cmd):
         p = utils.run_command(
@@ -164,17 +160,16 @@ class WaitForCurtinEventsTask(BackgroundTask):
 
     def __init__(self, controller):
         self.controller = controller
-        self.waited = 0
+        self.waited = 0.0
 
     def start(self):
         pass
 
     def _bg_run(self):
-        while self.controller._event_indent and self.waited < 10:
-            log.debug("_event_indent %r waiting", self.controller._event_indent)
-            time.sleep(1)
-            self.waited += 1
-        log.debug("waited %s for events to drain", self.waited)
+        while self.controller._event_indent and self.waited < 5.0:
+            time.sleep(0.1)
+            self.waited += 0.1
+        log.debug("waited %s seconds for events to drain", self.waited)
 
     def end(self, observer, fut):
         try:
@@ -415,21 +410,22 @@ class InstallProgressController(BaseController):
             lambda: self._bg_run_command_logged(["tail", "-F", "/target/var/log/cloud-init-output.log"]),
             lambda fut: None)
 
-        controller = self
         class w(TaskWatcher):
+            def __init__(self, controller):
+                self.controller = controller
             def task_complete(self, stage):
                 pass
             def task_error(self, stage, info=None):
-                controller.curtin_error()
+                self.controller.curtin_error()
             def tasks_finished(self):
-                controller.postinstall_complete()
+                self.controller.postinstall_complete()
         tasks = [
             ('drain', WaitForCurtinEventsTask(self)),
             ('start', InstallTask(self, "starting container", self.cm.start_container)),
             ('wait', InstallTask(self, "applying configuration", self.cm.wait_for_cloudinit)),
             ]
         # will add tasks to install snaps here in due course
-        ts = TaskSequence(self.run_in_bg, tasks, w())
+        ts = TaskSequence(self.run_in_bg, tasks, w(self))
         ts.run()
 
     def postinstall_complete(self):
