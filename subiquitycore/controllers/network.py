@@ -19,13 +19,20 @@ import os
 import random
 import select
 import socket
-import subprocess
 
 import yaml
 
 from probert.network import IFF_UP, NetworkEventReceiver
 
 from subiquitycore.models.network import sanitize_config
+from subiquitycore.tasksequence import (
+    BackgroundTask,
+    BackgroundProcess,
+    CancelableTask,
+    PythonSleep,
+    TaskSequence,
+    TaskWatcher,
+    )
 from subiquitycore.ui.views import (NetworkView,
                                     NetworkSetDefaultRouteView,
                                     NetworkBondInterfacesView,
@@ -36,106 +43,9 @@ from subiquitycore.ui.views import (NetworkView,
 from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
-from subiquitycore.utils import run_command, start_command
+from subiquitycore.utils import run_command
 
 log = logging.getLogger("subiquitycore.controller.network")
-
-
-class BackgroundTask:
-    """Something that runs without blocking the UI and can be canceled."""
-
-    def start(self):
-        """Start the task.
-
-        This is called on the UI thread, so must not block.
-        """
-        raise NotImplementedError(self.start)
-
-    def _bg_run(self):
-        """Run the task.
-
-        This is called on an arbitrary thread so don't do UI stuff!
-        """
-        raise NotImplementedError(self.run)
-
-    def end(self, observer, fut):
-        """Call task_succeeded or task_failed on observer.
-
-        This is called on the UI thread.
-
-        fut is a concurrent.futures.Future holding the result of running run.
-        """
-        raise NotImplementedError(self.end)
-
-    def cancel(self):
-        """Abort the task.
-
-        Any calls to task_succeeded or task_failed on the observer will
-        be ignored after this point so it doesn't really matter what run
-        returns after this is called.
-        """
-        raise NotImplementedError(self.cancel)
-
-
-class BackgroundProcess(BackgroundTask):
-
-    def __init__(self, cmd):
-        self.cmd = cmd
-        self.proc = None
-
-    def __repr__(self):
-        return 'BackgroundProcess(%r)'%(self.cmd,)
-
-    def start(self):
-        self.proc = start_command(self.cmd)
-
-    def _bg_run(self):
-        stdout, stderr = self.proc.communicate()
-        return subprocess.CompletedProcess(self.proc.args, self.proc.returncode, stdout, stderr)
-
-    def end(self, observer, fut):
-        cp = fut.result()
-        if cp.returncode == 0:
-            observer.task_succeeded()
-        else:
-            observer.task_failed(cp.stderr)
-
-    def cancel(self):
-        if self.proc is None:
-            return
-        try:
-            self.proc.terminate()
-        except ProcessLookupError:
-            pass # It's OK if the process has already terminated.
-
-
-class PythonSleep(BackgroundTask):
-
-    def __init__(self, duration):
-        self.duration = duration
-        self.r, self.w = os.pipe()
-
-    def __repr__(self):
-        return 'PythonSleep(%r)'%(self.duration,)
-
-    def start(self):
-        pass
-
-    def _bg_run(self):
-        r, _, _ = select.select([self.r], [], [], self.duration)
-        if not r:
-            return True
-        os.close(self.r)
-        os.close(self.w)
-
-    def end(self, observer, fut):
-        if fut.result():
-            observer.task_succeeded()
-        else:
-            observer.task_failed()
-
-    def cancel(self):
-        os.write(self.w, b'x')
 
 
 class DownNetworkDevices(BackgroundTask):
@@ -165,11 +75,8 @@ class DownNetworkDevices(BackgroundTask):
         else:
             observer.task_failed()
 
-    def cancel(self):
-        pass
 
-
-class WaitForDefaultRouteTask(BackgroundTask):
+class WaitForDefaultRouteTask(CancelableTask):
 
     def __init__(self, timeout, event_receiver):
         self.timeout = timeout
@@ -204,46 +111,6 @@ class WaitForDefaultRouteTask(BackgroundTask):
 
     def cancel(self):
         os.write(self.fail_w, b'x')
-
-
-class TaskSequence:
-    def __init__(self, run_in_bg, tasks, watcher):
-        self.run_in_bg = run_in_bg
-        self.tasks = tasks
-        self.watcher = watcher
-        self.canceled = False
-        self.stage = None
-        self.curtask = None
-
-    def run(self):
-        self._run1()
-
-    def cancel(self):
-        if self.curtask is not None:
-            log.debug("canceling %s", self.curtask)
-            self.curtask.cancel()
-        self.canceled = True
-
-    def _run1(self):
-        self.stage, self.curtask = self.tasks[0]
-        self.tasks = self.tasks[1:]
-        log.debug('running %s for stage %s', self.curtask, self.stage)
-        self.curtask.start()
-        self.run_in_bg(self.curtask._bg_run, lambda fut:self.curtask.end(self, fut))
-
-    def task_succeeded(self):
-        if self.canceled:
-            return
-        self.watcher.task_complete(self.stage)
-        if len(self.tasks) == 0:
-            self.watcher.tasks_finished()
-        else:
-            self._run1()
-
-    def task_failed(self, info=None):
-        if self.canceled:
-            return
-        self.watcher.task_error(self.stage, info)
 
 
 class SubiquityNetworkEventReceiver(NetworkEventReceiver):
@@ -310,7 +177,7 @@ network:
             password: password
 '''
 
-class NetworkController(BaseController):
+class NetworkController(BaseController, TaskWatcher):
     signals = [
         ('menu:network:main:set-default-v4-route',     'set_default_v4_route'),
         ('menu:network:main:set-default-v6-route',     'set_default_v6_route'),
