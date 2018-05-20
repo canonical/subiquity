@@ -256,7 +256,8 @@ class NetworkView(BaseView):
             (Color.info_error(self.error), self.footer.options()),
             ]
         if action == 'stop-networkd':
-            self.error.set_text("Stopping systemd-networkd-failed: %r" % (info,))
+            exc = info[0]
+            self.error.set_text("Stopping systemd-networkd-failed: %r" % (exc.stderr,))
         elif action == 'apply':
             self.error.set_text("Network configuration could not be applied; " + \
                                 "please verify your settings.")
