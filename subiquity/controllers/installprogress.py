@@ -19,6 +19,7 @@ import logging
 import os
 import subprocess
 import time
+import traceback
 
 import urwid
 import yaml
@@ -255,11 +256,18 @@ class InstallProgressController(BaseController):
             self.cm = PretendContainerManager()
         else:
             self.cm = ContainerManager()
-        self.run_in_bg(self._bg_setup_lxd, lambda fut:None)
+        self.run_in_bg(self._bg_setup_lxd, self.lxd_setup_done)
 
     def _bg_setup_lxd(self):
         self.cm.initialize_lxd()
         self.cm.create_container()
+
+    def lxd_setup_done(self, fut):
+        try:
+            fut.result()
+        except:
+            self.progress_view.add_log_line(traceback.format_exc())
+            self.curtin_error()
 
     def filesystem_config_done(self):
         self.curtin_start_install()
