@@ -118,10 +118,15 @@ class ContainerManager(object):
             })
 
     def initialize_lxd(self):
-        utils.run_command(
-            ["lxd", "init", "--preseed"],
-            input=self.preseed(),
+        cp = utils.run_command(
+            ["lxc", "query", "/1.0/storage-pools"],
             check=True)
+        pools = json.loads(cp.stdout)
+        if len(pools) == 0:
+            utils.run_command(
+                ["lxd", "init", "--preseed"],
+                input=self.preseed(),
+                check=True)
 
     def create_container(self):
         utils.run_command(
