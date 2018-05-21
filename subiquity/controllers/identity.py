@@ -101,7 +101,7 @@ class IdentityController(BaseController):
                 user_spec['ssh_keys'] = key_material.splitlines()
                 self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(user_spec))
             else:
-                self.ui.frame.body.confirm_ssh_keys(result, key_material, fingerprints)
+                self.ui.frame.body.confirm_ssh_keys(user_spec, key_material, fingerprints)
 
     def fetch_ssh_keys(self, user_spec, ssh_import_id):
         log.debug("User input: %s, fetching ssh keys for %s", user_spec, ssh_import_id)
