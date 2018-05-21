@@ -1,11 +1,12 @@
 import re
-
 import urwid
+
 
 def find_with_pred(w, pred, return_path=False):
     def _walk(w, path):
         if not isinstance(w, urwid.Widget):
-            raise RuntimeError("_walk walked to non-widget %r via %r" % (w, path))
+            raise RuntimeError(
+                "_walk walked to non-widget %r via %r" % (w, path))
         if pred(w):
             return w, path
         if hasattr(w, '_wrapped_widget'):
@@ -35,22 +36,27 @@ def find_with_pred(w, pred, return_path=False):
     else:
         return r
 
+
 def find_button_matching(w, pat, return_path=False):
     def pred(w):
         return isinstance(w, urwid.Button) and re.match(pat, w.label)
     return find_with_pred(w, pred, return_path)
 
+
 def click(but):
     but._emit('click')
 
+
 def keypress(w, key, size=(30, 1)):
     w.keypress(size, key)
+
 
 def get_focus_path(w):
     path = []
     while True:
         path.append(w)
-        if isinstance(w, urwid.ListBox) and w.set_focus_pending == "first selectable":
+        if isinstance(w, urwid.ListBox) and (w.set_focus_pending ==
+                                             "first selectable"):
             for w2 in w.body:
                 if w2.selectable():
                     w = w2
@@ -66,6 +72,7 @@ def get_focus_path(w):
         else:
             break
     return path
+
 
 def enter_data(form, data):
     for k, v in data.items():
