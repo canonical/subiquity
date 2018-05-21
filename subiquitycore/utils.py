@@ -110,6 +110,8 @@ def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PI
     """
     if input is None:
         kw['stdin'] = subprocess.DEVNULL
+    else:
+        input = input.encode(encoding)
     log.debug("run_command called: %s", cmd)
     try:
         cp = subprocess.run(cmd, input=input, stdout=stdout, stderr=stderr, env=_clean_env(env), **kw)
