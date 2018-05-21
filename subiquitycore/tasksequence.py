@@ -195,6 +195,7 @@ class TaskSequence:
         self.canceled = False
         self.stage = None
         self.curtask = None
+        self.task_complete_or_failed_called = False
 
     def run(self):
         self._run1()
@@ -213,15 +214,20 @@ class TaskSequence:
         self.run_in_bg(self.curtask._bg_run, self._call_end)
 
     def _call_end(self, fut):
+        log.exception("%s ended", self.stage)
         if self.canceled:
             return
+        self.task_complete_or_failed_called = False
         try:
             self.curtask.end(self, fut)
         except:
             log.exception("%s failed", self.stage)
             self.task_failed(sys.exc_info())
+        if not self.task_complete_or_failed_called:
+            raise RuntimeError("{} {}.end did not call task_complete or task_failed".format(self.stage, self.curtask))
 
     def task_succeeded(self):
+        self.task_complete_or_failed_called = True
         self.watcher.task_complete(self.stage)
         if len(self.tasks) == 0:
             self.watcher.tasks_finished()
@@ -229,4 +235,5 @@ class TaskSequence:
             self._run1()
 
     def task_failed(self, info=None):
+        self.task_complete_or_failed_called = True
         self.watcher.task_error(self.stage, info)
