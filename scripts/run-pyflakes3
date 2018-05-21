@@ -1,0 +1,24 @@
+#!/bin/bash
+# This file is part of curtin. See LICENSE file for copyright and license info.
+
+#    "console_conf/"
+pycheck_dirs=(
+    "subiquity/"
+    "subiquitycore/"
+    "tests/"
+)
+
+set -f
+if [ $# -eq 0 ]; then
+   files=( "${pycheck_dirs[@]}" )
+else
+   files=( "$@" )
+fi
+
+cmd=( "python3" -m "pyflakes" "${files[@]}" )
+
+echo "Running: " "${cmd[@]}" 1>&2
+export PYFLAKES_BUILTINS="_"
+exec "${cmd[@]}"
+
+# vi: ts=4 expandtab syntax=sh

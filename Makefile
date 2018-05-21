@@ -7,6 +7,7 @@ PYTHONPATH=$(shell pwd):$(shell pwd)/probert
 PROBERTDIR=./probert
 PROBERT_REPO=https://github.com/CanonicalLtd/probert
 export PYTHONPATH
+CWD := $(shell pwd)
 
 ifneq (,$(MACHINE))
 	MACHARGS=--machine=$(MACHINE)
@@ -38,6 +39,10 @@ lint:
 	echo "Running flake8 lint tests..."
 	python3 /usr/bin/flake8 bin/$(PYTHONSRC)-tui --ignore=F403
 	python3 /usr/bin/flake8 --exclude $(PYTHONSRC)/tests/ $(PYTHONSRC) --ignore=F403
+
+pyflakes3:
+	echo "Running pyflakes tests..."
+	@$(CWD)/scripts/run-pyflakes3
 
 unit:
 	echo "Running unit tests..."
