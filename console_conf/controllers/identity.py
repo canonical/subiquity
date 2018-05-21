@@ -55,7 +55,7 @@ def host_key_fingerprints():
         log.debug("sshd -T failed %r", config['err'])
         return []
     keyfiles = []
-    for line in config.output.splitlines():
+    for line in config.stdout.splitlines():
         if line.startswith('hostkey '):
             keyfiles.append(line.split(None, 1)[1])
     info = []
