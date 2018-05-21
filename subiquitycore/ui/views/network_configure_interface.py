@@ -21,11 +21,13 @@ from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, menu_btn, _stylized_button
 from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.utils import button_pile, Padding
-from subiquitycore.ui.views.network import _build_gateway_ip_info_for_version, _build_wifi_info
+from subiquitycore.ui.views.network import (
+    _build_gateway_ip_info_for_version, _build_wifi_info)
 
 log = logging.getLogger('subiquitycore.network.network_configure_interface')
 
 choice_btn = _stylized_button("", "", "menu")
+
 
 class NetworkConfigureInterfaceView(BaseView):
 
@@ -107,16 +109,16 @@ class NetworkConfigureInterfaceView(BaseView):
 
         buttons = [
             menu_btn(label="    %s" % _("Use a static IPv4 configuration"),
-                    on_press=self.show_ipv4_configuration),
+                     on_press=self.show_ipv4_configuration),
             choice_btn(label="    %s" % _("Use DHCPv4 on this interface"),
-                    on_press=self.enable_dhcp4),
+                       on_press=self.enable_dhcp4),
             choice_btn(label="    %s" % _("Do not use"),
-                    on_press=self.clear_ipv4),
+                       on_press=self.clear_ipv4),
         ]
         for btn in buttons:
             btn.original_widget._label._cursor_position = 1
         padding = getattr(Padding, 'left_{}'.format(button_padding))
-        buttons = [ padding(button) for button in buttons ]
+        buttons = [padding(button) for button in buttons]
 
         return buttons
 
@@ -125,24 +127,24 @@ class NetworkConfigureInterfaceView(BaseView):
 
         buttons = [
             menu_btn(label="    %s" % _("Use a static IPv6 configuration"),
-                    on_press=self.show_ipv6_configuration),
+                     on_press=self.show_ipv6_configuration),
             choice_btn(label="    %s" % _("Use DHCPv6 on this interface"),
-                    on_press=self.enable_dhcp6),
+                       on_press=self.enable_dhcp6),
             choice_btn(label="    %s" % _("Do not use"),
-                    on_press=self.clear_ipv6),
+                       on_press=self.clear_ipv6),
         ]
 
         for btn in buttons:
             btn.original_widget._label._cursor_position = 1
 
         padding = getattr(Padding, 'left_{}'.format(button_padding))
-        buttons = [ padding(button) for button in buttons ]
+        buttons = [padding(button) for button in buttons]
 
         return buttons
 
-
     def _build_wifi_config(self):
-        btn = menu_btn(label=_("Configure WIFI settings"), on_press=self.show_wlan_configuration)
+        btn = menu_btn(label=_("Configure WIFI settings"),
+                       on_press=self.show_wlan_configuration)
         return [Padding.left_70(btn)]
 
     def _build_buttons(self):
@@ -159,9 +161,14 @@ class NetworkConfigureInterfaceView(BaseView):
             self.controller.default()
             return
         if self.dev.type == 'wlan':
-            self.wifi_info.contents = [ (obj, ('pack', None)) for obj in _build_wifi_info(self.dev) ]
-        self.ipv4_info.contents = [ (obj, ('pack', None)) for obj in _build_gateway_ip_info_for_version(self.dev, 4) ]
-        self.ipv6_info.contents = [ (obj, ('pack', None)) for obj in _build_gateway_ip_info_for_version(self.dev, 6) ]
+            self.wifi_info.contents = [
+                (obj, ('pack', None)) for obj in _build_wifi_info(self.dev)]
+        self.ipv4_info.contents = [
+            (obj, ('pack', None))
+            for obj in _build_gateway_ip_info_for_version(self.dev, 4)]
+        self.ipv6_info.contents = [
+            (obj, ('pack', None))
+            for obj in _build_gateway_ip_info_for_version(self.dev, 6)]
 
     def clear_ipv4(self, btn):
         self.dev.remove_ip_networks_for_version(4)
