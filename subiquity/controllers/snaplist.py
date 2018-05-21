@@ -197,7 +197,7 @@ class SnapListController(BaseController):
             cmds = [['sleep', '0.5']]
         else:
             with open('/etc/systemd/system/snapd.service.d/snap_proxy.conf', 'w') as fp:
-                fp.write('self.proxy.proxy_systemd_dropin()')
+                fp.write(self.proxy.proxy_systemd_dropin())
             cmds = [
                 ['systemctl', 'daemon-reload'],
                 ['systemctl', 'restart', 'snapd.service'],
