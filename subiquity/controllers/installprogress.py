@@ -418,7 +418,7 @@ class InstallProgressController(BaseController):
             def task_error(self, stage, info=None):
                 self.controller.curtin_error()
             def tasks_finished(self):
-                self.controller.postinstall_complete()
+                self.controller.loop.set_alarm_in(0.0, lambda loop, ud:self.controller.postinstall_complete())
         tasks = [
             ('drain', WaitForCurtinEventsTask(self)),
             ('start', InstallTask(self, "starting container", self.cm.start_container)),
