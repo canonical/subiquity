@@ -128,9 +128,12 @@ class ContainerManager(object):
                 check=True)
 
     def create_container(self):
-        utils.run_command(
-            ["lxc", "query", "--wait", "--request", "POST", "--data", self.container_config(), "/1.0/containers"],
-            check=True)
+        cp = utils.run_command(["lxc", "query", "/1.0/containers"], check=True)
+        containers = json.loads(cp.stdout)
+        if "/1.0/containers/" + self.container_name not in containers:
+            utils.run_command(
+                ["lxc", "query", "--wait", "--request", "POST", "--data", self.container_config(), "/1.0/containers"],
+                check=True)
 
     def start_container(self):
         utils.run_command(["lxc", "start", self.container_name], check=True)
