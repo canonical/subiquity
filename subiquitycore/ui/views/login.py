@@ -101,8 +101,10 @@ class LoginView(BaseView):
         login_text = local_tpl.format(**login_info)
 
         if user.ssh_import_id:
-            login_info.update({'auth': self.auth_name(user.ssh_import_id),
-                               'ssh_import_id': user.ssh_import_id.split(":")[-1]})
+            login_info.update({
+                'auth': self.auth_name(user.ssh_import_id),
+                'ssh_import_id': user.ssh_import_id.split(":")[-1]
+            })
             login_text += remote_tpl.format(**login_info)
 
             ips = []
