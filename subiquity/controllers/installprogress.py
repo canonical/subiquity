@@ -172,14 +172,11 @@ class WaitForCurtinEventsTask(BackgroundTask):
         log.debug("waited %s seconds for events to drain", self.waited)
 
     def end(self, observer, fut):
-        try:
-            fut.result()
-        except:
-            log.exception("WaitForCurtinEventsTask failed:")
-            observer.task_failed()
-        else:
-            self.controller._install_event_start("finalizing system configuration")
-            observer.task_succeeded()
+        # Will raise if command failed:
+        fut.result()
+        self.controller._install_event_start("finalizing system configuration")
+        observer.task_succeeded()
+
 
 class InstallTask(BackgroundTask):
 
@@ -190,6 +187,9 @@ class InstallTask(BackgroundTask):
         self.args = args
         self.kw = kw
 
+    def __repr__(self):
+        return "InstallTask(%r, *%r, **%r)"%(self.func, self.args, self.kw)
+
     def start(self):
         self.controller._install_event_start(self.step_name)
 
@@ -197,14 +197,10 @@ class InstallTask(BackgroundTask):
         self.func(*self.args, **self.kw)
 
     def end(self, observer, fut):
-        try:
-            fut.result()
-        except:
-            log.exception("InstallTask failed:")
-            observer.task_failed()
-        else:
-            self.controller._install_event_finish()
-            observer.task_succeeded()
+        # Will raise if command failed:
+        fut.result()
+        self.controller._install_event_finish()
+        observer.task_succeeded()
 
     def cancel(self):
         pass
@@ -277,8 +273,11 @@ class InstallProgressController(BaseController):
 
     def curtin_error(self, log_text=None):
         log.debug('curtin_error')
+        if self.progress_view is None:
+            self.progress_view = ProgressView(self)
+        else:
+            self.progress_view.spinner.stop()
         self.install_state = InstallState.ERROR
-        self.progress_view.spinner.stop()
         if log_text is not None:
             self.progress_view.add_log_line(log_text)
         self.progress_view.set_status(('info_error', _("An error has occurred")))
@@ -420,8 +419,11 @@ class InstallProgressController(BaseController):
             def task_complete(self, stage):
                 pass
             def task_error(self, stage, info):
-                tb = traceback.format_exception(*info)
-                self.controller.curtin_error("\n".join(tb))
+                if isinstance(info, tuple):
+                    tb = traceback.format_exception(*info)
+                    self.controller.curtin_error("".join(tb))
+                else:
+                    self.controller.curtin_error()
             def tasks_finished(self):
                 self.controller.loop.set_alarm_in(0.0, lambda loop, ud:self.controller.postinstall_complete())
         tasks = [
