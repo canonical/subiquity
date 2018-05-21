@@ -1,5 +1,4 @@
 
-import os
 import re
 
 from urwid import connect_signal, Padding, Text, WidgetWrap
