@@ -24,7 +24,8 @@ from subiquitycore.ui.interactive import RestrictedEditor, StringEditor
 from subiquitycore.ui.form import Form, FormField, StringField
 
 
-log = logging.getLogger('subiquitycore.network.network_configure_ipv4_interface')
+log = logging.getLogger(
+    'subiquitycore.network.network_configure_ipv4_interface')
 
 ip_families = {
     4: {
@@ -42,6 +43,7 @@ class IPField(FormField):
     def __init__(self, *args, **kw):
         self.has_mask = kw.pop('has_mask', False)
         super().__init__(*args, **kw)
+
     def _make_widget(self, form):
         if form.ip_version == 6:
             return StringEditor()
@@ -67,8 +69,10 @@ class NetworkConfigForm(Form):
     subnet = IPField(_("Subnet:"), has_mask=True)
     address = IPField(_("Address:"))
     gateway = IPField(_("Gateway:"))
-    nameservers = StringField(_("Name servers:"), help=_("IP addresses, comma separated"))
-    searchdomains = StringField(_("Search domains:"), help=_("Domains, comma separated"))
+    nameservers = StringField(_("Name servers:"),
+                              help=_("IP addresses, comma separated"))
+    searchdomains = StringField(_("Search domains:"),
+                                help=_("Domains, comma separated"))
 
     def clean_subnet(self, subnet):
         log.debug("clean_subnet %r", subnet)
@@ -83,7 +87,8 @@ class NetworkConfigForm(Form):
         except ValueError:
             return
         if address not in subnet:
-            raise ValueError(_("'%s' is not contained in '%s'") % (address, subnet))
+            raise ValueError(
+                _("'%s' is not contained in '%s'") % (address, subnet))
         return address
 
     def clean_gateway(self, gateway):
@@ -120,17 +125,21 @@ class BaseNetworkConfigureManualView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        self.form.subnet.help = _("Example: %s"%(self.example_address,))
-        configured_addresses = self.dev.configured_ip_addresses_for_version(self.ip_version)
+        self.form.subnet.help = _("Example: %s" % (self.example_address,))
+        configured_addresses = (
+            self.dev.configured_ip_addresses_for_version(self.ip_version))
         if configured_addresses:
             addr = ipaddress.ip_interface(configured_addresses[0])
             self.form.subnet.value = str(addr.network)
             self.form.address.value = str(addr.ip)
-        configured_gateway = self.dev.configured_gateway_for_version(self.ip_version)
+        configured_gateway = (
+            self.dev.configured_gateway_for_version(self.ip_version))
         if configured_gateway:
             self.form.gateway.value = configured_gateway
-        self.form.nameservers.value = ', '.join(self.dev.configured_nameservers)
-        self.form.searchdomains.value = ', '.join(self.dev.configured_searchdomains)
+        self.form.nameservers.value = (
+            ', '.join(self.dev.configured_nameservers))
+        self.form.searchdomains.value = (
+            ', '.join(self.dev.configured_searchdomains))
         self.error = Text("", align='center')
 
         super().__init__(self.form.as_screen(focus_buttons=False))
@@ -162,15 +171,16 @@ class BaseNetworkConfigureManualView(BaseView):
                 self.model.set_default_v4_gateway(self.dev.name,
                                                   self.gateway_input.value)
                 self.is_gateway = True
-                self.set_as_default_gw_button.contents = \
-                    [ (obj, ('pack', None)) \
-                           for obj in self._build_set_as_default_gw_button() ]
+                self.set_as_default_gw_button.contents = [
+                    (obj, ('pack', None))
+                    for obj in self._build_set_as_default_gw_button()]
             except ValueError:
                 # FIXME: set error message UX ala identity
                 pass
 
     def done(self, sender):
-        # XXX this converting from and to and from strings thing is a bit out of hand.
+        # XXX this converting from and to and from strings thing is a
+        # bit out of hand.
         gateway = self.form.gateway.value
         if gateway is not None:
             gateway = str(gateway)
@@ -191,6 +201,7 @@ class BaseNetworkConfigureManualView(BaseView):
     def cancel(self, sender=None):
         self.model.default_gateway = None
         self.controller.network_configure_interface(self.dev.name)
+
 
 class NetworkConfigureIPv4InterfaceView(BaseNetworkConfigureManualView):
     ip_version = 4
