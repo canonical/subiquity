@@ -15,7 +15,6 @@
 
 import logging
 import yaml
-import os
 from probert.network import (StoredDataObserver, UdevObserver)
 from probert.storage import (Storage,
                              StorageInfo)

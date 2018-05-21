@@ -79,7 +79,7 @@ class IdentityController(BaseController):
 
         cp = utils.run_command(['ssh-keygen', '-lf-'], input=key_material)
         if cp.returncode != 0:
-            return FetchSSHKeysFailure(_("ssh-keygen failed to show fingerprint of downloaded keys:"), p.stderr)
+            return FetchSSHKeysFailure(_("ssh-keygen failed to show fingerprint of downloaded keys:"), cp.stderr)
         fingerprints = cp.stdout.replace("# ssh-import-id {} ".format(ssh_import_id), "").strip().splitlines()
 
         return user_spec, key_material, fingerprints

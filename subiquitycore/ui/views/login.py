@@ -22,7 +22,7 @@ import logging
 from urwid import Text
 from subiquitycore.ui.buttons import done_btn
 from subiquitycore.ui.container import Pile, ListBox
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquitycore.views.login")

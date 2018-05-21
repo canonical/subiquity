@@ -1,8 +1,8 @@
 #!/bin/bash
 # This file is part of curtin. See LICENSE file for copyright and license info.
 
-#    "console_conf/"
 pycheck_dirs=(
+    "console_conf/"
     "subiquity/"
     "subiquitycore/"
     "tests/"

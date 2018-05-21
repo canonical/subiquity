@@ -1,6 +1,5 @@
 from urwid import (
     BoxAdapter,
-    Button,
     connect_signal,
     LineBox,
     Text,

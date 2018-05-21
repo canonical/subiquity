@@ -484,7 +484,7 @@ class NetworkModel(object):
             },
             "type": "bond"
         }
-        bondinfo = make_network_info(ifname, info)
+        bondinfo = info
         bonddev = Networkdev(ifname, 'bond')
         bonddev.configure(probe_info=bondinfo)
 
