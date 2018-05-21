@@ -28,6 +28,7 @@ from urwid import (
     Text,
     WidgetWrap,
     )
+from urwid import Padding as uPadding
 
 from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn, menu_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
@@ -44,8 +45,8 @@ class ApplyingConfigWidget(WidgetWrap):
         self.cancel_func = cancel_func
         button = cancel_btn(_("Cancel"), on_press=self.do_cancel)
         self.bar = ProgressBar(normal='progress_incomplete',
-                        complete='progress_complete',
-                        current=0, done=step_count)
+                               complete='progress_complete',
+                               current=0, done=step_count)
         box = LineBox(Pile([self.bar,
                             button_pile([button])]),
                       title=_("Applying network config"))
@@ -57,16 +58,21 @@ class ApplyingConfigWidget(WidgetWrap):
     def do_cancel(self, sender):
         self.cancel_func()
 
+
 def _build_wifi_info(dev):
     r = []
     if dev.actual_ssid is not None:
         if dev.configured_ssid is not None:
             if dev.actual_ssid != dev.configured_ssid:
-                r.append(Text(_("Associated to '%s', will associate to '%s'" % (dev.actual_ssid, dev.configured_ssid))))
+                r.append(
+                    Text(_("Associated to '%s', will "
+                           "associate to '%s'" % (dev.actual_ssid,
+                                                  dev.configured_ssid))))
             else:
                 r.append(Text(_("Associated to '%s'" % dev.actual_ssid)))
         else:
-            r.append(Text(_("No access point configured, but associated to '%s'" % dev.actual_ssid)))
+            r.append(Text(_("No access point configured, but associated "
+                            "to '%s'" % dev.actual_ssid)))
     else:
         if dev.configured_ssid is not None:
             r.append(Text(_("Will associate to '%s'" % dev.configured_ssid)))
@@ -74,16 +80,17 @@ def _build_wifi_info(dev):
             r.append(Text(_("No access point configured")))
     return r
 
+
 def _format_address_list(label, addresses):
     if len(addresses) == 0:
         return []
     elif len(addresses) == 1:
-        return [Text(label%('',)+' '+str(addresses[0]))]
+        return [Text(label % ('',) + ' ' + str(addresses[0]))]
     else:
         ips = []
         for ip in addresses:
             ips.append(str(ip))
-        return [Text(label%('es',) + ' ' + ', '.join(ips))]
+        return [Text(label % ('es',) + ' ' + ', '.join(ips))]
 
 
 def _build_gateway_ip_info_for_version(dev, version):
@@ -91,17 +98,26 @@ def _build_gateway_ip_info_for_version(dev, version):
     configured_ip_addresses = dev.configured_ip_addresses_for_version(version)
     if dev.dhcp_for_version(version):
         if dev.actual_ip_addresses_for_version(version):
-            return _format_address_list(_("Will use DHCP for IPv%s, currently has address%%s:" % version), actual_ip_addresses)
+            return _format_address_list(_("Will use DHCP for IPv%s, currently "
+                                          "has address%%s:" % version),
+                                        actual_ip_addresses)
         return [Text(_("Will use DHCP for IPv%s" % version))]
     elif configured_ip_addresses:
         if sorted(actual_ip_addresses) == sorted(configured_ip_addresses):
-            return _format_address_list(_("Using static address%%s for IPv%s:" % version), actual_ip_addresses)
-        p = _format_address_list(_("Will use static address%%s for IPv%s:" % version), configured_ip_addresses)
+            return _format_address_list(
+                _("Using static address%%s for IPv%s:" % version),
+                actual_ip_addresses)
+        p = _format_address_list(
+            _("Will use static address%%s for IPv%s:" % version),
+            configured_ip_addresses)
         if actual_ip_addresses:
-            p.extend(_format_address_list(_("Currently has address%s:"), actual_ip_addresses))
+            p.extend(_format_address_list(_("Currently has address%s:"),
+                                          actual_ip_addresses))
         return p
     elif actual_ip_addresses:
-        return _format_address_list(_("Has no IPv%s configuration, currently has address%%s:" % version), actual_ip_addresses)
+        return _format_address_list(_("Has no IPv%s configuration, currently "
+                                      "has address%%s:" % version),
+                                    actual_ip_addresses)
     else:
         return [Text(_("IPv%s is not configured" % version))]
 
@@ -165,7 +181,8 @@ class NetworkView(BaseView):
 
             if dev.type == 'wlan':
                 col_2.extend(_build_wifi_info(dev))
-            if len(dev.actual_ip_addresses) == 0 and dev.type == 'eth' and not dev.is_connected:
+            if len(dev.actual_ip_addresses) == 0 and (
+                    dev.type == 'eth' and not dev.is_connected):
                 col_2.append(Color.info_primary(Text(_("Not connected"))))
             col_2.extend(_build_gateway_ip_info_for_version(dev, 4))
             col_2.extend(_build_gateway_ip_info_for_version(dev, 6))
@@ -174,10 +191,10 @@ class NetworkView(BaseView):
             template = ''
             if dev.hwaddr:
                 template += '{} '.format(dev.hwaddr)
-            ## TODO is this to translate?
+            # TODO is this to translate?
             if dev.is_bond_slave:
                 template += '(Bonded) '
-            ## TODO to check if this is affected by translations
+            # TODO to check if this is affected by translations
             if not dev.vendor.lower().startswith('unknown'):
                 vendor = textwrap.wrap(dev.vendor, 15)[0]
                 template += '{} '.format(vendor)
@@ -188,7 +205,8 @@ class NetworkView(BaseView):
                 template += '({})'.format(dev.speed)
 
             col_2.append(Color.info_minor(Text(template)))
-            iface_menus.append(Columns([(ifname_width, Pile(col_1)), Pile(col_2)], 2))
+            iface_menus.append(
+                Columns([(ifname_width, Pile(col_1)), Pile(col_2)], 2))
 
         return iface_menus
 
@@ -197,8 +215,9 @@ class NetworkView(BaseView):
             Padding.center_79(self.additional_options),
             Padding.line_break(""),
         ]
-        self.listbox.base_widget.body[:] = widgets
-        self.additional_options.contents = [ (obj, ('pack', None)) for obj in self._build_additional_options() ]
+        self.listbox.body[:] = widgets
+        self.additional_options.contents = [
+            (obj, ('pack', None)) for obj in self._build_additional_options()]
 
     def _build_additional_options(self):
         labels = []
@@ -243,8 +262,8 @@ class NetworkView(BaseView):
                     on_press=self.additional_menu_select,
                     user_data=sig))
 
-        from urwid import Padding
-        buttons = [ Padding(button, align='left', width=max_btn_len + 6) for button in buttons ]
+        buttons = [uPadding(button, align='left', width=max_btn_len + 6)
+                   for button in buttons]
         r = labels + buttons
         if len(r) > 0:
             r[0:0] = [Text("")]
@@ -265,19 +284,20 @@ class NetworkView(BaseView):
             ]
         if action == 'stop-networkd':
             exc = info[0]
-            self.error.set_text("Stopping systemd-networkd-failed: %r" % (exc.stderr,))
+            self.error.set_text(
+                "Stopping systemd-networkd-failed: %r" % (exc.stderr,))
         elif action == 'apply':
-            self.error.set_text("Network configuration could not be applied; " + \
+            self.error.set_text("Network configuration could not be applied; "
                                 "please verify your settings.")
         elif action == 'timeout':
-            self.error.set_text("Network configuration timed out; " + \
+            self.error.set_text("Network configuration timed out; "
                                 "please verify your settings.")
         elif action == 'down':
             self.error.set_text("Downing network interfaces failed.")
         elif action == 'canceled':
             self.error.set_text("Network configuration canceled.")
         else:
-            self.error.set_text("An unexpected error has occurred; " + \
+            self.error.set_text("An unexpected error has occurred; "
                                 "please verify your settings.")
 
     def done(self, result):
