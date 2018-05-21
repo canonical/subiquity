@@ -29,14 +29,12 @@ from subiquity.ui.views.snaplist import SnapListView
 
 log = logging.getLogger('subiquity.controllers.snaplist')
 
-class SnapInfoLoader:
-    def __init__(self):
-        pass
 
 class SampleDataSnapInfoLoader:
 
     def __init__(self, model, snap_data_dir):
         self.model = model
+        self.state = "not running"
         self.snap_data_dir = snap_data_dir
 
     def start(self):
@@ -48,6 +46,7 @@ class SampleDataSnapInfoLoader:
             with open(snap_info_file) as fp:
                 self.model.load_info_data(json.load(fp))
         self.state = "loaded"
+
 
 class SnapdSnapInfoLoader:
 
@@ -159,7 +158,12 @@ class SnapListController(BaseController):
                 return
             else:
                 self.loader.stop()
-        self.loader = SnapdSnapInfoLoader(self.model, self.run_in_bg, '/run/snapd.socket')
+        if self.opts.snaps_from_examples:
+            self.loader = SampleDataSnapInfoLoader(
+                self.model,
+                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "examples", "snaps"))
+        else:
+            self.loader = SnapdSnapInfoLoader(self.model, self.run_in_bg, '/run/snapd.socket')
         self.loader.start()
 
     def network_config_done(self, netplan_path):
