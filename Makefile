@@ -40,8 +40,12 @@ lint:
 	python3 /usr/bin/flake8 bin/$(PYTHONSRC)-tui --ignore=F403
 	python3 /usr/bin/flake8 --exclude $(PYTHONSRC)/tests/ $(PYTHONSRC) --ignore=F403
 
+pep8:
+	echo "Running $Q tests..."
+	@$(CWD)/scripts/run-pep8
+
 pyflakes3:
-	echo "Running pyflakes tests..."
+	echo "Running $Q tests..."
 	@$(CWD)/scripts/run-pyflakes3
 
 unit:
