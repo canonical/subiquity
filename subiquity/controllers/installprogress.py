@@ -212,21 +212,24 @@ class InstallTask(BackgroundTask):
 
 class PretendContainerManager:
 
+    def __init__(self):
+        self.scale_factor = float(os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "4"))
+
     def initialize_lxd(self):
         log.debug("initialize_lxd")
-        time.sleep(4)
+        time.sleep(4/self.scale_factor)
 
     def create_container(self):
         log.debug("create_container")
-        time.sleep(1)
+        time.sleep(1/self.scale_factor)
 
     def start_container(self):
         log.debug("start_container")
-        time.sleep(1)
+        time.sleep(2/self.scale_factor)
 
     def wait_for_cloudinit(self):
         log.debug("wait_for_cloudinit")
-        time.sleep(4)
+        time.sleep(8/self.scale_factor)
 
 
 class InstallProgressController(BaseController):
