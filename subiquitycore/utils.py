@@ -112,7 +112,12 @@ def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PI
         kw['stdin'] = subprocess.DEVNULL
     log.debug("run_command called: %s", cmd)
     try:
-        cp = subprocess.run(cmd, input=input, stdout=stdout, stderr=stderr, encoding=encoding, env=_clean_env(env), **kw)
+        cp = subprocess.run(cmd, input=input, stdout=stdout, stderr=stderr, env=_clean_env(env), **kw)
+        if encoding:
+            if isinstance(cp.stdout, bytes):
+                cp.stdout = cp.stdout.decode(encoding)
+            if isinstance(cp.stderr, bytes):
+                cp.stderr = cp.stderr.decode(encoding)
     except subprocess.CalledProcessError as e:
         log.debug("run_command %s", str(e))
         raise
@@ -127,7 +132,7 @@ def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stde
     We never ever want a subprocess to inherit our file descriptors!
     """
     log.debug('start_command called: %s', cmd)
-    return subprocess.Popen(cmd, stdin=stdin, stdout=stdout, stderr=stderr, encoding=encoding, env=_clean_env(env), **kw)
+    return subprocess.Popen(cmd, stdin=stdin, stdout=stdout, stderr=stderr, env=_clean_env(env), **kw)
 
 
 # FIXME: replace with passlib and update package deps

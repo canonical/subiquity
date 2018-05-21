@@ -70,6 +70,8 @@ class IdentityController(BaseController):
 
     def _bg_fetch_ssh_keys(self, user_spec, proc, ssh_import_id):
         stdout, stderr = proc.communicate()
+        stdout = stdout.decode('utf-8', errors='replace')
+        stderr = stderr.decode('utf-8', errors='replace')
         log.debug("ssh-import-id exited with code %s", proc.returncode)
         if proc != self._fetching_proc:
             log.debug("_fetch_ssh_keys cancelled")
