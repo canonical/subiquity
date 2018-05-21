@@ -120,5 +120,5 @@ class IscsiDiskView(BaseView):
         # TODO: List found volumes
         return Pile(items)
 
-    def confirm(self, result):
+    def confirm(self, result, sig):
         self.signal.emit_signal(sig)
