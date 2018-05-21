@@ -12,7 +12,8 @@ from subiquitycore.ui.form import Form, PasswordField, StringField
 from subiquitycore.ui.utils import Color, Padding
 import logging
 
-log = logging.getLogger(__name__)
+log = logging.getLogger(
+    'subiquitycore.network.network_configure_wlan_interface')
 
 
 class NetworkList(WidgetWrap):
