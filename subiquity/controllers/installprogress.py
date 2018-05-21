@@ -264,8 +264,7 @@ class InstallProgressController(BaseController):
         try:
             fut.result()
         except:
-            self.progress_view.add_log_line(traceback.format_exc())
-            self.curtin_error()
+            self.curtin_error(traceback.format_exc())
 
     def filesystem_config_done(self):
         self.curtin_start_install()
@@ -276,10 +275,12 @@ class InstallProgressController(BaseController):
         else:
             self._identity_config_done = True
 
-    def curtin_error(self):
+    def curtin_error(self, log_text=None):
         log.debug('curtin_error')
         self.install_state = InstallState.ERROR
         self.progress_view.spinner.stop()
+        if log_text is not None:
+            self.progress_view.add_log_line(log_text)
         self.progress_view.set_status(('info_error', _("An error has occurred")))
         self.progress_view.show_complete(True)
         self.default()
@@ -418,8 +419,9 @@ class InstallProgressController(BaseController):
                 self.controller = controller
             def task_complete(self, stage):
                 pass
-            def task_error(self, stage, info=None):
-                self.controller.curtin_error()
+            def task_error(self, stage, info):
+                tb = traceback.format_exception(*info)
+                self.controller.curtin_error("\n".join(tb))
             def tasks_finished(self):
                 self.controller.loop.set_alarm_in(0.0, lambda loop, ud:self.controller.postinstall_complete())
         tasks = [
