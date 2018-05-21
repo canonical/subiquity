@@ -196,7 +196,7 @@ class SnapListRow(WidgetWrap):
                 if fi is not None:
                     fi.close()
                 if len(self.snap.channels) == 0: # or other indication of failure
-                    pass # Show a 'failed' message
+                    pass # XXX show a 'failed' message, allow retrying
                 self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name))
             self.parent.controller.get_snap_info(self.snap, callback)
             # If we didn't get callback synchronously, display a dialog while the info loads.
@@ -230,6 +230,7 @@ class SnapListView(BaseView):
             called = True
             if spinner is not None:
                 spinner.stop()
+            # XXX Do something different (show a message, allow retrying) if load failed.
             self.make_main_screen(snap_list)
             self._w = self.main_screen
         self.controller.get_snap_list(callback)
