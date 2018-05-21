@@ -56,6 +56,11 @@ class SampleDataSnapInfoLoader:
                 self.model.load_info_data(json.load(fp))
         self.state = SnapInfoLoaderState.LOADED
 
+    def get_snap_list(self, callback):
+        callback(self.model.get_snap_list())
+
+    def get_snap_info(self, snap, callback):
+        callback()
 
 class SnapdSnapInfoLoader:
 
@@ -71,11 +76,11 @@ class SnapdSnapInfoLoader:
     def start(self):
         self.state = SnapInfoLoaderState.LOADING_LIST
         log.debug("loading list of snaps")
-        def cb():
+        def cb(snap_list):
             if self.state != SnapInfoLoaderState.LOADING_LIST:
                 return
             self.state = SnapInfoLoaderState.LOADING_INFO
-            self.pending_info_snaps = self.model.get_snap_list()
+            self.pending_info_snaps = snap_list
             log.debug("fetched list of %s snaps", len(self.pending_info_snaps))
             self._fetch_next_info()
         self.ongoing[None] = [cb]
@@ -98,11 +103,19 @@ class SnapdSnapInfoLoader:
             self.state = SnapInfoLoaderState.FAILED
         else:
             self.model.load_find_data(response.json())
-        for cb in self.ongoing[None]:
-            cb()
-        del self.ongoing[None]
+        for cb in self.ongoing.pop(None):
+            cb(self.model.get_snap_list())
 
-    def fetch_info_for_snap(self, snap, callback):
+    def get_snap_list(self, callback):
+        if self.state >= SnapInfoLoaderState.LOADING_INFO:
+            callback(self.model.get_snap_list())
+        else:
+            self.ongoing[None].append(callback)
+
+    def get_snap_info(self, snap, callback):
+        if len(snap.channels) > 0:
+            callback()
+            return
         if snap in self.ongoing:
             self.ongoing[snap].append(callback)
             return
@@ -134,8 +147,9 @@ class SnapdSnapInfoLoader:
             response = fut.result()
             response.raise_for_status()
         except requests.exceptions.RequestException:
-            log.exception("loading list of snaps failed")
+            log.exception("loading snap info failed")
             self.state = SnapInfoLoaderState.FAILED
+            # XXX something better here?
         else:
             data = response.json()
             snap = self.model.load_info_data(data)
@@ -143,9 +157,8 @@ class SnapdSnapInfoLoader:
                 log.debug("fetched info on %r", snap.name)
             else:
                 log.debug("fetched info on mystery snap %s", data)
-            for cb in self.ongoing.get(snap, []):
-                cb()
-            del self.ongoing[snap]
+        for cb in self.ongoing.pop(snap):
+            cb()
 
 
 class SnapListController(BaseController):
@@ -203,10 +216,14 @@ class SnapListController(BaseController):
             )
         self.ui.set_body(SnapListView(self.model, self))
 
-    def info_for_snap(self, snap, callback):
-        self.loader.fetch_info_for_snap(snap, callback)
+    def get_snap_list(self, callback):
+        self.loader.get_snap_list(callback)
+
+    def get_snap_info(self, snap, callback):
+        self.loader.get_snap_info(snap, callback)
 
     def done(self, snaps_to_install):
+        self.model.set_installed_list(snaps_to_install)
         self.signal.emit_signal("next-screen")
 
     def cancel(self, sender=None):

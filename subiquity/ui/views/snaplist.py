@@ -169,6 +169,7 @@ class FetchingInfo(WidgetWrap):
         self.spinner.stop()
         self.parent.remove_overlay()
 
+
 class SnapListRow(WidgetWrap):
     def __init__(self, parent, snap, max_name_len, max_publisher_len):
         self.parent = parent
@@ -187,19 +188,23 @@ class SnapListRow(WidgetWrap):
         super().__init__(self.two_column)
     def keypress(self, size, key):
         if key.startswith("enter"):
-            if self.snap.channels:
+            called = False
+            fi = None
+            def callback():
+                nonlocal called
+                called = True
+                if fi is not None:
+                    fi.close()
+                if len(self.snap.channels) == 0: # or other indication of failure
+                    pass # Show a 'failed' message
                 self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name))
-                return
-            else:
+            self.parent.controller.get_snap_info(self.snap, callback)
+            # If we didn't get callback synchronously, display a dialog while the info loads.
+            if not called:
                 fi = FetchingInfo(self.parent, self.snap, self.parent.controller.loop)
                 self.parent.show_overlay(fi, width=fi.width)
-                def cb():
-                    if not fi.closed:
-                        fi.close()
-                        self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name))
-                self.parent.controller.info_for_snap(self.snap, cb)
-                return
-        return super().keypress(size, key)
+        else:
+            return super().keypress(size, key)
     def state_change(self, sender, new_state):
         if new_state:
             self.parent.to_install[self.snap.name] = 'stable'
@@ -218,36 +223,31 @@ class SnapListView(BaseView):
         self.model = model
         self.controller = controller
         self.to_install = {} # {snap_name: risk}
-        if self.controller.loader.state == "loading list":
-            spinner = Spinner(controller.loop, style='dots')
-            spinner.start()
-            ok = ok_btn(label=_("Continue"), on_press=self.done)
-            cancel = cancel_btn(label=_("Cancel"), on_press=self.done)
-            p = button_pile([ok, cancel])
-            def cb():
+        called = False
+        spinner = None
+        def callback(snap_list):
+            nonlocal called
+            called = True
+            if spinner is not None:
                 spinner.stop()
-                if self.controller.loader.state == "failed":
-                    body = [Text(_("Loading server snaps from the store failed, sorry."))]
-                    self._w = screen(body, button_pile([ok, cancel]))
-                else:
-                    self.make_main_screen()
-                    self._w = self.main_screen
-            self.controller.loader.ongoing[None].append(cb)
-            body = [spinner]
-            super().__init__(screen(
-                body, button_pile([ok, cancel]),
-                excerpt=_("Loading server snaps from store, please wait...")))
-        else:
-            self.make_main_screen()
-            super().__init__(self.main_screen)
+            self.make_main_screen(snap_list)
+            self._w = self.main_screen
+        self.controller.get_snap_list(callback)
+        if called:
+            return
+        spinner = Spinner(controller.loop, style='dots')
+        spinner.start()
+        ok = ok_btn(label=_("Continue"), on_press=self.done)
+        self._w = screen(
+            [spinner], button_pile([ok]),
+            excerpt=_("Loading server snaps from store, please wait..."))
 
-    def make_main_screen(self):
-        snaps = self.model.get_snap_list()
-        self.name_len = max([len(snap.name) for snap in snaps])
-        self.publisher_len = max([len(snap.publisher) for snap in snaps])
+    def make_main_screen(self, snap_list):
+        self.name_len = max([len(snap.name) for snap in snap_list])
+        self.publisher_len = max([len(snap.publisher) for snap in snap_list])
         self.snap_rows = {}
         body = []
-        for snap in snaps:
+        for snap in snap_list:
             row = SnapListRow(self, snap, self.name_len, self.publisher_len)
             self.snap_rows[snap.name] = row
             body.append(row)
