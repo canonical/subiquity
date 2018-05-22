@@ -54,31 +54,47 @@ class StarRadioButton(RadioButton):
 
 
 class NoTabCyclingListBox(ListBox):
+    # Carefully disable the TabCycling parts of our ListBox (but keep the scrollbar!)
+
     def keypress(self, size, key):
         if not key.startswith("enter") and self._command_map[key] in ('next selectable', 'prev selectable'):
             return key
         else:
             return super().keypress(size, key)
+
     def _select_first_selectable(self):
         return
+
     def _select_last_selectable(self):
         return
 
+
 class SnapInfoView(Widget):
+
+    # This is mostly like a Pile but it tries to be a bit smart about
+    # how to distribute space between the description and channel list
+    # (which can both be arbitrarily long or short). If both are long,
+    # the channel list is given a third of the space. If there is
+    # space for both, they are packed into the upper part of the view.
+
     _selectable = True
     _sizing = frozenset([BOX])
-    description_index = 5
-    channels_index = 7
+
     def __init__(self, parent, snap, cur_channel):
         self.parent = parent
         self.snap = snap
         self.channels = []
         self.needs_focus = True
+
         channel_width = max(len(csi.channel_name) for csi in snap.channels) \
           + StarRadioButton.reserve_columns + 1
         max_version = max(len(csi.version) for csi in snap.channels)
         max_revision = max(len(str(csi.revision)) for csi in snap.channels) + 2
         max_size = max(len(humanize_size(csi.size)) for csi in snap.channels)
+
+        self.description = Text(snap.description.replace('\r', '').strip())
+        self.lb_description = Padding.center_79(ListBox([self.description]))
+
         radio_group = []
         for csi in snap.channels:
             notes = '-'
@@ -97,10 +113,10 @@ class SnapInfoView(Widget):
                 (max_size, Text(humanize_size(csi.size))),
                 ('pack', Text(notes)),
                 ], dividechars=1)))
-        self.description = Text(snap.description.replace('\r', '').strip())
-        self.lb_description = Padding.center_79(ListBox([self.description]))
+
         self.lb_channels = Padding.center_79(NoTabCyclingListBox(self.channels))
-        self.pile = Pile([
+
+        contents = [
             ('pack', Text("")),
             ('pack', Padding.center_79(Text("{} - {}".format(snap.name, snap.publisher)))),
             ('pack', Text("")),
@@ -112,24 +128,33 @@ class SnapInfoView(Widget):
             ('pack', Text("")),
             ('pack', button_pile([other_btn(label=_("Close"), on_press=self.close)])),
             ('pack', Text("")),
-            ])
+            ]
+        self.description_index = contents.index(self.lb_channels)
+        self.pile = Pile(contents)
+
     def close(self, sender=None):
         self.parent._w = self.parent.main_screen
+
     def state_change(self, sender, state, user_data):
         if state:
             self.parent.snap_rows[self.snap.name].box.set_state(True)
             self.parent.to_install[self.snap.name] = user_data
+
     def keypress(self, size, key):
         return self.pile.keypress(size, key)
+
     def render(self, size, focus):
         maxcol, maxrow = size
+
         rows_available = maxrow
         pack_option = self.pile.options('pack')
         for w, o in self.pile.contents:
             if o == pack_option:
                 rows_available -= w.rows((maxcol,), focus)
+
         rows_wanted_description = Padding.center_79(self.description).rows((maxcol,), False)
         rows_wanted_channels = len(self.channels)
+
         if rows_wanted_channels + rows_wanted_description <= rows_available:
             description_rows = rows_wanted_description
         else:
@@ -138,6 +163,7 @@ class SnapInfoView(Widget):
             else:
                 channel_rows = min(rows_wanted_channels, int(rows_available/3))
                 description_rows = rows_available - channel_rows
+
         self.pile.contents[self.description_index] = (self.lb_description, self.pile.options('given', description_rows))
         if description_rows >= rows_wanted_description:
             self.lb_description.original_widget._selectable = False
@@ -148,7 +174,9 @@ class SnapInfoView(Widget):
             self.needs_focus = False
         return self.pile.render(size, focus)
 
+
 class FetchingInfo(WidgetWrap):
+
     def __init__(self, parent, snap, loop):
         self.parent = parent
         self.spinner = Spinner(loop, style='dots')
@@ -165,6 +193,7 @@ class FetchingInfo(WidgetWrap):
                     ('pack', self.spinner),
                     ('pack', button_pile([cancel_btn(label=_("Cancel"), on_press=self.close)])),
                     ])))
+
     def close(self, sender=None):
         if self.closed:
             return
@@ -174,6 +203,7 @@ class FetchingInfo(WidgetWrap):
 
 
 class SnapListRow(WidgetWrap):
+
     def __init__(self, parent, snap, max_name_len, max_publisher_len):
         self.parent = parent
         self.snap = snap
@@ -189,6 +219,7 @@ class SnapListRow(WidgetWrap):
                 Text(snap.summary, wrap='clip'),
                 ], dividechars=1))
         super().__init__(self.two_column)
+
     def keypress(self, size, key):
         if key.startswith("enter"):
             called = False
@@ -208,11 +239,13 @@ class SnapListRow(WidgetWrap):
                 self.parent.show_overlay(fi, width=fi.width)
         else:
             return super().keypress(size, key)
+
     def state_change(self, sender, new_state):
         if new_state:
             self.parent.to_install[self.snap.name] = ('stable', self.snap.confinement == "classic")
         else:
             self.parent.to_install.pop(self.snap.name, None)
+
     def render(self, size, focus):
         maxcol = size[0]
         if maxcol - self.name_and_publisher_width >= 40:
@@ -260,7 +293,10 @@ class SnapListView(BaseView):
         self.main_screen = screen(
             NoTabCyclingListBox(body), button_pile([ok, cancel]),
             focus_buttons=False,
-            excerpt=_("These are popular snaps in server environments. Select or deselect with SPACE, press ENTER to see more details of the package, publisher and versions available."))
+            excerpt=_(
+                "These are popular snaps in server environments. Select or "
+                "deselect with SPACE, press ENTER to see more details of the "
+                "package, publisher and versions available."))
 
     def done(self, sender=None):
         log.debug("snaps to install %s", self.to_install)
