@@ -38,19 +38,19 @@ class ApplicationError(Exception):
 # From uapi/linux/kd.h:
 KDGKBTYPE = 0x4B33  # get keyboard type
 
-GIO_CMAP  = 0x4B70	# gets colour palette on VGA+
-PIO_CMAP  = 0x4B71	# sets colour palette on VGA+
+GIO_CMAP = 0x4B70  # gets colour palette on VGA+
+PIO_CMAP = 0x4B71  # sets colour palette on VGA+
 UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
 
 # /usr/include/linux/kd.h
-K_RAW       = 0x00
-K_XLATE     = 0x01
+K_RAW = 0x00
+K_XLATE = 0x01
 K_MEDIUMRAW = 0x02
-K_UNICODE   = 0x03
-K_OFF       = 0x04
+K_UNICODE = 0x03
+K_OFF = 0x04
 
-KDGKBMODE = 0x4B44 # gets current keyboard mode
-KDSKBMODE = 0x4B45 # sets current keyboard mode
+KDGKBMODE = 0x4B44  # gets current keyboard mode
+KDSKBMODE = 0x4B45  # sets current keyboard mode
 
 
 class ISO_8613_3_Screen(urwid.raw_display.Screen):
@@ -65,7 +65,8 @@ class ISO_8613_3_Screen(urwid.raw_display.Screen):
     def _attrspec_to_escape(self, a):
         f_r, f_g, f_b = self._fg_to_rgb[a.foreground]
         b_r, b_g, b_b = self._bg_to_rgb[a.background]
-        return "\x1b[38;2;{};{};{};48;2;{};{};{}m".format(f_r, f_g, f_b, b_r, b_g, b_b)
+        return "\x1b[38;2;{};{};{};48;2;{};{};{}m".format(f_r, f_g, f_b,
+                                                          b_r, b_g, b_b)
 
 
 def is_linux_tty():
@@ -76,7 +77,6 @@ def is_linux_tty():
         return False
     log.debug("KDGKBTYPE returned %r", r)
     return r == b'\x02'
-
 
 
 def setup_screen(colors, styles):
@@ -96,7 +96,8 @@ def setup_screen(colors, styles):
     # class that displays maps the standard color name to the value
     # specified in colors using 24-bit control codes.
     if len(colors) != 8:
-        raise Exception("setup_screen must be passed a list of exactly 8 colors")
+        raise Exception(
+            "setup_screen must be passed a list of exactly 8 colors")
     urwid_8_names = (
         'black',
         'dark red',
@@ -128,7 +129,6 @@ def setup_screen(colors, styles):
         return ISO_8613_3_Screen(_urwid_name_to_rgb), urwid_palette
 
 
-
 class KeyCodesFilter:
     """input_filter that can pass (medium) raw keycodes to the application
 
@@ -149,7 +149,8 @@ class KeyCodesFilter:
     def enter_keycodes_mode(self):
         log.debug("enter_keycodes_mode")
         self.filtering = True
-        # Read the old keyboard mode (it will proably always be K_UNICODE but well).
+        # Read the old keyboard mode (it will proably always be
+        # K_UNICODE but well).
         o = bytearray(4)
         fcntl.ioctl(self._fd, KDGKBMODE, o)
         self._old_mode = struct.unpack('i', o)[0]
@@ -159,13 +160,16 @@ class KeyCodesFilter:
         self._old_settings = termios.tcgetattr(self._fd)
         new_settings = termios.tcgetattr(self._fd)
         new_settings[tty.IFLAG] = 0
-        new_settings[tty.LFLAG] = new_settings[tty.LFLAG] & ~(termios.ECHO | termios.ICANON | termios.ISIG)
+        new_settings[tty.LFLAG] = new_settings[tty.LFLAG] & ~(termios.ECHO |
+                                                              termios.ICANON |
+                                                              termios.ISIG)
         new_settings[tty.CC][termios.VMIN] = 0
         new_settings[tty.CC][termios.VTIME] = 0
         termios.tcsetattr(self._fd, termios.TCSAFLUSH, new_settings)
         # Finally, set the keyboard mode to K_MEDIUMRAW, which causes
         # the keyboard driver in the kernel to pass us keycodes.
-        log.debug("old mode was %s, setting mode to %s", self._old_mode, K_MEDIUMRAW)
+        log.debug("old mode was %s, setting mode to %s",
+                  self._old_mode, K_MEDIUMRAW)
         fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
 
     def exit_keycodes_mode(self):
@@ -188,9 +192,12 @@ class KeyCodesFilter:
                     p = 'release '
                 else:
                     p = 'press '
-                if i + 2 < n and (codes[i] & 0x7f) == 0 and (codes[i + 1] & 0x80) != 0 and (codes[i + 2] & 0x80) != 0:
-                    kc = ((codes[i + 1] & 0x7f) << 7) | (codes[i + 2] & 0x7f)
-                    i += 3
+                if i + 2 < n and (codes[i] & 0x7f) == 0:
+                    if (codes[i + 1] & 0x80) != 0:
+                        if (codes[i + 2] & 0x80) != 0:
+                            kc = (((codes[i + 1] & 0x7f) << 7) |
+                                  (codes[i + 2] & 0x7f))
+                            i += 3
                 else:
                     kc = codes[i] & 0x7f
                     i += 1
@@ -266,7 +273,8 @@ class Application:
             "input_filter": input_filter,
         }
         if opts.screens:
-            self.controllers = [c for c in self.controllers if c in opts.screens]
+            self.controllers = [c for c in self.controllers
+                                if c in opts.screens]
         ui.progress_completion = len(self.controllers)
         self.common['controllers'] = dict.fromkeys(self.controllers)
         self.controller_index = -1
@@ -356,18 +364,21 @@ class Application:
                 loop.set_alarm_in(0.01, _run_script)
 
         def c(pat):
-            but = view_helpers.find_button_matching(self.common['ui'], '.*' + pat + '.*')
+            but = view_helpers.find_button_matching(self.common['ui'],
+                                                    '.*' + pat + '.*')
             if not but:
                 ss.wait_count += 1
                 if ss.wait_count > 10:
-                    raise Exception("no button found matching %r after waiting for 10 secs"%(pat,))
-                wait(1, func=lambda : c(pat))
+                    raise Exception("no button found matching %r after"
+                                    "waiting for 10 secs" % pat)
+                wait(1, func=lambda: c(pat))
                 return
             ss.wait_count = 0
             view_helpers.click(but)
 
         def wait(delay, func=None):
             ss.waiting = True
+
             def next(loop, user_data):
                 ss.waiting = False
                 if func is not None:
@@ -394,7 +405,8 @@ class Application:
 
             self.common['loop'] = urwid.MainLoop(
                 self.common['ui'], palette=palette, screen=screen,
-                handle_mouse=False, pop_ups=True, input_filter=self.common['input_filter'].filter)
+                handle_mouse=False, pop_ups=True,
+                input_filter=self.common['input_filter'].filter)
 
             log.debug("Running event loop: {}".format(
                 self.common['loop'].event_loop))
@@ -403,7 +415,8 @@ class Application:
             self.common['loop'].set_alarm_in(0.05, self.next_screen)
             if self.common['opts'].scripts:
                 self.run_scripts(self.common['opts'].scripts)
-            controllers_mod = __import__('%s.controllers' % self.project, None, None, [''])
+            controllers_mod = __import__('%s.controllers' % self.project,
+                                         None, None, [''])
             for k in self.controllers:
                 log.debug("Importing controller: {}".format(k))
                 klass = getattr(controllers_mod, k+"Controller")
