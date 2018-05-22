@@ -196,6 +196,7 @@ class SnapListController(BaseController):
         if self.opts.dry_run:
             cmds = [['sleep', '0.5']]
         else:
+            os.makedirs('/etc/systemd/system/snapd.service.d', exist_ok=True)
             with open('/etc/systemd/system/snapd.service.d/snap_proxy.conf', 'w') as fp:
                 fp.write(self.proxy.proxy_systemd_dropin())
             cmds = [
