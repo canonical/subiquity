@@ -66,7 +66,7 @@ class SnapInfoView(Widget):
     _sizing = frozenset([BOX])
     description_index = 5
     channels_index = 7
-    def __init__(self, parent, snap, cur_risk):
+    def __init__(self, parent, snap, cur_channel):
         self.parent = parent
         self.snap = snap
         self.channels = []
@@ -84,9 +84,9 @@ class SnapInfoView(Widget):
             btn = StarRadioButton(
                 radio_group,
                 "{}:".format(csi.channel_name),
-                state=csi.channel_name == cur_risk,
+                state=csi.channel_name == cur_channel,
                 on_state_change=self.state_change,
-                user_data=csi.channel_name)
+                user_data=(csi.channel_name, csi.confinement == "classic"))
             self.channels.append(Color.menu_button(Columns([
                 (channel_width, btn),
                 (max_version, Text(csi.version)),
@@ -112,10 +112,10 @@ class SnapInfoView(Widget):
             ])
     def close(self, sender=None):
         self.parent._w = self.parent.main_screen
-    def state_change(self, sender, state, risk):
+    def state_change(self, sender, state, user_data):
         if state:
             self.parent.snap_rows[self.snap.name].box.set_state(True)
-            self.parent.to_install[self.snap.name] = risk
+            self.parent.to_install[self.snap.name] = user_data
     def keypress(self, size, key):
         return self.pile.keypress(size, key)
     def render(self, size, focus):
@@ -197,7 +197,7 @@ class SnapListRow(WidgetWrap):
                     fi.close()
                 if len(self.snap.channels) == 0: # or other indication of failure
                     pass # XXX show a 'failed' message, allow retrying
-                self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name))
+                self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name, (None,))[0])
             self.parent.controller.get_snap_info(self.snap, callback)
             # If we didn't get callback synchronously, display a dialog while the info loads.
             if not called:
@@ -207,7 +207,7 @@ class SnapListRow(WidgetWrap):
             return super().keypress(size, key)
     def state_change(self, sender, new_state):
         if new_state:
-            self.parent.to_install[self.snap.name] = 'stable'
+            self.parent.to_install[self.snap.name] = ('stable', self.snap.confinement == "classic")
         else:
             self.parent.to_install.pop(self.snap.name, None)
     def render(self, size, focus):
@@ -222,7 +222,7 @@ class SnapListView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.to_install = {} # {snap_name: risk}
+        self.to_install = {} # {snap_name: (channel, is_classic)}
         called = False
         spinner = None
         def callback(snap_list):

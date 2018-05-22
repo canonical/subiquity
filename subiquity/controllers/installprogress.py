@@ -127,8 +127,10 @@ class UpdateSnapSeed(BackgroundTask):
             seedinfo = {
                 'name': snap_name,
                 'file': snap_file,
-                'channel': self.controller.base_model.snaplist.to_install[snap_name],
+                'channel': self.controller.base_model.snaplist.to_install[snap_name][0],
                 }
+            if self.controller.base_model.snaplist.to_install[snap_name][1]:
+                seedinfo['classic'] = True
             seed['snaps'].append(seedinfo)
 
         os.rmdir(self._tmp_dir)
@@ -346,7 +348,7 @@ class InstallProgressController(BaseController):
             tasks = [
                 ('drain', WaitForCurtinEventsTask(self)),
                 ]
-            for snap_name, channel in sorted(self.base_model.snaplist.to_install.items()):
+            for snap_name, (channel, is_classic) in sorted(self.base_model.snaplist.to_install.items()):
                 tasks.append(("snapdownload", DownloadSnapTask(self, tmp_dir, snap_name, channel)))
             tasks.append(("snapseed", UpdateSnapSeed(self, root)))
             ts = TaskSequence(self.run_in_bg, tasks, w(self))

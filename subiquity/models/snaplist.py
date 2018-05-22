@@ -28,6 +28,7 @@ class SnapInfo:
     summary = attr.ib()
     publisher = attr.ib()
     description = attr.ib()
+    confinement = attr.ib()
     channels = attr.ib(default=attr.Factory(list))
 
 
@@ -46,6 +47,7 @@ class SnapListModel:
     def __init__(self, common):
         self._snap_info = []
         self._snaps_by_name = {}
+        self.to_install = {} # snap_name -> (channel, is_classic)
 
     def _from_snapd_info(self, name):
         sock = "/run/snapd.socket"
@@ -62,6 +64,7 @@ class SnapListModel:
                 summary=s['summary'],
                 publisher=s['developer'],
                 description=s['description'],
+                confinement=s['confinement'],
                 )
             self._snap_info.append(snap)
             self._snaps_by_name[s['name']] = snap
