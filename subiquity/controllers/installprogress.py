@@ -70,6 +70,7 @@ class WaitForCurtinEventsTask(BackgroundTask):
         self.controller._install_event_start("installing snaps")
         observer.task_succeeded()
 
+
 class DownloadSnapTask(BackgroundTask):
 
     def __init__(self, controller, download_dir, snap_name, channel):
@@ -110,6 +111,8 @@ class UpdateSnapSeed(BackgroundTask):
         self.controller._install_event_start(_("updating snap seed"))
 
     def _bg_run(self):
+        # This doesn't really need to be in the background, but as we
+        # have the infrastructure already in place, we may as well.
         with open(self._seed_yaml) as fp:
             seed = yaml.safe_load(fp)
 
