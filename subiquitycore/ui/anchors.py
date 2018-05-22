@@ -41,6 +41,7 @@ class StepsProgressBar(ProgressBar):
     def get_text(self):
         return "{} / {}".format(self.current, self.done)
 
+
 class Footer(WidgetWrap):
     """ Footer widget
 
