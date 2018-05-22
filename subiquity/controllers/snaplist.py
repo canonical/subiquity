@@ -166,6 +166,8 @@ class SnapdSnapInfoLoader:
 
 class SnapListController(BaseController):
 
+    snapd_socket_path = '/run/snapd.socket'
+
     signals = [
         ('network-config-written', 'network_config_done'),
         ('network-proxy-set', 'proxy_config_done'),
@@ -189,7 +191,7 @@ class SnapListController(BaseController):
                 self.model,
                 os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "examples", "snaps"))
         else:
-            self.loader = SnapdSnapInfoLoader(self.model, self.run_in_bg, '/run/snapd.socket', self.opts.snap_section)
+            self.loader = SnapdSnapInfoLoader(self.model, self.run_in_bg, self.snapd_socket_path, self.opts.snap_section)
         self.loader.start()
 
     def network_config_done(self, netplan_path):

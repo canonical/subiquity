@@ -46,10 +46,12 @@ class SnapSelection:
     is_classic = attr.ib()
 
 
+risks = ["stable", "candidate", "beta", "edge"]
+
 class SnapListModel:
     """The overall model for subiquity."""
 
-    def __init__(self, common):
+    def __init__(self):
         self._snap_info = []
         self._snaps_by_name = {}
         self.to_install = {} # snap_name -> SnapSelection
@@ -73,7 +75,7 @@ class SnapListModel:
             return
         channel_map = info['channels']
         for track in info['tracks']:
-            for risk in ["stable", "candidate", "beta", "edge"]:
+            for risk in risks:
                 channel_name = '{}/{}'.format(track, risk)
                 if channel_name in channel_map:
                     channel_data = channel_map[channel_name]

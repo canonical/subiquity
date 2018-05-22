@@ -51,7 +51,7 @@ class SubiquityModel:
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
         self.proxy = ProxyModel()
-        self.snaplist = SnapListModel(common)
+        self.snaplist = SnapListModel()
 
     def _cloud_init_config(self):
         user = self.identity.user
