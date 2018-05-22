@@ -45,6 +45,9 @@ class ProxyForm(Form):
 
 class ProxyView(BaseView):
 
+    title = _("Configure proxy")
+    excerpt = _("If this system requires a proxy to connect to the internet, enter its details here.")
+
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
@@ -54,7 +57,7 @@ class ProxyView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen())
+        super().__init__(self.form.as_screen(excerpt=_(self.excerpt)))
 
     def done(self, result):
         log.debug("User input: {}".format(result.as_data()))

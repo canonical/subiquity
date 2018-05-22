@@ -28,7 +28,6 @@ from urwid import (
     WidgetWrap,
     )
 
-from subiquitycore.i18n import *
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.container import Columns, Pile
 from subiquitycore.ui.interactive import (
@@ -362,8 +361,10 @@ class Form(object, metaclass=MetaForm):
         del rows[-1:]
         return rows
 
-    def as_screen(self, focus_buttons=True):
-        return screen(self.as_rows(), self.buttons, focus_buttons=focus_buttons)
+    def as_screen(self, focus_buttons=True, excerpt=None):
+        return screen(
+            self.as_rows(), self.buttons,
+            focus_buttons=focus_buttons, excerpt=excerpt)
 
     def validated(self):
         in_error = False

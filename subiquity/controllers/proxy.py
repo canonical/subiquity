@@ -31,9 +31,6 @@ class ProxyController(BaseController):
         self.answers = self.all_answers.get('Proxy', {})
 
     def default(self):
-        title = _("Configure proxy")
-        excerpt = _("If this system requires a proxy to connect to the internet, enter its details here.")
-        self.ui.set_header(title, excerpt)
         self.ui.set_body(ProxyView(self.model, self))
         if 'proxy' in self.answers:
             self.done(self.answers['proxy'])

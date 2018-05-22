@@ -29,7 +29,11 @@ from DistUtilsExtra.command import build_i18n
 import os
 import sys
 
-import subiquitycore
+with open(os.path.join(os.path.dirname(__file__), 'subiquitycore', '__init__.py')) as init:
+    lines = [line for line in init if 'i18n' not in line]
+    ns = {}
+    exec('\n'.join(lines), ns)
+    version = ns['__version__']
 
 if sys.argv[-1] == 'clean':
     print("Cleaning up ...")
@@ -37,7 +41,7 @@ if sys.argv[-1] == 'clean':
     sys.exit()
 
 setup(name='subiquity',
-      version=subiquitycore.__version__,
+      version=version,
       description="Ubuntu Server Installer",
       long_description=__doc__,
       author='Canonical Engineering',

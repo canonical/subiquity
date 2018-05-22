@@ -203,11 +203,13 @@ def button_pile(buttons):
     width = max_label + 4
     return _Padding(Pile(buttons), min_width=width, width=width, align='center')
 
-def screen(rows, buttons, focus_buttons=True):
+def screen(rows, buttons, focus_buttons=True, excerpt=None):
     """Helper to create a common screen layout.
 
     The commonest screen layout in subiquity is:
 
+        [ 1 line padding (optional) ]
+        excerpt (optional)
         [ 1 line padding ]
         Listbox()
         [ 1 line padding ]
@@ -216,14 +218,25 @@ def screen(rows, buttons, focus_buttons=True):
 
     This helper makes creating this a 1-liner.
     """
-    screen = Pile([
+    if isinstance(rows, list):
+        rows = ListBox(rows)
+    if isinstance(buttons, list):
+        buttons = button_pile(buttons)
+    excerpt_rows = []
+    if excerpt is not None:
+        excerpt_rows = [
+            ('pack', Text("")),
+            ('pack', Text(excerpt)),
+            ]
+    body = [
         ('pack', Text("")),
-        Padding.center_79(ListBox(rows)),
+        rows,
         ('pack', Text("")),
         ('pack', buttons),
         ('pack', Text("")),
-        ])
+        ]
+    pile = Pile(excerpt_rows + body)
     if focus_buttons:
-        screen.focus_position = 3
-    return screen
+        pile.focus_position = len(excerpt_rows) + 3
+    return Padding.center_79(pile)
 

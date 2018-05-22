@@ -45,14 +45,6 @@ class KeyboardController(BaseController):
     def default(self):
         if self.model.current_lang is None:
             self.model.load_language('C')
-        title = _("Keyboard configuration")
-        if self.opts.run_on_serial:
-            excerpt = _('Please select the layout of the keyboard directly attached to the system, if any.')
-        else:
-            excerpt = _('Please select your keyboard layout below, or select "Identify keyboard" to detect your layout automatically.')
-        footer = _("Use UP, DOWN and ENTER keys to select your keyboard.")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
         view = KeyboardView(self.model, self, self.opts)
         self.ui.set_body(view)
         if 'layout' in self.answers:
