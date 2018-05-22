@@ -21,11 +21,13 @@ Provides high level options for Ubuntu install
 import binascii
 import logging
 import re
-from urwid import connect_signal, Text
+
+import lsb_release
+
+from urwid import connect_signal
 
 from subiquitycore.ui.buttons import back_btn, forward_btn
-from subiquitycore.ui.utils import Padding, button_pile
-from subiquitycore.ui.container import ListBox, Pile
+from subiquitycore.ui.utils import screen
 from subiquitycore.view import BaseView
 from subiquitycore.ui.interactive import (
     PasswordEditor,
@@ -43,19 +45,24 @@ log = logging.getLogger('subiquity.installpath')
 
 
 class InstallpathView(BaseView):
+    title = "Ubuntu {}"
+
+    excerpt = _("Welcome to Ubuntu! The world's favourite platform "
+                "for clouds, clusters, and amazing internet things. "
+                "This is the installer for Ubuntu on servers and "
+                "internet devices.")
+    footer = _("Use UP, DOWN arrow keys, and ENTER, to "
+               "navigate options")
+
     def __init__(self, model, controller):
+        self.title = self.title.format(lsb_release.get_distro_information()['RELEASE'])
         self.model = model
         self.controller = controller
         self.items = []
         back = back_btn(_("Back"), on_press=self.cancel)
-        self.body = [
-            ('pack', Text("")),
-            Padding.center_79(self._build_choices()),
-            ('pack', Text("")),
-            ('pack', button_pile([back])),
-            ('pack', Text("")),
-        ]
-        super().__init__(Pile(self.body))
+        super().__init__(screen(
+            self._build_choices(), [back],
+            focus_buttons=False, excerpt=_(self.excerpt)))
 
     def _build_choices(self):
         choices = []
@@ -64,7 +71,7 @@ class InstallpathView(BaseView):
             choices.append(
                 forward_btn(
                     label=label, on_press=self.confirm, user_arg=path))
-        return ListBox(choices)
+        return choices
 
     def confirm(self, sender, path):
         self.controller.choose_path(path)
@@ -149,11 +156,12 @@ class RackForm(Form):
 
 class MAASView(BaseView):
 
-    def __init__(self, model, controller):
+    def __init__(self, model, controller, title, excerpt):
         self.model = model
         self.controller = controller
         self.signal = controller.signal
         self.items = []
+        self.title = title
 
         if self.model.path == "maas_region":
             self.form = RegionForm()
@@ -165,7 +173,7 @@ class MAASView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen(focus_buttons=False))
+        super().__init__(self.form.as_screen(focus_buttons=False, excerpt=excerpt))
 
     def done(self, result):
         log.debug("User input: {}".format(result.as_data()))

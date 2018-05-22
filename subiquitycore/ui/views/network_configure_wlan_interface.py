@@ -54,6 +54,7 @@ class NetworkConfigureWLANView(BaseView):
         self.model = model
         self.controller = controller
         self.dev = self.model.get_netdev_by_name(name)
+        self.title = _("Network interface {} WIFI configuration").format(name)
 
         self.form = WLANForm()
 

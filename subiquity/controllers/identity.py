@@ -36,9 +36,6 @@ class IdentityController(BaseController):
         self.answers = self.all_answers.get('Identity', {})
 
     def default(self):
-        title = _("Profile setup")
-        excerpt = _("Enter the username and password (or ssh identity) you will use to log in to the system.")
-        self.ui.set_header(title, excerpt)
         self.ui.set_body(IdentityView(self.model, self, self.opts))
         if 'realname' in self.answers and \
             'username' in self.answers and \
@@ -70,6 +67,8 @@ class IdentityController(BaseController):
 
     def _bg_fetch_ssh_keys(self, user_spec, proc, ssh_import_id):
         stdout, stderr = proc.communicate()
+        stdout = stdout.decode('utf-8', errors='replace')
+        stderr = stderr.decode('utf-8', errors='replace')
         log.debug("ssh-import-id exited with code %s", proc.returncode)
         if proc != self._fetching_proc:
             log.debug("_fetch_ssh_keys cancelled")

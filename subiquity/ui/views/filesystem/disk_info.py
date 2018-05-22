@@ -26,11 +26,15 @@ log = logging.getLogger('subiquity.ui.filesystem.disk_info')
 
 
 class DiskInfoView(BaseView):
+
+    footer = _('Select next or previous disks with n and p')
+
     def __init__(self, model, controller, disk, hdinfo):
         log.debug('DiskInfoView: {}'.format(disk))
         self.model = model
         self.controller = controller
         self.disk = disk
+        self.title = _("Information on {}").format(disk.label)
         hdinfo = hdinfo.split("\n")
         body = []
         for h in hdinfo:

@@ -35,6 +35,7 @@ from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
     align_up,
+    Disk,
     FilesystemModel,
     HUMAN_UNITS,
     dehumanize_size,
@@ -185,11 +186,13 @@ class PartitionView(PartitionFormatView):
         self.controller = controller
         self.disk = disk
         self.partition = partition
+        self.title = _("Partition, format, and mount {}").format(disk.label)
 
         max_size = disk.free
         initial = {}
         if partition is None:
             label = _("Create")
+            self.footer = _("Enter partition details, format and mount.")
         else:
             max_size += partition.size
             initial['size'] = humanize_size(partition.size)
@@ -197,6 +200,7 @@ class PartitionView(PartitionFormatView):
                 label = None
                 initial['mount'] = None
             else:
+                self.footer = _("Edit partition details, format and mount.")
                 label = _("Save")
         super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk), focus_buttons=label is None)
         if label is not None:
@@ -247,10 +251,18 @@ class PartitionView(PartitionFormatView):
 
 
 class FormatEntireView(PartitionFormatView):
+
     def __init__(self, model, controller, volume, back):
         self.model = model
         self.controller = controller
         self.volume = volume
+        if isinstance(volume, Disk):
+            self.title = _("Format and/or mount {}").format(disk.label)
+            self.footer = _("Format or mount whole disk.")
+        else:
+            self.title = _("Partition, format, and mount {}").format(volume.device.label)
+            self.footer = _("Edit partition details, format and mount.")
+
         super().__init__(None, volume, {}, back)
 
     def done(self, form):

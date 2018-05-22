@@ -107,6 +107,12 @@ def _build_gateway_ip_info_for_version(dev, version):
 
 
 class NetworkView(BaseView):
+    title = _("Network connections")
+    excerpt = _("Configure at least one interface this server can use to talk to "
+               "other machines, and which preferably provides sufficient access for "
+               "updates.")
+    footer = _("Select an interface to configure it or select Done to continue")
+
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
@@ -117,7 +123,7 @@ class NetworkView(BaseView):
             Padding.center_79(self.additional_options),
             Padding.line_break(""),
         ])
-        self.footer = Pile([
+        self.bottom = Pile([
                 Text(""),
                 self._build_buttons(),
                 Text(""),
@@ -125,9 +131,11 @@ class NetworkView(BaseView):
         self.error_showing = False
         self.frame = Pile([
             ('pack', Text("")),
+            ('pack', Padding.center_79(Text(_(self.excerpt)))),
+            ('pack', Text("")),
             Padding.center_90(self.listbox),
-            ('pack', self.footer)])
-        self.frame.focus_position = 2
+            ('pack', self.bottom)])
+        self.frame.focus_position = 4
         super().__init__(self.frame)
 
     def _build_buttons(self):
@@ -251,9 +259,9 @@ class NetworkView(BaseView):
 
     def show_network_error(self, action, info=None):
         self.error_showing = True
-        self.footer.contents[0:0] = [
-            (Text(""), self.footer.options()),
-            (Color.info_error(self.error), self.footer.options()),
+        self.bottom.contents[0:0] = [
+            (Text(""), self.bottom.options()),
+            (Color.info_error(self.error), self.bottom.options()),
             ]
         if action == 'stop-networkd':
             exc = info[0]
@@ -274,7 +282,7 @@ class NetworkView(BaseView):
 
     def done(self, result):
         if self.error_showing:
-            self.footer.contents[0:2] = []
+            self.bottom.contents[0:2] = []
         self.controller.network_finish(self.model.render())
 
     def cancel(self, button=None):

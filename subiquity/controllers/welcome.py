@@ -30,11 +30,6 @@ class WelcomeController(BaseController):
         log.debug("Welcome: answers=%s", self.answers)
 
     def default(self):
-        title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
-        excerpt = _("Please choose your preferred language")
-        footer = _("Use UP, DOWN and ENTER keys to select your language.")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
         view = WelcomeView(self.model, self)
         self.ui.set_body(view)
         if 'lang' in self.answers:

@@ -29,6 +29,9 @@ from subiquitycore.ui.buttons import (
     ok_btn,
     other_btn,
     )
+from subiquitycore.ui.container import (
+    ListBox,
+    )
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     StringEditor,
@@ -257,6 +260,9 @@ class FetchingSSHKeysFailed(Stretchy):
         self.parent.remove_overlay()
 
 class IdentityView(BaseView):
+    title = _("Profile setup")
+    excerpt = _("Enter the username and password (or ssh identity) you will use to log in to the system.")
+
     def __init__(self, model, controller, opts):
         self.model = model
         self.controller = controller
@@ -270,12 +276,14 @@ class IdentityView(BaseView):
         connect_signal(self.form.ssh_import_id.widget, 'select', self._select_ssh_import_id)
         self.form.import_username.enabled = False
 
+
+        self.form_rows = ListBox(self.form.as_rows())
         super().__init__(
             screen(
-                self.form.as_rows(),
-                button_pile([self.form.done_btn]),
+                self.form_rows,
+                [self.form.done_btn],
+                excerpt=_(self.excerpt),
                 focus_buttons=False))
-        self.form_rows = self._w[1]
 
     def _check_password(self, sender, new_text):
         password = self.form.password.value

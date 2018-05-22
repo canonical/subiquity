@@ -30,11 +30,15 @@ log = logging.getLogger("subiquity.views.welcome")
 
 
 class WelcomeView(BaseView):
+    title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
+    footer = _("Use UP, DOWN and ENTER keys to select your language.")
 
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
         super().__init__(Pile([
+            ('pack', Text("")),
+            ('pack', Padding.center_79(Text(_("Please choose your preferred language")))),
             ('pack', Text("")),
             Padding.center_50(self._build_model_inputs()),
             ('pack', Text("")),

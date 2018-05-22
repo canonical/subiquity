@@ -208,6 +208,8 @@ def screen(rows, buttons, focus_buttons=True, excerpt=None):
 
     The commonest screen layout in subiquity is:
 
+        [ 1 line padding (optional) ]
+        excerpt (optional)
         [ 1 line padding ]
         Listbox()
         [ 1 line padding ]
@@ -218,21 +220,23 @@ def screen(rows, buttons, focus_buttons=True, excerpt=None):
     """
     if isinstance(rows, list):
         rows = ListBox(rows)
-    body = []
+    if isinstance(buttons, list):
+        buttons = button_pile(buttons)
+    excerpt_rows = []
     if excerpt is not None:
-        body = [
+        excerpt_rows = [
             ('pack', Text("")),
-            ('pack', Padding.center_79(Text(excerpt))),
+            ('pack', Text(excerpt)),
             ]
-    body.extend([
+    body = [
         ('pack', Text("")),
-        Padding.center_79(rows),
+        rows,
         ('pack', Text("")),
         ('pack', buttons),
         ('pack', Text("")),
-        ])
-    screen = Pile(body)
+        ]
+    pile = Pile(excerpt_rows + body)
     if focus_buttons:
-        screen.focus_position = 3 + 2*bool(excerpt)
-    return screen
+        pile.focus_position = len(excerpt_rows) + 3
+    return Padding.center_79(pile)
 
