@@ -72,10 +72,63 @@ class WaitForCurtinEventsTask(BackgroundTask):
 
 
 class DownloadSnapTask(BackgroundTask):
+    # tl;dr: "snap download" makes me slightly sad
+    #
+    # When the user requests that a snap be installed, we need to
+    # download the snap and associated assertion, put those in
+    # /var/lib/snapd/seed/{snaps,assertions}/ and add it
+    # /var/lib/snapd/seed/seed.yaml (all in the target system).  The
+    # data in the seed.yaml is the name of the snap, the name of the
+    # downloaded file and the channel to track.
+    #
+    # "snap download" downloads the snap and assertion for us but the
+    # part that makes me slightly sad is that it doesn't tell us the
+    # name of the files it downloaded in any reasonable way. We could
+    # make some assumptions -- they're
+    # ${SNAP_NAME}_${REVISION}.{snap,assert} and I don't think
+    # SNAP_NAME or REVISION can contain underscores -- but this feels
+    # a bit icky. So what I do is run each snap download in a separate
+    # directory -- /var/lib/snapd/seed/tmp/$SNAP_NAME/ -- so
+    # UpdateSnapSeed can be sure that the only snap/assertion in
+    # /var/lib/snapd/seed/tmp/$SNAP_NAME/ is indeed the snap/assertion
+    # for $SNAP_NAME.
+    #
+    # So after all the DownloadSnapTasks have run, the directory tree
+    # looks like this:
+    #
+    # /var/lib/snapd/seed/
+    #         seed.yaml -- seed that came from the base system
+    #         snaps/
+    #           [snaps from base seed]
+    #         assertions/
+    #           [assertions from base seed]
+    #         tmp/
+    #           $SNAP1/
+    #             $SNAP1_$REV1.snap
+    #             $SNAP1_$REV1.assert
+    #           $SNAP2/
+    #             $SNAP2_$REV2.snap
+    #             $SNAP2_$REV2.assert
+    #           ...
+    #
+    # UpdateSnapSeed turns this into:
+    #
+    # /var/lib/snapd/seed/
+    #         seed.yaml -- updated seed
+    #         snaps/
+    #           [snaps from base seed]
+    #           $SNAP1_$REV1.snap
+    #           $SNAP2_$REV2.snap
+    #           ...
+    #         assertions/
+    #           [assertions from base seed]
+    #           $SNAP1_$REV1.assert
+    #           $SNAP2_$REV2.assert
+    #           ...
 
-    def __init__(self, controller, download_dir, snap_name, channel):
+    def __init__(self, controller, tmp_dir, snap_name, channel):
         self.controller = controller
-        self.download_dir = os.path.join(download_dir, snap_name)
+        self.this_snap_download_dir = os.path.join(tmp_dir, snap_name)
         self.snap_name = snap_name
         self.channel = channel
 
@@ -84,13 +137,13 @@ class DownloadSnapTask(BackgroundTask):
         os.mkdir(self.download_dir)
         self.proc = utils.start_command(
             ['snap', 'download', '--channel='+self.channel, self.snap_name],
-            cwd=self.download_dir)
+            cwd=self.this_snap_download_dir)
 
     def _bg_run(self):
         self.proc.communicate()
         if self.proc.returncode != 0:
             raise subprocess.CalledProcessError(
-                cp.returncode, cp.args, output=cp.stdout, stderr=cp.stderr)
+                self.proc.returncode, self.proc.args, output=self.proc.stdout, stderr=self.proc.stderr)
 
     def end(self, observer, fut):
         self.controller._install_event_finish()
@@ -102,10 +155,10 @@ class UpdateSnapSeed(BackgroundTask):
 
     def __init__(self, controller, root):
         self.controller = controller
-        self._seed_yaml = os.path.join(root, "var/lib/snapd/seed/seed.yaml")
-        self._tmp_dir = os.path.join(root, "var/lib/snapd/seed/tmp")
-        self._snap_dir = os.path.join(root, "var/lib/snapd/seed/snaps")
-        self._assertions_dir = os.path.join(root, "var/lib/snapd/seed/assertions")
+        self.seed_yaml = os.path.join(root, "var/lib/snapd/seed/seed.yaml")
+        self.tmp_dir = os.path.join(root, "var/lib/snapd/seed/tmp")
+        self.snap_dir = os.path.join(root, "var/lib/snapd/seed/snaps")
+        self.assertions_dir = os.path.join(root, "var/lib/snapd/seed/assertions")
 
     def start(self):
         self.controller._install_event_start(_("updating snap seed"))
@@ -113,19 +166,23 @@ class UpdateSnapSeed(BackgroundTask):
     def _bg_run(self):
         # This doesn't really need to be in the background, but as we
         # have the infrastructure already in place, we may as well.
-        with open(self._seed_yaml) as fp:
+        with open(self.seed_yaml) as fp:
             seed = yaml.safe_load(fp)
 
-        for snap_name in os.listdir(self._tmp_dir):
-            [snap_path] = glob.glob(os.path.join(self._tmp_dir, snap_name, "*.snap"))
-            [assertion_path] = glob.glob(os.path.join(self._tmp_dir, snap_name, "*.assert"))
+        for snap_name in os.listdir(self.tmp_dir):
+            this_snap_download_dir = os.path.join(self.tmp_dir, snap_name)
+            [snap_path] = glob.glob(os.path.join(this_snap_download_dir, "*.snap"))
+            [assertion_path] = glob.glob(os.path.join(this_snap_download_dir, "*.assert"))
 
             snap_file = os.path.basename(snap_path)
             assertion_file = os.path.basename(assertion_path)
-            os.rename(snap_path, os.path.join(self._snap_dir, snap_file))
-            os.rename(assertion_path, os.path.join(self._assertions_dir, assertion_file))
+            os.rename(snap_path, os.path.join(self.snap_dir, snap_file))
+            os.rename(assertion_path, os.path.join(self.assertions_dir, assertion_file))
 
-            os.rmdir(os.path.join(self._tmp_dir, snap_name))
+            # If this directory is not empty, something very
+            # unexpected has happened and we should fail.
+            os.rmdir(this_snap_download_dir)
+
             selection = self.controller.base_model.snaplist.to_install[snap_name]
             seedinfo = {
                 'name': snap_name,
@@ -136,9 +193,11 @@ class UpdateSnapSeed(BackgroundTask):
                 seedinfo['classic'] = True
             seed['snaps'].append(seedinfo)
 
-        os.rmdir(self._tmp_dir)
+        # If the above loop did not empty this directory, again
+        # something very unexpected has happened and we should fail.
+        os.rmdir(self.tmp_dir)
 
-        with open(self._seed_yaml, 'w') as fp:
+        with open(self.seed_yaml, 'w') as fp:
             yaml.dump(seed, fp)
 
     def end(self, observer, fut):
