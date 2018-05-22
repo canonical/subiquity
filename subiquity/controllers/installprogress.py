@@ -13,10 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
 import datetime
+import glob
 import logging
 import os
+import shutil
 import subprocess
 import time
 import traceback
@@ -72,61 +73,73 @@ class WaitForCurtinEventsTask(BackgroundTask):
 class DownloadSnapTask(BackgroundTask):
 
     # XXX classic
-    def __init__(self, controller, download_dir, snap_name, risk):
+    def __init__(self, controller, download_dir, snap_name, channel):
         self.controller = controller
-        self.download_dir = download_dir
-        self.snap = snap_name
-        self.risk = risk
+        self.download_dir = os.path.join(download_dir, snap_name)
+        self.snap_name = snap_name
+        self.channel = channel
 
     def start(self):
         self.controller._install_event_start(_("downloading {}").format(self.snap_name))
+        os.mkdir(self.download_dir)
         self.proc = utils.start_command(
-            ['snap', 'download', '--channel='+self.risk, self.snap_name],
-            cwd=self.download_dir, check=True)
+            ['snap', 'download', '--channel='+self.channel, self.snap_name],
+            cwd=self.download_dir)
 
     def _bg_run(self):
         self.proc.communicate()
+        if self.proc.returncode != 0:
+            raise subprocess.CalledProcessError(
+                cp.returncode, cp.args, output=cp.stdout, stderr=cp.stderr)
 
-    def end(self, fut):
+    def end(self, observer, fut):
         self.controller._install_event_finish()
         fut.result()
+        observer.task_succeeded()
 
 
 class UpdateSnapSeed(BackgroundTask):
 
-    def __init__(self, root):
-        self._seed_yaml = os.path.join(self.root, "var/lib/snapd/seed/seed.yaml")
-        self._tmp_dir = os.path.join(self.root, "var/lib/snapd/seed/tmp")
-        self._snap_dir = os.path.join(self.root, "var/lib/snapd/seed/snaps")
-        self._assertions_dir = os.path.join(self.root, "var/lib/snapd/seed/assertions")
+    def __init__(self, controller, root):
+        self.controller = controller
+        self._seed_yaml = os.path.join(root, "var/lib/snapd/seed/seed.yaml")
+        self._tmp_dir = os.path.join(root, "var/lib/snapd/seed/tmp")
+        self._snap_dir = os.path.join(root, "var/lib/snapd/seed/snaps")
+        self._assertions_dir = os.path.join(root, "var/lib/snapd/seed/assertions")
 
     def start(self):
-        self.controller._install_event_start(_("updating snap seed").format(self.snap_name))
+        self.controller._install_event_start(_("updating snap seed"))
 
     def _bg_run(self):
-        snap_files = {}
-        for fn in os.listdir(self._tmp_dir):
-            if fn.endswith(".snap"):
-                os.rename(os.path.join(self._tmp_dir, fn), os.path.join(self._snap_dir, fn))
-                snap_name = os.path.splitext(fn)[0].rsplit('_', 1)[0]
-                snap_files[snap_name] = fn
-            elif fn.endswith(".assert"):
-                os.rename(os.path.join(self._tmp_dir, fn), os.path.join(self._assertions_dir, fn))
-            else:
-                1/0
-        os.rmdir(self._tmp_dir)
         with open(self._seed_yaml) as fp:
-            seed = yaml.safe_load(fp.read())
-        for snap_name, snap_file in sorted(snap_files.items()):
-            d = OrderedDict()
-            d['name'] = snap_name
-            d['channel'] = self.controller.base_model.snaplist.to_install[snap_name]
-            d['file'] = snap_file
-            seed['snaps'].append(d)
+            seed = yaml.safe_load(fp)
 
-    def end(self, fut):
-        fut.result()
+        for snap_name in os.listdir(self._tmp_dir):
+            [snap_path] = glob.glob(os.path.join(self._tmp_dir, snap_name, "*.snap"))
+            [assertion_path] = glob.glob(os.path.join(self._tmp_dir, snap_name, "*.assert"))
+
+            snap_file = os.path.basename(snap_path)
+            assertion_file = os.path.basename(assertion_path)
+            os.rename(snap_path, os.path.join(self._snap_dir, snap_file))
+            os.rename(assertion_path, os.path.join(self._assertions_dir, assertion_file))
+
+            os.rmdir(os.path.join(self._tmp_dir, snap_name))
+            seedinfo = {
+                'name': snap_name,
+                'file': snap_file,
+                'channel': self.controller.base_model.snaplist.to_install[snap_name],
+                }
+            seed['snaps'].append(seedinfo)
+
+        os.rmdir(self._tmp_dir)
+
+        with open(self._seed_yaml, 'w') as fp:
+            yaml.dump(seed, fp)
+
+    def end(self, observer, fut):
         self.controller._install_event_finish()
+        fut.result()
+        observer.task_succeeded()
 
 
 class InstallProgressController(BaseController):
@@ -317,24 +330,25 @@ class InstallProgressController(BaseController):
                     else:
                         self.controller.curtin_error()
                 def tasks_finished(self):
-                    self._install_event_finish()
+                    self.controller._install_event_finish()
                     self.controller.loop.set_alarm_in(0.0, lambda loop, ud:self.controller.postinstall_complete())
             if self.opts.dry_run:
                 root = '.subiquity'
-                os.makedirs(os.path.join(root, 'var/lib/snapd/seed/snaps'), existing_ok=True)
-                os.makedirs(os.path.join(root, 'var/lib/snapd/seed/assertions'), existing_ok=True)
+                os.makedirs(os.path.join(root, 'var/lib/snapd/seed/snaps'), exist_ok=True)
+                os.makedirs(os.path.join(root, 'var/lib/snapd/seed/assertions'), exist_ok=True)
                 with open(os.path.join(root, 'var/lib/snapd/seed/seed.yaml'), 'w') as fp:
-                    fp.write("snaps:\n- name: core\n channel: stable\n file: core_XXXX.snap")
+                    fp.write("snaps:\n- name: core\n  channel: stable\n  file: core_XXXX.snap")
+                shutil.rmtree(os.path.join(root, 'var/lib/snapd/seed/tmp'), ignore_errors=True)
             else:
                 root = TARGET
             tmp_dir = os.path.join(root, 'var/lib/snapd/seed/tmp')
-            os.makedirs(tmp_dir, existing_ok=True)
+            os.mkdir(tmp_dir)
             tasks = [
                 ('drain', WaitForCurtinEventsTask(self)),
                 ]
-            for snap_name, risk in sorted(self.base_model.snaplist.to_install.items()):
-                tasks.append("snapdownload", DownloadSnapTask(self, tmp_dir, snap_name, risk))
-            tasks.append("snapseed", UpdateSnapSeed(self, root))
+            for snap_name, channel in sorted(self.base_model.snaplist.to_install.items()):
+                tasks.append(("snapdownload", DownloadSnapTask(self, tmp_dir, snap_name, channel)))
+            tasks.append(("snapseed", UpdateSnapSeed(self, root)))
             ts = TaskSequence(self.run_in_bg, tasks, w(self))
             ts.run()
         else:
