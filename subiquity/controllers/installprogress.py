@@ -13,8 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
 import datetime
-import json
 import logging
 import os
 import subprocess
@@ -68,6 +68,65 @@ class WaitForCurtinEventsTask(BackgroundTask):
         fut.result()
         self.controller._install_event_start("installing snaps")
         observer.task_succeeded()
+
+class DownloadSnapTask(BackgroundTask):
+
+    # XXX classic
+    def __init__(self, controller, download_dir, snap_name, risk):
+        self.controller = controller
+        self.download_dir = download_dir
+        self.snap = snap_name
+        self.risk = risk
+
+    def start(self):
+        self.controller._install_event_start(_("downloading {}").format(self.snap_name))
+        self.proc = utils.start_command(
+            ['snap', 'download', '--channel='+self.risk, self.snap_name],
+            cwd=self.download_dir, check=True)
+
+    def _bg_run(self):
+        self.proc.communicate()
+
+    def end(self, fut):
+        self.controller._install_event_finish()
+        fut.result()
+
+
+class UpdateSnapSeed(BackgroundTask):
+
+    def __init__(self, root):
+        self._seed_yaml = os.path.join(self.root, "var/lib/snapd/seed/seed.yaml")
+        self._tmp_dir = os.path.join(self.root, "var/lib/snapd/seed/tmp")
+        self._snap_dir = os.path.join(self.root, "var/lib/snapd/seed/snaps")
+        self._assertions_dir = os.path.join(self.root, "var/lib/snapd/seed/assertions")
+
+    def start(self):
+        self.controller._install_event_start(_("updating snap seed").format(self.snap_name))
+
+    def _bg_run(self):
+        snap_files = {}
+        for fn in os.listdir(self._tmp_dir):
+            if fn.endswith(".snap"):
+                os.rename(os.path.join(self._tmp_dir, fn), os.path.join(self._snap_dir, fn))
+                snap_name = os.path.splitext(fn)[0].rsplit('_', 1)[0]
+                snap_files[snap_name] = fn
+            elif fn.endswith(".assert"):
+                os.rename(os.path.join(self._tmp_dir, fn), os.path.join(self._assertions_dir, fn))
+            else:
+                1/0
+        os.rmdir(self._tmp_dir)
+        with open(self._seed_yaml) as fp:
+            seed = yaml.safe_load(fp.read())
+        for snap_name, snap_file in sorted(snap_files.items()):
+            d = OrderedDict()
+            d['name'] = snap_name
+            d['channel'] = self.controller.base_model.snaplist.to_install[snap_name]
+            d['file'] = snap_file
+            seed['snaps'].append(d)
+
+    def end(self, fut):
+        fut.result()
+        self.controller._install_event_finish()
 
 
 class InstallProgressController(BaseController):
@@ -258,10 +317,24 @@ class InstallProgressController(BaseController):
                     else:
                         self.controller.curtin_error()
                 def tasks_finished(self):
+                    self._install_event_finish()
                     self.controller.loop.set_alarm_in(0.0, lambda loop, ud:self.controller.postinstall_complete())
+            if self.opts.dry_run:
+                root = '.subiquity'
+                os.makedirs(os.path.join(root, 'var/lib/snapd/seed/snaps'), existing_ok=True)
+                os.makedirs(os.path.join(root, 'var/lib/snapd/seed/assertions'), existing_ok=True)
+                with open(os.path.join(root, 'var/lib/snapd/seed/seed.yaml'), 'w') as fp:
+                    fp.write("snaps:\n- name: core\n channel: stable\n file: core_XXXX.snap")
+            else:
+                root = TARGET
+            tmp_dir = os.path.join(root, 'var/lib/snapd/seed/tmp')
+            os.makedirs(tmp_dir, existing_ok=True)
             tasks = [
                 ('drain', WaitForCurtinEventsTask(self)),
                 ]
+            for snap_name, risk in sorted(self.base_model.snaplist.to_install.items()):
+                tasks.append("snapdownload", DownloadSnapTask(self, tmp_dir, snap_name, risk))
+            tasks.append("snapseed", UpdateSnapSeed(self, root))
             ts = TaskSequence(self.run_in_bg, tasks, w(self))
             ts.run()
         else:
@@ -269,8 +342,6 @@ class InstallProgressController(BaseController):
 
 
     def postinstall_complete(self):
-        if self._event_indent:
-            self._install_event_finish()
         self.ui.set_header(_("Installation complete!"))
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
