@@ -259,25 +259,36 @@ class SnapListView(BaseView):
         self.model = model
         self.controller = controller
         self.to_install = {} # {snap_name: (channel, is_classic)}
-        called = False
+        self.load()
+
+    def load(self, sender=None):
         spinner = None
+        called = False
         def callback(snap_list):
             nonlocal called
             called = True
-            if spinner is not None:
-                spinner.stop()
-            # XXX Do something different (show a message, allow retrying) if load failed.
-            self.make_main_screen(snap_list)
-            self._w = self.main_screen
+            spinner.stop()
+            if len(snap_list) == 0:
+                self.offer_retry()
+            else:
+                self.make_main_screen(snap_list)
+                self._w = self.main_screen
         self.controller.get_snap_list(callback)
         if called:
             return
-        spinner = Spinner(controller.loop, style='dots')
+        spinner = Spinner(self.controller.loop, style='dots')
         spinner.start()
         ok = ok_btn(label=_("Continue"), on_press=self.done)
         self._w = screen(
             [spinner], button_pile([ok]),
             excerpt=_("Loading server snaps from store, please wait..."))
+
+    def offer_retry(self):
+        retry = other_btn(label=_("Try again"), on_press=self.load)
+        cont = ok_btn(label=_("Continue"), on_press=self.done)
+        self._w = screen(
+            [Text(_("Sorry, loading snaps from the store failed."))],
+            button_pile([retry, cont]))
 
     def make_main_screen(self, snap_list):
         self.name_len = max([len(snap.name) for snap in snap_list])

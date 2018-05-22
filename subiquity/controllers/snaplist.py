@@ -109,7 +109,10 @@ class SnapdSnapInfoLoader:
     def get_snap_list(self, callback):
         if self.state >= SnapInfoLoaderState.LOADING_INFO:
             callback(self.model.get_snap_list())
+        elif None in self.ongoing:
+            self.ongoing[None].append(callback)
         else:
+            self.start()
             self.ongoing[None].append(callback)
 
     def get_snap_info(self, snap, callback):
