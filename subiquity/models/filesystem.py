@@ -13,15 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import attr
 import collections
 import glob
 import logging
 import math
 import os
 import sys
-
-import attr
-
 
 HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
 log = logging.getLogger('subiquity.models.filesystem')
@@ -38,9 +36,9 @@ def humanize_size(size):
         return "0B"
     p = int(math.floor(math.log(size, 2) / 10))
     # We want to truncate the non-integral part, not round to nearest.
-    s = "{:.17f}".format(size / 2**(10*p))
+    s = "{:.17f}".format(size / 2 ** (10 * p))
     i = s.index('.')
-    s = s[:i+4]
+    s = s[:i + 4]
     return s + HUMAN_UNITS[int(p)]
 
 
@@ -61,7 +59,7 @@ def dehumanize_size(size):
     if len(parts) > 2:
         raise ValueError(_("{!r} is not valid input").format(size_in))
     elif len(parts) == 2:
-        div = 10**len(parts[1])
+        div = 10 ** len(parts[1])
         size = parts[0] + parts[1]
     else:
         div = 1
@@ -73,8 +71,10 @@ def dehumanize_size(size):
 
     if suffix is not None:
         if suffix not in HUMAN_UNITS:
-            raise ValueError("unrecognized suffix {!r} in {!r}".format(size_in[-1], size_in))
-        mult = 2**(10*HUMAN_UNITS.index(suffix))
+            raise ValueError(
+                "unrecognized suffix {!r} in {!r}".format(size_in[-1],
+                                                          size_in))
+        mult = 2 ** (10 * HUMAN_UNITS.index(suffix))
     else:
         mult = 1
 
@@ -86,9 +86,10 @@ def dehumanize_size(size):
 
 def id_factory(name):
     i = 0
+
     def factory():
         nonlocal i
-        r = "%s-%s"%(name, i)
+        r = "%s-%s" % (name, i)
         i += 1
         return r
     return attr.Factory(factory)
@@ -128,10 +129,14 @@ class Disk:
     name = attr.ib(default="")
     grub_device = attr.ib(default=False)
 
-    _partitions = attr.ib(default=attr.Factory(list), repr=False) # [Partition]
-    _fs = attr.ib(default=None, repr=False) # Filesystem
+    # [Partition]
+    _partitions = attr.ib(default=attr.Factory(list), repr=False)
+    # Filesystem
+    _fs = attr.ib(default=None, repr=False)
+
     def partitions(self):
         return self._partitions
+
     def fs(self):
         return self._fs
 
@@ -158,7 +163,8 @@ class Disk:
 
     @property
     def size(self):
-        return max(0, align_down(self._info.size) - (2<<20)) # The first and last megabyte of the disk are not usable.
+        # The first and last megabyte of the disk are not usable.
+        return max(0, align_down(self._info.size) - (2 << 20))
 
     def desc(self):
         return _("local disk")
@@ -188,13 +194,15 @@ class Partition:
 
     id = attr.ib(default=id_factory("part"))
     type = attr.ib(default="partition")
-    device = attr.ib(default=None) # Disk
+    device = attr.ib(default=None)  # Disk
     size = attr.ib(default=None)
     wipe = attr.ib(default=None)
     flag = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
-    _fs = attr.ib(default=None, repr=False) # Filesystem
+    # Filesystem
+    _fs = attr.ib(default=None, repr=False)
+
     def fs(self):
         return self._fs
 
@@ -212,14 +220,13 @@ class Partition:
             return fs_obj.is_mounted
         return False
 
-
     @property
     def _number(self):
         return self.device._partitions.index(self) + 1
 
     @property
     def path(self):
-        return "%s%s"%(self.device.path, self._number)
+        return "%s%s" % (self.device.path, self._number)
 
 
 @attr.s
@@ -228,12 +235,13 @@ class Filesystem:
     id = attr.ib(default=id_factory("fs"))
     type = attr.ib(default="format")
     fstype = attr.ib(default=None)
-    volume = attr.ib(default=None) # Partition or Disk
+    volume = attr.ib(default=None)  # Partition or Disk
     label = attr.ib(default=None)
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
-    _mount = attr.ib(default=None, repr=False) # Mount
+    _mount = attr.ib(default=None, repr=False)  # Mount
+
     def mount(self):
         return self._mount
 
@@ -242,12 +250,13 @@ class Filesystem:
 class Mount:
     id = attr.ib(default=id_factory("mount"))
     type = attr.ib(default="mount")
-    device = attr.ib(default=None) # Filesystem
+    device = attr.ib(default=None)  # Filesystem
     path = attr.ib(default=None)
 
 
 def align_up(size, block_size=1 << 20):
     return (size + block_size - 1) & ~(block_size - 1)
+
 
 def align_down(size, block_size=1 << 20):
     return size & ~(block_size - 1)
@@ -255,7 +264,7 @@ def align_down(size, block_size=1 << 20):
 
 class FilesystemModel(object):
 
-    lower_size_limit = 128*(1<<20)
+    lower_size_limit = 128 * (1 << 20)
 
     supported_filesystems = [
         ('ext4', True, FS('ext4', True)),
@@ -280,11 +289,12 @@ class FilesystemModel(object):
 
     def __init__(self, prober):
         self.prober = prober
-        self._available_disks = {} # keyed by path, eg /dev/sda
+        self._available_disks = {}  # keyed by path, eg /dev/sda
         self.reset()
 
     def reset(self):
-        self._disks = collections.OrderedDict() # only gets populated when something uses the disk
+        # only gets populated when something uses the disk
+        self._disks = collections.OrderedDict()
         self._filesystems = []
         self._partitions = []
         self._mounts = []
@@ -305,7 +315,7 @@ class FilesystemModel(object):
             r.append(asdict(p))
         for f in self._filesystems:
             r.append(asdict(f))
-        for m in sorted(self._mounts, key=lambda m:len(m.path)):
+        for m in sorted(self._mounts, key=lambda m: len(m.path)):
             r.append(asdict(m))
         return r
 
@@ -334,21 +344,20 @@ class FilesystemModel(object):
             log.debug("fs probe %s", path)
             if path in currently_mounted:
                 continue
-            if data['DEVTYPE'] == 'disk' \
-              and not data["DEVPATH"].startswith('/devices/virtual') \
-              and data["MAJOR"] != "2" \
-              and data['attrs'].get('ro') != "1":
-                #log.debug('disk={}\n{}'.format(
-                #    path, json.dumps(data, indent=4, sort_keys=True)))
-                info = self.prober.get_storage_info(path)
-                self._available_disks[path] = Disk.from_info(info)
+            if data['DEVTYPE'] == 'disk':
+                if not data["DEVPATH"].startswith('/devices/virtual'):
+                    if data["MAJOR"] != "2" and data['attrs'].get('ro') != "1":
+                        # log.debug('disk={}\n{}'.format(
+                        #    path, json.dumps(data, indent=4, sort_keys=True)))
+                        info = self.prober.get_storage_info(path)
+                        self._available_disks[path] = Disk.from_info(info)
 
     def _use_disk(self, disk):
         if disk.path not in self._disks:
             self._disks[disk.path] = disk
 
     def all_disks(self):
-        return sorted(self._available_disks.values(), key=lambda x:x.label)
+        return sorted(self._available_disks.values(), key=lambda x: x.label)
 
     def get_disk(self, path):
         return self._available_disks.get(path)
@@ -369,8 +378,9 @@ class FilesystemModel(object):
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
         if not volume.available:
-            if not (isinstance(volume, Partition) and volume.flag == 'bios_grub' and fstype == 'fat32'):
-                raise Exception("{} is not available".format(volume))
+            if not isinstance(volume, Partition):
+                if (volume.flag == 'bios_grub' and fstype == 'fat32'):
+                    raise Exception("{} is not available".format(volume))
         if isinstance(volume, Disk):
             self._use_disk(volume)
         if volume._fs is not None:
@@ -397,7 +407,8 @@ class FilesystemModel(object):
 
     def can_install(self):
         # Do we need to check that there is a disk with the boot flag?
-        return '/' in self.get_mountpoint_to_devpath_mapping() and self.bootable()
+        return ('/' in self.get_mountpoint_to_devpath_mapping() and
+                self.bootable())
 
     def bootable(self):
         ''' true if one disk has a boot partition '''
