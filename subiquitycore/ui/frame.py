@@ -46,7 +46,8 @@ class SubiquityUI(WidgetWrap):
         self.frame.header = Header(title)
 
     def set_footer(self, message):
-        self.frame.footer = Footer(message, self.progress_current, self.progress_completion)
+        self.frame.footer = Footer(message, self.progress_current,
+                                   self.progress_completion)
 
     def set_body(self, widget):
         self.set_header(_(widget.title))
