@@ -65,8 +65,6 @@ class Signal:
             urwid.emit_signal(self, 'menu:welcome:main')
 
     def emit_signal(self, name, *args, **kwargs):
-        # Disabled because it can reveal credentials in the arguments.
-        #log.debug("Emitter: {}, {}, {}".format(name, args, kwargs))
         if name.startswith("menu:"):
             log.debug(" emit: before: "
                       "size={} stack={}".format(len(self.signal_stack),
