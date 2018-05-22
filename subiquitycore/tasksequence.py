@@ -110,7 +110,7 @@ class PythonSleep(CancelableTask):
         self.cancel_r, self.cancel_w = os.pipe()
 
     def __repr__(self):
-        return 'PythonSleep(%r)'%(self.duration,)
+        return 'PythonSleep(%r)' % (self.duration,)
 
     def start(self):
         pass
@@ -125,7 +125,8 @@ class PythonSleep(CancelableTask):
         # and there's no other way to fail so just return.
 
     def end(self, observer, fut):
-        # Call fut.result() to cater for the case that _bg_run somehow managed to raise an exception.
+        # Call fut.result() to cater for the case that _bg_run somehow managed
+        # to raise an exception.
         fut.result()
         # Call task_succeeded() because if we got here, we weren't canceled.
         observer.task_succeeded()
@@ -141,7 +142,7 @@ class BackgroundProcess(CancelableTask):
         self.proc = None
 
     def __repr__(self):
-        return 'BackgroundProcess(%r)'%(self.cmd,)
+        return 'BackgroundProcess(%r)' % (self.cmd,)
 
     def start(self):
         self.proc = start_command(self.cmd)
@@ -167,7 +168,7 @@ class BackgroundProcess(CancelableTask):
         try:
             self.proc.terminate()
         except ProcessLookupError:
-            pass # It's OK if the process has already terminated.
+            pass  # It's OK if the process has already terminated.
 
 
 class TaskWatcher(ABC):
@@ -201,7 +202,8 @@ class TaskSequence:
         self._run1()
 
     def cancel(self):
-        if self.curtask is not None and isinstance(self.curtask, CancelableTask):
+        if self.curtask is not None and isinstance(self.curtask,
+                                                   CancelableTask):
             log.debug("canceling %s", self.curtask)
             self.curtask.cancel()
         self.canceled = True
@@ -224,7 +226,8 @@ class TaskSequence:
             log.exception("%s failed", self.stage)
             self.task_failed(sys.exc_info())
         if not self.task_complete_or_failed_called:
-            raise RuntimeError("{} {}.end did not call task_complete or task_failed".format(self.stage, self.curtask))
+            raise RuntimeError("{} {}.end did not call task_complete or "
+                               "task_failed".format(self.stage, self.curtask))
 
     def task_succeeded(self):
         self.task_complete_or_failed_called = True
