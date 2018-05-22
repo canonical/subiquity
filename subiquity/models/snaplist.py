@@ -41,13 +41,19 @@ class ChannelSnapInfo:
     size = attr.ib()
 
 
+@attr.s(cmp=False)
+class SnapSelection:
+    channel = attr.ib()
+    is_classic = attr.ib()
+
+
 class SnapListModel:
     """The overall model for subiquity."""
 
     def __init__(self, common):
         self._snap_info = []
         self._snaps_by_name = {}
-        self.to_install = {} # snap_name -> (channel, is_classic)
+        self.to_install = {} # snap_name -> SnapSelection
 
     def _from_snapd_info(self, name):
         sock = "/run/snapd.socket"

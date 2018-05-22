@@ -36,19 +36,22 @@ from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.snaplist")
 
+
 class StarCheckBox(CheckBox):
     states = {
-        True: SelectableIcon("*", 0),
-        False: SelectableIcon(" ", 0),
+        True: SelectableIcon(" *"),
+        False: SelectableIcon("  "),
         }
     reserve_columns = 2
 
+
 class StarRadioButton(RadioButton):
     states = {
-        True: SelectableIcon("*", 0),
-        False: SelectableIcon(" ", 0),
+        True: SelectableIcon(" *"),
+        False: SelectableIcon("  "),
         }
     reserve_columns = 2
+
 
 class NoTabCyclingListBox(ListBox):
     def keypress(self, size, key):

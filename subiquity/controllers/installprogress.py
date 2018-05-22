@@ -72,7 +72,6 @@ class WaitForCurtinEventsTask(BackgroundTask):
 
 class DownloadSnapTask(BackgroundTask):
 
-    # XXX classic
     def __init__(self, controller, download_dir, snap_name, channel):
         self.controller = controller
         self.download_dir = os.path.join(download_dir, snap_name)
