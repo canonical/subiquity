@@ -14,9 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+import json
 import logging
 import os
 import subprocess
+import time
+import traceback
 
 import urwid
 import yaml
@@ -25,6 +28,11 @@ from systemd import journal
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
+from subiquitycore.tasksequence import (
+    BackgroundTask,
+    TaskSequence,
+    TaskWatcher,
+    )
 
 from subiquity.ui.views.installprogress import ProgressView
 
@@ -40,10 +48,33 @@ class InstallState:
     ERROR = -1
 
 
+class WaitForCurtinEventsTask(BackgroundTask):
+
+    def __init__(self, controller):
+        self.controller = controller
+        self.waited = 0.0
+
+    def start(self):
+        pass
+
+    def _bg_run(self):
+        while self.controller._event_indent and self.waited < 5.0:
+            time.sleep(0.1)
+            self.waited += 0.1
+        log.debug("waited %s seconds for events to drain", self.waited)
+
+    def end(self, observer, fut):
+        # Will raise if command failed:
+        fut.result()
+        self.controller._install_event_start("installing snaps")
+        observer.task_succeeded()
+
+
 class InstallProgressController(BaseController):
     signals = [
         ('installprogress:filesystem-config-done', 'filesystem_config_done'),
         ('installprogress:identity-config-done',   'identity_config_done'),
+        ('installprogress:snap-config-done',       'snap_config_done'),
     ]
 
     def __init__(self, common):
@@ -55,6 +86,7 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.NOT_STARTED
         self.journal_listener_handle = None
         self._identity_config_done = False
+        self._snap_config_done = False
         self._event_indent = ""
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
@@ -63,20 +95,31 @@ class InstallProgressController(BaseController):
         self.curtin_start_install()
 
     def identity_config_done(self):
-        if self.install_state == InstallState.DONE:
+        if self.install_state == InstallState.DONE and self._snap_config_done:
             self.postinstall_configuration()
         else:
             self._identity_config_done = True
 
-    def curtin_error(self):
+    def snap_config_done(self):
+        if self.install_state == InstallState.DONE and self._identity_config_done:
+            self.postinstall_configuration()
+        else:
+            self._snap_config_done = True
+
+    def curtin_error(self, log_text=None):
         log.debug('curtin_error')
+        if self.progress_view is None:
+            self.progress_view = ProgressView(self)
+        else:
+            self.progress_view.spinner.stop()
         self.install_state = InstallState.ERROR
-        self.progress_view.spinner.stop()
+        if log_text is not None:
+            self.progress_view.add_log_line(log_text)
         self.progress_view.set_status(('info_error', _("An error has occurred")))
         self.progress_view.show_complete(True)
         self.default()
 
-    def _bg_run_command_logged(self, cmd, env):
+    def _bg_run_command_logged(self, cmd, env=None):
         cmd = ['systemd-cat', '--level-prefix=false', '--identifier=' + self._log_syslog_identifier] + cmd
         return utils.run_command(cmd, env=env)
 
@@ -85,6 +128,18 @@ class InstallProgressController(BaseController):
             self.curtin_event(event)
         elif event['SYSLOG_IDENTIFIER'] == self._log_syslog_identifier:
             self.curtin_log(event)
+
+    def _install_event_start(self, message):
+        log.debug("_install_event_start %s", message)
+        self.footer_description.set_text(message)
+        self.progress_view.add_event(self._event_indent + message)
+        self._event_indent += "  "
+        self.footer_spinner.start()
+
+    def _install_event_finish(self):
+        self._event_indent = self._event_indent[:-2]
+        log.debug("_install_event_finish %r", self._event_indent)
+        self.footer_spinner.stop()
 
     def curtin_event(self, event):
         e = {}
@@ -96,15 +151,9 @@ class InstallProgressController(BaseController):
         if event_type not in ['start', 'finish']:
             return
         if event_type == 'start':
-            message = event.get("CURTIN_MESSAGE", "??")
-            if not self.progress_view_showing is None:
-                self.footer_description.set_text(message)
-            self.progress_view.add_event(self._event_indent + message)
-            self._event_indent += "  "
-            self.footer_spinner.start()
+            self._install_event_start(event.get("CURTIN_MESSAGE", "??"))
         if event_type == 'finish':
-            self._event_indent = self._event_indent[:-2]
-            self.footer_spinner.stop()
+            self._install_event_finish()
 
     def curtin_log(self, event):
         self.progress_view.add_log_line(event['MESSAGE'])
@@ -185,19 +234,43 @@ class InstallProgressController(BaseController):
         else:
             # Re-set footer so progress bar updates.
             self.ui.set_footer(_("Thank you for using Ubuntu!"))
-        if self._identity_config_done:
+        if self._identity_config_done and self._snap_config_done:
             self.postinstall_configuration()
 
     def cancel(self):
         pass
 
     def postinstall_configuration(self):
-        # If we need to do anything that takes time here (like running
-        # dpkg-reconfigure maas-rack-controller, for example...) we
-        # should switch to doing that work in a background thread.
+        log.debug("starting postinstall_configuration")
         self.configure_cloud_init()
         self.copy_logs_to_target()
 
+        if self.base_model.snaplist.to_install:
+            class w(TaskWatcher):
+                def __init__(self, controller):
+                    self.controller = controller
+                def task_complete(self, stage):
+                    pass
+                def task_error(self, stage, info):
+                    if isinstance(info, tuple):
+                        tb = traceback.format_exception(*info)
+                        self.controller.curtin_error("".join(tb))
+                    else:
+                        self.controller.curtin_error()
+                def tasks_finished(self):
+                    self.controller.loop.set_alarm_in(0.0, lambda loop, ud:self.controller.postinstall_complete())
+            tasks = [
+                ('drain', WaitForCurtinEventsTask(self)),
+                ]
+            ts = TaskSequence(self.run_in_bg, tasks, w(self))
+            ts.run()
+        else:
+            self.postinstall_complete()
+
+
+    def postinstall_complete(self):
+        if self._event_indent:
+            self._install_event_finish()
         self.ui.set_header(_("Installation complete!"))
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()

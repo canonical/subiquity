@@ -224,6 +224,7 @@ class SnapListController(BaseController):
 
     def done(self, snaps_to_install):
         self.model.set_installed_list(snaps_to_install)
+        self.signal.emit_signal("installprogress:snap-config-done")
         self.signal.emit_signal("next-screen")
 
     def cancel(self, sender=None):
