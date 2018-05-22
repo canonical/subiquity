@@ -15,7 +15,8 @@
 
 import logging
 import yaml
-from probert.network import (StoredDataObserver, UdevObserver)
+from probert.network import (StoredDataObserver,
+                             UdevObserver)
 from probert.storage import (Storage,
                              StorageInfo)
 
@@ -37,8 +38,8 @@ class Prober():
         if self.opts.machine_config:
             log.debug('User specified machine_config: {}'.format(
                       self.opts.machine_config))
-            self.saved_config = \
-              self._load_machine_config(self.opts.machine_config)
+            self.saved_config = (
+                self._load_machine_config(self.opts.machine_config))
             self.probe_data = self.saved_config
         log.debug('Prober() init finished, data:{}'.format(self.saved_config))
 
