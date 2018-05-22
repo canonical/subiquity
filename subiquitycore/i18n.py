@@ -27,18 +27,22 @@ if os.path.isdir(build_mo):
     localedir = build_mo
 syslog.syslog('Final localedir is ' + localedir)
 
+
 def switch_language(code='en_US'):
     if code != 'en_US' and 'FAKE_TRANSLATE' in os.environ:
         def my_gettext(message):
             return "_(%s)" % message
     elif code:
-        translation = gettext.translation('subiquity', localedir=localedir, languages=[code])
+        translation = gettext.translation('subiquity', localedir=localedir,
+                                          languages=[code])
+
         def my_gettext(message):
             if not message:
                 return message
             return translation.gettext(message)
     import builtins
     builtins.__dict__['_'] = my_gettext
+
 
 switch_language()
 
