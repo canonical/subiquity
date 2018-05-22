@@ -63,13 +63,16 @@ class SampleDataSnapInfoLoader:
     def get_snap_info(self, snap, callback):
         callback()
 
+
 class SnapdSnapInfoLoader:
 
-    def __init__(self, model, run_in_bg, sock):
-        self.state = SnapInfoLoaderState.NOT_RUNNING
+    def __init__(self, model, run_in_bg, sock, store_section):
         self.model = model
         self.run_in_bg = run_in_bg
         self.url_base = "http+unix://{}/v2/find?".format(quote_plus(sock))
+        self.store_section = store_section
+
+        self.state = SnapInfoLoaderState.NOT_RUNNING
         self.session = requests_unixsocket.Session()
         self.pending_info_snaps = []
         self.ongoing = {} # {snap:[callbacks]}
@@ -91,7 +94,7 @@ class SnapdSnapInfoLoader:
         self.state = SnapInfoLoaderState.STOPPED
 
     def _bg_fetch_list(self):
-        return self.session.get(self.url_base + 'section=developers', timeout=60)
+        return self.session.get(self.url_base + 'section=' + self.store_section, timeout=60)
 
     def _fetched_list(self, fut):
         if self.state == SnapInfoLoaderState.STOPPED:
@@ -186,7 +189,7 @@ class SnapListController(BaseController):
                 self.model,
                 os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "examples", "snaps"))
         else:
-            self.loader = SnapdSnapInfoLoader(self.model, self.run_in_bg, '/run/snapd.socket')
+            self.loader = SnapdSnapInfoLoader(self.model, self.run_in_bg, '/run/snapd.socket', self.opts.snap_section)
         self.loader.start()
 
     def network_config_done(self, netplan_path):
