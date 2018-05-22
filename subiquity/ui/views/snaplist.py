@@ -132,7 +132,7 @@ class SnapInfoView(Widget):
             ('pack', button_pile([other_btn(label=_("Close"), on_press=self.close)])),
             ('pack', Text("")),
             ]
-        self.description_index = contents.index(self.lb_channels)
+        self.description_index = contents.index(self.lb_description)
         self.pile = Pile(contents)
 
     def close(self, sender=None):
