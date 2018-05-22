@@ -121,7 +121,10 @@ class SnapInfoView(Widget):
 
         contents = [
             ('pack', Text("")),
-            ('pack', Padding.center_79(Text("{} - {}".format(snap.name, snap.publisher)))),
+            ('pack', Padding.center_79(Columns([
+                Text(snap.name),
+                ('pack', Text("Publisher: {}".format(snap.publisher), align='right')),
+                ], dividechars=1))),
             ('pack', Text("")),
             ('pack', Padding.center_79(Text(snap.summary))),
             ('pack', Text("")),

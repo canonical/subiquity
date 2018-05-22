@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from urllib.parse import quote_plus
 
 import attr
 
@@ -54,14 +53,6 @@ class SnapListModel:
         self._snap_info = []
         self._snaps_by_name = {}
         self.to_install = {} # snap_name -> SnapSelection
-
-    def _from_snapd_info(self, name):
-        sock = "/run/snapd.socket"
-        url = "http+unix://{}/v2/find?name={}".format(quote_plus(sock), name)
-        import requests_unixsocket
-        session = requests_unixsocket.Session()
-        r = session.get(url)
-        return r.json()
 
     def load_find_data(self, data):
         for s in data['result']:
