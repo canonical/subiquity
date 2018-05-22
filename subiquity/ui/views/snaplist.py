@@ -42,7 +42,7 @@ class StarCheckBox(CheckBox):
         True: SelectableIcon(" *"),
         False: SelectableIcon("  "),
         }
-    reserve_columns = 2
+    reserve_columns = 3
 
 
 class StarRadioButton(RadioButton):
@@ -50,7 +50,7 @@ class StarRadioButton(RadioButton):
         True: SelectableIcon(" *"),
         False: SelectableIcon("  "),
         }
-    reserve_columns = 2
+    reserve_columns = 3
 
 
 class NoTabCyclingListBox(ListBox):
@@ -201,6 +201,34 @@ class FetchingInfo(WidgetWrap):
         self.spinner.stop()
         self.parent.remove_overlay()
 
+class FetchingFailed(WidgetWrap):
+
+    def __init__(self, row, snap):
+        self.row = row
+        self.closed = False
+        text = _("Fetching info for {} failed").format(snap.name)
+        # | text |
+        # 12    34
+        self.width = len(text) + 4
+        retry = other_btn(label=_("Try again"), on_press=self.load)
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.close)
+        super().__init__(
+            LineBox(
+                Pile([
+                    ('pack', Text(' ' + text)),
+                    ('pack', button_pile([retry, cancel])),
+                    ])))
+
+    def load(self, sender=None):
+        self.close()
+        self.row.load_info()
+
+    def close(self, sender=None):
+        if self.closed:
+            return
+        self.closed = True
+        self.row.parent.remove_overlay()
+
 
 class SnapListRow(WidgetWrap):
 
@@ -220,23 +248,28 @@ class SnapListRow(WidgetWrap):
                 ], dividechars=1))
         super().__init__(self.two_column)
 
+    def load_info(self):
+        called = False
+        fi = None
+        def callback():
+            nonlocal called
+            called = True
+            if fi is not None:
+                fi.close()
+            if len(self.snap.channels) == 0: # or other indication of failure
+                ff = FetchingFailed(self, self.snap)
+                self.parent.show_overlay(ff, width=ff.width)
+            else:
+                self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name, (None,))[0])
+        self.parent.controller.get_snap_info(self.snap, callback)
+        # If we didn't get callback synchronously, display a dialog while the info loads.
+        if not called:
+            fi = FetchingInfo(self.parent, self.snap, self.parent.controller.loop)
+            self.parent.show_overlay(fi, width=fi.width)
+
     def keypress(self, size, key):
         if key.startswith("enter"):
-            called = False
-            fi = None
-            def callback():
-                nonlocal called
-                called = True
-                if fi is not None:
-                    fi.close()
-                if len(self.snap.channels) == 0: # or other indication of failure
-                    pass # XXX show a 'failed' message, allow retrying
-                self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name, (None,))[0])
-            self.parent.controller.get_snap_info(self.snap, callback)
-            # If we didn't get callback synchronously, display a dialog while the info loads.
-            if not called:
-                fi = FetchingInfo(self.parent, self.snap, self.parent.controller.loop)
-                self.parent.show_overlay(fi, width=fi.width)
+            self.load_info()
         else:
             return super().keypress(size, key)
 

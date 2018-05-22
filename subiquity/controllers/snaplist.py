@@ -131,7 +131,7 @@ class SnapdSnapInfoLoader:
         log.debug('starting fetch for %s', snap.name)
         self.run_in_bg(
             lambda: self._bg_fetch_next_info(snap),
-            self._fetched_info)
+            lambda fut: self._fetched_info(snap, fut))
 
     def _fetch_next_info(self):
         if not self.pending_info_snaps:
@@ -143,7 +143,7 @@ class SnapdSnapInfoLoader:
     def _bg_fetch_next_info(self, snap):
         return self.session.get(self.url_base + 'name=' + snap.name, timeout=60)
 
-    def _fetched_info(self, fut):
+    def _fetched_info(self, snap, fut):
         if self.state == SnapInfoLoaderState.STOPPED:
             return
         try:
@@ -155,11 +155,7 @@ class SnapdSnapInfoLoader:
             # XXX something better here?
         else:
             data = response.json()
-            snap = self.model.load_info_data(data)
-            if snap is not None:
-                log.debug("fetched info on %r", snap.name)
-            else:
-                log.debug("fetched info on mystery snap %s", data)
+            self.model.load_info_data(data)
         for cb in self.ongoing.pop(snap):
             cb()
 
