@@ -25,6 +25,7 @@ import requests_unixsocket
 from subiquitycore.controller import BaseController
 from subiquitycore import utils
 
+from subiquity.models.snaplist import SnapSelection
 from subiquity.ui.views.snaplist import SnapListView
 
 log = logging.getLogger('subiquity.controllers.snaplist')
@@ -172,6 +173,7 @@ class SnapListController(BaseController):
         self.model = self.base_model.snaplist
         self.loader = None
         self._maybe_start_new_loader()
+        self.answers = self.all_answers.get('SnapList', {})
 
     def _maybe_start_new_loader(self):
         if self.loader:
@@ -211,9 +213,12 @@ class SnapListController(BaseController):
             # If loading snaps failed, skip the screen.
             self.done({})
             return
-        self.ui.set_header(
-            _("Featured Server Snaps"),
-            )
+        if 'snaps' in self.answers:
+            to_install = {}
+            for snap_name, selection in self.answers['snaps'].items():
+                to_install[snap_name] = SnapSelection(**selection)
+            self.done(to_install)
+            return
         self.ui.set_body(SnapListView(self.model, self))
 
     def get_snap_list(self, callback):

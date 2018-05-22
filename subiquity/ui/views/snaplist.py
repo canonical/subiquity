@@ -32,6 +32,7 @@ from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
+from subiquity.models.snaplist import SnapSelection
 from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.snaplist")
@@ -105,7 +106,9 @@ class SnapInfoView(Widget):
                 "{}:".format(csi.channel_name),
                 state=csi.channel_name == cur_channel,
                 on_state_change=self.state_change,
-                user_data=(csi.channel_name, csi.confinement == "classic"))
+                user_data=SnapSelection(
+                    channel=csi.channel_name,
+                    is_classic=csi.confinement == "classic"))
             self.channels.append(Color.menu_button(Columns([
                 (channel_width, btn),
                 (max_version, Text(csi.version)),
@@ -135,10 +138,10 @@ class SnapInfoView(Widget):
     def close(self, sender=None):
         self.parent._w = self.parent.main_screen
 
-    def state_change(self, sender, state, user_data):
+    def state_change(self, sender, state, selection):
         if state:
             self.parent.snap_rows[self.snap.name].box.set_state(True)
-            self.parent.to_install[self.snap.name] = user_data
+            self.parent.to_install[self.snap.name] = selection
 
     def keypress(self, size, key):
         return self.pile.keypress(size, key)
@@ -260,7 +263,10 @@ class SnapListRow(WidgetWrap):
                 ff = FetchingFailed(self, self.snap)
                 self.parent.show_overlay(ff, width=ff.width)
             else:
-                self.parent._w = SnapInfoView(self.parent, self.snap, self.parent.to_install.get(self.snap.name, (None,))[0])
+                cur_channel = None
+                if self.snap.name in self.parent.to_install:
+                    cur_channel = self.parent.to_install[self.snap.name].channel
+                self.parent._w = SnapInfoView(self.parent, self.snap, cur_channel)
         self.parent.controller.get_snap_info(self.snap, callback)
         # If we didn't get callback synchronously, display a dialog while the info loads.
         if not called:
@@ -275,7 +281,9 @@ class SnapListRow(WidgetWrap):
 
     def state_change(self, sender, new_state):
         if new_state:
-            self.parent.to_install[self.snap.name] = ('stable', self.snap.confinement == "classic")
+            self.parent.to_install[self.snap.name] = SnapSelection(
+                channel='stable',
+                is_classic=self.snap.confinement == "classic")
         else:
             self.parent.to_install.pop(self.snap.name, None)
 
@@ -287,6 +295,8 @@ class SnapListRow(WidgetWrap):
             return self.two_column.render(size, focus)
 
 class SnapListView(BaseView):
+
+    title = _("Featured Server Snaps")
 
     def __init__(self, model, controller):
         self.model = model
@@ -300,7 +310,8 @@ class SnapListView(BaseView):
         def callback(snap_list):
             nonlocal called
             called = True
-            spinner.stop()
+            if spinner is not None:
+                spinner.stop()
             if len(snap_list) == 0:
                 self.offer_retry()
             else:
