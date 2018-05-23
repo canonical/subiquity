@@ -17,12 +17,14 @@
 # /usr/share/console-setup/pc105.tree. This code parses that data into
 # subclasses of Step.
 
+
 class Step:
     def __repr__(self):
         kvs = []
         for k, v in self.__dict__.items():
             kvs.append("%s=%r" % (k, v))
         return "%s(%s)" % (self.__class__.__name__, ", ".join(sorted(kvs)))
+
     def check(self):
         pass
 
@@ -32,9 +34,11 @@ class StepPressKey(Step):
     def __init__(self):
         self.symbols = []
         self.keycodes = {}
+
     def check(self):
         if len(self.symbols) == 0 or len(self.keycodes) == 0:
             raise Exception
+
 
 class StepKeyPresent(Step):
     # "Is this symbol present on your keyboard"
@@ -42,9 +46,11 @@ class StepKeyPresent(Step):
         self.symbol = symbol
         self.yes = None
         self.no = None
+
     def check(self):
         if self.yes is None or self.no is None:
             raise Exception
+
 
 class StepResult(Step):
     # "This is the autodetected layout"
