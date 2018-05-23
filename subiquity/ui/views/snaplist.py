@@ -318,7 +318,7 @@ class SnapListView(BaseView):
         spinner.start()
         ok = ok_btn(label=_("Continue"), on_press=self.done)
         self._w = screen(
-            [spinner], button_pile([ok]),
+            [spinner], [ok],
             excerpt=_("Loading server snaps from store, please wait..."))
 
     def offer_retry(self):
@@ -326,7 +326,7 @@ class SnapListView(BaseView):
         cont = ok_btn(label=_("Continue"), on_press=self.done)
         self._w = screen(
             [Text(_("Sorry, loading snaps from the store failed."))],
-            button_pile([retry, cont]))
+            [retry, cont])
 
     def make_main_screen(self, snap_list):
         self.name_len = max([len(snap.name) for snap in snap_list])
@@ -338,9 +338,8 @@ class SnapListView(BaseView):
             self.snap_rows[snap.name] = row
             body.append(row)
         ok = ok_btn(label=_("OK"), on_press=self.done)
-        cancel = cancel_btn(label=_("Cancel"), on_press=self.done)
         self.main_screen = screen(
-            NoTabCyclingListBox(body), button_pile([ok, cancel]),
+            NoTabCyclingListBox(body), [ok]),
             focus_buttons=False,
             excerpt=_(
                 "These are popular snaps in server environments. Select or "
