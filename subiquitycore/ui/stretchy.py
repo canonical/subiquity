@@ -130,7 +130,7 @@ class StretchyOverlay(urwid.Widget):
 
     def keypress(self, size, key):
         top_size, scrollbar_visible = self._top_size(size, True)
-        self.listbox._selectable = scrollbar_visible or self.stretchy.stretchy_w.selectable()
+        self.listbox.base_widget._selectable = scrollbar_visible or self.stretchy.stretchy_w.selectable()
         return self.top_w.keypress(top_size, key)
 
     def render(self, size, focus):

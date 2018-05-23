@@ -301,7 +301,7 @@ class IdentityView(BaseView):
         iu.widget.error_invalid_char = _(data['error_invalid_char'])
         iu.enabled = val is not None
         if val is not None:
-            self.form_rows.body.focus += 2
+            self.form_rows.base_widget.body.focus += 2
         self.form.ssh_import_id_value = val
         if iu.value != "" or val is None:
             iu.validate()
