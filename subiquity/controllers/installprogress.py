@@ -134,7 +134,7 @@ class DownloadSnapTask(BackgroundTask):
 
     def start(self):
         self.controller._install_event_start(_("downloading {}").format(self.snap_name))
-        os.mkdir(self.download_dir)
+        os.mkdir(self.this_snap_download_dir)
         self.proc = utils.start_command(
             ['snap', 'download', '--channel='+self.channel, self.snap_name],
             cwd=self.this_snap_download_dir)
