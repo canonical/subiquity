@@ -55,19 +55,24 @@ REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
 
+
 class RealnameEditor(StringEditor, WantsToKnowFormField):
     def valid_char(self, ch):
         if len(ch) == 1 and ch in ':,=':
             self.bff.in_error = True
-            self.bff.show_extra(("info_error", _("The characters : , and = are not permitted in this field")))
+            self.bff.show_extra(("info_error",
+                                 _("The characters : , and = are not permitted"
+                                   " in this field")))
             return False
         else:
             return super().valid_char(ch)
 
+
 class UsernameEditor(StringEditor, WantsToKnowFormField):
     def __init__(self):
         self.valid_char_pat = r'[-a-z0-9_]'
-        self.error_invalid_char = _("The only characters permitted in this field are a-z, 0-9, _ and -")
+        self.error_invalid_char = _("The only characters permitted in this "
+                                    "field are a-z, 0-9, _ and -")
         super().__init__()
 
     def valid_char(self, ch):
@@ -94,15 +99,19 @@ _ssh_import_data = {
         'caption': _("Github Username:"),
         'help': "Enter your Github username.",
         'valid_char': r'[a-zA-Z0-9\-]',
-        'error_invalid_char': 'A Github username may only contain alphanumeric characters or hyphens.',
+        'error_invalid_char': ('A Github username may only contain '
+                               'alphanumeric characters or hyphens.'),
         },
     'lp': {
         'caption': _("Launchpad Username:"),
         'help': "Enter your Launchpad username.",
         'valid_char': r'[a-z0-9\+\.\-]',
-        'error_invalid_char': 'A Launchpad username may only contain lower-case alphanumeric characters, hyphens, plus, or periods.',
+        'error_invalid_char': ('A Launchpad username may only contain '
+                               'lower-case alphanumeric characters, hyphens, '
+                               'plus, or periods.'),
         },
     }
+
 
 class IdentityForm(Form):
 
@@ -134,7 +143,8 @@ class IdentityForm(Form):
             return _("Server name must not be empty")
 
         if len(self.hostname.value) > HOSTNAME_MAXLEN:
-            return _("Server name too long, must be < ") + str(HOSTNAME_MAXLEN)
+            return (_("Server name too long, must be < ") +
+                    str(HOSTNAME_MAXLEN))
 
         if not re.match(r'[a-z_][a-z0-9_-]*', self.hostname.value):
             return _("Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
@@ -176,9 +186,11 @@ class IdentityForm(Form):
         if self.ssh_import_id_value == 'lp':
             lp_regex = r"^[a-z0-9][a-z0-9\+\.\-]+$"
             if not re.match(lp_regex, self.import_username.value):
-                return _("""\
-A Launchpad username must be at least two characters long and start with a letter or number. \
-All letters must be lower-case. The characters +, - and . are also allowed after the first character.""")
+                return _("A Launchpad username must be at least two "
+                         "characters long and start with a letter or "
+                         "number. All letters must be lower-case. The "
+                         "characters +, - and . are also allowed after "
+                         "the first character.""")
         elif self.ssh_import_id_value == 'gh':
             if username.startswith('-') or username.endswith('-') or '--' in username or not re.match('^[a-zA-Z0-9\-]+$', username):
                 return _("A Github username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.")
