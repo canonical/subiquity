@@ -22,7 +22,7 @@ configuration.
 import logging
 from urwid import CheckBox, connect_signal, Text
 
-from subiquitycore.ui.actionmenu import ActionMenu
+from subiquitycore.ui.actionmenu import ActionMenu, ActionMenuButton
 from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
@@ -78,14 +78,6 @@ class FilesystemConfirmation(Stretchy):
 
 class NarrowCheckBox(CheckBox):
     reserve_columns = 3
-
-device_actions = [
-    (_("Information"), 'info'),
-    (_("Edit"), 'edit'),
-    (_("Add Partition"), 'partition'),
-    (_("Format / Mount"), 'format'),
-    (_("Delete"), 'delete'),
-    ]
 
 class FilesystemView(BaseView):
     title = _("Filesystem setup")
@@ -227,7 +219,14 @@ class FilesystemView(BaseView):
         label = Text(dev.label)
         size = Text(humanize_size(dev.size).rjust(9))
         typ = Text(dev.desc())
-        action_menu = ActionMenu([(_(label), dev.supports_action(action), action) for label, action in device_actions])
+        device_actions = [
+            (_("Information"), 'info'),
+            (_("Edit"), 'edit'),
+            (_("Add Partition"), 'partition'),
+            (_("Format / Mount"), 'format'),
+            (Color.danger_button(ActionMenuButton(_("Delete"))), 'delete'),
+            ]
+        action_menu = ActionMenu([(label, dev.supports_action(action), action) for label, action in device_actions])
         connect_signal(action_menu, 'action', self._action, dev)
         r = [Columns([
             (3, action_menu),
