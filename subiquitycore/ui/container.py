@@ -386,41 +386,46 @@ class FocusTrackingListBox(TabCyclingListBox):
 Columns = FocusTrackingColumns
 Pile = FocusTrackingPile
 
+class ScrollBarListBox(urwid.WidgetDecoration):
 
-class ScrollBarListBox(FocusTrackingListBox):
-
-    def __init__(self, walker=None):
+    def __init__(self, lb):
         def f(char, attr):
             return urwid.AttrMap(urwid.SolidFill(char), attr)
         self.boxes = [
-            urwid.AttrMap(urwid.SolidFill("\N{FULL BLOCK}"), 'scrollbar_bg'),
-            urwid.AttrMap(urwid.SolidFill("\N{FULL BLOCK}"), 'scrollbar_fg'),
+            f("\N{FULL BLOCK}", 'scrollbar_bg'),
+            f("\N{FULL BLOCK}", 'scrollbar_fg'),
             ]
         self.bar = Pile([
             ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'scrollbar_bg')),
             ('weight', 1, self.boxes[0]),
             ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'scrollbar_bg')),
             ])
-        super().__init__(walker)
+        super().__init__(lb)
+
+    def keypress(self, size, key):
+        visible = self.original_widget.ends_visible(size, True)
+        if len(visible) != 2:
+            size = (size[0]-1, size[1])
+        return self.original_widget.keypress(size, key)
 
     def render(self, size, focus=False):
-        visible = self.ends_visible(size, focus)
+        visible = self.original_widget.ends_visible(size, focus)
         if len(visible) == 2:
-            return super().render(size, focus)
+            return self.original_widget.render(size, focus)
         else:
             # This implementation assumes that the number of rows is
             # not too large (and in particular is finite). That's the
             # case for all the listboxes we have in subiquity today.
             maxcol, maxrow = size
 
-            offset, inset = self.get_focus_offset_inset((maxcol - 1, maxrow))
+            offset, inset = self.original_widget.get_focus_offset_inset((maxcol - 1, maxrow))
 
             seen_focus = False
             height = height_before_focus = 0
-            focus_widget, focus_pos = self.body.get_focus()
+            focus_widget, focus_pos = self.original_widget.body.get_focus()
             # Scan through the rows calculating total height and the
             # height of the rows before the focus widget.
-            for widget in self.body:
+            for widget in self.original_widget.body:
                 rows = widget.rows((maxcol - 1,))
                 if widget is focus_widget:
                     seen_focus = True
@@ -459,10 +464,15 @@ class ScrollBarListBox(FocusTrackingListBox):
                 (self.bar.contents[2][0], self.bar.options('weight', bottom)),
                 ]
             canvases = [
-                (super().render((maxcol - 1, maxrow), focus), self.focus_position, True, maxcol - 1),
+                (self.original_widget.render((maxcol - 1, maxrow), focus), self.original_widget.focus_position, True, maxcol - 1),
                 (self.bar.render((1, maxrow)), None, False, 1)
                 ]
             return urwid.CanvasJoin(canvases)
 
 
-ListBox = ScrollBarListBox
+def ListBox(body=None):
+    # urwid.ListBox converts an arbitrary sequence argument to a
+    # PollingListWalker, which doesn't work with our code.
+    if body is not None and getattr(body, 'get_focus', None) is None:
+        body = urwid.SimpleFocusListWalker(body)
+    return ScrollBarListBox(FocusTrackingListBox(body))

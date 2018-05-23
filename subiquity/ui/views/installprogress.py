@@ -66,21 +66,24 @@ class ProgressView(BaseView):
 
         super().__init__(self.event_pile)
 
-    def add_event(self, text):
-        at_end = len(self.event_listwalker) == 0 or self.event_listbox.focus_position == len(self.event_listwalker) - 1
-        if len(self.event_listwalker) > 0:
-            self.event_listwalker[-1] = self.event_listwalker[-1][0]
-        self.event_listwalker.append(Columns([('pack', Text(text)), ('pack', self.spinner)], dividechars=1))
+    def _add_line(self, lb, line):
+        lb = lb.base_widget
+        walker = lb.body
+        at_end = len(walker) == 0 or lb.focus_position == len(walker) - 1
+        walker.append(line)
         if at_end:
-            self.event_listbox.set_focus(len(self.event_listwalker) - 1)
-            self.event_listbox.set_focus_valign('bottom')
+            lb.set_focus(len(walker) - 1)
+            lb.set_focus_valign('bottom')
+
+    def add_event(self, text):
+        walker = self.event_listwalker
+        if len(walker) > 0:
+            walker[-1] = walker[-1][0]
+        new = Columns([('pack', Text(text)), ('pack', self.spinner)], dividechars=1)
+        self._add_line(self.event_listbox, new)
 
     def add_log_line(self, text):
-        at_end = len(self.log_listwalker) == 0 or self.log_listbox.focus_position == len(self.log_listwalker) - 1
-        self.log_listwalker.append(Text(text))
-        if at_end:
-            self.log_listbox.set_focus(len(self.log_listwalker) - 1)
-            self.log_listbox.set_focus_valign('bottom')
+        self._add_line(self.log_listbox, Text(text))
 
     def set_status(self, text):
         self.event_linebox.set_title(text)

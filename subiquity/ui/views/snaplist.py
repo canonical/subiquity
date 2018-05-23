@@ -19,15 +19,17 @@ from urwid import (
     BOX,
     CheckBox,
     LineBox,
+    ListBox as UrwidListBox,
     RadioButton,
     SelectableIcon,
+    SimpleFocusListWalker,
     Text,
     Widget,
     WidgetWrap,
     )
 
 from subiquitycore.ui.buttons import ok_btn, cancel_btn, other_btn
-from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.container import Columns, ListBox, Pile, ScrollBarListBox
 from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
@@ -54,20 +56,9 @@ class StarRadioButton(RadioButton):
     reserve_columns = 3
 
 
-class NoTabCyclingListBox(ListBox):
-    # Carefully disable the TabCycling parts of our ListBox (but keep the scrollbar!)
-
-    def keypress(self, size, key):
-        if not key.startswith("enter") and self._command_map[key] in ('next selectable', 'prev selectable'):
-            return key
-        else:
-            return super().keypress(size, key)
-
-    def _select_first_selectable(self):
-        return
-
-    def _select_last_selectable(self):
-        return
+def NoTabCyclingListBox(body):
+    body = SimpleFocusListWalker(body)
+    return ScrollBarListBox(UrwidListBox(body))
 
 
 class SnapInfoView(Widget):
