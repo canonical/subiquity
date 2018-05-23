@@ -57,8 +57,10 @@ class IscsiDiskView(BaseView):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Connect anonymously", align="right")),
-                    ("weight", 0.3, Color.string_input(Pile(self.connect_anon.group)))
+                    ("weight", 0.2,
+                     Text("Connect anonymously", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(Pile(self.connect_anon.group)))
                 ],
                 dividechars=4
             ),
@@ -78,8 +80,10 @@ class IscsiDiskView(BaseView):
             ),
             Columns(
                 [
-                    ("weight", 0.2, Text("Require server auth", align="right")),
-                    ("weight", 0.3, Color.string_input(Pile(self.server_auth.group)))
+                    ("weight", 0.2,
+                     Text("Require server auth", align="right")),
+                    ("weight", 0.3,
+                     Color.string_input(Pile(self.server_auth.group)))
                 ],
                 dividechars=4
             ),
