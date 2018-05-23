@@ -17,6 +17,7 @@ valid_data = {
     'confirm_password': 'password'
     }
 
+
 class IdentityViewTests(unittest.TestCase):
 
     def make_view(self):
