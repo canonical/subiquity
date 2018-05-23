@@ -36,6 +36,8 @@ class LocaleModel(object):
         ('fr_FR', 'French'),
         ('de_DE', 'German'),
         ('el_GR', 'Greek, Modern (1453-)'),
+        # noqa: ('he_IL', 'Hebrew'), # disabled as it does not render
+                                     # correctly on a vt with default font
         ('hu_HU', 'Hungarian'),
         ('lv_LV', 'Latvian'),
         ('nb_NO', 'Norsk bokmål'), # iso_639_3 for nb does not translate Norwgian
