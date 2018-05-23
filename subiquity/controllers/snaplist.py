@@ -31,20 +31,10 @@ from subiquity.ui.views.snaplist import SnapListView
 log = logging.getLogger('subiquity.controllers.snaplist')
 
 
-class SnapInfoLoaderState:
-    NOT_RUNNING = 0
-    LOADING_LIST = 1
-    LOADING_INFO = 2
-    LOADED = 3
-    STOPPED = -1
-    FAILED = -2
-
-
 class SampleDataSnapInfoLoader:
 
     def __init__(self, model, snap_data_dir):
         self.model = model
-        self.state = SnapInfoLoaderState.NOT_RUNNING
         self.snap_data_dir = snap_data_dir
 
     def start(self):
@@ -55,7 +45,6 @@ class SampleDataSnapInfoLoader:
         for snap_info_file in glob.glob(snap_info_glob):
             with open(snap_info_file) as fp:
                 self.model.load_info_data(json.load(fp))
-        self.state = SnapInfoLoaderState.LOADED
 
     def get_snap_list(self, callback):
         callback(self.model.get_snap_list())
@@ -72,18 +61,22 @@ class SnapdSnapInfoLoader:
         self.url_base = "http+unix://{}/v2/find?".format(quote_plus(sock))
         self.store_section = store_section
 
-        self.state = SnapInfoLoaderState.NOT_RUNNING
+        self.running = False
+        self.snap_list_fetched = False
+        self.all_snap_info_fetched = False
+        self.failed = False
+
         self.session = requests_unixsocket.Session()
         self.pending_info_snaps = []
         self.ongoing = {} # {snap:[callbacks]}
 
     def start(self):
-        self.state = SnapInfoLoaderState.LOADING_LIST
+        self.running = True
         log.debug("loading list of snaps")
         def cb(snap_list):
-            if self.state != SnapInfoLoaderState.LOADING_LIST:
+            if not self.running:
                 return
-            self.state = SnapInfoLoaderState.LOADING_INFO
+            self.snap_list_fetched = True
             self.pending_info_snaps = snap_list
             log.debug("fetched list of %s snaps", len(self.pending_info_snaps))
             self._fetch_next_info()
@@ -91,27 +84,28 @@ class SnapdSnapInfoLoader:
         self.run_in_bg(self._bg_fetch_list, self._fetched_list)
 
     def stop(self):
-        self.state = SnapInfoLoaderState.STOPPED
+        self.running = False
 
     def _bg_fetch_list(self):
         return self.session.get(self.url_base + 'section=' + self.store_section, timeout=60)
 
     def _fetched_list(self, fut):
-        if self.state == SnapInfoLoaderState.STOPPED:
+        if not self.running:
             return
         try:
             response = fut.result()
             response.raise_for_status()
         except requests.exceptions.RequestException:
             log.exception("loading list of snaps failed")
-            self.state = SnapInfoLoaderState.FAILED
+            self.failed = True
+            self.running = False
         else:
             self.model.load_find_data(response.json())
         for cb in self.ongoing.pop(None):
             cb(self.model.get_snap_list())
 
     def get_snap_list(self, callback):
-        if self.state >= SnapInfoLoaderState.LOADING_INFO:
+        if self.snap_list_fetched:
             callback(self.model.get_snap_list())
         elif None in self.ongoing:
             self.ongoing[None].append(callback)
@@ -139,7 +133,7 @@ class SnapdSnapInfoLoader:
 
     def _fetch_next_info(self):
         if not self.pending_info_snaps:
-            self.state = SnapInfoLoaderState.LOADED
+            self.all_snap_info_fetched = True
             return
         snap = self.pending_info_snaps.pop(0)
         self._fetch_info_for_snap(snap, self._fetch_next_info)
@@ -148,14 +142,13 @@ class SnapdSnapInfoLoader:
         return self.session.get(self.url_base + 'name=' + snap.name, timeout=60)
 
     def _fetched_info(self, snap, fut):
-        if self.state == SnapInfoLoaderState.STOPPED:
+        if not self.running:
             return
         try:
             response = fut.result()
             response.raise_for_status()
         except requests.exceptions.RequestException:
             log.exception("loading snap info failed")
-            self.state = SnapInfoLoaderState.FAILED
             # XXX something better here?
         else:
             data = response.json()
@@ -182,7 +175,9 @@ class SnapListController(BaseController):
 
     def _maybe_start_new_loader(self):
         if self.loader:
-            if self.loader.state >= SnapInfoLoaderState.LOADING_INFO:
+            # If the loader managed to load the list of snaps, the
+            # network must basically be working.
+            if self.loader.snap_list_fetched:
                 return
             else:
                 self.loader.stop()
@@ -214,7 +209,7 @@ class SnapListController(BaseController):
             lambda fut: self._maybe_start_new_loader())
 
     def default(self):
-        if self.loader.state == SnapInfoLoaderState.FAILED:
+        if self.loader.failed:
             # If loading snaps failed, skip the screen.
             self.done({})
             return
