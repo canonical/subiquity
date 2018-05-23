@@ -33,6 +33,7 @@ log = logging.getLogger("subiquitycore.controller.installprogress")
 
 TARGET = '/target'
 
+
 class InstallState:
     NOT_STARTED = 0
     RUNNING = 1
@@ -72,12 +73,14 @@ class InstallProgressController(BaseController):
         log.debug('curtin_error')
         self.install_state = InstallState.ERROR
         self.progress_view.spinner.stop()
-        self.progress_view.set_status(('info_error', _("An error has occurred")))
+        self.progress_view.set_status(('info_error',
+                                       _("An error has occurred")))
         self.progress_view.show_complete(True)
         self.default()
 
     def _bg_run_command_logged(self, cmd, env):
-        cmd = ['systemd-cat', '--level-prefix=false', '--identifier=' + self._log_syslog_identifier] + cmd
+        cmd = ['systemd-cat', '--level-prefix=false',
+               '--identifier=' + self._log_syslog_identifier] + cmd
         return utils.run_command(cmd, env=env)
 
     def _journal_event(self, event):
@@ -97,7 +100,7 @@ class InstallProgressController(BaseController):
             return
         if event_type == 'start':
             message = event.get("CURTIN_MESSAGE", "??")
-            if not self.progress_view_showing is None:
+            if self.progress_view_showing is not None:
                 self.footer_description.set_text(message)
             self.progress_view.add_event(self._event_indent + message)
             self._event_indent += "  "
@@ -115,6 +118,7 @@ class InstallProgressController(BaseController):
         for identifier in identifiers:
             args.append("SYSLOG_IDENTIFIER={}".format(identifier))
         reader.add_match(*args)
+
         def watch():
             if reader.process() != journal.APPEND:
                 return
@@ -135,17 +139,20 @@ class InstallProgressController(BaseController):
         if self.opts.dry_run:
             log.debug("Installprogress: this is a dry-run")
             config_location = os.path.join('.subiquity/', config_file_name)
-            curtin_cmd = [
-                "python3", "scripts/replay-curtin-log.py", "examples/curtin-events.json", self._event_syslog_identifier,
-                ]
+            curtin_cmd = ["python3", "scripts/replay-curtin-log.py",
+                          "examples/curtin-events.json",
+                          self._event_syslog_identifier]
         else:
             log.debug("Installprogress: this is the *REAL* thing")
-            config_location = os.path.join('/var/log/installer', config_file_name)
-            curtin_cmd = ['curtin', '--showtrace', '-c', config_location, 'install']
+            config_location = os.path.join('/var/log/installer',
+                                           config_file_name)
+            curtin_cmd = ['curtin', '--showtrace', '-c',
+                          config_location, 'install']
 
-        self._write_config(
-            config_location,
-            self.base_model.render(target=TARGET, syslog_identifier=self._event_syslog_identifier))
+        ident = self._event_syslog_identifier
+        self._write_config(config_location,
+                           self.base_model.render(target=TARGET,
+                                                  syslog_identifier=ident))
 
         return curtin_cmd
 
@@ -156,9 +163,14 @@ class InstallProgressController(BaseController):
         self.progress_view = ProgressView(self)
         self.footer_spinner = self.progress_view.spinner
 
-        self.ui.set_footer(urwid.Columns([('pack', urwid.Text(_("Install in progress:"))), (self.footer_description), ('pack', self.footer_spinner)], dividechars=1))
+        self.ui.set_footer(urwid.Columns(
+            [('pack', urwid.Text(_("Install in progress:"))),
+             (self.footer_description),
+             ('pack', self.footer_spinner)], dividechars=1))
 
-        self.journal_listener_handle = self.start_journald_listener([self._event_syslog_identifier, self._log_syslog_identifier], self._journal_event)
+        self.journal_listener_handle = self.start_journald_listener(
+            [self._event_syslog_identifier, self._log_syslog_identifier],
+            self._journal_event)
 
         curtin_cmd = self._get_curtin_command()
 
@@ -214,9 +226,11 @@ class InstallProgressController(BaseController):
     def copy_logs_to_target(self):
         if self.opts.dry_run:
             return
-        utils.run_command(['cp', '-aT', '/var/log/installer', '/target/var/log/installer'])
+        utils.run_command(['cp', '-aT', '/var/log/installer',
+                           '/target/var/log/installer'])
         try:
-            with open('/target/var/log/installer/installer-journal.txt', 'w') as output:
+            with open('/target/var/log/installer/installer-journal.txt',
+                      'w') as output:
                 utils.run_command(
                     ['journalctl'],
                     stdout=output, stderr=subprocess.STDOUT)
@@ -245,7 +259,8 @@ class InstallProgressController(BaseController):
             self.progress_view.title = _("Install complete!")
             self.progress_view.footer = _("Thank you for using Ubuntu!")
         elif self.install_state == InstallState.ERROR:
-            self.progress_view.title = _('An error occurred during installation')
-            self.progress_view.footer = _('Please report this error in Launchpad')
+            self.progress_view.title = (
+                _('An error occurred during installation'))
+            self.progress_view.footer = (
+                _('Please report this error in Launchpad'))
         self.ui.set_body(self.progress_view)
-
