@@ -78,8 +78,8 @@ class SnapInfoView(Widget):
         self.channels = []
         self.needs_focus = True
 
-        channel_width = max(len(csi.channel_name) for csi in snap.channels) \
-          + StarRadioButton.reserve_columns + 1
+        channel_width = (max(len(csi.channel_name) for csi in snap.channels)
+            + StarRadioButton.reserve_columns + 1)
         max_version = max(len(csi.version) for csi in snap.channels)
         max_revision = max(len(str(csi.revision)) for csi in snap.channels) + 2
         max_size = max(len(humanize_size(csi.size)) for csi in snap.channels)
