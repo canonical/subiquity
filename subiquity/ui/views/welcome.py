@@ -37,7 +37,8 @@ class WelcomeView(BaseView):
         self.controller = controller
         super().__init__(Pile([
             ('pack', Text("")),
-            ('pack', Padding.center_79(Text(_("Please choose your preferred language")))),
+            ('pack', Padding.center_79(
+                Text(_("Please choose your preferred language")))),
             ('pack', Text("")),
             Padding.center_50(self._build_model_inputs()),
             ('pack', Text("")),
@@ -49,7 +50,8 @@ class WelcomeView(BaseView):
         for i, (code, native) in enumerate(self.model.get_languages()):
             if code == self.model.selected_language:
                 current_index = i
-            btns.append(forward_btn(label=native, on_press=self.confirm, user_arg=code))
+            btns.append(forward_btn(label=native, on_press=self.confirm,
+                                    user_arg=code))
 
         lb = ListBox(btns)
         if current_index is not None:
