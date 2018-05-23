@@ -62,7 +62,7 @@ class _PopUpSelectDialog(WidgetWrap):
                 btn = Text("    " + option.label)
                 group.append(AttrWrap(btn, 'info_minor'))
         list_box = ListBox(group)
-        list_box.focus_position = cur_index
+        list_box.base_widget.focus_position = cur_index
         super().__init__(LineBox(list_box))
 
     def click(self, btn, index):

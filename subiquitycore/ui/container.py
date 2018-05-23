@@ -473,6 +473,8 @@ class ScrollBarListBox(urwid.WidgetDecoration):
 def ListBox(body=None):
     # urwid.ListBox converts an arbitrary sequence argument to a
     # PollingListWalker, which doesn't work with our code.
-    if body is not None and getattr(body, 'get_focus', None) is None:
+    if body is None:
+        body = []
+    if body is getattr(body, 'get_focus', None) is None:
         body = urwid.SimpleFocusListWalker(body)
     return ScrollBarListBox(FocusTrackingListBox(body))
