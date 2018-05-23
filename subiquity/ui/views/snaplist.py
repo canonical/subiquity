@@ -339,7 +339,7 @@ class SnapListView(BaseView):
             body.append(row)
         ok = ok_btn(label=_("OK"), on_press=self.done)
         self.main_screen = screen(
-            NoTabCyclingListBox(body), [ok]),
+            NoTabCyclingListBox(body), [ok],
             focus_buttons=False,
             excerpt=_(
                 "These are popular snaps in server environments. Select or "
