@@ -197,7 +197,7 @@ class NetworkView(BaseView):
             Padding.center_79(self.additional_options),
             Padding.line_break(""),
         ]
-        self.listbox.body[:] = widgets
+        self.listbox.base_widget.body[:] = widgets
         self.additional_options.contents = [ (obj, ('pack', None)) for obj in self._build_additional_options() ]
 
     def _build_additional_options(self):
