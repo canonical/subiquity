@@ -344,7 +344,6 @@ class NetworkController(BaseController, TaskWatcher):
             NetworkSetDefaultRouteView(self.model, socket.AF_INET6, self))
 
     def bond_interfaces(self):
-        #self.ui.set_header("Bond interfaces")
         self.ui.set_body(NetworkBondInterfacesView(self.model, self))
 
     def network_configure_interface(self, iface):
