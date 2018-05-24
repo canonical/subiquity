@@ -14,90 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import fnmatch
-import glob
 import ipaddress
 import logging
-import os
 from socket import AF_INET, AF_INET6
 
-import yaml
-from yaml.reader import ReaderError
+from subiquitycore import netplan
 
 
 NETDEV_IGNORED_IFACE_NAMES = ['lo']
 NETDEV_IGNORED_IFACE_TYPES = ['bridge', 'tun', 'tap', 'dummy', 'sit']
 log = logging.getLogger('subiquitycore.models.network')
-
-
-class _NetplanDevice:
-    def __init__(self, name, config):
-        match = config.get('match')
-        if match is None:
-            self.match_name = name
-            self.match_mac = None
-            self.match_driver = None
-        else:
-            self.match_name = match.get('name')
-            self.match_mac = match.get('macaddress')
-            self.match_driver = match.get('driver')
-        self.config = config
-
-    def matches_link(self, link):
-        if self.match_name is not None:
-            matches_name = fnmatch.fnmatch(link.name, self.match_name)
-        else:
-            matches_name = True
-        if self.match_mac is not None:
-            matches_mac = self.match_mac == link.hwaddr
-        else:
-            matches_mac = True
-        if self.match_driver is not None:
-            matches_driver = self.match_driver == link.driver
-        else:
-            matches_driver = True
-        return matches_name and matches_mac and matches_driver
-
-
-class NetplanConfig:
-    """A NetplanConfig represents the network config for a system.
-
-    Call parse_netplan_config() with each piece of yaml config, and then
-    call config_for_device to get the config that matches a particular
-    network devices, if any.
-    """
-
-    def __init__(self):
-        self.devices = []
-
-    def parse_netplan_config(self, config):
-        try:
-            config = yaml.safe_load(config)
-        except ReaderError as e:
-            log.info("could not parse config: %s", e)
-            return
-        network = config.get('network')
-        if network is None:
-            log.info("no 'network' key in config")
-            return
-        version = network.get("version")
-        if version != 2:
-            log.info("network has no/unexpected version %s", version)
-            return
-        for ethernet, eth_config in network.get('ethernets', {}).items():
-            self.devices.append(_NetplanDevice(ethernet, eth_config))
-        for wifi, wifi_config in network.get('wifis', {}).items():
-            self.devices.append(_NetplanDevice(wifi, wifi_config))
-
-    def config_for_device(self, link):
-        for dev in self.devices:
-            if dev.matches_link(link):
-                config = copy.deepcopy(dev.config)
-                if 'match' in config:
-                    del config['match']
-                return config
-        else:
-            return {}
 
 
 def ip_version(ip):
@@ -393,21 +319,9 @@ class NetworkModel(object):
         self.network_routes = {}
 
     def parse_netplan_configs(self, netplan_root):
-        self.config = NetplanConfig()
-        configs_by_basename = {}
-        paths = (
-          glob.glob(os.path.join(netplan_root, 'lib/netplan', "*.yaml")) +
-          glob.glob(os.path.join(netplan_root, 'etc/netplan', "*.yaml")) +
-          glob.glob(os.path.join(netplan_root, 'run/netplan', "*.yaml")))
-        for path in paths:
-            configs_by_basename[os.path.basename(path)] = path
-        for _, path in sorted(configs_by_basename.items()):
-            try:
-                fp = open(path)
-            except OSError:
-                log.exception("opening %s failed", path)
-            with fp:
-                self.config.parse_netplan_config(fp.read())
+        config = netplan.Config()
+        config.load_from_root(netplan_root)
+        self.config = config
 
     def get_menu(self):
         return self.additional_options
