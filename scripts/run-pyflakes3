@@ -8,9 +8,19 @@ pycheck_dirs=(
     "tests/"
 )
 
+bin_files=(
+    "bin/console-conf-tui"
+    "bin/subiquity-tui"
+)
+CR="
+"
+[ "$1" = "-v" ] && { verbose="$1"; shift; } || verbose=""
+
 set -f
-if [ $# -eq 0 ]; then
-   files=( "${pycheck_dirs[@]}" )
+if [ $# -eq 0 ]; then unset IFS
+   IFS="$CR"
+   files=( "${bin_files[@]}" "${pycheck_dirs[@]}" )
+   unset IFS
 else
    files=( "$@" )
 fi
