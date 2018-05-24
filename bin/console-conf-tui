@@ -39,9 +39,11 @@ checks:
             - /sys
 '''
 
+
 def parse_options(argv):
     parser = argparse.ArgumentParser(
-        description='console-conf - Pre-Ownership Configuration for Ubuntu Core',
+        description=(
+            'console-conf - Pre-Ownership Configuration for Ubuntu Core'),
         prog='console-conf')
     parser.add_argument('--dry-run', action='store_true',
                         dest='dry_run',
@@ -52,12 +54,14 @@ def parse_options(argv):
     parser.add_argument('--machine-config', metavar='CONFIG',
                         dest='machine_config',
                         help="Don't Probe. Use probe data file")
-    parser.add_argument('--screens', action='append', dest='screens', default=[])
+    parser.add_argument('--screens', action='append', dest='screens',
+                        default=[])
     parser.add_argument('--answers')
     return parser.parse_args(argv)
 
 
 LOGDIR = "/var/log/console-conf/"
+
 
 def main():
     opts = parse_options(sys.argv[1:])
@@ -88,6 +92,7 @@ def main():
         return 1
 
     interface.run()
+
 
 if __name__ == '__main__':
     sys.exit(main())
