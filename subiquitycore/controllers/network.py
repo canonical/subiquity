@@ -229,14 +229,6 @@ class NetworkController(BaseController, TaskWatcher):
         self.signal.emit_signal('prev-screen')
 
     def default(self):
-        title = _("Network connections")
-        excerpt = _("Configure at least one interface this server can use to "
-                    "talk to other machines, and which preferably provides "
-                    "sufficient access for updates.")
-        footer = _("Select an interface to configure it or select Done to "
-                   "continue")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
         self.ui.set_body(NetworkView(self.model, self))
         if self.answers.get('accept-default', False):
             self.network_finish(self.model.render())
