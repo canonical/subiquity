@@ -134,7 +134,8 @@ class DownloadSnapTask(BackgroundTask):
         self.channel = channel
 
     def start(self):
-        self.controller._install_event_start(_("downloading {}").format(self.snap_name))
+        self.controller._install_event_start(
+            _("downloading {}").format(self.snap_name))
         os.mkdir(self.this_snap_download_dir)
         self.proc = utils.start_command(
             ['snap', 'download', '--channel='+self.channel, self.snap_name],
@@ -144,13 +145,14 @@ class DownloadSnapTask(BackgroundTask):
         stdout, stderr = self.proc.communicate()
         if self.proc.returncode != 0:
             raise subprocess.CalledProcessError(
-                self.proc.returncode, self.proc.args, output=stdout, stderr=stderr)
+                self.proc.returncode, self.proc.args, output=stdout,
+                stderr=stderr)
 
     def end(self, observer, fut):
         self.controller._install_event_finish()
         try:
             fut.result()
-        except:
+        except BaseException:
             shutil.rmtree(self.this_snap_download_dir)
             raise
         else:
@@ -161,10 +163,14 @@ class UpdateSnapSeed(BackgroundTask):
 
     def __init__(self, controller, root):
         self.controller = controller
-        self.seed_yaml = os.path.join(root, "var/lib/snapd/seed/seed.yaml")
-        self.tmp_dir = os.path.join(root, "var/lib/snapd/seed/tmp")
-        self.snap_dir = os.path.join(root, "var/lib/snapd/seed/snaps")
-        self.assertions_dir = os.path.join(root, "var/lib/snapd/seed/assertions")
+        self.seed_yaml = os.path.join(
+            root, "var/lib/snapd/seed/seed.yaml")
+        self.tmp_dir = os.path.join(
+            root, "var/lib/snapd/seed/tmp")
+        self.snap_dir = os.path.join(
+            root, "var/lib/snapd/seed/snaps")
+        self.assertions_dir = os.path.join(
+            root, "var/lib/snapd/seed/assertions")
 
     def start(self):
         self.controller._install_event_start(_("updating snap seed"))
@@ -175,21 +181,28 @@ class UpdateSnapSeed(BackgroundTask):
         with open(self.seed_yaml) as fp:
             seed = yaml.safe_load(fp)
 
+        to_install = self.controller.base_model.snaplist.to_install
         for snap_name in os.listdir(self.tmp_dir):
             this_snap_download_dir = os.path.join(self.tmp_dir, snap_name)
-            [snap_path] = glob.glob(os.path.join(this_snap_download_dir, "*.snap"))
-            [assertion_path] = glob.glob(os.path.join(this_snap_download_dir, "*.assert"))
+            [snap_path] = glob.glob(
+                os.path.join(this_snap_download_dir, "*.snap"))
+            [assertion_path] = glob.glob(
+                os.path.join(this_snap_download_dir, "*.assert"))
 
             snap_file = os.path.basename(snap_path)
             assertion_file = os.path.basename(assertion_path)
-            os.rename(snap_path, os.path.join(self.snap_dir, snap_file))
-            os.rename(assertion_path, os.path.join(self.assertions_dir, assertion_file))
+            os.rename(
+                snap_path,
+                os.path.join(self.snap_dir, snap_file))
+            os.rename(
+                assertion_path,
+                os.path.join(self.assertions_dir, assertion_file))
 
             # If this directory is not empty, something very
             # unexpected has happened and we should fail.
             os.rmdir(this_snap_download_dir)
 
-            selection = self.controller.base_model.snaplist.to_install[snap_name]
+            selection = to_install[snap_name]
             seedinfo = {
                 'name': snap_name,
                 'file': snap_file,
@@ -210,6 +223,39 @@ class UpdateSnapSeed(BackgroundTask):
         self.controller._install_event_finish()
         fut.result()
         observer.task_succeeded()
+
+
+class SnapSeedTaskWatcher(TaskWatcher):
+    def __init__(self, controller):
+        self.controller = controller
+        self.tasklist = []
+
+    def task_complete(self, stage):
+        self.tasklist.pop(0)
+
+    def task_error(self, stage, info):
+        if stage.startswith("download"):
+            curtask = self.tasklist[0][1]
+            explanation = None
+            if isinstance(info, tuple):
+                log.debug("xxx %s", info)
+                if isinstance(info[1], subprocess.CalledProcessError):
+                    explanation = info[1].stderr.strip()
+                else:
+                    explanation = "".join(traceback.format_exception(*info))
+            self.controller.progress_view.ask_for_retry_snap(
+                self, curtask.snap_name, explanation)
+            return
+        if isinstance(info, tuple):
+            tb = traceback.format_exception(*info)
+            self.controller.curtin_error("".join(tb))
+        else:
+            self.controller.curtin_error()
+
+    def tasks_finished(self):
+        self.controller._install_event_finish()
+        self.controller.loop.set_alarm_in(
+            0.0, lambda loop, ud: self.controller.postinstall_complete())
 
 
 class InstallProgressController(BaseController):
@@ -237,13 +283,15 @@ class InstallProgressController(BaseController):
         self.curtin_start_install()
 
     def identity_config_done(self):
-        if self.install_state == InstallState.DONE and self._snap_config_done:
+        if self.install_state == InstallState.DONE and \
+          self._snap_config_done:
             self.postinstall_configuration()
         else:
             self._identity_config_done = True
 
     def snap_config_done(self):
-        if self.install_state == InstallState.DONE and self._identity_config_done:
+        if self.install_state == InstallState.DONE and \
+          self._identity_config_done:
             self.postinstall_configuration()
         else:
             self._snap_config_done = True
@@ -295,23 +343,7 @@ class InstallProgressController(BaseController):
         if event_type not in ['start', 'finish']:
             return
         if event_type == 'start':
-<<<<<<< HEAD
             self._install_event_start(event.get("CURTIN_MESSAGE", "??"))
-||||||| merged common ancestors
-            message = event.get("CURTIN_MESSAGE", "??")
-            if not self.progress_view_showing is None:
-                self.footer_description.set_text(message)
-            self.progress_view.add_event(self._event_indent + message)
-            self._event_indent += "  "
-            self.footer_spinner.start()
-=======
-            message = event.get("CURTIN_MESSAGE", "??")
-            if self.progress_view_showing is not None:
-                self.footer_description.set_text(message)
-            self.progress_view.add_event(self._event_indent + message)
-            self._event_indent += "  "
-            self.footer_spinner.start()
->>>>>>> master
         if event_type == 'finish':
             self._install_event_finish()
 
@@ -417,53 +449,40 @@ class InstallProgressController(BaseController):
         self.copy_logs_to_target()
 
         if self.base_model.snaplist.to_install:
-            class watcher(TaskWatcher):
-                def __init__(self, controller):
-                    self.controller = controller
-                    self.tasklist = []
-                def task_complete(self, stage):
-                    self.tasklist.pop(0)
-                def task_error(self, stage, info):
-                    if stage.startswith("download"):
-                        curtask = self.tasklist[0][1]
-                        explanation = None
-                        if isinstance(info, tuple):
-                            log.debug("xxx %s", info)
-                            if isinstance(info[1], subprocess.CalledProcessError):
-                                explanation = info[1].stderr.strip()
-                            else:
-                                explanation = "".join(traceback.format_exception(*info))
-                        self.controller.progress_view.ask_for_retry_snap(self, curtask.snap_name, explanation)
-                        return
-                    if isinstance(info, tuple):
-                        tb = traceback.format_exception(*info)
-                        self.controller.curtin_error("".join(tb))
-                    else:
-                        self.controller.curtin_error()
-                def tasks_finished(self):
-                    self.controller._install_event_finish()
-                    self.controller.loop.set_alarm_in(0.0, lambda loop, ud:self.controller.postinstall_complete())
-            w = watcher(self)
+            w = SnapSeedTaskWatcher(self)
             if self.opts.dry_run:
                 root = '.subiquity'
-                shutil.rmtree(os.path.join(root, 'var/lib/snapd/seed'), ignore_errors=True)
-                os.makedirs(os.path.join(root, 'var/lib/snapd/seed/snaps'))
-                os.makedirs(os.path.join(root, 'var/lib/snapd/seed/assertions'))
-                with open(os.path.join(root, 'var/lib/snapd/seed/seed.yaml'), 'w') as fp:
-                    fp.write("snaps:\n- name: core\n  channel: stable\n  file: core_XXXX.snap")
+                shutil.rmtree(
+                    os.path.join(root, 'var/lib/snapd/seed'),
+                    ignore_errors=True)
+                os.makedirs(
+                    os.path.join(root, 'var/lib/snapd/seed/snaps'))
+                os.makedirs(
+                    os.path.join(root, 'var/lib/snapd/seed/assertions'))
+                fake_seed = ("snaps:\n"
+                             "- name: core\n"
+                             "  channel: stable\n"
+                             "  file: core_XXXX.snap")
+                seed_path = os.path.join(root, 'var/lib/snapd/seed/seed.yaml')
+                with open(seed_path, 'w') as fp:
+                    fp.write(fake_seed)
             else:
                 root = TARGET
             tmp_dir = os.path.join(root, 'var/lib/snapd/seed/tmp')
             os.mkdir(tmp_dir)
             w.tasklist.append(('drain', WaitForCurtinEventsTask(self)))
-            for snap_name, selection in sorted(self.base_model.snaplist.to_install.items()):
-                w.tasklist.append(("download " + snap_name, DownloadSnapTask(self, tmp_dir, snap_name, selection.channel)))
+            for snap_name, selection in sorted(
+                    self.base_model.snaplist.to_install.items()):
+                w.tasklist.append((
+                    "download " + snap_name,
+                    DownloadSnapTask(
+                        self, tmp_dir, snap_name, selection.channel)
+                    ))
             w.tasklist.append(("snapseed", UpdateSnapSeed(self, root)))
             ts = TaskSequence(self.run_in_bg, w.tasklist, w)
             ts.run()
         else:
             self.postinstall_complete()
-
 
     def postinstall_complete(self):
         self.ui.set_header(_("Installation complete!"))

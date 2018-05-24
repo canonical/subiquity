@@ -37,24 +37,31 @@ class MyLineBox(LineBox):
         else:
             return ""
 
+
 class AskForRetryStretchy(Stretchy):
     def __init__(self, parent, watcher, snap_name, explanation):
         self.parent = parent
         self.watcher = watcher
         if explanation is None:
             widgets = [
-                Text(_('Downloading the snap "{}" failed for an unknown reason.').format(snap_name)),
+                Text(_('Downloading the snap "{}" failed for an unknown '
+                       'reason.').format(snap_name)),
                 ]
             stretchy_index = 0
         else:
             widgets = [
-                Text(_('Downloading the snap "{}" failed with the following output:').format(snap_name)),
+                Text(_('Downloading the snap "{}" failed with the following '
+                       'output:').format(snap_name)),
                 Text(""),
                 Text(explanation),
                 ]
             stretchy_index = 2
-        retry = other_btn(label=_("Try again"), on_press=self.cont, user_arg=True)
-        give_up = other_btn(label=_("Give up on this snap"), on_press=self.cont, user_arg=False)
+        retry = other_btn(
+            label=_("Try again"),
+            on_press=self.cont, user_arg=True)
+        give_up = other_btn(
+            label=_("Give up on this snap"),
+            on_press=self.cont, user_arg=False)
         widgets.extend([
             Text(""),
             Text(_("Would you like to try to download this snap again?")),
@@ -67,6 +74,7 @@ class AskForRetryStretchy(Stretchy):
     def cont(self, sender, retry_cur):
         self.parent.remove_overlay()
         self.parent.controller.resume_snap_downloads(self.watcher, retry_cur)
+
 
 class ProgressView(BaseView):
     def __init__(self, controller):
@@ -141,7 +149,8 @@ class ProgressView(BaseView):
         p.focus_position = 1
 
     def ask_for_retry_snap(self, watcher, snap_name, explanation):
-        self.show_stretchy_overlay(AskForRetryStretchy(self, watcher, snap_name, explanation))
+        self.show_stretchy_overlay(
+            AskForRetryStretchy(self, watcher, snap_name, explanation))
 
     def reboot(self, btn):
         self.controller.reboot()

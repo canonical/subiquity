@@ -68,11 +68,12 @@ class SnapdSnapInfoLoader:
 
         self.session = requests_unixsocket.Session()
         self.pending_info_snaps = []
-        self.ongoing = {} # {snap:[callbacks]}
+        self.ongoing = {}  # {snap:[callbacks]}
 
     def start(self):
         self.running = True
         log.debug("loading list of snaps")
+
         def cb(snap_list):
             if not self.running:
                 return
@@ -87,7 +88,8 @@ class SnapdSnapInfoLoader:
         self.running = False
 
     def _bg_fetch_list(self):
-        return self.session.get(self.url_base + 'section=' + self.store_section, timeout=60)
+        return self.session.get(
+            self.url_base + 'section=' + self.store_section, timeout=60)
 
     def _fetched_list(self, fut):
         if not self.running:
@@ -139,7 +141,8 @@ class SnapdSnapInfoLoader:
         self._fetch_info_for_snap(snap, self._fetch_next_info)
 
     def _bg_fetch_next_info(self, snap):
-        return self.session.get(self.url_base + 'name=' + snap.name, timeout=60)
+        return self.session.get(
+            self.url_base + 'name=' + snap.name, timeout=60)
 
     def _fetched_info(self, snap, fut):
         if not self.running:
@@ -184,9 +187,15 @@ class SnapListController(BaseController):
         if self.opts.snaps_from_examples:
             self.loader = SampleDataSnapInfoLoader(
                 self.model,
-                os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "examples", "snaps"))
+                os.path.join(
+                    os.path.dirname(
+                        os.path.dirname(
+                            os.path.dirname(__file__))),
+                    "examples", "snaps"))
         else:
-            self.loader = SnapdSnapInfoLoader(self.model, self.run_in_bg, self.snapd_socket_path, self.opts.snap_section)
+            self.loader = SnapdSnapInfoLoader(
+                self.model, self.run_in_bg, self.snapd_socket_path,
+                self.opts.snap_section)
         self.loader.start()
 
     def network_config_done(self, netplan_path):
@@ -197,8 +206,9 @@ class SnapListController(BaseController):
         if self.opts.dry_run:
             cmds = [['sleep', '0.5']]
         else:
-            os.makedirs('/etc/systemd/system/snapd.service.d', exist_ok=True)
-            with open('/etc/systemd/system/snapd.service.d/snap_proxy.conf', 'w') as fp:
+            dropin_dir = '/etc/systemd/system/snapd.service.d'
+            os.makedirs(dropin_dir, exist_ok=True)
+            with open(os.path.join(dropin_dir, 'snap_proxy.conf'), 'w') as fp:
                 fp.write(self.base_model.proxy.proxy_systemd_dropin())
             cmds = [
                 ['systemctl', 'daemon-reload'],

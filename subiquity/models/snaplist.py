@@ -48,13 +48,14 @@ class SnapSelection:
 
 risks = ["stable", "candidate", "beta", "edge"]
 
+
 class SnapListModel:
     """The overall model for subiquity."""
 
     def __init__(self):
         self._snap_info = []
         self._snaps_by_name = {}
-        self.to_install = {} # snap_name -> SnapSelection
+        self.to_install = {}  # snap_name -> SnapSelection
 
     def load_find_data(self, data):
         for s in data['result']:

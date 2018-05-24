@@ -79,7 +79,7 @@ class SnapInfoView(Widget):
         self.needs_focus = True
 
         channel_width = (max(len(csi.channel_name) for csi in snap.channels)
-            + StarRadioButton.reserve_columns + 1)
+                         + StarRadioButton.reserve_columns + 1)
         max_version = max(len(csi.version) for csi in snap.channels)
         max_revision = max(len(str(csi.revision)) for csi in snap.channels) + 2
         max_size = max(len(humanize_size(csi.size)) for csi in snap.channels)
@@ -108,13 +108,15 @@ class SnapInfoView(Widget):
                 ('pack', Text(notes)),
                 ], dividechars=1)))
 
-        self.lb_channels = Padding.center_79(NoTabCyclingListBox(self.channels))
+        self.lb_channels = Padding.center_79(
+            NoTabCyclingListBox(self.channels))
 
         contents = [
             ('pack', Text("")),
             ('pack', Padding.center_79(Columns([
                 Text(snap.name),
-                ('pack', Text("Publisher: {}".format(snap.publisher), align='right')),
+                ('pack', Text(
+                    "Publisher: {}".format(snap.publisher), align='right')),
                 ], dividechars=1))),
             ('pack', Text("")),
             ('pack', Padding.center_79(Text(snap.summary))),
@@ -123,7 +125,9 @@ class SnapInfoView(Widget):
             ('pack', Text("")),
             ('weight', 1, self.lb_channels),
             ('pack', Text("")),
-            ('pack', button_pile([other_btn(label=_("Close"), on_press=self.close)])),
+            ('pack', button_pile([
+                other_btn(label=_("Close"), on_press=self.close),
+                ])),
             ('pack', Text("")),
             ]
         self.description_index = contents.index(self.lb_description)
@@ -149,7 +153,8 @@ class SnapInfoView(Widget):
             if o == pack_option:
                 rows_available -= w.rows((maxcol,), focus)
 
-        rows_wanted_description = Padding.center_79(self.description).rows((maxcol,), False)
+        padded_description = Padding.center_79(self.description)
+        rows_wanted_description = padded_description.rows((maxcol,), False)
         rows_wanted_channels = len(self.channels)
 
         if rows_wanted_channels + rows_wanted_description <= rows_available:
@@ -161,7 +166,8 @@ class SnapInfoView(Widget):
                 channel_rows = min(rows_wanted_channels, int(rows_available/3))
                 description_rows = rows_available - channel_rows
 
-        self.pile.contents[self.description_index] = (self.lb_description, self.pile.options('given', description_rows))
+        self.pile.contents[self.description_index] = (
+            self.lb_description, self.pile.options('given', description_rows))
         if description_rows >= rows_wanted_description:
             self.lb_description.original_widget._selectable = False
         else:
@@ -188,7 +194,9 @@ class FetchingInfo(WidgetWrap):
                 Pile([
                     ('pack', Text(' ' + text)),
                     ('pack', self.spinner),
-                    ('pack', button_pile([cancel_btn(label=_("Cancel"), on_press=self.close)])),
+                    ('pack', button_pile([
+                        cancel_btn(label=_("Cancel"), on_press=self.close),
+                        ])),
                     ])))
 
     def close(self, sender=None):
@@ -197,6 +205,7 @@ class FetchingInfo(WidgetWrap):
         self.closed = True
         self.spinner.stop()
         self.parent.remove_overlay()
+
 
 class FetchingFailed(WidgetWrap):
 
@@ -233,7 +242,8 @@ class SnapListRow(WidgetWrap):
         self.parent = parent
         self.snap = snap
         self.box = StarCheckBox(snap.name, on_state_change=self.state_change)
-        self.name_and_publisher_width = max_name_len + self.box.reserve_columns + max_publisher_len + 2
+        self.name_and_publisher_width = (
+            max_name_len + self.box.reserve_columns + max_publisher_len + 2)
         self.two_column = Color.menu_button(Columns([
                 (max_name_len+self.box.reserve_columns, self.box),
                 Text(snap.summary, wrap='clip'),
@@ -248,23 +258,26 @@ class SnapListRow(WidgetWrap):
     def load_info(self):
         called = False
         fi = None
+
         def callback():
             nonlocal called
             called = True
             if fi is not None:
                 fi.close()
-            if len(self.snap.channels) == 0: # or other indication of failure
+            if len(self.snap.channels) == 0:  # or other indication of failure
                 ff = FetchingFailed(self, self.snap)
                 self.parent.show_overlay(ff, width=ff.width)
             else:
-                cur_channel = None
+                cur_chan = None
                 if self.snap.name in self.parent.to_install:
-                    cur_channel = self.parent.to_install[self.snap.name].channel
-                self.parent._w = SnapInfoView(self.parent, self.snap, cur_channel)
+                    cur_chan = self.parent.to_install[self.snap.name].channel
+                self.parent._w = SnapInfoView(self.parent, self.snap, cur_chan)
         self.parent.controller.get_snap_info(self.snap, callback)
-        # If we didn't get callback synchronously, display a dialog while the info loads.
+        # If we didn't get callback synchronously, display a dialog
+        # while the info loads.
         if not called:
-            fi = FetchingInfo(self.parent, self.snap, self.parent.controller.loop)
+            fi = FetchingInfo(
+                self.parent, self.snap, self.parent.controller.loop)
             self.parent.show_overlay(fi, width=fi.width)
 
     def keypress(self, size, key):
@@ -288,6 +301,7 @@ class SnapListRow(WidgetWrap):
         else:
             return self.two_column.render(size, focus)
 
+
 class SnapListView(BaseView):
 
     title = _("Featured Server Snaps")
@@ -295,12 +309,13 @@ class SnapListView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.to_install = {} # {snap_name: (channel, is_classic)}
+        self.to_install = {}  # {snap_name: (channel, is_classic)}
         self.load()
 
     def load(self, sender=None):
         spinner = None
         called = False
+
         def callback(snap_list):
             nonlocal called
             called = True
