@@ -7,7 +7,10 @@ pycheck_dirs=(
     "subiquitycore/"
     "tests/"
 )
-bin_files=( )
+bin_files=(
+    "bin/console-conf-tui"
+    "bin/subiquity-tui"
+)
 CR="
 "
 [ "$1" = "-v" ] && { verbose="$1"; shift; } || verbose=""
