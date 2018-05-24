@@ -130,6 +130,7 @@ class Padding:
     """
     line_break = partialmethod(Text)
 
+
 # This makes assumptions about the style names defined by both
 # subiquity and console_conf. The fix is to stop using the Color class
 # below, I think.
