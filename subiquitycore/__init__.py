@@ -15,6 +15,9 @@
 
 """ SubiquityCore """
 
-import subiquitycore.i18n
+from subiquitycore import i18n
+__all__ = [
+    'i18n',
+]
 
 __version__ = "0.0.5"
