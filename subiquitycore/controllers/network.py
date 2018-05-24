@@ -16,7 +16,6 @@
 from functools import partial
 import logging
 import os
-import random
 import select
 import socket
 
@@ -44,6 +43,8 @@ from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
 from subiquitycore.utils import run_command
+from subiquitycore.file_util import write_file
+from subiquitycore import netplan
 
 log = logging.getLogger("subiquitycore.controller.network")
 
@@ -245,22 +246,16 @@ class NetworkController(BaseController, TaskWatcher):
         log.debug("network config: \n%s",
                   yaml.dump(sanitize_config(config), default_flow_style=False))
 
-        netplan_path = self.netplan_path
-        while True:
-            try:
-                tmppath = '%s.%s' % (netplan_path, random.randrange(0, 1000))
-                fd = os.open(tmppath,
-                             os.O_WRONLY | os.O_EXCL | os.O_CREAT, 0o0600)
-            except FileExistsError:
+        for p in netplan.configs_in_root(self.root, masked=True):
+            if p == self.netplan_path:
                 continue
-            else:
-                break
-        w = os.fdopen(fd, 'w')
-        with w:
-            w.write("# This is the network config written by "
-                    "'%s'\n" % (self.opts.project))
-            w.write(yaml.dump(config))
-        os.rename(tmppath, netplan_path)
+            os.rename(p, p + ".dist-" + self.opts.project)
+
+        write_file(self.netplan_path, '\n'.join((
+            ("# This is the network config written by '%s'" %
+             self.opts.project),
+            yaml.dump(config))), omode="w")
+
         self.model.parse_netplan_configs(self.root)
         if self.opts.dry_run:
             tasks = [
