@@ -15,6 +15,7 @@
 
 from urwid import AttrMap, Button, Text
 
+
 def _stylized_button(left, right, style):
     class Btn(Button):
         button_left = Text(left)
@@ -26,8 +27,10 @@ def _stylized_button(left, right, style):
             super().__init__(btn, style + '_button', style + '_button focus')
     return StyleAttrMap
 
+
 def action_button(style):
     return _stylized_button('[', ']', style)
+
 
 menu_btn = _stylized_button("", ">", "menu")
 forward_btn = _stylized_button("", ">", "done")
@@ -42,5 +45,3 @@ delete_btn = danger_btn
 back_btn = other_btn
 cancel_btn = other_btn
 reset_btn = other_btn
-
-

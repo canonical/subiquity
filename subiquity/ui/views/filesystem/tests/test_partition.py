@@ -17,7 +17,6 @@ from subiquity.models.filesystem import (
 from subiquity.ui.views.filesystem.partition import PartitionView
 
 
-
 class PartitionViewTests(unittest.TestCase):
 
     def make_view(self, partition=None):
@@ -46,7 +45,8 @@ class PartitionViewTests(unittest.TestCase):
 
     def test_delete_not_disabled_for_ordinary_partition(self):
         view = self.make_view(Partition(size=50*(2**20)))
-        but, path = view_helpers.find_button_matching(view, "Delete", return_path=True)
+        but, path = view_helpers.find_button_matching(view, "Delete",
+                                                      return_path=True)
         self.assertIsNotNone(but)
         for w in path:
             if isinstance(w, urwid.WidgetDisable):
@@ -54,7 +54,8 @@ class PartitionViewTests(unittest.TestCase):
 
     def test_delete_disabled_for_boot_partition(self):
         view = self.make_view(Partition(size=50*(2**20), flag="boot"))
-        but, path = view_helpers.find_button_matching(view, "Delete", return_path=True)
+        but, path = view_helpers.find_button_matching(view, "Delete",
+                                                      return_path=True)
         self.assertIsNotNone(but)
         for w in path:
             if isinstance(w, urwid.WidgetDisable):
@@ -71,8 +72,8 @@ class PartitionViewTests(unittest.TestCase):
 
     def test_create_partition(self):
         valid_data = {
-            'size':"1M",
-            'fstype':FilesystemModel.fs_by_name["ext4"],
+            'size': "1M",
+            'fstype': FilesystemModel.fs_by_name["ext4"],
             }
         view = self.make_view()
         view_helpers.enter_data(view.form, valid_data)

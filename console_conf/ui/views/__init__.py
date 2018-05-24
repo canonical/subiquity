@@ -15,6 +15,11 @@
 
 """ ConsoleConf UI Views """
 
-from .identity import IdentityView  # NOQA
-from .login import LoginView  # NOQA
-from .welcome import WelcomeView  # NOQA
+from .identity import IdentityView
+from .login import LoginView
+from .welcome import WelcomeView
+__all__ = [
+    'IdentityView',
+    'LoginView',
+    'WelcomeView',
+]

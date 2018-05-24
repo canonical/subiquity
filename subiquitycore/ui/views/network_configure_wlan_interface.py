@@ -1,6 +1,5 @@
 from urwid import (
     BoxAdapter,
-    Button,
     connect_signal,
     LineBox,
     Text,
@@ -13,15 +12,19 @@ from subiquitycore.ui.form import Form, PasswordField, StringField
 from subiquitycore.ui.utils import Color, Padding
 import logging
 
-log = logging.getLogger('subiquitycore.network.network_configure_wlan_interface')
+log = logging.getLogger(
+    'subiquitycore.network.network_configure_wlan_interface')
+
 
 class NetworkList(WidgetWrap):
 
     def __init__(self, parent, ssids):
         self.parent = parent
         button = cancel_btn(_("Cancel"), on_press=self.do_cancel)
-        ssid_list = [menu_btn(label=ssid, on_press=self.do_network) for ssid in ssids]
-        p = Pile([BoxAdapter(ListBox(ssid_list), height=10), Padding.fixed_10(button)])
+        ssid_list = [menu_btn(label=ssid, on_press=self.do_network)
+                     for ssid in ssids]
+        p = Pile([BoxAdapter(ListBox(ssid_list), height=10),
+                  Padding.fixed_10(button)])
         box = LineBox(p, title="Select a network")
         super().__init__(box)
 
@@ -48,6 +51,7 @@ class WLANForm(Form):
             return "Password must be at least 8 characters long if present"
         elif len(psk) > 63:
             return "Password must be less than 63 characters long"
+
 
 class NetworkConfigureWLANView(BaseView):
     def __init__(self, model, controller, name):
@@ -89,7 +93,7 @@ class NetworkConfigureWLANView(BaseView):
         self.show_overlay(NetworkList(self, self.dev.actual_ssids))
 
     def start_scan(self, sender):
-        self.keypress((0,0), 'up')
+        self.keypress((0, 0), 'up')
         try:
             self.controller.start_scan(self.dev)
         except RuntimeError as r:
@@ -98,7 +102,8 @@ class NetworkConfigureWLANView(BaseView):
 
     def _build_iface_inputs(self):
         if len(self.dev.actual_ssids) > 0:
-            networks_btn = menu_btn("Choose a visible network", on_press=self.show_ssid_list)
+            networks_btn = menu_btn("Choose a visible network",
+                                    on_press=self.show_ssid_list)
         else:
             networks_btn = Color.info_minor(Columns(
                 [
@@ -117,8 +122,10 @@ class NetworkConfigureWLANView(BaseView):
                     ('fixed', 1, Text(">"))
                 ], dividechars=1))
 
+        warning = (
+            "Only open or WPA2/PSK networks are supported at this time.")
         col = [
-            Padding.center_79(Color.info_minor(Text("Only open or WPA2/PSK networks are supported at this time."))),
+            Padding.center_79(Color.info_minor(Text(warning))),
             Padding.line_break(""),
             self.ssid_row,
             Padding.fixed_30(networks_btn),
@@ -134,11 +141,13 @@ class NetworkConfigureWLANView(BaseView):
             # The interface is gone
             self.controller.default()
             return
-        self.inputs.contents = [ (obj, ('pack', None)) for obj in self._build_iface_inputs() ]
+        self.inputs.contents = [(obj, ('pack', None))
+                                for obj in self._build_iface_inputs()]
 
     def done(self, sender):
         if self.dev.configured_ssid is None and self.form.ssid.value:
-            # Turn DHCP4 on by default when specifying an SSID for the first time...
+            # Turn DHCP4 on by default when specifying an SSID for
+            # the first time...
             self.dev.dhcp4 = True
         if self.form.ssid.value:
             ssid = self.form.ssid.value

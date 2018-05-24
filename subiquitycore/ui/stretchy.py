@@ -50,6 +50,7 @@ import urwid
 
 from subiquitycore.ui.container import ListBox, Pile
 
+
 class Stretchy:
     def __init__(self, title, widgets, stretchy_index, focus_index):
         """
@@ -71,17 +72,20 @@ class Stretchy:
 class StretchyOverlay(urwid.Widget):
     _selectable = True
     _sizing = frozenset([urwid.BOX])
+
     def __init__(self, bottom_w, stretchy):
         self.bottom_w = bottom_w
         self.stretchy = stretchy
         self.listbox = ListBox([stretchy.stretchy_w])
+
         def entry(i, w):
             if i == stretchy.stretchy_index:
                 return ('weight', 1, self.listbox)
             else:
                 return ('pack', w)
 
-        inner_pile = Pile([entry(i, w) for (i, w) in enumerate(stretchy.widgets)])
+        inner_pile = Pile(
+            [entry(i, w) for (i, w) in enumerate(stretchy.widgets)])
         inner_pile.focus_position = stretchy.focus_index
         # this Filler/Padding/LineBox/Filler/Padding construction
         # seems ridiculous but it works.
@@ -98,12 +102,14 @@ class StretchyOverlay(urwid.Widget):
             top=1, bottom=1, height=('relative', 100))
 
     def _top_size(self, size, focus):
-        # Returns the size of the top widget and whether the scollbar will be shown.
+        # Returns the size of the top widget and whether
+        # the scollbar will be shown.
 
-        maxcol, maxrow = size # we are a BOX widget
+        maxcol, maxrow = size  # we are a BOX widget
         outercol = min(maxcol, 80)
-        innercol = outercol - 10 # (3 outer padding, 1 line, 2 inner padding) x 2
-        fixed_rows = 6 # lines at top and bottom and padding
+        # (3 outer padding, 1 line, 2 inner padding) x 2
+        innercol = outercol - 10
+        fixed_rows = 6  # lines at top and bottom and padding
 
         for i, widget in enumerate(self.stretchy.widgets):
             if i == self.stretchy.stretchy_index:
@@ -130,7 +136,8 @@ class StretchyOverlay(urwid.Widget):
 
     def keypress(self, size, key):
         top_size, scrollbar_visible = self._top_size(size, True)
-        self.listbox.base_widget._selectable = scrollbar_visible or self.stretchy.stretchy_w.selectable()
+        self.listbox._selectable = (
+            scrollbar_visible or self.stretchy.stretchy_w.selectable())
         return self.top_w.keypress(top_size, key)
 
     def render(self, size, focus):

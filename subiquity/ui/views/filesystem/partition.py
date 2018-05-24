@@ -51,6 +51,7 @@ class FSTypeField(FormField):
     def _make_widget(self, form):
         return Selector(opts=FilesystemModel.supported_filesystems)
 
+
 class SizeWidget(StringEditor):
     def __init__(self, form):
         self.form = form
@@ -70,16 +71,22 @@ class SizeWidget(StringEditor):
         except ValueError:
             return
         if sz > self.form.max_size:
-            self.form.size.show_extra(('info_minor', _("Capped partition size at %s")%(self.form.size_str,)))
+            self.form.size.show_extra(
+                ('info_minor',
+                 _("Capped partition size at %s") % (self.form.size_str,)))
             self.value = self.form.size_str
-        elif align_up(sz) != sz and humanize_size(align_up(sz)) != self.form.size.value:
-            sz_str = humanize_size(align_up(sz))
-            self.form.size.show_extra(('info_minor', _("Rounded size up to %s")%(sz_str,)))
-            self.value = sz_str
+        elif align_up(sz) != sz:
+            if humanize_size(align_up(sz)) != self.form.size.value:
+                sz_str = humanize_size(align_up(sz))
+                self.form.size.show_extra(
+                    ('info_minor', _("Rounded size up to %s") % (sz_str,)))
+                self.value = sz_str
+
 
 class SizeField(FormField):
     def _make_widget(self, form):
         return SizeWidget(form)
+
 
 class PartitionForm(Form):
 
@@ -128,7 +135,7 @@ class PartitionForm(Form):
             return _('Path exceeds PATH_MAX')
         dev = self.mountpoint_to_devpath_mapping.get(mount)
         if dev is not None:
-            return _("%s is already mounted at %s")%(dev, mount)
+            return _("%s is already mounted at %s") % (dev, mount)
 
 
 class PartitionFormatView(BaseView):
@@ -137,7 +144,8 @@ class PartitionFormatView(BaseView):
 
     def __init__(self, size, existing, initial, back, focus_buttons=False):
 
-        mountpoint_to_devpath_mapping = self.model.get_mountpoint_to_devpath_mapping()
+        mountpoint_to_devpath_mapping = (
+            self.model.get_mountpoint_to_devpath_mapping())
         if existing is not None:
             fs = existing.fs()
             if fs is not None:
@@ -150,13 +158,15 @@ class PartitionFormatView(BaseView):
                         del mountpoint_to_devpath_mapping[mount.path]
             else:
                 initial['fstype'] = self.model.fs_by_name[None]
-        self.form = self.form_cls(mountpoint_to_devpath_mapping, size, initial)
+        self.form = self.form_cls(mountpoint_to_devpath_mapping, size,
+                                  initial)
         self.back = back
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(screen(self.make_body(), self.form.buttons, focus_buttons=focus_buttons))
+        super().__init__(screen(self.make_body(), self.form.buttons,
+                                focus_buttons=focus_buttons))
 
     def make_body(self):
         return self.form.as_rows()
@@ -170,12 +180,17 @@ Required bootloader partition
 
 GRUB will be installed onto the target disk's MBR.
 
-However, on a disk with a GPT partition table, there is not enough space after the MBR for GRUB to store its second-stage core.img, so a small unformatted partition is needed at the start of the disk. It will not contain a filesystem and will not be mounted, and cannot be edited here.""")
+However, on a disk with a GPT partition table, there is not enough space
+after the MBR for GRUB to store its second-stage core.img, so a small
+unformatted partition is needed at the start of the disk. It will not contain
+a filesystem and will not be mounted, and cannot be edited here.""")
 
 boot_partition_description = _("""\
 Required bootloader partition
 
-This is the ESP / "EFI system partition" required by UEFI. Grub will be installed onto this partition, which must be formatted as fat32. The only aspect of this partition that can be edited is the size.""")
+This is the ESP / "EFI system partition" required by UEFI. Grub will be
+installed onto this partition, which must be formatted as fat32. The only
+aspect of this partition that can be edited is the size.""")
 
 
 class PartitionView(PartitionFormatView):
@@ -202,7 +217,9 @@ class PartitionView(PartitionFormatView):
             else:
                 self.footer = _("Edit partition details, format and mount.")
                 label = _("Save")
-        super().__init__(max_size, partition, initial, lambda : self.controller.partition_disk(disk), focus_buttons=label is None)
+        super().__init__(max_size, partition, initial,
+                         lambda: self.controller.partition_disk(disk),
+                         focus_buttons=label is None)
         if label is not None:
             self.form.buttons.base_widget[0].set_label(label)
         else:
@@ -210,7 +227,8 @@ class PartitionView(PartitionFormatView):
             self.form.buttons.base_widget[0].set_label(_("OK"))
         if partition is not None:
             if partition.flag == "boot":
-                opts = [Option(("fat32", True, self.model.fs_by_name["fat32"]))]
+                opts = [Option(("fat32", True,
+                        self.model.fs_by_name["fat32"]))]
                 self.form.fstype.widget._options = opts
                 self.form.fstype.widget.index = 0
                 self.form.mount.enabled = False
@@ -234,7 +252,7 @@ class PartitionView(PartitionFormatView):
                     Text(""),
                     ]
             btn = delete_btn(_("Delete"), on_press=self.delete)
-            if self.partition.flag == "boot" or self.partition.flag == "bios_grub":
+            if self.partition.flag in ["boot", "bios_grub"]:
                 btn = WidgetDisable(Color.info_minor(btn.original_widget))
             body.extend([
                 Text(""),
@@ -247,7 +265,8 @@ class PartitionView(PartitionFormatView):
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
-        self.controller.partition_disk_handler(self.disk, self.partition, form.as_data())
+        self.controller.partition_disk_handler(self.disk, self.partition,
+                                               form.as_data())
 
 
 class FormatEntireView(PartitionFormatView):
@@ -257,14 +276,16 @@ class FormatEntireView(PartitionFormatView):
         self.controller = controller
         self.volume = volume
         if isinstance(volume, Disk):
-            self.title = _("Format and/or mount {}").format(disk.label)
+            self.title = _("Format and/or mount {}").format(volume.label)
             self.footer = _("Format or mount whole disk.")
         else:
-            self.title = _("Partition, format, and mount {}").format(volume.device.label)
+            self.title = _("Partition, format, "
+                           "and mount {}").format(volume.device.label)
             self.footer = _("Edit partition details, format and mount.")
 
         super().__init__(None, volume, {}, back)
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
-        self.controller.add_format_handler(self.volume, form.as_data(), self.back)
+        self.controller.add_format_handler(self.volume, form.as_data(),
+                                           self.back)

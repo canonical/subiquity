@@ -34,7 +34,9 @@ class WelcomeView(BaseView):
     def __init__(self, controller):
         self.controller = controller
         super().__init__(Pile([
-            ListBox([Text('')]), # need to have a listbox or something else "stretchy" here or urwid complains.
+            # need to have a listbox or something else "stretchy" here or
+            # urwid complains.
+            ListBox([Text('')]),
             ('pack', button_pile([ok_btn("OK", on_press=self.confirm)])),
             ('pack', Text("")),
             ], focus_item=1))

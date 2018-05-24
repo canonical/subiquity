@@ -50,6 +50,7 @@ the installation has started.
 
 Are you sure you want to continue?""")
 
+
 class FilesystemConfirmation(Stretchy):
     def __init__(self, parent, controller):
         self.parent = parent
@@ -109,24 +110,27 @@ class FilesystemView(BaseView):
 
     def _build_used_disks(self):
         log.debug('FileSystemView: building used disks')
-        return Color.info_minor(Text("No disks have been used to create a constructed disk."))
+        return Color.info_minor(
+            Text("No disks have been used to create a constructed disk."))
 
     def _build_filesystem_list(self):
         log.debug('FileSystemView: building part list')
         cols = []
         mount_point_text = _("MOUNT POINT")
         longest_path = len(mount_point_text)
-        for m in sorted(self.model._mounts, key=lambda m:m.path):
+        for m in sorted(self.model._mounts, key=lambda m: m.path):
             path = m.path
             longest_path = max(longest_path, len(path))
             for p, *dummy in reversed(cols):
                 if path.startswith(p):
                     path = [('info_minor', p), path[len(p):]]
                     break
-            cols.append((m.path, path, humanize_size(m.device.volume.size), m.device.fstype, m.device.volume.desc()))
+            cols.append((m.path, path, humanize_size(m.device.volume.size),
+                         m.device.fstype, m.device.volume.desc()))
         for fs in self.model._filesystems:
             if fs.fstype == 'swap':
-                cols.append((None, _('SWAP'), humanize_size(fs.volume.size), fs.fstype, fs.volume.desc()))
+                cols.append((None, _('SWAP'), humanize_size(fs.volume.size),
+                             fs.fstype, fs.volume.desc()))
 
         if len(cols) == 0:
             return Pile([Color.info_minor(
@@ -135,14 +139,16 @@ class FilesystemView(BaseView):
         type_text = _("TYPE")
         size_width = max(len(size_text), 9)
         type_width = max(len(type_text), self.model.longest_fs_name)
-        cols.insert(0, (None, mount_point_text, size_text, type_text, _("DEVICE TYPE")))
+        cols.insert(0, (None, mount_point_text, size_text, type_text,
+                        _("DEVICE TYPE")))
         pl = []
         for dummy, a, b, c, d in cols:
             if b == "SIZE":
                 b = Text(b, align='center')
             else:
                 b = Text(b, align='right')
-            pl.append(Columns([(longest_path, Text(a)), (size_width, b), (type_width, Text(c)), Text(d)], 4))
+            pl.append(Columns([(longest_path, Text(a)), (size_width, b),
+                               (type_width, Text(c)), Text(d)], 4))
         return Pile(pl)
 
     def _build_buttons(self):
@@ -150,7 +156,8 @@ class FilesystemView(BaseView):
         buttons = []
 
         # don't enable done botton if we can't install
-        # XXX should enable/disable button rather than having it appear/disappear I think
+        # XXX should enable/disable button rather than having it
+        # appear/disappear I think
         if self.model.can_install():
             buttons.append(
                 done_btn(_("Done"), on_press=self.done))
@@ -165,13 +172,16 @@ class FilesystemView(BaseView):
 
         def col3(col1, col2, col3):
             inputs.append(Columns([(42, col1), (10, col2), col3], 2))
+
         def col2(col1, col2):
             inputs.append(Columns([(42, col1), col2], 2))
+
         def col1(col1):
             inputs.append(Columns([(42, col1)], 1))
 
         inputs = []
-        col3(Text(_("DEVICE")), Text(_("SIZE"), align="center"), Text(_("TYPE")))
+        col3(Text(_("DEVICE")), Text(_("SIZE"), align="center"),
+             Text(_("TYPE")))
         r.append(Pile(inputs))
 
         for disk in self.model.all_disks():
@@ -188,11 +198,13 @@ class FilesystemView(BaseView):
                 label = _("entire device, ")
                 fs_obj = self.model.fs_by_name[fs.fstype]
                 if fs.mount():
-                    label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
+                    label += "%-*s" % (self.model.longest_fs_name+2,
+                                       fs.fstype+',') + fs.mount().path
                 else:
                     label += fs.fstype
                 if fs_obj.label and fs_obj.is_mounted and not fs.mount():
-                    disk_btn = menu_btn(label=label, on_press=self.click_disk, user_arg=disk)
+                    disk_btn = menu_btn(label=label, on_press=self.click_disk,
+                                        user_arg=disk)
                     disk_btn = disk_btn
                 else:
                     disk_btn = Color.info_minor(Text("  " + label))
@@ -202,16 +214,21 @@ class FilesystemView(BaseView):
                 fs = partition.fs()
                 if fs is not None:
                     if fs.mount():
-                        label += "%-*s"%(self.model.longest_fs_name+2, fs.fstype+',') + fs.mount().path
+                        label += "%-*s" % (self.model.longest_fs_name+2,
+                                           fs.fstype+',') + fs.mount().path
                     else:
                         label += fs.fstype
                 elif partition.flag == "bios_grub":
                     label += "bios_grub"
                 else:
                     label += _("unformatted")
-                size = Text("{:>9} ({}%)".format(humanize_size(partition.size), int(100*partition.size/disk.size)))
+                size = Text("{:>9} ({}%)".format(
+                            humanize_size(partition.size),
+                            int(100 * partition.size/disk.size)))
                 if partition.available:
-                    part_btn = menu_btn(label=label, on_press=self.click_partition, user_arg=partition)
+                    part_btn = menu_btn(label=label,
+                                        on_press=self.click_partition,
+                                        user_arg=partition)
                     col2(part_btn, size)
                 else:
                     part_btn = Color.info_minor(Text("  " + label))
@@ -221,7 +238,7 @@ class FilesystemView(BaseView):
             free = disk.free
             percent = str(int(100*free/size))
             if percent == "0":
-                percent = "%.2f"%(100*free/size,)
+                percent = "%.2f" % (100 * free / size,)
             if disk.available and disk.used > 0:
                 label = _("Add/Edit Partitions")
                 size = "{:>9} ({}%) free".format(humanize_size(free), percent)
@@ -231,9 +248,8 @@ class FilesystemView(BaseView):
             else:
                 label = _("Edit Partitions")
                 size = ""
-            col2(
-                menu_btn(label=label, on_press=self.click_disk, user_arg=disk),
-                Text(size))
+            col2(menu_btn(label=label, on_press=self.click_disk,
+                          user_arg=disk), Text(size))
             r.append(Pile(inputs))
 
         if len(r) == 1:
@@ -254,4 +270,5 @@ class FilesystemView(BaseView):
         self.controller.reset()
 
     def done(self, button):
-        self.show_stretchy_overlay(FilesystemConfirmation(self, self.controller))
+        self.show_stretchy_overlay(FilesystemConfirmation(self,
+                                                          self.controller))

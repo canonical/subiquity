@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import crypt
-import errno
 import logging
 import os
 import random
@@ -69,7 +68,8 @@ def environment_check(check):
             for i in items:
                 if not os.path.exists(i):
                     if 'SNAP' in os.environ:
-                        log.warn("Adjusting path for snaps: {}".format(os.environ.get('SNAP')))
+                        log.warn("Adjusting path for snaps: %s",
+                                 os.environ.get('SNAP'))
                         i = os.environ.get('SNAP') + i
                         if not os.path.exists(i):
                             env_ok = False
@@ -103,7 +103,9 @@ def _clean_env(env):
     return env
 
 
-def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', errors='replace', env=None, **kw):
+def run_command(cmd, *, input=None, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
+                env=None, **kw):
     """A wrapper around subprocess.run with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
@@ -114,7 +116,8 @@ def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PI
         input = input.encode(encoding)
     log.debug("run_command called: %s", cmd)
     try:
-        cp = subprocess.run(cmd, input=input, stdout=stdout, stderr=stderr, env=_clean_env(env), **kw)
+        cp = subprocess.run(cmd, input=input, stdout=stdout, stderr=stderr,
+                            env=_clean_env(env), **kw)
         if encoding:
             if isinstance(cp.stdout, bytes):
                 cp.stdout = cp.stdout.decode(encoding)
@@ -128,13 +131,16 @@ def run_command(cmd, *, input=None, stdout=subprocess.PIPE, stderr=subprocess.PI
         return cp
 
 
-def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8', errors='replace', env=None, **kw):
+def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                  stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
+                  env=None, **kw):
     """A wrapper around subprocess.Popen with logging and different defaults.
 
     We never ever want a subprocess to inherit our file descriptors!
     """
     log.debug('start_command called: %s', cmd)
-    return subprocess.Popen(cmd, stdin=stdin, stdout=stdout, stderr=stderr, env=_clean_env(env), **kw)
+    return subprocess.Popen(cmd, stdin=stdin, stdout=stdout, stderr=stderr,
+                            env=_clean_env(env), **kw)
 
 
 # FIXME: replace with passlib and update package deps
@@ -156,8 +162,10 @@ def crypt_password(passwd, algo='SHA-512'):
 def disable_console_conf():
     """ Stop console-conf service; which also restores getty service """
     log.info('disabling console-conf service')
-    run_command(["systemctl", "stop", "--no-block", "console-conf@*.service", "serial-console-conf@*.service"])
+    run_command(["systemctl", "stop", "--no-block", "console-conf@*.service",
+                 "serial-console-conf@*.service"])
     return
+
 
 def disable_subiquity():
     """ Stop subiquity service; which also restores getty service """
@@ -165,5 +173,7 @@ def disable_subiquity():
     run_command(["mkdir", "-p", "/run/subiquity"])
     run_command(["touch", "/run/subiquity/complete"])
     run_command(["systemctl", "start", "--no-block", "getty@tty1.service"])
-    run_command(["systemctl", "stop", "--no-block", "snap.subiquity.subiquity-service.service", "serial-subiquity@*.service"])
+    run_command(["systemctl", "stop", "--no-block",
+                 "snap.subiquity.subiquity-service.service",
+                 "serial-subiquity@*.service"])
     return

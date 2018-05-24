@@ -20,6 +20,7 @@ from subiquitycore import i18n
 
 log = logging.getLogger('subiquity.models.locale')
 
+
 class LocaleModel(object):
     """ Model representing locale selection
 
@@ -36,11 +37,10 @@ class LocaleModel(object):
         ('fr_FR', 'French'),
         ('de_DE', 'German'),
         ('el_GR', 'Greek, Modern (1453-)'),
-        # noqa: ('he_IL', 'Hebrew'), # disabled as it does not render
-                                     # correctly on a vt with default font
+        # ('he_IL', 'Hebrew'),  # noqa: disabled as it does not render correctly on a vt with default font
         ('hu_HU', 'Hungarian'),
         ('lv_LV', 'Latvian'),
-        ('nb_NO', 'Norsk bokmål'), # iso_639_3 for nb does not translate Norwgian
+        ('nb_NO', 'Norsk bokmål'),  # noqa: iso_639_3 for nb does not translate Norwgian
         ('pl_PL', 'Polish'),
         ('ru_RU', 'Russian'),
         ('es_ES', 'Spanish'),
@@ -62,7 +62,8 @@ class LocaleModel(object):
         for code, name in self.supported_languages:
             native = name
             if gettext.find('iso_639_3', languages=[code]):
-                native_lang = gettext.translation('iso_639_3', languages=[code])
+                native_lang = gettext.translation('iso_639_3',
+                                                  languages=[code])
                 native = native_lang.gettext(name).capitalize()
             languages.append((code, native))
         return languages

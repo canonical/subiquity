@@ -24,9 +24,10 @@ class IscsiDiskModel(object):
     """
 
     menu = [
-        ('Discover volumes now',                        'iscsi:discover-volumes'),
-        ('Use custom discovery credentials (advanced)', 'iscsi:custom-discovery-credentials'),
-        ('Enter volume details manually',               'iscsi:manual-volume-details')
+        ('Discover volumes now', 'iscsi:discover-volumes'),
+        ('Use custom discovery credentials (advanced)',
+         'iscsi:custom-discovery-credentials'),
+        ('Enter volume details manually', 'iscsi:manual-volume-details')
     ]
 
     server_authentication = {

@@ -14,12 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-
 from subiquitycore.controller import BaseController
-
 from subiquity.ui.views import WelcomeView
 
 log = logging.getLogger('subiquity.controllers.welcome')
+
 
 class WelcomeController(BaseController):
 

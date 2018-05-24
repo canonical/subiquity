@@ -28,8 +28,9 @@ from subiquitycore.ui.container import ListBox
 
 
 class _PopUpButton(SelectableIcon):
-    """It looks a bit like a radio button, but it just emits 'click' on activation."""
-
+    """It looks a bit like a radio button, but it just emits
+       'click' on activation.
+    """
     signals = ['click']
 
     states = {
@@ -55,7 +56,7 @@ class _PopUpSelectDialog(WidgetWrap):
         group = []
         for i, option in enumerate(self.parent._options):
             if option.enabled:
-                btn = _PopUpButton(option.label, state=i==cur_index)
+                btn = _PopUpButton(option.label, state=(i == cur_index))
                 connect_signal(btn, 'click', self.click, i)
                 group.append(AttrWrap(btn, 'menu_button', 'menu_button focus'))
             else:
@@ -106,7 +107,8 @@ class Option:
 
 
 class Selector(PopUpLauncher):
-    """A widget that allows the user to chose between options by popping up a list of options.
+    """A widget that allows the user to chose between options by popping
+       up a list of options.
 
     (A bit like <select> in an HTML form).
     """
@@ -172,6 +174,9 @@ class Selector(PopUpLauncher):
         return _PopUpSelectDialog(self, self.index)
 
     def get_pop_up_parameters(self):
-        width = max([len(o.label) for o in self._options]) \
-          + len(self._prefix) +  3 # line on left, space, line on right
-        return {'left':-1, 'top':-self.index-1, 'overlay_width':width, 'overlay_height':len(self._options) + 2}
+        # line on left, space, line on right
+        width = (max([len(o.label) for o in self._options]) +
+                 len(self._prefix) + 3)
+        return {'left': -1, 'top': -self.index - 1,
+                'overlay_width': width,
+                'overlay_height': len(self._options) + 2}
