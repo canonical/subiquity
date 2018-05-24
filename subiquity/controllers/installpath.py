@@ -15,8 +15,6 @@
 
 import logging
 
-import lsb_release
-
 from subiquitycore.controller import BaseController
 
 from subiquity.ui.views import InstallpathView, MAASView
