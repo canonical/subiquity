@@ -28,6 +28,7 @@ class FetchSSHKeysFailure(Exception):
         self.message = message
         self.output = output
 
+
 class IdentityController(BaseController):
 
     def __init__(self, common):
@@ -37,10 +38,8 @@ class IdentityController(BaseController):
 
     def default(self):
         self.ui.set_body(IdentityView(self.model, self, self.opts))
-        if 'realname' in self.answers and \
-            'username' in self.answers and \
-            'password' in self.answers and \
-            'hostname' in self.answers:
+        if all(elem in self.answers for elem in
+               ['realname', 'username', 'password', 'hostname']):
             d = {
                 'realname': self.answers['realname'],
                 'username': self.answers['username'],
@@ -62,7 +61,7 @@ class IdentityController(BaseController):
         try:
             self._fetching_proc.terminate()
         except ProcessLookupError:
-            pass # It's OK if the process has already terminated.
+            pass  # It's OK if the process has already terminated.
         self._fetching_proc = None
 
     def _bg_fetch_ssh_keys(self, user_spec, proc, ssh_import_id):
@@ -79,8 +78,12 @@ class IdentityController(BaseController):
 
         cp = utils.run_command(['ssh-keygen', '-lf-'], input=key_material)
         if cp.returncode != 0:
-            return FetchSSHKeysFailure(_("ssh-keygen failed to show fingerprint of downloaded keys:"), p.stderr)
-        fingerprints = cp.stdout.replace("# ssh-import-id {} ".format(ssh_import_id), "").strip().splitlines()
+            return FetchSSHKeysFailure(_("ssh-keygen failed to show "
+                                         "fingerprint of downloaded keys:"),
+                                       cp.stderr)
+        fingerprints = (
+            cp.stdout.replace("# ssh-import-id {} ".format(ssh_import_id),
+                              "").strip().splitlines())
 
         return user_spec, key_material, fingerprints
 
@@ -98,15 +101,20 @@ class IdentityController(BaseController):
             user_spec, key_material, fingerprints = result
             if 'ssh_import_id' in self.answers:
                 user_spec['ssh_keys'] = key_material.splitlines()
-                self.loop.set_alarm_in(0.0, lambda loop, ud: self.done(user_spec))
+                self.loop.set_alarm_in(0.0,
+                                       lambda loop, ud: self.done(user_spec))
             else:
-                self.ui.frame.body.confirm_ssh_keys(user_spec, key_material, fingerprints)
+                self.ui.frame.body.confirm_ssh_keys(user_spec, key_material,
+                                                    fingerprints)
 
     def fetch_ssh_keys(self, user_spec, ssh_import_id):
-        log.debug("User input: %s, fetching ssh keys for %s", user_spec, ssh_import_id)
-        self._fetching_proc = utils.start_command(['ssh-import-id', '-o-', ssh_import_id])
+        log.debug("User input: %s, fetching ssh keys for %s",
+                  user_spec, ssh_import_id)
+        self._fetching_proc = utils.start_command(['ssh-import-id', '-o-',
+                                                   ssh_import_id])
         self.run_in_bg(
-            lambda: self._bg_fetch_ssh_keys(user_spec, self._fetching_proc, ssh_import_id),
+            lambda: self._bg_fetch_ssh_keys(user_spec, self._fetching_proc,
+                                            ssh_import_id),
             self._fetched_ssh_keys)
 
     def done(self, user_spec):

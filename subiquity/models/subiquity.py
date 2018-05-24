@@ -31,8 +31,11 @@ from .snaplist import SnapListModel
 
 def setup_yaml():
     """ http://stackoverflow.com/a/8661021 """
-    represent_dict_order = lambda self, data:  self.represent_mapping('tag:yaml.org,2002:map', data.items())
+    represent_dict_order = (
+        lambda self, data: self.represent_mapping('tag:yaml.org,2002:map',
+                                                  data.items()))
     yaml.add_representer(OrderedDict, represent_dict_order)
+
 
 setup_yaml()
 
@@ -55,7 +58,9 @@ class SubiquityModel:
 
     def _cloud_init_config(self):
         user = self.identity.user
-        users_and_groups_path = os.path.join(os.environ.get("SNAP", "/does-not-exist"), "users-and-groups")
+        users_and_groups_path = (
+            os.path.join(os.environ.get("SNAP", "/does-not-exist"),
+                         "users-and-groups"))
         if os.path.exists(users_and_groups_path):
             groups = open(users_and_groups_path).read().split()
         else:
@@ -83,9 +88,9 @@ class SubiquityModel:
         return config
 
     def _cloud_init_files(self):
-        # TODO, this should be moved to the in-target cloud-config seed so on first
-        # boot of the target, it reconfigures datasource_list to none for subsequent
-        # boots.
+        # TODO, this should be moved to the in-target cloud-config seed so on
+        # first boot of the target, it reconfigures datasource_list to none
+        # for subsequent boots.
         # (mwhudson does not entirely know what the above means!)
         userdata = '#cloud-config\n' + yaml.dump(self._cloud_init_config())
         metadata = yaml.dump({'instance-id': str(uuid.uuid4())})
@@ -112,8 +117,10 @@ class SubiquityModel:
             'install': {
                 'target': target,
                 'unmount': 'disabled',
-                'save_install_config': '/var/log/installer/curtin-install-cfg.yaml',
-                'save_install_log': '/var/log/installer/curtin-install.log',
+                'save_install_config':
+                    '/var/log/installer/curtin-install-cfg.yaml',
+                'save_install_log':
+                    '/var/log/installer/curtin-install.log',
                 },
 
             'sources': {
@@ -128,7 +135,10 @@ class SubiquityModel:
 
             'pollinate': {
                 'user_agent': {
-                    'subiquity': "%s_%s"%(os.environ.get("SNAP_VERSION", 'dry-run'), os.environ.get("SNAP_REVISION", 'dry-run')),
+                    'subiquity': "%s_%s" % (os.environ.get("SNAP_VERSION",
+                                                           'dry-run'),
+                                            os.environ.get("SNAP_REVISION",
+                                                           'dry-run')),
                     },
                 },
 
@@ -159,9 +169,9 @@ class SubiquityModel:
 
         if self.proxy.proxy:
             config['write_files']['snapd_dropin'] = {
-                    'path': 'etc/systemd/system/snapd.service.d/snap_proxy.conf',
-                    'content': self.proxy.proxy_systemd_dropin(),
-                }
+                'path': 'etc/systemd/system/snapd.service.d/snap_proxy.conf',
+                'content': self.proxy.proxy_systemd_dropin(),
+            }
 
         if not self.filesystem.add_swapfile():
             config['swap'] = {'size': 0}

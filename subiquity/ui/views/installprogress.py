@@ -29,6 +29,7 @@ from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.installprogress")
 
+
 class MyLineBox(LineBox):
     def format_title(self, title):
         if title:
@@ -74,7 +75,8 @@ class ProgressView(BaseView):
 
         self.event_listbox = ListBox()
         self.event_linebox = MyLineBox(self.event_listbox)
-        self.event_buttons = button_pile([other_btn(_("View full log"), on_press=self.view_log)])
+        self.event_buttons = button_pile([other_btn(_("View full log"),
+                                          on_press=self.view_log)])
         event_body = [
             ('pack', Text("")),
             ('weight', 1, Padding.center_79(self.event_linebox)),
@@ -88,7 +90,8 @@ class ProgressView(BaseView):
         log_linebox = MyLineBox(self.log_listbox, _("Full installer output"))
         log_body = [
             ('weight', 1, log_linebox),
-            ('pack', button_pile([other_btn(_("Close"), on_press=self.close_log)])),
+            ('pack', button_pile([other_btn(_("Close"),
+                                  on_press=self.close_log)])),
             ]
         self.log_pile = Pile(log_body)
 
@@ -106,10 +109,12 @@ class ProgressView(BaseView):
     def add_event(self, text):
         walker = self.event_listbox.base_widget.body
         if len(walker) > 0:
-            # Remove the spinner from the line it is currently on, if there is one.
+            # Remove the spinner from the line it is currently on, if
+            # there is one.
             walker[-1] = walker[-1][0]
         # Add spinner to the line we are inserting.
-        new_line = Columns([('pack', Text(text)), ('pack', self.spinner)], dividechars=1)
+        new_line = Columns([('pack', Text(text)), ('pack', self.spinner)],
+                           dividechars=1)
         self._add_line(self.event_listbox, new_line)
 
     def add_log_line(self, text):
@@ -121,10 +126,12 @@ class ProgressView(BaseView):
     def show_complete(self, include_exit=False):
         p = self.event_buttons.original_widget
         p.contents.append(
-            (ok_btn(_("Reboot Now"), on_press=self.reboot), p.options('pack')))
+            (ok_btn(_("Reboot Now"), on_press=self.reboot),
+             p.options('pack')))
         if include_exit:
             p.contents.append(
-                (cancel_btn(_("Exit To Shell"), on_press=self.quit), p.options('pack')))
+                (cancel_btn(_("Exit To Shell"), on_press=self.quit),
+                 p.options('pack')))
 
         w = 0
         for b, o in p.contents:

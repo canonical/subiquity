@@ -13,20 +13,40 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .filesystem import (FilesystemView,  # NOQA
+from .filesystem import (FilesystemView,
                          PartitionView,
                          FormatEntireView,
                          DiskPartitionView,
                          DiskInfoView,
                          GuidedDiskSelectionView,
                          GuidedFilesystemView)
-from .bcache import BcacheView  # NOQA
-from .raid import RaidView  # NOQA
-from .ceph import CephDiskView  # NOQA
-from .iscsi import IscsiDiskView  # NOQA
-from .lvm import LVMVolumeGroupView  # NOQA
-from .identity import IdentityView  # NOQA
-from .installpath import InstallpathView, MAASView  # NOQA
-from .installprogress import ProgressView  # NOQA
+from .bcache import BcacheView
+from .raid import RaidView
+from .ceph import CephDiskView
+from .iscsi import IscsiDiskView
+from .lvm import LVMVolumeGroupView
+from .identity import IdentityView
+from .installpath import InstallpathView, MAASView
+from .installprogress import ProgressView
 from .keyboard import KeyboardView
 from .welcome import WelcomeView
+__all__ = [
+    'BcacheView',
+    'CephDiskView',
+    'DiskInfoView',
+    'DiskPartitionView',
+    'FilesystemView',
+    'FormatEntireView',
+    'GuidedDiskSelectionView',
+    'GuidedFilesystemView',
+    'IdentityView',
+    'InstallpathView',
+    'IscsiDiskView',
+    'KeyboardView',
+    'LVMVolumeGroupView',
+    'MAASView',
+    'PartitionView',
+    'ProgressView',
+    'RaidView',
+    'WelcomeView',
+]

@@ -55,19 +55,24 @@ REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
 
+
 class RealnameEditor(StringEditor, WantsToKnowFormField):
     def valid_char(self, ch):
         if len(ch) == 1 and ch in ':,=':
             self.bff.in_error = True
-            self.bff.show_extra(("info_error", _("The characters : , and = are not permitted in this field")))
+            self.bff.show_extra(("info_error",
+                                 _("The characters : , and = are not permitted"
+                                   " in this field")))
             return False
         else:
             return super().valid_char(ch)
 
+
 class UsernameEditor(StringEditor, WantsToKnowFormField):
     def __init__(self):
         self.valid_char_pat = r'[-a-z0-9_]'
-        self.error_invalid_char = _("The only characters permitted in this field are a-z, 0-9, _ and -")
+        self.error_invalid_char = _("The only characters permitted in this "
+                                    "field are a-z, 0-9, _ and -")
         super().__init__()
 
     def valid_char(self, ch):
@@ -77,6 +82,7 @@ class UsernameEditor(StringEditor, WantsToKnowFormField):
             return False
         else:
             return super().valid_char(ch)
+
 
 RealnameField = simple_field(RealnameEditor)
 UsernameField = simple_field(UsernameEditor)
@@ -94,15 +100,19 @@ _ssh_import_data = {
         'caption': _("Github Username:"),
         'help': "Enter your Github username.",
         'valid_char': r'[a-zA-Z0-9\-]',
-        'error_invalid_char': 'A Github username may only contain alphanumeric characters or hyphens.',
+        'error_invalid_char': ('A Github username may only contain '
+                               'alphanumeric characters or hyphens.'),
         },
     'lp': {
         'caption': _("Launchpad Username:"),
         'help': "Enter your Launchpad username.",
         'valid_char': r'[a-z0-9\+\.\-]',
-        'error_invalid_char': 'A Launchpad username may only contain lower-case alphanumeric characters, hyphens, plus, or periods.',
+        'error_invalid_char': ('A Launchpad username may only contain '
+                               'lower-case alphanumeric characters, hyphens, '
+                               'plus, or periods.'),
         },
     }
+
 
 class IdentityForm(Form):
 
@@ -119,7 +129,6 @@ class IdentityForm(Form):
             (_("No"), True, None),
             (_("from Github"), True, "gh"),
             (_("from Launchpad"), True, "lp"),
-            #(_("from Ubuntu One account"), True, "sso"),
             ],
         help=_("You can import your SSH keys from Github or Launchpad."))
     import_username = UsernameField(_ssh_import_data[None]['caption'])
@@ -135,7 +144,8 @@ class IdentityForm(Form):
             return _("Server name must not be empty")
 
         if len(self.hostname.value) > HOSTNAME_MAXLEN:
-            return _("Server name too long, must be < ") + str(HOSTNAME_MAXLEN)
+            return (_("Server name too long, must be < ") +
+                    str(HOSTNAME_MAXLEN))
 
         if not re.match(r'[a-z_][a-z0-9_-]*', self.hostname.value):
             return _("Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
@@ -166,6 +176,7 @@ class IdentityForm(Form):
     # the signal handler stuffs the value here before doing
     # validation (yes, this is a hack).
     ssh_import_id_value = None
+
     def validate_import_username(self):
         if self.ssh_import_id_value is None:
             return
@@ -177,12 +188,19 @@ class IdentityForm(Form):
         if self.ssh_import_id_value == 'lp':
             lp_regex = r"^[a-z0-9][a-z0-9\+\.\-]+$"
             if not re.match(lp_regex, self.import_username.value):
-                return _("""\
-A Launchpad username must be at least two characters long and start with a letter or number. \
-All letters must be lower-case. The characters +, - and . are also allowed after the first character.""")
+                return _("A Launchpad username must be at least two "
+                         "characters long and start with a letter or "
+                         "number. All letters must be lower-case. The "
+                         "characters +, - and . are also allowed after "
+                         "the first character.""")
         elif self.ssh_import_id_value == 'gh':
-            if username.startswith('-') or username.endswith('-') or '--' in username or not re.match('^[a-zA-Z0-9\-]+$', username):
-                return _("A Github username may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen.")
+            if username.startswith('-') or (username.endswith('-') or
+                                            '--' in username or
+                                            not re.match('^[a-zA-Z0-9\-]+$',
+                                                         username)):
+                return _("A Github username may only contain alphanumeric "
+                         "characters or single hyphens, and cannot begin or "
+                         "end with a hyphen.")
 
 
 class FetchingSSHKeys(WidgetWrap):
@@ -202,6 +220,7 @@ class FetchingSSHKeys(WidgetWrap):
                     ('pack', spinner),
                     ('pack', button_pile([button])),
                     ])))
+
     def cancel(self, sender):
         self.parent.controller._fetch_cancel()
         self.parent.remove_overlay()
@@ -218,12 +237,15 @@ class ConfirmSSHKeys(Stretchy):
 
         if len(fingerprints) > 1:
             title = _("Confirm SSH keys")
-            header = _('Keys with the following fingerprints were fetched. Do you want to use them?')
+            header = _("Keys with the following fingerprints were fetched. "
+                       "Do you want to use them?")
         else:
             title = _("Confirm SSH key")
-            header = _('A key with the following fingerprint was fetched. Do you want to use it?')
+            header = _("A key with the following fingerprint was fetched. "
+                       "Do you want to use it?")
 
-        fingerprints = Pile([Text(fingerprint) for fingerprint in fingerprints])
+        fingerprints = Pile([Text(fingerprint)
+                             for fingerprint in fingerprints])
 
         super().__init__(
             title,
@@ -237,9 +259,11 @@ class ConfirmSSHKeys(Stretchy):
 
     def cancel(self, sender):
         self.parent.remove_overlay()
+
     def ok(self, sender):
         self.result['ssh_keys'] = self.key_material.splitlines()
         self.parent.controller.done(self.result)
+
 
 class FetchingSSHKeysFailed(Stretchy):
     def __init__(self, parent, msg, stderr):
@@ -256,12 +280,15 @@ class FetchingSSHKeysFailed(Stretchy):
             "",
             widgets,
             2, 4)
+
     def close(self, sender):
         self.parent.remove_overlay()
 
+
 class IdentityView(BaseView):
     title = _("Profile setup")
-    excerpt = _("Enter the username and password (or ssh identity) you will use to log in to the system.")
+    excerpt = _("Enter the username and password (or ssh identity) you "
+                "will use to log in to the system.")
 
     def __init__(self, model, controller, opts):
         self.model = model
@@ -272,10 +299,11 @@ class IdentityView(BaseView):
 
         self.form = IdentityForm()
         connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form.confirm_password.widget, 'change', self._check_password)
-        connect_signal(self.form.ssh_import_id.widget, 'select', self._select_ssh_import_id)
+        connect_signal(self.form.confirm_password.widget, 'change',
+                       self._check_password)
+        connect_signal(self.form.ssh_import_id.widget, 'select',
+                       self._select_ssh_import_id)
         self.form.import_username.enabled = False
-
 
         self.form_rows = ListBox(self.form.as_rows())
         super().__init__(
@@ -288,7 +316,8 @@ class IdentityView(BaseView):
     def _check_password(self, sender, new_text):
         password = self.form.password.value
         if not password.startswith(new_text):
-            self.form.confirm_password.show_extra(("info_error", _("Passwords do not match")))
+            self.form.confirm_password.show_extra(
+                ("info_error", _("Passwords do not match")))
         else:
             self.form.confirm_password.show_extra('')
 
@@ -318,7 +347,8 @@ class IdentityView(BaseView):
         if self.form.ssh_import_id.value:
             fsk = FetchingSSHKeys(self)
             self.show_overlay(fsk, width=fsk.width, min_width=None)
-            ssh_import_id = self.form.ssh_import_id.value + ":" + self.form.import_username.value
+            ssh_import_id = (self.form.ssh_import_id.value +
+                             ":" + self.form.import_username.value)
             self.controller.fetch_ssh_keys(result, ssh_import_id)
         else:
             log.debug("User input: {}".format(result))
@@ -326,7 +356,8 @@ class IdentityView(BaseView):
 
     def confirm_ssh_keys(self, result, ssh_key, fingerprints):
         self.remove_overlay()
-        self.show_stretchy_overlay(ConfirmSSHKeys(self, result, ssh_key, fingerprints))
+        self.show_stretchy_overlay(ConfirmSSHKeys(self, result, ssh_key,
+                                                  fingerprints))
 
     def fetching_ssh_keys_failed(self, msg, stderr):
         self.remove_overlay()

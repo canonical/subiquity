@@ -6,6 +6,8 @@ PYTHONSRC=$(NAME)
 PYTHONPATH=$(shell pwd):$(shell pwd)/probert
 PROBERTDIR=./probert
 PROBERT_REPO=https://github.com/CanonicalLtd/probert
+export PYTHONPATH
+CWD := $(shell pwd)
 
 ifneq (,$(MACHINE))
 	MACHARGS=--machine=$(MACHINE)
@@ -28,15 +30,18 @@ dryrun: probert i18n
 	$(MAKE) ui-view DRYRUN="--dry-run --uefi"
 
 ui-view:
-	(PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC)-tui $(DRYRUN) $(MACHARGS))
+	(bin/$(PYTHONSRC)-tui $(DRYRUN) $(MACHARGS))
 
 ui-view-serial:
-	(TERM=att4424 PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC)-tui $(DRYRUN) --serial)
+	(TERM=att4424 bin/$(PYTHONSRC)-tui $(DRYRUN) --serial)
 
-lint:
-	echo "Running flake8 lint tests..."
-	python3 /usr/bin/flake8 bin/$(PYTHONSRC)-tui --ignore=F403
-	python3 /usr/bin/flake8 --exclude $(PYTHONSRC)/tests/ $(PYTHONSRC) --ignore=F403
+lint: pep8 pyflakes3
+
+pep8:
+	@$(CWD)/scripts/run-pep8
+
+pyflakes3:
+	@$(CWD)/scripts/run-pyflakes3
 
 unit:
 	echo "Running unit tests..."
@@ -52,3 +57,5 @@ probert:
 
 clean:
 	./debian/rules clean
+
+.PHONY: lint pyflakes3 pep8

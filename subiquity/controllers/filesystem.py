@@ -18,7 +18,6 @@ import os
 
 from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
-from subiquitycore.ui.error import ErrorView
 
 from subiquity.models.filesystem import align_up, humanize_size
 from subiquity.ui.views import (
@@ -50,8 +49,6 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', False)
-        # self.iscsi_model = IscsiDiskModel()
-        # self.ceph_model = CephDiskModel()
         self.model.probe()  # probe before we complete
 
     def default(self):
@@ -90,7 +87,8 @@ class FilesystemController(BaseController):
 
     # Filesystem/Disk partition -----------------------------------------------
     def partition_disk(self, disk):
-        log.debug("In disk partition view, using {} as the disk.".format(disk.label))
+        log.debug("In disk partition view, using "
+                  "{} as the disk.".format(disk.label))
         dp_view = DiskPartitionView(self.model, self, disk)
 
         self.ui.set_body(dp_view)
@@ -135,9 +133,10 @@ class FilesystemController(BaseController):
                     old_fs._mount = None
                     self.model._mounts.remove(mount)
             if spec['fstype'].label is not None:
-                fs = self.model.add_filesystem(partition, spec['fstype'].label)
+                fs = self.model.add_filesystem(partition,
+                                               spec['fstype'].label)
                 if spec['mount']:
-                  self.model.add_mount(fs, spec['mount'])
+                    self.model.add_mount(fs, spec['mount'])
             self.partition_disk(disk)
             return
 
@@ -149,19 +148,22 @@ class FilesystemController(BaseController):
                 if UEFI_GRUB_SIZE_BYTES*2 >= disk.size:
                     part_size = disk.size // 2
                 log.debug('Adding EFI partition first')
-                part = self.model.add_partition(disk=disk, size=part_size, flag='boot')
+                part = self.model.add_partition(disk=disk, size=part_size,
+                                                flag='boot')
                 fs = self.model.add_filesystem(part, 'fat32')
                 self.model.add_mount(fs, '/boot/efi')
             else:
                 log.debug('Adding grub_bios gpt partition first')
-                part = self.model.add_partition(disk=disk, size=BIOS_GRUB_SIZE_BYTES, flag='bios_grub')
+                part = self.model.add_partition(disk=disk,
+                                                size=BIOS_GRUB_SIZE_BYTES,
+                                                flag='bios_grub')
             disk.grub_device = True
 
             # adjust downward the partition size (if necessary) to accommodate
             # bios/grub partition
             if spec['size'] > disk.free:
                 log.debug("Adjusting request down:" +
-                        "{} - {} = {}".format(spec['size'], part.size,
+                          "{} - {} = {}".format(spec['size'], part.size,
                                                 disk.free))
                 spec['size'] = disk.free
 
@@ -196,32 +198,21 @@ class FilesystemController(BaseController):
                 full = p.device.free == 0
                 p.device._partitions.remove(p)
                 if full:
-                    largest_part = max((part.size, part) for part in p.device._partitions)[1]
+                    largest_part = max((part.size, part)
+                                       for part in p.device._partitions)[1]
                     largest_part.size += p.size
                 if disk.free < p.size:
-                    largest_part = max((part.size, part) for part in disk._partitions)[1]
+                    largest_part = max((part.size, part)
+                                       for part in disk._partitions)[1]
                     largest_part.size -= (p.size - disk.free)
                 disk._partitions.insert(0, p)
                 p.device = disk
         self.partition_disk(disk)
 
     def connect_iscsi_disk(self, *args, **kwargs):
-        # title = ("Disk and filesystem setup")
-        # excerpt = ("Connect to iSCSI cluster")
-        # self.ui.set_header(title, excerpt)
-        # self.ui.set_footer("")
-        # self.ui.set_body(IscsiDiskView(self.iscsi_model,
-        #                                self.signal))
         self.ui.set_body(DummyView(self.signal))
 
     def connect_ceph_disk(self, *args, **kwargs):
-        # title = ("Disk and filesystem setup")
-        # footer = ("Select available disks to format and mount")
-        # excerpt = ("Connect to Ceph storage cluster")
-        # self.ui.set_header(title, excerpt)
-        # self.ui.set_footer(footer)
-        # self.ui.set_body(CephDiskView(self.ceph_model,
-        #                               self.signal))
         self.ui.set_body(DummyView(self.signal))
 
     def create_volume_group(self, *args, **kwargs):
@@ -266,7 +257,8 @@ class FilesystemController(BaseController):
 
     def format_entire(self, disk):
         log.debug("format_entire {}".format(disk.label))
-        afv_view = FormatEntireView(self.model, self, disk, lambda : self.partition_disk(disk))
+        afv_view = FormatEntireView(self.model, self, disk,
+                                    lambda: self.partition_disk(disk))
         self.ui.set_body(afv_view)
 
     def format_mount_partition(self, partition):

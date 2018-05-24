@@ -15,8 +15,6 @@
 
 import logging
 
-import lsb_release
-
 from subiquitycore.controller import BaseController
 
 from subiquity.ui.views import InstallpathView, MAASView
@@ -30,6 +28,7 @@ class InstallpathController(BaseController):
         super().__init__(common)
         self.model = self.base_model.installpath
         self.answers = self.all_answers.get("Installpath", {})
+        self.release = None
 
     def installpath(self):
         self.ui.set_body(InstallpathView(self.model, self))
@@ -63,7 +62,8 @@ class InstallpathController(BaseController):
             "treat physical servers like virtual machines (instances) "
             "in the cloud. Rather than having to manage each server "
             "individually, MAAS turns your bare metal into an elastic "
-            "cloud-like resource. \n\nFor further details, see https://maas.io/."
+            "cloud-like resource. \n\n"
+            "For further details, see https://maas.io/."
             )
         self.ui.set_body(MAASView(self.model, self, title, excerpt))
 

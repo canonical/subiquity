@@ -130,6 +130,7 @@ class Padding:
     """
     line_break = partialmethod(Text)
 
+
 # This makes assumptions about the style names defined by both
 # subiquity and console_conf. The fix is to stop using the Color class
 # below, I think.
@@ -158,6 +159,7 @@ STYLE_NAMES = set([
     'progress_incomplete',
     'progress_complete',
 ])
+
 
 def apply_style_map(cls):
     """ Applies AttrMap attributes to Color class
@@ -198,10 +200,13 @@ def button_pile(buttons):
     for button in buttons:
         button = button.base_widget
         if not isinstance(button, Button):
-            raise RuntimeError("button_pile takes a list of buttons, not %s", button)
+            raise RuntimeError("button_pile takes a list of buttons, not %s",
+                               button)
         max_label = max(len(button.label), max_label)
     width = max_label + 4
-    return _Padding(Pile(buttons), min_width=width, width=width, align='center')
+    return _Padding(Pile(buttons), min_width=width,
+                    width=width, align='center')
+
 
 def screen(rows, buttons, focus_buttons=True, excerpt=None):
     """Helper to create a common screen layout.
@@ -239,4 +244,3 @@ def screen(rows, buttons, focus_buttons=True, excerpt=None):
     if focus_buttons:
         pile.focus_position = len(excerpt_rows) + 3
     return Padding.center_79(pile)
-

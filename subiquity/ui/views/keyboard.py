@@ -56,10 +56,13 @@ class AutoDetectBase(WidgetWrap):
         self.step = step
         lb = LineBox(self.make_body(), _("Keyboard auto-detection"))
         super().__init__(lb)
+
     def start(self):
         pass
+
     def stop(self):
         pass
+
     def keypress(self, size, key):
         if key == 'esc':
             self.keyboard_detector.backup()
@@ -77,7 +80,9 @@ class AutoDetectIntro(AutoDetectBase):
 
     def make_body(self):
         return Pile([
-                Text(_("Keyboard detection starting. You will be asked a series of questions about your keyboard. Press escape at any time to go back to the previous screen.")),
+                Text(_("Keyboard detection starting. You will be asked a "
+                       "series of questions about your keyboard. Press escape "
+                       "at any time to go back to the previous screen.")),
                 Text(""),
                 button_pile([
                     ok_btn(label=_("OK"), on_press=self.ok),
@@ -97,6 +102,7 @@ class AutoDetectFailed(AutoDetectBase):
                 Text(""),
                 button_pile([ok_btn(label="OK", on_press=self.ok)]),
                 ])
+
 
 class AutoDetectResult(AutoDetectBase):
 
@@ -123,10 +129,10 @@ another layout or run the automated detection again.
         var_text = _("Variant")
         width = max(len(layout_text), len(var_text), 12)
         if variant is not None:
-            var_desc = [Text("%*s: %s"%(width, var_text, variant))]
+            var_desc = [Text("%*s: %s" % (width, var_text, variant))]
         return Pile([
                 Text(_(self.preamble)),
-                Text("%*s: %s"%(width, layout_text, layout)),
+                Text("%*s: %s" % (width, layout_text, layout)),
             ] + var_desc + [
                 Text(_(self.postamble)),
                 button_pile([ok_btn(label=_("OK"), on_press=self.ok)]),
@@ -147,7 +153,8 @@ class AutoDetectPressKey(AutoDetectBase):
         return Pile([
             Text(_("Please press one of the following keys:")),
             Text(""),
-            Columns([Text(s, align="center") for s in self.step.symbols], dividechars=1),
+            Columns([Text(s, align="center")
+                     for s in self.step.symbols], dividechars=1),
             Text(""),
             Color.info_error(self.error_text),
             ])
@@ -174,7 +181,8 @@ class AutoDetectPressKey(AutoDetectBase):
         elif key.startswith('press '):
             code = int(key[len('press '):])
             if code not in self.step.keycodes:
-                self.error_text.set_text(_("Input was not recognized, try again"))
+                self.error_text.set_text(_("Input was not recognized, "
+                                           "try again"))
                 return
             v = self.step.keycodes[code]
         else:
@@ -260,6 +268,7 @@ class Detector:
         self.overlay.start()
         self.keyboard_view.show_overlay(self.overlay)
 
+
 class ApplyingConfig(WidgetWrap):
     def __init__(self, loop):
         spinner = Spinner(loop, style='dots')
@@ -277,9 +286,13 @@ class ApplyingConfig(WidgetWrap):
 
 
 toggle_text = _("""\
-You will need a way to toggle the keyboard between the national layout and the standard Latin layout.
+You will need a way to toggle the keyboard between the national layout and
+the standard Latin layout.
 
-Right Alt or Caps Lock keys are often chosen for ergonomic reasons (in the latter case, use the combination Shift+Caps Lock for normal Caps toggle). Alt+Shift is also a popular combination; it will however lose its usual behavior in Emacs and other programs that use it for specific needs.
+Right Alt or Caps Lock keys are often chosen for ergonomic reasons (in the
+latter case, use the combination Shift+Caps Lock for normal Caps toggle).
+Alt+Shift is also a popular combination; it will however lose its usual
+behavior in Emacs and other programs that use it for specific needs.
 
 Not all listed keys are present on all keyboards. """)
 
@@ -314,7 +327,7 @@ class ToggleQuestion(Stretchy):
         self.selector.value = 'alt_shift_toggle'
         if self.parent.model.setting.toggle:
             try:
-               self.selector.value = self.parent.model.setting.toggle
+                self.selector.value = self.parent.model.setting.toggle
             except AttributeError:
                 pass
 
@@ -368,7 +381,7 @@ class KeyboardView(BaseView):
         opts = []
         for layout, desc in model.layouts.items():
             opts.append(Option((desc, True, layout)))
-        opts.sort(key=lambda o:o.label)
+        opts.sort(key=lambda o: o.label)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
@@ -382,18 +395,23 @@ class KeyboardView(BaseView):
             pass
 
         if self.opts.run_on_serial:
-            excerpt = _('Please select the layout of the keyboard directly attached to the system, if any.')
+            excerpt = _('Please select the layout of the keyboard directly '
+                        'attached to the system, if any.')
         else:
-            excerpt = _('Please select your keyboard layout below, or select "Identify keyboard" to detect your layout automatically.')
+            excerpt = _('Please select your keyboard layout below, or select '
+                        '"Identify keyboard" to detect your layout '
+                        'automatically.')
 
         lb_contents = self.form.as_rows()
         if not self.opts.run_on_serial:
             lb_contents.extend([
                 Text(""),
                 button_pile([
-                    other_btn(label=_("Identify keyboard"), on_press=self.detect)]),
+                    other_btn(label=_("Identify keyboard"),
+                              on_press=self.detect)]),
                 ])
-        super().__init__(screen(lb_contents, self.form.buttons, excerpt=excerpt))
+        super().__init__(screen(lb_contents, self.form.buttons,
+                                excerpt=excerpt))
 
     def detect(self, sender):
         detector = Detector(self)
@@ -434,11 +452,12 @@ class KeyboardView(BaseView):
         log.debug("%s", layout)
         opts = []
         default_i = -1
-        for i, (variant, variant_desc) in enumerate(self.model.variants[layout].items()):
+        layout_items = enumerate(self.model.variants[layout].items())
+        for i, (variant, variant_desc) in layout_items:
             if variant == "":
                 default_i = i
             opts.append(Option((variant_desc, True, variant)))
-        opts.sort(key=lambda o:o.label)
+        opts.sort(key=lambda o: o.label)
         if default_i < 0:
             opts.insert(0, Option(("default", True, "")))
         self.form.variant.widget._options = opts

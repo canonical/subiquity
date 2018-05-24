@@ -1,5 +1,4 @@
 
-import os
 import re
 
 from urwid import connect_signal, Padding, Text, WidgetWrap
@@ -36,6 +35,7 @@ class _MountEditor(StringEditor):
 OTHER = object()
 LEAVE_UNMOUNTED = object()
 
+
 class MountSelector(WidgetWrap):
     def __init__(self, mountpoint_to_devpath_mapping):
         opts = []
@@ -48,7 +48,7 @@ class MountSelector(WidgetWrap):
                     first_opt = i
                 opts.append((mnt, True, mnt))
             else:
-                opts.append(("%-*s (%s)"%(max_len, mnt, devpath), False))
+                opts.append(("%-*s (%s)" % (max_len, mnt, devpath), False))
         if first_opt is None:
             first_opt = len(opts)
         opts.append((_('other'), True, OTHER))
@@ -65,14 +65,16 @@ class MountSelector(WidgetWrap):
 
     def _showhide_other(self, show):
         if show and not self._other_showing:
-            self._w.contents.append((Padding(Columns([(1, Text("/")), self._other]), left=4), self._w.options('pack')))
+            self._w.contents.append(
+                (Padding(Columns([(1, Text("/")), self._other]), left=4),
+                 self._w.options('pack')))
             self._other_showing = True
         elif not show and self._other_showing:
             del self._w.contents[-1]
             self._other_showing = False
 
     def _select_mount(self, sender, value):
-        self._showhide_other(value==OTHER)
+        self._showhide_other(value == OTHER)
         if value == OTHER:
             self._w.focus_position = 1
 

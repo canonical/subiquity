@@ -25,6 +25,7 @@ from console_conf.ui.views import IdentityView, LoginView
 
 log = logging.getLogger('console_conf.controllers.identity')
 
+
 def get_device_owner():
     """ Check if device is owned """
 
@@ -44,6 +45,7 @@ def get_device_owner():
                 }
             return result
     return None
+
 
 def host_key_fingerprints():
     """Query sshd to find the host keys and then fingerprint them.
@@ -92,12 +94,16 @@ def host_key_info():
         return []
     if len(fingerprints) == 1:
         [(keytype, fingerprint)] = fingerprints
-        return single_host_key_tmpl.format(keytype=keytype, fingerprint=fingerprint)
+        return single_host_key_tmpl.format(keytype=keytype,
+                                           fingerprint=fingerprint)
     lines = [host_keys_intro]
     longest_type = max([len(keytype) for keytype, _ in fingerprints])
     for keytype, fingerprint in fingerprints:
-        lines.append(host_key_tmpl.format(keytype=keytype, fingerprint=fingerprint, width=longest_type))
+        lines.append(host_key_tmpl.format(keytype=keytype,
+                                          fingerprint=fingerprint,
+                                          width=longest_type))
     return "".join(lines)
+
 
 login_details_tmpl = """\
 Ubuntu Core 16 on {first_ip} ({tty_name})
@@ -106,6 +112,7 @@ To login:
 {sshcommands}
 Personalize your account at https://login.ubuntu.com.
 """
+
 
 login_details_tmpl_no_ip = """\
 Ubuntu Core 16 on <no ip address> ({tty_name})
@@ -116,18 +123,22 @@ supposed to be a DHCP server running on your network?)
 Personalize your account at https://login.ubuntu.com.
 """
 
+
 def write_login_details(fp, username, ips):
     sshcommands = "\n"
     for ip in ips:
-        sshcommands += "    ssh %s@%s\n"%(username, ip)
-    tty_name = os.ttyname(0)[5:] # strip off the /dev/
+        sshcommands += "    ssh %s@%s\n" % (username, ip)
+    tty_name = os.ttyname(0)[5:]  # strip off the /dev/
     if len(ips) == 0:
         fp.write(login_details_tmpl_no_ip.format(
             sshcommands=sshcommands, tty_name=tty_name))
     else:
         first_ip = ips[0]
-        fp.write(login_details_tmpl.format(
-            sshcommands=sshcommands, host_key_info=host_key_info(), tty_name=tty_name, first_ip=first_ip))
+        fp.write(login_details_tmpl.format(sshcommands=sshcommands,
+                                           host_key_info=host_key_info(),
+                                           tty_name=tty_name,
+                                           first_ip=first_ip))
+
 
 def write_login_details_standalone():
     owner = get_device_owner()
@@ -135,7 +146,8 @@ def write_login_details_standalone():
         print("No device owner details found.")
         return 0
     from probert import network
-    from subiquitycore.models.network import NETDEV_IGNORED_IFACE_NAMES, NETDEV_IGNORED_IFACE_TYPES
+    from subiquitycore.models.network import (NETDEV_IGNORED_IFACE_NAMES,
+                                              NETDEV_IGNORED_IFACE_TYPES)
     import operator
     observer = network.UdevObserver()
     observer.start()
@@ -153,7 +165,8 @@ def write_login_details_standalone():
         print("Ubuntu Core 16 on <no ip address> ({})".format(tty_name))
         print()
         print("You cannot log in until the system has an IP address.")
-        print("(Is there supposed to be a DHCP server running on your network?)")
+        print("(Is there supposed to be a DHCP server running on "
+              "your network?)")
         return 2
     write_login_details(sys.stdout, owner['username'], ips)
     return 0
@@ -175,8 +188,11 @@ class IdentityController(BaseController):
         device_owner = get_device_owner()
         if device_owner is not None:
             self.model.add_user(device_owner)
-            key_file = os.path.join(device_owner['homedir'], ".ssh/authorized_keys")
-            self.model.user.fingerprints = run_command(['ssh-keygen', '-lf', key_file]).stdout.replace('\r', '').splitlines()
+            key_file = os.path.join(device_owner['homedir'],
+                                    ".ssh/authorized_keys")
+            self.model.user.fingerprints = (
+                run_command(['ssh-keygen', '-lf',
+                             key_file]).stdout.replace('\r', '').splitlines())
             self.login()
 
     def identity_done(self, email):
@@ -190,10 +206,12 @@ class IdentityController(BaseController):
         else:
             self.ui.frame.body.progress.set_text("Contacting store...")
             self.loop.draw_screen()
-            cp = run_command(["snap", "create-user", "--sudoer", "--json", email])
+            cp = run_command(
+                ["snap", "create-user", "--sudoer", "--json", email])
             self.ui.frame.body.progress.set_text("")
             if cp.returncode != 0:
-                self.ui.frame.body.error.set_text("Creating user failed:\n" + cp.stderr)
+                self.ui.frame.body.error.set_text(
+                    "Creating user failed:\n" + cp.stderr)
                 return
             else:
                 data = json.loads(cp.stdout)
@@ -231,7 +249,8 @@ class IdentityController(BaseController):
 
     def login_done(self):
         if not self.opts.dry_run:
-            # stop the console-conf services (this will kill the current process).
+            # stop the console-conf services (this will kill the
+            # current process).
             disable_console_conf()
 
         self.signal.emit_signal('quit')

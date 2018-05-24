@@ -55,7 +55,8 @@ class DownNetworkDevices(BackgroundTask):
         self.devs_to_down = devs_to_down
 
     def __repr__(self):
-        return 'DownNetworkDevices(%s)'%([dev.name for dev in self.devs_to_down],)
+        return 'DownNetworkDevices(%s)' % ([dev.name for dev in
+                                            self.devs_to_down],)
 
     def start(self):
         for dev in self.devs_to_down:
@@ -83,7 +84,7 @@ class WaitForDefaultRouteTask(CancelableTask):
         self.event_receiver = event_receiver
 
     def __repr__(self):
-        return 'WaitForDefaultRouteTask(%r)'%(self.timeout,)
+        return 'WaitForDefaultRouteTask(%r)' % (self.timeout,)
 
     def got_route(self):
         os.write(self.success_w, b'x')
@@ -95,7 +96,8 @@ class WaitForDefaultRouteTask(CancelableTask):
 
     def _bg_run(self):
         try:
-            r, _, _ = select.select([self.fail_r, self.success_r], [], [], self.timeout)
+            r, _, _ = select.select([self.fail_r, self.success_r], [], [],
+                                    self.timeout)
             return self.success_r in r
         finally:
             os.close(self.fail_r)
@@ -177,6 +179,7 @@ network:
             password: password
 '''
 
+
 class NetworkController(BaseController, TaskWatcher):
     signals = [
         ('menu:network:main:set-default-v4-route',     'set_default_v4_route'),
@@ -203,7 +206,8 @@ class NetworkController(BaseController, TaskWatcher):
         self.model.parse_netplan_configs(self.root)
 
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
-        self.observer, fds = self.prober.probe_network(self.network_event_receiver)
+        self.observer, fds = (
+            self.prober.probe_network(self.network_event_receiver))
         for fd in fds:
             self.loop.watch_file(fd, partial(self._data_ready, fd))
 
@@ -211,7 +215,7 @@ class NetworkController(BaseController, TaskWatcher):
         cp = run_command(['udevadm', 'settle', '-t', '0'])
         if cp.returncode != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
-            self.loop.set_alarm_in(0.1, lambda loop, ud:self._data_ready(fd))
+            self.loop.set_alarm_in(0.1, lambda loop, ud: self._data_ready(fd))
             return
         self.observer.data_ready(fd)
         v = self.ui.frame.body
@@ -238,20 +242,23 @@ class NetworkController(BaseController, TaskWatcher):
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
     def network_finish(self, config):
-        log.debug("network config: \n%s", yaml.dump(sanitize_config(config), default_flow_style=False))
+        log.debug("network config: \n%s",
+                  yaml.dump(sanitize_config(config), default_flow_style=False))
 
         netplan_path = self.netplan_path
         while True:
             try:
                 tmppath = '%s.%s' % (netplan_path, random.randrange(0, 1000))
-                fd = os.open(tmppath, os.O_WRONLY | os.O_EXCL | os.O_CREAT, 0o0600)
+                fd = os.open(tmppath,
+                             os.O_WRONLY | os.O_EXCL | os.O_CREAT, 0o0600)
             except FileExistsError:
                 continue
             else:
                 break
         w = os.fdopen(fd, 'w')
         with w:
-            w.write("# This is the network config written by '{}'\n".format(self.opts.project))
+            w.write("# This is the network config written by "
+                    "'%s'\n" % (self.opts.project))
             w.write(yaml.dump(config))
         os.rename(tmppath, netplan_path)
         self.model.parse_netplan_configs(self.root)
@@ -264,25 +271,36 @@ class NetworkController(BaseController, TaskWatcher):
             if os.path.exists('/lib/netplan/generate'):
                 # If netplan appears to be installed, run generate to at
                 # least test that what we wrote is acceptable to netplan.
-                tasks.append(('generate', BackgroundProcess(['netplan', 'generate', '--root', self.root])))
+                tasks.append(('generate',
+                              BackgroundProcess(['netplan', 'generate',
+                                                 '--root', self.root])))
             if not self.tried_once:
-                tasks.append(('timeout', WaitForDefaultRouteTask(3, self.network_event_receiver)))
+                tasks.append(
+                    ('timeout',
+                     WaitForDefaultRouteTask(3, self.network_event_receiver))
+                )
                 tasks.append(('fail', BackgroundProcess(['false'])))
                 self.tried_once = True
         else:
             devs_to_down = []
             for dev in self.model.get_all_netdevs():
-                if dev._configuration != self.model.config.config_for_device(dev._net_info):
+                devcfg = self.model.config.config_for_device(dev._net_info)
+                if dev._configuration != devcfg:
                     devs_to_down.append(dev)
             tasks = []
             if devs_to_down:
                 tasks.extend([
-                    ('stop-networkd', BackgroundProcess(['systemctl', 'stop', 'systemd-networkd.service'])),
-                    ('down', DownNetworkDevices(self.observer.rtlistener, devs_to_down)),
+                    ('stop-networkd',
+                     BackgroundProcess(['systemctl',
+                                        'stop', 'systemd-networkd.service'])),
+                    ('down',
+                     DownNetworkDevices(self.observer.rtlistener,
+                                        devs_to_down)),
                     ])
             tasks.extend([
                 ('apply', BackgroundProcess(['netplan', 'apply'])),
-                ('timeout', WaitForDefaultRouteTask(30, self.network_event_receiver)),
+                ('timeout',
+                 WaitForDefaultRouteTask(30, self.network_event_receiver)),
                 ])
 
         def cancel():
@@ -308,29 +326,43 @@ class NetworkController(BaseController, TaskWatcher):
         self.signal.emit_signal('next-screen')
 
     def set_default_v4_route(self):
-        #self.ui.set_header("Default route")
-        self.ui.set_body(NetworkSetDefaultRouteView(self.model, socket.AF_INET, self))
+        self.ui.set_header("Default route")
+        self.ui.set_body(
+            NetworkSetDefaultRouteView(self.model, socket.AF_INET, self))
 
     def set_default_v6_route(self):
-        #self.ui.set_header("Default route")
-        self.ui.set_body(NetworkSetDefaultRouteView(self.model, socket.AF_INET6, self))
+        self.ui.set_header("Default route")
+        self.ui.set_body(
+            NetworkSetDefaultRouteView(self.model, socket.AF_INET6, self))
 
     def bond_interfaces(self):
-        #self.ui.set_header("Bond interfaces")
         self.ui.set_body(NetworkBondInterfacesView(self.model, self))
 
     def network_configure_interface(self, iface):
-        self.ui.set_body(NetworkConfigureInterfaceView(self.model, self, iface))
+        self.ui.set_header(_("Network interface {}").format(iface))
+        self.ui.set_footer("")
+        self.ui.set_body(
+            NetworkConfigureInterfaceView(self.model, self, iface))
 
     def network_configure_ipv4_interface(self, iface):
-        self.ui.set_body(NetworkConfigureIPv4InterfaceView(self.model, self, iface))
+        self.ui.set_header(_(
+            "Network interface {} manual IPv4 configuration").format(iface))
+        self.ui.set_footer("")
+        self.ui.set_body(
+            NetworkConfigureIPv4InterfaceView(self.model, self, iface))
 
     def network_configure_wlan_interface(self, iface):
+        self.ui.set_header(_(
+            "Network interface {} WIFI configuration").format(iface))
+        self.ui.set_footer("")
         self.ui.set_body(NetworkConfigureWLANView(self.model, self, iface))
 
     def network_configure_ipv6_interface(self, iface):
-        self.ui.set_body(NetworkConfigureIPv6InterfaceView(self.model, self, iface))
+        self.ui.set_header(_(
+            "Network interface {} manual IPv6 configuration").format(iface))
+        self.ui.set_footer("")
+        self.ui.set_body(
+            NetworkConfigureIPv6InterfaceView(self.model, self, iface))
 
     def install_network_driver(self):
         self.ui.set_body(DummyView(self))
-

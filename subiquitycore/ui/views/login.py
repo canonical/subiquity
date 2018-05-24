@@ -22,7 +22,7 @@ import logging
 from urwid import Text
 from subiquitycore.ui.buttons import done_btn
 from subiquitycore.ui.container import Pile, ListBox
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquitycore.views.login")
@@ -101,8 +101,10 @@ class LoginView(BaseView):
         login_text = local_tpl.format(**login_info)
 
         if user.ssh_import_id:
-            login_info.update({'auth': self.auth_name(user.ssh_import_id),
-                               'ssh_import_id': user.ssh_import_id.split(":")[-1]})
+            login_info.update({
+                'auth': self.auth_name(user.ssh_import_id),
+                'ssh_import_id': user.ssh_import_id.split(":")[-1]
+            })
             login_text += remote_tpl.format(**login_info)
 
             ips = []

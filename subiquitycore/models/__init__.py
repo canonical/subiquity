@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .network import NetworkModel  # NOQA
-from .identity import IdentityModel  # NOQA
-from .login import LoginModel  # NOQA
+from .identity import IdentityModel
+from .login import LoginModel
+from .network import NetworkModel
+__all__ = ['IdentityModel', 'LoginModel', 'NetworkModel']

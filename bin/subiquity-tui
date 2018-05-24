@@ -47,9 +47,11 @@ checks:
             - /usr/bin/curtin
 '''
 
+
 class ClickAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         namespace.scripts.append("c(" + repr(values) + ")")
+
 
 def parse_options(argv):
     parser = argparse.ArgumentParser(
@@ -67,9 +69,14 @@ def parse_options(argv):
     parser.add_argument('--uefi', action='store_true',
                         dest='uefi',
                         help='run in uefi support mode')
-    parser.add_argument('--screens', action='append', dest='screens', default=[])
-    parser.add_argument('--script', metavar="SCRIPT", action='append', dest='scripts', default=[], help='Execute SCRIPT in a namespace containing view helpers and "ui"')
-    parser.add_argument('--click', metavar="PAT", action=ClickAction, help='Synthesize a click on a button matching PAT')
+    parser.add_argument('--screens', action='append', dest='screens',
+                        default=[])
+    parser.add_argument('--script', metavar="SCRIPT", action='append',
+                        dest='scripts', default=[],
+                        help=('Execute SCRIPT in a namespace containing view '
+                              'helpers and "ui"'))
+    parser.add_argument('--click', metavar="PAT", action=ClickAction,
+                        help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
     parser.add_argument(
         '--snaps-from-examples', action='store_true',
@@ -84,6 +91,7 @@ def parse_options(argv):
 LOGDIR = "/var/log/installer/"
 
 AUTO_ANSWERS_FILE = "/subiquity_config/answers.yaml"
+
 
 def main():
     opts = parse_options(sys.argv[1:])
@@ -118,6 +126,7 @@ def main():
         return 1
 
     subiquity_interface.run()
+
 
 if __name__ == '__main__':
     sys.exit(main())

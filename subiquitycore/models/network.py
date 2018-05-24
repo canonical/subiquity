@@ -21,7 +21,8 @@ import logging
 import os
 from socket import AF_INET, AF_INET6
 
-import yaml, yaml.reader
+import yaml
+from yaml.reader import ReaderError
 
 
 NETDEV_IGNORED_IFACE_NAMES = ['lo']
@@ -72,7 +73,7 @@ class NetplanConfig:
     def parse_netplan_config(self, config):
         try:
             config = yaml.safe_load(config)
-        except yaml.reader.ReaderError as e:
+        except ReaderError as e:
             log.info("could not parse config: %s", e)
             return
         network = config.get('network')
@@ -188,7 +189,7 @@ class Networkdev:
         return "{}G".format(int(speed / 1000))
 
     def dhcp_for_version(self, version):
-        dhcp_key = 'dhcp%s'%(version,)
+        dhcp_key = 'dhcp%s' % version
         return self._configuration.get(dhcp_key, False)
 
     @property
@@ -218,11 +219,13 @@ class Networkdev:
             fam = AF_INET
         elif version == 6:
             fam = AF_INET6
-        return [addr.ip for _, addr in sorted(self._net_info.addresses.items()) if addr.family == fam]
+        return [addr.ip for _, addr in sorted(self._net_info.addresses.items())
+                if addr.family == fam]
 
     @property
     def actual_ip_addresses(self):
-        return self.actual_ip_addresses_for_version(4) + self.actual_ip_addresses_for_version(6)
+        return (self.actual_ip_addresses_for_version(4) +
+                self.actual_ip_addresses_for_version(6))
 
     def configured_ip_addresses_for_version(self, version):
         r = []
@@ -233,17 +236,18 @@ class Networkdev:
 
     @property
     def actual_global_ip_addresses(self):
-        return [addr.ip for _, addr in sorted(self._net_info.addresses.items()) if addr.scope == "global"]
+        return [addr.ip for _, addr in sorted(self._net_info.addresses.items())
+                if addr.scope == "global"]
 
     @property
     def configured_ip_addresses(self):
         return self._configuration.setdefault('addresses', [])
 
     def configured_gateway_for_version(self, version):
-        return self._configuration.get('gateway%s'%(version,), None)
+        return self._configuration.get('gateway%s' % version, None)
 
     def set_configured_gateway_for_version(self, version, gateway):
-        key = 'gateway%s'%(version,)
+        key = 'gateway%s' % version
         if gateway is None:
             self._configuration.pop(key, None)
         else:
@@ -304,7 +308,7 @@ class Networkdev:
         self.remove_ip_networks_for_version(6)
 
     def remove_ip_networks_for_version(self, version):
-        dhcp_key = 'dhcp%s'%(version,)
+        dhcp_key = 'dhcp%s' % version
         setattr(self, dhcp_key, False)
         addrs = []
         for ip in self._configuration.get('addresses', []):
@@ -346,28 +350,26 @@ def _sanitize_inteface_config(iface_config):
         if 'password' in ap_config:
             ap_config['password'] = '<REDACTED>'
 
+
 def sanitize_interface_config(iface_config):
     iface_config = copy.deepcopy(iface_config)
     _sanitize_inteface_config(iface_config)
     return iface_config
 
+
 def sanitize_config(config):
     """Return a copy of config with passwords redacted."""
     config = copy.deepcopy(config)
-    for iface, iface_config in config.get('network', {}).get('wifis', {}).items():
+    interfaces = config.get('network', {}).get('wifis', {}).items()
+    for iface, iface_config in interfaces:
         _sanitize_inteface_config(iface_config)
     return config
+
 
 class NetworkModel(object):
     """ Model representing network interfaces
     """
-
-    additional_options = [
-        #('Set a custom IPv4 default route', 'menu:network:main:set-default-v4-route'),
-        #('Set a custom IPv6 default route', 'menu:network:main:set-default-v6-route'),
-        #('Bond interfaces',                 'menu:network:main:bond-interfaces'),
-        #('Install network driver',          'network:install-network-driver'),
-    ]
+    additional_options = []
 
     # TODO: what is "linear" level?
     bonding_modes = {
@@ -382,8 +384,8 @@ class NetworkModel(object):
 
     def __init__(self, support_wlan=True):
         self.support_wlan = support_wlan
-        self.devices = {} # Maps ifindex to Networkdev
-        self.devices_by_name = {} # Maps interface names to Networkdev
+        self.devices = {}  # Maps ifindex to Networkdev
+        self.devices_by_name = {}  # Maps interface names to Networkdev
         self.default_v4_gateway = None
         self.default_v6_gateway = None
         self.v4_gateway_dev = None
@@ -393,9 +395,10 @@ class NetworkModel(object):
     def parse_netplan_configs(self, netplan_root):
         self.config = NetplanConfig()
         configs_by_basename = {}
-        paths = glob.glob(os.path.join(netplan_root, 'lib/netplan', "*.yaml")) + \
-          glob.glob(os.path.join(netplan_root, 'etc/netplan', "*.yaml")) + \
-          glob.glob(os.path.join(netplan_root, 'run/netplan', "*.yaml"))
+        paths = (
+          glob.glob(os.path.join(netplan_root, 'lib/netplan', "*.yaml")) +
+          glob.glob(os.path.join(netplan_root, 'etc/netplan', "*.yaml")) +
+          glob.glob(os.path.join(netplan_root, 'run/netplan', "*.yaml")))
         for path in paths:
             configs_by_basename[os.path.basename(path)] = path
         for _, path in sorted(configs_by_basename.items()):
@@ -419,7 +422,8 @@ class NetworkModel(object):
         if link.is_virtual:
             return
         config = self.config.config_for_device(link)
-        log.debug("new_link %s %s with config %s", ifindex, link.name, sanitize_interface_config(config))
+        log.debug("new_link %s %s with config %s",
+                  ifindex, link.name, sanitize_interface_config(config))
         self.devices[ifindex] = Networkdev(link, config)
         self.devices_by_name[link.name] = Networkdev(link, config)
 
@@ -489,7 +493,7 @@ class NetworkModel(object):
             },
             "type": "bond"
         }
-        bondinfo = make_network_info(ifname, info)
+        bondinfo = info
         bonddev = Networkdev(ifname, 'bond')
         bonddev.configure(probe_info=bondinfo)
 
@@ -558,9 +562,10 @@ class NetworkModel(object):
 
         nw_routes = []
         if self.default_v4_gateway:
-            nw_routes.append({ 'to': '0.0.0.0/0', 'via': self.default_v4_gateway })
+            nw_routes.append(
+                {'to': '0.0.0.0/0', 'via': self.default_v4_gateway})
         if self.default_v6_gateway is not None:
-            nw_routes.append({ 'to': '::/0', 'via': self.default_v6_gateway })
+            nw_routes.append({'to': '::/0', 'via': self.default_v6_gateway})
         if len(nw_routes) > 0:
             config['network']['routes'] = nw_routes
 

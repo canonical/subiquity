@@ -22,6 +22,7 @@ from subiquity.ui.views import KeyboardView
 
 log = logging.getLogger('subiquity.controllers.keyboard')
 
+
 class KeyboardController(BaseController):
 
     signals = [

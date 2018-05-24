@@ -9,7 +9,6 @@ from subiquity.controllers.filesystem import FilesystemController
 from subiquity.ui.views.filesystem.guided import GuidedFilesystemView
 
 
-
 class GuidedFilesystemViewTests(unittest.TestCase):
 
     def make_view(self):
@@ -20,14 +19,16 @@ class GuidedFilesystemViewTests(unittest.TestCase):
         view = self.make_view()
         focus_path = view_helpers.get_focus_path(view)
         for w in reversed(focus_path):
-            if isinstance(w, urwid.Button) and w.label == "Use An Entire Disk":
-                return
+            if isinstance(w, urwid.Button):
+                if w.label == "Use An Entire Disk":
+                    return
         else:
             self.fail("Guided button not focus")
 
     def test_click_guided(self):
         view = self.make_view()
-        button = view_helpers.find_button_matching(view, "^Use An Entire Disk$")
+        button = (
+            view_helpers.find_button_matching(view, "^Use An Entire Disk$"))
         view_helpers.click(button)
         view.controller.guided.assert_called_once_with()
 
