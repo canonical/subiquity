@@ -54,7 +54,7 @@ class WelcomeView(BaseView):
 
         lb = SimpleList(sl)
         if current_index is not None:
-            lb._w.focus_position = current_index
+            lb._w.base_widget.focus_position = current_index
         return lb
 
     def confirm(self, sender, code):
