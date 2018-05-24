@@ -196,8 +196,12 @@ class RaidForm(Form):
             return None
 
     def validate_devices(self):
+        log.debug('validate_devices %s %s', len(self.devices.value), self.level.value)
         if len(self.devices.value) < 2:
             return _("At least two devices must be selected")
+        elif len(self.devices.value) < self.level.value.min_devices:
+            return _('RAID Level "{}" requires at least {} devices').format(
+                self.level.value.name, self.level.value.min_devices)
 
     def validate_mount(self):
         mount = self.mount.value
@@ -256,6 +260,8 @@ class RaidStretchy(Stretchy):
 
         self.form = RaidForm(mountpoint_to_devpath_mapping, all_devices, self, initial)
 
+        self.form.level.enabled = len(initial['devices']) > 0
+
         connect_signal(self.form.level.widget, 'select', self._select_level)
         connect_signal(self.form.devices.widget, 'select', self._select_devices)
         connect_signal(self.form, 'submit', self.done)
@@ -274,14 +280,21 @@ class RaidStretchy(Stretchy):
 
     def _select_level(self, sender, new_level):
         self.form.size.value = humanize_size(get_raid_size(new_level.value, self.form.devices.value))
+        self.form.level.widget._index = levels.index(new_level) # *cough*
+        self.form.devices.showing_extra = False
+        self.form.devices.validate()
 
     def _select_devices(self, sender, new_devices):
         self.form.size.value = humanize_size(get_raid_size(self.form.level.value.value, new_devices))
+        self.form.level.enabled = len(new_devices) > 1
         opts = []
         for level in levels:
             enabled = len(new_devices) >= level.min_devices
             opts.append(Option((_(level.name), enabled, level)))
         self.form.level.widget._options = opts
+        self.form.devices.value = new_devices
+        self.form.devices.showing_extra = False
+        self.form.devices.validate()
 
     def done(self, sender):
         result = self.form.as_data()
