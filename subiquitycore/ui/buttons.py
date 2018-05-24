@@ -31,6 +31,7 @@ def _stylized_button(left, right, style):
 def action_button(style):
     return _stylized_button('[', ']', style)
 
+
 menu_btn = _stylized_button("", ">", "menu")
 forward_btn = _stylized_button("", ">", "done")
 done_btn = action_button("done")
