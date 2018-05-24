@@ -1,6 +1,7 @@
 #!/bin/bash
 set -eux
 IMAGE=$1
+SCRIPT=$2
 
 apt-get -qq update
 apt -t trusty-backports install -y lxd
@@ -42,4 +43,4 @@ then
     done
 fi
 
-lxc exec tester -- sh -c "cd /subiquity && ./scripts/runtests.sh"
+lxc exec tester -- sh -c "cd /subiquity && ./scripts/installdeps.sh && $SCRIPT"
