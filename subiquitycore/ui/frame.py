@@ -15,8 +15,13 @@
 
 """ Base Frame Widget """
 
-from urwid import Frame, WidgetWrap
-from subiquitycore.ui.anchors import Header, Footer, Body
+from urwid import (
+    Frame,
+    Text,
+    WidgetWrap,
+    )
+from subiquitycore.ui.anchors import Header, Footer
+from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.utils import Color
 import logging
 
@@ -28,9 +33,8 @@ class SubiquityUI(WidgetWrap):
 
     def __init__(self):
         self.header = Header("")
-        self.body = Body()
         self.footer = Footer("", 0, 1)
-        self.frame = Frame(self.body, header=self.header, footer=self.footer)
+        self.frame = Frame(ListBox([Text("")]), header=self.header, footer=self.footer)
         self.progress_current = 0
         self.progress_completion = 0
         super().__init__(Color.body(self.frame))

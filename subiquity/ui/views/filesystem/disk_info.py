@@ -16,8 +16,8 @@
 import logging
 from urwid import Text
 
-from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import done_btn
+from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.view import BaseView
 
@@ -40,7 +40,7 @@ class DiskInfoView(BaseView):
         for h in hdinfo:
             body.append(Text(h))
         body.append(self._build_buttons())
-        super().__init__(Padding.center_79(SimpleList(body)))
+        super().__init__(Padding.center_79(ListBox(body)))
 
     def _build_buttons(self):
         return button_pile([done_btn(_("Done"), on_press=self.done)])
