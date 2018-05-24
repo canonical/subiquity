@@ -222,7 +222,7 @@ class TaskSequence:
         self.task_complete_or_failed_called = False
         try:
             self.curtask.end(self, fut)
-        except:
+        except Exception:
             log.exception("%s failed", self.stage)
             self.task_failed(sys.exc_info())
         if not self.task_complete_or_failed_called:
