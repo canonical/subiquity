@@ -49,7 +49,6 @@ class LoginView(BaseView):
                     ])),
                 ]))
 
-
     def _build_buttons(self):
         return [
             done_btn("Done", on_press=self.done),
