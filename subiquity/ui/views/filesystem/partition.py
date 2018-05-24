@@ -276,7 +276,7 @@ class FormatEntireView(PartitionFormatView):
         self.controller = controller
         self.volume = volume
         if isinstance(volume, Disk):
-            self.title = _("Format and/or mount {}").format(disk.label)
+            self.title = _("Format and/or mount {}").format(volume.label)
             self.footer = _("Format or mount whole disk.")
         else:
             self.title = _("Partition, format, "
