@@ -287,6 +287,7 @@ class URLEditor(StringEditor, WantsToKnowFormField):
             raise ValueError(_("This field must be a %s URL.") % schemes)
         return v
 
+
 URLField = simple_field(URLEditor)
 
 
