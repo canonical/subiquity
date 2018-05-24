@@ -35,6 +35,7 @@ class ApplicationError(Exception):
     """ Basecontroller exception """
     pass
 
+
 # From uapi/linux/kd.h:
 KDGKBTYPE = 0x4B33  # get keyboard type
 
@@ -424,7 +425,7 @@ class Application:
             log.debug("*** %s", self.common['controllers'])
             self._connect_base_signals()
             self.common['loop'].run()
-        except:
+        except Exception:
             log.exception("Exception in controller.run():")
             raise
         finally:
