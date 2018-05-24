@@ -59,7 +59,8 @@ class InstallpathView(BaseView):
                "navigate options")
 
     def __init__(self, model, controller):
-        self.title = self.title.format(lsb_release.get_distro_information()['RELEASE'])
+        self.title = self.title.format(
+            lsb_release.get_distro_information()['RELEASE'])
         self.model = model
         self.controller = controller
         self.items = []
@@ -131,6 +132,7 @@ class RackSecretEditor(PasswordEditor, WantsToKnowFormField):
         else:
             return super().valid_char(ch)
 
+
 RackSecretField = simple_field(RackSecretEditor)
 
 
@@ -178,7 +180,8 @@ class MAASView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen(focus_buttons=False, excerpt=excerpt))
+        super().__init__(self.form.as_screen(focus_buttons=False,
+                                             excerpt=excerpt))
 
     def done(self, result):
         log.debug("User input: {}".format(result.as_data()))
