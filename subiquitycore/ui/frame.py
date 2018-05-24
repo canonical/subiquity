@@ -34,7 +34,9 @@ class SubiquityUI(WidgetWrap):
     def __init__(self):
         self.header = Header("")
         self.footer = Footer("", 0, 1)
-        self.frame = Frame(ListBox([Text("")]), header=self.header, footer=self.footer)
+        self.frame = Frame(
+            ListBox([Text("")]),
+            header=self.header, footer=self.footer)
         self.progress_current = 0
         self.progress_completion = 0
         super().__init__(Color.body(self.frame))
