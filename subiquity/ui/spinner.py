@@ -19,7 +19,9 @@ from urwid import (
 
 styles = {
     'dots': {
-        'texts': [t.replace('*', '\N{bullet}') for t in ['|*----|', '|-*---|', '|--*--|', '|---*-|', '|----*|', '|---*-|', '|--*--|', '|-*---|']],
+        'texts': [t.replace('*', '\N{bullet}')
+                  for t in ['|*----|', '|-*---|', '|--*--|', '|---*-|',
+                            '|----*|', '|---*-|', '|--*--|', '|-*---|']],
         'rate': 0.2,
         },
     'spin': {
@@ -27,6 +29,7 @@ styles = {
         'rate': 0.1,
         },
     }
+
 
 class Spinner(Text):
     def __init__(self, loop, style='spin', align='center'):
@@ -38,7 +41,7 @@ class Spinner(Text):
         self.handle = None
 
     def _advance(self, sender=None, user_data=None):
-        self.spin_index = (self.spin_index + 1)%len(self.spin_text)
+        self.spin_index = (self.spin_index + 1) % len(self.spin_text)
         self.set_text(self.spin_text[self.spin_index])
         self.handle = self.loop.set_alarm_in(self.rate, self._advance)
 
@@ -51,4 +54,3 @@ class Spinner(Text):
         if self.handle is not None:
             self.loop.remove_alarm(self.handle)
             self.handle = None
-
