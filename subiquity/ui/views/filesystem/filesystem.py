@@ -214,6 +214,9 @@ class FilesystemView(BaseView):
             if action == 'edit':
                 from ..raid import RaidStretchy
                 self.show_stretchy_overlay(RaidStretchy(self, obj))
+            elif action == 'partition':
+                from .partition import PartitionStretchy
+                self.show_stretchy_overlay(PartitionStretchy(self, obj))
 
     def _build_device_rows(self, dev, available):
         label = Text(dev.label)
