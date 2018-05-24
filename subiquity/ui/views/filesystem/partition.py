@@ -279,7 +279,8 @@ class FormatEntireView(PartitionFormatView):
             self.title = _("Format and/or mount {}").format(disk.label)
             self.footer = _("Format or mount whole disk.")
         else:
-            self.title = _("Partition, format, and mount {}").format(volume.device.label)
+            self.title = _("Partition, format, "
+                           "and mount {}").format(volume.device.label)
             self.footer = _("Edit partition details, format and mount.")
 
         super().__init__(None, volume, {}, back)
