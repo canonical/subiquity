@@ -18,7 +18,6 @@ import os
 
 from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
-from subiquitycore.ui.error import ErrorView
 
 from subiquity.models.filesystem import align_up, humanize_size
 from subiquity.ui.views import (
