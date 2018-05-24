@@ -395,9 +395,12 @@ class KeyboardView(BaseView):
             pass
 
         if self.opts.run_on_serial:
-            excerpt = _('Please select the layout of the keyboard directly attached to the system, if any.')
+            excerpt = _('Please select the layout of the keyboard directly '
+                        'attached to the system, if any.')
         else:
-            excerpt = _('Please select your keyboard layout below, or select "Identify keyboard" to detect your layout automatically.')
+            excerpt = _('Please select your keyboard layout below, or select '
+                        '"Identify keyboard" to detect your layout '
+                        'automatically.')
 
         lb_contents = self.form.as_rows()
         if not self.opts.run_on_serial:
@@ -407,7 +410,8 @@ class KeyboardView(BaseView):
                     other_btn(label=_("Identify keyboard"),
                               on_press=self.detect)]),
                 ])
-        super().__init__(screen(lb_contents, self.form.buttons, excerpt=excerpt))
+        super().__init__(screen(lb_contents, self.form.buttons,
+                                excerpt=excerpt))
 
     def detect(self, sender):
         detector = Detector(self)
