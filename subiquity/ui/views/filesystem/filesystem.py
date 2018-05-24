@@ -92,15 +92,6 @@ class FilesystemView(BaseView):
             Text(""),
             ] + [Padding.push_4(p) for p in self._build_available_inputs()]
 
-        #+ [
-            #self._build_menu(),
-            #Text(""),
-            #Text("USED DISKS"),
-            #Text(""),
-            #self._build_used_disks(),
-            #Text(""),
-        #]
-
         self.lb = Padding.center_95(ListBox(body))
         bottom = Pile([
                 Text(""),
@@ -255,26 +246,6 @@ class FilesystemView(BaseView):
 
     def click_partition(self, sender, partition):
         self.controller.format_mount_partition(partition)
-
-    def _build_menu(self):
-        log.debug('FileSystemView: building menu')
-        opts = []
-        #avail_disks = self.model.get_available_disk_names()
-
-        fs_menu = [
-            # ('Connect iSCSI network disk',         'filesystem:connect-iscsi-disk'),
-            # ('Connect Ceph network disk',          'filesystem:connect-ceph-disk'),
-            # ('Create volume group (LVM2)',           'menu:filesystem:main:create-volume-group'),
-            # ('Create software RAID (MD)',            'menu:filesystem:main:create-raid'),
-            # ('Setup hierarchichal storage (bcache)', 'menu:filesystem:main:setup-bcache'),
-        ]
-
-        for opt, sig in fs_menu:
-            if len(avail_disks) > 1:
-                opts.append(menu_btn(label=opt,
-                                     on_press=self.on_fs_menu_press,
-                                     user_data=sig))
-        return Pile(opts)
 
     def cancel(self, button=None):
         self.controller.default()

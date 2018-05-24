@@ -35,8 +35,6 @@ def setup_logger(dir):
     log.setLevel('DEBUG')
     log.setFormatter(
         logging.Formatter("%(asctime)s %(name)s:%(lineno)d %(message)s"))
-    # log_filter = logging.Filter(name='subiquity')
-    # log.addFilter(log_filter)
 
     logger = logging.getLogger('')
     logger.setLevel('DEBUG')

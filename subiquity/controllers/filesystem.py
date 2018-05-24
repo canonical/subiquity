@@ -50,8 +50,6 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', False)
-        # self.iscsi_model = IscsiDiskModel()
-        # self.ceph_model = CephDiskModel()
         self.model.probe()  # probe before we complete
 
     def default(self):
@@ -206,22 +204,9 @@ class FilesystemController(BaseController):
         self.partition_disk(disk)
 
     def connect_iscsi_disk(self, *args, **kwargs):
-        # title = ("Disk and filesystem setup")
-        # excerpt = ("Connect to iSCSI cluster")
-        # self.ui.set_header(title, excerpt)
-        # self.ui.set_footer("")
-        # self.ui.set_body(IscsiDiskView(self.iscsi_model,
-        #                                self.signal))
         self.ui.set_body(DummyView(self.signal))
 
     def connect_ceph_disk(self, *args, **kwargs):
-        # title = ("Disk and filesystem setup")
-        # footer = ("Select available disks to format and mount")
-        # excerpt = ("Connect to Ceph storage cluster")
-        # self.ui.set_header(title, excerpt)
-        # self.ui.set_footer(footer)
-        # self.ui.set_body(CephDiskView(self.ceph_model,
-        #                               self.signal))
         self.ui.set_body(DummyView(self.signal))
 
     def create_volume_group(self, *args, **kwargs):

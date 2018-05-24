@@ -115,7 +115,6 @@ class InstallProgressController(BaseController):
         for identifier in identifiers:
             args.append("SYSLOG_IDENTIFIER={}".format(identifier))
         reader.add_match(*args)
-        #reader.seek_tail()
         def watch():
             if reader.process() != journal.APPEND:
                 return

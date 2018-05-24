@@ -119,7 +119,6 @@ class IdentityForm(Form):
             (_("No"), True, None),
             (_("from Github"), True, "gh"),
             (_("from Launchpad"), True, "lp"),
-            #(_("from Ubuntu One account"), True, "sso"),
             ],
         help=_("You can import your SSH keys from Github or Launchpad."))
     import_username = UsernameField(_ssh_import_data[None]['caption'])
