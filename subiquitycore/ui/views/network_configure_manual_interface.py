@@ -119,7 +119,8 @@ class BaseNetworkConfigureManualView(BaseView):
         self.model = model
         self.controller = controller
         self.dev = self.model.get_netdev_by_name(name)
-        self.title = _("Network interface {} manual IPv{} configuration").format(name, self.ip_version)
+        self.title = _("Network interface {} manual IPv{} "
+                       "configuration").format(name, self.ip_version)
         self.is_gateway = False
         self.form = NetworkConfigForm(self.ip_version)
         connect_signal(self.form, 'submit', self.done)
