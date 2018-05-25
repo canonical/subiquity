@@ -13,10 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from .filesystem import (FilesystemView,
-                         PartitionView,
-                         FormatEntireView,
-                         DiskPartitionView,
+from .filesystem import (DiskPartitionView,
                          GuidedDiskSelectionView,
                          GuidedFilesystemView)
 from .bcache import BcacheView
