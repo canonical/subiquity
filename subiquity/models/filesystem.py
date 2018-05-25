@@ -101,7 +101,7 @@ def get_raid_size(level, devices):
     elif level == 10:
         return min_size * (len(devices) // 2)
     else:
-        raise ValueError("unknown raid level %s"%level)
+        raise ValueError("unknown raid level %s" % level)
 
 
 def id_factory(name):
@@ -154,14 +154,14 @@ class Disk:
     # Filesystem
     _fs = attr.ib(default=None, repr=False)
     # Raid
-    _raid = attr.ib(default=None, repr=False) # Raid
+    _raid = attr.ib(default=None, repr=False)
 
->>>>>>> master
     def partitions(self):
         return self._partitions
 
     def fs(self):
         return self._fs
+
     def raid(self):
         return self._raid
 
@@ -295,6 +295,7 @@ class Partition:
 
     def fs(self):
         return self._fs
+
     def raid(self):
         return self._raid
 
@@ -353,11 +354,11 @@ class Raid:
     raidlevel = attr.ib(default=None)  # 0, 1, 5, 6, 10
     devices = attr.ib(default=attr.Factory(list))  # [Partition or Disk]
 
-     # [Partition]
+    # [Partition]
     _partitions = attr.ib(default=attr.Factory(list), repr=False)
-     # Filesystem
+    # Filesystem
     _fs = attr.ib(default=None, repr=False)
-     # Raid
+    # Raid
     _raid = attr.ib(default=None, repr=False)
 
     def supports_action(self, action):
@@ -374,8 +375,10 @@ class Raid:
 
     def partitions(self):
         return self._partitions
+
     def fs(self):
         return self._fs
+
     def raid(self):
         return self._raid
 
@@ -535,7 +538,7 @@ class FilesystemModel(object):
 
     def probe(self):
         storage = self.prober.get_storage()
-        currently_mounted = {}#self._get_system_mounted_disks()
+        currently_mounted = {}  # self._get_system_mounted_disks()
         for path, data in storage.items():
             log.debug("fs probe %s", path)
             if path in currently_mounted:
@@ -543,7 +546,7 @@ class FilesystemModel(object):
             if data['DEVTYPE'] == 'disk':
                 if not data["DEVPATH"].startswith('/devices/virtual'):
                     if data["MAJOR"] != "2" and data['attrs'].get('ro') != "1":
-                        # log.debug('disk={}\n{}'.format(
+                        #  log.debug('disk={}\n{}'.format(
                         #    path, json.dumps(data, indent=4, sort_keys=True)))
                         info = self.prober.get_storage_info(path)
                         self._available_disks[path] = Disk.from_info(info)
@@ -578,7 +581,10 @@ class FilesystemModel(object):
         return p
 
     def add_raid(self, result):
-        r = Raid(name=result['name'], raidlevel=result['level'].value, devices=result['devices'])
+        r = Raid(
+            name=result['name'],
+            raidlevel=result['level'].value,
+            devices=result['devices'])
         for d in result['devices']:
             if isinstance(d, Disk):
                 self._use_disk(d)
@@ -588,10 +594,10 @@ class FilesystemModel(object):
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
-        ## if not volume.available:
-        ##     if not isinstance(volume, Partition):
-        ##         if (volume.flag == 'bios_grub' and fstype == 'fat32'):
-        ##             raise Exception("{} is not available".format(volume))
+        #  if not volume.available:
+        #      if not isinstance(volume, Partition):
+        #          if (volume.flag == 'bios_grub' and fstype == 'fat32'):
+        #              raise Exception("{} is not available".format(volume))
         if isinstance(volume, Disk):
             self._use_disk(volume)
         if volume._fs is not None:

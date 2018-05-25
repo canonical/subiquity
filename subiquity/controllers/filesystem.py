@@ -245,7 +245,6 @@ class FilesystemController(BaseController):
                 self.model.add_mount(fs, result['mount'])
         self.manual()
 
-
     def format_entire(self, disk):
         log.debug("format_entire {}".format(disk.label))
         afv_view = FormatEntireView(self.model, self, disk,

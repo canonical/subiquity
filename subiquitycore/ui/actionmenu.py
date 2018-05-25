@@ -26,7 +26,6 @@ from urwid import (
     Widget,
     )
 
-from subiquitycore.ui.buttons import delete_btn, menu_btn
 from subiquitycore.ui.container import Columns, ListBox
 from subiquitycore.ui.selector import Option
 from subiquitycore.ui.utils import Color
@@ -40,6 +39,7 @@ def demarkup(s):
     if isinstance(s, list):
         return [demarkup(x) for x in s]
 
+
 def markup_length(s):
     if isinstance(s, Widget):
         return markup_length(s.base_widget.label)
@@ -49,13 +49,16 @@ def markup_length(s):
     if isinstance(s, list):
         return sum(markup_length(x) for x in s)
 
+
 class ActionBackButton(Button):
     button_left = Text("<")
     button_right = Text("")
 
+
 class ActionMenuButton(Button):
     button_left = Text("")
     button_right = Text(">")
+
 
 class _ActionMenuDialog(WidgetWrap):
     """A list of menu_btns with a box around them."""
@@ -71,7 +74,8 @@ class _ActionMenuDialog(WidgetWrap):
                     btn = option.label
                 else:
                     btn = Color.menu_button(ActionMenuButton(option.label))
-                connect_signal(btn.base_widget, 'click', self.click, option.value)
+                connect_signal(
+                    btn.base_widget, 'click', self.click, option.value)
                 group.append(btn)
             else:
                 label = option.label
@@ -136,4 +140,9 @@ class ActionMenu(PopUpLauncher):
 
     def get_pop_up_parameters(self):
         width = max([markup_length(o.label) for o in self._options]) + 7
-        return {'left':-3, 'top':1, 'overlay_width':width, 'overlay_height':len(self._options) + 3}
+        return {
+            'left': -3,
+            'top': 1,
+            'overlay_width': width,
+            'overlay_height': len(self._options) + 3,
+            }

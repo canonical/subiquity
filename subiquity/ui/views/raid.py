@@ -60,6 +60,7 @@ from subiquity.models.filesystem import (
 
 log = logging.getLogger('subiquity.ui.raid')
 
+
 @attr.s
 class RaidLevel:
     name = attr.ib()
@@ -75,6 +76,7 @@ levels = [
     RaidLevel(_("10"), 10, 72),
     ]
 
+
 class BlockDevicePicker(Stretchy):
 
     def __init__(self, chooser, parent, devices):
@@ -82,10 +84,12 @@ class BlockDevicePicker(Stretchy):
         self.chooser = chooser
         self.devices = devices
         device_widgets = []
-        max_label_width = max([40] + [len(device.label) for device, checked in devices])
+        max_label_width = max(
+            [40] + [len(device.label) for device, checked in devices])
         for device, checked in devices:
             disk_sz = humanize_size(device.size)
-            disk_string = "{:{}} {}".format(device.label, max_label_width, disk_sz)
+            disk_string = "{:{}} {}".format(
+                device.label, max_label_width, disk_sz)
             device_widgets.append(CheckBox(disk_string, state=checked))
             if device.fs() is not None:
                 fs = device.fs()
@@ -108,7 +112,6 @@ class BlockDevicePicker(Stretchy):
             stretchy_index=0,
             focus_index=0)
 
-
     def ok(self, sender):
         selected_devs = []
         for i in range(len(self.devices)):
@@ -126,15 +129,18 @@ class BlockDevicePicker(Stretchy):
 
 class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
     signals = ['select']
+
     def __init__(self):
         self.button = menu_btn(label="", on_press=self.click)
         self.button_padding = UrwidPadding(self.button, width=4)
         self.pile = Pile([self.button])
         self.value = []
         super().__init__(self.pile)
+
     @property
     def value(self):
         return self.devices
+
     @value.setter
     def value(self, value):
         self.devices = value
@@ -151,26 +157,33 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
         w.append((b, self.pile.options('pack')))
         self.pile.contents[:] = w
         self.pile.focus_item = b
+
     def set_bound_form_field(self, bff):
         super().set_bound_form_field(bff)
         connect_signal(bff, 'enable', self.enable)
         connect_signal(bff, 'disable', self.disable)
+
     def enable(self, sender):
-        self.button.set_attr_map({None:'menu'})
+        self.button.set_attr_map({None: 'menu'})
+
     def disable(self, sender):
-        self.button.set_attr_map({None:'info_minor'})
+        self.button.set_attr_map({None: 'info_minor'})
+
     def click(self, sender):
         devs = []
         for device in self.bff.form.all_devices:
             devs.append((device, device in self.devices))
-        self.bff.view.parent.show_stretchy_overlay(BlockDevicePicker(self, self.bff.view.parent, devs), 70)
+        self.bff.view.parent.show_stretchy_overlay(
+            BlockDevicePicker(self, self.bff.view.parent, devs), 70)
 
 
 MultiDeviceField = simple_field(MultiDeviceChooser)
 
+
 class RaidForm(Form):
 
-    def __init__(self, mountpoint_to_devpath_mapping, all_devices, view, initial={}):
+    def __init__(self, mountpoint_to_devpath_mapping,
+                 all_devices, view, initial={}):
         self.mountpoint_to_devpath_mapping = mountpoint_to_devpath_mapping
         self.all_devices = all_devices
         super().__init__(initial)
@@ -196,7 +209,9 @@ class RaidForm(Form):
             return None
 
     def validate_devices(self):
-        log.debug('validate_devices %s %s', len(self.devices.value), self.level.value)
+        log.debug(
+            'validate_devices %s %s',
+            len(self.devices.value), self.level.value)
         if len(self.devices.value) < 2:
             return _("At least two devices must be selected")
         elif len(self.devices.value) < self.level.value.min_devices:
@@ -212,13 +227,14 @@ class RaidForm(Form):
             return _('Path exceeds PATH_MAX')
         dev = self.mountpoint_to_devpath_mapping.get(mount)
         if dev is not None:
-            return _("%s is already mounted at %s")%(dev, mount)
+            return _("{} is already mounted at {}").format(dev, mount)
 
 
 class RaidStretchy(Stretchy):
     def __init__(self, parent, devices):
         self.parent = parent
-        mountpoint_to_devpath_mapping = self.parent.model.get_mountpoint_to_devpath_mapping()
+        mountpoint_to_devpath_mapping = (
+            self.parent.model.get_mountpoint_to_devpath_mapping())
         if isinstance(devices, list):
             title = _('Create software RAID ("MD") disk')
             self.existing = None
@@ -247,7 +263,8 @@ class RaidStretchy(Stretchy):
                 'mount': m,
                 'name': raid.name,
                 }
-            i = [i for i, l in enumerate(levels) if l.value == raid.raidlevel][0]
+            i = [i for i, l in enumerate(levels)
+                 if l.value == raid.raidlevel][0]
 
         all_devices = list(initial['devices'])
         for dev in self.parent.model.all_devices():
@@ -258,14 +275,15 @@ class RaidStretchy(Stretchy):
                     if p.ok_for_raid:
                         all_devices.append(p)
 
-        self.form = RaidForm(mountpoint_to_devpath_mapping, all_devices, self, initial)
+        form = self.form = RaidForm(
+            mountpoint_to_devpath_mapping, all_devices, self, initial)
 
-        self.form.level.enabled = len(initial['devices']) > 0
+        form.level.enabled = len(initial['devices']) > 0
 
-        connect_signal(self.form.level.widget, 'select', self._select_level)
-        connect_signal(self.form.devices.widget, 'select', self._select_devices)
-        connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', self.cancel)
+        connect_signal(form.level.widget, 'select', self._select_level)
+        connect_signal(form.devices.widget, 'select', self._select_devices)
+        connect_signal(form, 'submit', self.done)
+        connect_signal(form, 'cancel', self.cancel)
 
         opts = []
         for level in levels:
@@ -276,16 +294,21 @@ class RaidStretchy(Stretchy):
 
         self.form.size.enabled = False
 
-        super().__init__(title, [Pile(self.form.as_rows()), Text(""), self.form.buttons], 0, 0)
+        super().__init__(
+            title,
+            [Pile(self.form.as_rows()), Text(""), self.form.buttons],
+            0, 0)
 
     def _select_level(self, sender, new_level):
-        self.form.size.value = humanize_size(get_raid_size(new_level.value, self.form.devices.value))
-        self.form.level.widget._index = levels.index(new_level) # *cough*
+        self.form.size.value = humanize_size(
+            get_raid_size(new_level.value, self.form.devices.value))
+        self.form.level.widget._index = levels.index(new_level)  # *cough*
         self.form.devices.showing_extra = False
         self.form.devices.validate()
 
     def _select_devices(self, sender, new_devices):
-        self.form.size.value = humanize_size(get_raid_size(self.form.level.value.value, new_devices))
+        self.form.size.value = humanize_size(
+            get_raid_size(self.form.level.value.value, new_devices))
         self.form.level.enabled = len(new_devices) > 1
         opts = []
         for level in levels:
