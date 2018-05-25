@@ -211,19 +211,6 @@ class FilesystemController(BaseController):
         self.ui.set_footer(footer)
         self.ui.set_body(LVMVolumeGroupView(self.model, self.signal))
 
-    def create_raid(self, *args, **kwargs):
-        title = ("Create software RAID (\"MD\") disk")
-        footer = ("ENTER on a disk will show detailed "
-                  "information for that disk")
-        excerpt = ("Use SPACE to select disks to form your RAID array, "
-                   "and then specify the RAID parameters. Multiple-disk "
-                   "arrays work best when all the disks in an array are "
-                   "the same size and speed.")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
-        self.ui.set_body(RaidView(self.model,
-                                  self.signal))
-
     def create_bcache(self, *args, **kwargs):
         title = ("Create hierarchical storage (\"bcache\") disk")
         footer = ("ENTER on a disk will show detailed "
@@ -244,17 +231,6 @@ class FilesystemController(BaseController):
             if result['mount']:
                 self.model.add_mount(fs, result['mount'])
         self.manual()
-
-    def format_entire(self, disk):
-        log.debug("format_entire {}".format(disk.label))
-        afv_view = FormatEntireView(self.model, self, disk,
-                                    lambda: self.partition_disk(disk))
-        self.ui.set_body(afv_view)
-
-    def format_mount_partition(self, partition):
-        log.debug("format_mount_partition {}".format(partition))
-        afv_view = FormatEntireView(self.model, self, partition, self.manual)
-        self.ui.set_body(afv_view)
 
     def show_disk_information_next(self, disk):
         log.debug('show_disk_info_next: curr_device={}'.format(disk))

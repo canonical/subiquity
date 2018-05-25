@@ -20,7 +20,7 @@ configuration.
 
 """
 import logging
-from urwid import CheckBox, connect_signal, Text
+from urwid import connect_signal, Text
 
 from subiquitycore.ui.actionmenu import ActionMenu, ActionMenuButton
 from subiquitycore.ui.buttons import (
