@@ -27,7 +27,7 @@ from subiquitycore.ui.buttons import delete_btn
 from subiquitycore.ui.form import (
     Form,
     FormField,
-    )
+)
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.selector import Option, Selector
 from subiquitycore.ui.container import Pile
@@ -40,7 +40,7 @@ from subiquity.models.filesystem import (
     HUMAN_UNITS,
     dehumanize_size,
     humanize_size,
-    )
+)
 from subiquity.ui.mount import MountField
 
 
@@ -50,6 +50,7 @@ log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 class FSTypeField(FormField):
     def _make_widget(self, form):
         return Selector(opts=FilesystemModel.supported_filesystems)
+
 
 class SizeWidget(StringEditor):
     def __init__(self, form):
@@ -70,16 +71,22 @@ class SizeWidget(StringEditor):
         except ValueError:
             return
         if sz > self.form.max_size:
-            self.form.size.show_extra(('info_minor', _("Capped partition size at %s")%(self.form.size_str,)))
+            self.form.size.show_extra(
+                ('info_minor',
+                 _("Capped partition size at {}").format(self.form.size_str)))
             self.value = self.form.size_str
-        elif align_up(sz) != sz and humanize_size(align_up(sz)) != self.form.size.value:
+        elif (align_up(sz) != sz and
+              humanize_size(align_up(sz)) != self.form.size.value):
             sz_str = humanize_size(align_up(sz))
-            self.form.size.show_extra(('info_minor', _("Rounded size up to %s")%(sz_str,)))
+            self.form.size.show_extra(
+                ('info_minor', _("Rounded size up to {}").format(sz_str)))
             self.value = sz_str
+
 
 class SizeField(FormField):
     def _make_widget(self, form):
         return SizeWidget(form)
+
 
 class PartitionForm(Form):
 
@@ -128,21 +135,25 @@ class PartitionForm(Form):
             return _('Path exceeds PATH_MAX')
         dev = self.mountpoint_to_devpath_mapping.get(mount)
         if dev is not None:
-            return _("%s is already mounted at %s")%(dev, mount)
+            return _("{} is already mounted at {}").format(dev, mount)
 
 
+bios_grub_partition_description = _(
+    "Required bootloader partition\n"
+    "\n"
+    "GRUB will be installed onto the target disk's MBR.\n"
+    "\n"
+    "However, on a disk with a GPT partition table, there is not enough space "
+    "after the MBR for GRUB to store its second-stage core.img, so a small "
+    "unformatted partition is needed at the start of the disk. It will not "
+    "contain a filesystem and will not be mounted, and cannot be edited here.")
 
-bios_grub_partition_description = _("""\
-Required bootloader partition
-
-GRUB will be installed onto the target disk's MBR.
-
-However, on a disk with a GPT partition table, there is not enough space after the MBR for GRUB to store its second-stage core.img, so a small unformatted partition is needed at the start of the disk. It will not contain a filesystem and will not be mounted, and cannot be edited here.""")
-
-boot_partition_description = _("""\
-Required bootloader partition
-
-This is the ESP / "EFI system partition" required by UEFI. Grub will be installed onto this partition, which must be formatted as fat32. The only aspect of this partition that can be edited is the size.""")
+boot_partition_description = _(
+    "Required bootloader partition\n"
+    "\n"
+    'This is the ESP / "EFI system partition" required by UEFI. Grub will be '
+    'installed onto this partition, which must be formatted as fat32. The '
+    'only aspect of this partition that can be edited is the size.')
 
 
 class PartitionStretchy(Stretchy):
@@ -155,7 +166,8 @@ class PartitionStretchy(Stretchy):
         self.controller = parent.controller
         self.parent = parent
         max_size = disk.free
-        mountpoint_to_devpath_mapping = self.model.get_mountpoint_to_devpath_mapping()
+        mountpoint_to_devpath_mapping = (
+            self.model.get_mountpoint_to_devpath_mapping())
 
         initial = {}
         label = _("Create")
@@ -179,7 +191,8 @@ class PartitionStretchy(Stretchy):
             else:
                 initial['fstype'] = self.model.fs_by_name[None]
 
-        self.form = PartitionForm(mountpoint_to_devpath_mapping, max_size, initial)
+        self.form = PartitionForm(
+            mountpoint_to_devpath_mapping, max_size, initial)
 
         if label is not None:
             self.form.buttons.base_widget[0].set_label(label)
@@ -189,7 +202,9 @@ class PartitionStretchy(Stretchy):
 
         if partition is not None:
             if partition.flag == "boot":
-                opts = [Option(("fat32", True, self.model.fs_by_name["fat32"]))]
+                opts = [
+                    Option(("fat32", True, self.model.fs_by_name["fat32"])),
+                ]
                 self.form.fstype.widget._options = opts
                 self.form.fstype.widget.index = 0
                 self.form.mount.enabled = False
@@ -202,7 +217,6 @@ class PartitionStretchy(Stretchy):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-
         rows = []
         focus_index = 0
         extra_buttons = []
@@ -211,15 +225,15 @@ class PartitionStretchy(Stretchy):
                 rows.extend([
                     Text(_(boot_partition_description)),
                     Text(""),
-                    ])
+                ])
             elif self.partition.flag == "bios_grub":
                 rows.extend([
                     Text(_(bios_grub_partition_description)),
                     Text(""),
-                    ])
+                ])
                 focus_index = 2
             d_btn = delete_btn(_("Delete"), on_press=self.delete)
-            if self.partition.flag == "boot" or self.partition.flag == "bios_grub":
+            if self.partition.flag in ("boot", "bios_grub"):
                 d_btn = WidgetDisable(Color.info_minor(d_btn.original_widget))
             extra_buttons.append(d_btn)
         rows.extend(self.form.as_rows())
@@ -227,17 +241,18 @@ class PartitionStretchy(Stretchy):
             rows.extend([
                 Text(""),
                 button_pile(extra_buttons),
-                ])
+            ])
         widgets = [
             Pile(rows),
             Text(""),
             self.form.buttons,
-            ]
+        ]
 
         if partition is None:
             title = _("Adding partition to {}").format(disk.label)
         else:
-            title = _("Editing partition {} of {}").format(partition._number, disk.label)
+            title = _("Editing partition {} of {}").format(
+                partition._number, disk.label)
 
         super().__init__(title, widgets, 0, focus_index)
 
@@ -249,4 +264,5 @@ class PartitionStretchy(Stretchy):
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
-        self.controller.partition_disk_handler(self.disk, self.partition, form.as_data())
+        self.controller.partition_disk_handler(
+            self.disk, self.partition, form.as_data())
