@@ -5,7 +5,8 @@ from unittest import mock
 from subiquitycore.controllers.network import NetworkController
 from subiquitycore.models.network import Networkdev, NetworkModel
 from subiquitycore.testing import view_helpers
-from subiquitycore.ui.views.network_configure_manual_interface import NetworkConfigureIPv4InterfaceView
+from subiquitycore.ui.views.network_configure_manual_interface import (
+    NetworkConfigureIPv4InterfaceView)
 
 
 valid_data = {
@@ -16,19 +17,22 @@ valid_data = {
     'searchdomains': '.custom',
     }
 
+
 class TestNetworkConfigureIPv4InterfaceView(unittest.TestCase):
 
     def make_view(self):
         model = mock.create_autospec(spec=NetworkModel)
         controller = mock.create_autospec(spec=NetworkController)
         ifname = 'ifname'
+
         def get_netdev_by_name(name):
             if name == ifname:
                 dev = mock.create_autospec(spec=Networkdev)
-                dev.configured_ip_addresses_for_version = lambda v:[]
+                dev.configured_ip_addresses_for_version = lambda v: []
                 return dev
             else:
-                raise AssertionError("get_netdev_by_name called with unexpected arg %s"%(name,))
+                raise AssertionError("get_netdev_by_name called with "
+                                     "unexpected arg %s" % (name,))
         model.get_netdev_by_name.side_effect = get_netdev_by_name
         return NetworkConfigureIPv4InterfaceView(model, controller, ifname)
 

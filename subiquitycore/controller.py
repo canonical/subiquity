@@ -53,9 +53,12 @@ class BaseController(ABC):
         exception will crash the process so be careful!
         """
         fut = self.pool.submit(func)
+
         def in_main_thread(ignored):
             callback(fut)
+
         pipe = self.loop.watch_pipe(in_main_thread)
+
         def in_random_thread(ignored):
             os.write(pipe, b'x')
         fut.add_done_callback(in_random_thread)

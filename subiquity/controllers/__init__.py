@@ -13,13 +13,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.controllers.login import LoginController  # NOQA
-from subiquitycore.controllers.network import NetworkController  # NOQA
-
-from .identity import IdentityController  # NOQA
-from .installpath import InstallpathController  # NOQA
-from .installprogress import InstallProgressController  # NOQA
-from .filesystem import FilesystemController  # NOQA
-from .keyboard import KeyboardController  # NOQA
-from .proxy import ProxyController  # NOQA
-from .welcome import WelcomeController  # NOQA
+from .filesystem import FilesystemController
+from .identity import IdentityController
+from .installpath import InstallpathController
+from .installprogress import InstallProgressController
+from .keyboard import KeyboardController
+from .proxy import ProxyController
+from subiquitycore.controllers.login import LoginController
+from subiquitycore.controllers.network import NetworkController
+from .welcome import WelcomeController
+__all__ = [
+    'FilesystemController',
+    'IdentityController',
+    'InstallpathController',
+    'InstallProgressController',
+    'KeyboardController',
+    'ProxyController',
+    'LoginController',
+    'NetworkController',
+    'WelcomeController',
+]

@@ -16,9 +16,7 @@
 import logging
 from urwid import Text
 
-from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import done_btn
-from subiquitycore.ui.utils import button_pile, Padding
 from subiquitycore.ui.stretchy import Stretchy
 
 

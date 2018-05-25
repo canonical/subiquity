@@ -14,26 +14,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # This is adapted from
-# https://github.com/pimutils/khal/commit/bd7c5f928a7670de9afae5657e66c6dc846688ac, which has this license:
+# https://github.com/pimutils/khal/commit/bd7c5f928a7670de9afae5657e66c6dc846688ac # noqa
+#
 #
 # Copyright (c) 2013-2015 Christian Geier et al.
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy of
-# this software and associated documentation files (the "Software"), to deal in
-# the Software without restriction, including without limitation the rights to
-# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-# the Software, and to permit persons to whom the Software is furnished to do so,
-# subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR OPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
 """Extended versions of urwid containers.
 
@@ -107,7 +109,6 @@ def _has_other_selectable(widgets, cur_focus):
     return False
 
 
-
 for key, command in list(urwid.command_map._command.items()):
     if command in ('next selectable', 'prev selectable', urwid.ACTIVATE):
         urwid.command_map[key + ' no wrap'] = command
@@ -149,7 +150,7 @@ class TabCyclingPile(urwid.Pile):
     # reason we can't do this via simple subclassing is the need to
     # call _select_{first,last}_selectable on the newly focused
     # element when the focus changes.
-    def keypress(self, size, key ):
+    def keypress(self, size, key):
         """Pass the keypress to the widget in focus.
         Unhandled 'up' and 'down' keys may cause a focus change."""
         if not self.contents:
@@ -157,7 +158,9 @@ class TabCyclingPile(urwid.Pile):
 
         # start subiquity change: new code
         downkey = key
-        if not key.endswith(' no wrap') and self._command_map[key] in ('next selectable', 'prev selectable'):
+        if not key.endswith(' no wrap') and (self._command_map[key] in
+                                             ('next selectable',
+                                              'prev selectable')):
             if _has_other_selectable(self._widgets(), self.focus_position):
                 downkey += ' no wrap'
         # end subiquity change
@@ -169,9 +172,12 @@ class TabCyclingPile(urwid.Pile):
         i = self.focus_position
         if self.selectable():
             tsize = self.get_item_size(size, i, True, item_rows)
-            # start subiquity change: pass downkey to focus, not key, do not return if command_map[upkey] is next/prev selectable
+            # start subiquity change: pass downkey to focus, not key,
+            # do not return if command_map[upkey] is next/prev selectable
             upkey = self.focus.keypress(tsize, downkey)
-            if self._command_map[upkey] not in ('cursor up', 'cursor down', 'next selectable', 'prev selectable'):
+            if self._command_map[upkey] not in ('cursor up', 'cursor down',
+                                                'next selectable',
+                                                'prev selectable'):
                 return upkey
             # end subiquity change
 
@@ -187,7 +193,8 @@ class TabCyclingPile(urwid.Pile):
                 self._select_first_selectable()
             return key
         elif self._command_map[key] == 'prev selectable':
-            for i, (w, o) in reversed(list(enumerate(self._contents[:self.focus_position]))):
+            positions = self._contents[:self.focus_position]
+            for i, (w, o) in reversed(list(enumerate(positions))):
                 if w.selectable():
                     self.set_focus(i)
                     _maybe_call(w, "_select_last_selectable")
@@ -197,9 +204,9 @@ class TabCyclingPile(urwid.Pile):
             return key
         # continued subiquity change: set 'meth' appropriately
         elif self._command_map[key] == 'cursor up':
-            candidates = list(range(i-1, -1, -1)) # count backwards to 0
+            candidates = list(range(i-1, -1, -1))  # count backwards to 0
             meth = '_select_last_selectable'
-        else: # self._command_map[key] == 'cursor down'
+        else:  # self._command_map[key] == 'cursor down'
             candidates = list(range(i+1, len(self.contents)))
             meth = '_select_first_selectable'
         # end subiquity change
@@ -222,7 +229,7 @@ class TabCyclingPile(urwid.Pile):
             rows = item_rows[j]
             if self._command_map[key] == 'cursor up':
                 rowlist = list(range(rows-1, -1, -1))
-            else: # self._command_map[key] == 'cursor down'
+            else:  # self._command_map[key] == 'cursor down'
                 rowlist = list(range(rows))
             for row in rowlist:
                 tsize = self.get_item_size(size, j, True, item_rows)
@@ -237,15 +244,16 @@ class TabCyclingPile(urwid.Pile):
 
 class OneSelectableColumns(urwid.Columns):
     def __init__(self, widget_list, dividechars=0, focus_column=None,
-        min_width=1, box_columns=None):
-        super().__init__(widget_list, dividechars, focus_column, min_width, box_columns)
+                 min_width=1, box_columns=None):
+        super().__init__(widget_list, dividechars, focus_column,
+                         min_width, box_columns)
         selectables = 0
         for w, o in self._contents:
             if w.selectable():
-                selectables +=1
+                selectables += 1
         if selectables > 1:
-            raise Exception("subiquity only supports one selectable in a Columns")
-
+            raise Exception(
+                "subiquity only supports one selectable in a Columns")
 
 
 class TabCyclingListBox(urwid.ListBox):
@@ -288,7 +296,9 @@ class TabCyclingListBox(urwid.ListBox):
 
     def keypress(self, size, key):
         downkey = key
-        if not key.endswith(' no wrap') and self._command_map[key] in ('next selectable', 'prev selectable'):
+        if not key.endswith(' no wrap') and (self._command_map[key] in
+                                             ('next selectable',
+                                              'prev selectable')):
             if _has_other_selectable(self.body, self.focus_position):
                 downkey += ' no wrap'
         upkey = super().keypress(size, downkey)
@@ -309,7 +319,8 @@ class TabCyclingListBox(urwid.ListBox):
                 self._select_first_selectable()
             return key
         elif self._command_map[key] == 'prev selectable':
-            for i, w in reversed(list(enumerate(self.body[:self.focus_position]))):
+            positions = self.body[:self.focus_position]
+            for i, w in reversed(list(enumerate(positions))):
                 if w.selectable():
                     self.set_focus(i)
                     _maybe_call(w, "_select_last_selectable")
@@ -352,6 +363,7 @@ class FocusTrackingMixin:
 class FocusTrackingPile(FocusTrackingMixin, TabCyclingPile):
     pass
 
+
 class FocusTrackingColumns(FocusTrackingMixin, OneSelectableColumns):
     pass
 
@@ -387,40 +399,50 @@ Columns = FocusTrackingColumns
 Pile = FocusTrackingPile
 
 
-class ScrollBarListBox(FocusTrackingListBox):
+class ScrollBarListBox(urwid.WidgetDecoration):
 
-    def __init__(self, walker=None):
+    def __init__(self, lb):
         def f(char, attr):
             return urwid.AttrMap(urwid.SolidFill(char), attr)
         self.boxes = [
-            urwid.AttrMap(urwid.SolidFill("\N{FULL BLOCK}"), 'scrollbar_bg'),
-            urwid.AttrMap(urwid.SolidFill("\N{FULL BLOCK}"), 'scrollbar_fg'),
+            f("\N{FULL BLOCK}", 'scrollbar_bg'),
+            f("\N{FULL BLOCK}", 'scrollbar_fg'),
             ]
         self.bar = Pile([
-            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'scrollbar_bg')),
+            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}",
+                            'scrollbar_bg')),
             ('weight', 1, self.boxes[0]),
-            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}", 'scrollbar_bg')),
+            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}",
+                            'scrollbar_bg')),
             ])
-        super().__init__(walker)
+        super().__init__(lb)
+
+    def keypress(self, size, key):
+        visible = self.original_widget.ends_visible(size, True)
+        if len(visible) != 2:
+            size = (size[0]-1, size[1])
+        return self.original_widget.keypress(size, key)
 
     def render(self, size, focus=False):
-        visible = self.ends_visible(size, focus)
+        visible = self.original_widget.ends_visible(size, focus)
         if len(visible) == 2:
-            return super().render(size, focus)
+            return self.original_widget.render(size, focus)
         else:
             # This implementation assumes that the number of rows is
             # not too large (and in particular is finite). That's the
             # case for all the listboxes we have in subiquity today.
             maxcol, maxrow = size
 
-            offset, inset = self.get_focus_offset_inset((maxcol - 1, maxrow))
+            offset, inset = (
+                self.original_widget.get_focus_offset_inset((maxcol - 1,
+                                                             maxrow)))
 
             seen_focus = False
             height = height_before_focus = 0
-            focus_widget, focus_pos = self.body.get_focus()
+            focus_widget, focus_pos = self.original_widget.body.get_focus()
             # Scan through the rows calculating total height and the
             # height of the rows before the focus widget.
-            for widget in self.body:
+            for widget in self.original_widget.body:
                 rows = widget.rows((maxcol - 1,))
                 if widget is focus_widget:
                     seen_focus = True
@@ -459,10 +481,18 @@ class ScrollBarListBox(FocusTrackingListBox):
                 (self.bar.contents[2][0], self.bar.options('weight', bottom)),
                 ]
             canvases = [
-                (super().render((maxcol - 1, maxrow), focus), self.focus_position, True, maxcol - 1),
+                (self.original_widget.render((maxcol - 1, maxrow), focus),
+                 self.original_widget.focus_position, True, maxcol - 1),
                 (self.bar.render((1, maxrow)), None, False, 1)
                 ]
             return urwid.CanvasJoin(canvases)
 
 
-ListBox = ScrollBarListBox
+def ListBox(body=None):
+    # urwid.ListBox converts an arbitrary sequence argument to a
+    # PollingListWalker, which doesn't work with our code.
+    if body is None:
+        body = []
+    if body is getattr(body, 'get_focus', None) is None:
+        body = urwid.SimpleFocusListWalker(body)
+    return ScrollBarListBox(FocusTrackingListBox(body))

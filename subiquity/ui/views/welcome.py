@@ -20,9 +20,8 @@ Welcome provides user with language selection
 """
 import logging
 from urwid import Text
-from subiquitycore.ui.lists import SimpleList
 from subiquitycore.ui.buttons import forward_btn
-from subiquitycore.ui.container import Pile
+from subiquitycore.ui.container import Pile, ListBox
 from subiquitycore.ui.utils import Padding
 from subiquitycore.view import BaseView
 
@@ -38,23 +37,25 @@ class WelcomeView(BaseView):
         self.controller = controller
         super().__init__(Pile([
             ('pack', Text("")),
-            ('pack', Padding.center_79(Text(_("Please choose your preferred language")))),
+            ('pack', Padding.center_79(
+                Text(_("Please choose your preferred language")))),
             ('pack', Text("")),
             Padding.center_50(self._build_model_inputs()),
             ('pack', Text("")),
             ]))
 
     def _build_model_inputs(self):
-        sl = []
+        btns = []
         current_index = None
         for i, (code, native) in enumerate(self.model.get_languages()):
             if code == self.model.selected_language:
                 current_index = i
-            sl.append(forward_btn(label=native, on_press=self.confirm, user_arg=code))
+            btns.append(forward_btn(label=native, on_press=self.confirm,
+                                    user_arg=code))
 
-        lb = SimpleList(sl)
+        lb = ListBox(btns)
         if current_index is not None:
-            lb._w.focus_position = current_index
+            lb.base_widget.focus_position = current_index
         return lb
 
     def confirm(self, sender, code):

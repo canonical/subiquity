@@ -32,7 +32,11 @@ from subiquitycore.view import BaseView
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     )
-from subiquity.ui.views.identity import UsernameField, PasswordField, USERNAME_MAXLEN
+from subiquity.ui.views.identity import (
+    UsernameField,
+    PasswordField,
+    USERNAME_MAXLEN,
+    )
 from subiquitycore.ui.form import (
     Form,
     simple_field,
@@ -55,7 +59,8 @@ class InstallpathView(BaseView):
                "navigate options")
 
     def __init__(self, model, controller):
-        self.title = self.title.format(lsb_release.get_distro_information()['RELEASE'])
+        self.title = self.title.format(
+            lsb_release.get_distro_information()['RELEASE'])
         self.model = model
         self.controller = controller
         self.items = []
@@ -78,6 +83,7 @@ class InstallpathView(BaseView):
 
     def cancel(self, button=None):
         self.controller.cancel()
+
 
 class RegionForm(Form):
 
@@ -114,7 +120,8 @@ def to_bin(u):
 class RackSecretEditor(PasswordEditor, WantsToKnowFormField):
     def __init__(self):
         self.valid_char_pat = r'[a-fA-F0-9]'
-        self.error_invalid_char = _("The secret can only contain hexadecimal characters, i.e. 0-9, a-f, A-F.")
+        self.error_invalid_char = _("The secret can only contain hexadecimal "
+                                    "characters, i.e. 0-9, a-f, A-F.")
         super().__init__()
 
     def valid_char(self, ch):
@@ -125,21 +132,21 @@ class RackSecretEditor(PasswordEditor, WantsToKnowFormField):
         else:
             return super().valid_char(ch)
 
+
 RackSecretField = simple_field(RackSecretEditor)
+
 
 class RackForm(Form):
 
     url = URLField(
         _("Ubuntu MAAS Region API address:"),
-        help=_(
-            "e.g. \"http://192.168.1.1:5240/MAAS\". "
-            "localhost or 127.0.0.1 are not useful values here." ))
+        help=_("e.g. \"http://192.168.1.1:5240/MAAS\". "
+               "localhost or 127.0.0.1 are not useful values here."))
 
     secret = RackSecretField(
         _("MAAS shared secret:"),
-        help=_(
-            "The secret can be found in /var/lib/maas/secret "
-            "on the region controller. " ))
+        help=_("The secret can be found in /var/lib/maas/secret "
+               "on the region controller. "))
 
     def validate_url(self):
         if len(self.url.value) < 1:
@@ -151,7 +158,7 @@ class RackForm(Form):
         try:
             to_bin(self.secret.value)
         except binascii.Error as error:
-            return _("Secret could not be decoded: %s")%(error,)
+            return _("Secret could not be decoded: %s") % (error,)
 
 
 class MAASView(BaseView):
@@ -173,7 +180,8 @@ class MAASView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen(focus_buttons=False, excerpt=excerpt))
+        super().__init__(self.form.as_screen(focus_buttons=False,
+                                             excerpt=excerpt))
 
     def done(self, result):
         log.debug("User input: {}".format(result.as_data()))

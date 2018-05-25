@@ -17,7 +17,6 @@ import logging
 from urwid import (
     LineBox,
     Text,
-    SimpleFocusListWalker,
     )
 
 from subiquitycore.view import BaseView
@@ -28,6 +27,7 @@ from subiquitycore.ui.utils import button_pile, Padding
 from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.installprogress")
+
 
 class MyLineBox(LineBox):
     def format_title(self, title):
@@ -42,10 +42,10 @@ class ProgressView(BaseView):
         self.controller = controller
         self.spinner = Spinner(controller.loop)
 
-        self.event_listwalker = SimpleFocusListWalker([])
-        self.event_listbox = ListBox(self.event_listwalker)
+        self.event_listbox = ListBox()
         self.event_linebox = MyLineBox(self.event_listbox)
-        self.event_buttons = button_pile([other_btn(_("View full log"), on_press=self.view_log)])
+        self.event_buttons = button_pile([other_btn(_("View full log"),
+                                          on_press=self.view_log)])
         event_body = [
             ('pack', Text("")),
             ('weight', 1, Padding.center_79(self.event_linebox)),
@@ -55,32 +55,39 @@ class ProgressView(BaseView):
         ]
         self.event_pile = Pile(event_body)
 
-        self.log_listwalker = SimpleFocusListWalker([])
-        self.log_listbox = ListBox(self.log_listwalker)
+        self.log_listbox = ListBox()
         log_linebox = MyLineBox(self.log_listbox, _("Full installer output"))
         log_body = [
             ('weight', 1, log_linebox),
-            ('pack', button_pile([other_btn(_("Close"), on_press=self.close_log)])),
+            ('pack', button_pile([other_btn(_("Close"),
+                                  on_press=self.close_log)])),
             ]
         self.log_pile = Pile(log_body)
 
         super().__init__(self.event_pile)
 
-    def add_event(self, text):
-        at_end = len(self.event_listwalker) == 0 or self.event_listbox.focus_position == len(self.event_listwalker) - 1
-        if len(self.event_listwalker) > 0:
-            self.event_listwalker[-1] = self.event_listwalker[-1][0]
-        self.event_listwalker.append(Columns([('pack', Text(text)), ('pack', self.spinner)], dividechars=1))
+    def _add_line(self, lb, line):
+        lb = lb.base_widget
+        walker = lb.body
+        at_end = len(walker) == 0 or lb.focus_position == len(walker) - 1
+        walker.append(line)
         if at_end:
-            self.event_listbox.set_focus(len(self.event_listwalker) - 1)
-            self.event_listbox.set_focus_valign('bottom')
+            lb.set_focus(len(walker) - 1)
+            lb.set_focus_valign('bottom')
+
+    def add_event(self, text):
+        walker = self.event_listbox.base_widget.body
+        if len(walker) > 0:
+            # Remove the spinner from the line it is currently on, if
+            # there is one.
+            walker[-1] = walker[-1][0]
+        # Add spinner to the line we are inserting.
+        new_line = Columns([('pack', Text(text)), ('pack', self.spinner)],
+                           dividechars=1)
+        self._add_line(self.event_listbox, new_line)
 
     def add_log_line(self, text):
-        at_end = len(self.log_listwalker) == 0 or self.log_listbox.focus_position == len(self.log_listwalker) - 1
-        self.log_listwalker.append(Text(text))
-        if at_end:
-            self.log_listbox.set_focus(len(self.log_listwalker) - 1)
-            self.log_listbox.set_focus_valign('bottom')
+        self._add_line(self.log_listbox, Text(text))
 
     def set_status(self, text):
         self.event_linebox.set_title(text)
@@ -88,10 +95,12 @@ class ProgressView(BaseView):
     def show_complete(self, include_exit=False):
         p = self.event_buttons.original_widget
         p.contents.append(
-            (ok_btn(_("Reboot Now"), on_press=self.reboot), p.options('pack')))
+            (ok_btn(_("Reboot Now"), on_press=self.reboot),
+             p.options('pack')))
         if include_exit:
             p.contents.append(
-                (cancel_btn(_("Exit To Shell"), on_press=self.quit), p.options('pack')))
+                (cancel_btn(_("Exit To Shell"), on_press=self.quit),
+                 p.options('pack')))
 
         w = 0
         for b, o in p.contents:

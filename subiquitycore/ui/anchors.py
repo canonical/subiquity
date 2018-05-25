@@ -15,7 +15,6 @@
 
 from urwid import WidgetWrap, Pile, Text, ProgressBar
 from subiquitycore.ui.utils import Padding, Color
-from subiquitycore.ui.lists import SimpleList
 
 
 class Header(WidgetWrap):
@@ -42,6 +41,7 @@ class StepsProgressBar(ProgressBar):
     def get_text(self):
         return "{} / {}".format(self.current, self.done)
 
+
 class Footer(WidgetWrap):
     """ Footer widget
 
@@ -64,11 +64,3 @@ class Footer(WidgetWrap):
             message_widget,
         ]
         super().__init__(Color.frame_footer(Pile(status)))
-
-
-class Body(WidgetWrap):
-    """ Body widget
-    """
-
-    def __init__(self):
-        super().__init__(SimpleList([Text("")]))

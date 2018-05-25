@@ -41,11 +41,13 @@ from subiquitycore.ui.utils import button_pile, Color, screen
 log = logging.getLogger("subiquitycore.ui.form")
 
 
-class Toggleable(delegate_to_widget_mixin('_original_widget'), WidgetDecoration):
+class Toggleable(delegate_to_widget_mixin('_original_widget'),
+                 WidgetDecoration):
 
     def __init__(self, original):
         if not isinstance(original, AttrMap):
-            raise RuntimeError("Toggleable must be passed an AttrMap, not %s", original)
+            raise RuntimeError(
+                "Toggleable must be passed an AttrMap, not %s", original)
         self.original = original
         self.enabled = False
         self.enable()
@@ -57,7 +59,8 @@ class Toggleable(delegate_to_widget_mixin('_original_widget'), WidgetDecoration)
 
     def disable(self):
         if self.enabled:
-            self.original_widget = WidgetDisable(Color.info_minor(self.original.original_widget))
+            self.original_widget = (
+                WidgetDisable(Color.info_minor(self.original.original_widget)))
             self.enabled = False
 
 
@@ -97,6 +100,7 @@ class WantsToKnowFormField(object):
     """A marker class."""
     def set_bound_form_field(self, bff):
         self.bff = bff
+
 
 class BoundFormField(metaclass=MetaSignals):
 
@@ -249,7 +253,8 @@ class BoundFormField(metaclass=MetaSignals):
                 emit_signal(self, 'disable', self)
             self._enabled = val
             if self.pile is not None:
-                self.pile.contents[0] = (self._cols(), self.pile.contents[0][1])
+                self.pile.contents[0] = (self._cols(),
+                                         self.pile.contents[0][1])
 
 
 def simple_field(widget_maker):
@@ -288,6 +293,7 @@ class URLEditor(StringEditor, WantsToKnowFormField):
             raise ValueError(_("This field must be a %s URL.") % schemes)
         return v
 
+
 URLField = simple_field(URLEditor)
 
 
@@ -312,7 +318,7 @@ class MetaForm(MetaSignals):
                 if v.caption is None:
                     v.caption = k + ":"
                 _unbound_fields.append(v)
-        _unbound_fields.sort(key=lambda f:f.index)
+        _unbound_fields.sort(key=lambda f: f.index)
         self._unbound_fields = _unbound_fields
 
 
@@ -324,8 +330,10 @@ class Form(object, metaclass=MetaForm):
     cancel_label = _("Cancel")
 
     def __init__(self, initial={}):
-        self.done_btn = Toggleable(done_btn(_(self.ok_label), on_press=self._click_done))
-        self.cancel_btn = Toggleable(cancel_btn(_(self.cancel_label), on_press=self._click_cancel))
+        self.done_btn = Toggleable(done_btn(_(self.ok_label),
+                                   on_press=self._click_done))
+        self.cancel_btn = Toggleable(cancel_btn(_(self.cancel_label),
+                                     on_press=self._click_cancel))
         self.buttons = button_pile([self.done_btn, self.cancel_btn])
         self._fields = []
         for field in self._unbound_fields:

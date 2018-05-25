@@ -30,12 +30,10 @@ from subiquitycore.ui.form import (
 
 log = logging.getLogger('subiquity.installpath')
 
-proxy_help = _("""\
-If you need to use a HTTP proxy to access the outside world, enter the \
-proxy information here. Otherwise, leave this blank.
-
-The proxy information should be given in the standard form of \
-"http://[[user][:pass]@]host[:port]/".""")
+proxy_help = _("If you need to use a HTTP proxy to access the outside world, "
+               "enter the proxy information here. Otherwise, leave this blank."
+               "\n\nThe proxy information should be given in the standard "
+               "form of \"http://[[user][:pass]@]host[:port]/\".")
 
 
 class ProxyForm(Form):
@@ -46,7 +44,8 @@ class ProxyForm(Form):
 class ProxyView(BaseView):
 
     title = _("Configure proxy")
-    excerpt = _("If this system requires a proxy to connect to the internet, enter its details here.")
+    excerpt = _("If this system requires a proxy to connect to the internet, "
+                "enter its details here.")
 
     def __init__(self, model, controller):
         self.model = model

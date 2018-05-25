@@ -36,7 +36,8 @@ class BaseView(WidgetWrap):
             height='pack'
             )
         PADDING = 3
-        # Don't expect callers to account for the padding if they pass a fixed width.
+        # Don't expect callers to account for the padding if
+        # they pass a fixed width.
         if 'width' in kw:
             if isinstance(kw['width'], int):
                 kw['width'] += 2*PADDING

@@ -39,7 +39,8 @@ class ProxyController(BaseController):
         self.signal.emit_signal('prev-screen')
 
     def done(self, proxy):
-        self.model.proxy = proxy
-        os.environ['http_proxy'] = os.environ['https_proxy'] = proxy
-        self.signal.emit_signal('network-proxy-set')
+        if proxy != self.model.proxy:
+            self.model.proxy = proxy
+            os.environ['http_proxy'] = os.environ['https_proxy'] = proxy
+            self.signal.emit_signal('network-proxy-set')
         self.signal.emit_signal('next-screen')

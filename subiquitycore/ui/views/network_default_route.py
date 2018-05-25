@@ -91,7 +91,7 @@ class NetworkSetDefaultRouteView(BaseView):
 
         items.append(Padding.center_79(
             menu_btn(label="Specify the default route manually",
-                    on_press=self.show_edit_default_route)))
+                     on_press=self.show_edit_default_route)))
         return items
 
     def _build_buttons(self):

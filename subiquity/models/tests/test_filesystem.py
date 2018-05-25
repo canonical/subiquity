@@ -1,10 +1,8 @@
-
 import unittest
-
 from subiquity.models.filesystem import dehumanize_size, humanize_size
 
-class TestHumanizeSize(unittest.TestCase):
 
+class TestHumanizeSize(unittest.TestCase):
 
     basics = [
         ('1.000M', 2**20),
@@ -19,13 +17,14 @@ class TestHumanizeSize(unittest.TestCase):
             with self.subTest(input=string):
                 self.assertEqual(string, humanize_size(integer))
 
+
 class TestDehumanizeSize(unittest.TestCase):
 
     basics = [
         ('1', 1),
         ('134', 134),
 
-        ('0.5B', 0), # Does it make sense to allow this?
+        ('0.5B', 0),  # Does it make sense to allow this?
         ('1B', 1),
 
         ('1K', 2**10),
@@ -76,5 +75,6 @@ class TestDehumanizeSize(unittest.TestCase):
                 except ValueError as e:
                     actual_error = str(e)
                 else:
-                    self.fail("dehumanize_size({!r}) did not error".format(input))
+                    self.fail(
+                        "dehumanize_size({!r}) did not error".format(input))
                 self.assertEqual(expected_error, actual_error)

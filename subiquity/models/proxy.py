@@ -31,4 +31,4 @@ class ProxyModel(object):
         self.proxy = ""
 
     def proxy_systemd_dropin(self):
-        return dropin_template.format(self.proxy)
+        return dropin_template.format(proxy=self.proxy)

@@ -23,6 +23,7 @@ XKBOPTIONS="{options}"
 BACKSPACE="guess"
 """
 
+
 @attr.s
 class KeyboardSetting:
     layout = attr.ib()
@@ -52,32 +53,40 @@ class KeyboardSetting:
                     new_variant = 'latinalternatequotes'
                 else:
                     new_variant = 'latin'
-                return KeyboardSetting(layout='rs,rs', variant=new_variant + ',' + self.variant)
+                return KeyboardSetting(layout='rs,rs',
+                                       variant=(new_variant +
+                                                ',' + self.variant))
         elif self.layout == 'jp':
-            if self.variant in ('106', 'common', 'OADG109A', 'nicola_f_bs', ''):
+            if self.variant in ('106', 'common', 'OADG109A',
+                                'nicola_f_bs', ''):
                 return self
             else:
-                return KeyboardSetting(layout='jp,jp', variant=',' + self.variant)
+                return KeyboardSetting(layout='jp,jp',
+                                       variant=',' + self.variant)
         elif self.layout == 'lt':
             if self.variant == 'us':
                 return KeyboardSetting(layout='lt,lt', variant='us,')
             else:
-                return KeyboardSetting(layout='lt,lt', variant=self.variant + ',us')
+                return KeyboardSetting(layout='lt,lt',
+                                       variant=self.variant + ',us')
         elif self.layout == 'me':
             if self.variant == 'basic' or self.variant.startswith('latin'):
                 return self
             else:
-                return KeyboardSetting(layout='me,me', variant=self.variant + ',us')
+                return KeyboardSetting(layout='me,me',
+                                       variant=self.variant + ',us')
         elif self.layout in standard_non_latin_layouts:
-            return KeyboardSetting(layout='us,' + self.layout, variant=',' + self.variant)
+            return KeyboardSetting(layout='us,' + self.layout,
+                                   variant=',' + self.variant)
         else:
             return self
 
     @classmethod
     def from_config_file(cls, config_file):
         content = open(config_file).read()
+
         def optval(opt, default):
-            match = re.search('(?m)^\s*%s=(.*)$'%(opt,), content)
+            match = re.search('(?m)^\s*%s=(.*)$' % (opt,), content)
             if match:
                 r = match.group(1).strip('"')
                 if r != '':
@@ -94,8 +103,8 @@ class KeyboardSetting:
 
     def for_ui(self):
         """
-        Attempt to guess a setting the user chose which resulted in the current config. 
-        Basically the inverse of latinizable().
+        Attempt to guess a setting the user chose which resulted in the
+        current config.  Basically the inverse of latinizable().
         """
         if ',' in self.layout:
             layout1, layout2 = self.layout.split(',', 1)
@@ -126,17 +135,18 @@ class KeyboardSetting:
 # Non-latin keyboard layouts that are handled in a uniform way
 standard_non_latin_layouts = set(
     ('af', 'am', 'ara', 'ben', 'bd', 'bg', 'bt', 'by', 'et', 'ge',
-    'gh', 'gr', 'guj', 'guru', 'il', ''in'', 'iq', 'ir', 'iku', 'kan',
-    'kh', 'kz', 'la', 'lao', 'lk', 'kg', 'ma', 'mk', 'mm', 'mn', 'mv',
-    'mal', 'np', 'ori', 'pk', 'ru', 'scc', 'sy', 'syr', 'tel', 'th',
-    'tj', 'tam', 'tib', 'ua', 'ug', 'uz')
-    )
+     'gh', 'gr', 'guj', 'guru', 'il', ''in'', 'iq', 'ir', 'iku', 'kan',
+     'kh', 'kz', 'la', 'lao', 'lk', 'kg', 'ma', 'mk', 'mm', 'mn', 'mv',
+     'mal', 'np', 'ori', 'pk', 'ru', 'scc', 'sy', 'syr', 'tel', 'th',
+     'tj', 'tam', 'tib', 'ua', 'ug', 'uz')
+)
 
 
 class KeyboardModel:
     def __init__(self, root):
         self.root = root
-        self._kbnames_file = os.path.join(os.environ.get("SNAP", '.'), 'kbdnames.txt')
+        self._kbnames_file = os.path.join(os.environ.get("SNAP", '.'),
+                                          'kbdnames.txt')
         self._clear()
         if os.path.exists(self.config_path):
             self.setting = KeyboardSetting.from_config_file(self.config_path)
@@ -182,7 +192,9 @@ class KeyboardModel:
     def lookup(self, code):
         if ':' in code:
             layout_code, variant_code = code.split(":", 1)
-            return self.layouts.get(layout_code, '?'), self.variants.get(layout_code, {}).get(variant_code, '?')
+            layout = self.layouts.get(layout_code, '?')
+            variant = self.variants.get(layout_code, {}).get(variant_code, '?')
+            return (layout, variant)
         else:
             return self.layouts.get(code, '?'), None
 
