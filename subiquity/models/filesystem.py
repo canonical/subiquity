@@ -266,10 +266,13 @@ class FilesystemModel(object):
 
     lower_size_limit = 128 * (1 << 20)
 
+    # FIXME: convert this to a list of namedtuples
+    # (label, widget_enabled, value)
     supported_filesystems = [
         ('ext4', True, FS('ext4', True)),
         ('xfs', True, FS('xfs', True)),
         ('btrfs', True, FS('btrfs', True)),
+        ('zfsroot', True, FS('zfsroot', True)),
         ('---', False),
         ('swap', True, FS('swap', False)),
         ('---', False),
@@ -286,6 +289,16 @@ class FilesystemModel(object):
                     longest_fs_name = len(fs.label)
             fs_by_name[fs.label] = fs
     fs_by_name['fat32'] = FS('fat32', True)
+
+    @classmethod
+    def filter_supported_fs(cls, disabled=None):
+        if not disabled:
+            disabled = []
+        # for disabled filesystems, create new tuple with enabled
+        # attribute set to False, otherwise copy the original value
+        supported = [(fs[0], False, fs[2]) if (fs[0] in disabled) else fs
+                     for fs in cls.supported_filesystems]
+        return supported
 
     def __init__(self, prober):
         self.prober = prober
@@ -392,6 +405,14 @@ class FilesystemModel(object):
     def add_mount(self, fs, path):
         if fs._mount is not None:
             raise Exception("%s is already mounted")
+
+        # zfsroot enforces one zfs mount and only /
+        zfs_mounts = [m for m in self._mounts if m.device.fstype == 'zfsroot']
+        if len(zfs_mounts) > 1:
+            raise ValueError("Only one zfsroot mount allowed")
+        if fs.fstype == "zfsroot" and path != "/":
+            raise ValueError("ZFSroot is only allowed as root mount")
+
         fs._mount = m = Mount(device=fs, path=path)
         self._mounts.append(m)
         return m
@@ -401,6 +422,9 @@ class FilesystemModel(object):
         for m in self._mounts:
             r[m.path] = m.device.volume.path
         return r
+
+    def get_mountpoint_to_fstype_mapping(self):
+        return {m.path: m.device.fstype for m in self._mounts}
 
     def any_configuration_done(self):
         return len(self._disks) > 0

@@ -49,7 +49,15 @@ log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 
 class FSTypeField(FormField):
     def _make_widget(self, form):
-        return Selector(opts=FilesystemModel.supported_filesystems)
+        # I dislike how we cannot control the View from the model
+        # the View creation below creates this FSTypeField and the
+        # contructor should take the list of supported filesystems
+        # rather than this embedded function which has to be
+        # modified locally.
+        disabled = [fs for fs in form.mountpoint_to_fstype_mapping.values()
+                    if fs == 'zfsroot']
+        opts = FilesystemModel.filter_supported_fs(disabled=disabled)
+        return Selector(opts=opts)
 
 
 class SizeWidget(StringEditor):
@@ -90,8 +98,10 @@ class SizeField(FormField):
 
 class PartitionForm(Form):
 
-    def __init__(self, mountpoint_to_devpath_mapping, max_size, initial={}):
+    def __init__(self, mountpoint_to_devpath_mapping,
+                 mountpoint_to_fstype_mapping, max_size, initial={}):
         self.mountpoint_to_devpath_mapping = mountpoint_to_devpath_mapping
+        self.mountpoint_to_fstype_mapping = mountpoint_to_fstype_mapping
         self.max_size = max_size
         if max_size is not None:
             self.size_str = humanize_size(max_size)
@@ -134,6 +144,8 @@ class PartitionForm(Form):
         if len(mount) > 4095:
             return _('Path exceeds PATH_MAX')
         dev = self.mountpoint_to_devpath_mapping.get(mount)
+        if self.fstype.widget.value.label == "zfsroot" and mount != "/":
+            return 'ZFS is only supported on /'
         if dev is not None:
             return _("%s is already mounted at %s") % (dev, mount)
 
@@ -146,6 +158,8 @@ class PartitionFormatView(BaseView):
 
         mountpoint_to_devpath_mapping = (
             self.model.get_mountpoint_to_devpath_mapping())
+        mountpoint_to_fstype_mapping = (
+            self.model.get_mountpoint_to_fstype_mapping())
         if existing is not None:
             fs = existing.fs()
             if fs is not None:
@@ -158,7 +172,8 @@ class PartitionFormatView(BaseView):
                         del mountpoint_to_devpath_mapping[mount.path]
             else:
                 initial['fstype'] = self.model.fs_by_name[None]
-        self.form = self.form_cls(mountpoint_to_devpath_mapping, size,
+        self.form = self.form_cls(mountpoint_to_devpath_mapping,
+                                  mountpoint_to_fstype_mapping, size,
                                   initial)
         self.back = back
 

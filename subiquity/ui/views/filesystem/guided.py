@@ -103,11 +103,13 @@ class GuidedDiskSelectionView(BaseView):
     def cancel(self, btn=None):
         self.controller.default()
 
-    def choose_disk(self, btn, disk):
+    def choose_disk(self, btn, disk, fstype=None):
         self.model.reset()
+        if not fstype:
+            fstype = 'ext4'
         result = {
             "size": disk.free,
-            "fstype": self.model.fs_by_name["ext4"],
+            "fstype": self.model.fs_by_name[fstype],
             "mount": "/",
         }
         self.controller.partition_disk_handler(disk, None, result)

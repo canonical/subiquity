@@ -69,7 +69,8 @@ class FilesystemController(BaseController):
         if self.answers['guided']:
             index = self.answers['guided-index']
             disk = self.model.all_disks()[index]
-            v.choose_disk(None, disk)
+            fstype = self.answers.get('guided-fstype')
+            v.choose_disk(None, disk, fstype=fstype)
 
     def reset(self):
         log.info("Resetting Filesystem model")
