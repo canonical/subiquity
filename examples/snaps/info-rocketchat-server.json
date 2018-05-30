@@ -1,0 +1,85 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "wdBUbiEuMNHmAHLBCXQXOcXaOCvbWS1e",
+      "title": "Rocket.Chat Server",
+      "summary": "Group chat server for 100s,  installed in seconds.",
+      "description": "Slack-like online chat server for your office, group or family.   Up and running in seconds. Supports file sharing, video conference, geolocation, and much more.   Web and mobile client.   MIT licensed Open Source project.   List of features at  https://rocket.chat/ ,  MIT licensed source code at https://github.com/RocketChat/Rocket.Chat , 24 x 7 community support and community server at https://open.rocket.chat/",
+      "download-size": 220393472,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/1024x1024-circle.png",
+      "name": "rocketchat-server",
+      "developer": "rocketchat",
+      "status": "available",
+      "type": "app",
+      "version": "0.65.1",
+      "channel": "beta",
+      "ignore-validation": false,
+      "revision": "1271",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://open.rocket.chat/channel/ubuntu-snap",
+      "license": "MIT",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.44.26.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.45.00.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.45.35.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.47.10.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.48.31.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-03-09_at_20.15.01.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-03-18_at_18.00.07.png"
+        }
+      ],
+      "channels": {
+        "latest/candidate": {
+          "revision": "1271",
+          "confinement": "strict",
+          "version": "0.65.1",
+          "channel": "candidate",
+          "epoch": "0",
+          "size": 220393472
+        },
+        "latest/edge": {
+          "revision": "1163",
+          "confinement": "strict",
+          "version": "0.59.0-develop",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 176312320
+        },
+        "latest/stable": {
+          "revision": "1265",
+          "confinement": "strict",
+          "version": "0.64.2",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 218386432
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

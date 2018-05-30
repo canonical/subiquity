@@ -1,0 +1,96 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "ijQR4HjYlTAmIjELJm5XCpNAqbDZWJ3h",
+      "title": "conjure-up",
+      "summary": "Package runtime for conjure-up spells",
+      "description": "This package provides conjure-up, an interface to installing spells that provide the user with an end to end walkthrough experience for installing and using big software.\r\n",
+      "download-size": 106147840,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/icon_12.png",
+      "name": "conjure-up",
+      "developer": "canonical",
+      "status": "available",
+      "type": "app",
+      "version": "2.5.7-20180530.1405",
+      "channel": "edge",
+      "ignore-validation": false,
+      "revision": "1004",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://github.com/conjure-up/conjure-up",
+      "license": "MIT",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/application-config.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/application-list.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/bootstrap-wait.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/cloud-selection.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/deploy-status.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/spell-selection.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/steps-config.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/summary.png"
+        }
+      ],
+      "channels": {
+        "latest/beta": {
+          "revision": "999",
+          "confinement": "classic",
+          "version": "2.5.6-20180507.2005",
+          "channel": "beta",
+          "epoch": "0",
+          "size": 106254336
+        },
+        "latest/candidate": {
+          "revision": "999",
+          "confinement": "classic",
+          "version": "2.5.6-20180507.2005",
+          "channel": "candidate",
+          "epoch": "0",
+          "size": 106254336
+        },
+        "latest/edge": {
+          "revision": "1004",
+          "confinement": "classic",
+          "version": "2.5.7-20180530.1405",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 106147840
+        },
+        "latest/stable": {
+          "revision": "999",
+          "confinement": "classic",
+          "version": "2.5.6-20180507.2005",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 106254336
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

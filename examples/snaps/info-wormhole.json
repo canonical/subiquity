@@ -1,0 +1,69 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "NOZSH62zMXFazJq0adh8ztBM7VYNPxmP",
+      "title": "wormhole",
+      "summary": "get things from one computer to another, safely",
+      "description": "This package provides a library and a command-line tool named wormhole, which\nmakes it possible to get arbitrary-sized files and directories (or short\npieces of text) from one computer to another. The two endpoints are identified\nby using identical \"wormhole codes\": in general, the sending machine generates\nand displays the code, which must then be typed into the receiving machine.\n",
+      "download-size": 15949824,
+      "name": "wormhole",
+      "developer": "snapcrafters",
+      "status": "available",
+      "type": "app",
+      "version": "0.10.5",
+      "channel": "edge",
+      "ignore-validation": false,
+      "revision": "33",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://github.com/snapcrafters/magic-wormhole/issues",
+      "license": "MIT",
+      "channels": {
+        "latest/beta": {
+          "revision": "23",
+          "confinement": "strict",
+          "version": "0.10.3",
+          "channel": "beta",
+          "epoch": "0",
+          "size": 14331904
+        },
+        "latest/candidate": {
+          "revision": "23",
+          "confinement": "strict",
+          "version": "0.10.3",
+          "channel": "candidate",
+          "epoch": "0",
+          "size": 14331904
+        },
+        "latest/edge": {
+          "revision": "33",
+          "confinement": "strict",
+          "version": "0.10.5",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 15949824
+        },
+        "latest/stable": {
+          "revision": "23",
+          "confinement": "strict",
+          "version": "0.10.3",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 14331904
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

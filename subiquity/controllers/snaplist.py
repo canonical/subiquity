@@ -36,6 +36,9 @@ class SampleDataSnapInfoLoader:
     def __init__(self, model, snap_data_dir):
         self.model = model
         self.snap_data_dir = snap_data_dir
+        self.snap_list_fetched = False
+        self.all_snap_info_fetched = False
+        self.failed = False
 
     def start(self):
         snap_find_output = os.path.join(self.snap_data_dir, 'find-output.json')
@@ -45,6 +48,8 @@ class SampleDataSnapInfoLoader:
         for snap_info_file in glob.glob(snap_info_glob):
             with open(snap_info_file) as fp:
                 self.model.load_info_data(json.load(fp))
+        self.snap_list_fetched = True
+        self.all_snap_info_fetched = True
 
     def get_snap_list(self, callback):
         callback(self.model.get_snap_list())
@@ -61,7 +66,7 @@ class SnapdSnapInfoLoader:
         self.url_base = "http+unix://{}/v2/find?".format(quote_plus(sock))
         self.store_section = store_section
 
-        self.running = False
+        self._running = False
         self.snap_list_fetched = False
         self.all_snap_info_fetched = False
         self.failed = False
@@ -71,11 +76,11 @@ class SnapdSnapInfoLoader:
         self.ongoing = {}  # {snap:[callbacks]}
 
     def start(self):
-        self.running = True
+        self._running = True
         log.debug("loading list of snaps")
 
         def cb(snap_list):
-            if not self.running:
+            if not self._running:
                 return
             self.snap_list_fetched = True
             self.pending_info_snaps = snap_list
@@ -85,14 +90,14 @@ class SnapdSnapInfoLoader:
         self.run_in_bg(self._bg_fetch_list, self._fetched_list)
 
     def stop(self):
-        self.running = False
+        self._running = False
 
     def _bg_fetch_list(self):
         return self.session.get(
             self.url_base + 'section=' + self.store_section, timeout=60)
 
     def _fetched_list(self, fut):
-        if not self.running:
+        if not self._running:
             return
         try:
             response = fut.result()
@@ -100,7 +105,7 @@ class SnapdSnapInfoLoader:
         except requests.exceptions.RequestException:
             log.exception("loading list of snaps failed")
             self.failed = True
-            self.running = False
+            self._running = False
         else:
             self.model.load_find_data(response.json())
         for cb in self.ongoing.pop(None):
@@ -145,7 +150,7 @@ class SnapdSnapInfoLoader:
             self.url_base + 'name=' + snap.name, timeout=60)
 
     def _fetched_info(self, snap, fut):
-        if not self.running:
+        if not self._running:
             return
         try:
             response = fut.result()

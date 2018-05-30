@@ -1,0 +1,46 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "W7TagWOq55vJphD3Ek4ZUtQytGRMeQqK",
+      "title": "postgresql10",
+      "summary": "PostgreSQL is a powerful, open source object-relational database system.",
+      "description": "PostgreSQL is a powerful, open source object-relational database system. It has more than 15 years of active development and a proven architecture that has earned it a strong reputation for reliability, data integrity, and correctness.",
+      "download-size": 40583168,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/05/postgresql-icon-256x256.jpg.png",
+      "name": "postgresql10",
+      "developer": "cmd",
+      "status": "available",
+      "type": "app",
+      "version": "10.4",
+      "channel": "beta",
+      "ignore-validation": false,
+      "revision": "47",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "",
+      "license": "Proprietary",
+      "channels": {
+        "latest/stable": {
+          "revision": "47",
+          "confinement": "strict",
+          "version": "10.4",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 40583168
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

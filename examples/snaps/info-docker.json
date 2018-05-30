@@ -1,0 +1,145 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "sLCsFAO8PKM5Z0fAKNszUOX0YASjQfeZ",
+      "title": "Docker",
+      "summary": "The docker app deployment mechanism",
+      "description": "Docker for snappy.\r\n\r\nThis snap allows you to use the full capabilities of docker on snappy.\r\n\r\nIn order to use 'docker build', 'docker save' and 'docker load', you need to place your dockerfile within $HOME. All files that you want docker to access to must be within this path.\r\n\r\nYou may also use the 'docker-privilege' command to allow you to use 'docker run --privileged'. Because docker is unencumbered on snappy, it is recommended that you follow the Docker project's recommendations for using docker securely.",
+      "download-size": 38555648,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2015/04/docker.svg.png",
+      "name": "docker",
+      "developer": "docker-inc",
+      "status": "available",
+      "type": "app",
+      "version": "17.03.1-ce-1",
+      "channel": "edge",
+      "ignore-validation": false,
+      "revision": "248",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "mailto:snappy-devel@lists.ubuntu.com",
+      "license": "Apache-2.0",
+      "channels": {
+        "17.03/candidate": {
+          "revision": "159",
+          "confinement": "strict",
+          "version": "17.03.2-ce-1",
+          "channel": "17.03/candidate",
+          "epoch": "0",
+          "size": 42430464
+        },
+        "17.03/edge": {
+          "revision": "159",
+          "confinement": "strict",
+          "version": "17.03.2-ce-1",
+          "channel": "17.03/edge",
+          "epoch": "0",
+          "size": 42430464
+        },
+        "17.03/stable": {
+          "revision": "159",
+          "confinement": "strict",
+          "version": "17.03.2-ce-1",
+          "channel": "17.03/stable",
+          "epoch": "0",
+          "size": 42430464
+        },
+        "17.06/candidate": {
+          "revision": "179",
+          "confinement": "strict",
+          "version": "17.06.2-ce",
+          "channel": "17.06/candidate",
+          "epoch": "0",
+          "size": 43610112
+        },
+        "17.06/edge": {
+          "revision": "237",
+          "confinement": "strict",
+          "version": "17.06.2-ce-1",
+          "channel": "17.06/edge",
+          "epoch": "0",
+          "size": 44191744
+        },
+        "17.06/stable": {
+          "revision": "179",
+          "confinement": "strict",
+          "version": "17.06.2-ce",
+          "channel": "17.06/stable",
+          "epoch": "0",
+          "size": 43610112
+        },
+        "17.09/beta": {
+          "revision": "232",
+          "confinement": "strict",
+          "version": "17.09.1-ce",
+          "channel": "17.09/beta",
+          "epoch": "0",
+          "size": 44212224
+        },
+        "17.09/candidate": {
+          "revision": "232",
+          "confinement": "strict",
+          "version": "17.09.1-ce",
+          "channel": "17.09/candidate",
+          "epoch": "0",
+          "size": 44212224
+        },
+        "17.09/edge": {
+          "revision": "232",
+          "confinement": "strict",
+          "version": "17.09.1-ce",
+          "channel": "17.09/edge",
+          "epoch": "0",
+          "size": 44212224
+        },
+        "latest/beta": {
+          "revision": "232",
+          "confinement": "strict",
+          "version": "17.09.1-ce",
+          "channel": "beta",
+          "epoch": "0",
+          "size": 44212224
+        },
+        "latest/candidate": {
+          "revision": "179",
+          "confinement": "strict",
+          "version": "17.06.2-ce",
+          "channel": "candidate",
+          "epoch": "0",
+          "size": 43610112
+        },
+        "latest/edge": {
+          "revision": "248",
+          "confinement": "strict",
+          "version": "17.03.1-ce-1",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 38555648
+        },
+        "latest/stable": {
+          "revision": "179",
+          "confinement": "strict",
+          "version": "17.06.2-ce",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 43610112
+        }
+      },
+      "tracks": [
+        "latest",
+        "17.03",
+        "17.06",
+        "17.09"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

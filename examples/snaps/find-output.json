@@ -4,152 +4,365 @@
   "status": "OK",
   "result": [
     {
-      "id": "eDsKaYaf4gx5I1bfSy6SdTTfKc1ppDx7",
-      "title": "WolfenDoom: Blade of Agony",
-      "summary": "WolfenDoom: Blade of Agony",
-      "description": "Blade of Agony is a story-driven FPS. The project is inspired by WWII shooters from the 90's and early 2000's, like Wolfenstein 3D, Medal of Honor, and Call of Duty, but with faster-paced gameplay in the spirit of Doom!\n\n---\n\nIt's 1942, and the war approaches its peak. The U.S. has joined the Allied forces, and the Soviets are pushing back the front in the east. The tides of war are turning, and Hitler's victory seems more and more beyond his grasp. But the Nazis, refusing to capitulate, have grown obsessed with human experiments and occult artifacts, in which they see a potential escape from their final Doom. The Allied leaders reject this possibility as nonsense; nonetheless, some still fear what the Führer might be up to. The situation is nebulous, however, and little is certain.\n\nYou are Cpt. William \"B.J.\" Blazkowicz, an Allied spy, a fearless risk-taker, and the greatest soldier to ever take up arms in World War II. Your role has changed, though; you've retired from active duty, and now you spearhead operations as a systems analyst. You thought it would be the right choice--leading and motivating instead of doing the dirty work--but lately you've grown restless. At least until a few days ago, when you received an encrypted message from your old friend and comrade Cpt. Douglas Blake, calling you back to duty...\n\n---\n\nBlade of Agony is much more than just a pastiche of the classic shooters that inspired it; the project will offer a unique experience.\n- 17 playable and unique levels in Chapter 1 & 2 (over 24 in the full game)\n- Orchestra-quality game music\n- Voice acting and ambient soundscapes\n- A combination of low-poly models and hi-resolution sprite assets to create the perfect retro feeling\n- Devastating armaments from the battlefields of WWII\n- Interactive NPCs that support the twisted plot's progress and help you understand the game\n- Beautiful special effects (weather, elements, explosions, etc.)\n- Much, much more!\n\n---\n\nThis package bundles together the game with the gzdoom engine. The game requires a powerful computer to run smoothly. If you experience low frame rates or stuttering, please turn down the resolution, effects and filtering options in the menu.\n\nFrom: http://boa.realm667.com/index.php/about",
-      "download-size": 487387136,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/12/boa.png",
-      "name": "boa",
-      "developer": "njmcphail",
+      "id": "wdBUbiEuMNHmAHLBCXQXOcXaOCvbWS1e",
+      "title": "Rocket.Chat Server",
+      "summary": "Group chat server for 100s,  installed in seconds.",
+      "description": "Slack-like online chat server for your office, group or family.   Up and running in seconds. Supports file sharing, video conference, geolocation, and much more.   Web and mobile client.   MIT licensed Open Source project.   List of features at  https://rocket.chat/ ,  MIT licensed source code at https://github.com/RocketChat/Rocket.Chat , 24 x 7 community support and community server at https://open.rocket.chat/",
+      "download-size": 218386432,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/1024x1024-circle.png",
+      "name": "rocketchat-server",
+      "developer": "rocketchat",
       "status": "available",
       "type": "app",
-      "version": "c2-gzdoom3.3.2",
+      "version": "0.64.2",
       "channel": "stable",
       "ignore-validation": false,
-      "revision": "144",
+      "revision": "1265",
       "confinement": "strict",
       "private": false,
       "devmode": false,
       "jailmode": false,
-      "contact": "https://github.com/mcphail/boa",
-      "license": "Proprietary",
+      "contact": "https://open.rocket.chat/channel/ubuntu-snap",
+      "license": "MIT",
       "screenshots": [
         {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/12/boa2.png"
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.44.26.png"
         },
         {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/12/boa3.png"
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.45.00.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.45.35.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.47.10.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.48.31.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-03-09_at_20.15.01.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-03-18_at_18.00.07.png"
         }
       ]
     },
     {
-      "id": "8ZiDCAC7uIH80MIQzZDRgGNtjQCoASFU",
-      "title": "pin-town",
-      "summary": "Help the Pin Pals in this physics puzzle game, inspired by Pachinko",
-      "description": "Welcome to Pin Town ! Home of the Pin Pals (and Gals) !\r\nHelp them in their wacky adventures across town in this unique physics puzzle game, inspired by Pachinko.\r\n\r\nThere's a lot to do in Pin Town : Find a house, visit the beach, go to the movies and a lot more ! Get one to three stars for completing each levels and try to beat your highest score !\r\n\r\nSimply aim the Pin Pal (or Gal) and send them bouncing madly through numerous custom-themed levels filled with power ups and special challenges !",
-      "download-size": 46014464,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/05/icon_256_1.png",
-      "name": "pin-town",
-      "developer": "failsafegames",
+      "id": "njObIbGQEaVx1H4nyWxchk1i8opy4h54",
+      "title": "Nextcloud",
+      "summary": "Nextcloud Server - A safe home for all your data",
+      "description": "Access, share and protect your files, calendars, contacts, communication and more at home and in your enterprise.",
+      "download-size": 205299712,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/06/icon.svg_1.png",
+      "name": "nextcloud",
+      "developer": "nextcloud",
       "status": "available",
       "type": "app",
-      "version": "2.0.79",
+      "version": "13.0.2snap1",
       "channel": "stable",
       "ignore-validation": false,
-      "revision": "2",
+      "revision": "6916",
       "confinement": "strict",
       "private": false,
       "devmode": false,
       "jailmode": false,
-      "contact": "https://www.failsafegames.com/",
-      "license": "Proprietary",
+      "contact": "https://github.com/nextcloud/nextcloud-snap",
+      "license": "AGPL-3.0+"
+    },
+    {
+      "id": "jtpboSYvTCEyHoutkkRo1SI9ioSMOUb3",
+      "title": "Wekan",
+      "summary": "The open-source Trello-like kanban",
+      "description": "Wekan is an open-source and collaborative kanban board application.\r\n\r\nWhether you’re maintaining a personal todo list, planning your holidays with some friends, or working in a team on your next revolutionary idea, Kanban boards are an unbeatable tool to keep your things organized. They give you a visual overview of the current state of your project, and make you productive by allowing you to focus on the few items that matter the most.\r\nDepending on target environment, some configuration settings might need to be adjusted.\r\nFor full list of configuration options call:\r\n$ wekan.help",
+      "download-size": 148783104,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/06/-NNP9RC0.png",
+      "name": "wekan",
+      "developer": "xet7",
+      "status": "available",
+      "type": "app",
+      "version": "1.02",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "202",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "",
+      "license": "MIT",
       "screenshots": [
         {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/05/screen0.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/05/screen1.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/05/screen2.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/05/screen3.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/05/screen5.png"
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/02/wekan-markdown.png"
         }
       ]
     },
     {
-      "id": "wXpsTyUtxXJ6aqnqhWRi0d3WwqzrD1Yv",
-      "title": "ScummVM",
-      "summary": "ScummVM is a program which allows you to run certain classic graphical point-and-click adventure games",
-      "description": "ScummVM is a program which allows you to run certain classic graphical\npoint-and-click adventure games, provided you already have their data\nfiles. The clever part about this: ScummVM just replaces the executables\nshipped with the game, allowing you to play them on systems for which\nthey were never designed!\n",
-      "download-size": 83574784,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/06/256px-Scummvm_icon.svg.png",
-      "name": "scummvm",
+      "id": "We2QH1ClwGL6V88RJRWuZPWaBBPuzWPL",
+      "title": "prometheus",
+      "summary": "Unofficial Prometheus snap package",
+      "description": "Prometheus is a systems and service monitoring system. It collects metrics from configured targets at given intervals, evaluates rule expressions, displays the results, and can trigger alerts if some condition is observed to be true.\r\n",
+      "download-size": 14331904,
+      "name": "prometheus",
+      "developer": "jacek",
+      "status": "available",
+      "type": "app",
+      "version": "1.8.2",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "18",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://launchpad.net/prometheus-snap",
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "NOZSH62zMXFazJq0adh8ztBM7VYNPxmP",
+      "title": "wormhole",
+      "summary": "get things from one computer to another, safely",
+      "description": "This package provides a library and a command-line tool named wormhole, which\nmakes it possible to get arbitrary-sized files and directories (or short\npieces of text) from one computer to another. The two endpoints are identified\nby using identical \"wormhole codes\": in general, the sending machine generates\nand displays the code, which must then be typed into the receiving machine.\n",
+      "download-size": 14331904,
+      "name": "wormhole",
       "developer": "snapcrafters",
       "status": "available",
       "type": "app",
-      "version": "2.0.0",
+      "version": "0.10.3",
       "channel": "stable",
       "ignore-validation": false,
-      "revision": "10",
+      "revision": "23",
       "confinement": "strict",
       "private": false,
       "devmode": false,
       "jailmode": false,
-      "contact": "https://github.com/snapcrafters/scummvm/issues",
+      "contact": "https://github.com/snapcrafters/magic-wormhole/issues",
+      "license": "MIT"
+    },
+    {
+      "id": "b96UJ4vttpNhpbaCWctVzfduQcPwQ5wn",
+      "title": "canonical-livepatch",
+      "summary": "Canonical Livepatch Client",
+      "description": "Canonical Livepatch Client",
+      "download-size": 5152768,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/pictogram-upgrade-orange-hex.svg.png",
+      "name": "canonical-livepatch",
+      "developer": "canonical",
+      "status": "available",
+      "type": "app",
+      "version": "8.0.2",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "41",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "mailto:snappy-canonical-storeaccount@canonical.com",
+      "license": "Proprietary"
+    },
+    {
+      "id": "J60k4JY0HppjwOjW8dZdYc8obXKxujRu",
+      "title": "LXD",
+      "summary": "System container manager and API",
+      "description": "LXD is a container manager for system containers.\r\n\r\nIt offers a REST API to remotely manage containers over the network, using an image based workflow and with support for live migration.\r\n\r\nImages are available for all Ubuntu releases and architectures as well as for a wide number of other Linux distributions.\r\n\r\nLXD containers are lightweight, secure by default and a great alternative to virtual machines.",
+      "download-size": 57008128,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/containers.png",
+      "name": "lxd",
+      "developer": "canonical",
+      "status": "available",
+      "type": "app",
+      "version": "3.1",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "7275",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://github.com/lxc/lxd/issues",
+      "license": "Apache-2.0",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/lxd.png"
+        }
+      ]
+    },
+    {
+      "id": "YMJsyW4vySPdys8BCA7jx8UiOVSVhUT6",
+      "title": "stress-ng",
+      "summary": "tool to load and stress a computer",
+      "description": "stress-ng can stress various subsystems of a computer.  It can stress load CPU, cache, disk, memory, socket and pipe I/O, scheduling and much more.  stress-ng is a re-write of the original stress tool by Amos Waterland but has many additional features such as specifying the number of bogo operations to run, execution metrics, a stress verification on memory and compute operations and considerably more stress mechanisms.",
+      "download-size": 2347008,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/stress-ng-256x256.png",
+      "name": "stress-ng",
+      "developer": "cking-kernel-tools",
+      "status": "available",
+      "type": "app",
+      "version": "0.09.28-20180525-4264-0e8e0ce",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "335",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "mailto:colin.king@canonical.com",
       "license": "GPL-2.0",
       "screenshots": [
         {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/12/Screenshot_from_2017-12-21_01-18-09.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/12/Screenshot_from_2017-12-21_01-17-42.png"
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/large_1.png"
         }
       ]
     },
     {
-      "id": "9RHGBFG3a83SavexQGzNT8BHMCSfZ3CN",
-      "title": "codebreakers",
-      "summary": "Guess the code and unlock RogueBot Central",
-      "description": "Game similar to mastermind, pit yourself against progressively harder codes.\r\n\r\nThis is a demo created for the System76 Super Fan Contest. It was created in the same App A Week style some of our other games have been created in.  This snap will be updated with new levels and puzzles, and even a story mode if the popularity warrants the work. So download and enjoy and pop back in from time to time to see whats new!!.",
-      "download-size": 102014976,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/codebreakers.png",
-      "name": "codebreakers",
-      "developer": "vagueentertainment",
+      "id": "Ee7LGphwQR669pcfCCdl0oJQouta69to",
+      "title": "FFmpeg",
+      "summary": "A complete solution to record, convert and stream audio and video.",
+      "description": "FFmpeg is the leading multimedia framework, able to decode, encode, transcode, mux, demux, stream, filter and play pretty much anything that humans and machines have created. It supports the most obscure ancient formats up to the cutting edge. No matter if they were designed by some standards committee, the community or a corporation.",
+      "download-size": 20807680,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/05/ffmpeg_LI3KGoz.png",
+      "name": "ffmpeg",
+      "developer": "snapcrafters",
       "status": "available",
       "type": "app",
-      "version": "1.05",
+      "version": "4.0",
       "channel": "stable",
       "ignore-validation": false,
-      "revision": "9",
+      "revision": "13",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://github.com/snapcrafters/ffmpeg/issues",
+      "license": "LGPL-2.1+",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/05/01_ffmpeg.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/05/02_ffmpeg.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/05/03_ffmpeg.png"
+        }
+      ]
+    },
+    {
+      "id": "GhcPmkNNyI2NORCAAdqEG0R303ITAhO9",
+      "title": "tizonia",
+      "summary": "Tizonia command-line cloud music player.",
+      "description": "Command-line cloud music player for Linux with support for Spotify,\nGoogle Play Music, YouTube, SoundCloud, Dirble, Plex servers and Chromecast devices.",
+      "download-size": 53293056,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/12/tizonia-logo-256.png",
+      "name": "tizonia",
+      "developer": "tizonia",
+      "status": "available",
+      "type": "app",
+      "version": "0.14.0",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "172",
       "confinement": "strict",
       "private": false,
       "devmode": false,
       "jailmode": false,
-      "contact": "mailto:bflanagin@vagueentertainment.com",
-      "license": "LGPL-2.1",
+      "contact": "http://www.tizonia.org",
+      "license": "LGPL-3.0+",
       "screenshots": [
         {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/ScreenShot2.png"
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/03/tizonia-usage-screencast2.gif"
         },
         {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/Screenshot3.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/Screenshot1.png"
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/03/tizonia-usage-screencast.gif"
         }
       ]
     },
     {
-      "id": "5YRF3ZPZpPhlacYTqMVDPWa2rjgUUcGw",
-      "title": "M.A.R.S. - a ridiculous shooter",
-      "summary": "A 2D space shooter with awesome visual effects and attractive physics.",
-      "description": "M.A.R.S. - a ridiculous shooter is a 2D space shooter with awesome visual\neffects and attractive physics. Players can battle each other or computer\ncontrolled enemies in exciting game modes.\n\nThe Story:\nIn year 3547, civilizations all over the galaxy have settled their own\nplanets, living in peace and harmony with its environment. But outside the\ncontemplative habitats, the GREAT WAR is raging. As a famous fighter on your\nway to never ending honor and prosperity, you have to protect your planet\nfrom the oncoming doom of your jealous neighbours!",
-      "download-size": 96866304,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/11/mars-256_etORXwv.png",
-      "name": "marsshooter",
-      "developer": "diddledan",
+      "id": "ijQR4HjYlTAmIjELJm5XCpNAqbDZWJ3h",
+      "title": "conjure-up",
+      "summary": "Package runtime for conjure-up spells",
+      "description": "This package provides conjure-up, an interface to installing spells that provide the user with an end to end walkthrough experience for installing and using big software.\r\n",
+      "download-size": 106254336,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/icon_12.png",
+      "name": "conjure-up",
+      "developer": "canonical",
       "status": "available",
       "type": "app",
-      "version": "0+git.a6f48a2",
+      "version": "2.5.6-20180507.2005",
       "channel": "stable",
       "ignore-validation": false,
-      "revision": "4",
+      "revision": "999",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://github.com/conjure-up/conjure-up",
+      "license": "MIT",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/application-config.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/application-list.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/bootstrap-wait.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/cloud-selection.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/deploy-status.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/spell-selection.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/steps-config.png"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/summary.png"
+        }
+      ]
+    },
+    {
+      "id": "sLCsFAO8PKM5Z0fAKNszUOX0YASjQfeZ",
+      "title": "Docker",
+      "summary": "The docker app deployment mechanism",
+      "description": "Docker for snappy.\r\n\r\nThis snap allows you to use the full capabilities of docker on snappy.\r\n\r\nIn order to use 'docker build', 'docker save' and 'docker load', you need to place your dockerfile within $HOME. All files that you want docker to access to must be within this path.\r\n\r\nYou may also use the 'docker-privilege' command to allow you to use 'docker run --privileged'. Because docker is unencumbered on snappy, it is recommended that you follow the Docker project's recommendations for using docker securely.",
+      "download-size": 43610112,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2015/04/docker.svg.png",
+      "name": "docker",
+      "developer": "docker-inc",
+      "status": "available",
+      "type": "app",
+      "version": "17.06.2-ce",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "179",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "mailto:snappy-devel@lists.ubuntu.com",
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "W7TagWOq55vJphD3Ek4ZUtQytGRMeQqK",
+      "title": "postgresql10",
+      "summary": "PostgreSQL is a powerful, open source object-relational database system.",
+      "description": "PostgreSQL is a powerful, open source object-relational database system. It has more than 15 years of active development and a proven architecture that has earned it a strong reputation for reliability, data integrity, and correctness.",
+      "download-size": 40583168,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/05/postgresql-icon-256x256.jpg.png",
+      "name": "postgresql10",
+      "developer": "cmd",
+      "status": "available",
+      "type": "app",
+      "version": "10.4",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "47",
       "confinement": "strict",
       "private": false,
       "devmode": false,
@@ -158,498 +371,128 @@
       "license": "Proprietary"
     },
     {
-      "id": "7xMPaiM3yBx0npSKPNuTYNhzW4xI9CDk",
-      "title": "retroarch",
-      "summary": "RetroArch",
-      "description": "RetroArch is the official reference frontend for the libretro API.",
-      "download-size": 181354496,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/09/256_9eCP4RS.png",
-      "name": "retroarch",
-      "developer": "libretro",
+      "id": "TKebVGcPeDKoOqAmNmczU2oWLtsojKD5",
+      "title": "etcd",
+      "summary": "Resilient key-value store by CoreOS",
+      "description": "Etcd is a high availability key-value store, implementing the RAFT\nalgorithm to deal with failover within the etcd cluster.  Popular\nin the Docker community as a shared store of small but important\ndata in a distributed application.\n",
+      "download-size": 11128832,
+      "name": "etcd",
+      "developer": "tvansteenburgh",
       "status": "available",
       "type": "app",
-      "version": "1.7.3",
+      "version": "3.2.8",
       "channel": "stable",
       "ignore-validation": false,
-      "revision": "113",
+      "revision": "76",
       "confinement": "strict",
       "private": false,
       "devmode": false,
       "jailmode": false,
-      "contact": "https://forums.libretro.com/",
-      "license": "GPL-3.0+",
+      "contact": "mailto:snappy-canonical-storeaccount@canonical.com",
+      "license": "Other Open Source"
+    },
+    {
+      "id": "V4Z90JuG4d64ycAAl948fM4vWQA9594q",
+      "title": "keepalived",
+      "summary": "High availability VRRP and load-balancing for Linux",
+      "description": "Keepalived is routing software written in C to provide simple and robust\nfacilities for loadbalancing and high-availability to Linux based\ninfrastructures.  Loadbalancing framework relies on well-known Linux\nVirtual Server (IPVS) kernel module providing Layer4 loadbalancing.\nHigh-availability is achieved by VRRP protocol.\n",
+      "download-size": 11161600,
+      "name": "keepalived",
+      "developer": "sabdfl",
+      "status": "available",
+      "type": "app",
+      "version": "1.3.5",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "67",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "mailto:mark@ubuntu.com",
+      "license": "GPL-2.0"
+    },
+    {
+      "id": "doU6KflBPp4ayHlwmLhafENYrK12iyBk",
+      "title": "micro",
+      "summary": "A modern and intuitive terminal-based text editor",
+      "description": "Micro is a terminal-based text editor that aims to be easy to use and\nintuitive, while also taking advantage of the full capabilities of modern\nterminals.",
+      "download-size": 3108864,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/10/micro-logo-mark_yAeRlBT.png",
+      "name": "micro",
+      "developer": "zy",
+      "status": "available",
+      "type": "app",
+      "version": "0+git.af520cf",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "648",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "mailto:zyedidia@gmail.com",
+      "license": "MIT",
       "screenshots": [
         {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/09/main-menu.png"
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/10/micro-atom-dark.png"
         },
         {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/09/nes.png"
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/10/micro-monokai.png"
         },
         {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/09/snes.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/09/shader-game-boy.png"
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/10/micro-solarized.png"
         }
       ]
     },
     {
-      "id": "OZ7LxjGo2W76qWvpNpiklbRtCA4u84L3",
-      "title": "oh my giraffe",
-      "summary": "oh my giraffe",
-      "description": "A delightful game of survival.\n",
-      "download-size": 28651520,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/oh-my-giraffe_256.png",
-      "name": "ohmygiraffe",
-      "developer": "popey",
+      "id": "hJmReLmgXSUj4SF7WhyTVRV6IzUa4QUZ",
+      "title": "htop",
+      "summary": "Interactive processes viewer",
+      "description": "Htop is an ncurses-based process viewer similar to top, but it allows one to scroll the list vertically and horizontally to see all processes and their full command lines.\r\n\r\nTasks related to processes (killing, renicing) can be done without entering their PIDs.\r\n",
+      "download-size": 4882432,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/05/htop.svg.png",
+      "name": "htop",
+      "developer": "maxiberta",
       "status": "available",
       "type": "app",
-      "version": "1.1.0a",
+      "version": "2.2.0",
       "channel": "stable",
       "ignore-validation": false,
-      "revision": "3",
+      "revision": "224",
       "confinement": "strict",
       "private": false,
       "devmode": false,
       "jailmode": false,
-      "contact": "mailto:alan@popey.com",
-      "license": "Proprietary",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/oh-my-giraffe.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/very-long-necks-with-ribbon.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/big-scary-cats-with-ribbon.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/off-the-hook-wipeouts-with-ribbon.png"
-        }
-      ]
-    },
-    {
-      "id": "ZOQQAuPhsvlJs67CxxJF69Kqc8wRlAtx",
-      "title": "micropolis",
-      "summary": "Micropolis, the original city simulation game from Maxis Software",
-      "description": "Micropolis, the original award winning city simulation game from\nMaxis Software, now runs on powerful Unix workstations with X11!  Now\nit's souped up, and even supports networked multi user collaboration!\nMulti Player Micropolis is designed to be a fun cooperative educational\nexperience!\n\nMicropolis is a colorful animated interactive system simulation\ngame, providing a set of rules and tools for planning and building a\ncomplex dynamic simulated city.  Several people on different X11\nworkstations can participate in the same city, cooperating and\ncoordinating their actions across the network.\n\nWorking together, you can zone land use, hook up the power grid,\nbuild roads, bridges, parks and stadiums, raise taxes, and even summon\ndisasters, causing the city to grow and thrive, or crumble and die.  It's\na creative, entertaining way to develop your political skills!\n\nSimCity designed and implemented by Will Wright,\nCopyright (C) 2002 by Electronic Arts.\nUnix porting, optimization and TCL/Tk user interface design\nby Don Hopkins (dhopkins@DonHopkins.com), for DUX Software.\nPorted to OLPC Fedora Linux by Don Hopkins.\n\nSimCity, Unix Version.  This game was released for the Unix platform\nin or about 1990 and has been modified for inclusion in the One Laptop\nPer Child program.  Copyright (C) 1989 - 2007 Electronic Arts Inc.",
-      "download-size": 19877888,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/11/micropolis.png",
-      "name": "micropolis",
-      "developer": "diddledan",
-      "status": "available",
-      "type": "app",
-      "version": "1.0",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "7",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "",
-      "license": "GPL-3.0+",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/01/Screenshot_from_2018-01-15_15-33-08.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/01/Screenshot_from_2018-01-15_15-34-12.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/01/Screenshot_from_2018-01-15_15-36-08.png"
-        }
-      ]
-    },
-    {
-      "id": "roFhaRzMw8ted6zNEL8NQnNrkFdIHnHv",
-      "title": "Warzone 2100",
-      "summary": "A free and open source real time strategy game",
-      "description": "In Warzone 2100, you command the forces of The Project in a battle to rebuild the world after mankind has almost been destroyed by nuclear missiles.\n\nThe game offers campaign, multi-player, and single-player skirmish modes. An extensive tech tree with over 400 different technologies, combined with the unit design system, allows for a wide variety of possible units and tactics.\n\nWarzone 2100 was originally developed as a commercial game by Pumpkin Studios and published in 1999, and was released as open source by them in 2004, for the community to continue working on it.",
-      "download-size": 182276096,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/09/warzone2100.large.png",
-      "name": "warzone2100",
-      "developer": "snapcrafters",
-      "status": "available",
-      "type": "app",
-      "version": "3.2.3",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "12",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "https://github.com/diddledan/warzone2100-snap/issues",
-      "license": "GPL-2.0+"
-    },
-    {
-      "id": "kY8dJvXQTxZ0keTgiCl1WBGT45o0hYYo",
-      "title": "OpenRA",
-      "summary": "A Libre/Free Real Time Strategy game engine supporting early Westwood classics",
-      "description": "Open Source real-time strategy game engine for early Westwood games\nsuch as Command & Conquer: Red Alert written in C# using SDL and\nOpenGL. Runs on Windows, Linux, *BSD and Mac OS X.",
-      "download-size": 147255296,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/08/openra.png",
-      "name": "openra",
-      "developer": "diddledan",
-      "status": "available",
-      "type": "app",
-      "version": "20180307",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "44",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "https://github.com/diddledan/openra-snap/issues",
-      "license": "GPL-3.0+"
-    },
-    {
-      "id": "bjPxXSBdXzlBa4PnaYGZtofDVAHRlcj7",
-      "title": "Quadrapassel",
-      "summary": "Fit falling blocks together",
-      "description": "Quadrapassel is a derivative of a classic Russian falling-block game.\nReposition and rotate the blocks as they fall, and attempt to fit them\ntogether. When you form a complete horizontal row of blocks, the row will\ndisappear and you score points. The game is over when the blocks get stacked\ntoo high. As your score gets higher, you level up and the blocks fall faster.\n\nIf you're looking for a challenge, Quadrapassel allows you to increase the\ninitial speed of the blocks, or begin the game with partial blocks on some\nof the rows. Or, instead of allowing the blocks to fall randomly, it can\nselect blocks that will be hard for you to place.",
-      "download-size": 1867776,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/07/quadrapassel.svg.png",
-      "name": "quadrapassel",
-      "developer": "canonical",
-      "status": "available",
-      "type": "app",
-      "version": "3.22.0",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "39",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "",
-      "license": "GPL-3.0+",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/07/Screenshot_from_2017-07-17_14-20-21.png"
-        }
-      ]
-    },
-    {
-      "id": "0rnkesZh4jFy9oovDTvL661qVTW4iDdE",
-      "title": "solitaire",
-      "summary": "usual Solitaire card game, as known as Patience or Klondike",
-      "description": "This is the usual Solitaire card game. Also known as Patience or Klondike.",
-      "download-size": 11538432,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/icon_app256_1.png",
-      "name": "solitaire",
-      "developer": "1bsyl",
-      "status": "available",
-      "type": "app",
-      "version": "1.0",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "2",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "mailto:sylvain.becker@gmail.com",
-      "license": "Proprietary",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/tv_1.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/tv_2.png"
-        }
-      ]
-    },
-    {
-      "id": "kuy6PEXtAFBPrp65dPXcTJ3dx1SM902R",
-      "title": "0ad",
-      "summary": "Real-time strategy game of ancient warfare",
-      "description": "0 A.D. (pronounced \"zero ey-dee\") is a free, open-source, cross-platform real-time strategy (RTS) game of ancient warfare. In short, it is a historically-based war/economy game that allows players to relive or rewrite the history of Western civilizations, focusing on the years between 500 B.C. and 500 A.D. The project is highly ambitious, involving state-of-the-art 3D graphics, detailed artwork, sound, and a flexible and powerful custom-built game engine.",
-      "download-size": 865411072,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/icon256_1.png",
-      "name": "play0ad",
-      "developer": "osomon",
-      "status": "available",
-      "type": "app",
-      "version": "0.0.22-alpha",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "53",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "https://launchpad.net/~osomon",
+      "contact": "https://github.com/maxiberta/htop-snap/issues",
       "license": "GPL-2.0",
       "screenshots": [
         {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/0adceltbrochfort.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/alpha-8-persianheavyinfantry.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/athenian_gymnasion.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/mauryan-structures.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/roman_buildings.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/screenshot0024.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/screenshot0044.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/screenshot0050.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/screenshot0072.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/screenshot0088.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/screenshot0095.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/screenshot0101.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/screenshot0344.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/water-specular.jpg"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/zagros-mountains.jpg"
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/05/htop-2.0.png"
         }
       ]
     },
     {
-      "id": "XKJBpAidfjnXmq06WLJPqSCi0CaDMf7D",
-      "title": "sudoku-game",
-      "summary": "Sudoku 9x9 game",
-      "description": "The object is to fill empty cells with numbers between 1 and 9, so that number should appear only once on each row, column and region.",
-      "download-size": 9019392,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/icon_app256_6.png",
-      "name": "sudoku-game",
-      "developer": "1bsyl",
+      "id": "mDxT0cGOHKSs62MOHSK5Ype0Na5UU2LB",
+      "title": "mosquitto",
+      "summary": "Eclipse Mosquitto MQTT broker",
+      "description": "This is a message broker that supports version 3.1 and 3.1.1 of the MQTT protocol. MQTT provides a method of carrying out messaging using a publish/subscribe model. It is lightweight, both in terms of bandwidth usage and ease of implementation. This makes it particularly useful at the edge of the network where a sensor or other simple device may be implemented using an arduino for example.\n\nThis snap runs as a service by default, using a configuration file $SNAP_COMMON/mosquitto.conf, which is typically /var/snap/mosquitto/common/mosquitto.conf. Due to the ways snaps work and are confined at the moment, it is a requirement to have a `user root` line in your configuration file so that the broker does not attempt to change to the mosquitto user.\n\nYou can also run mosquitto as a normal user, in which case it expects a configuration file at $SNAP_USER_COMMON/mosquitto.conf, or /home/user/snap/mosquitto/common/mosquitto.conf",
+      "download-size": 1748992,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/03/logo-256.png",
+      "name": "mosquitto",
+      "developer": "ralight",
       "status": "available",
       "type": "app",
-      "version": "1.0",
+      "version": "1.5",
       "channel": "stable",
       "ignore-validation": false,
-      "revision": "1",
+      "revision": "33",
       "confinement": "strict",
       "private": false,
       "devmode": false,
       "jailmode": false,
-      "contact": "http://www.1bsyl.com/www/Sudoku.php",
-      "license": "Proprietary",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/s2_3.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/s3_1.png"
-        }
-      ]
-    },
-    {
-      "id": "qHVefGEBezeuCeSfTND40uoUD6GRw8BO",
-      "title": "Discord",
-      "summary": "All-in-one voice and text chat for gamers",
-      "description": "All-in-one voice and text chat for gamers that's free, secure, and\nworks on both your desktop and phone.\n",
-      "download-size": 140967936,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/04/discord.png",
-      "name": "discord",
-      "developer": "snapcrafters",
-      "status": "available",
-      "type": "app",
-      "version": "0.0.5",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "64",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "https://github.com/snapcrafters/discord/issues",
-      "license": "Proprietary",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/08/Screenshot_from_2017-08-17_14-39-29.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/08/Screenshot_from_2017-08-17_14-40-26_CbMbFYu.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/08/Screenshot_from_2017-08-17_14-42-25.png"
-        }
-      ]
-    },
-    {
-      "id": "aJQRf6WPQq04DH0TB2HdTB6K9rf6I1yX",
-      "title": "Minecraft",
-      "summary": "Minecraft is a game about placing blocks and going on adventures.",
-      "description": "A game about placing blocks while running from skeletons",
-      "download-size": 148332544,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/12/minecraft_icon.png",
-      "name": "minecraft",
-      "developer": "snapcrafters",
-      "status": "available",
-      "type": "app",
-      "version": "latest",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "11",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "",
-      "license": "Proprietary",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/12/Screenshot_from_2017-12-17_12-23-40.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/12/Screenshot_from_2017-12-17_12-24-07.png"
-        }
-      ]
-    },
-    {
-      "id": "OYiX2afEAetC4e61gP6ndLs9ieJPUc83",
-      "title": "supertuxkart",
-      "summary": "SuperTuxKart is a free kart racing game",
-      "description": "SuperTuxKart is a free kart racing game. It focuses on fun and not on\nrealistic kart physics. Instructions can be found on the in-game help page.\n\nThe SuperTuxKart homepage can be found at https://supertuxkart.net/.\n\nTo run SuperTuxKart, make sure that your computer includes a graphics card\ncapable of 3D rendering - NVIDIA GeForce 8 series and newer (GeForce 8100 or\nnewer), AMD/ATI Radeon HD 4000 series and newer, Intel HD Graphics 3000 and\nnewer. You'll need at least 512 MB of free VRAM (video memory), and a CPU\nthat's running at 1 GHz or faster.\n",
-      "download-size": 542310400,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/01/supertuxkart-256.png",
-      "name": "supertuxkart",
-      "developer": "diddledan",
-      "status": "available",
-      "type": "app",
-      "version": "0.9.3",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "6",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "",
-      "license": "GPL-3.0+",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/01/screenshot1_GEOyVM5.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/01/screenshot2_LQDK2oE.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/01/screenshot3_g1a6bAA.png"
-        }
-      ]
-    },
-    {
-      "id": "rL5LA8xrvBd95OYczuFAWk05rUUpB4u9",
-      "title": "Tales of Maj'Eyal",
-      "summary": "A free, open source roguelike RPG",
-      "description": "Tales of Maj’Eyal is a free, open source roguelike RPG, featuring tactical turn-based combat and advanced character building.  Play as one of many unique races and classes in the lore-filled world of Eyal, exploring random dungeons, facing challenging battles, and developing characters with your own tailored mix of abilities and powers.  With a modern graphical and customisable interface, intuitive mouse control, streamlined mechanics and deep, challenging combat, Tales of Maj’Eyal offers engaging roguelike gameplay for the 21st century.",
-      "download-size": 458391552,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/02/tome.png",
-      "name": "talesofmajeyal",
-      "developer": "njmcphail",
-      "status": "available",
-      "type": "app",
-      "version": "1.5.8",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "10",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "https://github.com/mcphail/talesofmajeyal",
-      "license": "GPL-3.0",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/02/a5c760b98df785a180f559d6b3ce91bbc10e3fde.jpg"
-        }
-      ]
-    },
-    {
-      "id": "gmEYI3Be1Sbo0OSVdOrYDOHFuYrnLKvh",
-      "title": "SDLPoP",
-      "summary": "SDLPoP",
-      "description": "An open-source port of Prince of Persia, based on the disassembly of the \nDOS version.\n",
-      "download-size": 28438528,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/03/sdlpop.png",
-      "name": "sdlpop",
-      "developer": "snapcrafters",
-      "status": "available",
-      "type": "app",
-      "version": "v1.18.1",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "11",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "",
-      "license": "GPL-3.0",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/03/Screenshot_20180330_171753.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/03/Screenshot_20180330_171747.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/04/Screenshot_from_2018-04-06_13-46-22.png"
-        }
-      ]
-    },
-    {
-      "id": "ogcav3zrjqBXdDx8ofgJYMEPSLVRs9ID",
-      "title": "DOSBox-X",
-      "summary": "DOSBox-X fork of the DOSBox project",
-      "description": "DOSBox-X is a x86 emulator with Tandy/Hercules/CGA/EGA/VGA/SVGA graphics\nsound and DOS. It's been designed to run old DOS games under platforms that\ndon't support it.\n",
-      "download-size": 9977856,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/03/dosbox-x.png",
-      "name": "dosbox-x",
-      "developer": "snapcrafters",
-      "status": "available",
-      "type": "app",
-      "version": "59d2796",
-      "channel": "stable",
-      "ignore-validation": false,
-      "revision": "11",
-      "confinement": "strict",
-      "private": false,
-      "devmode": false,
-      "jailmode": false,
-      "contact": "",
-      "license": "GPL-2.0",
-      "screenshots": [
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/04/Screenshot_from_2018-04-06_13-55-46.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/04/Screenshot_from_2018-04-06_13-55-20.png"
-        },
-        {
-          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/04/Screenshot_from_2018-04-06_13-55-06.png"
-        }
-      ]
+      "contact": "https://mosquitto.org/",
+      "license": "EPL-1.0"
     }
   ],
   "sources": [
