@@ -6,6 +6,7 @@ PYTHONSRC=$(NAME)
 PYTHONPATH=$(shell pwd):$(shell pwd)/probert
 PROBERTDIR=./probert
 PROBERT_REPO=https://github.com/CanonicalLtd/probert
+noseopts ?= -v
 export PYTHONPATH
 CWD := $(shell pwd)
 
@@ -46,9 +47,9 @@ flake8:
 
 unit:
 	echo "Running unit tests..."
-	$(PYTHON) -m nose $(CHECK_DIRS)
+	$(PYTHON) -m nose $(noseopts) $(CHECK_DIRS)
 
-check: unit
+check: lint unit
 
 probert:
 	@if [ ! -d "$(PROBERTDIR)" ]; then \

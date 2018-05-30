@@ -118,7 +118,7 @@ def asdict(inst):
 @attr.s
 class Disk:
 
-    id = attr.ib(default=id_factory("disk"))
+    id = attr.ib(default=id_factory("disk"), cmp=False)
     type = attr.ib(default="disk")
     ptable = attr.ib(default='gpt')
     serial = attr.ib(default=None)
@@ -140,11 +140,11 @@ class Disk:
     def fs(self):
         return self._fs
 
-    _info = attr.ib(default=None)
+    _info = attr.ib(default=None, cmp=False)
 
     @classmethod
-    def from_info(self, info):
-        d = Disk(info=info)
+    def from_info(cls, info):
+        d = cls(info=info)
         d.serial = info.serial
         d.path = info.name
         d.model = info.model
@@ -152,8 +152,8 @@ class Disk:
 
     def reset(self):
         self.preserve = False
-        self.name = ''
-        self.grub_device = ''
+        self.name = ""
+        self.grub_device = False
         self._partitions = []
         self._fs = None
 
@@ -192,7 +192,7 @@ class Disk:
 @attr.s
 class Partition:
 
-    id = attr.ib(default=id_factory("part"))
+    id = attr.ib(default=id_factory("part"), cmp=False)
     type = attr.ib(default="partition")
     device = attr.ib(default=None)  # Disk
     size = attr.ib(default=None)
@@ -262,6 +262,27 @@ def align_down(size, block_size=1 << 20):
     return size & ~(block_size - 1)
 
 
+def _get_system_mounted_disks():
+    # FIXME: switch to curtin.block.get_installable_blockdevs()
+    # This assumes a fairly vanilla setup. It won't list as
+    # mounted a disk that is only mounted via lvm, for example.
+    mounted_devs = []
+    with open('/proc/mounts', encoding=sys.getfilesystemencoding()) as pm:
+        # mocking the filehandle iterator is hard, so invoke read()
+        for line in pm.read().splitlines():
+            if line.startswith('/dev/'):
+                mounted_devs.append(line.split()[0][5:])
+    mounted_disks = set()
+    for dev in mounted_devs:
+        if os.path.exists('/sys/block/{}'.format(dev)):
+            mounted_disks.add('/dev/' + dev)
+        else:
+            paths = glob.glob('/sys/block/*/{}/partition'.format(dev))
+            if len(paths) == 1:
+                mounted_disks.add('/dev/' + paths[0].split('/')[3])
+    return mounted_disks
+
+
 class FilesystemModel(object):
 
     lower_size_limit = 128 * (1 << 20)
@@ -319,27 +340,9 @@ class FilesystemModel(object):
             r.append(asdict(m))
         return r
 
-    def _get_system_mounted_disks(self):
-        # This assumes a fairly vanilla setup. It won't list as
-        # mounted a disk that is only mounted via lvm, for example.
-        mounted_devs = []
-        with open('/proc/mounts', encoding=sys.getfilesystemencoding()) as pm:
-            for line in pm:
-                if line.startswith('/dev/'):
-                    mounted_devs.append(line.split()[0][5:])
-        mounted_disks = set()
-        for dev in mounted_devs:
-            if os.path.exists('/sys/block/{}'.format(dev)):
-                mounted_disks.add('/dev/' + dev)
-            else:
-                paths = glob.glob('/sys/block/*/{}/partition'.format(dev))
-                if len(paths) == 1:
-                    mounted_disks.add('/dev/' + paths[0].split('/')[3])
-        return mounted_disks
-
     def probe(self):
         storage = self.prober.get_storage()
-        currently_mounted = self._get_system_mounted_disks()
+        currently_mounted = _get_system_mounted_disks()
         for path, data in storage.items():
             log.debug("fs probe %s", path)
             if path in currently_mounted:
@@ -377,9 +380,13 @@ class FilesystemModel(object):
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
+        # Do not allow the model to add a filesystem to special partitions:
+        #   GPT Partitions for GRUB have Partition.flag='bios_grub'
+        #   EFI Boot Partitions are Partition.flag='boot' and fstype=fat32
         if not volume.available:
-            if not isinstance(volume, Partition):
-                if (volume.flag == 'bios_grub' and fstype == 'fat32'):
+            if isinstance(volume, Partition):
+                if volume.flag == 'bios_grub' or (fstype == 'fat32' and
+                                                  volume.flag == 'boot'):
                     raise Exception("{} is not available".format(volume))
         if isinstance(volume, Disk):
             self._use_disk(volume)
