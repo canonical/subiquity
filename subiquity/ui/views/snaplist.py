@@ -85,7 +85,7 @@ class SnapInfoView(Widget):
         max_size = max(len(humanize_size(csi.size)) for csi in snap.channels)
 
         self.description = Text(snap.description.replace('\r', '').strip())
-        self.lb_description = Padding.center_79(ListBox([self.description]))
+        self.lb_description = ListBox([self.description])
 
         radio_group = []
         for csi in snap.channels:
@@ -108,18 +108,18 @@ class SnapInfoView(Widget):
                 ('pack', Text(notes)),
                 ], dividechars=1)))
 
-        self.lb_channels = Padding.center_79(
-            NoTabCyclingListBox(self.channels))
+        self.lb_channels = NoTabCyclingListBox(self.channels)
 
         contents = [
             ('pack', Text("")),
-            ('pack', Padding.center_79(Columns([
+            ('pack', Columns([
                 Text(snap.name),
                 ('pack', Text(
-                    "Publisher: {}".format(snap.publisher), align='right')),
-                ], dividechars=1))),
+                    _("Publisher: {}").format(snap.publisher),
+                    align='right')),
+                ], dividechars=1)),
             ('pack', Text("")),
-            ('pack', Padding.center_79(Text(snap.summary))),
+            ('pack', Text(snap.summary)),
             ('pack', Text("")),
             self.lb_description,
             ('pack', Text("")),
@@ -153,8 +153,7 @@ class SnapInfoView(Widget):
             if o == pack_option:
                 rows_available -= w.rows((maxcol,), focus)
 
-        padded_description = Padding.center_79(self.description)
-        rows_wanted_description = padded_description.rows((maxcol,), False)
+        rows_wanted_description = self.description.rows((maxcol,), False)
         rows_wanted_channels = len(self.channels)
 
         if rows_wanted_channels + rows_wanted_description <= rows_available:
@@ -271,7 +270,7 @@ class SnapListRow(WidgetWrap):
                 cur_chan = None
                 if self.snap.name in self.parent.to_install:
                     cur_chan = self.parent.to_install[self.snap.name].channel
-                self.parent._w = SnapInfoView(self.parent, self.snap, cur_chan)
+                self.parent._w = Padding.center_79(SnapInfoView(self.parent, self.snap, cur_chan))
         self.parent.controller.get_snap_info(self.snap, callback)
         # If we didn't get callback synchronously, display a dialog
         # while the info loads.
