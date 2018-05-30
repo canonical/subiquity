@@ -76,17 +76,6 @@ class SubiquityModel:
             }
         if user.ssh_keys:
             user_info['ssh_authorized_keys'] = user.ssh_keys
-        if self.snaplist.to_install:
-            cmds = []
-            for snap_name, selection in self.snaplist.to_install.items():
-                cmd = ['snap', 'install', '--channel=' + selection.channel]
-                if selection.is_classic:
-                    cmd.append('--classic')
-                cmd.append(snap_name)
-                cmds.append(' '.join(cmd))
-            user_info['snap'] = {
-                'commands': cmds,
-                }
         config = {
             'growpart': {
                 'mode': 'off',
@@ -96,6 +85,17 @@ class SubiquityModel:
             'resize_rootfs': False,
             'users': [user_info],
         }
+        if self.snaplist.to_install:
+            cmds = []
+            for snap_name, selection in self.snaplist.to_install.items():
+                cmd = ['snap', 'install', '--channel=' + selection.channel]
+                if selection.is_classic:
+                    cmd.append('--classic')
+                cmd.append(snap_name)
+                cmds.append(' '.join(cmd))
+            config['snap'] = {
+                'commands': cmds,
+                }
         return config
 
     def _cloud_init_files(self):
