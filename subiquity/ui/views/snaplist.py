@@ -169,9 +169,9 @@ class SnapInfoView(Widget):
         self.pile.contents[self.description_index] = (
             self.lb_description, self.pile.options('given', description_rows))
         if description_rows >= rows_wanted_description:
-            self.lb_description.original_widget._selectable = False
+            self.lb_description.base_widget._selectable = False
         else:
-            self.lb_description.original_widget._selectable = True
+            self.lb_description.base_widget._selectable = True
         if self.needs_focus:
             self.pile._select_first_selectable()
             self.needs_focus = False
