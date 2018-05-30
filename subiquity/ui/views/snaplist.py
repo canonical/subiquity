@@ -69,6 +69,7 @@ class SnapInfoView(WidgetWrap):
 
     def _select_first_selectable(self):
         self._w._select_first_selectable()
+
     def _select_last_selectable(self):
         self._w._select_last_selectable()
 
@@ -263,7 +264,7 @@ class SnapListRow(WidgetWrap):
                     SnapInfoView(self.parent, self.snap, cur_chan),
                     [other_btn(
                         label=_("Close"),
-                        on_press=lambda sender: self.parent.show_main_screen())],
+                        on_press=self.parent.show_main_screen)],
                     focus_buttons=False))
         self.parent.controller.get_snap_info(self.snap, callback)
         # If we didn't get callback synchronously, display a dialog
@@ -336,7 +337,7 @@ class SnapListView(BaseView):
                 ok_btn(label=_("Continue"), on_press=self.done),
             ])
 
-    def show_main_screen(self):
+    def show_main_screen(self, sender=None):
         self._w = self._main_screen
 
     def show_screen(self, screen):
