@@ -16,7 +16,6 @@
 import logging
 
 from urwid import (
-    BOX,
     CheckBox,
     LineBox,
     ListBox as UrwidListBox,
@@ -24,13 +23,12 @@ from urwid import (
     SelectableIcon,
     SimpleFocusListWalker,
     Text,
-    Widget,
     WidgetWrap,
     )
 
 from subiquitycore.ui.buttons import ok_btn, cancel_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile, ScrollBarListBox
-from subiquitycore.ui.utils import button_pile, Color, Padding, screen
+from subiquitycore.ui.utils import button_pile, Color, screen
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
@@ -61,7 +59,7 @@ def NoTabCyclingListBox(body):
     return ScrollBarListBox(UrwidListBox(body))
 
 
-class SnapInfoView(Widget):
+class SnapInfoView(WidgetWrap):
 
     # This is mostly like a Pile but it tries to be a bit smart about
     # how to distribute space between the description and channel list
@@ -69,8 +67,10 @@ class SnapInfoView(Widget):
     # the channel list is given a third of the space. If there is
     # space for both, they are packed into the upper part of the view.
 
-    _selectable = True
-    _sizing = frozenset([BOX])
+    def _select_first_selectable(self):
+        self._w._select_first_selectable()
+    def _select_last_selectable(self):
+        self._w._select_last_selectable()
 
     def __init__(self, parent, snap, cur_channel):
         self.parent = parent
@@ -111,7 +111,6 @@ class SnapInfoView(Widget):
         self.lb_channels = NoTabCyclingListBox(self.channels)
 
         contents = [
-            ('pack', Text("")),
             ('pack', Columns([
                 Text(snap.name),
                 ('pack', Text(
@@ -124,25 +123,15 @@ class SnapInfoView(Widget):
             self.lb_description,
             ('pack', Text("")),
             ('weight', 1, self.lb_channels),
-            ('pack', Text("")),
-            ('pack', button_pile([
-                other_btn(label=_("Close"), on_press=self.close),
-                ])),
-            ('pack', Text("")),
             ]
         self.description_index = contents.index(self.lb_description)
         self.pile = Pile(contents)
-
-    def close(self, sender=None):
-        self.parent._w = self.parent.main_screen
+        super().__init__(self.pile)
 
     def state_change(self, sender, state, selection):
         if state:
             self.parent.snap_rows[self.snap.name].box.set_state(True)
             self.parent.to_install[self.snap.name] = selection
-
-    def keypress(self, size, key):
-        return self.pile.keypress(size, key)
 
     def render(self, size, focus):
         maxcol, maxrow = size
@@ -270,7 +259,12 @@ class SnapListRow(WidgetWrap):
                 cur_chan = None
                 if self.snap.name in self.parent.to_install:
                     cur_chan = self.parent.to_install[self.snap.name].channel
-                self.parent._w = Padding.center_79(SnapInfoView(self.parent, self.snap, cur_chan))
+                self.parent.show_screen(screen(
+                    SnapInfoView(self.parent, self.snap, cur_chan),
+                    [other_btn(
+                        label=_("Close"),
+                        on_press=lambda sender: self.parent.show_main_screen())],
+                    focus_buttons=False))
         self.parent.controller.get_snap_info(self.snap, callback)
         # If we didn't get callback synchronously, display a dialog
         # while the info loads.
@@ -324,23 +318,29 @@ class SnapListView(BaseView):
                 self.offer_retry()
             else:
                 self.make_main_screen(snap_list)
-                self._w = self.main_screen
+                self.show_main_screen()
         self.controller.get_snap_list(callback)
         if called:
             return
         spinner = Spinner(self.controller.loop, style='dots')
         spinner.start()
-        ok = ok_btn(label=_("Continue"), on_press=self.done)
         self._w = screen(
-            [spinner], [ok],
+            [spinner], [ok_btn(label=_("Continue"), on_press=self.done)],
             excerpt=_("Loading server snaps from store, please wait..."))
 
     def offer_retry(self):
-        retry = other_btn(label=_("Try again"), on_press=self.load)
-        cont = ok_btn(label=_("Continue"), on_press=self.done)
         self._w = screen(
             [Text(_("Sorry, loading snaps from the store failed."))],
-            [retry, cont])
+            [
+                other_btn(label=_("Try again"), on_press=self.load),
+                ok_btn(label=_("Continue"), on_press=self.done),
+            ])
+
+    def show_main_screen(self):
+        self._w = self._main_screen
+
+    def show_screen(self, screen):
+        self._w = screen
 
     def make_main_screen(self, snap_list):
         self.name_len = max([len(snap.name) for snap in snap_list])
@@ -352,7 +352,7 @@ class SnapListView(BaseView):
             self.snap_rows[snap.name] = row
             body.append(row)
         ok = ok_btn(label=_("OK"), on_press=self.done)
-        self.main_screen = screen(
+        self._main_screen = screen(
             NoTabCyclingListBox(body), [ok],
             focus_buttons=False,
             excerpt=_(
@@ -365,7 +365,7 @@ class SnapListView(BaseView):
         self.controller.done(self.to_install)
 
     def cancel(self, sender=None):
-        if self._w is self.main_screen:
+        if self._w is self._main_screen:
             self.controller.cancel()
         else:
-            self._w = self.main_screen
+            self.show_main_screen()

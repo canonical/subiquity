@@ -216,7 +216,7 @@ def screen(rows, buttons, focus_buttons=True, excerpt=None):
         [ 1 line padding (optional) ]
         excerpt (optional)
         [ 1 line padding ]
-        Listbox()
+        Box widget (usually a ListBox)
         [ 1 line padding ]
         a button_pile
         [ 1 line padding ]
