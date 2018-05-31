@@ -1,0 +1,75 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "YMJsyW4vySPdys8BCA7jx8UiOVSVhUT6",
+      "title": "stress-ng",
+      "summary": "tool to load and stress a computer",
+      "description": "stress-ng can stress various subsystems of a computer.  It can stress load CPU, cache, disk, memory, socket and pipe I/O, scheduling and much more.  stress-ng is a re-write of the original stress tool by Amos Waterland but has many additional features such as specifying the number of bogo operations to run, execution metrics, a stress verification on memory and compute operations and considerably more stress mechanisms.",
+      "download-size": 2347008,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/stress-ng-256x256.png",
+      "name": "stress-ng",
+      "developer": "cking-kernel-tools",
+      "status": "available",
+      "type": "app",
+      "version": "0.09.28-20180525-4264-0e8e0ce",
+      "channel": "beta",
+      "ignore-validation": false,
+      "revision": "335",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "mailto:colin.king@canonical.com",
+      "license": "GPL-2.0",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/large_1.png"
+        }
+      ],
+      "channels": {
+        "latest/beta": {
+          "revision": "335",
+          "confinement": "strict",
+          "version": "0.09.28-20180525-4264-0e8e0ce",
+          "channel": "beta",
+          "epoch": "0",
+          "size": 2347008
+        },
+        "latest/candidate": {
+          "revision": "335",
+          "confinement": "strict",
+          "version": "0.09.28-20180525-4264-0e8e0ce",
+          "channel": "candidate",
+          "epoch": "0",
+          "size": 2347008
+        },
+        "latest/edge": {
+          "revision": "335",
+          "confinement": "strict",
+          "version": "0.09.28-20180525-4264-0e8e0ce",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 2347008
+        },
+        "latest/stable": {
+          "revision": "335",
+          "confinement": "strict",
+          "version": "0.09.28-20180525-4264-0e8e0ce",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 2347008
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

@@ -1,0 +1,94 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "We2QH1ClwGL6V88RJRWuZPWaBBPuzWPL",
+      "title": "prometheus",
+      "summary": "Unofficial Prometheus snap package",
+      "description": "Prometheus is a systems and service monitoring system. It collects metrics from configured targets at given intervals, evaluates rule expressions, displays the results, and can trigger alerts if some condition is observed to be true.\r\n",
+      "download-size": 21237760,
+      "name": "prometheus",
+      "developer": "jacek",
+      "status": "available",
+      "type": "app",
+      "version": "2.2.1",
+      "channel": "2/beta",
+      "ignore-validation": false,
+      "revision": "20",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://launchpad.net/prometheus-snap",
+      "license": "Apache-2.0",
+      "channels": {
+        "2/beta": {
+          "revision": "20",
+          "confinement": "strict",
+          "version": "2.2.1",
+          "channel": "2/beta",
+          "epoch": "0",
+          "size": 21237760
+        },
+        "2/edge": {
+          "revision": "20",
+          "confinement": "strict",
+          "version": "2.2.1",
+          "channel": "2/edge",
+          "epoch": "0",
+          "size": 21237760
+        },
+        "2/stable": {
+          "revision": "20",
+          "confinement": "strict",
+          "version": "2.2.1",
+          "channel": "2/stable",
+          "epoch": "0",
+          "size": 21237760
+        },
+        "latest/beta": {
+          "revision": "18",
+          "confinement": "strict",
+          "version": "1.8.2",
+          "channel": "beta",
+          "epoch": "0",
+          "size": 14331904
+        },
+        "latest/candidate": {
+          "revision": "18",
+          "confinement": "strict",
+          "version": "1.8.2",
+          "channel": "candidate",
+          "epoch": "0",
+          "size": 14331904
+        },
+        "latest/edge": {
+          "revision": "18",
+          "confinement": "strict",
+          "version": "1.8.2",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 14331904
+        },
+        "latest/stable": {
+          "revision": "18",
+          "confinement": "strict",
+          "version": "1.8.2",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 14331904
+        }
+      },
+      "tracks": [
+        "latest",
+        "2"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

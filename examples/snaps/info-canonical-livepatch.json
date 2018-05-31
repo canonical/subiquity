@@ -1,0 +1,70 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "b96UJ4vttpNhpbaCWctVzfduQcPwQ5wn",
+      "title": "canonical-livepatch",
+      "summary": "Canonical Livepatch Client",
+      "description": "Canonical Livepatch Client",
+      "download-size": 5152768,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/pictogram-upgrade-orange-hex.svg.png",
+      "name": "canonical-livepatch",
+      "developer": "canonical",
+      "status": "available",
+      "type": "app",
+      "version": "8.0.2",
+      "channel": "beta",
+      "ignore-validation": false,
+      "revision": "41",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "mailto:snappy-canonical-storeaccount@canonical.com",
+      "license": "Proprietary",
+      "channels": {
+        "latest/beta": {
+          "revision": "41",
+          "confinement": "strict",
+          "version": "8.0.2",
+          "channel": "beta",
+          "epoch": "0",
+          "size": 5152768
+        },
+        "latest/candidate": {
+          "revision": "41",
+          "confinement": "strict",
+          "version": "8.0.2",
+          "channel": "candidate",
+          "epoch": "0",
+          "size": 5152768
+        },
+        "latest/edge": {
+          "revision": "41",
+          "confinement": "strict",
+          "version": "8.0.2",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 5152768
+        },
+        "latest/stable": {
+          "revision": "41",
+          "confinement": "strict",
+          "version": "8.0.2",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 5152768
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

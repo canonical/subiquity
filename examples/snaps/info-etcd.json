@@ -1,0 +1,210 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "TKebVGcPeDKoOqAmNmczU2oWLtsojKD5",
+      "title": "etcd",
+      "summary": "Resilient key-value store by CoreOS",
+      "description": "Etcd is a high availability key-value store, implementing the RAFT\nalgorithm to deal with failover within the etcd cluster.  Popular\nin the Docker community as a shared store of small but important\ndata in a distributed application.\n",
+      "download-size": 11132928,
+      "name": "etcd",
+      "developer": "tvansteenburgh",
+      "status": "available",
+      "type": "app",
+      "version": "3.2.9",
+      "channel": "3.2/beta",
+      "ignore-validation": false,
+      "revision": "153",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "mailto:snappy-canonical-storeaccount@canonical.com",
+      "license": "Other Open Source",
+      "channels": {
+        "2.3/beta": {
+          "revision": "55",
+          "confinement": "strict",
+          "version": "2.3.8",
+          "channel": "2.3/beta",
+          "epoch": "0",
+          "size": 5795840
+        },
+        "2.3/candidate": {
+          "revision": "55",
+          "confinement": "strict",
+          "version": "2.3.8",
+          "channel": "2.3/candidate",
+          "epoch": "0",
+          "size": 5795840
+        },
+        "2.3/edge": {
+          "revision": "55",
+          "confinement": "strict",
+          "version": "2.3.8",
+          "channel": "2.3/edge",
+          "epoch": "0",
+          "size": 5795840
+        },
+        "2.3/stable": {
+          "revision": "55",
+          "confinement": "strict",
+          "version": "2.3.8",
+          "channel": "2.3/stable",
+          "epoch": "0",
+          "size": 5795840
+        },
+        "3.0/beta": {
+          "revision": "85",
+          "confinement": "strict",
+          "version": "3.0.17",
+          "channel": "3.0/beta",
+          "epoch": "0",
+          "size": 10985472
+        },
+        "3.0/candidate": {
+          "revision": "85",
+          "confinement": "strict",
+          "version": "3.0.17",
+          "channel": "3.0/candidate",
+          "epoch": "0",
+          "size": 10985472
+        },
+        "3.0/edge": {
+          "revision": "85",
+          "confinement": "strict",
+          "version": "3.0.17",
+          "channel": "3.0/edge",
+          "epoch": "0",
+          "size": 10985472
+        },
+        "3.0/stable": {
+          "revision": "85",
+          "confinement": "strict",
+          "version": "3.0.17",
+          "channel": "3.0/stable",
+          "epoch": "0",
+          "size": 10985472
+        },
+        "3.1/beta": {
+          "revision": "81",
+          "confinement": "strict",
+          "version": "3.1.10",
+          "channel": "3.1/beta",
+          "epoch": "0",
+          "size": 10653696
+        },
+        "3.1/candidate": {
+          "revision": "81",
+          "confinement": "strict",
+          "version": "3.1.10",
+          "channel": "3.1/candidate",
+          "epoch": "0",
+          "size": 10653696
+        },
+        "3.1/edge": {
+          "revision": "81",
+          "confinement": "strict",
+          "version": "3.1.10",
+          "channel": "3.1/edge",
+          "epoch": "0",
+          "size": 10653696
+        },
+        "3.1/stable": {
+          "revision": "81",
+          "confinement": "strict",
+          "version": "3.1.10",
+          "channel": "3.1/stable",
+          "epoch": "0",
+          "size": 10653696
+        },
+        "3.2/beta": {
+          "revision": "153",
+          "confinement": "strict",
+          "version": "3.2.9",
+          "channel": "3.2/beta",
+          "epoch": "0",
+          "size": 11132928
+        },
+        "3.2/candidate": {
+          "revision": "153",
+          "confinement": "strict",
+          "version": "3.2.9",
+          "channel": "3.2/candidate",
+          "epoch": "0",
+          "size": 11132928
+        },
+        "3.2/edge": {
+          "revision": "153",
+          "confinement": "strict",
+          "version": "3.2.9",
+          "channel": "3.2/edge",
+          "epoch": "0",
+          "size": 11132928
+        },
+        "3.2/stable": {
+          "revision": "153",
+          "confinement": "strict",
+          "version": "3.2.9",
+          "channel": "3.2/stable",
+          "epoch": "0",
+          "size": 11132928
+        },
+        "ingest/stable": {
+          "revision": "12",
+          "confinement": "classic",
+          "version": "ingest-0.5",
+          "channel": "ingest/stable",
+          "epoch": "0",
+          "size": 4096
+        },
+        "latest/beta": {
+          "revision": "76",
+          "confinement": "strict",
+          "version": "3.2.8",
+          "channel": "beta",
+          "epoch": "0",
+          "size": 11128832
+        },
+        "latest/candidate": {
+          "revision": "76",
+          "confinement": "strict",
+          "version": "3.2.8",
+          "channel": "candidate",
+          "epoch": "0",
+          "size": 11128832
+        },
+        "latest/edge": {
+          "revision": "148",
+          "confinement": "strict",
+          "version": "3.3.0-rc.0-855-ge095ee4",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 12464128
+        },
+        "latest/stable": {
+          "revision": "76",
+          "confinement": "strict",
+          "version": "3.2.8",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 11128832
+        }
+      },
+      "tracks": [
+        "latest",
+        "2.3",
+        "3.0",
+        "3.1",
+        "3.2",
+        "ingest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

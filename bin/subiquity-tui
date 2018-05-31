@@ -78,6 +78,14 @@ def parse_options(argv):
     parser.add_argument('--click', metavar="PAT", action=ClickAction,
                         help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
+    parser.add_argument(
+        '--snaps-from-examples', action='store_true',
+        help=("Load snap details from examples/snaps instead of store. "
+              "See examples/snaps/README.md for more."))
+    parser.add_argument(
+        '--snap-section', action='store', default='server',
+        help=("Show snaps from this section of the store in the snap "
+              "list screen."))
     return parser.parse_args(argv)
 
 

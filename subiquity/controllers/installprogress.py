@@ -45,6 +45,7 @@ class InstallProgressController(BaseController):
     signals = [
         ('installprogress:filesystem-config-done', 'filesystem_config_done'),
         ('installprogress:identity-config-done',   'identity_config_done'),
+        ('installprogress:snap-config-done',       'snap_config_done'),
     ]
 
     def __init__(self, common):
@@ -56,6 +57,7 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.NOT_STARTED
         self.journal_listener_handle = None
         self._identity_config_done = False
+        self._snap_config_done = False
         self._event_indent = ""
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
@@ -64,10 +66,18 @@ class InstallProgressController(BaseController):
         self.curtin_start_install()
 
     def identity_config_done(self):
-        if self.install_state == InstallState.DONE:
+        if self.install_state == InstallState.DONE and \
+          self._snap_config_done:
             self.postinstall_configuration()
         else:
             self._identity_config_done = True
+
+    def snap_config_done(self):
+        if self.install_state == InstallState.DONE and \
+          self._identity_config_done:
+            self.postinstall_configuration()
+        else:
+            self._snap_config_done = True
 
     def curtin_error(self):
         log.debug('curtin_error')

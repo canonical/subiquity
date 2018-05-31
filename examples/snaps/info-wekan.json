@@ -1,0 +1,75 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "jtpboSYvTCEyHoutkkRo1SI9ioSMOUb3",
+      "title": "Wekan",
+      "summary": "The open-source Trello-like kanban",
+      "description": "Wekan is an open-source and collaborative kanban board application.\r\n\r\nWhether you’re maintaining a personal todo list, planning your holidays with some friends, or working in a team on your next revolutionary idea, Kanban boards are an unbeatable tool to keep your things organized. They give you a visual overview of the current state of your project, and make you productive by allowing you to focus on the few items that matter the most.\r\nDepending on target environment, some configuration settings might need to be adjusted.\r\nFor full list of configuration options call:\r\n$ wekan.help",
+      "download-size": 148787200,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/06/-NNP9RC0.png",
+      "name": "wekan",
+      "developer": "xet7",
+      "status": "available",
+      "type": "app",
+      "version": "1.02-1-g6d75fe4",
+      "channel": "edge",
+      "ignore-validation": false,
+      "revision": "203",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "",
+      "license": "MIT",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/02/wekan-markdown.png"
+        }
+      ],
+      "channels": {
+        "latest/beta": {
+          "revision": "202",
+          "confinement": "strict",
+          "version": "1.02",
+          "channel": "beta",
+          "epoch": "0",
+          "size": 148783104
+        },
+        "latest/candidate": {
+          "revision": "202",
+          "confinement": "strict",
+          "version": "1.02",
+          "channel": "candidate",
+          "epoch": "0",
+          "size": 148783104
+        },
+        "latest/edge": {
+          "revision": "203",
+          "confinement": "strict",
+          "version": "1.02-1-g6d75fe4",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 148787200
+        },
+        "latest/stable": {
+          "revision": "202",
+          "confinement": "strict",
+          "version": "1.02",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 148783104
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

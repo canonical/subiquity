@@ -1,0 +1,78 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "V4Z90JuG4d64ycAAl948fM4vWQA9594q",
+      "title": "keepalived",
+      "summary": "High availability VRRP and load-balancing for Linux",
+      "description": "Keepalived is routing software written in C to provide simple and robust\nfacilities for loadbalancing and high-availability to Linux based\ninfrastructures.  Loadbalancing framework relies on well-known Linux\nVirtual Server (IPVS) kernel module providing Layer4 loadbalancing.\nHigh-availability is achieved by VRRP protocol.\n",
+      "download-size": 11427840,
+      "name": "keepalived",
+      "developer": "sabdfl",
+      "status": "available",
+      "type": "app",
+      "version": "v1.4+git",
+      "channel": "edge",
+      "ignore-validation": false,
+      "revision": "185",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "mailto:mark@ubuntu.com",
+      "license": "GPL-2.0",
+      "channels": {
+        "1.3/candidate": {
+          "revision": "183",
+          "confinement": "classic",
+          "version": "1.3.9",
+          "channel": "1.3/candidate",
+          "epoch": "0",
+          "size": 11386880
+        },
+        "1.3/stable": {
+          "revision": "67",
+          "confinement": "classic",
+          "version": "1.3.5",
+          "channel": "1.3/stable",
+          "epoch": "0",
+          "size": 11161600
+        },
+        "latest/candidate": {
+          "revision": "184",
+          "confinement": "classic",
+          "version": "1.4.4",
+          "channel": "candidate",
+          "epoch": "0",
+          "size": 11423744
+        },
+        "latest/edge": {
+          "revision": "185",
+          "confinement": "classic",
+          "version": "v1.4+git",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 11427840
+        },
+        "latest/stable": {
+          "revision": "67",
+          "confinement": "classic",
+          "version": "1.3.5",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 11161600
+        }
+      },
+      "tracks": [
+        "latest",
+        "1.3"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

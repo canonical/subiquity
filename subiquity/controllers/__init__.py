@@ -21,6 +21,7 @@ from .keyboard import KeyboardController
 from .proxy import ProxyController
 from subiquitycore.controllers.login import LoginController
 from subiquitycore.controllers.network import NetworkController
+from .snaplist import SnapListController
 from .welcome import WelcomeController
 __all__ = [
     'FilesystemController',
@@ -31,5 +32,6 @@ __all__ = [
     'ProxyController',
     'LoginController',
     'NetworkController',
+    'SnapListController',
     'WelcomeController',
 ]

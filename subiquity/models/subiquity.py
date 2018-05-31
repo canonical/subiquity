@@ -26,6 +26,7 @@ from .installpath import InstallpathModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
 from .proxy import ProxyModel
+from .snaplist import SnapListModel
 
 
 def setup_yaml():
@@ -53,6 +54,7 @@ class SubiquityModel:
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
         self.proxy = ProxyModel()
+        self.snaplist = SnapListModel()
 
     def _cloud_init_config(self):
         user = self.identity.user
@@ -83,6 +85,18 @@ class SubiquityModel:
             'resize_rootfs': False,
             'users': [user_info],
         }
+        if self.snaplist.to_install:
+            cmds = []
+            for snap_name, selection in sorted(
+                    self.snaplist.to_install.items()):
+                cmd = ['snap', 'install', '--channel=' + selection.channel]
+                if selection.is_classic:
+                    cmd.append('--classic')
+                cmd.append(snap_name)
+                cmds.append(' '.join(cmd))
+            config['snap'] = {
+                'commands': cmds,
+                }
         return config
 
     def _cloud_init_files(self):

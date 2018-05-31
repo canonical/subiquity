@@ -1,0 +1,105 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "njObIbGQEaVx1H4nyWxchk1i8opy4h54",
+      "title": "Nextcloud",
+      "summary": "Nextcloud Server - A safe home for all your data",
+      "description": "Access, share and protect your files, calendars, contacts, communication and more at home and in your enterprise.",
+      "download-size": 205615104,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/06/icon.svg_1.png",
+      "name": "nextcloud",
+      "developer": "nextcloud",
+      "status": "available",
+      "type": "app",
+      "version": "12-2018-05-30",
+      "channel": "12/edge",
+      "ignore-validation": false,
+      "revision": "7310",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://github.com/nextcloud/nextcloud-snap",
+      "license": "AGPL-3.0+",
+      "channels": {
+        "11/stable": {
+          "revision": "6942",
+          "confinement": "strict",
+          "version": "11.0.8snap1",
+          "channel": "11/stable",
+          "epoch": "0",
+          "size": 202977280
+        },
+        "12/edge": {
+          "revision": "7310",
+          "confinement": "strict",
+          "version": "12-2018-05-30",
+          "channel": "12/edge",
+          "epoch": "0",
+          "size": 205615104
+        },
+        "12/stable": {
+          "revision": "6949",
+          "confinement": "strict",
+          "version": "12.0.7snap1",
+          "channel": "12/stable",
+          "epoch": "0",
+          "size": 205369344
+        },
+        "13/edge": {
+          "revision": "7302",
+          "confinement": "strict",
+          "version": "13-2018-05-30",
+          "channel": "13/edge",
+          "epoch": "0",
+          "size": 205463552
+        },
+        "13/stable": {
+          "revision": "6916",
+          "confinement": "strict",
+          "version": "13.0.2snap1",
+          "channel": "13/stable",
+          "epoch": "0",
+          "size": 205299712
+        },
+        "latest/beta": {
+          "revision": "7235",
+          "confinement": "strict",
+          "version": "13.0.2snap1",
+          "channel": "beta",
+          "epoch": "0",
+          "size": 205340672
+        },
+        "latest/edge": {
+          "revision": "7303",
+          "confinement": "strict",
+          "version": "master-2018-05-30",
+          "channel": "edge",
+          "epoch": "0",
+          "size": 204627968
+        },
+        "latest/stable": {
+          "revision": "6916",
+          "confinement": "strict",
+          "version": "13.0.2snap1",
+          "channel": "stable",
+          "epoch": "0",
+          "size": 205299712
+        }
+      },
+      "tracks": [
+        "latest",
+        "11",
+        "12",
+        "13"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

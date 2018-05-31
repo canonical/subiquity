@@ -34,6 +34,8 @@ parts:
       - lsb-release
       - python3-distutils-extra
       - python3-urwid
+      - python3-requests
+      - python3-requests-unixsocket
     python-packages:
       - attrs
       - pyyaml
