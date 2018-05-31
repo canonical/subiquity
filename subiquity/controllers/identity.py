@@ -46,8 +46,8 @@ class IdentityController(BaseController):
                 'hostname': self.answers['hostname'],
                 'password': self.answers['password'],
                 }
-            if 'ssh_import_id' in self.answers:
-                ssh_import_id = self.answers['ssh_import_id']
+            if 'ssh-import-id' in self.answers:
+                ssh_import_id = self.answers['ssh-import-id']
                 self.fetch_ssh_keys(d, ssh_import_id)
             else:
                 self.done(d)
@@ -99,7 +99,7 @@ class IdentityController(BaseController):
                 # Happens if the fetch is cancelled.
                 return
             user_spec, key_material, fingerprints = result
-            if 'ssh_import_id' in self.answers:
+            if 'ssh-import-id' in self.answers:
                 user_spec['ssh_keys'] = key_material.splitlines()
                 self.loop.set_alarm_in(0.0,
                                        lambda loop, ud: self.done(user_spec))
