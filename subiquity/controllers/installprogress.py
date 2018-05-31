@@ -79,7 +79,7 @@ class InstallProgressController(BaseController):
         else:
             self._snap_config_done = True
 
-    def curtin_error(self, log_text=None):
+    def curtin_error(self):
         log.debug('curtin_error')
         self.install_state = InstallState.ERROR
         self.progress_view.spinner.stop()

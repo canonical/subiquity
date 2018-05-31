@@ -83,7 +83,6 @@ def parse_options(argv):
         help=("Load snap details from examples/snaps instead of store. "
               "See examples/snaps/README.md for more."))
     parser.add_argument(
-        # will change default to server when that exists
         '--snap-section', action='store', default='server',
         help=("Show snaps from this section of the store in the snap "
               "list screen."))

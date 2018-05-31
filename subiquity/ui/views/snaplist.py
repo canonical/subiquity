@@ -103,26 +103,28 @@ class SnapInfoView(WidgetWrap):
                     is_classic=csi.confinement == "classic"))
             self.channels.append(Color.menu_button(Columns([
                 (channel_width, btn),
-                (max_version, Text(csi.version)),
-                (max_revision, Text("({})".format(csi.revision))),
-                (max_size, Text(humanize_size(csi.size))),
-                ('pack', Text(notes)),
+                (max_version,   Text(csi.version)),
+                (max_revision,  Text("({})".format(csi.revision))),
+                (max_size,      Text(humanize_size(csi.size))),
+                ('pack',        Text(notes)),
                 ], dividechars=1)))
 
         self.lb_channels = NoTabCyclingListBox(self.channels)
 
+        title = Columns([
+            Text(snap.name),
+            ('pack', Text(
+                _("Publisher: {}").format(snap.publisher),
+                align='right')),
+            ], dividechars=1)
+
         contents = [
-            ('pack', Columns([
-                Text(snap.name),
-                ('pack', Text(
-                    _("Publisher: {}").format(snap.publisher),
-                    align='right')),
-                ], dividechars=1)),
-            ('pack', Text("")),
-            ('pack', Text(snap.summary)),
-            ('pack', Text("")),
-            self.lb_description,
-            ('pack', Text("")),
+            ('pack',      title),
+            ('pack',      Text("")),
+            ('pack',      Text(snap.summary)),
+            ('pack',      Text("")),
+            (10,          self.lb_description),  # overwritten in render()
+            ('pack',      Text("")),
             ('weight', 1, self.lb_channels),
             ]
         self.description_index = contents.index(self.lb_description)
@@ -178,14 +180,13 @@ class FetchingInfo(WidgetWrap):
         # | text |
         # 12    34
         self.width = len(text) + 4
+        cancel = cancel_btn(label=_("Cancel"), on_press=self.close)
         super().__init__(
             LineBox(
                 Pile([
                     ('pack', Text(' ' + text)),
                     ('pack', self.spinner),
-                    ('pack', button_pile([
-                        cancel_btn(label=_("Cancel"), on_press=self.close),
-                        ])),
+                    ('pack', button_pile([cancel])),
                     ])))
 
     def close(self, sender=None):

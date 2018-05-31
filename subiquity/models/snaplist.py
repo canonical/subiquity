@@ -71,7 +71,7 @@ class SnapListModel:
 
     def load_info_data(self, data):
         info = data['result'][0]
-        snap = self._snaps_by_name.get(info['name'], None)
+        snap = self._snaps_by_name.get(info['name'])
         if snap is None:
             return
         channel_map = info['channels']

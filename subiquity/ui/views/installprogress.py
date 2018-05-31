@@ -22,7 +22,6 @@ from urwid import (
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, ok_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
-from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import button_pile, Padding
 
 from subiquity.ui.spinner import Spinner
@@ -36,44 +35,6 @@ class MyLineBox(LineBox):
             return [" ", title, " "]
         else:
             return ""
-
-
-class AskForRetryStretchy(Stretchy):
-    def __init__(self, parent, watcher, snap_name, explanation):
-        self.parent = parent
-        self.watcher = watcher
-        if explanation is None:
-            widgets = [
-                Text(_('Downloading the snap "{}" failed for an unknown '
-                       'reason.').format(snap_name)),
-                ]
-            stretchy_index = 0
-        else:
-            widgets = [
-                Text(_('Downloading the snap "{}" failed with the following '
-                       'output:').format(snap_name)),
-                Text(""),
-                Text(explanation),
-                ]
-            stretchy_index = 2
-        retry = other_btn(
-            label=_("Try again"),
-            on_press=self.cont, user_arg=True)
-        give_up = other_btn(
-            label=_("Give up on this snap"),
-            on_press=self.cont, user_arg=False)
-        widgets.extend([
-            Text(""),
-            Text(_("Would you like to try to download this snap again?")),
-            Text(""),
-            button_pile([retry, give_up]),
-            ])
-        title = _('Downloading "{}" failed.').format(snap_name)
-        super().__init__(title, widgets, stretchy_index, len(widgets) - 1)
-
-    def cont(self, sender, retry_cur):
-        self.parent.remove_overlay()
-        self.parent.controller.resume_snap_downloads(self.watcher, retry_cur)
 
 
 class ProgressView(BaseView):
@@ -147,10 +108,6 @@ class ProgressView(BaseView):
         self.event_buttons.width = self.event_buttons.min_width = w + 4
         self.event_pile.focus_position = 3
         p.focus_position = 1
-
-    def ask_for_retry_snap(self, watcher, snap_name, explanation):
-        self.show_stretchy_overlay(
-            AskForRetryStretchy(self, watcher, snap_name, explanation))
 
     def reboot(self, btn):
         self.controller.reboot()

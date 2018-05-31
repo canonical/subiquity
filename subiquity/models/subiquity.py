@@ -87,7 +87,8 @@ class SubiquityModel:
         }
         if self.snaplist.to_install:
             cmds = []
-            for snap_name, selection in self.snaplist.to_install.items():
+            for snap_name, selection in sorted(
+                    self.snaplist.to_install.items()):
                 cmd = ['snap', 'install', '--channel=' + selection.channel]
                 if selection.is_classic:
                     cmd.append('--classic')
