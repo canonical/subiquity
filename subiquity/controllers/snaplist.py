@@ -37,7 +37,6 @@ class SampleDataSnapInfoLoader:
         self.model = model
         self.snap_data_dir = snap_data_dir
         self.snap_list_fetched = False
-        self.all_snap_info_fetched = False
         self.failed = False
 
     def start(self):
@@ -49,7 +48,6 @@ class SampleDataSnapInfoLoader:
             with open(snap_info_file) as fp:
                 self.model.load_info_data(json.load(fp))
         self.snap_list_fetched = True
-        self.all_snap_info_fetched = True
 
     def get_snap_list(self, callback):
         callback(self.model.get_snap_list())
@@ -68,7 +66,6 @@ class SnapdSnapInfoLoader:
 
         self._running = False
         self.snap_list_fetched = False
-        self.all_snap_info_fetched = False
         self.failed = False
 
         self.session = requests_unixsocket.Session()
@@ -140,7 +137,6 @@ class SnapdSnapInfoLoader:
 
     def _fetch_next_info(self):
         if not self.pending_info_snaps:
-            self.all_snap_info_fetched = True
             return
         snap = self.pending_info_snaps.pop(0)
         self._fetch_info_for_snap(snap, self._fetch_next_info)
