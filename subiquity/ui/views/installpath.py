@@ -22,8 +22,6 @@ import binascii
 import logging
 import re
 
-import lsb_release
-
 from urwid import connect_signal
 
 from subiquitycore.ui.buttons import back_btn, forward_btn
@@ -44,6 +42,7 @@ from subiquitycore.ui.form import (
     WantsToKnowFormField,
 )
 
+from subiquitycore.lsb_release import lsb_release
 
 log = logging.getLogger('subiquity.installpath')
 
@@ -60,7 +59,7 @@ class InstallpathView(BaseView):
 
     def __init__(self, model, controller):
         self.title = self.title.format(
-            lsb_release.get_distro_information()['RELEASE'])
+            lsb_release().get('release', 'Unknown Release'))
         self.model = model
         self.controller = controller
         self.items = []

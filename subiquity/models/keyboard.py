@@ -86,7 +86,7 @@ class KeyboardSetting:
         content = open(config_file).read()
 
         def optval(opt, default):
-            match = re.search('(?m)^\s*%s=(.*)$' % (opt,), content)
+            match = re.search(r'(?m)^\s*%s=(.*)$' % (opt,), content)
             if match:
                 r = match.group(1).strip('"')
                 if r != '':
