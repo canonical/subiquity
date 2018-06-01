@@ -196,7 +196,7 @@ class IdentityForm(Form):
         elif self.ssh_import_id_value == 'gh':
             if username.startswith('-') or (username.endswith('-') or
                                             '--' in username or
-                                            not re.match('^[a-zA-Z0-9\-]+$',
+                                            not re.match(r'^[a-zA-Z0-9\-]+$',
                                                          username)):
                 return _("A Github username may only contain alphanumeric "
                          "characters or single hyphens, and cannot begin or "

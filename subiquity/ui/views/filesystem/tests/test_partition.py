@@ -1,9 +1,8 @@
 import unittest
 from unittest import mock
+from collections import namedtuple
 
 import urwid
-
-from probert.storage import StorageInfo
 
 from subiquitycore.testing import view_helpers
 
@@ -17,17 +16,19 @@ from subiquity.models.filesystem import (
 from subiquity.ui.views.filesystem.partition import PartitionView
 
 
+FakeStorageInfo = namedtuple(
+    'FakeStorageInfo', ['name', 'size', 'free', 'serial', 'model'])
+FakeStorageInfo.__new__.__defaults__ = (None,) * len(FakeStorageInfo._fields)
+
+
 class PartitionViewTests(unittest.TestCase):
 
     def make_view(self, partition=None):
         controller = mock.create_autospec(spec=FilesystemController)
         model = mock.create_autospec(spec=FilesystemModel)
         model.fs_by_name = FilesystemModel.fs_by_name
-        info = mock.create_autospec(spec=StorageInfo)
-        info.name = 'disk-name'
-        info.size = 100*(2**20)
-        info.free = 50*(2**20)
-        disk = Disk.from_info(info)
+        disk = Disk.from_info(FakeStorageInfo(
+            name='disk-name', size=100*(2**20), free=50*(2**20)))
         return PartitionView(model, controller, disk, partition)
 
     def test_initial_focus(self):

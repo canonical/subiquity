@@ -29,9 +29,13 @@ syslog.syslog('Final localedir is ' + localedir)
 
 
 def switch_language(code='en_US'):
-    if code != 'en_US' and 'FAKE_TRANSLATE' in os.environ:
+    fake_trans = os.environ.get("FAKE_TRANSLATE", "0")
+    if code != 'en_US' and fake_trans == "mangle":
         def my_gettext(message):
             return "_(%s)" % message
+    elif fake_trans not in ("0", ""):
+        def my_gettext(message):
+            return message
     elif code:
         translation = gettext.translation('subiquity', localedir=localedir,
                                           languages=[code])
