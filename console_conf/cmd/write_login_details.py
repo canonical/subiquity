@@ -15,11 +15,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-
 from console_conf.controllers.identity import write_login_details_standalone
-
 from subiquitycore.log import setup_logger
 
-setup_logger(dir='/var/log/console-conf')
 
-sys.exit(write_login_details_standalone())
+def main():
+    setup_logger(dir='/var/log/console-conf')
+    write_login_details_standalone()
+
+
+if __name__ == '__main__':
+    sys.exit(main())

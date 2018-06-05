@@ -43,21 +43,12 @@ parts:
       #- urwid
     source: .
     source-type: git
-  wrappers:
-    plugin: dump
-    source: .
-    source-type: git
     organize:
       'bin/console-conf-tui': usr/bin/console-conf
       'bin/subiquity-tui': usr/bin/subiquity
       'bin/subiquity-loadkeys': usr/bin/subiquity-loadkeys
       'bin/curtin-journald-forwarder': usr/bin/curtin-journald-forwarder
       'bin/subiquity-service': usr/bin/subiquity-service
-    stage-packages: [libc6]
-    stage:
-      - usr/bin
-    prime:
-      - usr/bin
   users-and-groups:
     plugin: dump
     build-packages:

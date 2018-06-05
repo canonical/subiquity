@@ -9,6 +9,9 @@ PROBERT_REPO=https://github.com/CanonicalLtd/probert
 export PYTHONPATH
 CWD := $(shell pwd)
 
+CHECK_DIRS := console_conf/ subiquity/ subiquitycore/
+PYTHON := python3
+
 ifneq (,$(MACHINE))
 	MACHARGS=--machine=$(MACHINE)
 endif
@@ -21,10 +24,10 @@ install_deps:
 	sudo apt-get install -y python3-urwid python3-pyudev python3-nose python3-flake8 \
 		python3-yaml python3-coverage python3-dev pkg-config libnl-genl-3-dev \
 		libnl-route-3-dev python3-attr python3-distutils-extra python3-requests \
-		python3-requests-unixsocket pep8
+		python3-requests-unixsocket
 
 i18n:
-	python3 setup.py build
+	$(PYTHON) setup.py build
 
 dryrun: probert i18n
 	$(MAKE) ui-view DRYRUN="--dry-run --uefi"
@@ -35,27 +38,25 @@ ui-view:
 ui-view-serial:
 	(TERM=att4424 bin/$(PYTHONSRC)-tui $(DRYRUN) --serial)
 
-lint: pep8 pyflakes3
+lint: flake8
 
-pep8:
-	@$(CWD)/scripts/run-pep8
-
-pyflakes3:
-	@$(CWD)/scripts/run-pyflakes3
+flake8:
+	@echo 'tox -e flake8' is preferred to 'make flake8'
+	$(PYTHON) -m flake8 $(CHECK_DIRS)
 
 unit:
 	echo "Running unit tests..."
-	nosetests3 $(PYTHONSRC)/tests
+	$(PYTHON) -m nose $(CHECK_DIRS)
 
-check: lint unit
+check: unit
 
 probert:
 	@if [ ! -d "$(PROBERTDIR)" ]; then \
 		git clone -q $(PROBERT_REPO) $(PROBERTDIR); \
-		(cd probert && python3 setup.py build_ext -i); \
+		(cd probert && $(PYTHON) setup.py build_ext -i); \
     fi
 
 clean:
 	./debian/rules clean
 
-.PHONY: lint pyflakes3 pep8
+.PHONY: flake8 lint
