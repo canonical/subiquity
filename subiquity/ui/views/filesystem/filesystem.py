@@ -275,18 +275,20 @@ class DeviceList(WidgetWrap):
                 typ], 1), self.pile.options('pack')))
 
         def col2(menu, label, size):
-            cols.append(Columns([(3, menu), (42, label), size], 1))
+            cols.append(
+                (Columns([(3, menu), (42, label), size], 1), self.pile.options('pack')))
 
         def col1(label):
-            cols.append(Columns([(3, Text("")), (42, label)], 1))
+            cols.append(
+                (Columns([(3, Text("")), (42, label)], 1), self.pile.options('pack')))
 
         def _fmt_fs(label, fs):
-            r = _("{} formatted as {}").format(label, fs.fstype)
+            r = _("{} {}").format(label, fs.fstype)
             if not self.parent.model.fs_by_name[fs.fstype].is_mounted:
                 return r
             m = fs.mount()
             if m:
-                r += _(", mounted at {}").format(m.path)
+                r += _(", {}").format(m.path)
             else:
                 r += _(", not mounted")
             return r
@@ -312,17 +314,22 @@ class DeviceList(WidgetWrap):
                 Text(device.label),
                 Text(humanize_size(device.size)),
                 Text(device.desc()))
-            entire_label = _maybe_fmt_entire(_("entire device"), device)
+            entire_label = _maybe_fmt_entire(_("  entire device"), device)
             if entire_label is not None:
                 col1(entire_label)
             else:
                 for part in device.partitions():
-                    if part.available != self.show_available:
+                    if part.available() != self.show_available:
                         continue
-                    prefix = _("partition {}").format(part._number)
-                    label = _maybe_fmt_entire(prefix, part)
-                    if label is not None:
-                        label = _("{} not mounted").format(prefix)
+                    prefix = _("  partition {},").format(part._number)
+                    if part.flag == "bios_grub":
+                        label = prefix + " bios_grub"
+                    elif part.fs():
+                        label = _fmt_fs(prefix, part.fs())
+                    elif part.constructed_device():
+                        label = _fmt_constructed(prefix, part)
+                    else:
+                        label = _("{}, not formatted").format(prefix)
                     part_size = "{:>9} ({}%)".format(
                         humanize_size(part.size),
                         int(100 * part.size / device.size))
@@ -365,8 +372,12 @@ class FilesystemView(BaseView):
             Text(_("AVAILABLE DEVICES")),
             Text(""),
             DeviceList(self, True),
+            Text(""),
+            Text(_("USED DEVICES")),
+            Text(""),
             DeviceList(self, False),
-            ] + [Padding.push_4(p) for p in self._build_available_inputs()]
+            Text("")
+            ]
 
         self.lb = Padding.center_95(ListBox(body))
         bottom = Pile([
@@ -384,13 +395,12 @@ class FilesystemView(BaseView):
         log.debug('FileSystemView init complete()')
 
     def refresh_model_inputs(self):
-        mount_list_focus = False
-        if self.frame.focus.base_widget is self.lb.base_widget:
-            if self.lb.base_widget.focus is self.mount_list:
-                mount_list_focus = True
         self.mount_list.refresh_model_inputs()
-        if mount_list_focus and len(self.mount_list._mounts) == 0:
-            self.lb.base_widget.keypress((10, 10), 'tab')  # hmm
+        # If refreshing the view has left the focus widget with no
+        # selectable widgets, simulate a tab to move to the next
+        # selectable widget.
+        if not self.lb.base_widget.focus.selectable():
+            self.lb.base_widget.keypress((10, 10), 'tab')
 
     def _build_used_disks(self):
         log.debug('FileSystemView: building used disks')

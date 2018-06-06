@@ -49,25 +49,29 @@ class _ActionMenuDialog(WidgetWrap):
         close = ActionBackButton("(close)")
         connect_signal(close, "click", self.close)
         group = [close]
+        width = 0
         for i, option in enumerate(self.parent._options):
             if option.enabled:
                 if isinstance(option.label, Widget):
                     btn = option.label
                 else:
                     btn = Color.menu_button(ActionMenuButton(option.label))
+                width = max(width, len(btn.base_widget.label))
                 connect_signal(
                     btn.base_widget, 'click', self.click, option.value)
-                group.append(btn)
             else:
                 label = option.label
                 if isinstance(label, Widget):
                     label = label.base_widget.label
+                width = max(width, len(label))
                 btn = Columns([
                     ('fixed', 1, Text("")),
                     Text(label),
                     ('fixed', 1, Text(">")),
                     ], dividechars=1)
-                group.append(AttrWrap(btn, 'info_minor'))
+                btn = AttrWrap(btn, 'info_minor')
+            group.append(btn)
+        self.width = width
         super().__init__(LineBox(ListBox(group)))
 
     def close(self, sender):
@@ -100,6 +104,7 @@ class ActionMenu(PopUpLauncher):
             self._options.append(opt)
         self._button = Color.menu_button(SelectableIcon(self.icon, 1))
         super().__init__(self._button)
+        self._dialog = _ActionMenuDialog(self)
 
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
@@ -114,10 +119,10 @@ class ActionMenu(PopUpLauncher):
         self._emit("action", action)
 
     def create_pop_up(self):
-        return _ActionMenuDialog(self)
+        return self._dialog
 
     def get_pop_up_parameters(self):
-        width = max([len(o.label) for o in self._options]) + 7
+        width = self._dialog.width + 7
         return {
             'left': 0,
             'top': 1,
