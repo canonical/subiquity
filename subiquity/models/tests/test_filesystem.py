@@ -356,11 +356,8 @@ class TestFilesystemModel(CiTestCase):
     def _get_disks(self):
         all_disks = {}
         for disk in self._get_disk_names():
-            # print('disk path: %s' % disk)
             info = self.fsm.prober.get_storage_info(disk)
-            # print('disk info: %s' % info)
             d = Disk.from_info(info)
-            # print('disk obj : %s' % d)
             all_disks[disk] = d
         return all_disks
 
@@ -699,11 +696,10 @@ class TestFilesystemModel(CiTestCase):
         self.assertTrue(self.fsm.can_install())
         content = yaml.dump({'storage': {'config': self.fsm.render()}},
                             default_flow_style=False, indent=4)
-        print(content)
         self.assertEqual(EXPECTED_FSM_RENDERED_CONTENT, content)
 
     def test_render_ensures_swap_volume_is_mounted(self):
-        """render includes swap mont when partition.fs='swap' and nomount"""
+        """render includes swap mount when partition.fs='swap' and nomount"""
         self.fsm.probe()
         sda = self.fsm.all_disks()[0]
         sda.id = os.path.basename(sda.path)
@@ -713,8 +709,6 @@ class TestFilesystemModel(CiTestCase):
         swapfs.id = "%s-%s" % (swappart.id, swapfs.fstype)
 
         config = self.fsm.render()
-        for item in config:
-            print(item)
         mounts = [entry for entry in config if entry['type'] == 'mount']
         self.assertEqual(1, len(mounts))
         swapmount = mounts[0]
@@ -732,8 +726,6 @@ class TestFilesystemModel(CiTestCase):
         self.fsm.add_mount(swapfs, "")
 
         config = self.fsm.render()
-        for item in config:
-            print(item)
         mounts = [entry for entry in config if entry['type'] == 'mount']
         self.assertEqual(1, len(mounts))
         swapmount = mounts[0]
@@ -751,8 +743,6 @@ class TestFilesystemModel(CiTestCase):
         swapfs.id = "%s-%s" % (swappart.id, swapfs.fstype)
 
         config = self.fsm.render()
-        for item in config:
-            print(item)
         mounts = [entry for entry in config if entry['type'] == 'mount']
         self.assertEqual(1, len(mounts))
         swapmount = mounts[0]
@@ -771,8 +761,6 @@ class TestFilesystemModel(CiTestCase):
         self.fsm.add_mount(swapfs, "")
 
         config = self.fsm.render()
-        for item in config:
-            print(item)
         mounts = [entry for entry in config if entry['type'] == 'mount']
         self.assertEqual(1, len(mounts))
         swapmount = mounts[0]
@@ -786,8 +774,6 @@ class TestFilesystemModel(CiTestCase):
         swapfs = self.fsm.add_filesystem(sda, 'swap')
         swapfs.id = "%s-%s" % (sda.id, swapfs.fstype)
         config = self.fsm.render()
-        for item in config:
-            print(item)
         mounts = [entry for entry in config if entry['type'] == 'mount']
         self.assertEqual(1, len(mounts))
         swapmount = mounts[0]
@@ -803,8 +789,6 @@ class TestFilesystemModel(CiTestCase):
         self.fsm.add_mount(swapfs, "")
 
         config = self.fsm.render()
-        for item in config:
-            print(item)
         mounts = [entry for entry in config if entry['type'] == 'mount']
         self.assertEqual(1, len(mounts))
         swapmount = mounts[0]
@@ -826,7 +810,6 @@ none /dev tmpfs rw,relatime,size=492k,mode=755,uid=231072,gid=231072 0 0
 /dev/xdb /mnt ext4 rw,relatime,data=ordered 0 1
 /dev/xdz7 /wark ext4 rw,relatime,data=ordered 0 1
 """
-        print(proc_mounts)
         m_exists.side_effect = [
             False,  # os.path.exists('/sys/block/xda2') (False)
             True,   # os.path.exists('/sys/block/xdb') (True)
@@ -851,7 +834,6 @@ proc /proc proc rw,nosuid,nodev,noexec,relatime 0 0
 sysfs /sys sysfs rw,relatime 0 0
 udev /dev/fuse devtmpfs rw,nosuid,relatime,nr_inodes=2032480,mode=755 0 0
 """
-        print(proc_mounts)
         m_exists.side_effect = []
         m_glob.glob.side_effect = []
         with simple_mocked_open(content=proc_mounts):
