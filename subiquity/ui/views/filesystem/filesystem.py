@@ -20,8 +20,17 @@ configuration.
 
 """
 import logging
-from urwid import Text
 
+import attr
+from urwid import (
+    connect_signal,
+    Text,
+    WidgetWrap,
+    )
+
+from subiquitycore.ui.actionmenu import (
+    ActionMenu,
+    )
 from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
@@ -75,6 +84,118 @@ class FilesystemConfirmation(Stretchy):
         self.parent.remove_overlay()
 
 
+@attr.s
+class MountInfo:
+    mount = attr.ib(default=None)
+
+    @property
+    def path(self):
+        return self.mount.path
+
+    @property
+    def split_path(self):
+        return self.mount.path.split('/')
+
+    @property
+    def size(self):
+        return humanize_size(self.mount.device.volume.size)
+
+    @property
+    def fstype(self):
+        return self.mount.device.fstype
+
+    @property
+    def desc(self):
+        return self.mount.device.volume.desc()
+
+    def startswith(self, other):
+        i = 0
+        for a, b in zip(self.split_path, other.split_path):
+            if a != b:
+                break
+            i += 1
+        return i >= len(other.split_path)
+
+
+class MountList(WidgetWrap):
+    def __init__(self, parent):
+        self.parent = parent
+        pile = Pile([])
+        self._no_mounts_content = (
+            Color.info_minor(Text(_("No disks or partitions mounted."))),
+            pile.options('pack'))
+        super().__init__(pile)
+        self._compute_contents()
+
+    def _mount_action(self, sender, action, mount):
+        log.debug('_mount_action %s %s', action, mount)
+        if action == 'unmount':
+            self.parent.controller.delete_mount(mount)
+            self.parent.refresh_model_inputs()
+
+    def _compute_contents(self):
+        self._mounts = [
+            MountInfo(mount=m)
+            for m in sorted(self.parent.model._mounts, key=lambda m: m.path)
+        ]
+        if len(self._mounts) == 0:
+            self._w.contents[:] = [self._no_mounts_content]
+            return
+        log.debug('FileSystemView: building part list')
+        mount_point_text = _("MOUNT POINT")
+        longest_path = max(
+            [len(mount_point_text)] +
+            [len(m.mount.path) for m in self._mounts])
+        cols = []
+
+        def col(action_menu, path, size, fstype, desc):
+            c = Columns([
+                (4,            action_menu),
+                (longest_path, Text(path)),
+                (size_width,   size),
+                (type_width,   Text(fstype)),
+                Text(desc),
+            ], dividechars=1)
+            cols.append((c, self._w.options('pack')))
+
+        size_text = _("SIZE")
+        type_text = _("TYPE")
+        size_width = max(len(size_text), 9)
+        type_width = max(len(type_text), self.parent.model.longest_fs_name)
+        col(
+            Text(""),
+            mount_point_text,
+            Text(size_text, align='center'),
+            type_text,
+            _("DEVICE TYPE"))
+
+        actions = [(_("Unmount"), True, 'unmount')]
+        for i, mi in enumerate(self._mounts):
+            path_markup = mi.path
+            for j in range(i-1, -1, -1):
+                mi2 = self._mounts[j]
+                if mi.startswith(mi2):
+                    part1 = "/".join(mi.split_path[:len(mi2.split_path)])
+                    part2 = "/".join(
+                        [''] + mi.split_path[len(mi2.split_path):])
+                    path_markup = [('info_minor', part1), part2]
+                    break
+                if j == 0 and mi2.split_path == ['', '']:
+                    path_markup = [
+                        ('info_minor', "/"),
+                        "/".join(mi.split_path[1:]),
+                        ]
+            menu = ActionMenu(actions)
+            connect_signal(menu, 'action', self._mount_action, mi.mount)
+            col(
+                menu,
+                path_markup,
+                Text(mi.size, align='right'),
+                mi.fstype,
+                mi.desc)
+        self._w.contents[:] = cols
+
+
 class FilesystemView(BaseView):
     title = _("Filesystem setup")
     footer = _("Select available disks to format and mount")
@@ -84,10 +205,11 @@ class FilesystemView(BaseView):
         self.model = model
         self.controller = controller
         self.items = []
+        self.mount_list = MountList(self)
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
-            Padding.push_4(self._build_filesystem_list()),
+            self.mount_list,
             Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
@@ -107,6 +229,19 @@ class FilesystemView(BaseView):
             self.frame.focus_position = 2
         super().__init__(self.frame)
         log.debug('FileSystemView init complete()')
+
+    def refresh_model_inputs(self):
+        mount_list_focus = False
+        if self.frame.focus.base_widget is self.lb.base_widget:
+            if self.lb.base_widget.focus is self.mount_list:
+                mount_list_focus = True
+        if mount_list_focus:
+            last = self.mount_list._w.focus_position == len(self.mount_list._w.contents) - 1
+            self._compute_contents()
+            if len(self.mount_list._mounts) == 0:
+                self.lb.base_widget.keypress((10, 10), 'tab')  # hmm
+            elif last:
+                self.mount_list._w.focus_position -= 1
 
     def _build_used_disks(self):
         log.debug('FileSystemView: building used disks')
