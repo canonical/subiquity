@@ -119,6 +119,13 @@ class MountInfo:
 
 
 class MountList(WidgetWrap):
+
+    def _select_first_selectable(self):
+        self._w._select_first_selectable()
+
+    def _select_last_selectable(self):
+        self._w._select_last_selectable()
+
     def __init__(self, parent):
         self.parent = parent
         pile = Pile([])
