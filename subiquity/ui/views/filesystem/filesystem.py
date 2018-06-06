@@ -170,7 +170,10 @@ class MountList(WidgetWrap):
                 Color.body(Text("")),
             ], dividechars=1)
             if isinstance(action_menu, ActionMenu):
-                c = AttrMap(c, {None:'menu_button', 'grey':'info_minor'}, {None: 'menu_button focus', 'grey': 'menu_button focus'})
+                c = AttrMap(
+                    c,
+                    {None: 'menu_button', 'grey': 'info_minor'},
+                    {None: 'menu_button focus', 'grey': 'menu_button focus'})
             cols.append((c, self._w.options('pack')))
 
         size_text = _("SIZE")
@@ -208,10 +211,11 @@ class MountList(WidgetWrap):
                 Text(mi.size, align='right'),
                 mi.fstype,
                 mi.desc)
-        last = len(self._w.contents) > 0 and self._w.focus_position == len(self._w.contents) - 1
+        last = (len(self._w.contents) > 0 and
+            self._w.focus_position == len(self._w.contents) - 1)
         self._w.contents[:] = cols
         if last:
-          self._w.focus_position -= 1
+            self._w.focus_position -= 1
 
 
 class FilesystemView(BaseView):
