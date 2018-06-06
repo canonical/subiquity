@@ -28,7 +28,8 @@ import os
 import sys
 
 setup_kwargs = {}
-if sys.argv[1] == "build":
+# dpkg build uses build and install, tox uses sdist
+if sys.argv[1] in ("build", "install"):
     from DistUtilsExtra.command import build_extra
     from DistUtilsExtra.command import build_i18n
     setup_kwargs['cmdclass'] = {'build': build_extra.build_extra,
