@@ -123,7 +123,7 @@ class SnapInfoView(WidgetWrap):
             ('pack',      Text("")),
             ('pack',      Text(snap.summary)),
             ('pack',      Text("")),
-            (10,          self.lb_description),  # overwritten in render()
+            self.lb_description,  # overwritten in render()
             ('pack',      Text("")),
             ('weight', 1, self.lb_channels),
             ]
