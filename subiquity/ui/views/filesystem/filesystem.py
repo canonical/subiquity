@@ -237,7 +237,7 @@ class FilesystemView(BaseView):
                 mount_list_focus = True
         if mount_list_focus:
             last = self.mount_list._w.focus_position == len(self.mount_list._w.contents) - 1
-            self._compute_contents()
+            self.mount_list._compute_contents()
             if len(self.mount_list._mounts) == 0:
                 self.lb.base_widget.keypress((10, 10), 'tab')  # hmm
             elif last:

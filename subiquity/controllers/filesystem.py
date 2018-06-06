@@ -117,7 +117,7 @@ class FilesystemController(BaseController):
     def create_filesystem(self, volume, spec):
         if spec['fstype'] is None:
             return
-        fs = self.model.add_filesystem(volume, spec['fstype'])
+        fs = self.model.add_filesystem(volume, spec['fstype'].label)
         self.create_mount(fs, spec)
         return fs
 
@@ -158,17 +158,17 @@ class FilesystemController(BaseController):
                     part_size = disk.size // 2
                 log.debug('Adding EFI partition first')
                 part = self.create_partition(
+                    disk,
                     dict(
-                        disk=disk,
                         size=part_size,
-                        fstype='fat32',
+                        fstype=self.model.fs_by_name['fat32'],
                         mount='/boot/efi'),
                     flag="boot")
             else:
                 log.debug('Adding grub_bios gpt partition first')
                 part = self.create_partition(
+                    disk,
                     dict(
-                        disk=disk,
                         size=BIOS_GRUB_SIZE_BYTES,
                         fstype=None,
                         mount=None),
@@ -183,7 +183,7 @@ class FilesystemController(BaseController):
                                                 disk.free))
                 spec['size'] = disk.free
 
-        part = self.model.create_partition(disk, spec["size"])
+        part = self.create_partition(disk, spec)
 
         log.info("Successfully added partition")
         self.partition_disk(disk)
