@@ -2,17 +2,16 @@ Source: subiquity
 Section: admin
 Priority: extra
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
-Build-Depends: bzr,
-               debhelper (>= 9),
+Build-Depends: debhelper (>= 9),
                dh-python,
                dh-systemd,
-               iso-codes,
                git,
+               iso-codes,
                python3,
-               python3-setuptools,
+               python3-attr,
                python3-distutils-extra,
-               python3-yaml,
-               python3-attr
+               python3-setuptools,
+               python3-yaml
 Standards-Version: 3.9.5
 Homepage: https://github.com/CanonicalLtd/subiquity
 X-Python3-Version: >= 3.3
@@ -22,10 +21,10 @@ Vcs-Git: https://github.com/CanonicalLtd/subiquity.git
 Package: subiquity
 Architecture: all
 Depends: curtin,
+         iso-codes,
          python3,
          python3-attr,
          subiquitycore,
-         iso-codes,
          ${misc:Depends},
          ${python3:Depends}
 Description: Ubuntu Server Installer
@@ -65,10 +64,7 @@ Description: Ubuntu Server Installer - core libraries
 
 Package: console-conf
 Architecture: all
-Depends: python3,
-         subiquitycore,
-         ${misc:Depends},
-         ${python3:Depends}
+Depends: python3, subiquitycore, ${misc:Depends}, ${python3:Depends}
 Description: Ubuntu Core Pre-Ownership Configurator
  SUbiquity is an installer system for servers, embedded devices and desktops
  or laptops meant to build systems as quickly as possible for users to reach
@@ -85,9 +81,7 @@ Description: Ubuntu Core Pre-Ownership Configurator
 
 Package: subiquity-tools
 Architecture: all
-Depends: bzr,
-         ${misc:Depends},
-         cloud-image-utils,
+Depends: cloud-image-utils,
          devscripts,
          extlinux,
          gdisk,
@@ -113,6 +107,7 @@ Depends: bzr,
          subiquity,
          syslinux-common,
          ubuntu-cloudimage-keyring,
+         ${misc:Depends},
          ${python3:Depends}
 Description: Ubuntu Server Installer
  SUbiquity is an installer system for servers, embedded devices and desktops
