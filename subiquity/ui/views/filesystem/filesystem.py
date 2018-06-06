@@ -126,7 +126,7 @@ class MountList(WidgetWrap):
             Color.info_minor(Text(_("No disks or partitions mounted."))),
             pile.options('pack'))
         super().__init__(pile)
-        self._compute_contents()
+        self.refresh_model_inputs()
 
     def _mount_action(self, sender, action, mount):
         log.debug('_mount_action %s %s', action, mount)
@@ -134,7 +134,7 @@ class MountList(WidgetWrap):
             self.parent.controller.delete_mount(mount)
             self.parent.refresh_model_inputs()
 
-    def _compute_contents(self):
+    def refresh_model_inputs(self):
         self._mounts = [
             MountInfo(mount=m)
             for m in sorted(self.parent.model._mounts, key=lambda m: m.path)
@@ -201,7 +201,10 @@ class MountList(WidgetWrap):
                 Text(mi.size, align='right'),
                 mi.fstype,
                 mi.desc)
+        last = len(self._w.contents) > 0 and self._w.focus_position == len(self._w.contents) - 1
         self._w.contents[:] = cols
+        if last:
+          self._w.focus_position -= 1
 
 
 class FilesystemView(BaseView):
@@ -243,13 +246,9 @@ class FilesystemView(BaseView):
         if self.frame.focus.base_widget is self.lb.base_widget:
             if self.lb.base_widget.focus is self.mount_list:
                 mount_list_focus = True
-        if mount_list_focus:
-            last = self.mount_list._w.focus_position == len(self.mount_list._w.contents) - 1
-            self.mount_list._compute_contents()
-            if len(self.mount_list._mounts) == 0:
-                self.lb.base_widget.keypress((10, 10), 'tab')  # hmm
-            elif last:
-                self.mount_list._w.focus_position -= 1
+        self.mount_list.refresh_model_inputs()
+        if mount_list_focus and len(self.mount_list._mounts) == 0:
+            self.lb.base_widget.keypress((10, 10), 'tab')  # hmm
 
     def _build_used_disks(self):
         log.debug('FileSystemView: building used disks')
