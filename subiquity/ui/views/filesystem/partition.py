@@ -262,6 +262,7 @@ class PartitionView(PartitionFormatView):
 
     def delete(self, sender):
         self.controller.delete_partition(self.partition)
+        self.controller.partition_disk(self.disk)
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
