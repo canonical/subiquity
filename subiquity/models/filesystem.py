@@ -84,6 +84,26 @@ def dehumanize_size(size):
     return num * mult // div
 
 
+def get_raid_size(level, devices):
+    if len(devices) == 0:
+        return 0
+    min_size = min(dev.size for dev in devices)
+    if min_size <= 0:
+        return 0
+    if level == 0:
+        return min_size * len(devices)
+    elif level == 1:
+        return min_size
+    elif level == 5:
+        return min_size * (len(devices) - 1)
+    elif level == 6:
+        return min_size * (len(devices) - 2)
+    elif level == 10:
+        return min_size * (len(devices) // 2)
+    else:
+        raise ValueError("unknown raid level %s" % level)
+
+
 def id_factory(name):
     i = 0
 
@@ -116,7 +136,76 @@ def asdict(inst):
 
 
 @attr.s
-class Disk:
+class _Formattable:
+    # Base class for anything that can be formatted and mounted,
+    # e.g. a disk or a RAID or a partition.
+
+    # Filesystem
+    _fs = attr.ib(default=None, repr=False)
+    # Raid for now, but one day LV, ZPool, BCache...
+    _constructed_device = attr.ib(default=None, repr=False)
+
+    def _is_entirely_used(self):
+        return self._fs is not None or self._constructed_device is not None
+
+    def fs(self):
+        return self._fs
+
+    def constructed_device(self):
+        return self._constructed_device
+
+
+@attr.s
+class _Device(_Formattable):
+    # Anything that can have partitions, e.g. a disk or a RAID.
+
+    # subclass must implement .size!
+
+    # [Partition]
+    _partitions = attr.ib(default=attr.Factory(list), repr=False)
+
+    def partitions(self):
+        return self._partitions
+
+    @property
+    def used(self):
+        if self._is_entirely_used():
+            return self.size
+        r = 0
+        for p in self._partitions:
+            r += p.size
+        return r
+
+    @property
+    def empty(self):
+        return self.used == 0
+
+    @property
+    def free(self):
+        return self.size - self.used
+
+    def available(self):
+        # A _Device is available if:
+        # 1) it is not part of a RAID (or LVM or zpool or ...)
+        # 2) if it is formatted, it is available if it is formatted with fs
+        #    that needs to be mounted and is not mounted
+        # 3) if it is not formatted, if is available if it has free
+        #    space OR at least one partition is not formatted or is formatted
+        #    with a fs that needs to be mounted and is not mounted
+        if self._constructed_device is not None:
+            return False
+        if self._fs is not None:
+            return self._fs._available()
+        if self.free > 0:
+            return True
+        for p in self._partitions:
+            if p.available():
+                return True
+        return False
+
+
+@attr.s
+class Disk(_Device):
 
     id = attr.ib(default=id_factory("disk"))
     type = attr.ib(default="disk")
@@ -129,17 +218,6 @@ class Disk:
     name = attr.ib(default="")
     grub_device = attr.ib(default=False)
 
-    # [Partition]
-    _partitions = attr.ib(default=attr.Factory(list), repr=False)
-    # Filesystem
-    _fs = attr.ib(default=None, repr=False)
-
-    def partitions(self):
-        return self._partitions
-
-    def fs(self):
-        return self._fs
-
     _info = attr.ib(default=None)
 
     @classmethod
@@ -150,16 +228,49 @@ class Disk:
         d.model = info.model
         return d
 
+    def info_for_display(self):
+        bus = self._info.raw.get('ID_BUS', None)
+        major = self._info.raw.get('MAJOR', None)
+        if bus is None and major == '253':
+            bus = 'virtio'
+
+        devpath = self._info.raw.get('DEVPATH', self.path)
+        # XXX probert should be doing this!!
+        rotational = '1'
+        try:
+            dev = os.path.basename(devpath)
+            rfile = '/sys/class/block/{}/queue/rotational'.format(dev)
+            rotational = open(rfile, 'r').read().strip()
+        except (PermissionError, FileNotFoundError, IOError):
+            log.exception('WARNING: Failed to read file {}'.format(rfile))
+            pass
+
+        dinfo = {
+            'bus': bus,
+            'devname': self.path,
+            'devpath': devpath,
+            'model': self.model,
+            'serial': self.serial,
+            'size': self.size,
+            'humansize': humanize_size(self.size),
+            'vendor': self._info.vendor,
+            'rotational': 'true' if rotational == '1' else 'false',
+        }
+        if dinfo['serial'] is None:
+            dinfo['serial'] = 'unknown'
+        if dinfo['model'] is None:
+            dinfo['model'] = 'unknown'
+        if dinfo['vendor'] is None:
+            dinfo['vendor'] = 'unknown'
+        return dinfo
+
     def reset(self):
         self.preserve = False
         self.name = ''
         self.grub_device = ''
         self._partitions = []
         self._fs = None
-
-    @property
-    def available(self):
-        return self.used < self.size
+        self._constructed_device = None
 
     @property
     def size(self):
@@ -175,22 +286,9 @@ class Disk:
             return self.serial
         return self.path
 
-    @property
-    def used(self):
-        if self._fs is not None:
-            return self.size
-        r = 0
-        for p in self._partitions:
-            r += p.size
-        return r
-
-    @property
-    def free(self):
-        return self.size - self.used
-
 
 @attr.s
-class Partition:
+class Partition(_Formattable):
 
     id = attr.ib(default=id_factory("part"))
     type = attr.ib(default="partition")
@@ -200,25 +298,22 @@ class Partition:
     flag = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
-    # Filesystem
-    _fs = attr.ib(default=None, repr=False)
-
-    def fs(self):
-        return self._fs
-
     def desc(self):
         return _("partition of {}").format(self.device.desc())
+
+    @property
+    def label(self):
+        return _("partition {} of {}").format(self._number, self.device.label)
 
     @property
     def available(self):
         if self.flag == 'bios_grub':
             return False
+        if self._constructed_device is not None:
+            return False
         if self._fs is None:
             return True
-        if self._fs._mount is None:
-            fs_obj = FilesystemModel.fs_by_name[self._fs.fstype]
-            return fs_obj.is_mounted
-        return False
+        return self._fs._available()
 
     @property
     def _number(self):
@@ -230,12 +325,32 @@ class Partition:
 
 
 @attr.s
+class Raid(_Device):
+    id = attr.ib(default=id_factory("raid"))
+    type = attr.ib(default="raid")
+    name = attr.ib(default=None)
+    raidlevel = attr.ib(default=None)  # 0, 1, 5, 6, 10
+    devices = attr.ib(default=attr.Factory(list))  # [_Formattable]
+
+    @property
+    def size(self):
+        return get_raid_size(self.raidlevel, self.devices)
+
+    @property
+    def label(self):
+        return self.name
+
+    def desc(self):
+        return _("software RAID {}").format(self.raidlevel)
+
+
+@attr.s
 class Filesystem:
 
     id = attr.ib(default=id_factory("fs"))
     type = attr.ib(default="format")
     fstype = attr.ib(default=None)
-    volume = attr.ib(default=None)  # Partition or Disk
+    volume = attr.ib(default=None)  # _Formattable
     label = attr.ib(default=None)
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
@@ -244,6 +359,14 @@ class Filesystem:
 
     def mount(self):
         return self._mount
+
+    def _available(self):
+        # False if mounted or if fs does not require a mount, True otherwise.
+        if self._mount is None:
+            fs_obj = FilesystemModel.fs_by_name[self._fs.fstype]
+            return fs_obj.is_mounted
+        else:
+            return False
 
 
 @attr.s
@@ -295,8 +418,9 @@ class FilesystemModel(object):
     def reset(self):
         # only gets populated when something uses the disk
         self._disks = collections.OrderedDict()
-        self._filesystems = []
         self._partitions = []
+        self._raids = []
+        self._filesystems = []
         self._mounts = []
         for k, d in self._available_disks.items():
             self._available_disks[k].reset()
@@ -347,7 +471,7 @@ class FilesystemModel(object):
             if data['DEVTYPE'] == 'disk':
                 if not data["DEVPATH"].startswith('/devices/virtual'):
                     if data["MAJOR"] != "2" and data['attrs'].get('ro') != "1":
-                        # log.debug('disk={}\n{}'.format(
+                        #  log.debug('disk={}\n{}'.format(
                         #    path, json.dumps(data, indent=4, sort_keys=True)))
                         info = self.prober.get_storage_info(path)
                         self._available_disks[path] = Disk.from_info(info)
@@ -358,6 +482,12 @@ class FilesystemModel(object):
 
     def all_disks(self):
         return sorted(self._available_disks.values(), key=lambda x: x.label)
+
+    def all_raids(self):
+        return self._raids
+
+    def all_devices(self):
+        return self.all_disks() + self.all_raids()  # + self.all_lvms() + ...
 
     def get_disk(self, path):
         return self._available_disks.get(path)
@@ -374,6 +504,18 @@ class FilesystemModel(object):
         disk._partitions.append(p)
         self._partitions.append(p)
         return p
+
+    def add_raid(self, result):
+        r = Raid(
+            name=result['name'],
+            raidlevel=result['level'].value,
+            devices=result['devices'])
+        for d in result['devices']:
+            if isinstance(d, Disk):
+                self._use_disk(d)
+            d._raid = r
+        self._raids.append(r)
+        return r
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
@@ -399,7 +541,10 @@ class FilesystemModel(object):
     def get_mountpoint_to_devpath_mapping(self):
         r = {}
         for m in self._mounts:
-            r[m.path] = m.device.volume.path
+            if isinstance(m.device.volume, Raid):
+                r[m.path] = m.device.volume.name
+            else:
+                r[m.path] = m.device.volume.path
         return r
 
     def any_configuration_done(self):
