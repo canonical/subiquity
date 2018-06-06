@@ -1,4 +1,5 @@
-bin/subiquity-tui                      usr/share/subiquity
-bin/subiquity-debug                    usr/share/subiquity
-bin/subiquity-loadkeys                 usr/share/subiquity
+debian/tmp/usr/bin/subiquity-debug      usr/share/subiquity
+debian/tmp/usr/bin/subiquity-loadkeys   usr/share/subiquity
+debian/tmp/usr/bin/subiquity-tui        usr/share/subiquity
+debian/tmp/usr/bin/subiquity-service    usr/share/subiquity
 usr/share/subiquity/subiquity

@@ -36,7 +36,8 @@ if sys.argv[1] in ("build", "install"):
                                 'build_i18n': build_i18n.build_i18n}
 
 
-with open(os.path.join(os.path.dirname(__file__), 'subiquitycore', '__init__.py')) as init:
+with open(os.path.join(os.path.dirname(__file__),
+                       'subiquitycore', '__init__.py')) as init:
     lines = [line for line in init if 'i18n' not in line]
     ns = {}
     exec('\n'.join(lines), ns)
@@ -56,5 +57,20 @@ setup(name='subiquity',
       url='https://github.com/CanonicalLtd/subiquity',
       license="AGPLv3+",
       packages=find_packages(exclude=["tests"]),
+      scripts=[
+          'bin/console-conf-wait',
+          'bin/console-conf-wrapper',
+          'bin/subiquity-debug',
+          'bin/subiquity-loadkeys',
+          'bin/subiquity-service',
+      ],
+      entry_points={
+          'console_scripts': [
+              'subiquity-tui = subiquity.cmd.tui:main',
+              'console-conf-tui = console_conf.cmd.tui:main',
+              ('console-conf-write-login-details = '
+               'console_conf.cmd.write_login_details:main'),
+          ],
+      },
       data_files=[],
       **setup_kwargs)
