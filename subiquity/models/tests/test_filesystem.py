@@ -322,6 +322,20 @@ class TestFilesystemFilesystem(CiTestCase):
         self.assertEqual(mount, fs.mount())
 
 
+class MockedStorageInfo():
+    """Simplified version of probert.storage.StorageInfo"""
+    def __init__(self, probe_data):
+        [self.name] = probe_data
+        self.raw = probe_data.get(self.name)
+        self.type = self.raw['DEVTYPE']
+        self.size = int(self.raw['attrs']['size'])
+        self.devpath = self.raw['DEVPATH']
+        self.is_virtual = self.devpath.startswith('/devices/virtual')
+        self.serial = self.raw.get('ID_SERIAL', 'serial-%s' % self.name)
+        self.model = self.raw.get('ID_MODEL', 'model-%s' % self.name)
+        self.vendor = self.raw.get('ID_VENDOR', 'vendor-%s' % self.name)
+
+
 class TestFilesystemModel(CiTestCase):
     def setUp(self):
         super(TestFilesystemModel, self).setUp()
@@ -331,6 +345,8 @@ class TestFilesystemModel(CiTestCase):
         prober = 'subiquitycore.prober.Prober.'
         self.add_patch(prober + '_load_machine_config', 'm_probe_load')
         self.add_patch(prober + 'get_storage', 'm_probe_storage')
+        self.add_patch('subiquitycore.prober.StorageInfo',
+                       'm_storageinfo', autospec=False, new=MockedStorageInfo)
         fsm = 'subiquity.models.filesystem.'
         self.add_patch(fsm + '_get_system_mounted_disks', 'm_sys_mounts')
         self.m_sys_mounts.return_value = []
@@ -458,7 +474,6 @@ class TestFilesystemModel(CiTestCase):
         with self.assertRaises(Exception):
             self.fsm.add_partition(disk, disk.free + 1000)
 
-    # FIXME: can a Disk Object only have one filesystem?
     # FIXME: Disk.fs needs a setter
     def test_add_partition_to_disk_with_existing_fs(self):
         """raises exception if disk already has a filesystem"""
