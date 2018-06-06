@@ -15,6 +15,7 @@
 
 import attr
 import collections
+import enum
 import glob
 import logging
 import math
@@ -133,6 +134,14 @@ def asdict(inst):
 # Disk, Partition etc classes correspond to entries in curtin's
 # storage config list. They are mostly 'dumb data', all the logic is
 # in the FilesystemModel or FilesystemController classes.
+
+
+class DeviceAction(enum.Enum):
+    INFO = enum.auto()
+    EDIT = enum.auto()
+    PARTITION = enum.auto()
+    FORMAT = enum.auto()
+    DELETE = enum.auto()
 
 
 @attr.s
@@ -286,6 +295,18 @@ class Disk(_Device):
             return self.serial
         return self.path
 
+    def supports_action(self, action):
+        if action == DeviceAction.INFO:
+            return True
+        if action == DeviceAction.EDIT:
+            return False
+        if action == DeviceAction.PARTITION:
+            return self.free > 0
+        if action == DeviceAction.FORMAT:
+            return self.used == 0
+        if action == DeviceAction.DELETE:
+            return False
+
 
 @attr.s
 class Partition(_Formattable):
@@ -323,6 +344,18 @@ class Partition(_Formattable):
     def path(self):
         return "%s%s" % (self.device.path, self._number)
 
+    def supports_action(self, action):
+        if action == DeviceAction.INFO:
+            return False
+        if action == DeviceAction.EDIT:
+            return True
+        if action == DeviceAction.PARTITION:
+            return False
+        if action == DeviceAction.FORMAT:
+            return True
+        if action == DeviceAction.DELETE:
+            return False
+
 
 @attr.s
 class Raid(_Device):
@@ -342,6 +375,18 @@ class Raid(_Device):
 
     def desc(self):
         return _("software RAID {}").format(self.raidlevel)
+
+    def supports_action(self, action):
+        if action == DeviceAction.INFO:
+            return False
+        if action == DeviceAction.EDIT:
+            return True
+        if action == DeviceAction.PARTITION:
+            return self.raidlevel != 0 and self.free > 0
+        if action == DeviceAction.FORMAT:
+            return self.used == 0
+        if action == DeviceAction.DELETE:
+            return True
 
 
 @attr.s
@@ -375,6 +420,9 @@ class Mount:
     type = attr.ib(default="mount")
     device = attr.ib(default=None)  # Filesystem
     path = attr.ib(default=None)
+
+    def can_delete(self):
+        return self.device.volume.flag != "boot"
 
 
 def align_up(size, block_size=1 << 20):
