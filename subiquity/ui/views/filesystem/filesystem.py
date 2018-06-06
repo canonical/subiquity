@@ -149,7 +149,7 @@ class MountList(WidgetWrap):
         if len(self._mounts) == 0:
             self._w.contents[:] = [self._no_mounts_content]
             return
-        log.debug('FileSystemView: building part list')
+        log.debug('FileSystemView: building mount list')
         mount_point_text = _("MOUNT POINT")
         device_type_text = _("DEVICE TYPE")
         longest_path = max(
@@ -265,44 +265,6 @@ class FilesystemView(BaseView):
         log.debug('FileSystemView: building used disks')
         return Color.info_minor(
             Text("No disks have been used to create a constructed disk."))
-
-    def _build_filesystem_list(self):
-        log.debug('FileSystemView: building part list')
-        cols = []
-        mount_point_text = _("MOUNT POINT")
-        longest_path = len(mount_point_text)
-        for m in sorted(self.model._mounts, key=lambda m: m.path):
-            path = m.path
-            longest_path = max(longest_path, len(path))
-            for p, *dummy in reversed(cols):
-                if path.startswith(p):
-                    path = [('info_minor', p), path[len(p):]]
-                    break
-            cols.append((m.path, path, humanize_size(m.device.volume.size),
-                         m.device.fstype, m.device.volume.desc()))
-        for fs in self.model._filesystems:
-            if fs.fstype == 'swap':
-                cols.append((None, _('SWAP'), humanize_size(fs.volume.size),
-                             fs.fstype, fs.volume.desc()))
-
-        if len(cols) == 0:
-            return Pile([Color.info_minor(
-                Text(_("No disks or partitions mounted.")))])
-        size_text = _("SIZE")
-        type_text = _("TYPE")
-        size_width = max(len(size_text), 9)
-        type_width = max(len(type_text), self.model.longest_fs_name)
-        cols.insert(0, (None, mount_point_text, size_text, type_text,
-                        _("DEVICE TYPE")))
-        pl = []
-        for dummy, a, b, c, d in cols:
-            if b == "SIZE":
-                b = Text(b, align='center')
-            else:
-                b = Text(b, align='right')
-            pl.append(Columns([(longest_path, Text(a)), (size_width, b),
-                               (type_width, Text(c)), Text(d)], 4))
-        return Pile(pl)
 
     def _build_buttons(self):
         log.debug('FileSystemView: building buttons')
