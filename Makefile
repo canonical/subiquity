@@ -46,7 +46,7 @@ flake8:
 	$(PYTHON) -m flake8 $(CHECK_DIRS)
 
 unit:
-	echo "Running unit tests..."
+	@echo 'tox -e py3' is preferred to 'make unit'
 	$(PYTHON) -m nose $(noseopts) $(CHECK_DIRS)
 
 check: lint unit

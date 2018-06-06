@@ -5,6 +5,7 @@ import logging
 import mock
 import os
 import random
+import string
 import yaml
 import unittest
 
@@ -94,9 +95,9 @@ class TestHumanizeSize(unittest.TestCase):
 
     def test_basics(self):
         """convert common human values to integer values"""
-        for string, integer in self.basics:
-            with self.subTest(input=string):
-                self.assertEqual(string, humanize_size(integer))
+        for hval, integer in self.basics:
+            with self.subTest(input=hval):
+                self.assertEqual(hval, humanize_size(integer))
 
 
 class TestDehumanizeSize(unittest.TestCase):
@@ -163,6 +164,53 @@ class TestDehumanizeSize(unittest.TestCase):
 
 MB = 1 << 30
 GB = 1 << 40
+
+
+def get_supported_filesystems():
+    """ Extract the valid FS entries in
+        FilesystemModel.supported_filesystems list """
+    return [fstup for fstup in FilesystemModel.supported_filesystems
+            if len(fstup) > 2 and fstup[2].label]
+
+
+def mkfs():
+    return random.choice(get_supported_filesystems())
+
+
+def mkstring(length=None):
+    if not length:
+        length = 5
+    return ''.join(random.choices(string.ascii_lowercase, k=length))
+
+
+def mksize(start=None, end=None):
+    if not start:
+        start = 1
+    if not end:
+        end = 10
+    return random.randint(start, end)
+
+
+def mkpath(dirs=None, dirlength=None):
+    """ create a filesystem path composed of random chars
+        allowing subdirs, two by default:
+
+        Examples:
+
+        % mkpath()
+        '/nliyt/nxdcf'
+
+        % mkpath(dirs=3)
+        '/cvmqp/mvpgn/qrdil'
+
+        % mkpath(dirs=2, dirlength=2)
+        '/mq/kc'
+    """
+    if not dirs:
+        dirs = 2
+
+    return '/' + '/'.join([mkstring(length=dirlength)
+                           for _ in range(dirs)])
 
 
 class TestFilesystemDisk(CiTestCase):
@@ -242,9 +290,9 @@ class TestFilesystemPartition(CiTestCase):
         """verify partition.fs() returns the filesystem object added"""
         part = Partition()
         fs = Filesystem()
-        fs.fstype = 'ext4'
+        fs.fstype = mkfs()
         fs.volume = part
-        fs.label = 'cloudimg-rootfs'
+        fs.label = mkstring()
         part._fs = fs
         self.assertEqual(fs, part.fs())
 
@@ -274,13 +322,7 @@ class TestFilesystemPartition(CiTestCase):
 
     def test_partition_available_delegates_to_fs_mount(self):
         """partition.available delegates to fs._mount"""
-        def _fsobjs():
-            """ Extract the valid FS entries in
-                FilesystemModel.supported_filesystems list """
-            return [fstup for fstup in FilesystemModel.supported_filesystems
-                    if len(fstup) > 2 and fstup[2].label]
-
-        for (fsname, _disp, fs_obj) in _fsobjs():
+        for (fsname, _disp, fs_obj) in get_supported_filesystems():
             partition = Partition()
             fs = Filesystem()
             fs.fstype = fsname
@@ -291,7 +333,7 @@ class TestFilesystemPartition(CiTestCase):
         """partition.available is False with mounted"""
         partition = Partition()
         partition._fs = Filesystem()
-        partition._fs._mount = "Not None"
+        partition._fs._mount = Mount()
         self.assertFalse(partition.available)
 
     def test_partition_number(self):
@@ -305,12 +347,15 @@ class TestFilesystemPartition(CiTestCase):
     # FIXME: partition.path does not account for named partition (nvmen0p1)
     def test_partition_path(self):
         """partition.path derived from device path and part index"""
+        dpath = mkpath()
+        expected_path = dpath + '1'
+
         disk = Disk()
-        disk.path = "/wark/xda"
+        disk.path = dpath
         partition = Partition()
         partition.device = disk
         disk._partitions.append(partition)
-        self.assertEqual('/wark/xda1', partition.path)
+        self.assertEqual(expected_path, partition.path)
 
 
 class TestFilesystemFilesystem(CiTestCase):
@@ -480,8 +525,8 @@ class TestFilesystemModel(CiTestCase):
         self.fsm.probe()
         all_disks = self.fsm.all_disks()
         disk = random.choice(all_disks)
-        self.fsm.add_partition(disk, 10 * MB)
-        disk._fs = "Foobar"
+        self.fsm.add_partition(disk, mksize() * MB)
+        disk._fs = Filesystem()
         with self.assertRaises(Exception):
             self.fsm.add_partition(disk, disk.free)
 
@@ -491,8 +536,9 @@ class TestFilesystemModel(CiTestCase):
         all_disks = self.fsm.all_disks()
         disk = random.choice(all_disks)
         partition = self.fsm.add_partition(disk, disk.free)
-        fs = self.fsm.add_filesystem(partition, 'ext4')
-        self.fsm.add_mount(fs, '/wark/foo')
+        fs = self.fsm.add_filesystem(partition, mkfs())
+        mpath = mkpath()
+        self.fsm.add_mount(fs, mpath)
         self.assertNotEqual(collections.OrderedDict(), self.fsm._disks)
         self.assertNotEqual([], self.fsm._partitions)
         self.assertNotEqual([], self.fsm._filesystems)
@@ -508,8 +554,8 @@ class TestFilesystemModel(CiTestCase):
         self.fsm.probe()
         all_disks = self.fsm.all_disks()
         disk = random.choice(all_disks)
-        partition = self.fsm.add_partition(disk, 1 * MB)
-        fs1 = self.fsm.add_filesystem(partition, 'ext4')
+        partition = self.fsm.add_partition(disk, mksize() * MB)
+        fs1 = self.fsm.add_filesystem(partition, mkfs())
         self.assertEqual(fs1, self.fsm._filesystems[0])
 
     def test_add_filesystem_to_disk(self):
@@ -517,7 +563,7 @@ class TestFilesystemModel(CiTestCase):
         self.fsm.probe()
         all_disks = self.fsm.all_disks()
         disk = random.choice(all_disks)
-        fs1 = self.fsm.add_filesystem(disk, 'ext4')
+        fs1 = self.fsm.add_filesystem(disk, mkfs())
         self.assertEqual(fs1, self.fsm._filesystems[0])
 
     def test_add_filesystem_raises_exception_if_has_fs(self):
@@ -525,23 +571,23 @@ class TestFilesystemModel(CiTestCase):
         self.fsm.probe()
         all_disks = self.fsm.all_disks()
         disk = random.choice(all_disks)
-        partition = self.fsm.add_partition(disk, size=(1 * MB))
-        self.fsm.add_filesystem(partition, 'ext4')
+        partition = self.fsm.add_partition(disk, size=mksize() * MB)
+        self.fsm.add_filesystem(partition, mkfs())
         with self.assertRaises(Exception):
-            self.fsm.add_filesystem(partition, 'ext4')
+            self.fsm.add_filesystem(partition, mkfs())
 
     def test_add_filesystem_raises_exception_on_bios_grub(self):
         """raise exception when attempting to add fs to bios_grub partition"""
         self.fsm.probe()
         all_disks = self.fsm.all_disks()
         disk = random.choice(all_disks)
-        partition = self.fsm.add_partition(disk=disk, size=(1 * MB),
+        partition = self.fsm.add_partition(disk=disk, size=mksize() * MB,
                                            flag='bios_grub')
         with self.assertRaises(Exception):
-            self.fsm.add_filesystem(partition, 'ext4')
+            self.fsm.add_filesystem(partition, mkfs())
 
     def test_add_filesystem_raises_exception_on_boot_efi(self):
-        """raise exception when attempting to add fs to bios_grub partition"""
+        """raise exception when attempting to add fs to efi boot partition"""
         self.fsm.probe()
         all_disks = self.fsm.all_disks()
         disk = random.choice(all_disks)
@@ -550,19 +596,19 @@ class TestFilesystemModel(CiTestCase):
         fs = self.fsm.add_filesystem(partition, 'fat32')
         self.fsm.add_mount(fs, '/boot/efi')
         with self.assertRaises(Exception):
-            self.fsm.add_filesystem(partition, 'ext4')
+            self.fsm.add_filesystem(partition, mkfs())
 
     def test_mount_raise_exception_if_fs_is_mounted(self):
         """verify exception raised when attempting to mount fs thats mounted"""
         self.fsm.probe()
         all_disks = self.fsm.all_disks()
         disk = random.choice(all_disks)
-        partition = self.fsm.add_partition(disk=disk, size=(2 * MB),
-                                           flag='boot')
-        fs = self.fsm.add_filesystem(partition, 'fat32')
-        self.fsm.add_mount(fs, '/boot/efi')
+        partition = self.fsm.add_partition(disk=disk,
+                                           size=mksize() * MB)
+        fs = self.fsm.add_filesystem(partition, mkfs())
+        self.fsm.add_mount(fs, mkpath())
         with self.assertRaises(Exception):
-            self.fsm.add_mount(fs, '/opt')
+            self.fsm.add_mount(fs, mkpath())
 
     def test_get_mountpoint_to_devpath_mapping(self):
         """verify that mount.path in mapping and value is volume.path"""
