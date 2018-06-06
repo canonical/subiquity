@@ -16,6 +16,7 @@
 from abc import ABC, abstractmethod
 import attr
 import collections
+import enum
 import glob
 import logging
 import math
@@ -109,11 +110,20 @@ def asdict(inst):
                 r[field.name] = v
     return r
 
+
 # This code is not going to make much sense unless you have read
 # http://curtin.readthedocs.io/en/latest/topics/storage.html. The
 # Disk, Partition etc classes correspond to entries in curtin's
 # storage config list. They are mostly 'dumb data', all the logic is
 # in the FilesystemModel or FilesystemController classes.
+
+
+class DeviceAction(enum.Enum):
+    INFO = enum.auto()
+    EDIT = enum.auto()
+    PARTITION = enum.auto()
+    FORMAT = enum.auto()
+    DELETE = enum.auto()
 
 
 @attr.s
@@ -134,6 +144,9 @@ class _Formattable:
 
     def constructed_device(self):
         return self._constructed_device
+
+    def supports_action(self, action):
+        return getattr(self, "_supports_" + action.name)
 
 
 @attr.s
@@ -240,6 +253,14 @@ class Disk(_Device):
             return self.serial
         return self.path
 
+    _supports_INFO = True
+    _supports_EDIT = False
+    _supports_PARTITION = property(lambda self: self.free > 0)
+    _supports_FORMAT = property(
+        lambda self: len(self._partitions) == 0 and
+        self._constructed_device is None)
+    _supports_DELETE = False
+
 
 @attr.s
 class Partition(_Formattable):
@@ -276,6 +297,14 @@ class Partition(_Formattable):
     def path(self):
         return "%s%s" % (self.device.path, self._number)
 
+    _supports_INFO = False
+    _supports_EDIT = True
+    _supports_PARTITION = False
+    _supports_FORMAT = property(
+        lambda self: self.flag not in ('boot', 'bios_grub') and
+        self._constructed_device is None)
+    _supports_DELETE = _supports_FORMAT
+
 
 @attr.s
 class Filesystem:
@@ -308,6 +337,16 @@ class Mount:
     type = attr.ib(default="mount")
     device = attr.ib(default=None)  # Filesystem
     path = attr.ib(default=None)
+
+    def can_delete(self):
+        # Can't delete /boot/efi mount, anything else is fine.
+        if not isinstance(self.device.volume, Partition):
+            # Can't be /boot/efi if volume is not a partition
+            return True
+        if self.device.volume.flag == "boot":
+            # /boot/efi
+            return False
+        return True
 
 
 def align_up(size, block_size=1 << 20):
