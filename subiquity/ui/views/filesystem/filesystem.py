@@ -31,6 +31,7 @@ from urwid import (
 
 from subiquitycore.ui.actionmenu import (
     ActionMenu,
+    ActionMenuButton,
     )
 from subiquitycore.ui.buttons import (
     back_btn,
@@ -45,7 +46,7 @@ from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import humanize_size
+from subiquity.models.filesystem import DeviceAction, humanize_size
 
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
@@ -128,11 +129,11 @@ class MountList(WidgetWrap):
 
     def __init__(self, parent):
         self.parent = parent
-        pile = Pile([])
+        self.pile = Pile([])
         self._no_mounts_content = (
             Color.info_minor(Text(_("No disks or partitions mounted."))),
-            pile.options('pack'))
-        super().__init__(pile)
+            self.pile.options('pack'))
+        super().__init__(self.pile)
         self.refresh_model_inputs()
 
     def _mount_action(self, sender, action, mount):
@@ -142,22 +143,22 @@ class MountList(WidgetWrap):
             self.parent.refresh_model_inputs()
 
     def refresh_model_inputs(self):
-        self._mounts = [
+        mountinfos = [
             MountInfo(mount=m)
             for m in sorted(self.parent.model._mounts, key=lambda m: m.path)
         ]
-        if len(self._mounts) == 0:
-            self._w.contents[:] = [self._no_mounts_content]
+        if len(mountinfos) == 0:
+            self.pile.contents[:] = [self._no_mounts_content]
             return
         log.debug('FileSystemView: building mount list')
         mount_point_text = _("MOUNT POINT")
         device_type_text = _("DEVICE TYPE")
         longest_path = max(
             [len(mount_point_text)] +
-            [len(m.mount.path) for m in self._mounts])
+            [len(m.mount.path) for m in mountinfos])
         longest_type = max(
             [len(device_type_text)] +
-            [len(m.desc) for m in self._mounts])
+            [len(m.desc) for m in mountinfos])
         cols = []
 
         def col(action_menu, path, size, fstype, desc):
@@ -174,7 +175,7 @@ class MountList(WidgetWrap):
                     c,
                     {None: 'menu_button', 'grey': 'info_minor'},
                     {None: 'menu_button focus', 'grey': 'menu_button focus'})
-            cols.append((c, self._w.options('pack')))
+            cols.append((c, self.pile.options('pack')))
 
         size_text = _("SIZE")
         type_text = _("TYPE")
@@ -187,10 +188,10 @@ class MountList(WidgetWrap):
             type_text,
             device_type_text)
 
-        for i, mi in enumerate(self._mounts):
+        for i, mi in enumerate(mountinfos):
             path_markup = mi.path
             for j in range(i-1, -1, -1):
-                mi2 = self._mounts[j]
+                mi2 = mountinfos[j]
                 if mi.startswith(mi2):
                     part1 = "/".join(mi.split_path[:len(mi2.split_path)])
                     part2 = "/".join(
@@ -211,11 +212,139 @@ class MountList(WidgetWrap):
                 Text(mi.size, align='right'),
                 mi.fstype,
                 mi.desc)
-        last = (len(self._w.contents) > 0 and
-            self._w.focus_position == len(self._w.contents) - 1)
-        self._w.contents[:] = cols
-        if last:
-            self._w.focus_position -= 1
+        self.pile.contents[:] = cols
+        if self.pile.focus_position >= len(cols):
+            self.pile.focus_position = len(cols) - 1
+
+
+class DeviceList(WidgetWrap):
+
+    def _select_first_selectable(self):
+        self._w._select_first_selectable()
+
+    def _select_last_selectable(self):
+        self._w._select_last_selectable()
+
+    def __init__(self, parent, show_available):
+        self.parent = parent
+        self.show_available = show_available
+        self.pile = Pile([])
+        if show_available:
+            text = _("No available devices")
+        else:
+            text = _("No used devices")
+        self._no_devices_content = (
+            Color.info_minor(Text(text)),
+            self.pile.options('pack'))
+        super().__init__(self.pile)
+        self.refresh_model_inputs()
+
+    def _device_action(self, sender, action, device):
+        log.debug('_device_action %s %s', action, device)
+
+    def _action_menu_for_device(self, device):
+        delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
+        device_actions = [
+            (_("Information"),    DeviceAction.INFO),
+            (_("Edit"),           DeviceAction.EDIT),
+            (_("Add Partition"),  DeviceAction.PARTITION),
+            (_("Format / Mount"), DeviceAction.FORMAT),
+            (delete_btn,          DeviceAction.DELETE),
+        ]
+        menu = ActionMenu([
+            (label, device.supports_action(action), action)
+            for label, action in device_actions])
+        connect_signal(menu, 'action', self._device_action, device)
+        return menu
+
+    def refresh_model_inputs(self):
+        devices = [
+            d for d in self.parent.model.all_devices()
+            if d.available() == self.show_available
+        ]
+        if len(devices) == 0:
+            self.pile.contents[:] = [self._no_devices_content]
+            return
+        log.debug('FileSystemView: building device list')
+        cols = []
+        def col3(menu, device, size, typ):
+            cols.append((Columns([
+                (3, menu),
+                (42, device),
+                (10, size),
+                typ], 1), self.pile.options('pack')))
+
+        def col2(menu, label, size):
+            cols.append(Columns([(3, menu), (42, label), size], 1))
+
+        def col1(label):
+            cols.append(Columns([(3, Text("")), (42, label)], 1))
+
+        def _fmt_fs(label, fs):
+            r = _("{} formatted as {}").format(label, fs.fstype)
+            if not self.parent.model.fs_by_name[fs.fstype].is_mounted:
+                return r
+            m = fs.mount()
+            if m:
+                r += _(", mounted at {}").format(m.path)
+            else:
+                r += _(", not mounted")
+            return r
+
+        def _fmt_constructed(label, device):
+            return _("{} part of {} ({})").format(
+                label, device.label, device.desc())
+
+        def _maybe_fmt_entire(label, device):
+            if device.fs():
+                return _fmt_fs(label, device.fs())
+            elif device.constructed_device():
+                return _fmt_constructed(
+                    label, device.constructed_device())
+            else:
+                return None
+
+        col3(Text(""), Text(_("DEVICE")), Text(_("SIZE"), align="center"),
+             Text(_("TYPE")))
+        for device in devices:
+            col3(
+                self._action_menu_for_device(device),
+                Text(device.label),
+                Text(humanize_size(device.size)),
+                Text(device.desc()))
+            entire_label = _maybe_fmt_entire(_("entire device"), device)
+            if entire_label is not None:
+                col1(entire_label)
+            else:
+                for part in device.partitions():
+                    if part.available != self.show_available:
+                        continue
+                    prefix = _("partition {}").format(part._number)
+                    label = _maybe_fmt_entire(prefix, part)
+                    if label is not None:
+                        label = _("{} not mounted").format(prefix)
+                    part_size = "{:>9} ({}%)".format(
+                        humanize_size(part.size),
+                        int(100 * part.size / device.size))
+                    col2(
+                        self._action_menu_for_device(part),
+                        Text(label),
+                        Text(part_size),
+                        )
+                if 0 < device.used < device.size:
+                    size = device.size
+                    free = device.free
+                    percent = str(int(100 * free / size))
+                    if percent == "0":
+                        percent = "%.2f" % (100 * free / size,)
+                    col2([
+                        Text(""),
+                        Text(_("free space")),
+                        Text("{:>9} ({}%)".format(humanize_size(free), percent)),
+                    ])
+        self.pile.contents[:] = cols
+        if self.pile.focus_position >= len(cols):
+            self.pile.focus_position = len(cols) - 1
 
 
 class FilesystemView(BaseView):
@@ -235,6 +364,8 @@ class FilesystemView(BaseView):
             Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
+            DeviceList(self, True),
+            DeviceList(self, False),
             ] + [Padding.push_4(p) for p in self._build_available_inputs()]
 
         self.lb = Padding.center_95(ListBox(body))

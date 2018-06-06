@@ -326,7 +326,6 @@ class Partition(_Formattable):
     def label(self):
         return _("partition {} of {}").format(self._number, self.device.label)
 
-    @property
     def available(self):
         if self.flag == 'bios_grub':
             return False
