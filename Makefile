@@ -33,10 +33,10 @@ dryrun: probert i18n
 	$(MAKE) ui-view DRYRUN="--dry-run --uefi"
 
 ui-view:
-	(bin/$(PYTHONSRC)-tui $(DRYRUN) $(MACHARGS))
+	$(PYTHON) -m subiquity $(DRYRUN) $(MACHARGS)
 
 ui-view-serial:
-	(TERM=att4424 bin/$(PYTHONSRC)-tui $(DRYRUN) --serial)
+	(TERM=att4424 $(PYTHON) -m subiquity $(DRYRUN) --serial)
 
 lint: flake8
 
