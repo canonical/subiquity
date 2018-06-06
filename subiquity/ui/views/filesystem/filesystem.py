@@ -23,6 +23,7 @@ import logging
 
 import attr
 from urwid import (
+    AttrMap,
     connect_signal,
     Text,
     WidgetWrap,
@@ -143,19 +144,26 @@ class MountList(WidgetWrap):
             return
         log.debug('FileSystemView: building part list')
         mount_point_text = _("MOUNT POINT")
+        device_type_text = _("DEVICE TYPE")
         longest_path = max(
             [len(mount_point_text)] +
             [len(m.mount.path) for m in self._mounts])
+        longest_type = max(
+            [len(device_type_text)] +
+            [len(m.desc) for m in self._mounts])
         cols = []
 
         def col(action_menu, path, size, fstype, desc):
             c = Columns([
-                (4,            action_menu),
+                (3,            action_menu),
                 (longest_path, Text(path)),
                 (size_width,   size),
                 (type_width,   Text(fstype)),
-                Text(desc),
+                (longest_type, Text(desc)),
+                Color.body(Text("")),
             ], dividechars=1)
+            if isinstance(action_menu, ActionMenu):
+                c = AttrMap(c, {None:'menu_button', 'grey':'info_minor'}, {None: 'menu_button focus', 'grey': 'menu_button focus'})
             cols.append((c, self._w.options('pack')))
 
         size_text = _("SIZE")
@@ -167,9 +175,8 @@ class MountList(WidgetWrap):
             mount_point_text,
             Text(size_text, align='center'),
             type_text,
-            _("DEVICE TYPE"))
+            device_type_text)
 
-        actions = [(_("Unmount"), True, 'unmount')]
         for i, mi in enumerate(self._mounts):
             path_markup = mi.path
             for j in range(i-1, -1, -1):
@@ -178,13 +185,14 @@ class MountList(WidgetWrap):
                     part1 = "/".join(mi.split_path[:len(mi2.split_path)])
                     part2 = "/".join(
                         [''] + mi.split_path[len(mi2.split_path):])
-                    path_markup = [('info_minor', part1), part2]
+                    path_markup = [('grey', part1), part2]
                     break
                 if j == 0 and mi2.split_path == ['', '']:
                     path_markup = [
-                        ('info_minor', "/"),
+                        ('grey', "/"),
                         "/".join(mi.split_path[1:]),
                         ]
+            actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._mount_action, mi.mount)
             col(
