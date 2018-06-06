@@ -505,6 +505,12 @@ class FilesystemModel(object):
         self._partitions.append(p)
         return p
 
+    def remove_partition(self, part):
+        if part._fs or part._constructed_device:
+            raise Exception("can only remove empty partition")
+        part.device._partitions.remove(part)
+        self._partitions.remove(part)
+
     def add_raid(self, result):
         r = Raid(
             name=result['name'],
@@ -513,9 +519,16 @@ class FilesystemModel(object):
         for d in result['devices']:
             if isinstance(d, Disk):
                 self._use_disk(d)
-            d._raid = r
+            d._constructed_device = r
         self._raids.append(r)
         return r
+
+    def remove_raid(self, raid):
+        if raid._fs or raid._constructed_device:
+            raise Exception("can only remove empty RAID")
+        for d in raid.devices:
+            d._constructed_device = None
+        self._raids.remove(raid)
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
@@ -531,12 +544,22 @@ class FilesystemModel(object):
         self._filesystems.append(fs)
         return fs
 
+    def remove_filesystem(self, fs):
+        if fs._mount:
+            raise Exception("can only remove unmounted filesystem")
+        fs.volume._fs = None
+        self._filesystems.remove(fs)
+
     def add_mount(self, fs, path):
         if fs._mount is not None:
             raise Exception("%s is already mounted")
         fs._mount = m = Mount(device=fs, path=path)
         self._mounts.append(m)
         return m
+
+    def remove_mount(self, mount):
+        mount.device._mount = None
+        self._mounts.remove(mount)
 
     def get_mountpoint_to_devpath_mapping(self):
         r = {}
