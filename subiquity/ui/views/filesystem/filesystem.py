@@ -172,11 +172,11 @@ class MountList(WidgetWrap):
 
         def col(action_menu, path, size, fstype, desc):
             c = Columns([
-                (3,            action_menu),
                 (longest_path, Text(path)),
                 (size_width,   size),
                 (type_width,   Text(fstype)),
                 (longest_type, Text(desc)),
+                (3,            action_menu),
                 Color.body(Text("")),
             ], dividechars=1)
             if isinstance(action_menu, ActionMenu):
@@ -310,10 +310,10 @@ class DeviceList(WidgetWrap):
         rows = []
 
         def row3(menu, device, size, typ):
-            rows.append([menu, device, size, typ])
+            rows.append([device, size, typ, menu])
 
         def row2(menu, label, size):
-            rows.append([menu, label, size, Text("")])
+            rows.append([label, size, Text(""), menu])
 
         def row1(label):
             rows.append([Text(""), label])
@@ -385,11 +385,11 @@ class DeviceList(WidgetWrap):
                         humanize_size(free), percent)
                     row2(Text(""), Text(_("free space")), Text(size_text))
         widths = defaultdict(int)
-        widths[0] = 3
+        widths[3] = 1
         for row in rows:
             log.debug("%s", row)
             if len(row) == 4:
-                for i in 1, 2, 3:
+                for i in 0, 1, 2:
                     widths[i] = max(widths[i], len(row[i].text))
         cols = []
         for row in rows:
@@ -401,7 +401,6 @@ class DeviceList(WidgetWrap):
                     c = Color.menu_button(c)
                 cols.append((c, self.pile.options('pack')))
             elif len(row) == 2:
-                log.debug("%s", [(widths[0], row[0]), row[1]])
                 c = Columns([(widths[0], row[0]), row[1]], 1)
                 if c.selectable():
                     raise Exception("unexpectedly selectable row")

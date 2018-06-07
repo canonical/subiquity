@@ -32,7 +32,7 @@ from subiquitycore.ui.utils import Color
 
 
 class ActionBackButton(Button):
-    button_left = Text("^")
+    button_left = Text("<")
     button_right = Text("")
 
 
@@ -92,7 +92,7 @@ class ActionMenu(PopUpLauncher):
 
     # This doesn't seem like it would be the best icon but we couldn't
     # come up with a better one.
-    icon = "[\N{GREEK CAPITAL LETTER XI}]"
+    icon = ">"
     selected_icon = ('menu_button focus', icon)
 
     signals = ['action']
@@ -103,7 +103,7 @@ class ActionMenu(PopUpLauncher):
             if not isinstance(opt, Option):
                 opt = Option(opt)
             self._options.append(opt)
-        self._button = Color.menu_button(SelectableIcon(self.icon, 1))
+        self._button = Color.menu_button(SelectableIcon(self.icon, 0))
         super().__init__(self._button)
         self._dialog = _ActionMenuDialog(self)
 
@@ -133,8 +133,8 @@ class ActionMenu(PopUpLauncher):
     def get_pop_up_parameters(self):
         width = self._dialog.width + 7
         return {
-            'left': 0,
-            'top': 1,
+            'left': 1,
+            'top': -1,
             'overlay_width': width,
             'overlay_height': len(self._options) + 3,
             }
