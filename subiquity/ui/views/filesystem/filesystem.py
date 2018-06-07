@@ -51,6 +51,7 @@ from subiquity.models.filesystem import (
     DeviceAction,
     Disk,
     humanize_size,
+    Partition,
     )
 
 from .delete import ConfirmDeleteStretchy
@@ -213,7 +214,7 @@ class MountList(WidgetWrap):
                         "/".join(mi.split_path[1:]),
                         ]
             actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
-            menu = ActionMenu(actions)
+            menu = None#ActionMenu(actions)
             connect_signal(menu, 'action', self._mount_action, mi.mount)
             col(
                 menu,
@@ -282,7 +283,7 @@ class DeviceList(WidgetWrap):
         else:
             raise Exception("unexpected action on partition")
 
-    def _action_menu_for_device(self, device, cb):
+    def _action_menu_for_device(self, width, content, device):
         delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
         device_actions = [
             (_("Information"),    DeviceAction.INFO),
@@ -291,9 +292,17 @@ class DeviceList(WidgetWrap):
             (_("Format / Mount"), DeviceAction.FORMAT),
             (delete_btn,          DeviceAction.DELETE),
         ]
-        menu = ActionMenu([
-            (label, device.supports_action(action), action)
-            for label, action in device_actions])
+        menu = ActionMenu(
+            width,
+            content,
+            [
+                (label, device.supports_action(action), action)
+                for label, action in device_actions
+            ])
+        if isinstance(device, Partition):
+            cb = self._partition_action
+        else:
+            cb = self._device_action
         connect_signal(menu, 'action', cb, device)
         return menu
 
@@ -307,16 +316,10 @@ class DeviceList(WidgetWrap):
             self.pile.contents[:] = [self._no_devices_content]
             return
         log.debug('FileSystemView: building device list')
-        rows = []
+        rows = []  # [(device-or-None, [Text])]
 
-        def row3(menu, device, size, typ):
-            rows.append([device, size, typ, menu])
-
-        def row2(menu, label, size):
-            rows.append([label, size, Text(""), menu])
-
-        def row1(label):
-            rows.append([Text(""), label])
+        def row(device, *texts):
+            rows.append((device, texts))
 
         def _fmt_fs(label, fs):
             r = _("{} {}").format(label, fs.fstype)
@@ -333,11 +336,14 @@ class DeviceList(WidgetWrap):
             return _("{} part of {} ({})").format(
                 label, device.label, device.desc())
 
-        row3(Text(""), Text(_("DEVICE")), Text(_("SIZE"), align="center"),
-             Text(_("TYPE")))
+        row(
+            None,
+            Text(_("DEVICE")),
+            Text(_("SIZE"), align="center"),
+            Text(_("TYPE")))
         for device in devices:
-            row3(
-                self._action_menu_for_device(device, self._device_action),
+            row(
+                device,
                 Text(device.label),
                 Text(humanize_size(device.size)),
                 Text(device.desc()))
@@ -351,7 +357,7 @@ class DeviceList(WidgetWrap):
                     _("  entire device"),
                     device.constructed_device())
             if entire_label is not None:
-                row1(Text(entire_label))
+                row(None, Text(entire_label))
             else:
                 for part in device.partitions():
                     if part.available() != self.show_available:
@@ -368,10 +374,8 @@ class DeviceList(WidgetWrap):
                     part_size = "{:>9} ({}%)".format(
                         humanize_size(part.size),
                         int(100 * part.size / device.size))
-                    menu = self._action_menu_for_device(
-                        part, self._partition_action)
-                    row2(
-                        menu,
+                    row(
+                        part,
                         Text(label),
                         Text(part_size),
                         )
@@ -383,22 +387,20 @@ class DeviceList(WidgetWrap):
                         percent = "%.2f" % (100 * free / size,)
                     size_text = "{:>9} ({}%)".format(
                         humanize_size(free), percent)
-                    row2(Text(""), Text(_("free space")), Text(size_text))
+                    row(None, Text(_("free space")), Text(size_text))
         widths = defaultdict(int)
-        widths[3] = 1
-        for row in rows:
-            log.debug("%s", row)
-            if len(row) == 4:
-                for i in 0, 1, 2:
-                    widths[i] = max(widths[i], len(row[i].text))
+        for device, texts in rows:
+            log.debug("%s", texts)
+            if len(texts) == 3:
+                for i, text in enumerate(texts):
+                    widths[i] = max(widths[i], len(text.text))
         cols = []
-        for row in rows:
-            if len(row) == 4:
-                ws = [(widths[i], w) for i, w in enumerate(row)]
-                ws.append(Color.body(Text("")))
+        for device, texts in rows:
+            if len(texts) == 3:
+                ws = [(widths[i], w) for i, w in enumerate(texts)]
                 c = Columns(ws, 1)
-                if c.selectable():
-                    c = Color.menu_button(c)
+                if device is not None:
+                    c = self._action_menu_for_device(sum(widths.values()) + 2, c, device)
                 cols.append((c, self.pile.options('pack')))
             elif len(row) == 2:
                 c = Columns([(widths[0], row[0]), row[1]], 1)
