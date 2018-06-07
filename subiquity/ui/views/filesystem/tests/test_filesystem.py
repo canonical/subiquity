@@ -32,9 +32,10 @@ class FilesystemViewTests(unittest.TestCase):
 
     def test_one_disk(self):
         disk = Disk.from_info(FakeStorageInfo(
-            name='disk-name', size=100*(2**20), free=50*(2**20), serial="DISK-SERIAL"))
+            name='disk-name', size=100*(2**20), free=50*(2**20),
+            serial="DISK-SERIAL"))
         view = self.make_view([disk])
-        def pred(w):
-            return isinstance(w, urwid.Text) and "DISK-SERIAL" in w.text
-        w = view_helpers.find_with_pred(view, pred)
+        w = view_helpers.find_with_pred(
+            view,
+            lambda w: isinstance(w, urwid.Text) and "DISK-SERIAL" in w.text)
         self.assertIsNotNone(w, "could not find DISK-SERIAL in view")

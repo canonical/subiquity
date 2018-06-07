@@ -427,7 +427,8 @@ class Mount:
     path = attr.ib(default=None)
 
     def can_delete(self):
-        return not isinstance(self.device, Partition) or self.device.volume.flag != "boot"
+        return (not isinstance(self.device, Partition)
+                or self.device.volume.flag != "boot")
 
 
 def align_up(size, block_size=1 << 20):

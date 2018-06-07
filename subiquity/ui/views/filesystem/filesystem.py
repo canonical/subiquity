@@ -153,7 +153,8 @@ class MountList(WidgetWrap):
     def refresh_model_inputs(self):
         mountinfos = [
             MountInfo(mount=m)
-            for m in sorted(self.parent.model.all_mounts(), key=lambda m: m.path)
+            for m in sorted(
+                self.parent.model.all_mounts(), key=lambda m: m.path)
         ]
         if len(mountinfos) == 0:
             self.pile.contents[:] = [self._no_mounts_content]

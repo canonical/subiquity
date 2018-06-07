@@ -12,7 +12,6 @@ from subiquity.models.filesystem import (
     dehumanize_size,
     Disk,
     FilesystemModel,
-    Partition,
     )
 from subiquity.ui.views.filesystem.partition import PartitionStretchy
 
@@ -33,7 +32,7 @@ class PartitionViewTests(unittest.TestCase):
         base_view = BaseView(urwid.Text(""))
         base_view.model = model
         base_view.controller = controller
-        base_view.refresh_model_inputs = lambda:None
+        base_view.refresh_model_inputs = lambda: None
         stretchy = PartitionStretchy(base_view, disk, partition)
         base_view.show_stretchy_overlay(stretchy)
         return base_view, stretchy
