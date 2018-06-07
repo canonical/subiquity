@@ -29,7 +29,6 @@ class InstallpathModel(object):
     path = 'ubuntu'
     # update() is not run, upon selecting the default choice...
     curtin = {}
-    cmdline_sources = None
 
     def __init__(self, sources=None):
         self.cmdline_sources = sources
