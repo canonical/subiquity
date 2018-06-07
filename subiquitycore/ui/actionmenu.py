@@ -32,7 +32,7 @@ from subiquitycore.ui.utils import Color
 
 
 class ActionBackButton(Button):
-    button_left = Text("<")
+    button_left = Text("^")
     button_right = Text("")
 
 
