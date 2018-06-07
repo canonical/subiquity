@@ -357,7 +357,7 @@ class Partition(_Formattable):
         if action == DeviceAction.PARTITION:
             return False
         if action == DeviceAction.FORMAT:
-            return True
+            return self.flag not in ('boot', 'bios_grub')
         if action == DeviceAction.DELETE:
             return self.flag not in ('boot', 'bios_grub')
 

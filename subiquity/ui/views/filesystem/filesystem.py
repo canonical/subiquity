@@ -54,7 +54,7 @@ from subiquity.models.filesystem import (
     )
 
 from .disk_info import DiskInfoStretchy
-from .partition import PartitionStretchy
+from .partition import PartitionStretchy, FormatEntireStretchy
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
 
@@ -257,7 +257,7 @@ class DeviceList(WidgetWrap):
         if action == DeviceAction.PARTITION:
             self.parent.show_stretchy_overlay(PartitionStretchy(self.parent, device))
         if action == DeviceAction.FORMAT:
-            pass
+            self.parent.show_stretchy_overlay(FormatEntireStretchy(self.parent, device))
         if action == DeviceAction.DELETE:
             pass
 
@@ -267,6 +267,8 @@ class DeviceList(WidgetWrap):
             self.parent.show_stretchy_overlay(PartitionStretchy(self.parent, part.device, part))
         if action == DeviceAction.DELETE:
             pass
+        if action == DeviceAction.FORMAT:
+            self.parent.show_stretchy_overlay(FormatEntireStretchy(self.parent, part))
 
     def _action_menu_for_device(self, device, cb):
         delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))

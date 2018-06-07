@@ -184,11 +184,10 @@ class FilesystemController(BaseController):
 
         log.info("Successfully added partition")
 
-    def add_format_handler(self, volume, spec, back):
+    def add_format_handler(self, volume, spec):
         log.debug('add_format_handler')
         self.delete_filesystem(volume.fs())
-        self.add_filesystem(volume, spec)
-        back()
+        self.create_filesystem(volume, spec)
 
     def make_boot_disk(self, disk):
         # XXX This violates abstractions, needs some thinking.
