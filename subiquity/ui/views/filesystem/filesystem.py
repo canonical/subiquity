@@ -47,6 +47,7 @@ from subiquitycore.ui.container import (
     Pile,
     WidgetWrap,
     )
+from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import ColSpec, Table, TableRow
 from subiquitycore.ui.utils import button_pile, Color, Padding
@@ -466,19 +467,15 @@ class FilesystemView(BaseView):
 
     def _build_buttons(self):
         log.debug('FileSystemView: building buttons')
-        buttons = []
+        self.done = Toggleable(done_btn(_("Done"), on_press=self.done))
+        if not self.model.can_install():
+            self.done.disable()
 
-        # don't enable done botton if we can't install
-        # XXX should enable/disable button rather than having it
-        # appear/disappear I think
-        if self.model.can_install():
-            buttons.append(
-                done_btn(_("Done"), on_press=self.done))
-
-        buttons.append(reset_btn(_("Reset"), on_press=self.reset))
-        buttons.append(back_btn(_("Back"), on_press=self.cancel))
-
-        return button_pile(buttons)
+        return button_pile([
+            self.done,
+            reset_btn(_("Reset"), on_press=self.reset),
+            back_btn(_("Back"), on_press=self.cancel),
+            ])
 
     def refresh_model_inputs(self):
         self.mount_list.refresh_model_inputs()
@@ -489,6 +486,10 @@ class FilesystemView(BaseView):
         # selectable widget.
         while not self.lb.base_widget.focus.selectable():
             self.lb.base_widget.keypress((10, 10), 'tab')
+        if self.model.can_install():
+            self.done.enable()
+        else:
+            self.done.disable()
 
     def cancel(self, button=None):
         self.controller.default()
