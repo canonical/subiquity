@@ -48,7 +48,7 @@ class _ActionMenuDialog(WidgetWrap):
         self.parent = parent
         close = ActionBackButton("(close)")
         connect_signal(close, "click", self.close)
-        group = [close]
+        group = [Color.menu_button(close)]
         width = 0
         for i, option in enumerate(self.parent._options):
             if option.enabled:
@@ -93,6 +93,7 @@ class ActionMenu(PopUpLauncher):
     # This doesn't seem like it would be the best icon but we couldn't
     # come up with a better one.
     icon = "[\N{GREEK CAPITAL LETTER XI}]"
+    selected_icon = ('menu_button focus', icon)
 
     signals = ['action']
 
@@ -117,6 +118,14 @@ class ActionMenu(PopUpLauncher):
 
     def _action(self, action):
         self._emit("action", action)
+
+    def open_pop_up(self):
+        self._button.base_widget.set_text(self.selected_icon)
+        super().open_pop_up()
+
+    def close_pop_up(self):
+        self._button.base_widget.set_text(self.icon)
+        super().close_pop_up()
 
     def create_pop_up(self):
         return self._dialog
