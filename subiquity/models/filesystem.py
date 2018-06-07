@@ -309,7 +309,7 @@ class Disk(_Device):
         if action == DeviceAction.PARTITION:
             return self.free > 0
         if action == DeviceAction.FORMAT:
-            return self.used == 0
+            return len(self._partitions) == 0
         if action == DeviceAction.DELETE:
             return False
 
@@ -389,7 +389,7 @@ class Raid(_Device):
         if action == DeviceAction.PARTITION:
             return self.raidlevel != 0 and self.free > 0
         if action == DeviceAction.FORMAT:
-            return self.used == 0
+            return len(self._partitions) == 0
         if action == DeviceAction.DELETE:
             return True
 
@@ -427,7 +427,7 @@ class Mount:
     path = attr.ib(default=None)
 
     def can_delete(self):
-        return self.device.volume.flag != "boot"
+        return not isinstance(self.device, Partition) or self.device.volume.flag != "boot"
 
 
 def align_up(size, block_size=1 << 20):

@@ -303,7 +303,8 @@ class FormatEntireStretchy(Stretchy):
         rows = []
         if isinstance(device, Disk):
             rows = [
-                Text("you are doing something strange"),
+                Text(_("Formatting and mounting a Disk directly is unusual. "
+                       "You probably want to add a partition instead.")),
                 Text(""),
                 ]
         rows.extend(self.form.as_rows())

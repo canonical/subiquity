@@ -326,15 +326,6 @@ class DeviceList(WidgetWrap):
             return _("{} part of {} ({})").format(
                 label, device.label, device.desc())
 
-        def _maybe_fmt_entire(label, device):
-            if device.fs():
-                return _fmt_fs(label, device.fs())
-            elif device.constructed_device():
-                return _fmt_constructed(
-                    label, device.constructed_device())
-            else:
-                return None
-
         row3(Text(""), Text(_("DEVICE")), Text(_("SIZE"), align="center"),
              Text(_("TYPE")))
         for device in devices:
@@ -343,7 +334,15 @@ class DeviceList(WidgetWrap):
                 Text(device.label),
                 Text(humanize_size(device.size)),
                 Text(device.desc()))
-            entire_label = _maybe_fmt_entire(_("  entire device"), device)
+            entire_label = None
+            if device.fs():
+                entire_label = _fmt_fs(
+                    _("  entire device formatted as"),
+                    device.fs())
+            elif device.constructed_device():
+                entire_label = _fmt_constructed(
+                    _("  entire device"),
+                    device.constructed_device())
             if entire_label is not None:
                 row1(Text(entire_label))
             else:
