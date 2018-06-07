@@ -21,9 +21,8 @@ configuration.
 """
 import logging
 
-from urwid import connect_signal, Text, WidgetDisable
+from urwid import connect_signal, Text
 
-from subiquitycore.ui.buttons import delete_btn
 from subiquitycore.ui.form import (
     Form,
     FormField,
@@ -32,7 +31,6 @@ from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.selector import Option, Selector
 from subiquitycore.ui.container import Pile
 from subiquitycore.ui.stretchy import Stretchy
-from subiquitycore.ui.utils import Color, button_pile
 
 from subiquity.models.filesystem import (
     align_up,
@@ -220,7 +218,6 @@ class PartitionStretchy(Stretchy):
 
         rows = []
         focus_index = 0
-        extra_buttons = []
         if partition is not None:
             if self.partition.flag == "boot":
                 rows.extend([
@@ -233,16 +230,7 @@ class PartitionStretchy(Stretchy):
                     Text(""),
                 ])
                 focus_index = 2
-            d_btn = delete_btn(_("Delete"), on_press=self.delete)
-            if self.partition.flag in ("boot", "bios_grub"):
-                d_btn = WidgetDisable(Color.info_minor(d_btn.original_widget))
-            extra_buttons.append(d_btn)
         rows.extend(self.form.as_rows())
-        if extra_buttons:
-            rows.extend([
-                Text(""),
-                button_pile(extra_buttons),
-            ])
         widgets = [
             Pile(rows),
             Text(""),
@@ -258,11 +246,6 @@ class PartitionStretchy(Stretchy):
         super().__init__(title, widgets, 0, focus_index)
 
     def cancel(self, button=None):
-        self.parent.remove_overlay()
-
-    def delete(self, sender):
-        self.controller.delete_partition(self.partition)
-        self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 
     def done(self, form):
@@ -319,11 +302,6 @@ class FormatEntireStretchy(Stretchy):
         super().__init__(title, widgets, 0, 0)
 
     def cancel(self, button=None):
-        self.parent.remove_overlay()
-
-    def delete(self, sender):
-        self.controller.delete_partition(self.partition)
-        self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 
     def done(self, form):
