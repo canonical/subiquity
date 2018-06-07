@@ -47,8 +47,14 @@ from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import DeviceAction, humanize_size
+from subiquity.models.filesystem import (
+    DeviceAction,
+    Disk,
+    humanize_size,
+    )
 
+from .disk_info import DiskInfoStretchy
+from .partition import PartitionStretchy
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
 
@@ -243,19 +249,26 @@ class DeviceList(WidgetWrap):
     def _device_action(self, sender, action, device):
         log.debug('_device_action %s %s', action, device)
         if action == DeviceAction.INFO:
-            from .disk_info import DiskInfoStretchy
-            self.parent.show_stretchy_overlay(
-                DiskInfoStretchy(self.parent, device))
+            if isinstance(device, Disk):
+                self.parent.show_stretchy_overlay(
+                    DiskInfoStretchy(self.parent, device))
         if action == DeviceAction.EDIT:
             pass
         if action == DeviceAction.PARTITION:
-            pass
+            self.parent.show_stretchy_overlay(PartitionStretchy(self.parent, device))
         if action == DeviceAction.FORMAT:
             pass
         if action == DeviceAction.DELETE:
             pass
 
-    def _action_menu_for_device(self, device):
+    def _partition_action(self, sender, action, part):
+        log.debug('_partition_action %s %s', action, part)
+        if action == DeviceAction.EDIT:
+            self.parent.show_stretchy_overlay(PartitionStretchy(self.parent, part.device, part))
+        if action == DeviceAction.DELETE:
+            pass
+
+    def _action_menu_for_device(self, device, cb):
         delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
         device_actions = [
             (_("Information"),    DeviceAction.INFO),
@@ -267,7 +280,7 @@ class DeviceList(WidgetWrap):
         menu = ActionMenu([
             (label, device.supports_action(action), action)
             for label, action in device_actions])
-        connect_signal(menu, 'action', self._device_action, device)
+        connect_signal(menu, 'action', cb, device)
         return menu
 
     def refresh_model_inputs(self):
@@ -319,7 +332,7 @@ class DeviceList(WidgetWrap):
              Text(_("TYPE")))
         for device in devices:
             row3(
-                self._action_menu_for_device(device),
+                self._action_menu_for_device(device, self._device_action),
                 Text(device.label),
                 Text(humanize_size(device.size)),
                 Text(device.desc()))
@@ -343,7 +356,7 @@ class DeviceList(WidgetWrap):
                         humanize_size(part.size),
                         int(100 * part.size / device.size))
                     row2(
-                        self._action_menu_for_device(part),
+                        self._action_menu_for_device(part, self._partition_action),
                         Text(label),
                         Text(part_size),
                         )
@@ -355,11 +368,7 @@ class DeviceList(WidgetWrap):
                         percent = "%.2f" % (100 * free / size,)
                     size_text = "{:>9} ({}%)".format(
                         humanize_size(free), percent)
-                    row2([
-                        Text(""),
-                        Text(_("free space")),
-                        Text(size_text),
-                    ])
+                    row2(Text(""), Text(_("free space")), Text(size_text))
         widths = defaultdict(int)
         widths[0] = 3
         for row in rows:
@@ -377,6 +386,7 @@ class DeviceList(WidgetWrap):
                     c = Color.menu_button(c)
                 cols.append((c, self.pile.options('pack')))
             elif len(row) == 2:
+                log.debug("%s", [(widths[0], row[0]), row[1]])
                 c = Columns([(widths[0], row[0]), row[1]], 1)
                 if c.selectable():
                     raise Exception("unexpectedly selectable row")
@@ -398,6 +408,8 @@ class FilesystemView(BaseView):
         self.controller = controller
         self.items = []
         self.mount_list = MountList(self)
+        self.avail_list = DeviceList(self, True)
+        self.used_list = DeviceList(self, False)
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
@@ -405,11 +417,11 @@ class FilesystemView(BaseView):
             Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
-            DeviceList(self, True),
+            self.avail_list,
             Text(""),
             Text(_("USED DEVICES")),
             Text(""),
-            DeviceList(self, False),
+            self.used_list,
             Text("")
             ]
 
@@ -430,6 +442,8 @@ class FilesystemView(BaseView):
 
     def refresh_model_inputs(self):
         self.mount_list.refresh_model_inputs()
+        self.avail_list.refresh_model_inputs()
+        self.used_list.refresh_model_inputs()
         # If refreshing the view has left the focus widget with no
         # selectable widgets, simulate a tab to move to the next
         # selectable widget.

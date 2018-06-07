@@ -24,11 +24,9 @@ from subiquity.ui.views import (
     BcacheView,
     DiskPartitionView,
     FilesystemView,
-    FormatEntireView,
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     LVMVolumeGroupView,
-    PartitionView,
     RaidView,
     )
 
@@ -185,7 +183,6 @@ class FilesystemController(BaseController):
         part = self.create_partition(disk, spec)
 
         log.info("Successfully added partition")
-        self.partition_disk(disk)
 
     def add_format_handler(self, volume, spec, back):
         log.debug('add_format_handler')
