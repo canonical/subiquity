@@ -533,6 +533,9 @@ class FilesystemModel(object):
         if disk.path not in self._disks:
             self._disks[disk.path] = disk
 
+    def all_mounts(self):
+        return self._mounts[:]
+
     def all_disks(self):
         return sorted(self._available_disks.values(), key=lambda x: x.label)
 
