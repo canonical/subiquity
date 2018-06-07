@@ -23,13 +23,9 @@ configuration.
 from .disk_partition import DiskPartitionView
 from .filesystem import FilesystemView
 from .guided import GuidedDiskSelectionView, GuidedFilesystemView
-from .partition import FormatEntireView, PartitionView
 __all__ = [
-    'DiskInfoView',
     'DiskPartitionView',
     'FilesystemView',
     'GuidedDiskSelectionView',
     'GuidedFilesystemView',
-    'FormatEntireView',
-    'PartitionView',
 ]

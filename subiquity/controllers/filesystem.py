@@ -24,11 +24,9 @@ from subiquity.ui.views import (
     BcacheView,
     DiskPartitionView,
     FilesystemView,
-    FormatEntireView,
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     LVMVolumeGroupView,
-    PartitionView,
     RaidView,
     )
 
@@ -91,16 +89,6 @@ class FilesystemController(BaseController):
         dp_view = DiskPartitionView(self.model, self, disk)
 
         self.ui.set_body(dp_view)
-
-    def add_disk_partition(self, disk):
-        log.debug("Adding partition to {}".format(disk))
-        adp_view = PartitionView(self.model, self, disk)
-        self.ui.set_body(adp_view)
-
-    def edit_partition(self, disk, partition):
-        log.debug("Editing partition {}".format(partition))
-        adp_view = PartitionView(self.model, self, disk, partition)
-        self.ui.set_body(adp_view)
 
     def create_mount(self, fs, spec):
         if spec['mount'] is None:
@@ -185,7 +173,6 @@ class FilesystemController(BaseController):
         part = self.create_partition(disk, spec)
 
         log.info("Successfully added partition")
-        self.partition_disk(disk)
 
     def add_format_handler(self, volume, spec, back):
         log.debug('add_format_handler')
@@ -256,17 +243,6 @@ class FilesystemController(BaseController):
         log.debug('add_raid_dev: result={}'.format(result))
         self.model.add_raid_device(result)
         self.signal.prev_signal()
-
-    def format_entire(self, disk):
-        log.debug("format_entire {}".format(disk.label))
-        afv_view = FormatEntireView(self.model, self, disk,
-                                    lambda: self.partition_disk(disk))
-        self.ui.set_body(afv_view)
-
-    def format_mount_partition(self, partition):
-        log.debug("format_mount_partition {}".format(partition))
-        afv_view = FormatEntireView(self.model, self, partition, self.manual)
-        self.ui.set_body(afv_view)
 
     def show_disk_information_next(self, disk):
         log.debug('show_disk_info_next: curr_device={}'.format(disk))
