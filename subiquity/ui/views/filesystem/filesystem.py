@@ -52,6 +52,7 @@ from subiquity.models.filesystem import (
     humanize_size,
     )
 
+from .delete import ConfirmDeleteStretchy
 from .disk_info import DiskInfoStretchy
 from .partition import PartitionStretchy, FormatEntireStretchy
 
@@ -266,8 +267,10 @@ class DeviceList(WidgetWrap):
         if action == DeviceAction.EDIT:
             overlay = PartitionStretchy(self.parent, part.device, part)
         if action == DeviceAction.DELETE:
-            # TODO
-            return
+            overlay = ConfirmDeleteStretchy(
+                self.parent,
+                part,
+                self.parent.controller.delete_partition)
         if action == DeviceAction.FORMAT:
             overlay = FormatEntireStretchy(self.parent, part)
         if overlay is not None:
