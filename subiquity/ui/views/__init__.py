@@ -15,7 +15,6 @@
 
 from .filesystem import (
     FilesystemView,
-    DiskPartitionView,
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     )
@@ -32,7 +31,6 @@ from .welcome import WelcomeView
 __all__ = [
     'BcacheView',
     'CephDiskView',
-    'DiskPartitionView',
     'FilesystemView',
     'GuidedDiskSelectionView',
     'GuidedFilesystemView',

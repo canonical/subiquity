@@ -20,11 +20,9 @@ configuration.
 
 """
 
-from .disk_partition import DiskPartitionView
 from .filesystem import FilesystemView
 from .guided import GuidedDiskSelectionView, GuidedFilesystemView
 __all__ = [
-    'DiskPartitionView',
     'FilesystemView',
     'GuidedDiskSelectionView',
     'GuidedFilesystemView',

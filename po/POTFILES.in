@@ -18,7 +18,6 @@ subiquity/models/filesystem.py
 subiquity/models/installpath.py
 subiquity/ui/mount.py
 subiquity/ui/views/filesystem/disk_info.py
-subiquity/ui/views/filesystem/disk_partition.py
 subiquity/ui/views/filesystem/filesystem.py
 subiquity/ui/views/filesystem/guided.py
 subiquity/ui/views/filesystem/partition.py
