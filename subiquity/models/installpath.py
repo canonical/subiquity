@@ -28,23 +28,38 @@ class InstallpathModel(object):
 
     path = 'ubuntu'
     # update() is not run, upon selecting the default choice...
-    source = '/media/filesystem'
     curtin = {}
+    cmdline_sources = None
+
+    def __init__(self, sources=None):
+        self.cmdline_sources = sources
+        if sources:
+            self.path = 'cmdline'
 
     @property
     def paths(self):
-        return [
+        cmdline = []
+        if self.cmdline_sources:
+            cmdline = [(_('Install from cli provided sources'), 'cmdline')]
+        return cmdline + [
             (_('Install Ubuntu'),                 'ubuntu'),
             (_('Install MAAS bare-metal cloud (region)'), 'maas_region'),
             (_('Install MAAS bare-metal cloud (rack)'),   'maas_rack'),
         ]
 
+    @property
+    def sources(self):
+        src_map = {
+            'ubuntu': ['cp:///media/filesystem'],
+            'maas_region': ['cp:///media/region'],
+            'maas_rack': ['cp:///media/rack'],
+            'cmdline': self.cmdline_sources}
+        return {self.path + "%02d" % n: u
+                for n, u in enumerate(src_map[self.path])}
+
     def update(self, results):
-        if self.path == 'ubuntu':
-            self.source = '/media/filesystem'
-            self.curtin = {}
-        elif self.path == 'maas_region':
-            self.source = '/media/region'
+        self.curtin = {}
+        if self.path == 'maas_region':
             self.curtin['debconf_selections'] = {
                 'maas-username': ('maas-region-controller maas/username '
                                   'string %s' % results['username']),
@@ -108,7 +123,6 @@ class InstallpathModel(object):
                 '915-maas': ['umount', '/target/proc'],
             }
         elif self.path == 'maas_rack':
-            self.source = '/media/rack'
             self.curtin['debconf_selections'] = {
                 'maas-url': ('maas-rack-controller '
                              'maas-rack-controller/maas-url '
@@ -132,6 +146,7 @@ class InstallpathModel(object):
             }
         else:
             raise ValueError("invalid Installpath %s" % self.path)
+        self.curtin['sources'] = self.sources
 
     def render(self):
         return self.curtin
