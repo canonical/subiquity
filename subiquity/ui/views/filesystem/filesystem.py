@@ -247,6 +247,7 @@ class DeviceList(WidgetWrap):
             Color.info_minor(Text(text)),
             self.pile.options('pack'))
         super().__init__(self.pile)
+        self._rows = []
         self.refresh_model_inputs()
         # I don't really know why this is required:
         self.pile._select_first_selectable()
@@ -316,10 +317,10 @@ class DeviceList(WidgetWrap):
             self.pile.contents[:] = [self._no_devices_content]
             return
         log.debug('FileSystemView: building device list')
-        rows = []  # [(device-or-None, [Text])]
+        self._rows = []  # [(device-or-None, [Text])]
 
         def row(device, *texts):
-            rows.append((device, texts))
+            self._rows.append((device, texts))
 
         def _fmt_fs(label, fs):
             r = _("{} {}").format(label, fs.fstype)
@@ -388,16 +389,23 @@ class DeviceList(WidgetWrap):
                     size_text = "{:>9} ({}%)".format(
                         humanize_size(free), percent)
                     row(None, Text(_("  free space")), Text(size_text))
+
+    def get_widths(self):
         widths = defaultdict(int)
-        for device, texts in rows:
+        for device, texts in self._rows:
             log.debug("%s", texts)
             if len(texts) == 3:
                 for i, text in enumerate(texts):
                     widths[i] = max(widths[i], len(text.text))
             if len(texts) == 2:
                 widths[0] = max(widths[0], len(texts[0].text))
+        return widths
+
+    def apply_widths(self, widths):
+        if not self._rows:
+            return
         cols = []
-        for device, texts in rows:
+        for device, texts in self._rows:
             if len(texts) == 3:
                 t0 = texts[0]
                 w0 = widths[0]
@@ -428,7 +436,7 @@ class DeviceList(WidgetWrap):
             elif len(texts) == 1:
                 cols.append((texts[0], self.pile.options('pack')))
             else:
-                raise Exception("unexpected row length {}".format(row))
+                raise Exception("unexpected row length {}".format(texts))
         self.pile.contents[:] = cols
         if self.pile.focus_position >= len(cols):
             self.pile.focus_position = len(cols) - 1
@@ -472,6 +480,7 @@ class FilesystemView(BaseView):
             ('pack', Text("")),
             self.lb,
             ('pack', bottom)])
+        self.refresh_model_inputs()
         if self.model.can_install():
             self.frame.focus_position = 2
         super().__init__(self.frame)
@@ -481,6 +490,11 @@ class FilesystemView(BaseView):
         self.mount_list.refresh_model_inputs()
         self.avail_list.refresh_model_inputs()
         self.used_list.refresh_model_inputs()
+        w1 = self.avail_list.get_widths()
+        w2 = self.avail_list.get_widths()
+        w = {i:max(w1[i], w2[i]) for i in (0, 1, 2)}
+        self.avail_list.apply_widths(w)
+        self.used_list.apply_widths(w)
         # If refreshing the view has left the focus widget with no
         # selectable widgets, simulate a tab to move to the next
         # selectable widget.
