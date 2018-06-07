@@ -78,6 +78,9 @@ def parse_options(argv):
     parser.add_argument('--click', metavar="PAT", action=ClickAction,
                         help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
+    parser.add_argument('--source', default=[], action='append',
+                        dest='sources', metavar='URL',
+                        help='install from url instead of default.')
     parser.add_argument(
         '--snaps-from-examples', action='store_true',
         help=("Load snap details from examples/snaps instead of store. "

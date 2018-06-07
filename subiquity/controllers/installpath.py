@@ -54,6 +54,10 @@ class InstallpathController(BaseController):
         log.debug("Installing Ubuntu path chosen.")
         self.signal.emit_signal('next-screen')
 
+    def install_cmdline(self):
+        log.debug("Installing from command line sources.")
+        self.signal.emit_signal('next-screen')
+
     def install_maas_region(self):
         # show region questions, seed model
         title = "MAAS Region Controller Setup"

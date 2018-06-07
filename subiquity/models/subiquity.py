@@ -49,7 +49,7 @@ class SubiquityModel:
             root = os.path.abspath(".subiquity")
         self.locale = LocaleModel(common['signal'])
         self.keyboard = KeyboardModel(root)
-        self.installpath = InstallpathModel()
+        self.installpath = InstallpathModel(sources=common['opts'].sources)
         self.network = NetworkModel(support_wlan=False)
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
@@ -135,9 +135,7 @@ class SubiquityModel:
                     '/var/log/installer/curtin-install.log',
                 },
 
-            'sources': {
-                'rofs': 'cp://%s' % self.installpath.source,
-                },
+            'sources': self.installpath.sources,
 
             'verbosity': 3,
 
