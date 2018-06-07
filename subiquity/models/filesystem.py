@@ -212,6 +212,12 @@ class _Device(_Formattable):
                 return True
         return False
 
+    def has_unavailable_partition(self):
+        for p in self._partitions:
+            if not p.available():
+                return True
+        return False
+
 
 @attr.s
 class Disk(_Device):

@@ -19,6 +19,7 @@ Provides storage device selection and additional storage
 configuration.
 
 """
+from collections import defaultdict
 import logging
 
 import attr
@@ -260,27 +261,22 @@ class DeviceList(WidgetWrap):
     def refresh_model_inputs(self):
         devices = [
             d for d in self.parent.model.all_devices()
-            if d.available() == self.show_available
+            if (d.available() == self.show_available
+                or (not self.show_available and d.has_unavailable_partition()))
         ]
         if len(devices) == 0:
             self.pile.contents[:] = [self._no_devices_content]
             return
         log.debug('FileSystemView: building device list')
-        cols = []
-        def col3(menu, device, size, typ):
-            cols.append((Columns([
-                (3, menu),
-                (42, device),
-                (10, size),
-                typ], 1), self.pile.options('pack')))
+        rows = []
+        def row3(menu, device, size, typ):
+            rows.append([menu, device, size, typ])
 
-        def col2(menu, label, size):
-            cols.append(
-                (Columns([(3, menu), (42, label), size], 1), self.pile.options('pack')))
+        def row2(menu, label, size):
+            rows.append([menu, label, size, Text("")])
 
-        def col1(label):
-            cols.append(
-                (Columns([(3, Text("")), (42, label)], 1), self.pile.options('pack')))
+        def row1(label):
+            rows.append([Text(""), label])
 
         def _fmt_fs(label, fs):
             r = _("{} {}").format(label, fs.fstype)
@@ -306,17 +302,17 @@ class DeviceList(WidgetWrap):
             else:
                 return None
 
-        col3(Text(""), Text(_("DEVICE")), Text(_("SIZE"), align="center"),
+        row3(Text(""), Text(_("DEVICE")), Text(_("SIZE"), align="center"),
              Text(_("TYPE")))
         for device in devices:
-            col3(
+            row3(
                 self._action_menu_for_device(device),
                 Text(device.label),
                 Text(humanize_size(device.size)),
                 Text(device.desc()))
             entire_label = _maybe_fmt_entire(_("  entire device"), device)
             if entire_label is not None:
-                col1(entire_label)
+                row1(Text(entire_label))
             else:
                 for part in device.partitions():
                     if part.available() != self.show_available:
@@ -333,22 +329,45 @@ class DeviceList(WidgetWrap):
                     part_size = "{:>9} ({}%)".format(
                         humanize_size(part.size),
                         int(100 * part.size / device.size))
-                    col2(
+                    row2(
                         self._action_menu_for_device(part),
                         Text(label),
                         Text(part_size),
                         )
-                if 0 < device.used < device.size:
+                if self.show_available and 0 < device.used < device.size:
                     size = device.size
                     free = device.free
                     percent = str(int(100 * free / size))
                     if percent == "0":
                         percent = "%.2f" % (100 * free / size,)
-                    col2([
+                    row2([
                         Text(""),
                         Text(_("free space")),
                         Text("{:>9} ({}%)".format(humanize_size(free), percent)),
                     ])
+        widths = defaultdict(int)
+        widths[0] = 3
+        for row in rows:
+            log.debug("%s", row)
+            if len(row) == 4:
+                for i in 1, 2, 3:
+                    widths[i] = max(widths[i], len(row[i].text))
+        cols = []
+        for row in rows:
+            if len(row) == 4:
+                ws = [(widths[i], w) for i, w in enumerate(row)]
+                ws.append(Color.body(Text("")))
+                c = Columns(ws, 1)
+                if c.selectable():
+                    c = Color.menu_button(c)
+                cols.append((c, self.pile.options('pack')))
+            elif len(row) == 2:
+                c = Columns([(widths[0], row[0]), row[1]], 1)
+                if c.selectable():
+                    raise Exception("unexpectedly selectable row")
+                cols.append((c, self.pile.options('pack')))
+            else:
+                raise Exception("unexpected row length {}".format(row))
         self.pile.contents[:] = cols
         if self.pile.focus_position >= len(cols):
             self.pile.focus_position = len(cols) - 1
