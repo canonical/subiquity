@@ -17,8 +17,7 @@ import logging
 from urwid import Text
 
 from subiquitycore.ui.buttons import done_btn
-from subiquitycore.ui.container import ListBox
-from subiquitycore.ui.utils import button_pile, Padding
+from subiquitycore.ui.utils import button_pile
 from subiquitycore.ui.stretchy import Stretchy
 
 
@@ -43,29 +42,10 @@ class DiskInfoStretchy(Stretchy):
         widgets = [
             Text(result),
             Text(""),
-            button_pile([done_btn(_("Done"), on_press=self.cancel)]),
+            button_pile([done_btn(_("Close"), on_press=self.close)]),
             ]
         title = _("Info for {}").format(disk.label)
         super().__init__(title, widgets, 0, 2)
 
-    def _build_buttons(self):
-        return button_pile([done_btn(_("Done"), on_press=self.done)])
-
-    def keypress(self, size, key):
-        if key in ['tab', 'n', 'N', 'j', 'J']:
-            log.debug('keypress: [{}]'.format(key))
-            self.controller.show_disk_information_next(self.disk)
-            return None
-        if key in ['shift tab', 'p', 'P', 'k', 'K']:
-            log.debug('keypress: [{}]'.format(key))
-            self.controller.show_disk_information_prev(self.disk)
-            return None
-
-        return super().keypress(size, key)
-
-    def done(self, result):
-        ''' Return to FilesystemView '''
-        self.controller.partition_disk(self.disk)
-
-    def cancel(self, button=None):
+    def close(self, button=None):
         self.parent.remove_overlay()

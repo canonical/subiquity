@@ -244,7 +244,16 @@ class DeviceList(WidgetWrap):
         log.debug('_device_action %s %s', action, device)
         if action == DeviceAction.INFO:
             from .disk_info import DiskInfoStretchy
-            self.parent.show_stretchy_overlay(DiskInfoStretchy(self.parent, device))
+            self.parent.show_stretchy_overlay(
+                DiskInfoStretchy(self.parent, device))
+        if action == DeviceAction.EDIT:
+            pass
+        if action == DeviceAction.PARTITION:
+            pass
+        if action == DeviceAction.FORMAT:
+            pass
+        if action == DeviceAction.DELETE:
+            pass
 
     def _action_menu_for_device(self, device):
         delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
@@ -272,6 +281,7 @@ class DeviceList(WidgetWrap):
             return
         log.debug('FileSystemView: building device list')
         rows = []
+
         def row3(menu, device, size, typ):
             rows.append([menu, device, size, typ])
 
@@ -343,10 +353,12 @@ class DeviceList(WidgetWrap):
                     percent = str(int(100 * free / size))
                     if percent == "0":
                         percent = "%.2f" % (100 * free / size,)
+                    size_text = "{:>9} ({}%)".format(
+                        humanize_size(free), percent)
                     row2([
                         Text(""),
                         Text(_("free space")),
-                        Text("{:>9} ({}%)".format(humanize_size(free), percent)),
+                        Text(size_text),
                     ])
         widths = defaultdict(int)
         widths[0] = 3

@@ -19,7 +19,7 @@ import os
 from subiquitycore.controller import BaseController
 from subiquitycore.ui.dummy import DummyView
 
-from subiquity.models.filesystem import align_up, humanize_size
+from subiquity.models.filesystem import align_up
 from subiquity.ui.views import (
     BcacheView,
     DiskPartitionView,
