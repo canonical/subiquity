@@ -21,7 +21,6 @@ from urwid import (
     connect_signal,
     LineBox,
     PopUpLauncher,
-    SelectableIcon,
     Text,
     WidgetWrap,
     Widget,
@@ -119,11 +118,6 @@ class _ActionMenuLauncher(PopUpLauncher):
 
 class ActionMenu(WidgetWrap):
 
-    # This doesn't seem like it would be the best icon but we couldn't
-    # come up with a better one.
-    icon = ">"
-    selected_icon = ('menu_button focus', icon)
-
     signals = ['action']
 
     def __init__(self, content_width, content, opts):
@@ -133,22 +127,21 @@ class ActionMenu(WidgetWrap):
                 opt = Option(opt)
             self._options.append(opt)
         self._button = _ActionMenuLauncher(self)
-        c1 = Columns([(content_width, content), (1, self._button)], 1)
+        c1 = Columns([(1, Text("")), (content_width, content), (1, self._button)], 1)
         self.attr_map = Color.menu_button(c1)
-        c2 = Columns([(content_width+2, self.attr_map), Text("")])
+        c2 = Columns([(content_width+4, self.attr_map), Text("")])
         super().__init__(c2)
         self._dialog = _ActionMenuDialog(self)
 
-
     def get_cursor_coords(self, size):
-        return 0,0
+        return 2,0
 
     def render(self, size, focus):
         c = super().render(size, focus)
         if focus:
             # create a new canvas so we can add a cursor
             c = CompositeCanvas(c)
-            c.cursor = 0,0
+            c.cursor = self.get_cursor_coords(size)
         return c
 
     def selectable(self):

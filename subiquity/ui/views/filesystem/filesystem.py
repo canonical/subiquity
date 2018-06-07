@@ -214,8 +214,8 @@ class MountList(WidgetWrap):
                         "/".join(mi.split_path[1:]),
                         ]
             actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
-            menu = None#ActionMenu(actions)
-            connect_signal(menu, 'action', self._mount_action, mi.mount)
+            menu = Text("")#ActionMenu(actions)
+            #connect_signal(menu, 'action', self._mount_action, mi.mount)
             col(
                 menu,
                 path_markup,
@@ -345,7 +345,7 @@ class DeviceList(WidgetWrap):
             row(
                 device,
                 Text(device.label),
-                Text(humanize_size(device.size)),
+                Text("{:>9}".format(humanize_size(device.size))),
                 Text(device.desc()))
             entire_label = None
             if device.fs():
@@ -394,25 +394,38 @@ class DeviceList(WidgetWrap):
             if len(texts) == 3:
                 for i, text in enumerate(texts):
                     widths[i] = max(widths[i], len(text.text))
+            if len(texts) == 2:
+                widths[0] = max(widths[0], len(texts[0].text))
         cols = []
         for device, texts in rows:
             if len(texts) == 3:
                 ws = [(widths[i], w) for i, w in enumerate(texts)]
+                if device is None:
+                    ws.insert(0, (1, Text("")))
                 c = Columns(ws, 1)
                 if device is not None:
                     c = self._action_menu_for_device(sum(widths.values()) + 2, c, device)
                 cols.append((c, self.pile.options('pack')))
-            elif len(row) == 2:
-                c = Columns([(widths[0], row[0]), row[1]], 1)
-                if c.selectable():
-                    raise Exception("unexpectedly selectable row")
+            elif len(texts) == 2:
+                ws = [
+                    (widths[0], texts[0]),
+                    (widths[1]+widths[2], texts[1]),
+                    ]
+                if device is None:
+                    ws.insert(0, (1, Text("")))
+                c = Columns(ws, 1)
+                if device is not None:
+                    c = self._action_menu_for_device(sum(widths.values()) + 2, c, device)
                 cols.append((c, self.pile.options('pack')))
+            elif len(texts) == 1:
+                cols.append((texts[0], self.pile.options('pack')))
             else:
                 raise Exception("unexpected row length {}".format(row))
         self.pile.contents[:] = cols
         if self.pile.focus_position >= len(cols):
             self.pile.focus_position = len(cols) - 1
-
+        while not self.pile.focus.selectable():
+            self.pile.focus_position += 1
 
 class FilesystemView(BaseView):
     title = _("Filesystem setup")
