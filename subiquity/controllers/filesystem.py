@@ -89,7 +89,7 @@ class FilesystemController(BaseController):
         self.model.remove_mount(mount)
 
     def create_filesystem(self, volume, spec):
-        if spec['fstype'] is None:
+        if spec['fstype'] is None or spec['fstype'].label is None:
             return
         fs = self.model.add_filesystem(volume, spec['fstype'].label)
         self.create_mount(fs, spec)

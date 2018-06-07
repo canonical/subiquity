@@ -358,7 +358,7 @@ class DeviceList(WidgetWrap):
                     elif part.constructed_device():
                         label = _fmt_constructed(prefix, part)
                     else:
-                        label = _("{}, not formatted").format(prefix)
+                        label = _("{} not formatted").format(prefix)
                     part_size = "{:>9} ({}%)".format(
                         humanize_size(part.size),
                         int(100 * part.size / device.size))
