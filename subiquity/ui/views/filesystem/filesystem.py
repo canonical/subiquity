@@ -387,7 +387,7 @@ class DeviceList(WidgetWrap):
                         percent = "%.2f" % (100 * free / size,)
                     size_text = "{:>9} ({}%)".format(
                         humanize_size(free), percent)
-                    row(None, Text(_("free space")), Text(size_text))
+                    row(None, Text(_("  free space")), Text(size_text))
         widths = defaultdict(int)
         for device, texts in rows:
             log.debug("%s", texts)
@@ -399,23 +399,31 @@ class DeviceList(WidgetWrap):
         cols = []
         for device, texts in rows:
             if len(texts) == 3:
-                ws = [(widths[i], w) for i, w in enumerate(texts)]
+                t0 = texts[0]
+                w0 = widths[0]
                 if device is None:
-                    ws.insert(0, (1, Text("")))
-                c = Columns(ws, 1)
+                    t0.set_text("  " + t0.text)
+                    w0 += 2
+                ws = [(w0, t0)] + [(widths[i], w) for i, w in enumerate(texts) if i >= 1]
+                c = Columns(ws, 2)
                 if device is not None:
-                    c = self._action_menu_for_device(sum(widths.values()) + 2, c, device)
+                    c = self._action_menu_for_device(sum(widths.values()) + 5, c, device)
                 cols.append((c, self.pile.options('pack')))
             elif len(texts) == 2:
-                ws = [
-                    (widths[0], texts[0]),
-                    (widths[1]+widths[2], texts[1]),
-                    ]
+                t0 = texts[0]
+                w0 = widths[0]
                 if device is None:
-                    ws.insert(0, (1, Text("")))
-                c = Columns(ws, 1)
+                    t0.set_text("  " + t0.text)
+                    w0 += 2
+                ws = [
+                    (w0, t0),
+                    (widths[1]+widths[2]+2, texts[1]),
+                    ]
+                #if device is None:
+                #    ws.insert(0, (2, Text("")))
+                c = Columns(ws, 2)
                 if device is not None:
-                    c = self._action_menu_for_device(sum(widths.values()) + 2, c, device)
+                    c = self._action_menu_for_device(sum(widths.values()) + 5, c, device)
                 cols.append((c, self.pile.options('pack')))
             elif len(texts) == 1:
                 cols.append((texts[0], self.pile.options('pack')))
