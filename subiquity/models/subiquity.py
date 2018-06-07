@@ -141,10 +141,6 @@ class SubiquityModel:
 
             'verbosity': 3,
 
-            'partitioning_commands': {
-                'builtin': 'curtin block-meta custom',
-                },
-
             'pollinate': {
                 'user_agent': {
                     'subiquity': "%s_%s" % (os.environ.get("SNAP_VERSION",
