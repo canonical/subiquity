@@ -8,6 +8,8 @@ Network:
   accept-default: yes
 Proxy:
   proxy: ""
+Mirror:
+  mirror: "http://us.archive.ubuntu.com"
 Filesystem:
   guided: yes
   guided-index: 0

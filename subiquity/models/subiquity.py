@@ -26,6 +26,7 @@ from .installpath import InstallpathModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
 from .proxy import ProxyModel
+from .mirror import MirrorModel
 from .snaplist import SnapListModel
 
 
@@ -54,6 +55,7 @@ class SubiquityModel:
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
         self.proxy = ProxyModel()
+        self.mirror = MirrorModel()
         self.snaplist = SnapListModel()
 
     def _cloud_init_config(self):
@@ -124,6 +126,9 @@ class SubiquityModel:
             'apt': {
                 'http_proxy': self.proxy.proxy,
                 'https_proxy': self.proxy.proxy,
+                'primary': [{'arches': ["default"],
+                             'uri': self.mirror.mirror}],
+                'preserve_sources_list': False,
                 },
 
             'install': {

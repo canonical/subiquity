@@ -36,6 +36,7 @@ class Subiquity(Application):
             "Installpath",
             "Network",
             "Proxy",
+            "Mirror",
             "Filesystem",
             "Identity",
             "SnapList",

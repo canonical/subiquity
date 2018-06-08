@@ -19,6 +19,7 @@ from .installpath import InstallpathController
 from .installprogress import InstallProgressController
 from .keyboard import KeyboardController
 from .proxy import ProxyController
+from .mirror import MirrorController
 from subiquitycore.controllers.login import LoginController
 from subiquitycore.controllers.network import NetworkController
 from .snaplist import SnapListController
@@ -30,6 +31,7 @@ __all__ = [
     'InstallProgressController',
     'KeyboardController',
     'ProxyController',
+    'MirrorController',
     'LoginController',
     'NetworkController',
     'SnapListController',
