@@ -95,7 +95,7 @@ class _ActionMenuLauncher(PopUpLauncher):
         super().__init__(Text(">"))
 
     def open_pop_up(self):
-        self.parent.attr_map.set_attr_map({None: 'menu_button focus'})
+        self.parent.attr_map.set_attr_map({None: 'menu_button focus', 'grey': 'menu_button focus'})
         super().open_pop_up()
 
     def close_pop_up(self):
