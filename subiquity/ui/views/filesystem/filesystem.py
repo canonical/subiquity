@@ -171,16 +171,21 @@ class MountList(WidgetWrap):
             [len(m.desc) for m in mountinfos])
         cols = []
 
-        def col(action_menu, path, size, fstype, desc):
+        def col(mount, path, size, fstype, desc):
+            w0 = longest_path
+            if mount is None:
+                w0 += 2
+                path = '  ' + path
             c = Columns([
-                (longest_path, Text(path)),
+                (w0,           Text(path)),
                 (size_width,   size),
                 (type_width,   Text(fstype)),
                 (longest_type, Text(desc)),
-                (3,            action_menu),
-                Color.body(Text("")),
-            ], dividechars=1)
-            if isinstance(action_menu, ActionMenu):
+            ], dividechars=2)
+            if mount is not None:
+                actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
+                c = ActionMenu(longest_path + size_width + type_width + longest_type + 6, c, actions)
+                connect_signal(c, 'action', self._mount_action, mi.mount)
                 c = AttrMap(
                     c,
                     {None: 'menu_button', 'grey': 'info_minor'},
@@ -192,7 +197,7 @@ class MountList(WidgetWrap):
         size_width = max(len(size_text), 9)
         type_width = max(len(type_text), self.parent.model.longest_fs_name)
         col(
-            Text(""),
+            None,
             mount_point_text,
             Text(size_text, align='center'),
             type_text,
@@ -213,11 +218,8 @@ class MountList(WidgetWrap):
                         ('grey', "/"),
                         "/".join(mi.split_path[1:]),
                         ]
-            actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
-            menu = Text("")#ActionMenu(actions)
-            #connect_signal(menu, 'action', self._mount_action, mi.mount)
             col(
-                menu,
+                mi.mount,
                 path_markup,
                 Text(mi.size, align='right'),
                 mi.fstype,
@@ -225,6 +227,8 @@ class MountList(WidgetWrap):
         self.pile.contents[:] = cols
         if self.pile.focus_position >= len(cols):
             self.pile.focus_position = len(cols) - 1
+        while not self.pile.focus.selectable():
+            self.pile.focus_position += 1
 
 
 class DeviceList(WidgetWrap):
@@ -285,6 +289,12 @@ class DeviceList(WidgetWrap):
             raise Exception("unexpected action on partition")
 
     def _action_menu_for_device(self, width, content, device):
+        cursor_position = 0
+        if isinstance(device, Partition):
+            cb = self._partition_action
+            cursor_position += 2
+        else:
+            cb = self._device_action
         delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
         device_actions = [
             (_("Information"),    DeviceAction.INFO),
@@ -299,15 +309,13 @@ class DeviceList(WidgetWrap):
             [
                 (label, device.supports_action(action), action)
                 for label, action in device_actions
-            ])
-        if isinstance(device, Partition):
-            cb = self._partition_action
-        else:
-            cb = self._device_action
+            ],
+            cursor_position=cursor_position)
         connect_signal(menu, 'action', cb, device)
         return menu
 
     def refresh_model_inputs(self):
+        self._rows = []  # [(device-or-None, [Text])]
         devices = [
             d for d in self.parent.model.all_devices()
             if (d.available() == self.show_available
@@ -317,7 +325,6 @@ class DeviceList(WidgetWrap):
             self.pile.contents[:] = [self._no_devices_content]
             return
         log.debug('FileSystemView: building device list')
-        self._rows = []  # [(device-or-None, [Text])]
 
         def row(device, *texts):
             self._rows.append((device, texts))
@@ -443,6 +450,7 @@ class DeviceList(WidgetWrap):
         while not self.pile.focus.selectable():
             self.pile.focus_position += 1
 
+
 class FilesystemView(BaseView):
     title = _("Filesystem setup")
     footer = _("Select available disks to format and mount")
@@ -488,13 +496,15 @@ class FilesystemView(BaseView):
 
     def refresh_model_inputs(self):
         self.mount_list.refresh_model_inputs()
+
         self.avail_list.refresh_model_inputs()
         self.used_list.refresh_model_inputs()
         w1 = self.avail_list.get_widths()
-        w2 = self.avail_list.get_widths()
+        w2 = self.used_list.get_widths()
         w = {i:max(w1[i], w2[i]) for i in (0, 1, 2)}
         self.avail_list.apply_widths(w)
         self.used_list.apply_widths(w)
+
         # If refreshing the view has left the focus widget with no
         # selectable widgets, simulate a tab to move to the next
         # selectable widget.

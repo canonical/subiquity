@@ -120,13 +120,14 @@ class ActionMenu(WidgetWrap):
 
     signals = ['action']
 
-    def __init__(self, content_width, content, opts):
+    def __init__(self, content_width, content, opts, cursor_position=0):
         self._options = []
         for opt in opts:
             if not isinstance(opt, Option):
                 opt = Option(opt)
             self._options.append(opt)
         self._button = _ActionMenuLauncher(self)
+        self.cursor_position = cursor_position
         c1 = Columns([(1, Text("")), (content_width, content), (1, self._button)], 1)
         self.attr_map = Color.menu_button(c1)
         c2 = Columns([(content_width+4, self.attr_map), Text("")])
@@ -134,7 +135,7 @@ class ActionMenu(WidgetWrap):
         self._dialog = _ActionMenuDialog(self)
 
     def get_cursor_coords(self, size):
-        return 2,0
+        return 2+self.cursor_position,0
 
     def render(self, size, focus):
         c = super().render(size, focus)
