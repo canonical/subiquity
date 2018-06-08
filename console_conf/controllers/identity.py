@@ -16,6 +16,7 @@
 import json
 import logging
 import os
+import shlex
 import sys
 
 from subiquitycore.controller import BaseController
@@ -24,6 +25,28 @@ from subiquitycore.utils import disable_console_conf, run_command
 from console_conf.ui.views import IdentityView, LoginView
 
 log = logging.getLogger('console_conf.controllers.identity')
+
+
+def get_core_version():
+    """ For a ubuntu-core system, return its version or None """
+
+    path = "/usr/lib/os-release"
+    try:
+        with open(path, "r") as fp:
+            content = fp.read()
+    except FileNotFoundError:
+        return None
+
+    version = None
+    for line in shlex.split(content):
+        key, _, value = line.partition("=")
+        if key == "NAME" and value != "Ubuntu Core":
+            return None
+        if key == "VERSION_ID":
+            version = value
+            break
+
+    return version
 
 
 def get_device_owner():
@@ -106,7 +129,7 @@ def host_key_info():
 
 
 login_details_tmpl = """\
-Ubuntu Core 16 on {first_ip} ({tty_name})
+Ubuntu Core {version} on {first_ip} ({tty_name})
 {host_key_info}
 To login:
 {sshcommands}
@@ -115,7 +138,7 @@ Personalize your account at https://login.ubuntu.com.
 
 
 login_details_tmpl_no_ip = """\
-Ubuntu Core 16 on <no ip address> ({tty_name})
+Ubuntu Core {version} on <no ip address> ({tty_name})
 
 You cannot log in until the system has an IP address. (Is there
 supposed to be a DHCP server running on your network?)
@@ -129,15 +152,17 @@ def write_login_details(fp, username, ips):
     for ip in ips:
         sshcommands += "    ssh %s@%s\n" % (username, ip)
     tty_name = os.ttyname(0)[5:]  # strip off the /dev/
+    version = get_core_version() or "16"
     if len(ips) == 0:
         fp.write(login_details_tmpl_no_ip.format(
-            sshcommands=sshcommands, tty_name=tty_name))
+            sshcommands=sshcommands, tty_name=tty_name, version=version))
     else:
         first_ip = ips[0]
         fp.write(login_details_tmpl.format(sshcommands=sshcommands,
                                            host_key_info=host_key_info(),
                                            tty_name=tty_name,
-                                           first_ip=first_ip))
+                                           first_ip=first_ip,
+                                           version=version)
 
 
 def write_login_details_standalone():
@@ -162,11 +187,8 @@ def write_login_details_standalone():
                 ips.append(addr.ip)
     if len(ips) == 0:
         tty_name = os.ttyname(0)[5:]
-        print("Ubuntu Core 16 on <no ip address> ({})".format(tty_name))
-        print()
-        print("You cannot log in until the system has an IP address.")
-        print("(Is there supposed to be a DHCP server running on "
-              "your network?)")
+        version = get_core_version() or "16"
+        print(login_details_tmpl_no_ip.format(tty_name=tty_name))
         return 2
     write_login_details(sys.stdout, owner['username'], ips)
     return 0
