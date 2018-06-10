@@ -146,8 +146,8 @@ class Table(urwid.WidgetWrap):
         return sum(widths.values()) + (len(list(widths.keys()))-1)*self.spacing
 
     def _compute_widths_for_size(self, size):
-        #if self._last_size == size:
-        #    return
+        if self._last_size == size:
+            return
         always_scales = set()
         for i, cs in enumerate(self.colspecs.values()):
             if cs.always_scales:
@@ -194,6 +194,7 @@ class Table(urwid.WidgetWrap):
         return super().render(size, focus)
 
     def set_contents(self, rows):
+        self._last_size = None
         rows = [urwid.Padding(row) for row in rows]
         self.table_rows = rows
         self._w.contents[:] = self.container_maker(rows).contents
