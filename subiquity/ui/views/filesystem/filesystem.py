@@ -44,6 +44,7 @@ from subiquitycore.ui.buttons import (
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.stretchy import Stretchy
+from subiquitycore.ui.table import ColSpec, Table, TableRow
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
@@ -137,11 +138,13 @@ class MountList(WidgetWrap):
 
     def __init__(self, parent):
         self.parent = parent
-        self.pile = Pile([])
-        self._no_mounts_content = (
-            Color.info_minor(Text(_("No disks or partitions mounted."))),
-            self.pile.options('pack'))
-        super().__init__(self.pile)
+        self.table = Table([], colspecs={
+            0:ColSpec(can_scale=True),
+            1:ColSpec(min_width=9),
+        })
+        self._no_mounts_content = Color.info_minor(
+            Text(_("No disks or partitions mounted.")))
+        super().__init__(self.table)
         self.refresh_model_inputs()
 
     def _mount_action(self, sender, action, mount):
@@ -157,45 +160,17 @@ class MountList(WidgetWrap):
                 self.parent.model.all_mounts(), key=lambda m: m.path)
         ]
         if len(mountinfos) == 0:
-            self.pile.contents[:] = [self._no_mounts_content]
+            self._w = self._no_mounts_content
             return
+        self._w = self.table
         log.debug('FileSystemView: building mount list')
-        mount_point_text = _("MOUNT POINT")
-        device_type_text = _("DEVICE TYPE")
-        longest_path = max(
-            [len(mount_point_text)] +
-            [len(m.mount.path) for m in mountinfos])
-        longest_type = max(
-            [len(device_type_text)] +
-            [len(m.desc) for m in mountinfos])
-        cols = []
 
-        def col(action_menu, path, size, fstype, desc):
-            c = Columns([
-                (longest_path, Text(path)),
-                (size_width,   size),
-                (type_width,   Text(fstype)),
-                (longest_type, Text(desc)),
-                (3,            action_menu),
-                Color.body(Text("")),
-            ], dividechars=1)
-            if isinstance(action_menu, ActionMenu):
-                c = AttrMap(
-                    c,
-                    {None: 'menu_button', 'grey': 'info_minor'},
-                    {None: 'menu_button focus', 'grey': 'menu_button focus'})
-            cols.append((c, self.pile.options('pack')))
-
-        size_text = _("SIZE")
-        type_text = _("TYPE")
-        size_width = max(len(size_text), 9)
-        type_width = max(len(type_text), self.parent.model.longest_fs_name)
-        col(
-            Text(""),
-            mount_point_text,
-            Text(size_text, align='center'),
-            type_text,
-            device_type_text)
+        rows = [TableRow([
+            Text(_("MOUNT POINT")),
+            Text(_("SIZE"), align='center'),
+            Text(_("TYPE")),
+            Text(_("DEVICE TYPE")),
+            ])]
 
         for i, mi in enumerate(mountinfos):
             path_markup = mi.path
@@ -215,15 +190,20 @@ class MountList(WidgetWrap):
             actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._mount_action, mi.mount)
-            col(
-                menu,
-                path_markup,
-                Text(mi.size, align='right'),
-                mi.fstype,
-                mi.desc)
-        self.pile.contents[:] = cols
-        if self.pile.focus_position >= len(cols):
-            self.pile.focus_position = len(cols) - 1
+            rows.append(
+                AttrMap(
+                    TableRow([
+                        Text(path_markup),
+                        Text(mi.size, align='right'),
+                        Text(mi.fstype),
+                        Text(mi.desc),
+                        menu,
+                    ]),
+                    {None: 'menu_button', 'grey': 'info_minor'},
+                    {None: 'menu_button focus', 'grey': 'menu_button focus'}))
+        self.table.set_contents(rows)
+        if self.table._w.focus_position >= len(rows):
+            self.table._w.focus_position = len(rows) - 1
 
 
 class DeviceList(WidgetWrap):

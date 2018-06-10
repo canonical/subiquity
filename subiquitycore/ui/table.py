@@ -16,7 +16,9 @@
 from collections import defaultdict
 import logging
 
+from subiquitycore.ui.actionmenu import ActionMenu
 from subiquitycore.ui.container import Columns, Pile
+
 
 import attr
 
@@ -31,7 +33,7 @@ class ColSpec:
     always_scales = attr.ib(default=False)
     can_scale = attr.ib(default=False)
     omittable = attr.ib(default=False)
-    min_width = attr.ib(default=None)
+    min_width = attr.ib(default=0)
 
 
 def demarkup(s):
@@ -48,6 +50,8 @@ def widget_width(w):
         return w.natural_width()
     elif isinstance(w, urwid.CheckBox):
         return widget_width(w._wrapped_widget)
+    elif isinstance(w, (ActionMenu, urwid.AttrMap)):
+        return widget_width(w._original_widget)
     elif isinstance(w, urwid.Text):
         return len(demarkup(w.text))
     elif isinstance(w, urwid.Columns):
@@ -120,6 +124,12 @@ def default_container_maker(rows):
 
 class Table(urwid.WidgetWrap):
 
+    def _select_first_selectable(self):
+        self._w._select_first_selectable()
+
+    def _select_last_selectable(self):
+        self._w._select_last_selectable()
+
     def __init__(self, rows, colspecs=None, spacing=1,
                  container_maker=default_container_maker):
         self.table_rows = rows
@@ -128,24 +138,25 @@ class Table(urwid.WidgetWrap):
         self.colspecs = defaultdict(ColSpec, colspecs)
         self.spacing = spacing
         self._last_size = None
+        self.container_maker = container_maker
         super().__init__(container_maker(rows))
 
     def _total_width(self, widths):
         return sum(widths.values()) + (len(list(widths.keys()))-1)*self.spacing
 
     def _compute_widths_for_size(self, size):
-        if self._last_size == size:
-            return
+        #if self._last_size == size:
+        #    return
         always_scales = set()
         for i, cs in enumerate(self.colspecs.values()):
             if cs.always_scales:
                 always_scales.add(i)
-        widths = {}
+        widths = {i:cs.min_width for i, cs in self.colspecs.items()}
         for row in self.table_rows:
             row_widths = row.base_widget.get_natural_widths(always_scales)
             for i, w in row_widths.items():
                 widths[i] = max(w, widths.get(i, 0))
-        log.debug("%s %s", size[0], self._total_width(widths))
+        log.debug("%s %s %s", size[0], widths, self._total_width(widths))
         omits = set()
         if self._total_width(widths) > size[0]:
             for i in list(widths):
@@ -176,6 +187,10 @@ class Table(urwid.WidgetWrap):
     def render(self, size, focus):
         self._compute_widths_for_size(size)
         return super().render(size, focus)
+
+    def set_contents(self, rows):
+        self.table_rows = rows
+        self._w.contents[:] = self.container_maker(rows).contents
 
 
 if __name__ == '__main__':
