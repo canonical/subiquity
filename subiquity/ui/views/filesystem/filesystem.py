@@ -95,6 +95,18 @@ class FilesystemConfirmation(Stretchy):
         self.parent.remove_overlay()
 
 
+def _wire_menu_to_row(menu, row):
+    assert isinstance(row, AttrMap)
+    close_map = row.attr_map.copy()
+    open_map = row.focus_map.copy()
+    def _open(menu):
+        row.set_attr_map(open_map)
+    def _close(menu):
+        row.set_attr_map(close_map)
+    connect_signal(menu, 'open', _open)
+    connect_signal(menu, 'close', _close)
+
+
 @attr.s
 class MountInfo:
     mount = attr.ib(default=None)
@@ -138,7 +150,7 @@ class MountList(WidgetWrap):
 
     def __init__(self, parent):
         self.parent = parent
-        self.table = Table([], colspecs={
+        self.table = Table([], spacing=2, colspecs={
             0:ColSpec(can_scale=True),
             1:ColSpec(min_width=9),
         })
@@ -201,12 +213,7 @@ class MountList(WidgetWrap):
                     {None: 'menu_button', 'grey': 'info_minor'},
                     {None: 'menu_button focus', 'grey': 'menu_button focus'})
 
-            def _open(menu, am=am):
-                am.set_attr_map({None: 'menu_button focus', 'grey': 'menu_button focus'})
-            def _close(menu, am=am):
-                am.set_attr_map({None: 'menu_button', 'grey': 'info_minor'})
-            connect_signal(menu, 'open', _open)
-            connect_signal(menu, 'close', _close)
+            _wire_menu_to_row(menu, am)
             rows.append(am)
         self.table.set_contents(rows)
         if self.table._w.focus_position >= len(rows):
@@ -224,18 +231,19 @@ class DeviceList(WidgetWrap):
     def __init__(self, parent, show_available):
         self.parent = parent
         self.show_available = show_available
-        self.pile = Pile([])
+        self.table = Table([],  spacing=2, colspecs={
+            0:ColSpec(can_scale=True),
+            1:ColSpec(min_width=9),
+        })
         if show_available:
             text = _("No available devices")
         else:
             text = _("No used devices")
-        self._no_devices_content = (
-            Color.info_minor(Text(text)),
-            self.pile.options('pack'))
-        super().__init__(self.pile)
+        self._no_devices_content = Color.info_minor(Text(text))
+        super().__init__(self.table)
         self.refresh_model_inputs()
         # I don't really know why this is required:
-        self.pile._select_first_selectable()
+        self.table._select_first_selectable()
 
     def _device_action(self, sender, action, device):
         log.debug('_device_action %s %s', action, device)
@@ -291,19 +299,11 @@ class DeviceList(WidgetWrap):
                 or (not self.show_available and d.has_unavailable_partition()))
         ]
         if len(devices) == 0:
-            self.pile.contents[:] = [self._no_devices_content]
+            self._w = self._no_devices_content
             return
+        self._w = self.table
         log.debug('FileSystemView: building device list')
         rows = []
-
-        def row3(menu, device, size, typ):
-            rows.append([device, size, typ, menu])
-
-        def row2(menu, label, size):
-            rows.append([label, size, Text(""), menu])
-
-        def row1(label):
-            rows.append([Text(""), label])
 
         def _fmt_fs(label, fs):
             r = _("{} {}").format(label, fs.fstype)
@@ -320,14 +320,22 @@ class DeviceList(WidgetWrap):
             return _("{} part of {} ({})").format(
                 label, device.label, device.desc())
 
-        row3(Text(""), Text(_("DEVICE")), Text(_("SIZE"), align="center"),
-             Text(_("TYPE")))
+        rows.append(TableRow([
+            Text(_("DEVICE")),
+            Text(_("SIZE"), align="center"),
+            Text(_("TYPE")),
+        ]))
         for device in devices:
-            row3(
-                self._action_menu_for_device(device, self._device_action),
+            menu = self._action_menu_for_device(device, self._device_action)
+            am = Color.menu_button(TableRow([
                 Text(device.label),
-                Text(humanize_size(device.size)),
-                Text(device.desc()))
+                Text("{:>9}".format(humanize_size(device.size))),
+                Text(device.desc()),
+                menu,
+            ]))
+            _wire_menu_to_row(menu, am)
+            rows.append(am)
+
             entire_label = None
             if device.fs():
                 entire_label = _fmt_fs(
@@ -338,7 +346,9 @@ class DeviceList(WidgetWrap):
                     _("  entire device"),
                     device.constructed_device())
             if entire_label is not None:
-                row1(Text(entire_label))
+                rows.append(TableRow([
+                    Text(entire_label),
+                ]))
             else:
                 for part in device.partitions():
                     if part.available() != self.show_available:
@@ -357,11 +367,13 @@ class DeviceList(WidgetWrap):
                         int(100 * part.size / device.size))
                     menu = self._action_menu_for_device(
                         part, self._partition_action)
-                    row2(
-                        menu,
+                    am = Color.menu_button(TableRow([
                         Text(label),
-                        Text(part_size),
-                        )
+                        (2, Text(part_size)),
+                        menu,
+                    ]))
+                    _wire_menu_to_row(menu, am)
+                    rows.append(am)
                 if self.show_available and 0 < device.used < device.size:
                     size = device.size
                     free = device.free
@@ -370,33 +382,10 @@ class DeviceList(WidgetWrap):
                         percent = "%.2f" % (100 * free / size,)
                     size_text = "{:>9} ({}%)".format(
                         humanize_size(free), percent)
-                    row2(Text(""), Text(_("free space")), Text(size_text))
-        widths = defaultdict(int)
-        widths[3] = 1
-        for row in rows:
-            log.debug("%s", row)
-            if len(row) == 4:
-                for i in 0, 1, 2:
-                    widths[i] = max(widths[i], len(row[i].text))
-        cols = []
-        for row in rows:
-            if len(row) == 4:
-                ws = [(widths[i], w) for i, w in enumerate(row)]
-                ws.append(Color.body(Text("")))
-                c = Columns(ws, 1)
-                if c.selectable():
-                    c = Color.menu_button(c)
-                cols.append((c, self.pile.options('pack')))
-            elif len(row) == 2:
-                c = Columns([(widths[0], row[0]), row[1]], 1)
-                if c.selectable():
-                    raise Exception("unexpectedly selectable row")
-                cols.append((c, self.pile.options('pack')))
-            else:
-                raise Exception("unexpected row length {}".format(row))
-        self.pile.contents[:] = cols
-        if self.pile.focus_position >= len(cols):
-            self.pile.focus_position = len(cols) - 1
+                    rows.append(TableRow([Text(_("  free space")), (2, Text(size_text))]))
+        self.table.set_contents(rows)
+        if self.table._w.focus_position >= len(rows):
+            self.table._w.focus_position = len(rows) - 1
 
 
 class FilesystemView(BaseView):
@@ -448,7 +437,7 @@ class FilesystemView(BaseView):
         # If refreshing the view has left the focus widget with no
         # selectable widgets, simulate a tab to move to the next
         # selectable widget.
-        if not self.lb.base_widget.focus.selectable():
+        while not self.lb.base_widget.focus.selectable():
             self.lb.base_widget.keypress((10, 10), 'tab')
         if self.model.can_install():
             self.done.enable()
