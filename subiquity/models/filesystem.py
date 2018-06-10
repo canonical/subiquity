@@ -427,7 +427,7 @@ class Mount:
     path = attr.ib(default=None)
 
     def can_delete(self):
-        return (not isinstance(self.device, Partition)
+        return (not isinstance(self.device.volume, Partition)
                 or self.device.volume.flag != "boot")
 
 
