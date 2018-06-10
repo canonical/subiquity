@@ -132,6 +132,7 @@ class Table(urwid.WidgetWrap):
 
     def __init__(self, rows, colspecs=None, spacing=1,
                  container_maker=default_container_maker):
+        rows = [urwid.Padding(row) for row in rows]
         self.table_rows = rows
         if colspecs is None:
             colspecs = {}
@@ -176,8 +177,12 @@ class Table(urwid.WidgetWrap):
                                     break
                             else:
                                 break
+            total_width = size[0]
+        else:
+            total_width = self._total_width(widths)
         log.debug("widths %s omits %s", sorted(widths.items()), omits)
         for row in self.table_rows:
+            row.width = total_width
             row.base_widget.set_widths(widths, omits, self.spacing)
 
     def rows(self, size, focus):
@@ -189,6 +194,7 @@ class Table(urwid.WidgetWrap):
         return super().render(size, focus)
 
     def set_contents(self, rows):
+        rows = [urwid.Padding(row) for row in rows]
         self.table_rows = rows
         self._w.contents[:] = self.container_maker(rows).contents
 
