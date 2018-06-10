@@ -28,6 +28,7 @@ from urwid import (
 
 from subiquitycore.ui.buttons import ok_btn, cancel_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile, ScrollBarListBox
+from subiquitycore.ui.table import ColSpec, Table, TableRow
 from subiquitycore.ui.utils import button_pile, Color, screen
 from subiquitycore.view import BaseView
 
@@ -36,14 +37,6 @@ from subiquity.models.snaplist import SnapSelection
 from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.snaplist")
-
-
-class StarCheckBox(CheckBox):
-    states = {
-        True: SelectableIcon(" *"),
-        False: SelectableIcon("  "),
-        }
-    reserve_columns = 3
 
 
 class StarRadioButton(RadioButton):
@@ -79,12 +72,6 @@ class SnapInfoView(WidgetWrap):
         self.channels = []
         self.needs_focus = True
 
-        channel_width = (max(len(csi.channel_name) for csi in snap.channels)
-                         + StarRadioButton.reserve_columns + 1)
-        max_version = max(len(csi.version) for csi in snap.channels)
-        max_revision = max(len(str(csi.revision)) for csi in snap.channels) + 2
-        max_size = max(len(humanize_size(csi.size)) for csi in snap.channels)
-
         self.description = Text(snap.description.replace('\r', '').strip())
         self.lb_description = ListBox([self.description])
 
@@ -101,15 +88,17 @@ class SnapInfoView(WidgetWrap):
                 user_data=SnapSelection(
                     channel=csi.channel_name,
                     is_classic=csi.confinement == "classic"))
-            self.channels.append(Color.menu_button(Columns([
-                (channel_width, btn),
-                (max_version,   Text(csi.version)),
-                (max_revision,  Text("({})".format(csi.revision))),
-                (max_size,      Text(humanize_size(csi.size))),
-                ('pack',        Text(notes)),
-                ], dividechars=1)))
+            self.channels.append(Color.menu_button(TableRow([
+                btn,
+                Text(csi.version),
+                Text("({})".format(csi.revision)),
+                Text(humanize_size(csi.size)),
+                Text(notes),
+            ])))
 
-        self.lb_channels = NoTabCyclingListBox(self.channels)
+        self.lb_channels = Table(
+            self.channels,
+            container_maker=NoTabCyclingListBox)
 
         title = Columns([
             Text(snap.name),
@@ -133,7 +122,7 @@ class SnapInfoView(WidgetWrap):
 
     def state_change(self, sender, state, selection):
         if state:
-            self.parent.snap_rows[self.snap.name].box.set_state(True)
+            self.parent.snap_boxes[self.snap.name].set_state(True)
             self.parent.to_install[self.snap.name] = selection
 
     def render(self, size, focus):
@@ -226,24 +215,17 @@ class FetchingFailed(WidgetWrap):
         self.row.parent.remove_overlay()
 
 
-class SnapListRow(WidgetWrap):
+class SnapCheckBox(CheckBox):
+    states = {
+        True: SelectableIcon(" *"),
+        False: SelectableIcon("  "),
+        }
+    reserve_columns = 3
 
-    def __init__(self, parent, snap, max_name_len, max_publisher_len):
+    def __init__(self, parent, snap):
         self.parent = parent
         self.snap = snap
-        self.box = StarCheckBox(snap.name, on_state_change=self.state_change)
-        self.name_and_publisher_width = (
-            max_name_len + self.box.reserve_columns + max_publisher_len + 2)
-        self.two_column = Color.menu_button(Columns([
-                (max_name_len+self.box.reserve_columns, self.box),
-                Text(snap.summary, wrap='clip'),
-                ], dividechars=1))
-        self.three_column = Color.menu_button(Columns([
-                (max_name_len+4, self.box),
-                (max_publisher_len, Text(snap.publisher)),
-                Text(snap.summary, wrap='clip'),
-                ], dividechars=1))
-        super().__init__(self.two_column)
+        super().__init__(snap.name, on_state_change=self.state_change)
 
     def load_info(self):
         called = False
@@ -288,13 +270,6 @@ class SnapListRow(WidgetWrap):
                 is_classic=self.snap.confinement == "classic")
         else:
             self.parent.to_install.pop(self.snap.name, None)
-
-    def render(self, size, focus):
-        maxcol = size[0]
-        if maxcol - self.name_and_publisher_width >= 40:
-            return self.three_column.render(size, focus)
-        else:
-            return self.two_column.render(size, focus)
 
 
 class SnapListView(BaseView):
@@ -345,17 +320,26 @@ class SnapListView(BaseView):
         self._w = screen
 
     def make_main_screen(self, snap_list):
-        self.name_len = max([len(snap.name) for snap in snap_list])
-        self.publisher_len = max([len(snap.publisher) for snap in snap_list])
-        self.snap_rows = {}
+        self.snap_boxes = {}
         body = []
         for snap in snap_list:
-            row = SnapListRow(self, snap, self.name_len, self.publisher_len)
-            self.snap_rows[snap.name] = row
-            body.append(row)
+            box = self.snap_boxes[snap.name] = SnapCheckBox(self, snap)
+            row = [
+                box,
+                Text(snap.publisher),
+                Text(snap.summary, wrap='clip'),
+                ]
+            body.append(Color.menu_button(TableRow(row)))
+        table = Table(
+            body,
+            colspecs={
+                1: ColSpec(omittable=True),
+                2: ColSpec(can_scale=True, min_width=40),
+                },
+            container_maker=NoTabCyclingListBox)
         ok = ok_btn(label=_("OK"), on_press=self.done)
         self._main_screen = screen(
-            NoTabCyclingListBox(body), [ok],
+            table, [ok],
             focus_buttons=False,
             excerpt=_(
                 "These are popular snaps in server environments. Select or "
