@@ -51,7 +51,6 @@ from subiquity.models.filesystem import (
     DeviceAction,
     Disk,
     humanize_size,
-    Partition,
     )
 
 from .delete import ConfirmDeleteStretchy
@@ -171,21 +170,16 @@ class MountList(WidgetWrap):
             [len(m.desc) for m in mountinfos])
         cols = []
 
-        def col(mount, path, size, fstype, desc):
-            w0 = longest_path
-            if mount is None:
-                w0 += 2
-                path = '  ' + path
+        def col(action_menu, path, size, fstype, desc):
             c = Columns([
-                (w0,           Text(path)),
+                (longest_path, Text(path)),
                 (size_width,   size),
                 (type_width,   Text(fstype)),
                 (longest_type, Text(desc)),
-            ], dividechars=2)
-            if mount is not None:
-                actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
-                c = ActionMenu(longest_path + size_width + type_width + longest_type + 6, c, actions)
-                connect_signal(c, 'action', self._mount_action, mi.mount)
+                (3,            action_menu),
+                Color.body(Text("")),
+            ], dividechars=1)
+            if isinstance(action_menu, ActionMenu):
                 c = AttrMap(
                     c,
                     {None: 'menu_button', 'grey': 'info_minor'},
@@ -197,7 +191,7 @@ class MountList(WidgetWrap):
         size_width = max(len(size_text), 9)
         type_width = max(len(type_text), self.parent.model.longest_fs_name)
         col(
-            None,
+            Text(""),
             mount_point_text,
             Text(size_text, align='center'),
             type_text,
@@ -218,8 +212,11 @@ class MountList(WidgetWrap):
                         ('grey', "/"),
                         "/".join(mi.split_path[1:]),
                         ]
+            actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
+            menu = ActionMenu(actions)
+            connect_signal(menu, 'action', self._mount_action, mi.mount)
             col(
-                mi.mount,
+                menu,
                 path_markup,
                 Text(mi.size, align='right'),
                 mi.fstype,
@@ -227,8 +224,6 @@ class MountList(WidgetWrap):
         self.pile.contents[:] = cols
         if self.pile.focus_position >= len(cols):
             self.pile.focus_position = len(cols) - 1
-        while not self.pile.focus.selectable():
-            self.pile.focus_position += 1
 
 
 class DeviceList(WidgetWrap):
@@ -251,7 +246,6 @@ class DeviceList(WidgetWrap):
             Color.info_minor(Text(text)),
             self.pile.options('pack'))
         super().__init__(self.pile)
-        self._rows = []
         self.refresh_model_inputs()
         # I don't really know why this is required:
         self.pile._select_first_selectable()
@@ -288,13 +282,7 @@ class DeviceList(WidgetWrap):
         else:
             raise Exception("unexpected action on partition")
 
-    def _action_menu_for_device(self, width, content, device):
-        cursor_position = 0
-        if isinstance(device, Partition):
-            cb = self._partition_action
-            cursor_position += 2
-        else:
-            cb = self._device_action
+    def _action_menu_for_device(self, device, cb):
         delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
         device_actions = [
             (_("Information"),    DeviceAction.INFO),
@@ -303,19 +291,13 @@ class DeviceList(WidgetWrap):
             (_("Format / Mount"), DeviceAction.FORMAT),
             (delete_btn,          DeviceAction.DELETE),
         ]
-        menu = ActionMenu(
-            width,
-            content,
-            [
-                (label, device.supports_action(action), action)
-                for label, action in device_actions
-            ],
-            cursor_position=cursor_position)
+        menu = ActionMenu([
+            (label, device.supports_action(action), action)
+            for label, action in device_actions])
         connect_signal(menu, 'action', cb, device)
         return menu
 
     def refresh_model_inputs(self):
-        self._rows = []  # [(device-or-None, [Text])]
         devices = [
             d for d in self.parent.model.all_devices()
             if (d.available() == self.show_available
@@ -325,9 +307,16 @@ class DeviceList(WidgetWrap):
             self.pile.contents[:] = [self._no_devices_content]
             return
         log.debug('FileSystemView: building device list')
+        rows = []
 
-        def row(device, *texts):
-            self._rows.append((device, texts))
+        def row3(menu, device, size, typ):
+            rows.append([device, size, typ, menu])
+
+        def row2(menu, label, size):
+            rows.append([label, size, Text(""), menu])
+
+        def row1(label):
+            rows.append([Text(""), label])
 
         def _fmt_fs(label, fs):
             r = _("{} {}").format(label, fs.fstype)
@@ -344,16 +333,13 @@ class DeviceList(WidgetWrap):
             return _("{} part of {} ({})").format(
                 label, device.label, device.desc())
 
-        row(
-            None,
-            Text(_("DEVICE")),
-            Text(_("SIZE"), align="center"),
-            Text(_("TYPE")))
+        row3(Text(""), Text(_("DEVICE")), Text(_("SIZE"), align="center"),
+             Text(_("TYPE")))
         for device in devices:
-            row(
-                device,
+            row3(
+                self._action_menu_for_device(device, self._device_action),
                 Text(device.label),
-                Text("{:>9}".format(humanize_size(device.size))),
+                Text(humanize_size(device.size)),
                 Text(device.desc()))
             entire_label = None
             if device.fs():
@@ -365,7 +351,7 @@ class DeviceList(WidgetWrap):
                     _("  entire device"),
                     device.constructed_device())
             if entire_label is not None:
-                row(None, Text(entire_label))
+                row1(Text(entire_label))
             else:
                 for part in device.partitions():
                     if part.available() != self.show_available:
@@ -382,8 +368,10 @@ class DeviceList(WidgetWrap):
                     part_size = "{:>9} ({}%)".format(
                         humanize_size(part.size),
                         int(100 * part.size / device.size))
-                    row(
-                        part,
+                    menu = self._action_menu_for_device(
+                        part, self._partition_action)
+                    row2(
+                        menu,
                         Text(label),
                         Text(part_size),
                         )
@@ -395,60 +383,33 @@ class DeviceList(WidgetWrap):
                         percent = "%.2f" % (100 * free / size,)
                     size_text = "{:>9} ({}%)".format(
                         humanize_size(free), percent)
-                    row(None, Text(_("  free space")), Text(size_text))
-
-    def get_widths(self):
+                    row2(Text(""), Text(_("free space")), Text(size_text))
         widths = defaultdict(int)
-        for device, texts in self._rows:
-            log.debug("%s", texts)
-            if len(texts) == 3:
-                for i, text in enumerate(texts):
-                    widths[i] = max(widths[i], len(text.text))
-            if len(texts) == 2:
-                widths[0] = max(widths[0], len(texts[0].text))
-        return widths
-
-    def apply_widths(self, widths):
-        if not self._rows:
-            return
+        widths[3] = 1
+        for row in rows:
+            log.debug("%s", row)
+            if len(row) == 4:
+                for i in 0, 1, 2:
+                    widths[i] = max(widths[i], len(row[i].text))
         cols = []
-        for device, texts in self._rows:
-            if len(texts) == 3:
-                t0 = texts[0]
-                w0 = widths[0]
-                if device is None:
-                    t0.set_text("  " + t0.text)
-                    w0 += 2
-                ws = [(w0, t0)] + [(widths[i], w) for i, w in enumerate(texts) if i >= 1]
-                c = Columns(ws, 2)
-                if device is not None:
-                    c = self._action_menu_for_device(sum(widths.values()) + 5, c, device)
+        for row in rows:
+            if len(row) == 4:
+                ws = [(widths[i], w) for i, w in enumerate(row)]
+                ws.append(Color.body(Text("")))
+                c = Columns(ws, 1)
+                if c.selectable():
+                    c = Color.menu_button(c)
                 cols.append((c, self.pile.options('pack')))
-            elif len(texts) == 2:
-                t0 = texts[0]
-                w0 = widths[0]
-                if device is None:
-                    t0.set_text("  " + t0.text)
-                    w0 += 2
-                ws = [
-                    (w0, t0),
-                    (widths[1]+widths[2]+2, texts[1]),
-                    ]
-                #if device is None:
-                #    ws.insert(0, (2, Text("")))
-                c = Columns(ws, 2)
-                if device is not None:
-                    c = self._action_menu_for_device(sum(widths.values()) + 5, c, device)
+            elif len(row) == 2:
+                c = Columns([(widths[0], row[0]), row[1]], 1)
+                if c.selectable():
+                    raise Exception("unexpectedly selectable row")
                 cols.append((c, self.pile.options('pack')))
-            elif len(texts) == 1:
-                cols.append((texts[0], self.pile.options('pack')))
             else:
-                raise Exception("unexpected row length {}".format(texts))
+                raise Exception("unexpected row length {}".format(row))
         self.pile.contents[:] = cols
         if self.pile.focus_position >= len(cols):
             self.pile.focus_position = len(cols) - 1
-        while not self.pile.focus.selectable():
-            self.pile.focus_position += 1
 
 
 class FilesystemView(BaseView):
@@ -468,11 +429,9 @@ class FilesystemView(BaseView):
             Text(""),
             self.mount_list,
             Text(""),
-            Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
             self.avail_list,
-            Text(""),
             Text(""),
             Text(_("USED DEVICES")),
             Text(""),
@@ -490,7 +449,6 @@ class FilesystemView(BaseView):
             ('pack', Text("")),
             self.lb,
             ('pack', bottom)])
-        self.refresh_model_inputs()
         if self.model.can_install():
             self.frame.focus_position = 2
         super().__init__(self.frame)
@@ -498,15 +456,8 @@ class FilesystemView(BaseView):
 
     def refresh_model_inputs(self):
         self.mount_list.refresh_model_inputs()
-
         self.avail_list.refresh_model_inputs()
         self.used_list.refresh_model_inputs()
-        w1 = self.avail_list.get_widths()
-        w2 = self.used_list.get_widths()
-        w = {i:max(w1[i], w2[i]) for i in (0, 1, 2)}
-        self.avail_list.apply_widths(w)
-        self.used_list.apply_widths(w)
-
         # If refreshing the view has left the focus widget with no
         # selectable widgets, simulate a tab to move to the next
         # selectable widget.

@@ -17,10 +17,10 @@ from urwid import (
     ACTIVATE,
     AttrWrap,
     Button,
-    CompositeCanvas,
     connect_signal,
     LineBox,
     PopUpLauncher,
+    SelectableIcon,
     Text,
     WidgetWrap,
     Widget,
@@ -72,87 +72,69 @@ class _ActionMenuDialog(WidgetWrap):
                 btn = AttrWrap(btn, 'info_minor')
             group.append(btn)
         self.width = width
-        self.lb = ListBox(group)
-        super().__init__(LineBox(self.lb))
+        super().__init__(LineBox(ListBox(group)))
 
-    def close(self, sender=None):
-        self.parent._button.close_pop_up()
+    def close(self, sender):
+        self.parent.close_pop_up()
 
     def click(self, btn, value):
         self.parent._action(value)
-        self.close()
+        self.parent.close_pop_up()
 
     def keypress(self, size, key):
         if key == 'esc':
-            self.close()
+            self.parent.close_pop_up()
         else:
             return super().keypress(size, key)
 
 
-class _ActionMenuLauncher(PopUpLauncher):
-    def __init__(self, parent):
-        self.parent = parent
-        super().__init__(Text(">"))
+class ActionMenu(PopUpLauncher):
 
-    def open_pop_up(self):
-        self.parent.attr_map.set_attr_map({None: 'menu_button focus', 'grey': 'menu_button focus'})
-        super().open_pop_up()
-
-    def close_pop_up(self):
-        self.parent.attr_map.set_attr_map({None: 'menu_button'})
-        super().close_pop_up()
-
-    def create_pop_up(self):
-        self.parent._dialog.lb.base_widget.focus_position = 0
-        return self.parent._dialog
-
-    def get_pop_up_parameters(self):
-        width = self.parent._dialog.width + 7
-        return {
-            'left': 1,
-            'top': -1,
-            'overlay_width': width,
-            'overlay_height': len(self.parent._options) + 3,
-            }
-
-
-class ActionMenu(WidgetWrap):
+    # This doesn't seem like it would be the best icon but we couldn't
+    # come up with a better one.
+    icon = ">"
+    selected_icon = ('menu_button focus', icon)
 
     signals = ['action']
 
-    def __init__(self, content_width, content, opts, cursor_position=0):
+    def __init__(self, opts):
         self._options = []
         for opt in opts:
             if not isinstance(opt, Option):
                 opt = Option(opt)
             self._options.append(opt)
-        self._button = _ActionMenuLauncher(self)
-        self.cursor_position = cursor_position
-        c1 = Columns([(1, Text("")), (content_width, content), (1, self._button)], 1)
-        self.attr_map = Color.menu_button(c1)
-        c2 = Columns([(content_width+4, self.attr_map), Text("")])
-        super().__init__(c2)
+        self._button = Color.menu_button(SelectableIcon(self.icon, 0))
+        super().__init__(self._button)
         self._dialog = _ActionMenuDialog(self)
-
-    def get_cursor_coords(self, size):
-        return 2+self.cursor_position,0
-
-    def render(self, size, focus):
-        c = super().render(size, focus)
-        if focus:
-            # create a new canvas so we can add a cursor
-            c = CompositeCanvas(c)
-            c.cursor = self.get_cursor_coords(size)
-        return c
-
-    def selectable(self):
-        return True
 
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
             return key
-        self._button.open_pop_up()
+        self.open_pop_up()
+
+    def _set_index(self, val):
+        self._button.set_text(self._prefix + self._options[val].label)
+        self._index = val
 
     def _action(self, action):
         self._emit("action", action)
 
+    def open_pop_up(self):
+        self._button.base_widget.set_text(self.selected_icon)
+        super().open_pop_up()
+
+    def close_pop_up(self):
+        self._button.base_widget.set_text(self.icon)
+        super().close_pop_up()
+
+    def create_pop_up(self):
+        return self._dialog
+
+    def get_pop_up_parameters(self):
+        width = self._dialog.width + 7
+        return {
+            'left': 1,
+            'top': -1,
+            'overlay_width': width,
+            'overlay_height': len(self._options) + 3,
+            }
