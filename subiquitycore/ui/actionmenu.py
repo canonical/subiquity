@@ -90,12 +90,9 @@ class _ActionMenuDialog(WidgetWrap):
 
 class ActionMenu(PopUpLauncher):
 
-    # This doesn't seem like it would be the best icon but we couldn't
-    # come up with a better one.
     icon = ">"
-    selected_icon = ('menu_button focus', icon)
 
-    signals = ['action']
+    signals = ['action', 'open', 'close']
 
     def __init__(self, opts):
         self._options = []
@@ -103,7 +100,7 @@ class ActionMenu(PopUpLauncher):
             if not isinstance(opt, Option):
                 opt = Option(opt)
             self._options.append(opt)
-        self._button = Color.menu_button(SelectableIcon(self.icon, 0))
+        self._button = SelectableIcon(self.icon, 0)
         super().__init__(self._button)
         self._dialog = _ActionMenuDialog(self)
 
@@ -120,11 +117,11 @@ class ActionMenu(PopUpLauncher):
         self._emit("action", action)
 
     def open_pop_up(self):
-        self._button.base_widget.set_text(self.selected_icon)
+        self._emit("open")
         super().open_pop_up()
 
     def close_pop_up(self):
-        self._button.base_widget.set_text(self.icon)
+        self._emit("close")
         super().close_pop_up()
 
     def create_pop_up(self):

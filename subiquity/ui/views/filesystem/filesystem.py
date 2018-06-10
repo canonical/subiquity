@@ -190,8 +190,7 @@ class MountList(WidgetWrap):
             actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._mount_action, mi.mount)
-            rows.append(
-                AttrMap(
+            am = AttrMap(
                     TableRow([
                         Text(path_markup),
                         Text(mi.size, align='right'),
@@ -200,7 +199,15 @@ class MountList(WidgetWrap):
                         menu,
                     ]),
                     {None: 'menu_button', 'grey': 'info_minor'},
-                    {None: 'menu_button focus', 'grey': 'menu_button focus'}))
+                    {None: 'menu_button focus', 'grey': 'menu_button focus'})
+
+            def _open(menu, am=am):
+                am.set_attr_map({None: 'menu_button focus', 'grey': 'menu_button focus'})
+            def _close(menu, am=am):
+                am.set_attr_map({None: 'menu_button', 'grey': 'info_minor'})
+            connect_signal(menu, 'open', _open)
+            connect_signal(menu, 'close', _close)
+            rows.append(am)
         self.table.set_contents(rows)
         if self.table._w.focus_position >= len(rows):
             self.table._w.focus_position = len(rows) - 1
