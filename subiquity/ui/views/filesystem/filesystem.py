@@ -19,14 +19,15 @@ Provides storage device selection and additional storage
 configuration.
 
 """
-from collections import defaultdict
 import logging
 
 import attr
 from urwid import (
     AttrMap,
+    CompositeCanvas,
     connect_signal,
     Text,
+    WidgetDecoration,
     WidgetWrap,
     )
 
@@ -41,7 +42,7 @@ from subiquitycore.ui.buttons import (
     done_btn,
     reset_btn,
     )
-from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.container import ListBox, Pile
 from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import ColSpec, Table, TableRow
@@ -105,6 +106,30 @@ def _wire_menu_to_row(menu, row):
         row.set_attr_map(close_map)
     connect_signal(menu, 'open', _open)
     connect_signal(menu, 'close', _close)
+
+
+class CursorOverride(WidgetDecoration):
+
+    def __init__(self, w, cursor_x=0):
+        super().__init__(w)
+        self.cursor_x = cursor_x
+
+    def get_cursor_coords(self, size):
+        return self.cursor_x, 0
+
+    def rows(self, size, focus):
+        return self._original_widget.rows(size, focus)
+
+    def keypress(self, size, focus):
+        return self._original_widget.keypress(size, focus)
+
+    def render(self, size, focus=False):
+        c = self._original_widget.render(size, focus)
+        if focus:
+            # create a new canvas so we can add a cursor
+            c = CompositeCanvas(c)
+            c.cursor = self.get_cursor_coords(size)
+        return c
 
 
 @attr.s
@@ -203,13 +228,15 @@ class MountList(WidgetWrap):
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._mount_action, mi.mount)
             am = AttrMap(
-                    TableRow([
-                        Text(path_markup),
-                        Text(mi.size, align='right'),
-                        Text(mi.fstype),
-                        Text(mi.desc),
-                        menu,
-                    ]),
+                    CursorOverride(
+                        TableRow([
+                            Text(path_markup),
+                            Text(mi.size, align='right'),
+                            Text(mi.fstype),
+                            Text(mi.desc),
+                            menu,
+                        ]),
+                        cursor_x=0),
                     {None: 'menu_button', 'grey': 'info_minor'},
                     {None: 'menu_button focus', 'grey': 'menu_button focus'})
 
@@ -328,12 +355,12 @@ class DeviceList(WidgetWrap):
         ]))
         for device in devices:
             menu = self._action_menu_for_device(device, self._device_action)
-            am = Color.menu_button(TableRow([
+            am = Color.menu_button(CursorOverride(TableRow([
                 Text(device.label),
                 Text("{:>9}".format(humanize_size(device.size))),
                 Text(device.desc()),
                 menu,
-            ]))
+            ])))
             _wire_menu_to_row(menu, am)
             rows.append(am)
 
@@ -368,11 +395,11 @@ class DeviceList(WidgetWrap):
                         int(100 * part.size / device.size))
                     menu = self._action_menu_for_device(
                         part, self._partition_action)
-                    am = Color.menu_button(TableRow([
+                    am = Color.menu_button(CursorOverride(TableRow([
                         Text(label),
                         (2, Text(part_size)),
                         menu,
-                    ]))
+                    ]), cursor_x=2))
                     _wire_menu_to_row(menu, am)
                     rows.append(am)
                 if self.show_available and 0 < device.used < device.size:
