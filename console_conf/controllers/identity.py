@@ -188,7 +188,8 @@ def write_login_details_standalone():
     if len(ips) == 0:
         tty_name = os.ttyname(0)[5:]
         version = get_core_version() or "16"
-        print(login_details_tmpl_no_ip.format(tty_name=tty_name))
+        print(login_details_tmpl_no_ip.format(tty_name=tty_name,
+                                              version=version))
         return 2
     write_login_details(sys.stdout, owner['username'], ips)
     return 0
