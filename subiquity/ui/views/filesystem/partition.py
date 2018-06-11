@@ -36,6 +36,7 @@ from subiquitycore.ui.utils import Color, button_pile
 
 from subiquity.models.filesystem import (
     align_up,
+    Disk,
     FilesystemModel,
     HUMAN_UNITS,
     dehumanize_size,
@@ -268,5 +269,65 @@ class PartitionStretchy(Stretchy):
         log.debug("Add Partition Result: {}".format(form.as_data()))
         self.controller.partition_disk_handler(
             self.disk, self.partition, form.as_data())
+        self.parent.refresh_model_inputs()
+        self.parent.remove_overlay()
+
+
+class FormatEntireStretchy(Stretchy):
+
+    def __init__(self, parent, device):
+
+        self.device = device
+        self.model = parent.model
+        self.controller = parent.controller
+        self.parent = parent
+        mountpoint_to_devpath_mapping = (
+            self.model.get_mountpoint_to_devpath_mapping())
+        initial = {}
+        fs = device.fs()
+        if fs is not None:
+            initial['fstype'] = self.model.fs_by_name[fs.fstype]
+            mount = fs.mount()
+            if mount is not None:
+                initial['mount'] = mount.path
+                if mount.path in mountpoint_to_devpath_mapping:
+                    del mountpoint_to_devpath_mapping[mount.path]
+        else:
+            initial['fstype'] = self.model.fs_by_name[None]
+        self.form = PartitionForm(mountpoint_to_devpath_mapping, 0, initial)
+        self.form.remove_field('size')
+
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+
+        rows = []
+        if isinstance(device, Disk):
+            rows = [
+                Text(_("Formatting and mounting a disk directly is unusual. "
+                       "You probably want to add a partition instead.")),
+                Text(""),
+                ]
+        rows.extend(self.form.as_rows())
+        widgets = [
+            Pile(rows),
+            Text(""),
+            self.form.buttons,
+        ]
+
+        title = _("Format and/or mount {}").format(device.label)
+
+        super().__init__(title, widgets, 0, 0)
+
+    def cancel(self, button=None):
+        self.parent.remove_overlay()
+
+    def delete(self, sender):
+        self.controller.delete_partition(self.partition)
+        self.parent.refresh_model_inputs()
+        self.parent.remove_overlay()
+
+    def done(self, form):
+        log.debug("Format Entire Result: {}".format(form.as_data()))
+        self.controller.add_format_handler(self.device, form.as_data())
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()

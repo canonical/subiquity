@@ -17,17 +17,12 @@ import logging
 import os
 
 from subiquitycore.controller import BaseController
-from subiquitycore.ui.dummy import DummyView
 
 from subiquity.models.filesystem import align_up
 from subiquity.ui.views import (
-    BcacheView,
-    DiskPartitionView,
     FilesystemView,
     GuidedDiskSelectionView,
     GuidedFilesystemView,
-    LVMVolumeGroupView,
-    RaidView,
     )
 
 
@@ -82,14 +77,6 @@ class FilesystemController(BaseController):
         # switch to next screen
         self.signal.emit_signal('next-screen')
 
-    # Filesystem/Disk partition -----------------------------------------------
-    def partition_disk(self, disk):
-        log.debug("In disk partition view, using "
-                  "{} as the disk.".format(disk.label))
-        dp_view = DiskPartitionView(self.model, self, disk)
-
-        self.ui.set_body(dp_view)
-
     def create_mount(self, fs, spec):
         if spec['mount'] is None:
             return
@@ -124,7 +111,7 @@ class FilesystemController(BaseController):
         self.model.remove_partition(part)
 
     def partition_disk_handler(self, disk, partition, spec):
-        log.debug('spec: {}'.format(spec))
+        log.debug('partition_disk_handler: %s %s %s', disk, partition, spec)
         log.debug('disk.freespace: {}'.format(disk.free))
 
         if partition is not None:
@@ -133,7 +120,6 @@ class FilesystemController(BaseController):
                 raise Exception("partition size too large")
             self.delete_filesystem(partition.fs())
             self.create_filesystem(partition, spec)
-            self.partition_disk(disk)
             return
 
         system_bootable = self.model.bootable()
@@ -174,11 +160,10 @@ class FilesystemController(BaseController):
 
         log.info("Successfully added partition")
 
-    def add_format_handler(self, volume, spec, back):
-        log.debug('add_format_handler')
+    def add_format_handler(self, volume, spec):
+        log.debug('add_format_handler %s %s', volume, spec)
         self.delete_filesystem(volume.fs())
-        self.add_filesystem(volume, spec)
-        back()
+        self.create_filesystem(volume, spec)
 
     def make_boot_disk(self, disk):
         # XXX This violates abstractions, needs some thinking.
@@ -197,68 +182,6 @@ class FilesystemController(BaseController):
                 disk._partitions.insert(0, p)
                 p.device = disk
         self.partition_disk(disk)
-
-    def connect_iscsi_disk(self, *args, **kwargs):
-        self.ui.set_body(DummyView(self.signal))
-
-    def connect_ceph_disk(self, *args, **kwargs):
-        self.ui.set_body(DummyView(self.signal))
-
-    def create_volume_group(self, *args, **kwargs):
-        title = ("Create Logical Volume Group (\"LVM2\") disk")
-        footer = ("ENTER on a disk will show detailed "
-                  "information for that disk")
-        excerpt = ("Use SPACE to select disks to form your LVM2 volume group, "
-                   "and then specify the Volume Group name. ")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
-        self.ui.set_body(LVMVolumeGroupView(self.model, self.signal))
-
-    def create_raid(self, *args, **kwargs):
-        title = ("Create software RAID (\"MD\") disk")
-        footer = ("ENTER on a disk will show detailed "
-                  "information for that disk")
-        excerpt = ("Use SPACE to select disks to form your RAID array, "
-                   "and then specify the RAID parameters. Multiple-disk "
-                   "arrays work best when all the disks in an array are "
-                   "the same size and speed.")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
-        self.ui.set_body(RaidView(self.model,
-                                  self.signal))
-
-    def create_bcache(self, *args, **kwargs):
-        title = ("Create hierarchical storage (\"bcache\") disk")
-        footer = ("ENTER on a disk will show detailed "
-                  "information for that disk")
-        excerpt = ("Use SPACE to select a cache disk and a backing disk"
-                   " to form your bcache device.")
-
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer(footer)
-        self.ui.set_body(BcacheView(self.model,
-                                    self.signal))
-
-    def add_raid_dev(self, result):
-        log.debug('add_raid_dev: result={}'.format(result))
-        self.model.add_raid_device(result)
-        self.signal.prev_signal()
-
-    def show_disk_information_next(self, disk):
-        log.debug('show_disk_info_next: curr_device={}'.format(disk))
-        available = self.model.all_disks()
-        idx = available.index(disk)
-        next_idx = (idx + 1) % len(available)
-        next_device = available[next_idx]
-        self.show_disk_information(next_device)
-
-    def show_disk_information_prev(self, disk):
-        log.debug('show_disk_info_prev: curr_device={}'.format(disk))
-        available = self.model.all_disks()
-        idx = available.index(disk)
-        next_idx = (idx - 1) % len(available)
-        next_device = available[next_idx]
-        self.show_disk_information(next_device)
 
     def is_uefi(self):
         if self.opts.dry_run:
