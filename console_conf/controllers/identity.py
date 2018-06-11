@@ -162,7 +162,7 @@ def write_login_details(fp, username, ips):
                                            host_key_info=host_key_info(),
                                            tty_name=tty_name,
                                            first_ip=first_ip,
-                                           version=version)
+                                           version=version))
 
 
 def write_login_details_standalone():
