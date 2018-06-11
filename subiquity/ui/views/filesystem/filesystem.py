@@ -33,17 +33,16 @@ from urwid import (
 
 from subiquitycore.ui.actionmenu import (
     ActionMenu,
+    ActionMenuButton,
     )
 from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
     danger_btn,
     done_btn,
-    menu_btn,
     reset_btn,
     )
 from subiquitycore.ui.container import (
-    Columns,
     ListBox,
     Pile,
     WidgetWrap,
@@ -53,7 +52,7 @@ from subiquitycore.ui.table import ColSpec, Table, TableRow
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import humanize_size
+from subiquity.models.filesystem import DeviceAction, humanize_size
 
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
@@ -129,6 +128,10 @@ def add_menu_row_focus_behaviour(menu, row, attr_map, focus_map, cursor_x=0):
     2) The row is highlighted when focused and retains that focus even
        when the popup is open.
     """
+    if not isinstance(attr_map, dict):
+        attr_map = {None: attr_map}
+    if not isinstance(focus_map, dict):
+        focus_map = {None: focus_map}
     am = AttrMap(CursorOverride(row, cursor_x=cursor_x), attr_map, focus_map)
     connect_signal(menu, 'open', lambda menu: am.set_attr_map(focus_map))
     connect_signal(menu, 'close', lambda menu: am.set_attr_map(attr_map))
@@ -243,6 +246,150 @@ class MountList(WidgetWrap):
             self.table._w.focus_position = len(rows) - 1
 
 
+class DeviceList(WidgetWrap):
+
+    def __init__(self, parent, show_available):
+        self.parent = parent
+        self.show_available = show_available
+        self.table = Table([],  spacing=2, colspecs={
+            0: ColSpec(can_shrink=True),
+            1: ColSpec(min_width=9),
+        })
+        if show_available:
+            text = _("No available devices")
+        else:
+            text = _("No used devices")
+        self._no_devices_content = Color.info_minor(Text(text))
+        super().__init__(self.table)
+        self.refresh_model_inputs()
+        # I don't really know why this is required:
+        self.table._select_first_selectable()
+
+    def _device_action(self, sender, action, device):
+        log.debug('_device_action %s %s', action, device)
+
+    def _partition_action(self, sender, action, part):
+        log.debug('_partition_action %s %s', action, part)
+
+    def _action_menu_for_device(self, device, cb):
+        delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
+        device_actions = [
+            (_("Information"),    DeviceAction.INFO),
+            (_("Edit"),           DeviceAction.EDIT),
+            (_("Add Partition"),  DeviceAction.PARTITION),
+            (_("Format / Mount"), DeviceAction.FORMAT),
+            (delete_btn,          DeviceAction.DELETE),
+        ]
+        menu = ActionMenu([
+            (label, device.supports_action(action), action)
+            for label, action in device_actions])
+        connect_signal(menu, 'action', cb, device)
+        return menu
+
+    def refresh_model_inputs(self):
+        devices = [
+            d for d in self.parent.model.all_devices()
+            if (d.available() == self.show_available
+                or (not self.show_available and d.has_unavailable_partition()))
+        ]
+        if len(devices) == 0:
+            self._w = self._no_devices_content
+            self.table.table_rows = []
+            return
+        self._w = self.table
+        log.debug('FileSystemView: building device list')
+        rows = []
+
+        def _fmt_fs(label, fs):
+            r = _("{} {}").format(label, fs.fstype)
+            if not self.parent.model.fs_by_name[fs.fstype].is_mounted:
+                return r
+            m = fs.mount()
+            if m:
+                r += _(", {}").format(m.path)
+            else:
+                r += _(", not mounted")
+            return r
+
+        def _fmt_constructed(label, device):
+            return _("{} part of {} ({})").format(
+                label, device.label, device.desc())
+
+        rows.append(TableRow([
+            Text(_("DEVICE")),
+            Text(_("SIZE"), align="center"),
+            Text(_("TYPE")),
+        ]))
+        for device in devices:
+            menu = self._action_menu_for_device(device, self._device_action)
+            row = TableRow([
+                Text(device.label),
+                Text("{:>9}".format(humanize_size(device.size))),
+                Text(device.desc()),
+                menu,
+            ])
+            row = add_menu_row_focus_behaviour(
+                menu, row, 'menu_button', 'menu_button focus')
+            rows.append(row)
+
+            entire_label = None
+            if device.fs():
+                entire_label = _fmt_fs(
+                    _("  entire device formatted as"),
+                    device.fs())
+            elif device.constructed_device():
+                entire_label = _fmt_constructed(
+                    _("  entire device"),
+                    device.constructed_device())
+            if entire_label is not None:
+                rows.append(TableRow([
+                    Text(entire_label),
+                ]))
+            else:
+                for part in device.partitions():
+                    if part.available() != self.show_available:
+                        continue
+                    prefix = _("  partition {},").format(part._number)
+                    if part.flag == "bios_grub":
+                        label = prefix + " bios_grub"
+                    elif part.fs():
+                        label = _fmt_fs(prefix, part.fs())
+                    elif part.constructed_device():
+                        label = _fmt_constructed(
+                            prefix, part.constructed_device())
+                    else:
+                        label = _("{} not formatted").format(prefix)
+                    part_size = "{:>9} ({}%)".format(
+                        humanize_size(part.size),
+                        int(100 * part.size / device.size))
+                    menu = self._action_menu_for_device(
+                        part, self._partition_action)
+                    row = TableRow([
+                        Text(label),
+                        (2, Text(part_size)),
+                        menu,
+                    ])
+                    row = add_menu_row_focus_behaviour(
+                        menu, row, 'menu_button', 'menu_button focus',
+                        cursor_x=2)
+                    rows.append(row)
+                if self.show_available and 0 < device.used < device.size:
+                    size = device.size
+                    free = device.free
+                    percent = str(int(100 * free / size))
+                    if percent == "0":
+                        percent = "%.2f" % (100 * free / size,)
+                    size_text = "{:>9} ({}%)".format(
+                        humanize_size(free), percent)
+                    rows.append(TableRow([
+                        Text(_("  free space")),
+                        (2, Text(size_text))
+                    ]))
+        self.table.set_contents(rows)
+        if self.table._w.focus_position >= len(rows):
+            self.table._w.focus_position = len(rows) - 1
+
+
 class FilesystemView(BaseView):
     title = _("Filesystem setup")
     footer = _("Select available disks to format and mount")
@@ -253,14 +400,25 @@ class FilesystemView(BaseView):
         self.controller = controller
         self.items = []
         self.mount_list = MountList(self)
+        self.avail_list = DeviceList(self, True)
+        self.used_list = DeviceList(self, False)
+        self.avail_list.table.bind(self.used_list.table)
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
             self.mount_list,
             Text(""),
+            Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
-            ] + [Padding.push_4(p) for p in self._build_available_inputs()]
+            self.avail_list,
+            Text(""),
+            Text(""),
+            Text(_("USED DEVICES")),
+            Text(""),
+            self.used_list,
+            Text(""),
+            ]
 
         self.lb = Padding.center_95(ListBox(body))
         bottom = Pile([
@@ -295,102 +453,13 @@ class FilesystemView(BaseView):
 
     def refresh_model_inputs(self):
         self.mount_list.refresh_model_inputs()
-
-    def _build_available_inputs(self):
-        r = []
-
-        def col3(col1, col2, col3):
-            inputs.append(Columns([(42, col1), (10, col2), col3], 2))
-
-        def col2(col1, col2):
-            inputs.append(Columns([(42, col1), col2], 2))
-
-        def col1(col1):
-            inputs.append(Columns([(42, col1)], 1))
-
-        inputs = []
-        col3(Text(_("DEVICE")), Text(_("SIZE"), align="center"),
-             Text(_("TYPE")))
-        r.append(Pile(inputs))
-
-        for disk in self.model.all_disks():
-            inputs = []
-            disk_label = Text(disk.label)
-            size = Text(humanize_size(disk.size).rjust(9))
-            typ = Text(disk.desc())
-            col3(disk_label, size, typ)
-            if disk.size < self.model.lower_size_limit:
-                r.append(Color.info_minor(Pile(inputs)))
-                continue
-            fs = disk.fs()
-            if fs is not None:
-                label = _("entire device, ")
-                fs_obj = self.model.fs_by_name[fs.fstype]
-                if fs.mount():
-                    label += "%-*s" % (self.model.longest_fs_name+2,
-                                       fs.fstype+',') + fs.mount().path
-                else:
-                    label += fs.fstype
-                if fs_obj.label and fs_obj.is_mounted and not fs.mount():
-                    disk_btn = menu_btn(label=label, on_press=self.click_disk,
-                                        user_arg=disk)
-                    disk_btn = disk_btn
-                else:
-                    disk_btn = Color.info_minor(Text("  " + label))
-                col1(disk_btn)
-            for partition in disk.partitions():
-                label = _("partition {}, ").format(partition._number)
-                fs = partition.fs()
-                if fs is not None:
-                    if fs.mount():
-                        label += "%-*s" % (self.model.longest_fs_name+2,
-                                           fs.fstype+',') + fs.mount().path
-                    else:
-                        label += fs.fstype
-                elif partition.flag == "bios_grub":
-                    label += "bios_grub"
-                else:
-                    label += _("unformatted")
-                size = Text("{:>9} ({}%)".format(
-                            humanize_size(partition.size),
-                            int(100 * partition.size/disk.size)))
-                if partition.available:
-                    part_btn = menu_btn(label=label,
-                                        on_press=self.click_partition,
-                                        user_arg=partition)
-                    col2(part_btn, size)
-                else:
-                    part_btn = Color.info_minor(Text("  " + label))
-                    size = Color.info_minor(size)
-                    col2(part_btn, size)
-            size = disk.size
-            free = disk.free
-            percent = str(int(100*free/size))
-            if percent == "0":
-                percent = "%.2f" % (100 * free / size,)
-            if disk.available and disk.used > 0:
-                label = _("Add/Edit Partitions")
-                size = "{:>9} ({}%) free".format(humanize_size(free), percent)
-            elif disk.available and disk.used == 0:
-                label = _("Add First Partition")
-                size = ""
-            else:
-                label = _("Edit Partitions")
-                size = ""
-            col2(menu_btn(label=label, on_press=self.click_disk,
-                          user_arg=disk), Text(size))
-            r.append(Pile(inputs))
-
-        if len(r) == 1:
-            return [Color.info_minor(Text(_("No disks available.")))]
-
-        return r
-
-    def click_disk(self, sender, disk):
-        self.controller.partition_disk(disk)
-
-    def click_partition(self, sender, partition):
-        self.controller.format_mount_partition(partition)
+        self.avail_list.refresh_model_inputs()
+        self.used_list.refresh_model_inputs()
+        # If refreshing the view has left the focus widget with no
+        # selectable widgets, simulate a tab to move to the next
+        # selectable widget.
+        while not self.lb.base_widget.focus.selectable():
+            self.lb.base_widget.keypress((10, 10), 'tab')
 
     def cancel(self, button=None):
         self.controller.default()
