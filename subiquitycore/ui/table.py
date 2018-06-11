@@ -30,7 +30,6 @@ log = logging.getLogger('subiquitycore.ui.table')
 
 @attr.s
 class ColSpec:
-    always_scales = attr.ib(default=False)
     can_scale = attr.ib(default=False)
     omittable = attr.ib(default=False)
     min_width = attr.ib(default=0)
@@ -84,14 +83,14 @@ class TableRow(urwid.WidgetWrap):
         self.columns = Columns(cols)
         super().__init__(self.columns)
 
-    def get_natural_widths(self, always_scales):
+    def get_natural_widths(self):
         i = 0
         widths = {}
         for c in self.cells:
             colspan = 1
             if isinstance(c, tuple):
                 colspan, c = c
-            if colspan == 1 and i not in always_scales:
+            if colspan == 1:
                 widths[i] = widget_width(c)
             i += colspan
         return widths
@@ -122,6 +121,43 @@ def default_container_maker(rows):
     return Pile([('pack', r) for r in rows])
 
 
+def _compute_widths_for_size(maxcol, table_rows, colspecs, spacing):
+
+    def _total_width(widths):
+        return sum(widths.values()) + (len(list(widths.keys()))-1)*spacing
+
+    widths = {i:cs.min_width for i, cs in colspecs.items()}
+    for row in table_rows:
+        row_widths = row.base_widget.get_natural_widths()
+        for i, w in row_widths.items():
+            widths[i] = max(w, widths.get(i, 0))
+    log.debug("%s %s %s", maxcol, widths, _total_width(widths))
+    omits = set()
+    if _total_width(widths) > maxcol:
+        for i in list(widths):
+            if colspecs[i].can_scale:
+                del widths[i]
+                if colspecs[i].min_width:
+                    while True:
+                        remaining = maxcol - _total_width(widths)
+                        log.debug("remaining %s", remaining)
+                        if remaining >= (colspecs[i].min_width
+                                         + spacing):
+                            break
+                        for j in list(widths):
+                            if colspecs[j].omittable:
+                                omits.add(j)
+                                del widths[j]
+                                break
+                        else:
+                            break
+        total_width = maxcol
+    else:
+        total_width = _total_width(widths)
+    log.debug("widths %s omits %s", sorted(widths.items()), omits)
+    return widths, omits, total_width
+
+
 class Table(urwid.WidgetWrap):
 
     def _select_first_selectable(self):
@@ -140,47 +176,25 @@ class Table(urwid.WidgetWrap):
         self.spacing = spacing
         self._last_size = None
         self.container_maker = container_maker
+        self.group = set([self])
         super().__init__(container_maker(rows))
 
-    def _total_width(self, widths):
-        return sum(widths.values()) + (len(list(widths.keys()))-1)*self.spacing
+    def bind(self, other_table):
+        self.group = other_table.group = self.group | other_table.group
 
     def _compute_widths_for_size(self, size):
         if self._last_size == size:
             return
-        always_scales = set()
-        for i, cs in enumerate(self.colspecs.values()):
-            if cs.always_scales:
-                always_scales.add(i)
-        widths = {i:cs.min_width for i, cs in self.colspecs.items()}
-        for row in self.table_rows:
-            row_widths = row.base_widget.get_natural_widths(always_scales)
-            for i, w in row_widths.items():
-                widths[i] = max(w, widths.get(i, 0))
-        log.debug("%s %s %s", size[0], widths, self._total_width(widths))
-        omits = set()
-        if self._total_width(widths) > size[0]:
-            for i in list(widths):
-                if self.colspecs[i].can_scale:
-                    del widths[i]
-                    if self.colspecs[i].min_width:
-                        while True:
-                            remaining = size[0] - self._total_width(widths)
-                            log.debug("remaining %s", remaining)
-                            if remaining >= (self.colspecs[i].min_width
-                                             + self.spacing):
-                                break
-                            for j in list(widths):
-                                if self.colspecs[j].omittable:
-                                    omits.add(j)
-                                    del widths[j]
-                                    break
-                            else:
-                                break
-            total_width = size[0]
-        else:
-            total_width = self._total_width(widths)
-        log.debug("widths %s omits %s", sorted(widths.items()), omits)
+        rows = []
+        for table in self.group:
+            rows.extend(table.table_rows)
+        widths, omits, total_width = _compute_widths_for_size(
+            size[0], rows, self.colspecs, self.spacing)
+        for table in self.group:
+            table._last_size = size
+            table.apply_widths(widths, omits, total_width)
+
+    def apply_widths(self, widths, omits, total_width):
         for row in self.table_rows:
             row.width = total_width
             row.base_widget.set_widths(widths, omits, self.spacing)

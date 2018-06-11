@@ -300,6 +300,7 @@ class DeviceList(WidgetWrap):
         ]
         if len(devices) == 0:
             self._w = self._no_devices_content
+            self.table.table_rows = []
             return
         self._w = self.table
         log.debug('FileSystemView: building device list')
@@ -400,6 +401,7 @@ class FilesystemView(BaseView):
         self.mount_list = MountList(self)
         self.avail_list = DeviceList(self, True)
         self.used_list = DeviceList(self, False)
+        self.avail_list.table.bind(self.used_list.table)
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
@@ -443,11 +445,6 @@ class FilesystemView(BaseView):
             self.done.enable()
         else:
             self.done.disable()
-
-    def _build_used_disks(self):
-        log.debug('FileSystemView: building used disks')
-        return Color.info_minor(
-            Text("No disks have been used to create a constructed disk."))
 
     def _build_buttons(self):
         log.debug('FileSystemView: building buttons')
