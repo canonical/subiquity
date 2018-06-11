@@ -52,7 +52,7 @@ from subiquitycore.ui.table import ColSpec, Table, TableRow
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import DeviceAction, humanize_size
+from subiquity.models.filesystem import DeviceAction, Disk, humanize_size
 
 from .disk_info import DiskInfoStretchy
 from .partition import PartitionStretchy, FormatEntireStretchy
@@ -269,24 +269,33 @@ class DeviceList(WidgetWrap):
 
     def _device_action(self, sender, action, device):
         log.debug('_device_action %s %s', action, device)
+        overlay = None
         if action == DeviceAction.INFO:
-            self.parent.show_stretchy_overlay(
-                DiskInfoStretchy(self.parent, device))
+            if isinstance(device, Disk):
+                overlay = DiskInfoStretchy(self.parent, device)
         if action == DeviceAction.PARTITION:
-            self.parent.show_stretchy_overlay(
-                PartitionStretchy(self.parent, device))
+            overlay = PartitionStretchy(self.parent, device)
         if action == DeviceAction.FORMAT:
-            self.parent.show_stretchy_overlay(
-                FormatEntireStretchy(self.parent, device))
+            overlay = FormatEntireStretchy(self.parent, device)
+        if overlay is not None:
+            self.parent.show_stretchy_overlay(overlay)
+        else:
+            raise Exception("unexpected action on device")
 
     def _partition_action(self, sender, action, part):
         log.debug('_partition_action %s %s', action, part)
+        overlay = None
         if action == DeviceAction.EDIT:
-            self.parent.show_stretchy_overlay(
-                PartitionStretchy(self.parent, part.device, part))
+            overlay = PartitionStretchy(self.parent, part.device, part)
+        if action == DeviceAction.DELETE:
+            # TODO
+            return
         if action == DeviceAction.FORMAT:
-            self.parent.show_stretchy_overlay(
-                FormatEntireStretchy(self.parent, part))
+            overlay = FormatEntireStretchy(self.parent, part)
+        if overlay is not None:
+            self.parent.show_stretchy_overlay(overlay)
+        else:
+            raise Exception("unexpected action on partition")
 
     def _action_menu_for_device(self, device, cb):
         delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
