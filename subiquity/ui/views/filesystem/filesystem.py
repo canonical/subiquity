@@ -20,8 +20,20 @@ configuration.
 
 """
 import logging
-from urwid import Text
 
+import attr
+
+from urwid import (
+    AttrMap,
+    CompositeCanvas,
+    connect_signal,
+    Text,
+    WidgetDecoration,
+    )
+
+from subiquitycore.ui.actionmenu import (
+    ActionMenu,
+    )
 from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
@@ -30,8 +42,14 @@ from subiquitycore.ui.buttons import (
     menu_btn,
     reset_btn,
     )
-from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.container import (
+    Columns,
+    ListBox,
+    Pile,
+    WidgetWrap,
+    )
 from subiquitycore.ui.stretchy import Stretchy
+from subiquitycore.ui.table import ColSpec, Table, TableRow
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 
@@ -75,6 +93,156 @@ class FilesystemConfirmation(Stretchy):
         self.parent.remove_overlay()
 
 
+class CursorOverride(WidgetDecoration):
+    """Decoration to override where the cursor goes when a widget is focused.
+    """
+
+    def __init__(self, w, cursor_x=0):
+        super().__init__(w)
+        self.cursor_x = cursor_x
+
+    def get_cursor_coords(self, size):
+        return self.cursor_x, 0
+
+    def rows(self, size, focus):
+        return self._original_widget.rows(size, focus)
+
+    def keypress(self, size, focus):
+        return self._original_widget.keypress(size, focus)
+
+    def render(self, size, focus=False):
+        c = self._original_widget.render(size, focus)
+        if focus:
+            # create a new canvas so we can add a cursor
+            c = CompositeCanvas(c)
+            c.cursor = self.get_cursor_coords(size)
+        return c
+
+
+def add_menu_row_focus_behaviour(menu, row, attr_map, focus_map, cursor_x=0):
+    """Configure focus behaviour of row (which contains menu)
+
+    The desired behaviour is that:
+
+    1) The cursor appears at the left of the row rather than where the
+       menu is.
+    2) The row is highlighted when focused and retains that focus even
+       when the popup is open.
+    """
+    am = AttrMap(CursorOverride(row, cursor_x=cursor_x), attr_map, focus_map)
+    connect_signal(menu, 'open', lambda menu: am.set_attr_map(focus_map))
+    connect_signal(menu, 'close', lambda menu: am.set_attr_map(attr_map))
+    return am
+
+
+@attr.s
+class MountInfo:
+    mount = attr.ib(default=None)
+
+    @property
+    def path(self):
+        return self.mount.path
+
+    @property
+    def split_path(self):
+        return self.mount.path.split('/')
+
+    @property
+    def size(self):
+        return humanize_size(self.mount.device.volume.size)
+
+    @property
+    def fstype(self):
+        return self.mount.device.fstype
+
+    @property
+    def desc(self):
+        return self.mount.device.volume.desc()
+
+    def startswith(self, other):
+        i = 0
+        for a, b in zip(self.split_path, other.split_path):
+            if a != b:
+                break
+            i += 1
+        return i >= len(other.split_path)
+
+
+class MountList(WidgetWrap):
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.table = Table([], spacing=2, colspecs={
+            0: ColSpec(can_shrink=True),
+            1: ColSpec(min_width=9),
+        })
+        self._no_mounts_content = Color.info_minor(
+            Text(_("No disks or partitions mounted.")))
+        super().__init__(self.table)
+        self.refresh_model_inputs()
+
+    def _mount_action(self, sender, action, mount):
+        log.debug('_mount_action %s %s', action, mount)
+        if action == 'unmount':
+            self.parent.controller.delete_mount(mount)
+            self.parent.refresh_model_inputs()
+
+    def refresh_model_inputs(self):
+        mountinfos = [
+            MountInfo(mount=m)
+            for m in sorted(
+                self.parent.model.all_mounts(), key=lambda m: m.path)
+        ]
+        if len(mountinfos) == 0:
+            self.table.set_contents([])
+            self._w = self._no_mounts_content
+            return
+        self._w = self.table
+        log.debug('FileSystemView: building mount list')
+
+        rows = [TableRow([
+            Text(_("MOUNT POINT")),
+            Text(_("SIZE"), align='center'),
+            Text(_("TYPE")),
+            Text(_("DEVICE TYPE")),
+            ])]
+
+        for i, mi in enumerate(mountinfos):
+            path_markup = mi.path
+            for j in range(i-1, -1, -1):
+                mi2 = mountinfos[j]
+                if mi.startswith(mi2):
+                    part1 = "/".join(mi.split_path[:len(mi2.split_path)])
+                    part2 = "/".join(
+                        [''] + mi.split_path[len(mi2.split_path):])
+                    path_markup = [('info_minor', part1), part2]
+                    break
+                if j == 0 and mi2.split_path == ['', '']:
+                    path_markup = [
+                        ('info_minor', "/"),
+                        "/".join(mi.split_path[1:]),
+                        ]
+            actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
+            menu = ActionMenu(actions)
+            connect_signal(menu, 'action', self._mount_action, mi.mount)
+            row = TableRow([
+                Text(path_markup),
+                Text(mi.size, align='right'),
+                Text(mi.fstype),
+                Text(mi.desc),
+                menu,
+            ])
+            row = add_menu_row_focus_behaviour(
+                menu,
+                row,
+                'menu_button',
+                {None: 'menu_button focus', 'info_minor': 'menu_button focus'})
+            rows.append(row)
+        self.table.set_contents(rows)
+        if self.table._w.focus_position >= len(rows):
+            self.table._w.focus_position = len(rows) - 1
+
+
 class FilesystemView(BaseView):
     title = _("Filesystem setup")
     footer = _("Select available disks to format and mount")
@@ -84,10 +252,11 @@ class FilesystemView(BaseView):
         self.model = model
         self.controller = controller
         self.items = []
+        self.mount_list = MountList(self)
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
-            Padding.push_4(self._build_filesystem_list()),
+            self.mount_list,
             Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
@@ -108,49 +277,6 @@ class FilesystemView(BaseView):
         super().__init__(self.frame)
         log.debug('FileSystemView init complete()')
 
-    def _build_used_disks(self):
-        log.debug('FileSystemView: building used disks')
-        return Color.info_minor(
-            Text("No disks have been used to create a constructed disk."))
-
-    def _build_filesystem_list(self):
-        log.debug('FileSystemView: building part list')
-        cols = []
-        mount_point_text = _("MOUNT POINT")
-        longest_path = len(mount_point_text)
-        for m in sorted(self.model._mounts, key=lambda m: m.path):
-            path = m.path
-            longest_path = max(longest_path, len(path))
-            for p, *dummy in reversed(cols):
-                if path.startswith(p):
-                    path = [('info_minor', p), path[len(p):]]
-                    break
-            cols.append((m.path, path, humanize_size(m.device.volume.size),
-                         m.device.fstype, m.device.volume.desc()))
-        for fs in self.model._filesystems:
-            if fs.fstype == 'swap':
-                cols.append((None, _('SWAP'), humanize_size(fs.volume.size),
-                             fs.fstype, fs.volume.desc()))
-
-        if len(cols) == 0:
-            return Pile([Color.info_minor(
-                Text(_("No disks or partitions mounted.")))])
-        size_text = _("SIZE")
-        type_text = _("TYPE")
-        size_width = max(len(size_text), 9)
-        type_width = max(len(type_text), self.model.longest_fs_name)
-        cols.insert(0, (None, mount_point_text, size_text, type_text,
-                        _("DEVICE TYPE")))
-        pl = []
-        for dummy, a, b, c, d in cols:
-            if b == "SIZE":
-                b = Text(b, align='center')
-            else:
-                b = Text(b, align='right')
-            pl.append(Columns([(longest_path, Text(a)), (size_width, b),
-                               (type_width, Text(c)), Text(d)], 4))
-        return Pile(pl)
-
     def _build_buttons(self):
         log.debug('FileSystemView: building buttons')
         buttons = []
@@ -166,6 +292,9 @@ class FilesystemView(BaseView):
         buttons.append(back_btn(_("Back"), on_press=self.cancel))
 
         return button_pile(buttons)
+
+    def refresh_model_inputs(self):
+        self.mount_list.refresh_model_inputs()
 
     def _build_available_inputs(self):
         r = []
