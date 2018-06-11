@@ -417,6 +417,8 @@ class DeviceList(WidgetWrap):
         self.table.set_contents(rows)
         if self.table._w.focus_position >= len(rows):
             self.table._w.focus_position = len(rows) - 1
+        while not self.table._w.focus.selectable():
+            self.table._w.focus_position -= 1
 
 
 class FilesystemView(BaseView):
