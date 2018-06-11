@@ -66,8 +66,9 @@ Example:
 from collections import defaultdict
 import logging
 
-from subiquitycore.ui.container import Columns, Pile, WidgetWrap
 
+from subiquitycore.ui.actionmenu import ActionMenu
+from subiquitycore.ui.container import Columns, Pile, WidgetWrap
 
 import attr
 
@@ -108,7 +109,7 @@ def widget_width(w):
     """Return the natural width of the widget w."""
     if isinstance(w, urwid.CheckBox):
         return widget_width(w._wrapped_widget)
-    elif isinstance(w, urwid.AttrMap):
+    elif isinstance(w, (ActionMenu, urwid.AttrMap)):
         return widget_width(w._original_widget)
     elif isinstance(w, urwid.Text):
         return len(demarkup(w.text))
