@@ -62,6 +62,7 @@ too many elements in the ListBox.
 """
 
 import logging
+import operator
 
 import urwid
 
@@ -496,3 +497,22 @@ def ListBox(body=None):
     if body is getattr(body, 'get_focus', None) is None:
         body = urwid.SimpleFocusListWalker(body)
     return ScrollBarListBox(FocusTrackingListBox(body))
+
+
+get_delegate = operator.attrgetter("_wrapped_widget")
+
+
+class OurWidgetWrap(urwid.WidgetWrap):
+    # A wrapped widget needs to have a _select_first/last_selectable
+    # method if and only if the widget being wrapped does, so we
+    # define our own WidgetWrap class that uses the same technique to
+    # forward these methods along if present as urwid's WidgetWrap
+    # does.
+
+    _select_first_selectable = property(
+        lambda self: get_delegate(self)._select_first_selectable)
+    _select_last_selectable = property(
+        lambda self: get_delegate(self)._select_last_selectable)
+
+
+WidgetWrap = OurWidgetWrap

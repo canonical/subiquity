@@ -23,11 +23,16 @@ from urwid import (
     SelectableIcon,
     SimpleFocusListWalker,
     Text,
-    WidgetWrap,
     )
 
 from subiquitycore.ui.buttons import ok_btn, cancel_btn, other_btn
-from subiquitycore.ui.container import Columns, ListBox, Pile, ScrollBarListBox
+from subiquitycore.ui.container import (
+    Columns,
+    ListBox,
+    Pile,
+    ScrollBarListBox,
+    WidgetWrap,
+    )
 from subiquitycore.ui.utils import button_pile, Color, screen
 from subiquitycore.view import BaseView
 
@@ -66,12 +71,6 @@ class SnapInfoView(WidgetWrap):
     # (which can both be arbitrarily long or short). If both are long,
     # the channel list is given a third of the space. If there is
     # space for both, they are packed into the upper part of the view.
-
-    def _select_first_selectable(self):
-        self._w._select_first_selectable()
-
-    def _select_last_selectable(self):
-        self._w._select_last_selectable()
 
     def __init__(self, parent, snap, cur_channel):
         self.parent = parent
