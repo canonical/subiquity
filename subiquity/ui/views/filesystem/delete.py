@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2018 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -16,7 +16,7 @@
 import logging
 from urwid import Text
 
-from subiquitycore.ui.buttons import done_btn
+from subiquitycore.ui.buttons import danger_btn, other_btn
 from subiquitycore.ui.utils import button_pile
 from subiquitycore.ui.stretchy import Stretchy
 
@@ -24,28 +24,29 @@ from subiquitycore.ui.stretchy import Stretchy
 log = logging.getLogger('subiquity.ui.filesystem.disk_info')
 
 
-class DiskInfoStretchy(Stretchy):
-    def __init__(self, parent, disk):
-        log.debug('DiskInfoView: {}'.format(disk))
+class ConfirmDeleteStretchy(Stretchy):
+
+    def __init__(self, parent, thing, delete_func):
         self.parent = parent
-        dinfo = disk.info_for_display()
-        template = """\
-{devname}:\n
- Vendor: {vendor}
- Model: {model}
- SerialNo: {serial}
- Size: {humansize} ({size}B)
- Bus: {bus}
- Rotational: {rotational}
- Path: {devpath}"""
-        result = template.format(**dinfo)
+        self.thing = thing
+        self.delete_func = delete_func
+
+        title = _("Confirm deletion of {}").format(thing.desc())
+
         widgets = [
-            Text(result),
+            Text(_("Do you really want to delete {}?").format(thing.label)),
             Text(""),
-            button_pile([done_btn(_("Close"), on_press=self.close)]),
-            ]
-        title = _("Info for {}").format(disk.label)
+            button_pile([
+                danger_btn(label=_("Delete"), on_press=self.confirm),
+                other_btn(label=_("Cancel"), on_press=self.cancel),
+                ]),
+        ]
         super().__init__(title, widgets, 0, 2)
 
-    def close(self, button=None):
+    def confirm(self, sender=None):
+        self.delete_func(self.thing)
+        self.parent.refresh_model_inputs()
+        self.parent.remove_overlay()
+
+    def cancel(self, sender=None):
         self.parent.remove_overlay()
