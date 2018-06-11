@@ -44,13 +44,12 @@ from subiquitycore.ui.buttons import (
     )
 from subiquitycore.ui.container import (
     ListBox,
-    Pile,
     WidgetWrap,
     )
 from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import ColSpec, Table, TableRow
-from subiquitycore.ui.utils import button_pile, Color, Padding
+from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import DeviceAction, Disk, humanize_size
@@ -428,41 +427,35 @@ class FilesystemView(BaseView):
         log.debug('FileSystemView init start()')
         self.model = model
         self.controller = controller
-        self.items = []
+
         self.mount_list = MountList(self)
         self.avail_list = DeviceList(self, True)
         self.used_list = DeviceList(self, False)
         self.avail_list.table.bind(self.used_list.table)
+
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
-            self.mount_list,
+            Padding.push_2(self.mount_list),
             Text(""),
             Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
-            self.avail_list,
+            Padding.push_2(self.avail_list),
             Text(""),
             Text(""),
             Text(_("USED DEVICES")),
             Text(""),
-            self.used_list,
+            Padding.push_2(self.used_list),
             Text(""),
             ]
 
-        self.lb = Padding.center_95(ListBox(body))
-        bottom = Pile([
-                Text(""),
-                self._build_buttons(),
-                Text(""),
-                ])
-        self.frame = Pile([
-            ('pack', Text("")),
-            self.lb,
-            ('pack', bottom)])
-        if self.model.can_install():
-            self.frame.focus_position = 2
-        super().__init__(self.frame)
+        self.lb = ListBox(body)
+        frame = screen(
+            self.lb, self._build_buttons(),
+            focus_buttons=self.model.can_install())
+        frame.width = ('relative', 95)
+        super().__init__(frame)
         log.debug('FileSystemView init complete()')
 
     def _build_buttons(self):
@@ -471,11 +464,11 @@ class FilesystemView(BaseView):
         if not self.model.can_install():
             self.done.disable()
 
-        return button_pile([
+        return [
             self.done,
             reset_btn(_("Reset"), on_press=self.reset),
             back_btn(_("Back"), on_press=self.cancel),
-            ])
+            ]
 
     def refresh_model_inputs(self):
         self.mount_list.refresh_model_inputs()
