@@ -330,7 +330,15 @@ class Table(WidgetWrap):
         self._last_size = None
         rows = [urwid.Padding(row) for row in rows]
         self.table_rows = rows
+        empty_before = len(self._w.contents) == 0
         self._w.contents[:] = self.container_maker(rows).contents
+        empty_after = len(self._w.contents) == 0
+        # Pile / MonitoredFocusList have this strange behaviour where
+        # when you add rows to an empty pile by assigning to contents,
+        # the last row added ends up being the focus even if it's not
+        # selectable.
+        if empty_before and not empty_after:
+            self._select_first_selectable()
 
 
 if __name__ == '__main__':
