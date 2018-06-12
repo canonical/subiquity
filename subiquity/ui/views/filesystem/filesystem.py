@@ -278,6 +278,10 @@ class DeviceList(WidgetWrap):
     _disk_PARTITION = _stretchy_shower(PartitionStretchy)
     _disk_FORMAT = _stretchy_shower(FormatEntireStretchy)
 
+    def _disk_MAKE_BOOT(self, disk):
+        self.parent.controller.make_boot_disk(disk)
+        self.parent.refresh_model_inputs()
+
     _partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.device, part))
     _partition_DELETE = _stretchy_shower(
@@ -295,11 +299,12 @@ class DeviceList(WidgetWrap):
     def _action_menu_for_device(self, device):
         delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
         device_actions = [
-            (_("Information"),    DeviceAction.INFO),
-            (_("Edit"),           DeviceAction.EDIT),
-            (_("Add Partition"),  DeviceAction.PARTITION),
-            (_("Format / Mount"), DeviceAction.FORMAT),
-            (delete_btn,          DeviceAction.DELETE),
+            (_("Information"),      DeviceAction.INFO),
+            (_("Edit"),             DeviceAction.EDIT),
+            (_("Add Partition"),    DeviceAction.PARTITION),
+            (_("Format / Mount"),   DeviceAction.FORMAT),
+            (delete_btn,            DeviceAction.DELETE),
+            (_("Make boot device"), DeviceAction.MAKE_BOOT),
         ]
         menu = ActionMenu([
             (label, device.supports_action(action), action)

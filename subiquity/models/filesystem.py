@@ -124,6 +124,7 @@ class DeviceAction(enum.Enum):
     PARTITION = enum.auto()
     FORMAT = enum.auto()
     DELETE = enum.auto()
+    MAKE_BOOT = enum.auto()
 
 
 @attr.s
@@ -270,7 +271,7 @@ class Disk(_Device):
     def reset(self):
         self.preserve = False
         self.name = ''
-        self.grub_device = ''
+        self.grub_device = False
         self._partitions = []
         self._fs = None
         self._constructed_device = None
@@ -296,6 +297,8 @@ class Disk(_Device):
         lambda self: len(self._partitions) == 0 and
         self._constructed_device is None)
     _supports_DELETE = False
+    _supports_MAKE_BOOT = property(
+        lambda self: self._fs is None and self._constructed_device is None)
 
 
 @attr.s
@@ -340,6 +343,7 @@ class Partition(_Formattable):
         lambda self: self.flag not in ('boot', 'bios_grub') and
         self._constructed_device is None)
     _supports_DELETE = _supports_FORMAT
+    _supports_MAKE_BOOT = False
 
 
 @attr.s

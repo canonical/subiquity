@@ -18,7 +18,7 @@ import os
 
 from subiquitycore.controller import BaseController
 
-from subiquity.models.filesystem import align_up
+from subiquity.models.filesystem import align_up, DeviceAction
 from subiquity.ui.views import (
     FilesystemView,
     GuidedDiskSelectionView,
@@ -110,6 +110,31 @@ class FilesystemController(BaseController):
         self.delete_filesystem(part.fs())
         self.model.remove_partition(part)
 
+    def _create_boot_partition(self, disk):
+        if self.is_uefi():
+            part_size = UEFI_GRUB_SIZE_BYTES
+            if UEFI_GRUB_SIZE_BYTES*2 >= disk.size:
+                part_size = disk.size // 2
+            log.debug('Adding EFI partition first')
+            part = self.create_partition(
+                disk,
+                dict(
+                    size=part_size,
+                    fstype=self.model.fs_by_name['fat32'],
+                    mount='/boot/efi'),
+                flag="boot")
+        else:
+            log.debug('Adding grub_bios gpt partition first')
+            part = self.create_partition(
+                disk,
+                dict(
+                    size=BIOS_GRUB_SIZE_BYTES,
+                    fstype=None,
+                    mount=None),
+                flag='bios_grub')
+        disk.grub_device = True
+        return part
+
     def partition_disk_handler(self, disk, partition, spec):
         log.debug('partition_disk_handler: %s %s %s', disk, partition, spec)
         log.debug('disk.freespace: {}'.format(disk.free))
@@ -122,31 +147,11 @@ class FilesystemController(BaseController):
             self.create_filesystem(partition, spec)
             return
 
-        system_bootable = self.model.bootable()
-        log.debug('model has bootable device? {}'.format(system_bootable))
-        if not system_bootable and len(disk.partitions()) == 0:
-            if self.is_uefi():
-                part_size = UEFI_GRUB_SIZE_BYTES
-                if UEFI_GRUB_SIZE_BYTES*2 >= disk.size:
-                    part_size = disk.size // 2
-                log.debug('Adding EFI partition first')
-                part = self.create_partition(
-                    disk,
-                    dict(
-                        size=part_size,
-                        fstype=self.model.fs_by_name['fat32'],
-                        mount='/boot/efi'),
-                    flag="boot")
-            else:
-                log.debug('Adding grub_bios gpt partition first')
-                part = self.create_partition(
-                    disk,
-                    dict(
-                        size=BIOS_GRUB_SIZE_BYTES,
-                        fstype=None,
-                        mount=None),
-                    flag='bios_grub')
-            disk.grub_device = True
+        bootable = self.model.bootable()
+        log.debug('model has bootable device? {}'.format(bootable))
+        can_be_boot = disk.supports_action(DeviceAction.MAKE_BOOT)
+        if not bootable and len(disk.partitions()) == 0 and can_be_boot:
+            part = self._create_boot_partition(disk)
 
             # adjust downward the partition size (if necessary) to accommodate
             # bios/grub partition
@@ -156,7 +161,7 @@ class FilesystemController(BaseController):
                                                 disk.free))
                 spec['size'] = disk.free
 
-        part = self.create_partition(disk, spec)
+        self.create_partition(disk, spec)
 
         log.info("Successfully added partition")
 
@@ -171,6 +176,7 @@ class FilesystemController(BaseController):
             if p.flag in ("bios_grub", "boot"):
                 full = p.device.free == 0
                 p.device._partitions.remove(p)
+                p.device.grub_device = False
                 if full:
                     largest_part = max((part.size, part)
                                        for part in p.device._partitions)[1]
@@ -180,8 +186,10 @@ class FilesystemController(BaseController):
                                        for part in disk._partitions)[1]
                     largest_part.size -= (p.size - disk.free)
                 disk._partitions.insert(0, p)
+                disk.grub_device = True
                 p.device = disk
-        self.partition_disk(disk)
+                return
+        self._create_boot_partition(disk)
 
     def is_uefi(self):
         if self.opts.dry_run:
