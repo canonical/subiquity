@@ -52,7 +52,7 @@ from subiquitycore.ui.table import ColSpec, Table, TableRow
 from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import DeviceAction, Disk, humanize_size
+from subiquity.models.filesystem import DeviceAction, humanize_size
 
 from .delete import ConfirmDeleteStretchy
 from .disk_info import DiskInfoStretchy
@@ -249,6 +249,12 @@ class MountList(WidgetWrap):
             self.table._w.focus_position = len(rows) - 1
 
 
+def _stretchy_shower(cls):
+    def impl(self, device):
+        self.parent.show_stretchy_overlay(cls(self.parent, device))
+    return impl
+
+
 class DeviceList(WidgetWrap):
 
     def __init__(self, parent, show_available):
@@ -268,39 +274,25 @@ class DeviceList(WidgetWrap):
         # I don't really know why this is required:
         self.table._select_first_selectable()
 
-    def _device_action(self, sender, action, device):
-        log.debug('_device_action %s %s', action, device)
-        overlay = None
-        if action == DeviceAction.INFO:
-            if isinstance(device, Disk):
-                overlay = DiskInfoStretchy(self.parent, device)
-        if action == DeviceAction.PARTITION:
-            overlay = PartitionStretchy(self.parent, device)
-        if action == DeviceAction.FORMAT:
-            overlay = FormatEntireStretchy(self.parent, device)
-        if overlay is not None:
-            self.parent.show_stretchy_overlay(overlay)
-        else:
-            raise Exception("unexpected action on device")
+    _disk_INFO = _stretchy_shower(DiskInfoStretchy)
+    _disk_PARTITION = _stretchy_shower(PartitionStretchy)
+    _disk_FORMAT = _stretchy_shower(FormatEntireStretchy)
 
-    def _partition_action(self, sender, action, part):
-        log.debug('_partition_action %s %s', action, part)
-        overlay = None
-        if action == DeviceAction.EDIT:
-            overlay = PartitionStretchy(self.parent, part.device, part)
-        if action == DeviceAction.DELETE:
-            overlay = ConfirmDeleteStretchy(
-                self.parent,
-                part,
-                self.parent.controller.delete_partition)
-        if action == DeviceAction.FORMAT:
-            overlay = FormatEntireStretchy(self.parent, part)
-        if overlay is not None:
-            self.parent.show_stretchy_overlay(overlay)
-        else:
-            raise Exception("unexpected action on partition")
+    _partition_EDIT = _stretchy_shower(
+        lambda parent, part: PartitionStretchy(parent, part.device, part))
+    _partition_DELETE = _stretchy_shower(
+        lambda parent, part: ConfirmDeleteStretchy(
+            parent,
+            part,
+            parent.controller.delete_partition))
+    _partition_FORMAT = _disk_FORMAT
 
-    def _action_menu_for_device(self, device, cb):
+    def _action(self, sender, action, device):
+        log.debug('_action %s %s', action, device)
+        meth_name = '_{}_{}'.format(device.type, action.name)
+        getattr(self, meth_name)(device)
+
+    def _action_menu_for_device(self, device):
         delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
         device_actions = [
             (_("Information"),    DeviceAction.INFO),
@@ -312,7 +304,7 @@ class DeviceList(WidgetWrap):
         menu = ActionMenu([
             (label, device.supports_action(action), action)
             for label, action in device_actions])
-        connect_signal(menu, 'action', cb, device)
+        connect_signal(menu, 'action', self._action, device)
         return menu
 
     def refresh_model_inputs(self):
@@ -350,7 +342,7 @@ class DeviceList(WidgetWrap):
             Text(_("TYPE")),
         ]))
         for device in devices:
-            menu = self._action_menu_for_device(device, self._device_action)
+            menu = self._action_menu_for_device(device)
             row = TableRow([
                 Text(device.label),
                 Text("{:>9}".format(humanize_size(device.size))),
@@ -391,8 +383,7 @@ class DeviceList(WidgetWrap):
                     part_size = "{:>9} ({}%)".format(
                         humanize_size(part.size),
                         int(100 * part.size / device.size))
-                    menu = self._action_menu_for_device(
-                        part, self._partition_action)
+                    menu = self._action_menu_for_device(part)
                     row = TableRow([
                         Text(label),
                         (2, Text(part_size)),
