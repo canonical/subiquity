@@ -256,6 +256,22 @@ class OneSelectableColumns(urwid.Columns):
             raise Exception(
                 "subiquity only supports one selectable in a Columns")
 
+    def _select_first_selectable(self):
+        """Select first selectable child (possibily recursively)."""
+        for i, (w, o) in enumerate(self.contents):
+            if w.selectable():
+                self.set_focus(i)
+                _maybe_call(w, "_select_first_selectable")
+                return
+
+    def _select_last_selectable(self):
+        """Select last selectable child (possibily recursively)."""
+        for i, (w, o) in reversed(list(enumerate(self.contents))):
+            if w.selectable():
+                self.set_focus(i)
+                _maybe_call(w, "_select_last_selectable")
+                return
+
 
 class TabCyclingListBox(urwid.ListBox):
     _command_map = enter_advancing_command_map
