@@ -34,17 +34,14 @@ that have occurred to me during implementation:
 
 1. This code needs to know the "natural width" of anything you put
    into a table. Don't be surprised if widget_width needs extending.
-2. Cells that span multiple columns are ignored during width
-   computations, it's assumed that other content in the columns they
-   span will make the columns wide enough.
-3. Having a cell that spans multiple columns span a column that can
+2. Having a cell that spans multiple columns span a column that can
    shrink or be omitted will be confusing.
-4. Binding tables together that have different column options will
+3. Binding tables together that have different column options will
    similarly not do anything sensible.
-5. You can wrap table rows in decorators that do not affect their size
+4. You can wrap table rows in decorators that do not affect their size
    (AttrMap, etc) but do not use ones that do affect size (Padding,
    etc) or things will get confusing.
-6. I haven't tested this code with more than one column that can
+5. I haven't tested this code with more than one column that can
    shrink or more than one column that can be omitted.
 
 Example:
@@ -153,18 +150,46 @@ class TableRow(WidgetWrap):
         self.columns = Columns(cols)
         super().__init__(self.columns)
 
+    def _indices_cells(self):
+        """Yield the column indices each cell spans and the cell.
+        """
+        i = 0
+        for colspan, cell in self.cells:
+            yield range(i, i+colspan), cell
+            i += colspan
+
     def get_natural_widths(self):
         """Return a mapping {column-index:natural-width}.
 
-        Cells spanning multiple columns are ignored for now.
+        Cells spanning multiple columns are ignored (handled in
+        adjust_for_spanning_cells).
         """
-        i = 0
         widths = {}
-        for colspan, cell in self.cells:
-            if colspan == 1:
-                widths[i] = widget_width(cell)
-            i += colspan
+        for indices, cell in self._indices_cells():
+            if len(indices) == 1:
+                widths[indices[0]] = widget_width(cell)
         return widths
+
+    def adjust_for_spanning_cells(self, widths, spacing):
+        """Make sure columns are wide enough for cells with colspan > 1.
+
+        This very roughly follows the approach in
+        https://www.w3.org/TR/CSS2/tables.html#width-layout.
+        """
+        for indices, cell in self._indices_cells():
+            indices = [i for i in indices if widths[i] > 0]
+            if len(indices) <= 1:
+                continue
+            cur_width = sum(widths[i] for i in indices) + (
+                len(indices) - 1) * spacing
+            cell_width = widget_width(cell)
+            if cur_width < cell_width:
+                # Attempt to widen each column by about the same amount.
+                # But widen the first few columns by more if that's
+                # whats needed.
+                div, mod = divmod(cell_width - cur_width, len(indices))
+                for i, j in enumerate(indices):
+                    widths[j] += div + int(i <= mod)
 
     def set_widths(self, widths, spacing):
         """Configure row to given widths.
@@ -174,20 +199,17 @@ class TableRow(WidgetWrap):
         the column entirely.
         """
         cols = []
-        i = 0
-        for colspan, cell in self.cells:
+        for indices, cell in self._indices_cells():
             try:
-                width = sum(widths[j] for j in range(i, i+colspan))
+                width = sum(widths[j] for j in indices)
             except KeyError:
                 opt = self.columns.options('weight', 1)
             else:
                 if width == 0:
-                    i += colspan
                     continue
-                width += spacing*(colspan-1)
+                width += spacing*(len(indices)-1)
                 opt = self.columns.options('given', width)
             cols.append((cell, opt))
-            i += colspan
         self.columns.contents[:] = cols
         self.columns.dividechars = spacing
 
@@ -205,6 +227,11 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, spacing):
         row_widths = row.base_widget.get_natural_widths()
         for i, w in row_widths.items():
             widths[i] = max(w, widths.get(i, 0))
+
+    # Make sure columns are big enough for cells that span mutiple
+    # columns.
+    for row in table_rows:
+        row.base_widget.adjust_for_spanning_cells(widths, spacing)
 
     # log.debug("%s %s %s", maxcol, widths, total(widths))
 
