@@ -29,7 +29,7 @@ import sys
 
 setup_kwargs = {}
 # dpkg build uses build and install, tox uses sdist
-if sys.argv[1] in ("build", "install"):
+if 'SUBIQUITY_NO_I18N' not in os.environ:
     from DistUtilsExtra.command import build_extra
     from DistUtilsExtra.command import build_i18n
     setup_kwargs['cmdclass'] = {'build': build_extra.build_extra,
