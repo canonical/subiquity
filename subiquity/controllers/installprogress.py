@@ -110,7 +110,7 @@ class InstallProgressController(BaseController):
             return
         if event_type == 'start':
             message = event.get("CURTIN_MESSAGE", "??")
-            if self.progress_view_showing is not None:
+            if not self.progress_view_showing:
                 self.footer_description.set_text(message)
             self.progress_view.add_event(self._event_indent + message)
             self._event_indent += "  "
@@ -173,6 +173,7 @@ class InstallProgressController(BaseController):
         self.progress_view = ProgressView(self)
         self.footer_spinner = self.progress_view.spinner
 
+        self.ui.auto_footer = False
         self.ui.set_footer(urwid.Columns(
             [('pack', urwid.Text(_("Install in progress:"))),
              (self.footer_description),

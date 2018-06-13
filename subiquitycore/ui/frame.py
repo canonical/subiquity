@@ -39,6 +39,9 @@ class SubiquityUI(WidgetWrap):
             header=self.header, footer=self.footer)
         self.progress_current = 0
         self.progress_completion = 0
+        # After the install starts, we want to stop setting the footer
+        # from the body view.
+        self.auto_footer = True
         super().__init__(Color.body(self.frame))
 
     def keypress(self, size, key):
@@ -54,4 +57,5 @@ class SubiquityUI(WidgetWrap):
     def set_body(self, widget):
         self.set_header(_(widget.title))
         self.frame.body = widget
-        self.set_footer(_(widget.footer))
+        if self.auto_footer:
+            self.set_footer(_(widget.footer))
