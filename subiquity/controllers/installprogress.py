@@ -31,8 +31,6 @@ from subiquity.ui.views.installprogress import ProgressView
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
 
-TARGET = '/target'
-
 
 class InstallState:
     NOT_STARTED = 0
@@ -161,8 +159,7 @@ class InstallProgressController(BaseController):
 
         ident = self._event_syslog_identifier
         self._write_config(config_location,
-                           self.base_model.render(target=TARGET,
-                                                  syslog_identifier=ident))
+                           self.base_model.render(syslog_identifier=ident))
 
         return curtin_cmd
 
@@ -228,20 +225,16 @@ class InstallProgressController(BaseController):
             self.reboot()
 
     def configure_cloud_init(self):
-        if self.opts.dry_run:
-            target = '.subiquity'
-        else:
-            target = TARGET
-        self.base_model.configure_cloud_init(target)
+        self.base_model.configure_cloud_init()
 
     def copy_logs_to_target(self):
         if self.opts.dry_run:
             return
-        utils.run_command(['cp', '-aT', '/var/log/installer',
-                           '/target/var/log/installer'])
+        target_logs = os.path.join(self.base_model.target, 'var/log/installer')
+        utils.run_command(['cp', '-aT', '/var/log/installer', target_logs])
         try:
-            with open('/target/var/log/installer/installer-journal.txt',
-                      'w') as output:
+            with open(os.path.join(target_logs,
+                                   'installer-journal.txt'), 'w') as output:
                 utils.run_command(
                     ['journalctl'],
                     stdout=output, stderr=subprocess.STDOUT)

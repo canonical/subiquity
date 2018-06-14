@@ -20,6 +20,7 @@ import yaml
 
 from subiquitycore.models.identity import IdentityModel
 from subiquitycore.models.network import NetworkModel
+from subiquitycore.utils import run_command
 
 from .filesystem import FilesystemModel
 from .installpath import InstallpathModel
@@ -44,13 +45,19 @@ setup_yaml()
 class SubiquityModel:
     """The overall model for subiquity."""
 
+    target = '/target'
+
     def __init__(self, common):
         root = '/'
-        if common['opts'].dry_run:
+        self.opts = common['opts']
+        if self.opts.dry_run:
             root = os.path.abspath(".subiquity")
+            self.target = root
         self.locale = LocaleModel(common['signal'])
         self.keyboard = KeyboardModel(root)
-        self.installpath = InstallpathModel(sources=common['opts'].sources)
+        self.installpath = InstallpathModel(
+            target=self.target,
+            sources=common['opts'].sources)
         self.network = NetworkModel(support_wlan=False)
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
@@ -58,16 +65,28 @@ class SubiquityModel:
         self.mirror = MirrorModel()
         self.snaplist = SnapListModel()
 
+    def get_target_groups(self):
+        command = ['chroot', self.target, 'getent', 'group']
+        if self.opts.dry_run:
+            del command[:2]
+        cp = run_command(command, check=True)
+        groups = set()
+        for line in cp.stdout.splitlines():
+            groups.add(line.split(':')[0])
+        return groups
+
     def _cloud_init_config(self):
         user = self.identity.user
         users_and_groups_path = (
-            os.path.join(os.environ.get("SNAP", "/does-not-exist"),
+            os.path.join(os.environ.get("SNAP", "."),
                          "users-and-groups"))
         if os.path.exists(users_and_groups_path):
             groups = open(users_and_groups_path).read().split()
         else:
             groups = ['admin']
         groups.append('sudo')
+        groups = [group for group in groups
+                  if group in self.get_target_groups()]
         user_info = {
             'name': user.username,
             'gecos': user.realname,
@@ -114,14 +133,14 @@ class SubiquityModel:
             ('etc/cloud/ds-identify.cfg', 'policy: enabled\n'),
             ]
 
-    def configure_cloud_init(self, target):
+    def configure_cloud_init(self):
         for path, content in self._cloud_init_files():
-            path = os.path.join(target, path)
+            path = os.path.join(self.target, path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'w') as fp:
                 fp.write(content)
 
-    def render(self, target, syslog_identifier):
+    def render(self, syslog_identifier):
         config = {
             'apt': {
                 'http_proxy': self.proxy.proxy,
@@ -132,7 +151,7 @@ class SubiquityModel:
                 },
 
             'install': {
-                'target': target,
+                'target': self.target,
                 'unmount': 'disabled',
                 'save_install_config':
                     '/var/log/installer/curtin-install-cfg.yaml',
