@@ -52,6 +52,7 @@ class SubiquityModel:
         self.opts = common['opts']
         if self.opts.dry_run:
             root = os.path.abspath(".subiquity")
+            self.target = root
         self.locale = LocaleModel(common['signal'])
         self.keyboard = KeyboardModel(root)
         self.installpath = InstallpathModel(target=self.target, sources=common['opts'].sources)
