@@ -347,7 +347,7 @@ class FilesystemModel(object):
             if data['DEVTYPE'] == 'disk':
                 if data["DEVPATH"].startswith('/devices/virtual'):
                     continue
-                if data["MAJOR"] in ("2", "11"):
+                if data["MAJOR"] in ("2", "11"):  # serial and cd devices
                     continue
                 if data['attrs'].get('ro') == "1":
                     continue
