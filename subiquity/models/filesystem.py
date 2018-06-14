@@ -345,12 +345,16 @@ class FilesystemModel(object):
             if path in currently_mounted:
                 continue
             if data['DEVTYPE'] == 'disk':
-                if not data["DEVPATH"].startswith('/devices/virtual'):
-                    if data["MAJOR"] != "2" and data['attrs'].get('ro') != "1":
-                        # log.debug('disk={}\n{}'.format(
-                        #    path, json.dumps(data, indent=4, sort_keys=True)))
-                        info = self.prober.get_storage_info(path)
-                        self._available_disks[path] = Disk.from_info(info)
+                if data["DEVPATH"].startswith('/devices/virtual'):
+                    continue
+                if data["MAJOR"] == "2" or data['attrs'].get('ro') == "1":
+                    continue
+                if data.get("ID_CDROM", ""):
+                    continue
+                # log.debug('disk={}\n{}'.format(
+                #    path, json.dumps(data, indent=4, sort_keys=True)))
+                info = self.prober.get_storage_info(path)
+                self._available_disks[path] = Disk.from_info(info)
 
     def _use_disk(self, disk):
         if disk.path not in self._disks:
