@@ -42,19 +42,10 @@ def setup_yaml():
 setup_yaml()
 
 
-def get_all_groups(dry_run):
-    command = ['chroot', '/target', 'getent', 'group']
-    if dry_run:
-        del command[:2]
-    cp = run_command(command, check=True)
-    groups = set()
-    for line in cp.stdout.splitlines():
-        groups.add(line.split(':')[0])
-    return groups
-
-
 class SubiquityModel:
     """The overall model for subiquity."""
+
+    target = '/target'
 
     def __init__(self, common):
         root = '/'
@@ -71,6 +62,16 @@ class SubiquityModel:
         self.mirror = MirrorModel()
         self.snaplist = SnapListModel()
 
+    def get_target_groups(self):
+        command = ['chroot', self.target, 'getent', 'group']
+        if self.opts.dry_run:
+            del command[:2]
+        cp = run_command(command, check=True)
+        groups = set()
+        for line in cp.stdout.splitlines():
+            groups.add(line.split(':')[0])
+        return groups
+
     def _cloud_init_config(self):
         user = self.identity.user
         users_and_groups_path = (
@@ -81,8 +82,8 @@ class SubiquityModel:
         else:
             groups = ['admin']
         groups.append('sudo')
-        all_groups = get_all_groups(self.opts.dry_run)
-        groups = [group for group in groups if group in all_groups]
+        groups = [group for group in groups
+                  if group in self.get_target_groups()]
         user_info = {
             'name': user.username,
             'gecos': user.realname,
@@ -129,14 +130,14 @@ class SubiquityModel:
             ('etc/cloud/ds-identify.cfg', 'policy: enabled\n'),
             ]
 
-    def configure_cloud_init(self, target):
+    def configure_cloud_init(self):
         for path, content in self._cloud_init_files():
-            path = os.path.join(target, path)
+            path = os.path.join(self.target, path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, 'w') as fp:
                 fp.write(content)
 
-    def render(self, target, syslog_identifier):
+    def render(self, syslog_identifier):
         config = {
             'apt': {
                 'http_proxy': self.proxy.proxy,
@@ -147,7 +148,7 @@ class SubiquityModel:
                 },
 
             'install': {
-                'target': target,
+                'target': self.target,
                 'unmount': 'disabled',
                 'save_install_config':
                     '/var/log/installer/curtin-install-cfg.yaml',
