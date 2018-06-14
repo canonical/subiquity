@@ -20,6 +20,7 @@ import yaml
 
 from subiquitycore.models.identity import IdentityModel
 from subiquitycore.models.network import NetworkModel
+from subiquitycore.utils import run_command
 
 from .filesystem import FilesystemModel
 from .installpath import InstallpathModel
@@ -41,12 +42,24 @@ def setup_yaml():
 setup_yaml()
 
 
+def get_all_groups(dry_run):
+    command = ['chroot', '/target', 'getent', 'group']
+    if dry_run:
+        del command[:2]
+    cp = run_command(command, check=True)
+    groups = set()
+    for line in cp.stdout.splitlines():
+        groups.add(line.split(':')[0])
+    return groups
+
+
 class SubiquityModel:
     """The overall model for subiquity."""
 
     def __init__(self, common):
         root = '/'
-        if common['opts'].dry_run:
+        self.opts = common['opts']
+        if self.opts.dry_run:
             root = os.path.abspath(".subiquity")
         self.locale = LocaleModel(common['signal'])
         self.keyboard = KeyboardModel(root)
@@ -61,13 +74,15 @@ class SubiquityModel:
     def _cloud_init_config(self):
         user = self.identity.user
         users_and_groups_path = (
-            os.path.join(os.environ.get("SNAP", "/does-not-exist"),
+            os.path.join(os.environ.get("SNAP", "."),
                          "users-and-groups"))
         if os.path.exists(users_and_groups_path):
             groups = open(users_and_groups_path).read().split()
         else:
             groups = ['admin']
         groups.append('sudo')
+        all_groups = get_all_groups(self.opts.dry_run)
+        groups = [group for group in groups if group in all_groups]
         user_info = {
             'name': user.username,
             'gecos': user.realname,
