@@ -1,4 +1,9 @@
 #!/bin/bash
+set -eux
 python3 -m unittest discover
-# The --foreground is important to avoid subiquity getting SIGTTOU-ed.
-timeout --foreground 60 sh -c 'LANG=C.UTF-8 PYTHONPATH=. python3 -m subiquity.cmd.tui --answers examples/answers.yaml --dry-run --machine-config examples/mwhudson.json'
+export SUBIQUITY_REPLAY_TIMESCALE=10
+for answers in examples/answers*.yaml; do
+    # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
+    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --answers $answers --dry-run --machine-config examples/mwhudson.json"
+    python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf
+done
