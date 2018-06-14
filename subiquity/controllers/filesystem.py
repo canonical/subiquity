@@ -44,7 +44,7 @@ class FilesystemController(BaseController):
         self.answers = self.all_answers.get("Filesystem", {})
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
-        self.answers.setdefault('manual', False)
+        self.answers.setdefault('manual', [])
         self.model.probe()  # probe before we complete
 
     def default(self):
@@ -54,10 +54,79 @@ class FilesystemController(BaseController):
         elif self.answers['manual']:
             self.manual()
 
+    def _action_get(self, id):
+        if id.startswith('disk-index-'):
+            index = id[len('disk-index-'):]
+            if '-' in index:
+                index, part_spec = index.split('-', 1)
+                disk = self.model.all_disks()[int(index)]
+                if part_spec.startswith('part-index-'):
+                    part_index = part_spec[len('part-index-'):]
+                    return disk.partitions()[int(part_index)]
+            else:
+                return self.model.all_disks()[int(index)]
+        elif id.startswith('raid-'):
+            name = id[len('raid-'):]
+            for r in self.model.all_raids():
+                if r.name == name:
+                    return r
+        raise Exception("could not resolve {}".format(id))
+
+    def _action_clean_fstype(self, fstype):
+        return self.model.fs_by_name[fstype]
+
+    def _enter_form_data(self, data):
+        form = self.ui.frame.body._w.stretchy.form
+        for k, v in data.items():
+            c = getattr(self, '_action_clean_{}'.format(k), lambda x: x)
+            getattr(form, k).value = c(v)
+            yield
+        yield
+        for bf in form._fields:
+            bf.validate()
+        form.validated()
+        if not form.done_btn.enabled:
+            raise Exception("answers left form invalid!")
+        form._click_done(None)
+
+    def _answers_action(self, action):
+        from subiquitycore.ui.stretchy import StretchyOverlay
+        if 'obj' in action:
+            obj = self._action_get(action['obj'])
+            meth = getattr(
+                self.ui.frame.body.avail_list,
+                "_{}_{}".format(obj.type, action['action']))
+            meth(obj)
+            yield
+            if not isinstance(self.ui.frame.body._w, StretchyOverlay):
+                return
+            yield from self._enter_form_data(action['data'])
+        elif action['action'] == 'done':
+            if not self.ui.frame.body.done.enabled:
+                raise Exception("answers did not provide complete fs config")
+            self.finish()
+        else:
+            raise Exception("could not process action {}".format(action))
+
+    def _run_actions(self, actions):
+        for action in actions:
+            yield from self._answers_action(action)
+
+    def _run_iterator(self, it):
+        try:
+            next(it)
+        except StopIteration:
+            return
+        self.loop.set_alarm_in(
+            0.2,
+            lambda *args: self._run_iterator(it))
+
     def manual(self):
         self.ui.set_body(FilesystemView(self.model, self))
         if self.answers['guided']:
             self.finish()
+        if self.answers['manual']:
+            self._run_iterator(self._run_actions(self.answers['manual']))
 
     def guided(self):
         v = GuidedDiskSelectionView(self.model, self)
