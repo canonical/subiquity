@@ -347,7 +347,9 @@ class FilesystemModel(object):
             if data['DEVTYPE'] == 'disk':
                 if data["DEVPATH"].startswith('/devices/virtual'):
                     continue
-                if data["MAJOR"] == "2" or data['attrs'].get('ro') == "1":
+                if data["MAJOR"] in ("2", "11"):
+                    continue
+                if data['attrs'].get('ro') == "1":
                     continue
                 if data.get("ID_CDROM", ""):
                     continue
