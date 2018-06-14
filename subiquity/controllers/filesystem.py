@@ -18,7 +18,11 @@ import os
 
 from subiquitycore.controller import BaseController
 
-from subiquity.models.filesystem import align_up, DeviceAction
+from subiquity.models.filesystem import (
+    align_up,
+    DeviceAction,
+    Partition,
+    )
 from subiquity.ui.views import (
     FilesystemView,
     GuidedDiskSelectionView,
@@ -92,6 +96,13 @@ class FilesystemController(BaseController):
         if spec['fstype'] is None or spec['fstype'].label is None:
             return
         fs = self.model.add_filesystem(volume, spec['fstype'].label)
+        if isinstance(volume, Partition):
+            if spec['fstype'].label == "swap":
+                volume.flag = "swap"
+            elif volume.flag == "swap":
+                volume.flag = ""
+        if spec['fstype'].label == "swap":
+            self.model.add_mount(fs, "")
         self.create_mount(fs, spec)
         return fs
 

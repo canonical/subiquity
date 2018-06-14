@@ -379,7 +379,10 @@ class Mount:
     path = attr.ib(default=None)
 
     def can_delete(self):
-        # Can't delete /boot/efi mount, anything else is fine.
+        # Can't delete mount of /boot/efi or swap, anything else is fine.
+        if not self.path:
+            # swap mount
+            return False
         if not isinstance(self.device.volume, Partition):
             # Can't be /boot/efi if volume is not a partition
             return True
@@ -438,12 +441,6 @@ class FilesystemModel(object):
 
     def render(self):
         r = []
-        for f in self._filesystems:
-            if f.fstype == 'swap':
-                if isinstance(f.volume, Partition):
-                    f.volume.flag = "swap"
-                if f.mount() is None:
-                    self.add_mount(f, "")
         for d in self._disks.values():
             r.append(asdict(d))
         for p in self._partitions:

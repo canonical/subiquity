@@ -197,7 +197,8 @@ class MountList(WidgetWrap):
         mountinfos = [
             MountInfo(mount=m)
             for m in sorted(
-                self.parent.model.all_mounts(), key=lambda m: m.path)
+                self.parent.model.all_mounts(),
+                key=lambda m: (m.path == "", m.path))
         ]
         if len(mountinfos) == 0:
             self.table.set_contents([])
@@ -215,19 +216,22 @@ class MountList(WidgetWrap):
 
         for i, mi in enumerate(mountinfos):
             path_markup = mi.path
-            for j in range(i-1, -1, -1):
-                mi2 = mountinfos[j]
-                if mi.startswith(mi2):
-                    part1 = "/".join(mi.split_path[:len(mi2.split_path)])
-                    part2 = "/".join(
-                        [''] + mi.split_path[len(mi2.split_path):])
-                    path_markup = [('info_minor', part1), part2]
-                    break
-                if j == 0 and mi2.split_path == ['', '']:
-                    path_markup = [
-                        ('info_minor', "/"),
-                        "/".join(mi.split_path[1:]),
-                        ]
+            if path_markup == "":
+                path_markup = ('info_minor', "SWAP")
+            else:
+                for j in range(i-1, -1, -1):
+                    mi2 = mountinfos[j]
+                    if mi.startswith(mi2):
+                        part1 = "/".join(mi.split_path[:len(mi2.split_path)])
+                        part2 = "/".join(
+                            [''] + mi.split_path[len(mi2.split_path):])
+                        path_markup = [('info_minor', part1), part2]
+                        break
+                    if j == 0 and mi2.split_path == ['', '']:
+                        path_markup = [
+                            ('info_minor', "/"),
+                            "/".join(mi.split_path[1:]),
+                            ]
             actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._mount_action, mi.mount)
