@@ -55,7 +55,9 @@ class SubiquityModel:
             self.target = root
         self.locale = LocaleModel(common['signal'])
         self.keyboard = KeyboardModel(root)
-        self.installpath = InstallpathModel(target=self.target, sources=common['opts'].sources)
+        self.installpath = InstallpathModel(
+            target=self.target,
+            sources=common['opts'].sources)
         self.network = NetworkModel(support_wlan=False)
         self.filesystem = FilesystemModel(common['prober'])
         self.identity = IdentityModel()
