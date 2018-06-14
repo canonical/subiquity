@@ -511,7 +511,8 @@ class FilesystemModel(object):
             raise Exception("%s > %s", size, disk.free)
         real_size = align_up(size)
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
-        self._use_disk(disk)
+        if isinstance(disk, Disk):
+            self._use_disk(disk)
         if disk._fs is not None:
             raise Exception("%s is already formatted" % (disk.path,))
         p = Partition(device=disk, size=real_size, flag=flag)
