@@ -351,7 +351,7 @@ class FilesystemModel(object):
                     continue
                 if data['attrs'].get('ro') == "1":
                     continue
-                if data.get("ID_CDROM", ""):
+                if "ID_CDROM" in data:
                     continue
                 # log.debug('disk={}\n{}'.format(
                 #    path, json.dumps(data, indent=4, sort_keys=True)))
