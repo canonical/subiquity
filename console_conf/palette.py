@@ -50,8 +50,8 @@ STYLES = [
 
     ('progress_incomplete', 'fg',      'gray'),
     ('progress_complete',   'fg',      'neutral'),
-    ('scrollbar_fg',        'neutral', 'bg'),
-    ('scrollbar_bg',        'fg',      'bg'),
+    ('scrollbar',           'brand',   'bg'),
+    ('scrollbar focus',     'gray',    'bg'),
 ]
 
 STYLES_MONO = [
