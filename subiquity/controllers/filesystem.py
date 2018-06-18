@@ -75,8 +75,7 @@ class FilesystemController(BaseController):
     def _action_clean_fstype(self, fstype):
         return self.model.fs_by_name[fstype]
 
-    def _enter_form_data(self, data):
-        form = self.ui.frame.body._w.stretchy.form
+    def _enter_form_data(self, form, data, submit):
         for k, v in data.items():
             c = getattr(self, '_action_clean_{}'.format(k), lambda x: x)
             getattr(form, k).value = c(v)
@@ -85,12 +84,14 @@ class FilesystemController(BaseController):
         for bf in form._fields:
             bf.validate()
         form.validated()
-        if not form.done_btn.enabled:
-            raise Exception("answers left form invalid!")
-        form._click_done(None)
+        if submit:
+            if not form.done_btn.enabled:
+                raise Exception("answers left form invalid!")
+            form._click_done(None)
 
     def _answers_action(self, action):
         from subiquitycore.ui.stretchy import StretchyOverlay
+        from subiquity.ui.views.filesystem.delete import ConfirmDeleteStretchy
         if 'obj' in action:
             obj = self._action_get(action['obj'])
             meth = getattr(
@@ -98,9 +99,17 @@ class FilesystemController(BaseController):
                 "_{}_{}".format(obj.type, action['action']))
             meth(obj)
             yield
-            if not isinstance(self.ui.frame.body._w, StretchyOverlay):
+            body = self.ui.frame.body._w
+            if not isinstance(body, StretchyOverlay):
                 return
-            yield from self._enter_form_data(action['data'])
+            if isinstance(body.stretchy, ConfirmDeleteStretchy):
+                if action.get("submit", True):
+                    body.stretchy.done()
+            else:
+                yield from self._enter_form_data(
+                    body.stretchy.form,
+                    action['data'],
+                    action.get("submit", True))
         elif action['action'] == 'done':
             if not self.ui.frame.body.done.enabled:
                 raise Exception("answers did not provide complete fs config")
