@@ -20,6 +20,10 @@ from subiquitycore.ui.buttons import danger_btn, other_btn
 from subiquitycore.ui.utils import button_pile
 from subiquitycore.ui.stretchy import Stretchy
 
+from subiquity.models.filesystem import (
+    Partition,
+)
+
 
 log = logging.getLogger('subiquity.ui.filesystem.disk_info')
 
@@ -33,8 +37,26 @@ class ConfirmDeleteStretchy(Stretchy):
 
         title = _("Confirm deletion of {}").format(thing.desc())
 
+        lines = [
+            _("Do you really want to delete {}?").format(thing.label),
+        ]
+        if isinstance(thing, Partition):
+            lines.append("")
+            if thing.fs():
+                fs = thing.fs()
+                desc = _("It is formatted as {}").format(fs.fstype)
+                if fs.mount():
+                    desc += _(" and mounted at {}.").format(fs.mount().path)
+                else:
+                    desc += _(" and not mounted.")
+            else:
+                desc = _("It is not formatted.")
+            lines.append(desc)
+        else:
+            raise Exception(
+                "deletion of {} not yet supported".format(thing.desc()))
         widgets = [
-            Text(_("Do you really want to delete {}?").format(thing.label)),
+            Text("\n".join(lines)),
             Text(""),
             button_pile([
                 danger_btn(label=_("Delete"), on_press=self.confirm),
