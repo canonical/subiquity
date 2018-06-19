@@ -150,6 +150,11 @@ class _Formattable:
         return getattr(self, "_supports_" + action.name)
 
 
+# Nothing is put in the first and last megabytes of the disk to allow
+# space for the GPT data.
+GPT_OVERHEAD = 2 * (1 << 20)
+
+
 @attr.s
 class _Device(_Formattable, ABC):
     # Anything that can have partitions, e.g. a disk or a RAID.
@@ -179,22 +184,22 @@ class _Device(_Formattable, ABC):
         return self.used == 0
 
     @property
-    def free(self):
-        return self.size - self.used
+    def free_for_partitions(self):
+        return self.size - self.used - GPT_OVERHEAD
 
     def available(self):
         # A _Device is available if:
         # 1) it is not part of a device like a RAID or LVM or zpool or ...
         # 2) if it is formatted, it is available if it is formatted with fs
         #    that needs to be mounted and is not mounted
-        # 3) if it is not formatted, if is available if it has free
+        # 3) if it is not formatted, it is available if it has free
         #    space OR at least one partition is not formatted or is formatted
         #    with a fs that needs to be mounted and is not mounted
         if self._constructed_device is not None:
             return False
         if self._fs is not None:
             return self._fs._available()
-        if self.free > 0:
+        if self.free_for_partitions > 0:
             return True
         for p in self._partitions:
             if p.available():
@@ -278,8 +283,7 @@ class Disk(_Device):
 
     @property
     def size(self):
-        # The first and last megabyte of the disk are not usable.
-        return max(0, align_down(self._info.size) - (2 << 20))
+        return align_down(self._info.size)
 
     def desc(self):
         return _("local disk")
@@ -292,7 +296,7 @@ class Disk(_Device):
 
     _supports_INFO = True
     _supports_EDIT = False
-    _supports_PARTITION = property(lambda self: self.free > 0)
+    _supports_PARTITION = property(lambda self: self.free_for_partitions > 0)
     _supports_FORMAT = property(
         lambda self: len(self._partitions) == 0 and
         self._constructed_device is None)
@@ -509,8 +513,8 @@ class FilesystemModel(object):
         return self._available_disks.get(path)
 
     def add_partition(self, disk, size, flag=""):
-        if size > disk.free:
-            raise Exception("%s > %s", size, disk.free)
+        if size > disk.free_for_partitions:
+            raise Exception("%s > %s", size, disk.free_for_partitions)
         real_size = align_up(size)
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
         if isinstance(disk, Disk):
