@@ -419,47 +419,42 @@ Pile = FocusTrackingPile
 class ScrollBarListBox(urwid.WidgetDecoration):
 
     def __init__(self, lb):
-        def f(char, attr):
-            return urwid.AttrMap(urwid.SolidFill(char), attr)
-        self.boxes = [
-            f("\N{FULL BLOCK}", 'scrollbar_bg'),
-            f("\N{FULL BLOCK}", 'scrollbar_fg'),
-            ]
-        self.bar = Pile([
-            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}",
-                            'scrollbar_bg')),
-            ('weight', 1, self.boxes[0]),
-            ('weight', 1, f("\N{BOX DRAWINGS LIGHT VERTICAL}",
-                            'scrollbar_bg')),
+        self.bg = urwid.SolidFill(" ")
+        self.box = urwid.SolidFill("\N{FULL BLOCK}")
+        pile = Pile([
+                ('weight', 1, self.bg),
+                ('weight', 1, self.box),
+                ('weight', 1, self.bg),
             ])
+        self.bar = urwid.AttrMap(pile, 'scrollbar', 'scrollbar focus')
         super().__init__(lb)
 
     def keypress(self, size, key):
-        visible = self.original_widget.ends_visible(size, True)
+        lb = self.original_widget
+        visible = lb.ends_visible(size, True)
         if len(visible) != 2:
             size = (size[0]-1, size[1])
-        return self.original_widget.keypress(size, key)
+        return lb.keypress(size, key)
 
     def render(self, size, focus=False):
-        visible = self.original_widget.ends_visible(size, focus)
+        lb = self.original_widget
+        visible = lb.ends_visible(size, focus)
         if len(visible) == 2:
-            return self.original_widget.render(size, focus)
+            return lb.render(size, focus)
         else:
             # This implementation assumes that the number of rows is
             # not too large (and in particular is finite). That's the
             # case for all the listboxes we have in subiquity today.
             maxcol, maxrow = size
 
-            offset, inset = (
-                self.original_widget.get_focus_offset_inset((maxcol - 1,
-                                                             maxrow)))
+            offset, inset = lb.get_focus_offset_inset((maxcol - 1, maxrow))
 
             seen_focus = False
             height = height_before_focus = 0
-            focus_widget, focus_pos = self.original_widget.body.get_focus()
+            focus_widget, focus_pos = lb.body.get_focus()
             # Scan through the rows calculating total height and the
             # height of the rows before the focus widget.
-            for widget in self.original_widget.body:
+            for widget in lb.body:
                 rows = widget.rows((maxcol - 1,))
                 if widget is focus_widget:
                     seen_focus = True
@@ -486,23 +481,24 @@ class ScrollBarListBox(urwid.WidgetDecoration):
             #
             #     round(maxrow / (top + maxrow + bottom))
             #
-            # rows and that being < 1 simplifies to the below).
+            # rows and that being < 1 simplifies to the below.
+            o = self.bar.base_widget.options
             if maxrow*maxrow < height:
-                boxopt = self.bar.options('given', 1)
+                boxopt = o('given', 1)
             else:
-                boxopt = self.bar.options('weight', maxrow)
+                boxopt = o('weight', maxrow)
 
-            self.bar.contents[:] = [
-                (self.bar.contents[0][0], self.bar.options('weight', top)),
-                (self.boxes[focus], boxopt),
-                (self.bar.contents[2][0], self.bar.options('weight', bottom)),
+            self.bar.base_widget.contents[:] = [
+                (self.bg,  o('weight', top)),
+                (self.box, boxopt),
+                (self.bg,  o('weight', bottom)),
                 ]
-            canvases = [
-                (self.original_widget.render((maxcol - 1, maxrow), focus),
-                 self.original_widget.focus_position, True, maxcol - 1),
-                (self.bar.render((1, maxrow)), None, False, 1)
-                ]
-            return urwid.CanvasJoin(canvases)
+            lb_canvas = lb.render((maxcol - 1, maxrow), focus)
+            bar_canvas = self.bar.render((1, maxrow), focus)
+            return urwid.CanvasJoin([
+                (lb_canvas,  lb.focus_position, True,  maxcol - 1),
+                (bar_canvas, None,              False, 1),
+            ])
 
 
 def ListBox(body=None):
