@@ -86,6 +86,8 @@ class InstallpathView(BaseView):
 
 class RegionForm(Form):
 
+    cancel_label = _("Back")
+
     username = UsernameField(
         _("Pick a username for the admin account:"),
         help=_("Enter the administrative username."))
@@ -136,6 +138,8 @@ RackSecretField = simple_field(RackSecretEditor)
 
 
 class RackForm(Form):
+
+    cancel_label = _("Back")
 
     url = URLField(
         _("Ubuntu MAAS Region API address:"),
