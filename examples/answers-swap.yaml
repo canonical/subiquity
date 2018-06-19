@@ -12,11 +12,11 @@ Mirror:
   mirror: "http://us.archive.ubuntu.com"
 Filesystem:
   manual:
-    - obj: disk-index-0
+    - obj: [disk index 0]
       action: PARTITION
       data:
         size: 1G
-    - obj: disk-index-0
+    - obj: [disk index 0]
       action: PARTITION
       data:
         size: 1G

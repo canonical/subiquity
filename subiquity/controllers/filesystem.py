@@ -55,21 +55,19 @@ class FilesystemController(BaseController):
             self.manual()
 
     def _action_get(self, id):
-        if id.startswith('disk-index-'):
-            index = id[len('disk-index-'):]
-            if '-' in index:
-                index, part_spec = index.split('-', 1)
-                disk = self.model.all_disks()[int(index)]
-                if part_spec.startswith('part-index-'):
-                    part_index = part_spec[len('part-index-'):]
-                    return disk.partitions()[int(part_index)]
-            else:
-                return self.model.all_disks()[int(index)]
-        elif id.startswith('raid-'):
-            name = id[len('raid-'):]
-            for r in self.model.all_raids():
-                if r.name == name:
-                    return r
+        dev_spec = id[0].split()
+        dev = None
+        if dev_spec[0] == "disk":
+            if dev_spec[1] == "index":
+                dev = self.model.all_disks()[int(dev_spec[2])]
+        if dev is None:
+            raise Exception("could not resolve {}".format(id))
+        if len(id) > 1:
+            part, index = id[1].split()
+            if part == "part":
+                return dev.partitions()[int(index)]
+        else:
+            return dev
         raise Exception("could not resolve {}".format(id))
 
     def _action_clean_fstype(self, fstype):
