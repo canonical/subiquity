@@ -106,7 +106,7 @@ class GuidedDiskSelectionView(BaseView):
     def choose_disk(self, btn, disk):
         self.model.reset()
         result = {
-            "size": disk.free,
+            "size": disk.free_for_partitions,
             "fstype": self.model.fs_by_name["ext4"],
             "mount": "/",
         }

@@ -164,7 +164,7 @@ class PartitionStretchy(Stretchy):
         self.model = parent.model
         self.controller = parent.controller
         self.parent = parent
-        max_size = disk.free
+        max_size = disk.free_for_partitions
         mountpoint_to_devpath_mapping = (
             self.model.get_mountpoint_to_devpath_mapping())
 

@@ -404,7 +404,7 @@ class DeviceList(WidgetWrap):
                     rows.append(row)
                 if self.show_available and 0 < device.used < device.size:
                     size = device.size
-                    free = device.free
+                    free = device.free_for_partitions
                     percent = str(int(100 * free / size))
                     if percent == "0":
                         percent = "%.2f" % (100 * free / size,)

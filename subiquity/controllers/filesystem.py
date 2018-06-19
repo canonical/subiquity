@@ -224,11 +224,11 @@ class FilesystemController(BaseController):
 
     def partition_disk_handler(self, disk, partition, spec):
         log.debug('partition_disk_handler: %s %s %s', disk, partition, spec)
-        log.debug('disk.freespace: {}'.format(disk.free))
+        log.debug('disk.freespace: {}'.format(disk.free_for_partitions))
 
         if partition is not None:
             partition.size = align_up(spec['size'])
-            if disk.free < 0:
+            if disk.free_for_partitions < 0:
                 raise Exception("partition size too large")
             self.delete_filesystem(partition.fs())
             self.create_filesystem(partition, spec)
@@ -242,11 +242,11 @@ class FilesystemController(BaseController):
 
             # adjust downward the partition size (if necessary) to accommodate
             # bios/grub partition
-            if spec['size'] > disk.free:
-                log.debug("Adjusting request down:" +
-                          "{} - {} = {}".format(spec['size'], part.size,
-                                                disk.free))
-                spec['size'] = disk.free
+            if spec['size'] > disk.free_for_partitions:
+                log.debug(
+                    "Adjusting request down: %s - %s = %s",
+                    spec['size'], part.size, disk.free_for_partitions)
+                spec['size'] = disk.free_for_partitions
 
         self.create_partition(disk, spec)
 
@@ -261,17 +261,17 @@ class FilesystemController(BaseController):
         # XXX This violates abstractions, needs some thinking.
         for p in self.model._partitions:
             if p.flag in ("bios_grub", "boot"):
-                full = p.device.free == 0
+                full = p.device.free_for_partitions == 0
                 p.device._partitions.remove(p)
                 p.device.grub_device = False
                 if full:
                     largest_part = max((part.size, part)
                                        for part in p.device._partitions)[1]
                     largest_part.size += p.size
-                if disk.free < p.size:
+                if disk.free_for_partitions < p.size:
                     largest_part = max((part.size, part)
                                        for part in disk._partitions)[1]
-                    largest_part.size -= (p.size - disk.free)
+                    largest_part.size -= (p.size - disk.free_for_partitions)
                 disk._partitions.insert(0, p)
                 disk.grub_device = True
                 p.device = disk
