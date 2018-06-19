@@ -488,6 +488,8 @@ class FilesystemModel(object):
                 # log.debug('disk={}\n{}'.format(
                 #    path, json.dumps(data, indent=4, sort_keys=True)))
                 info = self.prober.get_storage_info(path)
+                if info.size < self.lower_size_limit:
+                    continue
                 self._available_disks[path] = Disk.from_info(info)
 
     def _use_disk(self, disk):
