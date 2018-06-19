@@ -19,10 +19,10 @@ Welcome provides user with language selection
 
 """
 import logging
-from urwid import Text
+
 from subiquitycore.ui.buttons import forward_btn
-from subiquitycore.ui.container import Pile, ListBox
-from subiquitycore.ui.utils import Padding
+from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.utils import screen
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("subiquity.views.welcome")
@@ -35,14 +35,11 @@ class WelcomeView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        super().__init__(Pile([
-            ('pack', Text("")),
-            ('pack', Padding.center_79(
-                Text(_("Please choose your preferred language")))),
-            ('pack', Text("")),
-            Padding.center_50(self._build_model_inputs()),
-            ('pack', Text("")),
-            ]))
+        super().__init__(screen(
+            self._build_model_inputs(),
+            buttons=None,
+            narrow_rows=True,
+            excerpt=_("Please choose your preferred language.")))
 
     def _build_model_inputs(self):
         btns = []
