@@ -525,6 +525,8 @@ class OurWidgetWrap(urwid.WidgetWrap):
         lambda self: get_delegate(self)._select_first_selectable)
     _select_last_selectable = property(
         lambda self: get_delegate(self)._select_last_selectable)
+    lost_focus = property(lambda self: get_delegate(self).lost_focus)
+    gained_focus = property(lambda self: get_delegate(self).gained_focus)
 
 
 WidgetWrap = OurWidgetWrap
