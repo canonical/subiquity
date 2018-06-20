@@ -23,7 +23,6 @@ from urwid import (
     MetaSignals,
     Text,
     WidgetDecoration,
-    WidgetDisable,
     WidgetWrap,
     )
 
@@ -115,6 +114,7 @@ class BoundFormField(object):
         self._enabled = True
         self.showing_extra = False
         self.widget = widget
+        self._validator = _Validator(self, Color.string_input(widget))
         if 'change' in getattr(widget, 'signals', []):
             connect_signal(widget, 'change', self._change)
         if isinstance(widget, WantsToKnowFormField):
@@ -211,20 +211,14 @@ class BoundFormField(object):
             self.pile[0][0].set_text(val)
 
     def _cols(self):
-        text = Text(self.caption, align="right")
-        if self._enabled:
-            input = Color.string_input(_Validator(self, self.widget))
-        else:
-            input = self.widget
-        cols = [
-                    (self._longest_caption, text),
-                    input
-                ]
-        cols = Columns(cols, dividechars=2)
-        if self._enabled:
-            return cols
-        else:
-            return WidgetDisable(Color.info_minor(cols))
+        caption = Text(self.caption, align="right")
+        cols = Columns([
+            (self._longest_caption, caption),
+            self._validator,
+        ], dividechars=2)
+        if not self._enabled:
+            cols = disabled(cols)
+        return cols
 
     def as_row(self, longest_caption):
         if self.pile is not None:
