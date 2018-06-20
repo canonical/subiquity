@@ -81,6 +81,7 @@ class _Validator(WidgetWrap):
 class FormField(abc.ABC):
 
     next_index = 0
+    takes_default_style = True
 
     def __init__(self, caption=None, help=None):
         self.caption = caption
@@ -116,7 +117,9 @@ class BoundFormField(object):
         self._enabled = True
         self.showing_extra = False
         self.widget = widget
-        self._validator = _Validator(self, Color.string_input(widget))
+        if field.takes_default_style:
+            widget = Color.string_input(widget)
+        self._validator = _Validator(self, widget)
         if 'change' in getattr(widget, 'signals', []):
             connect_signal(widget, 'change', self._change)
         if isinstance(widget, WantsToKnowFormField):
