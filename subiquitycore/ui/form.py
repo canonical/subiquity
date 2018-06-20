@@ -109,21 +109,33 @@ class BoundFormField(object):
     def __init__(self, field, form, widget):
         self.field = field
         self.form = form
-        self.in_error = False
-        self._help = None
-        self.help_text = Text("")
-        self._caption = None
-        self.pile = None
-        self._enabled = True
-        self.showing_extra = False
         self.widget = widget
-        if field.takes_default_style:
-            widget = Color.string_input(widget)
-        self._validator = _Validator(self, widget)
+
+        self.in_error = False
+        self._enabled = True
+        self._help = None
+        self.showing_extra = False
+
+        self._build_rows()
+
         if 'change' in getattr(widget, 'signals', []):
             connect_signal(widget, 'change', self._change)
         if isinstance(widget, WantsToKnowFormField):
             widget.set_bound_form_field(self)
+
+    def _build_rows(self):
+        widget = self.widget
+        if self.field.takes_default_style:
+            widget = Color.string_input(widget)
+        validator = _Validator(self, widget)
+
+        self.caption_text = Text(self.field.caption, align="right")
+        self.under_text = Text(self.help)
+
+        row1 = Columns([self.caption_text, validator], dividechars=2)
+        row2 = Columns([Text(""), self.under_text], dividechars=2)
+
+        self._rows = Toggleable(Pile([row1, row2]))
 
     def clean(self, value):
         cleaner = getattr(self.form, "clean_" + self.field.name, None)
@@ -145,7 +157,7 @@ class BoundFormField(object):
                 return
             self.in_error = False
             if not self.showing_extra:
-                self.help_text.set_text(self.help)
+                self.under_text.set_text(self.help)
             self.form.validated()
 
     def _validate(self):
@@ -159,7 +171,7 @@ class BoundFormField(object):
         if validator is not None:
             return validator()
 
-    def validate(self):
+    def validate(self, show_error=True):
         # cleaning/validation can call show_extra to add an
         # informative message. We record this by having show_extra to
         # set showing_extra so we don't immediately replace this
@@ -169,15 +181,16 @@ class BoundFormField(object):
         if r is None:
             self.in_error = False
             if not self.showing_extra:
-                self.help_text.set_text(self.help)
+                self.under_text.set_text(self.help)
         else:
             self.in_error = True
-            self.show_extra(('info_error', r))
+            if show_error:
+                self.show_extra(('info_error', r))
         self.form.validated()
 
     def show_extra(self, extra_markup):
         self.showing_extra = True
-        self.help_text.set_text(extra_markup)
+        self.under_text.set_text(extra_markup)
 
     @property
     def value(self):
@@ -192,50 +205,30 @@ class BoundFormField(object):
         if self._help is not None:
             return self._help
         elif self.field.help is not None:
-            return _(self.field.help)
+            return self.field.help
         else:
             return ""
 
     @help.setter
     def help(self, val):
+        if val is None:
+            val = ""
         self._help = val
-        if self.pile is not None:
-            self.pile[1][1].set_text(val)
+        self.under_text.set_text(val)
 
     @property
     def caption(self):
-        if self._caption is not None:
-            return self._caption
-        else:
-            return _(self.field.caption)
+        return self.caption_text.text
 
     @caption.setter
     def caption(self, val):
-        self._caption = val
-        if self.pile:
-            self.pile[0][0].set_text(val)
-
-    def _cols(self):
-        caption = Text(self.caption, align="right")
-        cols = Columns([
-            (self._longest_caption, caption),
-            self._validator,
-        ], dividechars=2)
-        if not self._enabled:
-            cols = disabled(cols)
-        return cols
+        self.caption_text.set_text(val)
 
     def as_row(self, longest_caption):
-        if self.pile is not None:
-            raise RuntimeError("do not call as_row more than once!")
-        self._longest_caption = longest_caption
-        self.help_text.set_text(self.help)
-        cols = [
-                    (self._longest_caption, Text("")),
-                    self.help_text,
-                ]
-        self.pile = Pile([self._cols(), Columns(cols, dividechars=2)])
-        return self.pile
+        for col, opt in self._rows.base_widget.contents:
+            col.contents[0] = (
+                col.contents[0][0], col.options('given', longest_caption))
+        return self._rows
 
     @property
     def enabled(self):
@@ -245,9 +238,10 @@ class BoundFormField(object):
     def enabled(self, val):
         if val != self._enabled:
             self._enabled = val
-            if self.pile is not None:
-                self.pile.contents[0] = (self._cols(),
-                                         self.pile.contents[0][1])
+            if val:
+                self._rows.enable()
+            else:
+                self._rows.disable()
 
 
 def simple_field(widget_maker):
@@ -336,7 +330,7 @@ class Form(object, metaclass=MetaForm):
             if field.name in initial:
                 bf.value = initial[field.name]
         for bf in self._fields:
-            bf.validate()
+            bf.validate(show_error=False)
         self.validated()
 
     def _click_done(self, sender):
