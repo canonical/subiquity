@@ -16,6 +16,7 @@
 """ UI utilities """
 
 from functools import partialmethod
+import logging
 
 from subiquitycore.ui.container import ListBox, Pile
 
@@ -24,7 +25,11 @@ from urwid import (
     Button,
     Padding as _Padding,
     Text,
+    WidgetDisable,
     )
+
+
+log = logging.getLogger("subiquitycore.ui.utils")
 
 
 def apply_padders(cls):
@@ -190,6 +195,13 @@ class Color:
 
     """
     pass
+
+
+_disable_everything_map = {k: 'info_minor' for k in STYLE_NAMES | set([None])}
+
+
+def disabled(w):
+    return WidgetDisable(AttrMap(w, _disable_everything_map))
 
 
 def button_pile(buttons):

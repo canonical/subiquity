@@ -17,7 +17,6 @@ import logging
 from urllib.parse import urlparse
 
 from urwid import (
-    AttrMap,
     connect_signal,
     delegate_to_widget_mixin,
     emit_signal,
@@ -36,7 +35,12 @@ from subiquitycore.ui.interactive import (
     StringEditor,
     )
 from subiquitycore.ui.selector import Selector
-from subiquitycore.ui.utils import button_pile, Color, screen
+from subiquitycore.ui.utils import (
+    button_pile,
+    Color,
+    disabled,
+    screen,
+    )
 
 log = logging.getLogger("subiquitycore.ui.form")
 
@@ -45,9 +49,6 @@ class Toggleable(delegate_to_widget_mixin('_original_widget'),
                  WidgetDecoration):
 
     def __init__(self, original):
-        if not isinstance(original, AttrMap):
-            raise RuntimeError(
-                "Toggleable must be passed an AttrMap, not %s", original)
         self.original = original
         self.enabled = False
         self.enable()
@@ -59,8 +60,7 @@ class Toggleable(delegate_to_widget_mixin('_original_widget'),
 
     def disable(self):
         if self.enabled:
-            self.original_widget = (
-                WidgetDisable(Color.info_minor(self.original.original_widget)))
+            self.original_widget = disabled(self.original)
             self.enabled = False
 
 
