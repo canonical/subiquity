@@ -410,8 +410,11 @@ class KeyboardView(BaseView):
                     other_btn(label=_("Identify keyboard"),
                               on_press=self.detect)]),
                 ])
-        super().__init__(screen(lb_contents, self.form.buttons,
-                                excerpt=excerpt))
+        super().__init__(screen(
+            lb_contents,
+            self.form.buttons,
+            excerpt=excerpt,
+            narrow_rows=True))
 
     def detect(self, sender):
         detector = Detector(self)
