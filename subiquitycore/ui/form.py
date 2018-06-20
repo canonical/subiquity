@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import abc
 import logging
 from urllib.parse import urlparse
 
@@ -77,7 +78,7 @@ class _Validator(WidgetWrap):
         self.field.validate()
 
 
-class FormField(object):
+class FormField(abc.ABC):
 
     next_index = 0
 
@@ -87,8 +88,9 @@ class FormField(object):
         self.index = FormField.next_index
         FormField.next_index += 1
 
+    @abc.abstractmethod
     def _make_widget(self, form):
-        raise NotImplementedError(self._make_widget)
+        pass
 
     def bind(self, form):
         widget = self._make_widget(form)
