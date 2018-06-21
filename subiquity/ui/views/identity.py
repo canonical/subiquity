@@ -167,7 +167,6 @@ class IdentityForm(Form):
     def validate_confirm_password(self):
         if self.password.value != self.confirm_password.value:
             return _("Passwords do not match")
-        self.password.validate()
 
     # validation of the import username does not read from
     # ssh_import_id.value because it is sometimes done from the

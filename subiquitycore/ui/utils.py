@@ -16,6 +16,7 @@
 """ UI utilities """
 
 from functools import partialmethod
+import logging
 
 from subiquitycore.ui.container import ListBox, Pile
 
@@ -24,7 +25,11 @@ from urwid import (
     Button,
     Padding as _Padding,
     Text,
+    WidgetDisable,
     )
+
+
+log = logging.getLogger("subiquitycore.ui.utils")
 
 
 def apply_padders(cls):
@@ -135,29 +140,26 @@ class Padding:
 # subiquity and console_conf. The fix is to stop using the Color class
 # below, I think.
 STYLE_NAMES = set([
-    'frame_header',
-    'frame_footer',
     'body',
-    'menu_button',
-    'menu_button focus',
-    'button',
-    'button focus',
-    'danger_button',
     'danger_button focus',
-    'cancel_button',
-    'cancel_button focus',
-    'reset_button',
-    'reset_button focus',
-    'save_button',
-    'save_button focus',
-    'info_primary',
-    'info_major',
-    'info_minor',
+    'danger_button',
+    'done_button focus',
+    'done_button',
+    'frame_footer',
+    'frame_header',
     'info_error',
-    'string_input',
-    'string_input focus',
-    'progress_incomplete',
+    'info_minor',
+    'info_primary',
+    'menu_button focus',
+    'menu_button',
+    'other_button focus',
+    'other_button',
     'progress_complete',
+    'progress_incomplete',
+    'scrollbar focus',
+    'scrollbar',
+    'string_input focus',
+    'string_input',
 ])
 
 
@@ -193,6 +195,13 @@ class Color:
 
     """
     pass
+
+
+_disable_everything_map = {k: 'info_minor' for k in STYLE_NAMES | set([None])}
+
+
+def disabled(w):
+    return WidgetDisable(AttrMap(w, _disable_everything_map))
 
 
 def button_pile(buttons):
