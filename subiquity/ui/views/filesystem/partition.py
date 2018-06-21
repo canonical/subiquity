@@ -94,7 +94,7 @@ class PartitionForm(Form):
         self.max_size = max_size
         if max_size is not None:
             self.size_str = humanize_size(max_size)
-            self.size.caption = _("Size (max {})").format(self.size_str)
+            self.size.caption = _("Size (max {}):").format(self.size_str)
         super().__init__(initial)
         if max_size is None:
             self.remove_field('size')
