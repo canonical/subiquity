@@ -251,7 +251,7 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, spacing):
         row.base_widget.adjust_for_spanning_cells(
             unpacked_cols, widths, spacing)
 
-    # log.debug("%s %s %s", maxcol, widths, total(widths))
+    # log.debug("%s %s %s %s", maxcol, widths, total(widths), unpacked_cols)
 
     total_width = total(widths)
     # If there is not enough space, find a column that can shrink.
@@ -306,7 +306,9 @@ class AbstractTable(WidgetWrap):
         Don't expect anything good to happen if the two tables do not
         use the same colspecs.
         """
-        self.group = other_table.group = self.group | other_table.group
+        new_group = self.group | other_table.group
+        for table in new_group:
+            table.group = new_group
 
     def _compute_widths_for_size(self, size):
         # Configure the table (and any bound tables) for the given size.
