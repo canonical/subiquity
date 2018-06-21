@@ -27,7 +27,7 @@ HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
 log = logging.getLogger('subiquity.models.filesystem')
 
 
-@attr.s
+@attr.s(cmp=False)
 class FS:
     label = attr.ib()
     is_mounted = attr.ib()
@@ -127,7 +127,7 @@ class DeviceAction(enum.Enum):
     MAKE_BOOT = enum.auto()
 
 
-@attr.s
+@attr.s(cmp=False)
 class _Formattable:
     # Base class for anything that can be formatted and mounted,
     # e.g. a disk or a RAID or a partition.
@@ -155,7 +155,7 @@ class _Formattable:
 GPT_OVERHEAD = 2 * (1 << 20)
 
 
-@attr.s
+@attr.s(cmp=False)
 class _Device(_Formattable, ABC):
     # Anything that can have partitions, e.g. a disk or a RAID.
 
@@ -213,7 +213,7 @@ class _Device(_Formattable, ABC):
         return False
 
 
-@attr.s
+@attr.s(cmp=False)
 class Disk(_Device):
 
     id = attr.ib(default=id_factory("disk"))
@@ -307,7 +307,7 @@ class Disk(_Device):
         and self._constructed_device is None)
 
 
-@attr.s
+@attr.s(cmp=False)
 class Partition(_Formattable):
 
     id = attr.ib(default=id_factory("part"))
@@ -353,7 +353,7 @@ class Partition(_Formattable):
     _supports_MAKE_BOOT = False
 
 
-@attr.s
+@attr.s(cmp=False)
 class Filesystem:
 
     id = attr.ib(default=id_factory("fs"))
@@ -378,7 +378,7 @@ class Filesystem:
             return False
 
 
-@attr.s
+@attr.s(cmp=False)
 class Mount:
     id = attr.ib(default=id_factory("mount"))
     type = attr.ib(default="mount")
