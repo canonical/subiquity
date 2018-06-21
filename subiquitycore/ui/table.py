@@ -19,12 +19,15 @@ A table widget.
 One of the principles of urwid is that widgets get their size from
 their container rather than deciding it for themselves. At times (as
 in stretchy.py) this does not make for the best UI. This module
-defines TablePile and TableListBox widgets that only take up as much
-horizontal space as needed for their cells. If the table want more
-horizontal space than is present, there is a degree of customization
-available as to what to do: you can tell which column to allow to
-shrink, and to omit another column to try to keep the shrinking column
-above a given threshold.
+defines TablePile and TableListBox widgets that by default only take
+up as much horizontal space as needed for their cells. If the table
+wants more horizontal space than is present, there is a degree of
+customization available as to what to do: you can tell which column to
+allow to shrink, and to omit another column to try to keep the
+shrinking column above a given threshold.
+
+You can also let columns take all available space, as is the urwid
+default.
 
 Other features include cells that span multiple columns and binding
 tables together so that they use the same widths for their columns.
@@ -87,17 +90,21 @@ log = logging.getLogger('subiquitycore.ui.table')
 @attr.s
 class ColSpec:
     """Details about a column."""
+    # Columns with pack=True take as much space as they need. Colunms
+    # with pack=False have the space remaining after pack=True columns
+    # are sized allocated to them.
+    pack = attr.ib(default=True)
     # can_shrink means that this column will be rendered narrower than
     # its natural width if there is not enough space for all columns
     # to have their natural width.
     can_shrink = attr.ib(default=False)
     # min_width is the minimum width that will be considered to be the
-    # columns natural width. If the column is shrinkable it might
-    # still be rendered narrower than this.
+    # columns natural width. If the column is shrinkable (or
+    # pack=False) it might still be rendered narrower than this.
     min_width = attr.ib(default=0)
     # omittable means that this column can be omitted in an effort to
-    # keep the width of a column with both can_shrink and min_width
-    # set above that minimum width.
+    # keep the width of a column with min_width set above that minimum
+    # width.
     omittable = attr.ib(default=False)
 
 
@@ -164,7 +171,7 @@ class TableRow(WidgetWrap):
             yield range(i, i+colspan), cell
             i += colspan
 
-    def get_natural_widths(self):
+    def get_natural_widths(self, unpacked_cols):
         """Return a mapping {column-index:natural-width}.
 
         Cells spanning multiple columns are ignored (handled in
@@ -172,17 +179,19 @@ class TableRow(WidgetWrap):
         """
         widths = {}
         for indices, cell in self._indices_cells():
-            if len(indices) == 1:
+            if len(indices) == 1 and indices[0] not in unpacked_cols:
                 widths[indices[0]] = widget_width(cell)
         return widths
 
-    def adjust_for_spanning_cells(self, widths, spacing):
+    def adjust_for_spanning_cells(self, unpacked_cols, widths, spacing):
         """Make sure columns are wide enough for cells with colspan > 1.
 
         This very roughly follows the approach in
         https://www.w3.org/TR/CSS2/tables.html#width-layout.
         """
         for indices, cell in self._indices_cells():
+            if set(indices) & unpacked_cols:
+                continue
             indices = [i for i in indices if widths[i] > 0]
             if len(indices) <= 1:
                 continue
@@ -227,17 +236,20 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, spacing):
         ncols = sum(1 for w in widths.values() if w > 0)
         return sum(widths.values()) + (ncols-1)*spacing
 
+    unpacked_cols = {i for i, cs in colspecs.items() if not cs.pack}
+
     # Find the natural width for each column.
-    widths = {i: cs.min_width for i, cs in colspecs.items()}
+    widths = {i: cs.min_width for i, cs in colspecs.items() if cs.pack}
     for row in table_rows:
-        row_widths = row.base_widget.get_natural_widths()
+        row_widths = row.base_widget.get_natural_widths(unpacked_cols)
         for i, w in row_widths.items():
             widths[i] = max(w, widths.get(i, 0))
 
     # Make sure columns are big enough for cells that span mutiple
     # columns.
     for row in table_rows:
-        row.base_widget.adjust_for_spanning_cells(widths, spacing)
+        row.base_widget.adjust_for_spanning_cells(
+            unpacked_cols, widths, spacing)
 
     # log.debug("%s %s %s", maxcol, widths, total(widths))
 
@@ -246,10 +258,11 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, spacing):
     #
     # If that column has a min_width, see if we need to omit any columns
     # to hit that target.
-    if total(widths) > maxcol:
-        for i in list(widths):
-            if colspecs[i].can_shrink:
-                del widths[i]
+    if total_width > maxcol or unpacked_cols:
+        for i in list(widths)+list(unpacked_cols):
+            if colspecs[i].can_shrink or not colspecs[i].pack:
+                if i in widths:
+                    del widths[i]
                 if colspecs[i].min_width:
                     while True:
                         remaining = maxcol - total(widths)
@@ -264,7 +277,7 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, spacing):
         total_width = maxcol
 
     # log.debug("widths %s", sorted(widths.items()))
-    return widths, total_width
+    return widths, total_width, bool(unpacked_cols)
 
 
 class AbstractTable(WidgetWrap):
@@ -302,12 +315,13 @@ class AbstractTable(WidgetWrap):
         rows = []
         for table in self.group:
             rows.extend(table.table_rows)
-        widths, total_width = _compute_widths_for_size(
+        widths, total_width, has_unpacked = _compute_widths_for_size(
             size[0], rows, self.colspecs, self.spacing)
         for table in self.group:
             table._last_size = size
             for row in table.table_rows:
-                row.width = total_width
+                if not has_unpacked:
+                    row.width = total_width
                 row.base_widget.set_widths(widths, self.spacing)
 
     def rows(self, size, focus):
