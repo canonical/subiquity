@@ -28,13 +28,17 @@ from urwid import (
     )
 
 from subiquitycore.ui.buttons import cancel_btn, done_btn
-from subiquitycore.ui.container import Columns, Pile
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     IntegerEditor,
     StringEditor,
     )
 from subiquitycore.ui.selector import Selector
+from subiquitycore.ui.table import (
+    ColSpec,
+    TablePile,
+    TableRow,
+    )
 from subiquitycore.ui.utils import (
     button_pile,
     Color,
@@ -104,6 +108,9 @@ class WantsToKnowFormField(object):
         self.bff = bff
 
 
+form_colspecs = {1: ColSpec(pack=False)}
+
+
 class BoundFormField(object):
 
     def __init__(self, field, form, widget):
@@ -116,26 +123,29 @@ class BoundFormField(object):
         self._help = None
         self.showing_extra = False
 
-        self._build_rows()
+        self._build_table()
 
         if 'change' in getattr(widget, 'signals', []):
             connect_signal(widget, 'change', self._change)
         if isinstance(widget, WantsToKnowFormField):
             widget.set_bound_form_field(self)
 
-    def _build_rows(self):
+    def _build_table(self):
         widget = self.widget
         if self.field.takes_default_style:
             widget = Color.string_input(widget)
-        validator = _Validator(self, widget)
 
         self.caption_text = Text(self.field.caption, align="right")
         self.under_text = Text(self.help)
 
-        row1 = Columns([self.caption_text, validator], dividechars=2)
-        row2 = Columns([Text(""), self.under_text], dividechars=2)
+        self._rows = [
+            Toggleable(TableRow(row)) for row in [
+                [self.caption_text, _Validator(self, widget)],
+                [Text(""),          self.under_text],
+                ]
+            ]
 
-        self._rows = Toggleable(Pile([row1, row2]))
+        self._table = TablePile(self._rows, spacing=2, colspecs=form_colspecs)
 
     def clean(self, value):
         cleaner = getattr(self.form, "clean_" + self.field.name, None)
@@ -224,12 +234,6 @@ class BoundFormField(object):
     def caption(self, val):
         self.caption_text.set_text(val)
 
-    def as_row(self, longest_caption):
-        for col, opt in self._rows.base_widget.contents:
-            col.contents[0] = (
-                col.contents[0][0], col.options('given', longest_caption))
-        return self._rows
-
     @property
     def enabled(self):
         return self._enabled
@@ -239,9 +243,11 @@ class BoundFormField(object):
         if val != self._enabled:
             self._enabled = val
             if val:
-                self._rows.enable()
+                for row in self._rows:
+                    row.enable()
             else:
-                self._rows.disable()
+                for row in self._rows:
+                    row.disable()
 
 
 def simple_field(widget_maker):
@@ -346,20 +352,16 @@ class Form(object, metaclass=MetaForm):
                 new_fields.append(bf)
         self._fields[:] = new_fields
 
-    @property
-    def longest_caption(self):
-        longest_caption = 0
-        for field in self._fields:
-            longest_caption = max(longest_caption, len(field.caption))
-        return longest_caption
-
     def as_rows(self):
-        longest_caption = self.longest_caption
-        rows = []
-        for field in self._fields:
-            rows.append(field.as_row(longest_caption))
+        if len(self._fields) == 0:
+            return []
+        t0 = self._fields[0]._table
+        rows = [t0]
+        for field in self._fields[1:]:
             rows.append(Text(""))
-        del rows[-1:]
+            t = field._table
+            t0.bind(t)
+            rows.append(t)
         return rows
 
     def as_screen(self, focus_buttons=True, excerpt=None):
