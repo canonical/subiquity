@@ -522,7 +522,10 @@ class FilesystemModel(object):
         if disk._fs is not None:
             raise Exception("%s is already formatted" % (disk.path,))
         p = Partition(device=disk, size=real_size, flag=flag)
-        disk._partitions.append(p)
+        if flag in ("boot", "bios_grub"):
+            disk._partitions.insert(0, p)
+        else:
+            disk._partitions.append(p)
         self._partitions.append(p)
         return p
 

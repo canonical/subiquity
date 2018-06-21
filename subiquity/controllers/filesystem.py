@@ -257,26 +257,27 @@ class FilesystemController(BaseController):
         self.delete_filesystem(volume.fs())
         self.create_filesystem(volume, spec)
 
-    def make_boot_disk(self, disk):
-        # XXX This violates abstractions, needs some thinking.
-        for p in self.model._partitions:
-            if p.flag in ("bios_grub", "boot"):
-                full = p.device.free_for_partitions == 0
-                p.device._partitions.remove(p)
-                p.device.grub_device = False
-                if full:
-                    largest_part = max((part.size, part)
-                                       for part in p.device._partitions)[1]
-                    largest_part.size += p.size
-                if disk.free_for_partitions < p.size:
-                    largest_part = max((part.size, part)
-                                       for part in disk._partitions)[1]
-                    largest_part.size -= (p.size - disk.free_for_partitions)
-                disk._partitions.insert(0, p)
-                disk.grub_device = True
-                p.device = disk
-                return
-        self._create_boot_partition(disk)
+    def make_boot_disk(self, new_boot_disk):
+        boot_partition = None
+        for disk in self.model.all_disks():
+            for part in disk.partitions():
+                if part.flag in ("bios_grub", "boot"):
+                    boot_partition = part
+        if boot_partition is not None:
+            boot_disk = boot_partition.device
+            full = boot_disk.free_for_partitions == 0
+            self.delete_partition(boot_partition)
+            boot_disk.grub_device = False
+            if full:
+                largest_part = max(
+                    boot_disk.partitions(), key=lambda p: p.size)
+                largest_part.size += boot_partition.size
+            if new_boot_disk.free_for_partitions < boot_partition.size:
+                largest_part = max(
+                    new_boot_disk.partitions(), key=lambda p: p.size)
+                largest_part.size -= (
+                    boot_partition.size - new_boot_disk.free_for_partitions)
+        self._create_boot_partition(new_boot_disk)
 
     def is_uefi(self):
         if self.opts.dry_run:
