@@ -204,7 +204,7 @@ class TableRow(WidgetWrap):
                 # whats needed.
                 div, mod = divmod(cell_width - cur_width, len(indices))
                 for i, j in enumerate(indices):
-                    widths[j] += div + int(i <= mod)
+                    widths[j] += div + int(i < mod)
 
     def set_widths(self, widths, spacing):
         """Configure row to given widths.
