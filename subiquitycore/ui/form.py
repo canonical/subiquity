@@ -306,6 +306,25 @@ class ChoiceField(FormField):
         return Selector(self.choices)
 
 
+class ReadOnlyWidget(Text):
+
+    @property
+    def value(self):
+        return self.text
+
+    @value.setter
+    def value(self, val):
+        self.set_text(val)
+
+
+class ReadOnlyField(FormField):
+
+    takes_default_style = False
+
+    def _make_widget(self, form):
+        return ReadOnlyWidget("")
+
+
 class MetaForm(MetaSignals):
 
     def __init__(self, name, bases, attrs):
