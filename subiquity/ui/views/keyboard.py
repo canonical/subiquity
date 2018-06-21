@@ -19,7 +19,6 @@ from urwid import (
     connect_signal,
     LineBox,
     Text,
-    WidgetWrap,
     )
 
 from subiquitycore.ui.buttons import (
@@ -30,6 +29,7 @@ from subiquitycore.ui.buttons import (
 from subiquitycore.ui.container import (
     Columns,
     Pile,
+    WidgetWrap,
     )
 from subiquitycore.ui.form import (
     ChoiceField,

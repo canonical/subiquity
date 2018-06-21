@@ -23,9 +23,11 @@ import re
 from urwid import (
     Edit,
     IntEdit,
-    WidgetWrap,
     )
 
+from subiquitycore.ui.container import (
+    WidgetWrap,
+    )
 from subiquitycore.ui.selector import Selector
 
 log = logging.getLogger("subiquitycore.ui.input")

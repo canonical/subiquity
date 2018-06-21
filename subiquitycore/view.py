@@ -18,9 +18,14 @@
 Contains some default key navigations
 """
 
-from subiquitycore.ui.stretchy import StretchyOverlay
+from urwid import Overlay, Text
 
-from urwid import Columns, Overlay, Pile, Text, WidgetWrap
+from subiquitycore.ui.container import (
+    Columns,
+    Pile,
+    WidgetWrap,
+    )
+from subiquitycore.ui.stretchy import StretchyOverlay
 
 
 class BaseView(WidgetWrap):

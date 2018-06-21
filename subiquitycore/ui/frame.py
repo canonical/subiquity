@@ -18,10 +18,12 @@
 from urwid import (
     Frame,
     Text,
-    WidgetWrap,
     )
 from subiquitycore.ui.anchors import Header, Footer
-from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.container import (
+    ListBox,
+    WidgetWrap,
+    )
 from subiquitycore.ui.utils import Color
 import logging
 

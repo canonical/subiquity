@@ -1,9 +1,17 @@
 
 import re
 
-from urwid import connect_signal, Padding, Text, WidgetWrap
+from urwid import (
+    connect_signal,
+    Padding,
+    Text,
+    )
 
-from subiquitycore.ui.container import Columns, Pile
+from subiquitycore.ui.container import (
+    Columns,
+    Pile,
+    WidgetWrap,
+    )
 from subiquitycore.ui.form import FormField
 from subiquitycore.ui.interactive import Selector, StringEditor
 

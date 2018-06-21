@@ -3,11 +3,15 @@ from urwid import (
     connect_signal,
     LineBox,
     Text,
-    WidgetWrap,
     )
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, menu_btn
-from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.container import (
+    Columns,
+    ListBox,
+    Pile,
+    WidgetWrap,
+    )
 from subiquitycore.ui.form import Form, PasswordField, StringField
 from subiquitycore.ui.utils import Color, Padding
 import logging

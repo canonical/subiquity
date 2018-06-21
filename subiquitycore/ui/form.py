@@ -24,10 +24,12 @@ from urwid import (
     MetaSignals,
     Text,
     WidgetDecoration,
-    WidgetWrap,
     )
 
 from subiquitycore.ui.buttons import cancel_btn, done_btn
+from subiquitycore.ui.container import (
+    WidgetWrap,
+)
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     IntegerEditor,

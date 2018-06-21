@@ -21,7 +21,6 @@ from urwid import (
     LineBox,
     Pile,
     Text,
-    WidgetWrap,
     )
 
 from subiquitycore.ui.buttons import (
@@ -31,6 +30,7 @@ from subiquitycore.ui.buttons import (
     )
 from subiquitycore.ui.container import (
     ListBox,
+    WidgetWrap,
     )
 from subiquitycore.ui.interactive import (
     PasswordEditor,

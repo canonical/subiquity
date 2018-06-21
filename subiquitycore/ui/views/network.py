@@ -26,12 +26,16 @@ from urwid import (
     LineBox,
     ProgressBar,
     Text,
-    WidgetWrap,
     )
 from urwid import Padding as uPadding
 
 from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn, menu_btn
-from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.container import (
+    Columns,
+    ListBox,
+    Pile,
+    WidgetWrap,
+    )
 from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.view import BaseView
 

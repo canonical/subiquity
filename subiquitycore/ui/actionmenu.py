@@ -22,11 +22,14 @@ from urwid import (
     PopUpLauncher,
     SelectableIcon,
     Text,
-    WidgetWrap,
     Widget,
     )
 
-from subiquitycore.ui.container import Columns, ListBox
+from subiquitycore.ui.container import (
+    Columns,
+    ListBox,
+    WidgetWrap,
+)
 from subiquitycore.ui.selector import Option
 from subiquitycore.ui.utils import Color
 

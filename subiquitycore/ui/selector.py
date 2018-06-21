@@ -21,10 +21,12 @@ from urwid import (
     PopUpLauncher,
     SelectableIcon,
     Text,
-    WidgetWrap,
     )
 
-from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.container import (
+    ListBox,
+    WidgetWrap,
+    )
 
 
 class _PopUpButton(SelectableIcon):
