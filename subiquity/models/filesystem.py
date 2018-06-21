@@ -218,7 +218,7 @@ class Disk(_Device):
 
     id = attr.ib(default=id_factory("disk"))
     type = attr.ib(default="disk")
-    ptable = attr.ib(default='gpt')
+    ptable = attr.ib(default=None)
     serial = attr.ib(default=None)
     path = attr.ib(default=None)
     model = attr.ib(default=None)
@@ -348,7 +348,8 @@ class Partition(_Formattable):
     _supports_FORMAT = property(
         lambda self: self.flag not in ('boot', 'bios_grub') and
         self._constructed_device is None)
-    _supports_DELETE = _supports_FORMAT
+    _supports_DELETE = property(
+        lambda self: self.flag not in ('boot', 'bios_grub'))
     _supports_MAKE_BOOT = False
 
 
@@ -528,6 +529,7 @@ class FilesystemModel(object):
             disk._partitions.insert(0, p)
         else:
             disk._partitions.append(p)
+        disk.ptable = 'gpt'
         self._partitions.append(p)
         return p
 
@@ -536,6 +538,8 @@ class FilesystemModel(object):
             raise Exception("can only remove empty partition")
         part.device._partitions.remove(part)
         self._partitions.remove(part)
+        if len(part.device._partitions) == 0:
+            part.device.ptable = None
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
