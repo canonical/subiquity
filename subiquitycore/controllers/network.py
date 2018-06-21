@@ -40,7 +40,6 @@ from subiquitycore.ui.views import (NetworkView,
                                     NetworkConfigureIPv6InterfaceView,
                                     NetworkConfigureWLANView)
 from subiquitycore.ui.views.network import ApplyingConfigWidget
-from subiquitycore.ui.dummy import DummyView
 from subiquitycore.controller import BaseController
 from subiquitycore.utils import run_command
 from subiquitycore.file_util import write_file
@@ -358,6 +357,3 @@ class NetworkController(BaseController, TaskWatcher):
         self.ui.set_footer("")
         self.ui.set_body(
             NetworkConfigureIPv6InterfaceView(self.model, self, iface))
-
-    def install_network_driver(self):
-        self.ui.set_body(DummyView(self))
