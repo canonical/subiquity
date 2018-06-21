@@ -48,7 +48,11 @@ from subiquitycore.ui.container import (
     )
 from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.stretchy import Stretchy
-from subiquitycore.ui.table import ColSpec, Table, TableRow
+from subiquitycore.ui.table import (
+    ColSpec,
+    TablePile,
+    TableRow,
+    )
 from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
@@ -178,7 +182,7 @@ class MountList(WidgetWrap):
 
     def __init__(self, parent):
         self.parent = parent
-        self.table = Table([], spacing=2, colspecs={
+        self.table = TablePile([], spacing=2, colspecs={
             0: ColSpec(can_shrink=True),
             1: ColSpec(min_width=9),
         })
@@ -264,7 +268,7 @@ class DeviceList(WidgetWrap):
     def __init__(self, parent, show_available):
         self.parent = parent
         self.show_available = show_available
-        self.table = Table([],  spacing=2, colspecs={
+        self.table = TablePile([],  spacing=2, colspecs={
             0: ColSpec(can_shrink=True),
             1: ColSpec(min_width=9),
         })
