@@ -33,7 +33,11 @@ from subiquitycore.ui.container import (
     ScrollBarListBox,
     WidgetWrap,
     )
-from subiquitycore.ui.table import ColSpec, Table, TableRow
+from subiquitycore.ui.table import (
+    AbstractTable,
+    ColSpec,
+    TableRow,
+    )
 from subiquitycore.ui.utils import button_pile, Color, screen
 from subiquitycore.view import BaseView
 
@@ -52,9 +56,11 @@ class StarRadioButton(RadioButton):
     reserve_columns = 3
 
 
-def NoTabCyclingListBox(body):
-    body = SimpleFocusListWalker(body)
-    return ScrollBarListBox(UrwidListBox(body))
+class NoTabCyclingTableListBox(AbstractTable):
+
+    def _make(self, rows):
+        body = SimpleFocusListWalker(rows)
+        return ScrollBarListBox(UrwidListBox(body))
 
 
 class SnapInfoView(WidgetWrap):
@@ -95,9 +101,7 @@ class SnapInfoView(WidgetWrap):
                 Text(notes),
             ])))
 
-        self.lb_channels = Table(
-            self.channels,
-            container_maker=NoTabCyclingListBox)
+        self.lb_channels = NoTabCyclingTableListBox(self.channels)
 
         title = Columns([
             Text(snap.name),
@@ -329,13 +333,12 @@ class SnapListView(BaseView):
                 Text(snap.summary, wrap='clip'),
                 ]
             body.append(Color.menu_button(TableRow(row)))
-        table = Table(
+        table = NoTabCyclingTableListBox(
             body,
             colspecs={
                 1: ColSpec(omittable=True),
                 2: ColSpec(can_shrink=True, min_width=40),
-                },
-            container_maker=NoTabCyclingListBox)
+                })
         ok = ok_btn(label=_("OK"), on_press=self.done)
         self._main_screen = screen(
             table, [ok],

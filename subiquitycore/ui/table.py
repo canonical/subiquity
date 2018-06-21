@@ -19,11 +19,12 @@ A table widget.
 One of the principles of urwid is that widgets get their size from
 their container rather than deciding it for themselves. At times (as
 in stretchy.py) this does not make for the best UI. This module
-defines a Table widget that only takes up as much horizontal space as
-needed for its cells. If the table want more horizontal space than is
-present, there is a degree of customization available as to what to
-do: you can tell which column to allow to shrink, and to omit another
-column to try to keep the shrinking column above a given threshold.
+defines TablePile and TableListBox widgets that only take up as much
+horizontal space as needed for their cells. If the table want more
+horizontal space than is present, there is a degree of customization
+available as to what to do: you can tell which column to allow to
+shrink, and to omit another column to try to keep the shrinking column
+above a given threshold.
 
 Other features include cells that span multiple columns and binding
 tables together so that they use the same widths for their columns.
@@ -47,7 +48,7 @@ that have occurred to me during implementation:
 Example:
 
 ```
-    v = Table([
+    v = TablePile([
         TableRow([
             urwid.Text("aa"),
             (2, urwid.Text("0123456789"*5, wrap='clip')),
@@ -68,7 +69,12 @@ import logging
 
 
 from subiquitycore.ui.actionmenu import ActionMenu
-from subiquitycore.ui.container import Columns, Pile, WidgetWrap
+from subiquitycore.ui.container import (
+    Columns,
+    ListBox,
+    Pile,
+    WidgetWrap,
+    )
 
 import attr
 
@@ -124,8 +130,7 @@ def widget_width(w):
                 r += widget_width(w1)
         r += (len(w.contents) - 1) * w.dividechars
         return r
-    else:
-        raise Exception("don't know how to find width of %r", w)
+    raise Exception("don't know how to find width of %r", w)
 
 
 class TableRow(WidgetWrap):
@@ -262,33 +267,23 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, spacing):
     return widths, total_width
 
 
-def default_container_maker(rows):
-    return Pile([('pack', r) for r in rows])
-
-
-class Table(WidgetWrap):
+class AbstractTable(WidgetWrap):
     # See the module docstring for docs.
 
-    def __init__(self, rows, colspecs=None, spacing=1,
-                 container_maker=default_container_maker):
+    def __init__(self, rows, colspecs=None, spacing=1):
         """Create a Table.
 
         `rows` - a list of possibly-decorated TableRows
         `colspecs` - a mapping {column-index:ColSpec}
         'spacing` - how much space to put between cells.
-
-        `container_maker` - something that makes a container out of a
-            sequences of rows. The default packs them all into a Pile,
-            the other option is to make a ListBox.
         """
         self.table_rows = [urwid.Padding(row) for row in rows]
         if colspecs is None:
             colspecs = {}
         self.colspecs = defaultdict(ColSpec, colspecs)
         self.spacing = spacing
-        self.container_maker = container_maker
 
-        super().__init__(container_maker(self.table_rows))
+        super().__init__(self._make(self.table_rows))
         self._last_size = None
         self.group = set([self])
 
@@ -323,16 +318,27 @@ class Table(WidgetWrap):
         self._compute_widths_for_size(size)
         return super().render(size, focus)
 
-    def set_contents(self, rows):
-        """Update the list of rows.
+    @property
+    def focus_position(self):
+        return self._w.base_widget.focus_position
 
-        This might not work if container_maker makes a ListBox.
-        """
+    @focus_position.setter
+    def focus_position(self, val):
+        self._w.base_widget.focus_position = val
+
+
+class TablePile(AbstractTable):
+
+    def _make(self, rows):
+        return Pile([('pack', r) for r in rows])
+
+    def set_contents(self, rows):
+        """Update the list of rows. """
         self._last_size = None
         rows = [urwid.Padding(row) for row in rows]
         self.table_rows = rows
         empty_before = len(self._w.contents) == 0
-        self._w.contents[:] = self.container_maker(rows).contents
+        self._w.contents[:] = [(row, self._w.options('pack')) for row in rows]
         empty_after = len(self._w.contents) == 0
         # Pile / MonitoredFocusList have this strange behaviour where
         # when you add rows to an empty pile by assigning to contents,
@@ -342,10 +348,16 @@ class Table(WidgetWrap):
             self._select_first_selectable()
 
 
+class TableListBox(AbstractTable):
+
+    def _make(self, rows):
+        return ListBox(rows)
+
+
 if __name__ == '__main__':
     from subiquitycore.log import setup_logger
     setup_logger('.subiquity')
-    v = Table([
+    v = TablePile([
         TableRow([
             urwid.Text("aa"),
             (2, urwid.Text("0123456789"*5, wrap='clip')),
