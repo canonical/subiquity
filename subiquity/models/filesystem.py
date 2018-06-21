@@ -302,7 +302,9 @@ class Disk(_Device):
         self._constructed_device is None)
     _supports_DELETE = False
     _supports_MAKE_BOOT = property(
-        lambda self: self._fs is None and self._constructed_device is None)
+        lambda self:
+        not self.grub_device and self._fs is None
+        and self._constructed_device is None)
 
 
 @attr.s
