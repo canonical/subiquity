@@ -286,12 +286,12 @@ class ApplyingConfig(WidgetWrap):
 
 
 toggle_text = _("""\
-You will need a way to toggle the keyboard between the national layout and
+You will need a way to toggle the keyboard between the national layout and \
 the standard Latin layout.
 
-Right Alt or Caps Lock keys are often chosen for ergonomic reasons (in the
-latter case, use the combination Shift+Caps Lock for normal Caps toggle).
-Alt+Shift is also a popular combination; it will however lose its usual
+Right Alt or Caps Lock keys are often chosen for ergonomic reasons (in the \
+latter case, use the combination Shift+Caps Lock for normal Caps toggle). \
+Alt+Shift is also a popular combination; it will however lose its usual \
 behavior in Emacs and other programs that use it for specific needs.
 
 Not all listed keys are present on all keyboards. """)
