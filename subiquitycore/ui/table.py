@@ -131,6 +131,12 @@ class TableRow(WidgetWrap):
         self.columns = Columns(cols)
         super().__init__(self.columns)
 
+    def selectable(self):
+        for w, _ in self._w.contents:
+            if w.selectable():
+                return True
+        return False
+
     def _indices_cells(self):
         """Yield the column indices each cell spans and the cell.
         """
