@@ -3,7 +3,6 @@ import re
 
 from urwid import (
     connect_signal,
-    Padding,
     Text,
     )
 
@@ -111,6 +110,8 @@ class MountSelector(WidgetWrap):
 
 
 class MountField(FormField):
+
     takes_default_style = False
+
     def _make_widget(self, form):
         return MountSelector(form.mountpoint_to_devpath_mapping)

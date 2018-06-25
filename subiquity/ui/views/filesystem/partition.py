@@ -47,6 +47,9 @@ log = logging.getLogger('subiquity.ui.filesystem.add_partition')
 
 
 class FSTypeField(FormField):
+
+    takes_default_style = False
+
     def _make_widget(self, form):
         return Selector(opts=FilesystemModel.supported_filesystems)
 

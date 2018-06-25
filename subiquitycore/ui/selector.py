@@ -18,12 +18,14 @@ from urwid import (
     AttrWrap,
     connect_signal,
     LineBox,
+    Padding as UrwidPadding,
     PopUpLauncher,
     SelectableIcon,
     Text,
     )
 
 from subiquitycore.ui.container import (
+    Columns,
     ListBox,
     WidgetWrap,
     )
@@ -134,20 +136,27 @@ class Selector(WidgetWrap):
     (A bit like <select> in an HTML form).
     """
 
-    _prefix = "(+) "
-
     signals = ['select']
 
     def __init__(self, opts, index=0):
+        self._icon = SelectableIcon("", 0)
+        self._padding = UrwidPadding(AttrWrap(
+            Columns([
+                (1, Text('[')),
+                self._icon,
+                (3, Text('\N{BLACK DOWN-POINTING SMALL TRIANGLE} ]')),
+                ], dividechars=1),
+            'menu_button', 'menu_button focus'))
+
         options = []
         for opt in opts:
             if not isinstance(opt, Option):
                 opt = Option(opt)
             options.append(opt)
+
         self.options = options
-        self._button = SelectableIcon(self._prefix, len(self._prefix))
         self._set_index(index)
-        super().__init__(_Launcher(self, self._button))
+        super().__init__(_Launcher(self, self._padding))
 
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
@@ -155,7 +164,7 @@ class Selector(WidgetWrap):
         self.open_pop_up()
 
     def _set_index(self, val):
-        self._button.set_text(self._prefix + self._options[val].label)
+        self._icon.set_text(self._options[val].label)
         self._index = val
 
     @property
@@ -174,6 +183,7 @@ class Selector(WidgetWrap):
     @options.setter
     def options(self, val):
         self._options = val
+        self._padding.width = max([len(o.label) for o in self._options]) + 6
 
     def option_by_label(self, label):
         for opt in self._options:
@@ -205,10 +215,8 @@ class Selector(WidgetWrap):
 
     def get_pop_up_parameters(self):
         # line on left, space, line on right
-        width = (max([len(o.label) for o in self._options]) +
-                 len(self._prefix) + 3)
-        return {'left': -1, 'top': -self.index - 1,
-                'overlay_width': width,
+        return {'left': 0, 'top': -self.index - 1,
+                'overlay_width': self._padding.width,
                 'overlay_height': len(self._options) + 2}
 
     def open_pop_up(self):
