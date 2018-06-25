@@ -526,15 +526,65 @@ class FilesystemModel(object):
             self._available_disks[k].reset()
 
     def render(self):
+        # the curtin storage config has the constraint that an action
+        # must be preceded by all the things that it depends on. Disks
+        # are easy because they don't depend on anything, but a raid
+        # can both be built of partitions and be partitioned itself so
+        # in some cases raid and partition actions have to be
+        # intermingled. We tackle this by tracking the ids that have
+        # been emitted and iterating over the raid and partition
+        # objects and emitting the ones that can be emitted repeatedly
+        # until there are none left (or we make no progress, which
+        # means there is a cycle in the definitions, something the UI
+        # should have prevented <wink>)
         r = []
+        emitted_ids = set()
+
+        def emit(obj):
+            r.append(asdict(obj))
+            emitted_ids.add(obj.id)
+
+        # As mentioned disks are easy.
         for d in self._disks.values():
-            r.append(asdict(d))
-        for p in self._partitions:
-            r.append(asdict(p))
+            emit(d)
+
+        def can_emit(obj):
+            # This will need to be extended for things like LVM.
+            if isinstance(obj, Partition):
+                return obj.device.id in emitted_ids
+            elif isinstance(obj, Raid):
+                for device in obj.devices:
+                    if device.id not in emitted_ids:
+                        return False
+                return True
+            else:
+                raise Exception(
+                    "don't know how to decide if {} can be emitted".format(
+                        obj))
+
+        work = self._partitions + self._raids
+
+        while work:
+            next_work = []
+            for obj in work:
+                if can_emit(obj):
+                    emit(obj)
+                else:
+                    next_work.apped(obj)
+            if len(next_work) == len(work):
+                raise Exception(
+                    "rendering block devices made no progress: {}".format(
+                        work))
+            work = next_work
+
+        # Filesystems and mounts are also easy, dependencies only flow
+        # from mounts to filesystems to things already emitted.
         for f in self._filesystems:
-            r.append(asdict(f))
+            emit(f)
+
         for m in sorted(self._mounts, key=lambda m: len(m.path)):
-            r.append(asdict(m))
+            emit(m)
+
         return r
 
     def _get_system_mounted_disks(self):
