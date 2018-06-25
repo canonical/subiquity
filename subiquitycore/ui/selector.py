@@ -32,19 +32,8 @@ from subiquitycore.ui.container import (
 
 
 class _PopUpButton(SelectableIcon):
-    """It looks a bit like a radio button, but it just emits
-       'click' on activation.
-    """
+    """Like Button, but simpler. """
     signals = ['click']
-
-    states = {
-        True: "(+) ",
-        False: "( ) ",
-        }
-
-    def __init__(self, option, state):
-        p = self.states[state]
-        super().__init__(p + option, len(p))
 
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
@@ -60,12 +49,22 @@ class _PopUpSelectDialog(WidgetWrap):
         group = []
         for i, option in enumerate(self.parent._options):
             if option.enabled:
-                btn = _PopUpButton(option.label, state=(i == cur_index))
+                btn = _PopUpButton(" " + option.label)
                 connect_signal(btn, 'click', self.click, i)
-                group.append(AttrWrap(btn, 'menu_button', 'menu_button focus'))
+                if i == cur_index:
+                    rhs = '\N{BLACK LEFT-POINTING SMALL TRIANGLE} '
+                else:
+                    rhs = '  '
+                btn = Columns([
+                    btn,
+                    (2, Text(rhs)),
+                    ])
+                btn = AttrWrap(btn, 'menu_button', 'menu_button focus')
             else:
-                btn = Text("    " + option.label)
-                group.append(AttrWrap(btn, 'info_minor'))
+                btn = Text(" " + option.label)
+                btn = AttrWrap(btn, 'info_minor')
+            btn = UrwidPadding(btn, width=self.parent._padding.width)
+            group.append(btn)
         list_box = ListBox(group)
         list_box.base_widget.focus_position = cur_index
         super().__init__(LineBox(list_box))
