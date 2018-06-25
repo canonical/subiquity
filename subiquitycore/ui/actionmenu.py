@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import attr
+
 from urwid import (
     ACTIVATE,
     AttrWrap,
@@ -30,7 +32,6 @@ from subiquitycore.ui.container import (
     ListBox,
     WidgetWrap,
 )
-from subiquitycore.ui.selector import Option
 from subiquitycore.ui.utils import Color
 
 
@@ -39,9 +40,14 @@ class ActionBackButton(Button):
     button_right = Text("")
 
 
-class ActionMenuButton(Button):
+class ActionMenuOpenButton(Button):
     button_left = Text("")
     button_right = Text(">")
+
+
+class ActionMenuButton(Button):
+    button_left = Text("")
+    button_right = Text("")
 
 
 class _ActionMenuDialog(WidgetWrap):
@@ -49,28 +55,35 @@ class _ActionMenuDialog(WidgetWrap):
 
     def __init__(self, parent):
         self.parent = parent
-        close = ActionBackButton("(close)")
+        close_text = "(close)"
+        close = ActionBackButton(close_text)
         connect_signal(close, "click", self.close)
         group = [Color.menu_button(close)]
-        width = 0
-        for i, option in enumerate(self.parent._options):
-            if option.enabled:
-                if isinstance(option.label, Widget):
-                    btn = option.label
+        width = len(close_text)
+        for i, action in enumerate(self.parent._actions):
+            if action.enabled:
+                if isinstance(action.label, Widget):
+                    btn = action.label
+                elif action.opens_dialog:
+                    btn = Color.menu_button(ActionMenuOpenButton(action.label))
                 else:
-                    btn = Color.menu_button(ActionMenuButton(option.label))
+                    btn = Color.menu_button(ActionMenuButton(action.label))
                 width = max(width, len(btn.base_widget.label))
                 connect_signal(
-                    btn.base_widget, 'click', self.click, option.value)
+                    btn.base_widget, 'click', self.click, action.value)
             else:
-                label = option.label
+                label = action.label
                 if isinstance(label, Widget):
                     label = label.base_widget.label
                 width = max(width, len(label))
+                if action.opens_dialog:
+                    rhs = ">"
+                else:
+                    rhs = ""
                 btn = Columns([
                     ('fixed', 1, Text("")),
                     Text(label),
-                    ('fixed', 1, Text(">")),
+                    ('fixed', 1, Text(rhs)),
                     ], dividechars=1)
                 btn = AttrWrap(btn, 'info_minor')
             group.append(btn)
@@ -91,6 +104,17 @@ class _ActionMenuDialog(WidgetWrap):
             return super().keypress(size, key)
 
 
+@attr.s
+class Action:
+    # The label that is shown in the menu
+    label = attr.ib()
+    enabled = attr.ib()
+    # The value passed along with the 'action' signal
+    value = attr.ib()
+    # Actions that open a dialog get a > at the end.
+    opens_dialog = attr.ib(default=False)
+
+
 class ActionMenu(PopUpLauncher):
 
     icon = ">"
@@ -98,11 +122,11 @@ class ActionMenu(PopUpLauncher):
     signals = ['action', 'open', 'close']
 
     def __init__(self, opts):
-        self._options = []
+        self._actions = []
         for opt in opts:
-            if not isinstance(opt, Option):
-                opt = Option(opt)
-            self._options.append(opt)
+            if not isinstance(opt, Action):
+                opt = Action(*opt)
+            self._actions.append(opt)
         self._button = SelectableIcon(self.icon, 0)
         super().__init__(self._button)
         self._dialog = _ActionMenuDialog(self)
@@ -133,5 +157,5 @@ class ActionMenu(PopUpLauncher):
             'left': 1,
             'top': -1,
             'overlay_width': width,
-            'overlay_height': len(self._options) + 3,
+            'overlay_height': len(self._actions) + 3,
             }
