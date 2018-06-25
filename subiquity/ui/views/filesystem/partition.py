@@ -204,7 +204,7 @@ class PartitionStretchy(Stretchy):
                 opts = [
                     Option(("fat32", True, self.model.fs_by_name["fat32"])),
                 ]
-                self.form.fstype.widget._options = opts
+                self.form.fstype.widget.options = opts
                 self.form.fstype.widget.index = 0
                 self.form.mount.enabled = False
                 self.form.fstype.enabled = False

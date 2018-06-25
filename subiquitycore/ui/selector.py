@@ -139,11 +139,12 @@ class Selector(WidgetWrap):
     signals = ['select']
 
     def __init__(self, opts, index=0):
-        self._options = []
+        options = []
         for opt in opts:
             if not isinstance(opt, Option):
                 opt = Option(opt)
-            self._options.append(opt)
+            options.append(opt)
+        self.options = options
         self._button = SelectableIcon(self._prefix, len(self._prefix))
         self._set_index(index)
         super().__init__(_Launcher(self, self._button))
@@ -166,6 +167,14 @@ class Selector(WidgetWrap):
         self._emit('select', self._options[val].value)
         self._set_index(val)
 
+    @property
+    def options(self):
+        return self._options[:]
+
+    @options.setter
+    def options(self, val):
+        self._options = val
+
     def option_by_label(self, label):
         for opt in self._options:
             if opt.label == label:
@@ -187,7 +196,7 @@ class Selector(WidgetWrap):
     def value(self, val):
         for i, opt in enumerate(self._options):
             if opt.value == val:
-                self._set_index(val)
+                self._set_index(i)
                 return
         raise AttributeError("cannot set value to %r", val)
 
