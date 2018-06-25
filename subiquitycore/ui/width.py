@@ -21,6 +21,11 @@ size_neutral_decorations = (
     urwid.WidgetDisable,
     )
 
+size_neutral_widget_wraps = (
+    urwid.Button,
+    urwid.CheckBox,
+    )
+
 
 def widget_width(w):
     """Return the natural width of the widget w."""
@@ -29,7 +34,7 @@ def widget_width(w):
         return widget_width(w.original_widget)
     if hasattr(w, 'get_natural_width'):
         return w.get_natural_width()
-    if isinstance(w, urwid.CheckBox):
+    if isinstance(w, size_neutral_widget_wraps):
         return widget_width(w._wrapped_widget)
     elif isinstance(w, size_neutral_decorations):
         return widget_width(w.original_widget)

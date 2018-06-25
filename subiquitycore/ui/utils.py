@@ -18,17 +18,17 @@
 from functools import partialmethod
 import logging
 
-from subiquitycore.ui.container import ListBox, Pile
-
 from urwid import (
     AttrMap,
-    Button,
     CompositeCanvas,
     Padding as _Padding,
     Text,
     WidgetDecoration,
     WidgetDisable,
     )
+
+from subiquitycore.ui.container import ListBox, Pile
+from subiquitycore.ui.width import widget_width
 
 
 log = logging.getLogger("subiquitycore.ui.utils")
@@ -207,16 +207,11 @@ def disabled(w):
 
 
 def button_pile(buttons):
-    max_label = 10
+    width = 14
     for button in buttons:
-        button = button.base_widget
-        if not isinstance(button, Button):
-            raise RuntimeError("button_pile takes a list of buttons, not %s",
-                               button)
-        max_label = max(len(button.label), max_label)
-    width = max_label + 4
-    return _Padding(Pile(buttons), min_width=width,
-                    width=width, align='center')
+        width = max(widget_width(button), width)
+    return _Padding(
+        Pile(buttons), min_width=width, width=width, align='center')
 
 
 def screen(rows, buttons, focus_buttons=True, excerpt=None, narrow_rows=False):
