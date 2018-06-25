@@ -23,7 +23,6 @@ import math
 import os
 import sys
 
-HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
 log = logging.getLogger('subiquity.models.filesystem')
 
 
@@ -31,6 +30,27 @@ log = logging.getLogger('subiquity.models.filesystem')
 class FS:
     label = attr.ib()
     is_mounted = attr.ib()
+
+
+@attr.s(cmp=False)
+class RaidLevel:
+    name = attr.ib()
+    value = attr.ib()
+    min_devices = attr.ib()
+    supports_spares = attr.ib(default=True)
+
+
+raidlevels = [
+    RaidLevel(_("0 (striped)"),  0,  2, False),
+    RaidLevel(_("1 (mirrored)"), 1,  2),
+    RaidLevel(_("5"),            5,  3),
+    RaidLevel(_("6"),            6,  4),
+    RaidLevel(_("10"),           10, 4),
+    ]
+raidlevels_by_value = {l.value: l for l in raidlevels}
+
+
+HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
 
 
 def humanize_size(size):
@@ -86,6 +106,26 @@ def dehumanize_size(size):
     return num * mult // div
 
 
+def get_raid_size(level, devices):
+    if len(devices) == 0:
+        return 0
+    min_size = min(dev.size for dev in devices)
+    if min_size <= 0:
+        return 0
+    if level == 0:
+        return min_size * len(devices)
+    elif level == 1:
+        return min_size
+    elif level == 5:
+        return min_size * (len(devices) - 1)
+    elif level == 6:
+        return min_size * (len(devices) - 2)
+    elif level == 10:
+        return min_size * (len(devices) // 2)
+    else:
+        raise ValueError("unknown raid level %s" % level)
+
+
 def id_factory(name):
     i = 0
 
@@ -103,11 +143,14 @@ def asdict(inst):
         if field.name.startswith('_'):
             continue
         v = getattr(inst, field.name)
-        if v:
-            if hasattr(v, 'id'):
-                v = v.id
-            if v is not None:
-                r[field.name] = v
+        if v is not None:
+            if isinstance(v, (list, set)):
+                r[field.name] = [elem.id for elem in v]
+            else:
+                if hasattr(v, 'id'):
+                    v = v.id
+                if v is not None:
+                    r[field.name] = v
     return r
 
 
@@ -134,7 +177,7 @@ class _Formattable:
 
     # Filesystem
     _fs = attr.ib(default=None, repr=False)
-    # Nothing yet, but one day RAID, LV, ZPool, BCache...
+    # Raid for now, but one day LV, ZPool, BCache...
     _constructed_device = attr.ib(default=None, repr=False)
 
     def _is_entirely_used(self):
@@ -354,6 +397,41 @@ class Partition(_Formattable):
 
 
 @attr.s(cmp=False)
+class Raid(_Device):
+    id = attr.ib(default=id_factory("raid"))
+    type = attr.ib(default="raid")
+    name = attr.ib(default=None)
+    raidlevel = attr.ib(default=None)  # 0, 1, 5, 6, 10
+    devices = attr.ib(default=attr.Factory(set))  # set([_Formattable])
+    spare_devices = attr.ib(default=attr.Factory(set))  # set([_Formattable])
+    ptable = attr.ib(default=None)
+
+    @property
+    def size(self):
+        return get_raid_size(self.raidlevel, self.devices)
+
+    @property
+    def label(self):
+        return self.name
+
+    def desc(self):
+        return _("software RAID {}").format(self.raidlevel)
+
+    _supports_INFO = False
+    _supports_EDIT = True
+    _supports_PARTITION = Disk._supports_PARTITION
+    _supports_FORMAT = property(
+        lambda self: len(self._partitions) == 0 and
+        self._constructed_device is None)
+    _supports_DELETE = True
+    _supports_MAKE_BOOT = False
+
+    @property
+    def path(self):
+        return "/dev/{}".format(self.name)
+
+
+@attr.s(cmp=False)
 class Filesystem:
 
     id = attr.ib(default=id_factory("fs"))
@@ -441,6 +519,7 @@ class FilesystemModel(object):
         # only gets populated when something uses the disk
         self._disks = collections.OrderedDict()
         self._partitions = []
+        self._raids = []
         self._filesystems = []
         self._mounts = []
         for k, d in self._available_disks.items():
@@ -509,8 +588,11 @@ class FilesystemModel(object):
     def all_disks(self):
         return sorted(self._available_disks.values(), key=lambda x: x.label)
 
+    def all_raids(self):
+        return self._raids[:]
+
     def all_devices(self):
-        return self.all_disks()  # + self.all_raids() + self.all_lvms() + ...
+        return self.all_disks() + self.all_raids()  # + self.all_lvms() + ...
 
     def get_disk(self, path):
         return self._available_disks.get(path)
@@ -540,6 +622,26 @@ class FilesystemModel(object):
         self._partitions.remove(part)
         if len(part.device._partitions) == 0:
             part.device.ptable = None
+
+    def add_raid(self, name, raidlevel, devices, spare_devices):
+        r = Raid(
+            name=name,
+            raidlevel=raidlevel,
+            devices=devices,
+            spare_devices=spare_devices)
+        for d in devices | spare_devices:
+            if isinstance(d, Disk):
+                self._use_disk(d)
+            d._constructed_device = r
+        self._raids.append(r)
+        return r
+
+    def remove_raid(self, raid):
+        if raid._fs or raid._constructed_device or len(raid.partitions()):
+            raise Exception("can only remove empty RAID")
+        for d in raid.devices:
+            d._constructed_device = None
+        self._raids.remove(raid)
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
@@ -575,7 +677,10 @@ class FilesystemModel(object):
     def get_mountpoint_to_devpath_mapping(self):
         r = {}
         for m in self._mounts:
-            r[m.path] = m.device.volume.path
+            if isinstance(m.device.volume, Raid):
+                r[m.path] = m.device.volume.name
+            else:
+                r[m.path] = m.device.volume.path
         return r
 
     def any_configuration_done(self):
