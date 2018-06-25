@@ -25,10 +25,8 @@ import attr
 
 from urwid import (
     AttrMap,
-    CompositeCanvas,
     connect_signal,
     Text,
-    WidgetDecoration,
     )
 
 from subiquitycore.ui.actionmenu import (
@@ -54,7 +52,13 @@ from subiquitycore.ui.table import (
     TablePile,
     TableRow,
     )
-from subiquitycore.ui.utils import button_pile, Color, Padding, screen
+from subiquitycore.ui.utils import (
+    button_pile,
+    Color,
+    CursorOverride,
+    Padding,
+    screen,
+    )
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import DeviceAction, humanize_size
@@ -98,34 +102,6 @@ class FilesystemConfirmation(Stretchy):
 
     def cancel(self, sender):
         self.parent.remove_overlay()
-
-
-class CursorOverride(WidgetDecoration):
-    """Decoration to override where the cursor goes when a widget is focused.
-    """
-
-    has_original_width = True
-
-    def __init__(self, w, cursor_x=0):
-        super().__init__(w)
-        self.cursor_x = cursor_x
-
-    def get_cursor_coords(self, size):
-        return self.cursor_x, 0
-
-    def rows(self, size, focus):
-        return self._original_widget.rows(size, focus)
-
-    def keypress(self, size, focus):
-        return self._original_widget.keypress(size, focus)
-
-    def render(self, size, focus=False):
-        c = self._original_widget.render(size, focus)
-        if focus:
-            # create a new canvas so we can add a cursor
-            c = CompositeCanvas(c)
-            c.cursor = self.get_cursor_coords(size)
-        return c
 
 
 def add_menu_row_focus_behaviour(menu, row, attr_map, focus_map, cursor_x=0):
