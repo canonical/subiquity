@@ -24,6 +24,9 @@ def _stylized_button(left, right, style):
     class StyleAttrMap(AttrMap):
         def __init__(self, label, on_press=None, user_arg=None):
             btn = Btn(label, on_press=on_press, user_data=user_arg)
+            btn._w.contents[2] = (
+                btn._w.contents[2][0],
+                btn._w.options('given', len(right)))
             super().__init__(btn, style + '_button', style + '_button focus')
     return StyleAttrMap
 
@@ -32,8 +35,11 @@ def action_button(style):
     return _stylized_button('[', ']', style)
 
 
-menu_btn = _stylized_button("", ">", "menu")
-forward_btn = _stylized_button("", ">", "done")
+_forward_rhs = "\N{BLACK RIGHT-POINTING SMALL TRIANGLE} ]"
+
+menu_btn = _stylized_button("[", _forward_rhs, "menu")
+forward_btn = _stylized_button("[", _forward_rhs, "done")
+
 done_btn = action_button("done")
 danger_btn = action_button("danger")
 other_btn = action_button("other")
