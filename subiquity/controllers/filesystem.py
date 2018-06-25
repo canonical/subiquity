@@ -222,6 +222,26 @@ class FilesystemController(BaseController):
         disk.grub_device = True
         return part
 
+    def create_raid(self, spec):
+        for d in spec['devices']:
+            self.delete_filesystem(d.fs())
+        raid = self.model.add_raid(
+            spec['name'],
+            spec['level'].value,
+            spec['devices'],
+            spec['spare_devices'])
+        self.create_filesystem(raid, spec)
+        return raid
+
+    def delete_raid(self, raid):
+        if raid is None:
+            return
+        self.delete_raid(raid.constructed_device())  # XXX
+        self.delete_filesystem(raid.fs())
+        for p in raid.partitions():
+            self.delete_partition(p)
+        self.model.remove_raid(raid)
+
     def partition_disk_handler(self, disk, partition, spec):
         log.debug('partition_disk_handler: %s %s %s', disk, partition, spec)
         log.debug('disk.freespace: {}'.format(disk.free_for_partitions))
@@ -256,6 +276,12 @@ class FilesystemController(BaseController):
         log.debug('add_format_handler %s %s', volume, spec)
         self.delete_filesystem(volume.fs())
         self.create_filesystem(volume, spec)
+
+    def raid_handler(self, existing, spec):
+        log.debug("raid_handler %s %s", existing, spec)
+        if existing is not None:
+            raise Exception("erk")
+        self.create_raid(spec)
 
     def make_boot_disk(self, new_boot_disk):
         boot_partition = None
