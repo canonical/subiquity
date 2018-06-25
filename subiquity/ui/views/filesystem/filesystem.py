@@ -32,6 +32,7 @@ from urwid import (
     )
 
 from subiquitycore.ui.actionmenu import (
+    Action,
     ActionMenu,
     ActionMenuButton,
     )
@@ -314,9 +315,14 @@ class DeviceList(WidgetWrap):
             (delete_btn,            DeviceAction.DELETE),
             (_("Make boot device"), DeviceAction.MAKE_BOOT),
         ]
-        menu = ActionMenu([
-            (label, device.supports_action(action), action)
-            for label, action in device_actions])
+        actions = []
+        for label, action in device_actions:
+            actions.append(Action(
+                label=label,
+                enabled=device.supports_action(action),
+                value=action,
+                opens_dialog=action != DeviceAction.MAKE_BOOT))
+        menu = ActionMenu(actions)
         connect_signal(menu, 'action', self._action, device)
         return menu
 
