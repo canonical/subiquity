@@ -385,10 +385,15 @@ class KeyboardView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
-        self.form.layout.widget._options = opts
+        self.form.layout.widget.options = opts
         setting = model.setting.for_ui()
         try:
             self.form.layout.widget.value = setting.layout
+        except AttributeError:
+            # Don't crash on pre-existing invalid config.
+            pass
+        self.select_layout(None, setting.layout)
+        try:
             self.form.variant.widget.value = setting.variant
         except AttributeError:
             # Don't crash on pre-existing invalid config.
@@ -463,7 +468,7 @@ class KeyboardView(BaseView):
         opts.sort(key=lambda o: o.label)
         if default_i < 0:
             opts.insert(0, Option(("default", True, "")))
-        self.form.variant.widget._options = opts
+        self.form.variant.widget.options = opts
         if default_i < 0:
             self.form.variant.widget.index = 0
         else:

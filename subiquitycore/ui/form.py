@@ -294,6 +294,8 @@ URLField = simple_field(URLEditor)
 
 class ChoiceField(FormField):
 
+    takes_default_style = False
+
     def __init__(self, caption=None, help=None, choices=[]):
         super().__init__(caption, help)
         self.choices = choices
