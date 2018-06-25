@@ -187,7 +187,7 @@ class Selector(WidgetWrap):
     def value(self, val):
         for i, opt in enumerate(self._options):
             if opt.value == val:
-                self.index = i
+                self._set_index(val)
                 return
         raise AttributeError("cannot set value to %r", val)
 

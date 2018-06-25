@@ -14,6 +14,8 @@ from subiquitycore.ui.container import (
     )
 from subiquitycore.ui.form import FormField
 from subiquitycore.ui.interactive import Selector, StringEditor
+from subiquitycore.ui.utils import Color
+
 
 common_mountpoints = [
     '/',
@@ -74,7 +76,7 @@ class MountSelector(WidgetWrap):
     def _showhide_other(self, show):
         if show and not self._other_showing:
             self._w.contents.append(
-                (Padding(Columns([(1, Text("/")), self._other]), left=4),
+                (Columns([(1, Text("/")), Color.string_input(self._other)]),
                  self._w.options('pack')))
             self._other_showing = True
         elif not show and self._other_showing:
@@ -109,6 +111,6 @@ class MountSelector(WidgetWrap):
 
 
 class MountField(FormField):
-
+    takes_default_style = False
     def _make_widget(self, form):
         return MountSelector(form.mountpoint_to_devpath_mapping)

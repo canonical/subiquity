@@ -389,6 +389,11 @@ class KeyboardView(BaseView):
         setting = model.setting.for_ui()
         try:
             self.form.layout.widget.value = setting.layout
+        except AttributeError:
+            # Don't crash on pre-existing invalid config.
+            pass
+        self.select_layout(None, setting.layout)
+        try:
             self.form.variant.widget.value = setting.variant
         except AttributeError:
             # Don't crash on pre-existing invalid config.
