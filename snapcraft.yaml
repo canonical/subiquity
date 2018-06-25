@@ -71,6 +71,10 @@ parts:
       /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl > kbdnames.txt
     stage:
       - kbdnames.txt
+  font:
+    plugin: dump
+    stage:
+      - subiquity.psf
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]

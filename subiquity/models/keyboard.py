@@ -205,7 +205,7 @@ class KeyboardModel:
         with open(path, 'w') as fp:
             fp.write(self.setting.render())
         if self.root == '/':
-            run_command(['setupcon', '--save', '--force'])
+            run_command(['setupcon', '--save', '--force', '--keyboard-only'])
             run_command(['/snap/bin/subiquity.subiquity-loadkeys'])
         else:
             run_command(['sleep', '1'])

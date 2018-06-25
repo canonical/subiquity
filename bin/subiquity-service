@@ -1,7 +1,5 @@
 #!/bin/sh
 /bin/dmesg -n 1
-loadkeys - <<EOF
- string F91 = "\033[Z"
- keycode 15 = Tab F91
-EOF
+$SNAP/usr/bin/subiquity-loadkeys
+setfont $SNAP/subiquity.psf
 /sbin/agetty -n --noclear -l $SNAP/usr/bin/python3 -o $SNAP/usr/bin/subiquity tty1 $TERM
