@@ -108,7 +108,7 @@ class StretchyOverlay(urwid.Widget):
         maxcol, maxrow = size  # we are a BOX widget
         outercol = min(maxcol, 80)
         # (3 outer padding, 1 line, 2 inner padding) x 2
-        innercol = outercol - 10
+        innercol = outercol - 12
         fixed_rows = 6  # lines at top and bottom and padding
 
         for i, widget in enumerate(self.stretchy.widgets):
