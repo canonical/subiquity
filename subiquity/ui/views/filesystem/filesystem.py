@@ -191,11 +191,12 @@ class MountList(WidgetWrap):
         log.debug('FileSystemView: building mount list')
 
         rows = [TableRow([
-            Text("  " + _("MOUNT POINT")),
-            Text(_("SIZE"), align='center'),
-            Text(_("TYPE")),
-            Text(_("DEVICE TYPE")),
-            ])]
+            Color.info_minor(heading) for heading in [
+                Text("  " + _("MOUNT POINT")),
+                Text(_("SIZE"), align='center'),
+                Text(_("TYPE")),
+                Text(_("DEVICE TYPE")),
+            ]])]
 
         for i, mi in enumerate(mountinfos):
             path_markup = mi.path
@@ -335,11 +336,11 @@ class DeviceList(WidgetWrap):
             return _("{} part of {} ({})").format(
                 label, device.label, device.desc())
 
-        rows.append(TableRow([
+        rows.append(TableRow([Color.info_minor(heading) for heading in [
             Text("  " + _("DEVICE")),
             Text(_("SIZE"), align="center"),
             Text(_("TYPE")),
-        ]))
+        ]]))
         for device in devices:
             menu = self._action_menu_for_device(device)
             row = TableRow([
