@@ -191,7 +191,7 @@ class MountList(WidgetWrap):
         log.debug('FileSystemView: building mount list')
 
         rows = [TableRow([
-            Text(_("MOUNT POINT")),
+            Text("  " + _("MOUNT POINT")),
             Text(_("SIZE"), align='center'),
             Text(_("TYPE")),
             Text(_("DEVICE TYPE")),
@@ -216,10 +216,11 @@ class MountList(WidgetWrap):
                             "/".join(mi.split_path[1:]),
                             ]
             actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
-            menu = ActionMenu(actions)
+            menu = ActionMenu(
+                actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE} ]")
             connect_signal(menu, 'action', self._mount_action, mi.mount)
             row = TableRow([
-                Text(path_markup),
+                Text(['[ ', path_markup]),
                 Text(mi.size, align='right'),
                 Text(mi.fstype),
                 Text(mi.desc),
@@ -229,7 +230,8 @@ class MountList(WidgetWrap):
                 menu,
                 row,
                 'menu_button',
-                {None: 'menu_button focus', 'info_minor': 'menu_button focus'})
+                {None: 'menu_button focus', 'info_minor': 'menu_button focus'},
+                cursor_x=2)
             rows.append(row)
         self.table.set_contents(rows)
         if self.table._w.focus_position >= len(rows):
@@ -300,7 +302,7 @@ class DeviceList(WidgetWrap):
                 enabled=device.supports_action(action),
                 value=action,
                 opens_dialog=action != DeviceAction.MAKE_BOOT))
-        menu = ActionMenu(actions)
+        menu = ActionMenu(actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE} ]")
         connect_signal(menu, 'action', self._action, device)
         return menu
 
@@ -334,14 +336,14 @@ class DeviceList(WidgetWrap):
                 label, device.label, device.desc())
 
         rows.append(TableRow([
-            Text(_("DEVICE")),
+            Text("  " + _("DEVICE")),
             Text(_("SIZE"), align="center"),
             Text(_("TYPE")),
         ]))
         for device in devices:
             menu = self._action_menu_for_device(device)
             row = TableRow([
-                Text(device.label),
+                Text("[ " + device.label),
                 Text("{:>9}".format(humanize_size(device.size))),
                 Text(device.desc()),
                 menu,
@@ -353,21 +355,21 @@ class DeviceList(WidgetWrap):
             entire_label = None
             if device.fs():
                 entire_label = _fmt_fs(
-                    _("  entire device formatted as"),
+                    "    " + _("entire device formatted as"),
                     device.fs())
             elif device.constructed_device():
                 entire_label = _fmt_constructed(
-                    _("  entire device"),
+                    "    " + _("entire device"),
                     device.constructed_device())
             if entire_label is not None:
                 rows.append(TableRow([
-                    Text(entire_label),
+                    (3, Text(entire_label)),
                 ]))
             else:
                 for part in device.partitions():
                     if part.available() != self.show_available:
                         continue
-                    prefix = _("  partition {},").format(part._number)
+                    prefix = _("partition {},").format(part._number)
                     if part.flag == "bios_grub":
                         label = prefix + " bios_grub"
                     elif part.fs():
@@ -382,13 +384,13 @@ class DeviceList(WidgetWrap):
                         int(100 * part.size / device.size))
                     menu = self._action_menu_for_device(part)
                     row = TableRow([
-                        Text(label),
+                        Text("[   " + label),
                         (2, Text(part_size)),
                         menu,
                     ])
                     row = add_menu_row_focus_behaviour(
                         menu, row, 'menu_button', 'menu_button focus',
-                        cursor_x=2)
+                        cursor_x=4)
                     rows.append(row)
                 if self.show_available and 0 < device.used < device.size:
                     size = device.size
@@ -399,7 +401,7 @@ class DeviceList(WidgetWrap):
                     size_text = "{:>9} ({}%)".format(
                         humanize_size(free), percent)
                     rows.append(TableRow([
-                        Text(_("  free space")),
+                        Text("    " + _("free space")),
                         (2, Text(size_text))
                     ]))
         self.table.set_contents(rows)

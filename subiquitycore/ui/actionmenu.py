@@ -36,13 +36,13 @@ from subiquitycore.ui.utils import Color
 
 
 class ActionBackButton(Button):
-    button_left = Text("<")
+    button_left = Text("\N{BLACK LEFT-POINTING SMALL TRIANGLE}")
     button_right = Text("")
 
 
 class ActionMenuOpenButton(Button):
     button_left = Text("")
-    button_right = Text(">")
+    button_right = Text("\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
 
 
 class ActionMenuButton(Button):
@@ -77,7 +77,7 @@ class _ActionMenuDialog(WidgetWrap):
                     label = label.base_widget.label
                 width = max(width, len(label))
                 if action.opens_dialog:
-                    rhs = ">"
+                    rhs = "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}"
                 else:
                     rhs = ""
                 btn = Columns([
@@ -117,16 +117,15 @@ class Action:
 
 class ActionMenu(PopUpLauncher):
 
-    icon = ">"
-
     signals = ['action', 'open', 'close']
 
-    def __init__(self, opts):
+    def __init__(self, opts, icon=">"):
         self._actions = []
         for opt in opts:
             if not isinstance(opt, Action):
                 opt = Action(*opt)
             self._actions.append(opt)
+        self.icon = icon
         self._button = SelectableIcon(self.icon, 0)
         super().__init__(self._button)
         self._dialog = _ActionMenuDialog(self)
