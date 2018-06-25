@@ -336,7 +336,7 @@ class ToggleQuestion(Stretchy):
             Text(""),
             Padding.center_79(Columns([
                 ('pack', Text(_("Shortcut: "))),
-                Color.string_input(self.selector),
+                self.selector,
                 ])),
             Text(""),
             button_pile([
