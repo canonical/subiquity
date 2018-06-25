@@ -42,7 +42,7 @@ class MirrorForm(Form):
 class MirrorView(BaseView):
 
     title = _("Configure Ubuntu archive mirror")
-    excerpt = _("If you use an alternative mirror for Ubuntu, enter its"
+    excerpt = _("If you use an alternative mirror for Ubuntu, enter its "
                 "details here.")
 
     def __init__(self, model, controller):
