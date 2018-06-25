@@ -54,6 +54,8 @@ log = logging.getLogger("subiquitycore.ui.form")
 class Toggleable(delegate_to_widget_mixin('_original_widget'),
                  WidgetDecoration):
 
+    has_original_width = True
+
     def __init__(self, original):
         self.original = original
         self.enabled = False

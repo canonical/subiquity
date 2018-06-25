@@ -71,13 +71,13 @@ from collections import defaultdict
 import logging
 
 
-from subiquitycore.ui.actionmenu import ActionMenu
 from subiquitycore.ui.container import (
     Columns,
     ListBox,
     Pile,
     WidgetWrap,
     )
+from subiquitycore.ui.width import widget_width
 
 import attr
 
@@ -106,38 +106,6 @@ class ColSpec:
     # keep the width of a column with min_width set above that minimum
     # width.
     omittable = attr.ib(default=False)
-
-
-def demarkup(s):
-    # Remove text markup from s.
-    if isinstance(s, str):
-        return s
-    if isinstance(s, tuple):
-        return demarkup(s[1])
-    if isinstance(s, list):
-        return [demarkup(x) for x in s]
-
-
-def widget_width(w):
-    """Return the natural width of the widget w."""
-    if isinstance(w, urwid.CheckBox):
-        return widget_width(w._wrapped_widget)
-    elif isinstance(w, (ActionMenu, urwid.AttrMap)):
-        return widget_width(w._original_widget)
-    elif isinstance(w, urwid.Text):
-        return len(demarkup(w.text))
-    elif isinstance(w, urwid.Columns):
-        if len(w.contents) == 0:
-            return 0
-        r = 0
-        for w1, o in w.contents:
-            if o[0] == urwid.GIVEN:
-                r += o[1]
-            else:
-                r += widget_width(w1)
-        r += (len(w.contents) - 1) * w.dividechars
-        return r
-    raise Exception("don't know how to find width of %r", w)
 
 
 class TableRow(WidgetWrap):

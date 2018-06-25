@@ -104,6 +104,8 @@ class CursorOverride(WidgetDecoration):
     """Decoration to override where the cursor goes when a widget is focused.
     """
 
+    has_original_width = True
+
     def __init__(self, w, cursor_x=0):
         super().__init__(w)
         self.cursor_x = cursor_x

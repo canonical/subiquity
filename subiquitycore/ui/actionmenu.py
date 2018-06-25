@@ -131,6 +131,9 @@ class ActionMenu(PopUpLauncher):
         super().__init__(self._button)
         self._dialog = _ActionMenuDialog(self)
 
+    def get_natural_width(self):
+        return len(self.icon)
+
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
             return key
