@@ -108,7 +108,26 @@ class Option:
             raise SelectorError("invalid option %r", val)
 
 
-class Selector(PopUpLauncher):
+class _Launcher(PopUpLauncher):
+    # PopUpLauncher is a WidgetDecoration, which means base_widget
+    # steps past it. This means that if Selector just inherited from
+    # PopUpLauncher, calling .base_widget on a (say) Padding
+    # containing a Selector would return the SelectableIcon, not the
+    # Selector. This is unhelpful, to put it mildly, so we do some
+    # proxying about so that PopUpLauncher can inherit from WidgetWrap
+    # instead.
+    def __init__(self, parent, child):
+        self.parent = parent
+        super().__init__(child)
+
+    def create_pop_up(self):
+        return self.parent.create_pop_up()
+
+    def get_pop_up_parameters(self):
+        return self.parent.get_pop_up_parameters()
+
+
+class Selector(WidgetWrap):
     """A widget that allows the user to chose between options by popping
        up a list of options.
 
@@ -127,7 +146,7 @@ class Selector(PopUpLauncher):
             self._options.append(opt)
         self._button = SelectableIcon(self._prefix, len(self._prefix))
         self._set_index(index)
-        super().__init__(self._button)
+        super().__init__(_Launcher(self, self._button))
 
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
@@ -182,3 +201,9 @@ class Selector(PopUpLauncher):
         return {'left': -1, 'top': -self.index - 1,
                 'overlay_width': width,
                 'overlay_height': len(self._options) + 2}
+
+    def open_pop_up(self):
+        self._w.open_pop_up()
+
+    def close_pop_up(self):
+        self._w.close_pop_up()
