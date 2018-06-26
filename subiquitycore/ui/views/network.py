@@ -26,6 +26,7 @@ from urwid import (
     connect_signal,
     LineBox,
     ProgressBar,
+    RadioButton,
     Text,
     )
 from urwid import Padding as uPadding
@@ -145,9 +146,23 @@ class EditNetworkStretchy(Stretchy):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
+        group = []
+        b1 = RadioButton(group, _("Use a static IPv{ip_version} configuration").format(ip_version=ip_version))
+        def b1cb(sender, state):
+            if state:
+                t.enable()
+            else:
+                for field in self.form._fields:
+                    field.show_extra(field.help)
+                t.disable()
+        connect_signal(b1, 'change', b1cb)
+        b2 = RadioButton(group, _("Use DHCPv{ip_version} on this interface").format(ip_version=ip_version))
+        b3 = RadioButton(group, _("Do not use"))
+        t = Toggleable(Pile(self.form.as_rows()))
+        widgets = [b1, Text(""), Padding.push_4(t), Text(""), b2, b3, Text(""), self.form.buttons]
         super().__init__(
-            "Edit {}".format(device.name),
-            [Pile(self.form.as_rows()), Text(""), self.form.buttons],
+            "Edit {device} IPv{ip_version} configuration".format(device=device.name, ip_version=ip_version),
+            widgets,
             0, 0)
 
     def done(self, sender):
