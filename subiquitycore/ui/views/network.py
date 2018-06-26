@@ -28,6 +28,7 @@ from urwid import (
     ProgressBar,
     RadioButton,
     Text,
+    WidgetPlaceholder,
     )
 from urwid import Padding as uPadding
 
@@ -40,6 +41,7 @@ from subiquitycore.ui.container import (
     WidgetWrap,
     )
 from subiquitycore.ui.form import Form, StringField, Toggleable, ChoiceField
+from subiquitycore.ui.selector import Option
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import button_pile, Color, make_action_menu_row, Padding
@@ -134,14 +136,24 @@ def _build_gateway_ip_info_for_version(dev, version):
 
 from .network_configure_manual_interface import NetworkConfigForm
 
-network_choices = [
-    (_("Automatic (DHCP)"), True, "dhcp"),
-    (_("Manual"), True, "manual"),
-    (_("Disable"), True, "disable"),
-    ]
+network_choices = {
+    4: [
+        (_("Automatic (DHCP)"), True, "dhcp"),
+        (_("Manual"), True, "manual"),
+        (_("Disable"), True, "disable"),
+    ],
+    6: [
+        (_("Automatic"), True, "accept-ra"),
+        (_("Automatic (DHCP)"), True, "dhcp"),
+        (_("Manual"), True, "manual"),
+        (_("Disable"), True, "disable"),
+    ],
+}
+
 
 class NetworkMethodForm(Form):
-    method = ChoiceField("IPv{ip_version} Method: ", choices=network_choices)
+    method = ChoiceField("IPv{ip_version} Method: ", choices=network_choices[4])
+
 
 class EditNetworkStretchy(Stretchy):
 
@@ -152,16 +164,23 @@ class EditNetworkStretchy(Stretchy):
 
         self.method_form = NetworkMethodForm()
         self.method_form.method.caption = _("IPv{ip_version} Method: ").format(ip_version=ip_version)
+
+        self.method_form.method.widget.options = list(map(Option, network_choices[ip_version]))
+
         connect_signal(self.method_form.method.widget, 'select', self._select_method)
 
         self.manual_form = NetworkConfigForm(ip_version)
 
-        connect_signal(self.method_form, 'submit', self.done)
+        connect_signal(self.method_form, 'submit', self.done_method)
+        connect_signal(self.method_form, 'submit', self.done_manual)
         connect_signal(self.method_form, 'cancel', self.cancel)
+        connect_signal(self.manual_form, 'cancel', self.cancel)
 
         self.form_pile = Pile(self.method_form.as_rows())
 
-        widgets = [self.form_pile, Text(""), self.method_form.buttons]
+        self.bp = WidgetPlaceholder(self.method_form.buttons)
+
+        widgets = [self.form_pile, Text(""), self.bp]
         super().__init__(
             "Edit {device} IPv{ip_version} configuration".format(device=device.name, ip_version=ip_version),
             widgets,
@@ -177,9 +196,15 @@ class EditNetworkStretchy(Stretchy):
             r(Text(""))
             for row in self.manual_form.as_rows():
                 r(row)
+            self.bp.original_widget = self.manual_form.buttons
+        else:
+            self.bp.original_widget = self.method_form.buttons
         self.form_pile.contents[:] = rows
 
-    def done(self, sender):
+    def done_method(self, sender):
+        pass
+
+    def done_manual(self, sender):
         # XXX this converting from and to and from strings thing is a
         # bit out of hand.
         gateway = self.form.gateway.value
@@ -248,6 +273,9 @@ class NetworkView(BaseView):
     def _action_edit_ipv4(self, device):
         self.show_stretchy_overlay(EditNetworkStretchy(self, device, 4))
 
+    def _action_edit_ipv6(self, device):
+        self.show_stretchy_overlay(EditNetworkStretchy(self, device, 6))
+
     def _action(self, sender, action, device):
         m = getattr(self, '_action_{}'.format(action))
         m(device)
@@ -273,6 +301,7 @@ class NetworkView(BaseView):
             actions = [
                 ("Info", True, 'info', True),
                 ("Edit IPv4", True, 'edit_ipv4', True),
+                ("Edit IPv6", True, 'edit_ipv6', True),
                 ]
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._action, dev)
