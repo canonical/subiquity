@@ -131,6 +131,51 @@ def _build_gateway_ip_info_for_version(dev, version):
         return [Text(_("IPv%s is not configured" % version))]
 
 
+from .network_configure_manual_interface import NetworkConfigForm
+
+class EditNetworkStretchy(Stretchy):
+
+    def __init__(self, parent, device, ip_version):
+        self.parent = parent
+        self.device = device
+        self.ip_version = ip_version
+
+        self.form = NetworkConfigForm(ip_version)
+
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+
+        super().__init__(
+            "Edit {}".format(device.name),
+            [Pile(self.form.as_rows()), Text(""), self.form.buttons],
+            0, 0)
+
+    def done(self, sender):
+        # XXX this converting from and to and from strings thing is a
+        # bit out of hand.
+        gateway = self.form.gateway.value
+        if gateway is not None:
+            gateway = str(gateway)
+        result = {
+            'network': str(self.form.subnet.value),
+            'address': str(self.form.address.value),
+            'gateway': gateway,
+            'nameservers': list(map(str, self.form.nameservers.value)),
+            'searchdomains': self.form.searchdomains.value,
+        }
+        self.dev.remove_ip_networks_for_version(self.ip_version)
+        self.dev.remove_nameservers()
+        self.dev.add_network(self.ip_version, result)
+
+        self.parent.refresh_model_inputs()
+        self.parent.remove_overlay()
+
+    def cancel(self, sender=None):
+        self.model.default_gateway = None
+        self.controller.network_configure_interface(self.dev.name)
+        self.parent.remove_overlay()
+
+
 class NetworkView(BaseView):
     title = _("Network connections")
     excerpt = _("Configure at least one interface this server can use to talk "
@@ -173,10 +218,12 @@ class NetworkView(BaseView):
     def _action_info(self, device):
         pass
 
+    def _action_edit_ipv4(self, device):
+        self.show_stretchy_overlay(EditNetworkStretchy(self, device, 4))
+
     def _action(self, sender, action, device):
         m = getattr(self, '_action_{}'.format(action))
         m(device)
-        self.refresh_model_inputs()
 
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()
@@ -197,7 +244,8 @@ class NetworkView(BaseView):
             else:
                 addresses = '-'
             actions = [
-                ("Info", True, 'info'),
+                ("Info", True, 'info', True),
+                ("Edit IPv4", True, 'edit_ipv4', True),
                 ]
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._action, dev)
