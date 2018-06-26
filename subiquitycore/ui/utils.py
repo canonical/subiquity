@@ -22,6 +22,7 @@ from urwid import (
     ACTIVATE,
     AttrMap,
     CompositeCanvas,
+    connect_signal,
     Padding as _Padding,
     SelectableIcon,
     Text,
@@ -30,6 +31,7 @@ from urwid import (
     )
 
 from subiquitycore.ui.container import ListBox, Pile
+from subiquitycore.ui.table import TableRow
 from subiquitycore.ui.width import widget_width
 
 
@@ -297,3 +299,19 @@ class ClickableIcon(SelectableIcon):
         if self._command_map[key] != ACTIVATE:
             return key
         self._emit('click')
+
+
+def make_action_menu_row(
+        cells, menu,
+        attr_map='menu_button', focus_map='menu_button focus',
+        cursor_x=2):
+    cells[0].set_text('[ ' + cells[0].text)
+    row = TableRow(cells + [menu])
+    if not isinstance(attr_map, dict):
+        attr_map = {None: attr_map}
+    if not isinstance(focus_map, dict):
+        focus_map = {None: focus_map}
+    am = AttrMap(CursorOverride(row, cursor_x=cursor_x), attr_map, focus_map)
+    connect_signal(menu, 'open', lambda menu: am.set_attr_map(focus_map))
+    connect_signal(menu, 'close', lambda menu: am.set_attr_map(attr_map))
+    return am
