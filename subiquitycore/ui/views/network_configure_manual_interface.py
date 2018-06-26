@@ -57,12 +57,12 @@ class IPField(FormField):
 
 class NetworkConfigForm(Form):
 
-    def __init__(self, ip_version):
+    def __init__(self, ip_version, initial={}):
         self.ip_version = ip_version
         fam = ip_families[ip_version]
         self.ip_address_cls = fam['address_cls']
         self.ip_network_cls = fam['network_cls']
-        super().__init__()
+        super().__init__(initial)
 
     ok_label = _("Save")
 

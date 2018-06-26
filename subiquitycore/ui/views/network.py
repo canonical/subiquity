@@ -19,6 +19,7 @@ Provides network device listings and extended network information
 
 """
 
+import ipaddress
 import logging
 import textwrap
 
@@ -26,7 +27,6 @@ from urwid import (
     connect_signal,
     LineBox,
     ProgressBar,
-    RadioButton,
     Text,
     WidgetPlaceholder,
     )
@@ -140,13 +140,13 @@ network_choices = {
     4: [
         (_("Automatic (DHCP)"), True, "dhcp"),
         (_("Manual"), True, "manual"),
-        (_("Disable"), True, "disable"),
+        (_("Disabled"), True, "disable"),
     ],
     6: [
         (_("Automatic"), True, "accept-ra"),
         (_("Automatic (DHCP)"), True, "dhcp"),
         (_("Manual"), True, "manual"),
-        (_("Disable"), True, "disable"),
+        (_("Disabled"), True, "disable"),
     ],
 }
 
@@ -165,12 +165,33 @@ class EditNetworkStretchy(Stretchy):
 
         self.method_form = NetworkMethodForm()
         self.method_form.method.caption = _("IPv{ip_version} Method: ").format(ip_version=ip_version)
+        manual_initial = {}
+        if len(device.configured_ip_addresses_for_version(ip_version)) > 0:
+            method = 'manual'
+            addr = ipaddress.ip_interface(
+                device.configured_ip_addresses_for_version(ip_version)[0])
+            manual_initial = {
+                'subnet': str(addr.network),
+                'address': str(addr.ip),
+                'nameservers': ', '.join(device.configured_nameservers),
+                'searchdomains': ', '.join(device.configured_searchdomains),
+            }
+            gw = device.configured_gateway_for_version(ip_version)
+            if gw:
+                manual_initial['gateway'] = str(gw)
+        elif self.device.dhcp_for_version(ip_version):
+            method = 'dhcp'
+        else:
+            method = 'disable'
+
+        self.method_form.method.value = method
 
         self.method_form.method.widget.options = list(map(Option, network_choices[ip_version]))
 
         connect_signal(self.method_form.method.widget, 'select', self._select_method)
 
-        self.manual_form = NetworkConfigForm(ip_version)
+        log.debug("manual_initial %s", manual_initial)
+        self.manual_form = NetworkConfigForm(ip_version, manual_initial)
 
         connect_signal(self.method_form, 'submit', self.done_method)
         connect_signal(self.manual_form, 'submit', self.done_manual)
@@ -180,6 +201,8 @@ class EditNetworkStretchy(Stretchy):
         self.form_pile = Pile(self.method_form.as_rows())
 
         self.bp = WidgetPlaceholder(self.method_form.buttons)
+
+        self._select_method(None, method)
 
         widgets = [self.form_pile, Text(""), self.bp]
         super().__init__(
