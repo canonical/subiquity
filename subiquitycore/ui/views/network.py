@@ -155,6 +155,9 @@ class EditNetworkStretchy(Stretchy):
             else:
                 for field in self.form._fields:
                     field.enabled = False
+                    field.showing_extra = False
+                    field.validate()
+            self.form.validated()
         connect_signal(b1, 'change', b1cb)
         b2 = RadioButton(group, _("Use DHCPv{ip_version} on this interface").format(ip_version=ip_version))
         b3 = RadioButton(group, _("Do not use"))

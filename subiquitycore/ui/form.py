@@ -406,5 +406,6 @@ class Form(object, metaclass=MetaForm):
     def as_data(self):
         data = {}
         for field in self._fields:
-            data[field.field.name] = field.value
+            if field.enabled:
+                data[field.field.name] = field.value
         return data
