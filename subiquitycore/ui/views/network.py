@@ -152,6 +152,7 @@ network_choices = {
 
 
 class NetworkMethodForm(Form):
+    ok_label = _("Save")
     method = ChoiceField("IPv{ip_version} Method: ", choices=network_choices[4])
 
 
@@ -172,7 +173,7 @@ class EditNetworkStretchy(Stretchy):
         self.manual_form = NetworkConfigForm(ip_version)
 
         connect_signal(self.method_form, 'submit', self.done_method)
-        connect_signal(self.method_form, 'submit', self.done_manual)
+        connect_signal(self.manual_form, 'submit', self.done_manual)
         connect_signal(self.method_form, 'cancel', self.cancel)
         connect_signal(self.manual_form, 'cancel', self.cancel)
 
