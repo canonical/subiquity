@@ -19,7 +19,6 @@ from .filesystem import (
     GuidedFilesystemView,
     )
 from .bcache import BcacheView
-from .raid import RaidView
 from .ceph import CephDiskView
 from .iscsi import IscsiDiskView
 from .lvm import LVMVolumeGroupView
@@ -41,6 +40,5 @@ __all__ = [
     'LVMVolumeGroupView',
     'MAASView',
     'ProgressView',
-    'RaidView',
     'WelcomeView',
 ]

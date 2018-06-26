@@ -39,6 +39,7 @@ from subiquitycore.ui.buttons import (
     cancel_btn,
     danger_btn,
     done_btn,
+    menu_btn,
     reset_btn,
     )
 from subiquitycore.ui.container import (
@@ -63,9 +64,10 @@ from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import DeviceAction, humanize_size
 
-from .delete import ConfirmDeleteStretchy
+from .delete import can_delete, ConfirmDeleteStretchy
 from .disk_info import DiskInfoStretchy
 from .partition import PartitionStretchy, FormatEntireStretchy
+from .raid import RaidStretchy
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
 
@@ -274,12 +276,13 @@ class DeviceList(WidgetWrap):
 
     _partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.device, part))
-    _partition_DELETE = _stretchy_shower(
-        lambda parent, part: ConfirmDeleteStretchy(
-            parent,
-            part,
-            parent.controller.delete_partition))
+    _partition_DELETE = _stretchy_shower(ConfirmDeleteStretchy)
     _partition_FORMAT = _disk_FORMAT
+
+    _raid_EDIT = _stretchy_shower(RaidStretchy)
+    _raid_PARTITION = _disk_PARTITION
+    _raid_FORMAT = _disk_FORMAT
+    _raid_DELETE = _partition_DELETE
 
     def _action(self, sender, action, device):
         log.debug('_action %s %s', action, device)
@@ -287,7 +290,10 @@ class DeviceList(WidgetWrap):
         getattr(self, meth_name)(device)
 
     def _action_menu_for_device(self, device):
-        delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
+        if can_delete(device)[0]:
+            delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
+        else:
+            delete_btn = _("Delete *")
         device_actions = [
             (_("Information"),      DeviceAction.INFO),
             (_("Edit"),             DeviceAction.EDIT),
@@ -427,6 +433,12 @@ class FilesystemView(BaseView):
         self.avail_list = DeviceList(self, True)
         self.used_list = DeviceList(self, False)
         self.avail_list.table.bind(self.used_list.table)
+        self._create_raid_btn = menu_btn(
+            label=_("Create software RAID (md)"),
+            on_press=self.create_raid)
+
+        bp = button_pile([self._create_raid_btn])
+        bp.align = 'left'
 
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
@@ -437,6 +449,8 @@ class FilesystemView(BaseView):
             Text(_("AVAILABLE DEVICES")),
             Text(""),
             Padding.push_2(self.avail_list),
+            Text(""),
+            Padding.push_2(bp),
             Text(""),
             Text(""),
             Text(_("USED DEVICES")),
@@ -478,6 +492,9 @@ class FilesystemView(BaseView):
             self.done.enable()
         else:
             self.done.disable()
+
+    def create_raid(self, button=None):
+        self.show_stretchy_overlay(RaidStretchy(self))
 
     def cancel(self, button=None):
         self.controller.default()

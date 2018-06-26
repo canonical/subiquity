@@ -148,6 +148,9 @@ class Selector(WidgetWrap):
         self._set_index(index)
         super().__init__(_Launcher(self, self._padding))
 
+    def get_natural_width(self):
+        return self._padding.width
+
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
             return key
