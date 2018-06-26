@@ -39,7 +39,7 @@ from subiquitycore.ui.container import (
     Pile,
     WidgetWrap,
     )
-from subiquitycore.ui.form import Form, StringField, Toggleable
+from subiquitycore.ui.form import Form, StringField, Toggleable, ChoiceField
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import button_pile, Color, make_action_menu_row, Padding
@@ -134,6 +134,15 @@ def _build_gateway_ip_info_for_version(dev, version):
 
 from .network_configure_manual_interface import NetworkConfigForm
 
+network_choices = [
+    (_("Automatic (DHCP)"), True, "dhcp"),
+    (_("Manual"), True, "manual"),
+    (_("Disable"), True, "disable"),
+    ]
+
+class NetworkMethodForm(Form):
+    method = ChoiceField("IPv{ip_version} Method: ", choices=network_choices)
+
 class EditNetworkStretchy(Stretchy):
 
     def __init__(self, parent, device, ip_version):
@@ -141,32 +150,34 @@ class EditNetworkStretchy(Stretchy):
         self.device = device
         self.ip_version = ip_version
 
-        self.form = NetworkConfigForm(ip_version)
+        self.method_form = NetworkMethodForm()
+        self.method_form.method.caption = _("IPv{ip_version} Method: ").format(ip_version=ip_version)
+        connect_signal(self.method_form.method.widget, 'select', self._select_method)
 
-        connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', self.cancel)
+        self.manual_form = NetworkConfigForm(ip_version)
 
-        group = []
-        b1 = RadioButton(group, _("Use a static IPv{ip_version} configuration").format(ip_version=ip_version))
-        def b1cb(sender, state):
-            if state:
-                for field in self.form._fields:
-                    field.enabled = True
-            else:
-                for field in self.form._fields:
-                    field.enabled = False
-                    field.showing_extra = False
-                    field.validate()
-            self.form.validated()
-        connect_signal(b1, 'change', b1cb)
-        b2 = RadioButton(group, _("Use DHCPv{ip_version} on this interface").format(ip_version=ip_version))
-        b3 = RadioButton(group, _("Do not use"))
-        t = Toggleable(Pile(self.form.as_rows()))
-        widgets = [b1, Text(""), Padding.push_4(t), Text(""), b2, b3, Text(""), self.form.buttons]
+        connect_signal(self.method_form, 'submit', self.done)
+        connect_signal(self.method_form, 'cancel', self.cancel)
+
+        self.form_pile = Pile(self.method_form.as_rows())
+
+        widgets = [self.form_pile, Text(""), self.method_form.buttons]
         super().__init__(
             "Edit {device} IPv{ip_version} configuration".format(device=device.name, ip_version=ip_version),
             widgets,
             0, 0)
+
+    def _select_method(self, sender, method):
+        rows = []
+        def r(w):
+            rows.append((w, self.form_pile.options('pack')))
+        for row in self.method_form.as_rows():
+            r(row)
+        if method == 'manual':
+            r(Text(""))
+            for row in self.manual_form.as_rows():
+                r(row)
+        self.form_pile.contents[:] = rows
 
     def done(self, sender):
         # XXX this converting from and to and from strings thing is a
@@ -189,8 +200,6 @@ class EditNetworkStretchy(Stretchy):
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
-        self.model.default_gateway = None
-        self.controller.network_configure_interface(self.dev.name)
         self.parent.remove_overlay()
 
 
