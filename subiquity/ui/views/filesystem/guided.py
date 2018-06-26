@@ -16,17 +16,28 @@
 import logging
 
 from urwid import (
+    connect_signal,
     Text,
     )
 
-from subiquitycore.ui.utils import button_pile, Color, Padding
 from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
-    forward_btn,
     ok_btn,
     )
-from subiquitycore.ui.container import ListBox, Pile
+from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.table import (
+    ColSpec,
+    TableListBox,
+    TableRow,
+    )
+from subiquitycore.ui.utils import (
+    button_pile,
+    ClickableIcon,
+    Color,
+    Padding,
+    screen,
+    )
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
@@ -78,27 +89,27 @@ class GuidedDiskSelectionView(BaseView):
         self.model = model
         self.controller = controller
         cancel = cancel_btn(_("Cancel"), on_press=self.cancel)
-        disks = []
+        rows = []
         for disk in self.model.all_disks():
-            label = "%-42s %s" % (disk.label,
-                                  humanize_size(disk.size).rjust(9))
             if disk.size >= model.lower_size_limit:
-                disk_btn = forward_btn(label, on_press=self.choose_disk,
-                                       user_arg=disk)
+                disk_btn = ClickableIcon(disk.label)
+                connect_signal(
+                    disk_btn, 'click', self.choose_disk, disk)
+                attr = Color.done_button
             else:
-                disk_btn = Color.info_minor(Text("  "+label))
-            disks.append(disk_btn)
-        body = Pile([
-            ('pack', Text("")),
-            ('pack', Padding.center_70(
-                        Text(_("Choose the disk to install to:")))),
-            ('pack', Text("")),
-            Padding.center_70(ListBox(disks)),
-            ('pack', Text("")),
-            ('pack', button_pile([cancel])),
-            ('pack', Text("")),
-            ])
-        super().__init__(body)
+                disk_btn = Text("  "+disk.label)
+                attr = Color.info_minor
+            rows.append(attr(TableRow([
+                Text('['),
+                disk_btn,
+                Text(humanize_size(disk.size), align='right'),
+                Text('\N{BLACK RIGHT-POINTING SMALL TRIANGLE} ]'),
+                ])))
+        super().__init__(screen(
+            TableListBox(rows, colspecs={1: ColSpec(pack=False)}),
+            button_pile([cancel]),
+            focus_buttons=False,
+            excerpt=_("Choose the disk to install to:")))
 
     def cancel(self, btn=None):
         self.controller.default()

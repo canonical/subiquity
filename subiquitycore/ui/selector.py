@@ -29,16 +29,7 @@ from subiquitycore.ui.container import (
     ListBox,
     WidgetWrap,
     )
-
-
-class _PopUpButton(SelectableIcon):
-    """Like Button, but simpler. """
-    signals = ['click']
-
-    def keypress(self, size, key):
-        if self._command_map[key] != ACTIVATE:
-            return key
-        self._emit('click')
+from subiquitycore.ui.utils import ClickableIcon
 
 
 class _PopUpSelectDialog(WidgetWrap):
@@ -49,7 +40,7 @@ class _PopUpSelectDialog(WidgetWrap):
         group = []
         for i, option in enumerate(self.parent._options):
             if option.enabled:
-                btn = _PopUpButton(" " + option.label)
+                btn = ClickableIcon(" " + option.label)
                 connect_signal(btn, 'click', self.click, i)
                 if i == cur_index:
                     rhs = '\N{BLACK LEFT-POINTING SMALL TRIANGLE} '

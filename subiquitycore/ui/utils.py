@@ -19,9 +19,11 @@ from functools import partialmethod
 import logging
 
 from urwid import (
+    ACTIVATE,
     AttrMap,
     CompositeCanvas,
     Padding as _Padding,
+    SelectableIcon,
     Text,
     WidgetDecoration,
     WidgetDisable,
@@ -285,3 +287,13 @@ class CursorOverride(WidgetDecoration):
             c = CompositeCanvas(c)
             c.cursor = self.get_cursor_coords(size)
         return c
+
+
+class ClickableIcon(SelectableIcon):
+    """Like Button, but simpler. """
+    signals = ['click']
+
+    def keypress(self, size, key):
+        if self._command_map[key] != ACTIVATE:
+            return key
+        self._emit('click')
