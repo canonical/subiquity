@@ -22,6 +22,7 @@ from subiquity.models.filesystem import (
     align_up,
     DeviceAction,
     Partition,
+    raidlevels_by_value,
     )
 from subiquity.ui.views import (
     FilesystemView,
@@ -60,6 +61,12 @@ class FilesystemController(BaseController):
         if dev_spec[0] == "disk":
             if dev_spec[1] == "index":
                 dev = self.model.all_disks()[int(dev_spec[2])]
+        elif dev_spec[0] == "raid":
+            if dev_spec[1] == "name":
+                for r in self.model.all_raids():
+                    if r.name == dev_spec[2]:
+                        dev = r
+                        break
         if dev is None:
             raise Exception("could not resolve {}".format(id))
         if len(id) > 1:
@@ -72,6 +79,15 @@ class FilesystemController(BaseController):
 
     def _action_clean_fstype(self, fstype):
         return self.model.fs_by_name[fstype]
+
+    def _action_clean_devices(self, devices):
+        return {
+            self._action_get(d): v
+            for d, v in zip(devices[::2], devices[1::2])
+            }
+
+    def _action_clean_level(self, level):
+        return raidlevels_by_value[level]
 
     def _enter_form_data(self, form, data, submit):
         for k, v in data.items():
@@ -108,6 +124,14 @@ class FilesystemController(BaseController):
                     body.stretchy.form,
                     action['data'],
                     action.get("submit", True))
+        elif action['action'] == 'create-raid':
+            self.ui.frame.body.create_raid()
+            yield
+            body = self.ui.frame.body._w
+            yield from self._enter_form_data(
+                body.stretchy.form,
+                action['data'],
+                action.get("submit", True))
         elif action['action'] == 'done':
             if not self.ui.frame.body.done.enabled:
                 raise Exception("answers did not provide complete fs config")
@@ -119,14 +143,14 @@ class FilesystemController(BaseController):
         for action in actions:
             yield from self._answers_action(action)
 
-    def _run_iterator(self, it):
+    def _run_iterator(self, it, delay=0.2):
         try:
             next(it)
         except StopIteration:
             return
         self.loop.set_alarm_in(
-            0.2,
-            lambda *args: self._run_iterator(it))
+            delay,
+            lambda *args: self._run_iterator(it, delay/1.1))
 
     def manual(self):
         self.ui.set_body(FilesystemView(self.model, self))
