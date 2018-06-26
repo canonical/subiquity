@@ -64,7 +64,7 @@ from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import DeviceAction, humanize_size
 
-from .delete import ConfirmDeleteStretchy
+from .delete import can_delete, ConfirmDeleteStretchy
 from .disk_info import DiskInfoStretchy
 from .partition import PartitionStretchy, FormatEntireStretchy
 from .raid import RaidStretchy
@@ -276,11 +276,7 @@ class DeviceList(WidgetWrap):
 
     _partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.device, part))
-    _partition_DELETE = _stretchy_shower(
-        lambda parent, part: ConfirmDeleteStretchy(
-            parent,
-            part,
-            parent.controller.delete_partition))
+    _partition_DELETE = _stretchy_shower(ConfirmDeleteStretchy)
     _partition_FORMAT = _disk_FORMAT
 
     _raid_EDIT = _stretchy_shower(RaidStretchy)
@@ -294,7 +290,10 @@ class DeviceList(WidgetWrap):
         getattr(self, meth_name)(device)
 
     def _action_menu_for_device(self, device):
-        delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
+        if can_delete(device)[0]:
+            delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
+        else:
+            delete_btn = _("Delete *")
         device_actions = [
             (_("Information"),      DeviceAction.INFO),
             (_("Edit"),             DeviceAction.EDIT),
