@@ -150,11 +150,11 @@ class EditNetworkStretchy(Stretchy):
         b1 = RadioButton(group, _("Use a static IPv{ip_version} configuration").format(ip_version=ip_version))
         def b1cb(sender, state):
             if state:
-                t.enable()
+                for field in self.form._fields:
+                    field.enabled = True
             else:
                 for field in self.form._fields:
-                    field.show_extra(field.help)
-                t.disable()
+                    field.enabled = False
         connect_signal(b1, 'change', b1cb)
         b2 = RadioButton(group, _("Use DHCPv{ip_version} on this interface").format(ip_version=ip_version))
         b3 = RadioButton(group, _("Do not use"))
