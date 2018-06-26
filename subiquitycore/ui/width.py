@@ -36,11 +36,14 @@ def widget_width(w):
         return w.get_natural_width()
     if isinstance(w, size_neutral_widget_wraps):
         return widget_width(w._wrapped_widget)
-    elif isinstance(w, size_neutral_decorations):
+    if isinstance(w, size_neutral_decorations):
         return widget_width(w.original_widget)
-    elif isinstance(w, urwid.Text):
+    if isinstance(w, urwid.Padding):
+        if w.width == urwid.RELATIVE_100:
+            return w.left + w.right + widget_width(w.original_widget)
+    if isinstance(w, urwid.Text):
         return len(w.text)
-    elif isinstance(w, urwid.Columns):
+    if isinstance(w, urwid.Columns):
         if len(w.contents) == 0:
             return 0
         r = 0
