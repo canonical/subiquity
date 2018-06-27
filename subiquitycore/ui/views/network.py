@@ -36,9 +36,12 @@ from subiquitycore.ui.container import (
     Pile,
     WidgetWrap,
     )
+from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import button_pile, Color, make_action_menu_row, Padding
 from .network_configure_manual_interface import EditNetworkStretchy
+from .network_configure_wlan_interface import NetworkConfigureWLANStretchy
+
 from subiquitycore.view import BaseView
 
 
@@ -171,6 +174,9 @@ class NetworkView(BaseView):
     def _action_edit_ipv4(self, device):
         self.show_stretchy_overlay(EditNetworkStretchy(self, device, 4))
 
+    def _action_edit_wlan(self, device):
+        self.show_stretchy_overlay(NetworkConfigureWLANStretchy(self, device))
+
     def _action_edit_ipv6(self, device):
         self.show_stretchy_overlay(EditNetworkStretchy(self, device, 6))
 
@@ -211,6 +217,10 @@ class NetworkView(BaseView):
                 addresses = '-'
             actions = [
                 ("Info", True, 'info', True),
+            ]
+            if dev.type == "wlan":
+                actions.append(("Edit WiFi", True, "edit_wlan", True))
+            actions += [
                 ("Edit IPv4", True, 'edit_ipv4', True),
                 ("Edit IPv6", True, 'edit_ipv6', True),
                 ]
@@ -232,6 +242,8 @@ class NetworkView(BaseView):
 
     def refresh_model_inputs(self):
         self.device_table.set_contents(self._build_model_inputs())
+        if isinstance(self._w, StretchyOverlay) and hasattr(self._w.stretchy, 'refresh_model_inputs'):
+            self._w.stretchy.refresh_model_inputs()
 
     def show_network_error(self, action, info=None):
         self.error_showing = True
