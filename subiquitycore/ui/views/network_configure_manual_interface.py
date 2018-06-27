@@ -125,24 +125,16 @@ class NetworkConfigForm(Form):
         return domains
 
 
-network_choices = {
-    4: [
-        (_("Automatic (DHCP)"), True, "dhcp"),
-        (_("Manual"), True, "manual"),
-        (_("Disabled"), True, "disable"),
-    ],
-    6: [
-        (_("Automatic"), True, "accept-ra"),
-        (_("Automatic (DHCP)"), True, "dhcp"),
-        (_("Manual"), True, "manual"),
-        (_("Disabled"), True, "disable"),
-    ],
-}
+network_choices = [
+    (_("Automatic (DHCP)"), True, "dhcp"),
+    (_("Manual"), True, "manual"),
+    (_("Disabled"), True, "disable"),
+    ]
 
 
 class NetworkMethodForm(Form):
     ok_label = _("Save")
-    method = ChoiceField("IPv{ip_version} Method: ", choices=network_choices[4])
+    method = ChoiceField("IPv{ip_version} Method: ", choices=network_choices)
 
 
 class EditNetworkStretchy(Stretchy):
@@ -175,15 +167,13 @@ class EditNetworkStretchy(Stretchy):
 
         self.method_form.method.value = method
 
-        self.method_form.method.widget.options = list(map(Option, network_choices[ip_version]))
-
         connect_signal(self.method_form.method.widget, 'select', self._select_method)
 
         log.debug("manual_initial %s", manual_initial)
         self.manual_form = NetworkConfigForm(ip_version, manual_initial)
 
-        connect_signal(self.method_form, 'submit', self.done_method)
-        connect_signal(self.manual_form, 'submit', self.done_manual)
+        connect_signal(self.method_form, 'submit', self.done)
+        connect_signal(self.manual_form, 'submit', self.done)
         connect_signal(self.method_form, 'cancel', self.cancel)
         connect_signal(self.manual_form, 'cancel', self.cancel)
 
@@ -214,31 +204,37 @@ class EditNetworkStretchy(Stretchy):
             self.bp.original_widget = self.method_form.buttons
         self.form_pile.contents[:] = rows
 
-    def done_method(self, sender):
-        pass
+    def done(self, sender):
 
-    def done_manual(self, sender):
-        # XXX this converting from and to and from strings thing is a
-        # bit out of hand.
-        gateway = self.form.gateway.value
-        if gateway is not None:
-            gateway = str(gateway)
-        result = {
-            'network': str(self.form.subnet.value),
-            'address': str(self.form.address.value),
-            'gateway': gateway,
-            'nameservers': list(map(str, self.form.nameservers.value)),
-            'searchdomains': self.form.searchdomains.value,
-        }
-        self.dev.remove_ip_networks_for_version(self.ip_version)
-        self.dev.remove_nameservers()
-        self.dev.add_network(self.ip_version, result)
+        self.device.remove_ip_networks_for_version(self.ip_version)
+        self.device.set_dhcp_for_version(self.ip_version, False)
 
+        if self.method_form.method.value == "manual":
+            form = self.manual_form
+            # XXX this converting from and to and from strings thing is a
+            # bit out of hand.
+            gateway = form.gateway.value
+            if gateway is not None:
+                gateway = str(gateway)
+            result = {
+                'network': str(form.subnet.value),
+                'address': str(form.address.value),
+                'gateway': gateway,
+                'nameservers': list(map(str, form.nameservers.value)),
+                'searchdomains': form.searchdomains.value,
+            }
+            self.device.remove_nameservers()
+            self.device.add_network(self.ip_version, result)
+        elif self.method_form.method.value == "dhcp":
+            self.device.set_dhcp_for_version(self.ip_version, True)
+        else:
+            pass
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()
+
 
 class BaseNetworkConfigureManualView(BaseView):
 

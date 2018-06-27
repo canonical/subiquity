@@ -20,6 +20,7 @@ Provides network device listings and extended network information
 """
 
 import logging
+from socket import AF_INET, AF_INET6
 
 from urwid import (
     connect_signal,
@@ -191,8 +192,21 @@ class NetworkView(BaseView):
                 dhcp = ",".join(dhcp)
             else:
                 dhcp = '-'
-            if dev.configured_ip_addresses:
-                addresses = ", ".join([str(a) for a in dev.configured_ip_addresses])
+            addresses = []
+            for v in 4, 6:
+                if dev.configured_ip_addresses_for_version(v):
+                   addresses.extend(["{} (static)".format(a) for a in dev.configured_ip_addresses_for_version(v)])
+                elif dev.dhcp_for_version(v):
+                   if v == 4:
+                      fam = AF_INET
+                   elif v == 6:
+                      fam = AF_INET6
+                   for a in dev._net_info.addresses.values():
+                       log.debug("a %s", a.serialize())
+                       if a.family == fam and a.source == 'dhcp':
+                           addresses.append("{} (from dhcp)".format(a.address))
+            if addresses:
+                addresses = ", ".join(addresses)
             else:
                 addresses = '-'
             actions = [
@@ -211,7 +225,8 @@ class NetworkView(BaseView):
                 ],
                 menu,
             ))
-            rows.append(Color.info_minor(TableRow([(4, Text("  " + dev.hwaddr + " " + dev.vendor))])))
+            info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
+            rows.append(Color.info_minor(TableRow([(4, Text("  " + info))])))
             rows.append(Color.info_minor(TableRow([(4, Text(""))])))
         return rows
 
