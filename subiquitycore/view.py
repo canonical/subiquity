@@ -26,6 +26,7 @@ from subiquitycore.ui.container import (
     WidgetWrap,
     )
 from subiquitycore.ui.stretchy import StretchyOverlay
+from subiquitycore.ui.utils import disabled
 
 
 class BaseView(WidgetWrap):
@@ -56,13 +57,14 @@ class BaseView(WidgetWrap):
                 ]),
             ('pack', Text("")),
             ])
-        self._w = Overlay(top_w=top, bottom_w=self._w, **args)
+        self._w = Overlay(top_w=top, bottom_w=disabled(self._w), **args)
 
     def show_stretchy_overlay(self, stretchy):
-        self._w = StretchyOverlay(self._w, stretchy)
+        self._w = StretchyOverlay(disabled(self._w), stretchy)
 
     def remove_overlay(self):
-        self._w = self._w.bottom_w
+        # disabled() wraps a widget in two decorations.
+        self._w = self._w.bottom_w.original_widget.original_widget
 
     def cancel(self):
         pass
