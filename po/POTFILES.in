@@ -10,7 +10,6 @@ subiquitycore/controllers/network.py
 subiquitycore/i18n.py
 subiquitycore/ui/form.py
 subiquitycore/ui/interactive.py
-subiquitycore/ui/views/network_configure_interface.py
 subiquitycore/ui/views/network_configure_manual_interface.py
 subiquitycore/ui/views/network_configure_wlan_interface.py
 subiquitycore/ui/views/network.py
