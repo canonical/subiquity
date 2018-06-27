@@ -16,12 +16,24 @@
 import logging
 import ipaddress
 
-from urwid import connect_signal, Text
+from urwid import (
+    connect_signal,
+    Text,
+    WidgetPlaceholder,
+    )
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import menu_btn
+from subiquitycore.ui.container import Pile
+from subiquitycore.ui.form import (
+    ChoiceField,
+    Form,
+    FormField,
+    StringField,
+    )
 from subiquitycore.ui.interactive import RestrictedEditor, StringEditor
-from subiquitycore.ui.form import Form, FormField, StringField
+from subiquitycore.ui.selector import Option
+from subiquitycore.ui.stretchy import Stretchy
 
 
 log = logging.getLogger(
@@ -112,6 +124,121 @@ class NetworkConfigForm(Form):
                 domains.append(domain)
         return domains
 
+
+network_choices = {
+    4: [
+        (_("Automatic (DHCP)"), True, "dhcp"),
+        (_("Manual"), True, "manual"),
+        (_("Disabled"), True, "disable"),
+    ],
+    6: [
+        (_("Automatic"), True, "accept-ra"),
+        (_("Automatic (DHCP)"), True, "dhcp"),
+        (_("Manual"), True, "manual"),
+        (_("Disabled"), True, "disable"),
+    ],
+}
+
+
+class NetworkMethodForm(Form):
+    ok_label = _("Save")
+    method = ChoiceField("IPv{ip_version} Method: ", choices=network_choices[4])
+
+
+class EditNetworkStretchy(Stretchy):
+
+    def __init__(self, parent, device, ip_version):
+        self.parent = parent
+        self.device = device
+        self.ip_version = ip_version
+
+        self.method_form = NetworkMethodForm()
+        self.method_form.method.caption = _("IPv{ip_version} Method: ").format(ip_version=ip_version)
+        manual_initial = {}
+        if len(device.configured_ip_addresses_for_version(ip_version)) > 0:
+            method = 'manual'
+            addr = ipaddress.ip_interface(
+                device.configured_ip_addresses_for_version(ip_version)[0])
+            manual_initial = {
+                'subnet': str(addr.network),
+                'address': str(addr.ip),
+                'nameservers': ', '.join(device.configured_nameservers),
+                'searchdomains': ', '.join(device.configured_searchdomains),
+            }
+            gw = device.configured_gateway_for_version(ip_version)
+            if gw:
+                manual_initial['gateway'] = str(gw)
+        elif self.device.dhcp_for_version(ip_version):
+            method = 'dhcp'
+        else:
+            method = 'disable'
+
+        self.method_form.method.value = method
+
+        self.method_form.method.widget.options = list(map(Option, network_choices[ip_version]))
+
+        connect_signal(self.method_form.method.widget, 'select', self._select_method)
+
+        log.debug("manual_initial %s", manual_initial)
+        self.manual_form = NetworkConfigForm(ip_version, manual_initial)
+
+        connect_signal(self.method_form, 'submit', self.done_method)
+        connect_signal(self.manual_form, 'submit', self.done_manual)
+        connect_signal(self.method_form, 'cancel', self.cancel)
+        connect_signal(self.manual_form, 'cancel', self.cancel)
+
+        self.form_pile = Pile(self.method_form.as_rows())
+
+        self.bp = WidgetPlaceholder(self.method_form.buttons)
+
+        self._select_method(None, method)
+
+        widgets = [self.form_pile, Text(""), self.bp]
+        super().__init__(
+            "Edit {device} IPv{ip_version} configuration".format(device=device.name, ip_version=ip_version),
+            widgets,
+            0, 0)
+
+    def _select_method(self, sender, method):
+        rows = []
+        def r(w):
+            rows.append((w, self.form_pile.options('pack')))
+        for row in self.method_form.as_rows():
+            r(row)
+        if method == 'manual':
+            r(Text(""))
+            for row in self.manual_form.as_rows():
+                r(row)
+            self.bp.original_widget = self.manual_form.buttons
+        else:
+            self.bp.original_widget = self.method_form.buttons
+        self.form_pile.contents[:] = rows
+
+    def done_method(self, sender):
+        pass
+
+    def done_manual(self, sender):
+        # XXX this converting from and to and from strings thing is a
+        # bit out of hand.
+        gateway = self.form.gateway.value
+        if gateway is not None:
+            gateway = str(gateway)
+        result = {
+            'network': str(self.form.subnet.value),
+            'address': str(self.form.address.value),
+            'gateway': gateway,
+            'nameservers': list(map(str, self.form.nameservers.value)),
+            'searchdomains': self.form.searchdomains.value,
+        }
+        self.dev.remove_ip_networks_for_version(self.ip_version)
+        self.dev.remove_nameservers()
+        self.dev.add_network(self.ip_version, result)
+
+        self.parent.refresh_model_inputs()
+        self.parent.remove_overlay()
+
+    def cancel(self, sender=None):
+        self.parent.remove_overlay()
 
 class BaseNetworkConfigureManualView(BaseView):
 
