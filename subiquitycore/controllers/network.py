@@ -34,11 +34,7 @@ from subiquitycore.tasksequence import (
     )
 from subiquitycore.ui.views import (NetworkView,
                                     NetworkSetDefaultRouteView,
-                                    NetworkBondInterfacesView,
-                                    NetworkConfigureInterfaceView,
-                                    NetworkConfigureIPv4InterfaceView,
-                                    NetworkConfigureIPv6InterfaceView,
-                                    NetworkConfigureWLANView)
+                                    NetworkBondInterfacesView)
 from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.controller import BaseController
 from subiquitycore.utils import run_command
@@ -331,29 +327,3 @@ class NetworkController(BaseController, TaskWatcher):
 
     def bond_interfaces(self):
         self.ui.set_body(NetworkBondInterfacesView(self.model, self))
-
-    def network_configure_interface(self, iface):
-        self.ui.set_header(_("Network interface {}").format(iface))
-        self.ui.set_footer("")
-        self.ui.set_body(
-            NetworkConfigureInterfaceView(self.model, self, iface))
-
-    def network_configure_ipv4_interface(self, iface):
-        self.ui.set_header(_(
-            "Network interface {} manual IPv4 configuration").format(iface))
-        self.ui.set_footer("")
-        self.ui.set_body(
-            NetworkConfigureIPv4InterfaceView(self.model, self, iface))
-
-    def network_configure_wlan_interface(self, iface):
-        self.ui.set_header(_(
-            "Network interface {} WIFI configuration").format(iface))
-        self.ui.set_footer("")
-        self.ui.set_body(NetworkConfigureWLANView(self.model, self, iface))
-
-    def network_configure_ipv6_interface(self, iface):
-        self.ui.set_header(_(
-            "Network interface {} manual IPv6 configuration").format(iface))
-        self.ui.set_footer("")
-        self.ui.set_body(
-            NetworkConfigureIPv6InterfaceView(self.model, self, iface))

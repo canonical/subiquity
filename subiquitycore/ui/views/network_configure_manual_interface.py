@@ -22,8 +22,6 @@ from urwid import (
     WidgetPlaceholder,
     )
 
-from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import menu_btn
 from subiquitycore.ui.container import Pile
 from subiquitycore.ui.form import (
     ChoiceField,
@@ -32,7 +30,6 @@ from subiquitycore.ui.form import (
     StringField,
     )
 from subiquitycore.ui.interactive import RestrictedEditor, StringEditor
-from subiquitycore.ui.selector import Option
 from subiquitycore.ui.stretchy import Stretchy
 
 
@@ -234,104 +231,3 @@ class EditNetworkStretchy(Stretchy):
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()
-
-
-class BaseNetworkConfigureManualView(BaseView):
-
-    def __init__(self, model, controller, name):
-        self.model = model
-        self.controller = controller
-        self.dev = self.model.get_netdev_by_name(name)
-        self.title = _("Network interface {} manual IPv{} "
-                       "configuration").format(name, self.ip_version)
-        self.is_gateway = False
-        self.form = NetworkConfigForm(self.ip_version)
-        connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', self.cancel)
-
-        self.form.subnet.help = _("Example: %s" % (self.example_address,))
-        configured_addresses = (
-            self.dev.configured_ip_addresses_for_version(self.ip_version))
-        if configured_addresses:
-            addr = ipaddress.ip_interface(configured_addresses[0])
-            self.form.subnet.value = str(addr.network)
-            self.form.address.value = str(addr.ip)
-        configured_gateway = (
-            self.dev.configured_gateway_for_version(self.ip_version))
-        if configured_gateway:
-            self.form.gateway.value = configured_gateway
-        self.form.nameservers.value = (
-            ', '.join(self.dev.configured_nameservers))
-        self.form.searchdomains.value = (
-            ', '.join(self.dev.configured_searchdomains))
-        self.error = Text("", align='center')
-
-        super().__init__(self.form.as_screen(focus_buttons=False))
-
-    def refresh_model_inputs(self):
-        try:
-            self.dev = self.model.get_netdev_by_name(self.dev.name)
-        except KeyError:
-            # The interface is gone
-            self.controller.default()
-            return
-
-    def _build_set_as_default_gw_button(self):
-        devs = self.model.get_all_netdevs()
-
-        self.is_gateway = self.model.v4_gateway_dev == self.dev.name
-
-        if not self.is_gateway and len(devs) > 1:
-            btn = menu_btn(label=_("Set this as default gateway"),
-                           on_press=self.set_default_gateway)
-        else:
-            btn = Text(_("This will be your default gateway"))
-
-        return [btn]
-
-    def set_default_gateway(self, button):
-        if self.gateway_input.value:
-            try:
-                self.model.set_default_v4_gateway(self.dev.name,
-                                                  self.gateway_input.value)
-                self.is_gateway = True
-                self.set_as_default_gw_button.contents = [
-                    (obj, ('pack', None))
-                    for obj in self._build_set_as_default_gw_button()]
-            except ValueError:
-                # FIXME: set error message UX ala identity
-                pass
-
-    def done(self, sender):
-        # XXX this converting from and to and from strings thing is a
-        # bit out of hand.
-        gateway = self.form.gateway.value
-        if gateway is not None:
-            gateway = str(gateway)
-        result = {
-            'network': str(self.form.subnet.value),
-            'address': str(self.form.address.value),
-            'gateway': gateway,
-            'nameservers': list(map(str, self.form.nameservers.value)),
-            'searchdomains': self.form.searchdomains.value,
-        }
-        self.dev.remove_ip_networks_for_version(self.ip_version)
-        self.dev.remove_nameservers()
-        self.dev.add_network(self.ip_version, result)
-
-        # return
-        self.controller.network_configure_interface(self.dev.name)
-
-    def cancel(self, sender=None):
-        self.model.default_gateway = None
-        self.controller.network_configure_interface(self.dev.name)
-
-
-class NetworkConfigureIPv4InterfaceView(BaseNetworkConfigureManualView):
-    ip_version = 4
-    example_address = '192.168.9.0/24'
-
-
-class NetworkConfigureIPv6InterfaceView(BaseNetworkConfigureManualView):
-    ip_version = 6
-    example_address = 'fde4:8dba:82e1::/64'

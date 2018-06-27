@@ -313,7 +313,7 @@ class NetworkModel(object):
     }
 
     def __init__(self, support_wlan=True):
-        self.support_wlan = support_wlan
+        self.support_wlan = True#support_wlan
         self.devices = {}  # Maps ifindex to Networkdev
         self.devices_by_name = {}  # Maps interface names to Networkdev
         self.default_v4_gateway = None
