@@ -243,7 +243,7 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, spacing):
                         if remaining >= colspecs[i].min_width + spacing:
                             break
                         for j in widths:
-                            if colspecs[j].omittable:
+                            if widths[j] and colspecs[j].omittable:
                                 widths[j] = 0
                                 break
                         else:
