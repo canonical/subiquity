@@ -342,8 +342,9 @@ class NetworkModel(object):
         config = self.config.config_for_device(link)
         log.debug("new_link %s %s with config %s",
                   ifindex, link.name, sanitize_interface_config(config))
-        self.devices[ifindex] = Networkdev(link, config)
-        self.devices_by_name[link.name] = Networkdev(link, config)
+        netdev = Networkdev(link, config)
+        self.devices[ifindex] = netdev
+        self.devices_by_name[link.name] = netdev
 
     def update_link(self, ifindex):
         # This is pretty edge-casey as the fact that we wait for the
