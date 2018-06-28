@@ -237,6 +237,21 @@ class NetworkController(BaseController, TaskWatcher):
             netplan_config_file_name = '00-snapd-config.yaml'
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
+    def add_vlan(self, device, vlan):
+        cmd = ['ip', 'link', 'add', 'name', '%s.%s' % (device.name, vlan),
+               'link', device.name, 'type', 'vlan', 'id', str(vlan)]
+        try:
+            run_command(cmd, check=True)
+        except:
+            self.ui.frame.body.show_network_error('add-vlan')
+
+    def rm_virtual_interface(self, device):
+        cmd = ['ip', 'link', 'delete', 'dev', device.name]
+        try:
+            run_command(cmd, check=True)
+        except:
+            self.ui.frame.body.show_network_error('rm-dev')
+
     def network_finish(self, config):
         log.debug("network config: \n%s",
                   yaml.dump(sanitize_config(config), default_flow_style=False))
