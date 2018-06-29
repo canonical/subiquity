@@ -103,10 +103,14 @@ class GuidedDiskSelectionView(BaseView):
                 Text('['),
                 disk_btn,
                 Text(humanize_size(disk.size), align='right'),
-                Text('\N{BLACK RIGHT-POINTING SMALL TRIANGLE} ]'),
+                Text('\N{BLACK RIGHT-POINTING SMALL TRIANGLE}'),
+                Text(']'),
                 ])))
         super().__init__(screen(
-            TableListBox(rows, colspecs={1: ColSpec(pack=False)}),
+            TableListBox(rows, spacing=1, colspecs={
+                1: ColSpec(can_shrink=True, min_width=20, rpad=2),
+                2: ColSpec(min_width=9),
+                }),
             button_pile([cancel]),
             focus_buttons=False,
             excerpt=_("Choose the disk to install to:")))

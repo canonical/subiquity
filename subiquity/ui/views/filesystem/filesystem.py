@@ -106,7 +106,7 @@ class FilesystemConfirmation(Stretchy):
         self.parent.remove_overlay()
 
 
-def add_menu_row_focus_behaviour(menu, row, attr_map, focus_map, cursor_x=0):
+def add_menu_row_focus_behaviour(menu, row, attr_map, focus_map, cursor_x=2):
     """Configure focus behaviour of row (which contains menu)
 
     The desired behaviour is that:
@@ -164,8 +164,11 @@ class MountList(WidgetWrap):
     def __init__(self, parent):
         self.parent = parent
         self.table = TablePile([], spacing=2, colspecs={
-            0: ColSpec(can_shrink=True),
-            1: ColSpec(min_width=9),
+            0: ColSpec(rpad=1),
+            1: ColSpec(can_shrink=True),
+            2: ColSpec(min_width=9),
+            4: ColSpec(rpad=1),
+            5: ColSpec(rpad=1),
         })
         self._no_mounts_content = Color.info_minor(
             Text(_("No disks or partitions mounted.")))
@@ -194,10 +197,13 @@ class MountList(WidgetWrap):
 
         rows = [TableRow([
             Color.info_minor(heading) for heading in [
-                Text("  " + _("MOUNT POINT")),
+                Text(" "),
+                Text(_("MOUNT POINT")),
                 Text(_("SIZE"), align='center'),
                 Text(_("TYPE")),
                 Text(_("DEVICE TYPE")),
+                Text(" "),
+                Text(" "),
             ]])]
 
         for i, mi in enumerate(mountinfos):
@@ -220,21 +226,22 @@ class MountList(WidgetWrap):
                             ]
             actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
             menu = ActionMenu(
-                actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE} ]")
+                actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
             connect_signal(menu, 'action', self._mount_action, mi.mount)
             row = TableRow([
-                Text(['[ ', path_markup]),
+                Text("["),
+                Text(path_markup),
                 Text(mi.size, align='right'),
                 Text(mi.fstype),
                 Text(mi.desc),
                 menu,
+                Text("]"),
             ])
             row = add_menu_row_focus_behaviour(
                 menu,
                 row,
                 'menu_button',
-                {None: 'menu_button focus', 'info_minor': 'menu_button focus'},
-                cursor_x=2)
+                {None: 'menu_button focus', 'info_minor': 'menu_button focus'})
             rows.append(row)
         self.table.set_contents(rows)
         if self.table._w.focus_position >= len(rows):
@@ -253,8 +260,11 @@ class DeviceList(WidgetWrap):
         self.parent = parent
         self.show_available = show_available
         self.table = TablePile([],  spacing=2, colspecs={
-            0: ColSpec(can_shrink=True),
-            1: ColSpec(min_width=9),
+            0: ColSpec(rpad=1),
+            1: ColSpec(can_shrink=False),
+            2: ColSpec(min_width=9),
+            3: ColSpec(rpad=1),
+            4: ColSpec(rpad=1),
         })
         if show_available:
             text = _("No available devices")
@@ -309,7 +319,7 @@ class DeviceList(WidgetWrap):
                 enabled=device.supports_action(action),
                 value=action,
                 opens_dialog=action != DeviceAction.MAKE_BOOT))
-        menu = ActionMenu(actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE} ]")
+        menu = ActionMenu(actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
         connect_signal(menu, 'action', self._action, device)
         return menu
 
@@ -343,17 +353,22 @@ class DeviceList(WidgetWrap):
                 label, device.label, device.desc())
 
         rows.append(TableRow([Color.info_minor(heading) for heading in [
-            Text("  " + _("DEVICE")),
+            Text(" "),
+            Text(_("DEVICE")),
             Text(_("SIZE"), align="center"),
             Text(_("TYPE")),
+            Text(" "),
+            Text(" "),
         ]]))
         for device in devices:
             menu = self._action_menu_for_device(device)
             row = TableRow([
-                Text("[ " + device.label),
+                Text("["),
+                Text(device.label),
                 Text("{:>9}".format(humanize_size(device.size))),
                 Text(device.desc()),
                 menu,
+                Text("]"),
             ])
             row = add_menu_row_focus_behaviour(
                 menu, row, 'menu_button', 'menu_button focus')
@@ -370,7 +385,10 @@ class DeviceList(WidgetWrap):
                     device.constructed_device())
             if entire_label is not None:
                 rows.append(TableRow([
+                    Text(""),
                     (3, Text(entire_label)),
+                    Text(""),
+                    Text(""),
                 ]))
             else:
                 for part in device.partitions():
@@ -391,9 +409,11 @@ class DeviceList(WidgetWrap):
                         int(100 * part.size / device.size))
                     menu = self._action_menu_for_device(part)
                     row = TableRow([
-                        Text("[   " + label),
+                        Text("["),
+                        Text("  " + label),
                         (2, Text(part_size)),
                         menu,
+                        Text("]"),
                     ])
                     row = add_menu_row_focus_behaviour(
                         menu, row, 'menu_button', 'menu_button focus',
@@ -410,8 +430,11 @@ class DeviceList(WidgetWrap):
                     size_text = "{:>9} ({}%)".format(
                         humanize_size(free), percent)
                     rows.append(TableRow([
-                        Text("    " + _("free space")),
-                        (2, Text(size_text))
+                        Text(""),
+                        Text("  " + _("free space")),
+                        (2, Text(size_text)),
+                        Text(""),
+                        Text(""),
                     ]))
         self.table.set_contents(rows)
         if self.table._w.focus_position >= len(rows):

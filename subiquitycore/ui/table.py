@@ -263,7 +263,7 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, default_spacing):
             unpacked_user_indices, widths)
 
     # log.debug("%s", (maxcol, widths.items(),
-    #                  sum(widths.values()), unpacked_cols))
+    #                  sum(widths.values()), unpacked_user_indices))
 
     total_width = sum(widths.values())
     # If there is not enough space, find a column that can shrink.
