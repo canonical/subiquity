@@ -106,6 +106,21 @@ class ColSpec:
     # keep the width of a column with min_width set above that minimum
     # width.
     omittable = attr.ib(default=False)
+    # rpad is the width of padding to the right of this column. None
+    # means use the table's default spacing (if not the last column in
+    # the row -- that gets no padding to the right by default).
+    rpad = attr.ib(default=None)
+
+
+def _width(widths, user_indices):
+    # widths = {underlying-index: width}
+    # user_indices = iterable of user-indices
+    # return the width spanned by the specified columns, including
+    # internal but not external padding.
+    user_indices = sorted(user_indices)
+    r = sum(widths[2*i] + widths.get(2*i+1, 0) for i in user_indices[:-1])
+    r += widths[2*user_indices[-1]]
+    return r
 
 
 class TableRow(WidgetWrap):
@@ -113,6 +128,15 @@ class TableRow(WidgetWrap):
 
     A wrapper around a Columns. The widths will be set when rendered.
     """
+
+    # To allow for variable padding between columns, we can't use
+    # Columns.dividechars. Instead, the padding is implemented as
+    # extra columns. This complicates things because "column i"
+    # becomes a bit ambiguous -- does it mean the i'th column from the
+    # user's POV, or does it mean the i'th column in the Columns from
+    # urwid's POV? This code tries to refer to the former as the "user
+    # index" and the latter as the "underlying index". Mapping from
+    # one to the other is pretty simple: underlying-index = 2*user-index.
 
     def __init__(self, cells):
         """cells is a list of [widget] or [(colspan, widget)].
@@ -128,6 +152,8 @@ class TableRow(WidgetWrap):
             assert colspan > 0
             self.cells.append((colspan, cell))
             cols.append(cell)
+            cols.append(urwid.Text(""))
+        del cols[-1]
         self.columns = Columns(cols)
         super().__init__(self.columns)
 
@@ -137,121 +163,136 @@ class TableRow(WidgetWrap):
                 return True
         return False
 
-    def _indices_cells(self):
-        """Yield the column indices each cell spans and the cell.
+    def _user_indices_cells(self):
+        """Yield the user indices each cell spans and the cell.
         """
-        i = 0
+        user_i = 0
         for colspan, cell in self.cells:
-            yield range(i, i+colspan), cell
-            i += colspan
+            yield range(user_i, user_i+colspan), cell
+            user_i += colspan
 
     def get_natural_widths(self, unpacked_cols):
-        """Return a mapping {column-index:natural-width}.
+        """Return a mapping {underlying-index:natural-width}.
 
         Cells spanning multiple columns are ignored (handled in
         adjust_for_spanning_cells).
         """
         widths = {}
-        for indices, cell in self._indices_cells():
-            if len(indices) == 1 and indices[0] not in unpacked_cols:
-                widths[indices[0]] = widget_width(cell)
+        for user_indices, cell in self._user_indices_cells():
+            if len(user_indices) == 1 and user_indices[0] not in unpacked_cols:
+                widths[2*user_indices[0]] = widget_width(cell)
         return widths
 
-    def adjust_for_spanning_cells(self, unpacked_cols, widths, spacing):
+    def adjust_for_spanning_cells(self, unpacked_user_indices, widths):
         """Make sure columns are wide enough for cells with colspan > 1.
 
         This very roughly follows the approach in
         https://www.w3.org/TR/CSS2/tables.html#width-layout.
         """
-        for indices, cell in self._indices_cells():
-            if set(indices) & unpacked_cols:
+        for user_indices, cell in self._user_indices_cells():
+            if set(user_indices) & unpacked_user_indices:
                 continue
-            indices = [i for i in indices if widths[i] > 0]
-            if len(indices) <= 1:
+            user_indices = [
+                user_i for user_i in user_indices if widths[2*user_i] > 0]
+            if len(user_indices) <= 1:
                 continue
-            cur_width = sum(widths[i] for i in indices) + (
-                len(indices) - 1) * spacing
+            cur_width = _width(widths, user_indices)
             cell_width = widget_width(cell)
             if cur_width < cell_width:
                 # Attempt to widen each column by about the same amount.
                 # But widen the first few columns by more if that's
                 # whats needed.
-                div, mod = divmod(cell_width - cur_width, len(indices))
-                for i, j in enumerate(indices):
-                    widths[j] += div + int(i < mod)
+                div, mod = divmod(cell_width - cur_width, len(user_indices))
+                for i, user_j in enumerate(user_indices):
+                    widths[2*user_j] += div + int(i < mod)
 
-    def set_widths(self, widths, spacing):
+    def set_widths(self, widths):
         """Configure row to given widths.
 
-        `widths` is a mapping {column-index:width}. A column-index being
+        `widths` is a mapping {underlying-index:width}. An index being
         missing means let the column shrink, a width being 0 means omit
         the column entirely.
         """
         cols = []
-        for indices, cell in self._indices_cells():
+        for user_indices, cell in self._user_indices_cells():
             try:
-                width = sum(widths[j] for j in indices)
+                width = _width(widths, user_indices)
             except KeyError:
                 opt = self.columns.options('weight', 1)
             else:
                 if width == 0:
                     continue
-                width += spacing*(len(indices)-1)
                 opt = self.columns.options('given', width)
             cols.append((cell, opt))
+            n = widths.get(2*max(user_indices) + 1, 0)
+            if n:
+                cols.append((urwid.Text(""), self.columns.options('given', n)))
         self.columns.contents[:] = cols
-        self.columns.dividechars = spacing
 
 
-def _compute_widths_for_size(maxcol, table_rows, colspecs, spacing):
-    """Return {column-index:width} and total width for a table."""
+def _compute_widths_for_size(maxcol, table_rows, colspecs, default_spacing):
+    """Return {cell-index:width} and total width for a table."""
 
-    def total(widths):
-        ncols = sum(1 for w in widths.values() if w > 0)
-        return sum(widths.values()) + (ncols-1)*spacing
-
-    unpacked_cols = {i for i, cs in colspecs.items() if not cs.pack}
+    unpacked_user_indices = {
+        user_i for user_i, cs in colspecs.items() if not cs.pack}
 
     # Find the natural width for each column.
-    widths = {i: cs.min_width for i, cs in colspecs.items() if cs.pack}
+    # widths maps underyling index to width
+    widths = {2*i: cs.min_width for i, cs in colspecs.items() if cs.pack}
     for row in table_rows:
-        row_widths = row.base_widget.get_natural_widths(unpacked_cols)
-        for i, w in row_widths.items():
-            widths[i] = max(w, widths.get(i, 0))
+        row_widths = row.base_widget.get_natural_widths(unpacked_user_indices)
+        for underlying_i, w in row_widths.items():
+            widths[underlying_i] = max(w, widths.get(underlying_i, 0))
+
+    # count the columns...
+    colcount = max(widths.keys())//2 + 1
+    if unpacked_user_indices:
+        colcount = max(colcount, max(unpacked_user_indices) + 1)
+
+    # Set the widths of the spacing columns.
+    widths.update(
+        {2*user_i+1: default_spacing for user_i in range(colcount-1)})
+    widths.update(
+        {2*user_i+1: cs.rpad for user_i, cs in colspecs.items()
+         if cs.rpad is not None})
 
     # Make sure columns are big enough for cells that span mutiple
     # columns.
     for row in table_rows:
         row.base_widget.adjust_for_spanning_cells(
-            unpacked_cols, widths, spacing)
+            unpacked_user_indices, widths)
 
-    # log.debug("%s %s %s %s", maxcol, widths, total(widths), unpacked_cols)
+    # log.debug("%s", (maxcol, widths.items(),
+    #                  sum(widths.values()), unpacked_cols))
 
-    total_width = total(widths)
+    total_width = sum(widths.values())
     # If there is not enough space, find a column that can shrink.
     #
     # If that column has a min_width, see if we need to omit any columns
     # to hit that target.
-    if total_width > maxcol or unpacked_cols:
-        for i in list(widths)+list(unpacked_cols):
-            if colspecs[i].can_shrink or not colspecs[i].pack:
-                if i in widths:
-                    del widths[i]
-                if colspecs[i].min_width:
+    if total_width > maxcol or unpacked_user_indices:
+        for user_i in range(colcount):
+            if colspecs[user_i].can_shrink or not colspecs[user_i].pack:
+                if 2*user_i in widths:
+                    del widths[2*user_i]
+                if colspecs[user_i].min_width:
                     while True:
-                        remaining = maxcol - total(widths)
-                        if remaining >= colspecs[i].min_width + spacing:
+                        remaining = maxcol - sum(widths.values())
+                        if remaining >= colspecs[user_i].min_width:
                             break
-                        for j in widths:
-                            if widths[j] and colspecs[j].omittable:
-                                widths[j] = 0
+                        for user_j in range(colcount):
+                            if not colspecs[user_j].omittable:
+                                continue
+                            if widths.get(2*user_j):
+                                widths[2*user_j] = 0
+                                widths[2*user_j+1] = 0
                                 break
                         else:
                             break
         total_width = maxcol
 
     # log.debug("widths %s", sorted(widths.items()))
-    return widths, total_width, bool(unpacked_cols)
+    return widths, total_width, bool(unpacked_user_indices)
 
 
 class AbstractTable(WidgetWrap):
@@ -298,7 +339,7 @@ class AbstractTable(WidgetWrap):
             for row in table.table_rows:
                 if not has_unpacked:
                     row.width = total_width
-                row.base_widget.set_widths(widths, self.spacing)
+                row.base_widget.set_widths(widths)
 
     def rows(self, size, focus):
         self._compute_widths_for_size(size)
@@ -358,7 +399,7 @@ if __name__ == '__main__':
             urwid.Text('fff'*10), urwid.Text('g')]),
         ], {
             1: ColSpec(can_shrink=True, min_width=10),
-            0: ColSpec(omittable=True),
+            0: ColSpec(omittable=True, rpad=1),
             }, spacing=4)
     v = Pile([
         ('pack', v),
