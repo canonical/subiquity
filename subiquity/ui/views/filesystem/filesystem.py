@@ -261,7 +261,7 @@ class DeviceList(WidgetWrap):
         self.show_available = show_available
         self.table = TablePile([],  spacing=2, colspecs={
             0: ColSpec(rpad=1),
-            1: ColSpec(can_shrink=False),
+            1: ColSpec(can_shrink=True),
             2: ColSpec(min_width=9),
             3: ColSpec(rpad=1),
             4: ColSpec(rpad=1),
