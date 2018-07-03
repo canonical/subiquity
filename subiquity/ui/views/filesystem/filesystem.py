@@ -32,7 +32,7 @@ from urwid import (
 from subiquitycore.ui.actionmenu import (
     Action,
     ActionMenu,
-    ActionMenuButton,
+    ActionMenuOpenButton,
     )
 from subiquitycore.ui.buttons import (
     back_btn,
@@ -62,7 +62,10 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import DeviceAction, humanize_size
+from subiquity.models.filesystem import (
+    DeviceAction,
+    humanize_size,
+    )
 
 from .delete import can_delete, ConfirmDeleteStretchy
 from .disk_info import DiskInfoStretchy
@@ -251,6 +254,7 @@ class MountList(WidgetWrap):
 def _stretchy_shower(cls):
     def impl(self, device):
         self.parent.show_stretchy_overlay(cls(self.parent, device))
+    impl.opens_dialog = True
     return impl
 
 
@@ -287,7 +291,6 @@ class DeviceList(WidgetWrap):
     _partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.device, part))
     _partition_DELETE = _stretchy_shower(ConfirmDeleteStretchy)
-    _partition_FORMAT = _disk_FORMAT
 
     _raid_EDIT = _stretchy_shower(RaidStretchy)
     _raid_PARTITION = _disk_PARTITION
@@ -300,26 +303,29 @@ class DeviceList(WidgetWrap):
         getattr(self, meth_name)(device)
 
     def _action_menu_for_device(self, device):
-        if can_delete(device)[0]:
-            delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
-        else:
-            delete_btn = _("Delete *")
-        device_actions = [
-            (_("Information"),      DeviceAction.INFO),
-            (_("Edit"),             DeviceAction.EDIT),
-            (_("Add Partition"),    DeviceAction.PARTITION),
-            (_("Format / Mount"),   DeviceAction.FORMAT),
-            (delete_btn,            DeviceAction.DELETE),
-            (_("Make boot device"), DeviceAction.MAKE_BOOT),
-        ]
-        actions = []
-        for label, action in device_actions:
-            actions.append(Action(
+        device_actions = []
+        can_delete_device = can_delete(device)[0]
+        for action in device.supported_actions:
+            if action == DeviceAction.DELETE:
+                enabled = True
+                if can_delete_device:
+                    label = Color.danger_button(
+                        ActionMenuOpenButton(_("Delete")))
+                else:
+                    label = _("Delete *")
+            else:
+                label = _(action.value)
+                enabled = device.action_possible(action)
+            meth_name = '_{}_{}'.format(device.type, action.name)
+            meth = getattr(self, meth_name)
+            opens_dialog = getattr(meth, 'opens_dialog', False)
+            device_actions.append(Action(
                 label=label,
-                enabled=device.supports_action(action),
+                enabled=enabled,
                 value=action,
-                opens_dialog=action != DeviceAction.MAKE_BOOT))
-        menu = ActionMenu(actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
+                opens_dialog=opens_dialog))
+        menu = ActionMenu(
+            device_actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
         connect_signal(menu, 'action', self._action, device)
         return menu
 

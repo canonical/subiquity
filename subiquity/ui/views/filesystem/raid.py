@@ -57,6 +57,7 @@ from subiquity.models.filesystem import (
     DeviceAction,
     get_raid_size,
     humanize_size,
+    Partition,
     raidlevels,
     raidlevels_by_value,
     )
@@ -341,9 +342,19 @@ class RaidStretchy(Stretchy):
             cur_devices = existing.devices | existing.spare_devices
 
         def device_ok(dev):
-            return (dev not in omits
-                    and (dev.supports_action(DeviceAction.FORMAT)
-                         or dev in cur_devices))
+            if dev in omits:
+                return False
+            if dev in cur_devices:
+                return True
+            if dev.fs():
+                return False
+            if dev in cur_devices:
+                return True
+            if dev.constructed_device() is not None:
+                return False
+            if isinstance(dev, Partition):
+                return not dev.flag
+            return dev.action_possible(DeviceAction.FORMAT)
 
         for dev in self.parent.model.all_devices():
             if device_ok(dev):
