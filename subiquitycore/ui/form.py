@@ -58,18 +58,20 @@ class Toggleable(delegate_to_widget_mixin('_original_widget'),
 
     def __init__(self, original):
         self.original = original
-        self.enabled = False
-        self.enable()
+        self._enabled = False
+        self.enabled = True
 
-    def enable(self):
-        if not self.enabled:
+    @property
+    def enabled(self):
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, val):
+        if val and not self._enabled:
             self.original_widget = self.original
-            self.enabled = True
-
-    def disable(self):
-        if self.enabled:
+        elif not val and self._enabled:
             self.original_widget = disabled(self.original)
-            self.enabled = False
+        self._enabled = val
 
 
 class _Validator(WidgetWrap):
@@ -244,14 +246,9 @@ class BoundFormField(object):
 
     @enabled.setter
     def enabled(self, val):
-        if val != self._enabled:
-            self._enabled = val
-            if val:
-                for row in self._rows:
-                    row.enable()
-            else:
-                for row in self._rows:
-                    row.disable()
+        self._enabled = val
+        for row in self._rows:
+            row.enabled = val
 
 
 def simple_field(widget_maker):
@@ -401,10 +398,10 @@ class Form(object, metaclass=MetaForm):
                 in_error = True
                 break
         if in_error:
-            self.buttons.base_widget.contents[0][0].disable()
+            self.buttons.base_widget.contents[0][0].enabled = False
             self.buttons.base_widget.focus_position = 1
         else:
-            self.buttons.base_widget.contents[0][0].enable()
+            self.buttons.base_widget.contents[0][0].enabled = True
 
     def as_data(self):
         data = {}

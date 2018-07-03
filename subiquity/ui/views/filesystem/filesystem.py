@@ -499,8 +499,7 @@ class FilesystemView(BaseView):
     def _build_buttons(self):
         log.debug('FileSystemView: building buttons')
         self.done = Toggleable(done_btn(_("Done"), on_press=self.done))
-        if not self.model.can_install():
-            self.done.disable()
+        self.done.enabled = self.model.can_install()
 
         return [
             self.done,
@@ -517,10 +516,7 @@ class FilesystemView(BaseView):
         # selectable widget.
         while not self.lb.base_widget.focus.selectable():
             self.lb.base_widget.keypress((10, 10), 'tab')
-        if self.model.can_install():
-            self.done.enable()
-        else:
-            self.done.disable()
+        self.done.enabled = self.model.can_install()
 
     def create_raid(self, button=None):
         self.show_stretchy_overlay(RaidStretchy(self))

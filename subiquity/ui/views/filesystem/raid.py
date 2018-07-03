@@ -91,10 +91,10 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
         self.devices = value
         for d, s in self.device_to_selector.items():
             if d in self.devices:
-                s.enable()
+                s.enabled = True
                 s.base_widget.value = self.devices[d]
             else:
-                s.disable()
+                s.enabled = False
         for d, b in self.device_to_checkbox.items():
             b.set_state(d in self.devices)
 
@@ -114,24 +114,24 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
         self.supports_spares = val
         if val:
             for device in list(self.devices):
-                self.device_to_selector[device].enable()
                 selector = self.device_to_selector[device]
+                selector.enabled = True
                 self.devices[device] = selector.base_widget.value
             self.table.set_contents(self.all_rows)
         else:
             for device in list(self.devices):
-                self.device_to_selector[device].disable()
+                self.device_to_selector[device].enabled = False
                 self.devices[device] = 'active'
             self.table.set_contents(self.no_selector_rows)
 
     def _state_change_device(self, sender, state, device):
         if state:
             if self.supports_spares:
-                self.device_to_selector[device].enable()
+                self.device_to_selector[device].enabled = True
             selector = self.device_to_selector[device]
             self.devices[device] = selector.base_widget.value
         else:
-            self.device_to_selector[device].disable()
+            self.device_to_selector[device].enabled = False
             del self.devices[device]
         self._emit('change', self.devices)
 
@@ -189,7 +189,7 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                     UrwidPadding(
                         Color.menu_button(selector),
                         left=len(prefix)))
-                selector.disable()
+                selector.enabled = False
                 self.device_to_selector[device] = selector
                 self.all_rows.append(TableRow([(2, selector)]))
                 # Do not append that one to no_selector_rows!
@@ -386,7 +386,8 @@ class RaidStretchy(Stretchy):
                 Text("You cannot save edit to RAIDs just yet."),
                 Text(""),
                 ]
-            self.form.validated = lambda *args: self.form.done_btn.disable()
+            self.form.validated = lambda *args: setattr(
+                self.form.done_btn, 'enabled', False)
             self.form.validated()
 
         super().__init__(
