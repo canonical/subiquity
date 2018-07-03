@@ -199,6 +199,11 @@ class _Formattable(ABC):
         assert action in self.supported_actions
         return getattr(self, "_can_" + action.name)
 
+    @property
+    @abstractmethod
+    def ok_for_raid(self):
+        pass
+
 
 # Nothing is put in the first and last megabytes of the disk to allow
 # space for the GPT data.
@@ -360,6 +365,8 @@ class Disk(_Device):
         not self.grub_device and self._fs is None
         and self._constructed_device is None)
 
+    ok_for_raid = _can_FORMAT
+
 
 @attr.s(cmp=False)
 class Partition(_Formattable):
@@ -405,6 +412,16 @@ class Partition(_Formattable):
     _can_DELETE = property(
         lambda self: self.flag not in ('boot', 'bios_grub'))
 
+    @property
+    def ok_for_raid(self):
+        if self.flag:
+            return False
+        if self._fs is not None:
+            return False
+        if self._constructed_device is not None:
+            return False
+        return True
+
 
 @attr.s(cmp=False)
 class Raid(_Device):
@@ -444,6 +461,14 @@ class Raid(_Device):
     @property
     def path(self):
         return "/dev/{}".format(self.name)
+
+    @property
+    def ok_for_raid(self):
+        if self._fs is not None:
+            return False
+        if self._constructed_device is not None:
+            return False
+        return True
 
 
 @attr.s(cmp=False)
