@@ -19,9 +19,22 @@ from urwid import Text
 from subiquitycore.ui.buttons import done_btn
 from subiquitycore.ui.utils import button_pile
 from subiquitycore.ui.stretchy import Stretchy
+from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 
 
 log = logging.getLogger('subiquity.ui.filesystem.disk_info')
+
+
+labels_keys = [
+    ('Path:', 'devname'),
+    ('Vendor:', 'vendor'),
+    ('Model:', 'model'),
+    ('SerialNo:', 'serial'),
+    ('Size:', 'size'),
+    ('Bus:', 'bus'),
+    ('Rotational:', 'rotational'),
+    ('Path:', 'devpath'),
+]
 
 
 class DiskInfoStretchy(Stretchy):
@@ -29,18 +42,12 @@ class DiskInfoStretchy(Stretchy):
         log.debug('DiskInfoView: {}'.format(disk))
         self.parent = parent
         dinfo = disk.info_for_display()
-        template = """\
-{devname}:\n
- Vendor: {vendor}
- Model: {model}
- SerialNo: {serial}
- Size: {humansize} ({size}B)
- Bus: {bus}
- Rotational: {rotational}
- Path: {devpath}"""
-        result = template.format(**dinfo)
+        rows = []
+        for label, key in labels_keys:
+            v = str(dinfo[key])
+            rows.append(TableRow([Text(label, align='right'), Text(v)]))
         widgets = [
-            Text(result),
+            TablePile(rows, colspecs={1: ColSpec(can_shrink=True)}),
             Text(""),
             button_pile([done_btn(_("Close"), on_press=self.close)]),
             ]
