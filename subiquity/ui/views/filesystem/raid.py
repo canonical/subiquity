@@ -51,8 +51,6 @@ from subiquitycore.ui.utils import (
     Color,
     )
 
-from .partition import FSTypeField
-from subiquity.ui.mount import MountField
 from subiquity.models.filesystem import (
     get_raid_size,
     humanize_size,
@@ -207,31 +205,15 @@ raidlevel_choices = [
 
 class RaidForm(Form):
 
-    def __init__(self, mountpoint_to_devpath_mapping,
-                 all_devices, initial, raid_names):
-        self.mountpoint_to_devpath_mapping = mountpoint_to_devpath_mapping
+    def __init__(self, all_devices, initial, raid_names):
         self.all_devices = all_devices
         self.raid_names = raid_names
         super().__init__(initial)
-        connect_signal(self.fstype.widget, 'select', self.select_fstype)
-        self.select_fstype(None, self.fstype.widget.value)
 
     name = StringField(_("Name:"))
     level = ChoiceField(_("RAID Level:"), choices=raidlevel_choices)
     devices = MultiDeviceField(_("Devices:"))
     size = ReadOnlyField(_("Size:"))
-
-    def select_fstype(self, sender, fs):
-        self.mount.enabled = fs.is_mounted
-
-    fstype = FSTypeField(_("Format:"))
-    mount = MountField(_("Mount:"))
-
-    def clean_mount(self, val):
-        if self.fstype.value.is_mounted:
-            return val
-        else:
-            return None
 
     def clean_name(self, val):
         if not re.match('md[0-9]+', val):
@@ -253,23 +235,10 @@ class RaidForm(Form):
                 'RAID Level "{}" requires at least {} active devices').format(
                 self.level.value.name, self.level.value.min_devices)
 
-    def validate_mount(self):
-        mount = self.mount.value
-        if mount is None:
-            return
-        # /usr/include/linux/limits.h:PATH_MAX
-        if len(mount) > 4095:
-            return _('Path exceeds PATH_MAX')
-        dev = self.mountpoint_to_devpath_mapping.get(mount)
-        if dev is not None:
-            return _("{} is already mounted at {}").format(dev, mount)
-
 
 class RaidStretchy(Stretchy):
     def __init__(self, parent, existing=None):
         self.parent = parent
-        mountpoint_to_devpath_mapping = (
-            self.parent.model.get_mountpoint_to_devpath_mapping())
         self.existing = existing
         raid_names = {raid.name for raid in parent.model.all_raids()}
         if existing is None:
@@ -289,17 +258,6 @@ class RaidStretchy(Stretchy):
         else:
             raid_names.remove(existing.name)
             title = _('Edit software RAID disk "{}"').format(existing.name)
-            f = existing.fs()
-            if f is None:
-                fs = parent.model.fs_by_name[None]
-                m = None
-            else:
-                fs = parent.model.fs_by_name[f.fstype]
-                m = f.mount()
-                if m:
-                    m = m.path
-                    if m in mountpoint_to_devpath_mapping:
-                        del mountpoint_to_devpath_mapping[m]
             name = existing.name
             if name.startswith('md/'):
                 name = name[3:]
@@ -310,41 +268,18 @@ class RaidStretchy(Stretchy):
                 devices[d] = 'spare'
             initial = {
                 'devices': devices,
-                'fstype': fs,
-                'mount': m,
                 'name': name,
                 'level': raidlevels_by_value[existing.raidlevel]
                 }
 
         all_devices = []
 
-        # We mustn't allow the user to add a device to this raid if it
-        # is built out of this raid!
-        omits = set()
-
-        def _walk_down(o):
-            if o is None:
-                return
-            if o in omits:
-                raise Exception(
-                    "block device cycle detected involving {}".format(o))
-            omits.add(o)
-            _walk_down(o.constructed_device())
-            for p in o.partitions():
-                _walk_down(p)
-
-        _walk_down(existing)
-
         cur_devices = set()
         if existing:
             cur_devices = existing.devices | existing.spare_devices
 
         def device_ok(dev):
-            if dev in omits:
-                return False
-            if dev in cur_devices:
-                return True
-            return dev.ok_for_raid
+            return dev != existing and (dev in cur_devices or dev.ok_for_raid)
 
         for dev in self.parent.model.all_devices():
             if device_ok(dev):
@@ -358,8 +293,7 @@ class RaidStretchy(Stretchy):
                     all_devices.append((LABEL, dev))
                     all_devices.extend(ok_parts)
 
-        form = self.form = RaidForm(
-            mountpoint_to_devpath_mapping, all_devices, initial, raid_names)
+        form = self.form = RaidForm(all_devices, initial, raid_names)
 
         self.form.devices.widget.set_supports_spares(
             initial['level'].supports_spares)
@@ -370,15 +304,6 @@ class RaidStretchy(Stretchy):
         connect_signal(form, 'cancel', self.cancel)
 
         rows = form.as_rows()
-
-        if existing is not None:
-            rows[0:0] = [
-                Text("You cannot save edit to RAIDs just yet."),
-                Text(""),
-                ]
-            self.form.validated = lambda *args: setattr(
-                self.form.done_btn, 'enabled', False)
-            self.form.validated()
 
         super().__init__(
             title,

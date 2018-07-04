@@ -40,6 +40,7 @@ from subiquitycore.ui.buttons import (
     danger_btn,
     done_btn,
     menu_btn,
+    other_btn,
     reset_btn,
     )
 from subiquitycore.ui.container import (
@@ -67,7 +68,7 @@ from subiquity.models.filesystem import (
     humanize_size,
     )
 
-from .delete import can_delete, ConfirmDeleteStretchy
+from .delete import ConfirmDeleteStretchy
 from .disk_info import DiskInfoStretchy
 from .partition import PartitionStretchy, FormatEntireStretchy
 from .raid import RaidStretchy
@@ -257,6 +258,35 @@ def _stretchy_shower(cls):
     return impl
 
 
+class WhyNotStretchy(Stretchy):
+
+    def __init__(self, parent, obj, action, whynot):
+        self.parent = parent
+        self.obj = obj
+
+        title = "Cannot {action} {type}".format(
+            action=_(action.value).lower(),
+            type=obj.desc())
+        widgets = [
+            Text(whynot),
+            Text(""),
+            button_pile([
+                other_btn(label=_("Close"), on_press=self.close),
+                ]),
+        ]
+        super().__init__(title, widgets, 0, 2)
+
+    def close(self, sender=None):
+        self.parent.remove_overlay()
+
+
+def _whynot_shower(view, action, whynot):
+    def impl(obj):
+        view.show_stretchy_overlay(WhyNotStretchy(view, obj, action, whynot))
+    impl.opens_dialog = True
+    return impl
+
+
 class DeviceList(WidgetWrap):
 
     def __init__(self, parent, show_available):
@@ -280,46 +310,56 @@ class DeviceList(WidgetWrap):
     _disk_PARTITION = _stretchy_shower(PartitionStretchy)
     _disk_FORMAT = _stretchy_shower(FormatEntireStretchy)
 
+    def _disk_REMOVE(self, disk):
+        cd = disk.constructed_device()
+        assert cd.type == "raid"
+        if disk in cd.devices:
+            cd.devices.remove(disk)
+        else:
+            cd.spare_devices.remove(disk)
+        disk._constructed_device = None
+        self.parent.refresh_model_inputs()
+
     def _disk_MAKE_BOOT(self, disk):
         self.parent.controller.make_boot_disk(disk)
         self.parent.refresh_model_inputs()
 
     _partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.device, part))
+    _partition_REMOVE = _disk_REMOVE
     _partition_DELETE = _stretchy_shower(ConfirmDeleteStretchy)
 
     _raid_EDIT = _stretchy_shower(RaidStretchy)
     _raid_PARTITION = _disk_PARTITION
     _raid_FORMAT = _disk_FORMAT
+    _raid_REMOVE = _disk_REMOVE
     _raid_DELETE = _partition_DELETE
 
-    def _action(self, sender, action, device):
-        log.debug('_action %s %s', action, device)
-        meth_name = '_{}_{}'.format(device.type, action.name)
-        getattr(self, meth_name)(device)
+    def _action(self, sender, value, device):
+        action, meth = value
+        log.debug('_action %s %s', action, device.id)
+        meth(device)
 
     def _action_menu_for_device(self, device):
         device_actions = []
-        can_delete_device = can_delete(device)[0]
         for action in device.supported_actions:
-            if action == DeviceAction.DELETE:
+            label = _(action.value)
+            enabled, whynot = device.action_possible(action)
+            if whynot:
+                assert not enabled
                 enabled = True
-                if can_delete_device:
-                    label = Color.danger_button(
-                        ActionMenuOpenButton(_("Delete")))
-                else:
-                    label = _("Delete *")
+                label += " *"
+                meth = _whynot_shower(self.parent, action, whynot)
             else:
-                label = _(action.value)
-                enabled = device.action_possible(action)
-            meth_name = '_{}_{}'.format(device.type, action.name)
-            meth = getattr(self, meth_name)
-            opens_dialog = getattr(meth, 'opens_dialog', False)
+                meth_name = '_{}_{}'.format(device.type, action.name)
+                meth = getattr(self, meth_name)
+            if not whynot and action == DeviceAction.DELETE:
+                label = Color.danger_button(ActionMenuOpenButton(label))
             device_actions.append(Action(
                 label=label,
                 enabled=enabled,
-                value=action,
-                opens_dialog=opens_dialog))
+                value=(action, meth),
+                opens_dialog=getattr(meth, 'opens_dialog', False)))
         menu = ActionMenu(
             device_actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
         connect_signal(menu, 'action', self._action, device)

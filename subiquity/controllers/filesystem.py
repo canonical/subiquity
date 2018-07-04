@@ -254,7 +254,6 @@ class FilesystemController(BaseController):
             spec['level'].value,
             spec['devices'],
             spec['spare_devices'])
-        self.create_filesystem(raid, spec)
         return raid
 
     def delete_raid(self, raid):
@@ -304,8 +303,17 @@ class FilesystemController(BaseController):
     def raid_handler(self, existing, spec):
         log.debug("raid_handler %s %s", existing, spec)
         if existing is not None:
-            raise Exception("erk")
-        self.create_raid(spec)
+            for d in existing.devices | existing.spare_devices:
+                d._constructed_device = None
+            for d in spec['devices'] | spec['spare_devices']:
+                self.delete_filesystem(d.fs())
+                d._constructed_device = existing
+            existing.name = spec['name']
+            existing.raidlevel = spec['level'].value
+            existing.devices = spec['devices']
+            existing.spare_devices = spec['spare_devices']
+        else:
+            self.create_raid(spec)
 
     def make_boot_disk(self, new_boot_disk):
         boot_partition = None
