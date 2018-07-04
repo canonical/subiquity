@@ -310,17 +310,29 @@ class DeviceList(WidgetWrap):
     _disk_PARTITION = _stretchy_shower(PartitionStretchy)
     _disk_FORMAT = _stretchy_shower(FormatEntireStretchy)
 
+    def _disk_REMOVE(self, disk):
+        cd = disk.constructed_device()
+        assert cd.type == "raid"
+        if disk in cd.devices:
+            cd.devices.remove(disk)
+        else:
+            cd.spare_devices.remove(disk)
+        disk._constructed_device = None
+        self.parent.refresh_model_inputs()
+
     def _disk_MAKE_BOOT(self, disk):
         self.parent.controller.make_boot_disk(disk)
         self.parent.refresh_model_inputs()
 
     _partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.device, part))
+    _partition_REMOVE = _disk_REMOVE
     _partition_DELETE = _stretchy_shower(ConfirmDeleteStretchy)
 
     _raid_EDIT = _stretchy_shower(RaidStretchy)
     _raid_PARTITION = _disk_PARTITION
     _raid_FORMAT = _disk_FORMAT
+    _raid_REMOVE = _disk_REMOVE
     _raid_DELETE = _partition_DELETE
 
     def _action(self, sender, value, device):

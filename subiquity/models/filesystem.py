@@ -167,8 +167,52 @@ class DeviceAction(enum.Enum):
     PARTITION = _("Add Partition")
     CREATE_LV = _("Create Logical Volume")
     FORMAT = _("Format")
+    REMOVE = _("Remove from RAID")
     DELETE = _("Delete")
     MAKE_BOOT = _("Make Boot Device")
+
+
+def _generic_can_EDIT(obj):
+    cd = obj.constructed_device()
+    if cd is None:
+        return True
+    return _(
+        "Cannot edit {selflabel} as it is part of the {cdtype} "
+        "{cdname}.").format(
+            selflabel=obj.label,
+            cdtype=cd.desc(),
+            cdname=cd.label)
+
+
+def _generic_can_REMOVE(obj):
+    cd = obj.constructed_device()
+    if cd is None:
+        return False
+    assert isinstance(cd, Raid)
+    if obj in cd.spare_devices:
+        return True
+    min_devices = raidlevels_by_value[cd.raidlevel].min_devices
+    if len(cd.devices) == min_devices:
+        return _(
+            "Removing {selflabel} would leave the {cdtype} {cdlabel} with less"
+            " than {min_devices} devices.").format(
+                selflabel=obj.label,
+                cdtype=cd.desc(),
+                cdlabel=cd.label,
+                min_devices=min_devices)
+    return True
+
+
+def _generic_can_DELETE(obj):
+    cd = obj.constructed_device()
+    if cd is None:
+        return True
+    return _(
+        "Cannot delete {selflabel} as it is part of the {cdtype} "
+        "{cdname}.").format(
+            selflabel=obj.label,
+            cdtype=cd.desc(),
+            cdname=cd.label)
 
 
 @attr.s(cmp=False)
@@ -359,6 +403,7 @@ class Disk(_Device):
         DeviceAction.INFO,
         DeviceAction.PARTITION,
         DeviceAction.FORMAT,
+        DeviceAction.REMOVE,
         DeviceAction.MAKE_BOOT,
         ]
     _can_INFO = True
@@ -366,36 +411,13 @@ class Disk(_Device):
     _can_FORMAT = property(
         lambda self: len(self._partitions) == 0 and
         self._constructed_device is None)
+    _can_REMOVE = property(_generic_can_REMOVE)
     _can_MAKE_BOOT = property(
         lambda self:
         not self.grub_device and self._fs is None
         and self._constructed_device is None)
 
     ok_for_raid = _can_FORMAT
-
-
-def _generic_can_DELETE(obj):
-    cd = obj.constructed_device()
-    if cd is None:
-        return True
-    return _(
-        "Cannot delete {selflabel} as it is part of the {cdtype} "
-        "{cdname}.").format(
-            selflabel=obj.label,
-            cdtype=cd.desc(),
-            cdname=cd.label)
-
-
-def _generic_can_EDIT(obj):
-    cd = obj.constructed_device()
-    if cd is None:
-        return True
-    return _(
-        "Cannot edit {selflabel} as it is part of the {cdtype} "
-        "{cdname}.").format(
-            selflabel=obj.label,
-            cdtype=cd.desc(),
-            cdname=cd.label)
 
 
 @attr.s(cmp=False)
@@ -435,10 +457,12 @@ class Partition(_Formattable):
 
     supported_actions = [
         DeviceAction.EDIT,
+        DeviceAction.REMOVE,
         DeviceAction.DELETE,
         ]
 
     _can_EDIT = property(_generic_can_EDIT)
+    _can_REMOVE = property(_generic_can_REMOVE)
 
     @property
     def _can_DELETE(self):
@@ -482,6 +506,7 @@ class Raid(_Device):
         DeviceAction.EDIT,
         DeviceAction.PARTITION,
         DeviceAction.FORMAT,
+        DeviceAction.REMOVE,
         DeviceAction.DELETE,
         ]
 
@@ -498,6 +523,7 @@ class Raid(_Device):
     _can_FORMAT = property(
         lambda self: len(self._partitions) == 0 and
         self._constructed_device is None)
+    _can_REMOVE = property(_generic_can_REMOVE)
 
     @property
     def _can_DELETE(self):
