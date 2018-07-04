@@ -32,7 +32,7 @@ from urwid import (
 from subiquitycore.ui.actionmenu import (
     Action,
     ActionMenu,
-    ActionMenuButton,
+    ActionMenuOpenButton,
     )
 from subiquitycore.ui.buttons import (
     back_btn,
@@ -62,7 +62,10 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import DeviceAction, humanize_size
+from subiquity.models.filesystem import (
+    DeviceAction,
+    humanize_size,
+    )
 
 from .delete import can_delete, ConfirmDeleteStretchy
 from .disk_info import DiskInfoStretchy
@@ -173,7 +176,6 @@ class MountList(WidgetWrap):
         self._no_mounts_content = Color.info_minor(
             Text(_("No disks or partitions mounted.")))
         super().__init__(self.table)
-        self.refresh_model_inputs()
 
     def _mount_action(self, sender, action, mount):
         log.debug('_mount_action %s %s', action, mount)
@@ -251,6 +253,7 @@ class MountList(WidgetWrap):
 def _stretchy_shower(cls):
     def impl(self, device):
         self.parent.show_stretchy_overlay(cls(self.parent, device))
+    impl.opens_dialog = True
     return impl
 
 
@@ -272,9 +275,6 @@ class DeviceList(WidgetWrap):
             text = _("No used devices")
         self._no_devices_content = Color.info_minor(Text(text))
         super().__init__(self.table)
-        self.refresh_model_inputs()
-        # I don't really know why this is required:
-        self.table._select_first_selectable()
 
     _disk_INFO = _stretchy_shower(DiskInfoStretchy)
     _disk_PARTITION = _stretchy_shower(PartitionStretchy)
@@ -287,7 +287,6 @@ class DeviceList(WidgetWrap):
     _partition_EDIT = _stretchy_shower(
         lambda parent, part: PartitionStretchy(parent, part.device, part))
     _partition_DELETE = _stretchy_shower(ConfirmDeleteStretchy)
-    _partition_FORMAT = _disk_FORMAT
 
     _raid_EDIT = _stretchy_shower(RaidStretchy)
     _raid_PARTITION = _disk_PARTITION
@@ -300,26 +299,29 @@ class DeviceList(WidgetWrap):
         getattr(self, meth_name)(device)
 
     def _action_menu_for_device(self, device):
-        if can_delete(device)[0]:
-            delete_btn = Color.danger_button(ActionMenuButton(_("Delete")))
-        else:
-            delete_btn = _("Delete *")
-        device_actions = [
-            (_("Information"),      DeviceAction.INFO),
-            (_("Edit"),             DeviceAction.EDIT),
-            (_("Add Partition"),    DeviceAction.PARTITION),
-            (_("Format / Mount"),   DeviceAction.FORMAT),
-            (delete_btn,            DeviceAction.DELETE),
-            (_("Make boot device"), DeviceAction.MAKE_BOOT),
-        ]
-        actions = []
-        for label, action in device_actions:
-            actions.append(Action(
+        device_actions = []
+        can_delete_device = can_delete(device)[0]
+        for action in device.supported_actions:
+            if action == DeviceAction.DELETE:
+                enabled = True
+                if can_delete_device:
+                    label = Color.danger_button(
+                        ActionMenuOpenButton(_("Delete")))
+                else:
+                    label = _("Delete *")
+            else:
+                label = _(action.value)
+                enabled = device.action_possible(action)
+            meth_name = '_{}_{}'.format(device.type, action.name)
+            meth = getattr(self, meth_name)
+            opens_dialog = getattr(meth, 'opens_dialog', False)
+            device_actions.append(Action(
                 label=label,
-                enabled=device.supports_action(action),
+                enabled=enabled,
                 value=action,
-                opens_dialog=action != DeviceAction.MAKE_BOOT))
-        menu = ActionMenu(actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
+                opens_dialog=opens_dialog))
+        menu = ActionMenu(
+            device_actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
         connect_signal(menu, 'action', self._action, device)
         return menu
 
@@ -337,20 +339,23 @@ class DeviceList(WidgetWrap):
         log.debug('FileSystemView: building device list')
         rows = []
 
-        def _fmt_fs(label, fs):
-            r = _("{} {}").format(label, fs.fstype)
-            if not self.parent.model.fs_by_name[fs.fstype].is_mounted:
-                return r
-            m = fs.mount()
-            if m:
-                r += _(", {}").format(m.path)
+        def _usage_label(obj):
+            cd = obj.constructed_device()
+            if cd is not None:
+                return _("{component_name} of {name}").format(
+                    component_name=cd.component_name, name=cd.name)
+            fs = obj.fs()
+            if fs is not None:
+                m = fs.mount()
+                if m:
+                    return _(
+                        "formatted as {fstype}, mounted at {path}").format(
+                            fstype=fs.fstype, path=m.path)
+                else:
+                    return _("formatted as {fstype}, not mounted").format(
+                        fstype=fs.fstype)
             else:
-                r += _(", not mounted")
-            return r
-
-        def _fmt_constructed(label, device):
-            return _("{} part of {} ({})").format(
-                label, device.label, device.desc())
+                return _("unused")
 
         rows.append(TableRow([Color.info_minor(heading) for heading in [
             Text(" "),
@@ -374,19 +379,10 @@ class DeviceList(WidgetWrap):
                 menu, row, 'menu_button', 'menu_button focus')
             rows.append(row)
 
-            entire_label = None
-            if device.fs():
-                entire_label = _fmt_fs(
-                    "    " + _("entire device formatted as"),
-                    device.fs())
-            elif device.constructed_device():
-                entire_label = _fmt_constructed(
-                    "    " + _("entire device"),
-                    device.constructed_device())
-            if entire_label is not None:
+            if not device.partitions():
                 rows.append(TableRow([
                     Text(""),
-                    (3, Text(entire_label)),
+                    (3, Text("  " + _usage_label(device))),
                     Text(""),
                     Text(""),
                 ]))
@@ -394,23 +390,13 @@ class DeviceList(WidgetWrap):
                 for part in device.partitions():
                     if part.available() != self.show_available:
                         continue
-                    prefix = _("partition {},").format(part._number)
-                    if part.flag == "bios_grub":
-                        label = prefix + " bios_grub"
-                    elif part.fs():
-                        label = _fmt_fs(prefix, part.fs())
-                    elif part.constructed_device():
-                        label = _fmt_constructed(
-                            prefix, part.constructed_device())
-                    else:
-                        label = _("{} not formatted").format(prefix)
+                    menu = self._action_menu_for_device(part)
                     part_size = "{:>9} ({}%)".format(
                         humanize_size(part.size),
                         int(100 * part.size / device.size))
-                    menu = self._action_menu_for_device(part)
                     row = TableRow([
                         Text("["),
-                        Text("  " + label),
+                        Text("  " + _("partition {}").format(part._number)),
                         (2, Text(part_size)),
                         menu,
                         Text("]"),
@@ -419,6 +405,16 @@ class DeviceList(WidgetWrap):
                         menu, row, 'menu_button', 'menu_button focus',
                         cursor_x=4)
                     rows.append(row)
+                    if part.flag == "bios_grub":
+                        label = "bios_grub"
+                    else:
+                        label = _usage_label(part)
+                    rows.append(TableRow([
+                        Text(""),
+                        (3, Text("    " + label)),
+                        Text(""),
+                        Text(""),
+                    ]))
                 if (self.show_available
                         and device.used > 0
                         and device.free_for_partitions > 0):
@@ -456,9 +452,9 @@ class FilesystemView(BaseView):
         self.avail_list = DeviceList(self, True)
         self.used_list = DeviceList(self, False)
         self.avail_list.table.bind(self.used_list.table)
-        self._create_raid_btn = menu_btn(
+        self._create_raid_btn = Toggleable(menu_btn(
             label=_("Create software RAID (md)"),
-            on_press=self.create_raid)
+            on_press=self.create_raid))
 
         bp = button_pile([self._create_raid_btn])
         bp.align = 'left'
@@ -488,13 +484,12 @@ class FilesystemView(BaseView):
             focus_buttons=self.model.can_install())
         frame.width = ('relative', 95)
         super().__init__(frame)
+        self.refresh_model_inputs()
         log.debug('FileSystemView init complete()')
 
     def _build_buttons(self):
         log.debug('FileSystemView: building buttons')
         self.done = Toggleable(done_btn(_("Done"), on_press=self.done))
-        if not self.model.can_install():
-            self.done.disable()
 
         return [
             self.done,
@@ -503,18 +498,20 @@ class FilesystemView(BaseView):
             ]
 
     def refresh_model_inputs(self):
+        raid_devices = set()
+        for d in self.model.all_devices():
+            if d.ok_for_raid:
+                raid_devices.add(d)
+            for p in d.partitions():
+                if p.ok_for_raid:
+                    raid_devices.add(p)
+            self._create_raid_btn.enabled = len(raid_devices) > 1
         self.mount_list.refresh_model_inputs()
         self.avail_list.refresh_model_inputs()
         self.used_list.refresh_model_inputs()
-        # If refreshing the view has left the focus widget with no
-        # selectable widgets, simulate a tab to move to the next
-        # selectable widget.
-        while not self.lb.base_widget.focus.selectable():
-            self.lb.base_widget.keypress((10, 10), 'tab')
-        if self.model.can_install():
-            self.done.enable()
-        else:
-            self.done.disable()
+        # This is an awful hack, actual thinking required:
+        self.lb.base_widget._select_first_selectable()
+        self.done.enabled = self.model.can_install()
 
     def create_raid(self, button=None):
         self.show_stretchy_overlay(RaidStretchy(self))
