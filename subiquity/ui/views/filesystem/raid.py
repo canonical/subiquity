@@ -51,7 +51,6 @@ from subiquitycore.ui.utils import (
     Color,
     )
 
-from subiquity.ui.mount import MountField
 from subiquity.models.filesystem import (
     get_raid_size,
     humanize_size,
@@ -275,33 +274,12 @@ class RaidStretchy(Stretchy):
 
         all_devices = []
 
-        # We mustn't allow the user to add a device to this raid if it
-        # is built out of this raid!
-        omits = set()
-
-        def _walk_down(o):
-            if o is None:
-                return
-            if o in omits:
-                raise Exception(
-                    "block device cycle detected involving {}".format(o))
-            omits.add(o)
-            _walk_down(o.constructed_device())
-            for p in o.partitions():
-                _walk_down(p)
-
-        _walk_down(existing)
-
         cur_devices = set()
         if existing:
             cur_devices = existing.devices | existing.spare_devices
 
         def device_ok(dev):
-            if dev in omits:
-                return False
-            if dev in cur_devices:
-                return True
-            return dev.ok_for_raid
+            return dev != existing and (dev in cur_devices or dev.ok_for_raid)
 
         for dev in self.parent.model.all_devices():
             if device_ok(dev):
