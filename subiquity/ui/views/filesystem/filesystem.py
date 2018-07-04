@@ -339,20 +339,23 @@ class DeviceList(WidgetWrap):
         log.debug('FileSystemView: building device list')
         rows = []
 
-        def _fmt_fs(label, fs):
-            r = _("{} {}").format(label, fs.fstype)
-            if not self.parent.model.fs_by_name[fs.fstype].is_mounted:
-                return r
-            m = fs.mount()
-            if m:
-                r += _(", {}").format(m.path)
+        def _usage_label(obj):
+            cd = obj.constructed_device()
+            if cd is not None:
+                return _("{component_name} of {name}").format(
+                    component_name=cd.component_name, name=cd.name)
+            fs = obj.fs()
+            if fs is not None:
+                m = fs.mount()
+                if m:
+                    return _(
+                        "formatted as {fstype}, mounted at {path}").format(
+                            fstype=fs.fstype, path=m.path)
+                else:
+                    return _("formatted as {fstype}, not mounted").format(
+                        fstype=fs.fstype)
             else:
-                r += _(", not mounted")
-            return r
-
-        def _fmt_constructed(label, device):
-            return _("{} part of {} ({})").format(
-                label, device.label, device.desc())
+                return _("unused")
 
         rows.append(TableRow([Color.info_minor(heading) for heading in [
             Text(" "),
@@ -376,19 +379,10 @@ class DeviceList(WidgetWrap):
                 menu, row, 'menu_button', 'menu_button focus')
             rows.append(row)
 
-            entire_label = None
-            if device.fs():
-                entire_label = _fmt_fs(
-                    "    " + _("entire device formatted as"),
-                    device.fs())
-            elif device.constructed_device():
-                entire_label = _fmt_constructed(
-                    "    " + _("entire device"),
-                    device.constructed_device())
-            if entire_label is not None:
+            if not device.partitions():
                 rows.append(TableRow([
                     Text(""),
-                    (3, Text(entire_label)),
+                    (3, Text("  " + _usage_label(device))),
                     Text(""),
                     Text(""),
                 ]))
@@ -396,23 +390,13 @@ class DeviceList(WidgetWrap):
                 for part in device.partitions():
                     if part.available() != self.show_available:
                         continue
-                    prefix = _("partition {},").format(part._number)
-                    if part.flag == "bios_grub":
-                        label = prefix + " bios_grub"
-                    elif part.fs():
-                        label = _fmt_fs(prefix, part.fs())
-                    elif part.constructed_device():
-                        label = _fmt_constructed(
-                            prefix, part.constructed_device())
-                    else:
-                        label = _("{} not formatted").format(prefix)
+                    menu = self._action_menu_for_device(part)
                     part_size = "{:>9} ({}%)".format(
                         humanize_size(part.size),
                         int(100 * part.size / device.size))
-                    menu = self._action_menu_for_device(part)
                     row = TableRow([
                         Text("["),
-                        Text("  " + label),
+                        Text("  " + _("partition {}").format(part._number)),
                         (2, Text(part_size)),
                         menu,
                         Text("]"),
@@ -421,6 +405,16 @@ class DeviceList(WidgetWrap):
                         menu, row, 'menu_button', 'menu_button focus',
                         cursor_x=4)
                     rows.append(row)
+                    if part.flag == "bios_grub":
+                        label = "bios_grub"
+                    else:
+                        label = _usage_label(part)
+                    rows.append(TableRow([
+                        Text(""),
+                        (3, Text("    " + label)),
+                        Text(""),
+                        Text(""),
+                    ]))
                 if (self.show_available
                         and device.used > 0
                         and device.free_for_partitions > 0):

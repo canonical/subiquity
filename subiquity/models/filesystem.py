@@ -470,6 +470,9 @@ class Raid(_Device):
             return False
         return True
 
+    # What is a device that makes up this device referred to as?
+    component_name = "component"
+
 
 @attr.s(cmp=False)
 class Filesystem:
