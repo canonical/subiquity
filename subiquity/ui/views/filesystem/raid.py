@@ -305,15 +305,6 @@ class RaidStretchy(Stretchy):
 
         rows = form.as_rows()
 
-        if existing is not None:
-            rows[0:0] = [
-                Text("You cannot save edit to RAIDs just yet."),
-                Text(""),
-                ]
-            self.form.validated = lambda *args: setattr(
-                self.form.done_btn, 'enabled', False)
-            self.form.validated()
-
         super().__init__(
             title,
             [Pile(rows), Text(""), self.form.buttons],
