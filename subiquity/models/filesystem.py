@@ -676,7 +676,7 @@ class FilesystemModel(object):
             if isinstance(obj, Partition):
                 return obj.device.id in emitted_ids
             elif isinstance(obj, Raid):
-                for device in obj.devices:
+                for device in obj.devices | obj.spare_devices:
                     if device.id not in emitted_ids:
                         return False
                 return True
