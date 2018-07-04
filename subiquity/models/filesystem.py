@@ -106,10 +106,14 @@ def dehumanize_size(size):
     return num * mult // div
 
 
+# This is a guess!
+RAID_OVERHEAD = 8 * (1 << 20)
+
+
 def get_raid_size(level, devices):
     if len(devices) == 0:
         return 0
-    min_size = min(dev.size for dev in devices)
+    min_size = min(dev.size for dev in devices) - RAID_OVERHEAD
     if min_size <= 0:
         return 0
     if level == 0:
