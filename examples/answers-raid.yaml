@@ -41,7 +41,7 @@ Filesystem:
           - [disk index 0, part 3]
           - spare
     - obj: [raid name md1]
-      action: FORMAT
+      action: PARTITION
       data:
         fstype: ext4
         mount: /

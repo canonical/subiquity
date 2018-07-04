@@ -693,7 +693,7 @@ class FilesystemModel(object):
                 if can_emit(obj):
                     emit(obj)
                 else:
-                    next_work.apped(obj)
+                    next_work.append(obj)
             if len(next_work) == len(work):
                 raise Exception(
                     "rendering block devices made no progress: {}".format(
