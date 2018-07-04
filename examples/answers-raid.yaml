@@ -31,7 +31,7 @@ Filesystem:
         mount: null
     - action: create-raid
       data:
-        name: md11
+        name: md1
         level: 1
         devices:
           - [disk index 0, part 1]
@@ -40,6 +40,11 @@ Filesystem:
           - active
           - [disk index 0, part 3]
           - spare
+    - obj: [raid name md1]
+      action: FORMAT
+      data:
+        fstype: ext4
+        mount: /
     - action: done
 Identity:
   realname: Ubuntu

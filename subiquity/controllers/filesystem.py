@@ -254,7 +254,6 @@ class FilesystemController(BaseController):
             spec['level'].value,
             spec['devices'],
             spec['spare_devices'])
-        self.create_filesystem(raid, spec)
         return raid
 
     def delete_raid(self, raid):
