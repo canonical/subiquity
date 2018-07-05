@@ -234,6 +234,14 @@ class NetworkView(BaseView):
         if isinstance(self._w, StretchyOverlay) and \
            hasattr(self._w.stretchy, 'refresh_model_inputs'):
             self._w.stretchy.refresh_model_inputs()
+        # we have heading, and then three lines per interface
+        # selectable line, extra line, whitespace line
+        # and focus ends up on the last whitespace line
+        # despite it, not being selectable. *derp*
+        current_focus = self.device_table.focus_position
+        if not self.device_table._w.contents[current_focus][0].selectable():
+            if self.device_table._w.contents[current_focus-2][0].selectable():
+                self.device_table._w.set_focus(current_focus-2)
 
     def show_network_error(self, action, info=None):
         self.error_showing = True
