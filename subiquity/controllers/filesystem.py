@@ -265,6 +265,34 @@ class FilesystemController(BaseController):
             self.delete_partition(p)
         self.model.remove_raid(raid)
 
+    def create_volgroup(self, spec):
+        for d in spec['devices']:
+            self.delete_filesystem(d.fs())
+        return self.model.add_volgroup(
+            name=spec['name'],
+            devices=spec['devices'])
+    create_lvm_volgroup = create_volgroup
+
+    def delete_volgroup(self, vg):
+        for lv in vg._partitions:
+            self.delete_logical_volume(lv)
+        self.model.remove_volgroup(vg)
+    delete_lvm_volgroup = delete_volgroup
+
+    def create_logical_volume(self, vg, spec):
+        lv = self.model.add_logical_volume(
+            vg=vg,
+            name=spec['name'],
+            size=spec['size'])
+        self.create_filesystem(lv, spec)
+        return lv
+    create_lvm_partition = create_logical_volume
+
+    def delete_logical_volume(self, lv):
+        self.delete_filesystem(lv.fs())
+        self.model.remove_logical_volume(lv)
+    delete_lvm_partition = delete_logical_volume
+
     def partition_disk_handler(self, disk, partition, spec):
         log.debug('partition_disk_handler: %s %s %s', disk, partition, spec)
         log.debug('disk.freespace: {}'.format(disk.free_for_partitions))
@@ -295,6 +323,21 @@ class FilesystemController(BaseController):
 
         log.info("Successfully added partition")
 
+    def logical_volume_handler(self, vg, lv, spec):
+        log.debug('logical_volume_handler: %s %s %s', vg, lv, spec)
+        log.debug('vg.freespace: {}'.format(vg.free_for_partitions))
+
+        if lv is not None:
+            lv.name = spec['name']
+            lv.size = align_up(spec['size'])
+            if vg.free_for_partitions < 0:
+                raise Exception("lv size too large")
+            self.delete_filesystem(lv.fs())
+            self.create_filesystem(lv, spec)
+            return
+
+        self.create_logical_volume(vg, spec)
+
     def add_format_handler(self, volume, spec):
         log.debug('add_format_handler %s %s', volume, spec)
         self.delete_filesystem(volume.fs())
@@ -314,6 +357,19 @@ class FilesystemController(BaseController):
             existing.spare_devices = spec['spare_devices']
         else:
             self.create_raid(spec)
+
+    def volgroup_handler(self, existing, spec):
+        log.debug("volgroup_handler %s %s", existing, spec)
+        if existing is not None:
+            for d in existing.devices:
+                d._constructed_device = None
+            for d in spec['devices']:
+                self.delete_filesystem(d.fs())
+                d._constructed_device = existing
+            existing.name = spec['name']
+            existing.devices = spec['devices']
+        else:
+            self.create_volgroup(spec)
 
     def make_boot_disk(self, new_boot_disk):
         boot_partition = None
