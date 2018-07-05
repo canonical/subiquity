@@ -186,7 +186,7 @@ class DeviceAction(enum.Enum):
     PARTITION = _("Add Partition")
     CREATE_LV = _("Create Logical Volume")
     FORMAT = _("Format")
-    REMOVE = _("Remove from RAID")
+    REMOVE = _("Remove from RAID/LVM")
     DELETE = _("Delete")
     MAKE_BOOT = _("Make Boot Device")
 
@@ -271,6 +271,11 @@ class _Formattable(ABC):
     @property
     @abstractmethod
     def ok_for_raid(self):
+        pass
+
+    @property
+    @abstractmethod
+    def ok_for_lvm(self):
         pass
 
 
@@ -436,7 +441,7 @@ class Disk(_Device):
         not self.grub_device and self._fs is None
         and self._constructed_device is None)
 
-    ok_for_raid = _can_FORMAT
+    ok_for_raid = ok_for_lvm = _can_FORMAT
 
 
 @attr.s(cmp=False)
@@ -498,6 +503,8 @@ class Partition(_Formattable):
         if self._constructed_device is not None:
             return False
         return True
+
+    ok_for_lvm = ok_for_raid
 
 
 @attr.s(cmp=False)
@@ -562,6 +569,8 @@ class Raid(_Device):
         if self._fs is not None:
             return False
 
+    ok_for_lvm = ok_for_raid
+
     # What is a device that makes up this device referred to as?
     component_name = "component"
 
@@ -582,6 +591,12 @@ class LVM_VolGroup(_Device):
 
     def desc(self):
         return "LVM volume group"
+
+    supported_actions = [
+        DeviceAction.EDIT,
+        DeviceAction.CREATE_LV,
+        DeviceAction.DELETE,
+        ]
 
     ok_for_raid = False
 
@@ -624,6 +639,7 @@ class LVM_LogicalVolume(_Formattable):
         return self.volgroup.path + '/' + self.name
 
     ok_for_raid = False
+    ok_for_lvm = False
 
 
 @attr.s(cmp=False)
