@@ -15,6 +15,7 @@
 
 import logging
 import ipaddress
+import yaml
 
 from urwid import (
     connect_signal,
@@ -32,6 +33,8 @@ from subiquitycore.ui.form import (
 from subiquitycore.ui.interactive import RestrictedEditor, StringEditor
 from subiquitycore.ui.stretchy import Stretchy
 
+from subiquitycore.ui.utils import button_pile
+from subiquitycore.ui.buttons import done_btn
 
 log = logging.getLogger(
     'subiquitycore.network.network_configure_ipv4_interface')
@@ -279,4 +282,22 @@ class AddVlanStretchy(Stretchy):
         self.parent.controller.add_vlan(self.device, self.form.vlan.value)
 
     def cancel(self, sender=None):
+        self.parent.remove_overlay()
+
+
+class ViewInterfaceInfo(Stretchy):
+    def __init__(self, parent, device):
+        log.debug('ViewInterfaceInfo: {}'.format(device))
+        self.parent = parent
+        result = yaml.dump(device._net_info.serialize(),
+                           default_flow_style=False)
+        widgets = [
+            Text(result),
+            Text(""),
+            button_pile([done_btn(_("Close"), on_press=self.close)]),
+            ]
+        title = _("Info for {}").format(device.name)
+        super().__init__(title, widgets, 0, 2)
+
+    def close(self, button=None):
         self.parent.remove_overlay()
