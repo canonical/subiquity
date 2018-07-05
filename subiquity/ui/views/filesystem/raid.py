@@ -205,7 +205,8 @@ raidlevel_choices = [
 
 class RaidForm(Form):
 
-    def __init__(self, all_devices, initial, raid_names):
+    def __init__(self, model, all_devices, initial, raid_names):
+        self.model = model
         self.all_devices = all_devices
         self.raid_names = raid_names
         super().__init__(initial)
@@ -234,6 +235,13 @@ class RaidForm(Form):
             return _(
                 'RAID Level "{}" requires at least {} active devices').format(
                 self.level.value.name, self.level.value.min_devices)
+        if not self.model.bootable():
+            mdc = self.devices.widget
+            empty_disks = {d for d in self.model.all_disks() if d.used == 0}
+            if not empty_disks - set(mdc.value):
+                return _("\
+If you put all disks into a RAID, there will be nowhere \
+to put the boot partition.")
 
 
 class RaidStretchy(Stretchy):
@@ -293,7 +301,8 @@ class RaidStretchy(Stretchy):
                     all_devices.append((LABEL, dev))
                     all_devices.extend(ok_parts)
 
-        form = self.form = RaidForm(all_devices, initial, raid_names)
+        form = self.form = RaidForm(
+            self.parent.model, all_devices, initial, raid_names)
 
         self.form.devices.widget.set_supports_spares(
             initial['level'].supports_spares)
