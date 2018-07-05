@@ -551,7 +551,21 @@ class FilesystemView(BaseView):
         self.used_list.refresh_model_inputs()
         # This is an awful hack, actual thinking required:
         self.lb.base_widget._select_first_selectable()
-        self.done.enabled = self.model.can_install()
+        can_install = self.model.can_install()
+        self.done.enabled = can_install
+        if can_install:
+            self.controller.ui.set_footer(
+                _("Select Done to begin the installation."))
+        else:
+            if not self.model.has_bootloader_partition():
+                self.controller.ui.set_footer(self.footer)
+            elif not self.model.is_root_mounted():
+                self.controller.ui.set_footer(
+                    _("You need to mount a device at / to continue."))
+            elif not self.model.is_slash_boot_on_local_disk():
+                self.controller.ui.set_footer(
+                    _("You must mount a partition of a local disk at /boot to "
+                      "continue."))
 
     def create_raid(self, button=None):
         self.show_stretchy_overlay(RaidStretchy(self))

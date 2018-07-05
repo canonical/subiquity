@@ -235,7 +235,7 @@ class RaidForm(Form):
             return _(
                 'RAID Level "{}" requires at least {} active devices').format(
                 self.level.value.name, self.level.value.min_devices)
-        if not self.model.bootable():
+        if not self.model.has_bootloader_partition():
             mdc = self.devices.widget
             empty_disks = {d for d in self.model.all_disks() if d.used == 0}
             if not empty_disks - set(mdc.value):
