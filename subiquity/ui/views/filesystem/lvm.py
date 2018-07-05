@@ -81,7 +81,7 @@ class VolGroupStretchy(Stretchy):
         else:
             vg_names.remove(existing.name)
             title = _('Edit volume group "{}"').format(existing.name)
-            devices = {d:'active' for d in existing.devices}
+            devices = {d: 'active' for d in existing.devices}
             initial = {
                 'devices': devices,
                 'name': existing.name,
