@@ -51,9 +51,6 @@ from subiquity.ui.views.filesystem.compound import (
 log = logging.getLogger('subiquity.ui.raid')
 
 
-LABEL, DEVICE, PART = range(3)
-
-
 raidlevel_choices = [
     Option((_(level.name), True, level)) for level in raidlevels]
 
