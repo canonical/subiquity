@@ -92,8 +92,10 @@ class SizeField(FormField):
 
 class PartitionForm(Form):
 
-    def __init__(self, mountpoint_to_devpath_mapping, max_size, initial={}):
+    def __init__(self, mountpoint_to_devpath_mapping, max_size, initial,
+                 ok_for_slash_boot):
         self.mountpoint_to_devpath_mapping = mountpoint_to_devpath_mapping
+        self.ok_for_slash_boot = ok_for_slash_boot
         self.max_size = max_size
         if max_size is not None:
             self.size_str = humanize_size(max_size)
@@ -194,7 +196,8 @@ class PartitionStretchy(Stretchy):
                 initial['fstype'] = self.model.fs_by_name[None]
 
         self.form = PartitionForm(
-            mountpoint_to_devpath_mapping, max_size, initial)
+            mountpoint_to_devpath_mapping, max_size, initial,
+            isinstance(disk, Disk))
 
         if label is not None:
             self.form.buttons.base_widget[0].set_label(label)
@@ -280,7 +283,8 @@ class FormatEntireStretchy(Stretchy):
                     del mountpoint_to_devpath_mapping[mount.path]
         else:
             initial['fstype'] = self.model.fs_by_name[None]
-        self.form = PartitionForm(mountpoint_to_devpath_mapping, 0, initial)
+        self.form = PartitionForm(
+            mountpoint_to_devpath_mapping, 0, initial, False)
         self.form.remove_field('size')
 
         connect_signal(self.form, 'submit', self.done)

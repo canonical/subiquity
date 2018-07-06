@@ -277,8 +277,8 @@ class FilesystemController(BaseController):
             self.create_filesystem(partition, spec)
             return
 
-        bootable = self.model.bootable()
-        log.debug('model has bootable device? {}'.format(bootable))
+        bootable = self.model.has_bootloader_partition()
+        log.debug('model has bootloader partition? {}'.format(bootable))
         can_be_boot = DeviceAction.MAKE_BOOT in disk.supported_actions
         if not bootable and len(disk.partitions()) == 0 and can_be_boot:
             part = self._create_boot_partition(disk)

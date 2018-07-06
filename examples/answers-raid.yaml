@@ -19,16 +19,14 @@ Filesystem:
       data:
         size: 1G
         fstype: null
-    - obj: [disk index 0]
+    - &newpart
+      obj: [disk index 0]
       action: PARTITION
       data:
         size: 1G
-        mount: null
-    - obj: [disk index 0]
-      action: PARTITION
-      data:
-        size: 1G
-        mount: null
+        fstype: null
+    - *newpart
+    - *newpart
     - action: create-raid
       data:
         name: md1
@@ -40,6 +38,11 @@ Filesystem:
           - active
           - [disk index 0, part 3]
           - spare
+    - obj: [disk index 0]
+      action: PARTITION
+      data:
+        size: 1G
+        mount: /boot
     - obj: [raid name md1]
       action: PARTITION
       data:

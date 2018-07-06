@@ -859,17 +859,42 @@ class FilesystemModel(object):
     def any_configuration_done(self):
         return len(self._disks) > 0
 
-    def can_install(self):
-        # Do we need to check that there is a disk with the boot flag?
-        return ('/' in self.get_mountpoint_to_devpath_mapping() and
-                self.bootable())
-
-    def bootable(self):
+    def has_bootloader_partition(self):
         ''' true if one disk has a boot partition '''
         for p in self._partitions:
             if p.flag == 'bios_grub' or p.flag == 'boot':
                 return True
         return False
+
+    def is_root_mounted(self):
+        for mount in self._mounts:
+            if mount.path == '/':
+                return True
+        return False
+
+    def is_slash_boot_on_local_disk(self):
+        for mount in self._mounts:
+            if mount.path == '/boot':
+                dev = mount.device.volume
+                # We should never allow anything other than a
+                # partition of a local disk to be mounted at /boot but
+                # well.
+                return (
+                    isinstance(dev, Partition)
+                    and isinstance(dev.device, Disk))
+        for mount in self._mounts:
+            if mount.path == '/':
+                dev = mount.device.volume
+                return (
+                    isinstance(dev, Partition)
+                    and isinstance(dev.device, Disk))
+        return False
+
+    def can_install(self):
+        # Do we need to check that there is a disk with the boot flag?
+        return (self.is_root_mounted()
+                and self.has_bootloader_partition()
+                and self.is_slash_boot_on_local_disk())
 
     def add_swapfile(self):
         for m in self._mounts:

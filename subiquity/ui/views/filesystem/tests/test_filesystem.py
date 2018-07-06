@@ -23,6 +23,7 @@ class FilesystemViewTests(unittest.TestCase):
 
     def make_view(self, devices=[]):
         controller = mock.create_autospec(spec=FilesystemController)
+        controller.ui = mock.Mock()
         model = mock.create_autospec(spec=FilesystemModel)
         model.all_devices.return_value = devices
         return FilesystemView(model, controller)
