@@ -246,6 +246,21 @@ class NetworkController(BaseController, TaskWatcher):
         except subprocess.CalledProcessError:
             self.ui.frame.body.show_network_error('add-vlan')
 
+    def add_bond(self, params):
+        cmd = ['ip', 'link', 'add',
+               'name', '%(name)s' % params,
+               'type', 'bond',
+               'mode', '%(mode)s' % params]
+        if params['mode'] in ['balance-xor', '802.3ad', 'balance-tlb']:
+            cmd += ['xmit_hash_policy', '%(xmit_hash_policy)s' % params]
+        if params['mode'] == '802.3ad':
+            cmd += ['lacp_rate', '%(lacp_rate)s' % params]
+
+        try:
+            run_command(cmd, check=True)
+        except subprocess.CalledProcessError:
+            self.ui.frame.body.show_network_error('add-bond')
+
     def rm_virtual_interface(self, device):
         cmd = ['ip', 'link', 'delete', 'dev', device.name]
         try:
@@ -265,7 +280,7 @@ class NetworkController(BaseController, TaskWatcher):
         write_file(self.netplan_path, '\n'.join((
             ("# This is the network config written by '%s'" %
              self.opts.project),
-            yaml.dump(config))), omode="w")
+            yaml.dump(config, default_flow_style=False))), omode="w")
 
         self.model.parse_netplan_configs(self.root)
         if self.opts.dry_run:

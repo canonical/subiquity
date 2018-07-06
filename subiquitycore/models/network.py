@@ -23,7 +23,7 @@ from subiquitycore import netplan
 
 NETDEV_IGNORED_IFACE_NAMES = ['lo']
 NETDEV_IGNORED_IFACE_TYPES = ['bridge', 'tun', 'tap', 'dummy', 'sit']
-NETDEV_WHITELIST_IFACE_TYPES = ['vlan']
+NETDEV_WHITELIST_IFACE_TYPES = ['vlan', 'bond']
 log = logging.getLogger('subiquitycore.models.network')
 
 
@@ -51,9 +51,15 @@ class Networkdev:
             link, vid = self.name.split('.')
             self._configuration['id'] = int(vid)
             self._configuration['link'] = link
+        if self.type == 'bond':
+            self._configuration['parameters'] = {
+                'mode': self._net_info.bond['mode'],
+                'lacp-rate': self._net_info.bond['lacp_rate'],
+                'transmit-hash-policy': self._net_info.bond['xmit_hash_policy'],
+            }
 
     def render(self):
-        if self.configured_ip_addresses or self.dhcp4 or self.dhcp6:
+        if self.type == 'bond' or self.configured_ip_addresses or self.dhcp4 or self.dhcp6:
             return {self.name: self._configuration}
         else:
             return {}
@@ -311,17 +317,6 @@ class NetworkModel(object):
     """
     additional_options = []
 
-    # TODO: what is "linear" level?
-    bonding_modes = {
-        0: 'balance-rr',
-        1: 'active-backup',
-        2: 'balance-xor',
-        3: 'broadcast',
-        4: '802.3ad',
-        5: 'balance-tlb',
-        6: 'balance-alb',
-    }
-
     def __init__(self, support_wlan=True):
         self.support_wlan = support_wlan
         self.devices = {}  # Maps ifindex to Networkdev
@@ -384,59 +379,6 @@ class NetworkModel(object):
 
     def get_netdev_by_name(self, name):
         return self.devices_by_name[name]
-
-    def add_bond(self, ifname, interfaces, params=[], subnets=[]):
-        # This needs rewriting!
-        ''' create a bond action and info dict from parameters '''
-        for iface in interfaces:
-            self.devices[iface].remove_networks()
-            self.devices[iface].dhcp4 = False
-            self.devices[iface].dhcp6 = False
-            self.devices[iface].switchport = True
-
-        info = {
-            "bond": {
-                "is_master": True,
-                "is_slave": False,
-                "mode": params['bond-mode'],
-                "slaves": interfaces,
-            },
-            "bridge": {
-                "interfaces": [],
-                "is_bridge": False,
-                "is_port": False,
-                "options": {}
-            },
-            "hardware": {
-                "INTERFACE": ifname,
-                'ID_MODEL_FROM_DATABASE': " + ".join(interfaces),
-                'attrs': {
-                    'address': "00:00:00:00:00:00",
-                    'speed': None,
-                },
-            },
-            "ip": {
-                "addr": "0.0.0.0",
-                "netmask": "0.0.0.0",
-                "source": None
-            },
-            "type": "bond"
-        }
-        bondinfo = info
-        bonddev = Networkdev(ifname, 'bond')
-        bonddev.configure(probe_info=bondinfo)
-
-        # update slave interface info
-        for bondifname in interfaces:
-            bondif = self.get_interface(bondifname)
-            bondif.info.bond['is_slave'] = True
-            log.debug('Marking {} as bond slave'.format(bondifname))
-
-        log.debug("add_bond: {} as netdev({})".format(
-                  ifname, bonddev))
-
-        self.devices[ifname] = bonddev
-        self.info[ifname] = bondinfo
 
     def clear_gateways(self):
         log.debug("clearing default gateway")

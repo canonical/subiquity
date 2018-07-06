@@ -30,12 +30,18 @@ from urwid import (
     )
 
 from subiquitycore.ui.actionmenu import ActionMenu
-from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn
+from subiquitycore.ui.buttons import (
+    back_btn,
+    cancel_btn,
+    done_btn,
+    menu_btn,
+    )
 from subiquitycore.ui.container import (
     ListBox,
     Pile,
     WidgetWrap,
     )
+from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import (
@@ -45,7 +51,11 @@ from subiquitycore.ui.utils import (
     Padding,
     )
 from .network_configure_manual_interface import (
-    EditNetworkStretchy, AddVlanStretchy, ViewInterfaceInfo)
+    AddBondStretchy,
+    AddVlanStretchy,
+    EditNetworkStretchy,
+    ViewInterfaceInfo,
+    )
 from .network_configure_wlan_interface import NetworkConfigureWLANStretchy
 
 from subiquitycore.view import BaseView
@@ -115,7 +125,14 @@ class NetworkView(BaseView):
                 0: ColSpec(rpad=1),
                 4: ColSpec(can_shrink=True, rpad=1),
                 })
+        self.create_bond_btn = Toggleable(menu_btn(
+            label=_("Create bond"),
+            on_press=self._action_add_bond))
+
+        bond_pile = button_pile([self.create_bond_btn])
+        bond_pile.align = 'left'
         self.listbox = ListBox([self.device_table] + [
+            bond_pile,
             Padding.line_break(""),
         ])
         self.bottom = Pile([
@@ -152,6 +169,9 @@ class NetworkView(BaseView):
 
     def _action_add_vlan(self, device):
         self.show_stretchy_overlay(AddVlanStretchy(self, device))
+
+    def _action_add_bond(self, button=None):
+        self.show_stretchy_overlay(AddBondStretchy(self))
 
     def _action_rm_dev(self, device):
         self.controller.rm_virtual_interface(device)
