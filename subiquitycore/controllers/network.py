@@ -18,6 +18,7 @@ import logging
 import os
 import select
 import socket
+import subprocess
 
 import yaml
 
@@ -242,14 +243,14 @@ class NetworkController(BaseController, TaskWatcher):
                'link', device.name, 'type', 'vlan', 'id', str(vlan)]
         try:
             run_command(cmd, check=True)
-        except:
+        except subprocess.CalledProcessError:
             self.ui.frame.body.show_network_error('add-vlan')
 
     def rm_virtual_interface(self, device):
         cmd = ['ip', 'link', 'delete', 'dev', device.name]
         try:
             run_command(cmd, check=True)
-        except:
+        except subprocess.CalledProcessError:
             self.ui.frame.body.show_network_error('rm-dev')
 
     def network_finish(self, config):

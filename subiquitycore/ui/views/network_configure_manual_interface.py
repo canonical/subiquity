@@ -239,6 +239,7 @@ class EditNetworkStretchy(Stretchy):
     def cancel(self, sender=None):
         self.parent.remove_overlay()
 
+
 class VlanForm(Form):
 
     def __init__(self, parent, device):
