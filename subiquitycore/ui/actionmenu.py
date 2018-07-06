@@ -120,7 +120,7 @@ class ActionMenu(PopUpLauncher):
     signals = ['action', 'open', 'close']
 
     def __init__(self, opts,
-                 icon="\N{BLACK RIGHT-POINTING SMALL TRIANGLE} ]"):
+                 icon="\N{BLACK RIGHT-POINTING SMALL TRIANGLE}"):
         self._actions = []
         for opt in opts:
             if not isinstance(opt, Action):

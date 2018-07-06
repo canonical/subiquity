@@ -24,7 +24,6 @@ import logging
 import attr
 
 from urwid import (
-    AttrMap,
     connect_signal,
     Text,
     )
@@ -57,7 +56,7 @@ from subiquitycore.ui.table import (
 from subiquitycore.ui.utils import (
     button_pile,
     Color,
-    CursorOverride,
+    make_action_menu_row,
     Padding,
     screen,
     )
@@ -108,26 +107,6 @@ class FilesystemConfirmation(Stretchy):
 
     def cancel(self, sender):
         self.parent.remove_overlay()
-
-
-def add_menu_row_focus_behaviour(menu, row, attr_map, focus_map, cursor_x=2):
-    """Configure focus behaviour of row (which contains menu)
-
-    The desired behaviour is that:
-
-    1) The cursor appears at the left of the row rather than where the
-       menu is.
-    2) The row is highlighted when focused and retains that focus even
-       when the popup is open.
-    """
-    if not isinstance(attr_map, dict):
-        attr_map = {None: attr_map}
-    if not isinstance(focus_map, dict):
-        focus_map = {None: focus_map}
-    am = AttrMap(CursorOverride(row, cursor_x=cursor_x), attr_map, focus_map)
-    connect_signal(menu, 'open', lambda menu: am.set_attr_map(focus_map))
-    connect_signal(menu, 'close', lambda menu: am.set_attr_map(attr_map))
-    return am
 
 
 @attr.s
@@ -228,10 +207,9 @@ class MountList(WidgetWrap):
                             "/".join(mi.split_path[1:]),
                             ]
             actions = [(_("Unmount"), mi.mount.can_delete(), 'unmount')]
-            menu = ActionMenu(
-                actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
+            menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._mount_action, mi.mount)
-            row = TableRow([
+            cells = [
                 Text("["),
                 Text(path_markup),
                 Text(mi.size, align='right'),
@@ -239,12 +217,15 @@ class MountList(WidgetWrap):
                 Text(mi.desc),
                 menu,
                 Text("]"),
-            ])
-            row = add_menu_row_focus_behaviour(
+            ]
+            row = make_action_menu_row(
+                cells,
                 menu,
-                row,
-                'menu_button',
-                {None: 'menu_button focus', 'info_minor': 'menu_button focus'})
+                attr_map='menu_button',
+                focus_map={
+                    None: 'menu_button focus',
+                    'info_minor': 'menu_button focus',
+                })
             rows.append(row)
         self.table.set_contents(rows)
         if self.table._w.focus_position >= len(rows):
@@ -360,8 +341,7 @@ class DeviceList(WidgetWrap):
                 enabled=enabled,
                 value=(action, meth),
                 opens_dialog=getattr(meth, 'opens_dialog', False)))
-        menu = ActionMenu(
-            device_actions, "\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
+        menu = ActionMenu(device_actions)
         connect_signal(menu, 'action', self._action, device)
         return menu
 
@@ -407,16 +387,15 @@ class DeviceList(WidgetWrap):
         ]]))
         for device in devices:
             menu = self._action_menu_for_device(device)
-            row = TableRow([
+            cells = [
                 Text("["),
                 Text(device.label),
                 Text("{:>9}".format(humanize_size(device.size))),
                 Text(device.desc()),
                 menu,
                 Text("]"),
-            ])
-            row = add_menu_row_focus_behaviour(
-                menu, row, 'menu_button', 'menu_button focus')
+            ]
+            row = make_action_menu_row(cells, menu)
             rows.append(row)
 
             if not device.partitions():
@@ -434,16 +413,14 @@ class DeviceList(WidgetWrap):
                     part_size = "{:>9} ({}%)".format(
                         humanize_size(part.size),
                         int(100 * part.size / device.size))
-                    row = TableRow([
+                    cells = [
                         Text("["),
                         Text("  " + _("partition {}").format(part._number)),
                         (2, Text(part_size)),
                         menu,
                         Text("]"),
-                    ])
-                    row = add_menu_row_focus_behaviour(
-                        menu, row, 'menu_button', 'menu_button focus',
-                        cursor_x=4)
+                    ]
+                    row = make_action_menu_row(cells, menu, cursor_x=4)
                     rows.append(row)
                     if part.flag == "bios_grub":
                         label = "bios_grub"

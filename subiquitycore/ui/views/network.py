@@ -144,7 +144,12 @@ class NetworkView(BaseView):
         self.controller = controller
         self.items = []
         self.error = Text("", align='center')
-        self.device_table = TablePile(self._build_model_inputs(), spacing=2, colspecs={3:ColSpec(can_shrink=True)})
+        self.device_table = TablePile(
+            self._build_model_inputs(),
+            spacing=2, colspecs={
+                0: ColSpec(rpad=1),
+                4: ColSpec(can_shrink=True, rpad=1),
+                })
         self.listbox = ListBox([self.device_table] + [
             Padding.line_break(""),
         ])
@@ -187,7 +192,9 @@ class NetworkView(BaseView):
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()
         rows = []
-        rows.append(TableRow([Color.info_minor(header) for header in [Text("  NAME"), Text("TYPE"), Text("DHCP"), Text("ADDRESSES")]]))
+        rows.append(TableRow([
+            Color.info_minor(Text(header))
+            for header in ["", "NAME", "TYPE", "DHCP", "ADDRESSES", ""]]))
         for dev in netdevs:
             dhcp = []
             if dev.dhcp4:
@@ -226,17 +233,20 @@ class NetworkView(BaseView):
                 ]
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._action, dev)
-            rows.append(make_action_menu_row(
-                [
-                    Text(dev.name),
-                    Text(dev.type),
-                    Text(dhcp),
-                    Text(addresses, wrap='clip'),
-                ],
+            rows.append(make_action_menu_row([
+                Text("["),
+                Text(dev.name),
+                Text(dev.type),
+                Text(dhcp),
+                Text(addresses, wrap='clip'),
                 menu,
-            ))
+                Text("]"),
+                ], menu))
             info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
-            rows.append(Color.info_minor(TableRow([(4, Text("  " + info))])))
+            rows.append(Color.info_minor(TableRow([
+                Text(""),
+                (4, Text(info)),
+                Text("")])))
             rows.append(Color.info_minor(TableRow([(4, Text(""))])))
         return rows
 

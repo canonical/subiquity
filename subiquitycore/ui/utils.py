@@ -302,11 +302,11 @@ class ClickableIcon(SelectableIcon):
 
 
 def make_action_menu_row(
-        cells, menu,
+        cells,
+        menu,
         attr_map='menu_button', focus_map='menu_button focus',
         cursor_x=2):
-    cells[0].set_text('[ ' + cells[0].text)
-    row = TableRow(cells + [menu])
+    row = TableRow(cells)
     if not isinstance(attr_map, dict):
         attr_map = {None: attr_map}
     if not isinstance(focus_map, dict):
