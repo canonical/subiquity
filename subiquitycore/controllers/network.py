@@ -18,6 +18,7 @@ import logging
 import os
 import select
 import socket
+import subprocess
 
 import yaml
 
@@ -236,6 +237,21 @@ class NetworkController(BaseController, TaskWatcher):
         else:
             netplan_config_file_name = '00-snapd-config.yaml'
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
+
+    def add_vlan(self, device, vlan):
+        cmd = ['ip', 'link', 'add', 'name', '%s.%s' % (device.name, vlan),
+               'link', device.name, 'type', 'vlan', 'id', str(vlan)]
+        try:
+            run_command(cmd, check=True)
+        except subprocess.CalledProcessError:
+            self.ui.frame.body.show_network_error('add-vlan')
+
+    def rm_virtual_interface(self, device):
+        cmd = ['ip', 'link', 'delete', 'dev', device.name]
+        try:
+            run_command(cmd, check=True)
+        except subprocess.CalledProcessError:
+            self.ui.frame.body.show_network_error('rm-dev')
 
     def network_finish(self, config):
         log.debug("network config: \n%s",

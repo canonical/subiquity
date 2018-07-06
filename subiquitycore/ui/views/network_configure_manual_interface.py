@@ -15,6 +15,7 @@
 
 import logging
 import ipaddress
+import yaml
 
 from urwid import (
     connect_signal,
@@ -32,6 +33,8 @@ from subiquitycore.ui.form import (
 from subiquitycore.ui.interactive import RestrictedEditor, StringEditor
 from subiquitycore.ui.stretchy import Stretchy
 
+from subiquitycore.ui.utils import button_pile
+from subiquitycore.ui.buttons import done_btn
 
 log = logging.getLogger(
     'subiquitycore.network.network_configure_ipv4_interface')
@@ -234,4 +237,68 @@ class EditNetworkStretchy(Stretchy):
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
+        self.parent.remove_overlay()
+
+
+class VlanForm(Form):
+
+    def __init__(self, parent, device):
+        self.parent = parent
+        self.device = device
+        super().__init__()
+
+    vlan = StringField(_("VLAN ID:"))
+
+    def clean_vlan(self, value):
+        try:
+            vlanid = int(value)
+        except ValueError:
+            vlanid = None
+        if vlanid is None or vlanid < 1 or vlanid > 4095:
+            raise ValueError(
+                _("VLAN ID must be between 1 and 4095"))
+        return vlanid
+
+    def validate_vlan(self):
+        new_name = '%s.%s' % (self.device.name, self.vlan.value)
+        if new_name in self.parent.model.devices_by_name:
+            return _("%s already exists") % new_name
+
+
+class AddVlanStretchy(Stretchy):
+
+    def __init__(self, parent, device):
+        self.parent = parent
+        self.device = device
+        self.form = VlanForm(parent, device)
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+        super().__init__(
+            _('Add a VLAN tag'),
+            [Pile(self.form.as_rows()), Text(""), self.form.buttons],
+            0, 0)
+
+    def done(self, sender):
+        self.parent.remove_overlay()
+        self.parent.controller.add_vlan(self.device, self.form.vlan.value)
+
+    def cancel(self, sender=None):
+        self.parent.remove_overlay()
+
+
+class ViewInterfaceInfo(Stretchy):
+    def __init__(self, parent, device):
+        log.debug('ViewInterfaceInfo: {}'.format(device))
+        self.parent = parent
+        result = yaml.dump(device._net_info.serialize(),
+                           default_flow_style=False)
+        widgets = [
+            Text(result),
+            Text(""),
+            button_pile([done_btn(_("Close"), on_press=self.close)]),
+            ]
+        title = _("Info for {}").format(device.name)
+        super().__init__(title, widgets, 0, 2)
+
+    def close(self, button=None):
         self.parent.remove_overlay()

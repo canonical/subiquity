@@ -44,7 +44,8 @@ from subiquitycore.ui.utils import (
     make_action_menu_row,
     Padding,
     )
-from .network_configure_manual_interface import EditNetworkStretchy
+from .network_configure_manual_interface import (
+    EditNetworkStretchy, AddVlanStretchy, ViewInterfaceInfo)
 from .network_configure_wlan_interface import NetworkConfigureWLANStretchy
 
 from subiquitycore.view import BaseView
@@ -138,7 +139,7 @@ class NetworkView(BaseView):
         return button_pile([done, back])
 
     def _action_info(self, device):
-        pass
+        self.show_stretchy_overlay(ViewInterfaceInfo(self, device))
 
     def _action_edit_ipv4(self, device):
         self.show_stretchy_overlay(EditNetworkStretchy(self, device, 4))
@@ -148,6 +149,12 @@ class NetworkView(BaseView):
 
     def _action_edit_ipv6(self, device):
         self.show_stretchy_overlay(EditNetworkStretchy(self, device, 6))
+
+    def _action_add_vlan(self, device):
+        self.show_stretchy_overlay(AddVlanStretchy(self, device))
+
+    def _action_rm_dev(self, device):
+        self.controller.rm_virtual_interface(device)
 
     def _action(self, sender, action, device):
         m = getattr(self, '_action_{}'.format(action))
@@ -199,6 +206,10 @@ class NetworkView(BaseView):
                 ("Edit IPv4", True, 'edit_ipv4', True),
                 ("Edit IPv6", True, 'edit_ipv6', True),
                 ]
+            if dev.type != 'vlan':
+                actions.append((_("Add a VLAN tag"), True, 'add_vlan', True))
+            if dev.is_virtual:
+                actions.append((_("Delete"), True, 'rm_dev', True))
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._action, dev)
             rows.append(make_action_menu_row([
@@ -223,6 +234,14 @@ class NetworkView(BaseView):
         if isinstance(self._w, StretchyOverlay) and \
            hasattr(self._w.stretchy, 'refresh_model_inputs'):
             self._w.stretchy.refresh_model_inputs()
+        # we have heading, and then three lines per interface
+        # selectable line, extra line, whitespace line
+        # and focus ends up on the last whitespace line
+        # despite it, not being selectable. *derp*
+        current_focus = self.device_table.focus_position
+        if not self.device_table._w.contents[current_focus][0].selectable():
+            if self.device_table._w.contents[current_focus-2][0].selectable():
+                self.device_table._w.set_focus(current_focus-2)
 
     def show_network_error(self, action, info=None):
         self.error_showing = True
@@ -244,6 +263,10 @@ class NetworkView(BaseView):
             self.error.set_text("Downing network interfaces failed.")
         elif action == 'canceled':
             self.error.set_text("Network configuration canceled.")
+        elif action == 'add-vlan':
+            self.error.set_text("Failed to add a VLAN tag.")
+        elif action == 'rm-dev':
+            self.error.set_text("Failed to delete a virtual interface.")
         else:
             self.error.set_text("An unexpected error has occurred; "
                                 "please verify your settings.")

@@ -23,6 +23,7 @@ from subiquitycore import netplan
 
 NETDEV_IGNORED_IFACE_NAMES = ['lo']
 NETDEV_IGNORED_IFACE_TYPES = ['bridge', 'tun', 'tap', 'dummy', 'sit']
+NETDEV_WHITELIST_IFACE_TYPES = ['vlan']
 log = logging.getLogger('subiquitycore.models.network')
 
 
@@ -45,6 +46,11 @@ class Networkdev:
     def __init__(self, net_info, configuration):
         self._net_info = net_info
         self._configuration = configuration
+        if self.type == 'vlan':
+            # probably should parse /proc/self/net/vlan/config instead
+            link, vid = self.name.split('.')
+            self._configuration['id'] = int(vid)
+            self._configuration['link'] = link
 
     def render(self):
         if self.configured_ip_addresses or self.dhcp4 or self.dhcp6:
@@ -97,6 +103,10 @@ class Networkdev:
     @property
     def is_bonded(self):
         return self.is_bond_master or self.is_bond_slave
+
+    @property
+    def is_virtual(self):
+        return self._net_info.is_virtual
 
     @property
     def speed(self):
@@ -337,13 +347,14 @@ class NetworkModel(object):
             return
         if link.name in NETDEV_IGNORED_IFACE_NAMES:
             return
-        if link.is_virtual:
+        if link.is_virtual and link.type not in NETDEV_WHITELIST_IFACE_TYPES:
             return
         config = self.config.config_for_device(link)
         log.debug("new_link %s %s with config %s",
                   ifindex, link.name, sanitize_interface_config(config))
-        self.devices[ifindex] = Networkdev(link, config)
-        self.devices_by_name[link.name] = Networkdev(link, config)
+        netdev = Networkdev(link, config)
+        self.devices[ifindex] = netdev
+        self.devices_by_name[link.name] = netdev
 
     def update_link(self, ifindex):
         # This is pretty edge-casey as the fact that we wait for the
@@ -464,6 +475,7 @@ class NetworkModel(object):
         ethernets = {}
         bonds = {}
         wifis = {}
+        vlans = {}
         for dev in self.devices.values():
             if dev.type == 'eth':
                 ethernets.update(dev.render())
@@ -471,12 +483,16 @@ class NetworkModel(object):
                 bonds.update(dev.render())
             if dev.type == 'wlan':
                 wifis.update(dev.render())
+            if dev.type == 'vlan':
+                vlans.update(dev.render())
         if any(ethernets):
             config['network']['ethernets'] = ethernets
         if any(bonds):
             config['network']['bonds'] = bonds
         if any(wifis):
             config['network']['wifis'] = wifis
+        if any(vlans):
+            config['network']['vlans'] = vlans
 
         nw_routes = []
         if self.default_v4_gateway:
