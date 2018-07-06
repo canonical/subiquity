@@ -90,47 +90,6 @@ def _build_wifi_info(dev):
     return r
 
 
-def _format_address_list(label, addresses):
-    if len(addresses) == 0:
-        return []
-    elif len(addresses) == 1:
-        return [Text(label % ('',) + ' ' + str(addresses[0]))]
-    else:
-        ips = []
-        for ip in addresses:
-            ips.append(str(ip))
-        return [Text(label % ('es',) + ' ' + ', '.join(ips))]
-
-
-def _build_gateway_ip_info_for_version(dev, version):
-    actual_ip_addresses = dev.actual_ip_addresses_for_version(version)
-    configured_ip_addresses = dev.configured_ip_addresses_for_version(version)
-    if dev.dhcp_for_version(version):
-        if dev.actual_ip_addresses_for_version(version):
-            return _format_address_list(_("Will use DHCP for IPv%s, currently "
-                                          "has address%%s:" % version),
-                                        actual_ip_addresses)
-        return [Text(_("Will use DHCP for IPv%s" % version))]
-    elif configured_ip_addresses:
-        if sorted(actual_ip_addresses) == sorted(configured_ip_addresses):
-            return _format_address_list(
-                _("Using static address%%s for IPv%s:" % version),
-                actual_ip_addresses)
-        p = _format_address_list(
-            _("Will use static address%%s for IPv%s:" % version),
-            configured_ip_addresses)
-        if actual_ip_addresses:
-            p.extend(_format_address_list(_("Currently has address%s:"),
-                                          actual_ip_addresses))
-        return p
-    elif actual_ip_addresses:
-        return _format_address_list(_("Has no IPv%s configuration, currently "
-                                      "has address%%s:" % version),
-                                    actual_ip_addresses)
-    else:
-        return [Text(_("IPv%s is not configured" % version))]
-
-
 class NetworkView(BaseView):
     title = _("Network connections")
     excerpt = _("Configure at least one interface this server can use to talk "
