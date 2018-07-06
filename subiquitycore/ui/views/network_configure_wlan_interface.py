@@ -9,7 +9,6 @@ from urwid import (
 
 from subiquitycore.ui.buttons import cancel_btn, menu_btn
 from subiquitycore.ui.container import (
-    Columns,
     ListBox,
     Pile,
     WidgetWrap,
@@ -67,7 +66,8 @@ class NetworkConfigureWLANStretchy(Stretchy):
     def __init__(self, parent, device):
         self.parent = parent
         self.device = device
-        title = _("Network interface {} WIFI configuration").format(device.name)
+        title = _("Network interface {} WIFI configuration").format(
+            device.name)
 
         self.form = WLANForm()
 
@@ -94,7 +94,8 @@ class NetworkConfigureWLANStretchy(Stretchy):
         super().__init__(title, widgets, 0, 0)
 
     def show_ssid_list(self, sender):
-        self.parent.show_overlay(NetworkList(self, self.device.actual_ssids), width=60)
+        self.parent.show_overlay(
+            NetworkList(self, self.device.actual_ssids), width=60)
 
     def start_scan(self, sender):
         fp = self.inputs.focus_position - 1
@@ -135,7 +136,8 @@ class NetworkConfigureWLANStretchy(Stretchy):
 
     def refresh_model_inputs(self):
         try:
-            self.device = self.parent.model.get_netdev_by_name(self.device.name)
+            self.device = self.parent.model.get_netdev_by_name(
+                self.device.name)
         except KeyError:
             # The interface is gone
             self.parent.remove_overlay()

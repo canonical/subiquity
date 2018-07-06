@@ -38,7 +38,12 @@ from subiquitycore.ui.container import (
     )
 from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
-from subiquitycore.ui.utils import button_pile, Color, make_action_menu_row, Padding
+from subiquitycore.ui.utils import (
+    button_pile,
+    Color,
+    make_action_menu_row,
+    Padding,
+    )
 from .network_configure_manual_interface import EditNetworkStretchy
 from .network_configure_wlan_interface import NetworkConfigureWLANStretchy
 
@@ -167,16 +172,20 @@ class NetworkView(BaseView):
             addresses = []
             for v in 4, 6:
                 if dev.configured_ip_addresses_for_version(v):
-                   addresses.extend(["{} (static)".format(a) for a in dev.configured_ip_addresses_for_version(v)])
+                    addresses.extend([
+                        "{} (static)".format(a)
+                        for a in dev.configured_ip_addresses_for_version(v)
+                        ])
                 elif dev.dhcp_for_version(v):
-                   if v == 4:
-                      fam = AF_INET
-                   elif v == 6:
-                      fam = AF_INET6
-                   for a in dev._net_info.addresses.values():
-                       log.debug("a %s", a.serialize())
-                       if a.family == fam and a.source == 'dhcp':
-                           addresses.append("{} (from dhcp)".format(a.address))
+                    if v == 4:
+                        fam = AF_INET
+                    elif v == 6:
+                        fam = AF_INET6
+                    for a in dev._net_info.addresses.values():
+                        log.debug("a %s", a.serialize())
+                        if a.family == fam and a.source == 'dhcp':
+                            addresses.append("{} (from dhcp)".format(
+                                a.address))
             if addresses:
                 addresses = ", ".join(addresses)
             else:
@@ -211,7 +220,8 @@ class NetworkView(BaseView):
 
     def refresh_model_inputs(self):
         self.device_table.set_contents(self._build_model_inputs())
-        if isinstance(self._w, StretchyOverlay) and hasattr(self._w.stretchy, 'refresh_model_inputs'):
+        if isinstance(self._w, StretchyOverlay) and \
+           hasattr(self._w.stretchy, 'refresh_model_inputs'):
             self._w.stretchy.refresh_model_inputs()
 
     def show_network_error(self, action, info=None):

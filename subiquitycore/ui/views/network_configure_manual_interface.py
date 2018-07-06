@@ -142,7 +142,8 @@ class EditNetworkStretchy(Stretchy):
         self.ip_version = ip_version
 
         self.method_form = NetworkMethodForm()
-        self.method_form.method.caption = _("IPv{ip_version} Method: ").format(ip_version=ip_version)
+        self.method_form.method.caption = _(
+            "IPv{ip_version} Method: ").format(ip_version=ip_version)
         manual_initial = {}
         if len(device.configured_ip_addresses_for_version(ip_version)) > 0:
             method = 'manual'
@@ -164,7 +165,8 @@ class EditNetworkStretchy(Stretchy):
 
         self.method_form.method.value = method
 
-        connect_signal(self.method_form.method.widget, 'select', self._select_method)
+        connect_signal(
+            self.method_form.method.widget, 'select', self._select_method)
 
         log.debug("manual_initial %s", manual_initial)
         self.manual_form = NetworkConfigForm(ip_version, manual_initial)
@@ -182,12 +184,14 @@ class EditNetworkStretchy(Stretchy):
 
         widgets = [self.form_pile, Text(""), self.bp]
         super().__init__(
-            "Edit {device} IPv{ip_version} configuration".format(device=device.name, ip_version=ip_version),
+            "Edit {device} IPv{ip_version} configuration".format(
+                device=device.name, ip_version=ip_version),
             widgets,
             0, 0)
 
     def _select_method(self, sender, method):
         rows = []
+
         def r(w):
             rows.append((w, self.form_pile.options('pack')))
         for row in self.method_form.as_rows():
