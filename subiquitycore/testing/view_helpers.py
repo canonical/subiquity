@@ -1,6 +1,8 @@
 import re
 import urwid
 
+from subiquitycore.ui.stretchy import StretchyOverlay
+
 
 def find_with_pred(w, pred, return_path=False):
     def _walk(w, path):
@@ -29,6 +31,10 @@ def find_with_pred(w, pred, return_path=False):
                 r, p = _walk(w, (w,) + path)
                 if r:
                     return r, p
+        elif isinstance(w, StretchyOverlay):
+            r, p = _walk(w.top_w, (w,) + path)
+            if r:
+                return r, p
         return None, None
     r, p = _walk(w, ())
     if return_path:

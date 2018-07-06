@@ -361,6 +361,11 @@ class Form(object, metaclass=MetaForm):
             bf.validate(show_error=False)
         self.validated()
 
+    def enter_data(self, data):
+        for bf in self._fields:
+            if bf.field.name in data:
+                bf.field.value = data[bf.field.name]
+
     def _click_done(self, sender):
         emit_signal(self, 'submit', self)
 
@@ -406,5 +411,6 @@ class Form(object, metaclass=MetaForm):
     def as_data(self):
         data = {}
         for field in self._fields:
-            data[field.field.name] = field.value
+            if field.enabled:
+                data[field.field.name] = field.value
         return data

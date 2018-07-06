@@ -256,6 +256,8 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, default_spacing):
         {2*user_i+1: cs.rpad for user_i, cs in colspecs.items()
          if cs.rpad is not None})
 
+    widths_before = widths.copy()
+
     # Make sure columns are big enough for cells that span mutiple
     # columns.
     for row in table_rows:
@@ -271,6 +273,11 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, default_spacing):
     # If that column has a min_width, see if we need to omit any columns
     # to hit that target.
     if total_width > maxcol or unpacked_user_indices:
+
+        for user_i in range(colcount):
+            if not colspecs[user_i].can_shrink and 2*user_i in widths:
+                widths[2*user_i] = widths_before[2*user_i]
+
         for user_i in range(colcount):
             if colspecs[user_i].can_shrink or not colspecs[user_i].pack:
                 if 2*user_i in widths:

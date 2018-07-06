@@ -20,23 +20,33 @@ Provides network device listings and extended network information
 """
 
 import logging
-import textwrap
+from socket import AF_INET, AF_INET6
 
 from urwid import (
+    connect_signal,
     LineBox,
     ProgressBar,
     Text,
     )
-from urwid import Padding as uPadding
 
-from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn, menu_btn
+from subiquitycore.ui.actionmenu import ActionMenu
+from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn
 from subiquitycore.ui.container import (
-    Columns,
     ListBox,
     Pile,
     WidgetWrap,
     )
-from subiquitycore.ui.utils import button_pile, Color, Padding
+from subiquitycore.ui.stretchy import StretchyOverlay
+from subiquitycore.ui.table import ColSpec, TablePile, TableRow
+from subiquitycore.ui.utils import (
+    button_pile,
+    Color,
+    make_action_menu_row,
+    Padding,
+    )
+from .network_configure_manual_interface import EditNetworkStretchy
+from .network_configure_wlan_interface import NetworkConfigureWLANStretchy
+
 from subiquitycore.view import BaseView
 
 
@@ -85,47 +95,6 @@ def _build_wifi_info(dev):
     return r
 
 
-def _format_address_list(label, addresses):
-    if len(addresses) == 0:
-        return []
-    elif len(addresses) == 1:
-        return [Text(label % ('',) + ' ' + str(addresses[0]))]
-    else:
-        ips = []
-        for ip in addresses:
-            ips.append(str(ip))
-        return [Text(label % ('es',) + ' ' + ', '.join(ips))]
-
-
-def _build_gateway_ip_info_for_version(dev, version):
-    actual_ip_addresses = dev.actual_ip_addresses_for_version(version)
-    configured_ip_addresses = dev.configured_ip_addresses_for_version(version)
-    if dev.dhcp_for_version(version):
-        if dev.actual_ip_addresses_for_version(version):
-            return _format_address_list(_("Will use DHCP for IPv%s, currently "
-                                          "has address%%s:" % version),
-                                        actual_ip_addresses)
-        return [Text(_("Will use DHCP for IPv%s" % version))]
-    elif configured_ip_addresses:
-        if sorted(actual_ip_addresses) == sorted(configured_ip_addresses):
-            return _format_address_list(
-                _("Using static address%%s for IPv%s:" % version),
-                actual_ip_addresses)
-        p = _format_address_list(
-            _("Will use static address%%s for IPv%s:" % version),
-            configured_ip_addresses)
-        if actual_ip_addresses:
-            p.extend(_format_address_list(_("Currently has address%s:"),
-                                          actual_ip_addresses))
-        return p
-    elif actual_ip_addresses:
-        return _format_address_list(_("Has no IPv%s configuration, currently "
-                                      "has address%%s:" % version),
-                                    actual_ip_addresses)
-    else:
-        return [Text(_("IPv%s is not configured" % version))]
-
-
 class NetworkView(BaseView):
     title = _("Network connections")
     excerpt = _("Configure at least one interface this server can use to talk "
@@ -139,9 +108,13 @@ class NetworkView(BaseView):
         self.controller = controller
         self.items = []
         self.error = Text("", align='center')
-        self.additional_options = Pile(self._build_additional_options())
-        self.listbox = ListBox(self._build_model_inputs() + [
-            Padding.center_79(self.additional_options),
+        self.device_table = TablePile(
+            self._build_model_inputs(),
+            spacing=2, colspecs={
+                0: ColSpec(rpad=1),
+                4: ColSpec(can_shrink=True, rpad=1),
+                })
+        self.listbox = ListBox([self.device_table] + [
             Padding.line_break(""),
         ])
         self.bottom = Pile([
@@ -164,122 +137,92 @@ class NetworkView(BaseView):
         done = done_btn(_("Done"), on_press=self.done)
         return button_pile([done, back])
 
+    def _action_info(self, device):
+        pass
+
+    def _action_edit_ipv4(self, device):
+        self.show_stretchy_overlay(EditNetworkStretchy(self, device, 4))
+
+    def _action_edit_wlan(self, device):
+        self.show_stretchy_overlay(NetworkConfigureWLANStretchy(self, device))
+
+    def _action_edit_ipv6(self, device):
+        self.show_stretchy_overlay(EditNetworkStretchy(self, device, 6))
+
+    def _action(self, sender, action, device):
+        m = getattr(self, '_action_{}'.format(action))
+        m(device)
+
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()
-        ifname_width = 8  # default padding
-        if netdevs:
-            ifname_width += max(map(lambda dev: len(dev.name), netdevs))
-            if ifname_width > 20:
-                ifname_width = 20
-
-        iface_menus = []
-
-        # Display each interface -- name in first column, then configured IPs
-        # in the second.
-        log.debug('interfaces: {}'.format(netdevs))
+        rows = []
+        rows.append(TableRow([
+            Color.info_minor(Text(header))
+            for header in ["", "NAME", "TYPE", "DHCP", "ADDRESSES", ""]]))
         for dev in netdevs:
-            col_1 = []
-            col_2 = []
-
-            col_1.append(
-                    menu_btn(label=dev.name, on_press=self.on_net_dev_press))
-
-            if dev.type == 'wlan':
-                col_2.extend(_build_wifi_info(dev))
-            if len(dev.actual_ip_addresses) == 0 and (
-                    dev.type == 'eth' and not dev.is_connected):
-                col_2.append(Color.info_primary(Text(_("Not connected"))))
-            col_2.extend(_build_gateway_ip_info_for_version(dev, 4))
-            col_2.extend(_build_gateway_ip_info_for_version(dev, 6))
-
-            # Other device info (MAC, vendor/model, speed)
-            template = ''
-            if dev.hwaddr:
-                template += '{} '.format(dev.hwaddr)
-            # TODO is this to translate?
-            if dev.is_bond_slave:
-                template += '(Bonded) '
-            # TODO to check if this is affected by translations
-            if not dev.vendor.lower().startswith('unknown'):
-                vendor = textwrap.wrap(dev.vendor, 15)[0]
-                template += '{} '.format(vendor)
-            if not dev.model.lower().startswith('unknown'):
-                model = textwrap.wrap(dev.model, 20)[0]
-                template += '{} '.format(model)
-            if dev.speed:
-                template += '({})'.format(dev.speed)
-
-            col_2.append(Color.info_minor(Text(template)))
-            iface_menus.append(
-                Columns([(ifname_width, Pile(col_1)), Pile(col_2)], 2))
-
-        return iface_menus
+            dhcp = []
+            if dev.dhcp4:
+                dhcp.append('v4')
+            if dev.dhcp6:
+                dhcp.append('v6')
+            if dhcp:
+                dhcp = ",".join(dhcp)
+            else:
+                dhcp = '-'
+            addresses = []
+            for v in 4, 6:
+                if dev.configured_ip_addresses_for_version(v):
+                    addresses.extend([
+                        "{} (static)".format(a)
+                        for a in dev.configured_ip_addresses_for_version(v)
+                        ])
+                elif dev.dhcp_for_version(v):
+                    if v == 4:
+                        fam = AF_INET
+                    elif v == 6:
+                        fam = AF_INET6
+                    for a in dev._net_info.addresses.values():
+                        log.debug("a %s", a.serialize())
+                        if a.family == fam and a.source == 'dhcp':
+                            addresses.append("{} (from dhcp)".format(
+                                a.address))
+            if addresses:
+                addresses = ", ".join(addresses)
+            else:
+                addresses = '-'
+            actions = [
+                ("Info", True, 'info', True),
+            ]
+            if dev.type == "wlan":
+                actions.append(("Edit WiFi", True, "edit_wlan", True))
+            actions += [
+                ("Edit IPv4", True, 'edit_ipv4', True),
+                ("Edit IPv6", True, 'edit_ipv6', True),
+                ]
+            menu = ActionMenu(actions)
+            connect_signal(menu, 'action', self._action, dev)
+            rows.append(make_action_menu_row([
+                Text("["),
+                Text(dev.name),
+                Text(dev.type),
+                Text(dhcp),
+                Text(addresses, wrap='clip'),
+                menu,
+                Text("]"),
+                ], menu))
+            info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
+            rows.append(Color.info_minor(TableRow([
+                Text(""),
+                (4, Text(info)),
+                Text("")])))
+            rows.append(Color.info_minor(TableRow([(4, Text(""))])))
+        return rows
 
     def refresh_model_inputs(self):
-        widgets = self._build_model_inputs() + [
-            Padding.center_79(self.additional_options),
-            Padding.line_break(""),
-        ]
-        self.listbox.base_widget.body[:] = widgets
-        self.additional_options.contents = [
-            (obj, ('pack', None)) for obj in self._build_additional_options()]
-
-    def _build_additional_options(self):
-        labels = []
-        netdevs = self.model.get_all_netdevs()
-
-        # Display default route status
-        if self.model.default_v4_gateway is not None:
-            v4_route_source = "via " + self.model.default_v4_gateway
-
-            default_v4_route_w = Color.info_minor(
-                Text(_("  IPv4 default route %s." % v4_route_source)))
-            labels.append(default_v4_route_w)
-
-        if self.model.default_v6_gateway is not None:
-            v6_route_source = "via " + self.model.default_v6_gateway
-
-            default_v6_route_w = Color.info_minor(
-                Text("  IPv6 default route " + v6_route_source + "."))
-            labels.append(default_v6_route_w)
-
-        max_btn_len = 0
-        buttons = []
-        for opt, sig in self.model.get_menu():
-            if ':set-default-route' in sig:
-                if len(netdevs) < 2:
-                    log.debug('Skipping default route menu option'
-                              ' (only one nic)')
-                    continue
-            if ':bond-interfaces' in sig:
-                not_bonded = [dev for dev in netdevs if not dev.is_bonded]
-                if len(not_bonded) < 2:
-                    log.debug('Skipping bonding menu option'
-                              ' (not enough available nics)')
-                    continue
-
-            if len(opt) > max_btn_len:
-                max_btn_len = len(opt)
-
-            buttons.append(
-                menu_btn(
-                    label=opt,
-                    on_press=self.additional_menu_select,
-                    user_data=sig))
-
-        buttons = [uPadding(button, align='left', width=max_btn_len + 6)
-                   for button in buttons]
-        r = labels + buttons
-        if len(r) > 0:
-            r[0:0] = [Text("")]
-        return r
-
-    def additional_menu_select(self, result, sig):
-        self.controller.signal.emit_signal(sig)
-
-    def on_net_dev_press(self, result):
-        log.debug("Selected network dev: {}".format(result.label))
-        self.controller.network_configure_interface(result.label)
+        self.device_table.set_contents(self._build_model_inputs())
+        if isinstance(self._w, StretchyOverlay) and \
+           hasattr(self._w.stretchy, 'refresh_model_inputs'):
+            self._w.stretchy.refresh_model_inputs()
 
     def show_network_error(self, action, info=None):
         self.error_showing = True

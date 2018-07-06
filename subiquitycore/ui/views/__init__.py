@@ -15,19 +15,11 @@
 
 from .login import LoginView
 from .network_bond_interfaces import NetworkBondInterfacesView
-from .network_configure_interface import NetworkConfigureInterfaceView
-from .network_configure_manual_interface import (
-    NetworkConfigureIPv4InterfaceView, NetworkConfigureIPv6InterfaceView)
-from .network_configure_wlan_interface import NetworkConfigureWLANView
 from .network_default_route import NetworkSetDefaultRouteView
 from .network import NetworkView
 __all__ = [
     'LoginView',
     'NetworkBondInterfacesView',
-    'NetworkConfigureInterfaceView',
-    'NetworkConfigureIPv4InterfaceView',
-    'NetworkConfigureIPv6InterfaceView',
-    'NetworkConfigureWLANView',
     'NetworkSetDefaultRouteView',
     'NetworkView',
 ]

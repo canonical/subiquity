@@ -1,12 +1,15 @@
 import unittest
 from unittest import mock
 
+import urwid
 
 from subiquitycore.controllers.network import NetworkController
 from subiquitycore.models.network import Networkdev, NetworkModel
 from subiquitycore.testing import view_helpers
 from subiquitycore.ui.views.network_configure_manual_interface import (
-    NetworkConfigureIPv4InterfaceView)
+    EditNetworkStretchy,
+    )
+from subiquitycore.view import BaseView
 
 
 valid_data = {
@@ -23,42 +26,41 @@ class TestNetworkConfigureIPv4InterfaceView(unittest.TestCase):
     def make_view(self):
         model = mock.create_autospec(spec=NetworkModel)
         controller = mock.create_autospec(spec=NetworkController)
-        ifname = 'ifname'
 
-        def get_netdev_by_name(name):
-            if name == ifname:
-                dev = mock.create_autospec(spec=Networkdev)
-                dev.configured_ip_addresses_for_version = lambda v: []
-                return dev
-            else:
-                raise AssertionError("get_netdev_by_name called with "
-                                     "unexpected arg %s" % (name,))
-        model.get_netdev_by_name.side_effect = get_netdev_by_name
-        return NetworkConfigureIPv4InterfaceView(model, controller, ifname)
+        device = mock.create_autospec(spec=Networkdev)
+        device.configured_ip_addresses_for_version = lambda v: []
+        base_view = BaseView(urwid.Text(""))
+        base_view.model = model
+        base_view.controller = controller
+        base_view.refresh_model_inputs = lambda: None
+        stretchy = EditNetworkStretchy(base_view, device, 4)
+        base_view.show_stretchy_overlay(stretchy)
+        stretchy.method_form.method.value = "manual"
+        return base_view, stretchy
 
     def test_initial_focus(self):
-        view = self.make_view()
+        view, stretchy = self.make_view()
         focus_path = view_helpers.get_focus_path(view)
         for w in reversed(focus_path):
-            if w is view.form.subnet.widget:
+            if w is stretchy.method_form.method.widget:
                 return
         else:
-            self.fail("Subnet widget not focus")
+            self.fail("method widget not focus")
 
     def test_done_initially_disabled(self):
-        view = self.make_view()
-        self.assertFalse(view.form.done_btn.enabled)
+        _, stretchy = self.make_view()
+        self.assertFalse(stretchy.manual_form.done_btn.enabled)
 
     def test_done_enabled_for_valid_data(self):
-        view = self.make_view()
-        view_helpers.enter_data(view.form, valid_data)
-        self.assertTrue(view.form.done_btn.enabled)
+        _, stretchy = self.make_view()
+        view_helpers.enter_data(stretchy.manual_form, valid_data)
+        self.assertTrue(stretchy.manual_form.done_btn.enabled)
 
     def test_click_done(self):
         # The ugliness of this test is probably an indication that the
         # view is doing too much...
-        view = self.make_view()
-        view_helpers.enter_data(view.form, valid_data)
+        view, stretchy = self.make_view()
+        view_helpers.enter_data(stretchy.manual_form, valid_data)
 
         expected = valid_data.copy()
         expected['nameservers'] = [expected['nameservers']]
@@ -68,6 +70,7 @@ class TestNetworkConfigureIPv4InterfaceView(unittest.TestCase):
         but = view_helpers.find_button_matching(view, "^Save$")
         view_helpers.click(but)
 
-        view.dev.remove_ip_networks_for_version.assert_called_once_with(4)
-        view.dev.remove_nameservers.assert_called_once_with()
-        view.dev.add_network.assert_called_once_with(4, expected)
+        rinfv = stretchy.device.remove_ip_networks_for_version
+        rinfv.assert_called_once_with(4)
+        stretchy.device.remove_nameservers.assert_called_once_with()
+        stretchy.device.add_network.assert_called_once_with(4, expected)
