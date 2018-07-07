@@ -67,6 +67,12 @@ class FilesystemController(BaseController):
                     if r.name == dev_spec[2]:
                         dev = r
                         break
+        elif dev_spec[0] == "volgroup":
+            if dev_spec[1] == "name":
+                for r in self.model.all_volgroups():
+                    if r.name == dev_spec[2]:
+                        dev = r
+                        break
         if dev is None:
             raise Exception("could not resolve {}".format(id))
         if len(id) > 1:
@@ -80,18 +86,24 @@ class FilesystemController(BaseController):
     def _action_clean_fstype(self, fstype):
         return self.model.fs_by_name[fstype]
 
-    def _action_clean_devices(self, devices):
+    def _action_clean_devices_raid(self, devices):
         return {
             self._action_get(d): v
             for d, v in zip(devices[::2], devices[1::2])
             }
 
+    def _action_clean_devices_vg(self, devices):
+        return {self._action_get(d): 'active' for d in devices}
+
     def _action_clean_level(self, level):
         return raidlevels_by_value[level]
 
-    def _enter_form_data(self, form, data, submit):
+    def _enter_form_data(self, form, data, submit, clean_suffix=''):
         for k, v in data.items():
-            c = getattr(self, '_action_clean_{}'.format(k), lambda x: x)
+            c = getattr(
+                self, '_action_clean_{}_{}'.format(k, clean_suffix), None)
+            if c is None:
+                c = getattr(self, '_action_clean_{}'.format(k), lambda x: x)
             getattr(form, k).value = c(v)
             yield
         yield
@@ -106,6 +118,7 @@ class FilesystemController(BaseController):
     def _answers_action(self, action):
         from subiquitycore.ui.stretchy import StretchyOverlay
         from subiquity.ui.views.filesystem.delete import ConfirmDeleteStretchy
+        log.debug("_answers_action %r", action)
         if 'obj' in action:
             obj = self._action_get(action['obj'])
             meth = getattr(
@@ -131,7 +144,17 @@ class FilesystemController(BaseController):
             yield from self._enter_form_data(
                 body.stretchy.form,
                 action['data'],
-                action.get("submit", True))
+                action.get("submit", True),
+                clean_suffix='raid')
+        elif action['action'] == 'create-vg':
+            self.ui.frame.body.create_vg()
+            yield
+            body = self.ui.frame.body._w
+            yield from self._enter_form_data(
+                body.stretchy.form,
+                action['data'],
+                action.get("submit", True),
+                clean_suffix='vg')
         elif action['action'] == 'done':
             if not self.ui.frame.body.done.enabled:
                 raise Exception("answers did not provide complete fs config")
