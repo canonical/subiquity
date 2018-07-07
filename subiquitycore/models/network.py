@@ -54,11 +54,12 @@ class Networkdev:
         if self.type == 'bond':
             bond = self._net_info.bond
             self._configuration['interfaces'] = bond['slaves']
-            self._configuration['parameters'] = {
-                'mode': bond['mode'],
-                'lacp-rate': bond['lacp_rate'],
-                'transmit-hash-policy': bond['xmit_hash_policy'],
-            }
+            params = {'mode': bond['mode']}
+            if bond['mode'] in ['balance-xor', '802.3ad', 'balance-tlb']:
+                params['transmit-hash-policy'] = bond['xmit_hash_policy']
+            if bond['mode'] == '802.3ad':
+                params['lacp-rate'] = bond['lacp_rate']
+            self._configuration['parameters'] = params
 
     def render(self):
         if (self.configured_ip_addresses or self.dhcp4 or self.dhcp6 or
