@@ -281,7 +281,7 @@ class PartitionStretchy(Stretchy):
             if isinstance(disk, LVM_VolGroup):
                 desc = _("logical volume {}").format(partition.name)
             else:
-                desc = _("partition {}").format(partition._number)
+                desc = partition.short_label
             title = _("Editing {} of {}").format(desc, disk.label)
 
         super().__init__(title, widgets, 0, focus_index)

@@ -294,11 +294,15 @@ class DeviceList(WidgetWrap):
 
     def _disk_REMOVE(self, disk):
         cd = disk.constructed_device()
-        assert cd.type == "raid"
-        if disk in cd.devices:
+        if cd.type == "raid":
+            if disk in cd.devices:
+                cd.devices.remove(disk)
+            else:
+                cd.spare_devices.remove(disk)
+        elif cd.type == "lvm_volgroup":
             cd.devices.remove(disk)
         else:
-            cd.spare_devices.remove(disk)
+            1/0
         disk._constructed_device = None
         self.parent.refresh_model_inputs()
 
@@ -320,6 +324,10 @@ class DeviceList(WidgetWrap):
     _lvm_volgroup_EDIT = _stretchy_shower(VolGroupStretchy)
     _lvm_volgroup_CREATE_LV = _disk_PARTITION
     _lvm_volgroup_DELETE = _partition_DELETE
+
+    _lvm_partition_EDIT = _stretchy_shower(
+        lambda parent, part: PartitionStretchy(parent, part.volgroup, part))
+    _lvm_partition_DELETE = _partition_DELETE
 
     def _action(self, sender, value, device):
         action, meth = value
@@ -420,7 +428,7 @@ class DeviceList(WidgetWrap):
                         int(100 * part.size / device.size))
                     cells = [
                         Text("["),
-                        Text("  " + _("partition {}").format(part._number)),
+                        Text("  " + part.short_label),
                         (2, Text(part_size)),
                         menu,
                         Text("]"),

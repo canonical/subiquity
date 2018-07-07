@@ -154,7 +154,7 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                     label = device.label
                     prefix = "    "
                 elif kind == PART:
-                    label = _("  partition {}").format(device._number)
+                    label = "  " + device.short_label
                     prefix = "      "
                 else:
                     raise Exception("unexpected kind {}".format(kind))

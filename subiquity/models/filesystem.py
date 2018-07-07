@@ -469,6 +469,10 @@ class Partition(_Formattable):
     def label(self):
         return _("partition {} of {}").format(self._number, self.device.label)
 
+    @property
+    def short_label(self):
+        return _("partition {}").format(self._number)
+
     def available(self):
         if self.flag == 'bios_grub':
             return False
@@ -671,6 +675,14 @@ class LVM_LogicalVolume(_Formattable):
     @property
     def path(self):
         return self.volgroup.path + '/' + self.name
+
+    supported_actions = [
+        DeviceAction.EDIT,
+        DeviceAction.DELETE,
+        ]
+
+    _can_EDIT = True
+    _can_DELETE = True
 
     ok_for_raid = False
     ok_for_lvm_vg = False
