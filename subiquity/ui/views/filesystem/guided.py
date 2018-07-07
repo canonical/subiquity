@@ -49,7 +49,7 @@ log = logging.getLogger("subiquity.ui.views.filesystem.guided")
 
 
 text = _("""The installer can guide you through partitioning an entire disk \
-or, if you prefer, you can do it manually.
+either directly or using LVM, or, if you prefer, you can do it manually.
 
 If you choose to partition an entire disk you will still have a chance to \
 review and modify the results.""")
@@ -87,6 +87,21 @@ class GuidedFilesystemView(BaseView):
         self.controller.cancel()
 
 
+excerpts = {
+    'direct': _("""The selected guided partitioning scheme creates the \
+required bootloader partition on the chosen disk and then creates a single \
+partition covering the rest of the disk, formatted as ext4 and mounted at '/'.\
+"""),
+
+    'lvm': _("""The LVM guided partitioning scheme creates three \
+partitions on the selected disk: one as required by the bootloader, one \
+for '/boot', and one covering the rest of the disk.
+
+A LVM volume group is created containing the large partition. A \
+4 gigabyte logical volume is created for the root filesystem. \
+It can easily be enlarged with standard LVM command line tools."""),
+}
+
 class GuidedDiskSelectionView(BaseView):
 
     title = _("Filesystem setup")
@@ -99,7 +114,7 @@ class GuidedDiskSelectionView(BaseView):
         cancel = cancel_btn(_("Cancel"), on_press=self.cancel)
         rows = []
         for disk in self.model.all_disks():
-            if disk.size >= model.lower_size_limit:
+            if disk.size >= dehumanize_size("6G"):
                 disk_btn = ClickableIcon(disk.label)
                 connect_signal(
                     disk_btn, 'click', self.choose_disk, disk)
@@ -121,7 +136,7 @@ class GuidedDiskSelectionView(BaseView):
                 }),
             button_pile([cancel]),
             focus_buttons=False,
-            excerpt=_("Choose the disk to install to:")))
+            excerpt=excerpts[method] + "\n\n" + _("Choose the disk to install to:")))
 
     def cancel(self, btn=None):
         self.controller.default()
