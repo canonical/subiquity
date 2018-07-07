@@ -112,14 +112,7 @@ class NetworkView(BaseView):
                 0: ColSpec(rpad=1),
                 4: ColSpec(can_shrink=True, rpad=1),
                 })
-        self.create_bond_btn = Toggleable(menu_btn(
-            label=_("Create bond"),
-            on_press=self._action_add_bond))
-
-        bond_pile = button_pile([self.create_bond_btn])
-        bond_pile.align = 'left'
         self.listbox = ListBox([self.device_table] + [
-            bond_pile,
             Padding.line_break(""),
         ])
         self.bottom = Pile([
@@ -256,6 +249,15 @@ class NetworkView(BaseView):
 
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()
+        masters = []
+        for master in netdevs:
+            if not master._net_info.bond['is_master']:
+                continue
+            masters.append((
+                _("Set master to %s") % master.name,
+                True,
+                {'action': 'add_master', 'master': master},
+                False))
         rows = []
         rows.append(TableRow([
             Color.info_minor(Text(header))

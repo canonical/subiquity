@@ -336,8 +336,9 @@ class BondForm(Form):
 
 class AddBondStretchy(Stretchy):
 
-    def __init__(self, parent):
+    def __init__(self, parent, slave=None):
         self.parent = parent
+        self.slave = slave
         self.form = BondForm()
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
@@ -349,6 +350,8 @@ class AddBondStretchy(Stretchy):
     def done(self, sender):
         self.parent.remove_overlay()
         self.parent.controller.add_bond(self.form.as_data())
+        self.parent.controller.add_master(
+            self.slave, master_name=self.form.name.value)
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()

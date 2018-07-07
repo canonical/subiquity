@@ -38,7 +38,8 @@ class NetDevAction(enum.Enum):
     EDIT_IPV4 = _("Edit IPv4")
     EDIT_IPV6 = _("Edit IPv6")
     ADD_VLAN = _("Add a VLAN tag")
-    ADD_BOND = _("Add a VLAN tag")
+    ADD_BOND = _("Create a new bond")
+    REMOVE_MASTER = _("Remove master")
     DELETE = _("Delete")
 
 
@@ -62,14 +63,17 @@ class Networkdev:
             self._configuration['link'] = if_indextoname(
                 net_info.netlink_data['vlan_link'])
         if self.type == 'bond':
+            bond = self._net_info.bond
+            self._configuration['interfaces'] = bond['slaves']
             self._configuration['parameters'] = {
-                'mode': self._net_info.bond['mode'],
-                'lacp-rate': self._net_info.bond['lacp_rate'],
-                'transmit-hash-policy': self._net_info.bond['xmit_hash_policy'],
+                'mode': bond['mode'],
+                'lacp-rate': bond['lacp_rate'],
+                'transmit-hash-policy': bond['xmit_hash_policy'],
             }
 
     def render(self):
-        if self.type == 'bond' or self.configured_ip_addresses or self.dhcp4 or self.dhcp6:
+        if (self.configured_ip_addresses or self.dhcp4 or self.dhcp6 or
+                self.is_bonded):
             return {self.name: self._configuration}
         else:
             return {}
@@ -81,7 +85,12 @@ class Networkdev:
     _supports_EDIT_WLAN = property(lambda self: self.type == "wlan")
     _supports_EDIT_IPV4 = True
     _supports_EDIT_IPV6 = True
-    _supports_ADD_VLAN = property(lambda self: self.type != "vlan")
+    _supports_ADD_VLAN = property(
+        lambda self: self.type != "vlan" and not self._net_info.bond['is_slave'])
+    _supports_ADD_BOND = property(
+        lambda self: not self._net_info.bond['is_slave'])
+    _supports_REMOVE_MASTER = property(
+        lambda self: self._net_info.bond['is_slave'])
     _supports_DELETE = property(lambda self: self.is_virtual)
 
     @property
