@@ -303,6 +303,7 @@ class ViewInterfaceInfo(Stretchy):
     def close(self, button=None):
         self.parent.remove_overlay()
 
+
 _bond_modes = [
     ('balance-rr', True, 'balance-rr'),
     ('active-backup', True, 'active-backup'),
@@ -313,6 +314,7 @@ _bond_modes = [
     ('balance-alb', True, 'balance-alb'),
 ]
 
+
 _xmit_hash_policies = [
     ('layer2', True, 'layer2'),
     ('layer2+3', True, 'layer2+3'),
@@ -321,18 +323,22 @@ _xmit_hash_policies = [
     ('encap3+4', True, 'encap3+4'),
 ]
 
+
 _lacp_rates = [
     ('slow', True, 'slow'),
     ('fast', True, 'fast'),
 ]
 
+
 class BondForm(Form):
 
     name = StringField(_("Name:"))
     mode = ChoiceField(_("Bond mode:"), choices=_bond_modes)
-    xmit_hash_policy = ChoiceField(_("XMIT hash policy:"), choices=_xmit_hash_policies)
+    xmit_hash_policy = ChoiceField(
+        _("XMIT hash policy:"), choices=_xmit_hash_policies)
     lacp_rate = ChoiceField(_("LACP rate:"), choices=_lacp_rates)
     ok_label = _("Save")
+
 
 class AddBondStretchy(Stretchy):
 

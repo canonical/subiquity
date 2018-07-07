@@ -87,7 +87,8 @@ class Networkdev:
     _supports_EDIT_IPV4 = True
     _supports_EDIT_IPV6 = True
     _supports_ADD_VLAN = property(
-        lambda self: self.type != "vlan" and not self._net_info.bond['is_slave'])
+        lambda self: self.type != "vlan"
+        and not self._net_info.bond['is_slave'])
     _supports_ADD_BOND = property(
         lambda self: not self._net_info.bond['is_slave'])
     _supports_REMOVE_MASTER = property(
