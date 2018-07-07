@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .login import LoginView
-from .network_bond_interfaces import NetworkBondInterfacesView
 from .network_default_route import NetworkSetDefaultRouteView
 from .network import NetworkView
 __all__ = [

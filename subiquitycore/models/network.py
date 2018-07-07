@@ -52,14 +52,17 @@ class Networkdev:
             self._configuration['id'] = int(vid)
             self._configuration['link'] = link
         if self.type == 'bond':
+            bond = self._net_info.bond
+            self._configuration['interfaces'] = bond['slaves']
             self._configuration['parameters'] = {
-                'mode': self._net_info.bond['mode'],
-                'lacp-rate': self._net_info.bond['lacp_rate'],
-                'transmit-hash-policy': self._net_info.bond['xmit_hash_policy'],
+                'mode': bond['mode'],
+                'lacp-rate': bond['lacp_rate'],
+                'transmit-hash-policy': bond['xmit_hash_policy'],
             }
 
     def render(self):
-        if self.type == 'bond' or self.configured_ip_addresses or self.dhcp4 or self.dhcp6:
+        if (self.configured_ip_addresses or self.dhcp4 or self.dhcp6 or
+                self.is_bonded):
             return {self.name: self._configuration}
         else:
             return {}
