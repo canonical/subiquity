@@ -26,6 +26,7 @@ from urwid import connect_signal, Text
 from subiquitycore.ui.form import (
     Form,
     FormField,
+    StringField,
 )
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.selector import Option, Selector
@@ -39,6 +40,7 @@ from subiquity.models.filesystem import (
     HUMAN_UNITS,
     dehumanize_size,
     humanize_size,
+    LVM_VolGroup,
 )
 from subiquity.ui.mount import MountField
 
@@ -93,13 +95,14 @@ class SizeField(FormField):
 class PartitionForm(Form):
 
     def __init__(self, mountpoint_to_devpath_mapping, max_size, initial,
-                 ok_for_slash_boot):
+                 ok_for_slash_boot, lvm_names):
         self.mountpoint_to_devpath_mapping = mountpoint_to_devpath_mapping
         self.ok_for_slash_boot = ok_for_slash_boot
         self.max_size = max_size
         if max_size is not None:
             self.size_str = humanize_size(max_size)
             self.size.caption = _("Size (max {}):").format(self.size_str)
+        self.lvm_names = lvm_names
         super().__init__(initial)
         if max_size is None:
             self.remove_field('size')
@@ -109,6 +112,7 @@ class PartitionForm(Form):
     def select_fstype(self, sender, fs):
         self.mount.enabled = fs.is_mounted
 
+    name = StringField(_("Name: "))
     size = SizeField()
     fstype = FSTypeField(_("Format:"))
     mount = MountField(_("Mount:"))
@@ -129,6 +133,12 @@ class PartitionForm(Form):
             return val
         else:
             return None
+
+    def validate_name(self):
+        log.debug("validate_name %s %s", self.name.value, self.lvm_names)
+        if self.name.value in self.lvm_names:
+            return _("There is already a logical volume named {}.").format(
+                self.name.value)
 
     def validate_mount(self):
         mount = self.mount.value
@@ -175,6 +185,10 @@ class PartitionStretchy(Stretchy):
 
         initial = {}
         label = _("Create")
+        if isinstance(disk, LVM_VolGroup):
+            lvm_names = {p.name for p in disk.partitions()}
+        else:
+            lvm_names = set()
         if self.partition:
             if self.partition.flag == "bios_grub":
                 label = None
@@ -194,10 +208,24 @@ class PartitionStretchy(Stretchy):
                         del mountpoint_to_devpath_mapping[mount.path]
             else:
                 initial['fstype'] = self.model.fs_by_name[None]
+            if isinstance(disk, LVM_VolGroup):
+                initial['name'] = partition.name
+                lvm_names.remove(partition.name)
+        elif isinstance(disk, LVM_VolGroup):
+            x = 0
+            while True:
+                name = 'lv-{}'.format(x)
+                if name not in lvm_names:
+                    break
+                x += 1
+            initial['name'] = name
 
         self.form = PartitionForm(
             mountpoint_to_devpath_mapping, max_size, initial,
-            isinstance(disk, Disk))
+            isinstance(disk, Disk), lvm_names)
+
+        if not isinstance(disk, LVM_VolGroup):
+            self.form.remove_field('name')
 
         if label is not None:
             self.form.buttons.base_widget[0].set_label(label)
@@ -244,10 +272,17 @@ class PartitionStretchy(Stretchy):
         ]
 
         if partition is None:
-            title = _("Adding partition to {}").format(disk.label)
+            if isinstance(disk, LVM_VolGroup):
+                add_name = _("logical volume")
+            else:
+                add_name = _("partition")
+            title = _("Adding {} to {}").format(add_name, disk.label)
         else:
-            title = _("Editing partition {} of {}").format(
-                partition._number, disk.label)
+            if isinstance(disk, LVM_VolGroup):
+                desc = _("logical volume {}").format(partition.name)
+            else:
+                desc = _("partition {}").format(partition._number)
+            title = _("Editing {} of {}").format(desc, disk.label)
 
         super().__init__(title, widgets, 0, focus_index)
 
@@ -256,8 +291,12 @@ class PartitionStretchy(Stretchy):
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
-        self.controller.partition_disk_handler(
-            self.disk, self.partition, form.as_data())
+        if isinstance(self.disk, LVM_VolGroup):
+            self.controller.logical_volume_handler(
+                self.disk, self.partition, form.as_data())
+        else:
+            self.controller.partition_disk_handler(
+                self.disk, self.partition, form.as_data())
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 
@@ -283,9 +322,9 @@ class FormatEntireStretchy(Stretchy):
                     del mountpoint_to_devpath_mapping[mount.path]
         else:
             initial['fstype'] = self.model.fs_by_name[None]
-        self.form = PartitionForm(
-            mountpoint_to_devpath_mapping, 0, initial, False)
+        self.form = PartitionForm(mountpoint_to_devpath_mapping, 0, initial, False, {})
         self.form.remove_field('size')
+        self.form.remove_field('name')
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
