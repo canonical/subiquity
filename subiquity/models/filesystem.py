@@ -600,7 +600,7 @@ class LVM_VolGroup(_Device):
 
     @property
     def free_for_partitions(self):
-        return self.size - self.used - GPT_OVERHEAD
+        return self.size - self.used
 
     @property
     def label(self):
