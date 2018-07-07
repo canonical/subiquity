@@ -302,3 +302,60 @@ class ViewInterfaceInfo(Stretchy):
 
     def close(self, button=None):
         self.parent.remove_overlay()
+
+
+_bond_modes = [
+    ('balance-rr', True, 'balance-rr'),
+    ('active-backup', True, 'active-backup'),
+    ('balance-xor', True, 'balance-xor'),
+    ('broadcast', True, 'broadcast'),
+    ('802.3ad', True, '802.3ad'),
+    ('balance-tlb', True, 'balance-tlb'),
+    ('balance-alb', True, 'balance-alb'),
+]
+
+_xmit_hash_policies = [
+    ('layer2', True, 'layer2'),
+    ('layer2+3', True, 'layer2+3'),
+    ('layer3+4', True, 'layer3+4'),
+    ('encap2+3', True, 'encap2+3'),
+    ('encap3+4', True, 'encap3+4'),
+]
+
+_lacp_rates = [
+    ('slow', True, 'slow'),
+    ('fast', True, 'fast'),
+]
+
+
+class BondForm(Form):
+
+    name = StringField(_("Name:"))
+    mode = ChoiceField(_("Bond mode:"), choices=_bond_modes)
+    xmit_hash_policy = ChoiceField(_("XMIT hash policy:"),
+                                   choices=_xmit_hash_policies)
+    lacp_rate = ChoiceField(_("LACP rate:"), choices=_lacp_rates)
+    ok_label = _("Save")
+
+
+class AddBondStretchy(Stretchy):
+
+    def __init__(self, parent, slave=None):
+        self.parent = parent
+        self.slave = slave
+        self.form = BondForm()
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+        super().__init__(
+            _('Create bond'),
+            [Pile(self.form.as_rows()), Text(""), self.form.buttons],
+            0, 0)
+
+    def done(self, sender):
+        self.parent.remove_overlay()
+        self.parent.controller.add_bond(self.form.as_data())
+        self.parent.controller.add_master(
+            self.slave, master_name=self.form.name.value)
+
+    def cancel(self, sender=None):
+        self.parent.remove_overlay()

@@ -30,7 +30,11 @@ from urwid import (
     )
 
 from subiquitycore.ui.actionmenu import ActionMenu
-from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn
+from subiquitycore.ui.buttons import (
+    back_btn,
+    cancel_btn,
+    done_btn,
+    )
 from subiquitycore.ui.container import (
     ListBox,
     Pile,
@@ -45,7 +49,11 @@ from subiquitycore.ui.utils import (
     Padding,
     )
 from .network_configure_manual_interface import (
-    EditNetworkStretchy, AddVlanStretchy, ViewInterfaceInfo)
+    AddBondStretchy,
+    AddVlanStretchy,
+    EditNetworkStretchy,
+    ViewInterfaceInfo,
+    )
 from .network_configure_wlan_interface import NetworkConfigureWLANStretchy
 
 from subiquitycore.view import BaseView
@@ -153,15 +161,35 @@ class NetworkView(BaseView):
     def _action_add_vlan(self, device):
         self.show_stretchy_overlay(AddVlanStretchy(self, device))
 
+    def _action_add_bond(self, device):
+        self.show_stretchy_overlay(AddBondStretchy(self, device))
+
+    def _action_add_master(self, device, master=None):
+        self.controller.add_master(device, master)
+
     def _action_rm_dev(self, device):
         self.controller.rm_virtual_interface(device)
 
     def _action(self, sender, action, device):
-        m = getattr(self, '_action_{}'.format(action))
-        m(device)
+        if isinstance(action, str):
+            m = getattr(self, '_action_{}'.format(action))
+            m(device)
+        if isinstance(action, dict):
+            action_name = action.pop('action')
+            m = getattr(self, '_action_{}'.format(action_name))
+            m(device, **action)
 
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()
+        masters = []
+        for master in netdevs:
+            if not master._net_info.bond['is_master']:
+                continue
+            masters.append((
+                _("Set master to %s") % master.name,
+                True,
+                {'action': 'add_master', 'master': master},
+                False))
         rows = []
         rows.append(TableRow([
             Color.info_minor(Text(header))
@@ -206,10 +234,21 @@ class NetworkView(BaseView):
                 ("Edit IPv4", True, 'edit_ipv4', True),
                 ("Edit IPv6", True, 'edit_ipv6', True),
                 ]
-            if dev.type != 'vlan':
+            if dev.type != 'vlan' and not dev._net_info.bond['is_slave']:
                 actions.append((_("Add a VLAN tag"), True, 'add_vlan', True))
             if dev.is_virtual:
                 actions.append((_("Delete"), True, 'rm_dev', True))
+            else:
+                if dev._net_info.bond['is_slave']:
+                    actions.append((
+                        _("Remove master"),
+                        True,
+                        {'action': 'add_master', 'master': None},
+                        False))
+                else:
+                    actions.extend(masters)
+                    actions.append(
+                        (_("Create a new bond"), True, 'add_bond', True))
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._action, dev)
             rows.append(make_action_menu_row([
