@@ -207,18 +207,25 @@ def _generic_can_REMOVE(obj):
     cd = obj.constructed_device()
     if cd is None:
         return False
-    assert isinstance(cd, Raid)
-    if obj in cd.spare_devices:
-        return True
-    min_devices = raidlevels_by_value[cd.raidlevel].min_devices
-    if len(cd.devices) == min_devices:
+    if isinstance(cd, Raid):
+        if obj in cd.spare_devices:
+            return True
+        min_devices = raidlevels_by_value[cd.raidlevel].min_devices
+        if len(cd.devices) == min_devices:
+            return _(
+                "Removing {selflabel} would leave the {cdtype} {cdlabel} with less"
+                " than {min_devices} devices.").format(
+                    selflabel=obj.label,
+                    cdtype=cd.desc(),
+                    cdlabel=cd.label,
+                    min_devices=min_devices)
+    elif isinstance(cd, LVM_VolGroup):
         return _(
-            "Removing {selflabel} would leave the {cdtype} {cdlabel} with less"
-            " than {min_devices} devices.").format(
+            "Removing {selflabel} would leave the {cdtype} {cdlabel} with no "
+            "devices.").format(
                 selflabel=obj.label,
                 cdtype=cd.desc(),
-                cdlabel=cd.label,
-                min_devices=min_devices)
+                cdlabel=cd.label)
     return True
 
 
@@ -275,7 +282,7 @@ class _Formattable(ABC):
 
     @property
     @abstractmethod
-    def ok_for_lvm(self):
+    def ok_for_lvm_vg(self):
         pass
 
 
@@ -441,7 +448,7 @@ class Disk(_Device):
         not self.grub_device and self._fs is None
         and self._constructed_device is None)
 
-    ok_for_raid = ok_for_lvm = _can_FORMAT
+    ok_for_raid = ok_for_lvm_vg = _can_FORMAT
 
 
 @attr.s(cmp=False)
@@ -504,7 +511,7 @@ class Partition(_Formattable):
             return False
         return True
 
-    ok_for_lvm = ok_for_raid
+    ok_for_lvm_vg = ok_for_raid
 
 
 @attr.s(cmp=False)
@@ -569,7 +576,7 @@ class Raid(_Device):
         if self._fs is not None:
             return False
 
-    ok_for_lvm = ok_for_raid
+    ok_for_lvm_vg = ok_for_raid
 
     # What is a device that makes up this device referred to as?
     component_name = "component"
@@ -583,9 +590,15 @@ class LVM_VolGroup(_Device):
     name = attr.ib(default=None)
     devices = attr.ib(default=attr.Factory(set))  # set([_Formattable])
 
+    @property
     def size(self):
         return get_lvm_size(self.devices)
 
+    @property
+    def free_for_partitions(self):
+        return self.size - self.used - GPT_OVERHEAD
+
+    @property
     def label(self):
         return self.name
 
@@ -598,7 +611,28 @@ class LVM_VolGroup(_Device):
         DeviceAction.DELETE,
         ]
 
+    @property
+    def _can_EDIT(self):
+        if len(self._partitions) > 0:
+            return _(
+                "Cannot edit {selflabel} because it has logical volumes.").format(
+                    selflabel=self.label)
+        else:
+            return _generic_can_EDIT(self)
+
+    _can_CREATE_LV = Disk._can_PARTITION
+
+    @property
+    def _can_DELETE(self):
+        if len(self._partitions) > 0:
+            return _(
+                "Cannot delete {selflabel} because it has logical volumes.").format(
+                    selflabel=self.label)
+        else:
+            return _generic_can_DELETE(self)
+
     ok_for_raid = False
+    ok_for_lvm_vg = False
 
     # What is a device that makes up this device referred to as?
     component_name = "PV"
@@ -639,7 +673,7 @@ class LVM_LogicalVolume(_Formattable):
         return self.volgroup.path + '/' + self.name
 
     ok_for_raid = False
-    ok_for_lvm = False
+    ok_for_lvm_vg = False
 
 
 @attr.s(cmp=False)

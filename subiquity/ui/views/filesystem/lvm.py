@@ -64,7 +64,7 @@ class VolGroupStretchy(Stretchy):
     def __init__(self, parent, existing=None):
         self.parent = parent
         self.existing = existing
-        vg_names = {vg.name for vg in parent.model.all_vgs()}
+        vg_names = {vg.name for vg in parent.model.all_volgroups()}
         if existing is None:
             title = _('Create LVM volume group')
             x = 0
@@ -89,7 +89,7 @@ class VolGroupStretchy(Stretchy):
 
         possible_components = get_possible_components(
             self.parent.model, existing, initial['devices'],
-            lambda dev: dev.ok_for_lvm)
+            lambda dev: dev.ok_for_lvm_vg)
 
         form = self.form = VolGroupForm(
             self.parent.model, possible_components, initial, vg_names)
@@ -109,8 +109,7 @@ class VolGroupStretchy(Stretchy):
 
     def _change_devices(self, sender, new_devices):
         if len(sender.active_devices) >= 1:
-            self.form.size.value = humanize_size(
-                get_lvm_size(self.form.level.value.value, new_devices))
+            self.form.size.value = humanize_size(get_lvm_size(new_devices))
         else:
             self.form.size.value = '-'
 
