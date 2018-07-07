@@ -51,7 +51,7 @@ class FilesystemController(BaseController):
     def default(self):
         self.ui.set_body(GuidedFilesystemView(self))
         if self.answers['guided']:
-            self.guided()
+            self.guided(self.answers.get('guided-method', 'direct'))
         elif self.answers['manual']:
             self.manual()
 
@@ -182,8 +182,8 @@ class FilesystemController(BaseController):
         if self.answers['manual']:
             self._run_iterator(self._run_actions(self.answers['manual']))
 
-    def guided(self):
-        v = GuidedDiskSelectionView(self.model, self)
+    def guided(self, method):
+        v = GuidedDiskSelectionView(self.model, self, method)
         self.ui.set_body(v)
         if self.answers['guided']:
             index = self.answers['guided-index']

@@ -40,7 +40,10 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import humanize_size
+from subiquity.models.filesystem import (
+    dehumanize_size,
+    humanize_size,
+    )
 
 log = logging.getLogger("subiquity.ui.views.filesystem.guided")
 
@@ -59,22 +62,26 @@ class GuidedFilesystemView(BaseView):
 
     def __init__(self, controller):
         self.controller = controller
-        guided = ok_btn(_("Use An Entire Disk"), on_press=self.guided)
+        direct = ok_btn(
+            _("Use An Entire Disk"), on_press=self.guided, user_arg="direct")
+        lvm = ok_btn(
+            _("Use An Entire Disk And Set Up LVM"), on_press=self.guided,
+            user_arg="lvm")
         manual = ok_btn(_("Manual"), on_press=self.manual)
         back = back_btn(_("Back"), on_press=self.cancel)
         lb = ListBox([
             Padding.center_70(Text("")),
             Padding.center_70(Text(_(text))),
             Padding.center_70(Text("")),
-            button_pile([guided, manual, back]),
+            button_pile([direct, lvm, manual, back]),
             ])
         super().__init__(lb)
 
     def manual(self, btn):
         self.controller.manual()
 
-    def guided(self, btn):
-        self.controller.guided()
+    def guided(self, btn, method):
+        self.controller.guided(method)
 
     def cancel(self, btn=None):
         self.controller.cancel()
@@ -85,9 +92,10 @@ class GuidedDiskSelectionView(BaseView):
     title = _("Filesystem setup")
     footer = (_("Choose the installation target"))
 
-    def __init__(self, model, controller):
+    def __init__(self, model, controller, method):
         self.model = model
         self.controller = controller
+        self.method = method
         cancel = cancel_btn(_("Cancel"), on_press=self.cancel)
         rows = []
         for disk in self.model.all_disks():
@@ -120,10 +128,38 @@ class GuidedDiskSelectionView(BaseView):
 
     def choose_disk(self, btn, disk):
         self.model.reset()
-        result = {
-            "size": disk.free_for_partitions,
-            "fstype": self.model.fs_by_name["ext4"],
-            "mount": "/",
-        }
-        self.controller.partition_disk_handler(disk, None, result)
+        if self.method == "direct":
+            result = {
+                "size": disk.free_for_partitions,
+                "fstype": self.model.fs_by_name["ext4"],
+                "mount": "/",
+                }
+            self.controller.partition_disk_handler(disk, None, result)
+        elif self.method == 'lvm':
+            self.controller.make_boot_disk(disk)
+            self.controller.create_partition(
+                device=disk, spec=dict(
+                    size=dehumanize_size('1G'),
+                    fstype=self.model.fs_by_name['ext4'],
+                    mount='/boot'
+                    ))
+            part = self.controller.create_partition(
+                device=disk, spec=dict(
+                    size=disk.free_for_partitions,
+                    fstype=None,
+                    ))
+            vg = self.controller.create_volgroup(
+                spec=dict(
+                    name="ubuntu-vg",
+                    devices=set([part]),
+                    ))
+            self.controller.create_logical_volume(
+                vg=vg, spec=dict(
+                    size=dehumanize_size("4G"),
+                    name="ubuntu-lv",
+                    fstype=self.model.fs_by_name['ext4'],
+                    mount="/",
+                    ))
+        else:
+            raise Exception("unknown guided method '{}'".format(self.method))
         self.controller.manual()
