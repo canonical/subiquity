@@ -102,6 +102,7 @@ A LVM volume group is created containing the large partition. A \
 It can easily be enlarged with standard LVM command line tools."""),
 }
 
+
 class GuidedDiskSelectionView(BaseView):
 
     title = _("Filesystem setup")
@@ -136,7 +137,10 @@ class GuidedDiskSelectionView(BaseView):
                 }),
             button_pile([cancel]),
             focus_buttons=False,
-            excerpt=excerpts[method] + "\n\n" + _("Choose the disk to install to:")))
+            excerpt=(
+                excerpts[method]
+                + "\n\n"
+                + _("Choose the disk to install to:"))))
 
     def cancel(self, btn=None):
         self.controller.default()

@@ -164,7 +164,7 @@ def asdict(inst):
         v = getattr(
             inst,
             'serialize_' + field.name,
-            lambda : getattr(inst, field.name))()
+            lambda: getattr(inst, field.name))()
         if v is not None:
             if isinstance(v, (list, set)):
                 r[field.name] = [elem.id for elem in v]
@@ -216,19 +216,20 @@ def _generic_can_REMOVE(obj):
         min_devices = raidlevels_by_value[cd.raidlevel].min_devices
         if len(cd.devices) == min_devices:
             return _(
-                "Removing {selflabel} would leave the {cdtype} {cdlabel} with less"
-                " than {min_devices} devices.").format(
+                "Removing {selflabel} would leave the {cdtype} {cdlabel} with "
+                "less than {min_devices} devices.").format(
                     selflabel=obj.label,
                     cdtype=cd.desc(),
                     cdlabel=cd.label,
                     min_devices=min_devices)
     elif isinstance(cd, LVM_VolGroup):
-        return _(
-            "Removing {selflabel} would leave the {cdtype} {cdlabel} with no "
-            "devices.").format(
-                selflabel=obj.label,
-                cdtype=cd.desc(),
-                cdlabel=cd.label)
+        if len(cd.devices) == 1:
+            return _(
+                "Removing {selflabel} would leave the {cdtype} {cdlabel} with "
+                "no devices.").format(
+                    selflabel=obj.label,
+                    cdtype=cd.desc(),
+                    cdlabel=cd.label)
     return True
 
 
@@ -622,7 +623,8 @@ class LVM_VolGroup(_Device):
     def _can_EDIT(self):
         if len(self._partitions) > 0:
             return _(
-                "Cannot edit {selflabel} because it has logical volumes.").format(
+                "Cannot edit {selflabel} because it has logical "
+                "volumes.").format(
                     selflabel=self.label)
         else:
             return _generic_can_EDIT(self)
@@ -633,7 +635,8 @@ class LVM_VolGroup(_Device):
     def _can_DELETE(self):
         if len(self._partitions) > 0:
             return _(
-                "Cannot delete {selflabel} because it has logical volumes.").format(
+                "Cannot delete {selflabel} because it has logical "
+                "volumes.").format(
                     selflabel=self.label)
         else:
             return _generic_can_DELETE(self)

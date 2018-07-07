@@ -322,7 +322,8 @@ class FormatEntireStretchy(Stretchy):
                     del mountpoint_to_devpath_mapping[mount.path]
         else:
             initial['fstype'] = self.model.fs_by_name[None]
-        self.form = PartitionForm(mountpoint_to_devpath_mapping, 0, initial, False, {})
+        self.form = PartitionForm(
+            mountpoint_to_devpath_mapping, 0, initial, False, {})
         self.form.remove_field('size')
         self.form.remove_field('name')
 
