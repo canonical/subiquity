@@ -34,14 +34,12 @@ from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
     done_btn,
-    menu_btn,
     )
 from subiquitycore.ui.container import (
     ListBox,
     Pile,
     WidgetWrap,
     )
-from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import (
@@ -249,7 +247,8 @@ class NetworkView(BaseView):
                         False))
                 else:
                     actions.extend(masters)
-                    actions.append((_("Create a new bond"), True, 'add_bond', True))
+                    actions.append(
+                        (_("Create a new bond"), True, 'add_bond', True))
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._action, dev)
             rows.append(make_action_menu_row([
