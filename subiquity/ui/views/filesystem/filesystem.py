@@ -338,6 +338,9 @@ class DeviceList(WidgetWrap):
         device_actions = []
         for action in device.supported_actions:
             label = _(action.value)
+            if action == DeviceAction.REMOVE and device.constructed_device():
+                cd = device.constructed_device()
+                label = _("Remove from {}").format(cd.desc())
             enabled, whynot = device.action_possible(action)
             if whynot:
                 assert not enabled
