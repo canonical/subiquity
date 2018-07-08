@@ -16,7 +16,7 @@
 import copy
 import ipaddress
 import logging
-from socket import AF_INET, AF_INET6
+from socket import AF_INET, AF_INET6, if_indextoname
 
 from subiquitycore import netplan
 
@@ -47,10 +47,9 @@ class Networkdev:
         self._net_info = net_info
         self._configuration = configuration
         if self.type == 'vlan':
-            # probably should parse /proc/self/net/vlan/config instead
-            link, vid = self.name.split('.')
-            self._configuration['id'] = int(vid)
-            self._configuration['link'] = link
+            self._configuration['id'] = net_info.netlink_data['vlan_id']
+            self._configuration['link'] = if_indextoname(
+                net_info.netlink_data['vlan_link'])
 
     def render(self):
         if self.configured_ip_addresses or self.dhcp4 or self.dhcp6:
