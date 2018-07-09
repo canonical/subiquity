@@ -130,6 +130,21 @@ def get_raid_size(level, devices):
         raise ValueError("unknown raid level %s" % level)
 
 
+# These are only defaults but curtin does not let you change/specify
+# them at this time.
+LVM_OVERHEAD = (1 << 20)
+LVM_CHUNK_SIZE = 4 * (1 << 20)
+
+
+def get_lvm_size(devices, size_overrides={}):
+    r = 0
+    for d in devices:
+        r += align_down(
+            size_overrides.get(d, d.size) - LVM_OVERHEAD,
+            LVM_CHUNK_SIZE)
+    return r
+
+
 def id_factory(name):
     i = 0
 
@@ -146,7 +161,10 @@ def asdict(inst):
     for field in attr.fields(type(inst)):
         if field.name.startswith('_'):
             continue
-        v = getattr(inst, field.name)
+        v = getattr(
+            inst,
+            'serialize_' + field.name,
+            lambda: getattr(inst, field.name))()
         if v is not None:
             if isinstance(v, (list, set)):
                 r[field.name] = [elem.id for elem in v]
@@ -171,7 +189,7 @@ class DeviceAction(enum.Enum):
     PARTITION = _("Add Partition")
     CREATE_LV = _("Create Logical Volume")
     FORMAT = _("Format")
-    REMOVE = _("Remove from RAID")
+    REMOVE = _("Remove from RAID/LVM")
     DELETE = _("Delete")
     MAKE_BOOT = _("Make Boot Device")
 
@@ -192,18 +210,26 @@ def _generic_can_REMOVE(obj):
     cd = obj.constructed_device()
     if cd is None:
         return False
-    assert isinstance(cd, Raid)
-    if obj in cd.spare_devices:
-        return True
-    min_devices = raidlevels_by_value[cd.raidlevel].min_devices
-    if len(cd.devices) == min_devices:
-        return _(
-            "Removing {selflabel} would leave the {cdtype} {cdlabel} with less"
-            " than {min_devices} devices.").format(
-                selflabel=obj.label,
-                cdtype=cd.desc(),
-                cdlabel=cd.label,
-                min_devices=min_devices)
+    if isinstance(cd, Raid):
+        if obj in cd.spare_devices:
+            return True
+        min_devices = raidlevels_by_value[cd.raidlevel].min_devices
+        if len(cd.devices) == min_devices:
+            return _(
+                "Removing {selflabel} would leave the {cdtype} {cdlabel} with "
+                "less than {min_devices} devices.").format(
+                    selflabel=obj.label,
+                    cdtype=cd.desc(),
+                    cdlabel=cd.label,
+                    min_devices=min_devices)
+    elif isinstance(cd, LVM_VolGroup):
+        if len(cd.devices) == 1:
+            return _(
+                "Removing {selflabel} would leave the {cdtype} {cdlabel} with "
+                "no devices.").format(
+                    selflabel=obj.label,
+                    cdtype=cd.desc(),
+                    cdlabel=cd.label)
     return True
 
 
@@ -226,7 +252,7 @@ class _Formattable(ABC):
 
     # Filesystem
     _fs = attr.ib(default=None, repr=False)
-    # Raid for now, but one day LV, ZPool, BCache...
+    # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
     _constructed_device = attr.ib(default=None, repr=False)
 
     def _is_entirely_used(self):
@@ -256,6 +282,11 @@ class _Formattable(ABC):
     @property
     @abstractmethod
     def ok_for_raid(self):
+        pass
+
+    @property
+    @abstractmethod
+    def ok_for_lvm_vg(self):
         pass
 
 
@@ -421,7 +452,7 @@ class Disk(_Device):
         not self.grub_device and self._fs is None
         and self._constructed_device is None)
 
-    ok_for_raid = _can_FORMAT
+    ok_for_raid = ok_for_lvm_vg = _can_FORMAT
 
 
 @attr.s(cmp=False)
@@ -441,6 +472,10 @@ class Partition(_Formattable):
     @property
     def label(self):
         return _("partition {} of {}").format(self._number, self.device.label)
+
+    @property
+    def short_label(self):
+        return _("partition {}").format(self._number)
 
     def available(self):
         if self.flag == 'bios_grub':
@@ -483,6 +518,8 @@ class Partition(_Formattable):
         if self._constructed_device is not None:
             return False
         return True
+
+    ok_for_lvm_vg = ok_for_raid
 
 
 @attr.s(cmp=False)
@@ -546,12 +583,115 @@ class Raid(_Device):
     def ok_for_raid(self):
         if self._fs is not None:
             return False
+
+    ok_for_lvm_vg = ok_for_raid
+
+    # What is a device that makes up this device referred to as?
+    component_name = "component"
+
+
+@attr.s(cmp=False)
+class LVM_VolGroup(_Device):
+
+    id = attr.ib(default=id_factory("vg"))
+    type = attr.ib(default="lvm_volgroup")
+    name = attr.ib(default=None)
+    devices = attr.ib(default=attr.Factory(set))  # set([_Formattable])
+
+    @property
+    def size(self):
+        return get_lvm_size(self.devices)
+
+    @property
+    def free_for_partitions(self):
+        return self.size - self.used
+
+    @property
+    def label(self):
+        return self.name
+
+    def desc(self):
+        return "LVM volume group"
+
+    supported_actions = [
+        DeviceAction.EDIT,
+        DeviceAction.CREATE_LV,
+        DeviceAction.DELETE,
+        ]
+
+    @property
+    def _can_EDIT(self):
+        if len(self._partitions) > 0:
+            return _(
+                "Cannot edit {selflabel} because it has logical "
+                "volumes.").format(
+                    selflabel=self.label)
+        else:
+            return _generic_can_EDIT(self)
+
+    _can_CREATE_LV = Disk._can_PARTITION
+
+    @property
+    def _can_DELETE(self):
+        if len(self._partitions) > 0:
+            return _(
+                "Cannot delete {selflabel} because it has logical "
+                "volumes.").format(
+                    selflabel=self.label)
+        else:
+            return _generic_can_DELETE(self)
+
+    ok_for_raid = False
+    ok_for_lvm_vg = False
+
+    # What is a device that makes up this device referred to as?
+    component_name = "PV"
+
+
+@attr.s(cmp=False)
+class LVM_LogicalVolume(_Formattable):
+
+    id = attr.ib(default=id_factory("lv"))
+    type = attr.ib(default="lvm_partition")
+    name = attr.ib(default=None)
+    volgroup = attr.ib(default=None)  # LVM_VolGroup
+    size = attr.ib(default=None)
+
+    def serialize_size(self):
+        return "{}b".format(self.size)
+
+    def available(self):
         if self._constructed_device is not None:
             return False
         return True
 
-    # What is a device that makes up this device referred to as?
-    component_name = "component"
+    @property
+    def flag(self):
+        return None  # hack!
+
+    def desc(self):
+        return "LVM logical volume"
+
+    @property
+    def short_label(self):
+        return self.name
+
+    label = short_label
+
+    @property
+    def path(self):
+        return self.volgroup.path + '/' + self.name
+
+    supported_actions = [
+        DeviceAction.EDIT,
+        DeviceAction.DELETE,
+        ]
+
+    _can_EDIT = True
+    _can_DELETE = True
+
+    ok_for_raid = False
+    ok_for_lvm_vg = False
 
 
 @attr.s(cmp=False)
@@ -643,6 +783,8 @@ class FilesystemModel(object):
         self._disks = collections.OrderedDict()
         self._partitions = []
         self._raids = []
+        self._vgs = []
+        self._lvs = []
         self._filesystems = []
         self._mounts = []
         for k, d in self._available_disks.items():
@@ -672,7 +814,7 @@ class FilesystemModel(object):
             emit(d)
 
         def can_emit(obj):
-            # This will need to be extended for things like LVM.
+            # This will need to be extended for things like bcache
             if isinstance(obj, Partition):
                 return obj.device.id in emitted_ids
             elif isinstance(obj, Raid):
@@ -680,12 +822,19 @@ class FilesystemModel(object):
                     if device.id not in emitted_ids:
                         return False
                 return True
+            elif isinstance(obj, LVM_VolGroup):
+                for device in obj.devices:
+                    if device.id not in emitted_ids:
+                        return False
+                return True
+            elif isinstance(obj, LVM_LogicalVolume):
+                return obj.volgroup.id in emitted_ids
             else:
                 raise Exception(
                     "don't know how to decide if {} can be emitted".format(
                         obj))
 
-        work = self._partitions + self._raids
+        work = self._partitions + self._raids + self._vgs + self._lvs
 
         while work:
             next_work = []
@@ -764,8 +913,11 @@ class FilesystemModel(object):
     def all_raids(self):
         return self._raids[:]
 
+    def all_volgroups(self):
+        return self._vgs[:]
+
     def all_devices(self):
-        return self.all_disks() + self.all_raids()  # + self.all_lvms() + ...
+        return self.all_disks() + self.all_raids() + self.all_volgroups()
 
     def get_disk(self, path):
         return self._available_disks.get(path)
@@ -815,6 +967,34 @@ class FilesystemModel(object):
         for d in raid.devices:
             d._constructed_device = None
         self._raids.remove(raid)
+
+    def add_volgroup(self, name, devices):
+        vg = LVM_VolGroup(name=name, devices=devices)
+        for d in devices:
+            if isinstance(d, Disk):
+                self._use_disk(d)
+            d._constructed_device = vg
+        self._vgs.append(vg)
+        return vg
+
+    def remove_volgroup(self, vg):
+        if len(vg._partitions):
+            raise Exception("can only remove empty VG")
+        for d in vg.devices:
+            d._constructed_device = None
+        self._vgs.remove(vg)
+
+    def add_logical_volume(self, vg, name, size):
+        lv = LVM_LogicalVolume(volgroup=vg, name=name, size=size)
+        vg._partitions.append(lv)
+        self._lvs.append(lv)
+        return lv
+
+    def remove_logical_volume(self, lv):
+        if lv._fs:
+            raise Exception("can only remove empty LV")
+        lv.volgroup._partitions.remove(lv)
+        self._lvs.remove(lv)
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)

@@ -51,7 +51,7 @@ class FilesystemController(BaseController):
     def default(self):
         self.ui.set_body(GuidedFilesystemView(self))
         if self.answers['guided']:
-            self.guided()
+            self.guided(self.answers.get('guided-method', 'direct'))
         elif self.answers['manual']:
             self.manual()
 
@@ -64,6 +64,12 @@ class FilesystemController(BaseController):
         elif dev_spec[0] == "raid":
             if dev_spec[1] == "name":
                 for r in self.model.all_raids():
+                    if r.name == dev_spec[2]:
+                        dev = r
+                        break
+        elif dev_spec[0] == "volgroup":
+            if dev_spec[1] == "name":
+                for r in self.model.all_volgroups():
                     if r.name == dev_spec[2]:
                         dev = r
                         break
@@ -80,18 +86,24 @@ class FilesystemController(BaseController):
     def _action_clean_fstype(self, fstype):
         return self.model.fs_by_name[fstype]
 
-    def _action_clean_devices(self, devices):
+    def _action_clean_devices_raid(self, devices):
         return {
             self._action_get(d): v
             for d, v in zip(devices[::2], devices[1::2])
             }
 
+    def _action_clean_devices_vg(self, devices):
+        return {self._action_get(d): 'active' for d in devices}
+
     def _action_clean_level(self, level):
         return raidlevels_by_value[level]
 
-    def _enter_form_data(self, form, data, submit):
+    def _enter_form_data(self, form, data, submit, clean_suffix=''):
         for k, v in data.items():
-            c = getattr(self, '_action_clean_{}'.format(k), lambda x: x)
+            c = getattr(
+                self, '_action_clean_{}_{}'.format(k, clean_suffix), None)
+            if c is None:
+                c = getattr(self, '_action_clean_{}'.format(k), lambda x: x)
             getattr(form, k).value = c(v)
             yield
         yield
@@ -106,6 +118,7 @@ class FilesystemController(BaseController):
     def _answers_action(self, action):
         from subiquitycore.ui.stretchy import StretchyOverlay
         from subiquity.ui.views.filesystem.delete import ConfirmDeleteStretchy
+        log.debug("_answers_action %r", action)
         if 'obj' in action:
             obj = self._action_get(action['obj'])
             meth = getattr(
@@ -131,7 +144,17 @@ class FilesystemController(BaseController):
             yield from self._enter_form_data(
                 body.stretchy.form,
                 action['data'],
-                action.get("submit", True))
+                action.get("submit", True),
+                clean_suffix='raid')
+        elif action['action'] == 'create-vg':
+            self.ui.frame.body.create_vg()
+            yield
+            body = self.ui.frame.body._w
+            yield from self._enter_form_data(
+                body.stretchy.form,
+                action['data'],
+                action.get("submit", True),
+                clean_suffix='vg')
         elif action['action'] == 'done':
             if not self.ui.frame.body.done.enabled:
                 raise Exception("answers did not provide complete fs config")
@@ -159,8 +182,8 @@ class FilesystemController(BaseController):
         if self.answers['manual']:
             self._run_iterator(self._run_actions(self.answers['manual']))
 
-    def guided(self):
-        v = GuidedDiskSelectionView(self.model, self)
+    def guided(self, method):
+        v = GuidedDiskSelectionView(self.model, self, method)
         self.ui.set_body(v)
         if self.answers['guided']:
             index = self.answers['guided-index']
@@ -265,6 +288,34 @@ class FilesystemController(BaseController):
             self.delete_partition(p)
         self.model.remove_raid(raid)
 
+    def create_volgroup(self, spec):
+        for d in spec['devices']:
+            self.delete_filesystem(d.fs())
+        return self.model.add_volgroup(
+            name=spec['name'],
+            devices=spec['devices'])
+    create_lvm_volgroup = create_volgroup
+
+    def delete_volgroup(self, vg):
+        for lv in vg._partitions:
+            self.delete_logical_volume(lv)
+        self.model.remove_volgroup(vg)
+    delete_lvm_volgroup = delete_volgroup
+
+    def create_logical_volume(self, vg, spec):
+        lv = self.model.add_logical_volume(
+            vg=vg,
+            name=spec['name'],
+            size=spec['size'])
+        self.create_filesystem(lv, spec)
+        return lv
+    create_lvm_partition = create_logical_volume
+
+    def delete_logical_volume(self, lv):
+        self.delete_filesystem(lv.fs())
+        self.model.remove_logical_volume(lv)
+    delete_lvm_partition = delete_logical_volume
+
     def partition_disk_handler(self, disk, partition, spec):
         log.debug('partition_disk_handler: %s %s %s', disk, partition, spec)
         log.debug('disk.freespace: {}'.format(disk.free_for_partitions))
@@ -295,6 +346,21 @@ class FilesystemController(BaseController):
 
         log.info("Successfully added partition")
 
+    def logical_volume_handler(self, vg, lv, spec):
+        log.debug('logical_volume_handler: %s %s %s', vg, lv, spec)
+        log.debug('vg.freespace: {}'.format(vg.free_for_partitions))
+
+        if lv is not None:
+            lv.name = spec['name']
+            lv.size = align_up(spec['size'])
+            if vg.free_for_partitions < 0:
+                raise Exception("lv size too large")
+            self.delete_filesystem(lv.fs())
+            self.create_filesystem(lv, spec)
+            return
+
+        self.create_logical_volume(vg, spec)
+
     def add_format_handler(self, volume, spec):
         log.debug('add_format_handler %s %s', volume, spec)
         self.delete_filesystem(volume.fs())
@@ -314,6 +380,19 @@ class FilesystemController(BaseController):
             existing.spare_devices = spec['spare_devices']
         else:
             self.create_raid(spec)
+
+    def volgroup_handler(self, existing, spec):
+        log.debug("volgroup_handler %s %s", existing, spec)
+        if existing is not None:
+            for d in existing.devices:
+                d._constructed_device = None
+            for d in spec['devices']:
+                self.delete_filesystem(d.fs())
+                d._constructed_device = existing
+            existing.name = spec['name']
+            existing.devices = spec['devices']
+        else:
+            self.create_volgroup(spec)
 
     def make_boot_disk(self, new_boot_disk):
         boot_partition = None

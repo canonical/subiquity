@@ -69,6 +69,7 @@ from subiquity.models.filesystem import (
 
 from .delete import ConfirmDeleteStretchy
 from .disk_info import DiskInfoStretchy
+from .lvm import VolGroupStretchy
 from .partition import PartitionStretchy, FormatEntireStretchy
 from .raid import RaidStretchy
 
@@ -293,11 +294,15 @@ class DeviceList(WidgetWrap):
 
     def _disk_REMOVE(self, disk):
         cd = disk.constructed_device()
-        assert cd.type == "raid"
-        if disk in cd.devices:
+        if cd.type == "raid":
+            if disk in cd.devices:
+                cd.devices.remove(disk)
+            else:
+                cd.spare_devices.remove(disk)
+        elif cd.type == "lvm_volgroup":
             cd.devices.remove(disk)
         else:
-            cd.spare_devices.remove(disk)
+            1/0
         disk._constructed_device = None
         self.parent.refresh_model_inputs()
 
@@ -316,6 +321,14 @@ class DeviceList(WidgetWrap):
     _raid_REMOVE = _disk_REMOVE
     _raid_DELETE = _partition_DELETE
 
+    _lvm_volgroup_EDIT = _stretchy_shower(VolGroupStretchy)
+    _lvm_volgroup_CREATE_LV = _disk_PARTITION
+    _lvm_volgroup_DELETE = _partition_DELETE
+
+    _lvm_partition_EDIT = _stretchy_shower(
+        lambda parent, part: PartitionStretchy(parent, part.volgroup, part))
+    _lvm_partition_DELETE = _partition_DELETE
+
     def _action(self, sender, value, device):
         action, meth = value
         log.debug('_action %s %s', action, device.id)
@@ -325,6 +338,9 @@ class DeviceList(WidgetWrap):
         device_actions = []
         for action in device.supported_actions:
             label = _(action.value)
+            if action == DeviceAction.REMOVE and device.constructed_device():
+                cd = device.constructed_device()
+                label = _("Remove from {}").format(cd.desc())
             enabled, whynot = device.action_possible(action)
             if whynot:
                 assert not enabled
@@ -415,7 +431,7 @@ class DeviceList(WidgetWrap):
                         int(100 * part.size / device.size))
                     cells = [
                         Text("["),
-                        Text("  " + _("partition {}").format(part._number)),
+                        Text("  " + part.short_label),
                         (2, Text(part_size)),
                         menu,
                         Text("]"),
@@ -472,8 +488,11 @@ class FilesystemView(BaseView):
         self._create_raid_btn = Toggleable(menu_btn(
             label=_("Create software RAID (md)"),
             on_press=self.create_raid))
+        self._create_vg_btn = Toggleable(menu_btn(
+            label=_("Create volume group (LVM)"),
+            on_press=self.create_vg))
 
-        bp = button_pile([self._create_raid_btn])
+        bp = button_pile([self._create_raid_btn, self._create_vg_btn])
         bp.align = 'left'
 
         body = [
@@ -515,14 +534,20 @@ class FilesystemView(BaseView):
             ]
 
     def refresh_model_inputs(self):
+        lvm_devices = set()
         raid_devices = set()
         for d in self.model.all_devices():
             if d.ok_for_raid:
                 raid_devices.add(d)
+            if d.ok_for_lvm_vg:
+                lvm_devices.add(d)
             for p in d.partitions():
                 if p.ok_for_raid:
                     raid_devices.add(p)
+                if p.ok_for_lvm_vg:
+                    lvm_devices.add(p)
             self._create_raid_btn.enabled = len(raid_devices) > 1
+            self._create_vg_btn.enabled = len(lvm_devices) > 0
         self.mount_list.refresh_model_inputs()
         self.avail_list.refresh_model_inputs()
         self.used_list.refresh_model_inputs()
@@ -546,6 +571,9 @@ class FilesystemView(BaseView):
 
     def create_raid(self, button=None):
         self.show_stretchy_overlay(RaidStretchy(self))
+
+    def create_vg(self, button=None):
+        self.show_stretchy_overlay(VolGroupStretchy(self))
 
     def cancel(self, button=None):
         self.controller.default()

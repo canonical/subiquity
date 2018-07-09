@@ -21,7 +21,6 @@ from .filesystem import (
 from .bcache import BcacheView
 from .ceph import CephDiskView
 from .iscsi import IscsiDiskView
-from .lvm import LVMVolumeGroupView
 from .identity import IdentityView
 from .installpath import InstallpathView, MAASView
 from .installprogress import ProgressView
@@ -37,7 +36,6 @@ __all__ = [
     'InstallpathView',
     'IscsiDiskView',
     'KeyboardView',
-    'LVMVolumeGroupView',
     'MAASView',
     'ProgressView',
     'WelcomeView',
