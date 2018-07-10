@@ -241,7 +241,11 @@ class NetworkView(BaseView):
         self.dev_to_row[dev] = row.base_widget
         self.cur_netdevs[netdev_i:netdev_i] = [dev]
         rows.append(row)
-        info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
+        if dev.type == "vlan":
+            info = _("VLAN {id} on interface {link}").format(
+                **dev._configuration)
+        else:
+            info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
         rows.append(Color.info_minor(TableRow([
             Text(""),
             (4, Text(info)),

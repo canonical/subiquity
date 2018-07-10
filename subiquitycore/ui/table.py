@@ -371,11 +371,13 @@ class TablePile(AbstractTable):
         return Pile([('pack', r) for r in rows])
 
     def insert_rows(self, index, new_rows):
+        self._last_size = None
         self.table_rows[index:index] = new_rows
         self._w.contents[index:index] = [
             (urwid.Padding(w), self._w.options('pack')) for w in new_rows]
 
     def remove_rows(self, start, end):
+        self._last_size = None
         refocus = self._w.focus_position >= (len(self._w.contents) - (end - start))
         del self.table_rows[start:end]
         del self._w.contents[start:end]
