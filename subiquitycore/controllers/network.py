@@ -210,16 +210,29 @@ class NetworkController(BaseController, TaskWatcher):
         self.model.parse_netplan_configs(self.root)
 
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
-        self.observer, fds = (
+        self._observer_handles = []
+        self.observer, self._observer_fds = (
             self.prober.probe_network(self.network_event_receiver))
-        for fd in fds:
+        self.start_watching()
+
+    def stop_watching(self):
+        for handle in self._observer_handles:
+            self.loop.remove_watch_file(handle)
+        self._observer_handles = []
+
+    def start_watching(self):
+        if self._observer_handles:
+            return
+        self._observer_handles = [
             self.loop.watch_file(fd, partial(self._data_ready, fd))
+            for fd in self._observer_fds]
 
     def _data_ready(self, fd):
         cp = run_command(['udevadm', 'settle', '-t', '0'])
         if cp.returncode != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
-            self.loop.set_alarm_in(0.1, lambda loop, ud: self._data_ready(fd))
+            self.stop_watching()
+            self.loop.set_alarm_in(0.1, lambda loop, ud: self.start_watching())
             return
         self.observer.data_ready(fd)
         v = self.ui.frame.body
