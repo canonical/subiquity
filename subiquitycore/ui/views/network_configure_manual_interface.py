@@ -315,6 +315,13 @@ _bond_modes = [
 ]
 
 
+_supports_xmit_hash_policy = {
+    'balance-xor',
+    '802.3ad',
+    'balance-tlb',
+}
+
+
 _xmit_hash_policies = [
     ('layer2', True, 'layer2'),
     ('layer2+3', True, 'layer2+3'),
@@ -322,6 +329,11 @@ _xmit_hash_policies = [
     ('encap2+3', True, 'encap2+3'),
     ('encap3+4', True, 'encap3+4'),
 ]
+
+
+_supports_lacp_rate = {
+    '802.3ad',
+}
 
 
 _lacp_rates = [
@@ -346,12 +358,19 @@ class AddBondStretchy(Stretchy):
         self.parent = parent
         self.slave = slave
         self.form = BondForm()
+        connect_signal(self.form.mode.widget, 'select', self._select_level)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
+        self._select_level(None, 'balance-rr')
         super().__init__(
             _('Create bond'),
             [Pile(self.form.as_rows()), Text(""), self.form.buttons],
             0, 0)
+
+    def _select_level(self, sender, new_value):
+        self.form.xmit_hash_policy.enabled = \
+          new_value in _supports_xmit_hash_policy
+        self.form.lacp_rate.enabled = new_value in _supports_lacp_rate
 
     def done(self, sender):
         self.parent.remove_overlay()
