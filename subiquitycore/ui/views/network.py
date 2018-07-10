@@ -162,6 +162,39 @@ class NetworkView(BaseView):
         log.debug("_action %s %s", action.name, device.name)
         meth(device)
 
+    def _cells_for_device(self, dev):
+        dhcp = []
+        if dev.dhcp4:
+            dhcp.append('v4')
+        if dev.dhcp6:
+            dhcp.append('v6')
+        if dhcp:
+            dhcp = ",".join(dhcp)
+        else:
+            dhcp = '-'
+        addresses = []
+        for v in 4, 6:
+            if dev.configured_ip_addresses_for_version(v):
+                addresses.extend([
+                    "{} (static)".format(a)
+                    for a in dev.configured_ip_addresses_for_version(v)
+                    ])
+            elif dev.dhcp_for_version(v):
+                if v == 4:
+                    fam = AF_INET
+                elif v == 6:
+                    fam = AF_INET6
+                for a in dev._net_info.addresses.values():
+                    log.debug("a %s", a.serialize())
+                    if a.family == fam and a.source == 'dhcp':
+                        addresses.append("{} (from dhcp)".format(
+                            a.address))
+        if addresses:
+            addresses = ", ".join(addresses)
+        else:
+            addresses = '-'
+        return (dev.name, dev.type, dhcp, addresses)
+
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()
         rows = []
@@ -169,36 +202,7 @@ class NetworkView(BaseView):
             Color.info_minor(Text(header))
             for header in ["", "NAME", "TYPE", "DHCP", "ADDRESSES", ""]]))
         for dev in netdevs:
-            dhcp = []
-            if dev.dhcp4:
-                dhcp.append('v4')
-            if dev.dhcp6:
-                dhcp.append('v6')
-            if dhcp:
-                dhcp = ",".join(dhcp)
-            else:
-                dhcp = '-'
-            addresses = []
-            for v in 4, 6:
-                if dev.configured_ip_addresses_for_version(v):
-                    addresses.extend([
-                        "{} (static)".format(a)
-                        for a in dev.configured_ip_addresses_for_version(v)
-                        ])
-                elif dev.dhcp_for_version(v):
-                    if v == 4:
-                        fam = AF_INET
-                    elif v == 6:
-                        fam = AF_INET6
-                    for a in dev._net_info.addresses.values():
-                        log.debug("a %s", a.serialize())
-                        if a.family == fam and a.source == 'dhcp':
-                            addresses.append("{} (from dhcp)".format(
-                                a.address))
-            if addresses:
-                addresses = ", ".join(addresses)
-            else:
-                addresses = '-'
+            name, typ, dhcp, addresses = self._cells_for_device(dev)
             actions = []
             for action in NetDevAction:
                 meth = getattr(self, '_action_' + action.name)
@@ -206,15 +210,16 @@ class NetworkView(BaseView):
                     actions.append((_(action.value), True, (action, meth), True))
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._action, dev)
-            rows.append(make_action_menu_row([
+            row = make_action_menu_row([
                 Text("["),
-                Text(dev.name),
-                Text(dev.type),
+                Text(name),
+                Text(typ),
                 Text(dhcp),
                 Text(addresses, wrap='clip'),
                 menu,
                 Text("]"),
-                ], menu))
+                ], menu)
+            rows.append(row)
             info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
             rows.append(Color.info_minor(TableRow([
                 Text(""),
