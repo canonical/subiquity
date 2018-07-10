@@ -378,12 +378,20 @@ class TablePile(AbstractTable):
 
     def remove_rows(self, start, end):
         self._last_size = None
-        refocus = self._w.focus_position >= (len(self._w.contents) - (end - start))
+        # MonitoredFocusList clamps the focus position to the new
+        # length of the list when you remove elements but it doesn't
+        # check that that the element it moves the focus to is
+        # selectable...
+        new_length = len(self._w.contents) - (end - start)
+        refocus = self._w.focus_position >= new_length
         del self.table_rows[start:end]
         del self._w.contents[start:end]
         log.debug("%s", (self._w.focus_position, len(self._w.contents)))
         if refocus:
             self._select_last_selectable()
+        else:
+            while not self._w.focus.selectable():
+                self._w.focus_position += 1
 
     def set_contents(self, rows):
         """Update the list of rows. """
