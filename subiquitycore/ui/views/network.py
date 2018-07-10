@@ -29,6 +29,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.models.network import NetDevAction
 from subiquitycore.ui.actionmenu import ActionMenu
 from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn
 from subiquitycore.ui.container import (
@@ -138,27 +139,28 @@ class NetworkView(BaseView):
         done = done_btn(_("Done"), on_press=self.done)
         return button_pile([done, back])
 
-    def _action_info(self, device):
+    def _action_INFO(self, device):
         self.show_stretchy_overlay(ViewInterfaceInfo(self, device))
 
-    def _action_edit_ipv4(self, device):
-        self.show_stretchy_overlay(EditNetworkStretchy(self, device, 4))
-
-    def _action_edit_wlan(self, device):
+    def _action_EDIT_WLAN(self, device):
         self.show_stretchy_overlay(NetworkConfigureWLANStretchy(self, device))
 
-    def _action_edit_ipv6(self, device):
+    def _action_EDIT_IPV4(self, device):
+        self.show_stretchy_overlay(EditNetworkStretchy(self, device, 4))
+
+    def _action_EDIT_IPV6(self, device):
         self.show_stretchy_overlay(EditNetworkStretchy(self, device, 6))
 
-    def _action_add_vlan(self, device):
+    def _action_ADD_VLAN(self, device):
         self.show_stretchy_overlay(AddVlanStretchy(self, device))
 
-    def _action_rm_dev(self, device):
+    def _action_DELETE(self, device):
         self.controller.rm_virtual_interface(device)
 
     def _action(self, sender, action, device):
-        m = getattr(self, '_action_{}'.format(action))
-        m(device)
+        action, meth = action
+        log.debug("_action %s %s", action.name, device.name)
+        meth(device)
 
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()
@@ -197,19 +199,11 @@ class NetworkView(BaseView):
                 addresses = ", ".join(addresses)
             else:
                 addresses = '-'
-            actions = [
-                ("Info", True, 'info', True),
-            ]
-            if dev.type == "wlan":
-                actions.append(("Edit WiFi", True, "edit_wlan", True))
-            actions += [
-                ("Edit IPv4", True, 'edit_ipv4', True),
-                ("Edit IPv6", True, 'edit_ipv6', True),
-                ]
-            if dev.type != 'vlan':
-                actions.append((_("Add a VLAN tag"), True, 'add_vlan', True))
-            if dev.is_virtual:
-                actions.append((_("Delete"), True, 'rm_dev', True))
+            actions = []
+            for action in NetDevAction:
+                meth = getattr(self, '_action_' + action.name)
+                if dev.supports_action(action):
+                    actions.append((_(action.value), True, (action, meth), True))
             menu = ActionMenu(actions)
             connect_signal(menu, 'action', self._action, dev)
             rows.append(make_action_menu_row([
