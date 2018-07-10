@@ -374,6 +374,7 @@ class NetworkModel(object):
         netdev = Networkdev(link, config)
         self.devices[ifindex] = netdev
         self.devices_by_name[link.name] = netdev
+        return netdev
 
     def update_link(self, ifindex):
         # This is pretty edge-casey as the fact that we wait for the
@@ -387,13 +388,15 @@ class NetworkModel(object):
                 log.debug("link renamed %s -> %s", k, dev.name)
                 del self.devices_by_name[k]
                 self.devices_by_name[dev.name] = dev
-                return
+                break
+        return dev
 
     def del_link(self, ifindex):
         if ifindex in self.devices:
             dev = self.devices[ifindex]
             del self.devices_by_name[dev.name]
             del self.devices[ifindex]
+            return dev
 
     def get_all_netdevs(self):
         return [v for k, v in sorted(self.devices_by_name.items())]

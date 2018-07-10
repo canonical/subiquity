@@ -37,7 +37,6 @@ from subiquitycore.ui.container import (
     Pile,
     WidgetWrap,
     )
-from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import (
     button_pile,
@@ -108,7 +107,8 @@ class NetworkView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.items = []
+        self.dev_to_row = {}
+        self.cur_netdevs = []
         self.error = Text("", align='center')
         self.device_table = TablePile(
             self._build_model_inputs(),
@@ -195,6 +195,60 @@ class NetworkView(BaseView):
             addresses = '-'
         return (dev.name, dev.type, dhcp, addresses)
 
+    def new_link(self, new_dev):
+        for i, cur_dev in enumerate(self.cur_netdevs):
+            if cur_dev.name > new_dev.name:
+                netdev_i = i
+                break
+        else:
+            netdev_i = len(self.cur_netdevs)
+        new_rows = self._rows_for_device(new_dev, netdev_i)
+        self.device_table.insert_rows(3*netdev_i+1, new_rows)
+
+    def update_link(self, dev):
+        row = self.dev_to_row[dev]
+        for i, text in enumerate(self._cells_for_device(dev)):
+            row.columns[2*(i+1)].set_text(text)
+
+    def del_link(self, dev):
+        log.debug("del_link %s", (dev in self.cur_netdevs))
+        if dev in self.cur_netdevs:
+            netdev_i = self.cur_netdevs.index(dev)
+            self.device_table.remove_rows(3*netdev_i, 3*(netdev_i+1))
+            del self.cur_netdevs[netdev_i]
+
+    def _rows_for_device(self, dev, netdev_i=None):
+        if netdev_i is None:
+            netdev_i = len(self.cur_netdevs)
+        rows = []
+        name, typ, dhcp, addresses = self._cells_for_device(dev)
+        actions = []
+        for action in NetDevAction:
+            meth = getattr(self, '_action_' + action.name)
+            if dev.supports_action(action):
+                actions.append((_(action.value), True, (action, meth), True))
+        menu = ActionMenu(actions)
+        connect_signal(menu, 'action', self._action, dev)
+        row = make_action_menu_row([
+            Text("["),
+            Text(name),
+            Text(typ),
+            Text(dhcp),
+            Text(addresses, wrap='clip'),
+            menu,
+            Text("]"),
+            ], menu)
+        self.dev_to_row[dev] = row.base_widget
+        self.cur_netdevs[netdev_i:netdev_i] = [dev]
+        rows.append(row)
+        info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
+        rows.append(Color.info_minor(TableRow([
+            Text(""),
+            (4, Text(info)),
+            Text("")])))
+        rows.append(Color.info_minor(TableRow([(4, Text(""))])))
+        return rows
+
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()
         rows = []
@@ -202,45 +256,8 @@ class NetworkView(BaseView):
             Color.info_minor(Text(header))
             for header in ["", "NAME", "TYPE", "DHCP", "ADDRESSES", ""]]))
         for dev in netdevs:
-            name, typ, dhcp, addresses = self._cells_for_device(dev)
-            actions = []
-            for action in NetDevAction:
-                meth = getattr(self, '_action_' + action.name)
-                if dev.supports_action(action):
-                    actions.append((_(action.value), True, (action, meth), True))
-            menu = ActionMenu(actions)
-            connect_signal(menu, 'action', self._action, dev)
-            row = make_action_menu_row([
-                Text("["),
-                Text(name),
-                Text(typ),
-                Text(dhcp),
-                Text(addresses, wrap='clip'),
-                menu,
-                Text("]"),
-                ], menu)
-            rows.append(row)
-            info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
-            rows.append(Color.info_minor(TableRow([
-                Text(""),
-                (4, Text(info)),
-                Text("")])))
-            rows.append(Color.info_minor(TableRow([(4, Text(""))])))
+            rows.extend(self._rows_for_device(dev))
         return rows
-
-    def refresh_model_inputs(self):
-        self.device_table.set_contents(self._build_model_inputs())
-        if isinstance(self._w, StretchyOverlay) and \
-           hasattr(self._w.stretchy, 'refresh_model_inputs'):
-            self._w.stretchy.refresh_model_inputs()
-        # we have heading, and then three lines per interface
-        # selectable line, extra line, whitespace line
-        # and focus ends up on the last whitespace line
-        # despite it, not being selectable. *derp*
-        current_focus = self.device_table.focus_position
-        if not self.device_table._w.contents[current_focus][0].selectable():
-            if self.device_table._w.contents[current_focus-2][0].selectable():
-                self.device_table._w.set_focus(current_focus-2)
 
     def show_network_error(self, action, info=None):
         self.error_showing = True

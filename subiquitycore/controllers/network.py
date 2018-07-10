@@ -115,19 +115,26 @@ class WaitForDefaultRouteTask(CancelableTask):
 class SubiquityNetworkEventReceiver(NetworkEventReceiver):
     def __init__(self, model):
         self.model = model
+        self.view = None
         self.default_route_waiter = None
         self.default_routes = set()
 
     def new_link(self, ifindex, link):
-        self.model.new_link(ifindex, link)
+        netdev = self.model.new_link(ifindex, link)
+        if self.view is not None and netdev is not None:
+            self.view.new_link(netdev)
 
     def del_link(self, ifindex):
-        self.model.del_link(ifindex)
+        netdev = self.model.del_link(ifindex)
         if ifindex in self.default_routes:
             self.default_routes.remove(ifindex)
+        if self.view is not None and netdev is not None:
+            self.view.del_link(netdev)
 
     def update_link(self, ifindex):
-        self.model.update_link(ifindex)
+        netdev = self.model.update_link(ifindex)
+        if self.view is not None and netdev is not None:
+            self.view.update_link(netdev)
 
     def route_change(self, action, data):
         super().route_change(action, data)
@@ -226,7 +233,9 @@ class NetworkController(BaseController, TaskWatcher):
         self.signal.emit_signal('prev-screen')
 
     def default(self):
-        self.ui.set_body(NetworkView(self.model, self))
+        view = NetworkView(self.model, self)
+        self.network_event_receiver.view = view
+        self.ui.set_body(view)
         if self.answers.get('accept-default', False):
             self.network_finish(self.model.render())
 
