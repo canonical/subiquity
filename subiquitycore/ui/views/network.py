@@ -37,6 +37,7 @@ from subiquitycore.ui.container import (
     Pile,
     WidgetWrap,
     )
+from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import (
     button_pile,
@@ -74,26 +75,11 @@ class ApplyingConfigWidget(WidgetWrap):
         self.cancel_func()
 
 
-def _build_wifi_info(dev):
-    r = []
-    if dev.actual_ssid is not None:
-        if dev.configured_ssid is not None:
-            if dev.actual_ssid != dev.configured_ssid:
-                r.append(
-                    Text(_("Associated to '%s', will "
-                           "associate to '%s'" % (dev.actual_ssid,
-                                                  dev.configured_ssid))))
-            else:
-                r.append(Text(_("Associated to '%s'" % dev.actual_ssid)))
-        else:
-            r.append(Text(_("No access point configured, but associated "
-                            "to '%s'" % dev.actual_ssid)))
-    else:
-        if dev.configured_ssid is not None:
-            r.append(Text(_("Will associate to '%s'" % dev.configured_ssid)))
-        else:
-            r.append(Text(_("No access point configured")))
-    return r
+def _stretchy_shower(cls, *args):
+    def impl(self, device):
+        self.show_stretchy_overlay(cls(self, device, *args))
+    impl.opens_dialog = True
+    return impl
 
 
 class NetworkView(BaseView):
@@ -139,20 +125,11 @@ class NetworkView(BaseView):
         done = done_btn(_("Done"), on_press=self.done)
         return button_pile([done, back])
 
-    def _action_INFO(self, device):
-        self.show_stretchy_overlay(ViewInterfaceInfo(self, device))
-
-    def _action_EDIT_WLAN(self, device):
-        self.show_stretchy_overlay(NetworkConfigureWLANStretchy(self, device))
-
-    def _action_EDIT_IPV4(self, device):
-        self.show_stretchy_overlay(EditNetworkStretchy(self, device, 4))
-
-    def _action_EDIT_IPV6(self, device):
-        self.show_stretchy_overlay(EditNetworkStretchy(self, device, 6))
-
-    def _action_ADD_VLAN(self, device):
-        self.show_stretchy_overlay(AddVlanStretchy(self, device))
+    _action_INFO = _stretchy_shower(ViewInterfaceInfo)
+    _action_EDIT_WLAN = _stretchy_shower(NetworkConfigureWLANStretchy)
+    _action_EDIT_IPV4 = _stretchy_shower(EditNetworkStretchy, 4)
+    _action_EDIT_IPV6 = _stretchy_shower(EditNetworkStretchy, 6)
+    _action_ADD_VLAN = _stretchy_shower(AddVlanStretchy)
 
     def _action_DELETE(self, device):
         self.controller.rm_virtual_interface(device)
@@ -216,6 +193,10 @@ class NetworkView(BaseView):
             netdev_i = self.cur_netdevs.index(dev)
             self.device_table.remove_rows(3*netdev_i, 3*(netdev_i+1))
             del self.cur_netdevs[netdev_i]
+        if isinstance(self._w, StretchyOverlay):
+            stretchy = self._w.stretchy
+            if getattr(stretchy, 'device', None) is dev:
+                self.remove_overlay()
 
     def _rows_for_device(self, dev, netdev_i=None):
         if netdev_i is None:
@@ -225,8 +206,10 @@ class NetworkView(BaseView):
         actions = []
         for action in NetDevAction:
             meth = getattr(self, '_action_' + action.name)
+            opens_dialog = getattr(meth, 'opens_dialog', False)
             if dev.supports_action(action):
-                actions.append((_(action.value), True, (action, meth), True))
+                actions.append(
+                    (_(action.value), True, (action, meth), opens_dialog))
         menu = ActionMenu(actions)
         connect_signal(menu, 'action', self._action, dev)
         row = make_action_menu_row([
