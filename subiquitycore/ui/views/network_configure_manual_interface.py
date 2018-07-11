@@ -18,17 +18,20 @@ import ipaddress
 import yaml
 
 from urwid import (
+    CheckBox,
     connect_signal,
     Text,
     WidgetPlaceholder,
     )
 
-from subiquitycore.ui.container import Pile
+from subiquitycore.ui.container import Pile, WidgetWrap
 from subiquitycore.ui.form import (
     ChoiceField,
     Form,
     FormField,
+    simple_field,
     StringField,
+    WantsToKnowFormField,
     )
 from subiquitycore.ui.interactive import RestrictedEditor, StringEditor
 from subiquitycore.ui.stretchy import Stretchy
@@ -342,16 +345,55 @@ _lacp_rates = [
 ]
 
 
+class MultiNetdevChooser(WidgetWrap, WantsToKnowFormField):
+
+    def __init__(self):
+        self.pile = Pile([])
+        self.selected = set()
+        self.box_to_device = {}
+        super().__init__(self.pile)
+
+    @property
+    def value(self):
+        return list(sorted(self.selected, key=lambda x: x.name))
+
+    @value.setter
+    def value(self, value):
+        self.selected = set(value)
+        for checkbox, opt in self.pile.contents:
+            checkbox.state = self.box_to_device[checkbox] in self.selected
+
+    def set_bound_form_field(self, bff):
+        contents = []
+        for d in bff.form.candidate_netdevs:
+            box = CheckBox(d.name, on_state_change=self._state_change)
+            self.box_to_device[box] = d
+            contents.append((box, self.pile.options('pack')))
+        self.pile.contents[:] = contents
+
+    def _state_change(self, sender, state):
+        device = self.box_to_device[sender]
+        if state:
+            self.selected.add(device)
+        else:
+            self.selected.remove(device)
+
+
+MultiNetdevField = simple_field(MultiNetdevChooser)
+MultiNetdevField.takes_default_style = False
+
+
 class BondForm(Form):
 
-    def __init__(self, initial, all_netdev_names):
+    def __init__(self, initial, candidate_netdevs, all_netdev_names):
+        self.candidate_netdevs = candidate_netdevs
         self.all_netdev_names = all_netdev_names
         super().__init__(initial)
         connect_signal(self.mode.widget, 'select', self._select_level)
         self._select_level(None, self.mode.value)
 
     name = StringField(_("Name:"))
-    devices = StringField(_("Devices: "))
+    devices = MultiNetdevField(_("Devices: "))
     mode = ChoiceField(_("Bond mode:"), choices=_bond_modes)
     xmit_hash_policy = ChoiceField(
         _("XMIT hash policy:"), choices=_xmit_hash_policies)
@@ -390,6 +432,7 @@ class BondStretchy(Stretchy):
                     break
                 x += 1
             initial = {
+                'devices': set(),
                 'name': name,
                 }
         else:
@@ -398,7 +441,9 @@ class BondStretchy(Stretchy):
             params = existing._configuration['parameters']
             mode = params['mode']
             initial = {
-                'devices': ','.join(existing._configuration['interfaces']),
+                'devices': set([
+                    parent.model.get_netdev_by_name(name)
+                    for name in existing._configuration['interfaces']]),
                 'name': existing.name,
                 'mode': mode,
                 }
@@ -406,7 +451,19 @@ class BondStretchy(Stretchy):
                 initial['xmit_hash_policy'] = params['transmit-hash-policy']
             if mode in _supports_lacp_rate:
                 initial['lacp_rate'] = params['lacp-rate']
-        self.form = BondForm(initial, all_netdev_names)
+
+        def device_ok(device):
+            if device is existing:
+                return False
+            if device in initial['devices']:
+                return True
+            return not device.is_bond_slave
+
+        candidate_netdevs = [
+            device  for device in parent.model.get_all_netdevs()
+            if device_ok(device)]
+
+        self.form = BondForm(initial, candidate_netdevs, all_netdev_names)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         super().__init__(
@@ -418,11 +475,9 @@ class BondStretchy(Stretchy):
         if self.existing is not None:
             self.parent.controller.rm_virtual_interface(self.existing)
         self.parent.controller.add_bond(self.form.as_data())
-        device_names = self.form.devices.value.split(',')
-        for device_name in device_names:
+        for slave in self.form.devices.value:
             self.parent.controller.add_master(
-                self.parent.model.get_netdev_by_name(device_name),
-                master_name=self.form.name.value)
+                slave, master_name=self.form.name.value)
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
