@@ -37,9 +37,8 @@ class NetDevAction(enum.Enum):
     EDIT_WLAN = _("Edit Wifi")
     EDIT_IPV4 = _("Edit IPv4")
     EDIT_IPV6 = _("Edit IPv6")
+    EDIT_BOND = _("Edit bond")
     ADD_VLAN = _("Add a VLAN tag")
-    ADD_BOND = _("Create a new bond")
-#    REMOVE_MASTER = _("Remove master")
     DELETE = _("Delete")
 
 
@@ -86,13 +85,10 @@ class Networkdev:
     _supports_EDIT_WLAN = property(lambda self: self.type == "wlan")
     _supports_EDIT_IPV4 = True
     _supports_EDIT_IPV6 = True
+    _supports_EDIT_BOND = property(lambda self: self.is_bond_master)
     _supports_ADD_VLAN = property(
         lambda self: self.type != "vlan"
         and not self._net_info.bond['is_slave'])
-    _supports_ADD_BOND = property(
-        lambda self: not self._net_info.bond['is_slave'])
-    _supports_REMOVE_MASTER = property(
-        lambda self: self._net_info.bond['is_slave'])
     _supports_DELETE = property(lambda self: self.is_virtual)
 
     @property

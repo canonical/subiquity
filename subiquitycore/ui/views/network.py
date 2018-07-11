@@ -51,8 +51,8 @@ from subiquitycore.ui.utils import (
     Padding,
     )
 from .network_configure_manual_interface import (
-    AddBondStretchy,
     AddVlanStretchy,
+    BondStretchy,
     EditNetworkStretchy,
     ViewInterfaceInfo,
     )
@@ -144,8 +144,8 @@ class NetworkView(BaseView):
     _action_EDIT_WLAN = _stretchy_shower(NetworkConfigureWLANStretchy)
     _action_EDIT_IPV4 = _stretchy_shower(EditNetworkStretchy, 4)
     _action_EDIT_IPV6 = _stretchy_shower(EditNetworkStretchy, 6)
+    _action_EDIT_BOND = _stretchy_shower(BondStretchy)
     _action_ADD_VLAN = _stretchy_shower(AddVlanStretchy)
-    _action_ADD_BOND = _stretchy_shower(AddBondStretchy)
 
     def _action_DELETE(self, device):
         self.controller.rm_virtual_interface(device)
@@ -157,14 +157,6 @@ class NetworkView(BaseView):
 
     def _cells_for_device(self, dev):
         dhcp = []
-        if dev.dhcp4:
-            dhcp.append('v4')
-        if dev.dhcp6:
-            dhcp.append('v6')
-        if dhcp:
-            dhcp = ",".join(dhcp)
-        else:
-            dhcp = '-'
         addresses = []
         for v in 4, 6:
             if dev.configured_ip_addresses_for_version(v):
@@ -272,7 +264,7 @@ class NetworkView(BaseView):
         return rows
 
     def _create_bond(self, sender):
-        pass
+        self.show_stretchy_overlay(BondStretchy(self))
 
     def show_network_error(self, action, info=None):
         self.error_showing = True

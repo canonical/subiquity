@@ -344,39 +344,85 @@ _lacp_rates = [
 
 class BondForm(Form):
 
+    def __init__(self, initial, all_netdev_names):
+        self.all_netdev_names = all_netdev_names
+        super().__init__(initial)
+        connect_signal(self.mode.widget, 'select', self._select_level)
+        self._select_level(None, self.mode.value)
+
     name = StringField(_("Name:"))
+    devices = StringField(_("Devices: "))
     mode = ChoiceField(_("Bond mode:"), choices=_bond_modes)
     xmit_hash_policy = ChoiceField(
         _("XMIT hash policy:"), choices=_xmit_hash_policies)
     lacp_rate = ChoiceField(_("LACP rate:"), choices=_lacp_rates)
     ok_label = _("Save")
 
+    def _select_level(self, sender, new_value):
+        self.xmit_hash_policy.enabled = new_value in _supports_xmit_hash_policy
+        self.lacp_rate.enabled = new_value in _supports_lacp_rate
 
-class AddBondStretchy(Stretchy):
+    def validate_name(self):
+        name = self.name.value
+        if name in self.all_netdev_names:
+            return _('There is already a network device named "{}"').format(
+                name=name)
+        if len(name) == 0:
+            return _("Name cannot be empty")
+        if len(name) > 16:
+            return _("Name cannot be more than 16 characters long")
 
-    def __init__(self, parent, slave=None):
+
+class BondStretchy(Stretchy):
+
+    def __init__(self, parent, existing=None):
         self.parent = parent
-        self.slave = slave
-        self.form = BondForm()
-        connect_signal(self.form.mode.widget, 'select', self._select_level)
+        self.existing = existing
+        all_netdev_names = {
+            device.name for device in parent.model.get_all_netdevs()}
+        if existing is None:
+            title = _('Create bond')
+            x = 0
+            while True:
+                name = 'bond{}'.format(x)
+                if name not in all_netdev_names:
+                    break
+                x += 1
+            initial = {
+                'name': name,
+                }
+        else:
+            title = _('Edit bond')
+            all_netdev_names.remove(existing.name)
+            params = existing._configuration['parameters']
+            mode = params['mode']
+            initial = {
+                'devices': ','.join(existing._configuration['interfaces']),
+                'name': existing.name,
+                'mode': mode,
+                }
+            if mode in _supports_xmit_hash_policy:
+                initial['xmit_hash_policy'] = params['transmit-hash-policy']
+            if mode in _supports_lacp_rate:
+                initial['lacp_rate'] = params['lacp-rate']
+        self.form = BondForm(initial, all_netdev_names)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
-        self._select_level(None, 'balance-rr')
         super().__init__(
-            _('Create bond'),
+            title,
             [Pile(self.form.as_rows()), Text(""), self.form.buttons],
             0, 0)
 
-    def _select_level(self, sender, new_value):
-        self.form.xmit_hash_policy.enabled = \
-          new_value in _supports_xmit_hash_policy
-        self.form.lacp_rate.enabled = new_value in _supports_lacp_rate
-
     def done(self, sender):
-        self.parent.remove_overlay()
+        if self.existing is not None:
+            self.parent.controller.rm_virtual_interface(self.existing)
         self.parent.controller.add_bond(self.form.as_data())
-        self.parent.controller.add_master(
-            self.slave, master_name=self.form.name.value)
+        device_names = self.form.devices.value.split(',')
+        for device_name in device_names:
+            self.parent.controller.add_master(
+                self.parent.model.get_netdev_by_name(device_name),
+                master_name=self.form.name.value)
+        self.parent.remove_overlay()
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()
