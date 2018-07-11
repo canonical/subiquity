@@ -460,7 +460,7 @@ class BondStretchy(Stretchy):
             return not device.is_bond_slave
 
         candidate_netdevs = [
-            device  for device in parent.model.get_all_netdevs()
+            device for device in parent.model.get_all_netdevs()
             if device_ok(device)]
 
         self.form = BondForm(initial, candidate_netdevs, all_netdev_names)
