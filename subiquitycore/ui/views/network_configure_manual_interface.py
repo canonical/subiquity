@@ -365,8 +365,9 @@ class BondForm(Form):
     def validate_name(self):
         name = self.name.value
         if name in self.all_netdev_names:
-            return _('There is already a network device named "{}"').format(
-                name=name)
+            return _(
+                'There is already a network device named "{}"'
+                ).format(name)
         if len(name) == 0:
             return _("Name cannot be empty")
         if len(name) > 16:
