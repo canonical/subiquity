@@ -35,6 +35,7 @@ from subiquitycore.ui.buttons import (
     back_btn,
     cancel_btn,
     done_btn,
+    menu_btn,
     )
 from subiquitycore.ui.container import (
     ListBox,
@@ -110,8 +111,13 @@ class NetworkView(BaseView):
                 0: ColSpec(rpad=1),
                 4: ColSpec(can_shrink=True, rpad=1),
                 })
+
+        self._create_bond_btn = menu_btn(_("Create bond"), on_press=self._create_bond)
+        bp = button_pile([self._create_bond_btn])
+        bp.align = 'left'
+
         self.listbox = ListBox([self.device_table] + [
-            Padding.line_break(""),
+            bp,
         ])
         self.bottom = Pile([
                 Text(""),
@@ -119,13 +125,14 @@ class NetworkView(BaseView):
                 Text(""),
                 ])
         self.error_showing = False
+
         self.frame = Pile([
             ('pack', Text("")),
             ('pack', Padding.center_79(Text(_(self.excerpt)))),
             ('pack', Text("")),
             Padding.center_90(self.listbox),
             ('pack', self.bottom)])
-        self.frame.focus_position = 4
+        self.frame.set_focus(self.bottom)
         super().__init__(self.frame)
 
     def _build_buttons(self):
@@ -263,6 +270,9 @@ class NetworkView(BaseView):
         for dev in netdevs:
             rows.extend(self._rows_for_device(dev))
         return rows
+
+    def _create_bond(self, sender):
+        pass
 
     def show_network_error(self, action, info=None):
         self.error_showing = True

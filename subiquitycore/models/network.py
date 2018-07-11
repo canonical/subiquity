@@ -39,7 +39,7 @@ class NetDevAction(enum.Enum):
     EDIT_IPV6 = _("Edit IPv6")
     ADD_VLAN = _("Add a VLAN tag")
     ADD_BOND = _("Create a new bond")
-    REMOVE_MASTER = _("Remove master")
+#    REMOVE_MASTER = _("Remove master")
     DELETE = _("Delete")
 
 
