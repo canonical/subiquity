@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import enum
 import ipaddress
 import logging
 from socket import AF_INET, AF_INET6, if_indextoname
@@ -29,6 +30,15 @@ log = logging.getLogger('subiquitycore.models.network')
 
 def ip_version(ip):
     return ipaddress.ip_interface(ip).version
+
+
+class NetDevAction(enum.Enum):
+    INFO = _("Info")
+    EDIT_WLAN = _("Edit Wifi")
+    EDIT_IPV4 = _("Edit IPv4")
+    EDIT_IPV6 = _("Edit IPv6")
+    ADD_VLAN = _("Add a VLAN tag")
+    DELETE = _("Delete")
 
 
 class Networkdev:
@@ -56,6 +66,16 @@ class Networkdev:
             return {self.name: self._configuration}
         else:
             return {}
+
+    def supports_action(self, action):
+        return getattr(self, "_supports_" + action.name)
+
+    _supports_INFO = True
+    _supports_EDIT_WLAN = property(lambda self: self.type == "wlan")
+    _supports_EDIT_IPV4 = True
+    _supports_EDIT_IPV6 = True
+    _supports_ADD_VLAN = property(lambda self: self.type != "vlan")
+    _supports_DELETE = property(lambda self: self.is_virtual)
 
     @property
     def configured(self):
@@ -354,6 +374,7 @@ class NetworkModel(object):
         netdev = Networkdev(link, config)
         self.devices[ifindex] = netdev
         self.devices_by_name[link.name] = netdev
+        return netdev
 
     def update_link(self, ifindex):
         # This is pretty edge-casey as the fact that we wait for the
@@ -367,13 +388,15 @@ class NetworkModel(object):
                 log.debug("link renamed %s -> %s", k, dev.name)
                 del self.devices_by_name[k]
                 self.devices_by_name[dev.name] = dev
-                return
+                break
+        return dev
 
     def del_link(self, ifindex):
         if ifindex in self.devices:
             dev = self.devices[ifindex]
             del self.devices_by_name[dev.name]
             del self.devices[ifindex]
+            return dev
 
     def get_all_netdevs(self):
         return [v for k, v in sorted(self.devices_by_name.items())]

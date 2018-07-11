@@ -115,19 +115,26 @@ class WaitForDefaultRouteTask(CancelableTask):
 class SubiquityNetworkEventReceiver(NetworkEventReceiver):
     def __init__(self, model):
         self.model = model
+        self.view = None
         self.default_route_waiter = None
         self.default_routes = set()
 
     def new_link(self, ifindex, link):
-        self.model.new_link(ifindex, link)
+        netdev = self.model.new_link(ifindex, link)
+        if self.view is not None and netdev is not None:
+            self.view.new_link(netdev)
 
     def del_link(self, ifindex):
-        self.model.del_link(ifindex)
+        netdev = self.model.del_link(ifindex)
         if ifindex in self.default_routes:
             self.default_routes.remove(ifindex)
+        if self.view is not None and netdev is not None:
+            self.view.del_link(netdev)
 
     def update_link(self, ifindex):
-        self.model.update_link(ifindex)
+        netdev = self.model.update_link(ifindex)
+        if self.view is not None and netdev is not None:
+            self.view.update_link(netdev)
 
     def route_change(self, action, data):
         super().route_change(action, data)
@@ -203,16 +210,29 @@ class NetworkController(BaseController, TaskWatcher):
         self.model.parse_netplan_configs(self.root)
 
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
-        self.observer, fds = (
+        self._observer_handles = []
+        self.observer, self._observer_fds = (
             self.prober.probe_network(self.network_event_receiver))
-        for fd in fds:
+        self.start_watching()
+
+    def stop_watching(self):
+        for handle in self._observer_handles:
+            self.loop.remove_watch_file(handle)
+        self._observer_handles = []
+
+    def start_watching(self):
+        if self._observer_handles:
+            return
+        self._observer_handles = [
             self.loop.watch_file(fd, partial(self._data_ready, fd))
+            for fd in self._observer_fds]
 
     def _data_ready(self, fd):
         cp = run_command(['udevadm', 'settle', '-t', '0'])
         if cp.returncode != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
-            self.loop.set_alarm_in(0.1, lambda loop, ud: self._data_ready(fd))
+            self.stop_watching()
+            self.loop.set_alarm_in(0.1, lambda loop, ud: self.start_watching())
             return
         self.observer.data_ready(fd)
         v = self.ui.frame.body
@@ -226,7 +246,9 @@ class NetworkController(BaseController, TaskWatcher):
         self.signal.emit_signal('prev-screen')
 
     def default(self):
-        self.ui.set_body(NetworkView(self.model, self))
+        view = NetworkView(self.model, self)
+        self.network_event_receiver.view = view
+        self.ui.set_body(view)
         if self.answers.get('accept-default', False):
             self.network_finish(self.model.render())
 

@@ -29,6 +29,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.models.network import NetDevAction
 from subiquitycore.ui.actionmenu import ActionMenu
 from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn
 from subiquitycore.ui.container import (
@@ -74,26 +75,11 @@ class ApplyingConfigWidget(WidgetWrap):
         self.cancel_func()
 
 
-def _build_wifi_info(dev):
-    r = []
-    if dev.actual_ssid is not None:
-        if dev.configured_ssid is not None:
-            if dev.actual_ssid != dev.configured_ssid:
-                r.append(
-                    Text(_("Associated to '%s', will "
-                           "associate to '%s'" % (dev.actual_ssid,
-                                                  dev.configured_ssid))))
-            else:
-                r.append(Text(_("Associated to '%s'" % dev.actual_ssid)))
-        else:
-            r.append(Text(_("No access point configured, but associated "
-                            "to '%s'" % dev.actual_ssid)))
-    else:
-        if dev.configured_ssid is not None:
-            r.append(Text(_("Will associate to '%s'" % dev.configured_ssid)))
-        else:
-            r.append(Text(_("No access point configured")))
-    return r
+def _stretchy_shower(cls, *args):
+    def impl(self, device):
+        self.show_stretchy_overlay(cls(self, device, *args))
+    impl.opens_dialog = True
+    return impl
 
 
 class NetworkView(BaseView):
@@ -107,7 +93,8 @@ class NetworkView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.items = []
+        self.dev_to_row = {}
+        self.cur_netdevs = []
         self.error = Text("", align='center')
         self.device_table = TablePile(
             self._build_model_inputs(),
@@ -138,27 +125,116 @@ class NetworkView(BaseView):
         done = done_btn(_("Done"), on_press=self.done)
         return button_pile([done, back])
 
-    def _action_info(self, device):
-        self.show_stretchy_overlay(ViewInterfaceInfo(self, device))
+    _action_INFO = _stretchy_shower(ViewInterfaceInfo)
+    _action_EDIT_WLAN = _stretchy_shower(NetworkConfigureWLANStretchy)
+    _action_EDIT_IPV4 = _stretchy_shower(EditNetworkStretchy, 4)
+    _action_EDIT_IPV6 = _stretchy_shower(EditNetworkStretchy, 6)
+    _action_ADD_VLAN = _stretchy_shower(AddVlanStretchy)
 
-    def _action_edit_ipv4(self, device):
-        self.show_stretchy_overlay(EditNetworkStretchy(self, device, 4))
-
-    def _action_edit_wlan(self, device):
-        self.show_stretchy_overlay(NetworkConfigureWLANStretchy(self, device))
-
-    def _action_edit_ipv6(self, device):
-        self.show_stretchy_overlay(EditNetworkStretchy(self, device, 6))
-
-    def _action_add_vlan(self, device):
-        self.show_stretchy_overlay(AddVlanStretchy(self, device))
-
-    def _action_rm_dev(self, device):
+    def _action_DELETE(self, device):
         self.controller.rm_virtual_interface(device)
 
     def _action(self, sender, action, device):
-        m = getattr(self, '_action_{}'.format(action))
-        m(device)
+        action, meth = action
+        log.debug("_action %s %s", action.name, device.name)
+        meth(device)
+
+    def _cells_for_device(self, dev):
+        dhcp = []
+        if dev.dhcp4:
+            dhcp.append('v4')
+        if dev.dhcp6:
+            dhcp.append('v6')
+        if dhcp:
+            dhcp = ",".join(dhcp)
+        else:
+            dhcp = '-'
+        addresses = []
+        for v in 4, 6:
+            if dev.configured_ip_addresses_for_version(v):
+                addresses.extend([
+                    "{} (static)".format(a)
+                    for a in dev.configured_ip_addresses_for_version(v)
+                    ])
+            elif dev.dhcp_for_version(v):
+                if v == 4:
+                    fam = AF_INET
+                elif v == 6:
+                    fam = AF_INET6
+                for a in dev._net_info.addresses.values():
+                    log.debug("a %s", a.serialize())
+                    if a.family == fam and a.source == 'dhcp':
+                        addresses.append("{} (from dhcp)".format(
+                            a.address))
+        if addresses:
+            addresses = ", ".join(addresses)
+        else:
+            addresses = '-'
+        return (dev.name, dev.type, dhcp, addresses)
+
+    def new_link(self, new_dev):
+        for i, cur_dev in enumerate(self.cur_netdevs):
+            if cur_dev.name > new_dev.name:
+                netdev_i = i
+                break
+        else:
+            netdev_i = len(self.cur_netdevs)
+        new_rows = self._rows_for_device(new_dev, netdev_i)
+        self.device_table.insert_rows(3*netdev_i+1, new_rows)
+
+    def update_link(self, dev):
+        row = self.dev_to_row[dev]
+        for i, text in enumerate(self._cells_for_device(dev)):
+            row.columns[2*(i+1)].set_text(text)
+
+    def del_link(self, dev):
+        log.debug("del_link %s", (dev in self.cur_netdevs))
+        if dev in self.cur_netdevs:
+            netdev_i = self.cur_netdevs.index(dev)
+            self.device_table.remove_rows(3*netdev_i, 3*(netdev_i+1))
+            del self.cur_netdevs[netdev_i]
+        if isinstance(self._w, StretchyOverlay):
+            stretchy = self._w.stretchy
+            if getattr(stretchy, 'device', None) is dev:
+                self.remove_overlay()
+
+    def _rows_for_device(self, dev, netdev_i=None):
+        if netdev_i is None:
+            netdev_i = len(self.cur_netdevs)
+        rows = []
+        name, typ, dhcp, addresses = self._cells_for_device(dev)
+        actions = []
+        for action in NetDevAction:
+            meth = getattr(self, '_action_' + action.name)
+            opens_dialog = getattr(meth, 'opens_dialog', False)
+            if dev.supports_action(action):
+                actions.append(
+                    (_(action.value), True, (action, meth), opens_dialog))
+        menu = ActionMenu(actions)
+        connect_signal(menu, 'action', self._action, dev)
+        row = make_action_menu_row([
+            Text("["),
+            Text(name),
+            Text(typ),
+            Text(dhcp),
+            Text(addresses, wrap='clip'),
+            menu,
+            Text("]"),
+            ], menu)
+        self.dev_to_row[dev] = row.base_widget
+        self.cur_netdevs[netdev_i:netdev_i] = [dev]
+        rows.append(row)
+        if dev.type == "vlan":
+            info = _("VLAN {id} on interface {link}").format(
+                **dev._configuration)
+        else:
+            info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
+        rows.append(Color.info_minor(TableRow([
+            Text(""),
+            (4, Text(info)),
+            Text("")])))
+        rows.append(Color.info_minor(TableRow([(4, Text(""))])))
+        return rows
 
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()
@@ -167,81 +243,8 @@ class NetworkView(BaseView):
             Color.info_minor(Text(header))
             for header in ["", "NAME", "TYPE", "DHCP", "ADDRESSES", ""]]))
         for dev in netdevs:
-            dhcp = []
-            if dev.dhcp4:
-                dhcp.append('v4')
-            if dev.dhcp6:
-                dhcp.append('v6')
-            if dhcp:
-                dhcp = ",".join(dhcp)
-            else:
-                dhcp = '-'
-            addresses = []
-            for v in 4, 6:
-                if dev.configured_ip_addresses_for_version(v):
-                    addresses.extend([
-                        "{} (static)".format(a)
-                        for a in dev.configured_ip_addresses_for_version(v)
-                        ])
-                elif dev.dhcp_for_version(v):
-                    if v == 4:
-                        fam = AF_INET
-                    elif v == 6:
-                        fam = AF_INET6
-                    for a in dev._net_info.addresses.values():
-                        log.debug("a %s", a.serialize())
-                        if a.family == fam and a.source == 'dhcp':
-                            addresses.append("{} (from dhcp)".format(
-                                a.address))
-            if addresses:
-                addresses = ", ".join(addresses)
-            else:
-                addresses = '-'
-            actions = [
-                ("Info", True, 'info', True),
-            ]
-            if dev.type == "wlan":
-                actions.append(("Edit WiFi", True, "edit_wlan", True))
-            actions += [
-                ("Edit IPv4", True, 'edit_ipv4', True),
-                ("Edit IPv6", True, 'edit_ipv6', True),
-                ]
-            if dev.type != 'vlan':
-                actions.append((_("Add a VLAN tag"), True, 'add_vlan', True))
-            if dev.is_virtual:
-                actions.append((_("Delete"), True, 'rm_dev', True))
-            menu = ActionMenu(actions)
-            connect_signal(menu, 'action', self._action, dev)
-            rows.append(make_action_menu_row([
-                Text("["),
-                Text(dev.name),
-                Text(dev.type),
-                Text(dhcp),
-                Text(addresses, wrap='clip'),
-                menu,
-                Text("]"),
-                ], menu))
-            info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
-            rows.append(Color.info_minor(TableRow([
-                Text(""),
-                (4, Text(info)),
-                Text("")])))
-            rows.append(Color.info_minor(TableRow([(4, Text(""))])))
+            rows.extend(self._rows_for_device(dev))
         return rows
-
-    def refresh_model_inputs(self):
-        self.device_table.set_contents(self._build_model_inputs())
-        if isinstance(self._w, StretchyOverlay) and \
-           hasattr(self._w.stretchy, 'refresh_model_inputs'):
-            self._w.stretchy.refresh_model_inputs()
-        # we have heading, and then three lines per interface
-        # selectable line, extra line, whitespace line
-        # and focus ends up on the last whitespace line
-        # despite it, not being selectable. *derp*
-        current_focus = self.device_table.focus_position
-        if not self.device_table._w.contents[current_focus][0].selectable():
-            if self.device_table._w.contents[current_focus-2][0].selectable():
-                self.device_table._w.set_focus(current_focus-2)
 
     def show_network_error(self, action, info=None):
         self.error_showing = True

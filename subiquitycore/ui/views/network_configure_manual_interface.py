@@ -233,7 +233,7 @@ class EditNetworkStretchy(Stretchy):
             self.device.set_dhcp_for_version(self.ip_version, True)
         else:
             pass
-        self.parent.refresh_model_inputs()
+        self.parent.update_link(self.device)
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
