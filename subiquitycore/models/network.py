@@ -74,7 +74,15 @@ class Networkdev:
     def render(self):
         if (self.configured_ip_addresses or self.dhcp4 or self.dhcp6 or
                 self.is_bonded):
-            return {self.name: self._configuration}
+            config = self._configuration
+            # If the device has dhcp configured but did not get
+            # addresses, mark it optional so as not to delay boot.
+            if ((self.dhcp4 or self.dhcp6)
+               and not self.actual_ip_addresses
+               and not self.configured_ip_addresses):
+                config = copy.deepcopy(config)
+                config['optional'] = True
+            return {self.name: config}
         else:
             return {}
 
