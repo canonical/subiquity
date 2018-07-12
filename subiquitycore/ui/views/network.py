@@ -31,7 +31,12 @@ from urwid import (
 
 from subiquitycore.models.network import NetDevAction
 from subiquitycore.ui.actionmenu import ActionMenu
-from subiquitycore.ui.buttons import back_btn, cancel_btn, done_btn
+from subiquitycore.ui.buttons import (
+    back_btn,
+    cancel_btn,
+    done_btn,
+    menu_btn,
+    )
 from subiquitycore.ui.container import (
     ListBox,
     Pile,
@@ -46,7 +51,11 @@ from subiquitycore.ui.utils import (
     Padding,
     )
 from .network_configure_manual_interface import (
-    EditNetworkStretchy, AddVlanStretchy, ViewInterfaceInfo)
+    AddVlanStretchy,
+    BondStretchy,
+    EditNetworkStretchy,
+    ViewInterfaceInfo,
+    )
 from .network_configure_wlan_interface import NetworkConfigureWLANStretchy
 
 from subiquitycore.view import BaseView
@@ -102,8 +111,14 @@ class NetworkView(BaseView):
                 0: ColSpec(rpad=1),
                 4: ColSpec(can_shrink=True, rpad=1),
                 })
+
+        self._create_bond_btn = menu_btn(
+            _("Create bond"), on_press=self._create_bond)
+        bp = button_pile([self._create_bond_btn])
+        bp.align = 'left'
+
         self.listbox = ListBox([self.device_table] + [
-            Padding.line_break(""),
+            bp,
         ])
         self.bottom = Pile([
                 Text(""),
@@ -111,13 +126,14 @@ class NetworkView(BaseView):
                 Text(""),
                 ])
         self.error_showing = False
+
         self.frame = Pile([
             ('pack', Text("")),
             ('pack', Padding.center_79(Text(_(self.excerpt)))),
             ('pack', Text("")),
             Padding.center_90(self.listbox),
             ('pack', self.bottom)])
-        self.frame.focus_position = 4
+        self.frame.set_focus(self.bottom)
         super().__init__(self.frame)
 
     def _build_buttons(self):
@@ -129,6 +145,7 @@ class NetworkView(BaseView):
     _action_EDIT_WLAN = _stretchy_shower(NetworkConfigureWLANStretchy)
     _action_EDIT_IPV4 = _stretchy_shower(EditNetworkStretchy, 4)
     _action_EDIT_IPV6 = _stretchy_shower(EditNetworkStretchy, 6)
+    _action_EDIT_BOND = _stretchy_shower(BondStretchy)
     _action_ADD_VLAN = _stretchy_shower(AddVlanStretchy)
 
     def _action_DELETE(self, device):
@@ -140,19 +157,13 @@ class NetworkView(BaseView):
         meth(device)
 
     def _cells_for_device(self, dev):
-        dhcp = []
-        if dev.dhcp4:
-            dhcp.append('v4')
-        if dev.dhcp6:
-            dhcp.append('v6')
-        if dhcp:
-            dhcp = ",".join(dhcp)
-        else:
-            dhcp = '-'
-        addresses = []
+        notes = []
+        if dev.is_bond_slave:
+            notes.append(_("enslaved to {}").format(
+                dev._net_info.bond['master']))
         for v in 4, 6:
             if dev.configured_ip_addresses_for_version(v):
-                addresses.extend([
+                notes.extend([
                     "{} (static)".format(a)
                     for a in dev.configured_ip_addresses_for_version(v)
                     ])
@@ -161,16 +172,22 @@ class NetworkView(BaseView):
                     fam = AF_INET
                 elif v == 6:
                     fam = AF_INET6
+                fam_addresses = []
                 for a in dev._net_info.addresses.values():
                     log.debug("a %s", a.serialize())
                     if a.family == fam and a.source == 'dhcp':
-                        addresses.append("{} (from dhcp)".format(
+                        fam_addresses.append("{} (from dhcp)".format(
                             a.address))
-        if addresses:
-            addresses = ", ".join(addresses)
+                if fam_addresses:
+                    notes.extend(fam_addresses)
+                else:
+                    notes.append(
+                        _("DHCPv{v} has supplied no addresses").format(v=v))
+        if notes:
+            notes = ", ".join(notes)
         else:
-            addresses = '-'
-        return (dev.name, dev.type, dhcp, addresses)
+            notes = '-'
+        return (dev.name, dev.type, notes)
 
     def new_link(self, new_dev):
         for i, cur_dev in enumerate(self.cur_netdevs):
@@ -202,7 +219,7 @@ class NetworkView(BaseView):
         if netdev_i is None:
             netdev_i = len(self.cur_netdevs)
         rows = []
-        name, typ, dhcp, addresses = self._cells_for_device(dev)
+        name, typ, addresses = self._cells_for_device(dev)
         actions = []
         for action in NetDevAction:
             meth = getattr(self, '_action_' + action.name)
@@ -216,7 +233,6 @@ class NetworkView(BaseView):
             Text("["),
             Text(name),
             Text(typ),
-            Text(dhcp),
             Text(addresses, wrap='clip'),
             menu,
             Text("]"),
@@ -227,6 +243,9 @@ class NetworkView(BaseView):
         if dev.type == "vlan":
             info = _("VLAN {id} on interface {link}").format(
                 **dev._configuration)
+        elif dev.type == "bond":
+            info = _("bond master for {}").format(
+                ', '.join(dev._net_info.bond['slaves']))
         else:
             info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
         rows.append(Color.info_minor(TableRow([
@@ -238,13 +257,25 @@ class NetworkView(BaseView):
 
     def _build_model_inputs(self):
         netdevs = self.model.get_all_netdevs()
+        masters = []
+        for master in netdevs:
+            if not master._net_info.bond['is_master']:
+                continue
+            masters.append((
+                _("Set master to %s") % master.name,
+                True,
+                {'action': 'add_master', 'master': master},
+                False))
         rows = []
         rows.append(TableRow([
             Color.info_minor(Text(header))
-            for header in ["", "NAME", "TYPE", "DHCP", "ADDRESSES", ""]]))
+            for header in ["", "NAME", "TYPE", "NOTES / ADDRESSES", ""]]))
         for dev in netdevs:
             rows.extend(self._rows_for_device(dev))
         return rows
+
+    def _create_bond(self, sender):
+        self.show_stretchy_overlay(BondStretchy(self))
 
     def show_network_error(self, action, info=None):
         self.error_showing = True

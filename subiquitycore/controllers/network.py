@@ -34,8 +34,7 @@ from subiquitycore.tasksequence import (
     TaskWatcher,
     )
 from subiquitycore.ui.views import (NetworkView,
-                                    NetworkSetDefaultRouteView,
-                                    NetworkBondInterfacesView)
+                                    NetworkSetDefaultRouteView)
 from subiquitycore.ui.views.network import ApplyingConfigWidget
 from subiquitycore.controller import BaseController
 from subiquitycore.utils import run_command
@@ -268,12 +267,48 @@ class NetworkController(BaseController, TaskWatcher):
         except subprocess.CalledProcessError:
             self.ui.frame.body.show_network_error('add-vlan')
 
+    def add_bond(self, params):
+        cmd = ['ip', 'link', 'add',
+               'name', '%(name)s' % params,
+               'type', 'bond',
+               'mode', '%(mode)s' % params]
+        if params['mode'] in ['balance-xor', '802.3ad', 'balance-tlb']:
+            cmd += ['xmit_hash_policy', '%(xmit_hash_policy)s' % params]
+        if params['mode'] == '802.3ad':
+            cmd += ['lacp_rate', '%(lacp_rate)s' % params]
+
+        try:
+            run_command(cmd, check=True)
+        except subprocess.CalledProcessError:
+            self.ui.frame.body.show_network_error('add-bond')
+
     def rm_virtual_interface(self, device):
         cmd = ['ip', 'link', 'delete', 'dev', device.name]
         try:
             run_command(cmd, check=True)
         except subprocess.CalledProcessError:
             self.ui.frame.body.show_network_error('rm-dev')
+
+    def add_master(self, device, master_dev=None, master_name=None):
+        # Drop ip configs
+        for ip in [4, 6]:
+            device.remove_ip_networks_for_version(ip)
+            device.set_dhcp_for_version(ip, False)
+
+        down_cmd = ['ip', 'link', 'set', 'dev', device.name, 'down']
+        cmd = ['ip', 'link', 'set', 'dev', device.name]
+        if master_dev:
+            master_name = master_dev.name
+        if master_name:
+            cmd += ['master', master_name]
+        else:
+            cmd += ['nomaster']
+        try:
+            # Down the interface, and set new master
+            run_command(down_cmd, check=True)
+            run_command(cmd, check=True)
+        except subprocess.CalledProcessError:
+            self.ui.frame.body.show_network_error('add-master')
 
     def network_finish(self, config):
         log.debug("network config: \n%s",
@@ -287,7 +322,7 @@ class NetworkController(BaseController, TaskWatcher):
         write_file(self.netplan_path, '\n'.join((
             ("# This is the network config written by '%s'" %
              self.opts.project),
-            yaml.dump(config))), omode="w")
+            yaml.dump(config, default_flow_style=False))), omode="w")
 
         self.model.parse_netplan_configs(self.root)
         if self.opts.dry_run:
@@ -362,6 +397,3 @@ class NetworkController(BaseController, TaskWatcher):
         self.ui.set_header("Default route")
         self.ui.set_body(
             NetworkSetDefaultRouteView(self.model, socket.AF_INET6, self))
-
-    def bond_interfaces(self):
-        self.ui.set_body(NetworkBondInterfacesView(self.model, self))
