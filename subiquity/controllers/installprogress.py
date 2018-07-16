@@ -258,13 +258,13 @@ class InstallProgressController(BaseController):
         self.progress_view_showing = True
         if self.install_state == InstallState.RUNNING:
             self.progress_view.title = _("Installing system")
-            self.progress_view.footer = _("Thank you for using Ubuntu!")
+            footer = _("Thank you for using Ubuntu!")
         elif self.install_state == InstallState.DONE:
             self.progress_view.title = _("Install complete!")
-            self.progress_view.footer = _("Thank you for using Ubuntu!")
+            footer = _("Thank you for using Ubuntu!")
         elif self.install_state == InstallState.ERROR:
             self.progress_view.title = (
                 _('An error occurred during installation'))
-            self.progress_view.footer = (
-                _('Please report this error in Launchpad'))
+            footer = _('Please report this error in Launchpad')
         self.ui.set_body(self.progress_view)
+        self.ui.set_footer(footer)
