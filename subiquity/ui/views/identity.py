@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 import re
 
 from urwid import (
@@ -116,6 +117,10 @@ _ssh_import_data = {
 
 class IdentityForm(Form):
 
+    def __init__(self, reserved_usernames):
+        self.reserved_usernames = reserved_usernames
+        super().__init__()
+
     realname = RealnameField(_("Your name:"))
     hostname = UsernameField(
         _("Your server's name:"),
@@ -151,14 +156,20 @@ class IdentityForm(Form):
             return _("Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
 
     def validate_username(self):
-        if len(self.username.value) < 1:
+        username = self.username.value
+        if len(username) < 1:
             return _("Username missing")
 
-        if len(self.username.value) > USERNAME_MAXLEN:
+        if len(username) > USERNAME_MAXLEN:
             return _("Username too long, must be < ") + str(USERNAME_MAXLEN)
 
-        if not re.match(r'[a-z_][a-z0-9_-]*', self.username.value):
+        if not re.match(r'[a-z_][a-z0-9_-]*', username):
             return _("Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
+
+        if username in self.reserved_usernames:
+            return _(
+                'The username "{username}" is reserved for use by the system.'
+                ).format(username=username)
 
     def validate_password(self):
         if len(self.password.value) < 1:
@@ -293,7 +304,21 @@ class IdentityView(BaseView):
         self.opts = opts
         self.items = []
 
-        self.form = IdentityForm()
+        reserved_usernames_path = (
+            os.path.join(os.environ.get("SNAP", "."), "reserved-usernames"))
+        reserved_usernames = set()
+        if os.path.exists(reserved_usernames_path):
+            with open(reserved_usernames_path) as fp:
+                for line in fp:
+                    line = line.strip()
+                    if line.startswith('#') or not line:
+                        continue
+                    reserved_usernames.add(line)
+        else:
+            reserved_usernames.add('root')
+
+        self.form = IdentityForm(reserved_usernames)
+
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form.confirm_password.widget, 'change',
                        self._check_password)

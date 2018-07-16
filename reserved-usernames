@@ -1,0 +1,107 @@
+# Static users from base-passwd/passwd.master (3.5.11).
+root
+daemon
+bin
+sys
+sync
+games
+man
+lp
+mail
+news
+uucp
+proxy
+www-data
+backup
+list
+irc
+gnats
+nobody
+
+# Other static groups from base-passwd/group.master (3.5.11).
+adm
+tty
+disk
+kmem
+dialout
+fax
+voice
+cdrom
+floppy
+tape
+sudo
+audio
+dip
+operator
+src
+shadow
+utmp
+video
+sasl
+plugdev
+staff
+users
+nogroup
+
+# Reserved usernames listed in base-passwd/README (3.5.11).
+netplan
+ftn
+mysql
+tac-plus
+alias
+qmail
+qmaild
+qmails
+qmailr
+qmailq
+qmaill
+qmailp
+asterisk
+vpopmail
+vchkpw
+
+# Ubuntu creates the admin group and adds the first user to it in order to
+# grant them sudo privileges.
+admin
+
+# Other miscellaneous system users/groups created by common packages. While
+# it's useful to add things here that people might run into, it's not
+# absolutely critical; the worst that will happen is that the installation
+# will fail at some later point.
+Debian-exim
+bind
+crontab
+cupsys
+dcc
+dhcp
+dictd
+dovecot
+fetchmail
+firebird
+ftp
+fuse
+gdm
+haldaemon
+hplilp
+identd
+jwhois
+klog
+lpadmin
+maas
+messagebus
+mythtv
+netdev
+powerdev
+radvd
+saned
+sbuild
+scanner
+slocate
+ssh
+sshd
+ssl-cert
+sslwrap
+statd
+syslog
+telnetd
+tftpd

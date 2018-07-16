@@ -57,9 +57,11 @@ parts:
       echo "get passwd/user-default-groups" | \
         debconf-communicate user-setup | \
         cut -d ' ' -f 2- > users-and-groups
+      cp /usr/lib/user-setup/reserved-usernames .
     stage-packages: [libc6]
     stage:
       - users-and-groups
+      - reserved-usernames
   kbdnames:
     plugin: dump
     build-packages:
