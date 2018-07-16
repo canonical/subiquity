@@ -38,6 +38,8 @@ proxy_help = _("If you need to use a HTTP proxy to access the outside world, "
 
 class ProxyForm(Form):
 
+    cancel_label = _("Back")
+
     url = URLField(_("Proxy address:"), help=proxy_help)
 
 

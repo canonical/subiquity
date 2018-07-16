@@ -54,6 +54,11 @@ class VolGroupForm(CompoundDiskForm):
     devices = MultiDeviceField(_("Devices:"))
     size = ReadOnlyField(_("Size:"))
 
+    def validate_devices(self):
+        if len(self.devices.value) < 1:
+            return _("Select at least one device to be part of the volume "
+                     "group.")
+
     def validate_name(self):
         if self.name.value in self.vg_names:
             return _("There is already a volume group named '{}'").format(
@@ -67,6 +72,7 @@ class VolGroupStretchy(Stretchy):
         vg_names = {vg.name for vg in parent.model.all_volgroups()}
         if existing is None:
             title = _('Create LVM volume group')
+            label = _('Create')
             x = 0
             while True:
                 name = 'vg{}'.format(x)
@@ -81,6 +87,7 @@ class VolGroupStretchy(Stretchy):
         else:
             vg_names.remove(existing.name)
             title = _('Edit volume group "{}"').format(existing.name)
+            label = _('Save')
             devices = {d: 'active' for d in existing.devices}
             initial = {
                 'devices': devices,
@@ -93,6 +100,7 @@ class VolGroupStretchy(Stretchy):
 
         form = self.form = VolGroupForm(
             self.parent.model, possible_components, initial, vg_names)
+        self.form.buttons.base_widget[0].set_label(label)
 
         self.form.devices.widget.set_supports_spares(False)
 

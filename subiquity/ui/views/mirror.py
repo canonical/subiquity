@@ -36,6 +36,8 @@ mirror_help = _(
 
 class MirrorForm(Form):
 
+    cancel_label = _("Back")
+
     url = URLField(_("Mirror address:"), help=mirror_help)
 
 

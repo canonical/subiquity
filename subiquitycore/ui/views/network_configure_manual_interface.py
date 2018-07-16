@@ -245,6 +245,8 @@ class EditNetworkStretchy(Stretchy):
 
 class VlanForm(Form):
 
+    ok_label = _("Create")
+
     def __init__(self, parent, device):
         self.parent = parent
         self.device = device
@@ -425,6 +427,7 @@ class BondStretchy(Stretchy):
             device.name for device in parent.model.get_all_netdevs()}
         if existing is None:
             title = _('Create bond')
+            label = _("Create")
             x = 0
             while True:
                 name = 'bond{}'.format(x)
@@ -437,6 +440,7 @@ class BondStretchy(Stretchy):
                 }
         else:
             title = _('Edit bond')
+            label = _("Save")
             all_netdev_names.remove(existing.name)
             params = existing._configuration['parameters']
             mode = params['mode']
@@ -464,6 +468,7 @@ class BondStretchy(Stretchy):
             if device_ok(device)]
 
         self.form = BondForm(initial, candidate_netdevs, all_netdev_names)
+        self.form.buttons.base_widget[0].set_label(label)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         super().__init__(

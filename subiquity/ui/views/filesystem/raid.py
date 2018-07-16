@@ -95,6 +95,7 @@ class RaidStretchy(Stretchy):
         raid_names = {raid.name for raid in parent.model.all_raids()}
         if existing is None:
             title = _('Create software RAID ("MD") disk')
+            label = _('Create')
             x = 0
             while True:
                 name = 'md{}'.format(x)
@@ -110,6 +111,7 @@ class RaidStretchy(Stretchy):
         else:
             raid_names.remove(existing.name)
             title = _('Edit software RAID disk "{}"').format(existing.name)
+            label = _('Save')
             name = existing.name
             if name.startswith('md/'):
                 name = name[3:]
@@ -131,8 +133,9 @@ class RaidStretchy(Stretchy):
         form = self.form = RaidForm(
             self.parent.model, possible_components, initial, raid_names)
 
-        self.form.devices.widget.set_supports_spares(
+        form.devices.widget.set_supports_spares(
             initial['level'].supports_spares)
+        form.buttons.base_widget[0].set_label(label)
 
         connect_signal(form.level.widget, 'select', self._select_level)
         connect_signal(form.devices.widget, 'change', self._change_devices)

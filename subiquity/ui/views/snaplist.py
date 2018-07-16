@@ -339,7 +339,7 @@ class SnapListView(BaseView):
                 1: ColSpec(omittable=True),
                 2: ColSpec(pack=False, min_width=40),
                 })
-        ok = ok_btn(label=_("OK"), on_press=self.done)
+        ok = ok_btn(label=_("Done"), on_press=self.done)
         self._main_screen = screen(
             table, [ok],
             focus_buttons=False,
