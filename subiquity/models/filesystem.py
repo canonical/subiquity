@@ -490,10 +490,6 @@ class Partition(_Formattable):
     def _number(self):
         return self.device._partitions.index(self) + 1
 
-    @property
-    def path(self):
-        return "%s%s" % (self.device.path, self._number)
-
     supported_actions = [
         DeviceAction.EDIT,
         DeviceAction.REMOVE,
@@ -574,10 +570,6 @@ class Raid(_Device):
                     selflabel=self.label)
         else:
             return _generic_can_DELETE(self)
-
-    @property
-    def path(self):
-        return "/dev/{}".format(self.name)
 
     @property
     def ok_for_raid(self):
@@ -677,10 +669,6 @@ class LVM_LogicalVolume(_Formattable):
         return self.name
 
     label = short_label
-
-    @property
-    def path(self):
-        return self.volgroup.path + '/' + self.name
 
     supported_actions = [
         DeviceAction.EDIT,
@@ -919,9 +907,6 @@ class FilesystemModel(object):
     def all_devices(self):
         return self.all_disks() + self.all_raids() + self.all_volgroups()
 
-    def get_disk(self, path):
-        return self._available_disks.get(path)
-
     def add_partition(self, disk, size, flag=""):
         if size > disk.free_for_partitions:
             raise Exception("%s > %s", size, disk.free_for_partitions)
@@ -930,7 +915,7 @@ class FilesystemModel(object):
         if isinstance(disk, Disk):
             self._use_disk(disk)
         if disk._fs is not None:
-            raise Exception("%s is already formatted" % (disk.path,))
+            raise Exception("%s is already formatted" % (disk.label,))
         p = Partition(device=disk, size=real_size, flag=flag)
         if flag in ("boot", "bios_grub"):
             disk._partitions.insert(0, p)
@@ -1026,15 +1011,6 @@ class FilesystemModel(object):
     def remove_mount(self, mount):
         mount.device._mount = None
         self._mounts.remove(mount)
-
-    def get_mountpoint_to_devpath_mapping(self):
-        r = {}
-        for m in self._mounts:
-            if isinstance(m.device.volume, Raid):
-                r[m.path] = m.device.volume.name
-            else:
-                r[m.path] = m.device.volume.path
-        return r
 
     def any_configuration_done(self):
         return len(self._disks) > 0

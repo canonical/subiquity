@@ -94,9 +94,9 @@ class SizeField(FormField):
 
 class PartitionForm(Form):
 
-    def __init__(self, mountpoint_to_devpath_mapping, max_size, initial,
-                 ok_for_slash_boot, lvm_names):
-        self.mountpoint_to_devpath_mapping = mountpoint_to_devpath_mapping
+    def __init__(self, mountpoints, max_size, initial, ok_for_slash_boot,
+                 lvm_names):
+        self.mountpoints = mountpoints
         self.ok_for_slash_boot = ok_for_slash_boot
         self.max_size = max_size
         if max_size is not None:
@@ -147,9 +147,12 @@ class PartitionForm(Form):
         # /usr/include/linux/limits.h:PATH_MAX
         if len(mount) > 4095:
             return _('Path exceeds PATH_MAX')
-        dev = self.mountpoint_to_devpath_mapping.get(mount)
+        dev = self.mountpoints.get(mount)
         if dev is not None:
-            return _("{} is already mounted at {}").format(dev, mount)
+            return _("{} is already mounted at {}.").format(
+                dev.label.title(), mount)
+        if mount == "/boot" and not self.ok_for_slash_boot:
+            return _("/boot must be on a partition of a local disk.")
 
 
 bios_grub_partition_description = _(
@@ -180,8 +183,8 @@ class PartitionStretchy(Stretchy):
         self.controller = parent.controller
         self.parent = parent
         max_size = disk.free_for_partitions
-        mountpoint_to_devpath_mapping = (
-            self.model.get_mountpoint_to_devpath_mapping())
+        mountpoints = {
+            m.path: m.device.volume for m in self.model.all_mounts()}
 
         initial = {}
         label = _("Create")
@@ -204,8 +207,7 @@ class PartitionStretchy(Stretchy):
                 mount = fs.mount()
                 if mount is not None:
                     initial['mount'] = mount.path
-                    if mount.path in mountpoint_to_devpath_mapping:
-                        del mountpoint_to_devpath_mapping[mount.path]
+                    del mountpoints[mount.path]
             else:
                 initial['fstype'] = self.model.fs_by_name[None]
             if isinstance(disk, LVM_VolGroup):
@@ -221,8 +223,7 @@ class PartitionStretchy(Stretchy):
             initial['name'] = name
 
         self.form = PartitionForm(
-            mountpoint_to_devpath_mapping, max_size, initial,
-            isinstance(disk, Disk), lvm_names)
+            mountpoints, max_size, initial, isinstance(disk, Disk), lvm_names)
 
         if not isinstance(disk, LVM_VolGroup):
             self.form.remove_field('name')
@@ -309,8 +310,9 @@ class FormatEntireStretchy(Stretchy):
         self.model = parent.model
         self.controller = parent.controller
         self.parent = parent
-        mountpoint_to_devpath_mapping = (
-            self.model.get_mountpoint_to_devpath_mapping())
+        mountpoints = {
+            m.path: m.device.volume for m in self.model.all_mounts()}
+
         initial = {}
         fs = device.fs()
         if fs is not None:
@@ -318,12 +320,10 @@ class FormatEntireStretchy(Stretchy):
             mount = fs.mount()
             if mount is not None:
                 initial['mount'] = mount.path
-                if mount.path in mountpoint_to_devpath_mapping:
-                    del mountpoint_to_devpath_mapping[mount.path]
+                del mountpoints[mount.path]
         else:
             initial['fstype'] = self.model.fs_by_name[None]
-        self.form = PartitionForm(
-            mountpoint_to_devpath_mapping, 0, initial, False, {})
+        self.form = PartitionForm(mountpoints, 0, initial, False, {})
         self.form.remove_field('size')
         self.form.remove_field('name')
 

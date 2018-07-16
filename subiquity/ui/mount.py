@@ -46,20 +46,18 @@ LEAVE_UNMOUNTED = object()
 
 
 class MountSelector(WidgetWrap):
-    def __init__(self, mountpoint_to_devpath_mapping, ok_for_slash_boot):
+    def __init__(self, mountpoints, ok_for_slash_boot):
         opts = []
         first_opt = None
-        max_len = max(map(len, common_mountpoints))
         for i, mnt in enumerate(common_mountpoints):
-            devpath = mountpoint_to_devpath_mapping.get(mnt)
             if not ok_for_slash_boot and mnt == "/boot":
                 opts.append((mnt, False))
-            elif devpath is None:
+            elif mnt not in mountpoints:
                 if first_opt is None:
                     first_opt = i
                 opts.append((mnt, True, mnt))
             else:
-                opts.append(("%-*s (%s)" % (max_len, mnt, devpath), False))
+                opts.append((mnt, False))
         if first_opt is None:
             first_opt = len(opts)
         opts.append((_('other'), True, OTHER))
@@ -116,5 +114,4 @@ class MountField(FormField):
     takes_default_style = False
 
     def _make_widget(self, form):
-        return MountSelector(
-            form.mountpoint_to_devpath_mapping, form.ok_for_slash_boot)
+        return MountSelector(form.mountpoints, form.ok_for_slash_boot)
