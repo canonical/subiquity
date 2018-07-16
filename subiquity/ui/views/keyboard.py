@@ -19,6 +19,7 @@ from urwid import (
     connect_signal,
     LineBox,
     Text,
+    Padding as UrwidPadding
     )
 
 from subiquitycore.ui.buttons import (
@@ -54,7 +55,13 @@ class AutoDetectBase(WidgetWrap):
         # step is an instance of pc105.Step
         self.keyboard_detector = keyboard_detector
         self.step = step
-        lb = LineBox(self.make_body(), _("Keyboard auto-detection"))
+        lb = LineBox(
+            Pile([
+                ('pack', Text("")),
+                ('pack', UrwidPadding(self.make_body(), left=2, right=2)),
+                ('pack', Text(""))
+            ]),
+            _("Keyboard auto-detection"))
         super().__init__(lb)
 
     def start(self):
@@ -150,14 +157,13 @@ class AutoDetectPressKey(AutoDetectBase):
 
     def make_body(self):
         self.error_text = Text("", align="center")
-        return Pile([
-            Text(_("Please press one of the following keys:")),
-            Text(""),
-            Columns([Text(s, align="center")
-                     for s in self.step.symbols], dividechars=1),
-            Text(""),
-            Color.info_error(self.error_text),
+        self.pile = Pile([
+            ('pack', Text(_("Please press one of the following keys:"))),
+            ('pack', Text("")),
+            ('pack', Columns([Text(s, align="center")
+                              for s in self.step.symbols], dividechars=1)),
             ])
+        return self.pile
 
     @property
     def input_filter(self):
@@ -168,6 +174,13 @@ class AutoDetectPressKey(AutoDetectBase):
 
     def stop(self):
         self.input_filter.exit_keycodes_mode()
+
+    def error(self, message):
+        t = Color.info_error(Text(message, align='center'))
+        self.pile.contents.extend([
+            (Text(""), self.pile.options('pack')),
+            (t,        self.pile.options('pack')),
+            ])
 
     def keypress(self, size, key):
         log.debug('keypress %r %r', size, key)
@@ -181,14 +194,16 @@ class AutoDetectPressKey(AutoDetectBase):
         elif key.startswith('press '):
             code = int(key[len('press '):])
             if code not in self.step.keycodes:
-                self.error_text.set_text(_("Input was not recognized, "
-                                           "try again"))
+                self.error(_("Input was not recognized, try again"))
                 return
             v = self.step.keycodes[code]
         else:
             # If we're not on a linux tty, the filtering won't have
             # happened and so there's no way to get the keycodes. Do
             # something literally random instead.
+            if key == 'e':
+                self.error(_("Input was not recognized, try again"))
+                return
             import random
             v = random.choice(list(self.step.keycodes.values()))
         self.keyboard_detector.do_step(v)
