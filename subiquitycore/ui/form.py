@@ -82,7 +82,7 @@ class _Validator(WidgetWrap):
 
     def lost_focus(self):
         self.field.showing_extra = False
-        lf = getattr(self._w, 'lost_focus', None)
+        lf = getattr(self._w.base_widget, 'lost_focus', None)
         if lf is not None:
             lf()
         self.field.validate()
