@@ -418,13 +418,18 @@ Pile = FocusTrackingPile
 
 class ScrollBarListBox(urwid.WidgetDecoration):
 
+    top = urwid.SolidFill("\N{BLACK UP-POINTING SMALL TRIANGLE}")
+    box = urwid.SolidFill("\N{FULL BLOCK}")
+    bg = urwid.SolidFill(" ")
+    bot = urwid.SolidFill("\N{BLACK DOWN-POINTING SMALL TRIANGLE}")
+
     def __init__(self, lb):
-        self.bg = urwid.SolidFill(" ")
-        self.box = urwid.SolidFill("\N{FULL BLOCK}")
         pile = Pile([
+                ('fixed',  1, self.top),
                 ('weight', 1, self.bg),
                 ('weight', 1, self.box),
                 ('weight', 1, self.bg),
+                ('fixed',  1, self.bot),
             ])
         self.bar = urwid.AttrMap(pile, 'scrollbar', 'scrollbar focus')
         super().__init__(lb)
@@ -483,15 +488,17 @@ class ScrollBarListBox(urwid.WidgetDecoration):
             #
             # rows and that being < 1 simplifies to the below.
             o = self.bar.base_widget.options
-            if maxrow*maxrow < height:
+            if maxrow*maxrow < height - 2:
                 boxopt = o('given', 1)
             else:
                 boxopt = o('weight', maxrow)
 
             self.bar.base_widget.contents[:] = [
+                (self.top, o('given', 1)),
                 (self.bg,  o('weight', top)),
                 (self.box, boxopt),
                 (self.bg,  o('weight', bottom)),
+                (self.bot, o('given', 1)),
                 ]
             lb_canvas = lb.render((maxcol - 1, maxrow), focus)
             bar_canvas = self.bar.render((1, maxrow), focus)
