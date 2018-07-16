@@ -433,6 +433,7 @@ class KeyboardView(BaseView):
         else:
             layout, variant = result, ""
         self.form.layout.widget.value = layout
+        self.select_layout(None, layout)
         self.form.variant.widget.value = variant
         self._w.base_widget.focus_position = 5
 
