@@ -205,7 +205,7 @@ class FilesystemController(BaseController):
         self.signal.emit_signal('next-screen')
 
     def create_mount(self, fs, spec):
-        if spec['mount'] is None:
+        if spec.get('mount') is None:
             return
         mount = self.model.add_mount(fs, spec['mount'])
         return mount
