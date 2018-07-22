@@ -192,7 +192,7 @@ class MountList(WidgetWrap):
         for i, mi in enumerate(mountinfos):
             path_markup = mi.path
             if path_markup == "":
-                path_markup = ('info_minor', "SWAP")
+                path_markup = "SWAP"
             else:
                 for j in range(i-1, -1, -1):
                     mi2 = mountinfos[j]
