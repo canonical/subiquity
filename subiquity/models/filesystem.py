@@ -575,6 +575,7 @@ class Raid(_Device):
     def ok_for_raid(self):
         if self._fs is not None:
             return False
+        return True
 
     ok_for_lvm_vg = ok_for_raid
 
