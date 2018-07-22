@@ -461,6 +461,8 @@ class BondStretchy(Stretchy):
                 return False
             if device in initial['devices']:
                 return True
+            if device.type == "vlan":
+                return False
             return not device.is_bond_slave
 
         candidate_netdevs = [
