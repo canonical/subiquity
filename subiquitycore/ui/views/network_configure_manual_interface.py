@@ -92,7 +92,11 @@ class NetworkConfigForm(Form):
     def clean_subnet(self, subnet):
         log.debug("clean_subnet %r", subnet)
         if '/' not in subnet:
-            raise ValueError(_("should be in CIDR form (xx.xx.xx.xx/yy)"))
+            if self.ip_version == 4:
+                example = "xx.xx.xx.xx/yy"
+            else:
+                example = "xx:xx:..:xx/yy"
+            raise ValueError(_("should be in CIDR form ({})").format(example))
         return self.ip_network_cls(subnet)
 
     def clean_address(self, address):
