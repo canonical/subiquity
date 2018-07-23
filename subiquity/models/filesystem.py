@@ -533,6 +533,13 @@ class Raid(_Device):
         return get_raid_size(self.raidlevel, self.devices)
 
     @property
+    def free_for_partitions(self):
+        # For some reason, the overhead on RAID devices seems to be
+        # higher (may be related to alignment of underlying
+        # partitions)
+        return self.size - self.used - 2*GPT_OVERHEAD
+
+    @property
     def label(self):
         return self.name
 
