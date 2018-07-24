@@ -584,6 +584,8 @@ class Raid(_Device):
             return False
         if len(self._partitions) > 0:
             return False
+        if self._constructed_device is not None:
+            return False
         return True
 
     ok_for_lvm_vg = ok_for_raid
