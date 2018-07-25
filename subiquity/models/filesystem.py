@@ -121,9 +121,9 @@ def get_raid_size(level, devices):
     elif level == 1:
         return min_size
     elif level == 5:
-        return min_size * (len(devices) - 1)
+        return (min_size - RAID_OVERHEAD) * (len(devices) - 1)
     elif level == 6:
-        return min_size * (len(devices) - 2)
+        return (min_size - RAID_OVERHEAD) * (len(devices) - 2)
     elif level == 10:
         return min_size * (len(devices) // 2)
     else:
