@@ -119,7 +119,7 @@ mksquashfs new_installer new_iso/casper/installer.squashfs
 xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
 	-V Ubuntu\ custom\ amd64 \
 	-o "${NEW_ISO}" \
-	-cache-inodes -J -l \
+	-cache-inodes -l \
 	-b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot \
 	-boot-load-size 4 -boot-info-table \
 	-eltorito-alt-boot -e boot/grub/efi.img -no-emul-boot \
