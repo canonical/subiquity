@@ -1,3 +1,14 @@
+subiquity (0.0.29+18.04.1) bionic; urgency=medium
+
+  * debian/*.service: agetty needs to be called with -i to not print out the
+    /etc/issue contents on login prompt.
+  * console-conf: cherry-pick branding fixes to controllers/identity.py to
+    not hard-code the core version number but instead try fetching it from
+    /usr/lib/os-release. This enables using console-conf for both core16 and
+    core18.
+
+ -- Łukasz 'sil2100' Zemczak <lukasz.zemczak@ubuntu.com>  Tue, 07 Aug 2018 17:40:23 +0200
+
 subiquity (0.0.29) zesty; urgency=medium
 
   * Fix a crash when widgets disappear (e.g. when a NIC is unplugged). 

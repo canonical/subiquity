@@ -9,7 +9,7 @@ StartLimitInterval=0
 [Service]
 Environment=PYTHONPATH=/usr/share/subiquity
 ExecStartPre=/bin/systemctl stop serial-getty@%I
-ExecStart=/sbin/agetty -n --keep-baud -l /usr/share/subiquity/console-conf-wrapper --login-options "--serial" 115200,38400,9600 %I $TERM
+ExecStart=/sbin/agetty -i -n --keep-baud -l /usr/share/subiquity/console-conf-wrapper --login-options "--serial" 115200,38400,9600 %I $TERM
 ExecStopPost=/bin/systemctl start serial-getty@%I
 Type=idle
 Restart=always

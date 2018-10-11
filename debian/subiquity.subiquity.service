@@ -10,7 +10,7 @@ ConditionPathExists=!/run/subiquity/complete
 Environment=PYTHONPATH=/usr/share/subiquity
 ExecStartPre=/usr/share/subiquity/subiquity-loadkeys
 ExecStartPre=/bin/systemctl stop getty@tty1
-ExecStart=/sbin/agetty -n --noclear -l /usr/share/subiquity/subiquity-tui tty1 $TERM
+ExecStart=/sbin/agetty -i -n --noclear -l /usr/share/subiquity/subiquity-tui tty1 $TERM
 ExecStopPost=/bin/systemctl start getty@tty1
 Type=idle
 Restart=always
