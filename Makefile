@@ -45,6 +45,10 @@ ui-view:
 ui-view-serial:
 	(TERM=att4424 PYTHONPATH=$(PYTHONPATH) bin/$(PYTHONSRC)-tui $(DRYRUN) --serial)
 
+shellcheck:
+	echo "Running shellcheck..."
+	shellcheck bin/console-conf-wrapper
+
 lint:
 	echo "Running flake8 lint tests..."
 	python3 /usr/bin/flake8 bin/$(PYTHONSRC)-tui --ignore=F403
@@ -54,7 +58,7 @@ unit:
 	echo "Running unit tests..."
 	nosetests3 $(PYTHONSRC)/tests
 
-check: lint unit
+check: shellcheck lint unit
 
 installer/$(INSTALLIMG): installer/geninstaller installer/runinstaller $(INSTALLER_RESOURCES) probert
 	(cd installer && TOPDIR=$(TOPDIR)/installer ./geninstaller -v -r $(RELEASE) -a $(ARCH) -s $(STREAM) -b $(BOOTLOADER)) 

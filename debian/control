@@ -10,7 +10,8 @@ Build-Depends: bzr,
                python3,
                python3-setuptools,
                python3-yaml,
-               python3-attr
+               python3-attr,
+               shellcheck
 Standards-Version: 3.9.5
 Homepage: https://github.com/CanonicalLtd/subiquity
 X-Python3-Version: >= 3.3
