@@ -155,6 +155,7 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
             self.default_routes.add(ifindex)
             if self.default_route_waiter:
                 self.default_route_waiter()
+                self.default_route_waiter = None
         elif action == "DEL" and ifindex in self.default_routes:
             self.default_routes.remove(ifindex)
         log.debug('default routes %s', self.default_routes)
