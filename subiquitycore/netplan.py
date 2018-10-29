@@ -18,10 +18,11 @@ class Config:
 
     def __init__(self):
         self.devices = []
+        self.config = []
 
     def parse_netplan_config(self, config):
         try:
-            config = yaml.safe_load(config)
+            self.config = config = yaml.safe_load(config)
         except yaml.ReaderError as e:
             log.info("could not parse config: %s", e)
             return

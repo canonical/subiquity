@@ -24,6 +24,10 @@ from urwid import (
     WidgetPlaceholder,
     )
 
+from subiquitycore.models.network import (
+    addr_version,
+    BondParameters,
+    )
 from subiquitycore.ui.container import Pile, WidgetWrap
 from subiquitycore.ui.form import (
     ChoiceField,
@@ -153,22 +157,26 @@ class EditNetworkStretchy(Stretchy):
 
         self.method_form = NetworkMethodForm()
         self.method_form.method.caption = _(
-            "IPv{ip_version} Method: ").format(ip_version=ip_version)
+            "IPv{v} Method: ").format(v=ip_version)
         manual_initial = {}
-        if len(device.configured_ip_addresses_for_version(ip_version)) > 0:
+        cur_addresses = []
+        for addr in device.config.get('addresses', []):
+            if addr_version(addr) == ip_version:
+                cur_addresses.append(addr)
+        if cur_addresses:
             method = 'manual'
-            addr = ipaddress.ip_interface(
-                device.configured_ip_addresses_for_version(ip_version)[0])
+            addr = ipaddress.ip_interface(cur_addresses[0])
+            ns = device.config.get('nameservers', {})
             manual_initial = {
                 'subnet': str(addr.network),
                 'address': str(addr.ip),
-                'nameservers': ', '.join(device.configured_nameservers),
-                'searchdomains': ', '.join(device.configured_searchdomains),
+                'nameservers': ', '.join(ns.get('addresses', [])),
+                'searchdomains': ', '.join(ns.get('search', [])),
             }
-            gw = device.configured_gateway_for_version(ip_version)
+            gw = device.config.get('gateway{v}'.format(v=ip_version))
             if gw:
                 manual_initial['gateway'] = str(gw)
-        elif self.device.dhcp_for_version(ip_version):
+        elif self.device.config.get('dhcp{v}'.format(v=ip_version)):
             method = 'dhcp'
         else:
             method = 'disable'
@@ -194,8 +202,8 @@ class EditNetworkStretchy(Stretchy):
 
         widgets = [self.form_pile, Text(""), self.bp]
         super().__init__(
-            "Edit {device} IPv{ip_version} configuration".format(
-                device=device.name, ip_version=ip_version),
+            "Edit {device} IPv{v} configuration".format(
+                device=device.name, v=ip_version),
             widgets,
             0, 0)
 
@@ -218,7 +226,6 @@ class EditNetworkStretchy(Stretchy):
     def done(self, sender):
 
         self.device.remove_ip_networks_for_version(self.ip_version)
-        self.device.set_dhcp_for_version(self.ip_version, False)
 
         if self.method_form.method.value == "manual":
             form = self.manual_form
@@ -234,10 +241,10 @@ class EditNetworkStretchy(Stretchy):
                 'nameservers': list(map(str, form.nameservers.value)),
                 'searchdomains': form.searchdomains.value,
             }
-            self.device.remove_nameservers()
+            self.device.config.pop('nameservers', None)
             self.device.add_network(self.ip_version, result)
         elif self.method_form.method.value == "dhcp":
-            self.device.set_dhcp_for_version(self.ip_version, True)
+            self.device.config['dhcp{v}'.format(v=self.ip_version)] = True
         else:
             pass
         self.parent.update_link(self.device)
@@ -271,7 +278,8 @@ class VlanForm(Form):
     def validate_vlan(self):
         new_name = '%s.%s' % (self.device.name, self.vlan.value)
         if new_name in self.parent.model.devices_by_name:
-            return _("%s already exists") % new_name
+            if self.parent.model.devices_by_name[new_name].config is not None:
+                return _("%s already exists") % new_name
 
 
 class AddVlanStretchy(Stretchy):
@@ -289,7 +297,9 @@ class AddVlanStretchy(Stretchy):
 
     def done(self, sender):
         self.parent.remove_overlay()
-        self.parent.controller.add_vlan(self.device, self.form.vlan.value)
+        dev = self.parent.controller.add_vlan(
+            self.device, self.form.vlan.value)
+        self.parent.new_link(dev)
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()
@@ -311,44 +321,6 @@ class ViewInterfaceInfo(Stretchy):
 
     def close(self, button=None):
         self.parent.remove_overlay()
-
-
-_bond_modes = [
-    ('balance-rr', True, 'balance-rr'),
-    ('active-backup', True, 'active-backup'),
-    ('balance-xor', True, 'balance-xor'),
-    ('broadcast', True, 'broadcast'),
-    ('802.3ad', True, '802.3ad'),
-    ('balance-tlb', True, 'balance-tlb'),
-    ('balance-alb', True, 'balance-alb'),
-]
-
-
-_supports_xmit_hash_policy = {
-    'balance-xor',
-    '802.3ad',
-    'balance-tlb',
-}
-
-
-_xmit_hash_policies = [
-    ('layer2', True, 'layer2'),
-    ('layer2+3', True, 'layer2+3'),
-    ('layer3+4', True, 'layer3+4'),
-    ('encap2+3', True, 'encap2+3'),
-    ('encap3+4', True, 'encap3+4'),
-]
-
-
-_supports_lacp_rate = {
-    '802.3ad',
-}
-
-
-_lacp_rates = [
-    ('slow', True, 'slow'),
-    ('fast', True, 'fast'),
-]
 
 
 class MultiNetdevChooser(WidgetWrap, WantsToKnowFormField):
@@ -400,15 +372,17 @@ class BondForm(Form):
 
     name = StringField(_("Name:"))
     devices = MultiNetdevField(_("Devices: "))
-    mode = ChoiceField(_("Bond mode:"), choices=_bond_modes)
+    mode = ChoiceField(_("Bond mode:"), choices=BondParameters.modes)
     xmit_hash_policy = ChoiceField(
-        _("XMIT hash policy:"), choices=_xmit_hash_policies)
-    lacp_rate = ChoiceField(_("LACP rate:"), choices=_lacp_rates)
+        _("XMIT hash policy:"), choices=BondParameters.xmit_hash_policies)
+    lacp_rate = ChoiceField(_("LACP rate:"), choices=BondParameters.lacp_rates)
     ok_label = _("Save")
 
     def _select_level(self, sender, new_value):
-        self.xmit_hash_policy.enabled = new_value in _supports_xmit_hash_policy
-        self.lacp_rate.enabled = new_value in _supports_lacp_rate
+        self.xmit_hash_policy.enabled = (
+            new_value in BondParameters.supports_xmit_hash_policy)
+        self.lacp_rate.enabled = (
+            new_value in BondParameters.supports_lacp_rate)
 
     def validate_name(self):
         name = self.name.value
@@ -446,18 +420,18 @@ class BondStretchy(Stretchy):
             title = _('Edit bond')
             label = _("Save")
             all_netdev_names.remove(existing.name)
-            params = existing._configuration['parameters']
+            params = existing.config['parameters']
             mode = params['mode']
             initial = {
                 'devices': set([
                     parent.model.get_netdev_by_name(name)
-                    for name in existing._configuration['interfaces']]),
+                    for name in existing.config['interfaces']]),
                 'name': existing.name,
                 'mode': mode,
                 }
-            if mode in _supports_xmit_hash_policy:
+            if mode in BondParameters.supports_xmit_hash_policy:
                 initial['xmit_hash_policy'] = params['transmit-hash-policy']
-            if mode in _supports_lacp_rate:
+            if mode in BondParameters.supports_lacp_rate:
                 initial['lacp_rate'] = params['lacp-rate']
 
         def device_ok(device):
@@ -483,12 +457,23 @@ class BondStretchy(Stretchy):
             0, 0)
 
     def done(self, sender):
-        if self.existing is not None:
-            self.parent.controller.rm_virtual_interface(self.existing)
-        self.parent.controller.add_bond(self.form.as_data())
-        for slave in self.form.devices.value:
-            self.parent.controller.add_master(
-                slave, master_name=self.form.name.value)
+        touched_devices = set()
+        get_netdev_by_name = self.parent.model.get_netdev_by_name
+        if self.existing:
+            for name in self.existing.config['interfaces']:
+                touched_devices.add(get_netdev_by_name(name))
+            bond = self.existing
+            self.parent.controller.add_or_update_bond(
+                self.existing, self.form.as_data())
+            self.parent.update_link(bond)
+        else:
+            bond = self.parent.controller.add_or_update_bond(
+                None, self.form.as_data())
+            self.parent.new_link(bond)
+        for name in self.form.devices.value:
+            touched_devices.add(name)
+        for dev in touched_devices:
+            self.parent.update_link(dev)
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):

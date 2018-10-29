@@ -24,7 +24,7 @@ import yaml
 
 from probert.network import IFF_UP, NetworkEventReceiver
 
-from subiquitycore.models.network import sanitize_config
+from subiquitycore.models.network import BondParameters, sanitize_config
 from subiquitycore.tasksequence import (
     BackgroundTask,
     BackgroundProcess,
@@ -46,9 +46,10 @@ log = logging.getLogger("subiquitycore.controller.network")
 
 class DownNetworkDevices(BackgroundTask):
 
-    def __init__(self, rtlistener, devs_to_down):
+    def __init__(self, rtlistener, devs_to_down, devs_to_delete):
         self.rtlistener = rtlistener
         self.devs_to_down = devs_to_down
+        self.devs_to_delete = devs_to_delete
 
     def __repr__(self):
         return 'DownNetworkDevices(%s)' % ([dev.name for dev in
@@ -62,6 +63,14 @@ class DownNetworkDevices(BackgroundTask):
             except RuntimeError:
                 # We don't actually care very much about this
                 log.exception('unset_link_flags failed for %s', dev.name)
+        for dev in self.devs_to_delete:
+            # XXX would be nicer to do this via rtlistener eventually.
+            log.debug('deleting %s', dev.name)
+            cmd = ['ip', 'link', 'delete', 'dev', dev.name]
+            try:
+                run_command(cmd, check=True)
+            except subprocess.CalledProcessError as cp:
+                log.info("deleting %s failed with %r", dev.name, cp.stderr)
 
     def _bg_run(self):
         return True
@@ -260,55 +269,27 @@ class NetworkController(BaseController, TaskWatcher):
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
     def add_vlan(self, device, vlan):
-        cmd = ['ip', 'link', 'add', 'name', '%s.%s' % (device.name, vlan),
-               'link', device.name, 'type', 'vlan', 'id', str(vlan)]
-        try:
-            run_command(cmd, check=True)
-        except subprocess.CalledProcessError:
-            self.ui.frame.body.show_network_error('add-vlan')
+        return self.model.new_vlan(device, vlan)
 
-    def add_bond(self, params):
-        cmd = ['ip', 'link', 'add',
-               'name', '%(name)s' % params,
-               'type', 'bond',
-               'mode', '%(mode)s' % params]
-        if params['mode'] in ['balance-xor', '802.3ad', 'balance-tlb']:
-            cmd += ['xmit_hash_policy', '%(xmit_hash_policy)s' % params]
-        if params['mode'] == '802.3ad':
-            cmd += ['lacp_rate', '%(lacp_rate)s' % params]
-
-        try:
-            run_command(cmd, check=True)
-        except subprocess.CalledProcessError:
-            self.ui.frame.body.show_network_error('add-bond')
-
-    def rm_virtual_interface(self, device):
-        cmd = ['ip', 'link', 'delete', 'dev', device.name]
-        try:
-            run_command(cmd, check=True)
-        except subprocess.CalledProcessError:
-            self.ui.frame.body.show_network_error('rm-dev')
-
-    def add_master(self, device, master_dev=None, master_name=None):
-        # Drop ip configs
-        for ip in [4, 6]:
-            device.remove_ip_networks_for_version(ip)
-            device.set_dhcp_for_version(ip, False)
-
-        down_cmd = ['ip', 'link', 'set', 'dev', device.name, 'down']
-        cmd = ['ip', 'link', 'set', 'dev', device.name]
-        if master_dev:
-            master_name = master_dev.name
-        if master_name:
-            cmd += ['master', master_name]
+    def add_or_update_bond(self, existing, result):
+        mode = result['mode']
+        params = {
+            'mode': mode,
+            }
+        if mode in BondParameters.supports_xmit_hash_policy:
+            params['transmit-hash-policy'] = result['xmit_hash_policy']
+        if mode in BondParameters.supports_lacp_rate:
+            params['lacp-rate'] = result['lacp_rate']
+        for device in result['devices']:
+            device.config = {}
+        interfaces = [d.name for d in result['devices']]
+        if existing is None:
+            return self.model.new_bond(result['name'], interfaces, params)
         else:
-            cmd += ['nomaster']
-        try:
-            # Down the interface, and set new master
-            run_command(down_cmd, check=True)
-            run_command(cmd, check=True)
-        except subprocess.CalledProcessError:
-            self.ui.frame.body.show_network_error('add-master')
+            existing.config['interfaces'] = interfaces
+            existing.config['parameters'] = params
+            existing.name = result['name']
+            return existing
 
     def network_finish(self, config):
         log.debug("network config: \n%s",
@@ -345,20 +326,25 @@ class NetworkController(BaseController, TaskWatcher):
                 tasks.append(('fail', BackgroundProcess(['false'])))
                 self.tried_once = True
         else:
+            devs_to_delete = []
             devs_to_down = []
-            for dev in self.model.get_all_netdevs():
-                devcfg = self.model.config.config_for_device(dev._net_info)
-                if dev._configuration != devcfg:
+            for dev in self.model.get_all_netdevs(include_deleted=True):
+                if dev.info is None:
+                    continue
+                devcfg = self.model.config.config_for_device(dev.info)
+                if dev.is_virtual:
+                    devs_to_delete.append(dev)
+                elif dev.config != devcfg:
                     devs_to_down.append(dev)
             tasks = []
-            if devs_to_down:
+            if devs_to_down or devs_to_delete:
                 tasks.extend([
                     ('stop-networkd',
                      BackgroundProcess(['systemctl',
                                         'stop', 'systemd-networkd.service'])),
                     ('down',
                      DownNetworkDevices(self.observer.rtlistener,
-                                        devs_to_down)),
+                                        devs_to_down, devs_to_delete)),
                     ])
             tasks.extend([
                 ('apply', BackgroundProcess(['netplan', 'apply'])),
