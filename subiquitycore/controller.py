@@ -70,3 +70,41 @@ class BaseController(ABC):
     @abstractmethod
     def default(self):
         pass
+
+    # Stuff for fine grained actions, used by filesystem and network
+    # controller at time of writing this comment.
+
+    def _enter_form_data(self, form, data, submit, clean_suffix=''):
+        for k, v in data.items():
+            c = getattr(
+                self, '_action_clean_{}_{}'.format(k, clean_suffix), None)
+            if c is None:
+                c = getattr(self, '_action_clean_{}'.format(k), lambda x: x)
+            field = getattr(form, k)
+            from subiquitycore.ui.selector import Selector
+            v = c(v)
+            if isinstance(field.widget, Selector):
+                field.widget._emit('select', v)
+            field.value = v
+            yield
+        yield
+        for bf in form._fields:
+            bf.validate()
+        form.validated()
+        if submit:
+            if not form.done_btn.enabled:
+                raise Exception("answers left form invalid!")
+            form._click_done(None)
+
+    def _run_actions(self, actions):
+        for action in actions:
+            yield from self._answers_action(action)
+
+    def _run_iterator(self, it, delay=0.2):
+        try:
+            next(it)
+        except StopIteration:
+            return
+        self.loop.set_alarm_in(
+            delay,
+            lambda *args: self._run_iterator(it, delay/1.1))

@@ -285,7 +285,7 @@ class NetworkView(BaseView):
             rows.extend(self._rows_for_device(dev))
         return rows
 
-    def _create_bond(self, sender):
+    def _create_bond(self, sender=None):
         self.show_stretchy_overlay(BondStretchy(self))
 
     def show_network_error(self, action, info=None):
@@ -316,7 +316,7 @@ class NetworkView(BaseView):
             self.error.set_text("An unexpected error has occurred; "
                                 "please verify your settings.")
 
-    def done(self, result):
+    def done(self, result=None):
         if self.error_showing:
             self.bottom.contents[0:2] = []
         self.controller.network_finish(self.model.render())

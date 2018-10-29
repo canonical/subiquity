@@ -98,23 +98,6 @@ class FilesystemController(BaseController):
     def _action_clean_level(self, level):
         return raidlevels_by_value[level]
 
-    def _enter_form_data(self, form, data, submit, clean_suffix=''):
-        for k, v in data.items():
-            c = getattr(
-                self, '_action_clean_{}_{}'.format(k, clean_suffix), None)
-            if c is None:
-                c = getattr(self, '_action_clean_{}'.format(k), lambda x: x)
-            getattr(form, k).value = c(v)
-            yield
-        yield
-        for bf in form._fields:
-            bf.validate()
-        form.validated()
-        if submit:
-            if not form.done_btn.enabled:
-                raise Exception("answers left form invalid!")
-            form._click_done(None)
-
     def _answers_action(self, action):
         from subiquitycore.ui.stretchy import StretchyOverlay
         from subiquity.ui.views.filesystem.delete import ConfirmDeleteStretchy
@@ -161,19 +144,6 @@ class FilesystemController(BaseController):
             self.finish()
         else:
             raise Exception("could not process action {}".format(action))
-
-    def _run_actions(self, actions):
-        for action in actions:
-            yield from self._answers_action(action)
-
-    def _run_iterator(self, it, delay=0.2):
-        try:
-            next(it)
-        except StopIteration:
-            return
-        self.loop.set_alarm_in(
-            delay,
-            lambda *args: self._run_iterator(it, delay/1.1))
 
     def manual(self):
         self.ui.set_body(FilesystemView(self.model, self))

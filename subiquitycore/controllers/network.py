@@ -254,12 +254,77 @@ class NetworkController(BaseController, TaskWatcher):
     def cancel(self):
         self.signal.emit_signal('prev-screen')
 
+    def _action_get(self, id):
+        dev_spec = id[0].split()
+        dev = None
+        if dev_spec[0] == "interface":
+            if dev_spec[1] == "index":
+                dev = self.model.get_all_netdevs()[int(dev_spec[2])]
+            elif dev_spec[1] == "name":
+                dev = self.model.get_netdev_by_name(dev_spec[2])
+        if dev is None:
+            raise Exception("could not resolve {}".format(id))
+        if len(id) > 1:
+            part, index = id[1].split()
+            if part == "part":
+                return dev.partitions()[int(index)]
+        else:
+            return dev
+        raise Exception("could not resolve {}".format(id))
+
+    def _action_clean_devices(self, devices):
+        return [self._action_get(device) for device in devices]
+
+    def _answers_action(self, action):
+        from subiquitycore.ui.stretchy import StretchyOverlay
+        log.debug("_answers_action %r", action)
+        if 'obj' in action:
+            obj = self._action_get(action['obj'])
+            meth = getattr(
+                self.ui.frame.body,
+                "_action_{}".format(action['action']))
+            meth(obj)
+            yield
+            body = self.ui.frame.body._w
+            if not isinstance(body, StretchyOverlay):
+                return
+            for k, v in action.items():
+                if not k.endswith('data'):
+                    continue
+                form_name = "form"
+                submit_key = "submit"
+                if '-' in k:
+                    prefix = k.split('-')[0]
+                    form_name = prefix + "_form"
+                    submit_key = prefix + "-submit"
+                yield from self._enter_form_data(
+                    getattr(body.stretchy, form_name),
+                    v,
+                    action.get(submit_key, True))
+        elif action['action'] == 'create-bond':
+            self.ui.frame.body._create_bond()
+            yield
+            body = self.ui.frame.body._w
+            yield from self._enter_form_data(
+                body.stretchy.form,
+                action['data'],
+                action.get("submit", True))
+        elif action['action'] == 'done':
+            # The first done fails in dry run mode.
+            self.ui.frame.body.done()
+            yield
+            self.ui.frame.body.done()
+        else:
+            raise Exception("could not process action {}".format(action))
+
     def default(self):
         view = NetworkView(self.model, self)
         self.network_event_receiver.view = view
         self.ui.set_body(view)
         if self.answers.get('accept-default', False):
             self.network_finish(self.model.render())
+        elif self.answers.get('actions', False):
+            self._run_iterator(self._run_actions(self.answers['actions']))
 
     @property
     def netplan_path(self):
