@@ -29,7 +29,10 @@ from urwid import (
     Text,
     )
 
-from subiquitycore.models.network import NetDevAction
+from subiquitycore.models.network import (
+    addr_version,
+    NetDevAction,
+    )
 from subiquitycore.ui.actionmenu import ActionMenu
 from subiquitycore.ui.buttons import (
     back_btn,
@@ -149,7 +152,14 @@ class NetworkView(BaseView):
     _action_ADD_VLAN = _stretchy_shower(AddVlanStretchy)
 
     def _action_DELETE(self, device):
-        self.controller.rm_virtual_interface(device)
+        touched_devs = set()
+        if device.type == "bond":
+            for name in device.config['interfaces']:
+                touched_devs.add(self.model.get_netdev_by_name(name))
+        device.config = None
+        self.del_link(device)
+        for dev in touched_devs:
+            self.update_link(dev)
 
     def _action(self, sender, action, device):
         action, meth = action
@@ -158,26 +168,32 @@ class NetworkView(BaseView):
 
     def _cells_for_device(self, dev):
         notes = []
-        if dev.is_bond_slave:
-            notes.append(_("enslaved to {}").format(
-                dev._net_info.bond['master']))
+        for dev2 in self.model.get_all_netdevs():
+            if dev2.type != "bond":
+                continue
+            if dev.name in dev2.config.get('interfaces', []):
+                notes.append(_("enslaved to {}").format(dev2.name))
+                break
         for v in 4, 6:
-            if dev.configured_ip_addresses_for_version(v):
-                notes.extend([
-                    "{} (static)".format(a)
-                    for a in dev.configured_ip_addresses_for_version(v)
-                    ])
-            elif dev.dhcp_for_version(v):
+            configured_ip_addresses = []
+            for ip in dev.config.get('addresses', []):
+                if addr_version(ip) == v:
+                    configured_ip_addresses.append(ip)
+            notes.extend([
+                "{} (static)".format(a)
+                for a in configured_ip_addresses
+                ])
+            if dev.config.get('dhcp{v}'.format(v=v)):
                 if v == 4:
                     fam = AF_INET
                 elif v == 6:
                     fam = AF_INET6
                 fam_addresses = []
-                for a in dev._net_info.addresses.values():
-                    log.debug("a %s", a.serialize())
-                    if a.family == fam and a.source == 'dhcp':
-                        fam_addresses.append("{} (from dhcp)".format(
-                            a.address))
+                if dev.info is not None:
+                    for a in dev.info.addresses.values():
+                        if a.family == fam and a.source == 'dhcp':
+                            fam_addresses.append("{} (from dhcp)".format(
+                                a.address))
                 if fam_addresses:
                     notes.extend(fam_addresses)
                 else:
@@ -190,6 +206,9 @@ class NetworkView(BaseView):
         return (dev.name, dev.type, notes)
 
     def new_link(self, new_dev):
+        if new_dev in self.dev_to_row:
+            self.update_link(new_dev)
+            return
         for i, cur_dev in enumerate(self.cur_netdevs):
             if cur_dev.name > new_dev.name:
                 netdev_i = i
@@ -201,6 +220,7 @@ class NetworkView(BaseView):
 
     def update_link(self, dev):
         row = self.dev_to_row[dev]
+        self.device_table.invalidate()
         for i, text in enumerate(self._cells_for_device(dev)):
             row.columns[2*(i+1)].set_text(text)
 
@@ -242,12 +262,13 @@ class NetworkView(BaseView):
         rows.append(row)
         if dev.type == "vlan":
             info = _("VLAN {id} on interface {link}").format(
-                **dev._configuration)
+                **dev.config)
         elif dev.type == "bond":
             info = _("bond master for {}").format(
-                ', '.join(dev._net_info.bond['slaves']))
+                ', '.join(dev.config['interfaces']))
         else:
-            info = " / ".join([dev.hwaddr, dev.vendor, dev.model])
+            info = " / ".join([
+                dev.info.hwaddr, dev.info.vendor, dev.info.model])
         rows.append(Color.info_minor(TableRow([
             Text(""),
             (4, Text(info)),
@@ -256,25 +277,15 @@ class NetworkView(BaseView):
         return rows
 
     def _build_model_inputs(self):
-        netdevs = self.model.get_all_netdevs()
-        masters = []
-        for master in netdevs:
-            if not master._net_info.bond['is_master']:
-                continue
-            masters.append((
-                _("Set master to %s") % master.name,
-                True,
-                {'action': 'add_master', 'master': master},
-                False))
         rows = []
         rows.append(TableRow([
             Color.info_minor(Text(header))
             for header in ["", "NAME", "TYPE", "NOTES / ADDRESSES", ""]]))
-        for dev in netdevs:
+        for dev in self.model.get_all_netdevs():
             rows.extend(self._rows_for_device(dev))
         return rows
 
-    def _create_bond(self, sender):
+    def _create_bond(self, sender=None):
         self.show_stretchy_overlay(BondStretchy(self))
 
     def show_network_error(self, action, info=None):
@@ -305,7 +316,7 @@ class NetworkView(BaseView):
             self.error.set_text("An unexpected error has occurred; "
                                 "please verify your settings.")
 
-    def done(self, result):
+    def done(self, result=None):
         if self.error_showing:
             self.bottom.contents[0:2] = []
         self.controller.network_finish(self.model.render())

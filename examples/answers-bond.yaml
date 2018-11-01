@@ -1,0 +1,44 @@
+Welcome:
+  lang: en_US
+Keyboard:
+  layout: us
+Installpath:
+  path: ubuntu
+Network:
+  actions:
+    - action: create-bond
+      data:
+        name: bond10
+        devices:
+          - [interface index 0]
+    - obj: [interface name bond10]
+      action: EDIT_IPV4
+      method-data:
+        method: manual
+      method-submit: false
+      manual-data:
+        subnet: "10.2.0.0/24"
+        address: 10.2.0.1
+    - action: done
+Proxy:
+  proxy: ""
+Mirror:
+  mirror: "http://us.archive.ubuntu.com"
+Filesystem:
+  guided: yes
+  guided-index: 0
+Identity:
+  realname: Ubuntu
+  username: ubuntu
+  hostname: ubuntu-server
+  # ubuntu
+  password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+  ssh-import-id: lp:mwhudson
+SnapList:
+  snaps:
+    hello:
+      channel: stable
+      is_classic: false
+InstallProgress:
+  reboot: yes
+

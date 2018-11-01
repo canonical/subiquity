@@ -3,7 +3,7 @@ from unittest import mock
 
 import urwid
 
-from subiquitycore.models.network import Networkdev
+from subiquitycore.models.network import NetworkDev
 from subiquitycore.testing import view_helpers
 from subiquitycore.ui.views.network_configure_manual_interface import (
     EditNetworkStretchy,
@@ -23,8 +23,8 @@ valid_data = {
 class TestNetworkConfigureIPv4InterfaceView(unittest.TestCase):
 
     def make_view(self):
-        device = mock.create_autospec(spec=Networkdev)
-        device.configured_ip_addresses_for_version = lambda v: []
+        device = mock.create_autospec(spec=NetworkDev)
+        device.config = {}
         base_view = BaseView(urwid.Text(""))
         base_view.update_link = lambda device: None
         stretchy = EditNetworkStretchy(base_view, device, 4)
@@ -66,5 +66,4 @@ class TestNetworkConfigureIPv4InterfaceView(unittest.TestCase):
 
         rinfv = stretchy.device.remove_ip_networks_for_version
         rinfv.assert_called_once_with(4)
-        stretchy.device.remove_nameservers.assert_called_once_with()
         stretchy.device.add_network.assert_called_once_with(4, expected)

@@ -332,6 +332,9 @@ class AbstractTable(WidgetWrap):
         for table in new_group:
             table.group = new_group
 
+    def invalidate(self):
+        self._last_size = None
+
     def _compute_widths_for_size(self, size):
         # Configure the table (and any bound tables) for the given size.
         if self._last_size == size:
@@ -371,13 +374,13 @@ class TablePile(AbstractTable):
         return Pile([('pack', r) for r in rows])
 
     def insert_rows(self, index, new_rows):
-        self._last_size = None
+        self.invalidate()
         self.table_rows[index:index] = new_rows
         self._w.contents[index:index] = [
             (urwid.Padding(w), self._w.options('pack')) for w in new_rows]
 
     def remove_rows(self, start, end):
-        self._last_size = None
+        self.invalidate()
         # MonitoredFocusList clamps the focus position to the new
         # length of the list when you remove elements but it doesn't
         # check that that the element it moves the focus to is
@@ -395,7 +398,7 @@ class TablePile(AbstractTable):
 
     def set_contents(self, rows):
         """Update the list of rows. """
-        self._last_size = None
+        self.invalidate()
         rows = [urwid.Padding(row) for row in rows]
         self.table_rows = rows
         empty_before = len(self._w.contents) == 0
