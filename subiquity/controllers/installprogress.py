@@ -18,6 +18,7 @@ import logging
 import os
 import subprocess
 import sys
+import platform
 
 import urwid
 import yaml
@@ -244,6 +245,10 @@ class InstallProgressController(BaseController):
             log.debug('dry-run enabled, skipping reboot, quiting instead')
             self.signal.emit_signal('quit')
         else:
+            # TODO Possibly run this earlier, to show a warning; or
+            # switch to shutdown if chreipl fails
+            if platform.machine() == 's390x':
+                utils.run_command(["chreipl", "/target/boot"])
             # Should probably run curtin -c $CONFIG unmount -t TARGET first.
             utils.run_command(["/sbin/reboot"])
 
