@@ -53,11 +53,11 @@ parts:
     plugin: dump
     build-packages:
       - user-setup
-    prepare: |
+    override-build: |
       echo "get passwd/user-default-groups" | \
         debconf-communicate user-setup | \
-        cut -d ' ' -f 2- > users-and-groups
-      cp /usr/lib/user-setup/reserved-usernames .
+        cut -d ' ' -f 2- > $SNAPCRAFT_PART_INSTALL/users-and-groups
+      cp /usr/lib/user-setup/reserved-usernames $SNAPCRAFT_PART_INSTALL/
     stage-packages: [libc6]
     stage:
       - users-and-groups
@@ -69,8 +69,8 @@ parts:
       - locales
       - xkb-data-i18n
     stage-packages: [libc6]
-    prepare: |
-      /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl > kbdnames.txt
+    override-build: |
+      /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl > $SNAPCRAFT_PART_INSTALL/kbdnames.txt
     stage:
       - kbdnames.txt
   font:
