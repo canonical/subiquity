@@ -19,6 +19,14 @@ apps:
     restart-condition: always
 
 parts:
+  curtin:
+    plugin: python
+    source-type: git
+    source: git://git.launchpad.net/curtin
+    source-branch: ubuntu/devel
+    requirements: requirements.txt
+    stage: [ "*", "-lib/python*/site-packages/_yaml.*.so" ]
+    stage-packages: [libc6]
   subiquity:
     plugin: python
     build-packages:
