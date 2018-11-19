@@ -1,5 +1,6 @@
 #!/bin/sh
 /bin/dmesg -n 1
+export PATH=$SNAP/bin:$SNAP/usr/bin:$PATH
 $SNAP/usr/bin/subiquity-loadkeys
 setfont $SNAP/subiquity.psf
 /sbin/agetty -n --noclear -l $SNAP/usr/bin/python3 -o $SNAP/usr/bin/subiquity tty1 $TERM

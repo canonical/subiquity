@@ -25,6 +25,8 @@ parts:
     source: git://git.launchpad.net/curtin
     source-branch: ubuntu/devel
     requirements: requirements.txt
+    organize:
+      'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
     stage: [ "*", "-lib/python*/site-packages/_yaml.*.so" ]
     stage-packages: [libc6]
   subiquity:

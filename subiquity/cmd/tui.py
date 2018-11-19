@@ -41,10 +41,6 @@ checks:
         directory:
             - /proc
             - /sys
-    exec:
-        file:
-            - /sbin/hdparm
-            - /usr/bin/curtin
 '''
 
 
