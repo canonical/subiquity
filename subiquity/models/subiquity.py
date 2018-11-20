@@ -20,6 +20,7 @@ import yaml
 
 from subiquitycore.models.identity import IdentityModel
 from subiquitycore.models.network import NetworkModel
+from subiquitycore.file_util import write_file
 from subiquitycore.utils import run_command
 
 from .filesystem import FilesystemModel
@@ -128,17 +129,16 @@ class SubiquityModel:
         userdata = '#cloud-config\n' + yaml.dump(self._cloud_init_config())
         metadata = yaml.dump({'instance-id': str(uuid.uuid4())})
         return [
-            ('var/lib/cloud/seed/nocloud-net/meta-data', metadata),
-            ('var/lib/cloud/seed/nocloud-net/user-data', userdata),
-            ('etc/cloud/ds-identify.cfg', 'policy: enabled\n'),
+            ('var/lib/cloud/seed/nocloud-net/meta-data', metadata, 0o644),
+            ('var/lib/cloud/seed/nocloud-net/user-data', userdata, 0o600),
+            ('etc/cloud/ds-identify.cfg', 'policy: enabled\n', 0o644),
             ]
 
     def configure_cloud_init(self):
-        for path, content in self._cloud_init_files():
+        for path, content, mode in self._cloud_init_files():
             path = os.path.join(self.target, path)
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            with open(path, 'w') as fp:
-                fp.write(content)
+            write_file(path, content, mode, omode="w")
 
     def render(self, syslog_identifier):
         config = {
