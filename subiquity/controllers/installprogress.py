@@ -17,6 +17,7 @@ import datetime
 import logging
 import os
 import subprocess
+import sys
 
 import urwid
 import yaml
@@ -86,10 +87,10 @@ class InstallProgressController(BaseController):
         self.progress_view.show_complete(True)
         self.default()
 
-    def _bg_run_command_logged(self, cmd, env):
+    def _bg_run_command_logged(self, cmd):
         cmd = ['systemd-cat', '--level-prefix=false',
                '--identifier=' + self._log_syslog_identifier] + cmd
-        return utils.run_command(cmd, env=env)
+        return utils.run_command(cmd)
 
     def _journal_event(self, event):
         if event['SYSLOG_IDENTIFIER'] == self._event_syslog_identifier:
@@ -154,7 +155,7 @@ class InstallProgressController(BaseController):
             log.debug("Installprogress: this is the *REAL* thing")
             config_location = os.path.join('/var/log/installer',
                                            config_file_name)
-            curtin_cmd = ['curtin', '--showtrace', '-c',
+            curtin_cmd = [sys.executable, '-m', 'curtin', '--showtrace', '-c',
                           config_location, 'install']
 
         ident = self._event_syslog_identifier
@@ -183,11 +184,8 @@ class InstallProgressController(BaseController):
         curtin_cmd = self._get_curtin_command()
 
         log.debug('Curtin install cmd: {}'.format(curtin_cmd))
-        env = os.environ.copy()
-        if 'SNAP' in env:
-            del env['SNAP']
         self.run_in_bg(
-            lambda: self._bg_run_command_logged(curtin_cmd, env),
+            lambda: self._bg_run_command_logged(curtin_cmd),
             self.curtin_install_completed)
 
     def curtin_install_completed(self, fut):
