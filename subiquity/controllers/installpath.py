@@ -66,7 +66,7 @@ class InstallpathController(BaseController):
             "treat physical servers like virtual machines (instances) "
             "in the cloud. Rather than having to manage each server "
             "individually, MAAS turns your bare metal into an elastic "
-            "cloud-like resource. \n\n"
+            "cloud-like resource.\n"
             "For further details, see https://maas.io/."
             )
         self.ui.set_body(MAASView(self.model, self, title, excerpt))

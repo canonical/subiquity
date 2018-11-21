@@ -236,7 +236,7 @@ def screen(rows, buttons, focus_buttons=True, excerpt=None, narrow_rows=False):
     if isinstance(rows, list):
         rows = ListBox(rows)
     if narrow_rows:
-        rows = Padding.center_63(rows)
+        rows = Padding.center_76(rows)
     if buttons is None:
         focus_buttons = False
     elif isinstance(buttons, list):

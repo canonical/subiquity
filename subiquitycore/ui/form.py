@@ -391,10 +391,10 @@ class Form(object, metaclass=MetaForm):
             rows.append(t)
         return rows
 
-    def as_screen(self, focus_buttons=True, excerpt=None):
+    def as_screen(self, focus_buttons=True, excerpt=None, narrow_rows=True):
         return screen(
             self.as_rows(), self.buttons,
-            focus_buttons=focus_buttons, excerpt=excerpt)
+            focus_buttons=focus_buttons, excerpt=excerpt, narrow_rows=narrow_rows)
 
     def validated(self):
         in_error = False

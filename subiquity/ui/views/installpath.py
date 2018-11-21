@@ -66,6 +66,7 @@ class InstallpathView(BaseView):
         back = back_btn(_("Back"), on_press=self.cancel)
         super().__init__(screen(
             self._build_choices(), [back],
+            narrow_rows=True,
             focus_buttons=False, excerpt=_(self.excerpt)))
 
     def _build_choices(self):
