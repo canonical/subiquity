@@ -118,7 +118,9 @@ class IdentityController(BaseController):
             self._fetched_ssh_keys)
 
     def done(self, user_spec):
-        log.debug("User input: {}".format(user_spec))
+        safe_spec = user_spec.copy()
+        safe_spec['password'] = '<REDACTED>'
+        log.debug("User input: {}".format(safe_spec))
         self.model.add_user(user_spec)
         self.signal.emit_signal('installprogress:identity-config-done')
         self.signal.emit_signal('next-screen')
