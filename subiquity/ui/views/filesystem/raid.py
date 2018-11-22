@@ -28,7 +28,6 @@ from subiquitycore.ui.form import (
     ChoiceField,
     ReadOnlyField,
     simple_field,
-    StringField,
     WantsToKnowFormField,
     )
 from subiquitycore.ui.interactive import (
@@ -65,7 +64,7 @@ class RaidnameEditor(StringEditor, WantsToKnowFormField):
         if len(ch) == 1 and ch == '/':
             self.bff.in_error = True
             self.bff.show_extra(("info_error",
-                                 _("The character / is not permitted "
+                                 _("/ is not permitted "
                                    "in the name of a RAID device")))
             return False
         elif len(ch) == 1 and ch.isspace():

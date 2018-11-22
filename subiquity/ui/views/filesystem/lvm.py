@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+import re
 
 from urwid import (
     connect_signal,
@@ -25,7 +27,11 @@ from subiquitycore.ui.container import (
     )
 from subiquitycore.ui.form import (
     ReadOnlyField,
-    StringField,
+    simple_field,
+    WantsToKnowFormField,
+    )
+from subiquitycore.ui.interactive import (
+    StringEditor,
     )
 from subiquitycore.ui.stretchy import (
     Stretchy,
@@ -44,13 +50,33 @@ from subiquity.ui.views.filesystem.compound import (
 log = logging.getLogger('subiquity.ui.lvm')
 
 
+class VGNameEditor(StringEditor, WantsToKnowFormField):
+    def __init__(self):
+        self.valid_char_pat = r'[-a-zA-Z0-9_+.]'
+        self.error_invalid_char = _("The only characters permitted in the "
+                                    "name of a volume group are a-z, A-Z, "
+                                    "0-9, +, _, . and -")
+        super().__init__()
+
+    def valid_char(self, ch):
+        if len(ch) == 1 and not re.match(self.valid_char_pat, ch):
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error", self.error_invalid_char))
+            return False
+        else:
+            return super().valid_char(ch)
+
+
+VGNameField = simple_field(VGNameEditor)
+
+
 class VolGroupForm(CompoundDiskForm):
 
     def __init__(self, model, possible_components, initial, vg_names):
         self.vg_names = vg_names
         super().__init__(model, possible_components, initial)
 
-    name = StringField(_("Name:"))
+    name = VGNameField(_("Name:"))
     devices = MultiDeviceField(_("Devices:"))
     size = ReadOnlyField(_("Size:"))
 
@@ -60,7 +86,15 @@ class VolGroupForm(CompoundDiskForm):
                      "group.")
 
     def validate_name(self):
-        if self.name.value in self.vg_names:
+        v = self.name.value
+        if not v:
+            return _("The name of a volume group cannot be empty")
+        if v.startswith('-'):
+            return _("The name of a volume group cannot start with a hyphen")
+        if v in ('.', '..', 'md') or os.path.exists('/dev/' + v):
+            return _("{} is not a valid name for a volume group").format(
+                v)
+        if v in self.vg_names:
             return _("There is already a volume group named '{}'").format(
                 self.name.value)
 

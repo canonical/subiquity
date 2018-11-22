@@ -20,13 +20,15 @@ configuration.
 
 """
 import logging
+import re
 
 from urwid import connect_signal, Text
 
 from subiquitycore.ui.form import (
     Form,
     FormField,
-    StringField,
+    simple_field,
+    WantsToKnowFormField,
 )
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.selector import Option, Selector
@@ -92,6 +94,26 @@ class SizeField(FormField):
         return SizeWidget(form)
 
 
+class LVNameEditor(StringEditor, WantsToKnowFormField):
+    def __init__(self):
+        self.valid_char_pat = r'[-a-zA-Z0-9_+.]'
+        self.error_invalid_char = _("The only characters permitted in the "
+                                    "name of a logical volume are a-z, A-Z, "
+                                    "0-9, +, _, . and -")
+        super().__init__()
+
+    def valid_char(self, ch):
+        if len(ch) == 1 and not re.match(self.valid_char_pat, ch):
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error", self.error_invalid_char))
+            return False
+        else:
+            return super().valid_char(ch)
+
+
+LVNameField = simple_field(LVNameEditor)
+
+
 class PartitionForm(Form):
 
     def __init__(self, mountpoints, max_size, initial, ok_for_slash_boot,
@@ -112,7 +134,7 @@ class PartitionForm(Form):
     def select_fstype(self, sender, fs):
         self.mount.enabled = fs.is_mounted
 
-    name = StringField(_("Name: "))
+    name = LVNameField(_("Name: "))
     size = SizeField()
     fstype = FSTypeField(_("Format:"))
     mount = MountField(_("Mount:"))
@@ -135,8 +157,20 @@ class PartitionForm(Form):
             return None
 
     def validate_name(self):
-        log.debug("validate_name %s %s", self.name.value, self.lvm_names)
-        if self.name.value in self.lvm_names:
+        v = self.name.value
+        if not v:
+            return _("The name of a logical volume cannot be empty")
+        if v.startswith('-'):
+            return _("The name of a logical volume cannot start with a hyphen")
+        if v in ('.', '..', 'snapshot', 'pvmove'):
+            return _("A logical volume may not be called {}").format(v)
+        for substring in ['_cdata', '_cmeta',   '_corig',  '_mlog',  '_mimage',
+                          '_pmspare',  '_rimage',  '_rmeta',  '_tdata',
+                          '_tmeta', '_vorigin']:
+            if substring in v:
+                return _('The name of a logical volume may not contain '
+                         '"{}"').format(substring)
+        if v in self.lvm_names:
             return _("There is already a logical volume named {}.").format(
                 self.name.value)
 
