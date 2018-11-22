@@ -65,8 +65,14 @@ class RaidnameEditor(StringEditor, WantsToKnowFormField):
         if len(ch) == 1 and ch == '/':
             self.bff.in_error = True
             self.bff.show_extra(("info_error",
-                                 _("The character / is not permitted"
-                                   " in this field")))
+                                 _("The character / is not permitted "
+                                   "in the name of a RAID device")))
+            return False
+        elif len(ch) == 1 and ch.isspace():
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error",
+                                 _("Whitespace is not permitted in the "
+                                   "name of a RAID device")))
             return False
         else:
             return super().valid_char(ch)
@@ -97,6 +103,8 @@ class RaidForm(CompoundDiskForm):
         if self.name.value in self.raid_names:
             return _("There is already a RAID named '{}'").format(
                 self.name.value)
+        if self.name.value in ('/dev/md/.', '/dev/md/..'):
+            return _(". and .. are not valid names for RAID devices")
 
     def validate_devices(self):
         log.debug(
