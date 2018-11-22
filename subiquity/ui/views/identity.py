@@ -372,7 +372,6 @@ class IdentityView(BaseView):
                              ":" + self.form.import_username.value)
             self.controller.fetch_ssh_keys(result, ssh_import_id)
         else:
-            log.debug("User input: {}".format(result))
             self.controller.done(result)
 
     def confirm_ssh_keys(self, result, ssh_key, fingerprints):
