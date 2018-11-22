@@ -27,7 +27,11 @@ from subiquitycore.ui.container import (
 from subiquitycore.ui.form import (
     ChoiceField,
     ReadOnlyField,
-    StringField,
+    simple_field,
+    WantsToKnowFormField,
+    )
+from subiquitycore.ui.interactive import (
+    StringEditor,
     )
 from subiquitycore.ui.selector import (
     Option,
@@ -55,18 +59,41 @@ raidlevel_choices = [
     Option((_(level.name), True, level)) for level in raidlevels]
 
 
+class RaidnameEditor(StringEditor, WantsToKnowFormField):
+    def valid_char(self, ch):
+        if len(ch) == 1 and ch == '/':
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error",
+                                 _("/ is not permitted "
+                                   "in the name of a RAID device")))
+            return False
+        elif len(ch) == 1 and ch.isspace():
+            self.bff.in_error = True
+            self.bff.show_extra(("info_error",
+                                 _("Whitespace is not permitted in the "
+                                   "name of a RAID device")))
+            return False
+        else:
+            return super().valid_char(ch)
+
+
+RaidnameField = simple_field(RaidnameEditor)
+
+
 class RaidForm(CompoundDiskForm):
 
     def __init__(self, model, possible_components, initial, raid_names):
         self.raid_names = raid_names
         super().__init__(model, possible_components, initial)
 
-    name = StringField(_("Name:"))
+    name = RaidnameField(_("Name:"))
     level = ChoiceField(_("RAID Level:"), choices=raidlevel_choices)
     devices = MultiDeviceField(_("Devices:"))
     size = ReadOnlyField(_("Size:"))
 
     def clean_name(self, val):
+        if not val:
+            raise ValueError("The name cannot be empty")
         if not re.match('md[0-9]+', val):
             val = 'md/' + val
         return val
@@ -75,6 +102,8 @@ class RaidForm(CompoundDiskForm):
         if self.name.value in self.raid_names:
             return _("There is already a RAID named '{}'").format(
                 self.name.value)
+        if self.name.value in ('/dev/md/.', '/dev/md/..'):
+            return _(". and .. are not valid names for RAID devices")
 
     def validate_devices(self):
         log.debug(
