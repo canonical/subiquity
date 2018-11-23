@@ -14,10 +14,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import platform
 
 log = logging.getLogger('subiquitycore.models.mirror')
 
-DEFAULT_MIRROR = 'http://archive.ubuntu.com/ubuntu'
+# correct default mirror for most arches
+DEFAULT_MIRROR = 'http://ports.ubuntu.com/ubuntu-ports'
+# apart from the two snowflakes
+if platform.machine() in ['i686', 'x86_64']:
+    DEFAULT_MIRROR = 'http://archive.ubuntu.com/ubuntu'
 
 
 class MirrorModel(object):
