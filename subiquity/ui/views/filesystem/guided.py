@@ -41,6 +41,7 @@ from subiquitycore.ui.utils import (
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
+    DeviceAction,
     dehumanize_size,
     humanize_size,
     )
@@ -155,7 +156,8 @@ class GuidedDiskSelectionView(BaseView):
                 }
             self.controller.partition_disk_handler(disk, None, result)
         elif self.method == 'lvm':
-            self.controller.make_boot_disk(disk)
+            if DeviceAction.MAKE_BOOT in disk.supported_actions:
+                self.controller.make_boot_disk(disk)
             self.controller.create_partition(
                 device=disk, spec=dict(
                     size=dehumanize_size('1G'),

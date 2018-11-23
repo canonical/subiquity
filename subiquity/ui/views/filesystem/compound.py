@@ -195,7 +195,7 @@ class CompoundDiskForm(Form):
         super().__init__(initial)
 
     def validate_devices(self):
-        if not self.model.has_bootloader_partition():
+        if self.model.needs_bootloader_partition():
             mdc = self.devices.widget
             empty_disks = {d for d in self.model.all_disks() if d.used == 0}
             if not empty_disks - set(mdc.value):
