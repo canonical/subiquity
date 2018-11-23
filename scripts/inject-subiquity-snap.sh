@@ -116,6 +116,7 @@ fi
 rm new_iso/casper/installer.squashfs
 mksquashfs new_installer new_iso/casper/installer.squashfs
 
+[ -e new_iso/boot/grub/efi.img ] && \
 xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
 	-V Ubuntu\ custom\ amd64 \
 	-o "${NEW_ISO}" \
@@ -125,4 +126,12 @@ xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
 	-eltorito-alt-boot -e boot/grub/efi.img -no-emul-boot \
 	-isohybrid-gpt-basdat -isohybrid-apm-hfsplus \
 	-isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin  \
+	new_iso/boot new_iso
+
+[ -e new_iso/boot/ubuntu.ikr ] && \
+xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
+	-V Ubuntu\ custom\ s390x \
+	-o "${NEW_ISO}" \
+	-cache-inodes -J -l \
+	-b boot/ubuntu.ikr -no-emul-boot \
 	new_iso/boot new_iso
