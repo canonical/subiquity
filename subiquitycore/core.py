@@ -398,7 +398,8 @@ class Application:
 
     def run(self):
         if not hasattr(self, 'loop'):
-            if self.common['opts'].run_on_serial:
+            if (self.common['opts'].run_on_serial and
+                    os.ttyname(0) != "/dev/ttysclp0"):
                 palette = self.STYLES_MONO
                 screen = urwid.raw_display.Screen()
             else:
