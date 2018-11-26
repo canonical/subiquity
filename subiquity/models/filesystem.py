@@ -885,13 +885,18 @@ class FilesystemModel(object):
             if path in currently_mounted:
                 continue
             if data['DEVTYPE'] == 'disk':
-                if data["DEVPATH"].startswith('/devices/virtual'):
+                if (data["DEVPATH"].startswith('/devices/virtual') and
+                        "DM_WWN" not in data):
                     continue
                 if data["MAJOR"] in ("2", "11"):  # serial and cd devices
                     continue
                 if data['attrs'].get('ro') == "1":
                     continue
                 if "ID_CDROM" in data:
+                    continue
+                if "DM_MULTIPATH_DEVICE_PATH" in data:
+                    continue
+                if "DM_PART" in data:
                     continue
                 # log.debug('disk={}\n{}'.format(
                 #    path, json.dumps(data, indent=4, sort_keys=True)))
