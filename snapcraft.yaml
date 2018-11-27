@@ -85,6 +85,8 @@ parts:
       - kbdnames.txt
   font:
     plugin: dump
+    organize:
+      font/subiquity.psf: subiquity.psf
     stage:
       - subiquity.psf
   probert:
