@@ -22,6 +22,7 @@ import logging
 import math
 import os
 import sys
+import platform
 
 log = logging.getLogger('subiquity.models.filesystem')
 
@@ -439,8 +440,9 @@ class Disk(_Device):
         DeviceAction.PARTITION,
         DeviceAction.FORMAT,
         DeviceAction.REMOVE,
-        DeviceAction.MAKE_BOOT,
         ]
+    if platform.machine() != 's390x':
+        supported_actions.append(DeviceAction.MAKE_BOOT)
     _can_INFO = True
     _can_PARTITION = property(lambda self: self.free_for_partitions > 0)
     _can_FORMAT = property(
@@ -1027,12 +1029,15 @@ class FilesystemModel(object):
     def any_configuration_done(self):
         return len(self._disks) > 0
 
-    def has_bootloader_partition(self):
-        ''' true if one disk has a boot partition '''
+    def needs_bootloader_partition(self):
+        '''true if no disk have a boot partition, and one is needed'''
+        # s390x has no such thing
+        if platform.machine() == 's390x':
+            return False
         for p in self._partitions:
-            if p.flag == 'bios_grub' or p.flag == 'boot':
-                return True
-        return False
+            if p.flag in ('bios_grub', 'boot'):
+                return False
+        return True
 
     def is_root_mounted(self):
         for mount in self._mounts:
@@ -1061,7 +1066,7 @@ class FilesystemModel(object):
     def can_install(self):
         # Do we need to check that there is a disk with the boot flag?
         return (self.is_root_mounted()
-                and self.has_bootloader_partition()
+                and not self.needs_bootloader_partition()
                 and self.is_slash_boot_on_local_disk())
 
     def add_swapfile(self):

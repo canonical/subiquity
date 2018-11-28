@@ -559,7 +559,7 @@ class FilesystemView(BaseView):
             self.controller.ui.set_footer(
                 _("Select Done to begin the installation."))
         else:
-            if not self.model.has_bootloader_partition():
+            if self.model.needs_bootloader_partition():
                 self.controller.ui.set_footer(self.footer)
             elif not self.model.is_root_mounted():
                 self.controller.ui.set_footer(
