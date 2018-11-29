@@ -16,24 +16,45 @@
 import logging
 import re
 
-from urwid import connect_signal
+from urwid import (
+    connect_signal,
+    LineBox,
+    Text,
+    )
 
 from subiquitycore.view import (
     BaseView,
     )
+from subiquitycore.ui.buttons import (
+    cancel_btn,
+    ok_btn,
+    other_btn,
+    )
 from subiquitycore.ui.container import (
     ListBox,
+    Pile,
+    WidgetWrap,
     )
 from subiquitycore.ui.form import (
     BooleanField,
     ChoiceField,
     Form,
 )
+from subiquitycore.ui.stretchy import (
+    Stretchy,
+    )
 from subiquitycore.ui.utils import (
+    button_pile,
     screen,
     )
 
-from .identity import UsernameField
+from subiquity.ui.spinner import (
+    Spinner,
+    )
+from subiquity.ui.views.identity import (
+    UsernameField,
+    )
+
 
 log = logging.getLogger('subiquity.ui.ssh')
 
@@ -116,6 +137,88 @@ class SSHForm(Form):
                          "end with a hyphen.")
 
 
+class FetchingSSHKeys(WidgetWrap):
+    def __init__(self, parent):
+        self.parent = parent
+        spinner = Spinner(parent.controller.loop, style='dots')
+        spinner.start()
+        text = _("Fetching SSH keys...")
+        button = cancel_btn(label=_("Cancel"), on_press=self.cancel)
+        # | text |
+        # 12    34
+        self.width = len(text) + 4
+        super().__init__(
+            LineBox(
+                Pile([
+                    ('pack', Text(' ' + text)),
+                    ('pack', spinner),
+                    ('pack', button_pile([button])),
+                    ])))
+
+    def cancel(self, sender):
+        self.parent.controller._fetch_cancel()
+        self.parent.remove_overlay()
+
+
+class ConfirmSSHKeys(Stretchy):
+    def __init__(self, parent, result, key_material, fingerprints):
+        self.parent = parent
+        self.result = result
+        self.key_material = key_material
+
+        ok = ok_btn(label=_("Yes"), on_press=self.ok)
+        cancel = cancel_btn(label=_("No"), on_press=self.cancel)
+
+        if len(fingerprints) > 1:
+            title = _("Confirm SSH keys")
+            header = _("Keys with the following fingerprints were fetched. "
+                       "Do you want to use them?")
+        else:
+            title = _("Confirm SSH key")
+            header = _("A key with the following fingerprint was fetched. "
+                       "Do you want to use it?")
+
+        fingerprints = Pile([Text(fingerprint)
+                             for fingerprint in fingerprints])
+
+        super().__init__(
+            title,
+            [
+                Text(header),
+                Text(""),
+                fingerprints,
+                Text(""),
+                button_pile([ok, cancel]),
+            ], 2, 4)
+
+    def cancel(self, sender):
+        self.parent.remove_overlay()
+
+    def ok(self, sender):
+        self.result['authorized_keys'] = self.key_material.splitlines()
+        self.parent.controller.done(self.result)
+
+
+class FetchingSSHKeysFailed(Stretchy):
+    def __init__(self, parent, msg, stderr):
+        self.parent = parent
+        ok = other_btn(label=_("Close"), on_press=self.close)
+        widgets = [
+            Text(msg),
+            Text(""),
+            Text(stderr.strip('\n')),
+            Text(""),
+            button_pile([ok]),
+            ]
+        super().__init__(
+            "",
+            widgets,
+            2, 4)
+
+    def close(self, sender):
+        self.parent.remove_overlay()
+
+
 class SSHView(BaseView):
 
     title = _("SSH Setup")
@@ -157,8 +260,27 @@ class SSHView(BaseView):
             iu.validate()
 
     def done(self, sender):
-        log.debug("User input: {}".format(self.form.as_data()))
-        self.controller.done(self.form.as_data())
+        result = self.form.as_data()
+        log.debug("User input: {}".format(result))
+
+        # if user specifed a value, allow user to validate fingerprint
+        if self.form.ssh_import_id.value:
+            fsk = FetchingSSHKeys(self)
+            self.show_overlay(fsk, width=fsk.width, min_width=None)
+            ssh_import_id = (self.form.ssh_import_id.value +
+                             ":" + self.form.import_username.value)
+            self.controller.fetch_ssh_keys(result, ssh_import_id)
+        else:
+            self.controller.done(result)
 
     def cancel(self, result=None):
         self.controller.cancel()
+
+    def confirm_ssh_keys(self, result, ssh_key, fingerprints):
+        self.remove_overlay()
+        self.show_stretchy_overlay(ConfirmSSHKeys(self, result, ssh_key,
+                                                  fingerprints))
+
+    def fetching_ssh_keys_failed(self, msg, stderr):
+        self.remove_overlay()
+        self.show_stretchy_overlay(FetchingSSHKeysFailed(self, msg, stderr))

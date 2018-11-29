@@ -53,6 +53,7 @@ from subiquitycore.ui.width import (
     widget_width,
     )
 
+
 log = logging.getLogger("subiquitycore.ui.form")
 
 
