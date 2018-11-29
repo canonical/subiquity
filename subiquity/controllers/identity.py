@@ -122,5 +122,4 @@ class IdentityController(BaseController):
         safe_spec['password'] = '<REDACTED>'
         log.debug("User input: {}".format(safe_spec))
         self.model.add_user(user_spec)
-        self.signal.emit_signal('installprogress:identity-config-done')
         self.signal.emit_signal('next-screen')

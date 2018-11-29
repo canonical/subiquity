@@ -30,6 +30,7 @@ from .locale import LocaleModel
 from .proxy import ProxyModel
 from .mirror import MirrorModel
 from .snaplist import SnapListModel
+from .ssh import SSHModel
 
 
 def setup_yaml():
@@ -65,6 +66,7 @@ class SubiquityModel:
         self.proxy = ProxyModel()
         self.mirror = MirrorModel()
         self.snaplist = SnapListModel()
+        self.ssh = SSHModel()
 
     def get_target_groups(self):
         command = ['chroot', self.target, 'getent', 'group']
@@ -96,8 +98,8 @@ class SubiquityModel:
             'groups': groups,
             'lock-passwd': False,
             }
-        if user.ssh_keys:
-            user_info['ssh_authorized_keys'] = user.ssh_keys
+        if self.ssh.authorized_keys:
+            user_info['ssh_authorized_keys'] = self.ssh.authorized_keys
         config = {
             'growpart': {
                 'mode': 'off',
@@ -107,6 +109,8 @@ class SubiquityModel:
             'resize_rootfs': False,
             'users': [user_info],
         }
+        if self.ssh.install_server:
+            config['ssh_pwauth'] = self.ssh.install_server
         if self.snaplist.to_install:
             cmds = []
             for snap_name, selection in sorted(
