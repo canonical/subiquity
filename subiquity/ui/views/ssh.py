@@ -14,20 +14,106 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import re
+
 from urwid import connect_signal
 
-from subiquitycore.view import BaseView
+from subiquitycore.view import (
+    BaseView,
+    )
+from subiquitycore.ui.container import (
+    ListBox,
+    )
 from subiquitycore.ui.form import (
+    BooleanField,
+    ChoiceField,
     Form,
 )
+from subiquitycore.ui.utils import (
+    screen,
+    )
 
+from .identity import UsernameField
 
 log = logging.getLogger('subiquity.ui.ssh')
 
 
+SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
+
+_ssh_import_data = {
+    None: {
+        'caption': _("Import Username:"),
+        'help': "",
+        'valid_char': '.',
+        'error_invalid_char': '',
+        'regex': '.*',
+        },
+    'gh': {
+        'caption': _("Github Username:"),
+        'help': "Enter your Github username.",
+        'valid_char': r'[a-zA-Z0-9\-]',
+        'error_invalid_char': ('A Github username may only contain '
+                               'alphanumeric characters or hyphens.'),
+        },
+    'lp': {
+        'caption': _("Launchpad Username:"),
+        'help': "Enter your Launchpad username.",
+        'valid_char': r'[a-z0-9\+\.\-]',
+        'error_invalid_char': ('A Launchpad username may only contain '
+                               'lower-case alphanumeric characters, hyphens, '
+                               'plus, or periods.'),
+        },
+    }
+
+
 class SSHForm(Form):
 
+    install = BooleanField(_("Install OpenSSH server"))
+
+    ssh_import_id = ChoiceField(
+        _("Import SSH identity:"),
+        choices=[
+            (_("No"), True, None),
+            (_("from Github"), True, "gh"),
+            (_("from Launchpad"), True, "lp"),
+            ],
+        help=_("You can import your SSH keys from Github or Launchpad."))
+
+    import_username = UsernameField(_ssh_import_data[None]['caption'])
+
+    pwauth = BooleanField(_("Allow password authentication over SSH"))
+
     cancel_label = _("Back")
+
+    # validation of the import username does not read from
+    # ssh_import_id.value because it is sometimes done from the
+    # 'select' signal of the import id selector, which is called
+    # before the import id selector's value has actually changed. so
+    # the signal handler stuffs the value here before doing
+    # validation (yes, this is a hack).
+    ssh_import_id_value = None
+
+    def validate_import_username(self):
+        if self.ssh_import_id_value is None:
+            return
+        username = self.import_username.value
+        if len(username) == 0:
+            return _("This field must not be blank.")
+        if len(username) > SSH_IMPORT_MAXLEN:
+            return _("SSH id too long, must be < ") + str(SSH_IMPORT_MAXLEN)
+        if self.ssh_import_id_value == 'lp':
+            lp_regex = r"^[a-z0-9][a-z0-9\+\.\-]+$"
+            if not re.match(lp_regex, self.import_username.value):
+                return _("A Launchpad username must be at least two "
+                         "characters long and start with a letter or "
+                         "number. All letters must be lower-case. The "
+                         "characters +, - and . are also allowed after "
+                         "the first character.""")
+        elif self.ssh_import_id_value == 'gh':
+            if not re.match(r'^[a-zA-Z0-9\-]+$', username):
+                return _("A Github username may only contain alphanumeric "
+                         "characters or single hyphens, and cannot begin or "
+                         "end with a hyphen.")
 
 
 class SSHView(BaseView):
@@ -40,12 +126,35 @@ class SSHView(BaseView):
         self.model = model
         self.controller = controller
 
-        self.form = SSHForm(initial={})
+        self.form = SSHForm(initial={"install": self.model.install_server})
+
+        connect_signal(self.form.ssh_import_id.widget, 'select',
+                       self._select_ssh_import_id)
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen(excerpt=_(self.excerpt)))
+        self.form_rows = ListBox(self.form.as_rows())
+        super().__init__(
+            screen(
+                self.form_rows,
+                self.form.buttons,
+                excerpt=_(self.excerpt),
+                focus_buttons=False))
+
+    def _select_ssh_import_id(self, sender, val):
+        iu = self.form.import_username
+        data = _ssh_import_data[val]
+        iu.help = _(data['help'])
+        iu.caption = _(data['caption'])
+        iu.widget.valid_char_pat = data['valid_char']
+        iu.widget.error_invalid_char = _(data['error_invalid_char'])
+        iu.enabled = val is not None
+        if val is not None:
+            self.form_rows.base_widget.body.focus += 2
+        self.form.ssh_import_id_value = val
+        if iu.value != "" or val is None:
+            iu.validate()
 
     def done(self, sender):
         log.debug("User input: {}".format(self.form.as_data()))

@@ -18,10 +18,12 @@ import logging
 from urllib.parse import urlparse
 
 from urwid import (
+    CheckBox,
     connect_signal,
     delegate_to_widget_mixin,
     emit_signal,
     MetaSignals,
+    Padding as UrwidPadding,
     Text,
     WidgetDecoration,
     )
@@ -46,6 +48,9 @@ from subiquitycore.ui.utils import (
     Color,
     disabled,
     screen,
+    )
+from subiquitycore.ui.width import (
+    widget_width,
     )
 
 log = logging.getLogger("subiquitycore.ui.form")
@@ -80,6 +85,9 @@ class _Validator(WidgetWrap):
         self.field = field
         super().__init__(w)
 
+    def get_natural_width(self):
+        return widget_width(self._w)
+
     def lost_focus(self):
         self.field.showing_extra = False
         lf = getattr(self._w.base_widget, 'lost_focus', None)
@@ -92,6 +100,7 @@ class FormField(abc.ABC):
 
     next_index = 0
     takes_default_style = True
+    caption_first = True
 
     def __init__(self, caption=None, help=None):
         self.caption = caption
@@ -141,12 +150,24 @@ class BoundFormField(object):
         if self.field.takes_default_style:
             widget = Color.string_input(widget)
 
-        self.caption_text = Text(self.field.caption, align="right")
+        self.caption_text = Text(self.field.caption)
         self.under_text = Text(self.help)
+
+        if self.field.caption_first:
+            self.caption_text.align = 'right'
+            first_row = [self.caption_text, _Validator(self, widget)]
+        else:
+            first_row = [
+                _Validator(
+                    self,
+                    UrwidPadding(
+                        widget, align='right', width=widget_width(widget))),
+                self.caption_text,
+                ]
 
         self._rows = [
             Toggleable(TableRow(row)) for row in [
-                [self.caption_text, _Validator(self, widget)],
+                first_row,
                 [Text(""),          self.under_text],
                 ]
             ]
@@ -320,6 +341,28 @@ class ReadOnlyField(FormField):
 
     def _make_widget(self, form):
         return ReadOnlyWidget("")
+
+
+class CheckBoxEditor(CheckBox):
+
+    reserve_columns = 3
+
+    @property
+    def value(self):
+        return self.state
+
+    @value.setter
+    def value(self, val):
+        self.state = val
+
+
+class BooleanField(FormField):
+
+    caption_first = False
+    takes_default_style = False
+
+    def _make_widget(self, form):
+        return CheckBoxEditor('')
 
 
 class MetaForm(MetaSignals):

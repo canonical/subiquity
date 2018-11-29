@@ -41,6 +41,8 @@ def widget_width(w):
     if isinstance(w, urwid.Padding):
         if w.width == urwid.RELATIVE_100:
             return w.left + w.right + widget_width(w.original_widget)
+        elif isinstance(w.width, int):
+            return w.width
     if isinstance(w, urwid.Text):
         return len(w.text)
     if isinstance(w, urwid.Columns):
