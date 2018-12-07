@@ -148,8 +148,9 @@ class IdentityForm(Form):
 
 class IdentityView(BaseView):
     title = _("Profile setup")
-    excerpt = _("Enter the username and password (or ssh identity) you "
-                "will use to log in to the system.")
+    excerpt = _("Enter the username and password you will use to log in to the "
+                "system. You can configure SSH access on the next screen but a "
+                "password is still needed for sudo.")
 
     def __init__(self, model, controller):
         self.model = model

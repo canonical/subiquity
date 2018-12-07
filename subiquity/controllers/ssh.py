@@ -108,7 +108,7 @@ class SSHController(BaseController):
     def done(self, result):
         log.debug("SSHController result %s", result)
         self.model.install_server = result['install_server']
-        self.model.authorized_keys = result['authorized_keys']
+        self.model.authorized_keys = result.get('authorized_keys', [])
         self.model.pwauth = result['pwauth']
         self.signal.emit_signal('installprogress:identity-config-done')
         self.signal.emit_signal('next-screen')

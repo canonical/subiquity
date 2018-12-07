@@ -89,7 +89,7 @@ _ssh_import_data = {
 
 class SSHForm(Form):
 
-    install = BooleanField(_("Install OpenSSH server"))
+    install_server = BooleanField(_("Install OpenSSH server"))
 
     ssh_import_id = ChoiceField(
         _("Import SSH identity:"),
@@ -105,6 +105,21 @@ class SSHForm(Form):
     pwauth = BooleanField(_("Allow password authentication over SSH"))
 
     cancel_label = _("Back")
+
+    def __init__(self, initial):
+        super().__init__(initial=initial)
+        connect_signal(self.install_server.widget, 'change', self._toggle_server)
+        self._toggle_server(None, self.install_server.value)
+
+    def _toggle_server(self, sender, new_value):
+        if new_value:
+            self.ssh_import_id.enabled = True
+            self.import_username.enabled = self.ssh_import_id.value is not None
+            self.pwauth.enabled = self.ssh_import_id.value is not None
+        else:
+            self.ssh_import_id.enabled = False
+            self.import_username.enabled = False
+            self.pwauth.enabled = False
 
     # validation of the import username does not read from
     # ssh_import_id.value because it is sometimes done from the
@@ -229,7 +244,7 @@ class SSHView(BaseView):
         self.model = model
         self.controller = controller
 
-        self.form = SSHForm(initial={"install": self.model.install_server})
+        self.form = SSHForm(initial={"install": self.model.install_server, "pwauth": self.model.pwauth})
 
         connect_signal(self.form.ssh_import_id.widget, 'select',
                        self._select_ssh_import_id)
@@ -253,6 +268,7 @@ class SSHView(BaseView):
         iu.widget.valid_char_pat = data['valid_char']
         iu.widget.error_invalid_char = _(data['error_invalid_char'])
         iu.enabled = val is not None
+        self.form.pwauth.enabled = val is not None
         if val is not None:
             self.form_rows.base_widget.body.focus += 2
         self.form.ssh_import_id_value = val
