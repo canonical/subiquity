@@ -80,7 +80,7 @@ class InstallTask(BackgroundTask):
         self.kw = kw
 
     def __repr__(self):
-        return "InstallTask(%r, *%r, **%r)"%(self.func, self.args, self.kw)
+        return "InstallTask(%r, *%r, **%r)" % (self.func, self.args, self.kw)
 
     def start(self):
         self.controller._install_event_start(self.step_name)
@@ -280,7 +280,7 @@ class InstallProgressController(BaseController):
         else:
             os.unlink(
                 os.path.join(
-                    self.base_model, "etc/apt/sources.list.d/iso.list"))
+                    self.base_model.target, "etc/apt/sources.list.d/iso.list"))
             cmd = [
                 sys.executable, "-m", "curtin", "in-target", "-t", "/target",
                 "--", "apt-get", "update",
@@ -291,18 +291,24 @@ class InstallProgressController(BaseController):
         self.copy_logs_to_target()
 
         class w(TaskWatcher):
+
             def __init__(self, controller):
                 self.controller = controller
+
             def task_complete(self, stage):
                 pass
+
             def task_error(self, stage, info):
                 if isinstance(info, tuple):
                     tb = traceback.format_exception(*info)
                     self.controller.curtin_error("".join(tb))
                 else:
                     self.controller.curtin_error()
+
             def tasks_finished(self):
-                self.controller.loop.set_alarm_in(0.0, lambda loop, ud:self.controller.postinstall_complete())
+                self.controller.loop.set_alarm_in(
+                    0.0,
+                    lambda loop, ud: self.controller.postinstall_complete())
         tasks = [
             ('drain', WaitForCurtinEventsTask(self)),
             ('cloud-init', InstallTask(
