@@ -110,7 +110,7 @@ class SubiquityModel:
             'users': [user_info],
         }
         if self.ssh.install_server:
-            config['ssh_pwauth'] = self.ssh.install_server
+            config['ssh_pwauth'] = self.ssh.pwauth
         if self.snaplist.to_install:
             cmds = []
             for snap_name, selection in sorted(
