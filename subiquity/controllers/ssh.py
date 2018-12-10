@@ -38,11 +38,12 @@ class SSHController(BaseController):
 
     def default(self):
         self.ui.set_body(SSHView(self.model, self))
-        #if self.answers:
-        #    self.done(self.answers)
+        # if self.answers:
+        #     self.done(self.answers)
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
+
     def _fetch_cancel(self):
         if self._fetching_proc is None:
             return

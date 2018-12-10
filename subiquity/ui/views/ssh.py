@@ -108,7 +108,8 @@ class SSHForm(Form):
 
     def __init__(self, initial):
         super().__init__(initial=initial)
-        connect_signal(self.install_server.widget, 'change', self._toggle_server)
+        connect_signal(
+            self.install_server.widget, 'change', self._toggle_server)
         self._toggle_server(None, self.install_server.value)
 
     def _toggle_server(self, sender, new_value):
@@ -244,7 +245,11 @@ class SSHView(BaseView):
         self.model = model
         self.controller = controller
 
-        self.form = SSHForm(initial={"install": self.model.install_server, "pwauth": self.model.pwauth})
+        self.form = SSHForm(initial={
+            "install": self.model.install_server,
+            "pwauth": self.model.pwauth,
+            "import_username": self.model.ssh_import_id,
+            })
 
         connect_signal(self.form.ssh_import_id.widget, 'select',
                        self._select_ssh_import_id)

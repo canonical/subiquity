@@ -19,35 +19,20 @@ import re
 
 from urwid import (
     connect_signal,
-    LineBox,
-    Pile,
-    Text,
     )
 
-from subiquitycore.ui.buttons import (
-    cancel_btn,
-    ok_btn,
-    other_btn,
-    )
-from subiquitycore.ui.container import (
-    ListBox,
-    WidgetWrap,
-    )
 from subiquitycore.ui.interactive import (
     PasswordEditor,
     StringEditor,
     )
-from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.form import (
-    ChoiceField,
     Form,
     simple_field,
     WantsToKnowFormField,
     )
-from subiquitycore.ui.utils import button_pile, screen
+from subiquitycore.ui.utils import screen
 from subiquitycore.view import BaseView
 
-from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.identity")
 
@@ -148,9 +133,9 @@ class IdentityForm(Form):
 
 class IdentityView(BaseView):
     title = _("Profile setup")
-    excerpt = _("Enter the username and password you will use to log in to the "
-                "system. You can configure SSH access on the next screen but a "
-                "password is still needed for sudo.")
+    excerpt = _("Enter the username and password you will use to log in to "
+                "the system. You can configure SSH access on the next screen "
+                "but a password is still needed for sudo.")
 
     def __init__(self, model, controller):
         self.model = model
