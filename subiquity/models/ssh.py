@@ -28,4 +28,4 @@ class SSHModel:
         # Although the generated config just contains the key above,
         # we store the imported id so that we can re-fill the form if
         # we go back to it.
-        self.ssh_import_id = None
+        self.ssh_import_id = ''
