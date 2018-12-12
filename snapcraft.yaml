@@ -46,6 +46,7 @@ parts:
       - python3-urwid
       - python3-requests
       - python3-requests-unixsocket
+      - ssh-import-id
     python-packages:
       - attrs
       - pyyaml
