@@ -24,7 +24,7 @@ class IdentityViewTests(unittest.TestCase):
         model = mock.create_autospec(spec=IdentityModel)
         controller = mock.create_autospec(spec=IdentityController)
         controller.signal = mock.create_autospec(spec=Signal)
-        return IdentityView(model, controller, {})
+        return IdentityView(model, controller)
 
     def test_initial_focus(self):
         view = self.make_view()
