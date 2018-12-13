@@ -19,6 +19,8 @@ import os
 import subprocess
 import sys
 import platform
+import time
+import traceback
 
 import urwid
 import yaml
@@ -27,6 +29,11 @@ from systemd import journal
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
+from subiquitycore.tasksequence import (
+    BackgroundTask,
+    TaskSequence,
+    TaskWatcher,
+    )
 
 from subiquity.ui.views.installprogress import ProgressView
 
@@ -39,6 +46,56 @@ class InstallState:
     RUNNING = 1
     DONE = 2
     ERROR = -1
+
+
+class WaitForCurtinEventsTask(BackgroundTask):
+
+    def __init__(self, controller):
+        self.controller = controller
+        self.waited = 0.0
+
+    def start(self):
+        pass
+
+    def _bg_run(self):
+        while self.controller._event_indent and self.waited < 5.0:
+            time.sleep(0.1)
+            self.waited += 0.1
+        log.debug("waited %s seconds for events to drain", self.waited)
+
+    def end(self, observer, fut):
+        # Will raise if command failed:
+        fut.result()
+        self.controller._install_event_start("final system configuration")
+        observer.task_succeeded()
+
+
+class InstallTask(BackgroundTask):
+
+    def __init__(self, controller, step_name, func, *args, **kw):
+        self.controller = controller
+        self.step_name = step_name
+        self.func = func
+        self.args = args
+        self.kw = kw
+
+    def __repr__(self):
+        return "InstallTask(%r, *%r, **%r)" % (self.func, self.args, self.kw)
+
+    def start(self):
+        self.controller._install_event_start(self.step_name)
+
+    def _bg_run(self):
+        self.func(*self.args, **self.kw)
+
+    def end(self, observer, fut):
+        # Will raise if command failed:
+        fut.result()
+        self.controller._install_event_finish()
+        observer.task_succeeded()
+
+    def cancel(self):
+        pass
 
 
 class InstallProgressController(BaseController):
@@ -99,6 +156,18 @@ class InstallProgressController(BaseController):
         elif event['SYSLOG_IDENTIFIER'] == self._log_syslog_identifier:
             self.curtin_log(event)
 
+    def _install_event_start(self, message):
+        log.debug("_install_event_start %s", message)
+        self.footer_description.set_text(message)
+        self.progress_view.add_event(self._event_indent + message)
+        self._event_indent += "  "
+        self.footer_spinner.start()
+
+    def _install_event_finish(self):
+        self._event_indent = self._event_indent[:-2]
+        log.debug("_install_event_finish %r", self._event_indent)
+        self.footer_spinner.stop()
+
     def curtin_event(self, event):
         e = {}
         for k, v in event.items():
@@ -109,15 +178,9 @@ class InstallProgressController(BaseController):
         if event_type not in ['start', 'finish']:
             return
         if event_type == 'start':
-            message = event.get("CURTIN_MESSAGE", "??")
-            if not self.progress_view_showing:
-                self.footer_description.set_text(message)
-            self.progress_view.add_event(self._event_indent + message)
-            self._event_indent += "  "
-            self.footer_spinner.start()
+            self._install_event_start(event.get("CURTIN_MESSAGE", "??"))
         if event_type == 'finish':
-            self._event_indent = self._event_indent[:-2]
-            self.footer_spinner.stop()
+            self._install_event_finish()
 
     def curtin_log(self, event):
         self.progress_view.add_log_line(event['MESSAGE'])
@@ -209,22 +272,63 @@ class InstallProgressController(BaseController):
     def cancel(self):
         pass
 
+    def _bg_cleanup_apt(self):
+        if self.opts.dry_run:
+            cmd = [
+                "sleep", "2",
+                ]
+        else:
+            os.unlink(
+                os.path.join(
+                    self.base_model.target, "etc/apt/sources.list.d/iso.list"))
+            cmd = [
+                sys.executable, "-m", "curtin", "in-target", "-t", "/target",
+                "--", "apt-get", "update",
+                ]
+        self._bg_run_command_logged(cmd)
+
     def postinstall_configuration(self):
-        # If we need to do anything that takes time here (like running
-        # dpkg-reconfigure maas-rack-controller, for example...) we
-        # should switch to doing that work in a background thread.
-        self.configure_cloud_init()
         self.copy_logs_to_target()
 
+        class w(TaskWatcher):
+
+            def __init__(self, controller):
+                self.controller = controller
+
+            def task_complete(self, stage):
+                pass
+
+            def task_error(self, stage, info):
+                if isinstance(info, tuple):
+                    tb = traceback.format_exception(*info)
+                    self.controller.curtin_error("".join(tb))
+                else:
+                    self.controller.curtin_error()
+
+            def tasks_finished(self):
+                self.controller.loop.set_alarm_in(
+                    0.0,
+                    lambda loop, ud: self.controller.postinstall_complete())
+        tasks = [
+            ('drain', WaitForCurtinEventsTask(self)),
+            ('cloud-init', InstallTask(
+                self, "configuring cloud-init",
+                self.base_model.configure_cloud_init)),
+            ('cleanup', InstallTask(
+                self, "cleaning up apt configuration",
+                self._bg_cleanup_apt)),
+            ]
+        ts = TaskSequence(self.run_in_bg, tasks, w(self))
+        ts.run()
+
+    def postinstall_complete(self):
+        self._install_event_finish()
         self.ui.set_header(_("Installation complete!"))
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
 
         if self.answers['reboot']:
             self.reboot()
-
-    def configure_cloud_init(self):
-        self.base_model.configure_cloud_init()
 
     def copy_logs_to_target(self):
         if self.opts.dry_run:
