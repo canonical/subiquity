@@ -23,6 +23,7 @@ from .mirror import MirrorController
 from subiquitycore.controllers.login import LoginController
 from subiquitycore.controllers.network import NetworkController
 from .snaplist import SnapListController
+from .ssh import SSHController
 from .welcome import WelcomeController
 __all__ = [
     'FilesystemController',
@@ -35,5 +36,6 @@ __all__ = [
     'LoginController',
     'NetworkController',
     'SnapListController',
+    'SSHController',
     'WelcomeController',
 ]

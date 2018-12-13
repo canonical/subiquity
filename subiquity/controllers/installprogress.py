@@ -102,6 +102,7 @@ class InstallProgressController(BaseController):
     signals = [
         ('installprogress:filesystem-config-done', 'filesystem_config_done'),
         ('installprogress:identity-config-done',   'identity_config_done'),
+        ('installprogress:ssh-config-done',        'ssh_config_done'),
         ('installprogress:snap-config-done',       'snap_config_done'),
     ]
 
@@ -113,8 +114,12 @@ class InstallProgressController(BaseController):
         self.progress_view_showing = False
         self.install_state = InstallState.NOT_STARTED
         self.journal_listener_handle = None
-        self._identity_config_done = False
-        self._snap_config_done = False
+        self._postinstall_prerequisites = {
+            'install': False,
+            'ssh': False,
+            'identity': False,
+            'snap': False,
+            }
         self._event_indent = ""
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
@@ -122,19 +127,19 @@ class InstallProgressController(BaseController):
     def filesystem_config_done(self):
         self.curtin_start_install()
 
+    def _step_done(self, step):
+        self._postinstall_prerequisites[step] = True
+        if all(self._postinstall_prerequisites.values()):
+            self.start_postinstall_configuration()
+
     def identity_config_done(self):
-        if self.install_state == InstallState.DONE and \
-          self._snap_config_done:
-            self.postinstall_configuration()
-        else:
-            self._identity_config_done = True
+        self._step_done('identity')
+
+    def ssh_config_done(self):
+        self._step_done('ssh')
 
     def snap_config_done(self):
-        if self.install_state == InstallState.DONE and \
-          self._identity_config_done:
-            self.postinstall_configuration()
-        else:
-            self._snap_config_done = True
+        self._step_done('snap')
 
     def curtin_error(self):
         log.debug('curtin_error')
@@ -266,11 +271,23 @@ class InstallProgressController(BaseController):
         else:
             # Re-set footer so progress bar updates.
             self.ui.set_footer(_("Thank you for using Ubuntu!"))
-        if self._identity_config_done:
-            self.postinstall_configuration()
+        self._step_done('install')
 
     def cancel(self):
         pass
+
+    def _bg_install_openssh_server(self):
+        if self.opts.dry_run:
+            cmd = [
+                "sleep", "2",
+                ]
+        else:
+            cmd = [
+                sys.executable, "-m", "curtin", "system-install", "-t",
+                "/target",
+                "--", "openssh-server",
+                ]
+        self._bg_run_command_logged(cmd)
 
     def _bg_cleanup_apt(self):
         if self.opts.dry_run:
@@ -287,7 +304,7 @@ class InstallProgressController(BaseController):
                 ]
         self._bg_run_command_logged(cmd)
 
-    def postinstall_configuration(self):
+    def start_postinstall_configuration(self):
         self.copy_logs_to_target()
 
         class w(TaskWatcher):
@@ -314,10 +331,18 @@ class InstallProgressController(BaseController):
             ('cloud-init', InstallTask(
                 self, "configuring cloud-init",
                 self.base_model.configure_cloud_init)),
+        ]
+        if self.base_model.ssh.install_server:
+            tasks.extend([
+                ('install-ssh', InstallTask(
+                    self, "installing OpenSSH server",
+                    self._bg_install_openssh_server)),
+                ])
+        tasks.extend([
             ('cleanup', InstallTask(
                 self, "cleaning up apt configuration",
                 self._bg_cleanup_apt)),
-            ]
+            ])
         ts = TaskSequence(self.run_in_bg, tasks, w(self))
         ts.run()
 

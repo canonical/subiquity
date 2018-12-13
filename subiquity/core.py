@@ -39,6 +39,7 @@ class Subiquity(Application):
             "Mirror",
             "Filesystem",
             "Identity",
+            "SSH",
             "SnapList",
             "InstallProgress",
     ]
