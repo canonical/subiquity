@@ -214,6 +214,13 @@ class SubiquityModel:
                 },
             }
 
+        if os.path.exists("/run/kernel-meta-package"):
+            with open("/run/kernel-meta-package") as fp:
+                kernel_package = fp.read().decode('ascii').strip()
+            config['kernel'] = {
+                'package': kernel_package,
+                }
+
         if self.proxy.proxy:
             config['write_files']['snapd_dropin'] = {
                 'path': 'etc/systemd/system/snapd.service.d/snap_proxy.conf',
