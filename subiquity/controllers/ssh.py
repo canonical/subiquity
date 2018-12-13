@@ -124,5 +124,5 @@ class SSHController(BaseController):
         self.model.authorized_keys = result.get('authorized_keys', [])
         self.model.pwauth = result.get('pwauth', True)
         self.model.ssh_import_id = result.get('ssh_import_id', None)
-        self.signal.emit_signal('installprogress:identity-config-done')
+        self.signal.emit_signal('installprogress:ssh-config-done')
         self.signal.emit_signal('next-screen')
