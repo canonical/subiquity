@@ -77,9 +77,9 @@ PasswordField = simple_field(PasswordEditor)
 
 class IdentityForm(Form):
 
-    def __init__(self, reserved_usernames):
+    def __init__(self, reserved_usernames, initial):
         self.reserved_usernames = reserved_usernames
-        super().__init__()
+        super().__init__(initial=initial)
 
     realname = RealnameField(_("Your name:"))
     hostname = UsernameField(
@@ -155,7 +155,16 @@ class IdentityView(BaseView):
         else:
             reserved_usernames.add('root')
 
-        self.form = IdentityForm(reserved_usernames)
+        if model.user:
+            initial = {
+                'realname': model.user.realname,
+                'username': model.user.username,
+                'hostname': model.hostname,
+            }
+        else:
+            initial = {}
+
+        self.form = IdentityForm(reserved_usernames, initial)
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form.confirm_password.widget, 'change',
