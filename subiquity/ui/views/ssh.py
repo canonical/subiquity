@@ -282,6 +282,14 @@ class SSHView(BaseView):
         iu.widget.error_invalid_char = _(data['error_invalid_char'])
         iu.enabled = val is not None
         self.form.pwauth.enabled = val is not None
+        # The logic here is a little tortured but the idea is that if
+        # the users switches from not importing a key to importing
+        # one, untick pwauth (but don't fiddle with the users choice
+        # if just switching between import sources), and conversely if
+        # the user is not importing a key then the box has to be
+        # ticked (and disabled).
+        if (val is None) != (self.form.ssh_import_id.value is None):
+            self.form.pwauth.value = val is None
         if val is not None:
             self.form_rows.base_widget.body.focus += 2
         self.form.ssh_import_id_value = val
