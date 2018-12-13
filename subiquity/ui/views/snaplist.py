@@ -340,8 +340,9 @@ class SnapListView(BaseView):
                 2: ColSpec(pack=False, min_width=40),
                 })
         ok = ok_btn(label=_("Done"), on_press=self.done)
+        cancel = cancel_btn(label=_("Back"), on_press=self.cancel)
         self._main_screen = screen(
-            table, [ok],
+            table, [ok, cancel],
             focus_buttons=False,
             excerpt=_(
                 "These are popular snaps in server environments. Select or "

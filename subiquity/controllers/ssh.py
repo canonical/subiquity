@@ -86,7 +86,7 @@ class SSHController(BaseController):
             cp.stdout.replace("# ssh-import-id {} ".format(ssh_import_id),
                               "").strip().splitlines())
 
-        return user_spec, key_material, fingerprints
+        return user_spec, ssh_import_id, key_material, fingerprints
 
     def _fetched_ssh_keys(self, fut):
         try:
@@ -99,14 +99,14 @@ class SSHController(BaseController):
             if result is None:
                 # Happens if the fetch is cancelled.
                 return
-            user_spec, key_material, fingerprints = result
+            user_spec, ssh_import_id, key_material, fingerprints = result
             if 'ssh-import-id' in self.all_answers.get("Identity", {}):
                 user_spec['ssh_keys'] = key_material.splitlines()
                 self.loop.set_alarm_in(0.0,
                                        lambda loop, ud: self.done(user_spec))
             else:
-                self.ui.frame.body.confirm_ssh_keys(user_spec, key_material,
-                                                    fingerprints)
+                self.ui.frame.body.confirm_ssh_keys(
+                    user_spec, ssh_import_id, key_material, fingerprints)
 
     def fetch_ssh_keys(self, user_spec, ssh_import_id):
         log.debug("User input: %s, fetching ssh keys for %s",
@@ -122,6 +122,7 @@ class SSHController(BaseController):
         log.debug("SSHController result %s", result)
         self.model.install_server = result['install_server']
         self.model.authorized_keys = result.get('authorized_keys', [])
-        self.model.pwauth = result['pwauth']
+        self.model.pwauth = result.get('pwauth', True)
+        self.model.ssh_import_id = result.get('ssh_import_id', None)
         self.signal.emit_signal('installprogress:identity-config-done')
         self.signal.emit_signal('next-screen')

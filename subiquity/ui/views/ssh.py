@@ -177,9 +177,11 @@ class FetchingSSHKeys(WidgetWrap):
 
 
 class ConfirmSSHKeys(Stretchy):
-    def __init__(self, parent, result, key_material, fingerprints):
+    def __init__(self, parent, result, ssh_import_id, key_material,
+                 fingerprints):
         self.parent = parent
         self.result = result
+        self.ssh_import_id = ssh_import_id
         self.key_material = key_material
 
         ok = ok_btn(label=_("Yes"), on_press=self.ok)
@@ -212,6 +214,7 @@ class ConfirmSSHKeys(Stretchy):
 
     def ok(self, sender):
         self.result['authorized_keys'] = self.key_material.splitlines()
+        self.result['ssh_import_id'] = self.ssh_import_id
         self.parent.controller.done(self.result)
 
 
@@ -245,11 +248,16 @@ class SSHView(BaseView):
         self.model = model
         self.controller = controller
 
-        self.form = SSHForm(initial={
-            "install": self.model.install_server,
+        initial = {
+            "install_server": self.model.install_server,
             "pwauth": self.model.pwauth,
-            "import_username": self.model.ssh_import_id,
-            })
+            }
+        if self.model.ssh_import_id:
+            prefix, username = self.model.ssh_import_id.split(':', 1)
+            initial['ssh_import_id'] = prefix
+            initial['import_username'] = username
+
+        self.form = SSHForm(initial=initial)
 
         connect_signal(self.form.ssh_import_id.widget, 'select',
                        self._select_ssh_import_id)
@@ -297,10 +305,11 @@ class SSHView(BaseView):
     def cancel(self, result=None):
         self.controller.cancel()
 
-    def confirm_ssh_keys(self, result, ssh_key, fingerprints):
+    def confirm_ssh_keys(self, result, ssh_import_id, ssh_key, fingerprints):
         self.remove_overlay()
-        self.show_stretchy_overlay(ConfirmSSHKeys(self, result, ssh_key,
-                                                  fingerprints))
+        self.show_stretchy_overlay(
+            ConfirmSSHKeys(
+                self, result, ssh_import_id, ssh_key, fingerprints))
 
     def fetching_ssh_keys_failed(self, msg, stderr):
         self.remove_overlay()
