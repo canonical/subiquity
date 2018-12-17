@@ -50,13 +50,13 @@ class SubiquityModel:
     target = '/target'
 
     def __init__(self, common):
-        root = '/'
+        self.root = '/'
         self.opts = common['opts']
         if self.opts.dry_run:
-            root = os.path.abspath(".subiquity")
-            self.target = root
+            self.root = os.path.abspath(".subiquity")
+            self.target = self.root
         self.locale = LocaleModel(common['signal'])
-        self.keyboard = KeyboardModel(root)
+        self.keyboard = KeyboardModel(self.root)
         self.installpath = InstallpathModel(
             target=self.target,
             sources=common['opts'].sources)
@@ -218,9 +218,10 @@ class SubiquityModel:
                 },
             }
 
-        if os.path.exists("/run/kernel-meta-package"):
-            with open("/run/kernel-meta-package") as fp:
-                kernel_package = fp.read().decode('ascii').strip()
+        mp_file = os.path.join(self.root, "run/kernel-meta-package")
+        if os.path.exists(mp_file):
+            with open(mp_file) as fp:
+                kernel_package = fp.read().strip()
             config['kernel'] = {
                 'package': kernel_package,
                 }
