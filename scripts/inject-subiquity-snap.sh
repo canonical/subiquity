@@ -73,18 +73,26 @@ do_mount -t iso9660 -o loop,ro "${OLD_ISO}" old_iso
 do_mount -t squashfs "${source_installer}" old_installer
 add_overlay old_installer new_installer
 
-CORE_SNAP="$(cd old_installer/var/lib/snapd/seed/snaps/; ls -1 core*.snap)"
+python -c '
+import sys, yaml
+with open("new_installer/var/lib/snapd/seed/seed.yaml") as fp:
+     old_seed = yaml.load(fp)
+new_snaps = []
 
-cat <<EOF > new_installer/var/lib/snapd/seed/seed.yaml
-snaps:
- - name: core
-   channel: stable
-   file: "${CORE_SNAP}"
- - name: subiquity
-   unasserted: true
-   classic: true
-   file: "${SUBIQUITY_SNAP}"
-EOF
+for snap in old_seed["snaps"]:
+    if snap["name"] == "subiquity":
+        new_snaps.append({
+            "name": "subiquity",
+            "unasserted": True,
+            "classic": True,
+            "file": sys.argv[1],
+            })
+    else:
+        new_snaps.append(snap)
+
+with open("new_installer/var/lib/snapd/seed/seed.yaml", "w") as fp:
+     yaml.dump({"snaps": new_snaps}, fp)
+' $SUBIQUITY_SNAP
 
 rm -f new_installer/var/lib/snapd/seed/assertions/subiquity*.assert
 rm -f new_installer/var/lib/snapd/seed/snaps/subiquity*.snap
