@@ -101,7 +101,7 @@ class SSHController(BaseController):
                 return
             user_spec, ssh_import_id, key_material, fingerprints = result
             if 'ssh-import-id' in self.all_answers.get("Identity", {}):
-                user_spec['ssh_keys'] = key_material.splitlines()
+                user_spec['authorized_keys'] = key_material.splitlines()
                 self.loop.set_alarm_in(0.0,
                                        lambda loop, ud: self.done(user_spec))
             else:
