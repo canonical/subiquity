@@ -345,7 +345,8 @@ class SnapListView(BaseView):
     file: lxd_59.snap
 '''
         else:
-            seed_location = os.path.join(source, 'var/lib/snapd/seed/seed.yaml')
+            seed_location = os.path.join(
+                source, 'var/lib/snapd/seed/seed.yaml')
             try:
                 fp = open(seed_location, encoding='utf-8', error='replace')
             except FileNotFoundError:
@@ -361,6 +362,7 @@ class SnapListView(BaseView):
             name = snap.get('name')
             if name:
                 names.add(name)
+        log.debug("pre-seeded snaps %s", names)
         return names
 
     def make_main_screen(self, snap_list):
@@ -369,7 +371,7 @@ class SnapListView(BaseView):
         preinstalled = self.get_preinstalled_snaps()
         for snap in snap_list:
             if snap.name in preinstalled:
-                log.debug("not offering preinstalled snap %r", snap.name)
+                log.debug("not offering preseeded snap %r", snap.name)
                 continue
             box = self.snap_boxes[snap.name] = SnapCheckBox(self, snap)
             row = [
