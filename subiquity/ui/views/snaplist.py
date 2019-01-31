@@ -15,6 +15,8 @@
 
 import logging
 
+import yaml
+
 from urwid import (
     CheckBox,
     LineBox,
@@ -322,10 +324,34 @@ class SnapListView(BaseView):
     def show_screen(self, screen):
         self._w = screen
 
+    def get_seed_yaml(self):
+        return '''snaps:
+  -
+    name: core
+    channel: stable
+    file: core_4486.snap
+  -
+    name: lxd
+    channel: stable/ubuntu-18.04
+    file: lxd_59.snap
+'''
+
+    def get_preinstalled_snaps(self):
+        seed = yaml.load(self.get_seed_yaml())
+        names = set()
+        for snap in seed.get('snaps', []):
+            name = snap.get('name')
+            if name:
+                names.add(name)
+        return names
+
     def make_main_screen(self, snap_list):
         self.snap_boxes = {}
         body = []
+        preinstalled = self.get_preinstalled_snaps()
         for snap in snap_list:
+            if snap.name in preinstalled:
+                continue
             box = self.snap_boxes[snap.name] = SnapCheckBox(self, snap)
             row = [
                 box,
