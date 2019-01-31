@@ -61,6 +61,9 @@ STYLES = [
     ('progress_complete',   'fg',      'neutral'),
     ('scrollbar',           'brand',   'bg'),
     ('scrollbar focus',     'gray',    'bg'),
+
+    ('verified',            'good',    'bg'),
+    ('verified focus',      'good',    'gray'),
 ]
 
 

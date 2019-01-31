@@ -19,6 +19,7 @@ import os
 import yaml
 
 from urwid import (
+    AttrMap,
     CheckBox,
     LineBox,
     ListBox as UrwidListBox,
@@ -106,11 +107,13 @@ class SnapInfoView(WidgetWrap):
 
         self.lb_channels = NoTabCyclingTableListBox(self.channels)
 
+        publisher = _("Publisher: {}").format(snap.publisher)
+        if snap.verified:
+            publisher = [publisher, ('verified', '\N{check mark}')]
+
         title = Columns([
             Text(snap.name),
-            ('pack', Text(
-                _("Publisher: {}").format(snap.publisher),
-                align='right')),
+            ('pack', Text(publisher, align='right')),
             ], dividechars=1)
 
         contents = [
@@ -378,12 +381,19 @@ class SnapListView(BaseView):
                 log.debug("not offering preseeded snap %r", snap.name)
                 continue
             box = self.snap_boxes[snap.name] = SnapCheckBox(self, snap)
+            publisher = snap.publisher
+            if snap.verified:
+                publisher = [publisher, ('verified', '\N{check mark}')]
             row = [
                 box,
-                Text(snap.publisher),
+                Text(publisher),
                 Text(snap.summary, wrap='clip'),
                 ]
-            body.append(Color.menu_button(TableRow(row)))
+            body.append(AttrMap(
+                TableRow(row),
+                'menu_button',
+                {None: 'menu_button focus', 'verified': 'verified focus'},
+                ))
         table = NoTabCyclingTableListBox(
             body,
             colspecs={

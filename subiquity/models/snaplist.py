@@ -26,6 +26,7 @@ class SnapInfo:
     name = attr.ib()
     summary = attr.ib()
     publisher = attr.ib()
+    verified = attr.ib()
     description = attr.ib()
     confinement = attr.ib()
     channels = attr.ib(default=attr.Factory(list))
@@ -63,6 +64,7 @@ class SnapListModel:
                 name=s['name'],
                 summary=s['summary'],
                 publisher=s['developer'],
+                verified=s['publisher']['validation'] == "verified",
                 description=s['description'],
                 confinement=s['confinement'],
                 )
