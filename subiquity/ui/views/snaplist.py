@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 
 import yaml
 
@@ -325,7 +326,15 @@ class SnapListView(BaseView):
         self._w = screen
 
     def get_seed_yaml(self):
-        return '''snaps:
+        log.debug("%r", self.controller.base_model.installpath.sources)
+        sources = list(self.controller.base_model.installpath.sources.values())
+        if len(sources) != 1 or not sources[0].startswith('cp://'):
+            log.warning("cannot parse install sources %r", sources)
+        else:
+            source = sources[0][5:]
+            log.debug("install source %r", source)
+        if self.controller.opts.dry_run:
+            return '''snaps:
   -
     name: core
     channel: stable
@@ -335,6 +344,15 @@ class SnapListView(BaseView):
     channel: stable/ubuntu-18.04
     file: lxd_59.snap
 '''
+        else:
+            seed_location = os.path.join(source, 'var/lib/snapd/seed/seed.yaml')
+            try:
+                fp = open(seed_location, encoding='utf-8', error='replace')
+            except FileNotFoundError:
+                log.exception("could not find source at %r", seed_location)
+            with fp:
+                content = fp.read()
+            return content
 
     def get_preinstalled_snaps(self):
         seed = yaml.load(self.get_seed_yaml())
