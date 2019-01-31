@@ -40,6 +40,7 @@ from subiquitycore.ui.container import (
 from subiquitycore.ui.table import (
     AbstractTable,
     ColSpec,
+    TablePile,
     TableRow,
     )
 from subiquitycore.ui.utils import button_pile, Color, screen
@@ -86,12 +87,9 @@ class SnapInfoView(WidgetWrap):
 
         radio_group = []
         for csi in snap.channels:
-            notes = '-'
-            if csi.confinement != "strict":
-                notes = csi.confinement
-            btn = StarRadioButton(
+            btn = RadioButton(
                 radio_group,
-                "{}:".format(csi.channel_name),
+                csi.channel_name,
                 state=csi.channel_name == cur_channel,
                 on_state_change=self.state_change,
                 user_data=SnapSelection(
@@ -99,17 +97,26 @@ class SnapInfoView(WidgetWrap):
                     is_classic=csi.confinement == "classic"))
             self.channels.append(Color.menu_button(TableRow([
                 btn,
-                Text(csi.version),
-                Text("({})".format(csi.revision)),
+                Text("{} ({})".format(csi.version, csi.revision)),
                 Text(humanize_size(csi.size)),
-                Text(notes),
+                Text("1 day ago"),
+                Text(csi.confinement),
             ])))
 
-        self.lb_channels = NoTabCyclingTableListBox(self.channels)
+        first_info_row = TableRow([
+            (2, Text([('info_minor', "LICENSE: "), snap.license])),
+            (3, Text([('info_minor', "LAST UPDATED: "), "foo"])),
+            ])
+        headings = ["CHANNEL", "VERSION", "SIZE", "PUBLISHED", "CONFINEMENT"]
+        heading_row = Color.info_minor(TableRow(map(Text, headings)))
+        info_table = TablePile([
+            first_info_row, TableRow([Text("")]), heading_row])
+        lb_channels = NoTabCyclingTableListBox(self.channels)
+        info_table.bind(lb_channels)
 
         publisher = _("Publisher: {}").format(snap.publisher)
         if snap.verified:
-            publisher = [publisher, ('verified', '\N{check mark}')]
+            publisher = [publisher, ('verified', ' \N{check mark}')]
 
         title = Columns([
             Text(snap.name),
@@ -123,7 +130,9 @@ class SnapInfoView(WidgetWrap):
             ('pack',      Text("")),
             self.lb_description,  # overwritten in render()
             ('pack',      Text("")),
-            ('weight', 1, self.lb_channels),
+            ('pack',      info_table),
+            ('pack',      Text("")),
+            ('weight', 1, lb_channels),
             ]
         self.description_index = contents.index(self.lb_description)
         self.pile = Pile(contents)
@@ -146,13 +155,21 @@ class SnapInfoView(WidgetWrap):
         rows_wanted_description = self.description.rows((maxcol,), False)
         rows_wanted_channels = len(self.channels)
 
+        log.debug('rows_available %s', rows_available)
+        log.debug(
+            'rows_wanted_description %s rows_wanted_channels %s',
+            rows_wanted_description,
+            rows_wanted_channels)
+
         if rows_wanted_channels + rows_wanted_description <= rows_available:
             description_rows = rows_wanted_description
         else:
             if rows_wanted_description < 2*rows_available/3:
                 description_rows = rows_wanted_description
             else:
-                channel_rows = min(rows_wanted_channels, int(rows_available/3))
+                channel_rows = max(
+                    min(rows_wanted_channels, int(rows_available/3)), 2)
+                log.debug('channel_rows %s', channel_rows)
                 description_rows = rows_available - channel_rows
 
         self.pile.contents[self.description_index] = (
