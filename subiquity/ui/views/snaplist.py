@@ -348,7 +348,7 @@ class SnapListView(BaseView):
             seed_location = os.path.join(
                 source, 'var/lib/snapd/seed/seed.yaml')
             try:
-                fp = open(seed_location, encoding='utf-8', error='replace')
+                fp = open(seed_location, encoding='utf-8', errors='replace')
             except FileNotFoundError:
                 log.exception("could not find source at %r", seed_location)
             with fp:
@@ -356,7 +356,11 @@ class SnapListView(BaseView):
             return content
 
     def get_preinstalled_snaps(self):
-        seed = yaml.load(self.get_seed_yaml())
+        try:
+            seed = yaml.load(self.get_seed_yaml())
+        except yaml.YAMLError:
+            log.debug("failed to parse seed.yaml")
+            return set()
         names = set()
         for snap in seed.get('snaps', []):
             name = snap.get('name')
