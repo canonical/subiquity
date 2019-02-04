@@ -14,6 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+
+import yaml
 
 from urwid import (
     CheckBox,
@@ -322,10 +325,58 @@ class SnapListView(BaseView):
     def show_screen(self, screen):
         self._w = screen
 
+    def get_seed_yaml(self):
+        log.debug("%r", self.controller.base_model.installpath.sources)
+        sources = list(self.controller.base_model.installpath.sources.values())
+        if len(sources) != 1 or not sources[0].startswith('cp://'):
+            log.warning("cannot parse install sources %r", sources)
+        else:
+            source = sources[0][5:]
+            log.debug("install source %r", source)
+        if self.controller.opts.dry_run:
+            return '''snaps:
+  -
+    name: core
+    channel: stable
+    file: core_4486.snap
+  -
+    name: lxd
+    channel: stable/ubuntu-18.04
+    file: lxd_59.snap
+'''
+        else:
+            seed_location = os.path.join(
+                source, 'var/lib/snapd/seed/seed.yaml')
+            try:
+                fp = open(seed_location, encoding='utf-8', errors='replace')
+            except FileNotFoundError:
+                log.exception("could not find source at %r", seed_location)
+            with fp:
+                content = fp.read()
+            return content
+
+    def get_preinstalled_snaps(self):
+        try:
+            seed = yaml.load(self.get_seed_yaml())
+        except yaml.YAMLError:
+            log.debug("failed to parse seed.yaml")
+            return set()
+        names = set()
+        for snap in seed.get('snaps', []):
+            name = snap.get('name')
+            if name:
+                names.add(name)
+        log.debug("pre-seeded snaps %s", names)
+        return names
+
     def make_main_screen(self, snap_list):
         self.snap_boxes = {}
         body = []
+        preinstalled = self.get_preinstalled_snaps()
         for snap in snap_list:
+            if snap.name in preinstalled:
+                log.debug("not offering preseeded snap %r", snap.name)
+                continue
             box = self.snap_boxes[snap.name] = SnapCheckBox(self, snap)
             row = [
                 box,
