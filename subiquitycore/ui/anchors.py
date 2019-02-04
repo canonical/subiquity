@@ -38,7 +38,7 @@ class Header(WidgetWrap):
             Color.frame_header(
                 Pile([
                     Text(""),
-                    Padding.center_79(Text(title)),
+                    Padding.center_79(Text(title), min_width=76),
                     Text(""),
                 ])))
 

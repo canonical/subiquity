@@ -518,7 +518,6 @@ class FilesystemView(BaseView):
         frame = screen(
             self.lb, self._build_buttons(),
             focus_buttons=self.model.can_install())
-        frame.width = ('relative', 95)
         super().__init__(frame)
         self.refresh_model_inputs()
         log.debug('FileSystemView init complete()')
