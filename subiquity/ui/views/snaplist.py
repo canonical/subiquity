@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 import logging
 import os
 
@@ -55,10 +56,10 @@ log = logging.getLogger("subiquity.views.snaplist")
 
 class StarRadioButton(RadioButton):
     states = {
-        True: SelectableIcon(" *"),
-        False: SelectableIcon("  "),
+        True: SelectableIcon("(*)"),
+        False: SelectableIcon("( )"),
         }
-    reserve_columns = 3
+    reserve_columns = 4
 
 
 class NoTabCyclingTableListBox(AbstractTable):
@@ -66,6 +67,33 @@ class NoTabCyclingTableListBox(AbstractTable):
     def _make(self, rows):
         body = SimpleFocusListWalker(rows)
         return ScrollBarListBox(UrwidListBox(body))
+
+
+def format_datetime(d):
+    delta = datetime.datetime.now() - d
+    if delta.total_seconds() < 60:
+        return _("just now")
+    elif delta.total_seconds() < 60*60:
+        amount = int(delta.total_seconds()/60)
+        if amount == 1:
+            unit = _("minute")
+        else:
+            unit = _("minutes")
+    elif delta.total_seconds() < 60*60*24:
+        amount = int(delta.total_seconds()/(60*60))
+        if amount == 1:
+            unit = _("hour")
+        else:
+            unit = _("hours")
+    elif delta.days < 30:
+        amount = delta.days
+        if amount == 1:
+            unit = _("day")
+        else:
+            unit = _("days")
+    else:
+        return str(d.date())
+    return _("{amount:2} {unit} ago").format(amount=amount, unit=unit)
 
 
 class SnapInfoView(WidgetWrap):
@@ -85,9 +113,11 @@ class SnapInfoView(WidgetWrap):
         self.description = Text(snap.description.replace('\r', '').strip())
         self.lb_description = ListBox([self.description])
 
+        latest_update = datetime.datetime.min
         radio_group = []
         for csi in snap.channels:
-            btn = RadioButton(
+            latest_update = max(latest_update, csi.released_at)
+            btn = StarRadioButton(
                 radio_group,
                 csi.channel_name,
                 state=csi.channel_name == cur_channel,
@@ -99,13 +129,15 @@ class SnapInfoView(WidgetWrap):
                 btn,
                 Text("{} ({})".format(csi.version, csi.revision)),
                 Text(humanize_size(csi.size)),
-                Text("1 day ago"),
+                Text(format_datetime(csi.released_at)),
                 Text(csi.confinement),
             ])))
 
         first_info_row = TableRow([
             (2, Text([('info_minor', "LICENSE: "), snap.license])),
-            (3, Text([('info_minor', "LAST UPDATED: "), "foo"])),
+            (3, Text([
+                ('info_minor', "LAST UPDATED: "),
+                format_datetime(latest_update)])),
             ])
         headings = ["CHANNEL", "VERSION", "SIZE", "PUBLISHED", "CONFINEMENT"]
         heading_row = Color.info_minor(TableRow(map(Text, headings)))
