@@ -25,7 +25,6 @@ from subiquitycore.ui.buttons import (
     cancel_btn,
     ok_btn,
     )
-from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.table import (
     ColSpec,
     TableListBox,
@@ -35,7 +34,6 @@ from subiquitycore.ui.utils import (
     button_pile,
     ClickableIcon,
     Color,
-    Padding,
     screen,
     )
 from subiquitycore.view import BaseView
@@ -70,13 +68,11 @@ class GuidedFilesystemView(BaseView):
             user_arg="lvm")
         manual = ok_btn(_("Manual"), on_press=self.manual)
         back = back_btn(_("Back"), on_press=self.cancel)
-        lb = ListBox([
-            Padding.center_70(Text("")),
-            Padding.center_70(Text(_(text))),
-            Padding.center_70(Text("")),
-            button_pile([direct, lvm, manual, back]),
-            ])
-        super().__init__(lb)
+        super().__init__(screen(
+            rows=[button_pile([direct, lvm, manual, back]), Text("")],
+            buttons=None,
+            focus_buttons=False,
+            excerpt=text))
 
     def manual(self, btn):
         self.controller.manual()

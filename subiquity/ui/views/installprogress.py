@@ -48,7 +48,7 @@ class ProgressView(BaseView):
                                           on_press=self.view_log)])
         event_body = [
             ('pack', Text("")),
-            ('weight', 1, Padding.center_79(self.event_linebox)),
+            ('weight', 1, Padding.center_79(self.event_linebox, min_width=76)),
             ('pack', Text("")),
             ('pack', self.event_buttons),
             ('pack', Text("")),
