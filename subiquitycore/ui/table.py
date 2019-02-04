@@ -305,14 +305,14 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, default_spacing):
 class AbstractTable(WidgetWrap):
     # See the module docstring for docs.
 
-    def __init__(self, rows, colspecs=None, spacing=1):
+    def __init__(self, rows, colspecs=None, spacing=1, align='left'):
         """Create a Table.
 
         `rows` - a list of possibly-decorated TableRows
         `colspecs` - a mapping {column-index:ColSpec}
         'spacing` - how much space to put between cells.
         """
-        self.table_rows = [urwid.Padding(row) for row in rows]
+        self.table_rows = [urwid.Padding(row, align=align) for row in rows]
         if colspecs is None:
             colspecs = {}
         self.colspecs = defaultdict(ColSpec, colspecs)

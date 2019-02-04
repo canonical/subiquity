@@ -131,7 +131,7 @@ class GuidedDiskSelectionView(BaseView):
             TableListBox(rows, spacing=1, colspecs={
                 1: ColSpec(can_shrink=True, min_width=20, rpad=2),
                 2: ColSpec(min_width=9),
-                }),
+                }, align='center'),
             button_pile([cancel]),
             focus_buttons=False,
             excerpt=(
