@@ -59,7 +59,6 @@ class StarRadioButton(RadioButton):
         True: SelectableIcon("(*)"),
         False: SelectableIcon("( )"),
         }
-    reserve_columns = 4
 
 
 class NoTabCyclingTableListBox(AbstractTable):
@@ -275,10 +274,9 @@ class FetchingFailed(WidgetWrap):
 
 class SnapCheckBox(CheckBox):
     states = {
-        True: SelectableIcon(" *"),
-        False: SelectableIcon("  "),
+        True: SelectableIcon("(*)"),
+        False: SelectableIcon("( )"),
         }
-    reserve_columns = 3
 
     def __init__(self, parent, snap):
         self.parent = parent
@@ -437,6 +435,7 @@ class SnapListView(BaseView):
                 box,
                 Text(publisher),
                 Text(snap.summary, wrap='clip'),
+                Text("\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
                 ]
             body.append(AttrMap(
                 TableRow(row),
