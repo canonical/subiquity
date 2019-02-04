@@ -58,9 +58,8 @@ class Footer(WidgetWrap):
 
     def __init__(self, message, current, complete):
         if isinstance(message, str):
-            message_widget = Padding.center_79(Text(message))
-        else:
-            message_widget = Padding.center_79(message)
+            message_widget = Text(message)
+        message_widget = Padding.center_79(message_widget, min_width=76)
         progress_bar = Padding.center_60(
             StepsProgressBar(normal='progress_incomplete',
                              complete='progress_complete',
