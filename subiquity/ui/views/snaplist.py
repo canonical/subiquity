@@ -145,9 +145,9 @@ class SnapInfoView(WidgetWrap):
         lb_channels = NoTabCyclingTableListBox(self.channels)
         info_table.bind(lb_channels)
 
-        publisher = _("Publisher: {}").format(snap.publisher)
+        publisher = [('info_minor', "by: "), snap.publisher]
         if snap.verified:
-            publisher = [publisher, ('verified', ' \N{check mark}')]
+            publisher.append(('verified', ' \N{check mark}'))
 
         title = Columns([
             Text(snap.name),
