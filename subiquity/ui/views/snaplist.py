@@ -145,18 +145,16 @@ class SnapInfoView(WidgetWrap):
         lb_channels = NoTabCyclingTableListBox(self.channels)
         info_table.bind(lb_channels)
 
-        publisher = [('info_minor', "by: "), snap.publisher]
+        publisher = [('info_minor header', "by: "), snap.publisher]
         if snap.verified:
-            publisher.append(('verified', ' \N{check mark}'))
+            publisher.append(('verified header', ' \N{check mark}'))
 
-        title = Columns([
+        self.title = Columns([
             Text(snap.name),
             ('pack', Text(publisher, align='right')),
             ], dividechars=1)
 
         contents = [
-            ('pack',      title),
-            ('pack',      Text("")),
             ('pack',      Text(snap.summary)),
             ('pack',      Text("")),
             self.lb_description,  # overwritten in render()
@@ -199,7 +197,7 @@ class SnapInfoView(WidgetWrap):
                 description_rows = rows_wanted_description
             else:
                 channel_rows = max(
-                    min(rows_wanted_channels, int(rows_available/3)), 2)
+                    min(rows_wanted_channels, int(rows_available/3)), 3)
                 log.debug('channel_rows %s', channel_rows)
                 description_rows = rows_available - channel_rows
 
@@ -299,8 +297,10 @@ class SnapCheckBox(CheckBox):
                 cur_chan = None
                 if self.snap.name in self.parent.to_install:
                     cur_chan = self.parent.to_install[self.snap.name].channel
+                siv = SnapInfoView(self.parent, self.snap, cur_chan)
+                self.parent.controller.ui.set_header(siv.title)
                 self.parent.show_screen(screen(
-                    SnapInfoView(self.parent, self.snap, cur_chan),
+                    siv,
                     [other_btn(
                         label=_("Close"),
                         on_press=self.parent.show_main_screen)],
@@ -370,6 +370,7 @@ class SnapListView(BaseView):
             ])
 
     def show_main_screen(self, sender=None):
+        self.controller.ui.set_header(_(self.title))
         self._w = self._main_screen
 
     def show_screen(self, screen):
