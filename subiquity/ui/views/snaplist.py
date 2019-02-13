@@ -133,16 +133,22 @@ class SnapInfoView(WidgetWrap):
             ])))
 
         first_info_row = TableRow([
-            (2, Text([('info_minor', "LICENSE: "), snap.license])),
-            (3, Text([
-                ('info_minor', "LAST UPDATED: "),
-                format_datetime(latest_update)])),
+            (2, Text(
+                [
+                    ('info_minor', "LICENSE: "),
+                    snap.license,
+                ], wrap='clip')),
+            (3, Text(
+                [
+                    ('info_minor', "LAST UPDATED: "),
+                    format_datetime(latest_update),
+                ])),
             ])
         headings = ["CHANNEL", "VERSION", "SIZE", "PUBLISHED", "CONFINEMENT"]
         heading_row = Color.info_minor(TableRow(map(Text, headings)))
         info_table = TablePile([
-            first_info_row, TableRow([Text("")]), heading_row])
-        lb_channels = NoTabCyclingTableListBox(self.channels)
+            first_info_row, TableRow([Text("")]), heading_row], spacing=2)
+        lb_channels = NoTabCyclingTableListBox(self.channels, spacing=2)
         info_table.bind(lb_channels)
 
         publisher = [('info_minor header', "by: "), snap.publisher]
