@@ -1,0 +1,107 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "pCSVMU1bUNCUbH0bAszxzXtMFxGYQMlp",
+      "title": "minidlna",
+      "summary": "server software with the aim of being fully compliant with DLNA/UPnP clients.",
+      "description": "The MiniDNLA daemon serves media files (music, pictures, and video) to clients on a network.\n\nExample clients include applications such as totem and xbmc, and devices such as portable media players, smartphones, and televisions.\n\nMiniDLNA is a simple, lightweight alternative to MediaTomb, but has fewer features. It does not have a web interface for administration and must be configured by editing a text file.",
+      "download-size": 20729856,
+      "name": "minidlna-escoand",
+      "publisher": {
+        "id": "SM7HUj44K6BPgLFoXdO71vrvMlgde26U",
+        "username": "escoand",
+        "display-name": "escoand",
+        "validation": "unproven"
+      },
+      "developer": "escoand",
+      "status": "available",
+      "type": "app",
+      "version": "1.2.1snap1",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "19",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "",
+      "license": "BSD-3-Clause",
+      "channels": {
+        "latest/beta": {
+          "revision": "19",
+          "confinement": "strict",
+          "version": "1.2.1snap1",
+          "channel": "beta",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 20729856,
+          "released-at": "2018-04-27T13:48:29.007626Z"
+        },
+        "latest/candidate": {
+          "revision": "19",
+          "confinement": "strict",
+          "version": "1.2.1snap1",
+          "channel": "candidate",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 20729856,
+          "released-at": "2018-04-27T13:48:29.00783Z"
+        },
+        "latest/edge": {
+          "revision": "19",
+          "confinement": "strict",
+          "version": "1.2.1snap1",
+          "channel": "edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 20729856,
+          "released-at": "2018-04-27T13:43:39.858325Z"
+        },
+        "latest/stable": {
+          "revision": "19",
+          "confinement": "strict",
+          "version": "1.2.1snap1",
+          "channel": "stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 20729856,
+          "released-at": "2018-04-27T13:48:29.008006Z"
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

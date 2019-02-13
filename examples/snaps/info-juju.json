@@ -1,0 +1,231 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "e2CPHpB1fUxcKtCyJTsm5t3hN9axJ0yj",
+      "title": "juju",
+      "summary": "juju client",
+      "description": "Juju is an open source modelling tool for operating software in the cloud.  Juju allows you to deploy, configure, manage, maintain, and scale cloud applications quickly and efficiently on public clouds, as well as on physical servers, OpenStack, and in containers. You can use Juju from the command line or through its GUI.\n\nIn modern environments, applications are rarely deployed in isolation. Even simple applications may require several other applications in order to function - like a database and a web server, for example. For modeling a more complex system, e.g. OpenStack, many more applications need to be installed, configured and connected to each other. Juju's application modelling provides tools to express the intent of how to deploy such applications and to subsequently scale and manage them.\n\nAt the lowest level, traditional configuration management tools like Chef and Puppet, or even general scripting languages such as Python or bash, automate the configuration of machines to a particular specification. With Juju, you create a model of the relationships between applications that make up your solution and you have a mapping of the parts of that model to machines. Juju then applies the necessary configuration management scripts to each machine in the model.\n\nApplication-specific knowledge such as dependencies, scale-out practices, operational events like backups and updates, and integration options with other pieces of software are encapsulated in Juju's 'charms'. This knowledge can then be shared between team members, reused everywhere from laptops to virtual machines and cloud, and shared with other organizations.  \n\nThe charm defines everything you all collaboratively know about deploying that particular application brilliantly. All you have to do is use any available charm (or write your own), and the corresponding application will be deployed in seconds, on any cloud or server or virtual machine.\n\nhttps://discourse.jujucharms.com/\nhttps://docs.jujucharms.com/\nhttps://github.com/juju/juju",
+      "download-size": 64921600,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/image-juju-256.svg.png",
+      "name": "juju",
+      "publisher": {
+        "id": "canonical",
+        "username": "canonical",
+        "display-name": "Canonical",
+        "validation": "verified"
+      },
+      "developer": "canonical",
+      "status": "available",
+      "type": "app",
+      "version": "2.5.0",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "6362",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "http://jujucharms.com",
+      "license": "Other Open Source",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/k8s.jpg",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/juju-gui.jpg",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/openstack-store.jpg",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/models-list_uiDEQ4O.jpg",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/image-juju-256.svg.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/k8s.jpg"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/juju-gui.jpg"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/openstack-store.jpg"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/models-list_uiDEQ4O.jpg"
+        }
+      ],
+      "channels": {
+        "2.3/edge": {
+          "revision": "5618",
+          "confinement": "classic",
+          "version": "2.3.10+2.3-235656c",
+          "channel": "2.3/edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 55205888,
+          "released-at": "2018-10-23T17:50:03.99497Z"
+        },
+        "2.3/stable": {
+          "revision": "5267",
+          "confinement": "classic",
+          "version": "2.3.9",
+          "channel": "2.3/stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 55160832,
+          "released-at": "2018-09-19T06:14:17.172922Z"
+        },
+        "2.4/edge": {
+          "revision": "6553",
+          "confinement": "classic",
+          "version": "2.4.8+2.4-11ac58b",
+          "channel": "2.4/edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 67452928,
+          "released-at": "2019-02-06T06:05:58.986587Z"
+        },
+        "2.4/stable": {
+          "revision": "6012",
+          "confinement": "classic",
+          "version": "2.4.7",
+          "channel": "2.4/stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 58843136,
+          "released-at": "2018-11-29T03:18:39.999921Z"
+        },
+        "2.5/candidate": {
+          "revision": "6580",
+          "confinement": "classic",
+          "version": "2.5.1+2.5-35c8462",
+          "channel": "2.5/candidate",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 71266304,
+          "released-at": "2019-02-11T10:49:51.640357Z"
+        },
+        "2.5/edge": {
+          "revision": "6597",
+          "confinement": "classic",
+          "version": "2.5.1+2.5-3bbdbe6",
+          "channel": "2.5/edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 71266304,
+          "released-at": "2019-02-12T16:42:02.932973Z"
+        },
+        "2.5/stable": {
+          "revision": "6362",
+          "confinement": "classic",
+          "version": "2.5.0",
+          "channel": "2.5/stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 64921600,
+          "released-at": "2019-01-21T14:47:51.328941Z"
+        },
+        "latest/edge": {
+          "revision": "6590",
+          "confinement": "classic",
+          "version": "2.6-beta1+develop-df8fba6",
+          "channel": "edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 71839744,
+          "released-at": "2019-02-12T12:27:05.94904Z"
+        },
+        "latest/stable": {
+          "revision": "6362",
+          "confinement": "classic",
+          "version": "2.5.0",
+          "channel": "stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 64921600,
+          "released-at": "2019-01-21T12:31:11.686594Z"
+        }
+      },
+      "tracks": [
+        "latest",
+        "2.5",
+        "2.4",
+        "2.3"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

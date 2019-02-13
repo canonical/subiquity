@@ -1,0 +1,128 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "pAGMQ0HpmF09Smxc9d3ZOUiVNhtWhy7r",
+      "title": "heroku",
+      "summary": "CLI client for Heroku",
+      "description": "The Heroku Command Line Interface (CLI), formerly known as the Heroku Toolbelt, is a tool for creating and managing Heroku apps from the command line / shell of various operating systems.",
+      "download-size": 25960448,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/09/heroku.png",
+      "name": "heroku",
+      "publisher": {
+        "id": "39QuBoEeo9RvCIgiqzikeDw4GkGVx4bd",
+        "username": "heroku",
+        "display-name": "Heroku",
+        "validation": "verified"
+      },
+      "developer": "heroku",
+      "status": "available",
+      "type": "app",
+      "version": "v7.21.0",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "3709",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://cli.heroku.com",
+      "license": "ISC",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/09/Screen_Shot_2017-09-29_at_10.24.11_AM.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/09/heroku.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/09/Screen_Shot_2017-09-29_at_10.24.11_AM.png"
+        },
+        {
+          "type": "video",
+          "url": "http://vimeo.com/236091798"
+        }
+      ],
+      "channels": {
+        "latest/beta": {
+          "revision": "3709",
+          "confinement": "classic",
+          "version": "v7.21.0",
+          "channel": "beta",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 25960448,
+          "released-at": "2019-02-12T14:00:48.131809Z"
+        },
+        "latest/candidate": {
+          "revision": "3709",
+          "confinement": "classic",
+          "version": "v7.21.0",
+          "channel": "candidate",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 25960448,
+          "released-at": "2019-02-12T14:00:49.720849Z"
+        },
+        "latest/edge": {
+          "revision": "3709",
+          "confinement": "classic",
+          "version": "v7.21.0",
+          "channel": "edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 25960448,
+          "released-at": "2019-02-12T00:09:08.106534Z"
+        },
+        "latest/stable": {
+          "revision": "3709",
+          "confinement": "classic",
+          "version": "v7.21.0",
+          "channel": "stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 25960448,
+          "released-at": "2019-02-12T14:00:51.037109Z"
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

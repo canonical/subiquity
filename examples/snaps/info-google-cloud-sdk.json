@@ -1,0 +1,98 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "MJbt3BgxESyOON7gqKVEnA06NLRM3Dxd",
+      "title": "Google Cloud SDK",
+      "summary": "Command-line interface for Google Cloud Platform products and services",
+      "description": "Command-line interface for Google Cloud Platform products and services",
+      "download-size": 58372096,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/04/cloud_icon_256.png",
+      "name": "google-cloud-sdk",
+      "publisher": {
+        "id": "8jqpPuIFTqQqlIUH9g14nscj1im4BBnl",
+        "username": "google-cloud-sdk",
+        "display-name": "Cloud SDK",
+        "validation": "verified"
+      },
+      "developer": "google-cloud-sdk",
+      "status": "available",
+      "type": "app",
+      "version": "234.0.0",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "70",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://cloud.google.com/sdk/docs/",
+      "license": "Apache-2.0",
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/04/cloud_icon_256.png"
+        }
+      ],
+      "channels": {
+        "latest/beta": {
+          "revision": "70",
+          "confinement": "classic",
+          "version": "234.0.0",
+          "channel": "beta",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 58372096,
+          "released-at": "2019-02-12T15:22:04.974597Z"
+        },
+        "latest/edge": {
+          "revision": "34",
+          "confinement": "classic",
+          "version": "200.0.0",
+          "channel": "edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 48775168,
+          "released-at": "2018-05-01T18:21:38.003719Z"
+        },
+        "latest/stable": {
+          "revision": "70",
+          "confinement": "classic",
+          "version": "234.0.0",
+          "channel": "stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 58372096,
+          "released-at": "2019-02-12T15:22:04.974597Z"
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

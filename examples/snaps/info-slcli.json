@@ -1,0 +1,100 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "OYkSLXVTgJIZh2LgMBwx4v2HDWCfoLaI",
+      "title": "slcli",
+      "summary": "Python based SoftLayer API Tool.",
+      "description": "A command-line interface is also included and can be used to manage various SoftLayer products and services.",
+      "download-size": 11460608,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/sl_logo_Snap.png",
+      "name": "slcli",
+      "publisher": {
+        "id": "FA2NG3XXbQLR2Sh6Kc0nsRi4Gwf7K9AB",
+        "username": "softlayer",
+        "display-name": "SoftLayer",
+        "validation": "unproven"
+      },
+      "developer": "softlayer",
+      "status": "available",
+      "type": "app",
+      "version": "5.5.1+git",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "383",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://github.com/softlayer/softlayer-python/issues",
+      "license": "MIT",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/02/Screenshot_from_2018-02-16_18-40-24.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/Screenshot_from_2018-06-07_17-30-38.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/sl_logo_Snap.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/02/Screenshot_from_2018-02-16_18-40-24.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/Screenshot_from_2018-06-07_17-30-38.png"
+        }
+      ],
+      "channels": {
+        "latest/edge": {
+          "revision": "576",
+          "confinement": "strict",
+          "version": "5.5.1+git",
+          "channel": "edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 11317248,
+          "released-at": "2019-02-05T22:15:23.579794Z"
+        },
+        "latest/stable": {
+          "revision": "383",
+          "confinement": "strict",
+          "version": "5.5.1+git",
+          "channel": "stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 11460608,
+          "released-at": "2018-11-02T01:30:55.89323Z"
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

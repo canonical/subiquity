@@ -1,0 +1,124 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "xbKFilZvKsEXegCPaOjd0eN7qucKsM92",
+      "title": "sabnzbd",
+      "summary": "SABnzbd",
+      "description": "The automated Usenet download tool. SABnzbd makes Usenet as simple and streamlined as possible by automating everything we can. All you have to do is add an .nzb. SABnzbd takes over from there, where it will be automatically downloaded, verified, repaired, extracted and filed away with zero human interaction.",
+      "download-size": 134926336,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/10/icon.svg_WxcxD3g.png",
+      "name": "sabnzbd",
+      "publisher": {
+        "id": "ALlEHtUfvo3ZaFd6RGeIT0nF2lW0kk6f",
+        "username": "safihre",
+        "display-name": "Safihre",
+        "validation": "unproven"
+      },
+      "developer": "safihre",
+      "status": "available",
+      "type": "app",
+      "version": "2.3.7",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "217",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://github.com/sabnzbd/sabnzbd/issues",
+      "license": "GPL-2.0+",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/file-lists.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/history-details.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/interface.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/phone-interface.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/night-mode.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/10/icon.svg_WxcxD3g.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/file-lists.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/history-details.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/interface.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/phone-interface.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/11/night-mode.png"
+        }
+      ],
+      "channels": {
+        "latest/edge": {
+          "revision": "289",
+          "confinement": "strict",
+          "version": "2.3.7",
+          "channel": "edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 136122368,
+          "released-at": "2019-02-09T10:11:23.465204Z"
+        },
+        "latest/stable": {
+          "revision": "217",
+          "confinement": "strict",
+          "version": "2.3.7",
+          "channel": "stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 134926336,
+          "released-at": "2019-01-12T09:58:22.250937Z"
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

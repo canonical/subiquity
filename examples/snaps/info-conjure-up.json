@@ -7,17 +7,23 @@
       "id": "ijQR4HjYlTAmIjELJm5XCpNAqbDZWJ3h",
       "title": "conjure-up",
       "summary": "Package runtime for conjure-up spells",
-      "description": "This package provides conjure-up, an interface to installing spells that provide the user with an end to end walkthrough experience for installing and using big software.\r\n",
-      "download-size": 106147840,
+      "description": "This package provides conjure-up, an interface to installing spells that provide the user with an end to end walkthrough experience for installing and using big software.\n",
+      "download-size": 115097600,
       "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/icon_12.png",
       "name": "conjure-up",
+      "publisher": {
+        "id": "canonical",
+        "username": "canonical",
+        "display-name": "Canonical",
+        "validation": "verified"
+      },
       "developer": "canonical",
       "status": "available",
       "type": "app",
-      "version": "2.5.7-20180530.1405",
-      "channel": "edge",
+      "version": "2.6.6-20190212.2202",
+      "channel": "stable",
       "ignore-validation": false,
-      "revision": "1004",
+      "revision": "1043",
       "confinement": "classic",
       "private": false,
       "devmode": false,
@@ -26,62 +32,140 @@
       "license": "MIT",
       "screenshots": [
         {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/application-config.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/application-list.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/bootstrap-wait.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/cloud-selection.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/deploy-status.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/spell-selection.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/steps-config.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/summary.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/icon_12.png"
+        },
+        {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/application-config.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/application-list.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/bootstrap-wait.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/cloud-selection.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/deploy-status.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/spell-selection.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/steps-config.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/01/summary.png"
         }
       ],
       "channels": {
         "latest/beta": {
-          "revision": "999",
+          "revision": "1043",
           "confinement": "classic",
-          "version": "2.5.6-20180507.2005",
+          "version": "2.6.6-20190212.2202",
           "channel": "beta",
-          "epoch": "0",
-          "size": 106254336
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 115097600,
+          "released-at": "2019-02-12T22:56:26.863331Z"
         },
         "latest/candidate": {
-          "revision": "999",
+          "revision": "1043",
           "confinement": "classic",
-          "version": "2.5.6-20180507.2005",
+          "version": "2.6.6-20190212.2202",
           "channel": "candidate",
-          "epoch": "0",
-          "size": 106254336
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 115097600,
+          "released-at": "2019-02-12T22:56:26.863331Z"
         },
         "latest/edge": {
-          "revision": "1004",
+          "revision": "1043",
           "confinement": "classic",
-          "version": "2.5.7-20180530.1405",
+          "version": "2.6.6-20190212.2202",
           "channel": "edge",
-          "epoch": "0",
-          "size": 106147840
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 115097600,
+          "released-at": "2019-02-12T22:56:26.863331Z"
         },
         "latest/stable": {
-          "revision": "999",
+          "revision": "1043",
           "confinement": "classic",
-          "version": "2.5.6-20180507.2005",
+          "version": "2.6.6-20190212.2202",
           "channel": "stable",
-          "epoch": "0",
-          "size": 106254336
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 115097600,
+          "released-at": "2019-02-12T22:56:26.863331Z"
         }
       },
       "tracks": [

@@ -6,17 +6,23 @@
     {
       "id": "We2QH1ClwGL6V88RJRWuZPWaBBPuzWPL",
       "title": "prometheus",
-      "summary": "Unofficial Prometheus snap package",
-      "description": "Prometheus is a systems and service monitoring system. It collects metrics from configured targets at given intervals, evaluates rule expressions, displays the results, and can trigger alerts if some condition is observed to be true.\r\n",
-      "download-size": 21237760,
+      "summary": "The Prometheus monitoring system and time series database",
+      "description": "Prometheus is a systems and service monitoring system. It collects metrics from configured targets at given intervals, evaluates rule expressions, displays the results, and can trigger alerts if some condition is observed to be true.\n",
+      "download-size": 14331904,
       "name": "prometheus",
+      "publisher": {
+        "id": "IJ1Iesv3hhEPHuegj7b3zvPLOh8wZs34",
+        "username": "jacek",
+        "display-name": "Jacek Nykis",
+        "validation": "unproven"
+      },
       "developer": "jacek",
       "status": "available",
       "type": "app",
-      "version": "2.2.1",
-      "channel": "2/beta",
+      "version": "1.8.2",
+      "channel": "stable",
       "ignore-validation": false,
-      "revision": "20",
+      "revision": "18",
       "confinement": "strict",
       "private": false,
       "devmode": false,
@@ -25,60 +31,132 @@
       "license": "Apache-2.0",
       "channels": {
         "2/beta": {
-          "revision": "20",
+          "revision": "23",
           "confinement": "strict",
-          "version": "2.2.1",
+          "version": "2.4.2",
           "channel": "2/beta",
-          "epoch": "0",
-          "size": 21237760
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 20557824,
+          "released-at": "2018-10-03T15:04:19.171673Z"
+        },
+        "2/candidate": {
+          "revision": "23",
+          "confinement": "strict",
+          "version": "2.4.2",
+          "channel": "2/candidate",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 20557824,
+          "released-at": "2018-10-10T15:50:40.436572Z"
         },
         "2/edge": {
-          "revision": "20",
+          "revision": "23",
           "confinement": "strict",
-          "version": "2.2.1",
+          "version": "2.4.2",
           "channel": "2/edge",
-          "epoch": "0",
-          "size": 21237760
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 20557824,
+          "released-at": "2018-10-03T15:04:19.172078Z"
         },
         "2/stable": {
-          "revision": "20",
+          "revision": "23",
           "confinement": "strict",
-          "version": "2.2.1",
+          "version": "2.4.2",
           "channel": "2/stable",
-          "epoch": "0",
-          "size": 21237760
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 20557824,
+          "released-at": "2018-10-10T15:50:46.785657Z"
         },
         "latest/beta": {
           "revision": "18",
           "confinement": "strict",
           "version": "1.8.2",
           "channel": "beta",
-          "epoch": "0",
-          "size": 14331904
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 14331904,
+          "released-at": "2017-12-06T18:22:41.257589Z"
         },
         "latest/candidate": {
           "revision": "18",
           "confinement": "strict",
           "version": "1.8.2",
           "channel": "candidate",
-          "epoch": "0",
-          "size": 14331904
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 14331904,
+          "released-at": "2018-01-10T15:19:26.477942Z"
         },
         "latest/edge": {
           "revision": "18",
           "confinement": "strict",
           "version": "1.8.2",
           "channel": "edge",
-          "epoch": "0",
-          "size": 14331904
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 14331904,
+          "released-at": "2017-12-06T18:22:41.257769Z"
         },
         "latest/stable": {
           "revision": "18",
           "confinement": "strict",
           "version": "1.8.2",
           "channel": "stable",
-          "epoch": "0",
-          "size": 14331904
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 14331904,
+          "released-at": "2018-01-10T15:19:13.270272Z"
         }
       },
       "tracks": [

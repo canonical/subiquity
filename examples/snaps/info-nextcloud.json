@@ -7,94 +7,270 @@
       "id": "njObIbGQEaVx1H4nyWxchk1i8opy4h54",
       "title": "Nextcloud",
       "summary": "Nextcloud Server - A safe home for all your data",
-      "description": "Access, share and protect your files, calendars, contacts, communication and more at home and in your enterprise.",
-      "download-size": 205615104,
+      "description": "Where are your photos and documents? With Nextcloud you pick a server of your choice, at home, in a data center or at a provider. And that is where your files will be. Nextcloud runs on that server, protecting your data and giving you access from your desktop or mobile devices. Through Nextcloud you also access, sync and share your existing data on that FTP drive at school, a Dropbox or a NAS you have at home.",
+      "download-size": 185958400,
       "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/06/icon.svg_1.png",
       "name": "nextcloud",
+      "publisher": {
+        "id": "lBnslZGp88VvX4EJSAvS2AG2Iryb1MNU",
+        "username": "nextcloud",
+        "display-name": "Nextcloud",
+        "validation": "verified"
+      },
       "developer": "nextcloud",
       "status": "available",
       "type": "app",
-      "version": "12-2018-05-30",
-      "channel": "12/edge",
+      "version": "15.0.2snap2",
+      "channel": "stable",
       "ignore-validation": false,
-      "revision": "7310",
+      "revision": "11336",
       "confinement": "strict",
       "private": false,
       "devmode": false,
       "jailmode": false,
       "contact": "https://github.com/nextcloud/nextcloud-snap",
       "license": "AGPL-3.0+",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/10/Screenshot_from_2018-10-26_09-49-46.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/10/Screenshot_from_2018-10-26_09-48-50.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/06/icon.svg_1.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/10/Screenshot_from_2018-10-26_09-49-46.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/10/Screenshot_from_2018-10-26_09-48-50.png"
+        }
+      ],
       "channels": {
         "11/stable": {
           "revision": "6942",
           "confinement": "strict",
           "version": "11.0.8snap1",
           "channel": "11/stable",
-          "epoch": "0",
-          "size": 202977280
-        },
-        "12/edge": {
-          "revision": "7310",
-          "confinement": "strict",
-          "version": "12-2018-05-30",
-          "channel": "12/edge",
-          "epoch": "0",
-          "size": 205615104
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 202977280,
+          "released-at": "2018-05-10T20:11:39.129597Z"
         },
         "12/stable": {
-          "revision": "6949",
+          "revision": "10632",
           "confinement": "strict",
-          "version": "12.0.7snap1",
+          "version": "12.0.13snap1",
           "channel": "12/stable",
-          "epoch": "0",
-          "size": 205369344
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 206282752,
+          "released-at": "2019-01-07T21:36:13.717072Z"
+        },
+        "13/beta": {
+          "revision": "11472",
+          "confinement": "strict",
+          "version": "13.0.10snap1+git2.f832b6d",
+          "channel": "13/beta",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 179302400,
+          "released-at": "2019-02-09T18:36:37.938961Z"
         },
         "13/edge": {
-          "revision": "7302",
+          "revision": "11505",
           "confinement": "strict",
-          "version": "13-2018-05-30",
+          "version": "13-2019-02-10",
           "channel": "13/edge",
-          "epoch": "0",
-          "size": 205463552
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 189325312,
+          "released-at": "2019-02-10T22:32:08.740112Z"
         },
         "13/stable": {
-          "revision": "6916",
+          "revision": "10859",
           "confinement": "strict",
-          "version": "13.0.2snap1",
+          "version": "13.0.10snap1",
           "channel": "13/stable",
-          "epoch": "0",
-          "size": 205299712
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 179277824,
+          "released-at": "2019-01-19T12:19:45.573985Z"
+        },
+        "14/beta": {
+          "revision": "11473",
+          "confinement": "strict",
+          "version": "14.0.6snap1+git2.cedf790",
+          "channel": "14/beta",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 184524800,
+          "released-at": "2019-02-09T18:45:41.592902Z"
+        },
+        "14/edge": {
+          "revision": "11545",
+          "confinement": "strict",
+          "version": "14-2019-02-12",
+          "channel": "14/edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 196898816,
+          "released-at": "2019-02-12T22:42:43.554552Z"
+        },
+        "14/stable": {
+          "revision": "11130",
+          "confinement": "strict",
+          "version": "14.0.6snap1",
+          "channel": "14/stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 184479744,
+          "released-at": "2019-01-26T01:34:39.638992Z"
+        },
+        "15/edge": {
+          "revision": "11525",
+          "confinement": "strict",
+          "version": "15-2019-02-11",
+          "channel": "15/edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 196079616,
+          "released-at": "2019-02-11T22:40:06.544775Z"
+        },
+        "15/stable": {
+          "revision": "11336",
+          "confinement": "strict",
+          "version": "15.0.2snap2",
+          "channel": "15/stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 185958400,
+          "released-at": "2019-02-03T00:40:15.856899Z"
         },
         "latest/beta": {
-          "revision": "7235",
+          "revision": "11470",
           "confinement": "strict",
-          "version": "13.0.2snap1",
+          "version": "15.0.2snap2+git2.6632ba6",
           "channel": "beta",
-          "epoch": "0",
-          "size": 205340672
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 196063232,
+          "released-at": "2019-02-09T18:04:05.010892Z"
         },
         "latest/edge": {
-          "revision": "7303",
+          "revision": "11509",
           "confinement": "strict",
-          "version": "master-2018-05-30",
+          "version": "master-2019-02-10",
           "channel": "edge",
-          "epoch": "0",
-          "size": 204627968
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 197169152,
+          "released-at": "2019-02-10T22:48:59.141411Z"
         },
         "latest/stable": {
-          "revision": "6916",
+          "revision": "11336",
           "confinement": "strict",
-          "version": "13.0.2snap1",
+          "version": "15.0.2snap2",
           "channel": "stable",
-          "epoch": "0",
-          "size": 205299712
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 185958400,
+          "released-at": "2019-02-03T00:40:15.856899Z"
         }
       },
       "tracks": [
         "latest",
-        "11",
+        "15",
+        "14",
+        "13",
         "12",
-        "13"
+        "11"
       ]
     }
   ],

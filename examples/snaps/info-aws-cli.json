@@ -1,0 +1,92 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "CRrJViJiSuDcCkU31G0xpNRVNaj4P960",
+      "title": "aws-cli",
+      "summary": "Universal Command Line Interface for Amazon Web Services",
+      "description": "The AWS CLI is an open source tool built on top of the AWS SDK for Python (Boto) that provides commands for interacting with AWS services. With minimal configuration, you can start using all of the functionality provided by the AWS Management Console from your favorite terminal program.",
+      "download-size": 15851520,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/06/copy_1.ico.png",
+      "name": "aws-cli",
+      "publisher": {
+        "id": "S7iQ7mKDXBDliQqRcgefvc2TKXIH9pYk",
+        "username": "aws",
+        "display-name": "Amazon Web Services",
+        "validation": "verified"
+      },
+      "developer": "aws",
+      "status": "available",
+      "type": "app",
+      "version": "1.15.71",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "135",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://console.aws.amazon.com/support",
+      "license": "Apache-2.0",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/06/Screen_Shot_2017-06-07_at_8.16.09_AM.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/06/copy_1.ico.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/06/Screen_Shot_2017-06-07_at_8.16.09_AM.png"
+        }
+      ],
+      "channels": {
+        "latest/edge": {
+          "revision": "140",
+          "confinement": "classic",
+          "version": "1.16.18",
+          "channel": "edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 21057536,
+          "released-at": "2018-09-21T14:07:54.904902Z"
+        },
+        "latest/stable": {
+          "revision": "135",
+          "confinement": "classic",
+          "version": "1.15.71",
+          "channel": "stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 15851520,
+          "released-at": "2018-08-20T15:27:58.746544Z"
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

@@ -11,11 +11,17 @@
       "download-size": 40583168,
       "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/05/postgresql-icon-256x256.jpg.png",
       "name": "postgresql10",
+      "publisher": {
+        "id": "B8oLpAkeAIsmyKRGs9qTcdPgflXY0DOx",
+        "username": "cmd",
+        "display-name": "Command Prompt, Inc.",
+        "validation": "verified"
+      },
       "developer": "cmd",
       "status": "available",
       "type": "app",
       "version": "10.4",
-      "channel": "beta",
+      "channel": "stable",
       "ignore-validation": false,
       "revision": "47",
       "confinement": "strict",
@@ -24,14 +30,28 @@
       "jailmode": false,
       "contact": "",
       "license": "Proprietary",
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/05/postgresql-icon-256x256.jpg.png"
+        }
+      ],
       "channels": {
         "latest/stable": {
           "revision": "47",
           "confinement": "strict",
           "version": "10.4",
           "channel": "stable",
-          "epoch": "0",
-          "size": 40583168
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 40583168,
+          "released-at": "2018-05-11T12:02:48.796118Z"
         }
       },
       "tracks": [

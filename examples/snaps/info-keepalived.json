@@ -8,15 +8,22 @@
       "title": "keepalived",
       "summary": "High availability VRRP and load-balancing for Linux",
       "description": "Keepalived is routing software written in C to provide simple and robust\nfacilities for loadbalancing and high-availability to Linux based\ninfrastructures.  Loadbalancing framework relies on well-known Linux\nVirtual Server (IPVS) kernel module providing Layer4 loadbalancing.\nHigh-availability is achieved by VRRP protocol.\n",
-      "download-size": 11427840,
+      "download-size": 12132352,
       "name": "keepalived",
+      "publisher": {
+        "id": "ExPLzHya8nISOTuxbZXUb8XQ0yOHhizK",
+        "username": "sabdfl",
+        "display-name": "Mark Shuttleworth",
+        "validation": "unproven"
+      },
       "developer": "sabdfl",
       "status": "available",
       "type": "app",
-      "version": "v1.4+git",
-      "channel": "edge",
+      "base": "core18",
+      "version": "2.0.10",
+      "channel": "stable",
       "ignore-validation": false,
-      "revision": "185",
+      "revision": "283",
       "confinement": "classic",
       "private": false,
       "devmode": false,
@@ -24,45 +31,53 @@
       "contact": "mailto:mark@ubuntu.com",
       "license": "GPL-2.0",
       "channels": {
-        "1.3/candidate": {
+        "1.3/stable": {
           "revision": "183",
           "confinement": "classic",
           "version": "1.3.9",
-          "channel": "1.3/candidate",
-          "epoch": "0",
-          "size": 11386880
-        },
-        "1.3/stable": {
-          "revision": "67",
-          "confinement": "classic",
-          "version": "1.3.5",
           "channel": "1.3/stable",
-          "epoch": "0",
-          "size": 11161600
-        },
-        "latest/candidate": {
-          "revision": "184",
-          "confinement": "classic",
-          "version": "1.4.4",
-          "channel": "candidate",
-          "epoch": "0",
-          "size": 11423744
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 11386880,
+          "released-at": "2018-08-19T11:02:42.582649Z"
         },
         "latest/edge": {
-          "revision": "185",
+          "revision": "282",
           "confinement": "classic",
-          "version": "v1.4+git",
+          "version": "v2.0.10-8-g7bc2306+",
           "channel": "edge",
-          "epoch": "0",
-          "size": 11427840
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 17047552,
+          "released-at": "2018-11-14T15:32:25.042759Z"
         },
         "latest/stable": {
-          "revision": "67",
+          "revision": "283",
           "confinement": "classic",
-          "version": "1.3.5",
+          "version": "2.0.10",
           "channel": "stable",
-          "epoch": "0",
-          "size": 11161600
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 12132352,
+          "released-at": "2018-12-18T13:28:02.692956Z"
         }
       },
       "tracks": [

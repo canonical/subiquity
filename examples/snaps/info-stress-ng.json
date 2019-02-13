@@ -6,18 +6,24 @@
     {
       "id": "YMJsyW4vySPdys8BCA7jx8UiOVSVhUT6",
       "title": "stress-ng",
-      "summary": "tool to load and stress a computer",
+      "summary": "A tool to load, stress test and benchmark a computer system",
       "description": "stress-ng can stress various subsystems of a computer.  It can stress load CPU, cache, disk, memory, socket and pipe I/O, scheduling and much more.  stress-ng is a re-write of the original stress tool by Amos Waterland but has many additional features such as specifying the number of bogo operations to run, execution metrics, a stress verification on memory and compute operations and considerably more stress mechanisms.",
-      "download-size": 2347008,
+      "download-size": 4104192,
       "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/stress-ng-256x256.png",
       "name": "stress-ng",
+      "publisher": {
+        "id": "A0bWW6dzToSREU4d1NDgbQy3A8ekYcjn",
+        "username": "cking-kernel-tools",
+        "display-name": "Colin King",
+        "validation": "unproven"
+      },
       "developer": "cking-kernel-tools",
       "status": "available",
       "type": "app",
-      "version": "0.09.28-20180525-4264-0e8e0ce",
-      "channel": "beta",
+      "version": "0.09.52-20190206-5237-dca7ba96",
+      "channel": "stable",
       "ignore-validation": false,
-      "revision": "335",
+      "revision": "491",
       "confinement": "strict",
       "private": false,
       "devmode": false,
@@ -26,41 +32,84 @@
       "license": "GPL-2.0",
       "screenshots": [
         {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/large_1.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/stress-ng-256x256.png"
+        },
+        {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/07/large_1.png"
         }
       ],
       "channels": {
         "latest/beta": {
-          "revision": "335",
+          "revision": "459",
           "confinement": "strict",
-          "version": "0.09.28-20180525-4264-0e8e0ce",
+          "version": "0.09.48-20181130-4835-73c6094",
           "channel": "beta",
-          "epoch": "0",
-          "size": 2347008
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 2392064,
+          "released-at": "2018-11-30T14:02:19.018904Z"
         },
         "latest/candidate": {
-          "revision": "335",
+          "revision": "491",
           "confinement": "strict",
-          "version": "0.09.28-20180525-4264-0e8e0ce",
+          "version": "0.09.52-20190206-5237-dca7ba96",
           "channel": "candidate",
-          "epoch": "0",
-          "size": 2347008
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 4104192,
+          "released-at": "2019-02-06T17:41:51.037489Z"
         },
         "latest/edge": {
-          "revision": "335",
+          "revision": "459",
           "confinement": "strict",
-          "version": "0.09.28-20180525-4264-0e8e0ce",
+          "version": "0.09.48-20181130-4835-73c6094",
           "channel": "edge",
-          "epoch": "0",
-          "size": 2347008
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 2392064,
+          "released-at": "2018-11-30T14:02:19.018904Z"
         },
         "latest/stable": {
-          "revision": "335",
+          "revision": "491",
           "confinement": "strict",
-          "version": "0.09.28-20180525-4264-0e8e0ce",
+          "version": "0.09.52-20190206-5237-dca7ba96",
           "channel": "stable",
-          "epoch": "0",
-          "size": 2347008
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 4104192,
+          "released-at": "2019-02-06T17:41:51.037489Z"
         }
       },
       "tracks": [

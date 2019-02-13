@@ -1,0 +1,66 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "37RaX7lHS7bKamfcFcXcx27EyAaCIzgG",
+      "title": "doctl",
+      "summary": "DigitalOcean command line tool",
+      "description": "Command-line tool for DigitalOcean services.",
+      "download-size": 3710976,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2017/03/do.png",
+      "name": "doctl",
+      "publisher": {
+        "id": "610MDSzhxnBJry4qv9lMaZHGdcIP51sA",
+        "username": "digitalocean",
+        "display-name": "DigitalOcean",
+        "validation": "verified"
+      },
+      "developer": "digitalocean",
+      "status": "available",
+      "type": "app",
+      "version": "1.9.0",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "18",
+      "confinement": "strict",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://github.com/digitalocean/doctl/issues",
+      "license": "Apache-2.0",
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2017/03/do.png"
+        }
+      ],
+      "channels": {
+        "latest/stable": {
+          "revision": "18",
+          "confinement": "strict",
+          "version": "1.9.0",
+          "channel": "stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 3710976,
+          "released-at": "2018-08-29T21:56:36.569632Z"
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

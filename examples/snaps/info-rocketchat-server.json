@@ -8,16 +8,22 @@
       "title": "Rocket.Chat Server",
       "summary": "Group chat server for 100s,  installed in seconds.",
       "description": "Slack-like online chat server for your office, group or family.   Up and running in seconds. Supports file sharing, video conference, geolocation, and much more.   Web and mobile client.   MIT licensed Open Source project.   List of features at  https://rocket.chat/ ,  MIT licensed source code at https://github.com/RocketChat/Rocket.Chat , 24 x 7 community support and community server at https://open.rocket.chat/",
-      "download-size": 220393472,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/1024x1024-circle.png",
+      "download-size": 234848256,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/12/icon-256.png",
       "name": "rocketchat-server",
+      "publisher": {
+        "id": "fKx24MRbDHk3JEy6Zaep0I4ydbhE0mJG",
+        "username": "rocketchat",
+        "display-name": "Rocket.Chat",
+        "validation": "verified"
+      },
       "developer": "rocketchat",
       "status": "available",
       "type": "app",
-      "version": "0.65.1",
-      "channel": "beta",
+      "version": "0.74.2",
+      "channel": "stable",
       "ignore-validation": false,
-      "revision": "1271",
+      "revision": "1364",
       "confinement": "strict",
       "private": false,
       "devmode": false,
@@ -26,51 +32,116 @@
       "license": "MIT",
       "screenshots": [
         {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.44.26.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.45.00.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.45.35.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.47.10.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.48.31.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-03-09_at_20.15.01.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-03-18_at_18.00.07.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/12/icon-256.png"
+        },
+        {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.44.26.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.45.00.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.45.35.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.47.10.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-02-22_at_21.48.31.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-03-09_at_20.15.01.png"
         },
         {
+          "type": "screenshot",
           "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/Screen_Shot_2016-03-18_at_18.00.07.png"
         }
       ],
       "channels": {
         "latest/candidate": {
-          "revision": "1271",
+          "revision": "1364",
           "confinement": "strict",
-          "version": "0.65.1",
+          "version": "0.74.2",
           "channel": "candidate",
-          "epoch": "0",
-          "size": 220393472
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 234848256,
+          "released-at": "2019-02-07T21:50:35.492747Z"
         },
         "latest/edge": {
-          "revision": "1163",
+          "revision": "1355",
           "confinement": "strict",
-          "version": "0.59.0-develop",
+          "version": "0.72.3",
           "channel": "edge",
-          "epoch": "0",
-          "size": 176312320
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 224509952,
+          "released-at": "2018-12-12T21:10:18.429157Z"
         },
         "latest/stable": {
-          "revision": "1265",
+          "revision": "1364",
           "confinement": "strict",
-          "version": "0.64.2",
+          "version": "0.74.2",
           "channel": "stable",
-          "epoch": "0",
-          "size": 218386432
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 234848256,
+          "released-at": "2019-02-07T22:29:12.567059Z"
         }
       },
       "tracks": [

@@ -1,0 +1,132 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "JSNnoJl3EqkMuWoy5Dgq8PMqZ0uNcpie",
+      "title": "powershell",
+      "summary": "PowerShell for every system!",
+      "description": "PowerShell is an automation and configuration management platform.\nIt consists of a cross-platform (Windows, Linux, and macOS)\ncommand-line shell and associated scripting language.\n\nSee https://docs.microsoft.com/en-us/powershell/scripting/powershell-core-support for support details.",
+      "download-size": 59899904,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/09/Powershell_black.ico.png",
+      "name": "powershell",
+      "publisher": {
+        "id": "perO3iKnLNYyouMURsEBXqG6HbRwd7mo",
+        "username": "microsoft-powershell",
+        "display-name": "Microsoft PowerShell",
+        "validation": "verified"
+      },
+      "developer": "microsoft-powershell",
+      "status": "available",
+      "type": "app",
+      "version": "6.1.2",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "17",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://github.com/powershell/powershell",
+      "license": "MIT",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/UbuntuSnap_b7yOPlK.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/UbuntuSnapWithGetHelp.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/09/Powershell_black.ico.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/UbuntuSnap_b7yOPlK.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/UbuntuSnapWithGetHelp.png"
+        }
+      ],
+      "channels": {
+        "latest/beta": {
+          "revision": "17",
+          "confinement": "classic",
+          "version": "6.1.2",
+          "channel": "beta",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 59899904,
+          "released-at": "2019-01-16T00:44:40.906604Z"
+        },
+        "latest/candidate": {
+          "revision": "17",
+          "confinement": "classic",
+          "version": "6.1.2",
+          "channel": "candidate",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 59899904,
+          "released-at": "2019-01-16T00:44:40.906604Z"
+        },
+        "latest/edge": {
+          "revision": "18",
+          "confinement": "classic",
+          "version": "6.1.2",
+          "channel": "edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 59899904,
+          "released-at": "2019-01-28T22:07:37.669092Z"
+        },
+        "latest/stable": {
+          "revision": "17",
+          "confinement": "classic",
+          "version": "6.1.2",
+          "channel": "stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 59899904,
+          "released-at": "2019-01-16T00:44:40.906604Z"
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

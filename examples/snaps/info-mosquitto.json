@@ -7,55 +7,117 @@
       "id": "mDxT0cGOHKSs62MOHSK5Ype0Na5UU2LB",
       "title": "mosquitto",
       "summary": "Eclipse Mosquitto MQTT broker",
-      "description": "This is a message broker that supports version 3.1 and 3.1.1 of the MQTT protocol. MQTT provides a method of carrying out messaging using a publish/subscribe model. It is lightweight, both in terms of bandwidth usage and ease of implementation. This makes it particularly useful at the edge of the network where a sensor or other simple device may be implemented using an arduino for example.\n\nThis snap runs as a service by default, using a configuration file $SNAP_COMMON/mosquitto.conf, which is typically /var/snap/mosquitto/common/mosquitto.conf. Due to the ways snaps work and are confined at the moment, it is a requirement to have a `user root` line in your configuration file so that the broker does not attempt to change to the mosquitto user.\n\nYou can also run mosquitto as a normal user, in which case it expects a configuration file at $SNAP_USER_COMMON/mosquitto.conf, or /home/user/snap/mosquitto/common/mosquitto.conf",
-      "download-size": 1748992,
-      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/03/logo-256.png",
+      "description": "This is a message broker that supports version 3.1 and 3.1.1 of the MQTT protocol. MQTT provides a method of carrying out messaging using a publish/subscribe model. It is lightweight, both in terms of bandwidth usage and ease of implementation. This makes it particularly useful at the edge of the network where a sensor or other simple device may be implemented using an arduino for example.\n\nBy default mosquitto will be installed as a system service, using the default configuration at /var/snap/mosquitto/common/default_config.conf. If this does not meet your needs, create the file /var/snap/mosquitto/common/mosquitto.conf and this will be used instead.  Note that only files inside /var/snap/mosquitto/common can be read by mosquitto, you cannot put other configuration files in /etc/mosquitto.",
+      "download-size": 1904640,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/08/mosquitto-logo-only.svg.png",
       "name": "mosquitto",
+      "publisher": {
+        "id": "l5m6dy7O2H7mosoJSwmhRa2ZA0H6yGt1",
+        "username": "ralight",
+        "display-name": "Roger Light",
+        "validation": "unproven"
+      },
       "developer": "ralight",
       "status": "available",
       "type": "app",
-      "version": "1.5",
-      "channel": "edge",
+      "version": "1.5.6",
+      "channel": "stable",
       "ignore-validation": false,
-      "revision": "35",
+      "revision": "134",
       "confinement": "strict",
       "private": false,
       "devmode": false,
       "jailmode": false,
       "contact": "https://mosquitto.org/",
       "license": "EPL-1.0",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/mosquitto_dbIlbAp.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        },
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/mosquitto_sub_d1aBoJH.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/08/mosquitto-logo-only.svg.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/mosquitto_dbIlbAp.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/06/mosquitto_sub_d1aBoJH.png"
+        }
+      ],
       "channels": {
         "latest/beta": {
-          "revision": "33",
+          "revision": "121",
           "confinement": "strict",
-          "version": "1.5",
+          "version": "1.5.5",
           "channel": "beta",
-          "epoch": "0",
-          "size": 1748992
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 1896448,
+          "released-at": "2018-12-11T16:58:23.331442Z"
         },
         "latest/candidate": {
-          "revision": "33",
+          "revision": "121",
           "confinement": "strict",
-          "version": "1.5",
+          "version": "1.5.5",
           "channel": "candidate",
-          "epoch": "0",
-          "size": 1748992
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 1896448,
+          "released-at": "2018-12-11T16:58:29.764696Z"
         },
         "latest/edge": {
-          "revision": "35",
+          "revision": "134",
           "confinement": "strict",
-          "version": "1.5",
+          "version": "1.5.6",
           "channel": "edge",
-          "epoch": "0",
-          "size": 1748992
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 1904640,
+          "released-at": "2019-02-08T21:49:30.680763Z"
         },
         "latest/stable": {
-          "revision": "33",
+          "revision": "134",
           "confinement": "strict",
-          "version": "1.5",
+          "version": "1.5.6",
           "channel": "stable",
-          "epoch": "0",
-          "size": 1748992
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 1904640,
+          "released-at": "2019-02-08T21:59:17.75809Z"
         }
       },
       "tracks": [

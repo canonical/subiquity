@@ -1,0 +1,124 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "oTlBRwmiNP4yYPYhhAipQPZ5RPvOpuOm",
+      "title": "kata-containers",
+      "summary": "Lightweight virtual machines that seamlessly plug into the containers ecosystem",
+      "description": "Kata Containers is an open source project and community working to build a standard implementation of lightweight Virtual Machines (VMs) that feel and perform like containers, but provide the workload isolation and security advantages of VMs",
+      "download-size": 56729600,
+      "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2018/07/33289952.png",
+      "name": "kata-containers",
+      "publisher": {
+        "id": "tN53rTX0uT47Sk1mau6s2xEF6yGWhGFy",
+        "username": "katacontainers",
+        "display-name": "Kata Containers",
+        "validation": "verified"
+      },
+      "developer": "katacontainers",
+      "status": "available",
+      "type": "app",
+      "version": "1.5.0",
+      "channel": "stable",
+      "ignore-validation": false,
+      "revision": "31",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": "https://katacontainers.io/",
+      "license": "Apache-2.0 OR BSD-2-Clause OR BSD-3-Clause-Clear OR GPL-2.0 OR LGPL-2.1 OR MIT",
+      "screenshots": [
+        {
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/07/Screenshot_from_2018-07-02_13-29-47.png",
+          "note": "'screenshots' is deprecated; use 'media' instead. More info at https://forum.snapcraft.io/t/8086"
+        }
+      ],
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/07/33289952.png"
+        },
+        {
+          "type": "screenshot",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2018/07/Screenshot_from_2018-07-02_13-29-47.png"
+        }
+      ],
+      "channels": {
+        "latest/beta": {
+          "revision": "31",
+          "confinement": "classic",
+          "version": "1.5.0",
+          "channel": "beta",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 56729600,
+          "released-at": "2019-01-30T13:59:26.093541Z"
+        },
+        "latest/candidate": {
+          "revision": "31",
+          "confinement": "classic",
+          "version": "1.5.0",
+          "channel": "candidate",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 56729600,
+          "released-at": "2019-01-30T13:59:26.093541Z"
+        },
+        "latest/edge": {
+          "revision": "48",
+          "confinement": "classic",
+          "version": "1.5.0",
+          "channel": "edge",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 56754176,
+          "released-at": "2019-02-12T21:10:31.167993Z"
+        },
+        "latest/stable": {
+          "revision": "31",
+          "confinement": "classic",
+          "version": "1.5.0",
+          "channel": "stable",
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 56729600,
+          "released-at": "2019-01-30T13:59:26.093541Z"
+        }
+      },
+      "tracks": [
+        "latest"
+      ]
+    }
+  ],
+  "sources": [
+    "store"
+  ],
+  "suggested-currency": "USD"
+}

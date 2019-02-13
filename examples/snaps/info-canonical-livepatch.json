@@ -8,54 +8,98 @@
       "title": "canonical-livepatch",
       "summary": "Canonical Livepatch Client",
       "description": "Canonical Livepatch Client",
-      "download-size": 5152768,
+      "download-size": 7811072,
       "icon": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/pictogram-upgrade-orange-hex.svg.png",
       "name": "canonical-livepatch",
+      "publisher": {
+        "id": "canonical",
+        "username": "canonical",
+        "display-name": "Canonical",
+        "validation": "verified"
+      },
       "developer": "canonical",
       "status": "available",
       "type": "app",
-      "version": "8.0.2",
-      "channel": "beta",
+      "version": "8.1.0",
+      "channel": "stable",
       "ignore-validation": false,
-      "revision": "41",
+      "revision": "54",
       "confinement": "strict",
       "private": false,
       "devmode": false,
       "jailmode": false,
-      "contact": "mailto:snappy-canonical-storeaccount@canonical.com",
+      "contact": "mailto:snaps@canonical.com",
       "license": "Proprietary",
+      "media": [
+        {
+          "type": "icon",
+          "url": "https://dashboard.snapcraft.io/site_media/appmedia/2016/08/pictogram-upgrade-orange-hex.svg.png"
+        }
+      ],
       "channels": {
         "latest/beta": {
-          "revision": "41",
+          "revision": "50",
           "confinement": "strict",
-          "version": "8.0.2",
+          "version": "8.0.6",
           "channel": "beta",
-          "epoch": "0",
-          "size": 5152768
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 5148672,
+          "released-at": "2018-10-08T19:44:18.015358Z"
         },
         "latest/candidate": {
-          "revision": "41",
+          "revision": "54",
           "confinement": "strict",
-          "version": "8.0.2",
+          "version": "8.1.0",
           "channel": "candidate",
-          "epoch": "0",
-          "size": 5152768
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 7811072,
+          "released-at": "2018-12-11T09:46:31.11059Z"
         },
         "latest/edge": {
-          "revision": "41",
+          "revision": "58",
           "confinement": "strict",
-          "version": "8.0.2",
+          "version": "8.2.0",
           "channel": "edge",
-          "epoch": "0",
-          "size": 5152768
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 7839744,
+          "released-at": "2019-02-04T17:39:17.242736Z"
         },
         "latest/stable": {
-          "revision": "41",
+          "revision": "54",
           "confinement": "strict",
-          "version": "8.0.2",
+          "version": "8.1.0",
           "channel": "stable",
-          "epoch": "0",
-          "size": 5152768
+          "epoch": {
+            "read": [
+              0
+            ],
+            "write": [
+              0
+            ]
+          },
+          "size": 7811072,
+          "released-at": "2018-12-13T10:23:08.936315Z"
         }
       },
       "tracks": [
