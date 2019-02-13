@@ -38,7 +38,7 @@ class Header(WidgetWrap):
             Color.frame_header(
                 Pile([
                     Text(""),
-                    Padding.center_79(Text(title)),
+                    Padding.center_79(Text(title), min_width=76),
                     Text(""),
                 ])))
 
@@ -58,9 +58,8 @@ class Footer(WidgetWrap):
 
     def __init__(self, message, current, complete):
         if isinstance(message, str):
-            message_widget = Padding.center_79(Text(message))
-        else:
-            message_widget = Padding.center_79(message)
+            message = Text(message)
+        message = Padding.center_79(message, min_width=76)
         progress_bar = Padding.center_60(
             StepsProgressBar(normal='progress_incomplete',
                              complete='progress_complete',
@@ -68,6 +67,6 @@ class Footer(WidgetWrap):
         status = [
             progress_bar,
             Padding.line_break(""),
-            message_widget,
+            message,
         ]
         super().__init__(Color.frame_footer(Pile(status)))

@@ -260,7 +260,7 @@ def screen(rows, buttons, focus_buttons=True, excerpt=None, narrow_rows=False):
     pile = Pile(excerpt_rows + body)
     if focus_buttons:
         pile.focus_position = len(excerpt_rows) + 3
-    return Padding.center_79(pile)
+    return Padding.center_79(pile, min_width=76)
 
 
 class CursorOverride(WidgetDecoration):

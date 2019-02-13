@@ -41,7 +41,6 @@ from subiquitycore.ui.buttons import (
     menu_btn,
     )
 from subiquitycore.ui.container import (
-    ListBox,
     Pile,
     WidgetWrap,
     )
@@ -51,7 +50,7 @@ from subiquitycore.ui.utils import (
     button_pile,
     Color,
     make_action_menu_row,
-    Padding,
+    screen,
     )
 from .network_configure_manual_interface import (
     AddVlanStretchy,
@@ -120,24 +119,26 @@ class NetworkView(BaseView):
         bp = button_pile([self._create_bond_btn])
         bp.align = 'left'
 
-        self.listbox = ListBox([self.device_table] + [
+        rows = [
+            self.device_table,
             bp,
-        ])
+        ]
+
+        buttons = button_pile([
+                    done_btn(_("Done"), on_press=self.done),
+                    back_btn(_("Back"), on_press=self.cancel),
+                    ])
         self.bottom = Pile([
-                Text(""),
-                self._build_buttons(),
-                Text(""),
-                ])
+            ('pack', buttons),
+        ])
+
         self.error_showing = False
 
-        self.frame = Pile([
-            ('pack', Text("")),
-            ('pack', Padding.center_79(Text(_(self.excerpt)))),
-            ('pack', Text("")),
-            Padding.center_90(self.listbox),
-            ('pack', self.bottom)])
-        self.frame.set_focus(self.bottom)
-        super().__init__(self.frame)
+        super().__init__(screen(
+            rows=rows,
+            buttons=self.bottom,
+            focus_buttons=True,
+            excerpt=self.excerpt))
 
     def _build_buttons(self):
         back = back_btn(_("Back"), on_press=self.cancel)
@@ -291,8 +292,8 @@ class NetworkView(BaseView):
     def show_network_error(self, action, info=None):
         self.error_showing = True
         self.bottom.contents[0:0] = [
-            (Text(""), self.bottom.options()),
             (Color.info_error(self.error), self.bottom.options()),
+            (Text(""), self.bottom.options()),
             ]
         if action == 'stop-networkd':
             exc = info[0]

@@ -22,10 +22,10 @@ import binascii
 import logging
 import re
 
-from urwid import connect_signal
+from urwid import connect_signal, Text
 
 from subiquitycore.ui.buttons import back_btn, forward_btn
-from subiquitycore.ui.utils import screen
+from subiquitycore.ui.utils import button_pile, screen
 from subiquitycore.view import BaseView
 from subiquitycore.ui.interactive import (
     PasswordEditor,
@@ -65,7 +65,7 @@ class InstallpathView(BaseView):
         self.items = []
         back = back_btn(_("Back"), on_press=self.cancel)
         super().__init__(screen(
-            self._build_choices(), [back],
+            [button_pile(self._build_choices()), Text("")], [back],
             focus_buttons=False, excerpt=_(self.excerpt)))
 
     def _build_choices(self):
