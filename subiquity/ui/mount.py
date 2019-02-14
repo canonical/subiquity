@@ -100,10 +100,13 @@ class MountSelector(WidgetWrap):
     def value(self, val):
         if val is None:
             self._selector.value = LEAVE_UNMOUNTED
+            self._showhide_other(False)
         elif val in common_mountpoints:
             self._selector.value = val
+            self._showhide_other(False)
         else:
             self._selector.value = OTHER
+            self._showhide_other(True)
             if not val.startswith('/'):
                 raise ValueError("%s does not start with /", val)
             self._other.value = val[1:]
