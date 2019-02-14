@@ -205,7 +205,6 @@ to put the boot partition.")
 
 
 def get_possible_components(model, existing, cur_devices, device_ok):
-
     possible_components = []
 
     def check(dev):
@@ -217,7 +216,7 @@ def get_possible_components(model, existing, cur_devices, device_ok):
         else:
             ok_parts = []
             for part in dev.partitions():
-                if device_ok(part):
+                if check(part):
                     ok_parts.append((PART, part))
             if len(ok_parts) > 0:
                 possible_components.append((LABEL, dev))
