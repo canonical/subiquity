@@ -242,6 +242,8 @@ class PartitionStretchy(Stretchy):
                 if mount is not None:
                     initial['mount'] = mount.path
                     del mountpoints[mount.path]
+                else:
+                    initial['mount'] = None
             else:
                 initial['fstype'] = self.model.fs_by_name[None]
             if isinstance(disk, LVM_VolGroup):
