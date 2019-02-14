@@ -326,12 +326,15 @@ class PartitionStretchy(Stretchy):
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
+        data = form.as_data()
+        if self.partition is not None and self.partition.flag == "boot":
+            data['fstype'] = self.model.fs_by_name[self.partition.fs().fstype]
+            data['mount'] = self.partition.fs().mount().path
         if isinstance(self.disk, LVM_VolGroup):
-            self.controller.logical_volume_handler(
-                self.disk, self.partition, form.as_data())
+            handler = self.controller.logical_volume_handler
         else:
-            self.controller.partition_disk_handler(
-                self.disk, self.partition, form.as_data())
+            handler = self.controller.partition_disk_handler
+        handler(self.disk, self.partition, data)
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 
