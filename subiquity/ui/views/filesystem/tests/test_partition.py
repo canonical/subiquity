@@ -74,6 +74,7 @@ class PartitionViewTests(unittest.TestCase):
         partition = model.add_partition(disk, 512*(2**20))
         model.add_filesystem(partition, "ext4")
         view, stretchy = self.make_view(model, disk, partition)
+        self.assertTrue(stretchy.form.done_btn.enabled)
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {

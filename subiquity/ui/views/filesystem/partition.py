@@ -157,6 +157,8 @@ class PartitionForm(Form):
             return None
 
     def validate_name(self):
+        if self.lvm_names is None:
+            return None
         v = self.name.value
         if not v:
             return _("The name of a logical volume cannot be empty")
@@ -225,7 +227,7 @@ class PartitionStretchy(Stretchy):
         if isinstance(disk, LVM_VolGroup):
             lvm_names = {p.name for p in disk.partitions()}
         else:
-            lvm_names = set()
+            lvm_names = None
         if self.partition:
             if self.partition.flag == "bios_grub":
                 label = None
