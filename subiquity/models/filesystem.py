@@ -603,6 +603,7 @@ class LVM_VolGroup(_Device):
     type = attr.ib(default="lvm_volgroup")
     name = attr.ib(default=None)
     devices = attr.ib(default=attr.Factory(set))  # set([_Formattable])
+    _passphrase = attr.ib(default=None)
 
     @property
     def size(self):
@@ -694,6 +695,15 @@ class LVM_LogicalVolume(_Formattable):
 
     ok_for_raid = False
     ok_for_lvm_vg = False
+
+
+@attr.s(cmp=False)
+class DM_Crypt:
+    id = attr.ib(default=id_factory("crypt"))
+    type = attr.ib(default="dm_crypt")
+    dm_name = attr.ib(default=None)
+    volume = attr.ib(default=None)  # _Formattable
+    key = attr.ib(default=None)
 
 
 @attr.s(cmp=False)
