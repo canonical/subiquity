@@ -7,6 +7,7 @@ from subiquitycore.models.network import NetworkDev
 from subiquitycore.testing import view_helpers
 from subiquitycore.ui.views.network_configure_manual_interface import (
     EditNetworkStretchy,
+    ViewInterfaceInfo,
     )
 from subiquitycore.view import BaseView
 
@@ -67,3 +68,34 @@ class TestNetworkConfigureIPv4InterfaceView(unittest.TestCase):
         rinfv = stretchy.device.remove_ip_networks_for_version
         rinfv.assert_called_once_with(4)
         stretchy.device.add_network.assert_called_once_with(4, expected)
+
+
+class FakeLink:
+    def serialize(self):
+        return "INFO"
+
+
+class TestViewInterfaceInfo(unittest.TestCase):
+
+    def make_view(self, *, info):
+        device = mock.create_autospec(spec=NetworkDev)
+        device.config = {}
+        device.info = info
+        device.type = "vlan"
+        base_view = BaseView(urwid.Text(""))
+        stretchy = ViewInterfaceInfo(base_view, device)
+        base_view.show_stretchy_overlay(stretchy)
+        return base_view, stretchy
+
+    def test_view(self):
+        view, stretchy = self.make_view(info=FakeLink())
+        text = view_helpers.find_with_pred(
+            view, lambda w: isinstance(w, urwid.Text) and "INFO" in w.text)
+        self.assertNotEqual(text, None)
+
+    def test_view_virtual(self):
+        view, stretchy = self.make_view(info=None)
+        text = view_helpers.find_with_pred(
+            view, lambda w: isinstance(
+                w, urwid.Text) and "Configured but not yet created" in w.text)
+        self.assertNotEqual(text, None)

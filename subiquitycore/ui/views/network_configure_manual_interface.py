@@ -309,8 +309,12 @@ class ViewInterfaceInfo(Stretchy):
     def __init__(self, parent, device):
         log.debug('ViewInterfaceInfo: {}'.format(device))
         self.parent = parent
-        result = yaml.dump(device._net_info.serialize(),
-                           default_flow_style=False)
+        if device.info is not None:
+            result = yaml.dump(
+                device.info.serialize(), default_flow_style=False)
+        else:
+            result = "Configured but not yet created {type} interface.".format(
+                type=device.type)
         widgets = [
             Text(result),
             Text(""),
