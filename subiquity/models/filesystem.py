@@ -609,7 +609,7 @@ class LVM_VolGroup(_Device):
     type = attr.ib(default="lvm_volgroup")
     name = attr.ib(default=None)
     devices = attr.ib(default=attr.Factory(set))  # set([_Formattable])
-    _passphrase = attr.ib(default=None)
+    _passphrase = attr.ib(default=None, repr=False)
 
     @property
     def size(self):

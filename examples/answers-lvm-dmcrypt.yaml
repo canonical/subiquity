@@ -38,8 +38,8 @@ Filesystem:
           - [disk index 0, part 1]
           - [disk index 0, part 2]
         encrypt: true
-        password: "foo"
-        confirm_password: "foo"
+        password: "passw0rd"
+        confirm_password: "passw0rd"
     - obj: [volgroup name vg-1]
       action: CREATE_LV
       data:
