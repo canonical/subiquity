@@ -599,6 +599,9 @@ class Raid(_Device):
     component_name = "component"
 
 
+LUKS_OVERHEAD = 2*(2**20)  # check this
+
+
 @attr.s(cmp=False)
 class LVM_VolGroup(_Device):
 
@@ -610,7 +613,10 @@ class LVM_VolGroup(_Device):
 
     @property
     def size(self):
-        return get_lvm_size(self.devices)
+        size = get_lvm_size(self.devices)
+        if self._passphrase:
+            size -= LUKS_OVERHEAD
+        return size
 
     @property
     def free_for_partitions(self):
