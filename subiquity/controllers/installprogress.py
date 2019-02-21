@@ -124,6 +124,9 @@ class InstallProgressController(BaseController):
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
 
+    def tpath(self, *path):
+        return os.path.join(self.base_model.target, *path)
+
     def filesystem_config_done(self):
         self.curtin_start_install()
 
@@ -291,18 +294,14 @@ class InstallProgressController(BaseController):
 
     def _bg_cleanup_apt(self):
         if self.opts.dry_run:
-            cmd = [
-                "sleep", str(2/self.scale_factor),
-                ]
+            cmds = [["sleep", str(1/self.scale_factor)]]
         else:
-            os.unlink(
-                os.path.join(
-                    self.base_model.target, "etc/apt/sources.list.d/iso.list"))
-            cmd = [
-                sys.executable, "-m", "curtin", "in-target", "-t", "/target",
-                "--", "apt-get", "update",
+            cmds = [
+                ["umount", self.tpath('etc/apt')],
+                ["umount", self.tpath('var/lib/apt/lists')],
                 ]
-        self._bg_run_command_logged(cmd)
+        for cmd in cmds:
+            self._bg_run_command_logged(cmd)
 
     def start_postinstall_configuration(self):
         self.copy_logs_to_target()
@@ -340,7 +339,7 @@ class InstallProgressController(BaseController):
                 ])
         tasks.extend([
             ('cleanup', InstallTask(
-                self, "cleaning up apt configuration",
+                self, "restoring apt configuration",
                 self._bg_cleanup_apt)),
             ])
         ts = TaskSequence(self.run_in_bg, tasks, w(self))
@@ -358,7 +357,7 @@ class InstallProgressController(BaseController):
     def copy_logs_to_target(self):
         if self.opts.dry_run:
             return
-        target_logs = os.path.join(self.base_model.target, 'var/log/installer')
+        target_logs = self.tpath('var/log/installer')
         utils.run_command(['cp', '-aT', '/var/log/installer', target_logs])
         try:
             with open(os.path.join(target_logs,
