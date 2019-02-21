@@ -223,6 +223,7 @@ class NetworkController(BaseController, TaskWatcher):
         self.observer, self._observer_fds = (
             self.prober.probe_network(self.network_event_receiver))
         self.start_watching()
+        self._done_by_action = False
 
     def stop_watching(self):
         for handle in self._observer_handles:
@@ -310,9 +311,7 @@ class NetworkController(BaseController, TaskWatcher):
                 action['data'],
                 action.get("submit", True))
         elif action['action'] == 'done':
-            # The first done fails in dry run mode.
-            self.ui.frame.body.done()
-            yield
+            self._done_by_action = True
             self.ui.frame.body.done()
         else:
             raise Exception("could not process action {}".format(action))
@@ -433,7 +432,7 @@ class NetworkController(BaseController, TaskWatcher):
     def task_error(self, stage, info=None):
         self.ui.frame.body.remove_overlay()
         self.ui.frame.body.show_network_error(stage, info)
-        if self.answers.get('accept-default', False):
+        if self.answers.get('accept-default', False) or self._done_by_action:
             self.network_finish(self.model.render())
 
     def tasks_finished(self):
