@@ -279,7 +279,7 @@ class InstallProgressController(BaseController):
     def _bg_install_openssh_server(self):
         if self.opts.dry_run:
             cmd = [
-                "sleep", "2",
+                "sleep", str(2/self.scale_factor),
                 ]
         else:
             cmd = [
@@ -292,7 +292,7 @@ class InstallProgressController(BaseController):
     def _bg_cleanup_apt(self):
         if self.opts.dry_run:
             cmd = [
-                "sleep", "2",
+                "sleep", str(2/self.scale_factor),
                 ]
         else:
             os.unlink(

@@ -20,7 +20,7 @@ def report(e):
         e['SYSLOG_IDENTIFIER'] = event_identifier
         e['CODE_LINE'] = int(e['CODE_LINE'])
         journal.send(**e)
-    elif e['SYSLOG_IDENTIFIER'].startswith("curtin_log"):
+    elif e['SYSLOG_IDENTIFIER'].startswith("curtin_log") and scale_factor < 10:
         print(e['MESSAGE'], flush=True)
 
 prev_ev = None

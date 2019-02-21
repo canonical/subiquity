@@ -208,4 +208,5 @@ class KeyboardModel:
             run_command(['setupcon', '--save', '--force', '--keyboard-only'])
             run_command(['/snap/bin/subiquity.subiquity-loadkeys'])
         else:
-            run_command(['sleep', '1'])
+            scale = float(os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
+            run_command(['sleep', str(1/scale)])

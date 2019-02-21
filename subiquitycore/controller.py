@@ -37,6 +37,7 @@ class BaseController(ABC):
         self.base_model = common['base_model']
         self.all_answers = common['answers']
         self.input_filter = common['input_filter']
+        self.scale_factor = common['scale_factor']
 
     def register_signals(self):
         """Defines signals associated with controller from model."""
@@ -100,7 +101,9 @@ class BaseController(ABC):
         for action in actions:
             yield from self._answers_action(action)
 
-    def _run_iterator(self, it, delay=0.2):
+    def _run_iterator(self, it, delay=None):
+        if delay is None:
+            delay = 0.2/self.scale_factor
         try:
             next(it)
         except StopIteration:
