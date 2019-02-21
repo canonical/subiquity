@@ -263,6 +263,7 @@ class Application:
         else:
             input_filter = DummyKeycodesFilter()
 
+        scale = float(os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
         self.common = {
             "ui": ui,
             "opts": opts,
@@ -272,6 +273,7 @@ class Application:
             "pool": futures.ThreadPoolExecutor(4),
             "answers": answers,
             "input_filter": input_filter,
+            "scale_factor": scale,
         }
         if opts.screens:
             self.controllers = [c for c in self.controllers

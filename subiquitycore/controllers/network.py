@@ -372,10 +372,11 @@ class NetworkController(BaseController, TaskWatcher):
 
         self.model.parse_netplan_configs(self.root)
         if self.opts.dry_run:
+            delay = 0.1/self.scale_factor
             tasks = [
-                ('one', BackgroundProcess(['sleep', '0.1'])),
-                ('two', PythonSleep(0.1)),
-                ('three', BackgroundProcess(['sleep', '0.1'])),
+                ('one', BackgroundProcess(['sleep', str(delay)])),
+                ('two', PythonSleep(delay)),
+                ('three', BackgroundProcess(['sleep', str(delay)])),
                 ]
             if os.path.exists('/lib/netplan/generate'):
                 # If netplan appears to be installed, run generate to at
