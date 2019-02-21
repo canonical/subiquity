@@ -207,7 +207,7 @@ class NetworkDev(object):
         if network['nameservers']:
             ns.setdefault('addresses', []).extend(network['nameservers'])
         if network['searchdomains']:
-            ns.setdefault('search', []).extend(network['search'])
+            ns.setdefault('search', []).extend(network['searchdomains'])
 
 
 class NetworkModel(object):

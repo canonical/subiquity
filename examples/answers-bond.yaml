@@ -19,6 +19,7 @@ Network:
       manual-data:
         subnet: "10.2.0.0/24"
         address: 10.2.0.1
+        searchdomains: lab
     - action: done
 Proxy:
   proxy: ""
