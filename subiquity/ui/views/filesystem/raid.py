@@ -85,6 +85,7 @@ class RaidForm(CompoundDiskForm):
     def __init__(self, model, possible_components, initial, raid_names):
         self.raid_names = raid_names
         super().__init__(model, possible_components, initial)
+        self.size.enabled = False
 
     name = RaidnameField(_("Name:"))
     level = ChoiceField(_("RAID Level:"), choices=raidlevel_choices)

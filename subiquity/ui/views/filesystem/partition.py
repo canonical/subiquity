@@ -157,6 +157,8 @@ class PartitionForm(Form):
             return None
 
     def validate_name(self):
+        if self.lvm_names is None:
+            return None
         v = self.name.value
         if not v:
             return _("The name of a logical volume cannot be empty")
@@ -225,7 +227,7 @@ class PartitionStretchy(Stretchy):
         if isinstance(disk, LVM_VolGroup):
             lvm_names = {p.name for p in disk.partitions()}
         else:
-            lvm_names = set()
+            lvm_names = None
         if self.partition:
             if self.partition.flag == "bios_grub":
                 label = None
@@ -242,6 +244,8 @@ class PartitionStretchy(Stretchy):
                 if mount is not None:
                     initial['mount'] = mount.path
                     del mountpoints[mount.path]
+                else:
+                    initial['mount'] = None
             else:
                 initial['fstype'] = self.model.fs_by_name[None]
             if isinstance(disk, LVM_VolGroup):
@@ -326,12 +330,15 @@ class PartitionStretchy(Stretchy):
 
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
+        data = form.as_data()
+        if self.partition is not None and self.partition.flag == "boot":
+            data['fstype'] = self.model.fs_by_name[self.partition.fs().fstype]
+            data['mount'] = self.partition.fs().mount().path
         if isinstance(self.disk, LVM_VolGroup):
-            self.controller.logical_volume_handler(
-                self.disk, self.partition, form.as_data())
+            handler = self.controller.logical_volume_handler
         else:
-            self.controller.partition_disk_handler(
-                self.disk, self.partition, form.as_data())
+            handler = self.controller.partition_disk_handler
+        handler(self.disk, self.partition, data)
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 
