@@ -599,7 +599,7 @@ class Raid(_Device):
     component_name = "component"
 
 
-LUKS_OVERHEAD = 2*(2**20)  # check this
+LUKS_OVERHEAD = 16*(2**20)
 
 
 @attr.s(cmp=False)
