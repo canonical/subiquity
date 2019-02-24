@@ -15,13 +15,14 @@ setup_overlay () {
 $PY -m curtin apt-config
 
 setup_overlay $TARGET_MOUNT_POINT/etc/apt
-setup_overlay $TARGET_MOUNT_POINT/var/lib/apt/lists
 
 cat > "/tmp/sources.list" <<EOF
 deb file:///run/cdrom $(lsb_release -sc) main restricted
 EOF
 if [ $HAS_NETWORK = 'true' ]; then
     cat "$TARGET_MOUNT_POINT/etc/apt/sources.list" >> "/tmp/sources.list"
+else
+    setup_overlay $TARGET_MOUNT_POINT/var/lib/apt/lists
 fi
 mv /tmp/sources.list "$TARGET_MOUNT_POINT/etc/apt/sources.list"
 $PY -m curtin in-target -- apt-get update

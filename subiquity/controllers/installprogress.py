@@ -298,8 +298,14 @@ class InstallProgressController(BaseController):
         else:
             cmds = [
                 ["umount", self.tpath('etc/apt')],
-                ["umount", self.tpath('var/lib/apt/lists')],
                 ]
+            if self.base_model.network.has_network:
+                cmds.append([
+                    sys.executable, "-m", "curtin", "in-target", "-t",
+                    "/target", "--", "apt-get", "update",
+                    ])
+            else:
+                cmds.append(["umount", self.tpath('var/lib/apt/lists')])
         for cmd in cmds:
             self._bg_run_command_logged(cmd)
 
