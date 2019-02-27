@@ -44,7 +44,12 @@ from subiquitycore.ui.table import (
     TablePile,
     TableRow,
     )
-from subiquitycore.ui.utils import button_pile, Color, screen
+from subiquitycore.ui.utils import (
+    button_pile,
+    Color,
+    Padding,
+    screen,
+    )
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
@@ -106,7 +111,6 @@ class SnapInfoView(WidgetWrap):
     def __init__(self, parent, snap, cur_channel):
         self.parent = parent
         self.snap = snap
-        self.channels = []
         self.needs_focus = True
 
         self.description = Text(snap.description.replace('\r', '').strip())
@@ -114,6 +118,7 @@ class SnapInfoView(WidgetWrap):
 
         latest_update = datetime.datetime.min
         radio_group = []
+        channel_rows = []
         for csi in snap.channels:
             latest_update = max(latest_update, csi.released_at)
             btn = StarRadioButton(
@@ -124,16 +129,17 @@ class SnapInfoView(WidgetWrap):
                 user_data=SnapSelection(
                     channel=csi.channel_name,
                     is_classic=csi.confinement == "classic"))
-            self.channels.append(Color.menu_button(TableRow([
+            channel_rows.append(Color.menu_button(TableRow([
                 btn,
-                Text("{} ({})".format(csi.version, csi.revision)),
+                Text(csi.version),
+                Text("(" + csi.revision + ")"),
                 Text(humanize_size(csi.size)),
                 Text(format_datetime(csi.released_at)),
                 Text(csi.confinement),
             ])))
 
         first_info_row = TableRow([
-            (2, Text(
+            (3, Text(
                 [
                     ('info_minor', "LICENSE: "),
                     snap.license,
@@ -144,12 +150,28 @@ class SnapInfoView(WidgetWrap):
                     format_datetime(latest_update),
                 ])),
             ])
-        headings = ["CHANNEL", "VERSION", "SIZE", "PUBLISHED", "CONFINEMENT"]
-        heading_row = Color.info_minor(TableRow(map(Text, headings)))
-        info_table = TablePile([
-            first_info_row, TableRow([Text("")]), heading_row], spacing=2)
-        lb_channels = NoTabCyclingTableListBox(self.channels, spacing=2)
-        info_table.bind(lb_channels)
+        heading_row = Color.info_minor(TableRow([
+            Text("CHANNEL"),
+            (2, Text("VERSION")),
+            Text("SIZE"),
+            Text("PUBLISHED"),
+            Text("CONFINEMENT"),
+            ]))
+        colspecs = {
+            1: ColSpec(can_shrink=True),
+            }
+        info_table = TablePile(
+            [
+                first_info_row,
+                TableRow([Text("")]),
+                heading_row,
+            ],
+            spacing=2, colspecs=colspecs)
+        self.lb_channels = NoTabCyclingTableListBox(
+            channel_rows,
+            spacing=2, colspecs=colspecs)
+        info_table.bind(self.lb_channels)
+        self.info_padding = Padding.pull_1(info_table)
 
         publisher = [('info_minor header', "by: "), snap.publisher]
         if snap.verified:
@@ -165,9 +187,9 @@ class SnapInfoView(WidgetWrap):
             ('pack',      Text("")),
             self.lb_description,  # overwritten in render()
             ('pack',      Text("")),
-            ('pack',      info_table),
+            ('pack',      self.info_padding),
             ('pack',      Text("")),
-            ('weight', 1, lb_channels),
+            ('weight', 1, self.lb_channels),
             ]
         self.description_index = contents.index(self.lb_description)
         self.pile = Pile(contents)
@@ -187,8 +209,10 @@ class SnapInfoView(WidgetWrap):
             if o == pack_option:
                 rows_available -= w.rows((maxcol,), focus)
 
-        rows_wanted_description = self.description.rows((maxcol,), False)
-        rows_wanted_channels = len(self.channels)
+        rows_wanted_description = self.description.rows((maxcol-1,), False)
+        rows_wanted_channels = 0
+        for row in self.lb_channels._w.original_widget.body:
+            rows_wanted_channels += row.rows((maxcol,), False)
 
         log.debug('rows_available %s', rows_available)
         log.debug(
@@ -198,9 +222,11 @@ class SnapInfoView(WidgetWrap):
 
         if rows_wanted_channels + rows_wanted_description <= rows_available:
             description_rows = rows_wanted_description
+            channel_rows = rows_wanted_channels
         else:
             if rows_wanted_description < 2*rows_available/3:
                 description_rows = rows_wanted_description
+                channel_rows = rows_available - description_rows
             else:
                 channel_rows = max(
                     min(rows_wanted_channels, int(rows_available/3)), 3)
@@ -213,6 +239,10 @@ class SnapInfoView(WidgetWrap):
             self.lb_description.base_widget._selectable = False
         else:
             self.lb_description.base_widget._selectable = True
+        if channel_rows >= rows_wanted_channels:
+            self.info_padding.right = 0
+        else:
+            self.info_padding.right = 1
         if self.needs_focus:
             self.pile._select_first_selectable()
             self.needs_focus = False
