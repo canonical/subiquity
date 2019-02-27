@@ -488,17 +488,24 @@ class ScrollBarListBox(urwid.WidgetDecoration):
             #
             # rows and that being < 1 simplifies to the below.
             o = self.bar.base_widget.options
-            if maxrow*maxrow < height - 2:
+            if maxrow < top + bottom:
                 boxopt = o('given', 1)
             else:
                 boxopt = o('weight', maxrow)
 
+            top_arrow = self.top
+            if top == 0:
+                top_arrow = urwid.AttrMap(top_arrow, 'scrollbar')
+            bot_arrow = self.bot
+            if bottom == 0:
+                bot_arrow = urwid.AttrMap(bot_arrow, 'scrollbar')
+
             self.bar.base_widget.contents[:] = [
-                (self.top, o('given', 1)),
+                (top_arrow, o('given', 1)),
                 (self.bg,  o('weight', top)),
                 (self.box, boxopt),
                 (self.bg,  o('weight', bottom)),
-                (self.bot, o('given', 1)),
+                (bot_arrow, o('given', 1)),
                 ]
             lb_canvas = lb.render((maxcol - 1, maxrow), focus)
             bar_canvas = self.bar.render((1, maxrow), focus)
