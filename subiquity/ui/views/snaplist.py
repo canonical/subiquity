@@ -13,12 +13,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 import logging
 import os
 
 import yaml
 
 from urwid import (
+    AttrMap,
     CheckBox,
     LineBox,
     ListBox as UrwidListBox,
@@ -39,9 +41,15 @@ from subiquitycore.ui.container import (
 from subiquitycore.ui.table import (
     AbstractTable,
     ColSpec,
+    TablePile,
     TableRow,
     )
-from subiquitycore.ui.utils import button_pile, Color, screen
+from subiquitycore.ui.utils import (
+    button_pile,
+    Color,
+    Padding,
+    screen,
+    )
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
@@ -53,10 +61,9 @@ log = logging.getLogger("subiquity.views.snaplist")
 
 class StarRadioButton(RadioButton):
     states = {
-        True: SelectableIcon(" *"),
-        False: SelectableIcon("  "),
+        True: SelectableIcon("(*)"),
+        False: SelectableIcon("( )"),
         }
-    reserve_columns = 3
 
 
 class NoTabCyclingTableListBox(AbstractTable):
@@ -64,6 +71,33 @@ class NoTabCyclingTableListBox(AbstractTable):
     def _make(self, rows):
         body = SimpleFocusListWalker(rows)
         return ScrollBarListBox(UrwidListBox(body))
+
+
+def format_datetime(d):
+    delta = datetime.datetime.now() - d
+    if delta.total_seconds() < 60:
+        return _("just now")
+    elif delta.total_seconds() < 60*60:
+        amount = int(delta.total_seconds()/60)
+        if amount == 1:
+            unit = _("minute")
+        else:
+            unit = _("minutes")
+    elif delta.total_seconds() < 60*60*24:
+        amount = int(delta.total_seconds()/(60*60))
+        if amount == 1:
+            unit = _("hour")
+        else:
+            unit = _("hours")
+    elif delta.days < 30:
+        amount = delta.days
+        if amount == 1:
+            unit = _("day")
+        else:
+            unit = _("days")
+    else:
+        return str(d.date())
+    return _("{amount:2} {unit} ago").format(amount=amount, unit=unit)
 
 
 class SnapInfoView(WidgetWrap):
@@ -77,48 +111,83 @@ class SnapInfoView(WidgetWrap):
     def __init__(self, parent, snap, cur_channel):
         self.parent = parent
         self.snap = snap
-        self.channels = []
         self.needs_focus = True
 
         self.description = Text(snap.description.replace('\r', '').strip())
         self.lb_description = ListBox([self.description])
 
+        latest_update = datetime.datetime.min
         radio_group = []
+        channel_rows = []
         for csi in snap.channels:
-            notes = '-'
-            if csi.confinement != "strict":
-                notes = csi.confinement
+            latest_update = max(latest_update, csi.released_at)
             btn = StarRadioButton(
                 radio_group,
-                "{}:".format(csi.channel_name),
+                csi.channel_name,
                 state=csi.channel_name == cur_channel,
                 on_state_change=self.state_change,
                 user_data=SnapSelection(
                     channel=csi.channel_name,
                     is_classic=csi.confinement == "classic"))
-            self.channels.append(Color.menu_button(TableRow([
+            channel_rows.append(Color.menu_button(TableRow([
                 btn,
                 Text(csi.version),
-                Text("({})".format(csi.revision)),
+                Text("(" + csi.revision + ")"),
                 Text(humanize_size(csi.size)),
-                Text(notes),
+                Text(format_datetime(csi.released_at)),
+                Text(csi.confinement),
             ])))
 
-        self.lb_channels = NoTabCyclingTableListBox(self.channels)
+        first_info_row = TableRow([
+            (3, Text(
+                [
+                    ('info_minor', "LICENSE: "),
+                    snap.license,
+                ], wrap='clip')),
+            (3, Text(
+                [
+                    ('info_minor', "LAST UPDATED: "),
+                    format_datetime(latest_update),
+                ])),
+            ])
+        heading_row = Color.info_minor(TableRow([
+            Text("CHANNEL"),
+            (2, Text("VERSION")),
+            Text("SIZE"),
+            Text("PUBLISHED"),
+            Text("CONFINEMENT"),
+            ]))
+        colspecs = {
+            1: ColSpec(can_shrink=True),
+            }
+        info_table = TablePile(
+            [
+                first_info_row,
+                TableRow([Text("")]),
+                heading_row,
+            ],
+            spacing=2, colspecs=colspecs)
+        self.lb_channels = NoTabCyclingTableListBox(
+            channel_rows,
+            spacing=2, colspecs=colspecs)
+        info_table.bind(self.lb_channels)
+        self.info_padding = Padding.pull_1(info_table)
 
-        title = Columns([
+        publisher = [('info_minor header', "by: "), snap.publisher]
+        if snap.verified:
+            publisher.append(('verified header', ' \N{check mark}'))
+
+        self.title = Columns([
             Text(snap.name),
-            ('pack', Text(
-                _("Publisher: {}").format(snap.publisher),
-                align='right')),
+            ('pack', Text(publisher, align='right')),
             ], dividechars=1)
 
         contents = [
-            ('pack',      title),
-            ('pack',      Text("")),
             ('pack',      Text(snap.summary)),
             ('pack',      Text("")),
             self.lb_description,  # overwritten in render()
+            ('pack',      Text("")),
+            ('pack',      self.info_padding),
             ('pack',      Text("")),
             ('weight', 1, self.lb_channels),
             ]
@@ -140,16 +209,28 @@ class SnapInfoView(WidgetWrap):
             if o == pack_option:
                 rows_available -= w.rows((maxcol,), focus)
 
-        rows_wanted_description = self.description.rows((maxcol,), False)
-        rows_wanted_channels = len(self.channels)
+        rows_wanted_description = self.description.rows((maxcol-1,), False)
+        rows_wanted_channels = 0
+        for row in self.lb_channels._w.original_widget.body:
+            rows_wanted_channels += row.rows((maxcol,), False)
+
+        log.debug('rows_available %s', rows_available)
+        log.debug(
+            'rows_wanted_description %s rows_wanted_channels %s',
+            rows_wanted_description,
+            rows_wanted_channels)
 
         if rows_wanted_channels + rows_wanted_description <= rows_available:
             description_rows = rows_wanted_description
+            channel_rows = rows_wanted_channels
         else:
             if rows_wanted_description < 2*rows_available/3:
                 description_rows = rows_wanted_description
+                channel_rows = rows_available - description_rows
             else:
-                channel_rows = min(rows_wanted_channels, int(rows_available/3))
+                channel_rows = max(
+                    min(rows_wanted_channels, int(rows_available/3)), 3)
+                log.debug('channel_rows %s', channel_rows)
                 description_rows = rows_available - channel_rows
 
         self.pile.contents[self.description_index] = (
@@ -158,6 +239,10 @@ class SnapInfoView(WidgetWrap):
             self.lb_description.base_widget._selectable = False
         else:
             self.lb_description.base_widget._selectable = True
+        if channel_rows >= rows_wanted_channels:
+            self.info_padding.right = 0
+        else:
+            self.info_padding.right = 1
         if self.needs_focus:
             self.pile._select_first_selectable()
             self.needs_focus = False
@@ -223,10 +308,9 @@ class FetchingFailed(WidgetWrap):
 
 class SnapCheckBox(CheckBox):
     states = {
-        True: SelectableIcon(" *"),
-        False: SelectableIcon("  "),
+        True: SelectableIcon("(*)"),
+        False: SelectableIcon("( )"),
         }
-    reserve_columns = 3
 
     def __init__(self, parent, snap):
         self.parent = parent
@@ -249,8 +333,10 @@ class SnapCheckBox(CheckBox):
                 cur_chan = None
                 if self.snap.name in self.parent.to_install:
                     cur_chan = self.parent.to_install[self.snap.name].channel
+                siv = SnapInfoView(self.parent, self.snap, cur_chan)
+                self.parent.controller.ui.set_header(siv.title)
                 self.parent.show_screen(screen(
-                    SnapInfoView(self.parent, self.snap, cur_chan),
+                    siv,
                     [other_btn(
                         label=_("Close"),
                         on_press=self.parent.show_main_screen)],
@@ -320,6 +406,7 @@ class SnapListView(BaseView):
             ])
 
     def show_main_screen(self, sender=None):
+        self.controller.ui.set_header(_(self.title))
         self._w = self._main_screen
 
     def show_screen(self, screen):
@@ -378,12 +465,20 @@ class SnapListView(BaseView):
                 log.debug("not offering preseeded snap %r", snap.name)
                 continue
             box = self.snap_boxes[snap.name] = SnapCheckBox(self, snap)
+            publisher = snap.publisher
+            if snap.verified:
+                publisher = [publisher, ('verified', '\N{check mark}')]
             row = [
                 box,
-                Text(snap.publisher),
+                Text(publisher),
                 Text(snap.summary, wrap='clip'),
+                Text("\N{BLACK RIGHT-POINTING SMALL TRIANGLE}")
                 ]
-            body.append(Color.menu_button(TableRow(row)))
+            body.append(AttrMap(
+                TableRow(row),
+                'menu_button',
+                {None: 'menu_button focus', 'verified': 'verified focus'},
+                ))
         table = NoTabCyclingTableListBox(
             body,
             colspecs={

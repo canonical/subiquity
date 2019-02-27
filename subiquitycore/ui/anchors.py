@@ -34,13 +34,12 @@ class Header(WidgetWrap):
     """
 
     def __init__(self, title):
-        super().__init__(
-            Color.frame_header(
-                Pile([
-                    Text(""),
-                    Padding.center_79(Text(title), min_width=76),
-                    Text(""),
-                ])))
+        if isinstance(title, str):
+            title = Text(title)
+        title = Padding.center_79(title, min_width=76)
+        super().__init__(Color.frame_header(
+                Pile(
+                    [Text(""), title, Text("")])))
 
 
 class StepsProgressBar(ProgressBar):

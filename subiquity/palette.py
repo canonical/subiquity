@@ -52,6 +52,7 @@ STYLES = [
 
     ('info_primary',        'fg',      'bg'),
     ('info_minor',          'gray',    'bg'),
+    ('info_minor header',   'gray',    'orange'),
     ('info_error',          'danger',  'bg'),
 
     ('string_input',        'bg',      'fg'),
@@ -61,6 +62,10 @@ STYLES = [
     ('progress_complete',   'fg',      'neutral'),
     ('scrollbar',           'brand',   'bg'),
     ('scrollbar focus',     'gray',    'bg'),
+
+    ('verified',            'good',    'bg'),
+    ('verified header',     'good',    'orange'),
+    ('verified focus',      'good',    'gray'),
 ]
 
 

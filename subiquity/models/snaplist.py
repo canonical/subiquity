@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import datetime
 import logging
 
 import attr
@@ -26,8 +27,10 @@ class SnapInfo:
     name = attr.ib()
     summary = attr.ib()
     publisher = attr.ib()
+    verified = attr.ib()
     description = attr.ib()
     confinement = attr.ib()
+    license = attr.ib()
     channels = attr.ib(default=attr.Factory(list))
 
 
@@ -38,6 +41,7 @@ class ChannelSnapInfo:
     confinement = attr.ib()
     version = attr.ib()
     size = attr.ib()
+    released_at = attr.ib()
 
 
 @attr.s(cmp=False)
@@ -63,8 +67,10 @@ class SnapListModel:
                 name=s['name'],
                 summary=s['summary'],
                 publisher=s['developer'],
+                verified=s['publisher']['validation'] == "verified",
                 description=s['description'],
                 confinement=s['confinement'],
+                license=s['license'],
                 )
             self._snap_info.append(snap)
             self._snaps_by_name[s['name']] = snap
@@ -88,6 +94,9 @@ class SnapListModel:
                         confinement=channel_data['confinement'],
                         version=channel_data['version'],
                         size=channel_data['size'],
+                        released_at=datetime.datetime.strptime(
+                            channel_data['released-at'],
+                            '%Y-%m-%dT%H:%M:%S.%fZ'),
                     ))
         return snap
 
