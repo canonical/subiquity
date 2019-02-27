@@ -78,8 +78,16 @@ def parse_options(argv):
                         dest='sources', metavar='URL',
                         help='install from url instead of default.')
     parser.add_argument(
-        '--snaps-from-examples', action='store_true',
+        '--snaps-from-examples', action='store_const', const=True,
+        dest="snaps_from_examples",
         help=("Load snap details from examples/snaps instead of store. "
+              "Default in dry-run mode.  "
+              "See examples/snaps/README.md for more."))
+    parser.add_argument(
+        '--no-snaps-from-examples', action='store_const', const=False,
+        dest="snaps_from_examples",
+        help=("Load snap details from store instead of examples. "
+              "Default in when not in dry-run mode.  "
               "See examples/snaps/README.md for more."))
     parser.add_argument(
         '--snap-section', action='store', default='server',
@@ -98,6 +106,8 @@ def main():
     global LOGDIR
     if opts.dry_run:
         LOGDIR = ".subiquity"
+        if opts.snaps_from_examples is None:
+            opts.snaps_from_examples = True
     LOGFILE = setup_logger(dir=LOGDIR)
     logger = logging.getLogger('subiquity')
     logger.info("Starting SUbiquity v{}".format(VERSION))
