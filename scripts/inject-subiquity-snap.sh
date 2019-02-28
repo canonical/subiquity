@@ -7,7 +7,10 @@ interactive=no
 edit_filesystem=no
 source_installer=old_iso/casper/installer.squashfs
 source_filesystem=
-while getopts ":ifc:s:n:" opt; do
+# Path on disk to a custom snapd (e.g. one that trusts the test keys)
+snapd_pkg=
+store_url=
+while getopts ":ifc:s:n:p:u:" opt; do
     case "${opt}" in
         i)
             interactive=yes
@@ -23,6 +26,12 @@ while getopts ":ifc:s:n:" opt; do
             ;;
         n)
             source_filesystem="$(readlink -f "${OPTARG}")"
+            ;;
+        p)
+            snapd_pkg="$(readlink -f "${OPTARG}")"
+            ;;
+        u)
+            store_url="${OPTARG}"
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -64,14 +73,25 @@ add_overlay() {
     local lower="$1"
     local mountpoint="$2"
     local work="$(mktemp -dp "${tmpdir}")"
-    local upper="$(mktemp -dp "${tmpdir}")"
+    if [ -n "${3-}" ]; then
+        local upper="${3}"
+    else
+        local upper="$(mktemp -dp "${tmpdir}")"
+    fi
     chmod go+rx "${work}" "${upper}"
     do_mount -t overlay overlay -o lowerdir="${lower}",upperdir="${upper}",workdir="${work}" "${mountpoint}"
 }
 
 do_mount -t iso9660 -o loop,ro "${OLD_ISO}" old_iso
-do_mount -t squashfs "${source_installer}" old_installer
-add_overlay old_installer new_installer
+if [ -n "$snapd_pkg" ]; then
+    # Setting up the overlay to install a custom snapd requires
+    # new_installer to be a real directory it seems.
+    unsquashfs -d new_installer "${source_installer}"
+else
+    do_mount -t squashfs "${source_installer}" old_installer
+    add_overlay old_installer new_installer
+fi
+
 
 python -c '
 import sys, yaml
@@ -97,6 +117,24 @@ with open("new_installer/var/lib/snapd/seed/seed.yaml", "w") as fp:
 rm -f new_installer/var/lib/snapd/seed/assertions/subiquity*.assert
 rm -f new_installer/var/lib/snapd/seed/snaps/subiquity*.snap
 cp "${SUBIQUITY_SNAP_PATH}" new_installer/var/lib/snapd/seed/snaps/
+
+if [ -n "$store_url" ]; then
+    STORE_CONFIG=new_installer/etc/systemd/system/snapd.service.d/store.conf
+    mkdir -p "$(dirname $STORE_CONFIG)"
+    cat > "$STORE_CONFIG" <<EOF
+[Service]
+Environment=SNAPD_DEBUG=1 SNAPD_DEBUG_HTTP=7 SNAPPY_TESTING=1
+Environment=SNAPPY_FORCE_API_URL=http://$store_url
+EOF
+fi
+
+if [ -n "$snapd_pkg" ]; then
+    do_mount -t squashfs ${source_filesystem:-old_iso/casper/filesystem.squashfs} old_filesystem
+    add_overlay old_filesystem combined new_installer
+    cp "$snapd_pkg" combined/
+    chroot combined dpkg -i $(basename "$snapd_pkg")
+    rm combined/$(basename "$snapd_pkg")
+fi
 
 add_overlay old_iso new_iso
 
