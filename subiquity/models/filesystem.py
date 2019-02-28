@@ -167,8 +167,11 @@ def asdict(inst):
             'serialize_' + field.name,
             lambda: getattr(inst, field.name))()
         if v is not None:
+            p = ''
+            if getattr(inst, '_passphrase', None) is not None:
+                p = 'dm-'
             if isinstance(v, (list, set)):
-                r[field.name] = [elem.id for elem in v]
+                r[field.name] = [p + elem.id for elem in v]
             else:
                 if hasattr(v, 'id'):
                     v = v.id
@@ -596,6 +599,9 @@ class Raid(_Device):
     component_name = "component"
 
 
+LUKS_OVERHEAD = 16*(2**20)
+
+
 @attr.s(cmp=False)
 class LVM_VolGroup(_Device):
 
@@ -603,10 +609,14 @@ class LVM_VolGroup(_Device):
     type = attr.ib(default="lvm_volgroup")
     name = attr.ib(default=None)
     devices = attr.ib(default=attr.Factory(set))  # set([_Formattable])
+    _passphrase = attr.ib(default=None, repr=False)
 
     @property
     def size(self):
-        return get_lvm_size(self.devices)
+        size = get_lvm_size(self.devices)
+        if self._passphrase:
+            size -= LUKS_OVERHEAD
+        return size
 
     @property
     def free_for_partitions(self):
@@ -694,6 +704,15 @@ class LVM_LogicalVolume(_Formattable):
 
     ok_for_raid = False
     ok_for_lvm_vg = False
+
+
+@attr.s(cmp=False)
+class DM_Crypt:
+    id = attr.ib(default=id_factory("crypt"))
+    type = attr.ib(default="dm_crypt")
+    dm_name = attr.ib(default=None)
+    volume = attr.ib(default=None)  # _Formattable
+    key = attr.ib(default=None)
 
 
 @attr.s(cmp=False)
@@ -825,18 +844,32 @@ class FilesystemModel(object):
                         return False
                 return True
             elif isinstance(obj, LVM_VolGroup):
+                p = ''
+                if obj._passphrase:
+                    p = "dm-"
                 for device in obj.devices:
-                    if device.id not in emitted_ids:
+                    if p + device.id not in emitted_ids:
                         return False
                 return True
             elif isinstance(obj, LVM_LogicalVolume):
                 return obj.volgroup.id in emitted_ids
+            elif isinstance(obj, DM_Crypt):
+                return obj.volume.id in emitted_ids
             else:
                 raise Exception(
                     "don't know how to decide if {} can be emitted".format(
                         obj))
 
-        work = self._partitions + self._raids + self._vgs + self._lvs
+        dms = []
+        for vg in self._vgs:
+            if vg._passphrase:
+                for volume in vg.devices:
+                    dms.append(DM_Crypt(
+                        id="dm-" + volume.id,
+                        volume=volume,
+                        key=vg._passphrase))
+
+        work = self._partitions + self._raids + dms + self._vgs + self._lvs
 
         while work:
             next_work = []
@@ -967,8 +1000,8 @@ class FilesystemModel(object):
             d._constructed_device = None
         self._raids.remove(raid)
 
-    def add_volgroup(self, name, devices):
-        vg = LVM_VolGroup(name=name, devices=devices)
+    def add_volgroup(self, name, devices, passphrase):
+        vg = LVM_VolGroup(name=name, devices=devices, passphrase=passphrase)
         for d in devices:
             if isinstance(d, Disk):
                 self._use_disk(d)

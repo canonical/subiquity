@@ -403,9 +403,12 @@ class DeviceList(WidgetWrap):
         ]]))
         for device in devices:
             menu = self._action_menu_for_device(device)
+            label = device.label
+            if getattr(device, "_passphrase", None) is not None:
+                label += _(" (encrypted)")
             cells = [
                 Text("["),
-                Text(device.label),
+                Text(label),
                 Text("{:>9}".format(humanize_size(device.size))),
                 Text(device.desc()),
                 menu,

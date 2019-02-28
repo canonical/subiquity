@@ -1,0 +1,69 @@
+Welcome:
+  lang: en_US
+Keyboard:
+  layout: us
+Installpath:
+  path: ubuntu
+Network:
+  accept-default: yes
+Proxy:
+  proxy: ""
+Mirror:
+  mirror: "http://us.archive.ubuntu.com"
+Filesystem:
+  manual:
+    - obj: [disk index 0]
+      action: MAKE_BOOT
+    - &newpart
+      obj: [disk index 0]
+      action: PARTITION
+      data:
+        size: 1G
+        mount: null
+    - *newpart
+    - *newpart
+    - *newpart
+    - *newpart
+    - *newpart
+    - obj: [disk index 0]
+      action: PARTITION
+      data:
+        size: 1G
+        fstype: ext4
+        mount: /boot
+    - action: create-vg
+      data:
+        name: vg-1
+        devices:
+          - [disk index 0, part 1]
+          - [disk index 0, part 2]
+        encrypt: true
+        password: "passw0rd"
+        confirm_password: "passw0rd"
+    - obj: [volgroup name vg-1]
+      action: CREATE_LV
+      data:
+        name: lv-0
+        size: 1G
+        fstype: ext4
+        mount: /
+    - action: done
+Identity:
+  realname: Ubuntu
+  username: ubuntu
+  hostname: ubuntu-server
+  # ubuntu
+  password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
+SSH:
+  install_server: true
+  pwauth: false
+  authorized_keys:
+    - |
+      ssh-rsa AAAAAAAAAAAAAAAAAAAAAAAAA # ssh-import-id lp:subiquity
+SnapList:
+  snaps:
+    hello:
+      channel: stable
+      is_classic: false
+InstallProgress:
+  reboot: yes

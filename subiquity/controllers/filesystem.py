@@ -263,7 +263,8 @@ class FilesystemController(BaseController):
             self.delete_filesystem(d.fs())
         return self.model.add_volgroup(
             name=spec['name'],
-            devices=spec['devices'])
+            devices=spec['devices'],
+            passphrase=spec.get('password'))
     create_lvm_volgroup = create_volgroup
 
     def delete_volgroup(self, vg):
@@ -352,7 +353,6 @@ class FilesystemController(BaseController):
             self.create_raid(spec)
 
     def volgroup_handler(self, existing, spec):
-        log.debug("volgroup_handler %s %s", existing, spec)
         if existing is not None:
             for d in existing.devices:
                 d._constructed_device = None
