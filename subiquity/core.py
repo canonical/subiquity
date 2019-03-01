@@ -14,15 +14,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 
 from subiquitycore.core import Application
 
 from subiquity.models.subiquity import SubiquityModel
+from subiquity.snapd import (
+    FakeSnapdConnection,
+    SnapdConnection,
+    )
+
 
 log = logging.getLogger('subiquity.core')
 
 
 class Subiquity(Application):
+
+    snapd_socket_path = '/run/snapd.socket'
 
     from subiquity.palette import COLORS, STYLES, STYLES_MONO
 
@@ -47,3 +55,12 @@ class Subiquity(Application):
     def __init__(self, ui, opts):
         super().__init__(ui, opts)
         self.common['ui'].progress_completion += 1
+        if opts.snaps_from_examples:
+            connection = FakeSnapdConnection(
+                os.path.join(
+                    os.path.dirname(
+                        os.path.dirname(__file__)),
+                    "examples", "snaps"))
+        else:
+            connection = SnapdConnection(self.snapd_socket_path)
+        self.common['snapd_connection'] = connection
