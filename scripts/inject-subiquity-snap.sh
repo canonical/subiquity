@@ -46,6 +46,10 @@ shift $((OPTIND-1))
 OLD_ISO="$(readlink -f "${1}")"
 SUBIQUITY_SNAP_PATH="$(readlink -f "${2}")"
 SUBIQUITY_SNAP="$(basename $SUBIQUITY_SNAP_PATH)"
+SUBIQUITY_ASSERTION="${SUBIQUITY_SNAP_PATH%.snap}.assert"
+if [ ! -f "$SUBIQUITY_ASSERTION" ]; then
+    SUBIQUITY_ASSERTION=
+fi
 NEW_ISO="$(readlink -f "${3}")"
 
 tmpdir="$(mktemp -d)"
@@ -94,16 +98,24 @@ fi
 
 
 python -c '
-import sys, yaml
+import os, sys, yaml
 with open("new_installer/var/lib/snapd/seed/seed.yaml") as fp:
      old_seed = yaml.load(fp)
 new_snaps = []
+
+subiquity_snap = {
+    "name": "subiquity",
+    "classic": True,
+    "file": sys.argv[1],
+    }
+
+if sys.argv[2] == "":
+    subiquity_snap["unasserted"] = True
 
 for snap in old_seed["snaps"]:
     if snap["name"] == "subiquity":
         new_snaps.append({
             "name": "subiquity",
-            "unasserted": True,
             "classic": True,
             "file": sys.argv[1],
             })
@@ -112,11 +124,16 @@ for snap in old_seed["snaps"]:
 
 with open("new_installer/var/lib/snapd/seed/seed.yaml", "w") as fp:
      yaml.dump({"snaps": new_snaps}, fp)
-' $SUBIQUITY_SNAP
+' $SUBIQUITY_SNAP $SUBIQUITY_ASSERTION
 
 rm -f new_installer/var/lib/snapd/seed/assertions/subiquity*.assert
 rm -f new_installer/var/lib/snapd/seed/snaps/subiquity*.snap
 cp "${SUBIQUITY_SNAP_PATH}" new_installer/var/lib/snapd/seed/snaps/
+if [ -n "${SUBIQUITY_ASSERTION}" ]; then
+    cp "${SUBIQUITY_ASSERTION}" new_installer/var/lib/snapd/seed/assertions/
+fi
+
+
 
 if [ -n "$store_url" ]; then
     STORE_CONFIG=new_installer/etc/systemd/system/snapd.service.d/store.conf
@@ -124,7 +141,7 @@ if [ -n "$store_url" ]; then
     cat > "$STORE_CONFIG" <<EOF
 [Service]
 Environment=SNAPD_DEBUG=1 SNAPD_DEBUG_HTTP=7 SNAPPY_TESTING=1
-Environment=SNAPPY_FORCE_API_URL=http://$store_url
+Environment=SNAPPY_FORCE_API_URL=$store_url
 EOF
 fi
 
