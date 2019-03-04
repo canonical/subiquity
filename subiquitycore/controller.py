@@ -38,6 +38,8 @@ class BaseController(ABC):
         self.all_answers = common['answers']
         self.input_filter = common['input_filter']
         self.scale_factor = common['scale_factor']
+        if 'snapd_connection' in common:
+            self.snapd_connection = common['snapd_connection']
 
     def register_signals(self):
         """Defines signals associated with controller from model."""

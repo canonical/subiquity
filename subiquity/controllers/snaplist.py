@@ -13,14 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import glob
-import json
 import logging
 import os
-from urllib.parse import quote_plus
 
 import requests.exceptions
-import requests_unixsocket
 
 from subiquitycore.controller import BaseController
 from subiquitycore import utils
@@ -31,44 +27,18 @@ from subiquity.ui.views.snaplist import SnapListView
 log = logging.getLogger('subiquity.controllers.snaplist')
 
 
-class SampleDataSnapInfoLoader:
-
-    def __init__(self, model, snap_data_dir):
-        self.model = model
-        self.snap_data_dir = snap_data_dir
-        self.snap_list_fetched = False
-        self.failed = False
-
-    def start(self):
-        snap_find_output = os.path.join(self.snap_data_dir, 'find-output.json')
-        with open(snap_find_output) as fp:
-            self.model.load_find_data(json.load(fp))
-        snap_info_glob = os.path.join(self.snap_data_dir, 'info-*.json')
-        for snap_info_file in glob.glob(snap_info_glob):
-            with open(snap_info_file) as fp:
-                self.model.load_info_data(json.load(fp))
-        self.snap_list_fetched = True
-
-    def get_snap_list(self, callback):
-        callback(self.model.get_snap_list())
-
-    def get_snap_info(self, snap, callback):
-        callback()
-
-
 class SnapdSnapInfoLoader:
 
-    def __init__(self, model, run_in_bg, sock, store_section):
+    def __init__(self, model, run_in_bg, connection, store_section):
         self.model = model
         self.run_in_bg = run_in_bg
-        self.url_base = "http+unix://{}/v2/find?".format(quote_plus(sock))
         self.store_section = store_section
 
         self._running = False
         self.snap_list_fetched = False
         self.failed = False
 
-        self.session = requests_unixsocket.Session()
+        self.connection = connection
         self.pending_info_snaps = []
         self.ongoing = {}  # {snap:[callbacks]}
 
@@ -90,8 +60,7 @@ class SnapdSnapInfoLoader:
         self._running = False
 
     def _bg_fetch_list(self):
-        return self.session.get(
-            self.url_base + 'section=' + self.store_section, timeout=60)
+        return self.connection.get('v2/find', section=self.store_section)
 
     def _fetched_list(self, fut):
         if not self._running:
@@ -142,8 +111,7 @@ class SnapdSnapInfoLoader:
         self._fetch_info_for_snap(snap, self._fetch_next_info)
 
     def _bg_fetch_next_info(self, snap):
-        return self.session.get(
-            self.url_base + 'name=' + snap.name, timeout=60)
+        return self.connection.get('v2/find', name=snap.name)
 
     def _fetched_info(self, snap, fut):
         if not self._running:
@@ -162,8 +130,6 @@ class SnapdSnapInfoLoader:
 
 
 class SnapListController(BaseController):
-
-    snapd_socket_path = '/run/snapd.socket'
 
     signals = [
         ('network-config-written', 'network_config_done'),
@@ -185,18 +151,9 @@ class SnapListController(BaseController):
                 return
             else:
                 self.loader.stop()
-        if self.opts.snaps_from_examples:
-            self.loader = SampleDataSnapInfoLoader(
-                self.model,
-                os.path.join(
-                    os.path.dirname(
-                        os.path.dirname(
-                            os.path.dirname(__file__))),
-                    "examples", "snaps"))
-        else:
-            self.loader = SnapdSnapInfoLoader(
-                self.model, self.run_in_bg, self.snapd_socket_path,
-                self.opts.snap_section)
+        self.loader = SnapdSnapInfoLoader(
+            self.model, self.run_in_bg, self.snapd_connection,
+            self.opts.snap_section)
         self.loader.start()
 
     def network_config_done(self, netplan_path):
