@@ -21,15 +21,10 @@ log = logging.getLogger("subiquity.models.installpath")
 
 
 class InstallpathModel(object):
-    """ Model representing install options
-
-    List of install paths in the form of:
-    ('UI Text seen by user', <signal name>, <callback function string>)
-    """
+    """Model representing install options"""
 
     path = 'ubuntu'
-    # update() is not run, upon selecting the default choice...
-    curtin = {}
+    results = {}
 
     def __init__(self, target, sources=None):
         self.target = target
@@ -59,21 +54,24 @@ class InstallpathModel(object):
                 for n, u in enumerate(src_map[self.path])}
 
     def update(self, results):
-        self.curtin = {}
+        self.results = results
+
+    def render(self):
+        config = {}
 
         def t(path):
             return os.path.join(self.target, path)
 
         if self.path == 'maas_region':
-            self.curtin['debconf_selections'] = {
+            config['debconf_selections'] = {
                 'maas-username': ('maas-region-controller maas/username '
-                                  'string %s' % results['username']),
+                                  'string %s' % self.results['username']),
                 'maas-password': ('maas-region-controller maas/password '
-                                  'password %s' % results['password']),
+                                  'password %s' % self.results['password']),
             }
-            self.curtin['late_commands'] = {
-                # Maintainer scripts cache results, from config files, if they
-                # exist.  These shouldn't exist, since this was fixed in
+            config['late_commands'] = {
+                # Maintainer scripts cache self.results, from config files, if
+                # they # exist.  These shouldn't exist, since this was fixed in
                 # livecd-rootfs but remove these, just to be sure.
                 '900-maas': ['rm', '-f', t('etc/maas/rackd.conf')],
                 '901-maas': ['rm', '-f', t('etc/maas/region.conf')],
@@ -128,15 +126,15 @@ class InstallpathModel(object):
                 '915-maas': ['umount', t('proc')],
             }
         elif self.path == 'maas_rack':
-            self.curtin['debconf_selections'] = {
+            config['debconf_selections'] = {
                 'maas-url': ('maas-rack-controller '
                              'maas-rack-controller/maas-url '
-                             'string %s' % results['url']),
+                             'string %s' % self.results['url']),
                 'maas-secret': ('maas-rack-controller '
                                 'maas-rack-controller/shared-secret '
-                                'password %s' % results['secret']),
+                                'password %s' % self.results['secret']),
             }
-            self.curtin['late_commands'] = {
+            config['late_commands'] = {
                 '90-maas': ['rm', '-f', t('etc/maas/rackd.conf')],
                 '91-maas': ['curtin', 'in-target', '--', 'maas-rack',
                             'config', '--init'],
@@ -149,9 +147,6 @@ class InstallpathModel(object):
                              '/var/lib/dpkg/info/maas-rack-controller.postinst'
                              ' configure || :')],
             }
-        else:
+        elif self.path != "ubuntu":
             raise ValueError("invalid Installpath %s" % self.path)
-        self.curtin['sources'] = self.sources
-
-    def render(self):
-        return self.curtin
+        return config
