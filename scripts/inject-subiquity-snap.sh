@@ -10,7 +10,8 @@ source_filesystem=
 # Path on disk to a custom snapd (e.g. one that trusts the test keys)
 snapd_pkg=
 store_url=
-while getopts ":ifc:s:n:p:u:" opt; do
+tracking=stable
+while getopts ":ifc:s:n:p:u:t:" opt; do
     case "${opt}" in
         i)
             interactive=yes
@@ -32,6 +33,9 @@ while getopts ":ifc:s:n:p:u:" opt; do
             ;;
         u)
             store_url="${OPTARG}"
+            ;;
+        t)
+            tracking="${OPTARG}"
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -107,6 +111,7 @@ subiquity_snap = {
     "name": "subiquity",
     "classic": True,
     "file": sys.argv[1],
+    "channel": sys.argv[3],
     }
 
 if sys.argv[2] == "":
@@ -114,17 +119,13 @@ if sys.argv[2] == "":
 
 for snap in old_seed["snaps"]:
     if snap["name"] == "subiquity":
-        new_snaps.append({
-            "name": "subiquity",
-            "classic": True,
-            "file": sys.argv[1],
-            })
+        new_snaps.append(subiquity_snap)
     else:
         new_snaps.append(snap)
 
 with open("new_installer/var/lib/snapd/seed/seed.yaml", "w") as fp:
      yaml.dump({"snaps": new_snaps}, fp)
-' $SUBIQUITY_SNAP $SUBIQUITY_ASSERTION
+' $SUBIQUITY_SNAP $SUBIQUITY_ASSERTION $tracking
 
 rm -f new_installer/var/lib/snapd/seed/assertions/subiquity*.assert
 rm -f new_installer/var/lib/snapd/seed/snaps/subiquity*.snap
