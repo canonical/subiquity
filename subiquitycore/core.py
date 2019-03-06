@@ -36,6 +36,10 @@ class ApplicationError(Exception):
     pass
 
 
+class Skip(Exception):
+    """Raise this from a controller's default method to skip a screen."""
+
+
 # From uapi/linux/kd.h:
 KDGKBTYPE = 0x4B33  # get keyboard type
 
@@ -300,26 +304,35 @@ class Application:
             controller_class.register_signals()
         log.debug(self.common['signal'])
 
-    def next_screen(self, *args):
-        self.controller_index += 1
-        if self.controller_index >= len(self.controllers):
-            self.exit()
-        self.common['ui'].progress_current += 1
+    def select_screen(self, index):
+        self.controller_index = index
+        self.common['ui'].progress_current = index
         controller_name = self.controllers[self.controller_index]
         log.debug("moving to screen %s", controller_name)
-        next_controller = self.common['controllers'][controller_name]
-        next_controller.default()
+        controller = self.common['controllers'][controller_name]
+        controller.default()
+
+    def next_screen(self, *args):
+        while True:
+            if self.controller_index == len(self.controllers) - 1:
+                self.exit()
+            try:
+                self.select_screen(self.controller_index + 1)
+            except Skip:
+                continue
+            else:
+                return
 
     def prev_screen(self, *args):
-        if self.controller_index == 0:
-            return
-        self.controller_index -= 1
-        if self.controller_index >= len(self.controllers):
-            self.exit()
-        self.common['ui'].progress_current -= 1
-        controller_name = self.controllers[self.controller_index]
-        next_controller = self.common['controllers'][controller_name]
-        next_controller.default()
+        while True:
+            if self.controller_index == 0:
+                self.exit()
+            try:
+                self.select_screen(self.controller_index - 1)
+            except Skip:
+                continue
+            else:
+                return
 
 # EventLoop -------------------------------------------------------------------
     def redraw_screen(self):

@@ -19,6 +19,7 @@ import os
 import requests.exceptions
 
 from subiquitycore.controller import BaseController
+from subiquitycore.core import Skip
 from subiquitycore import utils
 
 from subiquity.models.snaplist import SnapSelection
@@ -179,8 +180,7 @@ class SnapListController(BaseController):
     def default(self):
         if self.loader.failed:
             # If loading snaps failed, skip the screen.
-            self.done({})
-            return
+            raise Skip()
         if 'snaps' in self.answers:
             to_install = {}
             for snap_name, selection in self.answers['snaps'].items():
