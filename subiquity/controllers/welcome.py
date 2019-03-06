@@ -41,3 +41,9 @@ class WelcomeController(BaseController):
     def cancel(self):
         # Can't go back from here!
         pass
+
+    def serialize(self):
+        return self.model.selected_language
+
+    def deserialize(self, data):
+        self.model.switch_language(data)

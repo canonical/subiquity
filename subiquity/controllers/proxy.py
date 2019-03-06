@@ -38,6 +38,12 @@ class ProxyController(BaseController):
     def cancel(self):
         self.signal.emit_signal('prev-screen')
 
+    def serialize(self):
+        return self.model.proxy
+
+    def deserialize(self, data):
+        self.model.proxy = data
+
     def done(self, proxy):
         if proxy != self.model.proxy:
             self.model.proxy = proxy

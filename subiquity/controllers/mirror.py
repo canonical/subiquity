@@ -36,6 +36,12 @@ class MirrorController(BaseController):
     def cancel(self):
         self.signal.emit_signal('prev-screen')
 
+    def serialize(self):
+        return self.model.mirror
+
+    def deserialize(self, data):
+        self.model.mirror = data
+
     def done(self, mirror):
         if mirror != self.model.mirror:
             self.model.mirror = mirror
