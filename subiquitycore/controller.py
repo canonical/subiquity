@@ -74,6 +74,13 @@ class BaseController(ABC):
     def default(self):
         pass
 
+    def serialize(self):
+        return None
+
+    def deserialize(self, data):
+        if data is not None:
+            raise Exception("missing deserialize method on {}".format(self))
+
     # Stuff for fine grained actions, used by filesystem and network
     # controller at time of writing this comment.
 

@@ -30,7 +30,7 @@ class InstallpathController(BaseController):
         self.answers = self.all_answers.get("Installpath", {})
         self.release = None
 
-    def installpath(self):
+    def default(self):
         self.ui.set_body(InstallpathView(self.model, self))
         if 'path' in self.answers:
             path = self.answers['path']
@@ -41,10 +41,15 @@ class InstallpathController(BaseController):
                 self.model.update(self.answers)
                 self.signal.emit_signal('next-screen')
 
-    default = installpath
-
     def cancel(self):
         self.signal.emit_signal('prev-screen')
+
+    def serialize(self):
+        return {'path': self.model.path, 'results': self.model.results}
+
+    def deserialize(self, data):
+        self.model.path = data['path']
+        self.model.results = data['results']
 
     def choose_path(self, path):
         self.model.path = path
