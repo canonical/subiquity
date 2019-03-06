@@ -65,17 +65,22 @@ class InstallpathView(BaseView):
         self.items = []
         back = back_btn(_("Back"), on_press=self.cancel)
         super().__init__(screen(
-            [button_pile(self._build_choices()), Text("")], [back],
+            [self._build_choices(), Text("")], [back],
             focus_buttons=False, excerpt=_(self.excerpt)))
 
     def _build_choices(self):
         choices = []
-        for label, path in self.model.paths:
+        focus_position = 0
+        for i, (label, path) in enumerate(self.model.paths):
             log.debug("Building inputs: {}".format(path))
             choices.append(
                 forward_btn(
                     label=label, on_press=self.confirm, user_arg=path))
-        return choices
+            if path == self.model.path:
+                focus_position = i
+        bp = button_pile(choices)
+        bp.base_widget.focus_position = focus_position
+        return bp
 
     def confirm(self, sender, path):
         self.controller.choose_path(path)
@@ -174,9 +179,9 @@ class MAASView(BaseView):
         self.title = title
 
         if self.model.path == "maas_region":
-            self.form = RegionForm()
+            self.form = RegionForm(initial=self.model.results)
         elif self.model.path == "maas_rack":
-            self.form = RackForm()
+            self.form = RackForm(initial=self.model.results)
         else:
             raise ValueError("invalid MAAS form %s" % self.model.path)
 
