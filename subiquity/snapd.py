@@ -83,6 +83,7 @@ class FakeSnapdConnection:
         time.sleep(2)
 
     def get(self, path, **args):
+        log.debug("snapd get %s %s", path, args)
         filename = path.replace('/', '-')
         if args:
             filename += '-' + urlencode(sorted(args.items()))

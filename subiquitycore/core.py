@@ -277,6 +277,7 @@ class Application:
         scale = float(os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
         updated = os.path.exists(os.path.join(self.state_dir, 'updating'))
         self.common = {
+            "application": self,
             "updated": updated,
             "ui": ui,
             "opts": opts,

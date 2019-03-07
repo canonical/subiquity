@@ -54,8 +54,8 @@ class Signal:
             raise SignalException(
                 "Passed something other than a required list.")
         for sig, cb in signal_callback:
-            if sig not in self.known_signals:
-                self.register_signals(sig)
+            # if sig not in self.known_signals:
+            self.register_signals(sig)
             self.connect_signal(sig, cb)
 
     def __repr__(self):

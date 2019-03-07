@@ -38,6 +38,8 @@ class BaseController(ABC):
         self.input_filter = common['input_filter']
         self.scale_factor = common['scale_factor']
         self.run_in_bg = common['run_in_bg']
+        self.updated = common['updated']
+        self.application = common['application']
         if 'snapd_connection' in common:
             self.snapd_connection = common['snapd_connection']
 
