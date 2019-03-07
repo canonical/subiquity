@@ -16,10 +16,13 @@
 import json
 import logging
 import os
+import time
 from urllib.parse import (
     quote_plus,
     urlencode,
     )
+
+from subiquitycore.utils import run_command
 
 import requests_unixsocket
 
@@ -28,7 +31,8 @@ log = logging.getLogger('subiquity.snapd')
 
 
 class SnapdConnection:
-    def __init__(self, sock):
+    def __init__(self, root, sock):
+        self.root = root
         self.url_base = "http+unix://{}/".format(quote_plus(sock))
         self.session = requests_unixsocket.Session()
 
@@ -36,6 +40,23 @@ class SnapdConnection:
         if args:
             path += '?' + urlencode(args)
         return self.session.get(self.url_base + path, timeout=60)
+
+    def configure_proxy(self, proxy):
+        log.debug("restarting snapd to pick up proxy config")
+        dropin_dir = os.path.join(
+            self.root, 'etc/systemd/system/snapd.service.d')
+        os.makedirs(dropin_dir, exist_ok=True)
+        with open(os.path.join(dropin_dir, 'snap_proxy.conf'), 'w') as fp:
+            fp.write(proxy.proxy_systemd_dropin())
+        if self.root == '/':
+            cmds = [
+                ['systemctl', 'daemon-reload'],
+                ['systemctl', 'restart', 'snapd.service'],
+                ]
+        else:
+            cmds = [['sleep', '2']]
+        for cmd in cmds:
+            run_command(cmd)
 
 
 class FakeResponse:
@@ -54,6 +75,10 @@ class FakeResponse:
 class FakeSnapdConnection:
     def __init__(self, snap_data_dir):
         self.snap_data_dir = snap_data_dir
+
+    def configure_proxy(self, proxy):
+        log.debug("pretending to restart snapd to pick up proxy config")
+        time.sleep(2)
 
     def get(self, path, **args):
         filename = path.replace('/', '-')

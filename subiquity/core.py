@@ -62,5 +62,19 @@ class Subiquity(Application):
                         os.path.dirname(__file__)),
                     "examples", "snaps"))
         else:
-            connection = SnapdConnection(self.snapd_socket_path)
+            connection = SnapdConnection(self.root, self.snapd_socket_path)
         self.common['snapd_connection'] = connection
+        signal = self.common['signal']
+        signal.connect_signals([
+            ('network-proxy-set', self._proxy_set),
+            ])
+
+    def _proxy_set(self):
+        proxy_model = self.common['base_model'].proxy
+        signal = self.common['signal']
+        conn = self.common['snapd_connection']
+        self.run_in_bg(
+            lambda: conn.configure_proxy(proxy_model),
+            lambda fut: (
+                fut.result(), signal.emit_signal('snapd-network-change')),
+            )

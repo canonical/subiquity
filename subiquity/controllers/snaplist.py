@@ -14,13 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import os
 
 import requests.exceptions
 
 from subiquitycore.controller import BaseController
 from subiquitycore.core import Skip
-from subiquitycore import utils
 
 from subiquity.models.snaplist import SnapSelection
 from subiquity.ui.views.snaplist import SnapListView
@@ -134,7 +132,7 @@ class SnapListController(BaseController):
 
     signals = [
         ('network-config-written', 'network_config_done'),
-        ('network-proxy-set', 'proxy_config_done'),
+        ('snapd-network-change', 'network_config_done'),
     ]
 
     def __init__(self, common):
@@ -157,25 +155,8 @@ class SnapListController(BaseController):
             self.opts.snap_section)
         self.loader.start()
 
-    def network_config_done(self, netplan_path):
+    def network_config_done(self, *args):
         self._maybe_start_new_loader()
-
-    def proxy_config_done(self):
-        log.debug("restarting snapd to pick up proxy config")
-        if self.opts.dry_run:
-            cmds = [['sleep', '0.5']]
-        else:
-            dropin_dir = '/etc/systemd/system/snapd.service.d'
-            os.makedirs(dropin_dir, exist_ok=True)
-            with open(os.path.join(dropin_dir, 'snap_proxy.conf'), 'w') as fp:
-                fp.write(self.base_model.proxy.proxy_systemd_dropin())
-            cmds = [
-                ['systemctl', 'daemon-reload'],
-                ['systemctl', 'restart', 'snapd.service'],
-                ]
-        self.run_in_bg(
-            lambda: [utils.run_command(cmd) for cmd in cmds],
-            lambda fut: self._maybe_start_new_loader())
 
     def default(self):
         if self.loader.failed:

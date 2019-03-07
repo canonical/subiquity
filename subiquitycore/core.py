@@ -254,10 +254,10 @@ class Application:
 
         opts.project = self.project
 
-        root = '/'
+        self.root = '/'
         if opts.dry_run:
-            root = '.subiquity'
-        self.state_dir = os.path.join(root, 'run', self.project)
+            self.root = '.subiquity'
+        self.state_dir = os.path.join(self.root, 'run', self.project)
         os.makedirs(os.path.join(self.state_dir, 'states'), exist_ok=True)
 
         answers = {}
@@ -286,6 +286,7 @@ class Application:
             "answers": answers,
             "input_filter": input_filter,
             "scale_factor": scale,
+            "run_in_bg": self.run_in_bg,
         }
         if opts.screens:
             self.controllers = [c for c in self.controllers
@@ -293,6 +294,24 @@ class Application:
         ui.progress_completion = len(self.controllers)
         self.common['controllers'] = dict.fromkeys(self.controllers)
         self.controller_index = -1
+
+    def run_in_bg(self, func, callback):
+        """Run func() in a thread and call callback on UI thread.
+
+        callback will be passed a concurrent.futures.Future containing
+        the result of func(). The result of callback is discarded. An
+        exception will crash the process so be careful!
+        """
+        fut = self.common['pool'].submit(func)
+
+        def in_main_thread(ignored):
+            callback(fut)
+
+        pipe = self.common['loop'].watch_pipe(in_main_thread)
+
+        def in_random_thread(ignored):
+            os.write(pipe, b'x')
+        fut.add_done_callback(in_random_thread)
 
     def _connect_base_signals(self):
         """ Connect signals used in the core controller
