@@ -48,6 +48,9 @@ class BaseController(ABC):
             signals.append((sig, getattr(self, cb)))
         self.signal.connect_signals(signals)
 
+    def start(self):
+        pass
+
     @abstractmethod
     def cancel(self):
         pass

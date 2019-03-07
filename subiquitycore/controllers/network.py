@@ -215,11 +215,13 @@ class NetworkController(BaseController, TaskWatcher):
         self.model.parse_netplan_configs(self.root)
 
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
+        self._done_by_action = False
+
+    def start(self):
         self._observer_handles = []
         self.observer, self._observer_fds = (
             self.prober.probe_network(self.network_event_receiver))
         self.start_watching()
-        self._done_by_action = False
 
     def stop_watching(self):
         for handle in self._observer_handles:

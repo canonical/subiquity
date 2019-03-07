@@ -511,6 +511,10 @@ class Application:
             self.common['loop'].set_alarm_in(
                 0.05, select_initial_screen, initial_controller_index)
             self._connect_base_signals()
+
+            for k in self.controllers:
+                self.common['controllers'][k].start()
+
             self.common['loop'].run()
         except Exception:
             log.exception("Exception in controller.run():")
