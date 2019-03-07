@@ -20,7 +20,6 @@ from .installprogress import InstallProgressController
 from .keyboard import KeyboardController
 from .proxy import ProxyController
 from .mirror import MirrorController
-from subiquitycore.controllers.login import LoginController
 from subiquitycore.controllers.network import NetworkController
 from .snaplist import SnapListController
 from .ssh import SSHController
@@ -33,7 +32,6 @@ __all__ = [
     'KeyboardController',
     'ProxyController',
     'MirrorController',
-    'LoginController',
     'NetworkController',
     'SnapListController',
     'SSHController',

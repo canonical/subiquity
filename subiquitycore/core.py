@@ -239,7 +239,6 @@ class Application:
     #         "Filesystem",
     #         "Identity",
     #         "InstallProgress",
-    #         "Login",
     # ]
     # The 'next-screen' and 'prev-screen' signals move through the list of
     # controllers in order, calling the default method on the controller

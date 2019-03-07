@@ -16,12 +16,10 @@
 """ console-conf controllers """
 
 from .identity import IdentityController
-from subiquitycore.controllers.login import LoginController
 from subiquitycore.controllers.network import NetworkController
 from .welcome import WelcomeController
 __all__ = [
     'IdentityController',
-    'LoginController',
     'NetworkController',
     'WelcomeController',
 ]
