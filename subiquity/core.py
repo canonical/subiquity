@@ -67,7 +67,11 @@ class Subiquity(Application):
         signal = self.common['signal']
         signal.connect_signals([
             ('network-proxy-set', self._proxy_set),
+            ('network-change', self._network_change),
             ])
+
+    def _network_change(self):
+        self.common['signal'].emit_signal('snapd-network-change')
 
     def _proxy_set(self):
         proxy_model = self.common['base_model'].proxy

@@ -131,32 +131,29 @@ class SnapdSnapInfoLoader:
 class SnapListController(BaseController):
 
     signals = [
-        ('network-config-written', 'network_config_done'),
-        ('snapd-network-change', 'network_config_done'),
+        ('snapd-network-change', 'snapd_network_changed'),
     ]
+
+    def _make_loader(self):
+        return SnapdSnapInfoLoader(
+            self.model, self.run_in_bg, self.snapd_connection,
+            self.opts.snap_section)
 
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.snaplist
-        self.loader = None
-        self._maybe_start_new_loader()
+        self.loader = self._make_loader()
         self.answers = self.all_answers.get('SnapList', {})
 
-    def _maybe_start_new_loader(self):
-        if self.loader:
-            # If the loader managed to load the list of snaps, the
-            # network must basically be working.
-            if self.loader.snap_list_fetched:
-                return
-            else:
-                self.loader.stop()
-        self.loader = SnapdSnapInfoLoader(
-            self.model, self.run_in_bg, self.snapd_connection,
-            self.opts.snap_section)
+    def snapd_network_changed(self):
+        # If the loader managed to load the list of snaps, the
+        # network must basically be working.
+        if self.loader.snap_list_fetched:
+            return
+        else:
+            self.loader.stop()
+        self.loader = self._make_loader()
         self.loader.start()
-
-    def network_config_done(self, *args):
-        self._maybe_start_new_loader()
 
     def default(self):
         if self.loader.failed:

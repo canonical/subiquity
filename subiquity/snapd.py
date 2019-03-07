@@ -29,6 +29,8 @@ import requests_unixsocket
 
 log = logging.getLogger('subiquity.snapd')
 
+# Every method in this module blocks. Do not call them from the main thread!
+
 
 class SnapdConnection:
     def __init__(self, root, sock):
