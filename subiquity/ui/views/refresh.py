@@ -21,6 +21,7 @@ from urwid import (
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, other_btn
+from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.utils import button_pile, screen
 
 from subiquity.controllers.refresh import CheckState
@@ -133,15 +134,31 @@ class RefreshView(BaseView):
     def update(self, sender=None):
         self.spinner.stop()
 
-        rows = [Text("not yet")]
+        self.lb_tasks = ListBox([])
 
         buttons = [
             other_btn(_("Cancel update"), on_press=self.check_state_available),
             ]
 
         self.controller.ui.set_header("Downloading update...")
-        self._w = screen(rows, buttons, excerpt=_(self.progress_excerpt))
-        # self.controller.start_update(self.update_started)
+        self._w = screen(
+            self.lb_tasks, buttons, excerpt=_(self.progress_excerpt))
+        self.controller.start_update(self.update_started)
+
+    def update_started(self, change_id):
+        self.change_id = change_id
+        self.update_progress()
+
+    def update_progress(self, loop=None, ud=None):
+        self.controller.get_progress(self.change_id, self.updated_progress)
+
+    def updated_progress(self, change):
+        if change['status'] == 'Done':
+            # Will only get here dry run mode as part of the refresh is us
+            # getting restarted by snapd...
+            self.done()
+            return
+        self.controller.loop.set_alarm_in(0.1, self.update_progress)
 
     def done(self, result=None):
         self.spinner.stop()

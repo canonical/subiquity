@@ -87,6 +87,50 @@ class RefreshController(BaseController):
         if self.view:
             self.view.update_check_state()
 
+    def start_update(self, callback):
+        update_marker = os.path.join(self.application.state_dir, 'updating')
+        open(update_marker, 'w').close()
+        self.run_in_bg(
+            self._bg_start_update,
+            lambda fut: self.update_started(fut, callback))
+
+    def _bg_start_update(self):
+        return self.snapd_connection.post(
+            'v2/snaps/subiquity', {'action': 'refresh'})
+
+    def update_started(self, fut, callback):
+        try:
+            response = fut.result()
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            log.exception("requesting update")
+            self.update_state = CheckState.FAILED
+            self.update_failure = e
+            return
+        result = response.json()
+        log.debug("%s", result)
+        callback(result['change'])
+
+    def get_progress(self, change, callback):
+        self.run_in_bg(
+            lambda: self._bg_get_progress(change),
+            lambda fut: self.got_progress(fut, callback))
+
+    def _bg_get_progress(self, change):
+        return self.snapd_connection.get('v2/changes/{}'.format(change))
+
+    def got_progress(self, fut, callback):
+        try:
+            response = fut.result()
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            log.exception("checking for progress")
+            self.update_state = CheckState.FAILED
+            self.update_failure = e
+            return
+        result = response.json()
+        callback(result['result'])
+
     def default(self, index=1):
         from subiquity.ui.views.refresh import RefreshView
         if self.updated:
