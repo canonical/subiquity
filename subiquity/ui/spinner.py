@@ -32,7 +32,7 @@ styles = {
 
 
 class Spinner(Text):
-    def __init__(self, loop, style='spin', align='center'):
+    def __init__(self, loop=None, style='spin', align='center'):
         self.loop = loop
         self.spin_index = 0
         self.spin_text = styles[style]['texts']
@@ -40,9 +40,12 @@ class Spinner(Text):
         super().__init__('', align=align)
         self.handle = None
 
-    def _advance(self, sender=None, user_data=None):
+    def spin(self):
         self.spin_index = (self.spin_index + 1) % len(self.spin_text)
         self.set_text(self.spin_text[self.spin_index])
+
+    def _advance(self, sender=None, user_data=None):
+        self.spin()
         self.handle = self.loop.set_alarm_in(self.rate, self._advance)
 
     def start(self):

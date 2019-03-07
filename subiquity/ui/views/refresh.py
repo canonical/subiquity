@@ -16,18 +16,77 @@
 import logging
 
 from urwid import (
+    ProgressBar,
     Text,
+    WidgetWrap,
     )
 
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, other_btn
-from subiquitycore.ui.container import ListBox
-from subiquitycore.ui.utils import button_pile, screen
+from subiquitycore.ui.container import Columns, ListBox
+from subiquitycore.ui.utils import button_pile, Color, screen
 
 from subiquity.controllers.refresh import CheckState
 from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger('subiquity.ui.views.refresh')
+
+
+class TaskProgressBar(ProgressBar):
+    def __init__(self):
+        super().__init__(
+            normal='progress_incomplete',
+            complete='progress_complete')
+        self._width = 80
+        self.label = ""
+
+    def render(self, size, focus=False):
+        self._width = size[0]
+        return super().render(size, focus)
+
+    def get_text(self):
+        current_MiB = self.current / 1024 / 1024
+        done_MiB = self.done / 1024 / 1024
+        suffix = " {:.2f} / {:.2f} MiB".format(current_MiB, done_MiB)
+        remaining = self._width - len(suffix) - 2
+        if len(self.label) > remaining:
+            label = self.label[:remaining-3] + '...'
+        else:
+            label = self.label + ' ' * (remaining - len(self.label))
+        return label + suffix
+
+
+class TaskProgress(WidgetWrap):
+
+    def __init__(self):
+        self.mode = "spinning"
+        self.spinner = Spinner()
+        self.label = Text("", wrap='clip')
+        cols = Color.progress_incomplete(Columns([
+            (1, Text("")),
+            self.label,
+            (1, Text("")),
+            (1, self.spinner),
+            (1, Text("")),
+            ]))
+        super().__init__(cols)
+
+    def update(self, task):
+        progress = task['progress']
+        done = progress['done']
+        total = progress['total']
+        if total > 1:
+            if self.mode == "spinning":
+                bar = TaskProgressBar()
+                self._w = bar
+            else:
+                bar = self._w
+            bar.label = task['summary']
+            bar.done = total
+            bar.current = done
+        else:
+            self.label.set_text(task['summary'])
+            self.spinner.spin()
 
 
 class RefreshView(BaseView):
@@ -135,6 +194,7 @@ class RefreshView(BaseView):
         self.spinner.stop()
 
         self.lb_tasks = ListBox([])
+        self.task_to_bar = {}
 
         buttons = [
             other_btn(_("Cancel update"), on_press=self.check_state_available),
@@ -158,6 +218,20 @@ class RefreshView(BaseView):
             # getting restarted by snapd...
             self.done()
             return
+        for task in change['tasks']:
+            tid = task['id']
+            if task['status'] == "Done":
+                bar = self.task_to_bar.get(tid)
+                if bar is not None:
+                    self.lb_tasks.base_widget.body.remove(bar)
+                    del self.task_to_bar[tid]
+            if task['status'] == "Doing":
+                if tid not in self.task_to_bar:
+                    self.task_to_bar[tid] = bar = TaskProgress()
+                    self.lb_tasks.base_widget.body.append(bar)
+                else:
+                    bar = self.task_to_bar[tid]
+                bar.update(task)
         self.controller.loop.set_alarm_in(0.1, self.update_progress)
 
     def done(self, result=None):
