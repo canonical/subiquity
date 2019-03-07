@@ -14,13 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import os
 
 import requests.exceptions
 
 from subiquitycore.controller import BaseController
 from subiquitycore.core import Skip
-from subiquitycore import utils
 
 from subiquity.models.snaplist import SnapSelection
 from subiquity.ui.views.snaplist import SnapListView
@@ -133,49 +131,29 @@ class SnapdSnapInfoLoader:
 class SnapListController(BaseController):
 
     signals = [
-        ('network-config-written', 'network_config_done'),
-        ('network-proxy-set', 'proxy_config_done'),
+        ('snapd-network-change', 'snapd_network_changed'),
     ]
+
+    def _make_loader(self):
+        return SnapdSnapInfoLoader(
+            self.model, self.run_in_bg, self.snapd_connection,
+            self.opts.snap_section)
 
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.snaplist
-        self.loader = None
-        self._maybe_start_new_loader()
+        self.loader = self._make_loader()
         self.answers = self.all_answers.get('SnapList', {})
 
-    def _maybe_start_new_loader(self):
-        if self.loader:
-            # If the loader managed to load the list of snaps, the
-            # network must basically be working.
-            if self.loader.snap_list_fetched:
-                return
-            else:
-                self.loader.stop()
-        self.loader = SnapdSnapInfoLoader(
-            self.model, self.run_in_bg, self.snapd_connection,
-            self.opts.snap_section)
-        self.loader.start()
-
-    def network_config_done(self, netplan_path):
-        self._maybe_start_new_loader()
-
-    def proxy_config_done(self):
-        log.debug("restarting snapd to pick up proxy config")
-        if self.opts.dry_run:
-            cmds = [['sleep', '0.5']]
+    def snapd_network_changed(self):
+        # If the loader managed to load the list of snaps, the
+        # network must basically be working.
+        if self.loader.snap_list_fetched:
+            return
         else:
-            dropin_dir = '/etc/systemd/system/snapd.service.d'
-            os.makedirs(dropin_dir, exist_ok=True)
-            with open(os.path.join(dropin_dir, 'snap_proxy.conf'), 'w') as fp:
-                fp.write(self.base_model.proxy.proxy_systemd_dropin())
-            cmds = [
-                ['systemctl', 'daemon-reload'],
-                ['systemctl', 'restart', 'snapd.service'],
-                ]
-        self.run_in_bg(
-            lambda: [utils.run_command(cmd) for cmd in cmds],
-            lambda fut: self._maybe_start_new_loader())
+            self.loader.stop()
+        self.loader = self._make_loader()
+        self.loader.start()
 
     def default(self):
         if self.loader.failed:

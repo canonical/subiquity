@@ -16,7 +16,6 @@
 
 from abc import ABC, abstractmethod
 import logging
-import os
 
 log = logging.getLogger("subiquitycore.controller")
 
@@ -38,6 +37,7 @@ class BaseController(ABC):
         self.all_answers = common['answers']
         self.input_filter = common['input_filter']
         self.scale_factor = common['scale_factor']
+        self.run_in_bg = common['run_in_bg']
         if 'snapd_connection' in common:
             self.snapd_connection = common['snapd_connection']
 
@@ -48,23 +48,8 @@ class BaseController(ABC):
             signals.append((sig, getattr(self, cb)))
         self.signal.connect_signals(signals)
 
-    def run_in_bg(self, func, callback):
-        """Run func() in a thread and call callback on UI thread.
-
-        callback will be passed a concurrent.futures.Future containing
-        the result of func(). The result of callback is discarded. An
-        exception will crash the process so be careful!
-        """
-        fut = self.pool.submit(func)
-
-        def in_main_thread(ignored):
-            callback(fut)
-
-        pipe = self.loop.watch_pipe(in_main_thread)
-
-        def in_random_thread(ignored):
-            os.write(pipe, b'x')
-        fut.add_done_callback(in_random_thread)
+    def start(self):
+        pass
 
     @abstractmethod
     def cancel(self):

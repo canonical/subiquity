@@ -92,6 +92,7 @@ class WaitForDefaultRouteTask(CancelableTask):
         return 'WaitForDefaultRouteTask(%r)' % (self.timeout,)
 
     def got_route(self):
+        self.event_receiver.remove_default_route_waiter(self.got_route)
         os.write(self.success_w, b'x')
 
     def start(self):
@@ -124,7 +125,7 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
     def __init__(self, model):
         self.model = model
         self.view = None
-        self.default_route_waiter = None
+        self.default_route_waiters = []
         self.default_routes = set()
 
     def new_link(self, ifindex, link):
@@ -153,18 +154,20 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
         ifindex = data['ifindex']
         if action == "NEW" or action == "CHANGE":
             self.default_routes.add(ifindex)
-            if self.default_route_waiter:
-                self.default_route_waiter()
-                self.default_route_waiter = None
+            for waiter in self.default_route_waiters:
+                waiter()
         elif action == "DEL" and ifindex in self.default_routes:
             self.default_routes.remove(ifindex)
         log.debug('default routes %s', self.default_routes)
 
     def add_default_route_waiter(self, waiter):
+        self.default_route_waiters.append(waiter)
         if self.default_routes:
             waiter()
-        else:
-            self.default_route_waiter = waiter
+
+    def remove_default_route_waiter(self, waiter):
+        if waiter in self.default_route_waiters:
+            self.default_route_waiters.remove(waiter)
 
 
 default_netplan = '''
@@ -215,11 +218,17 @@ class NetworkController(BaseController, TaskWatcher):
         self.model.parse_netplan_configs(self.root)
 
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
+        self.network_event_receiver.add_default_route_waiter(self.got_route)
+        self._done_by_action = False
+
+    def got_route(self):
+        self.signal.emit_signal('network-change')
+
+    def start(self):
         self._observer_handles = []
         self.observer, self._observer_fds = (
             self.prober.probe_network(self.network_event_receiver))
         self.start_watching()
-        self._done_by_action = False
 
     def stop_watching(self):
         for handle in self._observer_handles:
@@ -433,6 +442,5 @@ class NetworkController(BaseController, TaskWatcher):
             self.network_finish(self.model.render())
 
     def tasks_finished(self):
-        self.signal.emit_signal('network-config-written', self.netplan_path)
         self.loop.set_alarm_in(
             0.0, lambda loop, ud: self.signal.emit_signal('next-screen'))
