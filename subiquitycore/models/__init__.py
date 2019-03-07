@@ -14,6 +14,5 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .identity import IdentityModel
-from .login import LoginModel
 from .network import NetworkModel
-__all__ = ['IdentityModel', 'LoginModel', 'NetworkModel']
+__all__ = ['IdentityModel', 'NetworkModel']
