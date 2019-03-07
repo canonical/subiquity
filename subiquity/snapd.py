@@ -43,6 +43,13 @@ class SnapdConnection:
             path += '?' + urlencode(args)
         return self.session.get(self.url_base + path, timeout=60)
 
+    def post(self, path, body, **args):
+        if args:
+            path += '?' + urlencode(args)
+        return self.session.post(
+            self.url_base + path, data=json.dumps(body),
+            timeout=60)
+
     def configure_proxy(self, proxy):
         log.debug("restarting snapd to pick up proxy config")
         dropin_dir = os.path.join(
@@ -61,7 +68,7 @@ class SnapdConnection:
             run_command(cmd)
 
 
-class FakeResponse:
+class _FakeFileResponse:
 
     def __init__(self, path):
         self.path = path
@@ -74,21 +81,48 @@ class FakeResponse:
             return json.load(fp)
 
 
+class _FakeMemoryResponse:
+
+    def __init__(self, data):
+        self.data = data
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self.data
+
+
 class FakeSnapdConnection:
     def __init__(self, snap_data_dir):
         self.snap_data_dir = snap_data_dir
+        self.path_responses = {}
 
     def configure_proxy(self, proxy):
         log.debug("pretending to restart snapd to pick up proxy config")
         time.sleep(2)
 
+    def post(self, path, body, **args):
+        if path == "v2/snaps/subiquity" and body['action'] == 'refresh':
+            return _FakeMemoryResponse({
+                "type": "async",
+                "change": 7,
+                "status-code": 200,
+                "status": "OK",
+                })
+        raise Exception(
+            "Don't know how to fake POST response to {}".format((path, args)))
+
     def get(self, path, **args):
-        log.debug("snapd get %s %s", path, args)
         filename = path.replace('/', '-')
         if args:
             filename += '-' + urlencode(sorted(args.items()))
-        filepath = os.path.join(self.snap_data_dir, filename + '.json')
-        if os.path.exists(filepath):
-            return FakeResponse(filepath)
+        filepath = os.path.join(self.snap_data_dir, filename)
+        if os.path.exists(filepath + '.json'):
+            return _FakeFileResponse(filepath + '.json')
+        if os.path.isdir(filepath):
+            i = self.path_responses.get(filepath, 0)
+            self.path_responses[filepath] = i + 1
+            return _FakeFileResponse('{}/{:04}.json'.format(filepath, i))
         raise Exception(
-            "Don't know how to fake response to {}".format((path, args)))
+            "Don't know how to fake GET response to {}".format((path, args)))

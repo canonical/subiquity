@@ -1,0 +1,256 @@
+{
+  "status": "OK",
+  "type": "sync",
+  "result": {
+    "status": "Doing",
+    "kind": "refresh-snap",
+    "tasks": [
+      {
+        "status": "Done",
+        "kind": "prerequisites",
+        "ready-time": "2019-03-04T23:48:27.944156996Z",
+        "summary": "Ensure prerequisites for \"subiquity\" are available",
+        "progress": {
+          "total": 1,
+          "done": 1,
+          "label": ""
+        },
+        "id": "85",
+        "spawn-time": "2019-03-04T23:48:27.925891923Z"
+      },
+      {
+        "status": "Doing",
+        "kind": "download-snap",
+        "summary": "Download snap \"subiquity\" (639) from channel \"edge/test-branch\"",
+        "progress": {
+          "total": 47489024,
+          "done": 42673691,
+          "label": "subiquity"
+        },
+        "id": "86",
+        "spawn-time": "2019-03-04T23:48:27.92593791Z"
+      },
+      {
+        "status": "Do",
+        "kind": "validate-snap",
+        "summary": "Fetch and check assertions for snap \"subiquity\" (639)",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "87",
+        "spawn-time": "2019-03-04T23:48:27.92600422Z"
+      },
+      {
+        "status": "Do",
+        "kind": "mount-snap",
+        "summary": "Mount snap \"subiquity\" (639)",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "88",
+        "spawn-time": "2019-03-04T23:48:27.926012439Z"
+      },
+      {
+        "status": "Do",
+        "kind": "run-hook",
+        "summary": "Run pre-refresh hook of \"subiquity\" snap if present",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "89",
+        "spawn-time": "2019-03-04T23:48:27.926025004Z"
+      },
+      {
+        "status": "Do",
+        "kind": "stop-snap-services",
+        "summary": "Stop snap \"subiquity\" services",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "90",
+        "spawn-time": "2019-03-04T23:48:27.926039626Z"
+      },
+      {
+        "status": "Do",
+        "kind": "remove-aliases",
+        "summary": "Remove aliases for snap \"subiquity\"",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "91",
+        "spawn-time": "2019-03-04T23:48:27.926045589Z"
+      },
+      {
+        "status": "Do",
+        "kind": "unlink-current-snap",
+        "summary": "Make current revision for snap \"subiquity\" unavailable",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "92",
+        "spawn-time": "2019-03-04T23:48:27.926088091Z"
+      },
+      {
+        "status": "Do",
+        "kind": "copy-snap-data",
+        "summary": "Copy snap \"subiquity\" data",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "93",
+        "spawn-time": "2019-03-04T23:48:27.926094562Z"
+      },
+      {
+        "status": "Do",
+        "kind": "setup-profiles",
+        "summary": "Setup snap \"subiquity\" (639) security profiles",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "94",
+        "spawn-time": "2019-03-04T23:48:27.926100431Z"
+      },
+      {
+        "status": "Do",
+        "kind": "link-snap",
+        "summary": "Make snap \"subiquity\" (639) available to the system",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "95",
+        "spawn-time": "2019-03-04T23:48:27.926105559Z"
+      },
+      {
+        "status": "Do",
+        "kind": "auto-connect",
+        "summary": "Automatically connect eligible plugs and slots of snap \"subiquity\"",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "96",
+        "spawn-time": "2019-03-04T23:48:27.926109802Z"
+      },
+      {
+        "status": "Do",
+        "kind": "set-auto-aliases",
+        "summary": "Set automatic aliases for snap \"subiquity\"",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "97",
+        "spawn-time": "2019-03-04T23:48:27.926113655Z"
+      },
+      {
+        "status": "Do",
+        "kind": "setup-aliases",
+        "summary": "Setup snap \"subiquity\" aliases",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "98",
+        "spawn-time": "2019-03-04T23:48:27.926117547Z"
+      },
+      {
+        "status": "Do",
+        "kind": "run-hook",
+        "summary": "Run post-refresh hook of \"subiquity\" snap if present",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "99",
+        "spawn-time": "2019-03-04T23:48:27.926123233Z"
+      },
+      {
+        "status": "Do",
+        "kind": "start-snap-services",
+        "summary": "Start snap \"subiquity\" (639) services",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "100",
+        "spawn-time": "2019-03-04T23:48:27.926136115Z"
+      },
+      {
+        "status": "Do",
+        "kind": "clear-snap",
+        "summary": "Remove data for snap \"subiquity\" (705)",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "101",
+        "spawn-time": "2019-03-04T23:48:27.928834185Z"
+      },
+      {
+        "status": "Do",
+        "kind": "discard-snap",
+        "summary": "Remove snap \"subiquity\" (705) from the system",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "102",
+        "spawn-time": "2019-03-04T23:48:27.928862386Z"
+      },
+      {
+        "status": "Do",
+        "kind": "cleanup",
+        "summary": "Clean up \"subiquity\" (639) install",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "103",
+        "spawn-time": "2019-03-04T23:48:27.92891587Z"
+      },
+      {
+        "status": "Do",
+        "kind": "run-hook",
+        "summary": "Run configure hook of \"subiquity\" snap if present",
+        "progress": {
+          "total": 1,
+          "done": 0,
+          "label": ""
+        },
+        "id": "104",
+        "spawn-time": "2019-03-04T23:48:27.928936157Z"
+      }
+    ],
+    "summary": "Refresh \"subiquity\" snap",
+    "ready": false,
+    "id": "7",
+    "spawn-time": "2019-03-04T23:48:27.929018798Z"
+  },
+  "status-code": 200
+}
