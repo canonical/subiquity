@@ -17,7 +17,6 @@ from functools import partial
 import logging
 import os
 import select
-import socket
 import subprocess
 
 import yaml
@@ -33,9 +32,10 @@ from subiquitycore.tasksequence import (
     TaskSequence,
     TaskWatcher,
     )
-from subiquitycore.ui.views import (NetworkView,
-                                    NetworkSetDefaultRouteView)
-from subiquitycore.ui.views.network import ApplyingConfigWidget
+from subiquitycore.ui.views.network import (
+    ApplyingConfigWidget,
+    NetworkView,
+    )
 from subiquitycore.controller import BaseController
 from subiquitycore.utils import run_command
 from subiquitycore.file_util import write_file
@@ -194,10 +194,6 @@ network:
 
 
 class NetworkController(BaseController, TaskWatcher):
-    signals = [
-        ('menu:network:main:set-default-v4-route',     'set_default_v4_route'),
-        ('menu:network:main:set-default-v6-route',     'set_default_v6_route'),
-    ]
 
     root = "/"
 
@@ -440,13 +436,3 @@ class NetworkController(BaseController, TaskWatcher):
         self.signal.emit_signal('network-config-written', self.netplan_path)
         self.loop.set_alarm_in(
             0.0, lambda loop, ud: self.signal.emit_signal('next-screen'))
-
-    def set_default_v4_route(self):
-        self.ui.set_header("Default route")
-        self.ui.set_body(
-            NetworkSetDefaultRouteView(self.model, socket.AF_INET, self))
-
-    def set_default_v6_route(self):
-        self.ui.set_header("Default route")
-        self.ui.set_body(
-            NetworkSetDefaultRouteView(self.model, socket.AF_INET6, self))
