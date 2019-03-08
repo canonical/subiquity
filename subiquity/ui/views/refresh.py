@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
 import logging
 
 from urwid import (
@@ -178,10 +179,19 @@ class RefreshView(BaseView):
     def check_state_failed(self):
         self.spinner.stop()
 
-        rows = [Text("<explanation goes here>")]
+        try:
+            result = self.controller.check_error.response.json()
+        except (AttributeError, json.decoder.JSONDecodeError):
+            message = None
+        else:
+            message = result.get("result", {}).get("message")
+        if message is None:
+            message = "Unknown error: {}".format(self.controller.check_error)
+
+        rows = [Text(message)]
 
         buttons = button_pile([
-            done_btn(_("Try again"), on_press=self.still_checking),
+            done_btn(_("Try again"), on_press=self.try_again),
             done_btn(_("Continue without updating"), on_press=self.done),
             other_btn(_("Back"), on_press=self.cancel),
             ])
@@ -189,6 +199,10 @@ class RefreshView(BaseView):
 
         self.title = self.failed_title
         self._w = screen(rows, buttons, excerpt=_(self.failed_excerpt))
+
+    def try_again(self, sender=None):
+        self.controller.snapd_network_changed()
+        self.check_state_checking()
 
     def update(self, sender=None):
         self.spinner.stop()

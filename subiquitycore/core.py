@@ -284,7 +284,7 @@ class Application:
             "signal": Signal(),
             "prober": prober,
             "loop": None,
-            "pool": futures.ThreadPoolExecutor(4),
+            "pool": futures.ThreadPoolExecutor(10),
             "answers": answers,
             "input_filter": input_filter,
             "scale_factor": scale,

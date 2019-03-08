@@ -74,16 +74,17 @@ class RefreshController(BaseController):
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             log.exception("checking for update")
+            self.check_error = e
             self.check_state = CheckState.FAILED
-            return
-        result = response.json()
-        log.debug("_check_result %s", result)
-        for snap in result["result"]:
-            if snap["name"] == self.snap_name:
-                self.check_state = CheckState.AVAILABLE
-                break
         else:
-            self.check_state = CheckState.UNAVAILABLE
+            result = response.json()
+            log.debug("_check_result %s", result)
+            for snap in result["result"]:
+                if snap["name"] == self.snap_name:
+                    self.check_state = CheckState.AVAILABLE
+                    break
+            else:
+                self.check_state = CheckState.UNAVAILABLE
         if self.view:
             self.view.update_check_state()
 
