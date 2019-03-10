@@ -49,6 +49,7 @@ class RefreshController(BaseController):
         self.check_state = CheckState.NOT_STARTED
         self.view = None
         self.offered_first_time = False
+        self.answers = self.all_answers.get("Refresh", {})
 
     def snapd_network_changed(self):
         # If we restarted into this version, don't check for a new version.
@@ -151,6 +152,11 @@ class RefreshController(BaseController):
         if show:
             self.view = RefreshView(self)
             self.ui.set_body(self.view)
+            if 'update' in self.answers:
+                if self.answers['update']:
+                    self.view.update()
+                else:
+                    self.done()
         else:
             raise Skip()
 
