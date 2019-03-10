@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import glob
 import json
 import logging
 import os
@@ -93,10 +94,31 @@ class _FakeMemoryResponse:
         return self.data
 
 
+class ResponseSet:
+    """Responses for a endpoint that returns different data each time.
+
+    Motivating example is v2/changes/$change_id."""
+
+    def __init__(self, files):
+        self.files = files
+        self.index = 0
+
+    def next(self):
+        f = self.files[self.index]
+        d = int(os.environ.get("SUBIQUITY_REPLAY_TIMESCALE", 1))
+        # Make sure we return the last response even when we skip most
+        # of them.
+        if d > 1 and self.index + d >= len(self.files):
+            self.index = len(self.files) - 1
+        else:
+            self.index += d
+        return _FakeFileResponse(f)
+
+
 class FakeSnapdConnection:
     def __init__(self, snap_data_dir):
         self.snap_data_dir = snap_data_dir
-        self.path_responses = {}
+        self.response_sets = {}
 
     def configure_proxy(self, proxy):
         log.debug("pretending to restart snapd to pick up proxy config")
@@ -117,12 +139,14 @@ class FakeSnapdConnection:
         filename = path.replace('/', '-')
         if args:
             filename += '-' + urlencode(sorted(args.items()))
+        if filename in self.response_sets:
+            return self.response_sets[filename].next()
         filepath = os.path.join(self.snap_data_dir, filename)
         if os.path.exists(filepath + '.json'):
             return _FakeFileResponse(filepath + '.json')
         if os.path.isdir(filepath):
-            i = self.path_responses.get(filepath, 0)
-            self.path_responses[filepath] = i + 1
-            return _FakeFileResponse('{}/{:04}.json'.format(filepath, i))
+            files = sorted(glob.glob(os.path.join(filepath, '*.json')))
+            rs = self.response_sets[filename] = ResponseSet(files)
+            return rs.next()
         raise Exception(
             "Don't know how to fake GET response to {}".format((path, args)))
