@@ -34,9 +34,8 @@ class KeyboardSetting:
         options = ""
         if self.toggle:
             options = "grp:" + self.toggle
-        variant = self.variant
         return etc_default_keyboard_template.format(
-            layout=self.layout, variant=variant, options=options)
+            layout=self.layout, variant=self.variant, options=options)
 
     def latinizable(self):
         """
@@ -201,12 +200,14 @@ class KeyboardModel:
     def set_keyboard(self, setting):
         path = self.config_path
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        self.setting = setting
         with open(path, 'w') as fp:
             fp.write(self.setting.render())
-        if self.root == '/':
-            run_command(['setupcon', '--save', '--force', '--keyboard-only'])
-            run_command(['/snap/bin/subiquity.subiquity-loadkeys'])
-        else:
-            scale = float(os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
-            run_command(['sleep', str(1/scale)])
+        if setting != self.setting:
+            self.setting = setting
+            if self.root == '/':
+                run_command([
+                    'setupcon', '--save', '--force', '--keyboard-only'])
+                run_command(['/snap/bin/subiquity.subiquity-loadkeys'])
+            else:
+                scale = os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1")
+                run_command(['sleep', str(1/float(scale))])
