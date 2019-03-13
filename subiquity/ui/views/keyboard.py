@@ -465,8 +465,9 @@ class KeyboardView(BaseView):
         self.really_done(setting)
 
     def really_done(self, setting):
-        ac = ApplyingConfig(self.controller.loop)
-        self.show_overlay(ac, width=ac.width, min_width=None)
+        if setting != self.model.setting:
+            ac = ApplyingConfig(self.controller.loop)
+            self.show_overlay(ac, width=ac.width, min_width=None)
         self.controller.done(setting)
 
     def cancel(self, result=None):
