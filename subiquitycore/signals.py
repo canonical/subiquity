@@ -34,7 +34,7 @@ class Signal:
             self.known_signals.extend(signals)
         else:
             self.known_signals.append(signals)
-        urwid.register_signal(Signal, signals)
+        urwid.register_signal(Signal, self.known_signals)
 
     def emit_signal(self, name, *args, **kwargs):
         urwid.emit_signal(self, name, *args, **kwargs)
@@ -54,8 +54,8 @@ class Signal:
             raise SignalException(
                 "Passed something other than a required list.")
         for sig, cb in signal_callback:
-            # if sig not in self.known_signals:
-            self.register_signals(sig)
+            if sig not in self.known_signals:
+                self.register_signals(sig)
             self.connect_signal(sig, cb)
 
     def __repr__(self):
