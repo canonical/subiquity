@@ -139,10 +139,9 @@ class SSHForm(Form):
         if len(username) > SSH_IMPORT_MAXLEN:
             return _("SSH id too long, must be < ") + str(SSH_IMPORT_MAXLEN)
         if self.ssh_import_id_value == 'lp':
-            lp_regex = r"^[a-z0-9][a-z0-9\+\.\-]+$"
+            lp_regex = r"^[a-z0-9][a-z0-9\+\.\-]*$"
             if not re.match(lp_regex, self.import_username.value):
-                return _("A Launchpad username must be at least two "
-                         "characters long and start with a letter or "
+                return _("A Launchpad username must start with a letter or "
                          "number. All letters must be lower-case. The "
                          "characters +, - and . are also allowed after "
                          "the first character.""")
