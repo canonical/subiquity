@@ -441,8 +441,8 @@ class DeviceList(WidgetWrap):
                     ]
                     row = make_action_menu_row(cells, menu, cursor_x=4)
                     rows.append(row)
-                    if part.flag == "bios_grub":
-                        label = "bios_grub"
+                    if part.flag in ["bios_grub", "prep"]:
+                        label = part.flag
                     else:
                         label = _usage_label(part)
                     rows.append(TableRow([
