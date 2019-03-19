@@ -1,0 +1,31 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": [
+    {
+      "id": "subiquity-id",
+      "summary": "",
+      "description": "",
+      "download-size": 52232192,
+      "name": "subiquity",
+      "publisher": {
+        "id": "canonical",
+        "username": "canonical",
+        "display-name": ""
+      },
+      "developer": "canonical",
+      "status": "available",
+      "type": "app",
+      "version": "0+git.04f1ff0d",
+      "channel": "",
+      "ignore-validation": false,
+      "revision": "424242",
+      "confinement": "classic",
+      "private": false,
+      "devmode": false,
+      "jailmode": false,
+      "contact": ""
+    }
+  ]
+}

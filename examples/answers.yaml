@@ -1,5 +1,7 @@
 Welcome:
   lang: en_US
+Refresh:
+  update: yes
 Keyboard:
   layout: us
 Installpath:

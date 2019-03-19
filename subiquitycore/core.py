@@ -26,6 +26,7 @@ import tty
 import urwid
 import yaml
 
+from subiquitycore.controller import RepeatedController
 from subiquitycore.signals import Signal
 from subiquitycore.prober import Prober, ProberException
 
@@ -276,13 +277,14 @@ class Application:
         scale = float(os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
         updated = os.path.exists(os.path.join(self.state_dir, 'updating'))
         self.common = {
+            "application": self,
             "updated": updated,
             "ui": ui,
             "opts": opts,
             "signal": Signal(),
             "prober": prober,
             "loop": None,
-            "pool": futures.ThreadPoolExecutor(4),
+            "pool": futures.ThreadPoolExecutor(10),
             "answers": answers,
             "input_filter": input_filter,
             "scale_factor": scale,
@@ -291,6 +293,8 @@ class Application:
         if opts.screens:
             self.controllers = [c for c in self.controllers
                                 if c in opts.screens]
+        else:
+            self.controllers = self.controllers[:]
         ui.progress_completion = len(self.controllers)
         self.common['controllers'] = dict.fromkeys(self.controllers)
         self.controller_index = -1
@@ -475,10 +479,21 @@ class Application:
                 self.run_scripts(self.common['opts'].scripts)
             controllers_mod = __import__('%s.controllers' % self.project,
                                          None, None, [''])
-            for k in self.controllers:
-                log.debug("Importing controller: {}".format(k))
-                klass = getattr(controllers_mod, k+"Controller")
-                self.common['controllers'][k] = klass(self.common)
+            for i, k in enumerate(self.controllers):
+                if self.common['controllers'][k] is None:
+                    log.debug("Importing controller: {}".format(k))
+                    klass = getattr(controllers_mod, k+"Controller")
+                    self.common['controllers'][k] = klass(self.common)
+                else:
+                    count = 1
+                    for k2 in self.controllers[:i]:
+                        if k2 == k or k2.startswith(k + '-'):
+                            count += 1
+                    orig = self.common['controllers'][k]
+                    k += '-' + str(count)
+                    self.controllers[i] = k
+                    self.common['controllers'][k] = RepeatedController(
+                        orig, count)
             log.debug("*** %s", self.common['controllers'])
 
             initial_controller_index = 0

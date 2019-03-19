@@ -40,11 +40,13 @@ class Subiquity(Application):
 
     controllers = [
             "Welcome",
+            "Refresh",
             "Keyboard",
             "Installpath",
             "Network",
             "Proxy",
             "Mirror",
+            "Refresh",
             "Filesystem",
             "Identity",
             "SSH",

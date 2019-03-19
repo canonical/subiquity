@@ -21,6 +21,7 @@ from .keyboard import KeyboardController
 from .proxy import ProxyController
 from .mirror import MirrorController
 from subiquitycore.controllers.network import NetworkController
+from .refresh import RefreshController
 from .snaplist import SnapListController
 from .ssh import SSHController
 from .welcome import WelcomeController
@@ -33,6 +34,7 @@ __all__ = [
     'ProxyController',
     'MirrorController',
     'NetworkController',
+    'RefreshController',
     'SnapListController',
     'SSHController',
     'WelcomeController',

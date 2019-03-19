@@ -38,6 +38,8 @@ class BaseController(ABC):
         self.input_filter = common['input_filter']
         self.scale_factor = common['scale_factor']
         self.run_in_bg = common['run_in_bg']
+        self.updated = common['updated']
+        self.application = common['application']
         if 'snapd_connection' in common:
             self.snapd_connection = common['snapd_connection']
 
@@ -105,3 +107,19 @@ class BaseController(ABC):
         self.loop.set_alarm_in(
             delay,
             lambda *args: self._run_iterator(it, delay/1.1))
+
+
+class RepeatedController(BaseController):
+
+    def __init__(self, orig, index):
+        self.orig = orig
+        self.index = index
+
+    def register_signals(self):
+        pass
+
+    def default(self):
+        self.orig.default(self.index)
+
+    def cancel(self):
+        self.orig.cancel()

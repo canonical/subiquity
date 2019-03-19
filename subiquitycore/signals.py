@@ -34,7 +34,7 @@ class Signal:
             self.known_signals.extend(signals)
         else:
             self.known_signals.append(signals)
-        urwid.register_signal(Signal, signals)
+        urwid.register_signal(Signal, self.known_signals)
 
     def emit_signal(self, name, *args, **kwargs):
         urwid.emit_signal(self, name, *args, **kwargs)
