@@ -4,6 +4,8 @@ Refresh:
   update: yes
 Keyboard:
   layout: us
+Zdev:
+  accept-default: yes
 Network:
   accept-default: yes
 Proxy:

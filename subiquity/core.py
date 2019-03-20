@@ -15,6 +15,7 @@
 
 import logging
 import os
+import platform
 
 from subiquitycore.core import Application
 
@@ -46,6 +47,7 @@ class Subiquity(Application):
             "Welcome",
             "Refresh",
             "Keyboard",
+            "Zdev",
             "Network",
             "Proxy",
             "Mirror",
@@ -58,6 +60,8 @@ class Subiquity(Application):
     ]
 
     def __init__(self, ui, opts):
+        if not opts.bootloader == 'none' and platform.machine() != 's390x':
+            self.controllers.remove("Zdev")
         super().__init__(ui, opts)
         self.common['ui'].progress_completion += 1
         if opts.snaps_from_examples:
