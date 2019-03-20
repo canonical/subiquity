@@ -483,7 +483,7 @@ class Partition(_Formattable):
         return _("partition {}").format(self._number)
 
     def available(self):
-        if self.flag == 'bios_grub':
+        if self.flag in ['bios_grub', 'prep']:
             return False
         if self._constructed_device is not None:
             return False
@@ -506,7 +506,7 @@ class Partition(_Formattable):
 
     @property
     def _can_DELETE(self):
-        if self.flag in ('boot', 'bios_grub'):
+        if self.flag in ('boot', 'bios_grub', 'prep'):
             return _("Cannot delete required bootloader partition")
         return _generic_can_DELETE(self)
 
@@ -964,7 +964,7 @@ class FilesystemModel(object):
         if disk._fs is not None:
             raise Exception("%s is already formatted" % (disk.label,))
         p = Partition(device=disk, size=real_size, flag=flag)
-        if flag in ("boot", "bios_grub"):
+        if flag in ("boot", "bios_grub", "prep"):
             disk._partitions.insert(0, p)
         else:
             disk._partitions.append(p)
@@ -1032,7 +1032,8 @@ class FilesystemModel(object):
         log.debug("adding %s to %s", fstype, volume)
         if not volume.available:
             if not isinstance(volume, Partition):
-                if (volume.flag == 'bios_grub' and fstype == 'fat32'):
+                if (volume.flag == 'prep' or (
+                        volume.flag == 'bios_grub' and fstype == 'fat32')):
                     raise Exception("{} is not available".format(volume))
         if isinstance(volume, Disk):
             self._use_disk(volume)
@@ -1068,7 +1069,7 @@ class FilesystemModel(object):
         if platform.machine() == 's390x':
             return False
         for p in self._partitions:
-            if p.flag in ('bios_grub', 'boot'):
+            if p.flag in ('bios_grub', 'boot', 'prep'):
                 return False
         return True
 

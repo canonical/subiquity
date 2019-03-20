@@ -15,6 +15,7 @@
 
 import logging
 import os
+import platform
 
 from subiquitycore.controller import BaseController
 
@@ -33,7 +34,8 @@ from subiquity.ui.views import (
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
 
-BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024   # 1MiB
+BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024    # 1MiB
+PREP_GRUB_SIZE_BYTES = 8 * 1024 * 1024    # 8MiB
 UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 
@@ -227,6 +229,15 @@ class FilesystemController(BaseController):
                     fstype=self.model.fs_by_name['fat32'],
                     mount='/boot/efi'),
                 flag="boot")
+        elif self.is_prep():
+            log.debug('Adding PReP gpt partition first')
+            part = self.create_partition(
+                disk,
+                dict(
+                    size=PREP_GRUB_SIZE_BYTES,
+                    fstype=None,
+                    mount=None),
+                flag='prep')
         else:
             log.debug('Adding grub_bios gpt partition first')
             part = self.create_partition(
@@ -368,7 +379,7 @@ class FilesystemController(BaseController):
         boot_partition = None
         for disk in self.model.all_disks():
             for part in disk.partitions():
-                if part.flag in ("bios_grub", "boot"):
+                if part.flag in ("bios_grub", "boot", "prep"):
                     boot_partition = part
         if boot_partition is not None:
             boot_disk = boot_partition.device
@@ -391,3 +402,6 @@ class FilesystemController(BaseController):
             return self.opts.uefi
 
         return os.path.exists('/sys/firmware/efi')
+
+    def is_prep(self):
+        return platform.machine().startswith("ppc64")

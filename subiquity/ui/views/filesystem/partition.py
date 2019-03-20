@@ -208,6 +208,12 @@ boot_partition_description = _(
     'installed onto this partition, which must be formatted as fat32. The '
     'only aspect of this partition that can be edited is the size.')
 
+prep_partition_description = _(
+    "Required bootloader partition\n"
+    "\n"
+    'This is the PReP partion which is required on POWER. Grub will be '
+    'installed onto this partition.')
+
 
 class PartitionStretchy(Stretchy):
 
@@ -229,7 +235,7 @@ class PartitionStretchy(Stretchy):
         else:
             lvm_names = None
         if self.partition:
-            if self.partition.flag == "bios_grub":
+            if self.partition.flag in ["bios_grub", "prep"]:
                 label = None
                 initial['mount'] = None
             else:
@@ -281,7 +287,7 @@ class PartitionStretchy(Stretchy):
                 self.form.fstype.widget.index = 0
                 self.form.mount.enabled = False
                 self.form.fstype.enabled = False
-            elif partition.flag == "bios_grub":
+            elif partition.flag in ["bios_grub", "prep"]:
                 self.form.mount.enabled = False
                 self.form.fstype.enabled = False
                 self.form.size.enabled = False
@@ -300,6 +306,12 @@ class PartitionStretchy(Stretchy):
             elif self.partition.flag == "bios_grub":
                 rows.extend([
                     Text(_(bios_grub_partition_description)),
+                    Text(""),
+                ])
+                focus_index = 2
+            elif self.partition.flag == "prep":
+                rows.extend([
+                    Text(_(prep_partition_description)),
                     Text(""),
                 ])
                 focus_index = 2
