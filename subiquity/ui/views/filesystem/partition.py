@@ -211,9 +211,8 @@ boot_partition_description = _(
 prep_partition_description = _(
     "Required bootloader partition\n"
     "\n"
-    'This is the PReP partion which is required on POWER systems. Grub will be '
-    'installed onto this partition. The '
-    'only aspect of this partition that can be edited is the size.')
+    'This is the PReP partion which is required on POWER. Grub will be '
+    'installed onto this partition.')
 
 
 class PartitionStretchy(Stretchy):
@@ -312,7 +311,7 @@ class PartitionStretchy(Stretchy):
                 focus_index = 2
             elif self.partition.flag == "prep":
                 rows.extend([
-                    Text(_(prep_grub_partition_description)),
+                    Text(_(prep_partition_description)),
                     Text(""),
                 ])
                 focus_index = 2

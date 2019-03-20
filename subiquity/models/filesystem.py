@@ -1032,7 +1032,8 @@ class FilesystemModel(object):
         log.debug("adding %s to %s", fstype, volume)
         if not volume.available:
             if not isinstance(volume, Partition):
-                if (volume.flag == 'prep' or (volume.flag == 'bios_grub' and fstype == 'fat32')):
+                if (volume.flag == 'prep' or (
+                        volume.flag == 'bios_grub' and fstype == 'fat32')):
                     raise Exception("{} is not available".format(volume))
         if isinstance(volume, Disk):
             self._use_disk(volume)
