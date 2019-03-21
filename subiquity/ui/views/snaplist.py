@@ -38,6 +38,7 @@ from subiquitycore.ui.container import (
     ScrollBarListBox,
     WidgetWrap,
     )
+from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.table import (
     AbstractTable,
     ColSpec,
@@ -54,7 +55,6 @@ from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import humanize_size
 from subiquity.models.snaplist import SnapSelection
-from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.snaplist")
 

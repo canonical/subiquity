@@ -25,10 +25,10 @@ from urwid import (
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox
+from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.utils import button_pile, Color, screen
 
 from subiquity.controllers.refresh import CheckState
-from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger('subiquity.ui.views.refresh')
 
