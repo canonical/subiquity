@@ -37,6 +37,7 @@ from subiquitycore.ui.form import (
     Form,
     )
 from subiquitycore.ui.selector import Selector, Option
+from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import (
     Stretchy,
     )
@@ -44,7 +45,6 @@ from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
 from subiquity.models.keyboard import KeyboardSetting
-from subiquity.ui.spinner import Spinner
 from subiquity.ui.views import pc105
 
 log = logging.getLogger("subiquity.ui.views.keyboard")

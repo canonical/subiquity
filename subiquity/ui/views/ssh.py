@@ -40,6 +40,9 @@ from subiquitycore.ui.form import (
     ChoiceField,
     Form,
 )
+from subiquitycore.ui.spinner import (
+    Spinner,
+    )
 from subiquitycore.ui.stretchy import (
     Stretchy,
     )
@@ -48,9 +51,6 @@ from subiquitycore.ui.utils import (
     screen,
     )
 
-from subiquity.ui.spinner import (
-    Spinner,
-    )
 from subiquity.ui.views.identity import (
     UsernameField,
     )

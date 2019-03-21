@@ -22,9 +22,8 @@ from urwid import (
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, ok_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.utils import button_pile, Padding
-
-from subiquity.ui.spinner import Spinner
 
 log = logging.getLogger("subiquity.views.installprogress")
 
