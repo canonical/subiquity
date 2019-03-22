@@ -207,8 +207,8 @@ class FilesystemController(BaseController):
         self.delete_mount(fs.mount())
         self.model.remove_filesystem(fs)
 
-    def create_partition(self, device, spec, wipe=None, flag=""):
-        part = self.model.add_partition(device, spec["size"], wipe, flag)
+    def create_partition(self, device, spec, flag="", wipe=None):
+        part = self.model.add_partition(device, spec["size"], flag, wipe)
         self.create_filesystem(part, spec)
         return part
 
