@@ -207,8 +207,8 @@ class FilesystemController(BaseController):
         self.delete_mount(fs.mount())
         self.model.remove_filesystem(fs)
 
-    def create_partition(self, device, spec, flag=""):
-        part = self.model.add_partition(device, spec["size"], flag)
+    def create_partition(self, device, spec, wipe=None, flag=""):
+        part = self.model.add_partition(device, spec["size"], wipe, flag)
         self.create_filesystem(part, spec)
         return part
 
@@ -237,6 +237,7 @@ class FilesystemController(BaseController):
                     size=PREP_GRUB_SIZE_BYTES,
                     fstype=None,
                     mount=None),
+                wipe='zero',
                 flag='prep')
         else:
             log.debug('Adding grub_bios gpt partition first')
@@ -247,7 +248,9 @@ class FilesystemController(BaseController):
                     fstype=None,
                     mount=None),
                 flag='bios_grub')
-        disk.grub_device = True
+        # should _not_ specify grub defice for prep
+        if not self.is_prep():
+            disk.grub_device = True
         return part
 
     def create_raid(self, spec):
