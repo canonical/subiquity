@@ -954,7 +954,7 @@ class FilesystemModel(object):
     def all_devices(self):
         return self.all_disks() + self.all_raids() + self.all_volgroups()
 
-    def add_partition(self, disk, size, flag=""):
+    def add_partition(self, disk, size, flag="", wipe=None):
         if size > disk.free_for_partitions:
             raise Exception("%s > %s", size, disk.free_for_partitions)
         real_size = align_up(size)
@@ -963,7 +963,7 @@ class FilesystemModel(object):
             self._use_disk(disk)
         if disk._fs is not None:
             raise Exception("%s is already formatted" % (disk.label,))
-        p = Partition(device=disk, size=real_size, flag=flag)
+        p = Partition(device=disk, size=real_size, flag=flag, wipe=wipe)
         if flag in ("boot", "bios_grub", "prep"):
             disk._partitions.insert(0, p)
         else:
