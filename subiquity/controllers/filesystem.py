@@ -237,6 +237,7 @@ class FilesystemController(BaseController):
                     size=PREP_GRUB_SIZE_BYTES,
                     fstype=None,
                     mount=None),
+                # must be wiped or grub-install will fail
                 wipe='zero',
                 flag='prep')
         else:
@@ -248,7 +249,7 @@ class FilesystemController(BaseController):
                     fstype=None,
                     mount=None),
                 flag='bios_grub')
-        # should _not_ specify grub defice for prep
+        # should _not_ specify grub device for prep
         if not self.is_prep():
             disk.grub_device = True
         return part
