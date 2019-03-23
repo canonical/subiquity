@@ -125,7 +125,7 @@ for snap in old_seed["snaps"]:
 
 with open("new_installer/var/lib/snapd/seed/seed.yaml", "w") as fp:
      yaml.dump({"snaps": new_snaps}, fp)
-' $SUBIQUITY_SNAP $SUBIQUITY_ASSERTION $tracking
+' "$SUBIQUITY_SNAP" "$SUBIQUITY_ASSERTION" "$tracking"
 
 rm -f new_installer/var/lib/snapd/seed/assertions/subiquity*.assert
 rm -f new_installer/var/lib/snapd/seed/snaps/subiquity*.snap
