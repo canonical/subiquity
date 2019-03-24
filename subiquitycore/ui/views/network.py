@@ -51,6 +51,7 @@ from subiquitycore.ui.utils import (
     make_action_menu_row,
     screen,
     )
+from subiquitycore.ui.width import widget_width
 from .network_configure_manual_interface import (
     AddVlanStretchy,
     BondStretchy,
@@ -125,13 +126,16 @@ class NetworkView(BaseView):
             bp,
         ]
 
-        buttons = button_pile([
-                    done_btn(_("Done"), on_press=self.done),
+        self.buttons = button_pile([
+                    done_btn("TBD", on_press=self.done),  # See _route_watcher
                     back_btn(_("Back"), on_press=self.cancel),
                     ])
         self.bottom = Pile([
-            ('pack', buttons),
+            ('pack', self.buttons),
         ])
+
+        self.controller.network_event_receiver.add_default_route_watcher(
+            self._route_watcher)
 
         self.error_showing = False
 
@@ -162,6 +166,19 @@ class NetworkView(BaseView):
         action, meth = action
         log.debug("_action %s %s", action.name, device.name)
         meth(device)
+
+    def _route_watcher(self, routes):
+        log.debug('view route_watcher %s', routes)
+        if routes:
+            label = _("Done")
+        else:
+            label = _("Continue without network")
+        self.buttons.base_widget[0].set_label(label)
+        self.buttons.width = max(
+            14,
+            widget_width(self.buttons.base_widget[0]),
+            widget_width(self.buttons.base_widget[1]),
+            )
 
     def _notes_for_device(self, dev):
         notes = []
@@ -378,7 +395,11 @@ class NetworkView(BaseView):
     def done(self, result=None):
         if self.error_showing:
             self.bottom.contents[0:2] = []
+        self.controller.network_event_receiver.remove_default_route_watcher(
+            self._route_watcher)
         self.controller.network_finish(self.model.render())
 
     def cancel(self, button=None):
+        self.controller.network_event_receiver.remove_default_route_watcher(
+            self._route_watcher)
         self.controller.cancel()
