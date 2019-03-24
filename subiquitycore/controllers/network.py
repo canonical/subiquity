@@ -52,10 +52,15 @@ class DownNetworkDevices(BackgroundTask):
         self.devs_to_delete = devs_to_delete
 
     def __repr__(self):
-        return 'DownNetworkDevices(%s)' % ([dev.name for dev in
-                                            self.devs_to_down],)
+        return 'DownNetworkDevices({}, {})'.format(
+            [dev.name for dev in self.devs_to_down],
+            [dev.name for dev in self.devs_to_delete],
+            )
 
     def start(self):
+        pass
+
+    def _bg_run(self):
         for dev in self.devs_to_down:
             try:
                 log.debug('downing %s', dev.name)
@@ -72,14 +77,8 @@ class DownNetworkDevices(BackgroundTask):
             except subprocess.CalledProcessError as cp:
                 log.info("deleting %s failed with %r", dev.name, cp.stderr)
 
-    def _bg_run(self):
-        return True
-
     def end(self, observer, fut):
-        if fut.result():
-            observer.task_succeeded()
-        else:
-            observer.task_failed()
+        observer.task_succeeded()
 
 
 class WaitForDefaultRouteTask(CancelableTask):
