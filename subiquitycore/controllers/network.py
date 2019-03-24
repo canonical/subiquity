@@ -176,6 +176,7 @@ class NetworkController(BaseController):
         self.answers = self.all_answers.get("Network", {})
         self.view = None
         self.view_shown = False
+        self.dhcp_check_handle = None
         if self.opts.dry_run:
             self.root = os.path.abspath(".subiquity")
             netplan_path = self.netplan_path
@@ -319,6 +320,13 @@ class NetworkController(BaseController):
                 log.debug("disabling %s", dev.name)
                 dev.disabled_reason = _("autoconfiguration failed")
 
+    def check_dchp_results(self, device_versions):
+        log.debug('check_dchp_results for %s', device_versions)
+        for dev, v in device_versions:
+            if not dev.dhcp_addresses()[v]:
+                dev.set_dhcp_state(v, "TIMEDOUT")
+                self.network_event_receiver.update_link(dev.ifindex)
+
     def default(self):
         if not self.view_shown:
             self.update_initial_configs()
@@ -342,11 +350,22 @@ class NetworkController(BaseController):
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
     def apply_config(self, silent=False):
+        if self.dhcp_check_handle is not None:
+            self.loop.remove_alarm(self.dhcp_check_handle)
+            self.dhcp_check_handle = None
+
         config = self.model.render()
 
         devs_to_delete = []
         devs_to_down = []
+        dhcp_device_versions = []
         for dev in self.model.get_all_netdevs(include_deleted=True):
+            for v in 4, 6:
+                if dev.dhcp_enabled(v):
+                    if not silent:
+                        dev.set_dhcp_state(v, "PENDING")
+                        self.network_event_receiver.update_link(dev.ifindex)
+                    dhcp_device_versions.append((dev, v))
             if dev.info is None:
                 continue
             if dev.is_virtual:
@@ -402,6 +421,11 @@ class NetworkController(BaseController):
             self.view.show_apply_spinner()
         ts = TaskSequence(self.run_in_bg, tasks, ApplyWatcher(self.view))
         ts.run()
+        if dhcp_device_versions:
+            self.dhcp_check_handle = self.loop.set_alarm_in(
+                10,
+                lambda loop, ud: self.check_dchp_results(ud),
+                dhcp_device_versions)
 
     def add_vlan(self, device, vlan):
         return self.model.new_vlan(device, vlan)

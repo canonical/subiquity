@@ -201,10 +201,17 @@ class NetworkView(BaseView):
                 if addrs:
                     address_info.extend(
                         [(label, Text(addr)) for addr in addrs])
+                elif dev.dhcp_state(v) == "PENDING":
+                    s = Spinner(self.controller.loop, align='left')
+                    s.rate = 0.3
+                    s.start()
+                    address_info.append((label, s))
+                elif dev.dhcp_state(v) == "TIMEDOUT":
+                    address_info.append((label, Text(_("timed out"))))
                 else:
                     address_info.append((
                         label,
-                        Text(_("no address")),
+                        Text(_("unknown state {}".format(dev.dhcp_state(v))))
                         ))
             else:
                 addrs = []

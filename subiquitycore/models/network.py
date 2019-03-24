@@ -111,6 +111,10 @@ class NetworkDev(object):
         self.config = {}
         self.info = None
         self.disabled_reason = None
+        self._dhcp_state = {
+            4: None,
+            6: None,
+            }
 
     def dhcp_addresses(self):
         r = {4: [], 6: []}
@@ -128,6 +132,14 @@ class NetworkDev(object):
 
     def dhcp_enabled(self, version):
         return self.config.get('dhcp{v}'.format(v=version), False)
+
+    def dhcp_state(self, version):
+        if not self.config.get('dhcp{v}'.format(v=version), False):
+            return None
+        return self._dhcp_state[version]
+
+    def set_dhcp_state(self, version, state):
+        self._dhcp_state[version] = state
 
     @property
     def name(self):
