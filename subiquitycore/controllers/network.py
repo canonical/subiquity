@@ -91,14 +91,15 @@ class WaitForDefaultRouteTask(CancelableTask):
     def __repr__(self):
         return 'WaitForDefaultRouteTask(%r)' % (self.timeout,)
 
-    def got_route(self):
-        self.event_receiver.remove_default_route_waiter(self.got_route)
-        os.write(self.success_w, b'x')
+    def route_update(self, routes):
+        if routes:
+            self.event_receiver.remove_default_route_watcher(self.route_update)
+            os.write(self.success_w, b'x')
 
     def start(self):
         self.fail_r, self.fail_w = os.pipe()
         self.success_r, self.success_w = os.pipe()
-        self.event_receiver.add_default_route_waiter(self.got_route)
+        self.event_receiver.add_default_route_watcher(self.route_update)
 
     def _bg_run(self):
         try:
@@ -125,7 +126,7 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
     def __init__(self, model):
         self.model = model
         self.view = None
-        self.default_route_waiters = []
+        self.default_route_watchers = []
         self.default_routes = set()
 
     def new_link(self, ifindex, link):
@@ -154,20 +155,19 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
         ifindex = data['ifindex']
         if action == "NEW" or action == "CHANGE":
             self.default_routes.add(ifindex)
-            for waiter in self.default_route_waiters:
-                waiter()
         elif action == "DEL" and ifindex in self.default_routes:
             self.default_routes.remove(ifindex)
+        for watcher in self.default_route_watchers:
+            watcher(self.default_routes)
         log.debug('default routes %s', self.default_routes)
 
-    def add_default_route_waiter(self, waiter):
-        self.default_route_waiters.append(waiter)
-        if self.default_routes:
-            waiter()
+    def add_default_route_watcher(self, watcher):
+        self.default_route_watchers.append(watcher)
+        watcher(self.default_routes)
 
-    def remove_default_route_waiter(self, waiter):
-        if waiter in self.default_route_waiters:
-            self.default_route_waiters.remove(waiter)
+    def remove_default_route_watcher(self, watcher):
+        if watcher in self.default_route_watchers:
+            self.default_route_watchers.remove(watcher)
 
 
 default_netplan = '''
@@ -218,11 +218,13 @@ class NetworkController(BaseController, TaskWatcher):
         self.model.parse_netplan_configs(self.root)
 
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
-        self.network_event_receiver.add_default_route_waiter(self.got_route)
+        self.network_event_receiver.add_default_route_watcher(
+            self.route_watcher)
         self._done_by_action = False
 
-    def got_route(self):
-        self.signal.emit_signal('network-change')
+    def route_watcher(self, routes):
+        if routes:
+            self.signal.emit_signal('network-change')
 
     def start(self):
         self._observer_handles = []
