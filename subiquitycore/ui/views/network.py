@@ -23,8 +23,6 @@ import logging
 
 from urwid import (
     connect_signal,
-    LineBox,
-    ProgressBar,
     Text,
     )
 
@@ -35,14 +33,13 @@ from subiquitycore.models.network import (
 from subiquitycore.ui.actionmenu import ActionMenu
 from subiquitycore.ui.buttons import (
     back_btn,
-    cancel_btn,
     done_btn,
     menu_btn,
     )
 from subiquitycore.ui.container import (
     Pile,
-    WidgetWrap,
     )
+from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import (
@@ -64,26 +61,6 @@ from subiquitycore.view import BaseView
 
 
 log = logging.getLogger('subiquitycore.views.network')
-
-
-class ApplyingConfigWidget(WidgetWrap):
-
-    def __init__(self, step_count, cancel_func):
-        self.cancel_func = cancel_func
-        button = cancel_btn(_("Cancel"), on_press=self.do_cancel)
-        self.bar = ProgressBar(normal='progress_incomplete',
-                               complete='progress_complete',
-                               current=0, done=step_count)
-        box = LineBox(Pile([self.bar,
-                            button_pile([button])]),
-                      title=_("Applying network config"))
-        super().__init__(box)
-
-    def advance(self):
-        self.bar.current += 1
-
-    def do_cancel(self, sender):
-        self.cancel_func()
 
 
 def _stretchy_shower(cls, *args):
@@ -179,6 +156,24 @@ class NetworkView(BaseView):
             widget_width(self.buttons.base_widget[0]),
             widget_width(self.buttons.base_widget[1]),
             )
+
+    def show_apply_spinner(self):
+        s = Spinner(self.controller.loop)
+        s.start()
+        c = TablePile([
+            TableRow([
+                Text(_("Applying changes")),
+                s,
+                ]),
+            ], align='center')
+        self.bottom.contents[0:0] = [
+            (c, self.bottom.options()),
+            (Text(""), self.bottom.options()),
+            ]
+
+    def hide_apply_spinner(self):
+        if len(self.bottom.contents) > 2:
+            self.bottom.contents[0:2] = []
 
     def _notes_for_device(self, dev):
         notes = []
@@ -397,7 +392,7 @@ class NetworkView(BaseView):
             self.bottom.contents[0:2] = []
         self.controller.network_event_receiver.remove_default_route_watcher(
             self._route_watcher)
-        self.controller.network_finish(self.model.render())
+        self.controller.done()
 
     def cancel(self, button=None):
         self.controller.network_event_receiver.remove_default_route_watcher(

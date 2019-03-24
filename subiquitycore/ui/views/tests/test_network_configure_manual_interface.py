@@ -3,6 +3,7 @@ from unittest import mock
 
 import urwid
 
+from subiquitycore.controllers.network import NetworkController
 from subiquitycore.models.network import NetworkDev
 from subiquitycore.testing import view_helpers
 from subiquitycore.ui.views.network_configure_manual_interface import (
@@ -28,6 +29,7 @@ class TestNetworkConfigureIPv4InterfaceView(unittest.TestCase):
         device.config = {}
         base_view = BaseView(urwid.Text(""))
         base_view.update_link = lambda device: None
+        base_view.controller = mock.create_autospec(spec=NetworkController)
         stretchy = EditNetworkStretchy(base_view, device, 4)
         base_view.show_stretchy_overlay(stretchy)
         stretchy.method_form.method.value = "manual"

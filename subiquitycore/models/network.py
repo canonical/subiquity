@@ -234,6 +234,7 @@ class NetworkModel(object):
     def __init__(self, support_wlan=True):
         self.support_wlan = support_wlan
         self.devices_by_name = {}  # Maps interface names to NetworkDev
+        self.has_network = False
 
     def parse_netplan_configs(self, netplan_root):
         self.config = netplan.Config()
