@@ -110,6 +110,7 @@ class NetworkDev(object):
         self.type = typ
         self.config = {}
         self.info = None
+        self.disabled_reason = None
 
     def dhcp_addresses(self):
         r = {4: [], 6: []}

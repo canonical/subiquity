@@ -224,7 +224,10 @@ class NetworkView(BaseView):
                 if dev2.type == "vlan" and dev.name == dev2.config.get('link'):
                     break
             else:
-                address_info.append((Text(_("disabled")), Text("")))
+                reason = dev.disabled_reason
+                if reason is None:
+                    reason = ""
+                address_info.append((Text(_("disabled")), Text(reason)))
         rows = []
         for label, value in address_info:
             rows.append(TableRow([Text(""), label, (2, value)]))

@@ -175,6 +175,7 @@ class NetworkController(BaseController):
         self.model = self.base_model.network
         self.answers = self.all_answers.get("Network", {})
         self.view = None
+        self.view_shown = False
         if self.opts.dry_run:
             self.root = os.path.abspath(".subiquity")
             netplan_path = self.netplan_path
@@ -300,8 +301,31 @@ class NetworkController(BaseController):
         else:
             raise Exception("could not process action {}".format(action))
 
+    def update_initial_configs(self):
+        # Any device that does not have a (global) address by the time
+        # we get to the network screen is marked as disabled, with an
+        # explanation.
+        for dev in self.model.get_all_netdevs():
+            has_global_address = False
+            if dev.info is None:
+                continue
+            for a in dev.info.addresses.values():
+                if a.scope == "global":
+                    has_global_address = True
+                    break
+            if not has_global_address:
+                dev.remove_ip_networks_for_version(4)
+                dev.remove_ip_networks_for_version(6)
+                log.debug("disabling %s", dev.name)
+                dev.disabled_reason = _("autoconfiguration failed")
+
     def default(self):
+        if not self.view_shown:
+            self.update_initial_configs()
         self.view = NetworkView(self.model, self)
+        if not self.view_shown:
+            self.apply_config(silent=True)
+            self.view_shown = True
         self.network_event_receiver.view = self.view
         self.ui.set_body(self.view)
         if self.answers.get('accept-default', False):
@@ -317,7 +341,7 @@ class NetworkController(BaseController):
             netplan_config_file_name = '00-snapd-config.yaml'
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
-    def apply_config(self):
+    def apply_config(self, silent=False):
         config = self.model.render()
 
         devs_to_delete = []
@@ -374,7 +398,8 @@ class NetworkController(BaseController):
                 ('apply', BackgroundProcess(['netplan', 'apply'])),
                 ])
 
-        self.view.show_apply_spinner()
+        if not silent:
+            self.view.show_apply_spinner()
         ts = TaskSequence(self.run_in_bg, tasks, ApplyWatcher(self.view))
         ts.run()
 
