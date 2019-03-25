@@ -292,6 +292,10 @@ class NetworkView(BaseView):
         log.debug(
             "del_link %s %s %s",
             dev.name, dev.ifindex, (dev in self.cur_netdevs))
+        # If a virtual device disappears while we still have config
+        # for it, we assume it will be back soon.
+        if dev.is_virtual and dev.config is not None:
+            return
         if dev in self.cur_netdevs:
             netdev_i = self.cur_netdevs.index(dev)
             self._remove_row(netdev_i+1)
