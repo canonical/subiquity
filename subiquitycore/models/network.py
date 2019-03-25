@@ -17,6 +17,7 @@ import copy
 import enum
 import ipaddress
 import logging
+from socket import AF_INET, AF_INET6
 
 from subiquitycore import netplan
 
@@ -109,6 +110,23 @@ class NetworkDev(object):
         self.type = typ
         self.config = {}
         self.info = None
+
+    def dhcp_addresses(self):
+        r = {4: [], 6: []}
+        if self.info is not None:
+            for a in self.info.addresses.values():
+                if a.family == AF_INET:
+                    v = 4
+                elif a.family == AF_INET6:
+                    v = 6
+                else:
+                    continue
+                if a.source == 'dhcp':
+                    r[v].append(str(a.address))
+        return r
+
+    def dhcp_enabled(self, version):
+        return self.config.get('dhcp{v}'.format(v=version), False)
 
     @property
     def name(self):

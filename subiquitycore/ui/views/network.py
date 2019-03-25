@@ -20,7 +20,6 @@ Provides network device listings and extended network information
 """
 
 import logging
-from socket import AF_INET, AF_INET6
 
 from urwid import (
     connect_signal,
@@ -104,15 +103,17 @@ class NetworkView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.dev_to_row = {}
+        self.dev_to_table = {}
         self.cur_netdevs = []
         self.error = Text("", align='center')
-        self.device_table = TablePile(
-            self._build_model_inputs(),
-            spacing=2, colspecs={
-                0: ColSpec(rpad=1),
-                4: ColSpec(can_shrink=True, rpad=1),
-                })
+
+        self.device_colspecs = {
+            0: ColSpec(rpad=1),
+            3: ColSpec(min_width=15),
+            4: ColSpec(can_shrink=True, rpad=1),
+            }
+
+        self.device_pile = Pile(self._build_model_inputs())
 
         self._create_bond_btn = menu_btn(
             _("Create bond"), on_press=self._create_bond)
@@ -120,7 +121,7 @@ class NetworkView(BaseView):
         bp.align = 'left'
 
         rows = [
-            self.device_table,
+            self.device_pile,
             bp,
         ]
 
@@ -139,11 +140,6 @@ class NetworkView(BaseView):
             buttons=self.bottom,
             focus_buttons=True,
             excerpt=self.excerpt))
-
-    def _build_buttons(self):
-        back = back_btn(_("Back"), on_press=self.cancel)
-        done = done_btn(_("Done"), on_press=self.done)
-        return button_pile([done, back])
 
     _action_INFO = _stretchy_shower(ViewInterfaceInfo)
     _action_EDIT_WLAN = _stretchy_shower(NetworkConfigureWLANStretchy)
@@ -167,47 +163,63 @@ class NetworkView(BaseView):
         log.debug("_action %s %s", action.name, device.name)
         meth(device)
 
-    def _cells_for_device(self, dev):
+    def _notes_for_device(self, dev):
         notes = []
+        if dev.type == "eth" and not dev.info.is_connected:
+            notes.append(_("not connected"))
         for dev2 in self.model.get_all_netdevs():
             if dev2.type != "bond":
                 continue
             if dev.name in dev2.config.get('interfaces', []):
                 notes.append(_("enslaved to {}").format(dev2.name))
                 break
-        for v in 4, 6:
-            configured_ip_addresses = []
-            for ip in dev.config.get('addresses', []):
-                if addr_version(ip) == v:
-                    configured_ip_addresses.append(ip)
-            notes.extend([
-                "{} (static)".format(a)
-                for a in configured_ip_addresses
-                ])
-            if dev.config.get('dhcp{v}'.format(v=v)):
-                if v == 4:
-                    fam = AF_INET
-                elif v == 6:
-                    fam = AF_INET6
-                fam_addresses = []
-                if dev.info is not None:
-                    for a in dev.info.addresses.values():
-                        if a.family == fam and a.source == 'dhcp':
-                            fam_addresses.append("{} (from dhcp)".format(
-                                a.address))
-                if fam_addresses:
-                    notes.extend(fam_addresses)
-                else:
-                    notes.append(
-                        _("DHCPv{v} has supplied no addresses").format(v=v))
         if notes:
             notes = ", ".join(notes)
         else:
             notes = '-'
-        return (dev.name, dev.type, notes)
+        return notes
+
+    def _address_rows_for_device(self, dev):
+        address_info = []
+        dhcp_addresses = dev.dhcp_addresses()
+        for v in 4, 6:
+            if dev.dhcp_enabled(v):
+                label = Text(_("DHCPv{v}").format(v=v))
+                addrs = dhcp_addresses.get(v)
+                if addrs:
+                    address_info.extend(
+                        [(label, Text(addr)) for addr in addrs])
+                else:
+                    address_info.append((
+                        label,
+                        Text(_("no address")),
+                        ))
+            else:
+                addrs = []
+                for ip in dev.config.get('addresses', []):
+                    if addr_version(ip) == v:
+                        addrs.append(str(ip))
+                if addrs:
+                    address_info.append(
+                        (Text(_('static')), Text(', '.join(addrs))))
+        if len(address_info) == 0:
+            # Do not show an interface as disabled if it is part of a bond or
+            # has a vlan on it.
+            for dev2 in self.model.get_all_netdevs():
+                if dev2.type == "bond" and \
+                  dev.name in dev2.config.get('interfaces', []):
+                    break
+                if dev2.type == "vlan" and dev.name == dev2.config.get('link'):
+                    break
+            else:
+                address_info.append((Text(_("disabled")), Text("")))
+        rows = []
+        for label, value in address_info:
+            rows.append(TableRow([Text(""), label, (2, value)]))
+        return rows
 
     def new_link(self, new_dev):
-        if new_dev in self.dev_to_row:
+        if new_dev in self.dev_to_table:
             self.update_link(new_dev)
             return
         for i, cur_dev in enumerate(self.cur_netdevs):
@@ -216,31 +228,68 @@ class NetworkView(BaseView):
                 break
         else:
             netdev_i = len(self.cur_netdevs)
-        new_rows = self._rows_for_device(new_dev, netdev_i)
-        self.device_table.insert_rows(3*netdev_i+1, new_rows)
+        w = self._device_widget(new_dev, netdev_i)
+        self.device_pile.contents[netdev_i+1:netdev_i+1] = [
+            (w, self.device_pile.options('pack'))]
 
     def update_link(self, dev):
-        row = self.dev_to_row[dev]
-        self.device_table.invalidate()
-        for i, text in enumerate(self._cells_for_device(dev)):
-            row.columns[2*(i+1)].set_text(text)
+        # Update the display of dev to represent the current state.
+        #
+        # The easiest way of doing this would be to just create a new table
+        # widget for the device and replace the current one with it. But that
+        # is jarring if the menu for the current device is open, so instead we
+        # overwrite the content of the first (menu) row of the old table with
+        # the contents of the first row of the new table, and replace all other
+        # rows of the old table with new content (which is OK as they cannot be
+        # focused).
+        old_table = self.dev_to_table[dev]
+        first_row = old_table.table_rows[0].base_widget
+        first_row.cells[1][1].set_text(dev.name)
+        first_row.cells[2][1].set_text(dev.type)
+        first_row.cells[3][1].set_text(self._notes_for_device(dev))
+        old_table.remove_rows(1, len(old_table.table_rows))
+        old_table.insert_rows(1, self._address_rows_for_device(dev))
+
+    def _remove_row(self, netdev_i):
+        # MonitoredFocusList clamps the focus position to the new
+        # length of the list when you remove elements but it doesn't
+        # check that that the element it moves the focus to is
+        # selectable...
+        new_length = len(self.device_pile.contents) - 1
+        refocus = self.device_pile.focus_position >= new_length
+        del self.device_pile.contents[netdev_i]
+        if refocus:
+            self.device_pile._select_last_selectable()
+        else:
+            while not self.device_pile.focus.selectable():
+                self.device_pile.focus_position += 1
+            self.device_pile.focus._select_first_selectable()
 
     def del_link(self, dev):
         log.debug("del_link %s", (dev in self.cur_netdevs))
         if dev in self.cur_netdevs:
             netdev_i = self.cur_netdevs.index(dev)
-            self.device_table.remove_rows(3*netdev_i, 3*(netdev_i+1))
+            self._remove_row(netdev_i+1)
             del self.cur_netdevs[netdev_i]
         if isinstance(self._w, StretchyOverlay):
             stretchy = self._w.stretchy
             if getattr(stretchy, 'device', None) is dev:
                 self.remove_overlay()
 
-    def _rows_for_device(self, dev, netdev_i=None):
+    def _device_widget(self, dev, netdev_i=None):
+        # Create the widget for a nic. This consists of a Pile containing a
+        # table, an info line and a blank line. The first row of the table is
+        # the one that can be focused and has a menu for manipulating the nic,
+        # the other rows summarize its address config.
+        #   [ name type notes   ▸ ]   \
+        #     address info            | <- table
+        #     more address info       /
+        #   mac / vendor info / model info
+        #   <blank line>
         if netdev_i is None:
             netdev_i = len(self.cur_netdevs)
-        rows = []
-        name, typ, addresses = self._cells_for_device(dev)
+        self.cur_netdevs[netdev_i:netdev_i] = [dev]
+
         actions = []
         for action in NetDevAction:
             meth = getattr(self, '_action_' + action.name)
@@ -248,19 +297,23 @@ class NetworkView(BaseView):
             if dev.supports_action(action):
                 actions.append(
                     (_(action.value), True, (action, meth), opens_dialog))
+
         menu = ActionMenu(actions)
         connect_signal(menu, 'action', self._action, dev)
-        row = make_action_menu_row([
+
+        trows = [make_action_menu_row([
             Text("["),
-            Text(name),
-            Text(typ),
-            Text(addresses, wrap='clip'),
+            Text(dev.name),
+            Text(dev.type),
+            Text(self._notes_for_device(dev), wrap='clip'),
             menu,
             Text("]"),
-            ], menu)
-        self.dev_to_row[dev] = row.base_widget
-        self.cur_netdevs[netdev_i:netdev_i] = [dev]
-        rows.append(row)
+            ], menu)] + self._address_rows_for_device(dev)
+
+        table = TablePile(trows, colspecs=self.device_colspecs, spacing=2)
+        self.dev_to_table[dev] = table
+        table.bind(self.heading_table)
+
         if dev.type == "vlan":
             info = _("VLAN {id} on interface {link}").format(
                 **dev.config)
@@ -270,20 +323,25 @@ class NetworkView(BaseView):
         else:
             info = " / ".join([
                 dev.info.hwaddr, dev.info.vendor, dev.info.model])
-        rows.append(Color.info_minor(TableRow([
-            Text(""),
-            (4, Text(info)),
-            Text("")])))
-        rows.append(Color.info_minor(TableRow([(4, Text(""))])))
-        return rows
+
+        return Pile([
+            ('pack', table),
+            ('pack', Color.info_minor(Text("  " + info))),
+            ('pack', Text("")),
+            ])
 
     def _build_model_inputs(self):
-        rows = []
-        rows.append(TableRow([
-            Color.info_minor(Text(header))
-            for header in ["", "NAME", "TYPE", "NOTES / ADDRESSES", ""]]))
+        self.heading_table = TablePile([
+            TableRow([
+                Color.info_minor(Text(header)) for header in [
+                    "", "NAME", "TYPE", "NOTES", "",
+                    ]
+                ])
+            ],
+            spacing=2, colspecs=self.device_colspecs)
+        rows = [self.heading_table]
         for dev in self.model.get_all_netdevs():
-            rows.extend(self._rows_for_device(dev))
+            rows.append(self._device_widget(dev))
         return rows
 
     def _create_bond(self, sender=None):
