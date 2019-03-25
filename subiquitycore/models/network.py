@@ -131,7 +131,10 @@ class NetworkDev(object):
         return r
 
     def dhcp_enabled(self, version):
-        return self.config.get('dhcp{v}'.format(v=version), False)
+        if self.config is None:
+            return False
+        else:
+            return self.config.get('dhcp{v}'.format(v=version), False)
 
     def dhcp_state(self, version):
         if not self.config.get('dhcp{v}'.format(v=version), False):

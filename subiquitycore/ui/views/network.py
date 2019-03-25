@@ -138,6 +138,7 @@ class NetworkView(BaseView):
         self.del_link(device)
         for dev in touched_devs:
             self.update_link(dev)
+        self.controller.apply_config()
 
     def _action(self, sender, action, device):
         action, meth = action
@@ -224,13 +225,7 @@ class NetworkView(BaseView):
         if len(address_info) == 0:
             # Do not show an interface as disabled if it is part of a bond or
             # has a vlan on it.
-            for dev2 in self.model.get_all_netdevs():
-                if dev2.type == "bond" and \
-                  dev.name in dev2.config.get('interfaces', []):
-                    break
-                if dev2.type == "vlan" and dev.name == dev2.config.get('link'):
-                    break
-            else:
+            if not dev.is_used:
                 reason = dev.disabled_reason
                 if reason is None:
                     reason = ""
@@ -241,6 +236,9 @@ class NetworkView(BaseView):
         return rows
 
     def new_link(self, new_dev):
+        log.debug(
+            "new_link %s %s %s",
+            new_dev.name, new_dev.ifindex, (new_dev in self.cur_netdevs))
         if new_dev in self.dev_to_table:
             self.update_link(new_dev)
             return
@@ -255,6 +253,9 @@ class NetworkView(BaseView):
             (w, self.device_pile.options('pack'))]
 
     def update_link(self, dev):
+        log.debug(
+            "update_link %s %s %s",
+            dev.name, dev.ifindex, (dev in self.cur_netdevs))
         # Update the display of dev to represent the current state.
         #
         # The easiest way of doing this would be to just create a new table
@@ -288,11 +289,14 @@ class NetworkView(BaseView):
             self.device_pile.focus._select_first_selectable()
 
     def del_link(self, dev):
-        log.debug("del_link %s", (dev in self.cur_netdevs))
+        log.debug(
+            "del_link %s %s %s",
+            dev.name, dev.ifindex, (dev in self.cur_netdevs))
         if dev in self.cur_netdevs:
             netdev_i = self.cur_netdevs.index(dev)
             self._remove_row(netdev_i+1)
             del self.cur_netdevs[netdev_i]
+            del self.dev_to_table[dev]
         if isinstance(self._w, StretchyOverlay):
             stretchy = self._w.stretchy
             if getattr(stretchy, 'device', None) is dev:
