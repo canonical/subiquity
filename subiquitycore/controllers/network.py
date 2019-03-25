@@ -308,7 +308,7 @@ class NetworkController(BaseController):
         # explanation.
         for dev in self.model.get_all_netdevs():
             has_global_address = False
-            if dev.info is None:
+            if dev.info is None or not dev.config:
                 continue
             for a in dev.info.addresses.values():
                 if a.scope == "global":

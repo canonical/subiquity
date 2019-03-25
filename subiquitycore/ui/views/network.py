@@ -258,6 +258,8 @@ class NetworkView(BaseView):
         log.debug(
             "update_link %s %s %s",
             dev.name, dev.ifindex, (dev in self.cur_netdevs))
+        if dev not in self.cur_netdevs:
+            return
         # Update the display of dev to represent the current state.
         #
         # The easiest way of doing this would be to just create a new table
