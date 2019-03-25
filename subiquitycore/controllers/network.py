@@ -365,6 +365,8 @@ class NetworkController(BaseController):
                     if not silent:
                         dev.set_dhcp_state(v, "PENDING")
                         self.network_event_receiver.update_link(dev.ifindex)
+                    else:
+                        dev.set_dhcp_state(v, "RECONFIGURE")
                     dhcp_device_versions.append((dev, v))
             if dev.info is None:
                 continue
