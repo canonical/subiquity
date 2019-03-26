@@ -444,7 +444,7 @@ class SnapListView(BaseView):
 
     def get_preinstalled_snaps(self):
         try:
-            seed = yaml.load(self.get_seed_yaml())
+            seed = yaml.safe_load(self.get_seed_yaml())
         except yaml.YAMLError:
             log.debug("failed to parse seed.yaml")
             return set()
