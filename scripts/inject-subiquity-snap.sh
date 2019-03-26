@@ -104,7 +104,7 @@ fi
 python -c '
 import os, sys, yaml
 with open("new_installer/var/lib/snapd/seed/seed.yaml") as fp:
-     old_seed = yaml.load(fp)
+     old_seed = yaml.safe_load(fp)
 new_snaps = []
 
 subiquity_snap = {
