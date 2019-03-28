@@ -9,6 +9,8 @@ apps:
     command: usr/bin/subiquity
   subiquity-loadkeys:
     command: usr/bin/subiquity-loadkeys
+  subiquity-configure-apt:
+    command: usr/bin/subiquity-configure-apt
   console-conf:
     command: usr/bin/console-conf
   probert:
@@ -58,8 +60,8 @@ parts:
       'bin/console-conf-tui': usr/bin/console-conf
       'bin/subiquity-tui': usr/bin/subiquity
       'bin/subiquity-loadkeys': usr/bin/subiquity-loadkeys
-      'bin/curtin-journald-forwarder': usr/bin/curtin-journald-forwarder
       'bin/subiquity-service': usr/bin/subiquity-service
+      'bin/subiquity-configure-apt': usr/bin/subiquity-configure-apt
   users-and-groups:
     plugin: dump
     build-packages:

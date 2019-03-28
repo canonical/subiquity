@@ -15,6 +15,7 @@
 
 from collections import OrderedDict
 import os
+import sys
 import uuid
 import yaml
 
@@ -152,23 +153,13 @@ class SubiquityModel:
                 'primary': [{'arches': ["default"],
                              'uri': self.mirror.mirror}],
                 'preserve_sources_list': False,
-                'sources': {
-                    'iso.list': {
-                        'source':
-                            'deb file:///run/cdrom $RELEASE main restricted',
-                        },
-                    },
                 },
 
             'curthooks_commands': {
-                '000-setup-tmpfs': [
-                    'mount', '-t', 'tmpfs', 'tmpfs',
-                    os.path.join(self.target, 'run')],
-                '001-create-run-cdrom': [
-                    'mkdir', '-p', os.path.join(self.target, 'run', 'cdrom')],
-                '002-mount-run-cdrom': [
-                    'mount', '--bind', '/cdrom',
-                    os.path.join(self.target, 'run', 'cdrom')],
+                '000-configure-apt': [
+                    '/snap/bin/subiquity.subiquity-configure-apt',
+                    sys.executable, str(self.network.has_network).lower(),
+                    ],
                 },
 
             'install': {
