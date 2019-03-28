@@ -29,6 +29,12 @@
 #    over /target/var/lib/apt/lists (if the network is working, we'll run "apt
 #    update" after the /target/etc/apt overlay has been cleared).
 
+if [ -z "$TARGET_MOUNT_POINT" ]; then
+    # Nothing good can happen from running this script without
+    # TARGET_MOUNT_POINT set.
+    exit 1;
+fi
+
 PY=$1
 HAS_NETWORK=$2
 
@@ -47,13 +53,14 @@ mount -t tmpfs tmpfs "$TARGET_MOUNT_POINT/run"
 mkdir -p "$TARGET_MOUNT_POINT/run/cdrom"
 mount --bind /cdrom "$TARGET_MOUNT_POINT/run/cdrom"
 
-cat > "/tmp/sources.list" <<EOF
-deb file:///run/cdrom $(lsb_release -sc) main restricted
-EOF
 if [ $HAS_NETWORK = 'true' ]; then
-    cat "$TARGET_MOUNT_POINT/etc/apt/sources.list" >> "/tmp/sources.list"
+    mv "$TARGET_MOUNT_POINT/etc/apt/sources.list" "$TARGET_MOUNT_POINT/etc/apt/sources.list.d/original.list"
 else
     setup_overlay $TARGET_MOUNT_POINT/var/lib/apt/lists
 fi
-mv /tmp/sources.list "$TARGET_MOUNT_POINT/etc/apt/sources.list"
+
+cat > "$TARGET_MOUNT_POINT/etc/apt/sources.list" <<EOF
+deb file:///run/cdrom $(lsb_release -sc) main restricted
+EOF
+
 $PY -m curtin in-target -- apt-get update
