@@ -23,8 +23,6 @@ import logging
 
 from urwid import (
     connect_signal,
-    LineBox,
-    ProgressBar,
     Text,
     )
 
@@ -35,14 +33,13 @@ from subiquitycore.models.network import (
 from subiquitycore.ui.actionmenu import ActionMenu
 from subiquitycore.ui.buttons import (
     back_btn,
-    cancel_btn,
     done_btn,
     menu_btn,
     )
 from subiquitycore.ui.container import (
     Pile,
-    WidgetWrap,
     )
+from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 from subiquitycore.ui.utils import (
@@ -51,6 +48,7 @@ from subiquitycore.ui.utils import (
     make_action_menu_row,
     screen,
     )
+from subiquitycore.ui.width import widget_width
 from .network_configure_manual_interface import (
     AddVlanStretchy,
     BondStretchy,
@@ -63,26 +61,6 @@ from subiquitycore.view import BaseView
 
 
 log = logging.getLogger('subiquitycore.views.network')
-
-
-class ApplyingConfigWidget(WidgetWrap):
-
-    def __init__(self, step_count, cancel_func):
-        self.cancel_func = cancel_func
-        button = cancel_btn(_("Cancel"), on_press=self.do_cancel)
-        self.bar = ProgressBar(normal='progress_incomplete',
-                               complete='progress_complete',
-                               current=0, done=step_count)
-        box = LineBox(Pile([self.bar,
-                            button_pile([button])]),
-                      title=_("Applying network config"))
-        super().__init__(box)
-
-    def advance(self):
-        self.bar.current += 1
-
-    def do_cancel(self, sender):
-        self.cancel_func()
 
 
 def _stretchy_shower(cls, *args):
@@ -125,13 +103,16 @@ class NetworkView(BaseView):
             bp,
         ]
 
-        buttons = button_pile([
-                    done_btn(_("Done"), on_press=self.done),
+        self.buttons = button_pile([
+                    done_btn("TBD", on_press=self.done),  # See _route_watcher
                     back_btn(_("Back"), on_press=self.cancel),
                     ])
         self.bottom = Pile([
-            ('pack', buttons),
+            ('pack', self.buttons),
         ])
+
+        self.controller.network_event_receiver.add_default_route_watcher(
+            self._route_watcher)
 
         self.error_showing = False
 
@@ -157,11 +138,43 @@ class NetworkView(BaseView):
         self.del_link(device)
         for dev in touched_devs:
             self.update_link(dev)
+        self.controller.apply_config()
 
     def _action(self, sender, action, device):
         action, meth = action
         log.debug("_action %s %s", action.name, device.name)
         meth(device)
+
+    def _route_watcher(self, routes):
+        log.debug('view route_watcher %s', routes)
+        if routes:
+            label = _("Done")
+        else:
+            label = _("Continue without network")
+        self.buttons.base_widget[0].set_label(label)
+        self.buttons.width = max(
+            14,
+            widget_width(self.buttons.base_widget[0]),
+            widget_width(self.buttons.base_widget[1]),
+            )
+
+    def show_apply_spinner(self):
+        s = Spinner(self.controller.loop)
+        s.start()
+        c = TablePile([
+            TableRow([
+                Text(_("Applying changes")),
+                s,
+                ]),
+            ], align='center')
+        self.bottom.contents[0:0] = [
+            (c, self.bottom.options()),
+            (Text(""), self.bottom.options()),
+            ]
+
+    def hide_apply_spinner(self):
+        if len(self.bottom.contents) > 2:
+            self.bottom.contents[0:2] = []
 
     def _notes_for_device(self, dev):
         notes = []
@@ -189,10 +202,19 @@ class NetworkView(BaseView):
                 if addrs:
                     address_info.extend(
                         [(label, Text(addr)) for addr in addrs])
+                elif dev.dhcp_state(v) == "PENDING":
+                    s = Spinner(self.controller.loop, align='left')
+                    s.rate = 0.3
+                    s.start()
+                    address_info.append((label, s))
+                elif dev.dhcp_state(v) == "TIMEDOUT":
+                    address_info.append((label, Text(_("timed out"))))
+                elif dev.dhcp_state(v) == "RECONFIGURE":
+                    address_info.append((label, Text(_("-"))))
                 else:
                     address_info.append((
                         label,
-                        Text(_("no address")),
+                        Text(_("unknown state {}".format(dev.dhcp_state(v))))
                         ))
             else:
                 addrs = []
@@ -205,20 +227,20 @@ class NetworkView(BaseView):
         if len(address_info) == 0:
             # Do not show an interface as disabled if it is part of a bond or
             # has a vlan on it.
-            for dev2 in self.model.get_all_netdevs():
-                if dev2.type == "bond" and \
-                  dev.name in dev2.config.get('interfaces', []):
-                    break
-                if dev2.type == "vlan" and dev.name == dev2.config.get('link'):
-                    break
-            else:
-                address_info.append((Text(_("disabled")), Text("")))
+            if not dev.is_used:
+                reason = dev.disabled_reason
+                if reason is None:
+                    reason = ""
+                address_info.append((Text(_("disabled")), Text(reason)))
         rows = []
         for label, value in address_info:
             rows.append(TableRow([Text(""), label, (2, value)]))
         return rows
 
     def new_link(self, new_dev):
+        log.debug(
+            "new_link %s %s %s",
+            new_dev.name, new_dev.ifindex, (new_dev in self.cur_netdevs))
         if new_dev in self.dev_to_table:
             self.update_link(new_dev)
             return
@@ -233,6 +255,11 @@ class NetworkView(BaseView):
             (w, self.device_pile.options('pack'))]
 
     def update_link(self, dev):
+        log.debug(
+            "update_link %s %s %s",
+            dev.name, dev.ifindex, (dev in self.cur_netdevs))
+        if dev not in self.cur_netdevs:
+            return
         # Update the display of dev to represent the current state.
         #
         # The easiest way of doing this would be to just create a new table
@@ -266,11 +293,18 @@ class NetworkView(BaseView):
             self.device_pile.focus._select_first_selectable()
 
     def del_link(self, dev):
-        log.debug("del_link %s", (dev in self.cur_netdevs))
+        log.debug(
+            "del_link %s %s %s",
+            dev.name, dev.ifindex, (dev in self.cur_netdevs))
+        # If a virtual device disappears while we still have config
+        # for it, we assume it will be back soon.
+        if dev.is_virtual and dev.config is not None:
+            return
         if dev in self.cur_netdevs:
             netdev_i = self.cur_netdevs.index(dev)
             self._remove_row(netdev_i+1)
             del self.cur_netdevs[netdev_i]
+            del self.dev_to_table[dev]
         if isinstance(self._w, StretchyOverlay):
             stretchy = self._w.stretchy
             if getattr(stretchy, 'device', None) is dev:
@@ -378,7 +412,11 @@ class NetworkView(BaseView):
     def done(self, result=None):
         if self.error_showing:
             self.bottom.contents[0:2] = []
-        self.controller.network_finish(self.model.render())
+        self.controller.network_event_receiver.remove_default_route_watcher(
+            self._route_watcher)
+        self.controller.done()
 
     def cancel(self, button=None):
+        self.controller.network_event_receiver.remove_default_route_watcher(
+            self._route_watcher)
         self.controller.cancel()

@@ -247,6 +247,7 @@ class EditNetworkStretchy(Stretchy):
             self.device.config['dhcp{v}'.format(v=self.ip_version)] = True
         else:
             pass
+        self.parent.controller.apply_config()
         self.parent.update_link(self.device)
         self.parent.remove_overlay()
 
@@ -300,6 +301,7 @@ class AddVlanStretchy(Stretchy):
         dev = self.parent.controller.add_vlan(
             self.device, self.form.vlan.value)
         self.parent.new_link(dev)
+        self.parent.controller.apply_config()
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()
@@ -479,6 +481,7 @@ class BondStretchy(Stretchy):
         for dev in touched_devices:
             self.parent.update_link(dev)
         self.parent.remove_overlay()
+        self.parent.controller.apply_config()
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()
