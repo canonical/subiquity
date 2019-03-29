@@ -114,15 +114,18 @@ class RefreshController(BaseController):
                 log.exception("checking switch")
                 return
             if response.json()["result"]["status"] == "Done":
-                return
+                return True
             time.sleep(0.1)
 
     def _snap_switched(self, fut):
         log.debug("snap switching completed")
         try:
-            fut.result()
+            success = fut.result()
         except:
             log.exception("_snap_switched")
+            return
+        if not success:
+            return
         self.switch_state = SwitchState.SWITCHED
         self._maybe_check_for_update()
 
