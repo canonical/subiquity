@@ -37,6 +37,7 @@ class CheckState(enum.IntEnum):
     def is_definite(self):
         return self in [self.AVAILABLE, self.UNAVAILABLE]
 
+
 class SwitchState(enum.IntEnum):
     NOT_STARTED = enum.auto()
     SWITCHING = enum.auto()
@@ -71,7 +72,7 @@ class RefreshController(BaseController):
 
         with open('/proc/cmdline') as fp:
             cmdline = fp.read()
-        prefix="subquity-channel="
+        prefix = "subquity-channel="
         for arg in cmdline.split():
             if arg.startswith(prefix):
                 log.debug("found cmdline arg %s", arg)
@@ -101,7 +102,7 @@ class RefreshController(BaseController):
                 'v2/snaps/{}'.format(self.snap_name),
                 {'action': 'switch', 'channel': channel})
             response.raise_for_status()
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             log.exception("switching")
             return
         change = response.json()["change"]
@@ -110,7 +111,7 @@ class RefreshController(BaseController):
                 response = self.snapd_connection.get(
                     'v2/changes/{}'.format(change))
                 response.raise_for_status()
-            except requests.exceptions.RequestException as e:
+            except requests.exceptions.RequestException:
                 log.exception("checking switch")
                 return
             if response.json()["result"]["status"] == "Done":
@@ -121,7 +122,7 @@ class RefreshController(BaseController):
         log.debug("snap switching completed")
         try:
             success = fut.result()
-        except:
+        except Exception:
             log.exception("_snap_switched")
             return
         if not success:
