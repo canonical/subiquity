@@ -132,6 +132,13 @@ class FakeSnapdConnection:
                 "status-code": 200,
                 "status": "OK",
                 })
+        if path == "v2/snaps/subiquity" and body['action'] == 'switch':
+            return _FakeMemoryResponse({
+                "type": "async",
+                "change": 8,
+                "status-code": 200,
+                "status": "Accepted",
+                })
         raise Exception(
             "Don't know how to fake POST response to {}".format((path, args)))
 
