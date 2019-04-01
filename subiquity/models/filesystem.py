@@ -178,20 +178,17 @@ def asdict(inst):
     for field in attr.fields(type(inst)):
         if field.name.startswith('_'):
             continue
-        v = getattr(
-            inst,
-            'serialize_' + field.name,
-            lambda: getattr(inst, field.name))()
-        if v is not None:
-            p = ''
-            if getattr(inst, '_passphrase', None) is not None:
-                p = 'dm-'
-            if isinstance(v, (list, set)):
-                r[field.name] = [p + elem.id for elem in v]
-            else:
-                if hasattr(v, 'id'):
-                    v = v.id
-                if v is not None:
+        m = getattr(inst, 'serialize_' + field.name, None)
+        if m:
+            r[field.name] = m()
+        else:
+            v = getattr(inst, field.name)
+            if v is not None:
+                if field.metadata.get('ref', False):
+                    r[field.name] = v.id
+                elif field.metadata.get('reflist', False):
+                    r[field.name] = [elem.id for elem in v]
+                else:
                     r[field.name] = v
     return r
 
@@ -629,6 +626,12 @@ class LVM_VolGroup(_Device):
     devices = reflist()  # set([_Formattable])
     _passphrase = attr.ib(default=None, repr=False)
 
+    def serialize_devices(self):
+        p = ''
+        if self._passphrase:
+            p = 'dm-'
+        return [p + d.id for d in self.devices]
+
     @property
     def size(self):
         size = get_lvm_size(self.devices)
@@ -855,30 +858,25 @@ class FilesystemModel(object):
             emit(d)
 
         def can_emit(obj):
-            # This will need to be extended for things like bcache
-            if isinstance(obj, Partition):
-                return obj.device.id in emitted_ids
-            elif isinstance(obj, Raid):
-                for device in obj.devices | obj.spare_devices:
-                    if device.id not in emitted_ids:
+            for f in attr.fields(type(obj)):
+                v = getattr(obj, f.name)
+                if not v:
+                    continue
+                if isinstance(obj, LVM_VolGroup) and f.name == 'devices':
+                    p = ''
+                    if obj._passphrase:
+                        p = "dm-"
+                    for device in obj.devices:
+                        if p + device.id not in emitted_ids:
+                            return False
+                elif f.metadata.get('ref', False):
+                    if v.id not in emitted_ids:
                         return False
-                return True
-            elif isinstance(obj, LVM_VolGroup):
-                p = ''
-                if obj._passphrase:
-                    p = "dm-"
-                for device in obj.devices:
-                    if p + device.id not in emitted_ids:
-                        return False
-                return True
-            elif isinstance(obj, LVM_LogicalVolume):
-                return obj.volgroup.id in emitted_ids
-            elif isinstance(obj, DM_Crypt):
-                return obj.volume.id in emitted_ids
-            else:
-                raise Exception(
-                    "don't know how to decide if {} can be emitted".format(
-                        obj))
+                elif f.metadata.get('reflist', False):
+                    for o in v:
+                        if o.id not in emitted_ids:
+                            return False
+            return True
 
         dms = []
         for vg in self._vgs:
