@@ -10,7 +10,6 @@ from subiquitycore.view import BaseView
 from subiquity.controllers.filesystem import FilesystemController
 from subiquity.models.filesystem import (
     dehumanize_size,
-    Disk,
     FilesystemModel,
     )
 from subiquity.ui.views.filesystem.partition import PartitionStretchy
@@ -23,10 +22,10 @@ FakeStorageInfo.__new__.__defaults__ = (None,) * len(FakeStorageInfo._fields)
 
 def make_model_and_disk():
     model = FilesystemModel(prober=None)
-    disk = Disk.from_info(FakeStorageInfo(
+    model._disk_info.append(FakeStorageInfo(
         name='disk-name', size=100*(2**30), free=50*(2**30)))
-    model._available_disks[disk.name] = disk
-    return model, disk
+    model.reset()
+    return model, model._actions[0]
 
 
 def make_view(model, disk, partition=None):
