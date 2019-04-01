@@ -27,6 +27,10 @@ import platform
 log = logging.getLogger('subiquity.models.filesystem')
 
 
+def fsobj(c):
+    return attr.s(cmp=False)(c)
+
+
 @attr.s(cmp=False)
 class FS:
     label = attr.ib()
@@ -146,15 +150,27 @@ def get_lvm_size(devices, size_overrides={}):
     return r
 
 
-def id_factory(name):
+def idfield(base):
     i = 0
 
     def factory():
         nonlocal i
-        r = "%s-%s" % (name, i)
+        r = "%s-%s" % (base, i)
         i += 1
         return r
-    return attr.Factory(factory)
+    return attr.ib(default=attr.Factory(factory))
+
+
+def ref():
+    return attr.ib(default=None, metadata={'ref': True})
+
+
+def reflist():
+    return attr.ib(default=attr.Factory(set), metadata={'reflist': True})
+
+
+def const(value):
+    return attr.ib(default=value)
 
 
 def asdict(inst):
@@ -357,11 +373,11 @@ class _Device(_Formattable, ABC):
         return False
 
 
-@attr.s(cmp=False)
+@fsobj
 class Disk(_Device):
 
-    id = attr.ib(default=id_factory("disk"))
-    type = attr.ib(default="disk")
+    id = idfield("disk")
+    type = const("disk")
     ptable = attr.ib(default=None)
     serial = attr.ib(default=None)
     path = attr.ib(default=None)
@@ -460,12 +476,12 @@ class Disk(_Device):
     ok_for_raid = ok_for_lvm_vg = _can_FORMAT
 
 
-@attr.s(cmp=False)
+@fsobj
 class Partition(_Formattable):
 
-    id = attr.ib(default=id_factory("part"))
-    type = attr.ib(default="partition")
-    device = attr.ib(default=None)  # Disk
+    id = idfield("part")
+    type = const("partition")
+    device = ref()  # Disk
     size = attr.ib(default=None)
     wipe = attr.ib(default=None)
     flag = attr.ib(default=None)
@@ -523,14 +539,15 @@ class Partition(_Formattable):
     ok_for_lvm_vg = ok_for_raid
 
 
-@attr.s(cmp=False)
+@fsobj
 class Raid(_Device):
-    id = attr.ib(default=id_factory("raid"))
-    type = attr.ib(default="raid")
+    id = idfield("raid")
+    type = const("raid")
+    preserve = attr.ib(default=False)
     name = attr.ib(default=None)
     raidlevel = attr.ib(default=None)  # 0, 1, 5, 6, 10
-    devices = attr.ib(default=attr.Factory(set))  # set([_Formattable])
-    spare_devices = attr.ib(default=attr.Factory(set))  # set([_Formattable])
+    devices = reflist()  # set([_Formattable])
+    spare_devices = reflist()  # set([_Formattable])
     ptable = attr.ib(default=None)
 
     @property
@@ -602,13 +619,14 @@ class Raid(_Device):
 LUKS_OVERHEAD = 16*(2**20)
 
 
-@attr.s(cmp=False)
+@fsobj
 class LVM_VolGroup(_Device):
 
-    id = attr.ib(default=id_factory("vg"))
-    type = attr.ib(default="lvm_volgroup")
+    id = idfield("vg")
+    type = const("lvm_volgroup")
+    preserve = attr.ib(default=False)
     name = attr.ib(default=None)
-    devices = attr.ib(default=attr.Factory(set))  # set([_Formattable])
+    devices = reflist()  # set([_Formattable])
     _passphrase = attr.ib(default=None, repr=False)
 
     @property
@@ -664,14 +682,15 @@ class LVM_VolGroup(_Device):
     component_name = "PV"
 
 
-@attr.s(cmp=False)
+@fsobj
 class LVM_LogicalVolume(_Formattable):
 
-    id = attr.ib(default=id_factory("lv"))
-    type = attr.ib(default="lvm_partition")
+    id = idfield("lv")
+    type = const("lvm_partition")
     name = attr.ib(default=None)
-    volgroup = attr.ib(default=None)  # LVM_VolGroup
+    volgroup = ref()  # LVM_VolGroup
     size = attr.ib(default=None)
+    preserve = attr.ib(default=False)
 
     def serialize_size(self):
         return "{}b".format(self.size)
@@ -706,22 +725,23 @@ class LVM_LogicalVolume(_Formattable):
     ok_for_lvm_vg = False
 
 
-@attr.s(cmp=False)
+@fsobj
 class DM_Crypt:
-    id = attr.ib(default=id_factory("crypt"))
-    type = attr.ib(default="dm_crypt")
+    id = idfield("crypt")
+    type = const("dm_crypt")
     dm_name = attr.ib(default=None)
-    volume = attr.ib(default=None)  # _Formattable
+    volume = ref()  # _Formattable
     key = attr.ib(default=None)
+    preserve = attr.ib(default=False)
 
 
-@attr.s(cmp=False)
+@fsobj
 class Filesystem:
 
-    id = attr.ib(default=id_factory("fs"))
-    type = attr.ib(default="format")
+    id = idfield("fs")
+    type = const("format")
     fstype = attr.ib(default=None)
-    volume = attr.ib(default=None)  # _Formattable
+    volume = ref()  # _Formattable
     label = attr.ib(default=None)
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
@@ -740,11 +760,11 @@ class Filesystem:
             return False
 
 
-@attr.s(cmp=False)
+@fsobj
 class Mount:
-    id = attr.ib(default=id_factory("mount"))
-    type = attr.ib(default="mount")
-    device = attr.ib(default=None)  # Filesystem
+    id = idfield("mount")
+    type = const("mount")
+    device = ref()  # Filesystem
     path = attr.ib(default=None)
 
     def can_delete(self):
