@@ -74,4 +74,5 @@ class Prober():
 
     def get_storage_info(self, device):
         ''' Load a StorageInfo class for specified device '''
-        return StorageInfo({device: self.get_storage().get(device)})
+        return StorageInfo(
+            {device: self.get_storage()['blockdev'].get(device)})
