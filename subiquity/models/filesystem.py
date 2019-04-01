@@ -27,7 +27,48 @@ import platform
 log = logging.getLogger('subiquity.models.filesystem')
 
 
+def _set_backlinks(obj):
+    for field in attr.fields(type(obj)):
+        backlink = field.metadata.get('backlink')
+        if backlink is None:
+            continue
+        v = getattr(obj, field.name)
+        if v is None:
+            continue
+        if not isinstance(v, (list, set)):
+            v = [v]
+        for vv in v:
+            b = getattr(vv, backlink, None)
+            if isinstance(b, list):
+                b.append(obj)
+            elif isinstance(b, set):
+                b.add(obj)
+            else:
+                setattr(vv, backlink, obj)
+
+
+def _remove_backlinks(obj):
+    for field in attr.fields(type(obj)):
+        backlink = field.metadata.get('backlink')
+        if backlink is None:
+            continue
+        v = getattr(obj, field.name)
+        if v is None:
+            continue
+        if not isinstance(v, (list, set)):
+            v = [v]
+        for vv in v:
+            b = getattr(vv, backlink, None)
+            if isinstance(b, list):
+                b.remove(obj)
+            elif isinstance(b, set):
+                b.remove(obj)
+            else:
+                setattr(vv, backlink, None)
+
+
 def fsobj(c):
+    c.__attrs_post_init__ = _set_backlinks
     return attr.s(cmp=False)(c)
 
 
@@ -161,12 +202,18 @@ def idfield(base):
     return attr.ib(default=attr.Factory(factory))
 
 
-def ref():
-    return attr.ib(default=None, metadata={'ref': True})
+def ref(*, backlink=None):
+    metadata = {'ref': True}
+    if backlink:
+        metadata['backlink'] = backlink
+    return attr.ib(default=None, metadata=metadata)
 
 
-def reflist():
-    return attr.ib(default=attr.Factory(set), metadata={'reflist': True})
+def reflist(*, backlink=None):
+    metadata = {'reflist': True}
+    if backlink:
+        metadata['backlink'] = backlink
+    return attr.ib(default=attr.Factory(set), metadata=metadata)
 
 
 def const(value):
@@ -478,7 +525,7 @@ class Partition(_Formattable):
 
     id = idfield("part")
     type = const("partition")
-    device = ref()  # Disk
+    device = ref(backlink="_partitions")  # Disk
     size = attr.ib(default=None)
     wipe = attr.ib(default=None)
     flag = attr.ib(default=None)
@@ -543,8 +590,8 @@ class Raid(_Device):
     preserve = attr.ib(default=False)
     name = attr.ib(default=None)
     raidlevel = attr.ib(default=None)  # 0, 1, 5, 6, 10
-    devices = reflist()  # set([_Formattable])
-    spare_devices = reflist()  # set([_Formattable])
+    devices = reflist(backlink="_constructed_device")  # set([_Formattable])
+    spare_devices = reflist(backlink="_constructed_device")  # ditto
     ptable = attr.ib(default=None)
 
     @property
@@ -623,7 +670,7 @@ class LVM_VolGroup(_Device):
     type = const("lvm_volgroup")
     preserve = attr.ib(default=False)
     name = attr.ib(default=None)
-    devices = reflist()  # set([_Formattable])
+    devices = reflist(backlink="_constructed_device")  # set([_Formattable])
     _passphrase = attr.ib(default=None, repr=False)
 
     def serialize_devices(self):
@@ -691,7 +738,7 @@ class LVM_LogicalVolume(_Formattable):
     id = idfield("lv")
     type = const("lvm_partition")
     name = attr.ib(default=None)
-    volgroup = ref()  # LVM_VolGroup
+    volgroup = ref(backlink="_partitions")  # LVM_VolGroup
     size = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
@@ -744,7 +791,7 @@ class Filesystem:
     id = idfield("fs")
     type = const("format")
     fstype = attr.ib(default=None)
-    volume = ref()  # _Formattable
+    volume = ref(backlink="_fs")  # _Formattable
     label = attr.ib(default=None)
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
@@ -767,7 +814,7 @@ class Filesystem:
 class Mount:
     id = idfield("mount")
     type = const("mount")
-    device = ref()  # Filesystem
+    device = ref(backlink="_mount")  # Filesystem
     path = attr.ib(default=None)
 
     def can_delete(self):
@@ -983,9 +1030,7 @@ class FilesystemModel(object):
             raise Exception("%s is already formatted" % (disk.label,))
         p = Partition(device=disk, size=real_size, flag=flag, wipe=wipe)
         if flag in ("boot", "bios_grub", "prep"):
-            disk._partitions.insert(0, p)
-        else:
-            disk._partitions.append(p)
+            disk._partitions.insert(0, disk._partitions.pop())
         disk.ptable = 'gpt'
         self._partitions.append(p)
         return p
@@ -993,7 +1038,7 @@ class FilesystemModel(object):
     def remove_partition(self, part):
         if part._fs or part._constructed_device:
             raise Exception("can only remove empty partition")
-        part.device._partitions.remove(part)
+        _remove_backlinks(part)
         self._partitions.remove(part)
         if len(part.device._partitions) == 0:
             part.device.ptable = None
@@ -1007,43 +1052,35 @@ class FilesystemModel(object):
         for d in devices | spare_devices:
             if isinstance(d, Disk):
                 self._use_disk(d)
-            d._constructed_device = r
         self._raids.append(r)
         return r
 
     def remove_raid(self, raid):
         if raid._fs or raid._constructed_device or len(raid.partitions()):
             raise Exception("can only remove empty RAID")
-        for d in raid.devices:
-            d._constructed_device = None
+        _remove_backlinks(raid)
         self._raids.remove(raid)
 
     def add_volgroup(self, name, devices, passphrase):
         vg = LVM_VolGroup(name=name, devices=devices, passphrase=passphrase)
-        for d in devices:
-            if isinstance(d, Disk):
-                self._use_disk(d)
-            d._constructed_device = vg
         self._vgs.append(vg)
         return vg
 
     def remove_volgroup(self, vg):
         if len(vg._partitions):
             raise Exception("can only remove empty VG")
-        for d in vg.devices:
-            d._constructed_device = None
+        _remove_backlinks(vg)
         self._vgs.remove(vg)
 
     def add_logical_volume(self, vg, name, size):
         lv = LVM_LogicalVolume(volgroup=vg, name=name, size=size)
-        vg._partitions.append(lv)
         self._lvs.append(lv)
         return lv
 
     def remove_logical_volume(self, lv):
         if lv._fs:
             raise Exception("can only remove empty LV")
-        lv.volgroup._partitions.remove(lv)
+        _remove_backlinks(lv)
         self._lvs.remove(lv)
 
     def add_filesystem(self, volume, fstype):
@@ -1057,25 +1094,25 @@ class FilesystemModel(object):
             self._use_disk(volume)
         if volume._fs is not None:
             raise Exception("%s is already formatted")
-        volume._fs = fs = Filesystem(volume=volume, fstype=fstype)
+        fs = Filesystem(volume=volume, fstype=fstype)
         self._filesystems.append(fs)
         return fs
 
     def remove_filesystem(self, fs):
         if fs._mount:
             raise Exception("can only remove unmounted filesystem")
-        fs.volume._fs = None
+        _remove_backlinks(fs)
         self._filesystems.remove(fs)
 
     def add_mount(self, fs, path):
         if fs._mount is not None:
             raise Exception("%s is already mounted")
-        fs._mount = m = Mount(device=fs, path=path)
+        m = Mount(device=fs, path=path)
         self._mounts.append(m)
         return m
 
     def remove_mount(self, mount):
-        mount.device._mount = None
+        _remove_backlinks(mount)
         self._mounts.remove(mount)
 
     def any_configuration_done(self):
