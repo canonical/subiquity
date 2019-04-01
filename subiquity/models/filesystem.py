@@ -356,6 +356,35 @@ class _Device(_Formattable, ABC):
                 return True
         return False
 
+    @property
+    def _can_DELETE(self):
+        mounted_partitions = 0
+        for p in self._partitions:
+            if p.fs() and p.fs().mount():
+                mounted_partitions += 1
+            elif p.constructed_device():
+                cd = p.constructed_device()
+                return _(
+                    "Cannot delete {selflabel} as partition {partnum} is part "
+                    "of the {cdtype} {cdname}.").format(
+                        selflabel=self.label,
+                        partnum=p._number,
+                        cdtype=cd.desc(),
+                        cdname=cd.label,
+                        )
+        if mounted_partitions > 1:
+            return _(
+                "Cannot delete {selflabel} because it has {count} mounted "
+                "partitions.").format(
+                    selflabel=self.label,
+                    count=mounted_partitions)
+        elif mounted_partitions == 1:
+            return _(
+                "Cannot delete {selflabel} because it has 1 mounted partition."
+                ).format(selflabel=self.label)
+        else:
+            return _generic_can_DELETE(self)
+
 
 @attr.s(cmp=False)
 class Disk(_Device):
@@ -575,15 +604,6 @@ class Raid(_Device):
     _can_REMOVE = property(_generic_can_REMOVE)
 
     @property
-    def _can_DELETE(self):
-        if len(self._partitions) > 0:
-            return _(
-                "Cannot delete {selflabel} because it has partitions.").format(
-                    selflabel=self.label)
-        else:
-            return _generic_can_DELETE(self)
-
-    @property
     def ok_for_raid(self):
         if self._fs is not None:
             return False
@@ -646,16 +666,6 @@ class LVM_VolGroup(_Device):
             return _generic_can_EDIT(self)
 
     _can_CREATE_LV = Disk._can_PARTITION
-
-    @property
-    def _can_DELETE(self):
-        if len(self._partitions) > 0:
-            return _(
-                "Cannot delete {selflabel} because it has logical "
-                "volumes.").format(
-                    selflabel=self.label)
-        else:
-            return _generic_can_DELETE(self)
 
     ok_for_raid = False
     ok_for_lvm_vg = False
