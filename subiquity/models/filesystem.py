@@ -913,7 +913,7 @@ class FilesystemModel(object):
         return mounted_disks
 
     def probe(self):
-        storage = self.prober.get_storage()
+        storage = self.prober.get_storage()["blockdev"]
         currently_mounted = self._get_system_mounted_disks()
         for path, data in storage.items():
             log.debug("fs probe %s", path)
