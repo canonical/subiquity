@@ -518,6 +518,7 @@ class FilesystemView(BaseView):
             ]
 
         self.lb = ListBox(body)
+        self.lb.base_widget.offset_rows = 2
         frame = screen(
             self.lb, self._build_buttons(),
             focus_buttons=self.model.can_install())
