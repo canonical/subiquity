@@ -11,7 +11,7 @@ Network:
 Proxy:
   proxy: ""
 Mirror:
-  mirror: "http://us.archive.ubuntu.com"
+  country-code: us
 Filesystem:
   guided: yes
   guided-index: 0

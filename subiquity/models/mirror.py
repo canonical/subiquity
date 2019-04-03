@@ -15,6 +15,7 @@
 
 import logging
 import platform
+from urllib import parse
 
 log = logging.getLogger('subiquitycore.models.mirror')
 
@@ -29,3 +30,8 @@ class MirrorModel(object):
 
     def __init__(self):
         self.mirror = DEFAULT_MIRROR
+
+    def set_country(self, cc):
+        parsed = parse.urlparse(DEFAULT_MIRROR)
+        new = parsed._replace(netloc=cc + '.' + parsed.netloc)
+        self.mirror = parse.urlunparse(new)
