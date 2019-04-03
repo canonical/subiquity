@@ -42,6 +42,9 @@ class MirrorController(BaseController):
         self.model = self.base_model.mirror
         self.check_state = CheckState.NOT_STARTED
         self.answers = self.all_answers.get('Mirror', {})
+        if 'country-code' in self.answers:
+            self.check_state = CheckState.DONE
+            self.model.set_country(self.answers['country-code'])
 
     def snapd_network_changed(self):
         if self.check_state != CheckState.DONE:
@@ -77,6 +80,7 @@ class MirrorController(BaseController):
             log.debug("bogus CountryCode found in %r", response.text)
             self.check_state = CheckState.FAILED
             return
+        self.check_state = CheckState.DONE
         self.model.set_country(cc)
 
     def default(self):
@@ -84,6 +88,9 @@ class MirrorController(BaseController):
         self.ui.set_body(MirrorView(self.model, self))
         if 'mirror' in self.answers:
             self.done(self.answers['mirror'])
+        elif 'country-code' in self.answers \
+             or 'accept-default' in self.answers:
+            self.done(self.model.mirror)
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
