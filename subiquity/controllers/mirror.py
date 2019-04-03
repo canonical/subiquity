@@ -32,6 +32,8 @@ class MirrorController(BaseController):
         self.ui.set_body(MirrorView(self.model, self))
         if 'mirror' in self.answers:
             self.done(self.answers['mirror'])
+        elif 'accept-default' in self.answers:
+            self.done(self.model.mirror)
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
