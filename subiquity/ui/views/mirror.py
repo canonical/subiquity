@@ -24,14 +24,13 @@ from subiquitycore.ui.form import (
     Form,
     URLField,
 )
-from subiquity.models.mirror import DEFAULT_MIRROR
 
 
 log = logging.getLogger('subiquity.ui.mirror')
 
 mirror_help = _(
     "You may provide an archive mirror that will be used instead "
-    "of the default '" + DEFAULT_MIRROR + "'")
+    "of the default.")
 
 
 class MirrorForm(Form):

@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import enum
 import logging
+import requests
+from xml.etree import ElementTree
 
 from subiquitycore.controller import BaseController
 from subiquity.ui.views.mirror import MirrorView
@@ -21,14 +24,63 @@ from subiquity.ui.views.mirror import MirrorView
 log = logging.getLogger('subiquity.controllers.mirror')
 
 
+class CheckState(enum.IntEnum):
+    NOT_STARTED = enum.auto()
+    CHECKING = enum.auto()
+    FAILED = enum.auto()
+    DONE = enum.auto()
+
+
 class MirrorController(BaseController):
+
+    signals = [
+        ('snapd-network-change', 'snapd_network_changed'),
+    ]
 
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.mirror
+        self.check_state = CheckState.NOT_STARTED
         self.answers = self.all_answers.get('Mirror', {})
 
+    def snapd_network_changed(self):
+        if self.check_state != CheckState.DONE:
+            self.check_state = CheckState.CHECKING
+            self.run_in_bg(self._bg_lookup, self.looked_up)
+
+    def _bg_lookup(self):
+        return requests.get("https://geoip.ubuntu.com/lookup")
+
+    def looked_up(self, fut):
+        if self.check_state == CheckState.DONE:
+            return
+        try:
+            response = fut.result()
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            log.exception("geoip lookup failed")
+            self.check_state = CheckState.FAILED
+            return
+        try:
+            e = ElementTree.fromstring(response.text)
+        except ElementTree.ParseError:
+            log.exception("parsing %r failed", response.text)
+            self.check_state = CheckState.FAILED
+            return
+        cc = e.find("CountryCode")
+        if cc is None:
+            log.debug("no CountryCode found in %r", response.text)
+            self.check_state = CheckState.FAILED
+            return
+        cc = cc.text.lower()
+        if len(cc) != 2:
+            log.debug("bogus CountryCode found in %r", response.text)
+            self.check_state = CheckState.FAILED
+            return
+        self.model.set_country(cc)
+
     def default(self):
+        self.check_state = CheckState.DONE
         self.ui.set_body(MirrorView(self.model, self))
         if 'mirror' in self.answers:
             self.done(self.answers['mirror'])
