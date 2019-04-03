@@ -674,7 +674,7 @@ class LVM_LogicalVolume(_Formattable):
     size = attr.ib(default=None)
 
     def serialize_size(self):
-        return "{}b".format(self.size)
+        return "{}B".format(self.size)
 
     def available(self):
         if self._constructed_device is not None:
