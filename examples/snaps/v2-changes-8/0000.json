@@ -1,0 +1,29 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": {
+    "id": "176",
+    "kind": "switch-snap",
+    "summary": "Switch \"subiquity\" snap to stable",
+    "status": "Done",
+    "tasks": [
+      {
+        "id": "4715",
+        "kind": "switch-snap",
+        "summary": "Switch snap \"subiquity\" to stable",
+        "status": "Done",
+        "progress": {
+          "label": "",
+          "done": 1,
+          "total": 1
+        },
+        "spawn-time": "2019-03-29T14:13:32.922119778+13:00",
+        "ready-time": "2019-03-29T14:13:32.941910157+13:00"
+      }
+    ],
+    "ready": true,
+    "spawn-time": "2019-03-29T14:13:32.922139818+13:00",
+    "ready-time": "2019-03-29T14:13:32.941911437+13:00"
+  }
+}

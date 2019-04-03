@@ -16,6 +16,7 @@
 import enum
 import logging
 import os
+import time
 
 import requests.exceptions
 
@@ -37,6 +38,12 @@ class CheckState(enum.IntEnum):
         return self in [self.AVAILABLE, self.UNAVAILABLE]
 
 
+class SwitchState(enum.IntEnum):
+    NOT_STARTED = enum.auto()
+    SWITCHING = enum.auto()
+    SWITCHED = enum.auto()
+
+
 class RefreshController(BaseController):
 
     signals = [
@@ -47,11 +54,93 @@ class RefreshController(BaseController):
         super().__init__(common)
         self.snap_name = os.environ.get("SNAP_NAME", "subiquity")
         self.check_state = CheckState.NOT_STARTED
+        self.switch_state = SwitchState.NOT_STARTED
+        self.network_state = "down"
         self.view = None
         self.offered_first_time = False
         self.answers = self.all_answers.get("Refresh", {})
 
+    def start(self):
+        self.switch_state = SwitchState.SWITCHING
+        channel = self.get_refresh_channel()
+        self.run_in_bg(
+            lambda: self._bg_switch_snap(channel),
+            self._snap_switched)
+
+    def get_refresh_channel(self):
+        """Return the channel we should refresh subiquity to."""
+
+        with open('/proc/cmdline') as fp:
+            cmdline = fp.read()
+        prefix = "subquity-channel="
+        for arg in cmdline.split():
+            if arg.startswith(prefix):
+                log.debug("found cmdline arg %s", arg)
+                return arg[len(prefix):]
+
+        info_file = '/cdrom/.disk/info'
+        try:
+            fp = open(info_file)
+        except FileNotFoundError:
+            if self.opts.dry_run:
+                info = (
+                    'Ubuntu-Server 18.04.2 LTS "Bionic Beaver" - '
+                    'Release amd64 (20190214.3)')
+            else:
+                log.debug("failed to find .disk/info file")
+                return
+        else:
+            with fp:
+                info = fp.read()
+        release = info.split()[1]
+        return 'stable/ubuntu-' + release
+
+    def _bg_switch_snap(self, channel):
+        log.debug("switching %s to %s", self.snap_name, channel)
+        try:
+            response = self.snapd_connection.post(
+                'v2/snaps/{}'.format(self.snap_name),
+                {'action': 'switch', 'channel': channel})
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            log.exception("switching")
+            return
+        change = response.json()["change"]
+        while True:
+            try:
+                response = self.snapd_connection.get(
+                    'v2/changes/{}'.format(change))
+                response.raise_for_status()
+            except requests.exceptions.RequestException:
+                log.exception("checking switch")
+                return
+            if response.json()["result"]["status"] == "Done":
+                return True
+            time.sleep(0.1)
+
+    def _snap_switched(self, fut):
+        log.debug("snap switching completed")
+        try:
+            success = fut.result()
+        except Exception:
+            log.exception("_snap_switched")
+            return
+        if not success:
+            return
+        self.switch_state = SwitchState.SWITCHED
+        self._maybe_check_for_update()
+
     def snapd_network_changed(self):
+        self.network_state = "up"
+        self._maybe_check_for_update()
+
+    def _maybe_check_for_update(self):
+        # If we have not yet switched to the right channel, wait.
+        if self.switch_state != SwitchState.SWITCHED:
+            return
+        # If the network is not yet up, wait.
+        if self.network_state == "down":
+            return
         # If we restarted into this version, don't check for a new version.
         if self.updated:
             return
@@ -98,7 +187,7 @@ class RefreshController(BaseController):
 
     def _bg_start_update(self):
         return self.snapd_connection.post(
-            'v2/snaps/subiquity', {'action': 'refresh'})
+            'v2/snaps/{}'.format(self.snap_name), {'action': 'refresh'})
 
     def update_started(self, fut, callback):
         try:
