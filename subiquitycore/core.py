@@ -376,6 +376,8 @@ class Application:
             try:
                 self.select_screen(self.controller_index - 1)
             except Skip:
+                controller_name = self.controllers[self.controller_index]
+                log.debug("skipping screen %s", controller_name)
                 continue
             else:
                 return

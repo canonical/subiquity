@@ -79,14 +79,21 @@ class DownNetworkDevices(BackgroundTask):
 
 
 class ApplyWatcher(TaskWatcher):
-    def __init__(self, view):
+    def __init__(self, view, controller):
         self.view = view
+        self.controller = controller
 
     def task_complete(self, stage):
         pass
 
     def tasks_finished(self):
         self.view.hide_apply_spinner()
+        if self.controller.answers.get('accept-default', False):
+            self.controller.done()
+        elif self.controller.answers.get('actions', False):
+            self.controller._run_iterator(
+                self.controller._run_actions(
+                    self.controller.answers['actions']))
 
     def task_error(self, stage, info):
         self.view.show_network_error(stage, info)
@@ -192,7 +199,6 @@ class NetworkController(BaseController):
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
         self.network_event_receiver.add_default_route_watcher(
             self.route_watcher)
-        self._done_by_action = False
 
     def route_watcher(self, routes):
         if routes:
@@ -297,7 +303,6 @@ class NetworkController(BaseController):
                 action['data'],
                 action.get("submit", True))
         elif action['action'] == 'done':
-            self._done_by_action = True
             self.ui.frame.body.done()
         else:
             raise Exception("could not process action {}".format(action))
@@ -306,6 +311,7 @@ class NetworkController(BaseController):
         # Any device that does not have a (global) address by the time
         # we get to the network screen is marked as disabled, with an
         # explanation.
+        log.debug("updating initial NIC config")
         for dev in self.model.get_all_netdevs():
             has_global_address = False
             if dev.info is None or not dev.config:
@@ -336,10 +342,6 @@ class NetworkController(BaseController):
             self.view_shown = True
         self.network_event_receiver.view = self.view
         self.ui.set_body(self.view)
-        if self.answers.get('accept-default', False):
-            self.done()
-        elif self.answers.get('actions', False):
-            self._run_iterator(self._run_actions(self.answers['actions']))
 
     @property
     def netplan_path(self):
@@ -350,6 +352,7 @@ class NetworkController(BaseController):
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
     def apply_config(self, silent=False):
+        log.debug("apply_config silent=%s", silent)
         if self.dhcp_check_handle is not None:
             self.loop.remove_alarm(self.dhcp_check_handle)
             self.dhcp_check_handle = None
@@ -421,7 +424,7 @@ class NetworkController(BaseController):
 
         if not silent:
             self.view.show_apply_spinner()
-        ts = TaskSequence(self.run_in_bg, tasks, ApplyWatcher(self.view))
+        ts = TaskSequence(self.run_in_bg, tasks, ApplyWatcher(self.view, self))
         ts.run()
         if dhcp_device_versions:
             self.dhcp_check_handle = self.loop.set_alarm_in(
