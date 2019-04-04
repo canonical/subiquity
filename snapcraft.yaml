@@ -29,7 +29,10 @@ parts:
     requirements: requirements.txt
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
-    stage: [ "*", "-lib/python*/site-packages/_yaml.*.so" ]
+    stage:
+     - "*"
+     - "-lib/python*/site-packages/_yaml.*.so"
+     - "-lib/python*/site-packages/jsonschema"
     stage-packages: [libc6]
   subiquity:
     plugin: python
