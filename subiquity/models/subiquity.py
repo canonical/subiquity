@@ -201,6 +201,10 @@ class SubiquityModel:
                 'config': self.filesystem.render(),
                 },
 
+            'system_upgrade': {
+                'enabled': True,
+            },
+
             'write_files': {
                 'etc_default_keyboard': {
                     'path': 'etc/default/keyboard',
