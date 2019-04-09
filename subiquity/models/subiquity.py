@@ -44,6 +44,18 @@ def setup_yaml():
 
 setup_yaml()
 
+HOSTS_CONTENT = """\
+127.0.0.1 localhost
+127.0.1.1 {hostname}
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+"""
+
 
 class SubiquityModel:
     """The overall model for subiquity."""
@@ -81,6 +93,7 @@ class SubiquityModel:
 
     def _cloud_init_config(self):
         user = self.identity.user
+        hostname = self.identity.hostname.strip()
         users_and_groups_path = (
             os.path.join(os.environ.get("SNAP", "."),
                          "users-and-groups"))
@@ -105,10 +118,23 @@ class SubiquityModel:
             'growpart': {
                 'mode': 'off',
                 },
-            'hostname': self.identity.hostname,
             'locale': self.locale.selected_language + '.UTF-8',
             'resize_rootfs': False,
             'users': [user_info],
+            'write_files': [
+                {
+                    'path': '/etc/hostname',
+                    'content': hostname + '\n',
+                    'permissions': 0o644,
+                    'owner': 'root:root',
+                },
+                {
+                    'path': '/etc/hosts',
+                    'content': HOSTS_CONTENT.format(hostname=hostname),
+                    'permissions': 0o644,
+                    'owner': 'root:root',
+                },
+            ],
         }
         if self.ssh.install_server:
             config['ssh_pwauth'] = self.ssh.pwauth
