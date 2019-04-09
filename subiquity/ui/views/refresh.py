@@ -105,8 +105,8 @@ class RefreshView(BaseView):
 
     available_title = _("Installer update available")
     available_excerpt = _(
-        "Version \"{new}\" of the installer is now available ("
-        "\"{current}\" is currently installed)."
+        "Version {new} of the installer is now available ({current} is "
+        "currently running)."
         )
 
     progress_title = _("Downloading update...")

@@ -18,7 +18,7 @@
     "developer": "canonical",
     "status": "active",
     "type": "app",
-    "version": "ubuntu-19.04.2",
+    "version": "19.04.2",
     "channel": "stable",
     "ignore-validation": false,
     "revision": "804",
