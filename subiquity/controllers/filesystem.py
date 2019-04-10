@@ -376,6 +376,7 @@ class FilesystemController(BaseController):
                 d._constructed_device = existing
             existing.name = spec['name']
             existing.devices = spec['devices']
+            existing._passphrase = spec.get('password')
         else:
             self.create_volgroup(spec)
 
