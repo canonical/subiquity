@@ -69,7 +69,8 @@ class RefreshController(BaseController):
 
     def get_refresh_channel(self):
         """Return the channel we should refresh subiquity to."""
-
+        if 'channel' in self.answers:
+            return self.answers['channel']
         with open('/proc/cmdline') as fp:
             cmdline = fp.read()
         prefix = "subquity-channel="
