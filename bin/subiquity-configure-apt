@@ -49,6 +49,7 @@ setup_overlay () {
 
 setup_overlay $TARGET_MOUNT_POINT/etc/apt
 
+
 mount -t tmpfs tmpfs "$TARGET_MOUNT_POINT/run"
 mkdir -p "$TARGET_MOUNT_POINT/run/cdrom"
 mount --bind /cdrom "$TARGET_MOUNT_POINT/run/cdrom"
@@ -56,6 +57,8 @@ mount --bind /cdrom "$TARGET_MOUNT_POINT/run/cdrom"
 if [ $HAS_NETWORK = 'true' ]; then
     mv "$TARGET_MOUNT_POINT/etc/apt/sources.list" "$TARGET_MOUNT_POINT/etc/apt/sources.list.d/original.list"
 else
+    # Do not use the configured proxy during the install if one was configured.
+    rm -f $TARGET_MOUNT_POINT/etc/apt/apt.conf.d/90curtin-aptproxy
     setup_overlay $TARGET_MOUNT_POINT/var/lib/apt/lists
 fi
 
