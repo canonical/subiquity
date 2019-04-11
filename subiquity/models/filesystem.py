@@ -506,14 +506,6 @@ class Disk(_Device):
             dinfo['vendor'] = 'unknown'
         return dinfo
 
-    def reset(self):
-        self.preserve = False
-        self.name = ''
-        self.grub_device = False
-        self._partitions = []
-        self._fs = None
-        self._constructed_device = None
-
     @property
     def size(self):
         return align_down(self._info.size)
@@ -876,20 +868,11 @@ class FilesystemModel(object):
 
     def __init__(self, prober):
         self.prober = prober
-        self._available_disks = {}  # keyed by path, eg /dev/sda
+        self._disk_info = []
         self.reset()
 
     def reset(self):
-        # only gets populated when something uses the disk
-        self._disks = collections.OrderedDict()
-        self._partitions = []
-        self._raids = []
-        self._vgs = []
-        self._lvs = []
-        self._filesystems = []
-        self._mounts = []
-        for k, d in self._available_disks.items():
-            self._available_disks[k].reset()
+        self._actions = [Disk.from_info(info) for info in self._disk_info]
 
     def render(self):
         # the curtin storage config has the constraint that an action
@@ -907,12 +890,10 @@ class FilesystemModel(object):
         emitted_ids = set()
 
         def emit(obj):
+            if obj.type == 'disk' and not obj.used:
+                return
             r.append(asdict(obj))
             emitted_ids.add(obj.id)
-
-        # As mentioned disks are easy.
-        for d in self._disks.values():
-            emit(d)
 
         def can_emit(obj):
             for f in attr.fields(type(obj)):
@@ -936,7 +917,7 @@ class FilesystemModel(object):
             return True
 
         dms = []
-        for vg in self._vgs:
+        for vg in self.all_volgroups():
             if vg._passphrase:
                 for volume in vg.devices:
                     dms.append(DM_Crypt(
@@ -944,7 +925,7 @@ class FilesystemModel(object):
                         volume=volume,
                         key=vg._passphrase))
 
-        work = self._partitions + self._raids + dms + self._vgs + self._lvs
+        work = self._actions + dms
 
         while work:
             next_work = []
@@ -958,14 +939,6 @@ class FilesystemModel(object):
                     "rendering block devices made no progress: {}".format(
                         work))
             work = next_work
-
-        # Filesystems and mounts are also easy, dependencies only flow
-        # from mounts to filesystems to things already emitted.
-        for f in self._filesystems:
-            emit(f)
-
-        for m in sorted(self._mounts, key=lambda m: len(m.path)):
-            emit(m)
 
         return r
 
@@ -1008,48 +981,69 @@ class FilesystemModel(object):
                 info = self.prober.get_storage_info(path)
                 if info.size < self.lower_size_limit:
                     continue
-                self._available_disks[path] = Disk.from_info(info)
+                self._disk_info.append(info)
+                self._actions.append(Disk.from_info(info))
 
-    def _use_disk(self, disk):
-        if disk.path not in self._disks:
-            self._disks[disk.path] = disk
+    def disk_by_path(self, path):
+        for a in self._actions:
+            if a.type == 'disk' and a.path == path:
+                return a
+        raise KeyError("no disk with path {} found".format(path))
+
+    def all_filesystems(self):
+        return [a for a in self._actions if a.type == 'format']
 
     def all_mounts(self):
-        return self._mounts[:]
-
-    def all_disks(self):
-        return sorted(self._available_disks.values(), key=lambda x: x.label)
-
-    def all_raids(self):
-        return self._raids[:]
-
-    def all_volgroups(self):
-        return self._vgs[:]
+        return [a for a in self._actions if a.type == 'mount']
 
     def all_devices(self):
-        return self.all_disks() + self.all_raids() + self.all_volgroups()
+        # return:
+        #  compound devices, newest first
+        #  disk devices, sorted by label
+        disks = []
+        compounds = []
+        for a in self._actions:
+            if a.type == 'disk':
+                disks.append(a)
+            elif isinstance(a, _Device):
+                compounds.append(a)
+        compounds.reverse()
+        disks.sort(key=lambda x: x.label)
+        return compounds + disks
+
+    def all_partitions(self):
+        return [a for a in self._actions if a.type == 'partition']
+
+    def all_disks(self):
+        return sorted(
+            [a for a in self._actions if a.type == 'disk'],
+            key=lambda x: x.label)
+
+    def all_raids(self):
+        return [a for a in self._actions if a.type == 'raid']
+
+    def all_volgroups(self):
+        return [a for a in self._actions if a.type == 'lvm_volgroup']
 
     def add_partition(self, disk, size, flag="", wipe=None):
         if size > disk.free_for_partitions:
             raise Exception("%s > %s", size, disk.free_for_partitions)
         real_size = align_up(size)
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
-        if isinstance(disk, Disk):
-            self._use_disk(disk)
         if disk._fs is not None:
             raise Exception("%s is already formatted" % (disk.label,))
         p = Partition(device=disk, size=real_size, flag=flag, wipe=wipe)
         if flag in ("boot", "bios_grub", "prep"):
             disk._partitions.insert(0, disk._partitions.pop())
         disk.ptable = 'gpt'
-        self._partitions.append(p)
+        self._actions.append(p)
         return p
 
     def remove_partition(self, part):
         if part._fs or part._constructed_device:
             raise Exception("can only remove empty partition")
         _remove_backlinks(part)
-        self._partitions.remove(part)
+        self._actions.remove(part)
         if len(part.device._partitions) == 0:
             part.device.ptable = None
 
@@ -1059,39 +1053,36 @@ class FilesystemModel(object):
             raidlevel=raidlevel,
             devices=devices,
             spare_devices=spare_devices)
-        for d in devices | spare_devices:
-            if isinstance(d, Disk):
-                self._use_disk(d)
-        self._raids.append(r)
+        self._actions.append(r)
         return r
 
     def remove_raid(self, raid):
         if raid._fs or raid._constructed_device or len(raid.partitions()):
             raise Exception("can only remove empty RAID")
         _remove_backlinks(raid)
-        self._raids.remove(raid)
+        self._actions.remove(raid)
 
     def add_volgroup(self, name, devices, passphrase):
         vg = LVM_VolGroup(name=name, devices=devices, passphrase=passphrase)
-        self._vgs.append(vg)
+        self._actions.append(vg)
         return vg
 
     def remove_volgroup(self, vg):
         if len(vg._partitions):
             raise Exception("can only remove empty VG")
         _remove_backlinks(vg)
-        self._vgs.remove(vg)
+        self._actions.remove(vg)
 
     def add_logical_volume(self, vg, name, size):
         lv = LVM_LogicalVolume(volgroup=vg, name=name, size=size)
-        self._lvs.append(lv)
+        self._actions.append(lv)
         return lv
 
     def remove_logical_volume(self, lv):
         if lv._fs:
             raise Exception("can only remove empty LV")
         _remove_backlinks(lv)
-        self._lvs.remove(lv)
+        self._actions.remove(lv)
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
@@ -1100,30 +1091,28 @@ class FilesystemModel(object):
                 if (volume.flag == 'prep' or (
                         volume.flag == 'bios_grub' and fstype == 'fat32')):
                     raise Exception("{} is not available".format(volume))
-        if isinstance(volume, Disk):
-            self._use_disk(volume)
         if volume._fs is not None:
             raise Exception("%s is already formatted")
         fs = Filesystem(volume=volume, fstype=fstype)
-        self._filesystems.append(fs)
+        self._actions.append(fs)
         return fs
 
     def remove_filesystem(self, fs):
         if fs._mount:
             raise Exception("can only remove unmounted filesystem")
         _remove_backlinks(fs)
-        self._filesystems.remove(fs)
+        self._actions.remove(fs)
 
     def add_mount(self, fs, path):
         if fs._mount is not None:
             raise Exception("%s is already mounted")
         m = Mount(device=fs, path=path)
-        self._mounts.append(m)
+        self._actions.append(m)
         return m
 
     def remove_mount(self, mount):
         _remove_backlinks(mount)
-        self._mounts.remove(mount)
+        self._actions.remove(mount)
 
     def any_configuration_done(self):
         return len(self._disks) > 0
@@ -1133,19 +1122,19 @@ class FilesystemModel(object):
         # s390x has no such thing
         if platform.machine() == 's390x':
             return False
-        for p in self._partitions:
+        for p in self.all_partitions():
             if p.flag in ('bios_grub', 'boot', 'prep'):
                 return False
         return True
 
     def is_root_mounted(self):
-        for mount in self._mounts:
+        for mount in self.all_mounts():
             if mount.path == '/':
                 return True
         return False
 
     def is_slash_boot_on_local_disk(self):
-        for mount in self._mounts:
+        for mount in self.all_mounts():
             if mount.path == '/boot':
                 dev = mount.device.volume
                 # We should never allow anything other than a
@@ -1154,7 +1143,7 @@ class FilesystemModel(object):
                 return (
                     isinstance(dev, Partition)
                     and isinstance(dev.device, Disk))
-        for mount in self._mounts:
+        for mount in self.all_mounts():
             if mount.path == '/':
                 dev = mount.device.volume
                 return (
@@ -1169,11 +1158,11 @@ class FilesystemModel(object):
                 and self.is_slash_boot_on_local_disk())
 
     def add_swapfile(self):
-        for m in self._mounts:
+        for m in self.all_mounts():
             if m.path == '/':
                 if m.device.fstype == 'btrfs':
                     return False
-        for fs in self._filesystems:
+        for fs in self.all_filesystems():
             if fs.fstype == "swap":
                 return False
         return True
