@@ -252,10 +252,10 @@ class InstallProgressController(BaseController):
         self.progress_view.show_complete(True)
         self.default()
 
-    def _bg_run_command_logged(self, cmd):
+    def _bg_run_command_logged(self, cmd, **kwargs):
         cmd = ['systemd-cat', '--level-prefix=false',
                '--identifier=' + self._log_syslog_identifier] + cmd
-        return utils.run_command(cmd)
+        return utils.run_command(cmd, **kwargs)
 
     def _journal_event(self, event):
         if event['SYSLOG_IDENTIFIER'] == self._event_syslog_identifier:
@@ -430,7 +430,7 @@ class InstallProgressController(BaseController):
                 "/target",
                 "--", "openssh-server",
                 ]
-        self._bg_run_command_logged(cmd)
+        self._bg_run_command_logged(cmd, check=True)
 
     @task(label="restoring apt configuration")
     def _bg_restore_apt_config(self):
@@ -448,7 +448,7 @@ class InstallProgressController(BaseController):
             else:
                 cmds.append(["umount", self.tpath('var/lib/apt/lists')])
         for cmd in cmds:
-            self._bg_run_command_logged(cmd)
+            self._bg_run_command_logged(cmd, check=True)
 
     @task
     def postinstall_complete(self):
