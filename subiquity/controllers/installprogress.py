@@ -471,7 +471,7 @@ class InstallProgressController(BaseController):
         else:
             self._bg_run_command_logged([
                 sys.executable, "-m", "curtin", "in-target", "-t", "/target",
-                "--", "unattended-upgrades",
+                "--", "unattended-upgrades", "-v",
             ], check=True)
 
     @task(net_only=True)
