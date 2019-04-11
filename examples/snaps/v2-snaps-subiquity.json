@@ -1,0 +1,62 @@
+{
+  "type": "sync",
+  "status-code": 200,
+  "status": "OK",
+  "result": {
+    "id": "ba2aj8guta0zSRlT3QM5aJNAUXPlBtf9",
+    "title": "subiquity",
+    "summary": "Ubuntu installer",
+    "description": "The Ubuntu server installer",
+    "installed-size": 51191808,
+    "name": "subiquity",
+    "publisher": {
+      "id": "canonical",
+      "username": "canonical",
+      "display-name": "Canonical",
+      "validation": "verified"
+    },
+    "developer": "canonical",
+    "status": "active",
+    "type": "app",
+    "version": "19.04.2",
+    "channel": "stable",
+    "ignore-validation": false,
+    "revision": "804",
+    "confinement": "classic",
+    "private": false,
+    "devmode": false,
+    "jailmode": false,
+    "apps": [
+      {
+        "snap": "subiquity",
+        "name": "console-conf"
+      },
+      {
+        "snap": "subiquity",
+        "name": "probert"
+      },
+      {
+        "snap": "subiquity",
+        "name": "subiquity"
+      },
+      {
+        "snap": "subiquity",
+        "name": "subiquity-configure-apt"
+      },
+      {
+        "snap": "subiquity",
+        "name": "subiquity-loadkeys"
+      },
+      {
+        "snap": "subiquity",
+        "name": "subiquity-service",
+        "daemon": "simple",
+        "enabled": true,
+        "active": true
+      }
+    ],
+    "contact": "mailto:mathieu.trudel-lapierre@canonical.com",
+    "mounted-from": "/var/lib/snapd/snaps/subiquity_804.snap",
+    "install-date": "2019-04-09T23:06:31.014843014+12:00"
+  }
+}

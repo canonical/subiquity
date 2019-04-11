@@ -105,7 +105,8 @@ class RefreshView(BaseView):
 
     available_title = _("Installer update available")
     available_excerpt = _(
-        "A new version of the installer is available."
+        "Version {new} of the installer is now available ({current} is "
+        "currently running)."
         )
 
     progress_title = _("Downloading update...")
@@ -159,10 +160,16 @@ class RefreshView(BaseView):
         self.spinner.stop()
 
         rows = [
+            Text("You can read the release notes for each version at:"),
+            Text(""),
+            Text(
+                "https://github.com/CanonicalLtd/subiquity/releases",
+                align='center'),
+            Text(""),
             Text(
                 _("If you choose to update, the update will be downloaded "
                   "and the installation will continue from here."),
-                )
+                ),
             ]
 
         buttons = button_pile([
@@ -172,9 +179,13 @@ class RefreshView(BaseView):
             ])
         buttons.base_widget.focus_position = 1
 
+        excerpt = _(self.available_excerpt).format(
+            current=self.controller.current_snap_version,
+            new=self.controller.new_snap_version)
+
         self.title = self.available_title
         self.controller.ui.set_header(self.available_title)
-        self._w = screen(rows, buttons, excerpt=_(self.available_excerpt))
+        self._w = screen(rows, buttons, excerpt=excerpt)
 
     def check_state_failed(self):
         self.spinner.stop()

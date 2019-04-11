@@ -56,12 +56,34 @@ class RefreshController(BaseController):
         self.check_state = CheckState.NOT_STARTED
         self.switch_state = SwitchState.NOT_STARTED
         self.network_state = "down"
+
+        self.current_snap_version = "unknown"
+        self.new_snap_version = ""
+
         self.view = None
         self.offered_first_time = False
         self.answers = self.all_answers.get("Refresh", {})
 
     def start(self):
         self.switch_state = SwitchState.SWITCHING
+        self.run_in_bg(self._bg_get_snap_details, self._got_snap_details)
+
+    def _bg_get_snap_details(self):
+        return self.snapd_connection.get(
+            'v2/snaps/{snap_name}'.format(snap_name=self.snap_name))
+
+    def _got_snap_details(self, fut):
+        try:
+            response = fut.result()
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            log.exception("_got_snap_details")
+        else:
+            r = response.json()
+            self.current_snap_version = r['result']['version']
+            log.debug(
+                "current version of snap is: %r",
+                self.current_snap_version)
         channel = self.get_refresh_channel()
         self.run_in_bg(
             lambda: self._bg_switch_snap(channel),
@@ -173,6 +195,10 @@ class RefreshController(BaseController):
             for snap in result["result"]:
                 if snap["name"] == self.snap_name:
                     self.check_state = CheckState.AVAILABLE
+                    self.new_snap_version = snap["version"]
+                    log.debug(
+                        "new version of snap available: %r",
+                        self.new_snap_version)
                     break
             else:
                 self.check_state = CheckState.UNAVAILABLE
