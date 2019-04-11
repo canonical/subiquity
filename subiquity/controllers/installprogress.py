@@ -379,9 +379,13 @@ class InstallProgressController(BaseController):
         pass
 
     def start_postinstall_configuration(self):
+        has_network = self.base_model.network.has_network
+
         def filter_task(func):
+            if func._extra.get('net_only') and not has_network:
+                return False
             if func._name == 'install_openssh' \
-              and not self.base_model.ssh.install_server:
+               and not self.base_model.ssh.install_server:
                 return False
             return True
 
@@ -456,6 +460,47 @@ class InstallProgressController(BaseController):
         self.ui.set_header(_("Installation complete!"))
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
+
+    @task(label="downloading and installing security updates",
+          transitions={'success': 'wait_for_click', 'reboot': 'abort_uu'},
+          net_only=True)
+    def _bg_run_uu(self):
+        if self.opts.dry_run:
+            self.uu = utils.start_command(["sleep", str(10/self.scale_factor)])
+            self.uu.wait()
+        else:
+            self._bg_run_command_logged([
+                sys.executable, "-m", "curtin", "in-target", "-t", "/target",
+                "--", "unattended-upgrades",
+            ], check=True)
+
+    @task(net_only=True)
+    def abort_uu(self):
+        self._install_event_finish()
+
+    @task(label="deferring update", net_only=True)
+    def _bg_stop_uu(self):
+        if self.opts.dry_run:
+            time.sleep(1)
+            self.uu.terminate()
+        else:
+            self._bg_run_command_logged([
+                'chroot', '/target',
+                '/usr/share/unattended-upgrades/unattended-upgrade-shutdown',
+                '--stop-only',
+                ], check=True)
+
+    @task(net_only=True, transitions={'success': 'reboot'})
+    def _bg_wait_for_uu(self):
+        r, w = os.pipe()
+
+        def callback(fut):
+            os.write(w, b'x')
+
+        self.sm.subscribe('run_uu', callback)
+        os.read(r, 1)
+        os.close(w)
+        os.close(r)
 
     @task(transitions={'reboot': 'reboot'})
     def _bg_wait_for_click(self):
