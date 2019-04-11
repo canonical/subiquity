@@ -478,7 +478,7 @@ class InstallProgressController(BaseController):
     def abort_uu(self):
         self._install_event_finish()
 
-    @task(label="deferring update", net_only=True)
+    @task(label="cancelling update", net_only=True)
     def _bg_stop_uu(self):
         if self.opts.dry_run:
             time.sleep(1)
