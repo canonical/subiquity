@@ -22,6 +22,7 @@ from urwid import (
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import cancel_btn, ok_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox, Pile
+from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.utils import button_pile, Padding
 
@@ -93,9 +94,9 @@ class ProgressView(BaseView):
 
     def show_complete(self, include_exit=False):
         p = self.event_buttons.original_widget
-        p.contents.append(
-            (ok_btn(_("Reboot Now"), on_press=self.reboot),
-             p.options('pack')))
+        self.reboot_btn = Toggleable(
+            ok_btn(_("Reboot Now"), on_press=self.reboot))
+        p.contents.append((self.reboot_btn, p.options('pack')))
         if include_exit:
             p.contents.append(
                 (cancel_btn(_("Exit To Shell"), on_press=self.quit),
@@ -109,7 +110,10 @@ class ProgressView(BaseView):
         p.focus_position = 1
 
     def reboot(self, btn):
-        self.controller.reboot()
+        self.reboot_btn.base_widget.set_label(_("Rebooting..."))
+        self.reboot_btn.enabled = False
+        self.event_buttons.original_widget._select_first_selectable()
+        self.controller.click_reboot()
 
     def quit(self, btn):
         self.controller.quit()

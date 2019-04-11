@@ -30,4 +30,4 @@ class IdentityViewTests(unittest.TestCase):
         btn = view_helpers.find_button_matching(view, "^Reboot Now$")
         self.assertIsNot(btn, None)
         view_helpers.click(btn)
-        view.controller.reboot.assert_called_once_with()
+        view.controller.click_reboot.assert_called_once_with()

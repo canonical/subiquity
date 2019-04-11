@@ -13,9 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+from concurrent.futures import Future
 import datetime
 import logging
 import os
+import signal
 import subprocess
 import sys
 import platform
@@ -29,11 +32,6 @@ from systemd import journal
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
-from subiquitycore.tasksequence import (
-    BackgroundTask,
-    TaskSequence,
-    TaskWatcher,
-    )
 
 from subiquity.ui.views.installprogress import ProgressView
 
@@ -48,54 +46,153 @@ class InstallState:
     ERROR = -1
 
 
-class WaitForCurtinEventsTask(BackgroundTask):
+task_counter = 0
 
-    def __init__(self, controller):
+
+def task(f=None, transitions=None, **kw):
+    """Annotate a method as a task to be used with StateMachine.
+
+    If the method's name starts with _bg_ it is run in a background thread.
+    (This ability to have tasks flip between running in the foreground and
+    background is what makes all this interesting).
+
+    Annotated methods have various attributes:
+
+      ._name -- the name of the state, which is the name of the method with
+                _bg_ stripped off if it was there.
+      ._is_bg -- indicates if this method should run in a background thread.
+      ._transitions -- transitions from this state to another, mapping
+                       transition name to the following state. The transition
+                       named 'success' is special -- it is what is followed
+                       when the function returns, unless some other transition
+                       has been followed beforehand.
+      ._extra -- any extra keyword arguments passed to @task()
+    """
+    if transitions is None:
+        transitions = {}
+
+    def annotate(f):
+        global task_counter
+        f._is_task = True
+        f._order = task_counter
+        task_counter += 1
+        if f.__name__.startswith("_bg_"):
+            f._name = f.__name__[4:]
+            f._is_bg = True
+        else:
+            f._name = f.__name__
+            f._is_bg = False
+        f._transitions = transitions
+        f._extra = kw
+        return f
+
+    if f is not None:
+        return annotate(f)
+    else:
+        return annotate
+
+
+def collect_tasks(inst, filter_task=lambda f: True):
+    """Collect the methods on inst annotated with @task.
+
+    Returns a list of tuples (method, transitions) where method is the
+    annotated method and transitions are the transitions defined while
+    method is running, with 'success' automatically filled in as a
+    transition to the next state if not otherwise defined.
+    """
+    task_funcs = []
+    attrs = inst.__class__.__dict__.values()
+    for a in attrs:
+        if not hasattr(a, "_is_task"):
+            continue
+        if filter_task(a):
+            task_funcs.append(getattr(inst, a.__name__))
+    task_funcs.sort(key=lambda f: f._order)
+    r = []
+    for i, func in enumerate(task_funcs[:-1]):
+        transitions = func._transitions.copy()
+        if 'success' not in transitions:
+            transitions['success'] = task_funcs[i+1]._name
+        r.append((func, transitions))
+    r.append((task_funcs[-1], task_funcs[-1]._transitions.copy()))
+    return r
+
+
+class StateMachine:
+    """Run tasks as returned by collect_tasks."""
+
+    def __init__(self, controller, task_funcs):
         self.controller = controller
-        self.waited = 0.0
+        self._tasks = {}
+        self._results = {}
+        self._transitions = {}
+        self._subscribers = {}
 
-    def start(self):
-        pass
+        for func, transitions in task_funcs:
+            self._tasks[func._name] = func
+            self._transitions[func._name] = transitions
+            self.subscribe(
+                func._name,
+                lambda fut, name=func._name: self._task_complete(name, fut))
 
-    def _bg_run(self):
-        while self.controller._event_indent and self.waited < 5.0:
-            time.sleep(0.1)
-            self.waited += 0.1
-        log.debug("waited %s seconds for events to drain", self.waited)
+        self.cur = task_funcs[0][0]._name
 
-    def end(self, observer, fut):
-        # Will raise if command failed:
-        fut.result()
-        self.controller._install_event_start("final system configuration")
-        observer.task_succeeded()
+    def subscribe(self, name, subscriber):
+        if name in self._results:
+            subscriber(self._results[name])
+        else:
+            self._subscribers.setdefault(name, set()).add(subscriber)
 
+    def _task_complete(self, name, fut):
+        if name != self.cur:
+            log.debug(
+                "_task_complete ignoring %s as %s != %s", fut, name, self.cur)
+            return
+        try:
+            fut.result()
+        except urwid.ExitMainLoop:
+            raise
+        except Exception:
+            log.debug("%s failed", name)
+            self.controller.curtin_error(traceback.format_exc())
+        else:
+            log.debug("%s completed", name)
+            if 'success' in self._transitions[name]:
+                self.transition('success')
+            else:
+                log.debug("all tasks completed")
 
-class InstallTask(BackgroundTask):
+    def run(self):
+        log.debug("running task %s", self.cur)
+        func = self._tasks[self.cur]
 
-    def __init__(self, controller, step_name, func, *args, **kw):
-        self.controller = controller
-        self.step_name = step_name
-        self.func = func
-        self.args = args
-        self.kw = kw
+        def end(fut):
+            log.debug('_end %s %s', func._name, fut)
+            self._results[func._name] = fut
+            if 'label' in func._extra:
+                self.controller._install_event_finish()
+            for subscriber in self._subscribers.get(func._name, ()):
+                subscriber(fut)
 
-    def __repr__(self):
-        return "InstallTask(%r, *%r, **%r)" % (self.func, self.args, self.kw)
+        if 'label' in func._extra:
+            self.controller._install_event_start(func._extra['label'])
 
-    def start(self):
-        self.controller._install_event_start(self.step_name)
+        if func._is_bg:
+            self.controller.run_in_bg(func, end)
+        else:
+            fut = Future()
+            try:
+                fut.set_result(func())
+            except Exception as e:
+                fut.set_exception(e)
+            end(fut)
 
-    def _bg_run(self):
-        self.func(*self.args, **self.kw)
-
-    def end(self, observer, fut):
-        # Will raise if command failed:
-        fut.result()
-        self.controller._install_event_finish()
-        observer.task_succeeded()
-
-    def cancel(self):
-        pass
+    def transition(self, name):
+        """Follow the named transition for the current state."""
+        new = self._transitions[self.cur][name]
+        log.debug("transition %s: %s -> %s", name, self.cur, new)
+        self.cur = new
+        self.run()
 
 
 class InstallProgressController(BaseController):
@@ -144,19 +241,21 @@ class InstallProgressController(BaseController):
     def snap_config_done(self):
         self._step_done('snap')
 
-    def curtin_error(self):
-        log.debug('curtin_error')
+    def curtin_error(self, log_text=None):
+        log.debug('curtin_error: %s', log_text)
         self.install_state = InstallState.ERROR
         self.progress_view.spinner.stop()
+        if log_text:
+            self.progress_view.add_log_line(log_text)
         self.progress_view.set_status(('info_error',
                                        _("An error has occurred")))
         self.progress_view.show_complete(True)
         self.default()
 
-    def _bg_run_command_logged(self, cmd):
+    def _bg_run_command_logged(self, cmd, **kwargs):
         cmd = ['systemd-cat', '--level-prefix=false',
                '--identifier=' + self._log_syslog_identifier] + cmd
-        return utils.run_command(cmd)
+        return utils.run_command(cmd, **kwargs)
 
     def _journal_event(self, event):
         if event['SYSLOG_IDENTIFIER'] == self._event_syslog_identifier:
@@ -279,20 +378,66 @@ class InstallProgressController(BaseController):
     def cancel(self):
         pass
 
-    def _bg_install_openssh_server(self):
+    def start_postinstall_configuration(self):
+        has_network = self.base_model.network.has_network
+
+        def filter_task(func):
+            if func._extra.get('net_only') and not has_network:
+                return False
+            if func._name == 'install_openssh' \
+               and not self.base_model.ssh.install_server:
+                return False
+            return True
+
+        log.debug("starting state machine")
+        self.sm = StateMachine(self, collect_tasks(self, filter_task))
+        self.sm.run()
+
+    @task
+    def _bg_drain_curtin_events(self):
+        waited = 0.0
+        while self._event_indent and waited < 5.0:
+            time.sleep(0.1)
+            waited += 0.1
+        log.debug("waited %s seconds for events to drain", waited)
+
+    @task(label="copying logs to installed system")
+    def _bg_copy_logs_to_target(self):
         if self.opts.dry_run:
-            cmd = [
-                "sleep", str(2/self.scale_factor),
-                ]
+            return
+        target_logs = self.tpath('var/log/installer')
+        utils.run_command(['cp', '-aT', '/var/log/installer', target_logs])
+        try:
+            with open(os.path.join(target_logs,
+                                   'installer-journal.txt'), 'w') as output:
+                utils.run_command(
+                    ['journalctl'],
+                    stdout=output, stderr=subprocess.STDOUT)
+        except Exception:
+            log.exception("saving journal failed")
+
+    @task
+    def start_final_configuration(self):
+        self._install_event_start("final system configuration")
+
+    @task(label="configuring cloud-init")
+    def _bg_configure_cloud_init(self):
+        self.base_model.configure_cloud_init()
+
+    @task(label="installing openssh")
+    def _bg_install_openssh(self):
+        if self.opts.dry_run:
+            cmd = ["sleep", str(2/self.scale_factor)]
         else:
             cmd = [
                 sys.executable, "-m", "curtin", "system-install", "-t",
                 "/target",
                 "--", "openssh-server",
                 ]
-        self._bg_run_command_logged(cmd)
+        self._bg_run_command_logged(cmd, check=True)
 
-    def _bg_cleanup_apt(self):
+    @task(label="restoring apt configuration")
+    def _bg_restore_apt_config(self):
         if self.opts.dry_run:
             cmds = [["sleep", str(1/self.scale_factor)]]
         else:
@@ -307,76 +452,65 @@ class InstallProgressController(BaseController):
             else:
                 cmds.append(["umount", self.tpath('var/lib/apt/lists')])
         for cmd in cmds:
-            self._bg_run_command_logged(cmd)
+            self._bg_run_command_logged(cmd, check=True)
 
-    def start_postinstall_configuration(self):
-        self.copy_logs_to_target()
-
-        class w(TaskWatcher):
-
-            def __init__(self, controller):
-                self.controller = controller
-
-            def task_complete(self, stage):
-                pass
-
-            def task_error(self, stage, info):
-                if isinstance(info, tuple):
-                    tb = traceback.format_exception(*info)
-                    self.controller.curtin_error("".join(tb))
-                else:
-                    self.controller.curtin_error()
-
-            def tasks_finished(self):
-                self.controller.loop.set_alarm_in(
-                    0.0,
-                    lambda loop, ud: self.controller.postinstall_complete())
-        tasks = [
-            ('drain', WaitForCurtinEventsTask(self)),
-            ('cloud-init', InstallTask(
-                self, "configuring cloud-init",
-                self.base_model.configure_cloud_init)),
-        ]
-        if self.base_model.ssh.install_server:
-            tasks.extend([
-                ('install-ssh', InstallTask(
-                    self, "installing OpenSSH server",
-                    self._bg_install_openssh_server)),
-                ])
-        tasks.extend([
-            ('cleanup', InstallTask(
-                self, "restoring apt configuration",
-                self._bg_cleanup_apt)),
-            ])
-        ts = TaskSequence(self.run_in_bg, tasks, w(self))
-        ts.run()
-
+    @task
     def postinstall_complete(self):
         self._install_event_finish()
         self.ui.set_header(_("Installation complete!"))
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
 
-        if self.answers['reboot']:
-            self.reboot()
-
-    def copy_logs_to_target(self):
+    @task(label="downloading and installing security updates",
+          transitions={'success': 'wait_for_click', 'reboot': 'abort_uu'},
+          net_only=True)
+    def _bg_run_uu(self):
         if self.opts.dry_run:
-            return
-        target_logs = self.tpath('var/log/installer')
-        utils.run_command(['cp', '-aT', '/var/log/installer', target_logs])
-        try:
-            with open(os.path.join(target_logs,
-                                   'installer-journal.txt'), 'w') as output:
-                utils.run_command(
-                    ['journalctl'],
-                    stdout=output, stderr=subprocess.STDOUT)
-        except Exception:
-            log.exception("saving journal failed")
+            self.uu = utils.start_command(["sleep", str(10/self.scale_factor)])
+            self.uu.wait()
+        else:
+            self._bg_run_command_logged([
+                sys.executable, "-m", "curtin", "in-target", "-t", "/target",
+                "--", "unattended-upgrades", "-v",
+            ], check=True)
 
+    @task(net_only=True)
+    def abort_uu(self):
+        self._install_event_finish()
+
+    @task(label="cancelling update", net_only=True)
+    def _bg_stop_uu(self):
+        if self.opts.dry_run:
+            time.sleep(1)
+            self.uu.terminate()
+        else:
+            self._bg_run_command_logged([
+                'chroot', '/target',
+                '/usr/share/unattended-upgrades/unattended-upgrade-shutdown',
+                '--stop-only',
+                ], check=True)
+
+    @task(net_only=True, transitions={'success': 'reboot'})
+    def _bg_wait_for_uu(self):
+        r, w = os.pipe()
+
+        def callback(fut):
+            os.write(w, b'x')
+
+        self.sm.subscribe('run_uu', callback)
+        os.read(r, 1)
+        os.close(w)
+        os.close(r)
+
+    @task(transitions={'reboot': 'reboot'})
+    def _bg_wait_for_click(self):
+        if not self.answers['reboot']:
+            signal.pause()
+
+    @task
     def reboot(self):
         if self.opts.dry_run:
-            log.debug('dry-run enabled, skipping reboot, quiting instead')
+            log.debug('dry-run enabled, skipping reboot, quitting instead')
             self.signal.emit_signal('quit')
         else:
             # TODO Possibly run this earlier, to show a warning; or
@@ -385,6 +519,9 @@ class InstallProgressController(BaseController):
                 utils.run_command(["chreipl", "/target/boot"])
             # Should probably run curtin -c $CONFIG unmount -t TARGET first.
             utils.run_command(["/sbin/reboot"])
+
+    def click_reboot(self):
+        self.sm.transition('reboot')
 
     def quit(self):
         if not self.opts.dry_run:
