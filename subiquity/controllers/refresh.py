@@ -95,7 +95,7 @@ class RefreshController(BaseController):
             return self.answers['channel']
         with open('/proc/cmdline') as fp:
             cmdline = fp.read()
-        prefix = "subquity-channel="
+        prefix = "subiquity-channel="
         for arg in cmdline.split():
             if arg.startswith(prefix):
                 log.debug("found cmdline arg %s", arg)
