@@ -17,6 +17,7 @@
 import argparse
 import logging
 import os
+import fcntl
 import signal
 import sys
 
@@ -125,6 +126,15 @@ def main():
     if opts.answers is None and os.path.exists(AUTO_ANSWERS_FILE):
         logger.debug("Autoloading answers from %s", AUTO_ANSWERS_FILE)
         opts.answers = AUTO_ANSWERS_FILE
+
+    if opts.answers:
+        opts.answers = open(opts.answers)
+        try:
+            fcntl.flock(opts.answers, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            logger.exception('Failed to lock auto answers file, proceding without it.')
+            opts.answers.close()
+            opts.answers = None
 
     ui = SubiquityUI()
 
