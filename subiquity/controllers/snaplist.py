@@ -159,6 +159,7 @@ class SnapListController(BaseController):
         if self.loader.failed or not self.base_model.network.has_network:
             # If loading snaps failed or the network is disabled, skip the
             # screen.
+            self.signal.emit_signal("installprogress:snap-config-done")
             raise Skip()
         if 'snaps' in self.answers:
             to_install = {}
