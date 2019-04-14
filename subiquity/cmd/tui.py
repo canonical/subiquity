@@ -132,7 +132,8 @@ def main():
         try:
             fcntl.flock(opts.answers, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError:
-            logger.exception('Failed to lock auto answers file, proceding without it.')
+            logger.exception(
+                'Failed to lock auto answers file, proceding without it.')
             opts.answers.close()
             opts.answers = None
 
