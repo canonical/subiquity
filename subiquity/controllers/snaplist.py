@@ -156,8 +156,9 @@ class SnapListController(BaseController):
         self.loader.start()
 
     def default(self):
-        if self.loader.failed:
-            # If loading snaps failed, skip the screen.
+        if self.loader.failed or not self.base_model.network.has_network:
+            # If loading snaps failed or the network is disabled, skip the
+            # screen.
             raise Skip()
         if 'snaps' in self.answers:
             to_install = {}
