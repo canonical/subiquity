@@ -25,6 +25,7 @@ from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.utils import button_pile, Padding
+from subiquitycore.ui.width import widget_width
 
 log = logging.getLogger("subiquity.views.installprogress")
 
@@ -42,10 +43,16 @@ class ProgressView(BaseView):
         self.controller = controller
         self.spinner = Spinner(controller.loop)
 
+        self.reboot_btn = Toggleable(ok_btn(
+            _("Reboot Now"), on_press=self.reboot))
+        self.exit_btn = cancel_btn(
+            _("Exit To Shell"), on_press=self.quit)
+        self.view_log_btn = other_btn(
+            _("View full log"), on_press=self.view_log)
+
         self.event_listbox = ListBox()
         self.event_linebox = MyLineBox(self.event_listbox)
-        self.event_buttons = button_pile([other_btn(_("View full log"),
-                                          on_press=self.view_log)])
+        self.event_buttons = button_pile([self.view_log_btn])
         event_body = [
             ('pack', Text("")),
             ('weight', 1, Padding.center_79(self.event_linebox, min_width=76)),
@@ -92,28 +99,40 @@ class ProgressView(BaseView):
     def set_status(self, text):
         self.event_linebox.set_title(text)
 
-    def show_complete(self, include_exit=False):
-        p = self.event_buttons.original_widget
-        self.reboot_btn = Toggleable(
-            ok_btn(_("Reboot Now"), on_press=self.reboot))
-        p.contents.append((self.reboot_btn, p.options('pack')))
-        if include_exit:
-            p.contents.append(
-                (cancel_btn(_("Exit To Shell"), on_press=self.quit),
-                 p.options('pack')))
+    def _set_button_width(self):
+        w = 14
+        for b, o in self.event_buttons.original_widget.contents:
+            w = max(widget_width(b), w)
+        self.event_buttons.width = self.event_buttons.min_width = w
 
-        w = 0
-        for b, o in p.contents:
-            w = max(len(b.base_widget.label), w)
-        self.event_buttons.width = self.event_buttons.min_width = w + 4
-        self.event_pile.focus_position = 3
-        p.focus_position = 1
+    def _set_buttons(self, buttons):
+        p = self.event_buttons.original_widget
+        p.contents[:] = [(b, p.options('pack')) for b in buttons]
+        self._set_button_width()
+
+    def update_running(self):
+        self.reboot_btn.base_widget.set_label(_("Cancel update and reboot"))
+        self._set_button_width()
+
+    def update_done(self):
+        self.reboot_btn.base_widget.set_label(_("Reboot"))
+        self._set_button_width()
+
+    def show_complete(self, include_exit=False, running_updates=False):
+        if include_exit:
+            btns = [self.view_log_btn, self.exit_btn, self.reboot_btn]
+        else:
+            btns = [self.view_log_btn, self.reboot_btn]
+        self._set_buttons(btns)
+        self.event_buttons.base_widget.focus_position = 1
+        self.event_pile.base_widget.focus_position = 3
 
     def reboot(self, btn):
         self.reboot_btn.base_widget.set_label(_("Rebooting..."))
         self.reboot_btn.enabled = False
         self.event_buttons.original_widget._select_first_selectable()
         self.controller.click_reboot()
+        self._set_button_width()
 
     def quit(self, btn):
         self.controller.quit()

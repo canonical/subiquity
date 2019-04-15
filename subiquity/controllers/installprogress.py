@@ -220,6 +220,7 @@ class InstallProgressController(BaseController):
         self._event_indent = ""
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
+        self.sm = None
 
     def tpath(self, *path):
         return os.path.join(self.base_model.target, *path)
@@ -461,8 +462,12 @@ class InstallProgressController(BaseController):
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
 
+    @task(net_only=True)
+    def uu_start(self):
+        self.progress_view.update_running()
+
     @task(label="downloading and installing security updates",
-          transitions={'success': 'wait_for_click', 'reboot': 'abort_uu'},
+          transitions={'reboot': 'abort_uu'},
           net_only=True)
     def _bg_run_uu(self):
         if self.opts.dry_run:
@@ -473,6 +478,10 @@ class InstallProgressController(BaseController):
                 sys.executable, "-m", "curtin", "in-target", "-t", "/target",
                 "--", "unattended-upgrades", "-v",
             ], check=True)
+
+    @task(transitions={'success': 'wait_for_click'}, net_only=True)
+    def uu_done(self):
+        self.progress_view.update_done()
 
     @task(net_only=True)
     def abort_uu(self):
@@ -521,7 +530,13 @@ class InstallProgressController(BaseController):
             utils.run_command(["/sbin/reboot"])
 
     def click_reboot(self):
-        self.sm.transition('reboot')
+        if self.sm is None:
+            # If the curtin install itself crashes, the state machine
+            # that manages post install steps won't be running. Just
+            # reboot anyway.
+            self.reboot()
+        else:
+            self.sm.transition('reboot')
 
     def quit(self):
         if not self.opts.dry_run:
