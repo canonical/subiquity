@@ -93,7 +93,6 @@ class SubiquityModel:
 
     def _cloud_init_config(self):
         user = self.identity.user
-        hostname = self.identity.hostname.strip()
         users_and_groups_path = (
             os.path.join(os.environ.get("SNAP", "."),
                          "users-and-groups"))
@@ -122,26 +121,6 @@ class SubiquityModel:
             'preserve_hostname': True,
             'resize_rootfs': False,
             'users': [user_info],
-            'write_files': [
-                {
-                    'path': '/etc/hostname',
-                    'content': hostname + '\n',
-                    'permissions': 0o644,
-                    'owner': 'root:root',
-                },
-                {
-                    'path': '/etc/hosts',
-                    'content': HOSTS_CONTENT.format(hostname=hostname),
-                    'permissions': 0o644,
-                    'owner': 'root:root',
-                },
-                {
-                    'path': '/etc/machine-id',
-                    'content': open('/etc/machine-id').read(),
-                    'permissions': 0o444,
-                    'owner': 'root:root',
-                },
-            ],
         }
         if self.ssh.install_server:
             config['ssh_pwauth'] = self.ssh.pwauth
@@ -166,10 +145,13 @@ class SubiquityModel:
         # (mwhudson does not entirely know what the above means!)
         userdata = '#cloud-config\n' + yaml.dump(self._cloud_init_config())
         metadata = yaml.dump({'instance-id': str(uuid.uuid4())})
+        hostname = self.identity.hostname.strip()
         return [
             ('var/lib/cloud/seed/nocloud-net/meta-data', metadata, 0o644),
             ('var/lib/cloud/seed/nocloud-net/user-data', userdata, 0o600),
             ('etc/cloud/ds-identify.cfg', 'policy: enabled\n', 0o644),
+            ('etc/hostname', hostname + "\n", 0o644),
+            ('etc/hosts', HOSTS_CONTENT.format(hostname=hostname), 0o644),
             ]
 
     def configure_cloud_init(self):
@@ -238,6 +220,12 @@ class SubiquityModel:
                 'etc_default_keyboard': {
                     'path': 'etc/default/keyboard',
                     'content': self.keyboard.setting.render(),
+                    'permissions': 0o644,
+                    },
+                'etc_machine_id': {
+                    'path': 'etc/machine-id',
+                    'content': open('/etc/machine-id').read(),
+                    'permissions': 0o444,
                     },
                 },
             }
