@@ -135,6 +135,12 @@ class SubiquityModel:
                     'permissions': 0o644,
                     'owner': 'root:root',
                 },
+                {
+                    'path': '/etc/machine-id',
+                    'content': open('/etc/machine-id').read(),
+                    'permissions': 0o444,
+                    'owner': 'root:root',
+                },
             ],
         }
         if self.ssh.install_server:
