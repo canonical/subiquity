@@ -21,8 +21,9 @@ import glob
 import logging
 import math
 import os
-import sys
+import pathlib
 import platform
+import sys
 
 log = logging.getLogger('subiquity.models.filesystem')
 
@@ -914,6 +915,17 @@ class FilesystemModel(object):
                     for o in v:
                         if o.id not in emitted_ids:
                             return False
+            if isinstance(obj, Mount):
+                # Any mount actions for a parent of this one have to be emitted
+                # first.
+                for parent in pathlib.Path(obj.path).parents:
+                    parent = str(parent)
+                    if parent in mountpoints:
+                        if mountpoints[parent] not in emitted_ids:
+                            log.debug(
+                                "cannot emit action to mount %s until that "
+                                "for %s is emitted", obj.path, parent)
+                            return False
             return True
 
         dms = []
@@ -924,6 +936,9 @@ class FilesystemModel(object):
                         id="dm-" + volume.id,
                         volume=volume,
                         key=vg._passphrase))
+
+        mountpoints = {m.path: m.id for m in self.all_mounts()}
+        log.debug('mountpoints %s', mountpoints)
 
         work = self._actions + dms
 
