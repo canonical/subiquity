@@ -220,6 +220,7 @@ class InstallProgressController(BaseController):
         self._event_indent = ""
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
+        self.sm = None
 
     def tpath(self, *path):
         return os.path.join(self.base_model.target, *path)
@@ -529,7 +530,13 @@ class InstallProgressController(BaseController):
             utils.run_command(["/sbin/reboot"])
 
     def click_reboot(self):
-        self.sm.transition('reboot')
+        if self.sm is None:
+            # If the curtin install itself crashes, the state machine
+            # that manages post install steps won't be running. Just
+            # reboot anyway.
+            self.reboot()
+        else:
+            self.sm.transition('reboot')
 
     def quit(self):
         if not self.opts.dry_run:
