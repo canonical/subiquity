@@ -461,8 +461,12 @@ class InstallProgressController(BaseController):
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
 
+    @task(net_only=True)
+    def uu_start(self):
+        self.progress_view.update_running()
+
     @task(label="downloading and installing security updates",
-          transitions={'success': 'wait_for_click', 'reboot': 'abort_uu'},
+          transitions={'reboot': 'abort_uu'},
           net_only=True)
     def _bg_run_uu(self):
         if self.opts.dry_run:
@@ -473,6 +477,10 @@ class InstallProgressController(BaseController):
                 sys.executable, "-m", "curtin", "in-target", "-t", "/target",
                 "--", "unattended-upgrades", "-v",
             ], check=True)
+
+    @task(transitions={'success': 'wait_for_click'}, net_only=True)
+    def uu_done(self):
+        self.progress_view.update_done()
 
     @task(net_only=True)
     def abort_uu(self):
