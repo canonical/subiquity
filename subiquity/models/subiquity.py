@@ -119,6 +119,7 @@ class SubiquityModel:
                 'mode': 'off',
                 },
             'locale': self.locale.selected_language + '.UTF-8',
+            'preserve_hostname': True,
             'resize_rootfs': False,
             'users': [user_info],
             'write_files': [
