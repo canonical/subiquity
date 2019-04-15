@@ -183,6 +183,8 @@ class StateMachine:
             fut = Future()
             try:
                 fut.set_result(func())
+            except urwid.ExitMainLoop:
+                raise
             except Exception as e:
                 fut.set_exception(e)
             end(fut)
@@ -402,21 +404,6 @@ class InstallProgressController(BaseController):
             waited += 0.1
         log.debug("waited %s seconds for events to drain", waited)
 
-    @task(label="copying logs to installed system")
-    def _bg_copy_logs_to_target(self):
-        if self.opts.dry_run:
-            return
-        target_logs = self.tpath('var/log/installer')
-        utils.run_command(['cp', '-aT', '/var/log/installer', target_logs])
-        try:
-            with open(os.path.join(target_logs,
-                                   'installer-journal.txt'), 'w') as output:
-                utils.run_command(
-                    ['journalctl'],
-                    stdout=output, stderr=subprocess.STDOUT)
-        except Exception:
-            log.exception("saving journal failed")
-
     @task
     def start_final_configuration(self):
         self._install_event_start("final system configuration")
@@ -461,6 +448,7 @@ class InstallProgressController(BaseController):
         self.ui.set_header(_("Installation complete!"))
         self.progress_view.set_status(_("Finished install!"))
         self.progress_view.show_complete()
+        self.copy_logs_transition = 'wait'
 
     @task(net_only=True)
     def uu_start(self):
@@ -479,7 +467,7 @@ class InstallProgressController(BaseController):
                 "--", "unattended-upgrades", "-v",
             ], check=True)
 
-    @task(transitions={'success': 'wait_for_click'}, net_only=True)
+    @task(transitions={'success': 'copy_logs_to_target'}, net_only=True)
     def uu_done(self):
         self.progress_view.update_done()
 
@@ -499,7 +487,7 @@ class InstallProgressController(BaseController):
                 '--stop-only',
                 ], check=True)
 
-    @task(net_only=True, transitions={'success': 'reboot'})
+    @task(net_only=True, transitions={'success': 'copy_logs_to_target'})
     def _bg_wait_for_uu(self):
         r, w = os.pipe()
 
@@ -510,6 +498,27 @@ class InstallProgressController(BaseController):
         os.read(r, 1)
         os.close(w)
         os.close(r)
+        self.copy_logs_transition = 'reboot'
+
+    @task(label="copying logs to installed system",
+          transitions={'reboot': 'reboot'})
+    def _bg_copy_logs_to_target(self):
+        if self.opts.dry_run:
+            return
+        target_logs = self.tpath('var/log/installer')
+        utils.run_command(['cp', '-aT', '/var/log/installer', target_logs])
+        try:
+            with open(os.path.join(target_logs,
+                                   'installer-journal.txt'), 'w') as output:
+                utils.run_command(
+                    ['journalctl'],
+                    stdout=output, stderr=subprocess.STDOUT)
+        except Exception:
+            log.exception("saving journal failed")
+
+    @task(transitions={'wait': 'wait_for_click', 'reboot': 'reboot'})
+    def copy_logs_done(self):
+        self.sm.transition(self.copy_logs_transition)
 
     @task(transitions={'reboot': 'reboot'})
     def _bg_wait_for_click(self):
