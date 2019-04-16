@@ -122,9 +122,10 @@ class InstallpathModel(object):
                         'pg_ctlcluster --skip-systemctl-redirect '
                         '$(/bin/ls /var/lib/postgresql/) main stop')],
                 '913-maas': ['umount', t('usr/sbin/invoke-rc.d')],
-                '914-maas': ['umount', t('dev')],
-                '915-maas': ['umount', t('sys')],
-                '916-maas': ['umount', t('proc')],
+                '914-maas': ['umount', t('dev/shm')],
+                '915-maas': ['umount', t('dev')],
+                '916-maas': ['umount', t('sys')],
+                '917-maas': ['umount', t('proc')],
             }
         elif self.path == 'maas_rack':
             config['debconf_selections'] = {
