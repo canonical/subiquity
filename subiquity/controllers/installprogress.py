@@ -232,6 +232,7 @@ class InstallProgressController(BaseController):
 
     def _step_done(self, step):
         self._postinstall_prerequisites[step] = True
+        log.debug("_step_done %s %s", step, self._postinstall_prerequisites)
         if all(self._postinstall_prerequisites.values()):
             self.start_postinstall_configuration()
 
