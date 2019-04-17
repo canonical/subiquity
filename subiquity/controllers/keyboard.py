@@ -59,6 +59,7 @@ class KeyboardController(BaseController):
             self._done)
 
     def _done(self, fut):
+        log.debug("KeyboardController._done next-screen")
         self.signal.emit_signal('next-screen')
 
     def cancel(self):

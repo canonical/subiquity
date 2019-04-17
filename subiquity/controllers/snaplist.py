@@ -176,6 +176,9 @@ class SnapListController(BaseController):
         self.loader.get_snap_info(snap, callback)
 
     def done(self, snaps_to_install):
+        log.debug(
+            "SnapListController.done next-screen snaps_to_install=%s",
+            snaps_to_install)
         self.model.set_installed_list(snaps_to_install)
         self.signal.emit_signal("installprogress:snap-config-done")
         self.signal.emit_signal("next-screen")

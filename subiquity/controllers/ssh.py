@@ -92,6 +92,9 @@ class SSHController(BaseController):
         if not isinstance(self.ui.frame.body, SSHView):
             # This can happen if curtin failed while the keys where being
             # fetched and we jump to the log view.
+            log.debug(
+                "view is now an instance of %s, not SSHView",
+                type(self.ui.frame.body))
             return
         try:
             result = fut.result()
@@ -123,7 +126,7 @@ class SSHController(BaseController):
             self._fetched_ssh_keys)
 
     def done(self, result):
-        log.debug("SSHController result %s", result)
+        log.debug("SSHController.done next-screen result=%s", result)
         self.model.install_server = result['install_server']
         self.model.authorized_keys = result.get('authorized_keys', [])
         self.model.pwauth = result.get('pwauth', True)

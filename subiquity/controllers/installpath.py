@@ -39,6 +39,9 @@ class InstallpathController(BaseController):
                 self.install_ubuntu()
             else:
                 self.model.update(self.answers)
+                log.debug(
+                    "InstallpathController.default next-screen answers=%s",
+                    self.answers)
                 self.signal.emit_signal('next-screen')
 
     def cancel(self):
@@ -56,7 +59,7 @@ class InstallpathController(BaseController):
         getattr(self, 'install_' + path)()
 
     def install_ubuntu(self):
-        log.debug("Installing Ubuntu path chosen.")
+        log.debug("InstallpathController.install_ubuntu next-screen")
         self.signal.emit_signal('next-screen')
 
     def install_cmdline(self):
@@ -89,5 +92,6 @@ class InstallpathController(BaseController):
         self.ui.set_body(MAASView(self.model, self, title, excerpt))
 
     def setup_maas(self, result):
+        log.debug("InstallpathController.setup_mass next-screen")
         self.model.update(result)
         self.signal.emit_signal('next-screen')
