@@ -45,6 +45,7 @@ class ProxyController(BaseController):
         self.model.proxy = data
 
     def done(self, proxy):
+        log.debug("ProxyController.done next-screen proxy=%s", proxy)
         if proxy != self.model.proxy:
             self.model.proxy = proxy
             os.environ['http_proxy'] = os.environ['https_proxy'] = proxy

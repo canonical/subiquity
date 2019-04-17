@@ -277,6 +277,7 @@ class RefreshController(BaseController):
             raise Skip()
 
     def done(self, sender=None):
+        log.debug("RefreshController.done next-screen")
         self.signal.emit_signal('next-screen')
 
     def cancel(self, sender=None):

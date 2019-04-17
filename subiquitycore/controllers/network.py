@@ -238,6 +238,7 @@ class NetworkController(BaseController):
         self.observer.trigger_scan(dev.ifindex)
 
     def done(self):
+        log.debug("NetworkController.done next-screen")
         self.view = None
         self.model.has_network = bool(
             self.network_event_receiver.default_routes)

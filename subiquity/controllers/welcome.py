@@ -36,6 +36,7 @@ class WelcomeController(BaseController):
             self.done()
 
     def done(self):
+        log.debug("WelcomeController.done next-screen")
         self.signal.emit_signal('next-screen')
 
     def cancel(self):

@@ -102,6 +102,7 @@ class MirrorController(BaseController):
         self.model.mirror = data
 
     def done(self, mirror):
+        log.debug("MirrorController.done next-screen mirror=%s", mirror)
         if mirror != self.model.mirror:
             self.model.mirror = mirror
         self.signal.emit_signal('next-screen')
