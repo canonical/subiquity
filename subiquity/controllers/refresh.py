@@ -278,7 +278,9 @@ class RefreshController(BaseController):
 
     def done(self, sender=None):
         log.debug("RefreshController.done next-screen")
+        self.view = None
         self.signal.emit_signal('next-screen')
 
     def cancel(self, sender=None):
+        self.view = None
         self.signal.emit_signal('prev-screen')
