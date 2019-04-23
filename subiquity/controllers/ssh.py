@@ -40,7 +40,7 @@ class SSHController(BaseController):
         self.ui.set_body(SSHView(self.model, self))
         if self.answers:
             d = {
-                "install_server": self.answers.get("install", False),
+                "install_server": self.answers.get("install_server", False),
                 "authorized_keys": self.answers.get("authorized_keys", []),
                 "pwauth": self.answers.get("pwauth", True),
             }
