@@ -7,9 +7,13 @@
 1. Subiquity is entirely usable by pressing up, down, space (or return) and the
    occasional bit of typing.
 
-2. The UI never blocks.  If something takes more than about 0.1s, it is done in
-   the background, possibly with some kind of indication in the UI (and the
-   ability to cancel if appropriate).
+2. The UI never blocks.  If something takes more than about 0.1s, it is done
+   in the background, possibly with some kind of indication in the UI and the
+   ability to cancel if appropriate.  (We should consider making sure that if
+   we pop up a progress dialog while something happens -- e.g. applying
+   keyboard configuration, which the user just has to wait for until going on
+   to the next screen -- that the dialog appears for at least, say, 0.5s to
+   avoid flickering the UI).
 
 3. General UX principles that it is worth keeping in mind:
 
@@ -168,7 +172,7 @@ us not use a background thread for absolutely every action we want to run in
 the background (there's no real reason to tie up a thread waiting for a
 subprocess to exit, for example).
 
-Only touch the UI from the main thread.
+A cast-iron rule: Only touch the UI from the main thread.
 
 ### Terminal things
 
@@ -210,6 +214,11 @@ Tests (and lint checks) are run by travis using lxd.  See `.travis.yml` and
 For "real" testing, you need to make a snap (`snapcraft snap`), mash it into an
 existing ISO using `./scripts/inject-subiquity-snap.sh`, and boot the result in
 a VM.
+
+There are integration tests that run daily at
+https://platform-qa-jenkins.ubuntu.com/view/server (unfortunately you need to
+be connected to the Canonical VPN -- i.e. be a Canonical staff member -- to
+see these results).
 
 ## Development process
 
