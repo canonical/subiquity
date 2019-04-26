@@ -160,6 +160,13 @@ class SubiquityModel:
             os.makedirs(os.path.dirname(path), exist_ok=True)
             write_file(path, content, mode, omode="w")
 
+    def _media_info(self):
+        if os.path.exists('/cdrom/.disk/info'):
+            with open('/cdrom/.disk/info') as fp:
+                return fp.read()
+        else:
+            return "media-info"
+
     def render(self, syslog_identifier):
         config = {
             'apt': {
@@ -226,6 +233,11 @@ class SubiquityModel:
                     'path': 'etc/machine-id',
                     'content': open('/etc/machine-id').read(),
                     'permissions': 0o444,
+                    },
+                'media_info': {
+                    'path': 'var/log/installer/media-info',
+                    'content': self._media_info(),
+                    'permissions': 0o644,
                     },
                 },
             }
