@@ -95,7 +95,8 @@ class FilesystemController(BaseController):
                 self._reprobe()
             else:
                 self._probe_state = ProbeState.FAILED
-                self.default()
+                if self.showing:
+                    self.default()
         else:
             self.model.load_probe_data(storage)
             self._probe_state = ProbeState.DONE
