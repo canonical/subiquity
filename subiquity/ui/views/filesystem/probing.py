@@ -46,3 +46,16 @@ class SlowProbing(BaseView):
                 Text(""),
                 self.spinner,
             ]))
+
+
+class ProbingFailed(BaseView):
+
+    title = _("Probing for devices to install to failed")
+
+    def __init__(self, controller):
+        self.controller = controller
+        super().__init__(screen(
+            [
+                Text(_("Unfortunately probing for devices to install to "
+                       "failed. Please report a bug on Launchpad.")),
+            ]))

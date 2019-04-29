@@ -17,8 +17,7 @@ import logging
 import yaml
 from probert.network import (StoredDataObserver,
                              UdevObserver)
-from probert.storage import (Storage,
-                             StorageInfo)
+from probert.storage import Storage
 
 log = logging.getLogger('subiquitycore.prober')
 
@@ -62,17 +61,12 @@ class Prober():
             observer = UdevObserver(receiver)
         return observer, observer.start()
 
-    def get_storage(self):
+    def get_storage(self, probe_types=None):
         ''' Load a StorageInfo class.  Probe if it's not present '''
         if 'storage' not in self.probe_data:
             log.debug('get_storage: no storage in probe_data, fetching')
             storage = Storage()
-            results = storage.probe()
+            results = storage.probe(probe_types=probe_types)
             self.probe_data['storage'] = results
 
         return self.probe_data['storage']
-
-    def get_storage_info(self, device):
-        ''' Load a StorageInfo class for specified device '''
-        return StorageInfo(
-            {device: self.get_storage()['blockdev'].get(device)})

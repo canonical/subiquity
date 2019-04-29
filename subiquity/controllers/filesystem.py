@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import enum
 import logging
 import os
 import platform
@@ -32,7 +33,10 @@ from subiquity.ui.views import (
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     )
-from subiquity.ui.views.filesystem.probing import SlowProbing
+from subiquity.ui.views.filesystem.probing import (
+    SlowProbing,
+    ProbingFailed,
+    )
 
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
@@ -40,6 +44,13 @@ log = logging.getLogger("subiquitycore.controller.filesystem")
 BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024    # 1MiB
 PREP_GRUB_SIZE_BYTES = 8 * 1024 * 1024    # 8MiB
 UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
+
+
+class ProbeState(enum.IntEnum):
+    NOT_STARTED = enum.auto()
+    PROBING = enum.auto()
+    FAILED = enum.auto()
+    DONE = enum.auto()
 
 
 class FilesystemController(BaseController):
@@ -52,29 +63,49 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
         self.showing = False
-        self._probe_complete = False
+        self._probe_state = ProbeState.NOT_STARTED
 
     def start(self):
+        self._probe_state = ProbeState.PROBING
         self.run_in_bg(self._bg_probe, self._probed)
 
-    def _bg_probe(self):
-        probed_data = self.prober.get_storage()["blockdev"]
+    def _bg_probe(self, probe_types=None):
+        probed_data = self.prober.get_storage(probe_types=probe_types)
         storage = {}
-        for path, data in probed_data.items():
+        for path, data in probed_data["blockdev"].items():
             storage[path] = StorageInfo({path: data})
         return storage
 
-    def _probed(self, fut):
-        storage = fut.result()
-        self.model.load_probe_data(storage)
-        self._probe_complete = True
-        if self.showing:
-            self.default()
+    def _probed(self, fut, restricted=False):
+        try:
+            storage = fut.result()
+        except Exception as e:
+            log.exception("probing failed restricted=%s", restricted)
+            if not restricted:
+                log.info("reprobing for blockdev only")
+                # Should make a crash file for apport, arrange for it to be
+                # copied onto the installed system and tell user all this
+                # happened!
+                self.run_in_bg(
+                    lambda: self._bg_probe(["blockdev"]),
+                    lambda fut: self._probed(fut, True),
+                    )
+            else:
+                self._probe_state = ProbeState.FAILED
+                self.default()
+        else:
+            self.model.load_probe_data(storage)
+            self._probe_state = ProbeState.DONE
+            # Should do something here if probing found no devices.
+            if self.showing:
+                self.default()
 
     def default(self):
         self.showing = True
-        if not self._probe_complete:
+        if self._probe_state == ProbeState.PROBING:
             self.ui.set_body(SlowProbing(self))
+        elif self._probe_state == ProbeState.FAILED:
+            self.ui.set_body(ProbingFailed(self))
         else:
             self.ui.set_body(GuidedFilesystemView(self))
             if self.answers['guided']:
