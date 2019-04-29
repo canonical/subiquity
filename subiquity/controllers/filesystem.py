@@ -49,6 +49,7 @@ UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 class ProbeState(enum.IntEnum):
     NOT_STARTED = enum.auto()
     PROBING = enum.auto()
+    REPROBING = enum.auto()
     FAILED = enum.auto()
     DONE = enum.auto()
 
@@ -68,6 +69,8 @@ class FilesystemController(BaseController):
     def start(self):
         self._probe_state = ProbeState.PROBING
         self.run_in_bg(self._bg_probe, self._probed)
+        self.loop.set_alarm_in(
+            5.0, lambda loop, ud: self._check_probe_timeout())
 
     def _bg_probe(self, probe_types=None):
         probed_data = self.prober.get_storage(probe_types=probe_types)
@@ -77,6 +80,9 @@ class FilesystemController(BaseController):
         return storage
 
     def _probed(self, fut, restricted=False):
+        if not restricted and self._probe_state != ProbeState.PROBING:
+            log.debug("ignoring result %s for timed out probe", fut)
+            return
         try:
             storage = fut.result()
         except Exception as e:
@@ -86,10 +92,7 @@ class FilesystemController(BaseController):
                 # Should make a crash file for apport, arrange for it to be
                 # copied onto the installed system and tell user all this
                 # happened!
-                self.run_in_bg(
-                    lambda: self._bg_probe(["blockdev"]),
-                    lambda fut: self._probed(fut, True),
-                    )
+                self._reprobe()
             else:
                 self._probe_state = ProbeState.FAILED
                 self.default()
@@ -100,9 +103,24 @@ class FilesystemController(BaseController):
             if self.showing:
                 self.default()
 
+    def _check_probe_timeout(self):
+        log.debug("_check_probe_timeout")
+        if self._probe_state == ProbeState.PROBING:
+            log.info(
+                "unrestricted probing timed out, reprobing for blockdev only")
+            self._reprobe()
+
+    def _reprobe(self):
+        self._probe_state = ProbeState.REPROBING
+        self.run_in_bg(
+            lambda: self._bg_probe(["blockdev"]),
+            lambda fut: self._probed(fut, True),
+            )
+
     def default(self):
         self.showing = True
-        if self._probe_state == ProbeState.PROBING:
+        if self._probe_state in [ProbeState.PROBING,
+                                 ProbeState.REPROBING]:
             self.ui.set_body(SlowProbing(self))
         elif self._probe_state == ProbeState.FAILED:
             self.ui.set_body(ProbingFailed(self))
