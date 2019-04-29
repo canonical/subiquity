@@ -867,8 +867,7 @@ class FilesystemModel(object):
             fs_by_name[fs.label] = fs
     fs_by_name['fat32'] = FS('fat32', True)
 
-    def __init__(self, prober):
-        self.prober = prober
+    def __init__(self):
         self._disk_info = []
         self.reset()
 
@@ -975,25 +974,23 @@ class FilesystemModel(object):
                     mounted_disks.add('/dev/' + paths[0].split('/')[3])
         return mounted_disks
 
-    def probe(self):
-        storage = self.prober.get_storage()["blockdev"]
+    def load_probe_data(self, storage):
         currently_mounted = self._get_system_mounted_disks()
-        for path, data in storage.items():
+        for path, info in storage.items():
             log.debug("fs probe %s", path)
             if path in currently_mounted:
                 continue
-            if data['DEVTYPE'] == 'disk':
-                if data["DEVPATH"].startswith('/devices/virtual'):
+            if info.type == 'disk':
+                if info.is_virtual:
                     continue
-                if data["MAJOR"] in ("2", "11"):  # serial and cd devices
+                if info.raw["MAJOR"] in ("2", "11"):  # serial and cd devices
                     continue
-                if data['attrs'].get('ro') == "1":
+                if info.raw['attrs'].get('ro') == "1":
                     continue
-                if "ID_CDROM" in data:
+                if "ID_CDROM" in info.raw:
                     continue
                 # log.debug('disk={}\n{}'.format(
                 #    path, json.dumps(data, indent=4, sort_keys=True)))
-                info = self.prober.get_storage_info(path)
                 if info.size < self.lower_size_limit:
                     continue
                 self._disk_info.append(info)

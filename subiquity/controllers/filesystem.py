@@ -17,6 +17,8 @@ import logging
 import os
 import platform
 
+from probert.storage import StorageInfo
+
 from subiquitycore.controller import BaseController
 
 from subiquity.models.filesystem import (
@@ -48,7 +50,13 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
-        self.model.probe()  # probe before we complete
+
+    def start(self):
+        probed_data = self.prober.get_storage()["blockdev"]
+        storage = {}
+        for path, data in probed_data.items():
+            storage[path] = StorageInfo({path: data})
+        self.model.load_probe_data(storage)
 
     def default(self):
         self.ui.set_body(GuidedFilesystemView(self))

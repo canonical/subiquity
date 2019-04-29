@@ -21,7 +21,7 @@ FakeStorageInfo.__new__.__defaults__ = (None,) * len(FakeStorageInfo._fields)
 
 
 def make_model_and_disk():
-    model = FilesystemModel(prober=None)
+    model = FilesystemModel()
     model._disk_info.append(FakeStorageInfo(
         name='disk-name', size=100*(2**30), free=50*(2**30)))
     model.reset()

@@ -74,7 +74,7 @@ class SubiquityModel:
             target=self.target,
             sources=common['opts'].sources)
         self.network = NetworkModel(support_wlan=False)
-        self.filesystem = FilesystemModel(common['prober'])
+        self.filesystem = FilesystemModel()
         self.identity = IdentityModel()
         self.proxy = ProxyModel()
         self.mirror = MirrorModel()
