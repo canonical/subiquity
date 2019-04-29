@@ -218,7 +218,8 @@ def button_pile(buttons):
         Pile(buttons), min_width=width, width=width, align='center')
 
 
-def screen(rows, buttons, focus_buttons=True, excerpt=None, narrow_rows=False):
+def screen(rows, buttons=None, focus_buttons=True, excerpt=None,
+           narrow_rows=False):
     """Helper to create a common screen layout.
 
     The commonest screen layout in subiquity is:

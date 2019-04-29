@@ -32,6 +32,7 @@ from subiquity.ui.views import (
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     )
+from subiquity.ui.views.filesystem.probing import SlowProbing
 
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
@@ -50,20 +51,36 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
+        self.showing = False
+        self._probe_complete = False
 
     def start(self):
+        self.run_in_bg(self._bg_probe, self._probed)
+
+    def _bg_probe(self):
         probed_data = self.prober.get_storage()["blockdev"]
         storage = {}
         for path, data in probed_data.items():
             storage[path] = StorageInfo({path: data})
+        return storage
+
+    def _probed(self, fut):
+        storage = fut.result()
         self.model.load_probe_data(storage)
+        self._probe_complete = True
+        if self.showing:
+            self.default()
 
     def default(self):
-        self.ui.set_body(GuidedFilesystemView(self))
-        if self.answers['guided']:
-            self.guided(self.answers.get('guided-method', 'direct'))
-        elif self.answers['manual']:
-            self.manual()
+        self.showing = True
+        if not self._probe_complete:
+            self.ui.set_body(SlowProbing(self))
+        else:
+            self.ui.set_body(GuidedFilesystemView(self))
+            if self.answers['guided']:
+                self.guided(self.answers.get('guided-method', 'direct'))
+            elif self.answers['manual']:
+                self.manual()
 
     def _action_get(self, id):
         dev_spec = id[0].split()
@@ -176,9 +193,11 @@ class FilesystemController(BaseController):
         self.manual()
 
     def cancel(self):
+        self.showing = False
         self.signal.emit_signal('prev-screen')
 
     def finish(self):
+        self.showing = False
         log.debug("FilesystemController.finish next-screen")
         # start curtin install in background
         self.signal.emit_signal('installprogress:filesystem-config-done')
