@@ -48,14 +48,16 @@ class SlowProbing(BaseView):
             ]))
 
 
+fail_text = _(
+    "Unfortunately probing for devices to install to failed. Please report a "
+    "bug on Launchpad, and if possible include the contents of the "
+    "/var/log/installer directory.")
+
+
 class ProbingFailed(BaseView):
 
     title = _("Probing for devices to install to failed")
 
     def __init__(self, controller):
         self.controller = controller
-        super().__init__(screen(
-            [
-                Text(_("Unfortunately probing for devices to install to "
-                       "failed. Please report a bug on Launchpad.")),
-            ]))
+        super().__init__(screen([Text(_(fail_text))]))
