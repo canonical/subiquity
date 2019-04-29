@@ -85,7 +85,7 @@ class FilesystemController(BaseController):
             return
         try:
             storage = fut.result()
-        except Exception as e:
+        except Exception:
             log.exception("probing failed restricted=%s", restricted)
             if not restricted:
                 log.info("reprobing for blockdev only")
