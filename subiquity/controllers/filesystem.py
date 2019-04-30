@@ -13,9 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import enum
 import logging
 import os
 import platform
+
+from probert.storage import StorageInfo
 
 from subiquitycore.controller import BaseController
 
@@ -30,6 +33,10 @@ from subiquity.ui.views import (
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     )
+from subiquity.ui.views.filesystem.probing import (
+    SlowProbing,
+    ProbingFailed,
+    )
 
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
@@ -37,6 +44,14 @@ log = logging.getLogger("subiquitycore.controller.filesystem")
 BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024    # 1MiB
 PREP_GRUB_SIZE_BYTES = 8 * 1024 * 1024    # 8MiB
 UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
+
+
+class ProbeState(enum.IntEnum):
+    NOT_STARTED = enum.auto()
+    PROBING = enum.auto()
+    REPROBING = enum.auto()
+    FAILED = enum.auto()
+    DONE = enum.auto()
 
 
 class FilesystemController(BaseController):
@@ -48,14 +63,74 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
-        self.model.probe()  # probe before we complete
+        self.showing = False
+        self._probe_state = ProbeState.NOT_STARTED
+
+    def start(self):
+        self._probe_state = ProbeState.PROBING
+        self.run_in_bg(self._bg_probe, self._probed)
+        self.loop.set_alarm_in(
+            5.0, lambda loop, ud: self._check_probe_timeout())
+
+    def _bg_probe(self, probe_types=None):
+        probed_data = self.prober.get_storage(probe_types=probe_types)
+        storage = {}
+        for path, data in probed_data["blockdev"].items():
+            storage[path] = StorageInfo({path: data})
+        return storage
+
+    def _probed(self, fut, restricted=False):
+        if not restricted and self._probe_state != ProbeState.PROBING:
+            log.debug("ignoring result %s for timed out probe", fut)
+            return
+        try:
+            storage = fut.result()
+        except Exception:
+            log.exception("probing failed restricted=%s", restricted)
+            if not restricted:
+                log.info("reprobing for blockdev only")
+                # Should make a crash file for apport, arrange for it to be
+                # copied onto the installed system and tell user all this
+                # happened!
+                self._reprobe()
+            else:
+                self._probe_state = ProbeState.FAILED
+                if self.showing:
+                    self.default()
+        else:
+            self.model.load_probe_data(storage)
+            self._probe_state = ProbeState.DONE
+            # Should do something here if probing found no devices.
+            if self.showing:
+                self.default()
+
+    def _check_probe_timeout(self):
+        log.debug("_check_probe_timeout")
+        if self._probe_state == ProbeState.PROBING:
+            log.info(
+                "unrestricted probing timed out, reprobing for blockdev only")
+            self._reprobe()
+
+    def _reprobe(self):
+        self._probe_state = ProbeState.REPROBING
+        self.run_in_bg(
+            lambda: self._bg_probe(["blockdev"]),
+            lambda fut: self._probed(fut, True),
+            )
 
     def default(self):
-        self.ui.set_body(GuidedFilesystemView(self))
-        if self.answers['guided']:
-            self.guided(self.answers.get('guided-method', 'direct'))
-        elif self.answers['manual']:
-            self.manual()
+        self.showing = True
+        if self._probe_state in [ProbeState.PROBING,
+                                 ProbeState.REPROBING]:
+            self.ui.set_body(SlowProbing(self))
+        elif self._probe_state == ProbeState.FAILED:
+            self.ui.set_body(ProbingFailed(self))
+        else:
+            self.ui.set_body(GuidedFilesystemView(self))
+            if self.answers['guided']:
+                self.guided(self.answers.get('guided-method', 'direct'))
+            elif self.answers['manual']:
+                self.manual()
 
     def _action_get(self, id):
         dev_spec = id[0].split()
@@ -168,9 +243,11 @@ class FilesystemController(BaseController):
         self.manual()
 
     def cancel(self):
+        self.showing = False
         self.signal.emit_signal('prev-screen')
 
     def finish(self):
+        self.showing = False
         log.debug("FilesystemController.finish next-screen")
         # start curtin install in background
         self.signal.emit_signal('installprogress:filesystem-config-done')
