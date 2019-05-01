@@ -16,7 +16,7 @@ class StorageChecker:
         assert 'size' in action
         assert action['device'] in self.actions
         assert 'ptable' in self.actions[action['device']]
-        if action['flag']:
+        if action['flag'] in ('boot', 'bios_grub', 'prep'):
             assert self.actions[action['device']]['type'] == 'disk'
 
     def _check_format(self, action):
