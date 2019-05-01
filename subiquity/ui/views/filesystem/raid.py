@@ -135,7 +135,7 @@ class RaidStretchy(Stretchy):
             initial = {
                 'devices': {},
                 'name': name,
-                'level': raidlevels_by_value[1],
+                'level': raidlevels_by_value["raid1"],
                 'size': '-',
                 }
         else:
