@@ -594,7 +594,7 @@ class Partition(_Formattable):
 
     @property
     def ok_for_raid(self):
-        if self.flag:
+        if self.flag in ('boot', 'bios_grub', 'prep'):
             return False
         if self._fs is not None:
             return False
