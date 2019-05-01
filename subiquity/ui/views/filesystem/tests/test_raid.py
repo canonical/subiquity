@@ -38,13 +38,12 @@ class RaidViewTests(unittest.TestCase):
         form_data = {
             'name': 'md0',
             'devices': {part1: 'active', part2: 'active', part3: 'spare'},
-            'level': raidlevels_by_value[1],
             }
         expected_data = {
             'name': 'md0',
             'devices': {part1, part2},
             'spare_devices': {part3},
-            'level': raidlevels_by_value[1],
+            'level': raidlevels_by_value["raid1"],
             }
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
@@ -55,17 +54,17 @@ class RaidViewTests(unittest.TestCase):
         model, disk = make_model_and_disk()
         part1 = model.add_partition(disk, 10*(2**30))
         part2 = model.add_partition(disk, 10*(2**30))
-        raid = model.add_raid("md0", 1, {part1, part2}, set())
+        raid = model.add_raid("md0", "raid1", {part1, part2}, set())
         view, stretchy = make_view(model, raid)
         form_data = {
             'name': 'md1',
-            'level': raidlevels_by_value[0],
+            'level': raidlevels_by_value["raid0"],
             }
         expected_data = {
             'name': 'md1',
             'devices': {part1, part2},
             'spare_devices': set(),
-            'level': raidlevels_by_value[0],
+            'level': raidlevels_by_value["raid0"],
             }
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)

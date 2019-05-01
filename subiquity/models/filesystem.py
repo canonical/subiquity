@@ -88,11 +88,11 @@ class RaidLevel:
 
 
 raidlevels = [
-    RaidLevel(_("0 (striped)"),  0,  2, False),
-    RaidLevel(_("1 (mirrored)"), 1,  2),
-    RaidLevel(_("5"),            5,  3),
-    RaidLevel(_("6"),            6,  4),
-    RaidLevel(_("10"),           10, 4),
+    RaidLevel(_("0 (striped)"),  "raid0",  2, False),
+    RaidLevel(_("1 (mirrored)"), "raid1",  2),
+    RaidLevel(_("5"),            "raid5",  3),
+    RaidLevel(_("6"),            "raid6",  4),
+    RaidLevel(_("10"),           "raid10", 4),
     ]
 raidlevels_by_value = {l.value: l for l in raidlevels}
 
@@ -163,15 +163,15 @@ def get_raid_size(level, devices):
     min_size = min(dev.size for dev in devices) - RAID_OVERHEAD
     if min_size <= 0:
         return 0
-    if level == 0:
+    if level == "raid0":
         return min_size * len(devices)
-    elif level == 1:
+    elif level == "raid1":
         return min_size
-    elif level == 5:
+    elif level == "raid5":
         return (min_size - RAID_OVERHEAD) * (len(devices) - 1)
-    elif level == 6:
+    elif level == "raid6":
         return (min_size - RAID_OVERHEAD) * (len(devices) - 2)
-    elif level == 10:
+    elif level == "raid10":
         return min_size * (len(devices) // 2)
     else:
         raise ValueError("unknown raid level %s" % level)
@@ -611,7 +611,7 @@ class Raid(_Device):
     type = const("raid")
     preserve = attr.ib(default=False)
     name = attr.ib(default=None)
-    raidlevel = attr.ib(default=None)  # 0, 1, 5, 6, 10
+    raidlevel = attr.ib(default=None)  # raid0, raid1, raid5, raid6, raid10
     devices = reflist(backlink="_constructed_device")  # set([_Formattable])
     spare_devices = reflist(backlink="_constructed_device")  # ditto
     ptable = attr.ib(default=None)
@@ -632,7 +632,7 @@ class Raid(_Device):
         return self.name
 
     def desc(self):
-        return _("software RAID {}").format(self.raidlevel)
+        return _("software RAID {}").format(self.raidlevel[4:])
 
     supported_actions = [
         DeviceAction.EDIT,

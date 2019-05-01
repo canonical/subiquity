@@ -173,6 +173,8 @@ class FilesystemController(BaseController):
         return {self._action_get(d): 'active' for d in devices}
 
     def _action_clean_level(self, level):
+        if isinstance(level, int):
+            level = "raid" + str(level)
         return raidlevels_by_value[level]
 
     def _answers_action(self, action):
