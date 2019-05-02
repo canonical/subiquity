@@ -43,6 +43,16 @@ Filesystem:
         password: "passw0rd"
         confirm_password: "passw0rd"
     - obj: [volgroup name vg-1]
+      action: EDIT
+      data:
+        encrypt: false
+    - obj: [volgroup name vg-1]
+      action: EDIT
+      data:
+        encrypt: true
+        password: "passw0rd"
+        confirm_password: "passw0rd"
+    - obj: [volgroup name vg-1]
       action: CREATE_LV
       data:
         name: lv-0
