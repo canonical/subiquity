@@ -73,6 +73,17 @@ def fsobj(c):
     return attr.s(cmp=False)(c)
 
 
+def dependencies(obj):
+    for f in attr.fields(type(obj)):
+        v = getattr(obj, f.name)
+        if not v:
+            continue
+        elif f.metadata.get('ref', False):
+            yield v
+        elif f.metadata.get('reflist', False):
+            yield from v
+
+
 @attr.s(cmp=False)
 class FS:
     label = attr.ib()
@@ -897,17 +908,9 @@ class FilesystemModel(object):
             emitted_ids.add(obj.id)
 
         def can_emit(obj):
-            for f in attr.fields(type(obj)):
-                v = getattr(obj, f.name)
-                if not v:
-                    continue
-                if f.metadata.get('ref', False):
-                    if v.id not in emitted_ids:
-                        return False
-                elif f.metadata.get('reflist', False):
-                    for o in v:
-                        if o.id not in emitted_ids:
-                            return False
+            for dep in dependencies(obj):
+                if dep.id not in emitted_ids:
+                    return False
             if isinstance(obj, Mount):
                 # Any mount actions for a parent of this one have to be emitted
                 # first.
