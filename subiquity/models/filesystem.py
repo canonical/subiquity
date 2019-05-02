@@ -880,17 +880,13 @@ class FilesystemModel(object):
         self._actions = [Disk.from_info(info) for info in self._disk_info]
 
     def render(self):
-        # the curtin storage config has the constraint that an action
-        # must be preceded by all the things that it depends on. Disks
-        # are easy because they don't depend on anything, but a raid
-        # can both be built of partitions and be partitioned itself so
-        # in some cases raid and partition actions have to be
-        # intermingled. We tackle this by tracking the ids that have
-        # been emitted and iterating over the raid and partition
-        # objects and emitting the ones that can be emitted repeatedly
-        # until there are none left (or we make no progress, which
-        # means there is a cycle in the definitions, something the UI
-        # should have prevented <wink>)
+        # The curtin storage config has the constraint that an action must be
+        # preceded by all the things that it depends on.  We handle this by
+        # repeatedly iterating over all actions and checking if we can emit
+        # each action by checking if all of the actions it depends on have been
+        # emitted.  Eventually this will either emit all actions or stop making
+        # progress -- which means there is a cycle in the definitions,
+        # something the UI should have prevented <wink>.
         r = []
         emitted_ids = set()
 
@@ -928,7 +924,7 @@ class FilesystemModel(object):
         mountpoints = {m.path: m.id for m in self.all_mounts()}
         log.debug('mountpoints %s', mountpoints)
 
-        work = self._actions
+        work = self._actions[:]
 
         while work:
             next_work = []
