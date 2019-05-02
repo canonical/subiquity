@@ -18,7 +18,7 @@ class Config:
 
     def __init__(self):
         self.devices = []
-        self.config = []
+        self.config = {}
 
     def parse_netplan_config(self, config):
         try:
