@@ -320,6 +320,15 @@ class _Formattable(ABC):
     # Base class for anything that can be formatted and mounted,
     # e.g. a disk or a RAID or a partition.
 
+    @property
+    @abstractmethod
+    def label(self):
+        pass
+
+    @property
+    def annotations(self):
+        return []
+
     # Filesystem
     _fs = attr.ib(default=None, repr=False)
     # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
@@ -564,6 +573,17 @@ class Partition(_Formattable):
     flag = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
+    @property
+    def annotations(self):
+        r = super().annotations
+        if self.flag == "prep":
+            r.append("PReP")
+        elif self.flag == "boot":
+            r.append("ESP")
+        elif self.flag == "bios_grub":
+            r.append("bios_grub")
+        return r
+
     def desc(self):
         return _("partition of {}").format(self.device.desc())
 
@@ -700,6 +720,14 @@ class LVM_VolGroup(_Device):
     @property
     def free_for_partitions(self):
         return self.size - self.used
+
+    @property
+    def annotations(self):
+        r = super().annotations
+        member = next(iter(self.devices))
+        if member.type == "dm_crypt":
+            r.append("encrypted")
+        return r
 
     @property
     def label(self):
