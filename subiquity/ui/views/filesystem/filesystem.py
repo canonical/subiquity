@@ -293,7 +293,10 @@ class DeviceList(WidgetWrap):
     _disk_FORMAT = _stretchy_shower(FormatEntireStretchy)
 
     def _disk_REMOVE(self, disk):
-        cd = disk.constructed_device()
+        cd = disk.constructed_device(skip_dm_crypt=False)
+        if cd.type == "dm_crypt":
+            self.parent.model.remove_dm_crypt(cd)
+            disk, cd = cd, cd.constructed_device()
         if cd.type == "raid":
             if disk in cd.devices:
                 cd.devices.remove(disk)
@@ -404,8 +407,10 @@ class DeviceList(WidgetWrap):
         for device in devices:
             menu = self._action_menu_for_device(device)
             label = device.label
-            if getattr(device, "_passphrase", None) is not None:
-                label += _(" (encrypted)")
+            if device.type == "lvm_volgroup":
+                member = next(iter(device.devices))
+                if member.type == "dm_crypt":
+                    label += _(" (encrypted)")
             cells = [
                 Text("["),
                 Text(label),

@@ -326,8 +326,14 @@ class _Formattable(ABC):
     def fs(self):
         return self._fs
 
-    def constructed_device(self):
-        return self._constructed_device
+    def constructed_device(self, skip_dm_crypt=True):
+        cd = self._constructed_device
+        if cd is None:
+            return None
+        elif cd.type == "dm_crypt" and skip_dm_crypt:
+            return cd._constructed_device
+        else:
+            return cd
 
     @property
     @abstractmethod
@@ -673,9 +679,6 @@ class Raid(_Device):
     component_name = "component"
 
 
-LUKS_OVERHEAD = 16*(2**20)
-
-
 @fsobj
 class LVM_VolGroup(_Device):
 
@@ -684,20 +687,10 @@ class LVM_VolGroup(_Device):
     preserve = attr.ib(default=False)
     name = attr.ib(default=None)
     devices = reflist(backlink="_constructed_device")  # set([_Formattable])
-    _passphrase = attr.ib(default=None, repr=False)
-
-    def serialize_devices(self):
-        p = ''
-        if self._passphrase:
-            p = 'dm-'
-        return [p + d.id for d in self.devices]
 
     @property
     def size(self):
-        size = get_lvm_size(self.devices)
-        if self._passphrase:
-            size -= LUKS_OVERHEAD
-        return size
+        return get_lvm_size(self.devices)
 
     @property
     def free_for_partitions(self):
@@ -778,14 +771,26 @@ class LVM_LogicalVolume(_Formattable):
     ok_for_lvm_vg = False
 
 
+LUKS_OVERHEAD = 16*(2**20)
+
+
 @fsobj
 class DM_Crypt:
     id = idfield("crypt")
     type = const("dm_crypt")
     dm_name = attr.ib(default=None)
-    volume = ref()  # _Formattable
-    key = attr.ib(default=None)
+    volume = ref(backlink="_constructed_device")  # _Formattable
+    key = attr.ib(default=None, repr=False)
     preserve = attr.ib(default=False)
+
+    _constructed_device = attr.ib(default=None, repr=False)
+
+    def constructed_device(self):
+        return self._constructed_device
+
+    @property
+    def size(self):
+        return self.volume.size - LUKS_OVERHEAD
 
 
 @fsobj
@@ -900,14 +905,7 @@ class FilesystemModel(object):
                 v = getattr(obj, f.name)
                 if not v:
                     continue
-                if isinstance(obj, LVM_VolGroup) and f.name == 'devices':
-                    p = ''
-                    if obj._passphrase:
-                        p = "dm-"
-                    for device in obj.devices:
-                        if p + device.id not in emitted_ids:
-                            return False
-                elif f.metadata.get('ref', False):
+                if f.metadata.get('ref', False):
                     if v.id not in emitted_ids:
                         return False
                 elif f.metadata.get('reflist', False):
@@ -927,19 +925,10 @@ class FilesystemModel(object):
                             return False
             return True
 
-        dms = []
-        for vg in self.all_volgroups():
-            if vg._passphrase:
-                for volume in vg.devices:
-                    dms.append(DM_Crypt(
-                        id="dm-" + volume.id,
-                        volume=volume,
-                        key=vg._passphrase))
-
         mountpoints = {m.path: m.id for m in self.all_mounts()}
         log.debug('mountpoints %s', mountpoints)
 
-        work = self._actions + dms
+        work = self._actions
 
         while work:
             next_work = []
@@ -1074,8 +1063,8 @@ class FilesystemModel(object):
         _remove_backlinks(raid)
         self._actions.remove(raid)
 
-    def add_volgroup(self, name, devices, passphrase):
-        vg = LVM_VolGroup(name=name, devices=devices, passphrase=passphrase)
+    def add_volgroup(self, name, devices):
+        vg = LVM_VolGroup(name=name, devices=devices)
         self._actions.append(vg)
         return vg
 
@@ -1095,6 +1084,17 @@ class FilesystemModel(object):
             raise Exception("can only remove empty LV")
         _remove_backlinks(lv)
         self._actions.remove(lv)
+
+    def add_dm_crypt(self, volume, key):
+        if not volume.available:
+            raise Exception("{} is not available".format(volume))
+        dm_crypt = DM_Crypt(volume=volume, key=key)
+        self._actions.append(dm_crypt)
+        return dm_crypt
+
+    def remove_dm_crypt(self, dm_crypt):
+        _remove_backlinks(dm_crypt)
+        self._actions.remove(dm_crypt)
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
