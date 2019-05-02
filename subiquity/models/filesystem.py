@@ -1125,9 +1125,6 @@ class FilesystemModel(object):
         _remove_backlinks(mount)
         self._actions.remove(mount)
 
-    def any_configuration_done(self):
-        return len(self._disks) > 0
-
     def needs_bootloader_partition(self):
         '''true if no disk have a boot partition, and one is needed'''
         # s390x has no such thing
