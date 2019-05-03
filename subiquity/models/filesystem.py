@@ -74,12 +74,6 @@ def fsobj(c):
 
 
 @attr.s(cmp=False)
-class FS:
-    label = attr.ib()
-    is_mounted = attr.ib()
-
-
-@attr.s(cmp=False)
 class RaidLevel:
     name = attr.ib()
     value = attr.ib()
@@ -807,8 +801,7 @@ class Filesystem:
     def _available(self):
         # False if mounted or if fs does not require a mount, True otherwise.
         if self._mount is None:
-            fs_obj = FilesystemModel.get_fs_by_name(self.fstype)
-            return fs_obj.is_mounted
+            return FilesystemModel.is_mounted_filesystem(self.fstype)
         else:
             return False
 
@@ -846,29 +839,12 @@ class FilesystemModel(object):
 
     lower_size_limit = 128 * (1 << 20)
 
-    supported_filesystems = [
-        ('ext4', True, FS('ext4', True)),
-        ('xfs', True, FS('xfs', True)),
-        ('btrfs', True, FS('btrfs', True)),
-        ('---', False, None),
-        ('swap', True, FS('swap', False)),
-        ('---', False, None),
-        ('leave unformatted', True, FS(None, False)),
-    ]
-
-    _fs_by_name = {}
-    for t in supported_filesystems:
-        fs = t[2]
-        if fs is not None:
-            _fs_by_name[fs.label] = fs
-
     @classmethod
-    def get_fs_by_name(cls, fstype):
-        if fstype in cls._fs_by_name:
-            return cls._fs_by_name[fstype]
+    def is_mounted_filesystem(self, fstype):
+        if fstype in [None, 'swap']:
+            return False
         else:
-            fs = cls._fs_by_name[fstype] = FS(fstype, True)
-            return fs
+            return True
 
     def __init__(self):
         self._disk_info = []
