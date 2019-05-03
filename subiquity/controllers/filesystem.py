@@ -161,7 +161,7 @@ class FilesystemController(BaseController):
         raise Exception("could not resolve {}".format(id))
 
     def _action_clean_fstype(self, fstype):
-        return self.model.fs_by_name[fstype]
+        return self.model.get_fs_by_name(fstype)
 
     def _action_clean_devices_raid(self, devices):
         return {
@@ -306,7 +306,7 @@ class FilesystemController(BaseController):
                 disk,
                 dict(
                     size=part_size,
-                    fstype=self.model.fs_by_name['fat32'],
+                    fstype=self.model.get_fs_by_name('fat32'),
                     mount='/boot/efi'),
                 flag="boot")
         elif self.is_prep():

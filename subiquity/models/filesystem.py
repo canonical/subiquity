@@ -807,7 +807,7 @@ class Filesystem:
     def _available(self):
         # False if mounted or if fs does not require a mount, True otherwise.
         if self._mount is None:
-            fs_obj = FilesystemModel.fs_by_name[self.fstype]
+            fs_obj = FilesystemModel.get_fs_by_name(self.fstype)
             return fs_obj.is_mounted
         else:
             return False
@@ -850,22 +850,25 @@ class FilesystemModel(object):
         ('ext4', True, FS('ext4', True)),
         ('xfs', True, FS('xfs', True)),
         ('btrfs', True, FS('btrfs', True)),
-        ('---', False),
+        ('---', False, None),
         ('swap', True, FS('swap', False)),
-        ('---', False),
+        ('---', False, None),
         ('leave unformatted', True, FS(None, False)),
     ]
 
-    fs_by_name = {}
-    longest_fs_name = 0
+    _fs_by_name = {}
     for t in supported_filesystems:
-        if len(t) > 2:
-            fs = t[2]
-            if fs.label is not None:
-                if len(fs.label) > longest_fs_name:
-                    longest_fs_name = len(fs.label)
-            fs_by_name[fs.label] = fs
-    fs_by_name['fat32'] = FS('fat32', True)
+        fs = t[2]
+        if fs is not None:
+            _fs_by_name[fs.label] = fs
+
+    @classmethod
+    def get_fs_by_name(cls, fstype):
+        if fstype in cls._fs_by_name:
+            return cls._fs_by_name[fstype]
+        else:
+            fs = cls._fs_by_name[fstype] = FS(fstype, True)
+            return fs
 
     def __init__(self):
         self._disk_info = []

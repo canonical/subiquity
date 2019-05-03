@@ -245,7 +245,7 @@ class PartitionStretchy(Stretchy):
             fs = self.partition.fs()
             if fs is not None:
                 if partition.flag != "boot":
-                    initial['fstype'] = self.model.fs_by_name[fs.fstype]
+                    initial['fstype'] = self.model.get_fs_by_name(fs.fstype)
                 mount = fs.mount()
                 if mount is not None:
                     initial['mount'] = mount.path
@@ -253,7 +253,7 @@ class PartitionStretchy(Stretchy):
                 else:
                     initial['mount'] = None
             else:
-                initial['fstype'] = self.model.fs_by_name[None]
+                initial['fstype'] = self.model.get_fs_by_name(None)
             if isinstance(disk, LVM_VolGroup):
                 initial['name'] = partition.name
                 lvm_names.remove(partition.name)
@@ -281,7 +281,9 @@ class PartitionStretchy(Stretchy):
         if partition is not None:
             if partition.flag == "boot":
                 opts = [
-                    Option(("fat32", True, self.model.fs_by_name["fat32"])),
+                    Option(
+                        ("fat32", True, self.model.get_fs_by_name("fat32")),
+                    ),
                 ]
                 self.form.fstype.widget.options = opts
                 self.form.fstype.widget.index = 0
@@ -344,7 +346,8 @@ class PartitionStretchy(Stretchy):
         log.debug("Add Partition Result: {}".format(form.as_data()))
         data = form.as_data()
         if self.partition is not None and self.partition.flag == "boot":
-            data['fstype'] = self.model.fs_by_name[self.partition.fs().fstype]
+            data['fstype'] = self.model.get_fs_by_name(
+                self.partition.fs().fstype)
             data['mount'] = self.partition.fs().mount().path
         if isinstance(self.disk, LVM_VolGroup):
             handler = self.controller.logical_volume_handler
@@ -369,13 +372,13 @@ class FormatEntireStretchy(Stretchy):
         initial = {}
         fs = device.fs()
         if fs is not None:
-            initial['fstype'] = self.model.fs_by_name[fs.fstype]
+            initial['fstype'] = self.model.get_fs_by_name(fs.fstype)
             mount = fs.mount()
             if mount is not None:
                 initial['mount'] = mount.path
                 del mountpoints[mount.path]
         else:
-            initial['fstype'] = self.model.fs_by_name[None]
+            initial['fstype'] = self.model.get_fs_by_name(None)
         self.form = PartitionForm(mountpoints, 0, initial, False, {})
         self.form.remove_field('size')
         self.form.remove_field('name')
