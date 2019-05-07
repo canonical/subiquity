@@ -15,8 +15,6 @@
 
 import enum
 import logging
-import os
-import platform
 
 from probert.storage import StorageInfo
 
@@ -24,6 +22,7 @@ from subiquitycore.controller import BaseController
 
 from subiquity.models.filesystem import (
     align_up,
+    Bootloader,
     DeviceAction,
     Partition,
     raidlevels_by_value,
@@ -59,6 +58,8 @@ class FilesystemController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.filesystem
+        if self.opts.dry_run and self.opts.uefi:
+            self.model.bootloader = Bootloader.UEFI
         self.answers = self.all_answers.get("Filesystem", {})
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
@@ -294,7 +295,8 @@ class FilesystemController(BaseController):
         self.model.remove_partition(part)
 
     def _create_boot_partition(self, disk):
-        if self.is_uefi():
+        bootloader = self.model.bootloader
+        if bootloader == Bootloader.UEFI:
             part_size = UEFI_GRUB_SIZE_BYTES
             if UEFI_GRUB_SIZE_BYTES*2 >= disk.size:
                 part_size = disk.size // 2
@@ -303,7 +305,7 @@ class FilesystemController(BaseController):
                 disk,
                 dict(size=part_size, fstype='fat32', mount='/boot/efi'),
                 flag="boot")
-        elif self.is_prep():
+        elif bootloader == Bootloader.PREP:
             log.debug('Adding PReP gpt partition first')
             part = self.create_partition(
                 disk,
@@ -311,14 +313,14 @@ class FilesystemController(BaseController):
                 # must be wiped or grub-install will fail
                 wipe='zero',
                 flag='prep')
-        else:
+        elif bootloader == Bootloader.BIOS:
             log.debug('Adding grub_bios gpt partition first')
             part = self.create_partition(
                 disk,
                 dict(size=BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
                 flag='bios_grub')
         # should _not_ specify grub device for prep
-        if not self.is_prep():
+        if bootloader != Bootloader.PREP:
             disk.grub_device = True
         return part
 
@@ -481,12 +483,3 @@ class FilesystemController(BaseController):
                 largest_part.size -= (
                     boot_partition.size - new_boot_disk.free_for_partitions)
         self._create_boot_partition(new_boot_disk)
-
-    def is_uefi(self):
-        if self.opts.dry_run:
-            return self.opts.uefi
-
-        return os.path.exists('/sys/firmware/efi')
-
-    def is_prep(self):
-        return platform.machine().startswith("ppc64")

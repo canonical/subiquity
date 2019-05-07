@@ -879,6 +879,13 @@ def align_down(size, block_size=1 << 20):
     return size & ~(block_size - 1)
 
 
+class Bootloader(enum.Enum):
+    NONE = "NONE"  # a system where the bootloader is external, e.g. s390x
+    BIOS = "BIOS"  # BIOS, where the bootloader dd-ed to the start of a device
+    UEFI = "UEFI"  # UEFI, ESPs and /boot/efi and all that (amd64 and arm64)
+    PREP = "PREP"  # ppc64el, which puts grub on a PReP partition
+
+
 class FilesystemModel(object):
 
     lower_size_limit = 128 * (1 << 20)
@@ -890,7 +897,20 @@ class FilesystemModel(object):
         else:
             return True
 
+    def _probe_bootloader(self):
+        # This will at some point change to return a list so that we can
+        # configure BIOS _and_ UEFI on amd64 systems.
+        if os.path.exists('/sys/firmware/efi'):
+            return Bootloader.UEFI
+        elif platform.machine().startswith("ppc64"):
+            return Bootloader.PREP
+        elif platform.machine() == "s390x":
+            return Bootloader.NONE
+        else:
+            return Bootloader.BIOS
+
     def __init__(self):
+        self.bootloader = self._probe_bootloader()
         self._disk_info = []
         self.reset()
 
