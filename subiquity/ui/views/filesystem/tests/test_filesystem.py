@@ -21,21 +21,21 @@ FakeStorageInfo.__new__.__defaults__ = (None,) * len(FakeStorageInfo._fields)
 
 class FilesystemViewTests(unittest.TestCase):
 
-    def make_view(self, devices=[]):
+    def make_view(self, model, devices=[]):
         controller = mock.create_autospec(spec=FilesystemController)
         controller.ui = mock.Mock()
-        model = mock.create_autospec(spec=FilesystemModel)
         model.all_devices.return_value = devices
         return FilesystemView(model, controller)
 
     def test_simple(self):
-        self.make_view()
+        self.make_view(mock.create_autospec(spec=FilesystemModel))
 
     def test_one_disk(self):
-        disk = Disk.from_info(FakeStorageInfo(
+        model = mock.create_autospec(spec=FilesystemModel)
+        disk = Disk.from_info(model, FakeStorageInfo(
             name='disk-name', size=100*(2**20), free=50*(2**20),
             serial="DISK-SERIAL"))
-        view = self.make_view([disk])
+        view = self.make_view(model, [disk])
         w = view_helpers.find_with_pred(
             view,
             lambda w: isinstance(w, urwid.Text) and "DISK-SERIAL" in w.text)

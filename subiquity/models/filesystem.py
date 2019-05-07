@@ -70,6 +70,7 @@ def _remove_backlinks(obj):
 
 def fsobj(c):
     c.__attrs_post_init__ = _set_backlinks
+    c._m = attr.ib(default=None)
     return attr.s(cmp=False)(c)
 
 
@@ -484,8 +485,8 @@ class Disk(_Device):
     _info = attr.ib(default=None)
 
     @classmethod
-    def from_info(self, info):
-        d = Disk(info=info)
+    def from_info(self, model, info):
+        d = Disk(m=model, info=info)
         d.serial = info.serial
         d.path = info.name
         d.model = info.model
@@ -915,7 +916,8 @@ class FilesystemModel(object):
         self.reset()
 
     def reset(self):
-        self._actions = [Disk.from_info(info) for info in self._disk_info]
+        self._actions = [
+            Disk.from_info(self, info) for info in self._disk_info]
 
     def _render_actions(self):
         # The curtin storage config has the constraint that an action must be
@@ -1020,7 +1022,7 @@ class FilesystemModel(object):
                 if info.size < self.lower_size_limit:
                     continue
                 self._disk_info.append(info)
-                self._actions.append(Disk.from_info(info))
+                self._actions.append(Disk.from_info(self, info))
 
     def disk_by_path(self, path):
         for a in self._actions:
@@ -1070,7 +1072,8 @@ class FilesystemModel(object):
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
         if disk._fs is not None:
             raise Exception("%s is already formatted" % (disk.label,))
-        p = Partition(device=disk, size=real_size, flag=flag, wipe=wipe)
+        p = Partition(
+            m=self, device=disk, size=real_size, flag=flag, wipe=wipe)
         if flag in ("boot", "bios_grub", "prep"):
             disk._partitions.insert(0, disk._partitions.pop())
         disk.ptable = 'gpt'
@@ -1087,6 +1090,7 @@ class FilesystemModel(object):
 
     def add_raid(self, name, raidlevel, devices, spare_devices):
         r = Raid(
+            m=self,
             name=name,
             raidlevel=raidlevel,
             devices=devices,
@@ -1101,7 +1105,7 @@ class FilesystemModel(object):
         self._actions.remove(raid)
 
     def add_volgroup(self, name, devices):
-        vg = LVM_VolGroup(name=name, devices=devices)
+        vg = LVM_VolGroup(m=self, name=name, devices=devices)
         self._actions.append(vg)
         return vg
 
@@ -1112,7 +1116,7 @@ class FilesystemModel(object):
         self._actions.remove(vg)
 
     def add_logical_volume(self, vg, name, size):
-        lv = LVM_LogicalVolume(volgroup=vg, name=name, size=size)
+        lv = LVM_LogicalVolume(m=self, volgroup=vg, name=name, size=size)
         self._actions.append(lv)
         return lv
 
@@ -1142,7 +1146,7 @@ class FilesystemModel(object):
                     raise Exception("{} is not available".format(volume))
         if volume._fs is not None:
             raise Exception("%s is already formatted")
-        fs = Filesystem(volume=volume, fstype=fstype)
+        fs = Filesystem(m=self, volume=volume, fstype=fstype)
         self._actions.append(fs)
         return fs
 
@@ -1155,7 +1159,7 @@ class FilesystemModel(object):
     def add_mount(self, fs, path):
         if fs._mount is not None:
             raise Exception("%s is already mounted")
-        m = Mount(device=fs, path=path)
+        m = Mount(m=self, device=fs, path=path)
         self._actions.append(m)
         return m
 
