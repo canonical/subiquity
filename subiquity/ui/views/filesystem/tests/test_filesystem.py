@@ -25,6 +25,7 @@ class FilesystemViewTests(unittest.TestCase):
         controller = mock.create_autospec(spec=FilesystemController)
         controller.ui = mock.Mock()
         model.all_devices.return_value = devices
+        model.grub_install_device = None
         return FilesystemView(model, controller)
 
     def test_simple(self):

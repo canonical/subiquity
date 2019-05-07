@@ -313,15 +313,14 @@ class FilesystemController(BaseController):
                 # must be wiped or grub-install will fail
                 wipe='zero',
                 flag='prep')
+            self.model.grub_install_device = part
         elif bootloader == Bootloader.BIOS:
             log.debug('Adding grub_bios gpt partition first')
             part = self.create_partition(
                 disk,
                 dict(size=BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
                 flag='bios_grub')
-        # should _not_ specify grub device for prep
-        if bootloader != Bootloader.PREP:
-            disk.grub_device = True
+            self.model.grub_install_device = disk
         return part
 
     def create_raid(self, spec):
@@ -472,7 +471,6 @@ class FilesystemController(BaseController):
             boot_disk = boot_partition.device
             full = boot_disk.free_for_partitions == 0
             self.delete_partition(boot_partition)
-            boot_disk.grub_device = False
             if full:
                 largest_part = max(
                     boot_disk.partitions(), key=lambda p: p.size)
