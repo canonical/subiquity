@@ -38,26 +38,30 @@ class InstallpathModel(object):
         if self.cmdline_sources:
             cmdline = [(_('Install from cli provided sources'), 'cmdline')]
         return cmdline + [
-            (_('Install Ubuntu'),                 'ubuntu'),
+            (_('Install Ubuntu'),                         'ubuntu'),
             (_('Install MAAS bare-metal cloud (region)'), 'maas_region'),
             (_('Install MAAS bare-metal cloud (rack)'),   'maas_rack'),
         ]
-
-    @property
-    def sources(self):
-        src_map = {
-            'ubuntu': ['cp:///media/filesystem'],
-            'maas_region': ['cp:///media/region'],
-            'maas_rack': ['cp:///media/rack'],
-            'cmdline': self.cmdline_sources}
-        return {self.path + "%02d" % n: u
-                for n, u in enumerate(src_map[self.path])}
 
     def update(self, results):
         self.results = results
 
     def render(self):
-        config = {}
+        src_map = {
+            'ubuntu': ['cp:///media/filesystem'],
+            'maas_region': ['cp:///media/region'],
+            'maas_rack': ['cp:///media/rack'],
+            'cmdline': self.cmdline_sources,
+            }
+        src_list = src_map[self.path]
+
+        sources = {}
+        for n, u in enumerate(src_list):
+            sources[self.path + "%02d" % n] = u
+
+        config = {
+            'sources': sources,
+            }
 
         def t(path):
             return os.path.join(self.target, path)

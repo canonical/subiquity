@@ -32,3 +32,26 @@ class ProxyModel(object):
 
     def proxy_systemd_dropin(self):
         return dropin_template.format(proxy=self.proxy)
+
+    def render(self):
+        if self.proxy:
+            return {
+                'apt': {
+                    'http_proxy': self.proxy,
+                    'https_proxy': self.proxy,
+                    },
+                'proxy': {
+                    'http_proxy': self.proxy,
+                    'https_proxy': self.proxy,
+                    },
+                'write_files': {
+                    'snapd_dropin': {
+                        'path': ('etc/systemd/system/'
+                                 'snapd.service.d/snap_proxy.conf'),
+                        'content': self.proxy.proxy_systemd_dropin(),
+                        'permissions': 0o644,
+                        },
+                    },
+                }
+        else:
+            return {}

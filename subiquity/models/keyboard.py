@@ -211,3 +211,14 @@ class KeyboardModel:
             else:
                 scale = os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1")
                 run_command(['sleep', str(1/float(scale))])
+
+    def render(self):
+        return {
+            'write_files': {
+                'etc_default_keyboard': {
+                    'path': 'etc/default/keyboard',
+                    'content': self.setting.render(),
+                    'permissions': 0o644,
+                    },
+                },
+            }
