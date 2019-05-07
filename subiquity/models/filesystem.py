@@ -1187,12 +1187,15 @@ class FilesystemModel(object):
     def needs_bootloader_partition(self):
         '''true if no disk have a boot partition, and one is needed'''
         # s390x has no such thing
-        if platform.machine() == 's390x':
+        if self.bootloader == Bootloader.NONE:
             return False
-        for p in self.all_partitions():
-            if p.flag in ('bios_grub', 'boot', 'prep'):
-                return False
-        return True
+        elif self.bootloader in [Bootloader.BIOS, Bootloader.PREP]:
+            return self.grub_install_device is None
+        elif self.bootloader == Bootloader.UEFI:
+            return self._mount_for_path('/boot/efi') is None
+        else:
+            raise AssertionError(
+                "unknown bootloader type {}".format(self.bootloader))
 
     def _mount_for_path(self, path):
         for mount in self.all_mounts():
@@ -1214,7 +1217,6 @@ class FilesystemModel(object):
         return False
 
     def can_install(self):
-        # Do we need to check that there is a disk with the boot flag?
         return (self.is_root_mounted()
                 and not self.needs_bootloader_partition()
                 and self.is_slash_boot_on_local_disk())
