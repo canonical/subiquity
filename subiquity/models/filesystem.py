@@ -958,7 +958,7 @@ class FilesystemModel(object):
                 'config': self._render_actions(),
                 },
             }
-        if not self.add_swapfile():
+        if not self._should_add_swapfile():
             config['swap'] = {'size': 0}
         return config
 
@@ -1153,24 +1153,19 @@ class FilesystemModel(object):
                 return False
         return True
 
-    def is_root_mounted(self):
+    def _mount_for_path(self, path):
         for mount in self.all_mounts():
-            if mount.path == '/':
-                return True
-        return False
+            if mount.path == path:
+                return mount
+        return None
+
+    def is_root_mounted(self):
+        return self._mount_for_path('/') is not None
 
     def is_slash_boot_on_local_disk(self):
-        for mount in self.all_mounts():
-            if mount.path == '/boot':
-                dev = mount.device.volume
-                # We should never allow anything other than a
-                # partition of a local disk to be mounted at /boot but
-                # well.
-                return (
-                    isinstance(dev, Partition)
-                    and isinstance(dev.device, Disk))
-        for mount in self.all_mounts():
-            if mount.path == '/':
+        for path in '/boot', '/':
+            mount = self._mount_for_path(path)
+            if mount is not None:
                 dev = mount.device.volume
                 return (
                     isinstance(dev, Partition)
@@ -1183,11 +1178,10 @@ class FilesystemModel(object):
                 and not self.needs_bootloader_partition()
                 and self.is_slash_boot_on_local_disk())
 
-    def add_swapfile(self):
-        for m in self.all_mounts():
-            if m.path == '/':
-                if m.device.fstype == 'btrfs':
-                    return False
+    def _should_add_swapfile(self):
+        mount = self._mount_for_path('/')
+        if mount is not None and mount.device.fstype == 'btrfs':
+            return False
         for fs in self.all_filesystems():
             if fs.fstype == "swap":
                 return False
