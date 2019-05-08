@@ -8,6 +8,7 @@ from subiquitycore.testing import view_helpers
 
 from subiquity.controllers.filesystem import FilesystemController
 from subiquity.models.filesystem import (
+    Bootloader,
     Disk,
     FilesystemModel,
     )
@@ -24,6 +25,7 @@ class FilesystemViewTests(unittest.TestCase):
     def make_view(self, model, devices=[]):
         controller = mock.create_autospec(spec=FilesystemController)
         controller.ui = mock.Mock()
+        model.bootloader = Bootloader.NONE
         model.all_devices.return_value = devices
         model.grub_install_device = None
         return FilesystemView(model, controller)

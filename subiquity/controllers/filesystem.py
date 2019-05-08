@@ -58,8 +58,9 @@ class FilesystemController(BaseController):
     def __init__(self, common):
         super().__init__(common)
         self.model = self.base_model.filesystem
-        if self.opts.dry_run and self.opts.uefi:
-            self.model.bootloader = Bootloader.UEFI
+        if self.opts.dry_run and self.opts.bootloader:
+            name = self.opts.bootloader.upper()
+            self.model.bootloader = getattr(Bootloader, name)
         self.answers = self.all_answers.get("Filesystem", {})
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)

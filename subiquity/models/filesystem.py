@@ -541,14 +541,18 @@ class Disk(_Device):
             return self.serial
         return self.path
 
-    supported_actions = [
-        DeviceAction.INFO,
-        DeviceAction.PARTITION,
-        DeviceAction.FORMAT,
-        DeviceAction.REMOVE,
-        ]
-    if platform.machine() != 's390x':
-        supported_actions.append(DeviceAction.MAKE_BOOT)
+    @property
+    def supported_actions(self):
+        actions = [
+            DeviceAction.INFO,
+            DeviceAction.PARTITION,
+            DeviceAction.FORMAT,
+            DeviceAction.REMOVE,
+            ]
+        if self._m.bootloader != Bootloader.NONE:
+            actions.append(DeviceAction.MAKE_BOOT)
+        return actions
+
     _can_INFO = True
     _can_PARTITION = property(lambda self: self.free_for_partitions > 0)
     _can_FORMAT = property(

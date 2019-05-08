@@ -37,7 +37,7 @@ def make_controller_and_disk():
     common['answers'] = {}
     opts = Thing()
     opts.dry_run = True
-    opts.uefi = True
+    opts.bootloader = "UEFI"
     common['opts'] = opts
     controller = FilesystemController(common)
     return controller, disk
