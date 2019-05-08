@@ -11,6 +11,8 @@ apps:
     command: usr/bin/subiquity-loadkeys
   subiquity-configure-apt:
     command: usr/bin/subiquity-configure-apt
+  subiquity-configure-run:
+    command: usr/bin/subiquity-configure-run
   console-conf:
     command: usr/bin/console-conf
   probert:
