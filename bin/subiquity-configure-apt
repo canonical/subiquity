@@ -50,7 +50,7 @@ setup_overlay () {
 setup_overlay $TARGET_MOUNT_POINT/etc/apt
 
 
-mount -t tmpfs tmpfs "$TARGET_MOUNT_POINT/run"
+mount --bind /run "$TARGET_MOUNT_POINT/run"
 mkdir -p "$TARGET_MOUNT_POINT/run/cdrom"
 mount --bind /cdrom "$TARGET_MOUNT_POINT/run/cdrom"
 
