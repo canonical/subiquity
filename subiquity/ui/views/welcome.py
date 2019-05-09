@@ -56,6 +56,5 @@ class WelcomeView(BaseView):
         return lb
 
     def confirm(self, sender, code):
-        self.model.switch_language(code)
-        log.debug('calling installpath')
-        self.controller.done()
+        log.debug('WelcomeController %s', code)
+        self.controller.done(code)

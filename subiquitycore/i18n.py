@@ -29,6 +29,7 @@ syslog.syslog('Final localedir is ' + localedir)
 
 
 def switch_language(code='en_US'):
+    syslog.syslog('switch_language ' + code)
     fake_trans = os.environ.get("FAKE_TRANSLATE", "0")
     if code != 'en_US' and fake_trans == "mangle":
         def my_gettext(message):

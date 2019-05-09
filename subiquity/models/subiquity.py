@@ -68,18 +68,16 @@ class SubiquityModel:
 
     target = '/target'
 
-    def __init__(self, common):
-        self.root = '/'
-        self.opts = common['opts']
-        if self.opts.dry_run:
-            self.root = os.path.abspath(".subiquity")
-            self.target = self.root
+    def __init__(self, root, sources=()):
+        self.root = root
+        if root != '/':
+            self.target = root
 
-        self.locale = LocaleModel(common['signal'])
+        self.locale = LocaleModel()
         self.keyboard = KeyboardModel(self.root)
         self.installpath = InstallpathModel(
             target=self.target,
-            sources=common['opts'].sources)
+            sources=sources)
         self.network = NetworkModel(support_wlan=False)
         self.proxy = ProxyModel()
         self.mirror = MirrorModel()
@@ -101,7 +99,7 @@ class SubiquityModel:
 
     def get_target_groups(self):
         command = ['chroot', self.target, 'getent', 'group']
-        if self.opts.dry_run:
+        if self.root != '/':
             del command[:2]
         cp = run_command(command, check=True)
         groups = set()

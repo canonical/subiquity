@@ -28,7 +28,7 @@ class ConsoleConf(Application):
 
     project = "console_conf"
 
-    model_class = ConsoleConfModel
+    make_model = ConsoleConfModel
 
     controllers = [
         "Welcome",
