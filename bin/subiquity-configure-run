@@ -1,0 +1,5 @@
+#!/bin/bash -eux
+
+# curtin should probably change to do this itself. But for now:
+
+mount --bind /run "$TARGET_MOUNT_POINT/run"
