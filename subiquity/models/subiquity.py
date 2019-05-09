@@ -183,6 +183,10 @@ class SubiquityModel:
         else:
             return "media-info"
 
+    def _machine_id(self):
+        with open('/etc/machine-id') as fp:
+            return fp.read()
+
     def render(self, syslog_identifier):
         config = {
             'apt': {
@@ -229,7 +233,7 @@ class SubiquityModel:
             'write_files': {
                 'etc_machine_id': {
                     'path': 'etc/machine-id',
-                    'content': open('/etc/machine-id').read(),
+                    'content': self._machine_id(),
                     'permissions': 0o444,
                     },
                 'media_info': {
