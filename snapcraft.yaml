@@ -67,6 +67,7 @@ parts:
       'bin/subiquity-loadkeys': usr/bin/subiquity-loadkeys
       'bin/subiquity-service': usr/bin/subiquity-service
       'bin/subiquity-configure-apt': usr/bin/subiquity-configure-apt
+      'bin/subiquity-configure-run': usr/bin/subiquity-configure-run
   users-and-groups:
     plugin: dump
     build-packages:
