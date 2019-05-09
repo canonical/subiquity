@@ -149,13 +149,19 @@ class VolGroupStretchy(Stretchy):
             vg_names.remove(existing.name)
             title = _('Edit volume group "{}"').format(existing.name)
             label = _('Save')
-            devices = {d: 'active' for d in existing.devices}
+            devices = {}
+            key = ""
+            for d in existing.devices:
+                if d.type == "dm_crypt":
+                    key = d.key
+                    d = d.volume
+                devices[d] = 'active'
             initial = {
                 'devices': devices,
                 'name': existing.name,
-                'encrypt': existing._passphrase is not None,
-                'password': existing._passphrase or "",
-                'confirm_password': existing._passphrase or "",
+                'encrypt': bool(key),
+                'password': key,
+                'confirm_password': key,
                 }
 
         possible_components = get_possible_components(

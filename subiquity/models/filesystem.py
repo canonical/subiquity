@@ -73,6 +73,17 @@ def fsobj(c):
     return attr.s(cmp=False)(c)
 
 
+def dependencies(obj):
+    for f in attr.fields(type(obj)):
+        v = getattr(obj, f.name)
+        if not v:
+            continue
+        elif f.metadata.get('ref', False):
+            yield v
+        elif f.metadata.get('reflist', False):
+            yield from v
+
+
 @attr.s(cmp=False)
 class FS:
     label = attr.ib()
@@ -326,8 +337,14 @@ class _Formattable(ABC):
     def fs(self):
         return self._fs
 
-    def constructed_device(self):
-        return self._constructed_device
+    def constructed_device(self, skip_dm_crypt=True):
+        cd = self._constructed_device
+        if cd is None:
+            return None
+        elif cd.type == "dm_crypt" and skip_dm_crypt:
+            return cd._constructed_device
+        else:
+            return cd
 
     @property
     @abstractmethod
@@ -673,9 +690,6 @@ class Raid(_Device):
     component_name = "component"
 
 
-LUKS_OVERHEAD = 16*(2**20)
-
-
 @fsobj
 class LVM_VolGroup(_Device):
 
@@ -684,20 +698,10 @@ class LVM_VolGroup(_Device):
     preserve = attr.ib(default=False)
     name = attr.ib(default=None)
     devices = reflist(backlink="_constructed_device")  # set([_Formattable])
-    _passphrase = attr.ib(default=None, repr=False)
-
-    def serialize_devices(self):
-        p = ''
-        if self._passphrase:
-            p = 'dm-'
-        return [p + d.id for d in self.devices]
 
     @property
     def size(self):
-        size = get_lvm_size(self.devices)
-        if self._passphrase:
-            size -= LUKS_OVERHEAD
-        return size
+        return get_lvm_size(self.devices)
 
     @property
     def free_for_partitions(self):
@@ -778,14 +782,26 @@ class LVM_LogicalVolume(_Formattable):
     ok_for_lvm_vg = False
 
 
+LUKS_OVERHEAD = 16*(2**20)
+
+
 @fsobj
 class DM_Crypt:
     id = idfield("crypt")
     type = const("dm_crypt")
     dm_name = attr.ib(default=None)
-    volume = ref()  # _Formattable
-    key = attr.ib(default=None)
+    volume = ref(backlink="_constructed_device")  # _Formattable
+    key = attr.ib(default=None, repr=False)
     preserve = attr.ib(default=False)
+
+    _constructed_device = attr.ib(default=None, repr=False)
+
+    def constructed_device(self):
+        return self._constructed_device
+
+    @property
+    def size(self):
+        return self.volume.size - LUKS_OVERHEAD
 
 
 @fsobj
@@ -875,17 +891,13 @@ class FilesystemModel(object):
         self._actions = [Disk.from_info(info) for info in self._disk_info]
 
     def render(self):
-        # the curtin storage config has the constraint that an action
-        # must be preceded by all the things that it depends on. Disks
-        # are easy because they don't depend on anything, but a raid
-        # can both be built of partitions and be partitioned itself so
-        # in some cases raid and partition actions have to be
-        # intermingled. We tackle this by tracking the ids that have
-        # been emitted and iterating over the raid and partition
-        # objects and emitting the ones that can be emitted repeatedly
-        # until there are none left (or we make no progress, which
-        # means there is a cycle in the definitions, something the UI
-        # should have prevented <wink>)
+        # The curtin storage config has the constraint that an action must be
+        # preceded by all the things that it depends on.  We handle this by
+        # repeatedly iterating over all actions and checking if we can emit
+        # each action by checking if all of the actions it depends on have been
+        # emitted.  Eventually this will either emit all actions or stop making
+        # progress -- which means there is a cycle in the definitions,
+        # something the UI should have prevented <wink>.
         r = []
         emitted_ids = set()
 
@@ -896,24 +908,9 @@ class FilesystemModel(object):
             emitted_ids.add(obj.id)
 
         def can_emit(obj):
-            for f in attr.fields(type(obj)):
-                v = getattr(obj, f.name)
-                if not v:
-                    continue
-                if isinstance(obj, LVM_VolGroup) and f.name == 'devices':
-                    p = ''
-                    if obj._passphrase:
-                        p = "dm-"
-                    for device in obj.devices:
-                        if p + device.id not in emitted_ids:
-                            return False
-                elif f.metadata.get('ref', False):
-                    if v.id not in emitted_ids:
-                        return False
-                elif f.metadata.get('reflist', False):
-                    for o in v:
-                        if o.id not in emitted_ids:
-                            return False
+            for dep in dependencies(obj):
+                if dep.id not in emitted_ids:
+                    return False
             if isinstance(obj, Mount):
                 # Any mount actions for a parent of this one have to be emitted
                 # first.
@@ -927,19 +924,10 @@ class FilesystemModel(object):
                             return False
             return True
 
-        dms = []
-        for vg in self.all_volgroups():
-            if vg._passphrase:
-                for volume in vg.devices:
-                    dms.append(DM_Crypt(
-                        id="dm-" + volume.id,
-                        volume=volume,
-                        key=vg._passphrase))
-
         mountpoints = {m.path: m.id for m in self.all_mounts()}
         log.debug('mountpoints %s', mountpoints)
 
-        work = self._actions + dms
+        work = self._actions[:]
 
         while work:
             next_work = []
@@ -1074,8 +1062,8 @@ class FilesystemModel(object):
         _remove_backlinks(raid)
         self._actions.remove(raid)
 
-    def add_volgroup(self, name, devices, passphrase):
-        vg = LVM_VolGroup(name=name, devices=devices, passphrase=passphrase)
+    def add_volgroup(self, name, devices):
+        vg = LVM_VolGroup(name=name, devices=devices)
         self._actions.append(vg)
         return vg
 
@@ -1095,6 +1083,17 @@ class FilesystemModel(object):
             raise Exception("can only remove empty LV")
         _remove_backlinks(lv)
         self._actions.remove(lv)
+
+    def add_dm_crypt(self, volume, key):
+        if not volume.available:
+            raise Exception("{} is not available".format(volume))
+        dm_crypt = DM_Crypt(volume=volume, key=key)
+        self._actions.append(dm_crypt)
+        return dm_crypt
+
+    def remove_dm_crypt(self, dm_crypt):
+        _remove_backlinks(dm_crypt)
+        self._actions.remove(dm_crypt)
 
     def add_filesystem(self, volume, fstype):
         log.debug("adding %s to %s", fstype, volume)
@@ -1125,9 +1124,6 @@ class FilesystemModel(object):
     def remove_mount(self, mount):
         _remove_backlinks(mount)
         self._actions.remove(mount)
-
-    def any_configuration_done(self):
-        return len(self._disks) > 0
 
     def needs_bootloader_partition(self):
         '''true if no disk have a boot partition, and one is needed'''

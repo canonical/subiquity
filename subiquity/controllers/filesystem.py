@@ -354,12 +354,14 @@ class FilesystemController(BaseController):
         self.model.remove_raid(raid)
 
     def create_volgroup(self, spec):
-        for d in spec['devices']:
-            self.delete_filesystem(d.fs())
-        return self.model.add_volgroup(
-            name=spec['name'],
-            devices=spec['devices'],
-            passphrase=spec.get('password'))
+        devices = set()
+        key = spec.get('password')
+        for device in spec['devices']:
+            self.delete_filesystem(device.fs())
+            if key:
+                device = self.model.add_dm_crypt(device, key)
+            devices.add(device)
+        return self.model.add_volgroup(name=spec['name'], devices=devices)
     create_lvm_volgroup = create_volgroup
 
     def delete_volgroup(self, vg):
@@ -449,14 +451,21 @@ class FilesystemController(BaseController):
 
     def volgroup_handler(self, existing, spec):
         if existing is not None:
+            key = spec.get('password')
             for d in existing.devices:
+                if d.type == "dm_crypt":
+                    self.model.remove_dm_crypt(d)
+                    d = d.volume
                 d._constructed_device = None
+            devices = set()
             for d in spec['devices']:
                 self.delete_filesystem(d.fs())
+                if key:
+                    d = self.model.add_dm_crypt(d, key)
                 d._constructed_device = existing
+                devices.add(d)
             existing.name = spec['name']
-            existing.devices = spec['devices']
-            existing._passphrase = spec.get('password')
+            existing.devices = devices
         else:
             self.create_volgroup(spec)
 
