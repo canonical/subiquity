@@ -1,5 +1,26 @@
+# Copyright 2019 Canonical, Ltd.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from collections import namedtuple
 import unittest
-from subiquity.models.filesystem import dehumanize_size, humanize_size
+
+from subiquity.models.filesystem import (
+    dehumanize_size,
+    FilesystemModel,
+    humanize_size,
+    )
 
 
 class TestHumanizeSize(unittest.TestCase):
@@ -78,3 +99,30 @@ class TestDehumanizeSize(unittest.TestCase):
                     self.fail(
                         "dehumanize_size({!r}) did not error".format(input))
                 self.assertEqual(expected_error, actual_error)
+
+
+FakeStorageInfo = namedtuple(
+    'FakeStorageInfo', ['name', 'size', 'free', 'serial', 'model'])
+FakeStorageInfo.__new__.__defaults__ = (None,) * len(FakeStorageInfo._fields)
+
+
+def make_model_and_disk():
+    model = FilesystemModel()
+    model._disk_info.append(FakeStorageInfo(
+        name='disk-name', size=100*(2**30), free=50*(2**30)))
+    model.reset()
+    return model, model._actions[0]
+
+
+class TestFilesystemModel(unittest.TestCase):
+
+    def test_vg_default_annotations(self):
+        model, disk = make_model_and_disk()
+        vg = model.add_volgroup('vg-0', {disk})
+        self.assertEqual(vg.annotations, [])
+
+    def test_vg_encrypted_annotations(self):
+        model, disk = make_model_and_disk()
+        dm_crypt = model.add_dm_crypt(disk, key='passw0rd')
+        vg = model.add_volgroup('vg-0', {dm_crypt})
+        self.assertEqual(vg.annotations, ['encrypted'])

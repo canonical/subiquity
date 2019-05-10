@@ -1,6 +1,5 @@
 import unittest
 from unittest import mock
-from collections import namedtuple
 
 import urwid
 
@@ -10,22 +9,11 @@ from subiquitycore.view import BaseView
 from subiquity.controllers.filesystem import FilesystemController
 from subiquity.models.filesystem import (
     dehumanize_size,
-    FilesystemModel,
+    )
+from subiquity.models.tests.test_filesystem import (
+    make_model_and_disk,
     )
 from subiquity.ui.views.filesystem.partition import PartitionStretchy
-
-
-FakeStorageInfo = namedtuple(
-    'FakeStorageInfo', ['name', 'size', 'free', 'serial', 'model'])
-FakeStorageInfo.__new__.__defaults__ = (None,) * len(FakeStorageInfo._fields)
-
-
-def make_model_and_disk():
-    model = FilesystemModel()
-    model._disk_info.append(FakeStorageInfo(
-        name='disk-name', size=100*(2**30), free=50*(2**30)))
-    model.reset()
-    return model, model._actions[0]
 
 
 def make_view(model, disk, partition=None):
