@@ -193,6 +193,7 @@ class VolGroupStretchy(Stretchy):
 
     def done(self, sender):
         result = self.form.as_data()
+        del result['size']
         mdc = self.form.devices.widget
         result['devices'] = mdc.active_devices
         if 'confirm_password' in result:
