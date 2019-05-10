@@ -29,6 +29,7 @@ class InstallpathModel(object):
     def __init__(self, target, sources=None):
         self.target = target
         self.cmdline_sources = sources
+        self.sources = {}
         if sources:
             self.path = 'cmdline'
 
@@ -55,12 +56,12 @@ class InstallpathModel(object):
             }
         src_list = src_map[self.path]
 
-        sources = {}
+        self.sources = {}
         for n, u in enumerate(src_list):
-            sources[self.path + "%02d" % n] = u
+            self.sources[self.path + "%02d" % n] = u
 
         config = {
-            'sources': sources,
+            'sources': self.sources,
             }
 
         def t(path):
