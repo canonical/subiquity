@@ -63,7 +63,7 @@ class ConfirmDeleteStretchy(Stretchy):
         super().__init__(title, widgets, 0, 2)
 
     def confirm(self, sender=None):
-        getattr(self.parent.controller, 'delete_' + self.obj.type)(self.obj)
+        self.parent.controller.delete(self.obj)
         self.parent.refresh_model_inputs()
         self.parent.remove_overlay()
 
