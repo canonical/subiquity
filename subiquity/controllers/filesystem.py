@@ -355,6 +355,9 @@ class FilesystemController(BaseController):
     def delete_volgroup(self, vg):
         for lv in vg._partitions:
             self.delete_logical_volume(lv)
+        for d in vg.devices:
+            if d.type == "dm_crypt":
+                self.model.remove_dm_crypt(d)
         self.model.remove_volgroup(vg)
     delete_lvm_volgroup = delete_volgroup
 
