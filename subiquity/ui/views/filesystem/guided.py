@@ -148,7 +148,7 @@ class GuidedDiskSelectionView(BaseView):
         if self.method == "direct":
             result = {
                 "size": disk.free_for_partitions,
-                "fstype": self.model.fs_by_name["ext4"],
+                "fstype": "ext4",
                 "mount": "/",
                 }
             self.controller.partition_disk_handler(disk, None, result)
@@ -158,7 +158,7 @@ class GuidedDiskSelectionView(BaseView):
             self.controller.create_partition(
                 device=disk, spec=dict(
                     size=dehumanize_size('1G'),
-                    fstype=self.model.fs_by_name['ext4'],
+                    fstype="ext4",
                     mount='/boot'
                     ))
             part = self.controller.create_partition(
@@ -175,7 +175,7 @@ class GuidedDiskSelectionView(BaseView):
                 vg=vg, spec=dict(
                     size=dehumanize_size("4G"),
                     name="ubuntu-lv",
-                    fstype=self.model.fs_by_name['ext4'],
+                    fstype="ext4",
                     mount="/",
                     ))
         else:

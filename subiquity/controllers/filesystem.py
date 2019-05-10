@@ -160,9 +160,6 @@ class FilesystemController(BaseController):
             return dev
         raise Exception("could not resolve {}".format(id))
 
-    def _action_clean_fstype(self, fstype):
-        return self.model.fs_by_name[fstype]
-
     def _action_clean_devices_raid(self, devices):
         return {
             self._action_get(d): v
@@ -268,15 +265,15 @@ class FilesystemController(BaseController):
         self.model.remove_mount(mount)
 
     def create_filesystem(self, volume, spec):
-        if spec['fstype'] is None or spec['fstype'].label is None:
+        if spec['fstype'] is None:
             return
-        fs = self.model.add_filesystem(volume, spec['fstype'].label)
+        fs = self.model.add_filesystem(volume, spec['fstype'])
         if isinstance(volume, Partition):
-            if spec['fstype'].label == "swap":
+            if spec['fstype'] == "swap":
                 volume.flag = "swap"
             elif volume.flag == "swap":
                 volume.flag = ""
-        if spec['fstype'].label == "swap":
+        if spec['fstype'] == "swap":
             self.model.add_mount(fs, "")
         self.create_mount(fs, spec)
         return fs
@@ -304,19 +301,13 @@ class FilesystemController(BaseController):
             log.debug('Adding EFI partition first')
             part = self.create_partition(
                 disk,
-                dict(
-                    size=part_size,
-                    fstype=self.model.fs_by_name['fat32'],
-                    mount='/boot/efi'),
+                dict(size=part_size, fstype='fat32', mount='/boot/efi'),
                 flag="boot")
         elif self.is_prep():
             log.debug('Adding PReP gpt partition first')
             part = self.create_partition(
                 disk,
-                dict(
-                    size=PREP_GRUB_SIZE_BYTES,
-                    fstype=None,
-                    mount=None),
+                dict(size=PREP_GRUB_SIZE_BYTES, fstype=None, mount=None),
                 # must be wiped or grub-install will fail
                 wipe='zero',
                 flag='prep')
@@ -324,10 +315,7 @@ class FilesystemController(BaseController):
             log.debug('Adding grub_bios gpt partition first')
             part = self.create_partition(
                 disk,
-                dict(
-                    size=BIOS_GRUB_SIZE_BYTES,
-                    fstype=None,
-                    mount=None),
+                dict(size=BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
                 flag='bios_grub')
         # should _not_ specify grub device for prep
         if not self.is_prep():

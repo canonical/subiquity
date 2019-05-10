@@ -54,7 +54,7 @@ class PartitionViewTests(unittest.TestCase):
     def test_create_partition(self):
         valid_data = {
             'size': "1M",
-            'fstype': FilesystemModel.fs_by_name["ext4"],
+            'fstype': "ext4",
             }
         model, disk = make_model_and_disk()
         view, stretchy = make_view(model, disk)
@@ -68,7 +68,7 @@ class PartitionViewTests(unittest.TestCase):
     def test_edit_partition(self):
         form_data = {
             'size': "256M",
-            'fstype': FilesystemModel.fs_by_name['xfs'],
+            'fstype': "xfs",
             }
         model, disk = make_model_and_disk()
         partition = model.add_partition(disk, 512*(2**20))
@@ -79,7 +79,7 @@ class PartitionViewTests(unittest.TestCase):
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
             'size': dehumanize_size(form_data['size']),
-            'fstype': FilesystemModel.fs_by_name['xfs'],
+            'fstype': 'xfs',
             'mount': None,
             }
         view.controller.partition_disk_handler.assert_called_once_with(
@@ -98,7 +98,7 @@ class PartitionViewTests(unittest.TestCase):
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
             'size': dehumanize_size(form_data['size']),
-            'fstype': FilesystemModel.fs_by_name["fat32"],
+            'fstype': "fat32",
             'mount': '/boot/efi',
             }
         view.controller.partition_disk_handler.assert_called_once_with(
