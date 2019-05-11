@@ -24,8 +24,7 @@ class WelcomeViewTests(unittest.TestCase):
         view = self.make_view_with_languages([('code', 'native')])
         but = view_helpers.find_button_matching(view, "^native$")
         view_helpers.click(but)
-        view.model.switch_language.assert_called_once_with("code")
-        view.controller.done.assert_called_once_with()
+        view.controller.done.assert_called_once_with('code')
 
     def test_initial_focus(self):
         # The initial focus for the view is the button for the first

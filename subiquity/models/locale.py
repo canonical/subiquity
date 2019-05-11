@@ -15,8 +15,9 @@
 
 import gettext
 import logging
-import os
+
 from subiquitycore import i18n
+
 
 log = logging.getLogger('subiquity.models.locale')
 
@@ -48,15 +49,6 @@ class LocaleModel(object):
     ]
     selected_language = None
 
-    def __init__(self, signal):
-        self.signal = signal
-        lang = os.environ.get("LANG")
-        if lang.endswith(".UTF-8"):
-            lang = lang.rsplit('.', 1)[0]
-        for code, name in self.supported_languages:
-            if code == lang:
-                self.switch_language(code)
-
     def get_languages(self):
         languages = []
         for code, name in self.supported_languages:
@@ -70,7 +62,6 @@ class LocaleModel(object):
 
     def switch_language(self, code):
         self.selected_language = code
-        self.signal.emit_signal('l10n:language-selected', code)
         i18n.switch_language(code)
 
     def __repr__(self):

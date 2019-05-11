@@ -897,7 +897,7 @@ class FilesystemModel(object):
     def reset(self):
         self._actions = [Disk.from_info(info) for info in self._disk_info]
 
-    def render(self):
+    def _render_actions(self):
         # The curtin storage config has the constraint that an action must be
         # preceded by all the things that it depends on.  We handle this by
         # repeatedly iterating over all actions and checking if we can emit
@@ -950,6 +950,17 @@ class FilesystemModel(object):
             work = next_work
 
         return r
+
+    def render(self):
+        config = {
+            'storage': {
+                'version': 1,
+                'config': self._render_actions(),
+                },
+            }
+        if not self.add_swapfile():
+            config['swap'] = {'size': 0}
+        return config
 
     def _get_system_mounted_disks(self):
         # This assumes a fairly vanilla setup. It won't list as

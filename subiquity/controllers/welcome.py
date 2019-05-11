@@ -14,8 +14,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+
 from subiquitycore.controller import BaseController
+
 from subiquity.ui.views import WelcomeView
+
 
 log = logging.getLogger('subiquity.controllers.welcome')
 
@@ -28,15 +32,24 @@ class WelcomeController(BaseController):
         self.answers = self.all_answers.get("Welcome", {})
         log.debug("Welcome: answers=%s", self.answers)
 
+    def start(self):
+        lang = os.environ.get("LANG")
+        if lang.endswith(".UTF-8"):
+            lang = lang.rsplit('.', 1)[0]
+        for code, name in self.model.supported_languages:
+            if code == lang:
+                self.model.switch_language(code)
+
     def default(self):
         view = WelcomeView(self.model, self)
         self.ui.set_body(view)
         if 'lang' in self.answers:
-            self.model.switch_language(self.answers['lang'])
-            self.done()
+            self.done(self.answers['lang'])
 
-    def done(self):
-        log.debug("WelcomeController.done next-screen")
+    def done(self, code):
+        log.debug("WelcomeController.done %s next-screen")
+        self.signal.emit_signal('l10n:language-selected', code)
+        self.model.switch_language(code)
         self.signal.emit_signal('next-screen')
 
     def cancel(self):

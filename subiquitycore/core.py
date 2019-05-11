@@ -477,7 +477,7 @@ class Application:
 
             log.debug("Running event loop: {}".format(
                 self.common['loop'].event_loop))
-            self.common['base_model'] = self.model_class(self.common)
+            self.common['base_model'] = self.make_model(self.common)
         try:
             if self.common['opts'].scripts:
                 self.run_scripts(self.common['opts'].scripts)

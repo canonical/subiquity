@@ -14,10 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from collections import OrderedDict
+import logging
 import os
 import sys
 import uuid
 import yaml
+
+from curtin.config import merge_config
 
 from subiquitycore.models.identity import IdentityModel
 from subiquitycore.models.network import NetworkModel
@@ -32,6 +35,9 @@ from .proxy import ProxyModel
 from .mirror import MirrorModel
 from .snaplist import SnapListModel
 from .ssh import SSHModel
+
+
+log = logging.getLogger('subiquity.models.subiquity')
 
 
 def setup_yaml():
@@ -62,28 +68,38 @@ class SubiquityModel:
 
     target = '/target'
 
-    def __init__(self, common):
-        self.root = '/'
-        self.opts = common['opts']
-        if self.opts.dry_run:
-            self.root = os.path.abspath(".subiquity")
-            self.target = self.root
-        self.locale = LocaleModel(common['signal'])
+    def __init__(self, root, sources=()):
+        self.root = root
+        if root != '/':
+            self.target = root
+
+        self.locale = LocaleModel()
         self.keyboard = KeyboardModel(self.root)
         self.installpath = InstallpathModel(
             target=self.target,
-            sources=common['opts'].sources)
+            sources=sources)
         self.network = NetworkModel(support_wlan=False)
-        self.filesystem = FilesystemModel()
-        self.identity = IdentityModel()
         self.proxy = ProxyModel()
         self.mirror = MirrorModel()
-        self.snaplist = SnapListModel()
+        self.filesystem = FilesystemModel()
+
+        # Collect the models that produce data for the curtin config.
+        self._install_models = [
+            self.keyboard,
+            self.installpath,
+            self.network,
+            self.proxy,
+            self.mirror,
+            self.filesystem,
+            ]
+
+        self.identity = IdentityModel()
         self.ssh = SSHModel()
+        self.snaplist = SnapListModel()
 
     def get_target_groups(self):
         command = ['chroot', self.target, 'getent', 'group']
-        if self.opts.dry_run:
+        if self.root != '/':
             del command[:2]
         cp = run_command(command, check=True)
         groups = set()
@@ -167,13 +183,13 @@ class SubiquityModel:
         else:
             return "media-info"
 
+    def _machine_id(self):
+        with open('/etc/machine-id') as fp:
+            return fp.read()
+
     def render(self, syslog_identifier):
         config = {
             'apt': {
-                'http_proxy': self.proxy.proxy,
-                'https_proxy': self.proxy.proxy,
-                'primary': [{'arches': ["default"],
-                             'uri': self.mirror.mirror}],
                 'preserve_sources_list': False,
                 },
 
@@ -196,8 +212,6 @@ class SubiquityModel:
                     '/var/log/installer/curtin-install.log',
                 },
 
-            'sources': self.installpath.sources,
-
             'verbosity': 3,
 
             'pollinate': {
@@ -209,11 +223,6 @@ class SubiquityModel:
                     },
                 },
 
-            'proxy': {
-                'http_proxy': self.proxy.proxy,
-                'https_proxy': self.proxy.proxy,
-                },
-
             'reporting': {
                 'subiquity': {
                     'type': 'journald',
@@ -221,20 +230,10 @@ class SubiquityModel:
                     },
                 },
 
-            'storage': {
-                'version': 1,
-                'config': self.filesystem.render(),
-                },
-
             'write_files': {
-                'etc_default_keyboard': {
-                    'path': 'etc/default/keyboard',
-                    'content': self.keyboard.setting.render(),
-                    'permissions': 0o644,
-                    },
                 'etc_machine_id': {
                     'path': 'etc/machine-id',
-                    'content': open('/etc/machine-id').read(),
+                    'content': self._machine_id(),
                     'permissions': 0o444,
                     },
                 'media_info': {
@@ -245,6 +244,10 @@ class SubiquityModel:
                 },
             }
 
+        for model in self._install_models:
+            log.debug("merging config from %s", model)
+            merge_config(config, model.render())
+
         mp_file = os.path.join(self.root, "run/kernel-meta-package")
         if os.path.exists(mp_file):
             with open(mp_file) as fp:
@@ -252,17 +255,5 @@ class SubiquityModel:
             config['kernel'] = {
                 'package': kernel_package,
                 }
-
-        if self.proxy.proxy:
-            config['write_files']['snapd_dropin'] = {
-                'path': 'etc/systemd/system/snapd.service.d/snap_proxy.conf',
-                'content': self.proxy.proxy_systemd_dropin(),
-            }
-
-        if not self.filesystem.add_swapfile():
-            config['swap'] = {'size': 0}
-
-        config.update(self.network.render())
-        config.update(self.installpath.render())
 
         return config

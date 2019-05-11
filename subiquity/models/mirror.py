@@ -35,3 +35,13 @@ class MirrorModel(object):
         parsed = parse.urlparse(DEFAULT_MIRROR)
         new = parsed._replace(netloc=cc + '.' + parsed.netloc)
         self.mirror = parse.urlunparse(new)
+
+    def render(self):
+        return {
+             'apt': {
+                 'primary': [{
+                     'arches': ["default"],
+                     'uri': self.mirror,
+                     }],
+                 }
+            }

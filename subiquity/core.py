@@ -36,7 +36,11 @@ class Subiquity(Application):
 
     project = "subiquity"
 
-    model_class = SubiquityModel
+    def make_model(self, common):
+        root = '/'
+        if common['opts'].dry_run:
+            root = os.path.abspath('.subiquity')
+        return SubiquityModel(root, common['opts'].sources)
 
     controllers = [
             "Welcome",
