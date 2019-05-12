@@ -259,11 +259,12 @@ class PartitionStretchy(Stretchy):
             if fs is not None:
                 if partition.flag != "boot":
                     initial['fstype'] = fs.fstype
-                mount = fs.mount()
-                if mount is not None:
-                    initial['mount'] = mount.path
-                else:
-                    initial['mount'] = None
+                if self.model.is_mounted_filesystem(fs.fstype):
+                    mount = fs.mount()
+                    if mount is not None:
+                        initial['mount'] = mount.path
+                    else:
+                        initial['mount'] = None
             if isinstance(disk, LVM_VolGroup):
                 initial['name'] = partition.name
                 lvm_names.remove(partition.name)
@@ -378,9 +379,10 @@ class FormatEntireStretchy(Stretchy):
         fs = device.fs()
         if fs is not None:
             initial['fstype'] = fs.fstype
-            mount = fs.mount()
-            if mount is not None:
-                initial['mount'] = mount.path
+            if self.model.is_mounted_filesystem(fs.fstype):
+                mount = fs.mount()
+                if mount is not None:
+                    initial['mount'] = mount.path
         elif not isinstance(device, Disk):
             initial['fstype'] = 'ext4'
         self.form = PartitionForm(self.model, 0, initial, False, None)
