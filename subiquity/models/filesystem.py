@@ -198,33 +198,37 @@ def get_lvm_size(devices, size_overrides={}):
     return r
 
 
-def idfield(base):
-    i = 0
+class attributes:
+    # Just a namespace to hang our wrappers around attr.ib() off.
 
-    def factory():
-        nonlocal i
-        r = "%s-%s" % (base, i)
-        i += 1
-        return r
-    return attr.ib(default=attr.Factory(factory))
+    @staticmethod
+    def idfield(base):
+        i = 0
 
+        def factory():
+            nonlocal i
+            r = "%s-%s" % (base, i)
+            i += 1
+            return r
+        return attr.ib(default=attr.Factory(factory))
 
-def ref(*, backlink=None):
-    metadata = {'ref': True}
-    if backlink:
-        metadata['backlink'] = backlink
-    return attr.ib(default=None, metadata=metadata)
+    @staticmethod
+    def ref(*, backlink=None):
+        metadata = {'ref': True}
+        if backlink:
+            metadata['backlink'] = backlink
+        return attr.ib(default=None, metadata=metadata)
 
+    @staticmethod
+    def reflist(*, backlink=None):
+        metadata = {'reflist': True}
+        if backlink:
+            metadata['backlink'] = backlink
+        return attr.ib(default=attr.Factory(set), metadata=metadata)
 
-def reflist(*, backlink=None):
-    metadata = {'reflist': True}
-    if backlink:
-        metadata['backlink'] = backlink
-    return attr.ib(default=attr.Factory(set), metadata=metadata)
-
-
-def const(value):
-    return attr.ib(default=value)
+    @staticmethod
+    def const(value):
+        return attr.ib(default=value)
 
 
 def asdict(inst):
@@ -471,8 +475,8 @@ class _Device(_Formattable, ABC):
 @fsobj
 class Disk(_Device):
 
-    id = idfield("disk")
-    type = const("disk")
+    id = attributes.idfield("disk")
+    type = attributes.const("disk")
     ptable = attr.ib(default=None)
     serial = attr.ib(default=None)
     path = attr.ib(default=None)
@@ -577,9 +581,9 @@ class Disk(_Device):
 @fsobj
 class Partition(_Formattable):
 
-    id = idfield("part")
-    type = const("partition")
-    device = ref(backlink="_partitions")  # Disk
+    id = attributes.idfield("part")
+    type = attributes.const("partition")
+    device = attributes.ref(backlink="_partitions")  # Disk
     size = attr.ib(default=None)
     wipe = attr.ib(default=None)
     flag = attr.ib(default=None)
@@ -650,13 +654,13 @@ class Partition(_Formattable):
 
 @fsobj
 class Raid(_Device):
-    id = idfield("raid")
-    type = const("raid")
+    id = attributes.idfield("raid")
+    type = attributes.const("raid")
     preserve = attr.ib(default=False)
     name = attr.ib(default=None)
     raidlevel = attr.ib(default=None)  # raid0, raid1, raid5, raid6, raid10
-    devices = reflist(backlink="_constructed_device")  # set([_Formattable])
-    spare_devices = reflist(backlink="_constructed_device")  # ditto
+    devices = attributes.reflist(backlink="_constructed_device")
+    spare_devices = attributes.reflist(backlink="_constructed_device")
     ptable = attr.ib(default=None)
 
     @property
@@ -719,11 +723,11 @@ class Raid(_Device):
 @fsobj
 class LVM_VolGroup(_Device):
 
-    id = idfield("vg")
-    type = const("lvm_volgroup")
+    id = attributes.idfield("vg")
+    type = attributes.const("lvm_volgroup")
     preserve = attr.ib(default=False)
     name = attr.ib(default=None)
-    devices = reflist(backlink="_constructed_device")  # set([_Formattable])
+    devices = attributes.reflist(backlink="_constructed_device")
 
     @property
     def size(self):
@@ -776,10 +780,10 @@ class LVM_VolGroup(_Device):
 @fsobj
 class LVM_LogicalVolume(_Formattable):
 
-    id = idfield("lv")
-    type = const("lvm_partition")
+    id = attributes.idfield("lv")
+    type = attributes.const("lvm_partition")
     name = attr.ib(default=None)
-    volgroup = ref(backlink="_partitions")  # LVM_VolGroup
+    volgroup = attributes.ref(backlink="_partitions")  # LVM_VolGroup
     size = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
@@ -821,10 +825,10 @@ LUKS_OVERHEAD = 16*(2**20)
 
 @fsobj
 class DM_Crypt:
-    id = idfield("crypt")
-    type = const("dm_crypt")
+    id = attributes.idfield("crypt")
+    type = attributes.const("dm_crypt")
     dm_name = attr.ib(default=None)
-    volume = ref(backlink="_constructed_device")  # _Formattable
+    volume = attributes.ref(backlink="_constructed_device")  # _Formattable
     key = attr.ib(default=None, repr=False)
     preserve = attr.ib(default=False)
 
@@ -841,10 +845,10 @@ class DM_Crypt:
 @fsobj
 class Filesystem:
 
-    id = idfield("fs")
-    type = const("format")
+    id = attributes.idfield("fs")
+    type = attributes.const("format")
     fstype = attr.ib(default=None)
-    volume = ref(backlink="_fs")  # _Formattable
+    volume = attributes.ref(backlink="_fs")  # _Formattable
     label = attr.ib(default=None)
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
@@ -864,9 +868,9 @@ class Filesystem:
 
 @fsobj
 class Mount:
-    id = idfield("mount")
-    type = const("mount")
-    device = ref(backlink="_mount")  # Filesystem
+    id = attributes.idfield("mount")
+    type = attributes.const("mount")
+    device = attributes.ref(backlink="_mount")  # Filesystem
     path = attr.ib(default=None)
 
     def can_delete(self):
