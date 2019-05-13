@@ -25,6 +25,8 @@ import pathlib
 import platform
 import sys
 
+from curtin.util import human2bytes
+
 log = logging.getLogger('subiquity.models.filesystem')
 
 
@@ -234,6 +236,19 @@ class attributes:
     @staticmethod
     def const(value):
         return attr.ib(default=value)
+
+    @staticmethod
+    def size():
+        return attr.ib(converter=human2bytes)
+
+    @staticmethod
+    def ptable():
+
+        def conv(val):
+            if val == "dos":
+                val = "msdos"
+            return val
+        return attr.ib(default=None, converter=conv)
 
 
 def asdict(inst):
@@ -479,7 +494,7 @@ class _Device(_Formattable, ABC):
 
 @fsobj("disk")
 class Disk(_Device):
-    ptable = attr.ib(default=None)
+    ptable = attributes.ptable()
     serial = attr.ib(default=None)
     path = attr.ib(default=None)
     model = attr.ib(default=None)
@@ -583,7 +598,7 @@ class Disk(_Device):
 @fsobj("partition")
 class Partition(_Formattable):
     device = attributes.ref(backlink="_partitions")  # Disk
-    size = attr.ib()
+    size = attributes.size()
 
     wipe = attr.ib(default=None)
     flag = attr.ib(default=None)
@@ -660,7 +675,7 @@ class Raid(_Device):
     spare_devices = attributes.reflist(backlink="_constructed_device")
 
     preserve = attr.ib(default=False)
-    ptable = attr.ib(default=None)
+    ptable = attributes.ptable()
 
     @property
     def size(self):
@@ -778,7 +793,7 @@ class LVM_VolGroup(_Device):
 class LVM_LogicalVolume(_Formattable):
     name = attr.ib()
     volgroup = attributes.ref(backlink="_partitions")  # LVM_VolGroup
-    size = attr.ib()
+    size = attributes.size()
 
     preserve = attr.ib(default=False)
 
