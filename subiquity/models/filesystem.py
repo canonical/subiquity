@@ -107,8 +107,18 @@ raidlevels = [
     RaidLevel(_("6"),            "raid6",  4),
     RaidLevel(_("10"),           "raid10", 4),
     ]
-raidlevels_by_value = {l.value: l for l in raidlevels}
 
+
+def _raidlevels_by_value():
+    r = {l.value: l for l in raidlevels}
+    for n in 0, 1, 5, 6, 10:
+        r[str(n)] = r[n] = r["raid"+str(n)]
+    r["stripe"] = r["raid0"]
+    r["mirror"] = r["raid1"]
+    return r
+
+
+raidlevels_by_value = _raidlevels_by_value()
 
 HUMAN_UNITS = ['B', 'K', 'M', 'G', 'T', 'P']
 
@@ -670,7 +680,7 @@ class Partition(_Formattable):
 @fsobj("raid")
 class Raid(_Device):
     name = attr.ib()
-    raidlevel = attr.ib()  # raid0, raid1, raid5, raid6, raid10
+    raidlevel = attr.ib(converter=lambda x: raidlevels_by_value[x].value)
     devices = attributes.reflist(backlink="_constructed_device")
     spare_devices = attributes.reflist(backlink="_constructed_device")
 
