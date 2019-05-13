@@ -68,10 +68,15 @@ def _remove_backlinks(obj):
                 setattr(vv, backlink, None)
 
 
-def fsobj(c):
-    c.__attrs_post_init__ = _set_backlinks
-    c._m = attr.ib(default=None)
-    return attr.s(cmp=False)(c)
+def fsobj(typ):
+    def wrapper(c):
+        c.__attrs_post_init__ = _set_backlinks
+        c.type = attributes.const(typ)
+        c.id = attributes.idfield(typ)
+        c._m = attr.ib(default=None)
+        c = attr.s(cmp=False)(c)
+        return c
+    return wrapper
 
 
 def dependencies(obj):
@@ -217,14 +222,14 @@ class attributes:
         metadata = {'ref': True}
         if backlink:
             metadata['backlink'] = backlink
-        return attr.ib(default=None, metadata=metadata)
+        return attr.ib(metadata=metadata)
 
     @staticmethod
     def reflist(*, backlink=None):
         metadata = {'reflist': True}
         if backlink:
             metadata['backlink'] = backlink
-        return attr.ib(default=attr.Factory(set), metadata=metadata)
+        return attr.ib(metadata=metadata)
 
     @staticmethod
     def const(value):
@@ -335,9 +340,9 @@ class _Formattable(ABC):
         return []
 
     # Filesystem
-    _fs = attr.ib(default=None, repr=False)
+    _fs = attr.ib(init=False, default=None, repr=False)
     # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
-    _constructed_device = attr.ib(default=None, repr=False)
+    _constructed_device = attr.ib(init=False, default=None, repr=False)
 
     def _is_entirely_used(self):
         return self._fs is not None or self._constructed_device is not None
@@ -395,7 +400,7 @@ class _Device(_Formattable, ABC):
         pass
 
     # [Partition]
-    _partitions = attr.ib(default=attr.Factory(list), repr=False)
+    _partitions = attr.ib(init=False, default=attr.Factory(list), repr=False)
 
     def partitions(self):
         return self._partitions
@@ -472,11 +477,8 @@ class _Device(_Formattable, ABC):
             return _generic_can_DELETE(self)
 
 
-@fsobj
+@fsobj("disk")
 class Disk(_Device):
-
-    id = attributes.idfield("disk")
-    type = attributes.const("disk")
     ptable = attr.ib(default=None)
     serial = attr.ib(default=None)
     path = attr.ib(default=None)
@@ -578,13 +580,11 @@ class Disk(_Device):
     ok_for_raid = ok_for_lvm_vg = _can_FORMAT
 
 
-@fsobj
+@fsobj("partition")
 class Partition(_Formattable):
-
-    id = attributes.idfield("part")
-    type = attributes.const("partition")
     device = attributes.ref(backlink="_partitions")  # Disk
-    size = attr.ib(default=None)
+    size = attr.ib()
+
     wipe = attr.ib(default=None)
     flag = attr.ib(default=None)
     preserve = attr.ib(default=False)
@@ -652,15 +652,14 @@ class Partition(_Formattable):
     ok_for_lvm_vg = ok_for_raid
 
 
-@fsobj
+@fsobj("raid")
 class Raid(_Device):
-    id = attributes.idfield("raid")
-    type = attributes.const("raid")
-    preserve = attr.ib(default=False)
-    name = attr.ib(default=None)
-    raidlevel = attr.ib(default=None)  # raid0, raid1, raid5, raid6, raid10
+    name = attr.ib()
+    raidlevel = attr.ib()  # raid0, raid1, raid5, raid6, raid10
     devices = attributes.reflist(backlink="_constructed_device")
     spare_devices = attributes.reflist(backlink="_constructed_device")
+
+    preserve = attr.ib(default=False)
     ptable = attr.ib(default=None)
 
     @property
@@ -720,14 +719,12 @@ class Raid(_Device):
     component_name = "component"
 
 
-@fsobj
+@fsobj("lvm_volgroup")
 class LVM_VolGroup(_Device):
-
-    id = attributes.idfield("vg")
-    type = attributes.const("lvm_volgroup")
-    preserve = attr.ib(default=False)
-    name = attr.ib(default=None)
+    name = attr.ib()
     devices = attributes.reflist(backlink="_constructed_device")
+
+    preserve = attr.ib(default=False)
 
     @property
     def size(self):
@@ -777,14 +774,12 @@ class LVM_VolGroup(_Device):
     component_name = "PV"
 
 
-@fsobj
+@fsobj("lvm_partition")
 class LVM_LogicalVolume(_Formattable):
-
-    id = attributes.idfield("lv")
-    type = attributes.const("lvm_partition")
-    name = attr.ib(default=None)
+    name = attr.ib()
     volgroup = attributes.ref(backlink="_partitions")  # LVM_VolGroup
-    size = attr.ib(default=None)
+    size = attr.ib()
+
     preserve = attr.ib(default=False)
 
     def serialize_size(self):
@@ -823,13 +818,12 @@ class LVM_LogicalVolume(_Formattable):
 LUKS_OVERHEAD = 16*(2**20)
 
 
-@fsobj
+@fsobj("dm_crypt")
 class DM_Crypt:
-    id = attributes.idfield("crypt")
-    type = attributes.const("dm_crypt")
-    dm_name = attr.ib(default=None)
     volume = attributes.ref(backlink="_constructed_device")  # _Formattable
-    key = attr.ib(default=None, repr=False)
+    key = attr.ib(repr=False)
+
+    dm_name = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
     _constructed_device = attr.ib(default=None, repr=False)
@@ -842,13 +836,11 @@ class DM_Crypt:
         return self.volume.size - LUKS_OVERHEAD
 
 
-@fsobj
+@fsobj("format")
 class Filesystem:
-
-    id = attributes.idfield("fs")
-    type = attributes.const("format")
-    fstype = attr.ib(default=None)
+    fstype = attr.ib()
     volume = attributes.ref(backlink="_fs")  # _Formattable
+
     label = attr.ib(default=None)
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
@@ -866,12 +858,10 @@ class Filesystem:
             return False
 
 
-@fsobj
+@fsobj("mount")
 class Mount:
-    id = attributes.idfield("mount")
-    type = attributes.const("mount")
     device = attributes.ref(backlink="_mount")  # Filesystem
-    path = attr.ib(default=None)
+    path = attr.ib()
 
     def can_delete(self):
         # Can't delete mount of /boot/efi or swap, anything else is fine.
