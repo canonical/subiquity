@@ -18,29 +18,13 @@
 Provides high level options for Ubuntu install
 
 """
-import binascii
 import logging
-import re
 
-from urwid import connect_signal, Text
+from urwid import Text
 
 from subiquitycore.ui.buttons import back_btn, forward_btn
 from subiquitycore.ui.utils import button_pile, screen
 from subiquitycore.view import BaseView
-from subiquitycore.ui.interactive import (
-    PasswordEditor,
-    )
-from subiquity.ui.views.identity import (
-    UsernameField,
-    PasswordField,
-    USERNAME_MAXLEN,
-    )
-from subiquitycore.ui.form import (
-    Form,
-    simple_field,
-    URLField,
-    WantsToKnowFormField,
-)
 
 from subiquitycore.lsb_release import lsb_release
 
@@ -87,4 +71,3 @@ class InstallpathView(BaseView):
 
     def cancel(self, button=None):
         self.controller.cancel()
-
