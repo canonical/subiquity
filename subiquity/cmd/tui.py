@@ -63,9 +63,9 @@ def parse_options(argv):
     parser.add_argument('--machine-config', metavar='CONFIG',
                         dest='machine_config',
                         help="Don't Probe. Use probe data file")
-    parser.add_argument('--uefi', action='store_true',
-                        dest='uefi',
-                        help='run in uefi support mode')
+    parser.add_argument('--bootloader',
+                        choices=['none', 'bios', 'prep', 'uefi'],
+                        help='Override style of bootloader to use')
     parser.add_argument('--screens', action='append', dest='screens',
                         default=[])
     parser.add_argument('--script', metavar="SCRIPT", action='append',

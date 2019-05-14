@@ -30,7 +30,7 @@ i18n:
 	$(PYTHON) setup.py build
 
 dryrun: probert i18n
-	$(MAKE) ui-view DRYRUN="--dry-run --uefi"
+	$(MAKE) ui-view DRYRUN="--dry-run --bootloader uefi"
 
 ui-view:
 	$(PYTHON) -m subiquity $(DRYRUN) $(MACHARGS)

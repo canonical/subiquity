@@ -24,16 +24,21 @@ from subiquity.models.tests.test_filesystem import (
     )
 
 
-class FakeBaseModel:
+class Thing:
+    # Just something to hang attributes off
     pass
 
 
 def make_controller_and_disk():
     common = defaultdict(type(None))
-    bm = FakeBaseModel()
+    bm = Thing()
     bm.filesystem, disk = make_model_and_disk()
     common['base_model'] = bm
     common['answers'] = {}
+    opts = Thing()
+    opts.dry_run = True
+    opts.bootloader = "UEFI"
+    common['opts'] = opts
     controller = FilesystemController(common)
     return controller, disk
 

@@ -70,6 +70,7 @@ def _remove_backlinks(obj):
 
 def fsobj(c):
     c.__attrs_post_init__ = _set_backlinks
+    c._m = attr.ib(default=None)
     return attr.s(cmp=False)(c)
 
 
@@ -484,8 +485,8 @@ class Disk(_Device):
     _info = attr.ib(default=None)
 
     @classmethod
-    def from_info(self, info):
-        d = Disk(info=info)
+    def from_info(self, model, info):
+        d = Disk(m=model, info=info)
         d.serial = info.serial
         d.path = info.name
         d.model = info.model
@@ -540,24 +541,35 @@ class Disk(_Device):
             return self.serial
         return self.path
 
-    supported_actions = [
-        DeviceAction.INFO,
-        DeviceAction.PARTITION,
-        DeviceAction.FORMAT,
-        DeviceAction.REMOVE,
-        ]
-    if platform.machine() != 's390x':
-        supported_actions.append(DeviceAction.MAKE_BOOT)
+    @property
+    def supported_actions(self):
+        actions = [
+            DeviceAction.INFO,
+            DeviceAction.PARTITION,
+            DeviceAction.FORMAT,
+            DeviceAction.REMOVE,
+            ]
+        if self._m.bootloader != Bootloader.NONE:
+            actions.append(DeviceAction.MAKE_BOOT)
+        return actions
+
     _can_INFO = True
     _can_PARTITION = property(lambda self: self.free_for_partitions > 0)
     _can_FORMAT = property(
         lambda self: len(self._partitions) == 0 and
         self._constructed_device is None)
     _can_REMOVE = property(_generic_can_REMOVE)
-    _can_MAKE_BOOT = property(
-        lambda self:
-        not self.grub_device and self._fs is None
-        and self._constructed_device is None)
+
+    @property
+    def _can_MAKE_BOOT(self):
+        install_dev = self._m.grub_install_device
+        if install_dev:
+            # For the PReP case, the install_device is the prep partition.
+            if install_dev.type == "partition":
+                install_dev = install_dev.device
+            if install_dev is self:
+                return False
+        return self._fs is None and self._constructed_device is None
 
     ok_for_raid = ok_for_lvm_vg = _can_FORMAT
 
@@ -879,6 +891,13 @@ def align_down(size, block_size=1 << 20):
     return size & ~(block_size - 1)
 
 
+class Bootloader(enum.Enum):
+    NONE = "NONE"  # a system where the bootloader is external, e.g. s390x
+    BIOS = "BIOS"  # BIOS, where the bootloader dd-ed to the start of a device
+    UEFI = "UEFI"  # UEFI, ESPs and /boot/efi and all that (amd64 and arm64)
+    PREP = "PREP"  # ppc64el, which puts grub on a PReP partition
+
+
 class FilesystemModel(object):
 
     lower_size_limit = 128 * (1 << 20)
@@ -890,12 +909,27 @@ class FilesystemModel(object):
         else:
             return True
 
+    def _probe_bootloader(self):
+        # This will at some point change to return a list so that we can
+        # configure BIOS _and_ UEFI on amd64 systems.
+        if os.path.exists('/sys/firmware/efi'):
+            return Bootloader.UEFI
+        elif platform.machine().startswith("ppc64"):
+            return Bootloader.PREP
+        elif platform.machine() == "s390x":
+            return Bootloader.NONE
+        else:
+            return Bootloader.BIOS
+
     def __init__(self):
+        self.bootloader = self._probe_bootloader()
         self._disk_info = []
         self.reset()
 
     def reset(self):
-        self._actions = [Disk.from_info(info) for info in self._disk_info]
+        self._actions = [
+            Disk.from_info(self, info) for info in self._disk_info]
+        self.grub_install_device = None
 
     def _render_actions(self):
         # The curtin storage config has the constraint that an action must be
@@ -958,8 +992,17 @@ class FilesystemModel(object):
                 'config': self._render_actions(),
                 },
             }
-        if not self.add_swapfile():
+        if not self._should_add_swapfile():
             config['swap'] = {'size': 0}
+        if self.grub_install_device:
+            dev = self.grub_install_device
+            if dev.type == "partition":
+                devpath = "{}{}".format(dev.device.path, dev._number)
+            else:
+                devpath = dev.path
+            config['grub'] = {
+                'install_devices': [devpath],
+                }
         return config
 
     def _get_system_mounted_disks(self):
@@ -1000,7 +1043,7 @@ class FilesystemModel(object):
                 if info.size < self.lower_size_limit:
                     continue
                 self._disk_info.append(info)
-                self._actions.append(Disk.from_info(info))
+                self._actions.append(Disk.from_info(self, info))
 
     def disk_by_path(self, path):
         for a in self._actions:
@@ -1050,7 +1093,8 @@ class FilesystemModel(object):
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
         if disk._fs is not None:
             raise Exception("%s is already formatted" % (disk.label,))
-        p = Partition(device=disk, size=real_size, flag=flag, wipe=wipe)
+        p = Partition(
+            m=self, device=disk, size=real_size, flag=flag, wipe=wipe)
         if flag in ("boot", "bios_grub", "prep"):
             disk._partitions.insert(0, disk._partitions.pop())
         disk.ptable = 'gpt'
@@ -1067,6 +1111,7 @@ class FilesystemModel(object):
 
     def add_raid(self, name, raidlevel, devices, spare_devices):
         r = Raid(
+            m=self,
             name=name,
             raidlevel=raidlevel,
             devices=devices,
@@ -1081,7 +1126,7 @@ class FilesystemModel(object):
         self._actions.remove(raid)
 
     def add_volgroup(self, name, devices):
-        vg = LVM_VolGroup(name=name, devices=devices)
+        vg = LVM_VolGroup(m=self, name=name, devices=devices)
         self._actions.append(vg)
         return vg
 
@@ -1092,7 +1137,7 @@ class FilesystemModel(object):
         self._actions.remove(vg)
 
     def add_logical_volume(self, vg, name, size):
-        lv = LVM_LogicalVolume(volgroup=vg, name=name, size=size)
+        lv = LVM_LogicalVolume(m=self, volgroup=vg, name=name, size=size)
         self._actions.append(lv)
         return lv
 
@@ -1122,7 +1167,7 @@ class FilesystemModel(object):
                     raise Exception("{} is not available".format(volume))
         if volume._fs is not None:
             raise Exception("%s is already formatted")
-        fs = Filesystem(volume=volume, fstype=fstype)
+        fs = Filesystem(m=self, volume=volume, fstype=fstype)
         self._actions.append(fs)
         return fs
 
@@ -1135,7 +1180,7 @@ class FilesystemModel(object):
     def add_mount(self, fs, path):
         if fs._mount is not None:
             raise Exception("%s is already mounted")
-        m = Mount(device=fs, path=path)
+        m = Mount(m=self, device=fs, path=path)
         self._actions.append(m)
         return m
 
@@ -1146,31 +1191,29 @@ class FilesystemModel(object):
     def needs_bootloader_partition(self):
         '''true if no disk have a boot partition, and one is needed'''
         # s390x has no such thing
-        if platform.machine() == 's390x':
+        if self.bootloader == Bootloader.NONE:
             return False
-        for p in self.all_partitions():
-            if p.flag in ('bios_grub', 'boot', 'prep'):
-                return False
-        return True
+        elif self.bootloader in [Bootloader.BIOS, Bootloader.PREP]:
+            return self.grub_install_device is None
+        elif self.bootloader == Bootloader.UEFI:
+            return self._mount_for_path('/boot/efi') is None
+        else:
+            raise AssertionError(
+                "unknown bootloader type {}".format(self.bootloader))
+
+    def _mount_for_path(self, path):
+        for mount in self.all_mounts():
+            if mount.path == path:
+                return mount
+        return None
 
     def is_root_mounted(self):
-        for mount in self.all_mounts():
-            if mount.path == '/':
-                return True
-        return False
+        return self._mount_for_path('/') is not None
 
     def is_slash_boot_on_local_disk(self):
-        for mount in self.all_mounts():
-            if mount.path == '/boot':
-                dev = mount.device.volume
-                # We should never allow anything other than a
-                # partition of a local disk to be mounted at /boot but
-                # well.
-                return (
-                    isinstance(dev, Partition)
-                    and isinstance(dev.device, Disk))
-        for mount in self.all_mounts():
-            if mount.path == '/':
+        for path in '/boot', '/':
+            mount = self._mount_for_path(path)
+            if mount is not None:
                 dev = mount.device.volume
                 return (
                     isinstance(dev, Partition)
@@ -1178,16 +1221,14 @@ class FilesystemModel(object):
         return False
 
     def can_install(self):
-        # Do we need to check that there is a disk with the boot flag?
         return (self.is_root_mounted()
                 and not self.needs_bootloader_partition()
                 and self.is_slash_boot_on_local_disk())
 
-    def add_swapfile(self):
-        for m in self.all_mounts():
-            if m.path == '/':
-                if m.device.fstype == 'btrfs':
-                    return False
+    def _should_add_swapfile(self):
+        mount = self._mount_for_path('/')
+        if mount is not None and mount.device.fstype == 'btrfs':
+            return False
         for fs in self.all_filesystems():
             if fs.fstype == "swap":
                 return False
