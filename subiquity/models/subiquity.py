@@ -188,6 +188,10 @@ class SubiquityModel:
                 'preserve_sources_list': False,
                 },
 
+            'sources': {
+                'ubuntu00': 'cp:///media/filesystem'
+                },
+
             'curthooks_commands': {
                 '000-configure-run': [
                     '/snap/bin/subiquity.subiquity-configure-run',
