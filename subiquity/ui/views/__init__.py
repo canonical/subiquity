@@ -22,7 +22,7 @@ from .bcache import BcacheView
 from .ceph import CephDiskView
 from .iscsi import IscsiDiskView
 from .identity import IdentityView
-from .installpath import InstallpathView, MAASView
+from .installpath import InstallpathView
 from .installprogress import ProgressView
 from .keyboard import KeyboardView
 from .welcome import WelcomeView
