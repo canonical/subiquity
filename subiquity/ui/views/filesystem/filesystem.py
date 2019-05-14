@@ -385,14 +385,18 @@ class DeviceList(WidgetWrap):
                     component_name=cd.component_name, name=cd.name)
             fs = obj.fs()
             if fs is not None:
-                m = fs.mount()
-                if m:
-                    return _(
-                        "formatted as {fstype}, mounted at {path}").format(
-                            fstype=fs.fstype, path=m.path)
-                else:
-                    return _("formatted as {fstype}, not mounted").format(
+                if not self.parent.model.is_mounted_filesystem(fs.fstype):
+                    return _("formatted as {fstype}").format(
                         fstype=fs.fstype)
+                else:
+                    m = fs.mount()
+                    if m:
+                        return _(
+                            "formatted as {fstype}, mounted at {path}").format(
+                                fstype=fs.fstype, path=m.path)
+                    else:
+                        return _("formatted as {fstype}, not mounted").format(
+                            fstype=fs.fstype)
             else:
                 return _("unused")
 
