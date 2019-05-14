@@ -15,9 +15,11 @@
 
 import logging
 
+from subiquitycore import utils
+
 from subiquitycore.controller import BaseController
 
-from subiquity.ui.views import InstallpathView, MAASView
+from subiquity.ui.views import InstallpathView
 
 log = logging.getLogger('subiquity.controller.installpath')
 
@@ -58,40 +60,15 @@ class InstallpathController(BaseController):
         self.model.path = path
         getattr(self, 'install_' + path)()
 
+    def install_execshell(self):
+        if not self.opts.dry_run:
+            utils.disable_subiquity()
+        self.signal.emit_signal('quit')
+
     def install_ubuntu(self):
         log.debug("InstallpathController.install_ubuntu next-screen")
         self.signal.emit_signal('next-screen')
 
     def install_cmdline(self):
         log.debug("Installing from command line sources.")
-        self.signal.emit_signal('next-screen')
-
-    def install_maas_region(self):
-        # show region questions, seed model
-        title = "MAAS Region Controller Setup"
-        excerpt = _(
-            "MAAS is Metal As A Service. Running on Ubuntu, it lets you "
-            "treat physical servers like virtual machines (instances) "
-            "in the cloud. Rather than having to manage each server "
-            "individually, MAAS turns your bare metal into an elastic "
-            "cloud-like resource. \n\n"
-            "For further details, see https://maas.io/."
-            )
-        self.ui.set_body(MAASView(self.model, self, title, excerpt))
-
-    def install_maas_rack(self):
-        # show cack questions, seed model
-        title = "MAAS Rack Controller Setup"
-        excerpt = _(
-            "A MAAS rack controller provides services to machines provisioned "
-            "by MAAS in the fabric (group of trunked switches) it is attached "
-            "to. The rack controller requires the accessible URL of a MAAS "
-            "region controller."
-            )
-
-        self.ui.set_body(MAASView(self.model, self, title, excerpt))
-
-    def setup_maas(self, result):
-        log.debug("InstallpathController.setup_mass next-screen")
-        self.model.update(result)
         self.signal.emit_signal('next-screen')

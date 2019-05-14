@@ -45,9 +45,18 @@ class ProxyController(BaseController):
         self.model.proxy = data
 
     def done(self, proxy):
+        _proxy_file = '/etc/profile.d/subiquity-proxy.sh'
         log.debug("ProxyController.done next-screen proxy=%s", proxy)
         if proxy != self.model.proxy:
             self.model.proxy = proxy
             os.environ['http_proxy'] = os.environ['https_proxy'] = proxy
+            if os.path.exists(_proxy_file):
+                os.unlink(_proxy_file)
+            if proxy:
+                with open(_proxy_file, 'w') as f:
+                    f.write('''#!/bin/sh
+export http_proxy={http_proxy}
+export https_proxy={http_proxy}
+'''.format(**os.environ))
             self.signal.emit_signal('network-proxy-set')
         self.signal.emit_signal('next-screen')
