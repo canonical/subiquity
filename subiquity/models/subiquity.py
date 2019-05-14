@@ -74,9 +74,6 @@ class SubiquityModel:
 
         self.locale = LocaleModel()
         self.keyboard = KeyboardModel(self.root)
-        self.installpath = InstallpathModel(
-            target=self.target,
-            sources=sources)
         self.network = NetworkModel(support_wlan=False)
         self.proxy = ProxyModel()
         self.mirror = MirrorModel()
@@ -85,7 +82,6 @@ class SubiquityModel:
         # Collect the models that produce data for the curtin config.
         self._install_models = [
             self.keyboard,
-            self.installpath,
             self.network,
             self.proxy,
             self.mirror,
