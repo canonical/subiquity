@@ -28,7 +28,6 @@ from subiquitycore.file_util import write_file
 from subiquitycore.utils import run_command
 
 from .filesystem import FilesystemModel
-from .installpath import InstallpathModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
 from .proxy import ProxyModel

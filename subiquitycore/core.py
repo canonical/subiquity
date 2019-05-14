@@ -235,7 +235,6 @@ class Application:
     # project = "subiquity"
     # controllers = [
     #         "Welcome",
-    #         "Installpath",
     #         "Network",
     #         "Filesystem",
     #         "Identity",
