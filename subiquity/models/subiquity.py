@@ -28,7 +28,6 @@ from subiquitycore.file_util import write_file
 from subiquitycore.utils import run_command
 
 from .filesystem import FilesystemModel
-from .installpath import InstallpathModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
 from .proxy import ProxyModel
@@ -75,9 +74,6 @@ class SubiquityModel:
 
         self.locale = LocaleModel()
         self.keyboard = KeyboardModel(self.root)
-        self.installpath = InstallpathModel(
-            target=self.target,
-            sources=sources)
         self.network = NetworkModel(support_wlan=False)
         self.proxy = ProxyModel()
         self.mirror = MirrorModel()
@@ -86,7 +82,6 @@ class SubiquityModel:
         # Collect the models that produce data for the curtin config.
         self._install_models = [
             self.keyboard,
-            self.installpath,
             self.network,
             self.proxy,
             self.mirror,
@@ -191,6 +186,10 @@ class SubiquityModel:
         config = {
             'apt': {
                 'preserve_sources_list': False,
+                },
+
+            'sources': {
+                'ubuntu00': 'cp:///media/filesystem'
                 },
 
             'curthooks_commands': {

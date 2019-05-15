@@ -15,7 +15,6 @@
 
 from .filesystem import FilesystemController
 from .identity import IdentityController
-from .installpath import InstallpathController
 from .installprogress import InstallProgressController
 from .keyboard import KeyboardController
 from .proxy import ProxyController
@@ -28,7 +27,6 @@ from .welcome import WelcomeController
 __all__ = [
     'FilesystemController',
     'IdentityController',
-    'InstallpathController',
     'InstallProgressController',
     'KeyboardController',
     'ProxyController',

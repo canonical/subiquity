@@ -46,7 +46,6 @@ class Subiquity(Application):
             "Welcome",
             "Refresh",
             "Keyboard",
-            "Installpath",
             "Network",
             "Proxy",
             "Mirror",

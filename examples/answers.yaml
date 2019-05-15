@@ -4,8 +4,6 @@ Refresh:
   update: yes
 Keyboard:
   layout: us
-Installpath:
-  path: ubuntu
 Network:
   accept-default: yes
 Proxy:
