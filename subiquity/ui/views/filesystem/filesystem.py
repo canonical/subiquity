@@ -576,10 +576,6 @@ class FilesystemView(BaseView):
             elif not self.model.is_root_mounted():
                 self.controller.ui.set_footer(
                     _("You need to mount a device at / to continue."))
-            elif not self.model.is_slash_boot_on_local_disk():
-                self.controller.ui.set_footer(
-                    _("You must mount a partition of a local disk at /boot to "
-                      "continue."))
 
     def create_raid(self, button=None):
         self.show_stretchy_overlay(RaidStretchy(self))

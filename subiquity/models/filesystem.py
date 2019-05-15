@@ -1210,20 +1210,9 @@ class FilesystemModel(object):
     def is_root_mounted(self):
         return self._mount_for_path('/') is not None
 
-    def is_slash_boot_on_local_disk(self):
-        for path in '/boot', '/':
-            mount = self._mount_for_path(path)
-            if mount is not None:
-                dev = mount.device.volume
-                return (
-                    isinstance(dev, Partition)
-                    and isinstance(dev.device, Disk))
-        return False
-
     def can_install(self):
         return (self.is_root_mounted()
-                and not self.needs_bootloader_partition()
-                and self.is_slash_boot_on_local_disk())
+                and not self.needs_bootloader_partition())
 
     def _should_add_swapfile(self):
         mount = self._mount_for_path('/')
