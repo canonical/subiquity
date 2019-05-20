@@ -378,27 +378,15 @@ class DeviceList(WidgetWrap):
         log.debug('FileSystemView: building device list')
         rows = []
 
-        def _usage_label(obj):
-            cd = obj.constructed_device()
-            if cd is not None:
-                return _("{component_name} of {name}").format(
-                    component_name=cd.component_name, name=cd.name)
-            fs = obj.fs()
-            if fs is not None:
-                if not self.parent.model.is_mounted_filesystem(fs.fstype):
-                    return _("formatted as {fstype}").format(
-                        fstype=fs.fstype)
-                else:
-                    m = fs.mount()
-                    if m:
-                        return _(
-                            "formatted as {fstype}, mounted at {path}").format(
-                                fstype=fs.fstype, path=m.path)
-                    else:
-                        return _("formatted as {fstype}, not mounted").format(
-                            fstype=fs.fstype)
-            else:
-                return _("unused")
+        def _append_usage_labels(obj, indent):
+            label = ", ".join(obj.usage_labels())
+            if label:
+                rows.append(TableRow([
+                    Text(""),
+                    (3, Text(indent + label)),
+                    Text(""),
+                    Text(""),
+                ]))
 
         rows.append(TableRow([Color.info_minor(heading) for heading in [
             Text(" "),
@@ -425,12 +413,7 @@ class DeviceList(WidgetWrap):
             rows.append(row)
 
             if not device.partitions():
-                rows.append(TableRow([
-                    Text(""),
-                    (3, Text("  " + _usage_label(device))),
-                    Text(""),
-                    Text(""),
-                ]))
+                _append_usage_labels(device, "  ")
             else:
                 for part in device.partitions():
                     if part.available() != self.show_available:
@@ -452,14 +435,7 @@ class DeviceList(WidgetWrap):
                     ]
                     row = make_action_menu_row(cells, menu, cursor_x=4)
                     rows.append(row)
-                    if part.flag in ["bios_grub", "prep"]:
-                        continue
-                    rows.append(TableRow([
-                        Text(""),
-                        (3, Text("    " + _usage_label(part))),
-                        Text(""),
-                        Text(""),
-                    ]))
+                    _append_usage_labels(part, "    ")
                 if (self.show_available
                         and device.used > 0
                         and device.free_for_partitions > 0):
