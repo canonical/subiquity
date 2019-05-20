@@ -379,14 +379,14 @@ class DeviceList(WidgetWrap):
         rows = []
 
         def _append_usage_labels(obj, indent):
-            label = ", ".join(obj.usage_labels())
-            if label:
+            for label in obj.usage_labels():
                 rows.append(TableRow([
                     Text(""),
                     (3, Text(indent + label)),
                     Text(""),
                     Text(""),
                 ]))
+                indent += "  "
 
         rows.append(TableRow([Color.info_minor(heading) for heading in [
             Text(" "),
