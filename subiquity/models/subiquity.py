@@ -202,6 +202,11 @@ class SubiquityModel:
                     ],
                 },
 
+            'grub': {
+                'terminal': 'unmodified',
+                'probe_additional_os': True
+                },
+
             'install': {
                 'target': self.target,
                 'unmount': 'disabled',
