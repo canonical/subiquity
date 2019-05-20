@@ -335,6 +335,14 @@ class AbstractTable(WidgetWrap):
     def invalidate(self):
         self._last_size = None
 
+    def get_natural_width(self):
+        rows = []
+        for table in self.group:
+            rows.extend(table.table_rows)
+        widths, total_width, has_unpacked = _compute_widths_for_size(
+            10000, rows, self.colspecs, self.spacing)
+        return total_width
+
     def _compute_widths_for_size(self, size):
         # Configure the table (and any bound tables) for the given size.
         if self._last_size == size:

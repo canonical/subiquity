@@ -43,6 +43,7 @@ from subiquity.models.filesystem import (
     dehumanize_size,
     humanize_size,
     )
+from .delete import summarize_partitions
 
 log = logging.getLogger("subiquity.ui.views.filesystem.guided")
 
@@ -127,6 +128,13 @@ class GuidedDiskSelectionView(BaseView):
                 Text('\N{BLACK RIGHT-POINTING SMALL TRIANGLE}'),
                 Text(']'),
                 ])))
+            if disk.used > 0:
+                if len(disk.partitions()) > 0:
+                    summary = summarize_partitions(disk)
+                else:
+                    summary = Text(", ".join(disk.usage_labels()))
+                rows.append(TableRow([
+                    Text(""), (2, Color.info_minor(summary))]))
         super().__init__(screen(
             TableListBox(rows, spacing=1, colspecs={
                 1: ColSpec(can_shrink=True, min_width=20, rpad=2),
