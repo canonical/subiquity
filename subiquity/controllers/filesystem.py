@@ -339,7 +339,7 @@ class FilesystemController(BaseController):
             return
         self.delete_raid(raid.constructed_device())  # XXX
         self.delete_filesystem(raid.fs())
-        for p in raid.partitions():
+        for p in list(raid.partitions()):
             self.delete_partition(p)
         self.model.remove_raid(raid)
 
@@ -355,7 +355,7 @@ class FilesystemController(BaseController):
     create_lvm_volgroup = create_volgroup
 
     def delete_volgroup(self, vg):
-        for lv in vg._partitions:
+        for lv in list(vg.partitions()):
             self.delete_logical_volume(lv)
         for d in vg.devices:
             if d.type == "dm_crypt":
