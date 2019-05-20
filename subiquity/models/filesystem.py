@@ -369,6 +369,28 @@ class _Formattable(ABC):
     # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
     _constructed_device = attr.ib(init=False, default=None, repr=False)
 
+    def usage_labels(self):
+        cd = self.constructed_device()
+        if cd is not None:
+            return [
+                _("{component_name} of {desc} {name}").format(
+                    component_name=cd.component_name,
+                    desc=cd.desc(),
+                    name=cd.name),
+                ]
+        fs = self.fs()
+        if fs is not None:
+            r = [_("formatted as {fstype}").format(fstype=fs.fstype)]
+            if self._m.is_mounted_filesystem(fs.fstype):
+                m = fs.mount()
+                if m:
+                    r.append(_("mounted at {path}").format(path=m.path))
+                else:
+                    r.append(_("not mounted"))
+            return r
+        else:
+            return [_("unused")]
+
     def _is_entirely_used(self):
         return self._fs is not None or self._constructed_device is not None
 
@@ -624,6 +646,11 @@ class Partition(_Formattable):
         elif self.flag == "bios_grub":
             r.append("bios_grub")
         return r
+
+    def usage_labels(self):
+        if self.flag == "prep" or self.flag == "bios_grub":
+            return []
+        return super().usage_labels()
 
     def desc(self):
         return _("partition of {}").format(self.device.desc())
