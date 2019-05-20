@@ -227,6 +227,7 @@ class FilesystemController(BaseController):
             self.finish()
         if self.answers['manual']:
             self._run_iterator(self._run_actions(self.answers['manual']))
+            self.answers['manual'] = []
 
     def guided(self, method):
         v = GuidedDiskSelectionView(self.model, self, method)
