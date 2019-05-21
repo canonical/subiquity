@@ -283,6 +283,7 @@ class FilesystemController(BaseController):
             return
         self.delete_mount(fs.mount())
         self.model.remove_filesystem(fs)
+    delete_format = delete_filesystem
 
     def create_partition(self, device, spec, flag="", wipe=None):
         part = self.model.add_partition(device, spec["size"], flag, wipe)
@@ -290,7 +291,7 @@ class FilesystemController(BaseController):
         return part
 
     def delete_partition(self, part):
-        self.delete_filesystem(part.fs())
+        self.clear(part)
         self.model.remove_partition(part)
 
     def _create_boot_partition(self, disk):
@@ -324,7 +325,7 @@ class FilesystemController(BaseController):
 
     def create_raid(self, spec):
         for d in spec['devices']:
-            self.delete_filesystem(d.fs())
+            self.clear(d)
         raid = self.model.add_raid(
             spec['name'],
             spec['level'].value,
@@ -335,8 +336,7 @@ class FilesystemController(BaseController):
     def delete_raid(self, raid):
         if raid is None:
             return
-        self.delete_raid(raid.constructed_device())  # XXX
-        self.delete_filesystem(raid.fs())
+        self.clear(raid)
         for p in list(raid.partitions()):
             self.delete_partition(p)
         self.model.remove_raid(raid)
@@ -345,7 +345,7 @@ class FilesystemController(BaseController):
         devices = set()
         key = spec.get('password')
         for device in spec['devices']:
-            self.delete_filesystem(device.fs())
+            self.clear(device)
             if key:
                 device = self.model.add_dm_crypt(device, key)
             devices.add(device)
@@ -371,9 +371,18 @@ class FilesystemController(BaseController):
     create_lvm_partition = create_logical_volume
 
     def delete_logical_volume(self, lv):
-        self.delete_filesystem(lv.fs())
+        self.clear(lv)
         self.model.remove_logical_volume(lv)
     delete_lvm_partition = delete_logical_volume
+
+    def delete(self, obj):
+        if obj is None:
+            return
+        getattr(self, 'delete_' + obj.type)(obj)
+
+    def clear(self, obj):
+        for subobj in obj.fs(), obj.constructed_device():
+            self.delete(subobj)
 
     def partition_disk_handler(self, disk, partition, spec):
         log.debug('partition_disk_handler: %s %s %s', disk, partition, spec)
@@ -422,7 +431,7 @@ class FilesystemController(BaseController):
 
     def add_format_handler(self, volume, spec):
         log.debug('add_format_handler %s %s', volume, spec)
-        self.delete_filesystem(volume.fs())
+        self.clear(volume)
         self.create_filesystem(volume, spec)
 
     def raid_handler(self, existing, spec):
@@ -431,7 +440,7 @@ class FilesystemController(BaseController):
             for d in existing.devices | existing.spare_devices:
                 d._constructed_device = None
             for d in spec['devices'] | spec['spare_devices']:
-                self.delete_filesystem(d.fs())
+                self.clear(d)
                 d._constructed_device = existing
             existing.name = spec['name']
             existing.raidlevel = spec['level'].value
@@ -450,7 +459,7 @@ class FilesystemController(BaseController):
                 d._constructed_device = None
             devices = set()
             for d in spec['devices']:
-                self.delete_filesystem(d.fs())
+                self.clear(d)
                 if key:
                     d = self.model.add_dm_crypt(d, key)
                 d._constructed_device = existing
