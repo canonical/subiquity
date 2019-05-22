@@ -46,13 +46,11 @@ LEAVE_UNMOUNTED = object()
 
 
 class MountSelector(WidgetWrap):
-    def __init__(self, mountpoints, ok_for_slash_boot):
+    def __init__(self, mountpoints):
         opts = []
         first_opt = None
         for i, mnt in enumerate(common_mountpoints):
-            if not ok_for_slash_boot and mnt == "/boot":
-                opts.append((mnt, False))
-            elif mnt not in mountpoints:
+            if mnt not in mountpoints:
                 if first_opt is None:
                     first_opt = i
                 opts.append((mnt, True, mnt))
@@ -117,4 +115,4 @@ class MountField(FormField):
     takes_default_style = False
 
     def _make_widget(self, form):
-        return MountSelector(form.mountpoints, form.ok_for_slash_boot)
+        return MountSelector(form.mountpoints)

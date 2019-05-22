@@ -128,14 +128,12 @@ LVNameField = simple_field(LVNameEditor)
 
 class PartitionForm(Form):
 
-    def __init__(self, model, max_size, initial, ok_for_slash_boot,
-                 lvm_names):
+    def __init__(self, model, max_size, initial, lvm_names):
         self.model = model
         initial_path = initial.get('mount')
         self.mountpoints = {
             m.path: m.device.volume for m in self.model.all_mounts()
             if m.path != initial_path}
-        self.ok_for_slash_boot = ok_for_slash_boot
         self.max_size = max_size
         if max_size is not None:
             self.size_str = humanize_size(max_size)
@@ -203,8 +201,6 @@ class PartitionForm(Form):
         if dev is not None:
             return _("{} is already mounted at {}.").format(
                 dev.label.title(), mount)
-        if mount == "/boot" and not self.ok_for_slash_boot:
-            return _("/boot must be on a partition of a local disk.")
 
 
 bios_grub_partition_description = _(
@@ -279,8 +275,7 @@ class PartitionStretchy(Stretchy):
                     x += 1
                 initial['name'] = name
 
-        self.form = PartitionForm(
-            self.model, max_size, initial, isinstance(disk, Disk), lvm_names)
+        self.form = PartitionForm(self.model, max_size, initial, lvm_names)
 
         if not isinstance(disk, LVM_VolGroup):
             self.form.remove_field('name')
@@ -385,7 +380,7 @@ class FormatEntireStretchy(Stretchy):
                     initial['mount'] = mount.path
         elif not isinstance(device, Disk):
             initial['fstype'] = 'ext4'
-        self.form = PartitionForm(self.model, 0, initial, False, None)
+        self.form = PartitionForm(self.model, 0, initial, None)
         self.form.remove_field('size')
         self.form.remove_field('name')
 
