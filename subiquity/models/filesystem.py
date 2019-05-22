@@ -593,12 +593,17 @@ class Disk(_Device):
 
     @property
     def _can_MAKE_BOOT(self):
-        install_dev = self._m.grub_install_device
-        if install_dev:
-            # For the PReP case, the install_device is the prep partition.
-            if install_dev.type == "partition":
-                install_dev = install_dev.device
-            if install_dev is self:
+        bl = self._m.bootloader
+        if bl == Bootloader.BIOS:
+            if self._m.grub_install_device is self:
+                return False
+        elif bl == Bootloader.UEFI:
+            m = self._m._mount_for_path('/boot/efi')
+            if m and m.device.volume.device is self:
+                return False
+        elif bl == Bootloader.PREP:
+            install_dev = self._m.grub_install_device
+            if install_dev.device is self:
                 return False
         return self._fs is None and self._constructed_device is None
 

@@ -22,6 +22,9 @@ from subiquity.controllers.filesystem import (
 from subiquity.models.tests.test_filesystem import (
     make_model_and_disk,
     )
+from subiquity.models.filesystem import (
+    Bootloader,
+    )
 
 
 class Thing:
@@ -57,3 +60,17 @@ class TestFilesystemController(unittest.TestCase):
         dm_crypts = [
             a for a in controller.model._actions if a.type == 'dm_crypt']
         self.assertEqual(dm_crypts, [])
+
+    def test_can_only_make_boot_once(self):
+        # This is really testing model code but it's much easier to test with a
+        # controller around.
+        for bl in Bootloader:
+            if bl == Bootloader.NONE:
+                continue
+            controller, disk = make_controller_and_disk()
+            controller.model.bootloader = bl
+            controller.make_boot_disk(disk)
+            self.assertFalse(
+                disk._can_MAKE_BOOT,
+                "make_boot_disk(disk) did not make _can_MAKE_BOOT false with "
+                "bootloader {}".format(bl))
