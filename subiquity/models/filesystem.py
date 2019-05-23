@@ -1002,9 +1002,10 @@ class FilesystemModel(object):
                 else:
                     next_work.append(obj)
             if len(next_work) == len(work):
-                raise Exception(
-                    "rendering block devices made no progress: {}".format(
-                        work))
+                msg = ["rendering block devices made no progress processing:"]
+                for w in work:
+                    msg.append(" - " + str(w))
+                raise Exception("\n".join(msg))
             work = next_work
 
         return r
