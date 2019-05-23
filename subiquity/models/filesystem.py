@@ -75,7 +75,7 @@ def fsobj(typ):
         c.__attrs_post_init__ = _set_backlinks
         c.type = attributes.const(typ)
         c.id = attributes.idfield(typ)
-        c._m = attr.ib(default=None)
+        c._m = attr.ib(repr=None, default=None)
         c = attr.s(cmp=False)(c)
         return c
     return wrapper
