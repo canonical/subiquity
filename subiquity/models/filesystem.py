@@ -75,7 +75,7 @@ def fsobj(typ):
         c.__attrs_post_init__ = _set_backlinks
         c.type = attributes.const(typ)
         c.id = attributes.idfield(typ)
-        c._m = attr.ib(default=None)
+        c._m = attr.ib(repr=None, default=None)
         c = attr.s(cmp=False)(c)
         return c
     return wrapper
@@ -90,6 +90,17 @@ def dependencies(obj):
             yield v
         elif f.metadata.get('reflist', False):
             yield from v
+
+
+def reverse_dependencies(obj):
+    for f in attr.fields(type(obj)):
+        if not f.metadata.get('is_backlink', False):
+            continue
+        v = getattr(obj, f.name)
+        if isinstance(v, (list, set)):
+            yield from v
+        elif v is not None:
+            yield v
 
 
 @attr.s(cmp=False)
@@ -244,6 +255,12 @@ class attributes:
         return attr.ib(metadata=metadata)
 
     @staticmethod
+    def backlink(*, default=None):
+        return attr.ib(
+            init=False, repr=False, default=default,
+            metadata={'is_backlink': True})
+
+    @staticmethod
     def const(value):
         return attr.ib(default=value)
 
@@ -365,9 +382,9 @@ class _Formattable(ABC):
         return []
 
     # Filesystem
-    _fs = attr.ib(init=False, default=None, repr=False)
+    _fs = attributes.backlink()
     # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
-    _constructed_device = attr.ib(init=False, default=None, repr=False)
+    _constructed_device = attributes.backlink()
 
     def _is_entirely_used(self):
         return self._fs is not None or self._constructed_device is not None
@@ -425,7 +442,7 @@ class _Device(_Formattable, ABC):
         pass
 
     # [Partition]
-    _partitions = attr.ib(init=False, default=attr.Factory(list), repr=False)
+    _partitions = attributes.backlink(default=attr.Factory(list))
 
     def partitions(self):
         return self._partitions
@@ -856,7 +873,7 @@ class DM_Crypt:
     dm_name = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
-    _constructed_device = attr.ib(default=None, repr=False)
+    _constructed_device = attributes.backlink()
 
     def constructed_device(self):
         return self._constructed_device
@@ -875,7 +892,7 @@ class Filesystem:
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
-    _mount = attr.ib(default=None, repr=False)  # Mount
+    _mount = attributes.backlink()
 
     def mount(self):
         return self._mount
@@ -1002,9 +1019,10 @@ class FilesystemModel(object):
                 else:
                     next_work.append(obj)
             if len(next_work) == len(work):
-                raise Exception(
-                    "rendering block devices made no progress: {}".format(
-                        work))
+                msg = ["rendering block devices made no progress processing:"]
+                for w in work:
+                    msg.append(" - " + str(w))
+                raise Exception("\n".join(msg))
             work = next_work
 
         return r
