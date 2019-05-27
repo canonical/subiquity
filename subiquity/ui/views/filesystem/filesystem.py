@@ -276,10 +276,9 @@ class DeviceList(WidgetWrap):
         self.show_available = show_available
         self.table = TablePile([],  spacing=2, colspecs={
             0: ColSpec(rpad=1),
-            1: ColSpec(can_shrink=True),
-            2: ColSpec(min_width=9),
-            3: ColSpec(rpad=1),
-            4: ColSpec(rpad=1),
+            2: ColSpec(can_shrink=True),
+            4: ColSpec(min_width=9),
+            5: ColSpec(rpad=1),
         })
         if show_available:
             text = _("No available devices")
@@ -378,24 +377,14 @@ class DeviceList(WidgetWrap):
         log.debug('FileSystemView: building device list')
         rows = []
 
-        def _append_usage_labels(obj, indent):
-            label = ", ".join(obj.usage_labels())
-            if label:
-                rows.append(TableRow([
-                    Text(""),
-                    (3, Text(indent + label)),
-                    Text(""),
-                    Text(""),
-                ]))
-
-        rows.append(TableRow([Color.info_minor(heading) for heading in [
+        rows.append(Color.info_minor(TableRow([
             Text(" "),
-            Text(_("DEVICE")),
-            Text(_("SIZE"), align="center"),
+            (2, Text(_("DEVICE"))),
             Text(_("TYPE")),
+            Text(_("SIZE"), align="center"),
             Text(" "),
             Text(" "),
-        ]]))
+        ])))
         for device in devices:
             menu = self._action_menu_for_device(device)
             label = device.label
@@ -403,9 +392,9 @@ class DeviceList(WidgetWrap):
                 label = "{} ({})".format(label, ", ".join(device.annotations))
             cells = [
                 Text("["),
-                Text(label),
-                Text("{:>9}".format(humanize_size(device.size))),
+                (2, Text(label)),
                 Text(device.desc()),
+                Text("{:>9}".format(humanize_size(device.size))),
                 menu,
                 Text("]"),
             ]
@@ -413,47 +402,42 @@ class DeviceList(WidgetWrap):
             rows.append(row)
 
             if not device.partitions():
-                _append_usage_labels(device, "  ")
+                rows.append(TableRow([
+                    Text(""),
+                    (3, Color.info_minor(
+                        Text(", ".join(device.usage_labels())))),
+                    Text(""),
+                    Text(""),
+                ]))
             else:
                 for part in device.partitions():
                     if part.available() != self.show_available:
                         continue
                     menu = self._action_menu_for_device(part)
-                    part_size = "{:>9} ({}%)".format(
-                        humanize_size(part.size),
-                        int(100 * part.size / device.size))
-                    part_label = part.short_label
-                    if part.annotations:
-                        part_label = "{} ({})".format(
-                            part_label, ", ".join(part.annotations))
+                    details = ", ".join(part.annotations + part.usage_labels())
                     cells = [
-                        Text("["),
-                        Text("  " + part_label),
-                        (2, Text(part_size)),
+                        Text(""),
+                        Text(part.short_label),
+                        (2, Text(details)),
+                        Text(humanize_size(part.size), align="right"),
                         menu,
-                        Text("]"),
+                        Text(""),
                     ]
-                    row = make_action_menu_row(cells, menu, cursor_x=4)
+                    row = make_action_menu_row(cells, menu, cursor_x=2)
                     rows.append(row)
-                    _append_usage_labels(part, "    ")
                 if (self.show_available
                         and device.used > 0
                         and device.free_for_partitions > 0):
-                    size = device.size
                     free = device.free_for_partitions
-                    percent = str(int(100 * free / size))
-                    if percent == "0":
-                        percent = "%.2f" % (100 * free / size,)
-                    size_text = "{:>9} ({}%)".format(
-                        humanize_size(free), percent)
                     rows.append(TableRow([
                         Text(""),
-                        Text("  " + _("free space")),
-                        (2, Text(size_text)),
+                        (3, Color.info_minor(Text(_("free space")))),
+                        Text(humanize_size(free), align="right"),
                         Text(""),
                         Text(""),
                     ]))
-        self.table.set_contents(rows)
+            rows.append(TableRow([Text("")]))
+        self.table.set_contents(rows[:-1])
         if self.table._w.focus_position >= len(rows):
             self.table._w.focus_position = len(rows) - 1
         while not self.table._w.focus.selectable():
