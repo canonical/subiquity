@@ -835,7 +835,9 @@ class LVM_LogicalVolume(_Formattable):
     def available(self):
         if self._constructed_device is not None:
             return False
-        return True
+        if self._fs is None:
+            return True
+        return self._fs._available()
 
     @property
     def flag(self):
