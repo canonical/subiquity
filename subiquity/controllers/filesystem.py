@@ -267,8 +267,12 @@ class FilesystemController(BaseController):
 
     def create_filesystem(self, volume, spec):
         if spec['fstype'] is None:
-            return
-        fs = self.model.add_filesystem(volume, spec['fstype'])
+            fs = volume.original_fs()
+            if fs is None:
+                return
+            self.model.readd_filesystem(fs)
+        else:
+            fs = self.model.add_filesystem(volume, spec['fstype'])
         if isinstance(volume, Partition):
             if spec['fstype'] == "swap":
                 volume.flag = "swap"
@@ -390,9 +394,10 @@ class FilesystemController(BaseController):
         log.debug('disk.freespace: {}'.format(disk.free_for_partitions))
 
         if partition is not None:
-            partition.size = align_up(spec['size'])
-            if disk.free_for_partitions < 0:
-                raise Exception("partition size too large")
+            if 'size' in spec:
+                partition.size = align_up(spec['size'])
+                if disk.free_for_partitions < 0:
+                    raise Exception("partition size too large")
             self.delete_filesystem(partition.fs())
             self.create_filesystem(partition, spec)
             return
@@ -420,10 +425,12 @@ class FilesystemController(BaseController):
         log.debug('vg.freespace: {}'.format(vg.free_for_partitions))
 
         if lv is not None:
-            lv.name = spec['name']
-            lv.size = align_up(spec['size'])
-            if vg.free_for_partitions < 0:
-                raise Exception("lv size too large")
+            if 'name' in spec:
+                lv.name = spec['name']
+            if 'size' in spec:
+                lv.size = align_up(spec['size'])
+                if vg.free_for_partitions < 0:
+                    raise Exception("lv size too large")
             self.delete_filesystem(lv.fs())
             self.create_filesystem(lv, spec)
             return

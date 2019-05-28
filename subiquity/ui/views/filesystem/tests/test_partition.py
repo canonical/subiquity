@@ -73,6 +73,26 @@ class PartitionViewTests(unittest.TestCase):
         view.controller.partition_disk_handler.assert_called_once_with(
             stretchy.disk, stretchy.partition, expected_data)
 
+    def test_edit_existing_partition(self):
+        form_data = {
+            'fstype': "xfs",
+            }
+        model, disk = make_model_and_disk()
+        partition = model.add_partition(disk, 512*(2**20))
+        partition.preserve = True
+        model.add_filesystem(partition, "ext4")
+        view, stretchy = make_view(model, disk, partition)
+        self.assertFalse(stretchy.form.size.enabled)
+        self.assertTrue(stretchy.form.done_btn.enabled)
+        view_helpers.enter_data(stretchy.form, form_data)
+        view_helpers.click(stretchy.form.done_btn.base_widget)
+        expected_data = {
+            'fstype': 'xfs',
+            'mount': None,
+            }
+        view.controller.partition_disk_handler.assert_called_once_with(
+            stretchy.disk, stretchy.partition, expected_data)
+
     def test_edit_boot_partition(self):
         form_data = {
             'size': "256M",
