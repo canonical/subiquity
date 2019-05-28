@@ -69,6 +69,7 @@ from subiquity.models.filesystem import (
 
 from .delete import ConfirmDeleteStretchy
 from .disk_info import DiskInfoStretchy
+from .helpers import summarize_device
 from .lvm import VolGroupStretchy
 from .partition import PartitionStretchy, FormatEntireStretchy
 from .raid import RaidStretchy
@@ -378,64 +379,41 @@ class DeviceList(WidgetWrap):
         rows = []
 
         rows.append(Color.info_minor(TableRow([
-            Text(" "),
+            Text(""),
             (2, Text(_("DEVICE"))),
             Text(_("TYPE")),
             Text(_("SIZE"), align="center"),
-            Text(" "),
-            Text(" "),
+            Text(""),
+            Text(""),
         ])))
         for device in devices:
-            menu = self._action_menu_for_device(device)
-            label = device.label
-            if device.annotations:
-                label = "{} ({})".format(label, ", ".join(device.annotations))
-            cells = [
-                Text("["),
-                (2, Text(label)),
-                Text(device.desc()),
-                Text("{:>9}".format(humanize_size(device.size))),
-                menu,
-                Text("]"),
-            ]
-            row = make_action_menu_row(cells, menu)
-            rows.append(row)
-
-            if not device.partitions():
+            for obj, cells in summarize_device(
+                    device,
+                    lambda part: part.available() == self.show_available):
+                if obj is not None:
+                    menu = self._action_menu_for_device(obj)
+                else:
+                    menu = Text("")
+                if obj is device:
+                    start, end = '[', ']'
+                else:
+                    start, end = '', ''
+                cells = [Text(start)] + cells + [menu, Text(end)]
+                if obj is not None:
+                    rows.append(make_action_menu_row(cells, menu))
+                else:
+                    rows.append(TableRow(cells))
+            if (self.show_available
+                    and device.used > 0
+                    and device.free_for_partitions > 0):
+                free = humanize_size(device.free_for_partitions)
                 rows.append(TableRow([
                     Text(""),
-                    (3, Color.info_minor(
-                        Text(", ".join(device.usage_labels())))),
+                    (3, Color.info_minor(Text(_("free space")))),
+                    Text(free, align="right"),
                     Text(""),
                     Text(""),
                 ]))
-            else:
-                for part in device.partitions():
-                    if part.available() != self.show_available:
-                        continue
-                    menu = self._action_menu_for_device(part)
-                    details = ", ".join(part.annotations + part.usage_labels())
-                    cells = [
-                        Text(""),
-                        Text(part.short_label),
-                        (2, Text(details)),
-                        Text(humanize_size(part.size), align="right"),
-                        menu,
-                        Text(""),
-                    ]
-                    row = make_action_menu_row(cells, menu, cursor_x=2)
-                    rows.append(row)
-                if (self.show_available
-                        and device.used > 0
-                        and device.free_for_partitions > 0):
-                    free = device.free_for_partitions
-                    rows.append(TableRow([
-                        Text(""),
-                        (3, Color.info_minor(Text(_("free space")))),
-                        Text(humanize_size(free), align="right"),
-                        Text(""),
-                        Text(""),
-                    ]))
             rows.append(TableRow([Text("")]))
         self.table.set_contents(rows[:-1])
         if self.table._w.focus_position >= len(rows):
