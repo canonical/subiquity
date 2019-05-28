@@ -180,16 +180,38 @@ def make_model_and_lv(bootloader=None):
 
 class TestFilesystemModel(unittest.TestCase):
 
+    def test_disk_annotations(self):
+        # disks never have annotations
+        model, disk = make_model_and_disk()
+        self.assertEqual(disk.annotations, [])
+        disk.preserve = True
+        self.assertEqual(disk.annotations, [])
+
+    def test_partition_annotations(self):
+        model, disk = make_model_and_disk()
+        part = model.add_partition(disk, size=disk.free_for_partitions)
+        self.assertEqual(part.annotations, ['new'])
+        part.preserve = True
+        self.assertEqual(part.annotations, ['existing'])
+        part.flag = "boot"
+        self.assertEqual(part.annotations, ['existing', 'ESP'])
+        part.flag = "prep"
+        self.assertEqual(part.annotations, ['existing', 'PReP'])
+        part.flag = "bios_grub"
+        self.assertEqual(part.annotations, ['existing', 'bios_grub'])
+
     def test_vg_default_annotations(self):
         model, disk = make_model_and_disk()
         vg = model.add_volgroup('vg-0', {disk})
-        self.assertEqual(vg.annotations, [])
+        self.assertEqual(vg.annotations, ['new'])
+        vg.preserve = True
+        self.assertEqual(vg.annotations, ['existing'])
 
     def test_vg_encrypted_annotations(self):
         model, disk = make_model_and_disk()
         dm_crypt = model.add_dm_crypt(disk, key='passw0rd')
         vg = model.add_volgroup('vg-0', {dm_crypt})
-        self.assertEqual(vg.annotations, ['encrypted'])
+        self.assertEqual(vg.annotations, ['new', 'encrypted'])
 
     def _test_ok_for_xxx(self, model, make_new_device, attr,
                          test_partitions=True):

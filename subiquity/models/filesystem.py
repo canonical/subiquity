@@ -385,7 +385,13 @@ class _Formattable(ABC):
 
     @property
     def annotations(self):
-        return []
+        preserve = getattr(self, 'preserve', None)
+        if preserve is None:
+            return []
+        elif preserve:
+            return [_("existing")]
+        else:
+            return [_("new")]
 
     # Filesystem
     _fs = attributes.backlink()
@@ -603,6 +609,10 @@ class Disk(_Device):
     @property
     def size(self):
         return align_down(self._info.size)
+
+    @property
+    def annotations(self):
+        return []
 
     def desc(self):
         return _("local disk")
