@@ -24,6 +24,7 @@ from subiquity.models.tests.test_filesystem import (
     )
 from subiquity.models.filesystem import (
     Bootloader,
+    DeviceAction,
     )
 
 
@@ -32,15 +33,15 @@ class Thing:
     pass
 
 
-def make_controller_and_disk():
+def make_controller_and_disk(bootloader=None):
     common = defaultdict(type(None))
     bm = Thing()
-    bm.filesystem, disk = make_model_and_disk()
+    bm.filesystem, disk = make_model_and_disk(bootloader)
     common['base_model'] = bm
     common['answers'] = {}
     opts = Thing()
     opts.dry_run = True
-    opts.bootloader = "UEFI"
+    opts.bootloader = None
     common['opts'] = opts
     controller = FilesystemController(common)
     return controller, disk
@@ -65,10 +66,9 @@ class TestFilesystemController(unittest.TestCase):
         # This is really testing model code but it's much easier to test with a
         # controller around.
         for bl in Bootloader:
-            if bl == Bootloader.NONE:
+            controller, disk = make_controller_and_disk(bl)
+            if DeviceAction.MAKE_BOOT not in disk.supported_actions:
                 continue
-            controller, disk = make_controller_and_disk()
-            controller.model.bootloader = bl
             controller.make_boot_disk(disk)
             self.assertFalse(
                 disk._can_MAKE_BOOT,
