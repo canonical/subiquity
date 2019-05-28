@@ -17,15 +17,17 @@ from abc import ABC, abstractmethod
 import attr
 import collections
 import enum
-import glob
+import itertools
 import logging
 import math
 import os
 import pathlib
 import platform
-import sys
 
 from curtin.util import human2bytes
+from curtin import storage_config
+
+from probert.storage import StorageInfo
 
 log = logging.getLogger('subiquity.models.filesystem')
 
@@ -70,6 +72,9 @@ def _remove_backlinks(obj):
                 setattr(vv, backlink, None)
 
 
+_type_to_cls = {}
+
+
 def fsobj(typ):
     def wrapper(c):
         c.__attrs_post_init__ = _set_backlinks
@@ -77,6 +82,7 @@ def fsobj(typ):
         c.id = attributes.idfield(typ)
         c._m = attr.ib(repr=None, default=None)
         c = attr.s(cmp=False)(c)
+        _type_to_cls[typ] = c
         return c
     return wrapper
 
@@ -554,14 +560,6 @@ class Disk(_Device):
 
     _info = attr.ib(default=None)
 
-    @classmethod
-    def from_info(self, model, info):
-        d = Disk(m=model, info=info)
-        d.serial = info.serial
-        d.path = info.name
-        d.model = info.model
-        return d
-
     def info_for_display(self):
         bus = self._info.raw.get('ID_BUS', None)
         major = self._info.raw.get('MAJOR', None)
@@ -1003,13 +1001,66 @@ class FilesystemModel(object):
 
     def __init__(self):
         self.bootloader = self._probe_bootloader()
-        self._disk_info = []
+        self._probe_data = None
         self.reset()
 
     def reset(self):
-        self._actions = [
-            Disk.from_info(self, info) for info in self._disk_info]
+        if self._probe_data is not None:
+            config = storage_config.extract_storage_config(self._probe_data)
+            self._actions = self._actions_from_config(
+                config["storage"]["config"],
+                self._probe_data['blockdev'])
+        else:
+            self._actions = []
         self.grub_install_device = None
+
+    def _actions_from_config(self, config, blockdevs):
+        byid = {}
+        objs = []
+        exclusions = set()
+        for action in config:
+            if action['type'] == 'mount':
+                exclusions.add(byid[action['device']])
+                continue
+            c = _type_to_cls.get(action['type'], None)
+            if c is None:
+                # Ignore any action we do not know how to process yet
+                # (e.g. bcache)
+                continue
+            kw = {}
+            for f in attr.fields(c):
+                n = f.name
+                if n not in action:
+                    continue
+                v = action[n]
+                if f.metadata.get('ref', False):
+                    kw[n] = byid[v]
+                elif f.metadata.get('reflist', False):
+                    kw[n] = [byid[id] for id in v]
+                else:
+                    kw[n] = v
+            if kw['type'] == 'disk':
+                path = kw['path']
+                kw['info'] = StorageInfo({path: blockdevs[path]})
+            kw['preserve'] = True
+            obj = byid[action['id']] = c(m=self, **kw)
+            objs.append(obj)
+
+        # We filter out anything that can be reached from a currently
+        # mounted device. The motivation here is only to exclude the
+        # media subiquity is mounted from, so this might be a bit
+        # excessive but hey it works.
+        while True:
+            log.debug("exclusions %s", {e.id for e in exclusions})
+            next_exclusions = exclusions.copy()
+            for e in exclusions:
+                next_exclusions.update(itertools.chain(
+                    dependencies(e), reverse_dependencies(e)))
+            if len(exclusions) == len(next_exclusions):
+                break
+            exclusions = next_exclusions
+
+        return [o for o in objs if o not in exclusions]
 
     def _render_actions(self):
         # The curtin storage config has the constraint that an action must be
@@ -1086,45 +1137,9 @@ class FilesystemModel(object):
                 }
         return config
 
-    def _get_system_mounted_disks(self):
-        # This assumes a fairly vanilla setup. It won't list as
-        # mounted a disk that is only mounted via lvm, for example.
-        mounted_devs = []
-        with open('/proc/mounts', encoding=sys.getfilesystemencoding()) as pm:
-            for line in pm:
-                if line.startswith('/dev/'):
-                    mounted_devs.append(line.split()[0][5:])
-        mounted_disks = set()
-        for dev in mounted_devs:
-            if os.path.exists('/sys/block/{}'.format(dev)):
-                mounted_disks.add('/dev/' + dev)
-            else:
-                paths = glob.glob('/sys/block/*/{}/partition'.format(dev))
-                if len(paths) == 1:
-                    mounted_disks.add('/dev/' + paths[0].split('/')[3])
-        return mounted_disks
-
-    def load_probe_data(self, storage):
-        currently_mounted = self._get_system_mounted_disks()
-        for path, info in storage.items():
-            log.debug("fs probe %s", path)
-            if path in currently_mounted:
-                continue
-            if info.type == 'disk':
-                if info.is_virtual:
-                    continue
-                if info.raw["MAJOR"] in ("2", "11"):  # serial and cd devices
-                    continue
-                if info.raw['attrs'].get('ro') == "1":
-                    continue
-                if "ID_CDROM" in info.raw:
-                    continue
-                # log.debug('disk={}\n{}'.format(
-                #    path, json.dumps(data, indent=4, sort_keys=True)))
-                if info.size < self.lower_size_limit:
-                    continue
-                self._disk_info.append(info)
-                self._actions.append(Disk.from_info(self, info))
+    def load_probe_data(self, probe_data):
+        self._probe_data = probe_data
+        self.reset()
 
     def disk_by_path(self, path):
         for a in self._actions:
