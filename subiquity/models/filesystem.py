@@ -620,7 +620,7 @@ class Disk(_Device):
                 return False
         elif bl == Bootloader.PREP:
             install_dev = self._m.grub_install_device
-            if install_dev.device is self:
+            if install_dev is not None and install_dev.device is self:
                 return False
         return self._fs is None and self._constructed_device is None
 
