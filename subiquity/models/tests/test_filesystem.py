@@ -340,6 +340,23 @@ class TestFilesystemModel(unittest.TestCase):
         model, disk = make_model_and_disk()
         self.assertActionNotSupported(disk, DeviceAction.EDIT)
 
+    def test_disk_action_REFORMAT(self):
+        model = make_model()
+
+        disk1 = make_disk(model, preserve=False)
+        self.assertActionNotPossible(disk1, DeviceAction.REFORMAT)
+
+        disk2 = make_disk(model, preserve=True)
+        self.assertActionNotPossible(disk2, DeviceAction.REFORMAT)
+        disk2p1 = make_partition(model, disk2, preserve=True)
+        self.assertActionPossible(disk2, DeviceAction.REFORMAT)
+        model.add_volgroup('vg0', {disk2p1})
+        self.assertActionNotPossible(disk2, DeviceAction.REFORMAT)
+
+        disk3 = make_disk(model, preserve=True)
+        model.add_volgroup('vg1', {disk3})
+        self.assertActionNotPossible(disk3, DeviceAction.REFORMAT)
+
     def test_disk_action_PARTITION(self):
         model, disk = make_model_and_disk()
         self.assertActionPossible(disk, DeviceAction.PARTITION)
@@ -464,6 +481,10 @@ class TestFilesystemModel(unittest.TestCase):
         model.add_volgroup('vg1', {part})
         self.assertActionNotPossible(part, DeviceAction.EDIT)
 
+    def test_partition_action_REFORMAT(self):
+        model, part = make_model_and_partition()
+        self.assertActionNotSupported(part, DeviceAction.REFORMAT)
+
     def test_partition_action_PARTITION(self):
         model, part = make_model_and_partition()
         self.assertActionNotSupported(part, DeviceAction.PARTITION)
@@ -530,6 +551,10 @@ class TestFilesystemModel(unittest.TestCase):
         raid3 = make_raid(model)
         raid3.preserve = True
         self.assertActionNotPossible(raid3, DeviceAction.EDIT)
+
+    def test_raid_action_REFORMAT(self):
+        model, raid = make_model_and_raid()
+        self.assertActionNotSupported(raid, DeviceAction.REFORMAT)
 
     def test_raid_action_PARTITION(self):
         model, raid = make_model_and_raid()
@@ -606,6 +631,10 @@ class TestFilesystemModel(unittest.TestCase):
         vg2.preserve = True
         self.assertActionNotPossible(vg2, DeviceAction.EDIT)
 
+    def test_vg_action_REFORMAT(self):
+        model, vg = make_model_and_vg()
+        self.assertActionNotSupported(vg, DeviceAction.REFORMAT)
+
     def test_vg_action_PARTITION(self):
         model, vg = make_model_and_vg()
         self.assertActionNotSupported(vg, DeviceAction.PARTITION)
@@ -652,6 +681,10 @@ class TestFilesystemModel(unittest.TestCase):
     def test_lv_action_EDIT(self):
         model, lv = make_model_and_lv()
         self.assertActionPossible(lv, DeviceAction.EDIT)
+
+    def test_lv_action_REFORMAT(self):
+        model, lv = make_model_and_lv()
+        self.assertActionNotSupported(lv, DeviceAction.REFORMAT)
 
     def test_lv_action_PARTITION(self):
         model, lv = make_model_and_lv()

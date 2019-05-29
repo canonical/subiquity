@@ -67,7 +67,7 @@ from subiquity.models.filesystem import (
     humanize_size,
     )
 
-from .delete import ConfirmDeleteStretchy
+from .delete import ConfirmDeleteStretchy, ConfirmReformatStretchy
 from .disk_info import DiskInfoStretchy
 from .helpers import summarize_device
 from .lvm import VolGroupStretchy
@@ -289,6 +289,7 @@ class DeviceList(WidgetWrap):
         super().__init__(self.table)
 
     _disk_INFO = _stretchy_shower(DiskInfoStretchy)
+    _disk_REFORMAT = _stretchy_shower(ConfirmReformatStretchy)
     _disk_PARTITION = _stretchy_shower(PartitionStretchy)
     _disk_FORMAT = _stretchy_shower(FormatEntireStretchy)
 
@@ -353,7 +354,8 @@ class DeviceList(WidgetWrap):
             else:
                 meth_name = '_{}_{}'.format(device.type, action.name)
                 meth = getattr(self, meth_name)
-            if not whynot and action == DeviceAction.DELETE:
+            if not whynot and action in [DeviceAction.DELETE,
+                                         DeviceAction.REFORMAT]:
                 label = Color.danger_button(ActionMenuOpenButton(label))
             device_actions.append(Action(
                 label=label,

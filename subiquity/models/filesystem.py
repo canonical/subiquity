@@ -314,6 +314,7 @@ def asdict(inst):
 class DeviceAction(enum.Enum):
     INFO = _("Info")
     EDIT = _("Edit")
+    REFORMAT = _("Reformat")
     PARTITION = _("Add Partition")
     CREATE_LV = _("Create Logical Volume")
     FORMAT = _("Format")
@@ -675,6 +676,7 @@ class Disk(_Device):
     def supported_actions(self):
         actions = [
             DeviceAction.INFO,
+            DeviceAction.REFORMAT,
             DeviceAction.PARTITION,
             DeviceAction.FORMAT,
             DeviceAction.REMOVE,
