@@ -229,6 +229,20 @@ class TestFilesystemModel(unittest.TestCase):
             dev3 = make_new_device()
             make_partition(model, dev3)
             self.assertFalse(getattr(dev3, attr))
+        # Empty existing devices are ok
+        dev4 = make_new_device()
+        dev4.preserve = True
+        self.assertTrue(getattr(dev4, attr))
+        # A dev with an existing filesystem is ok (there is no
+        # way to remove the format)
+        dev5 = make_new_device()
+        dev5.preserve = True
+        fs = model.add_filesystem(dev5, 'ext4')
+        fs.preserve = True
+        self.assertTrue(dev5.ok_for_raid)
+        # But a existing, *mounted* filesystem is not.
+        model.add_mount(fs, '/')
+        self.assertFalse(dev5.ok_for_raid)
 
     def test_disk_ok_for_xxx(self):
         model = make_model()
