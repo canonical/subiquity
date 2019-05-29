@@ -20,7 +20,8 @@ from subiquity.controllers.filesystem import (
     FilesystemController,
     )
 from subiquity.models.tests.test_filesystem import (
-    make_model_and_disk,
+    make_disk,
+    make_model,
     )
 from subiquity.models.filesystem import (
     Bootloader,
@@ -33,10 +34,10 @@ class Thing:
     pass
 
 
-def make_controller_and_disk(bootloader=None):
+def make_controller(bootloader=None):
     common = defaultdict(type(None))
     bm = Thing()
-    bm.filesystem, disk = make_model_and_disk(bootloader)
+    bm.filesystem = make_model(bootloader)
     common['base_model'] = bm
     common['answers'] = {}
     opts = Thing()
@@ -44,7 +45,12 @@ def make_controller_and_disk(bootloader=None):
     opts.bootloader = None
     common['opts'] = opts
     controller = FilesystemController(common)
-    return controller, disk
+    return controller
+
+
+def make_controller_and_disk(bootloader=None):
+    controller = make_controller(bootloader)
+    return controller, make_disk(controller.model)
 
 
 class TestFilesystemController(unittest.TestCase):
@@ -74,3 +80,80 @@ class TestFilesystemController(unittest.TestCase):
                 disk._can_MAKE_BOOT,
                 "make_boot_disk(disk) did not make _can_MAKE_BOOT false with "
                 "bootloader {}".format(bl))
+
+    def test_make_boot_disk_BIOS(self):
+        controller = make_controller(Bootloader.BIOS)
+        disk1 = make_disk(controller.model)
+        disk2 = make_disk(controller.model)
+        disk2p1 = controller.model.add_partition(
+            disk2, size=disk2.free_for_partitions)
+
+        controller.make_boot_disk(disk1)
+        self.assertEqual(len(disk1.partitions()), 1)
+        self.assertEqual(disk1.partitions()[0].flag, "bios_grub")
+        self.assertEqual(controller.model.grub_install_device, disk1)
+
+        size_before = disk2p1.size
+        controller.make_boot_disk(disk2)
+        self.assertEqual(len(disk1.partitions()), 0)
+        self.assertEqual(len(disk2.partitions()), 2)
+        self.assertEqual(disk2.partitions()[1], disk2p1)
+        self.assertEqual(
+            disk2.partitions()[0].size + disk2p1.size, size_before)
+        self.assertEqual(disk2.partitions()[0].flag, "bios_grub")
+        self.assertEqual(controller.model.grub_install_device, disk2)
+
+    def test_make_boot_disk_UEFI(self):
+        controller = make_controller(Bootloader.UEFI)
+        disk1 = make_disk(controller.model)
+        disk2 = make_disk(controller.model)
+        disk2p1 = controller.model.add_partition(
+            disk2, size=disk2.free_for_partitions)
+
+        controller.make_boot_disk(disk1)
+        self.assertEqual(len(disk1.partitions()), 1)
+        self.assertEqual(disk1.partitions()[0].flag, "boot")
+        self.assertEqual(controller.model.grub_install_device, None)
+        efi_mnt = controller.model._mount_for_path("/boot/efi")
+        self.assertEqual(efi_mnt.device.volume, disk1.partitions()[0])
+        self.assertEqual(disk1.partitions()[0].fs().fstype, "fat32")
+
+        size_before = disk2p1.size
+        controller.make_boot_disk(disk2)
+        self.assertEqual(len(disk1.partitions()), 0)
+        self.assertEqual(len(disk2.partitions()), 2)
+        self.assertEqual(disk2.partitions()[1], disk2p1)
+        self.assertEqual(
+            disk2.partitions()[0].size + disk2p1.size, size_before)
+        self.assertEqual(disk2.partitions()[0].flag, "boot")
+        self.assertEqual(controller.model.grub_install_device, None)
+        efi_mnt = controller.model._mount_for_path("/boot/efi")
+        self.assertEqual(efi_mnt.device.volume, disk2.partitions()[0])
+
+    def test_make_boot_disk_PREP(self):
+        controller = make_controller(Bootloader.PREP)
+        disk1 = make_disk(controller.model)
+        disk2 = make_disk(controller.model)
+        disk2p1 = controller.model.add_partition(
+            disk2, size=disk2.free_for_partitions)
+
+        controller.make_boot_disk(disk1)
+        self.assertEqual(len(disk1.partitions()), 1)
+        self.assertEqual(disk1.partitions()[0].flag, "prep")
+        self.assertEqual(disk1.partitions()[0].wipe, "zero")
+        self.assertEqual(
+            controller.model.grub_install_device,
+            disk1.partitions()[0])
+
+        size_before = disk2p1.size
+        controller.make_boot_disk(disk2)
+        self.assertEqual(len(disk1.partitions()), 0)
+        self.assertEqual(len(disk2.partitions()), 2)
+        self.assertEqual(disk2.partitions()[1], disk2p1)
+        self.assertEqual(
+            disk2.partitions()[0].size + disk2p1.size, size_before)
+        self.assertEqual(disk2.partitions()[0].flag, "prep")
+        self.assertEqual(disk2.partitions()[0].wipe, "zero")
+        self.assertEqual(
+            controller.model.grub_install_device,
+            disk2.partitions()[0])
