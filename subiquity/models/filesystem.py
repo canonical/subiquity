@@ -338,6 +338,12 @@ def _generic_can_REMOVE(obj):
     cd = obj.constructed_device()
     if cd is None:
         return False
+    if cd.preserve:
+        return _("Cannot remove selflabel from pre-exsting {cdtype} "
+                 "{cdlabel}").format(
+                    selflabel=obj.label,
+                    cdtype=cd.desc(),
+                    cdlabel=cd.label)
     if isinstance(cd, Raid):
         if obj in cd.spare_devices:
             return True
@@ -535,6 +541,13 @@ class _Device(_Formattable, ABC):
                 return True
         return False
 
+    def _has_preexisting_partition(self):
+        for p in self._partitions:
+            if p.preserve:
+                return True
+        else:
+            return False
+
     @property
     def _can_DELETE(self):
         mounted_partitions = 0
@@ -631,6 +644,33 @@ class Disk(_Device):
             return self.serial
         return self.path
 
+    def _potential_boot_partition(self):
+        if self._m.bootloader == Bootloader.NONE:
+            return None
+        if not self._partitions:
+            return None
+        if self._m.bootloader == Bootloader.BIOS:
+            if self._partitions[0].flag == "bios_grub":
+                return self._partitions[0]
+            else:
+                return None
+        flag = {
+            Bootloader.UEFI: "boot",
+            Bootloader.PREP: "prep",
+            }[self._m.bootloader]
+        for p in self._partitions:
+            # XXX should check not extended in the UEFI case too (until we fix
+            # that bug)
+            if p.flag == flag:
+                return p
+        return None
+
+    def _can_be_boot_disk(self):
+        if self._m.bootloader == Bootloader.BIOS and self.ptable == "msdos":
+            return True
+        else:
+            return self._potential_boot_partition() is not None
+
     @property
     def supported_actions(self):
         actions = [
@@ -644,7 +684,21 @@ class Disk(_Device):
         return actions
 
     _can_INFO = True
-    _can_PARTITION = property(lambda self: self.free_for_partitions > 0)
+
+    @property
+    def _can_REFORMAT(self):
+        if not self.preserve:
+            return False
+        if len(self._partitions) == 0:
+            return False
+        for p in self._partitions:
+            if p._constructed_device is not None:
+                return False
+        return True
+
+    _can_PARTITION = property(
+        lambda self: not self._has_preexisting_partition() and
+        self.free_for_partitions > 0)
     _can_FORMAT = property(
         lambda self: len(self._partitions) == 0 and
         self._constructed_device is None)
@@ -664,7 +718,10 @@ class Disk(_Device):
             install_dev = self._m.grub_install_device
             if install_dev is not None and install_dev.device is self:
                 return False
-        return self._fs is None and self._constructed_device is None
+        if self._has_preexisting_partition():
+            return self._can_be_boot_disk()
+        else:
+            return self._fs is None and self._constructed_device is None
 
     @property
     def ok_for_raid(self):
@@ -735,10 +792,14 @@ class Partition(_Formattable):
         ]
 
     _can_EDIT = property(_generic_can_EDIT)
+
     _can_REMOVE = property(_generic_can_REMOVE)
 
     @property
     def _can_DELETE(self):
+        if self.device._has_preexisting_partition():
+            return _("Cannot delete a single partition from a device that "
+                     "already has partitions.")
         if self.flag in ('boot', 'bios_grub', 'prep'):
             return _("Cannot delete required bootloader partition")
         return _generic_can_DELETE(self)
@@ -794,7 +855,9 @@ class Raid(_Device):
 
     @property
     def _can_EDIT(self):
-        if len(self._partitions) > 0:
+        if self.preserve:
+            return _("Cannot edit pre-existing RAIDs.")
+        elif len(self._partitions) > 0:
             return _(
                 "Cannot edit {selflabel} because it has partitions.").format(
                     selflabel=self.label)
@@ -861,7 +924,9 @@ class LVM_VolGroup(_Device):
 
     @property
     def _can_EDIT(self):
-        if len(self._partitions) > 0:
+        if self.preserve:
+            return _("Cannot edit pre-existing volume groups.")
+        elif len(self._partitions) > 0:
             return _(
                 "Cannot edit {selflabel} because it has logical "
                 "volumes.").format(
@@ -869,7 +934,8 @@ class LVM_VolGroup(_Device):
         else:
             return _generic_can_EDIT(self)
 
-    _can_CREATE_LV = Disk._can_PARTITION
+    _can_CREATE_LV = property(
+        lambda self: not self.preserve and self.free_for_partitions > 0)
 
     ok_for_raid = False
     ok_for_lvm_vg = False
@@ -915,7 +981,13 @@ class LVM_LogicalVolume(_Formattable):
         ]
 
     _can_EDIT = True
-    _can_DELETE = True
+
+    @property
+    def _can_DELETE(self):
+        if self.volgroup._has_preexisting_partition():
+            return _("Cannot delete a single logical volume from a volume "
+                     "group that already has logical volumes.")
+        return True
 
     ok_for_raid = False
     ok_for_lvm_vg = False
