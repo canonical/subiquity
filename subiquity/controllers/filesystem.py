@@ -163,13 +163,19 @@ class FilesystemController(BaseController):
         raise Exception("could not resolve {}".format(id))
 
     def _action_clean_devices_raid(self, devices):
-        return {
+        r = {
             self._action_get(d): v
             for d, v in zip(devices[::2], devices[1::2])
             }
+        for d in r:
+            assert d.ok_for_raid
+        return r
 
     def _action_clean_devices_vg(self, devices):
-        return {self._action_get(d): 'active' for d in devices}
+        r = {self._action_get(d): 'active' for d in devices}
+        for d in r:
+            assert d.ok_for_lvm_vg
+        return r
 
     def _action_clean_level(self, level):
         return raidlevels_by_value[level]

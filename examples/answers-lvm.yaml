@@ -19,7 +19,7 @@ Filesystem:
       action: PARTITION
       data:
         size: 1G
-        mount: null
+        fstype: null
     - *newpart
     - *newpart
     - *newpart
