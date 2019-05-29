@@ -410,13 +410,21 @@ class _Formattable(ABC):
                 ]
         fs = self.fs()
         if fs is not None:
-            r = [_("formatted as {fstype}").format(fstype=fs.fstype)]
+            if fs.preserve:
+                format_desc = _("already formatted as {fstype}")
+            elif self.original_fs() is not None:
+                format_desc = _("to be reformatted as {fstype}")
+            else:
+                format_desc = _("to be formatted as {fstype}")
+            r = [format_desc.format(fstype=fs.fstype)]
             if self._m.is_mounted_filesystem(fs.fstype):
                 m = fs.mount()
                 if m:
                     r.append(_("mounted at {path}").format(path=m.path))
                 else:
                     r.append(_("not mounted"))
+            elif fs.preserve and fs.mount() is not None:
+                r.append(_("unused"))
             return r
         else:
             return [_("unused")]

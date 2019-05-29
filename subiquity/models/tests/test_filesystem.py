@@ -273,10 +273,23 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertEqual(partition.usage_labels(), ["unused"])
         fs = model.add_filesystem(partition, 'ext4')
         self.assertEqual(
-            partition.usage_labels(), ["formatted as ext4", "not mounted"])
-        model.add_mount(fs, '/')
+            partition.usage_labels(),
+            ["to be formatted as ext4", "not mounted"])
+        partition._original_fs = fs
+        fs.preserve = True
+        partition.preserve = True
         self.assertEqual(
-            partition.usage_labels(), ["formatted as ext4", "mounted at /"])
+            partition.usage_labels(),
+            ["already formatted as ext4", "not mounted"])
+        model.remove_filesystem(fs)
+        fs2 = model.add_filesystem(partition, 'ext4')
+        self.assertEqual(
+            partition.usage_labels(),
+            ["to be reformatted as ext4", "not mounted"])
+        model.add_mount(fs2, '/')
+        self.assertEqual(
+            partition.usage_labels(),
+            ["to be reformatted as ext4", "mounted at /"])
 
     def assertActionNotSupported(self, obj, action):
         self.assertNotIn(action, obj.supported_actions)
