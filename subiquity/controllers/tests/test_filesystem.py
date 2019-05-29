@@ -225,3 +225,17 @@ class TestFilesystemController(unittest.TestCase):
         self.assertEqual(
             controller.model.grub_install_device,
             disk2.partitions()[0])
+
+    def test_mounting_partition_makes_boot_disk(self):
+        controller = make_controller(Bootloader.UEFI)
+        disk1 = make_disk(controller.model, preserve=True)
+        disk1p1 = controller.model.add_partition(
+            disk1, size=512 << 20, flag="boot")
+        disk1p1.preserve = True
+        disk1p2 = controller.model.add_partition(
+            disk1, size=disk1.free_for_partitions)
+        disk1p2.preserve = True
+        controller.partition_disk_handler(
+            disk1, disk1p2, {'fstype': 'ext4', 'mount': '/'})
+        efi_mnt = controller.model._mount_for_path("/boot/efi")
+        self.assertEqual(efi_mnt.device.volume, disk1p1)

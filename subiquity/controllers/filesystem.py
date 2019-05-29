@@ -258,6 +258,11 @@ class FilesystemController(BaseController):
         if spec.get('mount') is None:
             return
         mount = self.model.add_mount(fs, spec['mount'])
+        if self.model.needs_bootloader_partition():
+            vol = fs.volume
+            if vol.type == "partition" and vol.device.type == "disk":
+                if vol.device._can_be_boot_disk():
+                    self.make_boot_disk(vol.device)
         return mount
 
     def delete_mount(self, mount):
