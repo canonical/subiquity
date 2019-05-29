@@ -484,21 +484,47 @@ class FilesystemController(BaseController):
 
     def make_boot_disk(self, new_boot_disk):
         boot_partition = None
-        for disk in self.model.all_disks():
-            for part in disk.partitions():
-                if part.flag in ("bios_grub", "boot", "prep"):
-                    boot_partition = part
+        if self.model.bootloader == Bootloader.BIOS:
+            install_dev = self.model.grub_install_device
+            if install_dev:
+                boot_partition = install_dev._potential_boot_partition()
+        elif self.model.bootloader == Bootloader.UEFI:
+            mount = self.model._mount_for_path("/boot/efi")
+            if mount is not None:
+                boot_partition = mount.device.volume
+        elif self.model.bootloader == Bootloader.PREP:
+            boot_partition = self.model.grub_install_device
         if boot_partition is not None:
-            boot_disk = boot_partition.device
-            full = boot_disk.free_for_partitions == 0
-            self.delete_partition(boot_partition)
-            if full:
-                largest_part = max(
-                    boot_disk.partitions(), key=lambda p: p.size)
-                largest_part.size += boot_partition.size
-            if new_boot_disk.free_for_partitions < boot_partition.size:
-                largest_part = max(
-                    new_boot_disk.partitions(), key=lambda p: p.size)
-                largest_part.size -= (
-                    boot_partition.size - new_boot_disk.free_for_partitions)
-        self._create_boot_partition(new_boot_disk)
+            if boot_partition.preserve:
+                if self.model.bootloader == Bootloader.PREP:
+                    boot_partition.wipe = None
+                elif self.model.bootloader == Bootloader.UEFI:
+                    self.delete_mount(boot_partition.fs().mount())
+            else:
+                boot_disk = boot_partition.device
+                full = boot_disk.free_for_partitions == 0
+                self.delete_partition(boot_partition)
+                if full:
+                    largest_part = max(
+                        boot_disk.partitions(), key=lambda p: p.size)
+                    largest_part.size += boot_partition.size
+                if new_boot_disk.free_for_partitions < boot_partition.size:
+                    largest_part = max(
+                        new_boot_disk.partitions(), key=lambda p: p.size)
+                    largest_part.size -= (
+                        boot_partition.size -
+                        new_boot_disk.free_for_partitions)
+        if new_boot_disk._has_preexisting_partition():
+            if self.model.bootloader == Bootloader.BIOS:
+                self.model.grub_install_device = new_boot_disk
+            elif self.model.bootloader == Bootloader.UEFI:
+                part = new_boot_disk._potential_boot_partition()
+                if part.fs() is None:
+                    self.model.add_filesystem(part, 'fat32')
+                self.model.add_mount(part.fs(), '/boot/efi')
+            elif self.model.bootloader == Bootloader.PREP:
+                part = new_boot_disk._potential_boot_partition()
+                part.wipe = 'zero'
+                self.model.grub_install_device = part
+        else:
+            self._create_boot_partition(new_boot_disk)
