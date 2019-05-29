@@ -624,7 +624,17 @@ class Disk(_Device):
                 return False
         return self._fs is None and self._constructed_device is None
 
-    ok_for_raid = ok_for_lvm_vg = _can_FORMAT
+    @property
+    def ok_for_raid(self):
+        if self._fs is not None:
+            return False
+        if self._constructed_device is not None:
+            return False
+        if len(self._partitions) > 0:
+            return False
+        return True
+
+    ok_for_lvm_vg = ok_for_raid
 
 
 @fsobj("partition")
@@ -754,9 +764,9 @@ class Raid(_Device):
     def ok_for_raid(self):
         if self._fs is not None:
             return False
-        if len(self._partitions) > 0:
-            return False
         if self._constructed_device is not None:
+            return False
+        if len(self._partitions) > 0:
             return False
         return True
 

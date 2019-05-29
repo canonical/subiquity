@@ -180,6 +180,62 @@ class TestFilesystemModel(unittest.TestCase):
         vg = model.add_volgroup('vg-0', {dm_crypt})
         self.assertEqual(vg.annotations, ['encrypted'])
 
+    def _test_ok_for_xxx(self, model, make_new_device, attr,
+                         test_partitions=True):
+        # Newly formatted devs are ok_for_raid
+        dev1 = make_new_device()
+        self.assertTrue(getattr(dev1, attr))
+        # A freshly formatted dev is not ok_for_raid
+        dev2 = make_new_device()
+        model.add_filesystem(dev2, 'ext4')
+        self.assertFalse(getattr(dev2, attr))
+        if test_partitions:
+            # A device with a partition is not ok_for_raid
+            dev3 = make_new_device()
+            model.add_partition(dev3, size=dev3.free_for_partitions)
+            self.assertFalse(getattr(dev3, attr))
+
+    def test_disk_ok_for_xxx(self):
+        model = make_model()
+        self._test_ok_for_xxx(
+            model, lambda: make_disk(model), "ok_for_raid")
+        self._test_ok_for_xxx(
+            model, lambda: make_disk(model), "ok_for_lvm_vg")
+
+    def test_partition_ok_for_xxx(self):
+        model = make_model()
+
+        def make_new_device():
+            d = make_disk(model)
+            return model.add_partition(d, size=d.free_for_partitions//2)
+        self._test_ok_for_xxx(model, make_new_device, "ok_for_raid", False)
+        self._test_ok_for_xxx(model, make_new_device, "ok_for_lvm_vg", False)
+        for flag in 'bios_grub', 'boot', 'prep':
+            # Possibly we should change this to only care about the
+            # flag that matters to the current bootloader.
+            p = make_new_device()
+            p.flag = flag
+            self.assertFalse(p.ok_for_raid)
+            self.assertFalse(p.ok_for_lvm_vg)
+
+    def test_raid_ok_for_xxx(self):
+        model = make_model()
+
+        def make_new_device():
+            return make_raid(model)
+        self._test_ok_for_xxx(model, make_new_device, "ok_for_raid", False)
+        self._test_ok_for_xxx(model, make_new_device, "ok_for_lvm_vg", False)
+
+    def test_vg_ok_for_xxx(self):
+        model, vg = make_model_and_vg()
+        self.assertFalse(vg.ok_for_raid)
+        self.assertFalse(vg.ok_for_lvm_vg)
+
+    def test_lv_ok_for_xxx(self):
+        model, lv = make_model_and_lv()
+        self.assertFalse(lv.ok_for_raid)
+        self.assertFalse(lv.ok_for_lvm_vg)
+
     def assertActionNotSupported(self, obj, action):
         self.assertNotIn(action, obj.supported_actions)
 
