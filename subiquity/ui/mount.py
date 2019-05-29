@@ -58,9 +58,9 @@ class MountSelector(WidgetWrap):
                 opts.append((mnt, False))
         if first_opt is None:
             first_opt = len(opts)
-        opts.append((_('other'), True, OTHER))
+        opts.append((_('Other'), True, OTHER))
         opts.append(('---', False)),
-        opts.append((_('leave unmounted'), True, LEAVE_UNMOUNTED))
+        opts.append((_('Leave unmounted'), True, LEAVE_UNMOUNTED))
         self._selector = Selector(opts, first_opt)
         connect_signal(self._selector, 'select', self._select_mount)
         self._other = _MountEditor()

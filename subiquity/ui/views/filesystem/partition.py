@@ -163,7 +163,8 @@ class PartitionForm(Form):
     def select_fstype(self, sender, fstype):
         if fstype is None:
             fstype = self.existing_fs_type
-        self.mount.enabled = self.model.is_mounted_filesystem(fstype)
+        if getattr(self.device, 'flag', None) != "boot":
+            self.mount.enabled = self.model.is_mounted_filesystem(fstype)
 
     name = LVNameField(_("Name: "))
     size = SizeField()
@@ -234,8 +235,14 @@ boot_partition_description = _(
     "Required bootloader partition\n"
     "\n"
     'This is the ESP / "EFI system partition" required by UEFI. Grub will be '
-    'installed onto this partition, which must be formatted as fat32. The '
-    'only aspect of this partition that can be edited is the size.')
+    'installed onto this partition, which must be formatted as fat32.')
+
+boot_partition_description_size = _(
+    ' The only aspect of this partition that can be edited is the size.')
+
+boot_partition_description_reformat = _(
+    ' You can choose whether to use the existing filesystem on this '
+    'partition or reformat it.')
 
 prep_partition_description = _(
     "Required bootloader partition\n"
@@ -308,11 +315,32 @@ class PartitionStretchy(Stretchy):
 
         if partition is not None:
             if partition.flag == "boot":
-                opts = [Option(("fat32", True))]
-                self.form.fstype.widget.options = opts
-                self.form.fstype.widget.index = 0
-                self.form.mount.enabled = False
-                self.form.fstype.enabled = False
+                if partition.original_fs():
+                    opts = [
+                        Option((
+                            _("Use existing fat32 filesystem"),
+                            True,
+                            None
+                            )),
+                        Option(("---", False)),
+                        Option((
+                                _("Reformat as fresh fat32 filesystem"),
+                                True,
+                                "fat32"
+                            )),
+                        ]
+                    self.form.fstype.widget.options = opts
+                    if partition.fs().preserve:
+                        self.form.fstype.widget.index = 0
+                    else:
+                        self.form.fstype.widget.index = 2
+                    self.form.mount.enabled = False
+                else:
+                    opts = [Option(("fat32", True))]
+                    self.form.fstype.widget.options = opts
+                    self.form.fstype.widget.index = 0
+                    self.form.mount.enabled = False
+                    self.form.fstype.enabled = False
             elif partition.flag in ["bios_grub", "prep"]:
                 self.form.mount.enabled = False
                 self.form.fstype.enabled = False
@@ -328,8 +356,13 @@ class PartitionStretchy(Stretchy):
         focus_index = 0
         if partition is not None:
             if self.partition.flag == "boot":
+                desc = boot_partition_description
+                if self.partition.preserve:
+                    desc += boot_partition_description_reformat
+                else:
+                    desc += boot_partition_description_size
                 rows.extend([
-                    Text(_(boot_partition_description)),
+                    Text(_(desc)),
                     Text(""),
                 ])
             elif self.partition.flag == "bios_grub":
