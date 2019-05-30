@@ -588,7 +588,7 @@ class Disk(_Device):
     serial = attr.ib(default=None)
     path = attr.ib(default=None)
     model = attr.ib(default=None)
-    wipe = attr.ib(default='superblock')
+    wipe = attr.ib(default=None)
     preserve = attr.ib(default=False)
     name = attr.ib(default="")
     grub_device = attr.ib(default=False)
@@ -1192,8 +1192,6 @@ class FilesystemModel(object):
         emitted_ids = set()
 
         def emit(obj):
-            if obj.type == 'disk' and not obj.used:
-                return
             r.append(asdict(obj))
             emitted_ids.add(obj.id)
 

@@ -397,6 +397,8 @@ class FilesystemController(BaseController):
             self.delete(subobj)
 
     def reformat(self, disk):
+        if disk.type == "disk":
+            disk.preserve = False
         self.clear(disk)
         for p in list(disk.partitions()):
             self.delete(p)
@@ -413,6 +415,10 @@ class FilesystemController(BaseController):
             self.delete_filesystem(partition.fs())
             self.create_filesystem(partition, spec)
             return
+
+        if len(disk.partitions()) == 0:
+            if disk.type == "disk":
+                disk.preserve = False
 
         needs_boot = self.model.needs_bootloader_partition()
         log.debug('model needs a bootloader partition? {}'.format(needs_boot))
@@ -534,4 +540,5 @@ class FilesystemController(BaseController):
                 part.wipe = 'zero'
                 self.model.grub_install_device = part
         else:
+            new_boot_disk.preserve = False
             self._create_boot_partition(new_boot_disk)
