@@ -241,14 +241,11 @@ class TestFilesystemModel(unittest.TestCase):
 
     def assertActionPossible(self, obj, action):
         self.assertIn(action, obj.supported_actions)
-        self.assertTrue(obj.action_possible(action))
+        self.assertTrue(obj.action_possible(action)[0])
 
     def assertActionNotPossible(self, obj, action):
         self.assertIn(action, obj.supported_actions)
-        outcome = obj.action_possible(action)
-        if isinstance(outcome, tuple):
-            outcome = outcome[0]
-        self.assertFalse(outcome)
+        self.assertFalse(obj.action_possible(action)[0])
 
     def _test_remove_action(self, model, objects):
         self.assertActionNotPossible(objects[0], DeviceAction.REMOVE)
