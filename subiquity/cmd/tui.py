@@ -110,9 +110,21 @@ def main():
         if opts.snaps_from_examples is None:
             opts.snaps_from_examples = True
     LOGFILE = setup_logger(dir=LOGDIR)
+
     logger = logging.getLogger('subiquity')
     logger.info("Starting SUbiquity v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
+
+    block_log_dir = os.path.join(LOGDIR, "block")
+    os.makedirs(block_log_dir, exist_ok=True)
+    handler = logging.FileHandler(os.path.join(block_log_dir, 'discover.log'))
+    handler.setLevel('DEBUG')
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s %(name)s:%(lineno)d %(message)s"))
+    logging.getLogger('probert').addHandler(handler)
+    handler.addFilter(lambda rec: rec.name != 'probert.network')
+    logging.getLogger('curtin').addHandler(handler)
+    logging.getLogger('block-discover').addHandler(handler)
 
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGQUIT, signal.SIG_IGN)
@@ -140,7 +152,7 @@ def main():
     ui = SubiquityUI()
 
     try:
-        subiquity_interface = Subiquity(ui, opts)
+        subiquity_interface = Subiquity(ui, opts, block_log_dir)
     except ApplicationError as e:
         logger.exception('Failed to load Subiquity interface')
         print(e)

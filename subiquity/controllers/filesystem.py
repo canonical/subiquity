@@ -14,7 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import enum
+import json
 import logging
+import os
 
 from subiquitycore.controller import BaseController
 
@@ -37,6 +39,7 @@ from subiquity.ui.views.filesystem.probing import (
 
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
+block_discover_log = logging.getLogger('block-discover')
 
 BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024    # 1MiB
 PREP_GRUB_SIZE_BYTES = 8 * 1024 * 1024    # 8MiB
@@ -55,6 +58,7 @@ class FilesystemController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
+        self.block_log_dir = common.get('block_log_dir')
         self.model = self.base_model.filesystem
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
@@ -67,6 +71,7 @@ class FilesystemController(BaseController):
         self._probe_state = ProbeState.NOT_STARTED
 
     def start(self):
+        block_discover_log.info("starting probe")
         self._probe_state = ProbeState.PROBING
         self.run_in_bg(self._bg_probe, self._probed)
         self.loop.set_alarm_in(
@@ -77,14 +82,23 @@ class FilesystemController(BaseController):
 
     def _probed(self, fut, restricted=False):
         if not restricted and self._probe_state != ProbeState.PROBING:
-            log.debug("ignoring result %s for timed out probe", fut)
+            block_discover_log.debug(
+                "ignoring result %s for timed out probe", fut)
             return
         try:
             storage = fut.result()
+            if restricted:
+                fname = 'probe-data-restricted.json'
+            else:
+                fname = 'probe-data.json'
+            with open(os.path.join(self.block_log_dir, fname), 'w') as fp:
+                json.dump(storage, fp)
+            self.model.load_probe_data(storage)
         except Exception:
-            log.exception("probing failed restricted=%s", restricted)
+            block_discover_log.exception(
+                "probing failed restricted=%s", restricted)
             if not restricted:
-                log.info("reprobing for blockdev only")
+                block_discover_log.info("reprobing for blockdev only")
                 # Should make a crash file for apport, arrange for it to be
                 # copied onto the installed system and tell user all this
                 # happened!
@@ -94,7 +108,6 @@ class FilesystemController(BaseController):
                 if self.showing:
                     self.default()
         else:
-            self.model.load_probe_data(storage)
             self._probe_state = ProbeState.DONE
             # Should do something here if probing found no devices.
             if self.showing:
