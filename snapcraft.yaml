@@ -26,8 +26,8 @@ parts:
   curtin:
     plugin: python
     source-type: git
-    source: git://git.launchpad.net/curtin
-    source-branch: ubuntu/devel
+    source: git://git.launchpad.net/~mwhudson/curtin
+    source-branch: for-subiquity
     requirements: requirements.txt
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
