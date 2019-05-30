@@ -23,6 +23,7 @@ from subiquity.models.filesystem import (
     Disk,
     FilesystemModel,
     humanize_size,
+    Partition,
     )
 
 
@@ -129,9 +130,19 @@ def make_model_and_disk(bootloader=None):
     return model, make_disk(model)
 
 
+def make_partition(model, device=None, *, size=None, flag=""):
+    if device is None:
+        device = make_disk(model)
+    if size is None:
+        size = device.free_for_partitions//2
+    partition = Partition(m=model, device=device, size=size, flag=flag)
+    model._actions.append(partition)
+    return partition
+
+
 def make_model_and_partition(bootloader=None):
     model, disk = make_model_and_disk(bootloader)
-    return model, model.add_partition(disk, size=disk.free_for_partitions//2)
+    return model, make_partition(model, disk)
 
 
 def make_raid(model):
@@ -192,7 +203,7 @@ class TestFilesystemModel(unittest.TestCase):
         if test_partitions:
             # A device with a partition is not ok_for_raid
             dev3 = make_new_device()
-            model.add_partition(dev3, size=dev3.free_for_partitions)
+            make_partition(model, dev3)
             self.assertFalse(getattr(dev3, attr))
 
     def test_disk_ok_for_xxx(self):
@@ -206,8 +217,7 @@ class TestFilesystemModel(unittest.TestCase):
         model = make_model()
 
         def make_new_device():
-            d = make_disk(model)
-            return model.add_partition(d, size=d.free_for_partitions//2)
+            return make_partition(model)
         self._test_ok_for_xxx(model, make_new_device, "ok_for_raid", False)
         self._test_ok_for_xxx(model, make_new_device, "ok_for_lvm_vg", False)
         for flag in 'bios_grub', 'boot', 'prep':
@@ -274,9 +284,9 @@ class TestFilesystemModel(unittest.TestCase):
     def test_disk_action_PARTITION(self):
         model, disk = make_model_and_disk()
         self.assertActionPossible(disk, DeviceAction.PARTITION)
-        model.add_partition(disk, size=disk.free_for_partitions//2)
+        make_partition(model, disk, size=disk.free_for_partitions//2)
         self.assertActionPossible(disk, DeviceAction.PARTITION)
-        model.add_partition(disk, size=disk.free_for_partitions)
+        make_partition(model, disk, size=disk.free_for_partitions)
         self.assertActionNotPossible(disk, DeviceAction.PARTITION)
 
     def test_disk_action_CREATE_LV(self):
@@ -286,7 +296,7 @@ class TestFilesystemModel(unittest.TestCase):
     def test_disk_action_FORMAT(self):
         model, disk = make_model_and_disk()
         self.assertActionPossible(disk, DeviceAction.FORMAT)
-        model.add_partition(disk, size=disk.free_for_partitions//2)
+        make_partition(model, disk)
         self.assertActionNotPossible(disk, DeviceAction.FORMAT)
         disk2 = make_disk(model)
         model.add_volgroup('vg1', {disk2})
@@ -333,23 +343,21 @@ class TestFilesystemModel(unittest.TestCase):
 
     def test_partition_action_REMOVE(self):
         model = make_model()
-        model, disk = make_model_and_disk()
         parts = []
         for i in range(5):
-            parts.append(model.add_partition(
-                disk, size=disk.free_for_partitions//5))
+            parts.append(make_partition(model))
         self._test_remove_action(model, parts)
 
     def test_partition_action_DELETE(self):
-        model, disk = make_model_and_disk()
-        part1 = model.add_partition(disk, size=disk.free_for_partitions//2)
+        model = make_model()
+        part1 = make_partition(model)
         self.assertActionPossible(part1, DeviceAction.DELETE)
         fs = model.add_filesystem(part1, 'ext4')
         self.assertActionPossible(part1, DeviceAction.DELETE)
         model.add_mount(fs, '/')
         self.assertActionPossible(part1, DeviceAction.DELETE)
 
-        part2 = model.add_partition(disk, size=disk.free_for_partitions//2)
+        part2 = make_partition(model)
         model.add_volgroup('vg1', {part2})
         self.assertActionNotPossible(part2, DeviceAction.DELETE)
 
@@ -357,8 +365,7 @@ class TestFilesystemModel(unittest.TestCase):
             # Possibly we should change this to only prevent the
             # deletion of a partition with a flag that matters to the
             # current bootloader.
-            part = model.add_partition(
-                disk, size=disk.free_for_partitions//2, flag=flag)
+            part = make_partition(model, flag=flag)
             self.assertActionNotPossible(part, DeviceAction.DELETE)
 
     def test_partition_action_MAKE_BOOT(self):
@@ -376,15 +383,15 @@ class TestFilesystemModel(unittest.TestCase):
         model.add_volgroup('vg1', {raid1})
         self.assertActionNotPossible(raid1, DeviceAction.EDIT)
         raid2 = make_raid(model)
-        model.add_partition(raid2, size=raid2.free_for_partitions//2)
+        make_partition(model, raid2)
         self.assertActionNotPossible(raid2, DeviceAction.EDIT)
 
     def test_raid_action_PARTITION(self):
         model, raid = make_model_and_raid()
         self.assertActionPossible(raid, DeviceAction.PARTITION)
-        model.add_partition(raid, size=raid.free_for_partitions//2)
+        make_partition(model, raid, size=raid.free_for_partitions//2)
         self.assertActionPossible(raid, DeviceAction.PARTITION)
-        model.add_partition(raid, size=raid.free_for_partitions)
+        make_partition(model, raid, size=raid.free_for_partitions)
         self.assertActionNotPossible(raid, DeviceAction.PARTITION)
 
     def test_raid_action_CREATE_LV(self):
@@ -394,7 +401,7 @@ class TestFilesystemModel(unittest.TestCase):
     def test_raid_action_FORMAT(self):
         model, raid = make_model_and_raid()
         self.assertActionPossible(raid, DeviceAction.FORMAT)
-        model.add_partition(raid, size=raid.free_for_partitions//2)
+        make_partition(model, raid)
         self.assertActionNotPossible(raid, DeviceAction.FORMAT)
         raid2 = make_raid(model)
         model.add_volgroup('vg1', {raid2})
@@ -410,7 +417,7 @@ class TestFilesystemModel(unittest.TestCase):
 
         raid1 = make_raid(model)
         self.assertActionPossible(raid1, DeviceAction.DELETE)
-        part = model.add_partition(raid1, size=raid.free_for_partitions//2)
+        part = make_partition(model, raid1)
         self.assertActionPossible(raid1, DeviceAction.DELETE)
         fs = model.add_filesystem(part, 'ext4')
         self.assertActionPossible(raid1, DeviceAction.DELETE)
@@ -439,7 +446,7 @@ class TestFilesystemModel(unittest.TestCase):
     def test_vg_action_EDIT(self):
         model, vg = make_model_and_vg()
         self.assertActionPossible(vg, DeviceAction.EDIT)
-        model.add_partition(vg, size=vg.free_for_partitions//2)
+        model.add_logical_volume(vg, 'lv1', size=vg.free_for_partitions//2)
         self.assertActionNotPossible(vg, DeviceAction.EDIT)
 
     def test_vg_action_PARTITION(self):
@@ -451,7 +458,7 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertActionPossible(vg, DeviceAction.CREATE_LV)
         model.add_logical_volume(vg, 'lv1', size=vg.free_for_partitions//2)
         self.assertActionPossible(vg, DeviceAction.CREATE_LV)
-        model.add_partition(vg, size=vg.free_for_partitions)
+        model.add_logical_volume(vg, 'lv2', size=vg.free_for_partitions)
         self.assertActionNotPossible(vg, DeviceAction.CREATE_LV)
 
     def test_vg_action_FORMAT(self):
