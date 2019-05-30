@@ -533,7 +533,8 @@ class _Device(_Formattable, ABC):
         if self._fs is not None:
             return self._fs._available()
         if self.free_for_partitions > 0:
-            return True
+            if not self._has_preexisting_partition():
+                return True
         for p in self._partitions:
             if p.available():
                 return True
