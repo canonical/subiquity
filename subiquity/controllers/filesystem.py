@@ -285,6 +285,8 @@ class FilesystemController(BaseController):
                 volume.flag = ""
         if spec['fstype'] == "swap":
             self.model.add_mount(fs, "")
+        if spec['fstype'] is None and spec['use_swap']:
+            self.model.add_mount(fs, "")
         self.create_mount(fs, spec)
         return fs
 

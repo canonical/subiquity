@@ -25,6 +25,7 @@ import re
 from urwid import connect_signal, Text
 
 from subiquitycore.ui.form import (
+    BooleanField,
     Form,
     FormField,
     simple_field,
@@ -158,11 +159,21 @@ class PartitionForm(Form):
         if max_size is None:
             self.remove_field('size')
         connect_signal(self.fstype.widget, 'select', self.select_fstype)
+        self.form_pile = None
         self.select_fstype(None, self.fstype.widget.value)
 
     def select_fstype(self, sender, fstype):
+        show_use = False
         if fstype is None:
+            if self.existing_fs_type == "swap":
+                show_use = True
             fstype = self.existing_fs_type
+        if self.form_pile is not None:
+            for i, (w, o) in enumerate(self.form_pile.contents):
+                if w is self.mount._table and show_use:
+                    self.form_pile.contents[i] = (self.use_swap._table, o)
+                elif w is self.use_swap._table and not show_use:
+                    self.form_pile.contents[i] = (self.mount._table, o)
         if getattr(self.device, 'flag', None) != "boot":
             self.mount.enabled = self.model.is_mounted_filesystem(fstype)
 
@@ -170,6 +181,9 @@ class PartitionForm(Form):
     size = SizeField()
     fstype = FSTypeField(_("Format:"))
     mount = MountField(_("Mount:"))
+    use_swap = BooleanField(
+        _("Use as swap"),
+        help=_("Use this swap partition in the installed system."))
 
     def clean_size(self, val):
         if not val:
@@ -219,6 +233,16 @@ class PartitionForm(Form):
         if dev is not None:
             return _("{} is already mounted at {}.").format(
                 dev.label.title(), mount)
+
+    def as_rows(self):
+        r = super().as_rows()
+        if self.existing_fs_type == "swap":
+            exclude = self.mount._table
+        else:
+            exclude = self.use_swap._table
+        i = r.index(exclude)
+        del r[i-1:i+1]
+        return r
 
 
 bios_grub_partition_description = _(
@@ -279,6 +303,8 @@ class PartitionStretchy(Stretchy):
             if fs is not None:
                 if fs.preserve:
                     initial['fstype'] = None
+                    if fs.fstype == "swap":
+                        initial['use_swap'] = fs.mount() is not None
                 elif partition.flag != "boot":
                     initial['fstype'] = fs.fstype
                 if self.model.is_mounted_filesystem(fs.fstype):
@@ -378,8 +404,9 @@ class PartitionStretchy(Stretchy):
                 ])
                 focus_index = 2
         rows.extend(self.form.as_rows())
+        self.form.form_pile = Pile(rows)
         widgets = [
-            Pile(rows),
+            self.form.form_pile,
             Text(""),
             self.form.buttons,
         ]
@@ -431,6 +458,8 @@ class FormatEntireStretchy(Stretchy):
         if fs is not None:
             if fs.preserve:
                 initial['fstype'] = None
+                if fs.fstype == "swap":
+                    initial['use_swap'] = fs.mount() is not None
             else:
                 initial['fstype'] = fs.fstype
             initial['fstype'] = fs.fstype
@@ -455,8 +484,9 @@ class FormatEntireStretchy(Stretchy):
                 Text(""),
                 ]
         rows.extend(self.form.as_rows())
+        self.form.form_pile = Pile(rows)
         widgets = [
-            Pile(rows),
+            self.form.form_pile,
             Text(""),
             self.form.buttons,
         ]

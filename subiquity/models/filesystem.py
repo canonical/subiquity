@@ -430,8 +430,11 @@ class _Formattable(ABC):
                     r.append(_("mounted at {path}").format(path=m.path))
                 else:
                     r.append(_("not mounted"))
-            elif fs.preserve and fs.mount() is not None:
-                r.append(_("unused"))
+            elif fs.preserve:
+                if fs.mount() is None:
+                    r.append(_("unused"))
+                else:
+                    r.append(_("used"))
             return r
         else:
             return [_("unused")]
@@ -1167,7 +1170,15 @@ class FilesystemModel(object):
                 break
             exclusions = next_exclusions
 
-        return [o for o in objs if o not in exclusions]
+        objs = [o for o in objs if o not in exclusions]
+
+        for o in objs:
+            if o.type == "partition" and o.flag == "swap" and o._fs is None:
+                fs = Filesystem(m=self, fstype="swap", volume=o, preserve=True)
+                o._original_fs = fs
+                objs.append(fs)
+
+        return objs
 
     def _render_actions(self):
         # The curtin storage config has the constraint that an action must be
