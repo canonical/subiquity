@@ -69,6 +69,7 @@ from subiquity.models.filesystem import (
 
 from .delete import ConfirmDeleteStretchy
 from .disk_info import DiskInfoStretchy
+from .helpers import summarize_device
 from .lvm import VolGroupStretchy
 from .partition import PartitionStretchy, FormatEntireStretchy
 from .raid import RaidStretchy
@@ -276,10 +277,9 @@ class DeviceList(WidgetWrap):
         self.show_available = show_available
         self.table = TablePile([],  spacing=2, colspecs={
             0: ColSpec(rpad=1),
-            1: ColSpec(can_shrink=True),
-            2: ColSpec(min_width=9),
-            3: ColSpec(rpad=1),
-            4: ColSpec(rpad=1),
+            2: ColSpec(can_shrink=True),
+            4: ColSpec(min_width=9),
+            5: ColSpec(rpad=1),
         })
         if show_available:
             text = _("No available devices")
@@ -378,106 +378,44 @@ class DeviceList(WidgetWrap):
         log.debug('FileSystemView: building device list')
         rows = []
 
-        def _usage_label(obj):
-            cd = obj.constructed_device()
-            if cd is not None:
-                return _("{component_name} of {name}").format(
-                    component_name=cd.component_name, name=cd.name)
-            fs = obj.fs()
-            if fs is not None:
-                if not self.parent.model.is_mounted_filesystem(fs.fstype):
-                    return _("formatted as {fstype}").format(
-                        fstype=fs.fstype)
-                else:
-                    m = fs.mount()
-                    if m:
-                        return _(
-                            "formatted as {fstype}, mounted at {path}").format(
-                                fstype=fs.fstype, path=m.path)
-                    else:
-                        return _("formatted as {fstype}, not mounted").format(
-                            fstype=fs.fstype)
-            else:
-                return _("unused")
-
-        rows.append(TableRow([Color.info_minor(heading) for heading in [
-            Text(" "),
-            Text(_("DEVICE")),
-            Text(_("SIZE"), align="center"),
+        rows.append(Color.info_minor(TableRow([
+            Text(""),
+            (2, Text(_("DEVICE"))),
             Text(_("TYPE")),
-            Text(" "),
-            Text(" "),
-        ]]))
+            Text(_("SIZE"), align="center"),
+            Text(""),
+            Text(""),
+        ])))
         for device in devices:
-            menu = self._action_menu_for_device(device)
-            label = device.label
-            if device.annotations:
-                label = "{} ({})".format(label, ", ".join(device.annotations))
-            cells = [
-                Text("["),
-                Text(label),
-                Text("{:>9}".format(humanize_size(device.size))),
-                Text(device.desc()),
-                menu,
-                Text("]"),
-            ]
-            row = make_action_menu_row(cells, menu)
-            rows.append(row)
-
-            if not device.partitions():
+            for obj, cells in summarize_device(
+                    device,
+                    lambda part: part.available() == self.show_available):
+                if obj is not None:
+                    menu = self._action_menu_for_device(obj)
+                else:
+                    menu = Text("")
+                if obj is device:
+                    start, end = '[', ']'
+                else:
+                    start, end = '', ''
+                cells = [Text(start)] + cells + [menu, Text(end)]
+                if obj is not None:
+                    rows.append(make_action_menu_row(cells, menu))
+                else:
+                    rows.append(TableRow(cells))
+            if (self.show_available
+                    and device.used > 0
+                    and device.free_for_partitions > 0):
+                free = humanize_size(device.free_for_partitions)
                 rows.append(TableRow([
                     Text(""),
-                    (3, Text("  " + _usage_label(device))),
+                    (3, Color.info_minor(Text(_("free space")))),
+                    Text(free, align="right"),
                     Text(""),
                     Text(""),
                 ]))
-            else:
-                for part in device.partitions():
-                    if part.available() != self.show_available:
-                        continue
-                    menu = self._action_menu_for_device(part)
-                    part_size = "{:>9} ({}%)".format(
-                        humanize_size(part.size),
-                        int(100 * part.size / device.size))
-                    part_label = part.short_label
-                    if part.annotations:
-                        part_label = "{} ({})".format(
-                            part_label, ", ".join(part.annotations))
-                    cells = [
-                        Text("["),
-                        Text("  " + part_label),
-                        (2, Text(part_size)),
-                        menu,
-                        Text("]"),
-                    ]
-                    row = make_action_menu_row(cells, menu, cursor_x=4)
-                    rows.append(row)
-                    if part.flag in ["bios_grub", "prep"]:
-                        continue
-                    rows.append(TableRow([
-                        Text(""),
-                        (3, Text("    " + _usage_label(part))),
-                        Text(""),
-                        Text(""),
-                    ]))
-                if (self.show_available
-                        and device.used > 0
-                        and device.free_for_partitions > 0):
-                    size = device.size
-                    free = device.free_for_partitions
-                    percent = str(int(100 * free / size))
-                    if percent == "0":
-                        percent = "%.2f" % (100 * free / size,)
-                    size_text = "{:>9} ({}%)".format(
-                        humanize_size(free), percent)
-                    rows.append(TableRow([
-                        Text(""),
-                        Text("  " + _("free space")),
-                        (2, Text(size_text)),
-                        Text(""),
-                        Text(""),
-                    ]))
-        self.table.set_contents(rows)
+            rows.append(TableRow([Text("")]))
+        self.table.set_contents(rows[:-1])
         if self.table._w.focus_position >= len(rows):
             self.table._w.focus_position = len(rows) - 1
         while not self.table._w.focus.selectable():

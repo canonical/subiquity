@@ -34,6 +34,7 @@ from subiquitycore.ui.utils import (
     button_pile,
     ClickableIcon,
     Color,
+    CursorOverride,
     screen,
     )
 from subiquitycore.view import BaseView
@@ -41,8 +42,9 @@ from subiquitycore.view import BaseView
 from subiquity.models.filesystem import (
     DeviceAction,
     dehumanize_size,
-    humanize_size,
     )
+
+from .helpers import summarize_device
 
 log = logging.getLogger("subiquity.ui.views.filesystem.guided")
 
@@ -100,6 +102,10 @@ It can easily be enlarged with standard LVM command line tools."""),
 }
 
 
+def _wrap_button_row(row):
+    return CursorOverride(Color.done_button(row), 2)
+
+
 class GuidedDiskSelectionView(BaseView):
 
     title = _("Filesystem setup")
@@ -112,25 +118,29 @@ class GuidedDiskSelectionView(BaseView):
         cancel = cancel_btn(_("Cancel"), on_press=self.cancel)
         rows = []
         for disk in self.model.all_disks():
-            if disk.size >= dehumanize_size("6G"):
-                disk_btn = ClickableIcon(disk.label)
-                connect_signal(
-                    disk_btn, 'click', self.choose_disk, disk.path)
-                attr = Color.done_button
-            else:
-                disk_btn = Text("  "+disk.label)
-                attr = Color.info_minor
-            rows.append(attr(TableRow([
-                Text('['),
-                disk_btn,
-                Text(humanize_size(disk.size), align='right'),
-                Text('\N{BLACK RIGHT-POINTING SMALL TRIANGLE}'),
-                Text(']'),
-                ])))
+            for obj, cells in summarize_device(disk):
+                wrap = Color.info_minor
+                if obj is disk:
+                    start, end = '[', ']'
+                    arrow = '\N{BLACK RIGHT-POINTING SMALL TRIANGLE}'
+                    if disk.size >= dehumanize_size("6G"):
+                        arrow = ClickableIcon(arrow)
+                        connect_signal(
+                            arrow, 'click', self.choose_disk, disk.path)
+                        wrap = _wrap_button_row
+                else:
+                    start, arrow, end = '', '', ''
+                if isinstance(arrow, str):
+                    arrow = Text(arrow)
+                rows.append(wrap(TableRow(
+                    [Text(start)] + cells + [arrow, Text(end)])))
+            rows.append(TableRow([Text("")]))
         super().__init__(screen(
-            TableListBox(rows, spacing=1, colspecs={
-                1: ColSpec(can_shrink=True, min_width=20, rpad=2),
-                2: ColSpec(min_width=9),
+            TableListBox(rows[:-1], spacing=2, colspecs={
+                0: ColSpec(rpad=1),
+                2: ColSpec(can_shrink=True),
+                4: ColSpec(min_width=9),
+                5: ColSpec(rpad=1),
                 }, align='center'),
             button_pile([cancel]),
             focus_buttons=False,

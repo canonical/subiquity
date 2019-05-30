@@ -246,6 +246,16 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertFalse(lv.ok_for_raid)
         self.assertFalse(lv.ok_for_lvm_vg)
 
+    def test_partition_usage_labels(self):
+        model, partition = make_model_and_partition()
+        self.assertEqual(partition.usage_labels(), ["unused"])
+        fs = model.add_filesystem(partition, 'ext4')
+        self.assertEqual(
+            partition.usage_labels(), ["formatted as ext4", "not mounted"])
+        model.add_mount(fs, '/')
+        self.assertEqual(
+            partition.usage_labels(), ["formatted as ext4", "mounted at /"])
+
     def assertActionNotSupported(self, obj, action):
         self.assertNotIn(action, obj.supported_actions)
 

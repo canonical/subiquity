@@ -183,7 +183,8 @@ class TableRow(WidgetWrap):
                 widths[2*user_indices[0]] = widget_width(cell)
         return widths
 
-    def adjust_for_spanning_cells(self, unpacked_user_indices, widths):
+    def adjust_for_spanning_cells(self, unpacked_user_indices,
+                                  no_inherent_size, widths):
         """Make sure columns are wide enough for cells with colspan > 1.
 
         This very roughly follows the approach in
@@ -192,13 +193,17 @@ class TableRow(WidgetWrap):
         for user_indices, cell in self._user_indices_cells():
             if set(user_indices) & unpacked_user_indices:
                 continue
-            user_indices = [
-                user_i for user_i in user_indices if widths[2*user_i] > 0]
             if len(user_indices) <= 1:
                 continue
             cur_width = _width(widths, user_indices)
             cell_width = widget_width(cell)
             if cur_width < cell_width:
+                # If any of the spanned columns have no inherent size (i.e. all
+                # the cells in that column also span another column), only
+                # widen those columns.
+                unsized = set(user_indices) & no_inherent_size
+                if unsized:
+                    user_indices = unsized
                 # Attempt to widen each column by about the same amount.
                 # But widen the first few columns by more if that's
                 # whats needed.
@@ -249,6 +254,13 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, default_spacing):
     if unpacked_user_indices:
         colcount = max(colcount, max(unpacked_user_indices) + 1)
 
+    no_inherent_size = set()
+    for user_i in range(colcount):
+        if user_i not in unpacked_user_indices \
+          and widths.get(2*user_i, 0) == 0:
+            no_inherent_size.add(user_i)
+            widths[2*user_i] = 0
+
     # Set the widths of the spacing columns.
     widths.update(
         {2*user_i+1: default_spacing for user_i in range(colcount-1)})
@@ -262,7 +274,7 @@ def _compute_widths_for_size(maxcol, table_rows, colspecs, default_spacing):
     # columns.
     for row in table_rows:
         row.base_widget.adjust_for_spanning_cells(
-            unpacked_user_indices, widths)
+            unpacked_user_indices, no_inherent_size, widths)
 
     # log.debug("%s", (maxcol, widths.items(),
     #                  sum(widths.values()), unpacked_user_indices))
