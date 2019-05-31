@@ -1122,6 +1122,27 @@ class FilesystemModel(object):
         self.grub_install_device = None
 
     def _actions_from_config(self, config, blockdevs):
+        """Convert curtin storage config into action instances.
+
+        curtin represents storage "actions" as defined in
+        https://curtin.readthedocs.io/en/latest/topics/storage.html.  We
+        convert each action (that we know about) into an instance of
+        Disk, Partition, RAID, etc (unknown actions, e.g. bcache, are
+        just ignored).
+
+        We also filter out anything that can be reached from a currently
+        mounted device. The motivation here is only to exclude the media
+        subiquity is mounted from, so this might be a bit excessive but
+        hey it works.
+
+        Perhaps surprisingly the order of the returned actions matters.
+        The devices are presented in the filesystem view in the reverse
+        of the order they appear in _actions, which means that e.g. a
+        RAID appears higher up the list than the disks is is composed
+        of. This is quite important as it makes "unpeeling" existing
+        compound structures easy, you just delete the top device until
+        you only have disks left.
+        """
         byid = {}
         objs = []
         exclusions = set()
@@ -1140,12 +1161,18 @@ class FilesystemModel(object):
                 if n not in action:
                     continue
                 v = action[n]
-                if f.metadata.get('ref', False):
-                    kw[n] = byid[v]
-                elif f.metadata.get('reflist', False):
-                    kw[n] = [byid[id] for id in v]
-                else:
-                    kw[n] = v
+                try:
+                    if f.metadata.get('ref', False):
+                        kw[n] = byid[v]
+                    elif f.metadata.get('reflist', False):
+                        kw[n] = [byid[id] for id in v]
+                    else:
+                        kw[n] = v
+                except KeyError:
+                    # If a dependency of the current action has been
+                    # ignored, we need to ignore the current action too
+                    # (e.g. a bcache's filesystem).
+                    continue
             if kw['type'] == 'disk':
                 path = kw['path']
                 kw['info'] = StorageInfo({path: blockdevs[path]})
@@ -1155,10 +1182,6 @@ class FilesystemModel(object):
                 obj.volume._original_fs = obj
             objs.append(obj)
 
-        # We filter out anything that can be reached from a currently
-        # mounted device. The motivation here is only to exclude the
-        # media subiquity is mounted from, so this might be a bit
-        # excessive but hey it works.
         while True:
             log.debug("exclusions %s", {e.id for e in exclusions})
             next_exclusions = exclusions.copy()
