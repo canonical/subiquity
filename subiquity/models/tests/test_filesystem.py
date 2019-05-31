@@ -359,17 +359,25 @@ class TestFilesystemModel(unittest.TestCase):
 
         disk1 = make_disk(model, preserve=False)
         self.assertActionNotPossible(disk1, DeviceAction.REFORMAT)
+        disk1p1 = make_partition(model, disk1, preserve=False)
+        self.assertActionPossible(disk1, DeviceAction.REFORMAT)
+        model.add_volgroup('vg0', {disk1p1})
+        self.assertActionNotPossible(disk1, DeviceAction.REFORMAT)
 
         disk2 = make_disk(model, preserve=True)
         self.assertActionNotPossible(disk2, DeviceAction.REFORMAT)
         disk2p1 = make_partition(model, disk2, preserve=True)
         self.assertActionPossible(disk2, DeviceAction.REFORMAT)
-        model.add_volgroup('vg0', {disk2p1})
+        model.add_volgroup('vg1', {disk2p1})
         self.assertActionNotPossible(disk2, DeviceAction.REFORMAT)
 
-        disk3 = make_disk(model, preserve=True)
-        model.add_volgroup('vg1', {disk3})
+        disk3 = make_disk(model, preserve=False)
+        model.add_volgroup('vg2', {disk3})
         self.assertActionNotPossible(disk3, DeviceAction.REFORMAT)
+
+        disk4 = make_disk(model, preserve=True)
+        model.add_volgroup('vg2', {disk4})
+        self.assertActionNotPossible(disk4, DeviceAction.REFORMAT)
 
     def test_disk_action_PARTITION(self):
         model, disk = make_model_and_disk()

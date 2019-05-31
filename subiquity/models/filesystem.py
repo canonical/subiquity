@@ -693,8 +693,6 @@ class Disk(_Device):
 
     @property
     def _can_REFORMAT(self):
-        if not self.preserve:
-            return False
         if len(self._partitions) == 0:
             return False
         for p in self._partitions:
