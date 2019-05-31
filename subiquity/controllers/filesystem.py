@@ -288,7 +288,7 @@ class FilesystemController(BaseController):
             fs = volume.original_fs()
             if fs is None:
                 return
-            self.model.readd_filesystem(fs)
+            self.model.re_add_filesystem(fs)
         else:
             fs = self.model.add_filesystem(volume, spec['fstype'])
         if isinstance(volume, Partition):

@@ -1384,7 +1384,7 @@ class FilesystemModel(object):
         self._actions.append(fs)
         return fs
 
-    def readd_filesystem(self, fs):
+    def re_add_filesystem(self, fs):
         _set_backlinks(fs)
         self._actions.append(fs)
 
