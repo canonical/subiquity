@@ -174,7 +174,7 @@ class MountList(WidgetWrap):
         ]
         if len(mountinfos) == 0:
             self.table.set_contents([])
-            self._w = self._no_mounts_content
+            self._w = Padding.push_2(self._no_mounts_content)
             return
         self._w = self.table
         log.debug('FileSystemView: building mount list')
@@ -371,7 +371,7 @@ class DeviceList(WidgetWrap):
                 or (not self.show_available and d.has_unavailable_partition()))
         ]
         if len(devices) == 0:
-            self._w = self._no_devices_content
+            self._w = Padding.push_2(self._no_devices_content)
             self.table.table_rows = []
             return
         self._w = self.table
@@ -448,19 +448,19 @@ class FilesystemView(BaseView):
         body = [
             Text(_("FILE SYSTEM SUMMARY")),
             Text(""),
-            Padding.push_2(self.mount_list),
+            self.mount_list,
             Text(""),
             Text(""),
             Text(_("AVAILABLE DEVICES")),
             Text(""),
-            Padding.push_2(self.avail_list),
+            self.avail_list,
             Text(""),
-            Padding.push_2(bp),
+            bp,
             Text(""),
             Text(""),
             Text(_("USED DEVICES")),
             Text(""),
-            Padding.push_2(self.used_list),
+            self.used_list,
             Text(""),
             ]
 
