@@ -423,7 +423,7 @@ class ScrollBarListBox(urwid.WidgetDecoration):
     bg = urwid.SolidFill(" ")
     bot = urwid.SolidFill("\N{BLACK DOWN-POINTING SMALL TRIANGLE}")
 
-    def __init__(self, lb):
+    def __init__(self, lb, *, always_scroll=False):
         pile = Pile([
                 ('fixed',  1, self.top),
                 ('weight', 1, self.bg),
@@ -432,19 +432,23 @@ class ScrollBarListBox(urwid.WidgetDecoration):
                 ('fixed',  1, self.bot),
             ])
         self.bar = urwid.AttrMap(pile, 'scrollbar', 'scrollbar focus')
+        self._always_scroll = always_scroll
         super().__init__(lb)
+
+    def _scroll(self, size, focus):
+        if self._always_scroll:
+            return True
+        return len(self.original_widget.ends_visible(size, focus)) == 2
 
     def keypress(self, size, key):
         lb = self.original_widget
-        visible = lb.ends_visible(size, True)
-        if len(visible) != 2:
+        if not self._scroll(size, True):
             size = (size[0]-1, size[1])
         return lb.keypress(size, key)
 
     def render(self, size, focus=False):
         lb = self.original_widget
-        visible = lb.ends_visible(size, focus)
-        if len(visible) == 2:
+        if self._scroll(size, focus):
             return lb.render(size, focus)
         else:
             # This implementation assumes that the number of rows is
@@ -453,6 +457,7 @@ class ScrollBarListBox(urwid.WidgetDecoration):
             maxcol, maxrow = size
 
             offset, inset = lb.get_focus_offset_inset((maxcol - 1, maxrow))
+            visible = lb.ends_visible((maxcol - 1, maxrow), focus)
 
             seen_focus = False
             height = height_before_focus = 0
@@ -515,14 +520,16 @@ class ScrollBarListBox(urwid.WidgetDecoration):
             ])
 
 
-def ListBox(body=None):
+def ListBox(body=None, *, always_scroll=False):
     # urwid.ListBox converts an arbitrary sequence argument to a
     # PollingListWalker, which doesn't work with our code.
     if body is None:
         body = []
     if body is getattr(body, 'get_focus', None) is None:
         body = urwid.SimpleFocusListWalker(body)
-    return ScrollBarListBox(FocusTrackingListBox(body))
+    return ScrollBarListBox(
+        FocusTrackingListBox(body),
+        always_scroll=always_scroll)
 
 
 get_delegate = operator.attrgetter("_wrapped_widget")
