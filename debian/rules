@@ -18,21 +18,22 @@ override_dh_auto_clean:
 
 override_dh_install:
 	rm -rf $(PYBUILD_DESTDIR)usr/share/subiquity/subiquity-0.0.5.egg-info
-	dh_install --fail-missing
+	dh_install
+	dh_missing --fail-missing
 
 override_dh_python3:
 	dh_python3 --ignore-shebangs
 
 override_dh_installinit:
-	dh_installinit --no-start --name=console-conf@
-	dh_installinit --no-start --name=serial-console-conf@
+	dh_installsystemd --no-start --name=console-conf@
+	dh_installsystemd --no-start --name=serial-console-conf@
 	mkdir $(CURDIR)/debian/console-conf/lib/systemd/system/getty@.service.d/
 	install -m 0644 $(CURDIR)/debian/console-conf.conf $(CURDIR)/debian/console-conf/lib/systemd/system/getty@.service.d/
 	mkdir $(CURDIR)/debian/console-conf/lib/systemd/system/serial-getty@.service.d/
 	install -m 0644 $(CURDIR)/debian/console-conf-serial.conf $(CURDIR)/debian/console-conf/lib/systemd/system/serial-getty@.service.d/
-	dh_installinit --no-start --name=subiquity
-	dh_installinit --no-start --name=serial-subiquity@
-	dh_installinit --no-start --name=subiquity-debug@
+	dh_installsystemd --no-start --name=subiquity
+	dh_installsystemd --no-start --name=serial-subiquity@
+	dh_installsystemd --no-start --name=subiquity-debug@
 	mkdir $(CURDIR)/debian/subiquity/lib/systemd/system/getty@tty1.service.d/
 	install -m 0644 $(CURDIR)/debian/subiquity-tty1.conf $(CURDIR)/debian/subiquity/lib/systemd/system/getty@tty1.service.d/
 	mkdir $(CURDIR)/debian/subiquity/lib/systemd/system/getty@.service.d/
