@@ -1,10 +1,9 @@
 Source: subiquity
 Section: admin
-Priority: extra
+Priority: optional
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
-Build-Depends: debhelper (>= 9),
+Build-Depends: debhelper (>= 9.20160709),
                dh-python,
-               dh-systemd,
                git,
                iso-codes,
                python3,
@@ -12,11 +11,11 @@ Build-Depends: debhelper (>= 9),
                python3-distutils-extra,
                python3-setuptools,
                python3-yaml
-Standards-Version: 3.9.5
+Standards-Version: 4.3.0
 Homepage: https://github.com/CanonicalLtd/subiquity
-X-Python3-Version: >= 3.3
 Vcs-Browser: https://github.com/CanonicalLtd/subiquity
 Vcs-Git: https://github.com/CanonicalLtd/subiquity.git
+XS-Ubuntu-Use-Langpack: yes
 
 Package: subiquity
 Architecture: all

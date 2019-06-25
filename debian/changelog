@@ -1,8 +1,8 @@
-subiquity (0.0.30) UNRELEASED; urgency=medium
+subiquity (19.06.1) eoan; urgency=medium
 
-  * Losts of new things.
+  * Lots of new things.
 
- -- Michael Hudson-Doyle <mwhudson@debian.org>  Fri, 16 Mar 2018 14:54:48 +1300
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Tue, 25 Jun 2019 10:14:53 +0100
 
 subiquity (0.0.29) zesty; urgency=medium
 
