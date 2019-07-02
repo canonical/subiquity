@@ -96,3 +96,66 @@ class ConfirmDeleteStretchy(Stretchy):
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()
+
+
+class ConfirmReformatStretchy(Stretchy):
+
+    def __init__(self, parent, obj):
+        self.parent = parent
+        self.obj = obj
+
+        fs = obj.fs()
+        if fs is not None:
+            title = _("Remove filesystem from {}").format(obj.desc())
+            lines = [
+                _(
+                    "Do you really want to remove the existing filesystem "
+                    "from {}?"
+                    ).format(obj.label),
+                "",
+            ]
+            m = fs.mount()
+            if m is not None:
+                lines.append(_(
+                    "It is formatted as {fstype} and mounted at "
+                    "{path}").format(
+                        fstype=fs.fstype,
+                        path=m.path))
+            else:
+                lines.append(_(
+                    "It is formatted as {fstype} and not mounted.").format(
+                        fstype=fs.fstype))
+        else:
+            if obj.type == "lvm_volgroup":
+                things = _("logical volumes")
+            else:
+                things = _("partitions")
+            title = _("Remove all {things} from {obj}").format(
+                things=things, obj=obj.desc())
+            lines = [
+                _(
+                    "Do you really want to remove all {things} from "
+                    "{obj}?").format(
+                    things=things, obj=obj.label),
+                "",
+            ]
+            # XXX summarize partitions here?
+
+        delete_btn = danger_btn(label=_("Reformat"), on_press=self.confirm)
+        widgets = [
+            Text("\n".join(lines)),
+            Text(""),
+            button_pile([
+                delete_btn,
+                other_btn(label=_("Cancel"), on_press=self.cancel),
+                ]),
+        ]
+        super().__init__(title, widgets, 0, 2)
+
+    def confirm(self, sender=None):
+        self.parent.controller.reformat(self.obj)
+        self.parent.refresh_model_inputs()
+        self.parent.remove_overlay()
+
+    def cancel(self, sender=None):
+        self.parent.remove_overlay()

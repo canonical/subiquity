@@ -17,15 +17,17 @@ from abc import ABC, abstractmethod
 import attr
 import collections
 import enum
-import glob
+import itertools
 import logging
 import math
 import os
 import pathlib
 import platform
-import sys
 
 from curtin.util import human2bytes
+from curtin import storage_config
+
+from probert.storage import StorageInfo
 
 log = logging.getLogger('subiquity.models.filesystem')
 
@@ -70,6 +72,9 @@ def _remove_backlinks(obj):
                 setattr(vv, backlink, None)
 
 
+_type_to_cls = {}
+
+
 def fsobj(typ):
     def wrapper(c):
         c.__attrs_post_init__ = _set_backlinks
@@ -77,6 +82,7 @@ def fsobj(typ):
         c.id = attributes.idfield(typ)
         c._m = attr.ib(repr=None, default=None)
         c = attr.s(cmp=False)(c)
+        _type_to_cls[typ] = c
         return c
     return wrapper
 
@@ -308,6 +314,7 @@ def asdict(inst):
 class DeviceAction(enum.Enum):
     INFO = _("Info")
     EDIT = _("Edit")
+    REFORMAT = _("Reformat")
     PARTITION = _("Add Partition")
     CREATE_LV = _("Create Logical Volume")
     FORMAT = _("Format")
@@ -332,6 +339,12 @@ def _generic_can_REMOVE(obj):
     cd = obj.constructed_device()
     if cd is None:
         return False
+    if cd.preserve:
+        return _("Cannot remove selflabel from pre-exsting {cdtype} "
+                 "{cdlabel}").format(
+                    selflabel=obj.label,
+                    cdtype=cd.desc(),
+                    cdlabel=cd.label)
     if isinstance(cd, Raid):
         if obj in cd.spare_devices:
             return True
@@ -379,10 +392,17 @@ class _Formattable(ABC):
 
     @property
     def annotations(self):
-        return []
+        preserve = getattr(self, 'preserve', None)
+        if preserve is None:
+            return []
+        elif preserve:
+            return [_("existing")]
+        else:
+            return [_("new")]
 
     # Filesystem
     _fs = attributes.backlink()
+    _original_fs = attributes.backlink()
     # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
     _constructed_device = attributes.backlink()
 
@@ -397,13 +417,24 @@ class _Formattable(ABC):
                 ]
         fs = self.fs()
         if fs is not None:
-            r = [_("formatted as {fstype}").format(fstype=fs.fstype)]
+            if fs.preserve:
+                format_desc = _("already formatted as {fstype}")
+            elif self.original_fs() is not None:
+                format_desc = _("to be reformatted as {fstype}")
+            else:
+                format_desc = _("to be formatted as {fstype}")
+            r = [format_desc.format(fstype=fs.fstype)]
             if self._m.is_mounted_filesystem(fs.fstype):
                 m = fs.mount()
                 if m:
                     r.append(_("mounted at {path}").format(path=m.path))
                 else:
                     r.append(_("not mounted"))
+            elif fs.preserve:
+                if fs.mount() is None:
+                    r.append(_("unused"))
+                else:
+                    r.append(_("used"))
             return r
         else:
             return [_("unused")]
@@ -413,6 +444,9 @@ class _Formattable(ABC):
 
     def fs(self):
         return self._fs
+
+    def original_fs(self):
+        return self._original_fs
 
     def constructed_device(self, skip_dm_crypt=True):
         cd = self._constructed_device
@@ -499,7 +533,8 @@ class _Device(_Formattable, ABC):
         if self._fs is not None:
             return self._fs._available()
         if self.free_for_partitions > 0:
-            return True
+            if not self._has_preexisting_partition():
+                return True
         for p in self._partitions:
             if p.available():
                 return True
@@ -510,6 +545,13 @@ class _Device(_Formattable, ABC):
             if not p.available():
                 return True
         return False
+
+    def _has_preexisting_partition(self):
+        for p in self._partitions:
+            if p.preserve:
+                return True
+        else:
+            return False
 
     @property
     def _can_DELETE(self):
@@ -547,20 +589,12 @@ class Disk(_Device):
     serial = attr.ib(default=None)
     path = attr.ib(default=None)
     model = attr.ib(default=None)
-    wipe = attr.ib(default='superblock')
+    wipe = attr.ib(default=None)
     preserve = attr.ib(default=False)
     name = attr.ib(default="")
     grub_device = attr.ib(default=False)
 
     _info = attr.ib(default=None)
-
-    @classmethod
-    def from_info(self, model, info):
-        d = Disk(m=model, info=info)
-        d.serial = info.serial
-        d.path = info.name
-        d.model = info.model
-        return d
 
     def info_for_display(self):
         bus = self._info.raw.get('ID_BUS', None)
@@ -602,6 +636,10 @@ class Disk(_Device):
     def size(self):
         return align_down(self._info.size)
 
+    @property
+    def annotations(self):
+        return []
+
     def desc(self):
         return _("local disk")
 
@@ -611,10 +649,38 @@ class Disk(_Device):
             return self.serial
         return self.path
 
+    def _potential_boot_partition(self):
+        if self._m.bootloader == Bootloader.NONE:
+            return None
+        if not self._partitions:
+            return None
+        if self._m.bootloader == Bootloader.BIOS:
+            if self._partitions[0].flag == "bios_grub":
+                return self._partitions[0]
+            else:
+                return None
+        flag = {
+            Bootloader.UEFI: "boot",
+            Bootloader.PREP: "prep",
+            }[self._m.bootloader]
+        for p in self._partitions:
+            # XXX should check not extended in the UEFI case too (until we fix
+            # that bug)
+            if p.flag == flag:
+                return p
+        return None
+
+    def _can_be_boot_disk(self):
+        if self._m.bootloader == Bootloader.BIOS and self.ptable == "msdos":
+            return True
+        else:
+            return self._potential_boot_partition() is not None
+
     @property
     def supported_actions(self):
         actions = [
             DeviceAction.INFO,
+            DeviceAction.REFORMAT,
             DeviceAction.PARTITION,
             DeviceAction.FORMAT,
             DeviceAction.REMOVE,
@@ -624,7 +690,19 @@ class Disk(_Device):
         return actions
 
     _can_INFO = True
-    _can_PARTITION = property(lambda self: self.free_for_partitions > 0)
+
+    @property
+    def _can_REFORMAT(self):
+        if len(self._partitions) == 0:
+            return False
+        for p in self._partitions:
+            if p._constructed_device is not None:
+                return False
+        return True
+
+    _can_PARTITION = property(
+        lambda self: not self._has_preexisting_partition() and
+        self.free_for_partitions > 0)
     _can_FORMAT = property(
         lambda self: len(self._partitions) == 0 and
         self._constructed_device is None)
@@ -644,11 +722,16 @@ class Disk(_Device):
             install_dev = self._m.grub_install_device
             if install_dev is not None and install_dev.device is self:
                 return False
-        return self._fs is None and self._constructed_device is None
+        if self._has_preexisting_partition():
+            return self._can_be_boot_disk()
+        else:
+            return self._fs is None and self._constructed_device is None
 
     @property
     def ok_for_raid(self):
         if self._fs is not None:
+            if self._fs.preserve:
+                return self._fs._mount is None
             return False
         if self._constructed_device is not None:
             return False
@@ -715,10 +798,14 @@ class Partition(_Formattable):
         ]
 
     _can_EDIT = property(_generic_can_EDIT)
+
     _can_REMOVE = property(_generic_can_REMOVE)
 
     @property
     def _can_DELETE(self):
+        if self.device._has_preexisting_partition():
+            return _("Cannot delete a single partition from a device that "
+                     "already has partitions.")
         if self.flag in ('boot', 'bios_grub', 'prep'):
             return _("Cannot delete required bootloader partition")
         return _generic_can_DELETE(self)
@@ -728,6 +815,8 @@ class Partition(_Formattable):
         if self.flag in ('boot', 'bios_grub', 'prep'):
             return False
         if self._fs is not None:
+            if self._fs.preserve:
+                return self._fs._mount is None
             return False
         if self._constructed_device is not None:
             return False
@@ -774,7 +863,9 @@ class Raid(_Device):
 
     @property
     def _can_EDIT(self):
-        if len(self._partitions) > 0:
+        if self.preserve:
+            return _("Cannot edit pre-existing RAIDs.")
+        elif len(self._partitions) > 0:
             return _(
                 "Cannot edit {selflabel} because it has partitions.").format(
                     selflabel=self.label)
@@ -790,6 +881,8 @@ class Raid(_Device):
     @property
     def ok_for_raid(self):
         if self._fs is not None:
+            if self._fs.preserve:
+                return self._fs._mount is None
             return False
         if self._constructed_device is not None:
             return False
@@ -841,7 +934,9 @@ class LVM_VolGroup(_Device):
 
     @property
     def _can_EDIT(self):
-        if len(self._partitions) > 0:
+        if self.preserve:
+            return _("Cannot edit pre-existing volume groups.")
+        elif len(self._partitions) > 0:
             return _(
                 "Cannot edit {selflabel} because it has logical "
                 "volumes.").format(
@@ -849,7 +944,8 @@ class LVM_VolGroup(_Device):
         else:
             return _generic_can_EDIT(self)
 
-    _can_CREATE_LV = Disk._can_PARTITION
+    _can_CREATE_LV = property(
+        lambda self: not self.preserve and self.free_for_partitions > 0)
 
     ok_for_raid = False
     ok_for_lvm_vg = False
@@ -895,7 +991,13 @@ class LVM_LogicalVolume(_Formattable):
         ]
 
     _can_EDIT = True
-    _can_DELETE = True
+
+    @property
+    def _can_DELETE(self):
+        if self.volgroup._has_preexisting_partition():
+            return _("Cannot delete a single logical volume from a volume "
+                     "group that already has logical volumes.")
+        return True
 
     ok_for_raid = False
     ok_for_lvm_vg = False
@@ -939,7 +1041,10 @@ class Filesystem:
     def _available(self):
         # False if mounted or if fs does not require a mount, True otherwise.
         if self._mount is None:
-            return FilesystemModel.is_mounted_filesystem(self.fstype)
+            if self.preserve:
+                return True
+            else:
+                return FilesystemModel.is_mounted_filesystem(self.fstype)
         else:
             return False
 
@@ -1003,13 +1108,99 @@ class FilesystemModel(object):
 
     def __init__(self):
         self.bootloader = self._probe_bootloader()
-        self._disk_info = []
+        self._probe_data = None
         self.reset()
 
     def reset(self):
-        self._actions = [
-            Disk.from_info(self, info) for info in self._disk_info]
+        if self._probe_data is not None:
+            config = storage_config.extract_storage_config(self._probe_data)
+            self._actions = self._actions_from_config(
+                config["storage"]["config"],
+                self._probe_data['blockdev'])
+        else:
+            self._actions = []
         self.grub_install_device = None
+
+    def _actions_from_config(self, config, blockdevs):
+        """Convert curtin storage config into action instances.
+
+        curtin represents storage "actions" as defined in
+        https://curtin.readthedocs.io/en/latest/topics/storage.html.  We
+        convert each action (that we know about) into an instance of
+        Disk, Partition, RAID, etc (unknown actions, e.g. bcache, are
+        just ignored).
+
+        We also filter out anything that can be reached from a currently
+        mounted device. The motivation here is only to exclude the media
+        subiquity is mounted from, so this might be a bit excessive but
+        hey it works.
+
+        Perhaps surprisingly the order of the returned actions matters.
+        The devices are presented in the filesystem view in the reverse
+        of the order they appear in _actions, which means that e.g. a
+        RAID appears higher up the list than the disks is is composed
+        of. This is quite important as it makes "unpeeling" existing
+        compound structures easy, you just delete the top device until
+        you only have disks left.
+        """
+        byid = {}
+        objs = []
+        exclusions = set()
+        for action in config:
+            if action['type'] == 'mount':
+                exclusions.add(byid[action['device']])
+                continue
+            c = _type_to_cls.get(action['type'], None)
+            if c is None:
+                # Ignore any action we do not know how to process yet
+                # (e.g. bcache)
+                continue
+            kw = {}
+            for f in attr.fields(c):
+                n = f.name
+                if n not in action:
+                    continue
+                v = action[n]
+                try:
+                    if f.metadata.get('ref', False):
+                        kw[n] = byid[v]
+                    elif f.metadata.get('reflist', False):
+                        kw[n] = [byid[id] for id in v]
+                    else:
+                        kw[n] = v
+                except KeyError:
+                    # If a dependency of the current action has been
+                    # ignored, we need to ignore the current action too
+                    # (e.g. a bcache's filesystem).
+                    continue
+            if kw['type'] == 'disk':
+                path = kw['path']
+                kw['info'] = StorageInfo({path: blockdevs[path]})
+            kw['preserve'] = True
+            obj = byid[action['id']] = c(m=self, **kw)
+            if action['type'] == "format":
+                obj.volume._original_fs = obj
+            objs.append(obj)
+
+        while True:
+            log.debug("exclusions %s", {e.id for e in exclusions})
+            next_exclusions = exclusions.copy()
+            for e in exclusions:
+                next_exclusions.update(itertools.chain(
+                    dependencies(e), reverse_dependencies(e)))
+            if len(exclusions) == len(next_exclusions):
+                break
+            exclusions = next_exclusions
+
+        objs = [o for o in objs if o not in exclusions]
+
+        for o in objs:
+            if o.type == "partition" and o.flag == "swap" and o._fs is None:
+                fs = Filesystem(m=self, fstype="swap", volume=o, preserve=True)
+                o._original_fs = fs
+                objs.append(fs)
+
+        return objs
 
     def _render_actions(self):
         # The curtin storage config has the constraint that an action must be
@@ -1023,8 +1214,6 @@ class FilesystemModel(object):
         emitted_ids = set()
 
         def emit(obj):
-            if obj.type == 'disk' and not obj.used:
-                return
             r.append(asdict(obj))
             emitted_ids.add(obj.id)
 
@@ -1086,45 +1275,9 @@ class FilesystemModel(object):
                 }
         return config
 
-    def _get_system_mounted_disks(self):
-        # This assumes a fairly vanilla setup. It won't list as
-        # mounted a disk that is only mounted via lvm, for example.
-        mounted_devs = []
-        with open('/proc/mounts', encoding=sys.getfilesystemencoding()) as pm:
-            for line in pm:
-                if line.startswith('/dev/'):
-                    mounted_devs.append(line.split()[0][5:])
-        mounted_disks = set()
-        for dev in mounted_devs:
-            if os.path.exists('/sys/block/{}'.format(dev)):
-                mounted_disks.add('/dev/' + dev)
-            else:
-                paths = glob.glob('/sys/block/*/{}/partition'.format(dev))
-                if len(paths) == 1:
-                    mounted_disks.add('/dev/' + paths[0].split('/')[3])
-        return mounted_disks
-
-    def load_probe_data(self, storage):
-        currently_mounted = self._get_system_mounted_disks()
-        for path, info in storage.items():
-            log.debug("fs probe %s", path)
-            if path in currently_mounted:
-                continue
-            if info.type == 'disk':
-                if info.is_virtual:
-                    continue
-                if info.raw["MAJOR"] in ("2", "11"):  # serial and cd devices
-                    continue
-                if info.raw['attrs'].get('ro') == "1":
-                    continue
-                if "ID_CDROM" in info.raw:
-                    continue
-                # log.debug('disk={}\n{}'.format(
-                #    path, json.dumps(data, indent=4, sort_keys=True)))
-                if info.size < self.lower_size_limit:
-                    continue
-                self._disk_info.append(info)
-                self._actions.append(Disk.from_info(self, info))
+    def load_probe_data(self, probe_data):
+        self._probe_data = probe_data
+        self.reset()
 
     def disk_by_path(self, path):
         for a in self._actions:
@@ -1251,6 +1404,10 @@ class FilesystemModel(object):
         fs = Filesystem(m=self, volume=volume, fstype=fstype)
         self._actions.append(fs)
         return fs
+
+    def re_add_filesystem(self, fs):
+        _set_backlinks(fs)
+        self._actions.append(fs)
 
     def remove_filesystem(self, fs):
         if fs._mount:

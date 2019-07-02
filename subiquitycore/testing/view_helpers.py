@@ -82,4 +82,6 @@ def get_focus_path(w):
 
 def enter_data(form, data):
     for k, v in data.items():
-        getattr(form, k).value = v
+        bf = getattr(form, k)
+        assert bf.enabled, "%s is not enabled" % (k,)
+        bf.value = v

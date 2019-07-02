@@ -117,12 +117,14 @@ def make_model(bootloader=None):
     return model
 
 
-def make_disk(model):
+def make_disk(model, **kw):
     serial = 'serial%s' % len(model._actions)
     model._actions.append(Disk(
         m=model, serial=serial,
-        info=FakeStorageInfo(size=100*(2**30))))
-    return model._actions[-1]
+        info=FakeStorageInfo(size=100*(2**30)),
+        **kw))
+    disk = model._actions[-1]
+    return disk
 
 
 def make_model_and_disk(bootloader=None):
@@ -130,12 +132,12 @@ def make_model_and_disk(bootloader=None):
     return model, make_disk(model)
 
 
-def make_partition(model, device=None, *, size=None, flag=""):
+def make_partition(model, device=None, *, size=None, **kw):
     if device is None:
         device = make_disk(model)
     if size is None:
         size = device.free_for_partitions//2
-    partition = Partition(m=model, device=device, size=size, flag=flag)
+    partition = Partition(m=model, device=device, size=size, **kw)
     model._actions.append(partition)
     return partition
 
@@ -180,16 +182,38 @@ def make_model_and_lv(bootloader=None):
 
 class TestFilesystemModel(unittest.TestCase):
 
+    def test_disk_annotations(self):
+        # disks never have annotations
+        model, disk = make_model_and_disk()
+        self.assertEqual(disk.annotations, [])
+        disk.preserve = True
+        self.assertEqual(disk.annotations, [])
+
+    def test_partition_annotations(self):
+        model, disk = make_model_and_disk()
+        part = model.add_partition(disk, size=disk.free_for_partitions)
+        self.assertEqual(part.annotations, ['new'])
+        part.preserve = True
+        self.assertEqual(part.annotations, ['existing'])
+        part.flag = "boot"
+        self.assertEqual(part.annotations, ['existing', 'ESP'])
+        part.flag = "prep"
+        self.assertEqual(part.annotations, ['existing', 'PReP'])
+        part.flag = "bios_grub"
+        self.assertEqual(part.annotations, ['existing', 'bios_grub'])
+
     def test_vg_default_annotations(self):
         model, disk = make_model_and_disk()
         vg = model.add_volgroup('vg-0', {disk})
-        self.assertEqual(vg.annotations, [])
+        self.assertEqual(vg.annotations, ['new'])
+        vg.preserve = True
+        self.assertEqual(vg.annotations, ['existing'])
 
     def test_vg_encrypted_annotations(self):
         model, disk = make_model_and_disk()
         dm_crypt = model.add_dm_crypt(disk, key='passw0rd')
         vg = model.add_volgroup('vg-0', {dm_crypt})
-        self.assertEqual(vg.annotations, ['encrypted'])
+        self.assertEqual(vg.annotations, ['new', 'encrypted'])
 
     def _test_ok_for_xxx(self, model, make_new_device, attr,
                          test_partitions=True):
@@ -205,6 +229,20 @@ class TestFilesystemModel(unittest.TestCase):
             dev3 = make_new_device()
             make_partition(model, dev3)
             self.assertFalse(getattr(dev3, attr))
+        # Empty existing devices are ok
+        dev4 = make_new_device()
+        dev4.preserve = True
+        self.assertTrue(getattr(dev4, attr))
+        # A dev with an existing filesystem is ok (there is no
+        # way to remove the format)
+        dev5 = make_new_device()
+        dev5.preserve = True
+        fs = model.add_filesystem(dev5, 'ext4')
+        fs.preserve = True
+        self.assertTrue(dev5.ok_for_raid)
+        # But a existing, *mounted* filesystem is not.
+        model.add_mount(fs, '/')
+        self.assertFalse(dev5.ok_for_raid)
 
     def test_disk_ok_for_xxx(self):
         model = make_model()
@@ -251,10 +289,23 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertEqual(partition.usage_labels(), ["unused"])
         fs = model.add_filesystem(partition, 'ext4')
         self.assertEqual(
-            partition.usage_labels(), ["formatted as ext4", "not mounted"])
-        model.add_mount(fs, '/')
+            partition.usage_labels(),
+            ["to be formatted as ext4", "not mounted"])
+        partition._original_fs = fs
+        fs.preserve = True
+        partition.preserve = True
         self.assertEqual(
-            partition.usage_labels(), ["formatted as ext4", "mounted at /"])
+            partition.usage_labels(),
+            ["already formatted as ext4", "not mounted"])
+        model.remove_filesystem(fs)
+        fs2 = model.add_filesystem(partition, 'ext4')
+        self.assertEqual(
+            partition.usage_labels(),
+            ["to be reformatted as ext4", "not mounted"])
+        model.add_mount(fs2, '/')
+        self.assertEqual(
+            partition.usage_labels(),
+            ["to be reformatted as ext4", "mounted at /"])
 
     def assertActionNotSupported(self, obj, action):
         self.assertNotIn(action, obj.supported_actions)
@@ -272,12 +323,24 @@ class TestFilesystemModel(unittest.TestCase):
 
         vg = model.add_volgroup('vg1', {objects[0], objects[1]})
         self.assertActionPossible(objects[0], DeviceAction.REMOVE)
+
+        # Cannot remove a device from a preexisting VG
+        vg.preserve = True
+        self.assertActionNotPossible(objects[0], DeviceAction.REMOVE)
+        vg.preserve = False
+
         # Probably this removal should be a model method?
         vg.devices.remove(objects[1])
         objects[1]._constructed_device = None
         self.assertActionNotPossible(objects[0], DeviceAction.REMOVE)
         raid = model.add_raid('md0', 'raid1', set(objects[2:]), set())
         self.assertActionPossible(objects[2], DeviceAction.REMOVE)
+
+        # Cannot remove a device from a preexisting RAID
+        raid.preserve = True
+        self.assertActionNotPossible(objects[2], DeviceAction.REMOVE)
+        raid.preserve = False
+
         # Probably this removal should be a model method?
         raid.devices.remove(objects[4])
         objects[4]._constructed_device = None
@@ -291,6 +354,31 @@ class TestFilesystemModel(unittest.TestCase):
         model, disk = make_model_and_disk()
         self.assertActionNotSupported(disk, DeviceAction.EDIT)
 
+    def test_disk_action_REFORMAT(self):
+        model = make_model()
+
+        disk1 = make_disk(model, preserve=False)
+        self.assertActionNotPossible(disk1, DeviceAction.REFORMAT)
+        disk1p1 = make_partition(model, disk1, preserve=False)
+        self.assertActionPossible(disk1, DeviceAction.REFORMAT)
+        model.add_volgroup('vg0', {disk1p1})
+        self.assertActionNotPossible(disk1, DeviceAction.REFORMAT)
+
+        disk2 = make_disk(model, preserve=True)
+        self.assertActionNotPossible(disk2, DeviceAction.REFORMAT)
+        disk2p1 = make_partition(model, disk2, preserve=True)
+        self.assertActionPossible(disk2, DeviceAction.REFORMAT)
+        model.add_volgroup('vg1', {disk2p1})
+        self.assertActionNotPossible(disk2, DeviceAction.REFORMAT)
+
+        disk3 = make_disk(model, preserve=False)
+        model.add_volgroup('vg2', {disk3})
+        self.assertActionNotPossible(disk3, DeviceAction.REFORMAT)
+
+        disk4 = make_disk(model, preserve=True)
+        model.add_volgroup('vg2', {disk4})
+        self.assertActionNotPossible(disk4, DeviceAction.REFORMAT)
+
     def test_disk_action_PARTITION(self):
         model, disk = make_model_and_disk()
         self.assertActionPossible(disk, DeviceAction.PARTITION)
@@ -298,6 +386,14 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertActionPossible(disk, DeviceAction.PARTITION)
         make_partition(model, disk, size=disk.free_for_partitions)
         self.assertActionNotPossible(disk, DeviceAction.PARTITION)
+
+        # Can partition a disk with .preserve=True
+        disk2 = make_disk(model)
+        disk2.preserve = True
+        self.assertActionPossible(disk2, DeviceAction.PARTITION)
+        # But not if it has a partition.
+        make_partition(model, disk2, preserve=True)
+        self.assertActionNotPossible(disk2, DeviceAction.PARTITION)
 
     def test_disk_action_CREATE_LV(self):
         model, disk = make_model_and_disk()
@@ -321,13 +417,81 @@ class TestFilesystemModel(unittest.TestCase):
         model, disk = make_model_and_disk()
         self.assertActionNotSupported(disk, DeviceAction.DELETE)
 
-    def test_disk_action_MAKE_BOOT(self):
-        for bl in Bootloader:
-            model, disk = make_model_and_disk(bl)
-            if bl == Bootloader.NONE:
-                self.assertActionNotSupported(disk, DeviceAction.MAKE_BOOT)
-            else:
-                self.assertActionPossible(disk, DeviceAction.MAKE_BOOT)
+    def test_disk_action_MAKE_BOOT_NONE(self):
+        model, disk = make_model_and_disk(Bootloader.NONE)
+        self.assertActionNotSupported(disk, DeviceAction.MAKE_BOOT)
+
+    def test_disk_action_MAKE_BOOT_BIOS(self):
+        model = make_model(Bootloader.BIOS)
+        # Disks with msdos partition tables can always be the BIOS boot disk.
+        dos_disk = make_disk(model, ptable='msdos', preserve=True)
+        self.assertActionPossible(dos_disk, DeviceAction.MAKE_BOOT)
+        # Even if they have existing partitions
+        make_partition(
+            model, dos_disk, size=dos_disk.free_for_partitions, preserve=True)
+        self.assertActionPossible(dos_disk, DeviceAction.MAKE_BOOT)
+        # (we never create dos partition tables so no need to test
+        # preserve=False case).
+
+        # GPT disks with new partition tables can always be the BIOS boot disk
+        gpt_disk = make_disk(model, ptable='gpt', preserve=False)
+        self.assertActionPossible(gpt_disk, DeviceAction.MAKE_BOOT)
+        # Even if they are filled with partitions (we resize partitions to fit)
+        make_partition(model, gpt_disk, size=dos_disk.free_for_partitions)
+        self.assertActionPossible(gpt_disk, DeviceAction.MAKE_BOOT)
+
+        # GPT disks with existing partition tables but no partitions can be the
+        # BIOS boot disk (in general we ignore existing empty partition tables)
+        gpt_disk2 = make_disk(model, ptable='gpt', preserve=True)
+        self.assertActionPossible(gpt_disk2, DeviceAction.MAKE_BOOT)
+        # If there is an existing *partition* though, it cannot be the boot
+        # disk
+        make_partition(model, gpt_disk2, preserve=True)
+        self.assertActionNotPossible(gpt_disk2, DeviceAction.MAKE_BOOT)
+        # Unless there is already a bios_grub partition we can reuse
+        gpt_disk3 = make_disk(model, ptable='gpt', preserve=True)
+        make_partition(
+            model, gpt_disk3, flag="bios_grub", preserve=True)
+        make_partition(
+            model, gpt_disk3, preserve=True)
+        self.assertActionPossible(gpt_disk3, DeviceAction.MAKE_BOOT)
+        # Edge case city: the bios_grub partition has to be first
+        gpt_disk4 = make_disk(model, ptable='gpt', preserve=True)
+        make_partition(
+            model, gpt_disk4, preserve=True)
+        make_partition(
+            model, gpt_disk4, flag="bios_grub", preserve=True)
+        self.assertActionNotPossible(gpt_disk4, DeviceAction.MAKE_BOOT)
+
+    def _test_MAKE_BOOT_boot_partition(self, bl, flag):
+        # The logic for when MAKE_BOOT is enabled for both UEFI and PREP
+        # bootloaders turns out to be the same, modulo the special flag that
+        # has to be present on a partition.
+        model = make_model(bl)
+        # A disk with a new partition table can always be the UEFI/PREP boot
+        # disk.
+        new_disk = make_disk(model, preserve=False)
+        self.assertActionPossible(new_disk, DeviceAction.MAKE_BOOT)
+        # Even if they are filled with partitions (we resize partitions to fit)
+        make_partition(model, new_disk, size=new_disk.free_for_partitions)
+        self.assertActionPossible(new_disk, DeviceAction.MAKE_BOOT)
+
+        # A disk with an existing but empty partitions can also be the
+        # UEFI/PREP boot disk.
+        old_disk = make_disk(model, preserve=True)
+        self.assertActionPossible(old_disk, DeviceAction.MAKE_BOOT)
+        # If there is an existing partition though, it cannot.
+        make_partition(model, old_disk, preserve=True)
+        self.assertActionNotPossible(old_disk, DeviceAction.MAKE_BOOT)
+        # If there is an existing ESP/PReP partition though, fine!
+        make_partition(model, old_disk, flag=flag, preserve=True)
+        self.assertActionPossible(old_disk, DeviceAction.MAKE_BOOT)
+
+    def test_disk_action_MAKE_BOOT_UEFI(self):
+        self._test_MAKE_BOOT_boot_partition(Bootloader.UEFI, "boot")
+
+    def test_disk_action_MAKE_BOOT_PREP(self):
+        self._test_MAKE_BOOT_boot_partition(Bootloader.PREP, "prep")
 
     def test_partition_action_INFO(self):
         model, part = make_model_and_partition()
@@ -338,6 +502,10 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertActionPossible(part, DeviceAction.EDIT)
         model.add_volgroup('vg1', {part})
         self.assertActionNotPossible(part, DeviceAction.EDIT)
+
+    def test_partition_action_REFORMAT(self):
+        model, part = make_model_and_partition()
+        self.assertActionNotSupported(part, DeviceAction.REFORMAT)
 
     def test_partition_action_PARTITION(self):
         model, part = make_model_and_partition()
@@ -378,6 +546,12 @@ class TestFilesystemModel(unittest.TestCase):
             part = make_partition(model, flag=flag)
             self.assertActionNotPossible(part, DeviceAction.DELETE)
 
+        # You cannot delete a partition from a disk that has
+        # pre-existing partitions (only reformat)
+        disk2 = make_disk(model, preserve=True)
+        disk2p1 = make_partition(model, disk2, preserve=True)
+        self.assertActionNotPossible(disk2p1, DeviceAction.DELETE)
+
     def test_partition_action_MAKE_BOOT(self):
         model, part = make_model_and_partition()
         self.assertActionNotSupported(part, DeviceAction.MAKE_BOOT)
@@ -396,6 +570,14 @@ class TestFilesystemModel(unittest.TestCase):
         make_partition(model, raid2)
         self.assertActionNotPossible(raid2, DeviceAction.EDIT)
 
+        raid3 = make_raid(model)
+        raid3.preserve = True
+        self.assertActionNotPossible(raid3, DeviceAction.EDIT)
+
+    def test_raid_action_REFORMAT(self):
+        model, raid = make_model_and_raid()
+        self.assertActionNotSupported(raid, DeviceAction.REFORMAT)
+
     def test_raid_action_PARTITION(self):
         model, raid = make_model_and_raid()
         self.assertActionPossible(raid, DeviceAction.PARTITION)
@@ -403,6 +585,14 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertActionPossible(raid, DeviceAction.PARTITION)
         make_partition(model, raid, size=raid.free_for_partitions)
         self.assertActionNotPossible(raid, DeviceAction.PARTITION)
+
+        # Can partition a raid with .preserve=True
+        raid2 = make_raid(model)
+        raid2.preserve = True
+        self.assertActionPossible(raid2, DeviceAction.PARTITION)
+        # But not if it has a partition.
+        make_partition(model, raid2, preserve=True)
+        self.assertActionNotPossible(raid2, DeviceAction.PARTITION)
 
     def test_raid_action_CREATE_LV(self):
         model, raid = make_model_and_raid()
@@ -459,6 +649,14 @@ class TestFilesystemModel(unittest.TestCase):
         model.add_logical_volume(vg, 'lv1', size=vg.free_for_partitions//2)
         self.assertActionNotPossible(vg, DeviceAction.EDIT)
 
+        vg2 = make_vg(model)
+        vg2.preserve = True
+        self.assertActionNotPossible(vg2, DeviceAction.EDIT)
+
+    def test_vg_action_REFORMAT(self):
+        model, vg = make_model_and_vg()
+        self.assertActionNotSupported(vg, DeviceAction.REFORMAT)
+
     def test_vg_action_PARTITION(self):
         model, vg = make_model_and_vg()
         self.assertActionNotSupported(vg, DeviceAction.PARTITION)
@@ -470,6 +668,9 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertActionPossible(vg, DeviceAction.CREATE_LV)
         model.add_logical_volume(vg, 'lv2', size=vg.free_for_partitions)
         self.assertActionNotPossible(vg, DeviceAction.CREATE_LV)
+        vg2 = make_vg(model)
+        vg2.preserve = True
+        self.assertActionNotPossible(vg2, DeviceAction.CREATE_LV)
 
     def test_vg_action_FORMAT(self):
         model, vg = make_model_and_vg()
@@ -503,6 +704,10 @@ class TestFilesystemModel(unittest.TestCase):
         model, lv = make_model_and_lv()
         self.assertActionPossible(lv, DeviceAction.EDIT)
 
+    def test_lv_action_REFORMAT(self):
+        model, lv = make_model_and_lv()
+        self.assertActionNotSupported(lv, DeviceAction.REFORMAT)
+
     def test_lv_action_PARTITION(self):
         model, lv = make_model_and_lv()
         self.assertActionNotSupported(lv, DeviceAction.PARTITION)
@@ -526,6 +731,10 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertActionPossible(lv, DeviceAction.DELETE)
         model.add_mount(fs, '/')
         self.assertActionPossible(lv, DeviceAction.DELETE)
+
+        lv2 = make_lv(model)
+        lv2.preserve = lv2.volgroup.preserve = True
+        self.assertActionNotPossible(lv2, DeviceAction.DELETE)
 
     def test_lv_action_MAKE_BOOT(self):
         model, lv = make_model_and_lv()

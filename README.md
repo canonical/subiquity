@@ -30,7 +30,7 @@ installer without having access to the machine.  A few sample machine
 profiles are available in the repository at ./examples/ and
 can be loaded via the MACHINE make variable:
 
-`make dryrun MACHINE=examples/mwhudson.json`
+`make dryrun MACHINE=examples/simple.json`
 
 # Generating machine profiles
 Machine profiles are generated from the probert tool.  To collect a machine profile:

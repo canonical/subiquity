@@ -1,6 +1,5 @@
 import unittest
 from unittest import mock
-from collections import namedtuple
 
 import urwid
 
@@ -12,12 +11,10 @@ from subiquity.models.filesystem import (
     Disk,
     FilesystemModel,
     )
+from subiquity.models.tests.test_filesystem import (
+    FakeStorageInfo,
+    )
 from subiquity.ui.views.filesystem.filesystem import FilesystemView
-
-
-FakeStorageInfo = namedtuple(
-    'FakeStorageInfo', ['name', 'size', 'free', 'serial', 'model'])
-FakeStorageInfo.__new__.__defaults__ = (None,) * len(FakeStorageInfo._fields)
 
 
 class FilesystemViewTests(unittest.TestCase):
@@ -35,9 +32,9 @@ class FilesystemViewTests(unittest.TestCase):
 
     def test_one_disk(self):
         model = mock.create_autospec(spec=FilesystemModel)
-        disk = Disk.from_info(model, FakeStorageInfo(
-            name='disk-name', size=100*(2**20), free=50*(2**20),
-            serial="DISK-SERIAL"))
+        disk = Disk(
+            m=model, serial="DISK-SERIAL",
+            info=FakeStorageInfo(size=100*(2**20), free=50*(2**20)))
         view = self.make_view(model, [disk])
         w = view_helpers.find_with_pred(
             view,

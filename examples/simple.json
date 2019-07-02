@@ -1,0 +1,697 @@
+{
+    "network": {
+        "links": [
+            {
+                "addresses": [
+                    {
+                        "address": "10.0.2.15/24",
+                        "family": 2,
+                        "scope": "global",
+                        "source": "dhcp"
+                    },
+                    {
+                        "address": "fec0::5054:ff:fe12:3456/64",
+                        "family": 10,
+                        "scope": "site",
+                        "source": "dhcp"
+                    },
+                    {
+                        "address": "fe80::5054:ff:fe12:3456/64",
+                        "family": 10,
+                        "scope": "link",
+                        "source": "static"
+                    }
+                ],
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "lacp_rate": null,
+                    "master": null,
+                    "mode": null,
+                    "slaves": [],
+                    "xmit_hash_policy": null
+                },
+                "bridge": {
+                    "interfaces": [],
+                    "is_bridge": false,
+                    "is_port": false,
+                    "options": {}
+                },
+                "netlink_data": {
+                    "arptype": 1,
+                    "family": 0,
+                    "flags": 69699,
+                    "ifindex": 2,
+                    "is_vlan": false,
+                    "name": "ens3"
+                },
+                "type": "eth",
+                "udev_data": {
+                    "DEVPATH": "/devices/pci0000:00/0000:00:03.0/net/ens3",
+                    "ID_BUS": "pci",
+                    "ID_MM_CANDIDATE": "1",
+                    "ID_MODEL_FROM_DATABASE": "82540EM Gigabit Ethernet Controller (QEMU Virtual Machine)",
+                    "ID_MODEL_ID": "0x100e",
+                    "ID_NET_NAME_MAC": "enx525400123456",
+                    "ID_NET_NAME_PATH": "enp0s3",
+                    "ID_NET_NAME_SLOT": "ens3",
+                    "ID_NET_NAMING_SCHEME": "v240",
+                    "ID_PATH": "pci-0000:00:03.0",
+                    "ID_PATH_TAG": "pci-0000_00_03_0",
+                    "ID_PCI_CLASS_FROM_DATABASE": "Network controller",
+                    "ID_PCI_SUBCLASS_FROM_DATABASE": "Ethernet controller",
+                    "ID_VENDOR_FROM_DATABASE": "Intel Corporation",
+                    "ID_VENDOR_ID": "0x8086",
+                    "IFINDEX": "2",
+                    "INTERFACE": "ens3",
+                    "SUBSYSTEM": "net",
+                    "SYSTEMD_ALIAS": "/sys/subsystem/net/devices/ens3",
+                    "TAGS": ":systemd:",
+                    "USEC_INITIALIZED": "82651806",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "52:54:00:12:34:56",
+                        "broadcast": "ff:ff:ff:ff:ff:ff",
+                        "carrier": "1",
+                        "carrier_changes": "2",
+                        "carrier_down_count": "1",
+                        "carrier_up_count": "1",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "device": null,
+                        "dormant": "0",
+                        "duplex": "full",
+                        "flags": "0x1003",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "2",
+                        "iflink": "2",
+                        "link_mode": "0",
+                        "mtu": "1500",
+                        "name_assign_type": "4",
+                        "netdev_group": "0",
+                        "operstate": "up",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": "1000",
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "1",
+                        "uevent": "INTERFACE=ens3\nIFINDEX=2"
+                    }
+                }
+            },
+            {
+                "addresses": [
+                    {
+                        "address": "127.0.0.1/8",
+                        "family": 2,
+                        "scope": "host",
+                        "source": "static"
+                    },
+                    {
+                        "address": "::1/128",
+                        "family": 10,
+                        "scope": "host",
+                        "source": "static"
+                    }
+                ],
+                "bond": {
+                    "is_master": false,
+                    "is_slave": false,
+                    "lacp_rate": null,
+                    "master": null,
+                    "mode": null,
+                    "slaves": [],
+                    "xmit_hash_policy": null
+                },
+                "bridge": {
+                    "interfaces": [],
+                    "is_bridge": false,
+                    "is_port": false,
+                    "options": {}
+                },
+                "netlink_data": {
+                    "arptype": 772,
+                    "family": 0,
+                    "flags": 65609,
+                    "ifindex": 1,
+                    "is_vlan": false,
+                    "name": "lo"
+                },
+                "type": "lo",
+                "udev_data": {
+                    "DEVPATH": "/devices/virtual/net/lo",
+                    "ID_MM_CANDIDATE": "1",
+                    "IFINDEX": "1",
+                    "INTERFACE": "lo",
+                    "SUBSYSTEM": "net",
+                    "USEC_INITIALIZED": "89206115",
+                    "attrs": {
+                        "addr_assign_type": "0",
+                        "addr_len": "6",
+                        "address": "00:00:00:00:00:00",
+                        "broadcast": "00:00:00:00:00:00",
+                        "carrier": "1",
+                        "carrier_changes": "0",
+                        "carrier_down_count": "0",
+                        "carrier_up_count": "0",
+                        "dev_id": "0x0",
+                        "dev_port": "0",
+                        "dormant": "0",
+                        "duplex": null,
+                        "flags": "0x9",
+                        "gro_flush_timeout": "0",
+                        "ifalias": "",
+                        "ifindex": "1",
+                        "iflink": "1",
+                        "link_mode": "0",
+                        "mtu": "65536",
+                        "name_assign_type": null,
+                        "netdev_group": "0",
+                        "operstate": "unknown",
+                        "phys_port_id": null,
+                        "phys_port_name": null,
+                        "phys_switch_id": null,
+                        "proto_down": "0",
+                        "speed": null,
+                        "subsystem": "net",
+                        "tx_queue_len": "1000",
+                        "type": "772",
+                        "uevent": "INTERFACE=lo\nIFINDEX=1"
+                    }
+                }
+            }
+        ],
+        "routes": [
+            {
+                "dst": "default",
+                "family": 2,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "10.0.2.0/24",
+                "family": 2,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "10.0.2.2",
+                "family": 2,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "10.0.2.0",
+                "family": 2,
+                "ifindex": 2,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "10.0.2.15",
+                "family": 2,
+                "ifindex": 2,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "10.0.2.255",
+                "family": 2,
+                "ifindex": 2,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "127.0.0.0",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "127.0.0.0/8",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "127.0.0.1",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "127.255.255.255",
+                "family": 2,
+                "ifindex": 1,
+                "table": 255,
+                "type": 3
+            },
+            {
+                "dst": "::1",
+                "family": 10,
+                "ifindex": 1,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "fe80::/64",
+                "family": 10,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "fec0::/64",
+                "family": 10,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "default",
+                "family": 10,
+                "ifindex": 2,
+                "table": 254,
+                "type": 1
+            },
+            {
+                "dst": "::1",
+                "family": 10,
+                "ifindex": 1,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "fe80::5054:ff:fe12:3456",
+                "family": 10,
+                "ifindex": 2,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "fec0::5054:ff:fe12:3456",
+                "family": 10,
+                "ifindex": 2,
+                "table": 255,
+                "type": 2
+            },
+            {
+                "dst": "ff00::/8",
+                "family": 10,
+                "ifindex": 2,
+                "table": 255,
+                "type": 1
+            }
+        ]
+    },
+    "storage": {
+        "bcache": {
+            "backing": {},
+            "caching": {}
+        },
+        "blockdev": {
+            "/dev/fd0": {
+                "DEVNAME": "/dev/fd0",
+                "DEVPATH": "/devices/platform/floppy.0/block/fd0",
+                "DEVTYPE": "disk",
+                "MAJOR": "2",
+                "MINOR": "0",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "82216378",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "bdi": null,
+                    "capability": "11",
+                    "dev": "2:0",
+                    "device": null,
+                    "discard_alignment": "0",
+                    "events": "",
+                    "events_async": "",
+                    "events_poll_msecs": "-1",
+                    "ext_range": "1",
+                    "hidden": "0",
+                    "inflight": "       0        0",
+                    "range": "1",
+                    "removable": "1",
+                    "ro": "0",
+                    "size": "4096",
+                    "stat": "       1        0        8       68        0        0        0        0        0        8       68        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=2\nMINOR=0\nDEVNAME=fd0\nDEVTYPE=disk"
+                }
+            },
+            "/dev/sda": {
+                "DEVLINKS": "/dev/disk/by-id/scsi-0ATA_QEMU_HARDDISK_QM00001 /dev/disk/by-id/ata-QEMU_HARDDISK_QM00001 /dev/disk/by-id/scsi-1ATA_QEMU_HARDDISK_QM00001 /dev/disk/by-id/scsi-SATA_QEMU_HARDDISK_QM00001 /dev/disk/by-path/pci-0000:00:01.1-ata-1",
+                "DEVNAME": "/dev/sda",
+                "DEVPATH": "/devices/pci0000:00/0000:00:01.1/ata1/host0/target0:0:0/0:0:0:0/block/sda",
+                "DEVTYPE": "disk",
+                "ID_ATA": "1",
+                "ID_BUS": "ata",
+                "ID_MODEL": "QEMU_HARDDISK",
+                "ID_MODEL_ENC": "QEMU\\x20HARDDISK\\x20\\x20\\x20",
+                "ID_PATH": "pci-0000:00:01.1-ata-1",
+                "ID_PATH_TAG": "pci-0000_00_01_1-ata-1",
+                "ID_REVISION": "2.5+",
+                "ID_SCSI": "1",
+                "ID_SCSI_DI": "1",
+                "ID_SCSI_SN": "1",
+                "ID_SERIAL": "QEMU_HARDDISK_QM00001",
+                "ID_SERIAL_SHORT": "QM00001",
+                "ID_TYPE": "disk",
+                "ID_VENDOR": "ATA",
+                "ID_VENDOR_ENC": "ATA\\x20\\x20\\x20\\x20\\x20",
+                "MAJOR": "8",
+                "MINOR": "0",
+                "MPATH_SBIN_PATH": "/sbin",
+                "SCSI_IDENT_LUN_ATA": "QEMU_HARDDISK_QM00001",
+                "SCSI_IDENT_LUN_T10": "ATA_QEMU_HARDDISK_QM00001",
+                "SCSI_IDENT_LUN_VENDOR": "QM00001",
+                "SCSI_IDENT_SERIAL": "QM00001",
+                "SCSI_MODEL": "QEMU_HARDDISK",
+                "SCSI_MODEL_ENC": "QEMU\\x20HARDDISK\\x20\\x20\\x20",
+                "SCSI_REVISION": "2.5+",
+                "SCSI_TPGS": "0",
+                "SCSI_TYPE": "disk",
+                "SCSI_VENDOR": "ATA",
+                "SCSI_VENDOR_ENC": "ATA\\x20\\x20\\x20\\x20\\x20",
+                "SUBSYSTEM": "block",
+                "TAGS": ":systemd:",
+                "USEC_INITIALIZED": "82301144",
+                "attrs": {
+                    "alignment_offset": "0",
+                    "bdi": null,
+                    "capability": "50",
+                    "dev": "8:0",
+                    "device": null,
+                    "discard_alignment": "0",
+                    "events": "",
+                    "events_async": "",
+                    "events_poll_msecs": "-1",
+                    "ext_range": "256",
+                    "hidden": "0",
+                    "inflight": "       0        0",
+                    "range": "16",
+                    "removable": "0",
+                    "ro": "0",
+                    "size": "10737418240",
+                    "stat": "     411        0    16968      119        0        0        0        0        0      264        0        0        0        0        0",
+                    "subsystem": "block",
+                    "uevent": "MAJOR=8\nMINOR=0\nDEVNAME=sda\nDEVTYPE=disk"
+                }
+            }
+        },
+        "dmcrypt": {},
+        "filesystem": {
+        },
+        "lvm": {},
+        "mount": [
+            {
+                "children": [
+                    {
+                        "children": [
+                            {
+                                "fstype": "securityfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "securityfs",
+                                "target": "/sys/kernel/security"
+                            },
+                            {
+                                "children": [
+                                    {
+                                        "fstype": "cgroup2",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,nsdelegate",
+                                        "source": "cgroup2",
+                                        "target": "/sys/fs/cgroup/unified"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,xattr,name=systemd",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/systemd"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,rdma",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/rdma"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,hugetlb",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/hugetlb"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,pids",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/pids"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,freezer",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/freezer"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,memory",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/memory"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,cpu,cpuacct",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/cpu,cpuacct"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,cpuset",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/cpuset"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,blkio",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/blkio"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,perf_event",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/perf_event"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,devices",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/devices"
+                                    },
+                                    {
+                                        "fstype": "cgroup",
+                                        "options": "rw,nosuid,nodev,noexec,relatime,net_cls,net_prio",
+                                        "source": "cgroup",
+                                        "target": "/sys/fs/cgroup/net_cls,net_prio"
+                                    }
+                                ],
+                                "fstype": "tmpfs",
+                                "options": "ro,nosuid,nodev,noexec,mode=755",
+                                "source": "tmpfs",
+                                "target": "/sys/fs/cgroup"
+                            },
+                            {
+                                "fstype": "pstore",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "pstore",
+                                "target": "/sys/fs/pstore"
+                            },
+                            {
+                                "fstype": "efivarfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime",
+                                "source": "efivarfs",
+                                "target": "/sys/firmware/efi/efivars"
+                            },
+                            {
+                                "fstype": "bpf",
+                                "options": "rw,nosuid,nodev,noexec,relatime,mode=700",
+                                "source": "bpf",
+                                "target": "/sys/fs/bpf"
+                            },
+                            {
+                                "fstype": "debugfs",
+                                "options": "rw,relatime",
+                                "source": "debugfs",
+                                "target": "/sys/kernel/debug"
+                            },
+                            {
+                                "fstype": "fusectl",
+                                "options": "rw,relatime",
+                                "source": "fusectl",
+                                "target": "/sys/fs/fuse/connections"
+                            },
+                            {
+                                "fstype": "configfs",
+                                "options": "rw,relatime",
+                                "source": "configfs",
+                                "target": "/sys/kernel/config"
+                            }
+                        ],
+                        "fstype": "sysfs",
+                        "options": "rw,nosuid,nodev,noexec,relatime",
+                        "source": "sysfs",
+                        "target": "/sys"
+                    },
+                    {
+                        "children": [
+                            {
+                                "fstype": "autofs",
+                                "options": "rw,relatime,fd=44,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=14037",
+                                "source": "systemd-1",
+                                "target": "/proc/sys/fs/binfmt_misc"
+                            }
+                        ],
+                        "fstype": "proc",
+                        "options": "rw,nosuid,nodev,noexec,relatime",
+                        "source": "proc",
+                        "target": "/proc"
+                    },
+                    {
+                        "children": [
+                            {
+                                "fstype": "devpts",
+                                "options": "rw,nosuid,noexec,relatime,gid=5,mode=620,ptmxmode=000",
+                                "source": "devpts",
+                                "target": "/dev/pts"
+                            },
+                            {
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev",
+                                "source": "tmpfs",
+                                "target": "/dev/shm"
+                            },
+                            {
+                                "fstype": "mqueue",
+                                "options": "rw,relatime",
+                                "source": "mqueue",
+                                "target": "/dev/mqueue"
+                            },
+                            {
+                                "fstype": "hugetlbfs",
+                                "options": "rw,relatime,pagesize=2M",
+                                "source": "hugetlbfs",
+                                "target": "/dev/hugepages"
+                            }
+                        ],
+                        "fstype": "devtmpfs",
+                        "options": "rw,nosuid,relatime,size=465256k,nr_inodes=116314,mode=755",
+                        "source": "udev",
+                        "target": "/dev"
+                    },
+                    {
+                        "children": [
+                            {
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev,noexec,relatime,size=5120k",
+                                "source": "tmpfs",
+                                "target": "/run/lock"
+                            },
+                            {
+                                "fstype": "tmpfs",
+                                "options": "rw,nosuid,nodev,relatime,size=100148k,mode=700,uid=999,gid=999",
+                                "source": "tmpfs",
+                                "target": "/run/user/999"
+                            }
+                        ],
+                        "fstype": "tmpfs",
+                        "options": "rw,nosuid,noexec,relatime,size=100152k,mode=755",
+                        "source": "tmpfs",
+                        "target": "/run"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,noatime",
+                        "source": "/dev/loop0",
+                        "target": "/rofs"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,relatime",
+                        "source": "/dev/loop2",
+                        "target": "/usr/lib/modules"
+                    },
+                    {
+                        "fstype": "tmpfs",
+                        "options": "rw,nosuid,nodev,relatime",
+                        "source": "tmpfs",
+                        "target": "/tmp"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,relatime",
+                        "source": "/dev/loop3",
+                        "target": "/media/rack.lower"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,relatime",
+                        "source": "/dev/loop4",
+                        "target": "/media/region.lower"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,relatime",
+                        "source": "/dev/loop0",
+                        "target": "/media/filesystem"
+                    },
+                    {
+                        "fstype": "overlay",
+                        "options": "ro,relatime,lowerdir=/media/region.lower:/media/rack.lower:/media/filesystem",
+                        "source": "overlay",
+                        "target": "/media/region"
+                    },
+                    {
+                        "fstype": "overlay",
+                        "options": "ro,relatime,lowerdir=/media/rack.lower:/media/filesystem",
+                        "source": "overlay",
+                        "target": "/media/rack"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,nodev,relatime",
+                        "source": "/dev/loop5",
+                        "target": "/snap/core/6673"
+                    },
+                    {
+                        "fstype": "squashfs",
+                        "options": "ro,nodev,relatime",
+                        "source": "/dev/loop6",
+                        "target": "/snap/subiquity/1012"
+                    }
+                ],
+                "fstype": "overlay",
+                "options": "rw,relatime,lowerdir=//installer.squashfs://filesystem.squashfs,upperdir=/cow/upper,workdir=/cow/work",
+                "source": "/cow",
+                "target": "/"
+            }
+        ],
+        "multipath": {},
+        "raid": {},
+        "zfs": {
+            "zpools": {}
+        }
+    }
+}

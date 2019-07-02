@@ -83,8 +83,8 @@ class TestFilesystemController(unittest.TestCase):
 
     def test_make_boot_disk_BIOS(self):
         controller = make_controller(Bootloader.BIOS)
-        disk1 = make_disk(controller.model)
-        disk2 = make_disk(controller.model)
+        disk1 = make_disk(controller.model, preserve=False)
+        disk2 = make_disk(controller.model, preserve=False)
         disk2p1 = controller.model.add_partition(
             disk2, size=disk2.free_for_partitions)
 
@@ -103,10 +103,28 @@ class TestFilesystemController(unittest.TestCase):
         self.assertEqual(disk2.partitions()[0].flag, "bios_grub")
         self.assertEqual(controller.model.grub_install_device, disk2)
 
+    def test_make_boot_disk_BIOS_existing(self):
+        controller = make_controller(Bootloader.BIOS)
+        disk1 = make_disk(controller.model, preserve=True)
+        disk1p1 = controller.model.add_partition(
+            disk1, size=1 << 20, flag="bios_grub")
+        disk1p1.preserve = True
+        disk2 = make_disk(controller.model, preserve=False)
+
+        self.assertEqual(disk1.partitions(), [disk1p1])
+        self.assertEqual(controller.model.grub_install_device, None)
+        controller.make_boot_disk(disk1)
+        self.assertEqual(disk1.partitions(), [disk1p1])
+        self.assertEqual(controller.model.grub_install_device, disk1)
+
+        controller.make_boot_disk(disk2)
+        self.assertEqual(disk1.partitions(), [disk1p1])
+        self.assertEqual(controller.model.grub_install_device, disk2)
+
     def test_make_boot_disk_UEFI(self):
         controller = make_controller(Bootloader.UEFI)
-        disk1 = make_disk(controller.model)
-        disk2 = make_disk(controller.model)
+        disk1 = make_disk(controller.model, preserve=False)
+        disk2 = make_disk(controller.model, preserve=False)
         disk2p1 = controller.model.add_partition(
             disk2, size=disk2.free_for_partitions)
 
@@ -130,10 +148,35 @@ class TestFilesystemController(unittest.TestCase):
         efi_mnt = controller.model._mount_for_path("/boot/efi")
         self.assertEqual(efi_mnt.device.volume, disk2.partitions()[0])
 
+    def test_make_boot_disk_UEFI_existing(self):
+        controller = make_controller(Bootloader.UEFI)
+        disk1 = make_disk(controller.model, preserve=True)
+        disk1p1 = controller.model.add_partition(
+            disk1, size=512 << 20, flag="boot")
+        disk1p1.preserve = True
+        disk2 = make_disk(controller.model, preserve=True)
+
+        self.assertEqual(disk1.partitions(), [disk1p1])
+        self.assertEqual(controller.model.grub_install_device, None)
+        efi_mnt = controller.model._mount_for_path("/boot/efi")
+        self.assertEqual(efi_mnt, None)
+        controller.make_boot_disk(disk1)
+        self.assertEqual(disk1.partitions(), [disk1p1])
+        self.assertEqual(controller.model.grub_install_device, None)
+        efi_mnt = controller.model._mount_for_path("/boot/efi")
+        self.assertEqual(efi_mnt.device.volume, disk1p1)
+        self.assertEqual(disk1p1.fs().fstype, "fat32")
+
+        controller.make_boot_disk(disk2)
+        self.assertEqual(disk1.partitions(), [disk1p1])
+        self.assertEqual(controller.model.grub_install_device, None)
+        efi_mnt = controller.model._mount_for_path("/boot/efi")
+        self.assertEqual(efi_mnt.device.volume, disk2.partitions()[0])
+
     def test_make_boot_disk_PREP(self):
         controller = make_controller(Bootloader.PREP)
-        disk1 = make_disk(controller.model)
-        disk2 = make_disk(controller.model)
+        disk1 = make_disk(controller.model, preserve=False)
+        disk2 = make_disk(controller.model, preserve=False)
         disk2p1 = controller.model.add_partition(
             disk2, size=disk2.free_for_partitions)
 
@@ -157,3 +200,42 @@ class TestFilesystemController(unittest.TestCase):
         self.assertEqual(
             controller.model.grub_install_device,
             disk2.partitions()[0])
+
+    def test_make_boot_disk_PREP_existing(self):
+        controller = make_controller(Bootloader.PREP)
+        disk1 = make_disk(controller.model, preserve=True)
+        disk1p1 = controller.model.add_partition(
+            disk1, size=8 << 20, flag="prep")
+        disk1p1.preserve = True
+        disk2 = make_disk(controller.model, preserve=False)
+
+        self.assertEqual(disk1.partitions(), [disk1p1])
+        self.assertEqual(controller.model.grub_install_device, None)
+        controller.make_boot_disk(disk1)
+        self.assertEqual(disk1.partitions(), [disk1p1])
+        self.assertEqual(controller.model.grub_install_device, disk1p1)
+        self.assertEqual(disk1p1.wipe, 'zero')
+
+        controller.make_boot_disk(disk2)
+        self.assertEqual(disk1.partitions(), [disk1p1])
+        self.assertEqual(disk1p1.wipe, None)
+        self.assertEqual(
+            controller.model.grub_install_device, disk2.partitions()[0])
+        self.assertEqual(disk2.partitions()[0].flag, "prep")
+        self.assertEqual(
+            controller.model.grub_install_device,
+            disk2.partitions()[0])
+
+    def test_mounting_partition_makes_boot_disk(self):
+        controller = make_controller(Bootloader.UEFI)
+        disk1 = make_disk(controller.model, preserve=True)
+        disk1p1 = controller.model.add_partition(
+            disk1, size=512 << 20, flag="boot")
+        disk1p1.preserve = True
+        disk1p2 = controller.model.add_partition(
+            disk1, size=disk1.free_for_partitions)
+        disk1p2.preserve = True
+        controller.partition_disk_handler(
+            disk1, disk1p2, {'fstype': 'ext4', 'mount': '/'})
+        efi_mnt = controller.model._mount_for_path("/boot/efi")
+        self.assertEqual(efi_mnt.device.volume, disk1p1)

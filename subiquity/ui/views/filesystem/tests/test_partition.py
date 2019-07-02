@@ -50,6 +50,7 @@ class PartitionViewTests(unittest.TestCase):
         view_helpers.click(stretchy.form.done_btn.base_widget)
         valid_data['mount'] = '/'
         valid_data['size'] = dehumanize_size(valid_data['size'])
+        valid_data['use_swap'] = False
         view.controller.partition_disk_handler.assert_called_once_with(
             stretchy.disk, None, valid_data)
 
@@ -69,6 +70,28 @@ class PartitionViewTests(unittest.TestCase):
             'size': dehumanize_size(form_data['size']),
             'fstype': 'xfs',
             'mount': None,
+            'use_swap': False,
+            }
+        view.controller.partition_disk_handler.assert_called_once_with(
+            stretchy.disk, stretchy.partition, expected_data)
+
+    def test_edit_existing_partition(self):
+        form_data = {
+            'fstype': "xfs",
+            }
+        model, disk = make_model_and_disk()
+        partition = model.add_partition(disk, 512*(2**20))
+        partition.preserve = True
+        model.add_filesystem(partition, "ext4")
+        view, stretchy = make_view(model, disk, partition)
+        self.assertFalse(stretchy.form.size.enabled)
+        self.assertTrue(stretchy.form.done_btn.enabled)
+        view_helpers.enter_data(stretchy.form, form_data)
+        view_helpers.click(stretchy.form.done_btn.base_widget)
+        expected_data = {
+            'fstype': 'xfs',
+            'mount': None,
+            'use_swap': False,
             }
         view.controller.partition_disk_handler.assert_called_once_with(
             stretchy.disk, stretchy.partition, expected_data)
@@ -88,6 +111,7 @@ class PartitionViewTests(unittest.TestCase):
             'size': dehumanize_size(form_data['size']),
             'fstype': "fat32",
             'mount': '/boot/efi',
+            'use_swap': False,
             }
         view.controller.partition_disk_handler.assert_called_once_with(
             stretchy.disk, stretchy.partition, expected_data)

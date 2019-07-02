@@ -59,11 +59,14 @@ class Subiquity(Application):
             "InstallProgress",
     ]
 
-    def __init__(self, ui, opts):
+
+    def __init__(self, ui, opts, block_log_dir):
         if not opts.bootloader == 'none' and platform.machine() != 's390x':
             self.controllers.remove("Zdev")
+
         super().__init__(ui, opts)
         self.common['ui'].progress_completion += 1
+        self.common['block_log_dir'] = block_log_dir
         if opts.snaps_from_examples:
             connection = FakeSnapdConnection(
                 os.path.join(

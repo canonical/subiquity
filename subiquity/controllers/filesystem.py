@@ -14,9 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import enum
+import json
 import logging
-
-from probert.storage import StorageInfo
+import os
 
 from subiquitycore.controller import BaseController
 
@@ -39,6 +39,7 @@ from subiquity.ui.views.filesystem.probing import (
 
 
 log = logging.getLogger("subiquitycore.controller.filesystem")
+block_discover_log = logging.getLogger('block-discover')
 
 BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024    # 1MiB
 PREP_GRUB_SIZE_BYTES = 8 * 1024 * 1024    # 8MiB
@@ -57,6 +58,7 @@ class FilesystemController(BaseController):
 
     def __init__(self, common):
         super().__init__(common)
+        self.block_log_dir = common.get('block_log_dir')
         self.model = self.base_model.filesystem
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
@@ -69,28 +71,34 @@ class FilesystemController(BaseController):
         self._probe_state = ProbeState.NOT_STARTED
 
     def start(self):
+        block_discover_log.info("starting probe")
         self._probe_state = ProbeState.PROBING
         self.run_in_bg(self._bg_probe, self._probed)
         self.loop.set_alarm_in(
             5.0, lambda loop, ud: self._check_probe_timeout())
 
     def _bg_probe(self, probe_types=None):
-        probed_data = self.prober.get_storage(probe_types=probe_types)
-        storage = {}
-        for path, data in probed_data["blockdev"].items():
-            storage[path] = StorageInfo({path: data})
-        return storage
+        return self.prober.get_storage(probe_types=probe_types)
 
     def _probed(self, fut, restricted=False):
         if not restricted and self._probe_state != ProbeState.PROBING:
-            log.debug("ignoring result %s for timed out probe", fut)
+            block_discover_log.debug(
+                "ignoring result %s for timed out probe", fut)
             return
         try:
             storage = fut.result()
+            if restricted:
+                fname = 'probe-data-restricted.json'
+            else:
+                fname = 'probe-data.json'
+            with open(os.path.join(self.block_log_dir, fname), 'w') as fp:
+                json.dump(storage, fp)
+            self.model.load_probe_data(storage)
         except Exception:
-            log.exception("probing failed restricted=%s", restricted)
+            block_discover_log.exception(
+                "probing failed restricted=%s", restricted)
             if not restricted:
-                log.info("reprobing for blockdev only")
+                block_discover_log.info("reprobing for blockdev only")
                 # Should make a crash file for apport, arrange for it to be
                 # copied onto the installed system and tell user all this
                 # happened!
@@ -100,7 +108,6 @@ class FilesystemController(BaseController):
                 if self.showing:
                     self.default()
         else:
-            self.model.load_probe_data(storage)
             self._probe_state = ProbeState.DONE
             # Should do something here if probing found no devices.
             if self.showing:
@@ -241,7 +248,7 @@ class FilesystemController(BaseController):
         if self.answers['guided']:
             index = self.answers['guided-index']
             disk = self.model.all_disks()[index]
-            v.choose_disk(None, disk.path)
+            v.choose_disk(None, disk)
 
     def reset(self):
         log.info("Resetting Filesystem model")
@@ -264,6 +271,11 @@ class FilesystemController(BaseController):
         if spec.get('mount') is None:
             return
         mount = self.model.add_mount(fs, spec['mount'])
+        if self.model.needs_bootloader_partition():
+            vol = fs.volume
+            if vol.type == "partition" and vol.device.type == "disk":
+                if vol.device._can_be_boot_disk():
+                    self.make_boot_disk(vol.device)
         return mount
 
     def delete_mount(self, mount):
@@ -273,14 +285,20 @@ class FilesystemController(BaseController):
 
     def create_filesystem(self, volume, spec):
         if spec['fstype'] is None:
-            return
-        fs = self.model.add_filesystem(volume, spec['fstype'])
+            fs = volume.original_fs()
+            if fs is None:
+                return
+            self.model.re_add_filesystem(fs)
+        else:
+            fs = self.model.add_filesystem(volume, spec['fstype'])
         if isinstance(volume, Partition):
             if spec['fstype'] == "swap":
                 volume.flag = "swap"
             elif volume.flag == "swap":
                 volume.flag = ""
         if spec['fstype'] == "swap":
+            self.model.add_mount(fs, "")
+        if spec['fstype'] is None and spec['use_swap']:
             self.model.add_mount(fs, "")
         self.create_mount(fs, spec)
         return fs
@@ -391,17 +409,29 @@ class FilesystemController(BaseController):
         for subobj in obj.fs(), obj.constructed_device():
             self.delete(subobj)
 
+    def reformat(self, disk):
+        if disk.type == "disk":
+            disk.preserve = False
+        self.clear(disk)
+        for p in list(disk.partitions()):
+            self.delete(p)
+
     def partition_disk_handler(self, disk, partition, spec):
         log.debug('partition_disk_handler: %s %s %s', disk, partition, spec)
         log.debug('disk.freespace: {}'.format(disk.free_for_partitions))
 
         if partition is not None:
-            partition.size = align_up(spec['size'])
-            if disk.free_for_partitions < 0:
-                raise Exception("partition size too large")
+            if 'size' in spec:
+                partition.size = align_up(spec['size'])
+                if disk.free_for_partitions < 0:
+                    raise Exception("partition size too large")
             self.delete_filesystem(partition.fs())
             self.create_filesystem(partition, spec)
             return
+
+        if len(disk.partitions()) == 0:
+            if disk.type == "disk":
+                disk.preserve = False
 
         needs_boot = self.model.needs_bootloader_partition()
         log.debug('model needs a bootloader partition? {}'.format(needs_boot))
@@ -426,10 +456,12 @@ class FilesystemController(BaseController):
         log.debug('vg.freespace: {}'.format(vg.free_for_partitions))
 
         if lv is not None:
-            lv.name = spec['name']
-            lv.size = align_up(spec['size'])
-            if vg.free_for_partitions < 0:
-                raise Exception("lv size too large")
+            if 'name' in spec:
+                lv.name = spec['name']
+            if 'size' in spec:
+                lv.size = align_up(spec['size'])
+                if vg.free_for_partitions < 0:
+                    raise Exception("lv size too large")
             self.delete_filesystem(lv.fs())
             self.create_filesystem(lv, spec)
             return
@@ -478,21 +510,48 @@ class FilesystemController(BaseController):
 
     def make_boot_disk(self, new_boot_disk):
         boot_partition = None
-        for disk in self.model.all_disks():
-            for part in disk.partitions():
-                if part.flag in ("bios_grub", "boot", "prep"):
-                    boot_partition = part
+        if self.model.bootloader == Bootloader.BIOS:
+            install_dev = self.model.grub_install_device
+            if install_dev:
+                boot_partition = install_dev._potential_boot_partition()
+        elif self.model.bootloader == Bootloader.UEFI:
+            mount = self.model._mount_for_path("/boot/efi")
+            if mount is not None:
+                boot_partition = mount.device.volume
+        elif self.model.bootloader == Bootloader.PREP:
+            boot_partition = self.model.grub_install_device
         if boot_partition is not None:
-            boot_disk = boot_partition.device
-            full = boot_disk.free_for_partitions == 0
-            self.delete_partition(boot_partition)
-            if full:
-                largest_part = max(
-                    boot_disk.partitions(), key=lambda p: p.size)
-                largest_part.size += boot_partition.size
-            if new_boot_disk.free_for_partitions < boot_partition.size:
-                largest_part = max(
-                    new_boot_disk.partitions(), key=lambda p: p.size)
-                largest_part.size -= (
-                    boot_partition.size - new_boot_disk.free_for_partitions)
-        self._create_boot_partition(new_boot_disk)
+            if boot_partition.preserve:
+                if self.model.bootloader == Bootloader.PREP:
+                    boot_partition.wipe = None
+                elif self.model.bootloader == Bootloader.UEFI:
+                    self.delete_mount(boot_partition.fs().mount())
+            else:
+                boot_disk = boot_partition.device
+                full = boot_disk.free_for_partitions == 0
+                self.delete_partition(boot_partition)
+                if full:
+                    largest_part = max(
+                        boot_disk.partitions(), key=lambda p: p.size)
+                    largest_part.size += boot_partition.size
+                if new_boot_disk.free_for_partitions < boot_partition.size:
+                    largest_part = max(
+                        new_boot_disk.partitions(), key=lambda p: p.size)
+                    largest_part.size -= (
+                        boot_partition.size -
+                        new_boot_disk.free_for_partitions)
+        if new_boot_disk._has_preexisting_partition():
+            if self.model.bootloader == Bootloader.BIOS:
+                self.model.grub_install_device = new_boot_disk
+            elif self.model.bootloader == Bootloader.UEFI:
+                part = new_boot_disk._potential_boot_partition()
+                if part.fs() is None:
+                    self.model.add_filesystem(part, 'fat32')
+                self.model.add_mount(part.fs(), '/boot/efi')
+            elif self.model.bootloader == Bootloader.PREP:
+                part = new_boot_disk._potential_boot_partition()
+                part.wipe = 'zero'
+                self.model.grub_install_device = part
+        else:
+            new_boot_disk.preserve = False
+            self._create_boot_partition(new_boot_disk)
