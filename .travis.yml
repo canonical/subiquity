@@ -5,6 +5,7 @@ env:
   - IMAGE=ubuntu-daily:bionic SCRIPT=./scripts/runtests.sh
   - IMAGE=ubuntu-daily:cosmic SCRIPT=./scripts/runtests.sh
   - IMAGE=ubuntu-daily:disco SCRIPT=./scripts/runtests.sh
+  - IMAGE=ubuntu-daily:eoan SCRIPT=./scripts/runtests.sh
 
 language: bash
 
