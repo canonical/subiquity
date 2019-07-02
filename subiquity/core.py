@@ -59,7 +59,6 @@ class Subiquity(Application):
             "InstallProgress",
     ]
 
-
     def __init__(self, ui, opts, block_log_dir):
         if not opts.bootloader == 'none' and platform.machine() != 's390x':
             self.controllers.remove("Zdev")
