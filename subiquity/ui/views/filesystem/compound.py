@@ -196,9 +196,23 @@ class CompoundDiskForm(Form):
 
     def validate_devices(self):
         if self.model.needs_bootloader_partition():
+            # Check that we're not about to paint ourselves into a
+            # corner by putting _all_ disks into a RAID or whatever
+            # and not leaving anywher for the ESP or other bootloader
+            # partition.
             mdc = self.devices.widget
-            empty_disks = {d for d in self.model.all_disks() if d.used == 0}
-            if not empty_disks - set(mdc.value):
+            potential_boot_disks = set()
+            for d in self.model.all_disks():
+                if d.used == 0:
+                    # An empty disk can always have a boot partition added.
+                    potential_boot_disks.add(d)
+                elif d.preserve:
+                    # As can a disk that still has it's original
+                    # partition table (it can be reformatted, or it
+                    # might already have a bootloader partition we can
+                    # reuse)
+                    potential_boot_disks.add(d)
+            if not potential_boot_disks - set(mdc.value):
                 return _("\
 If you put all disks into RAIDs or LVM VGs, there will be nowhere \
 to put the boot partition.")
