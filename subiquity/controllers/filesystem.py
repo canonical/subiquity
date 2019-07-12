@@ -412,6 +412,7 @@ class FilesystemController(BaseController):
     def reformat(self, disk):
         if disk.type == "disk":
             disk.preserve = False
+            disk.wipe = 'superblock-recursive'
         self.clear(disk)
         for p in list(disk.partitions()):
             self.delete(p)
@@ -432,6 +433,7 @@ class FilesystemController(BaseController):
         if len(disk.partitions()) == 0:
             if disk.type == "disk":
                 disk.preserve = False
+                disk.wipe = 'superblock-recursive'
 
         needs_boot = self.model.needs_bootloader_partition()
         log.debug('model needs a bootloader partition? {}'.format(needs_boot))
