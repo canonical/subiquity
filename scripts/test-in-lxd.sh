@@ -4,7 +4,7 @@ IMAGE=$1
 SCRIPT=$2
 
 apt-get -qq update
-apt -t trusty-backports install -y lxd
+apt install -y lxd
 
 sed -i 's/LXD_IPV4_ADDR=".*"/LXD_IPV4_ADDR="192.168.123.1"/' /etc/default/lxd-bridge
 sed -i 's/LXD_IPV4_NETMASK=".*"/LXD_IPV4_NETMASK="255.255.255.0"/' /etc/default/lxd-bridge
