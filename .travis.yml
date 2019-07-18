@@ -1,4 +1,5 @@
 sudo: required
+dist: xenial
 
 env:
   - IMAGE=ubuntu-daily:bionic SCRIPT="make lint"
