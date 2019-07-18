@@ -13,10 +13,13 @@ from subiquity.models.filesystem import (
 from subiquity.models.tests.test_filesystem import (
     make_model_and_disk,
     )
-from subiquity.ui.views.filesystem.partition import PartitionStretchy
+from subiquity.ui.views.filesystem.partition import (
+    FormatEntireStretchy,
+    PartitionStretchy,
+    )
 
 
-def make_view(model, disk, partition=None):
+def make_partition_view(model, disk, partition=None):
     controller = mock.create_autospec(spec=FilesystemController)
     base_view = BaseView(urwid.Text(""))
     base_view.model = model
@@ -27,11 +30,22 @@ def make_view(model, disk, partition=None):
     return base_view, stretchy
 
 
+def make_format_entire_view(model, disk):
+    controller = mock.create_autospec(spec=FilesystemController)
+    base_view = BaseView(urwid.Text(""))
+    base_view.model = model
+    base_view.controller = controller
+    base_view.refresh_model_inputs = lambda: None
+    stretchy = FormatEntireStretchy(base_view, disk)
+    base_view.show_stretchy_overlay(stretchy)
+    return base_view, stretchy
+
+
 class PartitionViewTests(unittest.TestCase):
 
     def test_initial_focus(self):
         model, disk = make_model_and_disk()
-        view, stretchy = make_view(model, disk)
+        view, stretchy = make_partition_view(model, disk)
         focus_path = view_helpers.get_focus_path(view)
         for w in reversed(focus_path):
             if w is stretchy.form.size.widget:
@@ -45,7 +59,7 @@ class PartitionViewTests(unittest.TestCase):
             'fstype': "ext4",
             }
         model, disk = make_model_and_disk()
-        view, stretchy = make_view(model, disk)
+        view, stretchy = make_partition_view(model, disk)
         view_helpers.enter_data(stretchy.form, valid_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
         valid_data['mount'] = '/'
@@ -62,7 +76,7 @@ class PartitionViewTests(unittest.TestCase):
         model, disk = make_model_and_disk()
         partition = model.add_partition(disk, 512*(2**20))
         model.add_filesystem(partition, "ext4")
-        view, stretchy = make_view(model, disk, partition)
+        view, stretchy = make_partition_view(model, disk, partition)
         self.assertTrue(stretchy.form.done_btn.enabled)
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
@@ -83,7 +97,7 @@ class PartitionViewTests(unittest.TestCase):
         partition = model.add_partition(disk, 512*(2**20))
         partition.preserve = True
         model.add_filesystem(partition, "ext4")
-        view, stretchy = make_view(model, disk, partition)
+        view, stretchy = make_partition_view(model, disk, partition)
         self.assertFalse(stretchy.form.size.enabled)
         self.assertTrue(stretchy.form.done_btn.enabled)
         view_helpers.enter_data(stretchy.form, form_data)
@@ -104,7 +118,7 @@ class PartitionViewTests(unittest.TestCase):
         partition = model.add_partition(disk, 512*(2**20), "boot")
         fs = model.add_filesystem(partition, "fat32")
         model.add_mount(fs, '/boot/efi')
-        view, stretchy = make_view(model, disk, partition)
+        view, stretchy = make_partition_view(model, disk, partition)
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
@@ -115,3 +129,12 @@ class PartitionViewTests(unittest.TestCase):
             }
         view.controller.partition_disk_handler.assert_called_once_with(
             stretchy.disk, stretchy.partition, expected_data)
+
+    def test_format_entire_unusual_filesystem(self):
+        model, disk = make_model_and_disk()
+        fs = model.add_filesystem(disk, "ntfs")
+        fs.preserve = True
+        disk._original_fs = fs
+        view, stretchy = make_format_entire_view(model, disk)
+        self.assertEqual(
+            stretchy.form.fstype.value, None)
