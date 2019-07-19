@@ -275,6 +275,24 @@ prep_partition_description = _(
     'installed onto this partition.')
 
 
+def initial_data_for_fs(fs):
+    r = {}
+    if fs is not None:
+        if fs.preserve:
+            r['fstype'] = None
+            if fs.fstype == "swap":
+                r['use_swap'] = fs.mount() is not None
+        else:
+            r['fstype'] = fs.fstype
+        if fs._m.is_mounted_filesystem(fs.fstype):
+            mount = fs.mount()
+            if mount is not None:
+                r['mount'] = mount.path
+            else:
+                r['mount'] = None
+    return r
+
+
 class PartitionStretchy(Stretchy):
 
     def __init__(self, parent, disk, partition=None):
@@ -299,20 +317,9 @@ class PartitionStretchy(Stretchy):
                 label = _("Save")
             initial['size'] = humanize_size(self.partition.size)
             max_size += self.partition.size
-            fs = self.partition.fs()
-            if fs is not None:
-                if fs.preserve:
-                    initial['fstype'] = None
-                    if fs.fstype == "swap":
-                        initial['use_swap'] = fs.mount() is not None
-                elif partition.flag != "boot":
-                    initial['fstype'] = fs.fstype
-                if self.model.is_mounted_filesystem(fs.fstype):
-                    mount = fs.mount()
-                    if mount is not None:
-                        initial['mount'] = mount.path
-                    else:
-                        initial['mount'] = None
+
+            if partition.flag != "boot":
+                initial.update(initial_data_for_fs(self.partition.fs()))
             if isinstance(disk, LVM_VolGroup):
                 initial['name'] = partition.name
                 lvm_names.remove(partition.name)
@@ -456,17 +463,7 @@ class FormatEntireStretchy(Stretchy):
         initial = {}
         fs = device.fs()
         if fs is not None:
-            if fs.preserve:
-                initial['fstype'] = None
-                if fs.fstype == "swap":
-                    initial['use_swap'] = fs.mount() is not None
-            else:
-                initial['fstype'] = fs.fstype
-            initial['fstype'] = fs.fstype
-            if self.model.is_mounted_filesystem(fs.fstype):
-                mount = fs.mount()
-                if mount is not None:
-                    initial['mount'] = mount.path
+            initial.update(initial_data_for_fs(fs))
         elif not isinstance(device, Disk):
             initial['fstype'] = 'ext4'
         self.form = PartitionForm(self.model, 0, initial, None, device)
