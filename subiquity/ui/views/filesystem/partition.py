@@ -164,6 +164,12 @@ class PartitionForm(Form):
 
     def select_fstype(self, sender, fstype):
         show_use = False
+        if fstype is None and self.existing_fs_type is not None:
+            self.mount.widget.disable_unsuitable_mountpoints_for_existing_fs()
+            self.mount.value = self.mount.value
+        else:
+            self.mount.widget.enable_common_mountpoints()
+            self.mount.value = self.mount.value
         if fstype is None:
             if self.existing_fs_type == "swap":
                 show_use = True
