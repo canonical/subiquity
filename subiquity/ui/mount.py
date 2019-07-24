@@ -53,6 +53,9 @@ suitable_mountpoints_for_existing_fs = [
 
 
 class MountSelector(WidgetWrap):
+
+    signals = ['change']
+
     def __init__(self, mountpoints):
         opts = []
         first_opt = None
@@ -101,6 +104,8 @@ class MountSelector(WidgetWrap):
         self._showhide_other(value == OTHER)
         if value == OTHER:
             self._w.focus_position = 1
+            value = "/" + self._other.value
+        self._emit('change', value)
 
     @property
     def value(self):

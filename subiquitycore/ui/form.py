@@ -182,7 +182,7 @@ class BoundFormField(object):
         return value
 
     def _change(self, sender, new_val):
-        if self.in_error:
+        if self.in_error or self.showing_extra:
             self.showing_extra = False
             # the validator will likely inspect self.value to decide
             # if the new input is valid. So self.value had better
