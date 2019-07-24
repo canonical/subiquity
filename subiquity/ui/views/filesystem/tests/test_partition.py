@@ -89,6 +89,18 @@ class PartitionViewTests(unittest.TestCase):
         view.controller.partition_disk_handler.assert_called_once_with(
             stretchy.disk, stretchy.partition, expected_data)
 
+    def test_size_clamping(self):
+        model, disk = make_model_and_disk()
+        partition = model.add_partition(disk, 512*(2**20))
+        model.add_filesystem(partition, "ext4")
+        view, stretchy = make_partition_view(model, disk, partition)
+        self.assertTrue(stretchy.form.done_btn.enabled)
+        stretchy.form.size.value = "1000T"
+        stretchy.form.size.widget.lost_focus()
+        self.assertTrue(stretchy.form.size.showing_extra)
+        self.assertIn(
+            "Capped partition size", stretchy.form.size.under_text.text)
+
     def test_edit_existing_partition(self):
         form_data = {
             'fstype': "xfs",
@@ -109,6 +121,45 @@ class PartitionViewTests(unittest.TestCase):
             }
         view.controller.partition_disk_handler.assert_called_once_with(
             stretchy.disk, stretchy.partition, expected_data)
+
+    def test_edit_existing_partition_mountpoints(self):
+        # Set up a PartitionStretchy for editing a partition with an
+        # existing filesystem.
+        model, disk = make_model_and_disk()
+        partition = model.add_partition(disk, 512*(2**20))
+        partition.preserve = True
+        fs = model.add_filesystem(partition, "ext4")
+        fs.preserve = True
+        partition._original_fs = fs
+        view, stretchy = make_partition_view(model, disk, partition)
+        self.assertFalse(stretchy.form.size.enabled)
+        self.assertTrue(stretchy.form.done_btn.enabled)
+
+        # By default, the "leave formatted as xxx" option is selected.
+        self.assertIs(stretchy.form.fstype.value, None)
+        # As is "leave unmounted"
+        self.assertIs(stretchy.form.mount.value, None)
+
+        # The option for mounting at / is disabled. But /srv is still
+        # enabled.
+        selector = stretchy.form.mount.widget._selector
+        self.assertFalse(selector.option_by_value('/').enabled)
+        self.assertTrue(selector.option_by_value('/srv').enabled)
+
+        # Typing in an unsuitable mountpoint triggers a message.
+        stretchy.form.mount.value = "/boot"
+        stretchy.form.mount.validate()
+        self.assertTrue(stretchy.form.mount.showing_extra)
+        self.assertIn(
+            "bad idea", stretchy.form.mount.under_text.text)
+        self.assertIn(
+            "/boot", stretchy.form.mount.under_text.text)
+
+        # Selecting to reformat the partition clears the message and
+        # reenables the / option.
+        stretchy.form.select_fstype(None, "ext4")
+        self.assertFalse(stretchy.form.mount.showing_extra)
+        self.assertTrue(selector.option_by_value('/').enabled)
 
     def test_edit_boot_partition(self):
         form_data = {
