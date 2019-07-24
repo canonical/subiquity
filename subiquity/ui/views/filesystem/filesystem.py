@@ -129,11 +129,20 @@ class MountInfo:
 
     @property
     def fstype(self):
-        return self.mount.device.fstype
+        fstype = self.mount.device.fstype
+        if self.mount.device.preserve:
+            fstype = "existing" + " " + fstype
+        else:
+            fstype = "new" + " " + fstype
+        return fstype
 
     @property
     def desc(self):
-        return self.mount.device.volume.desc()
+        annotations = self.mount.device.volume.annotations
+        desc = self.mount.device.volume.desc()
+        if annotations:
+            desc = annotations[0] + " " + desc
+        return desc
 
     def startswith(self, other):
         i = 0
