@@ -44,8 +44,18 @@ class _MountEditor(StringEditor):
 OTHER = object()
 LEAVE_UNMOUNTED = object()
 
+suitable_mountpoints_for_existing_fs = [
+    '/home',
+    '/srv',
+    OTHER,
+    LEAVE_UNMOUNTED,
+    ]
+
 
 class MountSelector(WidgetWrap):
+
+    signals = ['change']
+
     def __init__(self, mountpoints):
         opts = []
         first_opt = None
@@ -70,6 +80,16 @@ class MountSelector(WidgetWrap):
             # This can happen if all the common_mountpoints are in use.
             self._showhide_other(True)
 
+    def disable_unsuitable_mountpoints_for_existing_fs(self):
+        for opt in self._selector._options:
+            if opt.value is not None:
+                opt.enabled = opt.value in suitable_mountpoints_for_existing_fs
+
+    def enable_common_mountpoints(self):
+        for opt in self._selector._options:
+            if isinstance(opt.value, str):
+                opt.enabled = opt.value in common_mountpoints
+
     def _showhide_other(self, show):
         if show and not self._other_showing:
             self._w.contents.append(
@@ -84,6 +104,8 @@ class MountSelector(WidgetWrap):
         self._showhide_other(value == OTHER)
         if value == OTHER:
             self._w.focus_position = 1
+            value = "/" + self._other.value
+        self._emit('change', value)
 
     @property
     def value(self):
@@ -96,10 +118,11 @@ class MountSelector(WidgetWrap):
 
     @value.setter
     def value(self, val):
+        opt = self._selector.option_by_value(val)
         if val is None:
             self._selector.value = LEAVE_UNMOUNTED
             self._showhide_other(False)
-        elif val in common_mountpoints:
+        elif opt is not None and opt.enabled:
             self._selector.value = val
             self._showhide_other(False)
         else:

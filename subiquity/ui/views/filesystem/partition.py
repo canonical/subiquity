@@ -44,7 +44,11 @@ from subiquity.models.filesystem import (
     humanize_size,
     LVM_VolGroup,
 )
-from subiquity.ui.mount import MountField
+from subiquity.ui.mount import (
+    common_mountpoints,
+    MountField,
+    suitable_mountpoints_for_existing_fs,
+    )
 
 
 log = logging.getLogger('subiquity.ui.filesystem.add_partition')
@@ -99,16 +103,16 @@ class SizeWidget(StringEditor):
         except ValueError:
             return
         if sz > self.form.max_size:
+            self.value = self.form.size_str
             self.form.size.show_extra(
                 ('info_minor',
                  _("Capped partition size at {}").format(self.form.size_str)))
-            self.value = self.form.size_str
         elif (align_up(sz) != sz and
               humanize_size(align_up(sz)) != self.form.size.value):
             sz_str = humanize_size(align_up(sz))
+            self.value = sz_str
             self.form.size.show_extra(
                 ('info_minor', _("Rounded size up to {}").format(sz_str)))
-            self.value = sz_str
 
 
 class SizeField(FormField):
@@ -164,10 +168,15 @@ class PartitionForm(Form):
 
     def select_fstype(self, sender, fstype):
         show_use = False
+        if fstype is None and self.existing_fs_type is not None:
+            self.mount.widget.disable_unsuitable_mountpoints_for_existing_fs()
+            self.mount.value = self.mount.value
+        else:
+            self.mount.widget.enable_common_mountpoints()
+            self.mount.value = self.mount.value
         if fstype is None:
             if self.existing_fs_type == "swap":
                 show_use = True
-            fstype = self.existing_fs_type
         if self.form_pile is not None:
             for i, (w, o) in enumerate(self.form_pile.contents):
                 if w is self.mount._table and show_use:
@@ -175,7 +184,14 @@ class PartitionForm(Form):
                 elif w is self.use_swap._table and not show_use:
                     self.form_pile.contents[i] = (self.mount._table, o)
         if getattr(self.device, 'flag', None) != "boot":
-            self.mount.enabled = self.model.is_mounted_filesystem(fstype)
+            fstype_for_check = fstype
+            if fstype_for_check is None:
+                fstype_for_check = self.existing_fs_type
+            self.mount.enabled = self.model.is_mounted_filesystem(
+                fstype_for_check)
+        self.fstype.value = fstype
+        self.mount.showing_extra = False
+        self.mount.validate()
 
     name = LVNameField(_("Name: "))
     size = SizeField()
@@ -233,6 +249,15 @@ class PartitionForm(Form):
         if dev is not None:
             return _("{} is already mounted at {}.").format(
                 dev.label.title(), mount)
+        if self.existing_fs_type is not None:
+            if self.fstype.value is None:
+                if mount in common_mountpoints:
+                    if mount not in suitable_mountpoints_for_existing_fs:
+                        self.mount.show_extra(
+                            ('info_error',
+                             _("Mounting an existing filesystem at {} is "
+                               "usually a bad idea, proceed only with "
+                               "caution.").format(mount)))
 
     def as_rows(self):
         r = super().as_rows()

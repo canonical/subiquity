@@ -79,11 +79,16 @@ class Option:
 
     def __init__(self, val):
         if not isinstance(val, tuple):
-            if not isinstance(val, str):
+            if isinstance(val, Option):
+                self.label = val.label
+                self.enabled = val.enabled
+                self.value = val.value
+            elif isinstance(val, str):
+                self.label = val
+                self.enabled = True
+                self.value = val
+            else:
                 raise SelectorError("invalid option %r", val)
-            self.label = val
-            self.enabled = True
-            self.value = val
         elif len(val) == 1:
             self.label = val[0]
             self.enabled = True
@@ -140,9 +145,7 @@ class Selector(WidgetWrap):
 
         options = []
         for opt in opts:
-            if not isinstance(opt, Option):
-                opt = Option(opt)
-            options.append(opt)
+            options.append(Option(opt))
 
         self.options = options
         self._set_index(index)

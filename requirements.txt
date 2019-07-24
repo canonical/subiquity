@@ -1,4 +1,4 @@
-urwid==1.2.1
+urwid==2.0.1
 nose-cov
 nose
 flake8
