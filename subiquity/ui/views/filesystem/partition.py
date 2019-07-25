@@ -345,6 +345,11 @@ class PartitionStretchy(Stretchy):
 
             if partition.flag != "boot":
                 initial.update(initial_data_for_fs(self.partition.fs()))
+            else:
+                if partition.fs() and partition.fs().mount():
+                    initial['mount'] = '/boot/efi'
+                else:
+                    initial['mount'] = None
             if isinstance(disk, LVM_VolGroup):
                 initial['name'] = partition.name
                 lvm_names.remove(partition.name)
@@ -465,8 +470,12 @@ class PartitionStretchy(Stretchy):
         log.debug("Add Partition Result: {}".format(form.as_data()))
         data = form.as_data()
         if self.partition is not None and self.partition.flag == "boot":
-            data['fstype'] = self.partition.fs().fstype
-            data['mount'] = self.partition.fs().mount().path
+            if self.partition.original_fs() is None:
+                data['fstype'] = self.partition.fs().fstype
+            if self.partition.fs().mount() is not None:
+                data['mount'] = self.partition.fs().mount().path
+            else:
+                data['mount'] = None
         if isinstance(self.disk, LVM_VolGroup):
             handler = self.controller.logical_volume_handler
         else:
