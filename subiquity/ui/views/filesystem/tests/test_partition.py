@@ -170,11 +170,62 @@ class PartitionViewTests(unittest.TestCase):
         fs = model.add_filesystem(partition, "fat32")
         model.add_mount(fs, '/boot/efi')
         view, stretchy = make_partition_view(model, disk, partition)
+
+        self.assertFalse(stretchy.form.fstype.enabled)
+        self.assertEqual(stretchy.form.fstype.value, "fat32")
+        self.assertFalse(stretchy.form.mount.enabled)
+        self.assertEqual(stretchy.form.mount.value, "/boot/efi")
+
         view_helpers.enter_data(stretchy.form, form_data)
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
             'size': dehumanize_size(form_data['size']),
             'fstype': "fat32",
+            'mount': '/boot/efi',
+            'use_swap': False,
+            }
+        view.controller.partition_disk_handler.assert_called_once_with(
+            stretchy.disk, stretchy.partition, expected_data)
+
+    def test_edit_existing_unused_boot_partition(self):
+        model, disk = make_model_and_disk()
+        partition = model.add_partition(disk, 512*(2**20), "boot")
+        fs = model.add_filesystem(partition, "fat32")
+        partition._original_fs = fs
+        disk.preserve = partition.preserve = fs.preserve = True
+        view, stretchy = make_partition_view(model, disk, partition)
+
+        self.assertTrue(stretchy.form.fstype.enabled)
+        self.assertEqual(stretchy.form.fstype.value, None)
+        self.assertFalse(stretchy.form.mount.enabled)
+        self.assertEqual(stretchy.form.mount.value, None)
+
+        view_helpers.click(stretchy.form.done_btn.base_widget)
+        expected_data = {
+            'fstype': None,
+            'mount': None,
+            'use_swap': False,
+            }
+        view.controller.partition_disk_handler.assert_called_once_with(
+            stretchy.disk, stretchy.partition, expected_data)
+
+    def test_edit_existing_used_boot_partition(self):
+        model, disk = make_model_and_disk()
+        partition = model.add_partition(disk, 512*(2**20), "boot")
+        fs = model.add_filesystem(partition, "fat32")
+        partition._original_fs = fs
+        disk.preserve = partition.preserve = fs.preserve = True
+        model.add_mount(fs, '/boot/efi')
+        view, stretchy = make_partition_view(model, disk, partition)
+
+        self.assertTrue(stretchy.form.fstype.enabled)
+        self.assertEqual(stretchy.form.fstype.value, None)
+        self.assertFalse(stretchy.form.mount.enabled)
+        self.assertEqual(stretchy.form.mount.value, '/boot/efi')
+
+        view_helpers.click(stretchy.form.done_btn.base_widget)
+        expected_data = {
+            'fstype': None,
             'mount': '/boot/efi',
             'use_swap': False,
             }
