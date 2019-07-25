@@ -120,7 +120,13 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
 
     def update_link(self, ifindex):
         netdev = self.model.update_link(ifindex)
-        if self.view is not None and netdev is not None:
+        if netdev is None:
+            return
+        if not (netdev.info.flags & IFF_UP) and ifindex in self.default_routes:
+            self.default_routes.remove(ifindex)
+            for watcher in self.default_route_watchers:
+                watcher(self.default_routes)
+        if self.view is not None:
             self.view.update_link(netdev)
 
     def route_change(self, action, data):
