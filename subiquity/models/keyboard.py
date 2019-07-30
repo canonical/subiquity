@@ -201,7 +201,7 @@ class KeyboardModel:
         path = self.config_path
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as fp:
-            fp.write(self.setting.render())
+            fp.write(setting.render())
         if setting != self.setting:
             self.setting = setting
             if self.root == '/':
