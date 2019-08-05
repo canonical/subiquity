@@ -22,6 +22,7 @@ import signal
 import subprocess
 import sys
 import platform
+import tempfile
 import time
 import traceback
 
@@ -463,10 +464,16 @@ class InstallProgressController(BaseController):
             self.uu = utils.start_command(["sleep", str(10/self.scale_factor)])
             self.uu.wait()
         else:
+            apt_conf = tempfile.NamedTemporaryFile(
+                dir="/target/tmp", delete=False)
+            apt_conf.write(uu_apt_conf)
+            apt_conf.close()
+            env = os.environ.copy()
+            env["APT_CONFIG"] = apt_conf.name[len("/target"):]
             self._bg_run_command_logged([
                 sys.executable, "-m", "curtin", "in-target", "-t", "/target",
                 "--", "unattended-upgrades", "-v",
-            ], check=True)
+            ], env=env, check=True)
 
     @task(transitions={'success': 'copy_logs_to_target'}, net_only=True)
     def uu_done(self):
@@ -567,3 +574,11 @@ class InstallProgressController(BaseController):
             footer = _('Please report this error in Launchpad')
         self.ui.set_body(self.progress_view)
         self.ui.set_footer(footer)
+
+
+uu_apt_conf = """\
+# Config for the unattended-upgrades run to avoid failing on battery power or
+# a metered connection.
+Unattended-Upgrade::OnlyOnACPower "false";
+Unattended-Upgrade::Skip-Updates-On-Metered-Connections "true"
+"""
