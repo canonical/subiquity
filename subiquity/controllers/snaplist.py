@@ -139,8 +139,8 @@ class SnapListController(BaseController):
             self.model, self.run_in_bg, self.snapd_connection,
             self.opts.snap_section)
 
-    def __init__(self, common):
-        super().__init__(common)
+    def __init__(self, app):
+        super().__init__(app)
         self.model = self.base_model.snaplist
         self.loader = self._make_loader()
         self.answers = self.all_answers.get('SnapList', {})

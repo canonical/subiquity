@@ -37,11 +37,11 @@ class Subiquity(Application):
 
     project = "subiquity"
 
-    def make_model(self, common):
+    def make_model(self):
         root = '/'
-        if common['opts'].dry_run:
+        if self.opts.dry_run:
             root = os.path.abspath('.subiquity')
-        return SubiquityModel(root, common['opts'].sources)
+        return SubiquityModel(root, self.opts.sources)
 
     controllers = [
             "Welcome",
@@ -64,8 +64,8 @@ class Subiquity(Application):
             self.controllers.remove("Zdev")
 
         super().__init__(ui, opts)
-        self.common['ui'].progress_completion += 1
-        self.common['block_log_dir'] = block_log_dir
+        self.ui.progress_completion += 1
+        self.block_log_dir = block_log_dir
         if opts.snaps_from_examples:
             connection = FakeSnapdConnection(
                 os.path.join(
@@ -74,22 +74,19 @@ class Subiquity(Application):
                     "examples", "snaps"))
         else:
             connection = SnapdConnection(self.root, self.snapd_socket_path)
-        self.common['snapd_connection'] = connection
-        signal = self.common['signal']
-        signal.connect_signals([
+        self.snapd_connection = connection
+        self.signal.connect_signals([
             ('network-proxy-set', self._proxy_set),
             ('network-change', self._network_change),
             ])
 
     def _network_change(self):
-        self.common['signal'].emit_signal('snapd-network-change')
+        self.signal.emit_signal('snapd-network-change')
 
     def _proxy_set(self):
-        proxy_model = self.common['base_model'].proxy
-        signal = self.common['signal']
-        conn = self.common['snapd_connection']
         self.run_in_bg(
-            lambda: conn.configure_proxy(proxy_model),
+            lambda: self.snapd_connection.configure_proxy(
+                self.base_model.proxy),
             lambda fut: (
-                fut.result(), signal.emit_signal('snapd-network-change')),
+                fut.result(), self.signal.emit_signal('snapd-network-change')),
             )

@@ -252,6 +252,8 @@ class Application:
             log.exception(err)
             raise ApplicationError(err)
 
+        self.ui = ui
+        self.opts = opts
         opts.project = self.project
 
         self.root = '/'
@@ -260,42 +262,34 @@ class Application:
         self.state_dir = os.path.join(self.root, 'run', self.project)
         os.makedirs(os.path.join(self.state_dir, 'states'), exist_ok=True)
 
-        answers = {}
+        self.answers = {}
         if opts.answers is not None:
-            answers = yaml.safe_load(opts.answers.read())
-            log.debug("Loaded answers %s", answers)
+            self.answers = yaml.safe_load(opts.answers.read())
+            log.debug("Loaded answers %s", self.answers)
             if not opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
 
         if is_linux_tty():
             log.debug("is_linux_tty")
-            input_filter = KeyCodesFilter()
+            self.input_filter = KeyCodesFilter()
         else:
-            input_filter = DummyKeycodesFilter()
+            self.input_filter = DummyKeycodesFilter()
 
-        scale = float(os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
-        updated = os.path.exists(os.path.join(self.state_dir, 'updating'))
-        self.common = {
-            "application": self,
-            "updated": updated,
-            "ui": ui,
-            "opts": opts,
-            "signal": Signal(),
-            "prober": prober,
-            "loop": None,
-            "pool": futures.ThreadPoolExecutor(10),
-            "answers": answers,
-            "input_filter": input_filter,
-            "scale_factor": scale,
-            "run_in_bg": self.run_in_bg,
-        }
+        self.scale_factor = float(
+            os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
+        self.updated = os.path.exists(os.path.join(self.state_dir, 'updating'))
+        self.ui = ui
+        self.signal = Signal()
+        self.prober = prober
+        self.loop = None
+        self.pool = futures.ThreadPoolExecutor(10)
         if opts.screens:
             self.controllers = [c for c in self.controllers
                                 if c in opts.screens]
         else:
             self.controllers = self.controllers[:]
         ui.progress_completion = len(self.controllers)
-        self.common['controllers'] = dict.fromkeys(self.controllers)
+        self.controller_instances = dict.fromkeys(self.controllers)
         self.controller_index = -1
 
     def run_in_bg(self, func, callback):
@@ -305,12 +299,12 @@ class Application:
         the result of func(). The result of callback is discarded. An
         exception will crash the process so be careful!
         """
-        fut = self.common['pool'].submit(func)
+        fut = self.pool.submit(func)
 
         def in_main_thread(ignored):
             callback(fut)
 
-        pipe = self.common['loop'].watch_pipe(in_main_thread)
+        pipe = self.loop.watch_pipe(in_main_thread)
 
         def in_random_thread(ignored):
             os.write(pipe, b'x')
@@ -322,23 +316,23 @@ class Application:
         signals = []
 
         signals.append(('quit', self.exit))
-        if self.common['opts'].dry_run:
+        if self.opts.dry_run:
             signals.append(('control-x-quit', self.exit))
         signals.append(('refresh', self.redraw_screen))
         signals.append(('next-screen', self.next_screen))
         signals.append(('prev-screen', self.prev_screen))
-        self.common['signal'].connect_signals(signals)
+        self.signal.connect_signals(signals)
 
         # Registers signals from each controller
-        for controller, controller_class in self.common['controllers'].items():
+        for controller_class in self.controller_instances.values():
             controller_class.register_signals()
-        log.debug(self.common['signal'])
+        log.debug(self.signal)
 
     def save_state(self):
         if self.controller_index < 0:
             return
         cur_controller_name = self.controllers[self.controller_index]
-        cur_controller = self.common['controllers'][cur_controller_name]
+        cur_controller = self.controller_instances[cur_controller_name]
         state_path = os.path.join(
             self.state_dir, 'states', cur_controller_name)
         with open(state_path, 'w') as fp:
@@ -346,10 +340,10 @@ class Application:
 
     def select_screen(self, index):
         self.controller_index = index
-        self.common['ui'].progress_current = index
+        self.ui.progress_current = index
         controller_name = self.controllers[self.controller_index]
         log.debug("moving to screen %s", controller_name)
-        controller = self.common['controllers'][controller_name]
+        controller = self.controller_instances[controller_name]
         controller.default()
         state_path = os.path.join(self.state_dir, 'last-screen')
         with open(state_path, 'w') as fp:
@@ -385,9 +379,9 @@ class Application:
 
 # EventLoop -------------------------------------------------------------------
     def redraw_screen(self):
-        if self.common['loop'] is not None:
+        if self.loop is not None:
             try:
-                self.common['loop'].draw_screen()
+                self.loop.draw_screen()
             except AssertionError as e:
                 log.critical("Redraw screen error: {}".format(e))
 
@@ -408,7 +402,6 @@ class Application:
         #    wait, above to wait for the button to appear in case it
         #    takes a while.
         from subiquitycore.testing import view_helpers
-        loop = self.common['loop']
 
         class ScriptState:
             def __init__(self):
@@ -426,11 +419,10 @@ class Application:
                 return
             ss.scripts = ss.scripts[1:]
             if ss.scripts:
-                loop.set_alarm_in(0.01, _run_script)
+                self.loop.set_alarm_in(0.01, _run_script)
 
         def c(pat):
-            but = view_helpers.find_button_matching(self.common['ui'],
-                                                    '.*' + pat + '.*')
+            but = view_helpers.find_button_matching(self.ui, '.*' + pat + '.*')
             if not but:
                 ss.wait_count += 1
                 if ss.wait_count > 10:
@@ -452,62 +444,61 @@ class Application:
                     ss.scripts = ss.scripts[1:]
                     if ss.scripts:
                         _run_script()
-            loop.set_alarm_in(delay, next)
+            self.loop.set_alarm_in(delay, next)
 
         ss.ns['c'] = c
         ss.ns['wait'] = wait
-        ss.ns['ui'] = self.common['ui']
+        ss.ns['ui'] = self.ui
 
-        self.common['loop'].set_alarm_in(0.06, _run_script)
+        self.loop.set_alarm_in(0.06, _run_script)
 
     def run(self):
-        if not hasattr(self, 'loop'):
-            if (self.common['opts'].run_on_serial and
-                    os.ttyname(0) != "/dev/ttysclp0"):
-                palette = self.STYLES_MONO
-                screen = urwid.raw_display.Screen()
-            else:
-                screen, palette = setup_screen(self.COLORS, self.STYLES)
+        if (self.opts.run_on_serial and
+                os.ttyname(0) != "/dev/ttysclp0"):
+            palette = self.STYLES_MONO
+            screen = urwid.raw_display.Screen()
+        else:
+            screen, palette = setup_screen(self.COLORS, self.STYLES)
 
-            self.common['loop'] = urwid.MainLoop(
-                self.common['ui'], palette=palette, screen=screen,
-                handle_mouse=False, pop_ups=True,
-                input_filter=self.common['input_filter'].filter)
+        self.loop = urwid.MainLoop(
+            self.ui, palette=palette, screen=screen,
+            handle_mouse=False, pop_ups=True,
+            input_filter=self.input_filter.filter)
 
-            log.debug("Running event loop: {}".format(
-                self.common['loop'].event_loop))
-            self.common['base_model'] = self.make_model(self.common)
+        log.debug("Running event loop: {}".format(
+            self.loop.event_loop))
+        self.base_model = self.make_model()
         try:
-            if self.common['opts'].scripts:
-                self.run_scripts(self.common['opts'].scripts)
+            if self.opts.scripts:
+                self.run_scripts(self.opts.scripts)
             controllers_mod = __import__('%s.controllers' % self.project,
                                          None, None, [''])
             for i, k in enumerate(self.controllers):
-                if self.common['controllers'][k] is None:
+                if self.controller_instances[k] is None:
                     log.debug("Importing controller: {}".format(k))
                     klass = getattr(controllers_mod, k+"Controller")
-                    self.common['controllers'][k] = klass(self.common)
+                    self.controller_instances[k] = klass(self)
                 else:
                     count = 1
                     for k2 in self.controllers[:i]:
                         if k2 == k or k2.startswith(k + '-'):
                             count += 1
-                    orig = self.common['controllers'][k]
+                    orig = self.controller_instances[k]
                     k += '-' + str(count)
                     self.controllers[i] = k
-                    self.common['controllers'][k] = RepeatedController(
+                    self.controller_instances[k] = RepeatedController(
                         orig, count)
-            log.debug("*** %s", self.common['controllers'])
+            log.debug("*** %s", self.controller_instances)
 
             initial_controller_index = 0
 
-            if self.common['updated']:
+            if self.updated:
                 for k in self.controllers:
                     state_path = os.path.join(self.state_dir, 'states', k)
                     if not os.path.exists(state_path):
                         continue
                     with open(state_path) as fp:
-                        self.common['controllers'][k].deserialize(
+                        self.controller_instances[k].deserialize(
                             json.load(fp))
 
                 last_screen = None
@@ -526,14 +517,14 @@ class Application:
                 except Skip:
                     self.next_screen()
 
-            self.common['loop'].set_alarm_in(
+            self.loop.set_alarm_in(
                 0.05, select_initial_screen, initial_controller_index)
             self._connect_base_signals()
 
             for k in self.controllers:
-                self.common['controllers'][k].start()
+                self.controller_instances[k].start()
 
-            self.common['loop'].run()
+            self.loop.run()
         except Exception:
             log.exception("Exception in controller.run():")
             raise

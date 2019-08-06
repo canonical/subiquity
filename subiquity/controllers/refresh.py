@@ -50,8 +50,8 @@ class RefreshController(BaseController):
         ('snapd-network-change', 'snapd_network_changed'),
     ]
 
-    def __init__(self, common):
-        super().__init__(common)
+    def __init__(self, app):
+        super().__init__(app)
         self.snap_name = os.environ.get("SNAP_NAME", "subiquity")
         self.check_state = CheckState.NOT_STARTED
         self.switch_state = SwitchState.NOT_STARTED

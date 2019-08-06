@@ -31,8 +31,8 @@ class FetchSSHKeysFailure(Exception):
 
 class SSHController(BaseController):
 
-    def __init__(self, common):
-        super().__init__(common)
+    def __init__(self, app):
+        super().__init__(app)
         self.model = self.base_model.ssh
         self.answers = self.all_answers.get('SSH', {})
 

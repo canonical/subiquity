@@ -194,8 +194,8 @@ def write_login_details_standalone():
 
 class IdentityController(BaseController):
 
-    def __init__(self, common):
-        super().__init__(common)
+    def __init__(self, app):
+        super().__init__(app)
         self.model = self.base_model.identity
 
     def default(self):

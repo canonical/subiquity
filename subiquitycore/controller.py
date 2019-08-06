@@ -25,23 +25,23 @@ class BaseController(ABC):
 
     signals = []
 
-    def __init__(self, common):
-        self.ui = common['ui']
-        self.signal = common['signal']
-        self.opts = common['opts']
-        self.loop = common['loop']
-        self.prober = common['prober']
-        self.controllers = common['controllers']
-        self.pool = common['pool']
-        self.base_model = common['base_model']
-        self.all_answers = common['answers']
-        self.input_filter = common['input_filter']
-        self.scale_factor = common['scale_factor']
-        self.run_in_bg = common['run_in_bg']
-        self.updated = common['updated']
-        self.application = common['application']
-        if 'snapd_connection' in common:
-            self.snapd_connection = common['snapd_connection']
+    def __init__(self, app):
+        self.ui = app.ui
+        self.signal = app.signal
+        self.opts = app.opts
+        self.loop = app.loop
+        self.prober = app.prober
+        self.controllers = app.controller_instances
+        self.pool = app.pool
+        self.base_model = app.base_model
+        self.all_answers = app.answers
+        self.input_filter = app.input_filter
+        self.scale_factor = app.scale_factor
+        self.run_in_bg = app.run_in_bg
+        self.updated = app.updated
+        self.application = app
+        if hasattr(app, 'snapd_connection'):
+            self.snapd_connection = app.snapd_connection
 
     def register_signals(self):
         """Defines signals associated with controller from model."""

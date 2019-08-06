@@ -205,8 +205,8 @@ class InstallProgressController(BaseController):
         ('installprogress:snap-config-done',       'snap_config_done'),
     ]
 
-    def __init__(self, common):
-        super().__init__(common)
+    def __init__(self, app):
+        super().__init__(app)
         self.answers = self.all_answers.get('InstallProgress', {})
         self.answers.setdefault('reboot', False)
         self.progress_view = None

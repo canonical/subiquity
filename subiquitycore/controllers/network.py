@@ -183,8 +183,8 @@ class NetworkController(BaseController):
 
     root = "/"
 
-    def __init__(self, common):
-        super().__init__(common)
+    def __init__(self, app):
+        super().__init__(app)
         self.model = self.base_model.network
         self.answers = self.all_answers.get("Network", {})
         self.view = None

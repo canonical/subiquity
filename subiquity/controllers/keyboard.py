@@ -29,8 +29,8 @@ class KeyboardController(BaseController):
         ('l10n:language-selected', 'language_selected'),
         ]
 
-    def __init__(self, common):
-        super().__init__(common)
+    def __init__(self, app):
+        super().__init__(app)
         self.model = self.base_model.keyboard
         self.answers = self.all_answers.get("Keyboard", {})
 

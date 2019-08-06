@@ -82,7 +82,8 @@ class KeyboardSetting:
 
     @classmethod
     def from_config_file(cls, config_file):
-        content = open(config_file).read()
+        with open(config_file) as fp:
+            content = fp.read()
 
         def optval(opt, default):
             match = re.search(r'(?m)^\s*%s=(.*)$' % (opt,), content)

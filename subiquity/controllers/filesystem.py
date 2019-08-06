@@ -56,9 +56,9 @@ class ProbeState(enum.IntEnum):
 
 class FilesystemController(BaseController):
 
-    def __init__(self, common):
-        super().__init__(common)
-        self.block_log_dir = common.get('block_log_dir')
+    def __init__(self, app):
+        super().__init__(app)
+        self.block_log_dir = app.block_log_dir
         self.model = self.base_model.filesystem
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()

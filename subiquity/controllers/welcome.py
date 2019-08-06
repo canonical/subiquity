@@ -26,8 +26,8 @@ log = logging.getLogger('subiquity.controllers.welcome')
 
 class WelcomeController(BaseController):
 
-    def __init__(self, common):
-        super().__init__(common)
+    def __init__(self, app):
+        super().__init__(app)
         self.model = self.base_model.locale
         self.answers = self.all_answers.get("Welcome", {})
         log.debug("Welcome: answers=%s", self.answers)
