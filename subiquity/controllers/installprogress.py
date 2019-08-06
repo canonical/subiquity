@@ -580,5 +580,5 @@ uu_apt_conf = """\
 # Config for the unattended-upgrades run to avoid failing on battery power or
 # a metered connection.
 Unattended-Upgrade::OnlyOnACPower "false";
-Unattended-Upgrade::Skip-Updates-On-Metered-Connections "true"
+Unattended-Upgrade::Skip-Updates-On-Metered-Connections "true";
 """
