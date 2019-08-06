@@ -26,8 +26,8 @@ class IdentityController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = self.base_model.identity
-        self.answers = self.all_answers.get('Identity', {})
+        self.model = app.base_model.identity
+        self.answers = app.answers.get('Identity', {})
 
     def default(self):
         self.ui.set_body(IdentityView(self.model, self))

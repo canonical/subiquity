@@ -33,8 +33,8 @@ class SSHController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = self.base_model.ssh
-        self.answers = self.all_answers.get('SSH', {})
+        self.model = app.base_model.ssh
+        self.answers = app.answers.get('SSH', {})
 
     def default(self):
         self.ui.set_body(SSHView(self.model, self))
@@ -45,8 +45,8 @@ class SSHController(BaseController):
                 "pwauth": self.answers.get("pwauth", True),
             }
             self.done(d)
-        elif 'ssh-import-id' in self.all_answers.get('Identity', {}):
-            import_id = self.all_answers['Identity']['ssh-import-id']
+        elif 'ssh-import-id' in self.app.answers.get('Identity', {}):
+            import_id = self.app.answers['Identity']['ssh-import-id']
             d = {
                 "install_server": True,
                 "pwauth": True,
@@ -107,7 +107,7 @@ class SSHController(BaseController):
                 # Happens if the fetch is cancelled.
                 return
             user_spec, ssh_import_id, key_material, fingerprints = result
-            if 'ssh-import-id' in self.all_answers.get("Identity", {}):
+            if 'ssh-import-id' in self.app.answers.get("Identity", {}):
                 user_spec['authorized_keys'] = key_material.splitlines()
                 self.loop.set_alarm_in(0.0,
                                        lambda loop, ud: self.done(user_spec))

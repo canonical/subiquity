@@ -58,12 +58,11 @@ class FilesystemController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.block_log_dir = app.block_log_dir
-        self.model = self.base_model.filesystem
+        self.model = app.base_model.filesystem
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
             self.model.bootloader = getattr(Bootloader, name)
-        self.answers = self.all_answers.get("Filesystem", {})
+        self.answers = app.answers.get("Filesystem", {})
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
@@ -78,7 +77,7 @@ class FilesystemController(BaseController):
             5.0, lambda loop, ud: self._check_probe_timeout())
 
     def _bg_probe(self, probe_types=None):
-        return self.prober.get_storage(probe_types=probe_types)
+        return self.app.prober.get_storage(probe_types=probe_types)
 
     def _probed(self, fut, restricted=False):
         if not restricted and self._probe_state != ProbeState.PROBING:
@@ -91,7 +90,7 @@ class FilesystemController(BaseController):
                 fname = 'probe-data-restricted.json'
             else:
                 fname = 'probe-data.json'
-            with open(os.path.join(self.block_log_dir, fname), 'w') as fp:
+            with open(os.path.join(self.app.block_log_dir, fname), 'w') as fp:
                 json.dump(storage, fp, indent=4)
             self.model.load_probe_data(storage)
         except Exception:

@@ -167,7 +167,7 @@ class AutoDetectPressKey(AutoDetectBase):
 
     @property
     def input_filter(self):
-        return self.keyboard_detector.keyboard_view.controller.input_filter
+        return self.keyboard_detector.keyboard_view.controller.app.input_filter
 
     def start(self):
         self.input_filter.enter_keycodes_mode()

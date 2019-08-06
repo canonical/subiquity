@@ -196,7 +196,7 @@ class IdentityController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = self.base_model.identity
+        self.model = app.base_model.identity
 
     def default(self):
         footer = ""

@@ -207,7 +207,8 @@ class InstallProgressController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.answers = self.all_answers.get('InstallProgress', {})
+        self.model = app.base_model
+        self.answers = app.answers.get('InstallProgress', {})
         self.answers.setdefault('reboot', False)
         self.progress_view = None
         self.progress_view_showing = False
@@ -225,7 +226,7 @@ class InstallProgressController(BaseController):
         self.sm = None
 
     def tpath(self, *path):
-        return os.path.join(self.base_model.target, *path)
+        return os.path.join(self.model.target, *path)
 
     def filesystem_config_done(self):
         self.curtin_start_install()
@@ -335,7 +336,7 @@ class InstallProgressController(BaseController):
 
         ident = self._event_syslog_identifier
         self._write_config(config_location,
-                           self.base_model.render(syslog_identifier=ident))
+                           self.model.render(syslog_identifier=ident))
 
         return curtin_cmd
 
@@ -383,13 +384,13 @@ class InstallProgressController(BaseController):
         pass
 
     def start_postinstall_configuration(self):
-        has_network = self.base_model.network.has_network
+        has_network = self.model.network.has_network
 
         def filter_task(func):
             if func._extra.get('net_only') and not has_network:
                 return False
             if func._name == 'install_openssh' \
-               and not self.base_model.ssh.install_server:
+               and not self.model.ssh.install_server:
                 return False
             return True
 
@@ -411,12 +412,12 @@ class InstallProgressController(BaseController):
 
     @task(label="configuring cloud-init")
     def _bg_configure_cloud_init(self):
-        self.base_model.configure_cloud_init()
+        self.model.configure_cloud_init()
 
     @task(label="installing openssh")
     def _bg_install_openssh(self):
         if self.opts.dry_run:
-            cmd = ["sleep", str(2/self.scale_factor)]
+            cmd = ["sleep", str(2/self.app.scale_factor)]
         else:
             cmd = [
                 sys.executable, "-m", "curtin", "system-install", "-t",
@@ -428,12 +429,12 @@ class InstallProgressController(BaseController):
     @task(label="restoring apt configuration")
     def _bg_restore_apt_config(self):
         if self.opts.dry_run:
-            cmds = [["sleep", str(1/self.scale_factor)]]
+            cmds = [["sleep", str(1/self.app.scale_factor)]]
         else:
             cmds = [
                 ["umount", self.tpath('etc/apt')],
                 ]
-            if self.base_model.network.has_network:
+            if self.model.network.has_network:
                 cmds.append([
                     sys.executable, "-m", "curtin", "in-target", "-t",
                     "/target", "--", "apt-get", "update",
@@ -460,7 +461,8 @@ class InstallProgressController(BaseController):
           net_only=True)
     def _bg_run_uu(self):
         if self.opts.dry_run:
-            self.uu = utils.start_command(["sleep", str(10/self.scale_factor)])
+            self.uu = utils.start_command([
+                "sleep", str(10/self.app.scale_factor)])
             self.uu.wait()
         else:
             self._bg_run_command_logged([

@@ -33,25 +33,18 @@ class Thing:
     pass
 
 
-app_attrs = (
-    "ui", "signal", "loop", "prober", "controller_instances", "pool",
-    "input_filter", "scale_factor", "run_in_bg", "updated", "snapd_connection",
-    "block_log_dir",
-    )
-
-
-def make_controller(bootloader=None):
-    app = Thing()
-    for attr in app_attrs:
-        setattr(app, attr, None)
-    bm = Thing()
-    bm.filesystem = make_model(bootloader)
-    app.base_model = bm
-    app.answers = {}
+class MiniApplication:
+    ui = signal = loop = run_in_bg = None
+    answers = {}
     opts = Thing()
     opts.dry_run = True
     opts.bootloader = None
-    app.opts = opts
+
+
+def make_controller(bootloader=None):
+    app = MiniApplication()
+    app.base_model = bm = Thing()
+    bm.filesystem = make_model(bootloader)
     controller = FilesystemController(app)
     return controller
 

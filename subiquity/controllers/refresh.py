@@ -62,14 +62,14 @@ class RefreshController(BaseController):
 
         self.view = None
         self.offered_first_time = False
-        self.answers = self.all_answers.get("Refresh", {})
+        self.answers = app.answers.get("Refresh", {})
 
     def start(self):
         self.switch_state = SwitchState.SWITCHING
         self.run_in_bg(self._bg_get_snap_details, self._got_snap_details)
 
     def _bg_get_snap_details(self):
-        return self.snapd_connection.get(
+        return self.app.snapd_connection.get(
             'v2/snaps/{snap_name}'.format(snap_name=self.snap_name))
 
     def _got_snap_details(self, fut):
@@ -121,7 +121,7 @@ class RefreshController(BaseController):
     def _bg_switch_snap(self, channel):
         log.debug("switching %s to %s", self.snap_name, channel)
         try:
-            response = self.snapd_connection.post(
+            response = self.app.snapd_connection.post(
                 'v2/snaps/{}'.format(self.snap_name),
                 {'action': 'switch', 'channel': channel})
             response.raise_for_status()
@@ -131,7 +131,7 @@ class RefreshController(BaseController):
         change = response.json()["change"]
         while True:
             try:
-                response = self.snapd_connection.get(
+                response = self.app.snapd_connection.get(
                     'v2/changes/{}'.format(change))
                 response.raise_for_status()
             except requests.exceptions.RequestException:
@@ -165,7 +165,7 @@ class RefreshController(BaseController):
         if self.network_state == "down":
             return
         # If we restarted into this version, don't check for a new version.
-        if self.updated:
+        if self.app.updated:
             return
         # If we got an answer, don't check again.
         if self.check_state.is_definite():
@@ -174,7 +174,7 @@ class RefreshController(BaseController):
         self.run_in_bg(self._bg_check_for_update, self._check_result)
 
     def _bg_check_for_update(self):
-        return self.snapd_connection.get('v2/find', select='refresh')
+        return self.app.snapd_connection.get('v2/find', select='refresh')
 
     def _check_result(self, fut):
         # If we managed to send concurrent requests and one has
@@ -206,14 +206,14 @@ class RefreshController(BaseController):
             self.view.update_check_state()
 
     def start_update(self, callback):
-        update_marker = os.path.join(self.application.state_dir, 'updating')
+        update_marker = os.path.join(self.app.state_dir, 'updating')
         open(update_marker, 'w').close()
         self.run_in_bg(
             self._bg_start_update,
             lambda fut: self.update_started(fut, callback))
 
     def _bg_start_update(self):
-        return self.snapd_connection.post(
+        return self.app.snapd_connection.post(
             'v2/snaps/{}'.format(self.snap_name), {'action': 'refresh'})
 
     def update_started(self, fut, callback):
@@ -235,7 +235,7 @@ class RefreshController(BaseController):
             lambda fut: self.got_progress(fut, callback))
 
     def _bg_get_progress(self, change):
-        return self.snapd_connection.get('v2/changes/{}'.format(change))
+        return self.app.snapd_connection.get('v2/changes/{}'.format(change))
 
     def got_progress(self, fut, callback):
         try:
@@ -251,7 +251,7 @@ class RefreshController(BaseController):
 
     def default(self, index=1):
         from subiquity.ui.views.refresh import RefreshView
-        if self.updated:
+        if self.app.updated:
             raise Skip()
         show = False
         if index == 1:

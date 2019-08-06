@@ -39,9 +39,9 @@ class MirrorController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = self.base_model.mirror
+        self.model = app.base_model.mirror
         self.check_state = CheckState.NOT_STARTED
-        self.answers = self.all_answers.get('Mirror', {})
+        self.answers = app.answers.get('Mirror', {})
         if 'country-code' in self.answers:
             self.check_state = CheckState.DONE
             self.model.set_country(self.answers['country-code'])

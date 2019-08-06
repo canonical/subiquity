@@ -27,8 +27,8 @@ class ProxyController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = self.base_model.proxy
-        self.answers = self.all_answers.get('Proxy', {})
+        self.model = app.base_model.proxy
+        self.answers = app.answers.get('Proxy', {})
 
     def default(self):
         self.ui.set_body(ProxyView(self.model, self))

@@ -185,8 +185,8 @@ class NetworkController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = self.base_model.network
-        self.answers = self.all_answers.get("Network", {})
+        self.model = app.base_model.network
+        self.answers = app.answers.get("Network", {})
         self.view = None
         self.view_shown = False
         self.dhcp_check_handle = None
@@ -213,7 +213,7 @@ class NetworkController(BaseController):
     def start(self):
         self._observer_handles = []
         self.observer, self._observer_fds = (
-            self.prober.probe_network(self.network_event_receiver))
+            self.app.prober.probe_network(self.network_event_receiver))
         self.start_watching()
 
     def stop_watching(self):
@@ -402,7 +402,7 @@ class NetworkController(BaseController):
         self.model.parse_netplan_configs(self.root)
 
         if self.opts.dry_run:
-            delay = 0.1/self.scale_factor
+            delay = 0.1/self.app.scale_factor
             tasks = [
                 ('one', BackgroundProcess(['sleep', str(delay)])),
                 ('two', PythonSleep(delay)),

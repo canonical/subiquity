@@ -30,18 +30,8 @@ class BaseController(ABC):
         self.signal = app.signal
         self.opts = app.opts
         self.loop = app.loop
-        self.prober = app.prober
-        self.controllers = app.controller_instances
-        self.pool = app.pool
-        self.base_model = app.base_model
-        self.all_answers = app.answers
-        self.input_filter = app.input_filter
-        self.scale_factor = app.scale_factor
         self.run_in_bg = app.run_in_bg
-        self.updated = app.updated
-        self.application = app
-        if hasattr(app, 'snapd_connection'):
-            self.snapd_connection = app.snapd_connection
+        self.app = app
 
     def register_signals(self):
         """Defines signals associated with controller from model."""
@@ -99,7 +89,7 @@ class BaseController(ABC):
 
     def _run_iterator(self, it, delay=None):
         if delay is None:
-            delay = 0.2/self.scale_factor
+            delay = 0.2/self.app.scale_factor
         try:
             next(it)
         except StopIteration:

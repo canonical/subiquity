@@ -31,8 +31,8 @@ class KeyboardController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = self.base_model.keyboard
-        self.answers = self.all_answers.get("Keyboard", {})
+        self.model = app.base_model.keyboard
+        self.answers = app.answers.get("Keyboard", {})
 
     def language_selected(self, code):
         log.debug("language_selected %s", code)

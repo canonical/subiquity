@@ -631,7 +631,7 @@ class ZdevController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.answers = self.all_answers.get('Zdev', {})
+        self.answers = app.answers.get('Zdev', {})
         if self.opts.dry_run:
             if platform.machine() == 's390x':
                 zdevinfos = self.lszdev()

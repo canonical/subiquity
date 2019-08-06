@@ -136,14 +136,14 @@ class SnapListController(BaseController):
 
     def _make_loader(self):
         return SnapdSnapInfoLoader(
-            self.model, self.run_in_bg, self.snapd_connection,
+            self.model, self.run_in_bg, self.app.snapd_connection,
             self.opts.snap_section)
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = self.base_model.snaplist
+        self.model = app.base_model.snaplist
         self.loader = self._make_loader()
-        self.answers = self.all_answers.get('SnapList', {})
+        self.answers = app.answers.get('SnapList', {})
 
     def snapd_network_changed(self):
         # If the loader managed to load the list of snaps, the
@@ -156,7 +156,7 @@ class SnapListController(BaseController):
         self.loader.start()
 
     def default(self):
-        if self.loader.failed or not self.base_model.network.has_network:
+        if self.loader.failed or not self.app.base_model.network.has_network:
             # If loading snaps failed or the network is disabled, skip the
             # screen.
             self.signal.emit_signal("installprogress:snap-config-done")
