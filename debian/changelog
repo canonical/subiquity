@@ -1,4 +1,4 @@
-subiquity (19.06.2) UNRELEASED; urgency=medium
+subiquity (19.08.1) eoan; urgency=medium
 
   * Fix up debian packaging:
     - generate .rtupdate in all the required packages
