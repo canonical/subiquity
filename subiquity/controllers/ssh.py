@@ -34,7 +34,6 @@ class SSHController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model.ssh
-        self.answers = app.answers.get('SSH', {})
 
     def default(self):
         self.ui.set_body(SSHView(self.model, self))

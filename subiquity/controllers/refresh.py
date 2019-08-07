@@ -62,7 +62,6 @@ class RefreshController(BaseController):
 
         self.view = None
         self.offered_first_time = False
-        self.answers = app.answers.get("Refresh", {})
 
     def start(self):
         self.switch_state = SwitchState.SWITCHING

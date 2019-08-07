@@ -186,7 +186,6 @@ class NetworkController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model.network
-        self.answers = app.answers.get("Network", {})
         self.view = None
         self.view_shown = False
         self.dhcp_check_handle = None

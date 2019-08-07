@@ -208,7 +208,6 @@ class InstallProgressController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model
-        self.answers = app.answers.get('InstallProgress', {})
         self.answers.setdefault('reboot', False)
         self.progress_view = None
         self.progress_view_showing = False

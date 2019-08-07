@@ -25,6 +25,10 @@ class BaseController(ABC):
 
     signals = []
 
+    @classmethod
+    def _controller_name(cls):
+        return cls.__name__[:-len("Controller")]
+
     def __init__(self, app):
         self.ui = app.ui
         self.signal = app.signal
@@ -32,6 +36,7 @@ class BaseController(ABC):
         self.loop = app.loop
         self.run_in_bg = app.run_in_bg
         self.app = app
+        self.answers = app.answers.get(self._controller_name(), {})
 
     def register_signals(self):
         """Defines signals associated with controller from model."""

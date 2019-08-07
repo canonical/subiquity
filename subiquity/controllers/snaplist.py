@@ -143,7 +143,6 @@ class SnapListController(BaseController):
         super().__init__(app)
         self.model = app.base_model.snaplist
         self.loader = self._make_loader()
-        self.answers = app.answers.get('SnapList', {})
 
     def snapd_network_changed(self):
         # If the loader managed to load the list of snaps, the

@@ -62,7 +62,6 @@ class FilesystemController(BaseController):
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
             self.model.bootloader = getattr(Bootloader, name)
-        self.answers = app.answers.get("Filesystem", {})
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
