@@ -278,7 +278,6 @@ class Application:
         self.scale_factor = float(
             os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
         self.updated = os.path.exists(os.path.join(self.state_dir, 'updating'))
-        self.ui = ui
         self.signal = Signal()
         self.prober = prober
         self.loop = None
@@ -452,6 +451,10 @@ class Application:
 
         self.loop.set_alarm_in(0.06, _run_script)
 
+    def unhandled_input(self, key):
+        if key == 'ctrl x':
+            self.signal.emit_signal('control-x-quit')
+
     def run(self):
         if (self.opts.run_on_serial and
                 os.ttyname(0) != "/dev/ttysclp0"):
@@ -463,7 +466,8 @@ class Application:
         self.loop = urwid.MainLoop(
             self.ui, palette=palette, screen=screen,
             handle_mouse=False, pop_ups=True,
-            input_filter=self.input_filter.filter)
+            input_filter=self.input_filter.filter,
+            unhandled_input=self.unhandled_input)
 
         log.debug("Running event loop: {}".format(
             self.loop.event_loop))
