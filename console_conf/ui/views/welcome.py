@@ -20,26 +20,25 @@ Welcome provides user with language selection
 """
 import logging
 
-from urwid import Text
-
-from subiquitycore.ui.buttons import ok_btn
-from subiquitycore.ui.container import ListBox, Pile
-from subiquitycore.ui.utils import button_pile
+from subiquitycore.ui.buttons import done_btn
+from subiquitycore.ui.utils import button_pile, screen
 from subiquitycore.view import BaseView
 
 log = logging.getLogger("console_conf.views.welcome")
 
 
 class WelcomeView(BaseView):
+    title = "Ubuntu Core"
+    excerpt = ("Configure the network and setup an administrator "
+               "account on this all-snap Ubuntu Core system.")
+
     def __init__(self, controller):
         self.controller = controller
-        super().__init__(Pile([
-            # need to have a listbox or something else "stretchy" here or
-            # urwid complains.
-            ListBox([Text('')]),
-            ('pack', button_pile([ok_btn("OK", on_press=self.confirm)])),
-            ('pack', Text("")),
-            ], focus_item=1))
+        super().__init__(screen(
+            rows=[],
+            buttons=button_pile([done_btn("OK", on_press=self.confirm)]),
+            focus_buttons=True,
+            excerpt=self.excerpt))
 
     def confirm(self, result):
         self.controller.done()

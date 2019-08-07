@@ -21,11 +21,6 @@ from subiquitycore.controller import BaseController
 class WelcomeController(BaseController):
 
     def default(self):
-        title = "Ubuntu Core"
-        excerpt = ("Configure the network and setup an administrator "
-                   "account on this all-snap Ubuntu Core system.")
-        self.ui.set_header(title, excerpt)
-        self.ui.set_footer("")
         view = WelcomeView(self)
         self.ui.set_body(view)
 
