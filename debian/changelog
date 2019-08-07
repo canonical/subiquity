@@ -1,3 +1,9 @@
+subiquity (19.08.1.2) eoan; urgency=medium
+
+  * Allow starting subiquity/console-conf without translations.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Wed, 07 Aug 2019 15:58:46 +0100
+
 subiquity (19.08.1) eoan; urgency=medium
 
   * Fix up debian packaging:
