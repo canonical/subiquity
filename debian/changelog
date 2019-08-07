@@ -1,3 +1,14 @@
+subiquity (19.08.1.1) eoan; urgency=medium
+
+  * Trick pkgstriptranslations into creating translations tarball with
+    .pot/po but not stripping any .mo translations from the subiquitycore
+    package (by using blacklist section) and ship empty /usr/share/locale
+    directory in the console-conf package. Otherwise, console-conf fails
+    to start on core20 as it needs _a_ translation. However, not sure if
+    one can use translations in console-conf at all.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Wed, 07 Aug 2019 12:25:43 +0100
+
 subiquity (19.08.1) eoan; urgency=medium
 
   * Fix up debian packaging:

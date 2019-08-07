@@ -42,6 +42,7 @@ Description: Ubuntu Server Installer
 
 Package: subiquitycore
 Architecture: all
+Section: debian-installer
 Depends: probert,
          python3-urwid (>= 1.2.1),
          python3-yaml,
