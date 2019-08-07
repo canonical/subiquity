@@ -22,7 +22,6 @@ Architecture: all
 Depends: curtin,
          iso-codes,
          python3,
-         python3-attr,
          subiquitycore,
          ${misc:Depends},
          ${python3:Depends}
@@ -44,6 +43,7 @@ Package: subiquitycore
 Architecture: all
 Depends: probert,
          python3-urwid (>= 1.2.1),
+         python3-attr,
          python3-yaml,
          ${misc:Depends},
          ${python3:Depends}

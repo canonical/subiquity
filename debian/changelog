@@ -1,3 +1,10 @@
+subiquity (19.08.1.3) UNRELEASED; urgency=medium
+
+  * Move python3-attr to subiquitycore package, as it is used by
+    console-conf too.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Wed, 07 Aug 2019 17:27:04 +0100
+
 subiquity (19.08.1.2) eoan; urgency=medium
 
   * Allow starting subiquity/console-conf without translations.
