@@ -22,7 +22,6 @@ import yaml
 
 from curtin.config import merge_config
 
-from subiquitycore.models.identity import IdentityModel
 from subiquitycore.models.network import NetworkModel
 from subiquitycore.file_util import write_file
 from subiquitycore.utils import run_command
@@ -34,6 +33,7 @@ from .proxy import ProxyModel
 from .mirror import MirrorModel
 from .snaplist import SnapListModel
 from .ssh import SSHModel
+from .identity import IdentityModel
 
 
 log = logging.getLogger('subiquity.models.subiquity')

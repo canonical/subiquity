@@ -1,6 +1,6 @@
 
 from subiquitycore.models.network import NetworkModel
-from subiquitycore.models.identity import IdentityModel
+from .identity import IdentityModel
 
 
 class ConsoleConfModel:
