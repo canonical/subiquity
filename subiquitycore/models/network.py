@@ -199,6 +199,11 @@ class NetworkDev(object):
                     return True
         return False
 
+    @property
+    def actual_global_ip_addresses(self):
+        return [addr.ip for _, addr in sorted(self.info.addresses.items())
+                if addr.scope == "global"]
+
     _supports_INFO = True
     _supports_EDIT_WLAN = property(lambda self: self.type == "wlan")
     _supports_EDIT_IPV4 = True
