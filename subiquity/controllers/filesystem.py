@@ -123,7 +123,7 @@ class FilesystemController(BaseController):
     def _reprobe(self):
         self._probe_state = ProbeState.REPROBING
         self.run_in_bg(
-            lambda: self._bg_probe(["blockdev"]),
+            lambda: self._bg_probe({"blockdev"}),
             lambda fut: self._probed(fut, True),
             )
 
