@@ -1,10 +1,10 @@
 import unittest
 from unittest import mock
 
-from subiquitycore.models.identity import IdentityModel
 from subiquitycore.signals import Signal
 from subiquitycore.testing import view_helpers
 
+from subiquity.models.identity import IdentityModel
 from subiquity.controllers.identity import IdentityController
 from subiquity.ui.views.identity import IdentityView
 

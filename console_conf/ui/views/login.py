@@ -31,6 +31,8 @@ log = logging.getLogger("subiquitycore.views.login")
 
 
 class LoginView(BaseView):
+    title = "Ubuntu Core"
+
     def __init__(self, opts, model, controller, netdevs):
         self.opts = opts
         self.model = model

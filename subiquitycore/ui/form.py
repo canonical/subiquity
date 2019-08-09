@@ -36,6 +36,7 @@ from subiquitycore.ui.interactive import (
     PasswordEditor,
     IntegerEditor,
     StringEditor,
+    EmailEditor,
     )
 from subiquitycore.ui.selector import Selector
 from subiquitycore.ui.table import (
@@ -283,6 +284,7 @@ def simple_field(widget_maker):
 StringField = simple_field(StringEditor)
 PasswordField = simple_field(PasswordEditor)
 IntegerField = simple_field(IntegerEditor)
+EmailField = simple_field(EmailEditor)
 
 
 class URLEditor(StringEditor, WantsToKnowFormField):

@@ -39,6 +39,11 @@ checks:
 '''
 
 
+class ClickAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        namespace.scripts.append("c(" + repr(values) + ")")
+
+
 def parse_options(argv):
     parser = argparse.ArgumentParser(
         description=(
@@ -55,6 +60,12 @@ def parse_options(argv):
                         help="Don't Probe. Use probe data file")
     parser.add_argument('--screens', action='append', dest='screens',
                         default=[])
+    parser.add_argument('--script', metavar="SCRIPT", action='append',
+                        dest='scripts', default=[],
+                        help=('Execute SCRIPT in a namespace containing view '
+                              'helpers and "ui"'))
+    parser.add_argument('--click', metavar="PAT", action=ClickAction,
+                        help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
     return parser.parse_args(argv)
 

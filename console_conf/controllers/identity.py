@@ -202,12 +202,9 @@ class IdentityController(BaseController):
         self.model = self.base_model.identity
 
     def default(self):
-        title = "Profile setup"
-        excerpt = "Enter an email address from your account in the store."
         footer = ""
-        self.ui.set_header(title, excerpt)
         self.ui.set_footer(footer)
-        self.ui.set_body(IdentityView(self.model, self, self.opts, self.loop))
+        self.ui.set_body(IdentityView(self.model, self))
         device_owner = get_device_owner()
         if device_owner is not None:
             self.model.add_user(device_owner)
@@ -227,11 +224,11 @@ class IdentityController(BaseController):
             self.model.add_user(result)
             login_details_path = '.subiquity/login-details.txt'
         else:
-            self.ui.frame.body.progress.set_text("Contacting store...")
+            self.ui.set_footer("Contacting store...")
             self.loop.draw_screen()
             cp = run_command(
                 ["snap", "create-user", "--sudoer", "--json", email])
-            self.ui.frame.body.progress.set_text("")
+            self.ui.set_footer("")
             if cp.returncode != 0:
                 self.ui.frame.body.error.set_text(
                     "Creating user failed:\n" + cp.stderr)

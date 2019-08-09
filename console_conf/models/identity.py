@@ -17,17 +17,16 @@ import logging
 
 import attr
 
-from subiquitycore.utils import crypt_password
 
-
-log = logging.getLogger('subiquitycore.models.identity')
+log = logging.getLogger('console_conf.models.identity')
 
 
 @attr.s
 class User(object):
     realname = attr.ib()
     username = attr.ib()
-    password = attr.ib()
+    homedir = attr.ib(default=None)
+    fingerprints = attr.ib(init=False, default=[])
 
 
 class IdentityModel(object):
@@ -36,23 +35,14 @@ class IdentityModel(object):
 
     def __init__(self):
         self._user = None
-        self._hostname = None
 
     def add_user(self, result):
         result = result.copy()
-        self._hostname = result.pop('hostname')
         self._user = User(**result)
-
-    @property
-    def hostname(self):
-        return self._hostname
 
     @property
     def user(self):
         return self._user
 
-    def encrypt_password(self, passinput):
-        return crypt_password(passinput)
-
     def __repr__(self):
-        return "<LocalUser: {} {}>".format(self.user, self.hostname)
+        return "<LocalUser: {}>".format(self.user)
