@@ -92,7 +92,7 @@ class FilesystemController(BaseController):
             else:
                 fname = 'probe-data.json'
             with open(os.path.join(self.block_log_dir, fname), 'w') as fp:
-                json.dump(storage, fp)
+                json.dump(storage, fp, indent=4)
             self.model.load_probe_data(storage)
         except Exception:
             block_discover_log.exception(
