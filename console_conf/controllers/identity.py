@@ -170,21 +170,18 @@ def write_login_details_standalone():
     if owner is None:
         print("No device owner details found.")
         return 0
-    from probert import network
-    from subiquitycore.models.network import (NETDEV_IGNORED_IFACE_NAMES,
-                                              NETDEV_IGNORED_IFACE_TYPES)
-    import operator
-    observer = network.UdevObserver()
-    observer.start()
+    from probert.prober import Prober
+    from subiquitycore.models.network import NETDEV_IGNORED_IFACE_TYPES
+    prober = Prober()
+    prober.probe_network()
+    links = prober.get_results()['network']['links']
     ips = []
-    for l in sorted(observer.links.values(), key=operator.attrgetter('name')):
-        if l.type in NETDEV_IGNORED_IFACE_TYPES:
+    for l in sorted(links, key=lambda l: l['netlink_data']['name']):
+        if l['type'] in NETDEV_IGNORED_IFACE_TYPES:
             continue
-        if l.name in NETDEV_IGNORED_IFACE_NAMES:
-            continue
-        for _, addr in sorted(l.addresses.items()):
-            if addr.scope == "global":
-                ips.append(addr.ip)
+        for addr in l['addresses']:
+            if addr['scope'] == "global":
+                ips.append(addr['address'].split('/')[0])
     if len(ips) == 0:
         tty_name = os.ttyname(0)[5:]
         version = get_core_version() or "16"
