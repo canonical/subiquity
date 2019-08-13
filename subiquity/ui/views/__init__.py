@@ -16,7 +16,6 @@
 from .filesystem import (
     FilesystemView,
     GuidedDiskSelectionView,
-    GuidedFilesystemView,
     )
 from .bcache import BcacheView
 from .ceph import CephDiskView
@@ -31,7 +30,6 @@ __all__ = [
     'CephDiskView',
     'FilesystemView',
     'GuidedDiskSelectionView',
-    'GuidedFilesystemView',
     'IdentityView',
     'IscsiDiskView',
     'KeyboardView',
