@@ -15,6 +15,7 @@
 
 from .filesystem import (
     FilesystemView,
+    GuidedPasswordView,
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     )

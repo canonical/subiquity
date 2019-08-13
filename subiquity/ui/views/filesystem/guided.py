@@ -25,6 +25,13 @@ from subiquitycore.ui.buttons import (
     cancel_btn,
     ok_btn,
     )
+from subiquitycore.ui.form import (
+    Form,
+    PasswordField,
+    )
+from subiquity.ui.views.identity import (
+    setup_password_validation,
+    )
 from subiquitycore.ui.table import (
     ColSpec,
     TableListBox,
@@ -68,10 +75,13 @@ class GuidedFilesystemView(BaseView):
         lvm = ok_btn(
             _("Use An Entire Disk And Set Up LVM"), on_press=self.guided,
             user_arg="lvm")
+        luks = ok_btn(
+            _("Use An Entire Disk And Set Up LUKS encrypted LVM"), on_press=self.guided_crypt,
+            user_arg="luks")
         manual = ok_btn(_("Manual"), on_press=self.manual)
         back = back_btn(_("Back"), on_press=self.cancel)
         super().__init__(screen(
-            rows=[button_pile([direct, lvm, manual, back]), Text("")],
+            rows=[button_pile([direct, lvm, luks, manual, back]), Text("")],
             buttons=None,
             focus_buttons=False,
             excerpt=text))
@@ -81,6 +91,9 @@ class GuidedFilesystemView(BaseView):
 
     def guided(self, btn, method):
         self.controller.guided(method)
+
+    def guided_crypt(self, btn, method):
+        self.controller.guided_crypt(method)
 
     def cancel(self, btn=None):
         self.controller.cancel()
@@ -99,11 +112,70 @@ for '/boot', and one covering the rest of the disk.
 A LVM volume group is created containing the large partition. A \
 4 gigabyte logical volume is created for the root filesystem. \
 It can easily be enlarged with standard LVM command line tools."""),
+    'luks': _("""The LUKS encrypted LVM guided partitioning scheme creates three \
+partitions on the selected disk: one as required by the bootloader, one \
+for '/boot', and one covering the rest of the disk.
+
+A LUKS encrypted LVM volume group is created containing the large partition. A \
+4 gigabyte logical volume is created for the root filesystem. \
+It can easily be enlarged with standard LVM command line tools."""),
 }
 
 
 def _wrap_button_row(row):
     return CursorOverride(Color.done_button(row), 2)
+
+loss_warning = _("""Warning: If you lose this security key, all data will be lost. If \
+you need to, write down your key and keep it in a safe place \
+elsewhere.""")
+
+
+class GuidedPasswordForm(Form):
+
+    def __init__(self):
+        super().__init__()
+        setup_password_validation(self, _("Security key"))
+
+    cancel_label = _("Back")
+    password = PasswordField(_("Choose a security key:"))
+    confirm_password = PasswordField(_("Confirm the security key:"),
+                                     help=loss_warning)
+
+    def validate_password(self):
+        if len(self.password.value) < 1:
+            return _("Security key must be set")
+
+    def validate_confirm_passwor(self):
+        if self.password.value != self.confirm_password.value:
+            return _("Security keys do not match")
+
+class GuidedPasswordView(BaseView):
+    title = _("Choose a security key")
+    footer = _("")
+    excerpt = _("""Disk encryption protects your files in case you lose your \
+computer. It requires you to enter a security key each time the \
+computer starts up.
+
+Any files outside of Ubuntu will not be encrypted.""")
+
+    def __init__(self, model, controller, method):
+        self.model = model
+        self.controller = controller
+        self.method = method
+        self.form = GuidedPasswordForm()
+
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+
+        super().__init__(self.form.as_screen(excerpt=_(self.excerpt), focus_buttons=False))
+
+    def cancel(self, button=None):
+        self.controller.guided_passphrase = ''
+        self.controller.default()
+
+    def done(self, result):
+        self.controller.guided_passphrase = result.password.value
+        self.controller.guided(self.method)
 
 
 class GuidedDiskSelectionView(BaseView):
@@ -150,7 +222,10 @@ class GuidedDiskSelectionView(BaseView):
                 + _("Choose the disk to install to:"))))
 
     def cancel(self, btn=None):
-        self.controller.default()
+        if self.method == "luks":
+            self.controller.guided_crypt(self.method)
+        else:
+            self.controller.default()
 
     def choose_disk(self, btn, disk):
         self.controller.reformat(disk)
@@ -161,7 +236,7 @@ class GuidedDiskSelectionView(BaseView):
                 "mount": "/",
                 }
             self.controller.partition_disk_handler(disk, None, result)
-        elif self.method == 'lvm':
+        elif self.method in ['lvm', 'luks']:
             if DeviceAction.MAKE_BOOT in disk.supported_actions:
                 self.controller.make_boot_disk(disk)
             self.controller.create_partition(
@@ -175,11 +250,11 @@ class GuidedDiskSelectionView(BaseView):
                     size=disk.free_for_partitions,
                     fstype=None,
                     ))
-            vg = self.controller.create_volgroup(
-                spec=dict(
-                    name="ubuntu-vg",
-                    devices=set([part]),
-                    ))
+            spec = dict(name="ubuntu-vg", devices=set([part]))
+            if self.method == 'luks':
+                spec['password'] = self.controller.guided_passphrase
+            # create volume group on partition
+            vg = self.controller.create_volgroup(spec)
             self.controller.create_logical_volume(
                 vg=vg, spec=dict(
                     size=dehumanize_size("4G"),

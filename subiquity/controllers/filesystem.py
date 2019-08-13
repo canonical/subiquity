@@ -29,6 +29,7 @@ from subiquity.models.filesystem import (
     )
 from subiquity.ui.views import (
     FilesystemView,
+    GuidedPasswordView,
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     )
@@ -65,6 +66,7 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
+        self.guided_passphrase = ""
         self._probe_state = ProbeState.NOT_STARTED
 
     def start(self):
@@ -238,6 +240,10 @@ class FilesystemController(BaseController):
             self._run_iterator(self._run_actions(self.answers['manual']))
             self.answers['manual'] = []
 
+    def guided_crypt(self, method):
+        v = GuidedPasswordView(self.model, self, method)
+        self.ui.set_body(v)
+
     def guided(self, method):
         v = GuidedDiskSelectionView(self.model, self, method)
         self.ui.set_body(v)
@@ -248,10 +254,12 @@ class FilesystemController(BaseController):
 
     def reset(self):
         log.info("Resetting Filesystem model")
+        self.guided_passphrase = ""
         self.model.reset()
         self.manual()
 
     def cancel(self):
+        self.guided_passphrase = ""
         self.signal.emit_signal('prev-screen')
 
     def finish(self):
