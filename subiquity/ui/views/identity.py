@@ -90,8 +90,6 @@ class IdentityForm(Form):
     confirm_password = PasswordField(_("Confirm your password:"))
 
     def validate_realname(self):
-        if len(self.realname.value) < 1:
-            return _("Real name must not be empty.")
         if len(self.realname.value) > REALNAME_MAXLEN:
             return _("Realname too long, must be < ") + str(REALNAME_MAXLEN)
 
