@@ -41,6 +41,8 @@ class IdentityModel(object):
     def add_user(self, result):
         result = result.copy()
         self._hostname = result.pop('hostname')
+        if not result.get('realname'):
+            result['realname'] = result['username']
         self._user = User(**result)
 
     @property
