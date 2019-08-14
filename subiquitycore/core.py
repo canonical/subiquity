@@ -308,6 +308,8 @@ class Application:
         fut = self.common['pool'].submit(func)
 
         def in_main_thread(ignored):
+            self.common['loop'].remove_watch_pipe(pipe)
+            os.close(pipe)
             callback(fut)
 
         pipe = self.common['loop'].watch_pipe(in_main_thread)
