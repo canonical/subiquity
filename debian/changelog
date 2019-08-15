@@ -1,7 +1,8 @@
-subiquity (19.08.1.3) UNRELEASED; urgency=medium
+subiquity (19.08.1.3) eoan; urgency=medium
 
   * Move python3-attr to subiquitycore package, as it is used by
     console-conf too.
+  * Unbreak console-conf.
 
  -- Dimitri John Ledkov <xnox@ubuntu.com>  Wed, 07 Aug 2019 17:27:04 +0100
 
