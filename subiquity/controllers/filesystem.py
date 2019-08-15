@@ -194,11 +194,11 @@ class FilesystemController(BaseController):
         if 'obj' in action:
             obj = self._action_get(action['obj'])
             meth = getattr(
-                self.ui.frame.body.avail_list,
+                self.ui.body.avail_list,
                 "_{}_{}".format(obj.type, action['action']))
             meth(obj)
             yield
-            body = self.ui.frame.body._w
+            body = self.ui.body._w
             if not isinstance(body, StretchyOverlay):
                 return
             if isinstance(body.stretchy, ConfirmDeleteStretchy):
@@ -210,25 +210,25 @@ class FilesystemController(BaseController):
                     action['data'],
                     action.get("submit", True))
         elif action['action'] == 'create-raid':
-            self.ui.frame.body.create_raid()
+            self.ui.body.create_raid()
             yield
-            body = self.ui.frame.body._w
+            body = self.ui.body._w
             yield from self._enter_form_data(
                 body.stretchy.form,
                 action['data'],
                 action.get("submit", True),
                 clean_suffix='raid')
         elif action['action'] == 'create-vg':
-            self.ui.frame.body.create_vg()
+            self.ui.body.create_vg()
             yield
-            body = self.ui.frame.body._w
+            body = self.ui.body._w
             yield from self._enter_form_data(
                 body.stretchy.form,
                 action['data'],
                 action.get("submit", True),
                 clean_suffix='vg')
         elif action['action'] == 'done':
-            if not self.ui.frame.body.done.enabled:
+            if not self.ui.body.done.enabled:
                 raise Exception("answers did not provide complete fs config")
             self.finish()
         else:

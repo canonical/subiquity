@@ -236,7 +236,7 @@ class NetworkController(BaseController):
             self.loop.set_alarm_in(0.1, lambda loop, ud: self.start_watching())
             return
         self.observer.data_ready(fd)
-        v = self.ui.frame.body
+        v = self.ui.body
         if hasattr(v, 'refresh_model_inputs'):
             v.refresh_model_inputs()
 
@@ -281,11 +281,11 @@ class NetworkController(BaseController):
         if 'obj' in action:
             obj = self._action_get(action['obj'])
             meth = getattr(
-                self.ui.frame.body,
+                self.ui.body,
                 "_action_{}".format(action['action']))
             meth(obj)
             yield
-            body = self.ui.frame.body._w
+            body = self.ui.body._w
             if not isinstance(body, StretchyOverlay):
                 return
             for k, v in action.items():
@@ -302,15 +302,15 @@ class NetworkController(BaseController):
                     v,
                     action.get(submit_key, True))
         elif action['action'] == 'create-bond':
-            self.ui.frame.body._create_bond()
+            self.ui.body._create_bond()
             yield
-            body = self.ui.frame.body._w
+            body = self.ui.body._w
             yield from self._enter_form_data(
                 body.stretchy.form,
                 action['data'],
                 action.get("submit", True))
         elif action['action'] == 'done':
-            self.ui.frame.body.done()
+            self.ui.body.done()
         else:
             raise Exception("could not process action {}".format(action))
 
