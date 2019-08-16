@@ -18,7 +18,6 @@ import argparse
 import logging
 import os
 import fcntl
-import signal
 import sys
 
 from subiquitycore.log import setup_logger
@@ -125,9 +124,6 @@ def main():
     handler.addFilter(lambda rec: rec.name != 'probert.network')
     logging.getLogger('curtin').addHandler(handler)
     logging.getLogger('block-discover').addHandler(handler)
-
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    signal.signal(signal.SIGQUIT, signal.SIG_IGN)
 
     env_ok = environment_check(ENVIRONMENT)
     if env_ok is False and not opts.dry_run:

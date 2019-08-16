@@ -20,7 +20,6 @@ import logging
 import os
 import struct
 import sys
-import termios
 import tty
 
 import urwid
@@ -156,25 +155,13 @@ class KeyCodesFilter:
     def enter_keycodes_mode(self):
         log.debug("enter_keycodes_mode")
         self.filtering = True
-        # Read the old keyboard mode (it will proably always be
-        # K_UNICODE but well).
+        # Read the old keyboard mode (it will proably always be K_UNICODE but
+        # well).
         o = bytearray(4)
         fcntl.ioctl(self._fd, KDGKBMODE, o)
         self._old_mode = struct.unpack('i', o)[0]
-        # Make some changes to the terminal settings.
-        # If you don't do this, sometimes writes to the terminal hang (and no,
-        # I don't know exactly why).
-        self._old_settings = termios.tcgetattr(self._fd)
-        new_settings = termios.tcgetattr(self._fd)
-        new_settings[tty.IFLAG] = 0
-        new_settings[tty.LFLAG] = new_settings[tty.LFLAG] & ~(termios.ECHO |
-                                                              termios.ICANON |
-                                                              termios.ISIG)
-        new_settings[tty.CC][termios.VMIN] = 0
-        new_settings[tty.CC][termios.VTIME] = 0
-        termios.tcsetattr(self._fd, termios.TCSAFLUSH, new_settings)
-        # Finally, set the keyboard mode to K_MEDIUMRAW, which causes
-        # the keyboard driver in the kernel to pass us keycodes.
+        # Set the keyboard mode to K_MEDIUMRAW, which causes the keyboard
+        # driver in the kernel to pass us keycodes.
         log.debug("old mode was %s, setting mode to %s",
                   self._old_mode, K_MEDIUMRAW)
         fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
@@ -184,7 +171,6 @@ class KeyCodesFilter:
         self.filtering = False
         log.debug("setting mode back to %s", self._old_mode)
         fcntl.ioctl(self._fd, KDSKBMODE, self._old_mode)
-        termios.tcsetattr(self._fd, termios.TCSANOW, self._old_settings)
 
     def filter(self, keys, codes):
         # Luckily urwid passes us the raw results from read() we can
@@ -526,6 +512,8 @@ class Application:
                 except Skip:
                     self.next_screen()
 
+            self.common['loop'].set_alarm_in(
+                0.00, lambda loop, ud: tty.setraw(0))
             self.common['loop'].set_alarm_in(
                 0.05, select_initial_screen, initial_controller_index)
             self._connect_base_signals()

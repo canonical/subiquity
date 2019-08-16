@@ -17,7 +17,6 @@
 import argparse
 import sys
 import logging
-import signal
 from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION
 from console_conf.core import ConsoleConf
@@ -82,9 +81,6 @@ def main():
     logger = logging.getLogger('console_conf')
     logger.info("Starting console-conf v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
-
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    signal.signal(signal.SIGQUIT, signal.SIG_IGN)
 
     env_ok = environment_check(ENVIRONMENT)
     if env_ok is False and not opts.dry_run:
