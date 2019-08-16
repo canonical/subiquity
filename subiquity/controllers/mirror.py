@@ -37,11 +37,10 @@ class MirrorController(BaseController):
         ('snapd-network-change', 'snapd_network_changed'),
     ]
 
-    def __init__(self, common):
-        super().__init__(common)
-        self.model = self.base_model.mirror
+    def __init__(self, app):
+        super().__init__(app)
+        self.model = app.base_model.mirror
         self.check_state = CheckState.NOT_STARTED
-        self.answers = self.all_answers.get('Mirror', {})
         if 'country-code' in self.answers:
             self.check_state = CheckState.DONE
             self.model.set_country(self.answers['country-code'])

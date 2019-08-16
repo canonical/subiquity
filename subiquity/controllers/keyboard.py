@@ -29,10 +29,9 @@ class KeyboardController(BaseController):
         ('l10n:language-selected', 'language_selected'),
         ]
 
-    def __init__(self, common):
-        super().__init__(common)
-        self.model = self.base_model.keyboard
-        self.answers = self.all_answers.get("Keyboard", {})
+    def __init__(self, app):
+        super().__init__(app)
+        self.model = app.base_model.keyboard
 
     def language_selected(self, code):
         log.debug("language_selected %s", code)

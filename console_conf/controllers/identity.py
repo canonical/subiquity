@@ -194,9 +194,9 @@ def write_login_details_standalone():
 
 class IdentityController(BaseController):
 
-    def __init__(self, common):
-        super().__init__(common)
-        self.model = self.base_model.identity
+    def __init__(self, app):
+        super().__init__(app)
+        self.model = app.base_model.identity
 
     def default(self):
         footer = ""
@@ -240,7 +240,7 @@ class IdentityController(BaseController):
                 login_details_path = '/run/console-conf/login-details.txt'
                 self.model.add_user(result)
         ips = []
-        net_model = self.controllers['Network'].model
+        net_model = self.app.controller_instances['Network'].model
         for dev in net_model.get_all_netdevs():
             ips.extend(dev.actual_global_ip_addresses)
         with open(login_details_path, 'w') as fp:
@@ -258,7 +258,7 @@ class IdentityController(BaseController):
         self.ui.set_header(title)
         self.ui.set_footer(footer)
 
-        net_model = self.controllers['Network'].model
+        net_model = self.app.controller_instances['Network'].model
         ifaces = net_model.get_all_netdevs()
         login_view = LoginView(self.opts, self.model, self, ifaces)
 

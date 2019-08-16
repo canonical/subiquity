@@ -25,23 +25,18 @@ class BaseController(ABC):
 
     signals = []
 
-    def __init__(self, common):
-        self.ui = common['ui']
-        self.signal = common['signal']
-        self.opts = common['opts']
-        self.loop = common['loop']
-        self.prober = common['prober']
-        self.controllers = common['controllers']
-        self.pool = common['pool']
-        self.base_model = common['base_model']
-        self.all_answers = common['answers']
-        self.input_filter = common['input_filter']
-        self.scale_factor = common['scale_factor']
-        self.run_in_bg = common['run_in_bg']
-        self.updated = common['updated']
-        self.application = common['application']
-        if 'snapd_connection' in common:
-            self.snapd_connection = common['snapd_connection']
+    @classmethod
+    def _controller_name(cls):
+        return cls.__name__[:-len("Controller")]
+
+    def __init__(self, app):
+        self.ui = app.ui
+        self.signal = app.signal
+        self.opts = app.opts
+        self.loop = app.loop
+        self.run_in_bg = app.run_in_bg
+        self.app = app
+        self.answers = app.answers.get(self._controller_name(), {})
 
     def register_signals(self):
         """Defines signals associated with controller from model."""
@@ -99,7 +94,7 @@ class BaseController(ABC):
 
     def _run_iterator(self, it, delay=None):
         if delay is None:
-            delay = 0.2/self.scale_factor
+            delay = 0.2/self.app.scale_factor
         try:
             next(it)
         except StopIteration:

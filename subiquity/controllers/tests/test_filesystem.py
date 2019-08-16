@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections import defaultdict
 import unittest
 
 from subiquity.controllers.filesystem import (
@@ -34,17 +33,19 @@ class Thing:
     pass
 
 
-def make_controller(bootloader=None):
-    common = defaultdict(type(None))
-    bm = Thing()
-    bm.filesystem = make_model(bootloader)
-    common['base_model'] = bm
-    common['answers'] = {}
+class MiniApplication:
+    ui = signal = loop = run_in_bg = None
+    answers = {}
     opts = Thing()
     opts.dry_run = True
     opts.bootloader = None
-    common['opts'] = opts
-    controller = FilesystemController(common)
+
+
+def make_controller(bootloader=None):
+    app = MiniApplication()
+    app.base_model = bm = Thing()
+    bm.filesystem = make_model(bootloader)
+    controller = FilesystemController(app)
     return controller
 
 

@@ -25,10 +25,9 @@ log = logging.getLogger('subiquity.controllers.proxy')
 
 class ProxyController(BaseController):
 
-    def __init__(self, common):
-        super().__init__(common)
-        self.model = self.base_model.proxy
-        self.answers = self.all_answers.get('Proxy', {})
+    def __init__(self, app):
+        super().__init__(app)
+        self.model = app.base_model.proxy
 
     def default(self):
         self.ui.set_body(ProxyView(self.model, self))

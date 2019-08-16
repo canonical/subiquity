@@ -6,6 +6,6 @@ from .identity import IdentityModel
 class ConsoleConfModel:
     """The overall model for console-conf."""
 
-    def __init__(self, common):
+    def __init__(self):
         self.network = NetworkModel(support_wlan=True)
         self.identity = IdentityModel()
