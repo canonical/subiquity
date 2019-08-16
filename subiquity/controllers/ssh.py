@@ -88,18 +88,18 @@ class SSHController(BaseController):
         return user_spec, ssh_import_id, key_material, fingerprints
 
     def _fetched_ssh_keys(self, fut):
-        if not isinstance(self.ui.frame.body, SSHView):
+        if not isinstance(self.ui.body, SSHView):
             # This can happen if curtin failed while the keys where being
             # fetched and we jump to the log view.
             log.debug(
                 "view is now an instance of %s, not SSHView",
-                type(self.ui.frame.body))
+                type(self.ui.body))
             return
         try:
             result = fut.result()
         except FetchSSHKeysFailure as e:
             log.debug("fetching ssh keys failed %s", e)
-            self.ui.frame.body.fetching_ssh_keys_failed(e.message, e.output)
+            self.ui.body.fetching_ssh_keys_failed(e.message, e.output)
         else:
             log.debug("_fetched_ssh_keys %s", result)
             if result is None:
@@ -111,7 +111,7 @@ class SSHController(BaseController):
                 self.loop.set_alarm_in(0.0,
                                        lambda loop, ud: self.done(user_spec))
             else:
-                self.ui.frame.body.confirm_ssh_keys(
+                self.ui.body.confirm_ssh_keys(
                     user_spec, ssh_import_id, key_material, fingerprints)
 
     def fetch_ssh_keys(self, user_spec, ssh_import_id):

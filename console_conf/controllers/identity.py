@@ -227,7 +227,7 @@ class IdentityController(BaseController):
                 ["snap", "create-user", "--sudoer", "--json", email])
             self.ui.set_footer("")
             if cp.returncode != 0:
-                self.ui.frame.body.error.set_text(
+                self.ui.body.error.set_text(
                     "Creating user failed:\n" + cp.stderr)
                 return
             else:
