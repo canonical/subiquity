@@ -19,6 +19,7 @@ import json
 import logging
 import os
 import struct
+import subprocess
 import sys
 import tty
 
@@ -296,6 +297,28 @@ class Application:
         def in_random_thread(ignored):
             os.write(pipe, b'x')
         fut.add_done_callback(in_random_thread)
+
+    def run_command_in_foreground(self, cmd, **kw):
+        screen = self.loop.screen
+
+        def run():
+            subprocess.run(cmd, **kw)
+
+        def restore(fut):
+            screen.start()
+            # Calling screen.start() sends the INPUT_DESCRIPTORS_CHANGED
+            # signal. This calls _reset_input_descriptors() which calls
+            # unhook_event_loop / hook_event_loop on the screen. But this all
+            # happens before _started is set on the screen, so hook_event_loop
+            # does not actually do anything -- and we end up not listening to
+            # stdin, obviously a defective situation for a console
+            # application. So send it again now the screen is started...
+            urwid.emit_signal(
+                screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
+            tty.setraw(0)
+
+        screen.stop()
+        self.run_in_bg(run, restore)
 
     def _connect_base_signals(self):
         """ Connect signals used in the core controller
