@@ -460,21 +460,24 @@ class InstallProgressController(BaseController):
           transitions={'reboot': 'abort_uu'},
           net_only=True)
     def _bg_run_uu(self):
+        target_tmp = os.path.join(self.model.target, "tmp")
+        os.makedirs(target_tmp, exist_ok=True)
+        apt_conf = tempfile.NamedTemporaryFile(
+            dir=target_tmp, delete=False, mode='w')
+        apt_conf.write(uu_apt_conf)
+        apt_conf.close()
+        env = os.environ.copy()
+        env["APT_CONFIG"] = apt_conf.name[len(self.model.target):]
         if self.opts.dry_run:
             self.uu = utils.start_command([
                 "sleep", str(10/self.app.scale_factor)])
             self.uu.wait()
         else:
-            apt_conf = tempfile.NamedTemporaryFile(
-                dir="/target/tmp", delete=False)
-            apt_conf.write(uu_apt_conf)
-            apt_conf.close()
-            env = os.environ.copy()
-            env["APT_CONFIG"] = apt_conf.name[len("/target"):]
             self._bg_run_command_logged([
                 sys.executable, "-m", "curtin", "in-target", "-t", "/target",
                 "--", "unattended-upgrades", "-v",
             ], env=env, check=True)
+        os.remove(apt_conf.name)
 
     @task(transitions={'success': 'copy_logs_to_target'}, net_only=True)
     def uu_done(self):
