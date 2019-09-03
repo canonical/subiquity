@@ -198,7 +198,7 @@ class IdentityController(BaseController):
         super().__init__(app)
         self.model = app.base_model.identity
 
-    def default(self):
+    def start_ui(self):
         footer = ""
         self.ui.set_footer(footer)
         self.ui.set_body(IdentityView(self.model, self))

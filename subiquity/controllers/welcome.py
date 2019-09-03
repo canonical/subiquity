@@ -39,7 +39,7 @@ class WelcomeController(BaseController):
             if code == lang:
                 self.model.switch_language(code)
 
-    def default(self):
+    def start_ui(self):
         view = WelcomeView(self.model, self)
         self.ui.set_body(view)
         if 'lang' in self.answers:

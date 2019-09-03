@@ -248,7 +248,7 @@ class RefreshController(BaseController):
         result = response.json()
         callback(result['result'])
 
-    def default(self, index=1):
+    def start_ui(self, index=1):
         from subiquity.ui.views.refresh import RefreshView
         if self.app.updated:
             raise Skip()

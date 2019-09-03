@@ -20,7 +20,7 @@ from subiquitycore.controller import BaseController
 
 class WelcomeController(BaseController):
 
-    def default(self):
+    def start_ui(self):
         view = WelcomeView(self)
         self.ui.set_body(view)
 

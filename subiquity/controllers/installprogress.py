@@ -564,7 +564,7 @@ class InstallProgressController(BaseController):
             utils.disable_subiquity()
         self.signal.emit_signal('quit')
 
-    def default(self):
+    def start_ui(self):
         self.progress_view_showing = True
         if self.install_state == InstallState.RUNNING:
             self.progress_view.title = _("Installing system")

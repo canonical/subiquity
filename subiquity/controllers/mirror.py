@@ -82,7 +82,7 @@ class MirrorController(BaseController):
         self.check_state = CheckState.DONE
         self.model.set_country(cc)
 
-    def default(self):
+    def start_ui(self):
         self.check_state = CheckState.DONE
         self.ui.set_body(MirrorView(self.model, self))
         if 'mirror' in self.answers:

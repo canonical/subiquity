@@ -278,6 +278,13 @@ class Application:
         self.controller_instances = dict.fromkeys(self.controllers)
         self.controller_index = -1
 
+    @property
+    def cur_controller(self):
+        if self.controller_index < 0:
+            return None
+        controller_name = self.controllers[self.controller_index]
+        return self.controller_instances[controller_name]
+
     def run_in_bg(self, func, callback):
         """Run func() in a thread and call callback on UI thread.
 
@@ -339,25 +346,25 @@ class Application:
         log.debug(self.signal)
 
     def save_state(self):
-        if self.controller_index < 0:
+        cur_controller = self.cur_controller
+        if cur_controller is None:
             return
-        cur_controller_name = self.controllers[self.controller_index]
-        cur_controller = self.controller_instances[cur_controller_name]
         state_path = os.path.join(
-            self.state_dir, 'states', cur_controller_name)
+            self.state_dir, 'states', cur_controller._controller_name())
         with open(state_path, 'w') as fp:
             json.dump(cur_controller.serialize(), fp)
 
     def select_screen(self, index):
+        if self.cur_controller is not None:
+            self.cur_controller.end_ui()
         self.controller_index = index
         self.ui.progress_current = index
-        controller_name = self.controllers[self.controller_index]
-        log.debug("moving to screen %s", controller_name)
-        controller = self.controller_instances[controller_name]
-        controller.default()
+        log.debug(
+            "moving to screen %s", self.cur_controller._controller_name())
+        self.cur_controller.start_ui()
         state_path = os.path.join(self.state_dir, 'last-screen')
         with open(state_path, 'w') as fp:
-            fp.write(controller_name)
+            fp.write(self.cur_controller._controller_name())
 
     def next_screen(self, *args):
         self.save_state()

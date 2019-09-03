@@ -46,6 +46,13 @@ class BaseController(ABC):
         self.signal.connect_signals(signals)
 
     def start(self):
+        """Called just before the main loop is started.
+
+        At the time this is called, all controllers and models and so on
+        have been created. This is when the controller should start
+        interacting with the outside world, e.g. probing for network
+        devices or start making connections to the snap store.
+        """
         pass
 
     @abstractmethod
@@ -53,8 +60,20 @@ class BaseController(ABC):
         pass
 
     @abstractmethod
-    def default(self):
-        pass
+    def start_ui(self):
+        """Start running this controller's UI.
+
+        This method should call self.ui.set_body.
+        """
+
+    def end_ui(self):
+        """Stop running this controller's UI.
+
+        This method doesn't actually need to remove this controller's UI
+        as the next one is about to replace it, it's more of a hook to
+        stop any background tasks that can be stopped when the UI is not
+        running.
+        """
 
     def serialize(self):
         return None
@@ -113,8 +132,8 @@ class RepeatedController(BaseController):
     def register_signals(self):
         pass
 
-    def default(self):
-        self.orig.default(self.index)
+    def start_ui(self):
+        self.orig.start_ui(self.index)
 
     def cancel(self):
         self.orig.cancel()

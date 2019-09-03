@@ -125,7 +125,7 @@ class FilesystemController(BaseController):
             lambda fut: self._probed(fut, True),
             )
 
-    def default(self):
+    def start_ui(self):
         self.showing = True
         if self._probe_state in [ProbeState.PROBING,
                                  ProbeState.REPROBING]:
