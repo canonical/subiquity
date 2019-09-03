@@ -77,7 +77,7 @@ def host_key_fingerprints():
     """
     config = run_command(['sshd', '-T'])
     if config.returncode != 0:
-        log.debug("sshd -T failed %r", config['err'])
+        log.debug("sshd -T failed %r", config.stderr)
         return []
     keyfiles = []
     for line in config.stdout.splitlines():
