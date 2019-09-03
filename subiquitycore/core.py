@@ -466,6 +466,46 @@ class Application:
         if key == 'ctrl x':
             self.signal.emit_signal('control-x-quit')
 
+    def load_controllers(self):
+        controllers_mod = __import__(
+            '{}.controllers'.format(self.project), None, None, [''])
+        for i, k in enumerate(self.controllers):
+            if self.controller_instances[k] is None:
+                log.debug("Importing controller: {}".format(k))
+                klass = getattr(controllers_mod, k+"Controller")
+                self.controller_instances[k] = klass(self)
+            else:
+                count = 1
+                for k2 in self.controllers[:i]:
+                    if k2 == k or k2.startswith(k + '-'):
+                        count += 1
+                orig = self.controller_instances[k]
+                k += '-' + str(count)
+                self.controllers[i] = k
+                self.controller_instances[k] = RepeatedController(
+                    orig, count)
+        log.debug("*** %s", self.controller_instances)
+
+    def load_serialized_state(self):
+        for k in self.controllers:
+            state_path = os.path.join(self.state_dir, 'states', k)
+            if not os.path.exists(state_path):
+                continue
+            with open(state_path) as fp:
+                self.controller_instances[k].deserialize(
+                    json.load(fp))
+
+        last_screen = None
+        state_path = os.path.join(self.state_dir, 'last-screen')
+        if os.path.exists(state_path):
+            with open(state_path) as fp:
+                last_screen = fp.read().strip()
+
+        if last_screen in self.controllers:
+            return self.controllers.index(last_screen)
+        else:
+            return 0
+
     def run(self):
         if (self.opts.run_on_serial and
                 os.ttyname(0) != "/dev/ttysclp0"):
@@ -486,45 +526,13 @@ class Application:
         try:
             if self.opts.scripts:
                 self.run_scripts(self.opts.scripts)
-            controllers_mod = __import__('%s.controllers' % self.project,
-                                         None, None, [''])
-            for i, k in enumerate(self.controllers):
-                if self.controller_instances[k] is None:
-                    log.debug("Importing controller: {}".format(k))
-                    klass = getattr(controllers_mod, k+"Controller")
-                    self.controller_instances[k] = klass(self)
-                else:
-                    count = 1
-                    for k2 in self.controllers[:i]:
-                        if k2 == k or k2.startswith(k + '-'):
-                            count += 1
-                    orig = self.controller_instances[k]
-                    k += '-' + str(count)
-                    self.controllers[i] = k
-                    self.controller_instances[k] = RepeatedController(
-                        orig, count)
-            log.debug("*** %s", self.controller_instances)
+
+            self.load_controllers()
 
             initial_controller_index = 0
 
             if self.updated:
-                for k in self.controllers:
-                    state_path = os.path.join(self.state_dir, 'states', k)
-                    if not os.path.exists(state_path):
-                        continue
-                    with open(state_path) as fp:
-                        self.controller_instances[k].deserialize(
-                            json.load(fp))
-
-                last_screen = None
-                state_path = os.path.join(self.state_dir, 'last-screen')
-                if os.path.exists(state_path):
-                    with open(state_path) as fp:
-                        last_screen = fp.read().strip()
-
-                if last_screen in self.controllers:
-                    initial_controller_index = self.controllers.index(
-                        last_screen)
+                initial_controller_index = self.load_serialized_state()
 
             def select_initial_screen(loop, index):
                 try:
