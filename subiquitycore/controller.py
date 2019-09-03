@@ -59,6 +59,13 @@ class BaseController(ABC):
     def cancel(self):
         pass
 
+    @property
+    def showing(self):
+        cur_controller = self.app.cur_controller
+        while isinstance(cur_controller, RepeatedController):
+            cur_controller = cur_controller.orig
+        return cur_controller is self
+
     @abstractmethod
     def start_ui(self):
         """Start running this controller's UI.

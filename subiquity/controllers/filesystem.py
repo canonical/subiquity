@@ -65,7 +65,6 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
-        self.showing = False
         self._probe_state = ProbeState.NOT_STARTED
 
     def start(self):
@@ -126,7 +125,6 @@ class FilesystemController(BaseController):
             )
 
     def start_ui(self):
-        self.showing = True
         if self._probe_state in [ProbeState.PROBING,
                                  ProbeState.REPROBING]:
             self.ui.set_body(SlowProbing(self))
@@ -254,11 +252,9 @@ class FilesystemController(BaseController):
         self.manual()
 
     def cancel(self):
-        self.showing = False
         self.signal.emit_signal('prev-screen')
 
     def finish(self):
-        self.showing = False
         log.debug("FilesystemController.finish next-screen")
         # start curtin install in background
         self.signal.emit_signal('installprogress:filesystem-config-done')

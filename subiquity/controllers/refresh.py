@@ -60,7 +60,6 @@ class RefreshController(BaseController):
         self.current_snap_version = "unknown"
         self.new_snap_version = ""
 
-        self.view = None
         self.offered_first_time = False
 
     def start(self):
@@ -201,8 +200,8 @@ class RefreshController(BaseController):
                     break
             else:
                 self.check_state = CheckState.UNAVAILABLE
-        if self.view:
-            self.view.update_check_state()
+        if self.showing:
+            self.ui.body.update_check_state()
 
     def start_update(self, callback):
         update_marker = os.path.join(self.app.state_dir, 'updating')
@@ -265,11 +264,10 @@ class RefreshController(BaseController):
         else:
             raise AssertionError("unexpected index {}".format(index))
         if show:
-            self.view = RefreshView(self)
-            self.ui.set_body(self.view)
+            self.ui.set_body(RefreshView(self))
             if 'update' in self.answers:
                 if self.answers['update']:
-                    self.view.update()
+                    self.ui.body.update()
                 else:
                     self.done()
         else:
@@ -277,9 +275,7 @@ class RefreshController(BaseController):
 
     def done(self, sender=None):
         log.debug("RefreshController.done next-screen")
-        self.view = None
         self.signal.emit_signal('next-screen')
 
     def cancel(self, sender=None):
-        self.view = None
         self.signal.emit_signal('prev-screen')
