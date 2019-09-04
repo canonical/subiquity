@@ -29,6 +29,7 @@ import yaml
 from subiquitycore.controller import RepeatedController
 from subiquitycore.signals import Signal
 from subiquitycore.prober import Prober, ProberException
+from subiquitycore.ui.frame import SubiquityCoreUI
 
 log = logging.getLogger('subiquitycore.core')
 
@@ -231,7 +232,9 @@ class Application:
     # controllers in order, calling the default method on the controller
     # instance.
 
-    def __init__(self, ui, opts):
+    make_ui = SubiquityCoreUI
+
+    def __init__(self, opts):
         try:
             prober = Prober(opts)
         except ProberException as e:
@@ -239,7 +242,7 @@ class Application:
             log.exception(err)
             raise ApplicationError(err)
 
-        self.ui = ui
+        self.ui = self.make_ui()
         self.opts = opts
         opts.project = self.project
 
@@ -274,7 +277,7 @@ class Application:
                                 if c in opts.screens]
         else:
             self.controllers = self.controllers[:]
-        ui.progress_completion = len(self.controllers)
+        self.ui.progress_completion = len(self.controllers)
         self.controller_instances = dict.fromkeys(self.controllers)
         self.controller_index = -1
 

@@ -32,7 +32,7 @@ from subiquitycore.ui.utils import Color
 log = logging.getLogger('subiquitycore.ui.frame')
 
 
-class SubiquityUI(WidgetWrap):
+class SubiquityCoreUI(WidgetWrap):
 
     def __init__(self):
         self.header = Header("")
