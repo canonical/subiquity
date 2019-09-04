@@ -211,7 +211,6 @@ class InstallProgressController(BaseController):
         self.model = app.base_model
         self.answers.setdefault('reboot', False)
         self.progress_view = None
-        self.progress_view_showing = False
         self.install_state = InstallState.NOT_STARTED
         self.journal_listener_handle = None
         self._postinstall_prerequisites = {
@@ -373,7 +372,7 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.DONE
         log.debug('After curtin install OK')
         self.ui.progress_current += 1
-        if not self.progress_view_showing:
+        if not self.showing:
             self.ui.set_footer(_("Install complete"))
         else:
             # Re-set footer so progress bar updates.
@@ -564,8 +563,7 @@ class InstallProgressController(BaseController):
             utils.disable_subiquity()
         self.signal.emit_signal('quit')
 
-    def default(self):
-        self.progress_view_showing = True
+    def start_ui(self):
         if self.install_state == InstallState.RUNNING:
             self.progress_view.title = _("Installing system")
             footer = _("Thank you for using Ubuntu!")

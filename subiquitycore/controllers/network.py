@@ -244,13 +244,11 @@ class NetworkController(BaseController):
 
     def done(self):
         log.debug("NetworkController.done next-screen")
-        self.view = None
         self.model.has_network = bool(
             self.network_event_receiver.default_routes)
         self.signal.emit_signal('next-screen')
 
     def cancel(self):
-        self.view = None
         self.signal.emit_signal('prev-screen')
 
     def _action_get(self, id):
@@ -339,7 +337,7 @@ class NetworkController(BaseController):
                 dev.set_dhcp_state(v, "TIMEDOUT")
                 self.network_event_receiver.update_link(dev.ifindex)
 
-    def default(self):
+    def start_ui(self):
         if not self.view_shown:
             self.update_initial_configs()
         self.view = NetworkView(self.model, self)
@@ -348,6 +346,9 @@ class NetworkController(BaseController):
             self.view_shown = True
         self.network_event_receiver.view = self.view
         self.ui.set_body(self.view)
+
+    def end_ui(self):
+        self.view = self.network_event_receiver.view = None
 
     @property
     def netplan_path(self):

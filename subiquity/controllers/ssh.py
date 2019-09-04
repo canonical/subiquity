@@ -35,7 +35,7 @@ class SSHController(BaseController):
         super().__init__(app)
         self.model = app.base_model.ssh
 
-    def default(self):
+    def start_ui(self):
         self.ui.set_body(SSHView(self.model, self))
         if self.answers:
             d = {

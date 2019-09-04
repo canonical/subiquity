@@ -29,7 +29,7 @@ class ProxyController(BaseController):
         super().__init__(app)
         self.model = app.base_model.proxy
 
-    def default(self):
+    def start_ui(self):
         self.ui.set_body(ProxyView(self.model, self))
         if 'proxy' in self.answers:
             self.done(self.answers['proxy'])

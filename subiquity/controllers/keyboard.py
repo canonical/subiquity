@@ -42,7 +42,7 @@ class KeyboardController(BaseController):
         log.debug("loading launguage %s", code)
         self.model.load_language(code)
 
-    def default(self):
+    def start_ui(self):
         if self.model.current_lang is None:
             self.model.load_language('C')
         view = KeyboardView(self.model, self, self.opts)

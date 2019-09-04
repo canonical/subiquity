@@ -154,7 +154,7 @@ class SnapListController(BaseController):
         self.loader = self._make_loader()
         self.loader.start()
 
-    def default(self):
+    def start_ui(self):
         if self.loader.failed or not self.app.base_model.network.has_network:
             # If loading snaps failed or the network is disabled, skip the
             # screen.

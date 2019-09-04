@@ -28,7 +28,7 @@ class IdentityController(BaseController):
         super().__init__(app)
         self.model = app.base_model.identity
 
-    def default(self):
+    def start_ui(self):
         self.ui.set_body(IdentityView(self.model, self))
         if all(elem in self.answers for elem in
                ['realname', 'username', 'password', 'hostname']):
