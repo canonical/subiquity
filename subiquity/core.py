@@ -17,6 +17,8 @@ import logging
 import os
 import platform
 
+import urwid
+
 from subiquitycore.core import Application
 
 from subiquity.models.subiquity import SubiquityModel
@@ -37,6 +39,7 @@ class Subiquity(Application):
     from subiquity.palette import COLORS, STYLES, STYLES_MONO
 
     project = "subiquity"
+    showing_global_extra = False
 
     def make_model(self):
         root = '/'
@@ -64,6 +67,7 @@ class Subiquity(Application):
     ]
 
     def __init__(self, opts, block_log_dir):
+        self.controllers = self.controllers[:]
         if not opts.bootloader == 'none' and platform.machine() != 's390x':
             self.controllers.remove("Zdev")
 
@@ -94,3 +98,29 @@ class Subiquity(Application):
             lambda fut: (
                 fut.result(), self.signal.emit_signal('snapd-network-change')),
             )
+
+    def unhandled_input(self, key):
+        if key in ['ctrl h', 'f1']:
+            self.show_global_extra()
+        else:
+            super().unhandled_input(key)
+
+    def show_global_extra(self):
+        if self.showing_global_extra:
+            return
+        self.showing_global_extra = True
+        from subiquity.ui.views.global_extra import GlobalExtraStretchy
+
+        fp = self.ui.pile.focus_position
+        self.ui.pile.focus_position = 1
+        self.ui.right_icon.base_widget._label._selectable = False
+
+        def restore_focus(sender):
+            self.showing_global_extra = False
+            self.ui.pile.focus_position = fp
+            self.ui.right_icon.base_widget._label._selectable = True
+
+        overlay = self.ui.body.show_stretchy_overlay(
+            GlobalExtraStretchy(self, self.ui.body))
+        urwid.connect_signal(overlay, 'closed', restore_focus)
+        return overlay
