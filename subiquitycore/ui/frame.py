@@ -34,9 +34,11 @@ log = logging.getLogger('subiquitycore.ui.frame')
 
 class SubiquityCoreUI(WidgetWrap):
 
+    right_icon = Text("")
+
     def __init__(self):
         self.header = Header("")
-        self.footer = Footer("", 0, 1)
+        self.footer = Footer("", self.right_icon, 0, 1)
         self.progress_current = 0
         self.progress_completion = 0
         # After the install starts, we want to stop setting the footer
@@ -58,7 +60,9 @@ class SubiquityCoreUI(WidgetWrap):
     def set_footer(self, message):
         self._assign_contents(
             2,
-            Footer(message, self.progress_current, self.progress_completion))
+            Footer(
+                message, self.right_icon,
+                self.progress_current, self.progress_completion))
 
     @property
     def body(self):
