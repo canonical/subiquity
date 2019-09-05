@@ -70,6 +70,9 @@ class BaseView(WidgetWrap):
         # disabled() wraps a widget in two decorations.
         self._w = self._w.bottom_w.original_widget.original_widget
 
+    def local_help(self):
+        return None
+
     def cancel(self):
         pass
 

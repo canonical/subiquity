@@ -17,13 +17,23 @@ class FakeOpts:
     snaps_from_examples = True
 
 
+class NoLocalHelpView(BaseView):
+    def __init__(self):
+        super().__init__(Text(""))
+
+
+class LocalHelpView(NoLocalHelpView):
+    def local_help(self):
+        return "title", "local help content"
+
+
 class SubiquityTests(TestCase):
 
     def make_app(self, view=None):
         app = Subiquity(FakeOpts(), '')
 
         if view is None:
-            view = BaseView(Text(""))
+            view = NoLocalHelpView()
         app.ui.set_body(view)
 
         return app
@@ -97,5 +107,28 @@ class SubiquityTests(TestCase):
         def pred(w):
             return isinstance(w, Text) and \
               'The following keys can be used at any time' in w.text
+
+        self.assertIsNotNone(view_helpers.find_with_pred(app.ui, pred))
+
+    def test_no_local_help(self):
+        app = self.make_app(NoLocalHelpView())
+        overlay = app.show_global_extra()
+
+        self.assertIsNone(view_helpers.find_button_matching(
+            overlay, '^View help on this screen$'))
+
+    def test_local_help(self):
+        app = self.make_app(LocalHelpView())
+        overlay = app.show_global_extra()
+
+        local_help_btn = view_helpers.find_button_matching(
+            overlay, '^View help on this screen$')
+        self.assertIsNotNone(local_help_btn)
+
+        view_helpers.click(local_help_btn)
+
+        def pred(w):
+            return isinstance(w, Text) and \
+              'local help content' in w.text
 
         self.assertIsNotNone(view_helpers.find_with_pred(app.ui, pred))

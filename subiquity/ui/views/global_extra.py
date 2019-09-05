@@ -108,6 +108,12 @@ class GlobalExtraStretchy(Stretchy):
         self.parent = parent
 
         btns = []
+        local_help = parent.local_help()
+        if local_help:
+            btns.append(
+                other_btn(
+                    _("View help on this screen"),
+                    on_press=self.show_local_help))
         btns.append(
             other_btn(
                 _("Read about this installer"),
@@ -123,6 +129,11 @@ class GlobalExtraStretchy(Stretchy):
             ]
 
         super().__init__(_("Available Actions"), widgets, 0, 0)
+
+    def show_local_help(self, sender):
+        title, text = self.parent.local_help()
+        self.parent.show_stretchy_overlay(
+            SimpleTextStretchy(self.parent, title, text))
 
     def show_about(self, sender):
         self.parent.show_stretchy_overlay(
