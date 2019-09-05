@@ -23,7 +23,6 @@ import sys
 from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION
 from subiquitycore.core import ApplicationError
-from subiquitycore.ui.frame import SubiquityUI
 from subiquitycore.utils import environment_check
 
 from subiquity.core import Subiquity
@@ -145,10 +144,8 @@ def main():
             opts.answers.close()
             opts.answers = None
 
-    ui = SubiquityUI()
-
     try:
-        subiquity_interface = Subiquity(ui, opts, block_log_dir)
+        subiquity_interface = Subiquity(opts, block_log_dir)
     except ApplicationError as e:
         logger.exception('Failed to load Subiquity interface')
         print(e)

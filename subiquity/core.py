@@ -24,6 +24,7 @@ from subiquity.snapd import (
     FakeSnapdConnection,
     SnapdConnection,
     )
+from subiquity.ui.frame import SubiquityUI
 
 
 log = logging.getLogger('subiquity.core')
@@ -43,6 +44,9 @@ class Subiquity(Application):
             root = os.path.abspath('.subiquity')
         return SubiquityModel(root, self.opts.sources)
 
+    def make_ui(self):
+        return SubiquityUI(self)
+
     controllers = [
             "Welcome",
             "Refresh",
@@ -59,11 +63,11 @@ class Subiquity(Application):
             "InstallProgress",
     ]
 
-    def __init__(self, ui, opts, block_log_dir):
+    def __init__(self, opts, block_log_dir):
         if not opts.bootloader == 'none' and platform.machine() != 's390x':
             self.controllers.remove("Zdev")
 
-        super().__init__(ui, opts)
+        super().__init__(opts)
         self.ui.progress_completion += 1
         self.block_log_dir = block_log_dir
         if opts.snaps_from_examples:

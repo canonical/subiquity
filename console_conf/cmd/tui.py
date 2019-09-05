@@ -21,7 +21,6 @@ from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION
 from console_conf.core import ConsoleConf
 from subiquitycore.core import ApplicationError
-from subiquitycore.ui.frame import SubiquityUI
 from subiquitycore.utils import environment_check
 
 
@@ -88,10 +87,8 @@ def main():
               'Check {} for errors.'.format(LOGFILE))
         return 1
 
-    ui = SubiquityUI()
-
     try:
-        interface = ConsoleConf(ui, opts)
+        interface = ConsoleConf(opts)
     except ApplicationError as e:
         logger.exception('Failed to load ConsoleConf interface')
         print(e)
