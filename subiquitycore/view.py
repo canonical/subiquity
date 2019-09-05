@@ -61,8 +61,11 @@ class BaseView(WidgetWrap):
 
     def show_stretchy_overlay(self, stretchy):
         self._w = StretchyOverlay(disabled(self._w), stretchy)
+        return self._w
 
     def remove_overlay(self):
+        if isinstance(self._w, StretchyOverlay):
+            self._w._emit('closed')
         # disabled() wraps a widget in two decorations.
         self._w = self._w.bottom_w.original_widget.original_widget
 

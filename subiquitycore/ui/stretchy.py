@@ -73,6 +73,8 @@ class StretchyOverlay(urwid.Widget):
     _selectable = True
     _sizing = frozenset([urwid.BOX])
 
+    signals = ['closed']
+
     def __init__(self, bottom_w, stretchy):
         self.bottom_w = bottom_w
         self.stretchy = stretchy
