@@ -21,7 +21,8 @@ configuration.
 """
 
 from .filesystem import FilesystemView
-from .guided import GuidedPasswordView, GuidedDiskSelectionView, GuidedFilesystemView
+from .guided import (GuidedPasswordView, GuidedDiskSelectionView,
+                     GuidedFilesystemView)
 __all__ = [
     'FilesystemView',
     'GuidedPasswordView',

@@ -31,6 +31,7 @@ __all__ = [
     'BcacheView',
     'CephDiskView',
     'FilesystemView',
+    'GuidedPasswordView',
     'GuidedDiskSelectionView',
     'GuidedFilesystemView',
     'IdentityView',

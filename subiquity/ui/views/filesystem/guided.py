@@ -76,8 +76,8 @@ class GuidedFilesystemView(BaseView):
             _("Use An Entire Disk And Set Up LVM"), on_press=self.guided,
             user_arg="lvm")
         luks = ok_btn(
-            _("Use An Entire Disk And Set Up LUKS encrypted LVM"), on_press=self.guided_crypt,
-            user_arg="luks")
+            _("Use An Entire Disk And Set Up LUKS encrypted LVM"),
+            on_press=self.guided_crypt, user_arg="luks")
         manual = ok_btn(_("Manual"), on_press=self.manual)
         back = back_btn(_("Back"), on_press=self.cancel)
         super().__init__(screen(
@@ -116,14 +116,15 @@ It can easily be enlarged with standard LVM command line tools."""),
 partitions on the selected disk: one as required by the bootloader, one \
 for '/boot', and one covering the rest of the disk.
 
-A LUKS encrypted LVM volume group is created containing the large partition. A \
-4 gigabyte logical volume is created for the root filesystem. \
+A LUKS encrypted LVM volume group is created containing the large partition. \
+A 4 gigabyte logical volume is created for the root filesystem. \
 It can easily be enlarged with standard LVM command line tools."""),
 }
 
 
 def _wrap_button_row(row):
     return CursorOverride(Color.done_button(row), 2)
+
 
 loss_warning = _("""Warning: If you lose this security key, all data will be lost. If \
 you need to, write down your key and keep it in a safe place \
@@ -149,6 +150,7 @@ class GuidedPasswordForm(Form):
         if self.password.value != self.confirm_password.value:
             return _("Security keys do not match")
 
+
 class GuidedPasswordView(BaseView):
     title = _("Choose a security key")
     footer = _("")
@@ -167,7 +169,8 @@ Any files outside of Ubuntu will not be encrypted.""")
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen(excerpt=_(self.excerpt), focus_buttons=False))
+        super().__init__(self.form.as_screen(excerpt=_(self.excerpt),
+                                             focus_buttons=False))
 
     def cancel(self, button=None):
         self.controller.guided_passphrase = ''
