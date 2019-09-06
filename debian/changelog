@@ -1,3 +1,11 @@
+subiquity (19.08.1.4) eoan; urgency=medium
+
+  * Bugfixes from master.
+  * Switch dependencies from probert, to probert-storage and
+    probert-network as needed. Reduces dependencies in core20 snap.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Fri, 06 Sep 2019 12:18:27 +0100
+
 subiquity (19.08.1.3) eoan; urgency=medium
 
   * Move python3-attr to subiquitycore package, as it is used by
