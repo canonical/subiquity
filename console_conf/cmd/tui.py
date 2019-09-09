@@ -20,20 +20,6 @@ import logging
 from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION
 from console_conf.core import ConsoleConf
-from subiquitycore.utils import environment_check
-
-
-# Does console-conf actually need any of this?
-ENVIRONMENT = '''
-checks:
-    write:
-        directory:
-            - /tmp
-    mount:
-        directory:
-            - /proc
-            - /sys
-'''
 
 
 class ClickAction(argparse.Action):
@@ -75,16 +61,10 @@ def main():
     global LOGDIR
     if opts.dry_run:
         LOGDIR = ".subiquity"
-    LOGFILE = setup_logger(dir=LOGDIR)
+    setup_logger(dir=LOGDIR)
     logger = logging.getLogger('console_conf')
     logger.info("Starting console-conf v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
-
-    env_ok = environment_check(ENVIRONMENT)
-    if env_ok is False and not opts.dry_run:
-        print('Failed environment check.  '
-              'Check {} for errors.'.format(LOGFILE))
-        return 1
 
     interface = ConsoleConf(opts)
     interface.run()

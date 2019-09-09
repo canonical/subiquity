@@ -22,24 +22,8 @@ import sys
 
 from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION
-from subiquitycore.utils import environment_check
 
 from subiquity.core import Subiquity
-
-
-ENVIRONMENT = '''
-checks:
-    read:
-        file:
-            - /var/log/syslog
-    write:
-        directory:
-            - /tmp
-    mount:
-        directory:
-            - /proc
-            - /sys
-'''
 
 
 class ClickAction(argparse.Action):
@@ -106,7 +90,7 @@ def main():
         LOGDIR = ".subiquity"
         if opts.snaps_from_examples is None:
             opts.snaps_from_examples = True
-    LOGFILE = setup_logger(dir=LOGDIR)
+    setup_logger(dir=LOGDIR)
 
     logger = logging.getLogger('subiquity')
     logger.info("Starting SUbiquity v{}".format(VERSION))
@@ -122,12 +106,6 @@ def main():
     handler.addFilter(lambda rec: rec.name != 'probert.network')
     logging.getLogger('curtin').addHandler(handler)
     logging.getLogger('block-discover').addHandler(handler)
-
-    env_ok = environment_check(ENVIRONMENT)
-    if env_ok is False and not opts.dry_run:
-        print('Failed environment check.  '
-              'Check {} for errors.'.format(LOGFILE))
-        return 1
 
     if opts.answers is None and os.path.exists(AUTO_ANSWERS_FILE):
         logger.debug("Autoloading answers from %s", AUTO_ANSWERS_FILE)
