@@ -82,7 +82,7 @@ def is_linux_tty():
     return r == b'\x02'
 
 
-def setup_screen(colors, styles):
+def setup_screen(colors, styles, is_linux_tty):
     """Return a palette and screen to be passed to MainLoop.
 
     colors is a list of exactly 8 tuples (name, (r, g, b))
@@ -117,7 +117,7 @@ def setup_screen(colors, styles):
     for name, fg, bg in styles:
         urwid_palette.append((name, urwid_name[fg], urwid_name[bg]))
 
-    if is_linux_tty():
+    if is_linux_tty:
         curpal = bytearray(16*3)
         fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
         for i in range(8):
@@ -246,7 +246,9 @@ class Application:
             if not opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
 
-        if is_linux_tty():
+        self.is_linux_tty = is_linux_tty()
+
+        if self.is_linux_tty:
             log.debug("is_linux_tty")
             self.input_filter = KeyCodesFilter()
         else:
@@ -502,7 +504,8 @@ class Application:
             palette = self.STYLES_MONO
             screen = urwid.raw_display.Screen()
         else:
-            screen, palette = setup_screen(self.COLORS, self.STYLES)
+            screen, palette = setup_screen(
+                self.COLORS, self.STYLES, self.is_linux_tty)
 
         self.loop = urwid.MainLoop(
             self.ui, palette=palette, screen=screen,
