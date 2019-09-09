@@ -34,11 +34,6 @@ from subiquitycore.ui.frame import SubiquityCoreUI
 log = logging.getLogger('subiquitycore.core')
 
 
-class ApplicationError(Exception):
-    """ Basecontroller exception """
-    pass
-
-
 class Skip(Exception):
     """Raise this from a controller's default method to skip a screen."""
 
