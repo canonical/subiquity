@@ -28,7 +28,7 @@ from subiquitycore.ui.form import (
 )
 
 
-log = logging.getLogger('subiquity.installpath')
+log = logging.getLogger('subiquity.ui.views.proxy')
 
 proxy_help = _("If you need to use a HTTP proxy to access the outside world, "
                "enter the proxy information here. Otherwise, leave this blank."

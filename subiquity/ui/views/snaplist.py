@@ -196,6 +196,8 @@ class SnapInfoView(WidgetWrap):
 
     def state_change(self, sender, state, selection):
         if state:
+            log.debug(
+                "selecting %s from %s", self.snap.name, selection.channel)
             self.parent.snap_boxes[self.snap.name].set_state(True)
             self.parent.to_install[self.snap.name] = selection
 
@@ -349,10 +351,12 @@ class SnapCheckBox(CheckBox):
 
     def state_change(self, sender, new_state):
         if new_state:
+            log.debug("selecting %s", self.snap.name)
             self.parent.to_install[self.snap.name] = SnapSelection(
                 channel='stable',
                 is_classic=self.snap.confinement == "classic")
         else:
+            log.debug("unselecting %s", self.snap.name)
             self.parent.to_install.pop(self.snap.name, None)
 
 

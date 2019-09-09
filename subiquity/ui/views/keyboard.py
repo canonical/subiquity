@@ -474,7 +474,8 @@ class KeyboardView(BaseView):
         self.controller.cancel()
 
     def select_layout(self, sender, layout):
-        log.debug("select_layout %s", layout)
+        if sender is not None:
+            log.debug("select_layout %s", layout)
         opts = []
         default_i = -1
         layout_items = enumerate(self.model.variants[layout].items())

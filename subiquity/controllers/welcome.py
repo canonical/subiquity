@@ -45,7 +45,7 @@ class WelcomeController(BaseController):
             self.done(self.answers['lang'])
 
     def done(self, code):
-        log.debug("WelcomeController.done %s next-screen")
+        log.debug("WelcomeController.done %s next-screen", code)
         self.signal.emit_signal('l10n:language-selected', code)
         self.model.switch_language(code)
         self.signal.emit_signal('next-screen')

@@ -216,7 +216,7 @@ class TaskSequence:
         self.run_in_bg(self.curtask._bg_run, self._call_end)
 
     def _call_end(self, fut):
-        log.exception("%s ended", self.stage)
+        log.debug("%s ended", self.stage)
         if self.canceled:
             return
         self.task_complete_or_failed_called = False
