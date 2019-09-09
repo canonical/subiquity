@@ -78,7 +78,7 @@ def is_linux_tty():
     except IOError as e:
         log.debug("KDGKBTYPE failed %r", e)
         return False
-    log.debug("KDGKBTYPE returned %r", r)
+    log.debug("KDGKBTYPE returned %r, is_linux_tty %s", r, r == b'\x02')
     return r == b'\x02'
 
 
@@ -249,7 +249,6 @@ class Application:
         self.is_linux_tty = is_linux_tty()
 
         if self.is_linux_tty:
-            log.debug("is_linux_tty")
             self.input_filter = KeyCodesFilter()
         else:
             self.input_filter = DummyKeycodesFilter()
@@ -476,7 +475,6 @@ class Application:
                 self.controllers[i] = k
                 self.controller_instances[k] = RepeatedController(
                     orig, count)
-        log.debug("*** %s", self.controller_instances)
 
     def load_serialized_state(self):
         for k in self.controllers:
@@ -539,8 +537,10 @@ class Application:
                 0.05, select_initial_screen, initial_controller_index)
             self._connect_base_signals()
 
+            log.debug("starting controllers")
             for k in self.controllers:
                 self.controller_instances[k].start()
+            log.debug("controllers started")
 
             self.loop.run()
         except Exception:
