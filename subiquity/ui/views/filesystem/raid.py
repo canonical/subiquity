@@ -107,9 +107,6 @@ class RaidForm(CompoundDiskForm):
             return _(". and .. are not valid names for RAID devices")
 
     def validate_devices(self):
-        log.debug(
-            'validate_devices %s %s',
-            len(self.devices.value), self.level.value)
         active_device_count = len(self.devices.widget.active_devices)
         if active_device_count < self.level.value.min_devices:
             return _(

@@ -29,7 +29,6 @@ class WelcomeController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model.locale
-        log.debug("Welcome: answers=%s", self.answers)
 
     def start(self):
         lang = os.environ.get("LANG")

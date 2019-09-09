@@ -213,12 +213,6 @@ class SnapInfoView(WidgetWrap):
         for row in self.lb_channels._w.original_widget.body:
             rows_wanted_channels += row.rows((maxcol,), False)
 
-        log.debug('rows_available %s', rows_available)
-        log.debug(
-            'rows_wanted_description %s rows_wanted_channels %s',
-            rows_wanted_description,
-            rows_wanted_channels)
-
         if rows_wanted_channels + rows_wanted_description <= rows_available:
             description_rows = rows_wanted_description
             channel_rows = rows_wanted_channels
@@ -229,7 +223,6 @@ class SnapInfoView(WidgetWrap):
             else:
                 channel_rows = max(
                     min(rows_wanted_channels, int(rows_available/3)), 3)
-                log.debug('channel_rows %s', channel_rows)
                 description_rows = rows_available - channel_rows
 
         self.pile.contents[self.description_index] = (
@@ -436,7 +429,7 @@ class SnapListView(BaseView):
         try:
             seed = yaml.safe_load(self.get_seed_yaml())
         except yaml.YAMLError:
-            log.debug("failed to parse seed.yaml")
+            log.exception("failed to parse seed.yaml")
             return set()
         names = set()
         for snap in seed.get('snaps', []):

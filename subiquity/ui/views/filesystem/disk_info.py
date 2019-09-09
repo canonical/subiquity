@@ -39,7 +39,6 @@ labels_keys = [
 
 class DiskInfoStretchy(Stretchy):
     def __init__(self, parent, disk):
-        log.debug('DiskInfoView: {}'.format(disk))
         self.parent = parent
         dinfo = disk.info_for_display()
         rows = []

@@ -22,11 +22,6 @@ from probert.storage import Storage
 log = logging.getLogger('subiquitycore.prober')
 
 
-class ProberException(Exception):
-    '''Base Prober Exception'''
-    pass
-
-
 class Prober():
     def __init__(self, opts):
         self.opts = opts
@@ -35,23 +30,9 @@ class Prober():
         self.saved_config = None
 
         if self.opts.machine_config:
-            log.debug('User specified machine_config: {}'.format(
-                      self.opts.machine_config))
-            self.saved_config = (
-                self._load_machine_config(self.opts.machine_config))
-            self.probe_data = self.saved_config
+            with open(self.opts.machine_config) as mc:
+                self.probe_data = self.saved_config = yaml.safe_load(mc)
         log.debug('Prober() init finished, data:{}'.format(self.saved_config))
-
-    def _load_machine_config(self, machine_config):
-        with open(machine_config) as mc:
-            try:
-                data = yaml.safe_load(mc)
-            except (UnicodeDecodeError, yaml.reader.ReaderError):
-                err = 'Failed to parse machine config'
-                log.exception(err)
-                raise ProberException(err)
-
-        return data
 
     def probe_network(self, receiver):
         if self.opts.machine_config:

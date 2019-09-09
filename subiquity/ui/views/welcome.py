@@ -56,5 +56,5 @@ class WelcomeView(BaseView):
         return lb
 
     def confirm(self, sender, code):
-        log.debug('WelcomeController %s', code)
+        log.debug('WelcomeView %s', code)
         self.controller.done(code)

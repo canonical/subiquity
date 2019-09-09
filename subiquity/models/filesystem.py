@@ -1183,7 +1183,6 @@ class FilesystemModel(object):
             objs.append(obj)
 
         while True:
-            log.debug("exclusions %s", {e.id for e in exclusions})
             next_exclusions = exclusions.copy()
             for e in exclusions:
                 next_exclusions.update(itertools.chain(
@@ -1191,6 +1190,8 @@ class FilesystemModel(object):
             if len(exclusions) == len(next_exclusions):
                 break
             exclusions = next_exclusions
+
+        log.debug("exclusions %s", {e.id for e in exclusions})
 
         objs = [o for o in objs if o not in exclusions]
 

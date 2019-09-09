@@ -88,12 +88,9 @@ class SSHController(BaseController):
         return user_spec, ssh_import_id, key_material, fingerprints
 
     def _fetched_ssh_keys(self, fut):
-        if not isinstance(self.ui.body, SSHView):
+        if not self.showing:
             # This can happen if curtin failed while the keys where being
             # fetched and we jump to the log view.
-            log.debug(
-                "view is now an instance of %s, not SSHView",
-                type(self.ui.body))
             return
         try:
             result = fut.result()

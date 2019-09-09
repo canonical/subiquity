@@ -186,7 +186,6 @@ class MountList(WidgetWrap):
             self._w = Padding.push_2(self._no_mounts_content)
             return
         self._w = self.table
-        log.debug('FileSystemView: building mount list')
 
         rows = [TableRow([
             Color.info_minor(heading) for heading in [
@@ -386,7 +385,6 @@ class DeviceList(WidgetWrap):
             self.table.table_rows = []
             return
         self._w = self.table
-        log.debug('FileSystemView: building device list')
         rows = []
 
         rows.append(Color.info_minor(TableRow([
@@ -438,7 +436,6 @@ class FilesystemView(BaseView):
     footer = _("Select available disks to format and mount")
 
     def __init__(self, model, controller):
-        log.debug('FileSystemView init start()')
         self.model = model
         self.controller = controller
 
@@ -482,10 +479,8 @@ class FilesystemView(BaseView):
             focus_buttons=self.model.can_install())
         super().__init__(frame)
         self.refresh_model_inputs()
-        log.debug('FileSystemView init complete()')
 
     def _build_buttons(self):
-        log.debug('FileSystemView: building buttons')
         self.done = Toggleable(done_btn(_("Done"), on_press=self.done))
 
         return [

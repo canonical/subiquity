@@ -321,13 +321,11 @@ class InstallProgressController(BaseController):
         config_file_name = 'subiquity-curtin-install.conf'
 
         if self.opts.dry_run:
-            log.debug("Installprogress: this is a dry-run")
             config_location = os.path.join('.subiquity/', config_file_name)
             curtin_cmd = ["python3", "scripts/replay-curtin-log.py",
                           "examples/curtin-events.json",
                           self._event_syslog_identifier]
         else:
-            log.debug("Installprogress: this is the *REAL* thing")
             config_location = os.path.join('/var/log/installer',
                                            config_file_name)
             curtin_cmd = [sys.executable, '-m', 'curtin', '--showtrace', '-c',
@@ -340,7 +338,7 @@ class InstallProgressController(BaseController):
         return curtin_cmd
 
     def curtin_start_install(self):
-        log.debug('Curtin Install: starting curtin')
+        log.debug('curtin_start_install')
         self.install_state = InstallState.RUNNING
         self.footer_description = urwid.Text(_("starting..."))
         self.progress_view = ProgressView(self)
@@ -358,7 +356,7 @@ class InstallProgressController(BaseController):
 
         curtin_cmd = self._get_curtin_command()
 
-        log.debug('Curtin install cmd: {}'.format(curtin_cmd))
+        log.debug('curtin install cmd: {}'.format(curtin_cmd))
         self.run_in_bg(
             lambda: self._bg_run_command_logged(curtin_cmd),
             self.curtin_install_completed)

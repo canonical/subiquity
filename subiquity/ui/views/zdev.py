@@ -145,7 +145,6 @@ class ZdevView(BaseView):
             focus_buttons=False)
         super().__init__(frame)
         self.refresh_model_inputs()
-        log.debug('ZdevView init complete()')
 
     def _build_buttons(self):
         return [

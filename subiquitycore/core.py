@@ -28,7 +28,7 @@ import yaml
 
 from subiquitycore.controller import RepeatedController
 from subiquitycore.signals import Signal
-from subiquitycore.prober import Prober, ProberException
+from subiquitycore.prober import Prober
 from subiquitycore.ui.frame import SubiquityCoreUI
 
 log = logging.getLogger('subiquitycore.core')
@@ -164,14 +164,11 @@ class KeyCodesFilter:
         self._old_mode = struct.unpack('i', o)[0]
         # Set the keyboard mode to K_MEDIUMRAW, which causes the keyboard
         # driver in the kernel to pass us keycodes.
-        log.debug("old mode was %s, setting mode to %s",
-                  self._old_mode, K_MEDIUMRAW)
         fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
 
     def exit_keycodes_mode(self):
         log.debug("exit_keycodes_mode")
         self.filtering = False
-        log.debug("setting mode back to %s", self._old_mode)
         fcntl.ioctl(self._fd, KDSKBMODE, self._old_mode)
 
     def filter(self, keys, codes):
@@ -235,12 +232,7 @@ class Application:
     make_ui = SubiquityCoreUI
 
     def __init__(self, opts):
-        try:
-            prober = Prober(opts)
-        except ProberException as e:
-            err = "Prober init failed: {}".format(e)
-            log.exception(err)
-            raise ApplicationError(err)
+        prober = Prober(opts)
 
         self.ui = self.make_ui()
         self.opts = opts
@@ -338,7 +330,6 @@ class Application:
         signals.append(('quit', self.exit))
         if self.opts.dry_run:
             signals.append(('control-x-quit', self.exit))
-        signals.append(('refresh', self.redraw_screen))
         signals.append(('next-screen', self.next_screen))
         signals.append(('prev-screen', self.prev_screen))
         self.signal.connect_signals(signals)
@@ -398,12 +389,6 @@ class Application:
                 return
 
 # EventLoop -------------------------------------------------------------------
-    def redraw_screen(self):
-        if self.loop is not None:
-            try:
-                self.loop.draw_screen()
-            except AssertionError as e:
-                log.critical("Redraw screen error: {}".format(e))
 
     def exit(self):
         raise urwid.ExitMainLoop()
