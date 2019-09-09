@@ -319,21 +319,20 @@ class Application:
         self.run_in_bg(run, restore)
 
     def _connect_base_signals(self):
-        """ Connect signals used in the core controller
-        """
-        signals = []
-
-        signals.append(('quit', self.exit))
+        """Connect signals used in the core controller."""
+        signals = [
+            ('quit', self.exit),
+            ('next-screen', self.next_screen),
+            ('prev-screen', self.prev_screen),
+            ]
         if self.opts.dry_run:
             signals.append(('control-x-quit', self.exit))
-        signals.append(('next-screen', self.next_screen))
-        signals.append(('prev-screen', self.prev_screen))
         self.signal.connect_signals(signals)
 
         # Registers signals from each controller
         for controller_class in self.controller_instances.values():
             controller_class.register_signals()
-        log.debug(self.signal)
+        log.debug("known signals: %s", self.signal.known_signals)
 
     def save_state(self):
         cur_controller = self.cur_controller
@@ -458,6 +457,7 @@ class Application:
             self.signal.emit_signal('control-x-quit')
 
     def load_controllers(self):
+        log.debug("load_controllers")
         controllers_mod = __import__(
             '{}.controllers'.format(self.project), None, None, [''])
         for i, k in enumerate(self.controllers):
@@ -475,6 +475,7 @@ class Application:
                 self.controllers[i] = k
                 self.controller_instances[k] = RepeatedController(
                     orig, count)
+        log.debug("load_controllers done")
 
     def load_serialized_state(self):
         for k in self.controllers:
@@ -497,6 +498,7 @@ class Application:
             return 0
 
     def run(self):
+        log.debug("Application.run")
         if (self.opts.run_on_serial and
                 os.ttyname(0) != "/dev/ttysclp0"):
             palette = self.STYLES_MONO
@@ -511,8 +513,6 @@ class Application:
             input_filter=self.input_filter.filter,
             unhandled_input=self.unhandled_input)
 
-        log.debug("Running event loop: {}".format(
-            self.loop.event_loop))
         self.base_model = self.make_model()
         try:
             if self.opts.scripts:

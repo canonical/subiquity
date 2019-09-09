@@ -77,7 +77,7 @@ class _Device:
             self.match_mac = match.get('macaddress')
             self.match_driver = match.get('driver')
         self.config = config
-        log.info("config for %s = %s" % (name, self.config))
+        log.debug("config for %s = %s" % (name, self.config))
 
     def matches_link(self, link):
         if self.match_name is not None:
