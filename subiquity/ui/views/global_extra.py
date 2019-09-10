@@ -17,16 +17,88 @@ import logging
 
 from urwid import Text
 
+from subiquitycore.lsb_release import lsb_release
 from subiquitycore.ui.buttons import other_btn
+from subiquitycore.ui.container import Pile
 from subiquitycore.ui.stretchy import Stretchy
+from subiquitycore.ui.table import (
+    ColSpec,
+    TablePile,
+    TableRow,
+    )
 from subiquitycore.ui.utils import button_pile
 
 log = logging.getLogger('subiquity.ui.view.global_extra')
 
 
+GLOBAL_KEY_HELP = _("""\
+The following keys can be used at any time:""")
+
+GLOBAL_KEYS = (
+    (_('F1'),        _('help')),
+    (_("ESC"),       _('go back')),
+    )
+
+DRY_RUN_KEYS = (
+    (_('Control-X'), _('quit (dry-run only)')),
+    )
+
+
+ABOUT_INSTALLER = _("""
+Welcome to the Ubuntu Server Installer!
+
+The most popular server Linux in the cloud and data centre, you can
+rely on Ubuntu Server and its five years of guaranteed free upgrades.
+
+The installer will guide you through installing Ubuntu Server
+{release}.
+
+The installer only requires the up and down arrow keys, space (or
+return) and the occasional bit of typing.""")
+
+
+def rewrap(text):
+    paras = text.split("\n\n")
+    return "\n\n".join([p.replace('\n', ' ') for p in paras]).strip()
+
+
 def close_btn(parent):
     return other_btn(
         _("Close"), on_press=lambda sender: parent.remove_overlay())
+
+
+class GlobalKeyStretchy(Stretchy):
+
+    def __init__(self, app, parent):
+        rows = []
+        for key, text in GLOBAL_KEYS:
+            rows.append(TableRow([Text(_(key)), Text(_(text))]))
+        if app.opts.dry_run:
+            for key, text in DRY_RUN_KEYS:
+                rows.append(TableRow([Text(_(key)), Text(_(text))]))
+        table = TablePile(
+            rows, spacing=2, colspecs={1: ColSpec(can_shrink=True)})
+        widgets = [
+            Pile([
+                ('pack', Text(rewrap(GLOBAL_KEY_HELP))),
+                ('pack', Text("")),
+                ('pack', table),
+                ]),
+            Text(""),
+            button_pile([close_btn(parent)]),
+            ]
+        super().__init__(_("Global Hot Keys"), widgets, 0, 2)
+
+
+class SimpleTextStretchy(Stretchy):
+
+    def __init__(self, parent, title, text):
+        widgets = [
+            Text(rewrap(text)),
+            Text(""),
+            button_pile([close_btn(parent)]),
+            ]
+        super().__init__(title, widgets, 0, 2)
 
 
 class GlobalExtraStretchy(Stretchy):
@@ -36,11 +108,29 @@ class GlobalExtraStretchy(Stretchy):
         self.parent = parent
 
         btns = []
-        btns.append(other_btn("button"))
-
+        btns.append(
+            other_btn(
+                _("Read about this installer"),
+                on_press=self.show_about))
+        btns.append(
+            other_btn(
+                _("Read about global hot keys"),
+                on_press=self.show_hot_keys))
         widgets = [
             button_pile(btns),
             Text(""),
             button_pile([close_btn(parent)]),
             ]
+
         super().__init__(_("Available Actions"), widgets, 0, 0)
+
+    def show_about(self, sender):
+        self.parent.show_stretchy_overlay(
+            SimpleTextStretchy(
+                self.parent,
+                _("About this installer"),
+                _(ABOUT_INSTALLER).format(**lsb_release())))
+
+    def show_hot_keys(self, sender):
+        self.parent.show_stretchy_overlay(
+            GlobalKeyStretchy(self.app, self.parent))
