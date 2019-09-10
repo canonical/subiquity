@@ -72,6 +72,13 @@ class SubiquityTests(TestCase):
         app.unhandled_input('ctrl h')
         self.assertTrue(app.showing_global_extra)
 
+    def test_global_extra_click_button(self):
+        app = self.make_app()
+        btn = view_helpers.find_button_matching(app.ui, '^Help$')
+        self.assertIsNotNone(btn)
+        view_helpers.click(btn)
+        self.assertTrue(app.showing_global_extra)
+
     def test_general_help(self):
         app = self.make_app()
         overlay = app.show_global_extra()

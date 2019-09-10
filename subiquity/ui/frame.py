@@ -26,6 +26,6 @@ class SubiquityUI(SubiquityCoreUI):
 
     def __init__(self, app):
         self.right_icon = ok_btn(
-            _("More..."), on_press=lambda sender: app.show_global_extra())
+            _("Help"), on_press=lambda sender: app.show_global_extra())
         self.right_icon.attr_map = {}
         super().__init__()
