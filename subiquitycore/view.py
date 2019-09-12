@@ -18,7 +18,11 @@
 Contains some default key navigations
 """
 
-from urwid import Overlay, Text
+from urwid import (
+    emit_signal,
+    Overlay,
+    Text,
+    )
 
 from subiquitycore.ui.container import (
     Columns,
@@ -60,12 +64,14 @@ class BaseView(WidgetWrap):
         self._w = Overlay(top_w=top, bottom_w=disabled(self._w), **args)
 
     def show_stretchy_overlay(self, stretchy):
+        emit_signal(stretchy, 'opened')
+        stretchy.opened()
         self._w = StretchyOverlay(disabled(self._w), stretchy)
-        return self._w
 
     def remove_overlay(self):
         if isinstance(self._w, StretchyOverlay):
-            self._w._emit('closed')
+            emit_signal(self._w.stretchy, 'closed')
+            self._w.stretchy.closed()
         # disabled() wraps a widget in two decorations.
         self._w = self._w.bottom_w.original_widget.original_widget
 

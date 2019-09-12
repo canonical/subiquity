@@ -51,7 +51,10 @@ import urwid
 from subiquitycore.ui.container import ListBox, Pile
 
 
-class Stretchy:
+class Stretchy(metaclass=urwid.MetaSignals):
+
+    signals = ['opened', 'closed']
+
     def __init__(self, title, widgets, stretchy_index, focus_index):
         """
         title: goes in the LineBox
@@ -64,6 +67,13 @@ class Stretchy:
         self.stretchy_index = stretchy_index
         self.focus_index = focus_index
 
+    def opened(self):
+        """Called when the stretchy is placed on the screen."""
+        pass
+
+    def closed(self):
+        """Called when the stretchy is removed from the screen."""
+
     @property
     def stretchy_w(self):
         return self.widgets[self.stretchy_index]
@@ -72,8 +82,6 @@ class Stretchy:
 class StretchyOverlay(urwid.Widget):
     _selectable = True
     _sizing = frozenset([urwid.BOX])
-
-    signals = ['closed']
 
     def __init__(self, bottom_w, stretchy):
         self.bottom_w = bottom_w
