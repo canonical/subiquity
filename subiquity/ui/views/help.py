@@ -103,6 +103,12 @@ class HelpMenu(WidgetWrap):
             ('pack', bottom),
             ])))
 
+    def keypress(self, size, key):
+        if key == 'esc':
+            self.parent.close_pop_up()
+        else:
+            return super().keypress(size, key)
+
     def _close(self, sender):
         self.parent.close_pop_up()
 
