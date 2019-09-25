@@ -28,6 +28,12 @@ from subiquitycore.view import BaseView
 log = logging.getLogger("subiquity.views.welcome")
 
 
+HELP = _("""
+Select the language to use for the installer and to be configured in the
+installed system.
+""")
+
+
 class WelcomeView(BaseView):
     title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
 
@@ -57,3 +63,6 @@ class WelcomeView(BaseView):
     def confirm(self, sender, code):
         log.debug('WelcomeView %s', code)
         self.controller.done(code)
+
+    def local_help(self):
+        return _("Language Selection"), _(HELP)

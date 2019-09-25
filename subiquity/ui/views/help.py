@@ -167,19 +167,25 @@ class HelpMenu(WidgetWrap):
         self.parent = parent
         close = header_btn(_("Help"))
         about = menu_item(_("About the installer"), on_press=self._about)
-        local = menu_item(_("Help on this screen"))
         keys = menu_item(
             _("Help on keyboard shortcuts"), on_press=self._shortcuts)
+        buttons = [
+            close,
+            about,
+            keys,
+            ]
+        local_title, local_doc = parent.app.ui.body.local_help()
+        if local_title is not None:
+            local = menu_item(
+                _("Help on {}").format(local_title),
+                on_press=self._show_local(local_title, local_doc))
+            buttons.append(local)
+        else:
+            local = Text(('info_minor header', _("Help on this screen")))
         entries = [
             about,
             local,
             hline,
-            keys,
-            ]
-        buttons = [
-            close,
-            about,
-            local,
             keys,
             ]
         for button in buttons:
@@ -209,7 +215,10 @@ class HelpMenu(WidgetWrap):
                 hline,
                 (1, brcorner),
                 ]))
-        self.width = max([widget_width(b) for b in buttons]) + 2
+        self.width = max([
+            widget_width(b) for b in entries
+            if not isinstance(b, Divider)
+            ]) + 2
         self.height = len(entries) + 2
         super().__init__(Color.frame_header(Filler(Pile(rows))))
 
@@ -255,6 +264,16 @@ class HelpMenu(WidgetWrap):
                 self.parent.app.ui.body,
                 _("About the installer"),
                 template.format(**info)))
+
+    def _show_local(self, local_title, local_doc):
+
+        def cb(sender=None):
+            self._show_overlay(
+                SimpleTextStretchy(
+                    self.parent.app.ui.body,
+                    local_title,
+                    local_doc))
+        return cb
 
     def _shortcuts(self, sender):
         self._show_overlay(

@@ -35,6 +35,13 @@ from subiquitycore.ui.utils import disabled
 
 class BaseView(WidgetWrap):
 
+    def local_help(self):
+        """Help for what the user is currently looking at.
+
+        Returns title, documentation (or None, None).
+        """
+        return None, None
+
     def show_overlay(self, overlay_widget, **kw):
         args = dict(
             align='center',
