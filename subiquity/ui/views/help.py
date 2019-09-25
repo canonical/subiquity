@@ -18,8 +18,8 @@ import logging
 from urwid import (
     connect_signal,
     Divider,
+    Filler,
     PopUpLauncher,
-    SolidFill,
     Text,
     )
 
@@ -28,7 +28,6 @@ from subiquitycore.ui.buttons import (
     )
 from subiquitycore.ui.container import (
     Columns,
-    ListBox,
     Pile,
     WidgetWrap,
     )
@@ -43,14 +42,15 @@ from subiquitycore.ui.width import (
 
 log = logging.getLogger('subiquity.ui.help')
 
-tlcorner = '┌'
-tline = '─'
-lline = '│'
-trcorner = '┐'
-blcorner = '└'
-rline = '│'
-bline = '─'
-brcorner = '┘'
+
+hline = Divider('─')
+vline = Text('│')
+tlcorner = Text('┌')
+trcorner = Text('┐')
+blcorner = Text('└')
+brcorner = Text('┘')
+rtee = Text('┤')
+ltee = Text('├')
 
 
 def menu_item(text):
@@ -62,19 +62,13 @@ class HelpMenu(WidgetWrap):
     def __init__(self, parent):
         self.parent = parent
         close = header_btn(_("Help"))
-        top = Columns([
-            ('fixed', 1, Text(tlcorner)),
-            Divider(tline),
-            (widget_width(close), close),
-            ('fixed', 1, Text(trcorner)),
-            ])
         about = menu_item(_("About the installer"))
         local = menu_item(_("Help on this screen"))
         keys = menu_item(_("Help on keyboard shortcuts"))
         entries = [
             about,
             local,
-            Divider(tline),
+            hline,
             keys,
             ]
         buttons = [
@@ -85,23 +79,34 @@ class HelpMenu(WidgetWrap):
             ]
         for button in buttons:
             connect_signal(button.base_widget, 'click', self._close)
-        middle = Columns([
-            ('fixed', 1, SolidFill(lline)),
-            ListBox(entries),
-            ('fixed', 1, SolidFill(rline)),
-            ])
-        bottom = Columns([
-            (1, Text(blcorner)),
-            Divider(bline),
-            (1, Text(brcorner)),
-            ])
+
+        rows = [
+            Columns([
+                ('fixed', 1, tlcorner),
+                hline,
+                (widget_width(close), close),
+                ('fixed', 1, trcorner),
+                ]),
+            ]
+        for entry in entries:
+            if isinstance(entry, Divider):
+                left, right = ltee, rtee
+            else:
+                left = right = vline
+            rows.append(Columns([
+                ('fixed', 1, left),
+                entry,
+                ('fixed', 1, right),
+                ]))
+        rows.append(
+            Columns([
+                (1, blcorner),
+                hline,
+                (1, brcorner),
+                ]))
         self.width = max([widget_width(b) for b in buttons]) + 2
         self.height = len(entries) + 2
-        super().__init__(Color.frame_header(Pile([
-            ('pack', top),
-            middle,
-            ('pack', bottom),
-            ])))
+        super().__init__(Color.frame_header(Filler(Pile(rows))))
 
     def keypress(self, size, key):
         if key == 'esc':
