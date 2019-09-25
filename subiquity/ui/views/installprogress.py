@@ -54,7 +54,6 @@ class ProgressView(BaseView):
         self.event_linebox = MyLineBox(self.event_listbox)
         self.event_buttons = button_pile([self.view_log_btn])
         event_body = [
-            ('pack', Text("")),
             ('weight', 1, Padding.center_79(self.event_linebox, min_width=76)),
             ('pack', Text("")),
             ('pack', self.event_buttons),
@@ -125,7 +124,7 @@ class ProgressView(BaseView):
             btns = [self.view_log_btn, self.reboot_btn]
         self._set_buttons(btns)
         self.event_buttons.base_widget.focus_position = 1
-        self.event_pile.base_widget.focus_position = 3
+        self.event_pile.base_widget.focus_position = 2
 
     def reboot(self, btn):
         self.reboot_btn.base_widget.set_label(_("Rebooting..."))
