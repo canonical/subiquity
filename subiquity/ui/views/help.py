@@ -41,6 +41,11 @@ from subiquitycore.ui.utils import (
 from subiquitycore.ui.stretchy import (
     Stretchy,
     )
+from subiquitycore.ui.table import (
+    ColSpec,
+    TablePile,
+    TableRow,
+    )
 from subiquitycore.ui.width import (
     widget_width,
     )
@@ -83,6 +88,42 @@ class SimpleTextStretchy(Stretchy):
         super().__init__(title, widgets, 0, 2)
 
 
+GLOBAL_KEY_HELP = _("""\
+The following keys can be used at any time:""")
+
+GLOBAL_KEYS = (
+    (_('F1'),        _('open help menu')),
+    (_("ESC"),       _('go back')),
+    )
+
+DRY_RUN_KEYS = (
+    (_('Control-X'), _('quit (dry-run only)')),
+    )
+
+
+class GlobalKeyStretchy(Stretchy):
+
+    def __init__(self, app, parent):
+        rows = []
+        for key, text in GLOBAL_KEYS:
+            rows.append(TableRow([Text(_(key)), Text(_(text))]))
+        if app.opts.dry_run:
+            for key, text in DRY_RUN_KEYS:
+                rows.append(TableRow([Text(_(key)), Text(_(text))]))
+        table = TablePile(
+            rows, spacing=2, colspecs={1: ColSpec(can_shrink=True)})
+        widgets = [
+            Pile([
+                ('pack', Text(rewrap(GLOBAL_KEY_HELP))),
+                ('pack', Text("")),
+                ('pack', table),
+                ]),
+            Text(""),
+            button_pile([close_btn(parent)]),
+            ]
+        super().__init__(_("Shortcut Keys"), widgets, 0, 2)
+
+
 hline = Divider('─')
 vline = Text('│')
 tlcorner = Text('┌')
@@ -107,7 +148,8 @@ class HelpMenu(WidgetWrap):
         close = header_btn(_("Help"))
         about = menu_item(_("About the installer"), on_press=self._about)
         local = menu_item(_("Help on this screen"))
-        keys = menu_item(_("Help on keyboard shortcuts"))
+        keys = menu_item(
+            _("Help on keyboard shortcuts"), on_press=self._shortcuts)
         entries = [
             about,
             local,
@@ -184,6 +226,12 @@ class HelpMenu(WidgetWrap):
                 self.parent.app.ui.body,
                 _("About the installer"),
                 _(ABOUT_INSTALLER).format(**lsb_release())))
+
+    def _shortcuts(self, sender):
+        self._show_overlay(
+            GlobalKeyStretchy(
+                self.parent.app,
+                self.parent.app.ui.body))
 
 
 class HelpButton(PopUpLauncher):
