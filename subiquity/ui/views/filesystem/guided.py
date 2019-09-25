@@ -150,7 +150,7 @@ class GuidedDiskSelectionView(BaseView):
                 + _("Choose the disk to install to:"))))
 
     def cancel(self, btn=None):
-        self.controller.default()
+        self.controller.start_ui()
 
     def choose_disk(self, btn, disk):
         self.controller.reformat(disk)

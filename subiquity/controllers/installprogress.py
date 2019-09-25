@@ -254,7 +254,7 @@ class InstallProgressController(BaseController):
         self.progress_view.set_status(('info_error',
                                        _("An error has occurred")))
         self.progress_view.show_complete(True)
-        self.default()
+        self.start_ui()
 
     def _bg_run_command_logged(self, cmd, **kwargs):
         cmd = ['systemd-cat', '--level-prefix=false',
