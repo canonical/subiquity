@@ -23,8 +23,10 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.lsb_release import lsb_release
 from subiquitycore.ui.buttons import (
     header_btn,
+    other_btn,
     )
 from subiquitycore.ui.container import (
     Columns,
@@ -32,8 +34,12 @@ from subiquitycore.ui.container import (
     WidgetWrap,
     )
 from subiquitycore.ui.utils import (
+    button_pile,
     ClickableIcon,
     Color,
+    )
+from subiquitycore.ui.stretchy import (
+    Stretchy,
     )
 from subiquitycore.ui.width import (
     widget_width,
@@ -41,6 +47,40 @@ from subiquitycore.ui.width import (
 
 
 log = logging.getLogger('subiquity.ui.help')
+
+
+def close_btn(parent):
+    return other_btn(
+        _("Close"), on_press=lambda sender: parent.remove_overlay())
+
+
+ABOUT_INSTALLER = _("""
+Welcome to the Ubuntu Server Installer!
+
+The most popular server Linux in the cloud and data centre, you can
+rely on Ubuntu Server and its five years of guaranteed free upgrades.
+
+The installer will guide you through installing Ubuntu Server
+{release}.
+
+The installer only requires the up and down arrow keys, space (or
+return) and the occasional bit of typing.""")
+
+
+def rewrap(text):
+    paras = text.split("\n\n")
+    return "\n\n".join([p.replace('\n', ' ') for p in paras]).strip()
+
+
+class SimpleTextStretchy(Stretchy):
+
+    def __init__(self, parent, title, text):
+        widgets = [
+            Text(rewrap(text)),
+            Text(""),
+            button_pile([close_btn(parent)]),
+            ]
+        super().__init__(title, widgets, 0, 2)
 
 
 hline = Divider('─')
@@ -53,8 +93,11 @@ rtee = Text('┤')
 ltee = Text('├')
 
 
-def menu_item(text):
-    return Color.frame_button(ClickableIcon(_(text), 0))
+def menu_item(text, on_press=None):
+    icon = ClickableIcon(_(text), 0)
+    if on_press is not None:
+        connect_signal(icon, 'click', on_press)
+    return Color.frame_button(icon)
 
 
 class HelpMenu(WidgetWrap):
@@ -62,7 +105,7 @@ class HelpMenu(WidgetWrap):
     def __init__(self, parent):
         self.parent = parent
         close = header_btn(_("Help"))
-        about = menu_item(_("About the installer"))
+        about = menu_item(_("About the installer"), on_press=self._about)
         local = menu_item(_("Help on this screen"))
         keys = menu_item(_("Help on keyboard shortcuts"))
         entries = [
@@ -116,6 +159,31 @@ class HelpMenu(WidgetWrap):
 
     def _close(self, sender):
         self.parent.close_pop_up()
+
+    def _show_overlay(self, stretchy):
+        app = self.parent.app
+        ui = app.ui
+        fp = ui.pile.focus_position
+        ui.pile.focus_position = 1
+        btn_label = self.parent.btn.base_widget._label
+        btn_label._selectable = False
+        app.showing_help = True
+
+        def restore_focus():
+            app.showing_help = False
+            ui.pile.focus_position = fp
+            btn_label._selectable = True
+
+        connect_signal(stretchy, 'closed', restore_focus)
+
+        ui.body.show_stretchy_overlay(stretchy)
+
+    def _about(self, sender=None):
+        self._show_overlay(
+            SimpleTextStretchy(
+                self.parent.app.ui.body,
+                _("About the installer"),
+                _(ABOUT_INSTALLER).format(**lsb_release())))
 
 
 class HelpButton(PopUpLauncher):
