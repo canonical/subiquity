@@ -37,7 +37,7 @@ class SubiquityCoreUI(WidgetWrap):
     right_icon = Text("")
 
     def __init__(self):
-        self.header = Header("")
+        self.header = Header("", self.right_icon)
         self.pile = Pile([
             ('pack', self.header),
             ListBox([Text("")]),
@@ -48,7 +48,7 @@ class SubiquityCoreUI(WidgetWrap):
         self.pile.contents[i] = (w, self.pile.contents[i][1])
 
     def set_header(self, title=None):
-        self._assign_contents(0, Header(title))
+        self._assign_contents(0, Header(title, self.right_icon))
 
     def set_footer(self, message):
         pass

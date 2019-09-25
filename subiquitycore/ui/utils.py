@@ -153,6 +153,7 @@ STYLE_NAMES = set([
     'done_button',
     'frame_footer',
     'frame_header',
+    'frame_header_fringe',
     'info_error',
     'info_minor',
     'info_primary',
@@ -245,11 +246,10 @@ def screen(rows, buttons=None, focus_buttons=True, excerpt=None,
     excerpt_rows = []
     if excerpt is not None:
         excerpt_rows = [
-            ('pack', Text("")),
             ('pack', Text(excerpt)),
+            ('pack', Text("")),
             ]
     body = [
-        ('pack', Text("")),
         rows,
         ('pack', Text("")),
     ]
@@ -260,7 +260,7 @@ def screen(rows, buttons=None, focus_buttons=True, excerpt=None,
         ])
     pile = Pile(excerpt_rows + body)
     if focus_buttons:
-        pile.focus_position = len(excerpt_rows) + 3
+        pile.focus_position = len(excerpt_rows) + 2
     return Padding.center_79(pile, min_width=76)
 
 

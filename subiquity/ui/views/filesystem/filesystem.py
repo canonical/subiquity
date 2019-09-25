@@ -490,7 +490,6 @@ class FilesystemView(BaseView):
         if not todos:
             return None
         rows = [
-            TableRow([Text("")]),
             TableRow([
                 Text("To continue you need to:"),
                 Text(todos[0]),
@@ -498,6 +497,7 @@ class FilesystemView(BaseView):
             ]
         for todo in todos[1:]:
             rows.append(TableRow([Text(""), Text(todo)]))
+        rows.append(TableRow([Text("")]))
         return TablePile(rows)
 
     def _build_buttons(self):
