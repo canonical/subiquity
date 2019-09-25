@@ -433,7 +433,6 @@ class DeviceList(WidgetWrap):
 
 class FilesystemView(BaseView):
     title = _("Filesystem setup")
-    footer = _("Select available disks to format and mount")
 
     def __init__(self, model, controller):
         self.model = model

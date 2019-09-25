@@ -50,9 +50,6 @@ class SubiquityCoreUI(WidgetWrap):
     def set_header(self, title=None):
         self._assign_contents(0, Header(title, self.right_icon))
 
-    def set_footer(self, message):
-        pass
-
     @property
     def body(self):
         return self.pile.contents[1][0]

@@ -385,7 +385,6 @@ class KeyboardForm(Form):
 class KeyboardView(BaseView):
 
     title = _("Keyboard configuration")
-    footer = _("Use UP, DOWN and ENTER keys to select your keyboard.")
 
     def __init__(self, model, controller, opts):
         self.model = model

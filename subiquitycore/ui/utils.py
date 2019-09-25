@@ -151,7 +151,6 @@ STYLE_NAMES = set([
     'danger_button',
     'done_button focus',
     'done_button',
-    'frame_footer',
     'frame_header',
     'frame_header_fringe',
     'info_error',

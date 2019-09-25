@@ -82,18 +82,9 @@ A subiquity screen consists of:
     2. a scrollable content area
     3. a stack of buttons, including "done"/"cancel" buttons for moving between
        screens
- 3. a footer
 
 The header has a summary line describing the current screen against an "ubuntu
 orange" background.
-
-The footer has a progress bar indicating how far through the install process
-the user was, a blank line and the summary area.  Currently the summary area
-contains static content for the first few screens, but there are vague plans to
-make it specific to the currently focused element. Once the install has started
-but before we get to the final screen, the summary area contains a summary of
-progress made by the installation.  Someday soon the summary area will also
-contain a button that allows you to drop to a shell at any point.
 
 The body area is where most of the action is. It follows a standard pattern
 described above, and the `subiquitycore.ui.utils.screen()` function makes it

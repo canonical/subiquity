@@ -75,8 +75,6 @@ class NetworkView(BaseView):
     excerpt = _("Configure at least one interface this server can use to talk "
                 "to other machines, and which preferably provides sufficient "
                 "access for updates.")
-    footer = _("Select an interface to configure it or select Done to "
-               "continue")
 
     def __init__(self, model, controller):
         self.model = model

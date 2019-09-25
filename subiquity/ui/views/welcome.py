@@ -30,7 +30,6 @@ log = logging.getLogger("subiquity.views.welcome")
 
 class WelcomeView(BaseView):
     title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
-    footer = _("Use UP, DOWN and ENTER keys to select your language.")
 
     def __init__(self, model, controller):
         self.model = model
@@ -39,7 +38,7 @@ class WelcomeView(BaseView):
             self._build_model_inputs(),
             buttons=None,
             narrow_rows=True,
-            excerpt=_("Please choose your preferred language.")))
+            excerpt=_("Use UP, DOWN and ENTER keys to select your language.")))
 
     def _build_model_inputs(self):
         btns = []

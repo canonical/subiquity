@@ -35,8 +35,6 @@ from subiquitycore.ui.utils import disabled
 
 class BaseView(WidgetWrap):
 
-    footer = ""
-
     def show_overlay(self, overlay_widget, **kw):
         args = dict(
             align='center',
