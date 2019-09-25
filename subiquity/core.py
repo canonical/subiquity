@@ -94,3 +94,10 @@ class Subiquity(Application):
             lambda fut: (
                 fut.result(), self.signal.emit_signal('snapd-network-change')),
             )
+
+    def unhandled_input(self, key):
+        if key == 'f1':
+            if not self.showing_help:
+                self.ui.right_icon.open_pop_up()
+        else:
+            super().unhandled_input(key)
