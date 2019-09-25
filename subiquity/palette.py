@@ -50,6 +50,9 @@ STYLES = [
     ('menu_button',         'fg',      'bg'),
     ('menu_button focus',   'fg',      'gray'),
 
+    ('frame_button',        'fg',      'orange'),
+    ('frame_button focus',  'orange',  'fg'),
+
     ('info_primary',        'fg',      'bg'),
     ('info_minor',          'gray',    'bg'),
     ('info_minor header',   'gray',    'orange'),

@@ -15,16 +15,20 @@
 
 import logging
 
-from subiquitycore.ui.frame import SubiquityCoreUI
+from urwid import (
+    PopUpLauncher,
+    )
 
-from subiquity.ui.views.help import HelpButton
+from subiquitycore.ui.buttons import (
+    header_btn,
+    )
 
 
-log = logging.getLogger('subiquity.ui.frame')
+log = logging.getLogger('subiquity.ui.help')
 
 
-class SubiquityUI(SubiquityCoreUI):
+class HelpButton(PopUpLauncher):
 
     def __init__(self, app):
-        self.right_icon = HelpButton(app)
-        super().__init__()
+        self.app = app
+        super().__init__(header_btn(_("Help")))
