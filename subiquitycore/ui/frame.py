@@ -20,7 +20,7 @@ import logging
 from urwid import (
     Text,
     )
-from subiquitycore.ui.anchors import Header, Footer
+from subiquitycore.ui.anchors import Header
 from subiquitycore.ui.container import (
     ListBox,
     Pile,
@@ -38,16 +38,9 @@ class SubiquityCoreUI(WidgetWrap):
 
     def __init__(self):
         self.header = Header("")
-        self.footer = Footer("", self.right_icon, 0, 1)
-        self.progress_current = 0
-        self.progress_completion = 0
-        # After the install starts, we want to stop setting the footer
-        # from the body view.
-        self.auto_footer = True
         self.pile = Pile([
             ('pack', self.header),
             ListBox([Text("")]),
-            ('pack', self.footer),
             ])
         super().__init__(Color.body(self.pile))
 
@@ -58,11 +51,7 @@ class SubiquityCoreUI(WidgetWrap):
         self._assign_contents(0, Header(title))
 
     def set_footer(self, message):
-        self._assign_contents(
-            2,
-            Footer(
-                message, self.right_icon,
-                self.progress_current, self.progress_completion))
+        pass
 
     @property
     def body(self):
@@ -71,5 +60,3 @@ class SubiquityCoreUI(WidgetWrap):
     def set_body(self, widget):
         self.set_header(_(widget.title))
         self._assign_contents(1, widget)
-        if self.auto_footer:
-            self.set_footer(_(widget.footer))

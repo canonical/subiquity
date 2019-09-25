@@ -68,7 +68,6 @@ class Subiquity(Application):
             self.controllers.remove("Zdev")
 
         super().__init__(opts)
-        self.ui.progress_completion += 1
         self.block_log_dir = block_log_dir
         if opts.snaps_from_examples:
             connection = FakeSnapdConnection(
