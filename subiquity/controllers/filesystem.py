@@ -103,12 +103,12 @@ class FilesystemController(BaseController):
             else:
                 self._probe_state = ProbeState.FAILED
                 if self.showing:
-                    self.default()
+                    self.start_ui()
         else:
             self._probe_state = ProbeState.DONE
             # Should do something here if probing found no devices.
             if self.showing:
-                self.default()
+                self.start_ui()
 
     def _check_probe_timeout(self):
         log.debug("_check_probe_timeout")
