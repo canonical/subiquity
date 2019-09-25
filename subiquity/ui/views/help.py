@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 
 from urwid import (
     connect_signal,
@@ -62,14 +63,33 @@ def close_btn(parent):
 ABOUT_INSTALLER = _("""
 Welcome to the Ubuntu Server Installer!
 
-The most popular server Linux in the cloud and data centre, you can
-rely on Ubuntu Server and its five years of guaranteed free upgrades.
+The most popular server Linux in the cloud and data centre, this
+release of Ubuntu will receive updates for 9 months from release.
 
 The installer will guide you through installing Ubuntu Server
 {release}.
 
 The installer only requires the up and down arrow keys, space (or
-return) and the occasional bit of typing.""")
+return) and the occasional bit of typing.
+
+This is version {snap_version} of the installer.
+""")
+
+
+ABOUT_INSTALLER_LTS = _("""
+Welcome to the Ubuntu Server Installer!
+
+The most popular server Linux in the cloud and data centre, you can
+rely on Ubuntu Server and its five years of guaranteed free upgrades.
+
+The installer will guide you through installing Ubuntu Server
+{release} LTS.
+
+The installer only requires the up and down arrow keys, space (or
+return) and the occasional bit of typing.
+
+This is version {snap_version} of the installer.
+""")
 
 
 def rewrap(text):
@@ -221,11 +241,20 @@ class HelpMenu(WidgetWrap):
         ui.body.show_stretchy_overlay(stretchy)
 
     def _about(self, sender=None):
+        info = lsb_release()
+        if 'LTS' in info['description']:
+            template = _(ABOUT_INSTALLER_LTS)
+        else:
+            template = _(ABOUT_INSTALLER)
+        info.update({
+            'snap_version': os.environ.get("SNAP_VERSION", "SNAP_VERSION"),
+            'snap_revision': os.environ.get("SNAP_REVISION", "SNAP_REVISION"),
+            })
         self._show_overlay(
             SimpleTextStretchy(
                 self.parent.app.ui.body,
                 _("About the installer"),
-                _(ABOUT_INSTALLER).format(**lsb_release())))
+                template.format(**info)))
 
     def _shortcuts(self, sender):
         self._show_overlay(
