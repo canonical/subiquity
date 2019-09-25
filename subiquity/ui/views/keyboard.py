@@ -183,7 +183,7 @@ class AutoDetectPressKey(AutoDetectBase):
             ])
 
     def keypress(self, size, key):
-        log.debug('keypress %r %r', size, key)
+        log.debug('keypress %r', key)
         if key.startswith('release '):
             # Escape is key 1 on all keyboards and all layouts except
             # amigas and very old Macs so this seems safe enough.
@@ -474,7 +474,8 @@ class KeyboardView(BaseView):
         self.controller.cancel()
 
     def select_layout(self, sender, layout):
-        log.debug("%s", layout)
+        if sender is not None:
+            log.debug("select_layout %s", layout)
         opts = []
         default_i = -1
         layout_items = enumerate(self.model.variants[layout].items())

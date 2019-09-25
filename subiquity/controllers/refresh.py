@@ -96,7 +96,8 @@ class RefreshController(BaseController):
         prefix = "subiquity-channel="
         for arg in cmdline.split():
             if arg.startswith(prefix):
-                log.debug("found cmdline arg %s", arg)
+                log.debug(
+                    "get_refresh_channel: found %s on kernel cmdline", arg)
                 return arg[len(prefix):]
 
         info_file = '/cdrom/.disk/info'
@@ -108,7 +109,8 @@ class RefreshController(BaseController):
                     'Ubuntu-Server 18.04.2 LTS "Bionic Beaver" - '
                     'Release amd64 (20190214.3)')
             else:
-                log.debug("failed to find .disk/info file")
+                log.debug(
+                    "get_refresh_channel: failed to find .disk/info file")
                 return
         else:
             with fp:
@@ -124,7 +126,7 @@ class RefreshController(BaseController):
                 {'action': 'switch', 'channel': channel})
             response.raise_for_status()
         except requests.exceptions.RequestException:
-            log.exception("switching")
+            log.exception("switching channels")
             return
         change = response.json()["change"]
         while True:
@@ -224,7 +226,7 @@ class RefreshController(BaseController):
             self.update_failure = e
             return
         result = response.json()
-        log.debug("%s", result)
+        log.debug("refresh requested: %s", result)
         callback(result['change'])
 
     def get_progress(self, change, callback):

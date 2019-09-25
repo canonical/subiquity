@@ -379,6 +379,7 @@ class NetworkView(BaseView):
         return rows
 
     def _create_bond(self, sender=None):
+        log.debug("_create_bond")
         self.show_stretchy_overlay(BondStretchy(self))
 
     def show_network_error(self, action, info=None):

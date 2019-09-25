@@ -34,7 +34,8 @@ def setup_logger(dir):
 
     log.setLevel('DEBUG')
     log.setFormatter(
-        logging.Formatter("%(asctime)s %(name)s:%(lineno)d %(message)s"))
+        logging.Formatter(
+            "%(asctime)s %(levelname)s %(name)s:%(lineno)d %(message)s"))
 
     logger = logging.getLogger('')
     logger.setLevel('DEBUG')

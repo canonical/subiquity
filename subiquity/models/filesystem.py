@@ -75,13 +75,38 @@ def _remove_backlinks(obj):
 _type_to_cls = {}
 
 
+def fsobj__repr(obj):
+    args = []
+    for f in attr.fields(type(obj)):
+        if f.name.startswith("_"):
+            continue
+        v = getattr(obj, f.name)
+        if v is f.default:
+            continue
+        if f.metadata.get('ref', False):
+            v = v.id
+        elif f.metadata.get('reflist', False):
+            if isinstance(v, set):
+                delims = "{}"
+            else:
+                delims = "[]"
+            v = delims[0] + ", ".join(vv.id for vv in v) + delims[1]
+        elif f.metadata.get('redact', False):
+            v = "<REDACTED>"
+        else:
+            v = repr(v)
+        args.append("{}={}".format(f.name, v))
+    return "{}({})".format(type(obj).__name__, ", ".join(args))
+
+
 def fsobj(typ):
     def wrapper(c):
         c.__attrs_post_init__ = _set_backlinks
         c.type = attributes.const(typ)
         c.id = attributes.idfield(typ)
         c._m = attr.ib(repr=None, default=None)
-        c = attr.s(cmp=False)(c)
+        c = attr.s(cmp=False, repr=False)(c)
+        c.__repr__ = fsobj__repr
         _type_to_cls[typ] = c
         return c
     return wrapper
@@ -263,8 +288,7 @@ class attributes:
     @staticmethod
     def backlink(*, default=None):
         return attr.ib(
-            init=False, repr=False, default=default,
-            metadata={'is_backlink': True})
+            init=False, default=default, metadata={'is_backlink': True})
 
     @staticmethod
     def const(value):
@@ -1009,7 +1033,7 @@ LUKS_OVERHEAD = 16*(2**20)
 @fsobj("dm_crypt")
 class DM_Crypt:
     volume = attributes.ref(backlink="_constructed_device")  # _Formattable
-    key = attr.ib(repr=False)
+    key = attr.ib(metadata={'redact': True})
 
     dm_name = attr.ib(default=None)
     preserve = attr.ib(default=False)
@@ -1183,7 +1207,6 @@ class FilesystemModel(object):
             objs.append(obj)
 
         while True:
-            log.debug("exclusions %s", {e.id for e in exclusions})
             next_exclusions = exclusions.copy()
             for e in exclusions:
                 next_exclusions.update(itertools.chain(
@@ -1191,6 +1214,8 @@ class FilesystemModel(object):
             if len(exclusions) == len(next_exclusions):
                 break
             exclusions = next_exclusions
+
+        log.debug("exclusions %s", {e.id for e in exclusions})
 
         objs = [o for o in objs if o not in exclusions]
 

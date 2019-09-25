@@ -180,7 +180,6 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                 self.all_rows.append(self._summarize(prefix, device))
                 self.no_selector_rows.append(self.all_rows[-1])
         self.table.set_contents(self.all_rows)
-        log.debug("%s", self.table._w.focus_position)
 
 
 MultiDeviceField = simple_field(MultiDeviceChooser)

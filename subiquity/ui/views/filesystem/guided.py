@@ -77,9 +77,11 @@ class GuidedFilesystemView(BaseView):
             excerpt=text))
 
     def manual(self, btn):
+        log.debug("GuidedFilesystemView.manual")
         self.controller.manual()
 
     def guided(self, btn, method):
+        log.debug("GuidedFilesystemView.guided")
         self.controller.guided(method)
 
     def cancel(self, btn=None):

@@ -401,7 +401,6 @@ class TablePile(AbstractTable):
         refocus = self._w.focus_position >= new_length
         del self.table_rows[start:end]
         del self._w.contents[start:end]
-        log.debug("%s", (self._w.focus_position, len(self._w.contents)))
         if refocus:
             self._select_last_selectable()
         else:

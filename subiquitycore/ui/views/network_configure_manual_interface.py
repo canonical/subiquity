@@ -94,7 +94,6 @@ class NetworkConfigForm(Form):
                                 help=_("Domains, comma separated"))
 
     def clean_subnet(self, subnet):
-        log.debug("clean_subnet %r", subnet)
         if '/' not in subnet:
             if self.ip_version == 4:
                 example = "xx.xx.xx.xx/yy"
@@ -241,12 +240,16 @@ class EditNetworkStretchy(Stretchy):
                 'nameservers': list(map(str, form.nameservers.value)),
                 'searchdomains': form.searchdomains.value,
             }
+            log.debug(
+                "EditNetworkStretchy %s manual result=%s",
+                self.ip_version, result)
             self.device.config.pop('nameservers', None)
             self.device.add_network(self.ip_version, result)
         elif self.method_form.method.value == "dhcp":
+            log.debug("EditNetworkStretchy %s dhcp", self.ip_version)
             self.device.config['dhcp{v}'.format(v=self.ip_version)] = True
         else:
-            pass
+            log.debug("EditNetworkStretchy %s, disabled", self.ip_version)
         self.parent.controller.apply_config()
         self.parent.update_link(self.device)
         self.parent.remove_overlay()
@@ -297,6 +300,9 @@ class AddVlanStretchy(Stretchy):
             0, 0)
 
     def done(self, sender):
+        log.debug(
+            "AddVlanStretchy.done %s %s",
+            self.device.name, self.form.vlan.value)
         self.parent.remove_overlay()
         dev = self.parent.controller.add_vlan(
             self.device, self.form.vlan.value)
@@ -309,7 +315,6 @@ class AddVlanStretchy(Stretchy):
 
 class ViewInterfaceInfo(Stretchy):
     def __init__(self, parent, device):
-        log.debug('ViewInterfaceInfo: {}'.format(device))
         self.parent = parent
         if device.info is not None:
             result = yaml.dump(
@@ -463,6 +468,7 @@ class BondStretchy(Stretchy):
             0, 0)
 
     def done(self, sender):
+        log.debug("BondStretchy.done result=%s", self.form.as_data())
         touched_devices = set()
         get_netdev_by_name = self.parent.model.get_netdev_by_name
         if self.existing:

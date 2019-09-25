@@ -319,13 +319,13 @@ class FilesystemController(BaseController):
             part_size = UEFI_GRUB_SIZE_BYTES
             if UEFI_GRUB_SIZE_BYTES*2 >= disk.size:
                 part_size = disk.size // 2
-            log.debug('Adding EFI partition first')
+            log.debug('_create_boot_partition - adding EFI partition')
             part = self.create_partition(
                 disk,
                 dict(size=part_size, fstype='fat32', mount='/boot/efi'),
                 flag="boot")
         elif bootloader == Bootloader.PREP:
-            log.debug('Adding PReP gpt partition first')
+            log.debug('_create_boot_partition - adding PReP partition')
             part = self.create_partition(
                 disk,
                 dict(size=PREP_GRUB_SIZE_BYTES, fstype=None, mount=None),
@@ -334,7 +334,7 @@ class FilesystemController(BaseController):
                 flag='prep')
             self.model.grub_install_device = part
         elif bootloader == Bootloader.BIOS:
-            log.debug('Adding grub_bios gpt partition first')
+            log.debug('_create_boot_partition - adding bios_grub partition')
             part = self.create_partition(
                 disk,
                 dict(size=BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),

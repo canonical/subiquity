@@ -16,8 +16,10 @@
 
 """ Registers all known signal emitters
 """
-import urwid
 import logging
+import types
+
+import urwid
 
 log = logging.getLogger('subiquity.signals')
 
@@ -39,11 +41,14 @@ class Signal:
     def emit_signal(self, name, *args, **kwargs):
         urwid.emit_signal(self, name, *args, **kwargs)
 
-    def connect_signal(self, name, cb, **kwargs):
-        log.debug(
-            "Emitter Connection: %s, %s, %s",
-            name, cb, kwargs)
-        urwid.connect_signal(self, name, cb, **kwargs)
+    def connect_signal(self, name, cb):
+        if isinstance(cb, types.MethodType):
+            scb = "{}.{}".format(
+                cb.__self__.__class__.__name__, cb.__func__.__name__)
+        else:
+            scb = str(cb)
+        log.debug("connect_signal: %s -> %s", name, scb)
+        urwid.connect_signal(self, name, cb)
 
     def connect_signals(self, signal_callback):
         """ Connects a batch of signals
@@ -57,6 +62,3 @@ class Signal:
             if sig not in self.known_signals:
                 self.register_signals(sig)
             self.connect_signal(sig, cb)
-
-    def __repr__(self):
-        return "Known Signals: {}".format(self.known_signals)

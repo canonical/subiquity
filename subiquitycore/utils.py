@@ -17,79 +17,9 @@ import crypt
 import logging
 import os
 import random
-import yaml
 import subprocess
 
 log = logging.getLogger("subiquitycore.utils")
-SYS_CLASS_NET = "/sys/class/net/"
-
-
-def environment_check(check):
-    ''' Check the environment to ensure subiquity can run without issues.
-    '''
-    log.info('Checking environment for installer requirements...')
-
-    def is_file(x):
-        return os.path.isfile(x)
-
-    def is_directory(x):
-        return os.path.isdir(x)
-
-    def is_mount(x):
-        return os.path.ismount(x)
-
-    def is_writable(x):
-        return os.access(x, os.W_OK)
-
-    def is_readable(x):
-        return os.access(x, os.R_OK)
-
-    def is_executable(x):
-        return os.access(x, os.X_OK)
-
-    check_map = {
-        'read': is_readable,
-        'write': is_writable,
-        'exec': is_executable,
-        'file': is_file,
-        'directory': is_directory,
-        'mount': is_mount,
-    }
-
-    checks = yaml.safe_load(check).get('checks', None)
-    if not checks:
-        log.error('Invalid environment check configuration')
-        return False
-
-    env_ok = True
-    for check_type in [c for c in checks
-                       if c in ['read', 'write', 'mount', 'exec']]:
-        for ftype, items in checks[check_type].items():
-            for i in items:
-                if not os.path.exists(i):
-                    if 'SNAP' in os.environ:
-                        log.warn("Adjusting path for snaps: %s",
-                                 os.environ.get('SNAP'))
-                        i = os.environ.get('SNAP') + i
-                        if not os.path.exists(i):
-                            env_ok = False
-                    else:
-                        env_ok = False
-
-                    if not env_ok:
-                        log.error('FAIL: {} is not found on the'
-                                  ' filesystem'.format(i))
-                        continue
-                if check_map[ftype](i) is False:
-                    log.error('FAIL: {} is NOT of type: {}'.format(i, ftype))
-                    env_ok = False
-                    continue
-                if check_map[check_type](i) is False:
-                    log.error('FAIL: {} does NOT have required attr:'
-                              ' {}'.format(i, check_type))
-                    env_ok = False
-
-    return env_ok
 
 
 def _clean_env(env):

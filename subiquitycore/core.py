@@ -28,15 +28,10 @@ import yaml
 
 from subiquitycore.controller import RepeatedController
 from subiquitycore.signals import Signal
-from subiquitycore.prober import Prober, ProberException
+from subiquitycore.prober import Prober
 from subiquitycore.ui.frame import SubiquityCoreUI
 
 log = logging.getLogger('subiquitycore.core')
-
-
-class ApplicationError(Exception):
-    """ Basecontroller exception """
-    pass
 
 
 class Skip(Exception):
@@ -83,11 +78,11 @@ def is_linux_tty():
     except IOError as e:
         log.debug("KDGKBTYPE failed %r", e)
         return False
-    log.debug("KDGKBTYPE returned %r", r)
+    log.debug("KDGKBTYPE returned %r, is_linux_tty %s", r, r == b'\x02')
     return r == b'\x02'
 
 
-def setup_screen(colors, styles):
+def setup_screen(colors, styles, is_linux_tty):
     """Return a palette and screen to be passed to MainLoop.
 
     colors is a list of exactly 8 tuples (name, (r, g, b))
@@ -122,7 +117,7 @@ def setup_screen(colors, styles):
     for name, fg, bg in styles:
         urwid_palette.append((name, urwid_name[fg], urwid_name[bg]))
 
-    if is_linux_tty():
+    if is_linux_tty:
         curpal = bytearray(16*3)
         fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
         for i in range(8):
@@ -164,14 +159,11 @@ class KeyCodesFilter:
         self._old_mode = struct.unpack('i', o)[0]
         # Set the keyboard mode to K_MEDIUMRAW, which causes the keyboard
         # driver in the kernel to pass us keycodes.
-        log.debug("old mode was %s, setting mode to %s",
-                  self._old_mode, K_MEDIUMRAW)
         fcntl.ioctl(self._fd, KDSKBMODE, K_MEDIUMRAW)
 
     def exit_keycodes_mode(self):
         log.debug("exit_keycodes_mode")
         self.filtering = False
-        log.debug("setting mode back to %s", self._old_mode)
         fcntl.ioctl(self._fd, KDSKBMODE, self._old_mode)
 
     def filter(self, keys, codes):
@@ -235,12 +227,7 @@ class Application:
     make_ui = SubiquityCoreUI
 
     def __init__(self, opts):
-        try:
-            prober = Prober(opts)
-        except ProberException as e:
-            err = "Prober init failed: {}".format(e)
-            log.exception(err)
-            raise ApplicationError(err)
+        prober = Prober(opts)
 
         self.ui = self.make_ui()
         self.opts = opts
@@ -259,8 +246,9 @@ class Application:
             if not opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
 
-        if is_linux_tty():
-            log.debug("is_linux_tty")
+        self.is_linux_tty = is_linux_tty()
+
+        if self.is_linux_tty:
             self.input_filter = KeyCodesFilter()
         else:
             self.input_filter = DummyKeycodesFilter()
@@ -331,22 +319,20 @@ class Application:
         self.run_in_bg(run, restore)
 
     def _connect_base_signals(self):
-        """ Connect signals used in the core controller
-        """
-        signals = []
-
-        signals.append(('quit', self.exit))
+        """Connect signals used in the core controller."""
+        signals = [
+            ('quit', self.exit),
+            ('next-screen', self.next_screen),
+            ('prev-screen', self.prev_screen),
+            ]
         if self.opts.dry_run:
             signals.append(('control-x-quit', self.exit))
-        signals.append(('refresh', self.redraw_screen))
-        signals.append(('next-screen', self.next_screen))
-        signals.append(('prev-screen', self.prev_screen))
         self.signal.connect_signals(signals)
 
         # Registers signals from each controller
         for controller_class in self.controller_instances.values():
             controller_class.register_signals()
-        log.debug(self.signal)
+        log.debug("known signals: %s", self.signal.known_signals)
 
     def save_state(self):
         cur_controller = self.cur_controller
@@ -398,12 +384,6 @@ class Application:
                 return
 
 # EventLoop -------------------------------------------------------------------
-    def redraw_screen(self):
-        if self.loop is not None:
-            try:
-                self.loop.draw_screen()
-            except AssertionError as e:
-                log.critical("Redraw screen error: {}".format(e))
 
     def exit(self):
         raise urwid.ExitMainLoop()
@@ -477,6 +457,7 @@ class Application:
             self.signal.emit_signal('control-x-quit')
 
     def load_controllers(self):
+        log.debug("load_controllers")
         controllers_mod = __import__(
             '{}.controllers'.format(self.project), None, None, [''])
         for i, k in enumerate(self.controllers):
@@ -494,7 +475,7 @@ class Application:
                 self.controllers[i] = k
                 self.controller_instances[k] = RepeatedController(
                     orig, count)
-        log.debug("*** %s", self.controller_instances)
+        log.debug("load_controllers done")
 
     def load_serialized_state(self):
         for k in self.controllers:
@@ -517,12 +498,14 @@ class Application:
             return 0
 
     def run(self):
+        log.debug("Application.run")
         if (self.opts.run_on_serial and
                 os.ttyname(0) != "/dev/ttysclp0"):
             palette = self.STYLES_MONO
             screen = urwid.raw_display.Screen()
         else:
-            screen, palette = setup_screen(self.COLORS, self.STYLES)
+            screen, palette = setup_screen(
+                self.COLORS, self.STYLES, self.is_linux_tty)
 
         self.loop = urwid.MainLoop(
             self.ui, palette=palette, screen=screen,
@@ -530,8 +513,6 @@ class Application:
             input_filter=self.input_filter.filter,
             unhandled_input=self.unhandled_input)
 
-        log.debug("Running event loop: {}".format(
-            self.loop.event_loop))
         self.base_model = self.make_model()
         try:
             if self.opts.scripts:
@@ -556,8 +537,10 @@ class Application:
                 0.05, select_initial_screen, initial_controller_index)
             self._connect_base_signals()
 
+            log.debug("starting controllers")
             for k in self.controllers:
                 self.controller_instances[k].start()
+            log.debug("controllers started")
 
             self.loop.run()
         except Exception:
