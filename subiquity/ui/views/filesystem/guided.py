@@ -59,7 +59,6 @@ review and modify the results.""")
 class GuidedFilesystemView(BaseView):
 
     title = _("Filesystem setup")
-    footer = _("Choose guided or manual partitioning")
 
     def __init__(self, controller):
         self.controller = controller
@@ -111,7 +110,6 @@ def _wrap_button_row(row):
 class GuidedDiskSelectionView(BaseView):
 
     title = _("Filesystem setup")
-    footer = (_("Choose the installation target"))
 
     def __init__(self, model, controller, method):
         self.model = model

@@ -16,8 +16,9 @@
 import logging
 
 from urwid import (
+    int_scale,
+    SolidFill,
     Text,
-    ProgressBar,
     )
 
 from subiquitycore.ui.container import (
@@ -25,83 +26,54 @@ from subiquitycore.ui.container import (
     Pile,
     WidgetWrap,
     )
-from subiquitycore.ui.utils import Padding, Color
+from subiquitycore.ui.utils import Color
 from subiquitycore.ui.width import widget_width
 
 log = logging.getLogger('subiquitycore.ui.anchors')
 
 
-class Header(WidgetWrap):
-    """ Header Widget
-
-    This widget uses the style key `frame_header`
-
-    :param str title: Title of Header
-    :returns: Header()
-    """
-
-    def __init__(self, title):
-        if isinstance(title, str):
-            title = Text(title)
-        title = Padding.center_79(title, min_width=76)
-        super().__init__(Color.frame_header(
-                Pile(
-                    [Text(""), title, Text("")])))
-
-
-class StepsProgressBar(ProgressBar):
-
-    def get_text(self):
-        return "{} / {}".format(self.current, self.done)
-
-
-class MyColumns(Columns):
+class HeaderColumns(Columns):
     # The idea is to render output like this:
     #
-    #                  message                [ help  ]
-    # [ lpad        ][ middle        ][ rpad ][ right ]
+    # [ pad ][ message       ][ btn ][ pad ]
     #
     # The constraints are:
     #
-    # 1. lpad + rpad + right + message = maxcol
+    # 1. pad + message + btn + pad = maxcol
     #
-    # 2. lpad and rpad are at least 1
+    # 2. pad is at least 1
     #
-    # 3. right is fixed
+    # 3. btn is fixed
     #
-    # 4. if possible, lpad = rpad + right and middle is 79% of maxcol
-    #    or 76, whichever is greater.
+    # 4. message + btn is 79% of maxcol or 76, whichever is greater.
 
     def column_widths(self, size, focus=False):
         maxcol = size[0]
-        right = widget_width(self.contents[3][0])
+        btn = widget_width(self.contents[2][0])
 
-        center = max(79*maxcol//100, 76)
-        lpad = (maxcol - center)//2
-        rpad = lpad - right
-        if rpad < 1:
-            rpad = 1
-        middle = maxcol - (lpad + rpad + right)
-        return [lpad, middle, rpad, right]
+        center = max(int_scale(79, 101, maxcol + 1), 76)
+        message = center - btn
+        pad = (maxcol - center)//2
+        return [pad, message, btn, pad]
 
 
-class Footer(WidgetWrap):
-    """ Footer widget
+class Header(WidgetWrap):
+    """ Header Widget """
 
-    Style key: `frame_footer`
-
-    """
-
-    def __init__(self, message, right_icon, current, complete):
-        if isinstance(message, str):
-            message = Text(message)
-        progress_bar = Padding.center_60(
-            StepsProgressBar(normal='progress_incomplete',
-                             complete='progress_complete',
-                             current=current, done=complete))
-        status = [
-            progress_bar,
-            Padding.line_break(""),
-            MyColumns([Text(""), message, Text(""), right_icon]),
-        ]
-        super().__init__(Color.frame_footer(Pile(status)))
+    def __init__(self, title, right_icon):
+        if isinstance(title, str):
+            title = Text(title)
+        title = HeaderColumns([
+            Text(""),
+            title,
+            right_icon,
+            Text(""),
+            ])
+        super().__init__(
+                Pile([
+                    (1, Color.frame_header_fringe(
+                        SolidFill("\N{lower half block}"))),
+                    Color.frame_header(title),
+                    (1, Color.frame_header_fringe(
+                        SolidFill("\N{upper half block}"))),
+                    ]))

@@ -36,8 +36,8 @@ COLORS = [
 ]
 
 STYLES = [
+    ('frame_header_fringe', 'orange',  'bg'),
     ('frame_header',        'fg',      'orange'),
-    ('frame_footer',        'fg',      'brand'),
     ('body',                'fg',      'bg'),
 
     ('done_button',         'fg',      'bg'),
@@ -70,8 +70,8 @@ STYLES = [
 
 
 STYLES_MONO = [
+    ('frame_header_fringe', 'black',   'white'),
     ('frame_header',        'white',   'black'),
-    ('frame_footer',        'white',   'black'),
     ('body',                'white',   'black'),
 
     ('done_button',         'white',   'black'),

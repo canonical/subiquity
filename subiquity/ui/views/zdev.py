@@ -127,7 +127,6 @@ class ZdevList(WidgetWrap):
 
 class ZdevView(BaseView):
     title = _("Zdev setup")
-    footer = _("Activate and configure Z devices")
 
     def __init__(self, controller):
         log.debug('FileSystemView init start()')

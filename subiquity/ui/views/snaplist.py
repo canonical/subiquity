@@ -172,16 +172,18 @@ class SnapInfoView(WidgetWrap):
         info_table.bind(self.lb_channels)
         self.info_padding = Padding.pull_1(info_table)
 
-        publisher = [('info_minor header', "by: "), snap.publisher]
+        publisher = [('info_minor', "by: "), snap.publisher]
         if snap.verified:
-            publisher.append(('verified header', ' \N{check mark}'))
+            publisher.append(('verified', ' \N{check mark}'))
 
-        self.title = Columns([
+        title = Columns([
             Text(snap.name),
             ('pack', Text(publisher, align='right')),
             ], dividechars=1)
 
         contents = [
+            ('pack',      title),
+            ('pack',      Text("")),
             ('pack',      Text(snap.summary)),
             ('pack',      Text("")),
             self.lb_description,  # overwritten in render()
@@ -328,7 +330,6 @@ class SnapCheckBox(CheckBox):
                 if self.snap.name in self.parent.to_install:
                     cur_chan = self.parent.to_install[self.snap.name].channel
                 siv = SnapInfoView(self.parent, self.snap, cur_chan)
-                self.parent.controller.ui.set_header(siv.title)
                 self.parent.show_screen(screen(
                     siv,
                     [other_btn(
@@ -402,7 +403,6 @@ class SnapListView(BaseView):
             ])
 
     def show_main_screen(self, sender=None):
-        self.controller.ui.set_header(_(self.title))
         self._w = self._main_screen
 
     def show_screen(self, screen):

@@ -269,15 +269,14 @@ class InstallProgressController(BaseController):
 
     def _install_event_start(self, message):
         log.debug("_install_event_start %s", message)
-        self.footer_description.set_text(message)
         self.progress_view.add_event(self._event_indent + message)
         self._event_indent += "  "
-        self.footer_spinner.start()
+        self.progress_view.spinner.start()
 
     def _install_event_finish(self):
         self._event_indent = self._event_indent[:-2]
         log.debug("_install_event_finish %r", self._event_indent)
-        self.footer_spinner.stop()
+        self.progress_view.spinner.stop()
 
     def curtin_event(self, event):
         e = {}
@@ -340,15 +339,7 @@ class InstallProgressController(BaseController):
     def curtin_start_install(self):
         log.debug('curtin_start_install')
         self.install_state = InstallState.RUNNING
-        self.footer_description = urwid.Text(_("starting..."))
         self.progress_view = ProgressView(self)
-        self.footer_spinner = self.progress_view.spinner
-
-        self.ui.auto_footer = False
-        self.ui.set_footer(urwid.Columns(
-            [('pack', urwid.Text(_("Install in progress:"))),
-             (self.footer_description),
-             ('pack', self.footer_spinner)], dividechars=1))
 
         self.journal_listener_handle = self.start_journald_listener(
             [self._event_syslog_identifier, self._log_syslog_identifier],
@@ -369,12 +360,6 @@ class InstallProgressController(BaseController):
             return
         self.install_state = InstallState.DONE
         log.debug('After curtin install OK')
-        self.ui.progress_current += 1
-        if not self.showing:
-            self.ui.set_footer(_("Install complete"))
-        else:
-            # Re-set footer so progress bar updates.
-            self.ui.set_footer(_("Thank you for using Ubuntu!"))
         self._step_done('install')
 
     def cancel(self):
@@ -564,16 +549,12 @@ class InstallProgressController(BaseController):
     def start_ui(self):
         if self.install_state == InstallState.RUNNING:
             self.progress_view.title = _("Installing system")
-            footer = _("Thank you for using Ubuntu!")
         elif self.install_state == InstallState.DONE:
             self.progress_view.title = _("Install complete!")
-            footer = _("Thank you for using Ubuntu!")
         elif self.install_state == InstallState.ERROR:
             self.progress_view.title = (
                 _('An error occurred during installation'))
-            footer = _('Please report this error in Launchpad')
         self.ui.set_body(self.progress_view)
-        self.ui.set_footer(footer)
 
 
 uu_apt_conf = """\

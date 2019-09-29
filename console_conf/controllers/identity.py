@@ -199,8 +199,6 @@ class IdentityController(BaseController):
         self.model = app.base_model.identity
 
     def start_ui(self):
-        footer = ""
-        self.ui.set_footer(footer)
         self.ui.set_body(IdentityView(self.model, self))
         device_owner = get_device_owner()
         if device_owner is not None:
@@ -221,11 +219,9 @@ class IdentityController(BaseController):
             self.model.add_user(result)
             login_details_path = '.subiquity/login-details.txt'
         else:
-            self.ui.set_footer("Contacting store...")
             self.loop.draw_screen()
             cp = run_command(
                 ["snap", "create-user", "--sudoer", "--json", email])
-            self.ui.set_footer("")
             if cp.returncode != 0:
                 self.ui.body.error.set_text(
                     "Creating user failed:\n" + cp.stderr)
@@ -254,9 +250,7 @@ class IdentityController(BaseController):
 
     def login(self):
         title = "Configuration Complete"
-        footer = "View configured user and device access methods"
         self.ui.set_header(title)
-        self.ui.set_footer(footer)
 
         net_model = self.app.controller_instances['Network'].model
         ifaces = net_model.get_all_netdevs()

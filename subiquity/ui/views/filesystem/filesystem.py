@@ -433,7 +433,6 @@ class DeviceList(WidgetWrap):
 
 class FilesystemView(BaseView):
     title = _("Filesystem setup")
-    footer = _("Select available disks to format and mount")
 
     def __init__(self, model, controller):
         self.model = model
@@ -474,11 +473,31 @@ class FilesystemView(BaseView):
 
         self.lb = ListBox(body)
         self.lb.base_widget.offset_rows = 2
-        frame = screen(
+        super().__init__(screen(
             self.lb, self._build_buttons(),
-            focus_buttons=self.model.can_install())
-        super().__init__(frame)
+            focus_buttons=self.model.can_install()))
+        self.frame = self._w.base_widget
+        self.showing_guidance = False
         self.refresh_model_inputs()
+
+    def _guidance(self):
+        todos = []
+        if not self.model.is_root_mounted():
+            todos.append(_("Mount a filesystem at /"))
+        if self.model.needs_bootloader_partition():
+            todos.append(_("Select a boot disk"))
+        if not todos:
+            return None
+        rows = [
+            TableRow([
+                Text("To continue you need to:"),
+                Text(todos[0]),
+                ]),
+            ]
+        for todo in todos[1:]:
+            rows.append(TableRow([Text(""), Text(todo)]))
+        rows.append(TableRow([Text("")]))
+        return TablePile(rows)
 
     def _build_buttons(self):
         self.done = Toggleable(done_btn(_("Done"), on_press=self.done))
@@ -511,15 +530,15 @@ class FilesystemView(BaseView):
         self.lb.base_widget._select_first_selectable()
         can_install = self.model.can_install()
         self.done.enabled = can_install
-        if can_install:
-            self.controller.ui.set_footer(
-                _("Select Done to begin the installation."))
+        if self.showing_guidance:
+            del self.frame.contents[0]
+        guidance = self._guidance()
+        if guidance:
+            self.frame.contents.insert(
+                0, (guidance, self.frame.options('pack')))
+            self.showing_guidance = True
         else:
-            if self.model.needs_bootloader_partition():
-                self.controller.ui.set_footer(self.footer)
-            elif not self.model.is_root_mounted():
-                self.controller.ui.set_footer(
-                    _("You need to mount a device at / to continue."))
+            self.showing_guidance = False
 
     def create_raid(self, button=None):
         self.show_stretchy_overlay(RaidStretchy(self))
