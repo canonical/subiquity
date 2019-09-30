@@ -299,23 +299,34 @@ class Application:
     def run_command_in_foreground(self, cmd, **kw):
         screen = self.loop.screen
 
+        # Calling screen.stop() sends the INPUT_DESCRIPTORS_CHANGED
+        # signal. This calls _reset_input_descriptors() which calls
+        # unhook_event_loop / hook_event_loop on the screen. But this all
+        # happens before _started is set to False on the screen and so this
+        # does not actually do anything -- we end up attempting to read from
+        # stdin while in a background process group, something that gets the
+        # kernel upset at us.
+        #
+        # The cleanest fix seems to be to just send the signal again once
+        # stop() has returned which, now that screen._started is False,
+        # correctly stops listening from stdin.
+        #
+        # There is an exactly analagous problem with screen.start() except
+        # there the symptom is that we are running in the foreground but not
+        # listening to stdin! The fix is the same.
+
         def run():
             subprocess.run(cmd, **kw)
 
         def restore(fut):
             screen.start()
-            # Calling screen.start() sends the INPUT_DESCRIPTORS_CHANGED
-            # signal. This calls _reset_input_descriptors() which calls
-            # unhook_event_loop / hook_event_loop on the screen. But this all
-            # happens before _started is set on the screen, so hook_event_loop
-            # does not actually do anything -- and we end up not listening to
-            # stdin, obviously a defective situation for a console
-            # application. So send it again now the screen is started...
             urwid.emit_signal(
                 screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
             tty.setraw(0)
 
         screen.stop()
+        urwid.emit_signal(
+            screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
         self.run_in_bg(run, restore)
 
     def _connect_base_signals(self):
