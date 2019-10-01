@@ -15,29 +15,25 @@
 
 import logging
 import os
-import sys
-from logging.handlers import TimedRotatingFileHandler
 
 
 def setup_logger(dir):
-    LOGFILE = os.path.join(dir, "subiquity-debug.log")
-    try:
-        os.makedirs(dir, exist_ok=True)
-        log = TimedRotatingFileHandler(LOGFILE,
-                                       when='D',
-                                       interval=1,
-                                       backupCount=7)
-    except PermissionError:
-        err = ("Failed to open logfile: ") + LOGFILE
-        sys.stderr.write(err + '\n')
-        sys.exit(1)
+    os.makedirs(dir, exist_ok=True)
+    nopid_file = os.path.join(dir, "subiquity-debug.log")
+    LOGFILE = "{}.{}".format(nopid_file, os.getpid())
+    handler = logging.FileHandler(LOGFILE, mode='w')
+    # os.symlink cannot replace an existing file or symlink so create
+    # it and then rename it over.
+    tmplink = LOGFILE + ".link"
+    os.symlink(os.path.basename(LOGFILE), tmplink)
+    os.rename(tmplink, nopid_file)
 
-    log.setLevel('DEBUG')
-    log.setFormatter(
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(
         logging.Formatter(
             "%(asctime)s %(levelname)s %(name)s:%(lineno)d %(message)s"))
 
-    logger = logging.getLogger('')
-    logger.setLevel('DEBUG')
-    logger.addHandler(log)
+    logger = logging.getLogger("")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
     return LOGFILE
