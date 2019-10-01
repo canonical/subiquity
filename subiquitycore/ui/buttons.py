@@ -40,6 +40,7 @@ _forward_rhs = "\N{BLACK RIGHT-POINTING SMALL TRIANGLE} ]"
 menu_btn = _stylized_button("[", _forward_rhs, "menu")
 forward_btn = _stylized_button("[", _forward_rhs, "done")
 
+header_btn = action_button("frame")
 done_btn = action_button("done")
 danger_btn = action_button("danger")
 other_btn = action_button("other")

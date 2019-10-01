@@ -42,6 +42,7 @@ class SubiquityCoreUI(WidgetWrap):
             ('pack', self.header),
             ListBox([Text("")]),
             ])
+        self.pile.focus_position = 1
         super().__init__(Color.body(self.pile))
 
     def _assign_contents(self, i, w):

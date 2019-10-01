@@ -17,6 +17,8 @@ import logging
 
 from subiquitycore.ui.frame import SubiquityCoreUI
 
+from subiquity.ui.views.help import HelpButton
+
 
 log = logging.getLogger('subiquity.ui.frame')
 
@@ -24,4 +26,5 @@ log = logging.getLogger('subiquity.ui.frame')
 class SubiquityUI(SubiquityCoreUI):
 
     def __init__(self, app):
+        self.right_icon = HelpButton(app)
         super().__init__()
