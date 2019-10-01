@@ -33,7 +33,6 @@ log = logging.getLogger('subiquity.core')
 class Subiquity(Application):
 
     snapd_socket_path = '/run/snapd.socket'
-    showing_help = False
 
     from subiquity.palette import COLORS, STYLES, STYLES_MONO
 

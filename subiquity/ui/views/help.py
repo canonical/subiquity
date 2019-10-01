@@ -232,20 +232,20 @@ class HelpMenu(WidgetWrap):
         self.parent.close_pop_up()
 
     def _show_overlay(self, stretchy):
-        app = self.parent.app
-        ui = app.ui
-        fp = ui.pile.focus_position
-        ui.pile.focus_position = 1
-        btn_label = self.parent.btn.base_widget._label
-        btn_label._selectable = False
-        app.showing_help = True
+        ui = self.parent.app.ui
 
-        def restore_focus():
-            app.showing_help = False
+        # We don't let help dialogs pile up: if one is already
+        # showing, remove it before showing the new one.
+        if self.parent.showing_something:
+            ui.body.remove_overlay()
+        self.parent.showing_something = True
+        fp, ui.pile.focus_position = ui.pile.focus_position, 1
+
+        def on_close():
+            self.parent.showing_something = False
             ui.pile.focus_position = fp
-            btn_label._selectable = True
 
-        connect_signal(stretchy, 'closed', restore_focus)
+        connect_signal(stretchy, 'closed', on_close)
 
         ui.body.show_stretchy_overlay(stretchy)
 
@@ -287,6 +287,7 @@ class HelpButton(PopUpLauncher):
     def __init__(self, app):
         self.app = app
         self.btn = header_btn(_("Help"), on_press=self._open)
+        self.showing_something = False
         super().__init__(self.btn)
 
     def _open(self, sender):
