@@ -111,7 +111,7 @@ class Subiquity(Application):
         if key == 'f1':
             if not self.ui.right_icon.showing_something:
                 self.ui.right_icon.open_pop_up()
-        elif key == 'ctrl z':
+        elif key in ['ctrl z', 'f2']:
             self.debug_shell()
         else:
             super().unhandled_input(key)
