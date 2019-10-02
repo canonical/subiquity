@@ -195,7 +195,7 @@ class NetworkView(BaseView):
         dhcp_addresses = dev.dhcp_addresses()
         for v in 4, 6:
             if dev.dhcp_enabled(v):
-                label = Text(_("DHCPv{v}").format(v=v))
+                label = Text("DHCPv{v}".format(v=v))
                 addrs = dhcp_addresses.get(v)
                 if addrs:
                     address_info.extend(
