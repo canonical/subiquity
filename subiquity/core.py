@@ -96,7 +96,7 @@ class Subiquity(Application):
 
     def unhandled_input(self, key):
         if key == 'f1':
-            if not self.showing_help:
+            if not self.ui.right_icon.showing_something:
                 self.ui.right_icon.open_pop_up()
         else:
             super().unhandled_input(key)
