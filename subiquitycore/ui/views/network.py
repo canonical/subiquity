@@ -208,7 +208,7 @@ class NetworkView(BaseView):
                 elif dev.dhcp_state(v) == "TIMEDOUT":
                     address_info.append((label, Text(_("timed out"))))
                 elif dev.dhcp_state(v) == "RECONFIGURE":
-                    address_info.append((label, Text(_("-"))))
+                    address_info.append((label, Text("-")))
                 else:
                     address_info.append((
                         label,
