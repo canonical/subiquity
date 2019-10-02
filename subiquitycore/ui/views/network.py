@@ -195,7 +195,7 @@ class NetworkView(BaseView):
         dhcp_addresses = dev.dhcp_addresses()
         for v in 4, 6:
             if dev.dhcp_enabled(v):
-                label = Text(_("DHCPv{v}").format(v=v))
+                label = Text("DHCPv{v}".format(v=v))
                 addrs = dhcp_addresses.get(v)
                 if addrs:
                     address_info.extend(
@@ -208,7 +208,7 @@ class NetworkView(BaseView):
                 elif dev.dhcp_state(v) == "TIMEDOUT":
                     address_info.append((label, Text(_("timed out"))))
                 elif dev.dhcp_state(v) == "RECONFIGURE":
-                    address_info.append((label, Text(_("-"))))
+                    address_info.append((label, Text("-")))
                 else:
                     address_info.append((
                         label,
