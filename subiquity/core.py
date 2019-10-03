@@ -16,7 +16,8 @@
 import logging
 import os
 import platform
-import shlex
+
+import urwid
 
 from subiquitycore.core import Application
 
@@ -44,6 +45,8 @@ installed system will be mounted at /target.""")
 
 
 class Subiquity(Application):
+
+    signals = ['debug-shell-exited']
 
     snapd_socket_path = '/run/snapd.socket'
 
@@ -117,6 +120,13 @@ class Subiquity(Application):
             super().unhandled_input(key)
 
     def debug_shell(self):
+
+        def _before():
+            os.system("clear")
+            print(DEBUG_SHELL_INTRO)
+
+        def _after():
+            urwid.emit_signal(self, 'debug-shell-exited')
+
         self.run_command_in_foreground(
-            "clear && echo {} && bash".format(shlex.quote(DEBUG_SHELL_INTRO)),
-            shell=True, cwd='/')
+            "bash", before_hook=_before, after_hook=_after, cwd='/')
