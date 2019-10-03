@@ -16,6 +16,7 @@
 import logging
 import os
 import platform
+import shlex
 
 from subiquitycore.core import Application
 
@@ -28,6 +29,18 @@ from subiquity.ui.frame import SubiquityUI
 
 
 log = logging.getLogger('subiquity.core')
+
+
+DEBUG_SHELL_INTRO = _("""\
+Installer shell session activated.
+
+This shell session is running inside the installer environment.  You
+will be returned to the installer when this shell is exited, for
+example by typing Control-D or 'exit'.
+
+Be aware that this is an ephemeral environment.  Changes to this
+environment will not survive a reboot. If the install has started, the
+installed system will be mounted at /target.""")
 
 
 class Subiquity(Application):
@@ -98,5 +111,12 @@ class Subiquity(Application):
         if key == 'f1':
             if not self.ui.right_icon.showing_something:
                 self.ui.right_icon.open_pop_up()
+        elif key in ['ctrl z', 'f2']:
+            self.debug_shell()
         else:
             super().unhandled_input(key)
+
+    def debug_shell(self):
+        self.run_command_in_foreground(
+            "clear && echo {} && bash".format(shlex.quote(DEBUG_SHELL_INTRO)),
+            shell=True)

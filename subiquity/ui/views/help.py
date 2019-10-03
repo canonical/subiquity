@@ -112,8 +112,9 @@ GLOBAL_KEY_HELP = _("""\
 The following keys can be used at any time:""")
 
 GLOBAL_KEYS = (
-    (_('F1'),        _('open help menu')),
-    (_("ESC"),       _('go back')),
+    (_('Control-Z, F2'), _('switch to shell')),
+    (_("ESC"),           _('go back')),
+    (_('F1'),            _('open help menu')),
     )
 
 DRY_RUN_KEYS = (
@@ -169,17 +170,20 @@ class HelpMenu(WidgetWrap):
         about = menu_item(_("About the installer"), on_press=self._about)
         keys = menu_item(
             _("Help on keyboard shortcuts"), on_press=self._shortcuts)
-        buttons = [
+        drop_to_shell = menu_item(
+            _("Switch to shell"), on_press=self._debug_shell)
+        buttons = {
             close,
             about,
             keys,
-            ]
+            drop_to_shell,
+            }
         local_title, local_doc = parent.app.ui.body.local_help()
         if local_title is not None:
             local = menu_item(
                 _("Help on {}").format(local_title),
                 on_press=self._show_local(local_title, local_doc))
-            buttons.append(local)
+            buttons.add(local)
         else:
             local = Text(('info_minor header', _("Help on this screen")))
         entries = [
@@ -187,6 +191,8 @@ class HelpMenu(WidgetWrap):
             local,
             hline,
             keys,
+            hline,
+            drop_to_shell,
             ]
         for button in buttons:
             connect_signal(button.base_widget, 'click', self._close)
@@ -280,6 +286,9 @@ class HelpMenu(WidgetWrap):
             GlobalKeyStretchy(
                 self.parent.app,
                 self.parent.app.ui.body))
+
+    def _debug_shell(self, sender):
+        self.parent.app.debug_shell()
 
 
 class HelpButton(PopUpLauncher):
