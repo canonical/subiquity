@@ -66,13 +66,29 @@ class Stretchy(metaclass=urwid.MetaSignals):
         self.widgets = widgets
         self.stretchy_index = stretchy_index
         self.focus_index = focus_index
+        urwid.connect_signal(self, 'opened', self.opened)
+        urwid.connect_signal(self, 'closed', self.closed)
+        self._connections = []
+        urwid.connect_signal(self, 'opened', self._connect)
+        urwid.connect_signal(self, 'closed', self._disconnect)
 
     def opened(self):
         """Called when the stretchy is placed on the screen."""
-        pass
 
     def closed(self):
         """Called when the stretchy is removed from the screen."""
+
+    def add_connection(self, obj, signal, cb, *args, **kw):
+        """Subscribe to a signal on obj while the stretchy is on-screen."""
+        self._connections.append((obj, signal, cb, args, kw))
+
+    def _connect(self):
+        for obj, signal, cb, args, kw in self._connections:
+            urwid.connect_signal(obj, signal, cb, *args, **kw)
+
+    def _disconnect(self):
+        for obj, signal, cb, args, kw in self._connections:
+            urwid.disconnect_signal(obj, signal, cb, *args, **kw)
 
     @property
     def stretchy_w(self):
