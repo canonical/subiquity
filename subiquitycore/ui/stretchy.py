@@ -53,7 +53,7 @@ from subiquitycore.ui.container import ListBox, Pile
 
 class Stretchy(metaclass=urwid.MetaSignals):
 
-    signals = ['opened', 'closed']
+    signals = ['opened', 'closed', '_set_title']
 
     def __init__(self, title, widgets, stretchy_index, focus_index):
         """
@@ -62,7 +62,7 @@ class Stretchy(metaclass=urwid.MetaSignals):
         stretchy_index: index into widgets of widget to wrap in ListBox
         focus_index: index into widgets of initial focus
         """
-        self.title = title
+        self._title = title
         self.widgets = widgets
         self.stretchy_index = stretchy_index
         self.focus_index = focus_index
@@ -94,6 +94,15 @@ class Stretchy(metaclass=urwid.MetaSignals):
     def stretchy_w(self):
         return self.widgets[self.stretchy_index]
 
+    @property
+    def title(self):
+        return self._title
+
+    @title.setter
+    def title(self, value):
+        self._title = value
+        urwid.emit_signal(self, '_set_title')
+
 
 class StretchyOverlay(urwid.Widget):
     _selectable = True
@@ -102,6 +111,7 @@ class StretchyOverlay(urwid.Widget):
     def __init__(self, bottom_w, stretchy):
         self.bottom_w = bottom_w
         self.stretchy = stretchy
+        stretchy.add_connection(stretchy, '_set_title', self._set_title)
         self.listbox = ListBox([stretchy.stretchy_w])
 
         def entry(i, w):
@@ -115,16 +125,15 @@ class StretchyOverlay(urwid.Widget):
         inner_pile.focus_position = stretchy.focus_index
         # this Filler/Padding/LineBox/Filler/Padding construction
         # seems ridiculous but it works.
+        self.lb = urwid.LineBox(
+            urwid.Filler(
+                urwid.Padding(
+                    inner_pile,
+                    left=2, right=2),
+                top=1, bottom=1, height=('relative', 100)),
+            title=stretchy.title)
         self.top_w = urwid.Filler(
-            urwid.Padding(
-                urwid.LineBox(
-                    urwid.Filler(
-                        urwid.Padding(
-                            inner_pile,
-                            left=2, right=2),
-                        top=1, bottom=1, height=('relative', 100)),
-                    title=stretchy.title),
-                left=3, right=3),
+            urwid.Padding(self.lb, left=3, right=3),
             top=1, bottom=1, height=('relative', 100))
 
     def _top_size(self, size, focus):
@@ -159,6 +168,9 @@ class StretchyOverlay(urwid.Widget):
             return (outercol, stretchy_ideal_rows + fixed_rows), False
         else:
             return (outercol, size[1]), True
+
+    def _set_title(self):
+        self.lb.set_title(self.stretchy.title)
 
     @property
     def focus(self):
