@@ -119,4 +119,4 @@ class Subiquity(Application):
     def debug_shell(self):
         self.run_command_in_foreground(
             "clear && echo {} && bash".format(shlex.quote(DEBUG_SHELL_INTRO)),
-            shell=True)
+            shell=True, cwd='/')
