@@ -112,10 +112,11 @@ GLOBAL_KEY_HELP = _("""\
 The following keys can be used at any time:""")
 
 GLOBAL_KEYS = (
-    (_('Control-Z, F2'), _('switch to shell')),
     (_("ESC"),           _('go back')),
-    (_('Control-L'),     _('redraw screen')),
     (_('F1'),            _('open help menu')),
+    (_('Control-Z, F2'), _('switch to shell')),
+    (_('Control-L, F3'), _('redraw screen')),
+    (_('Control-T, F4'), _('toggle color on and off')),
     )
 
 DRY_RUN_KEYS = (

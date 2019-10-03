@@ -129,6 +129,8 @@ def setup_screen(colors, styles, is_linux_tty):
         _urwid_name_to_rgb = {}
         for i, n in enumerate(urwid_8_names):
             _urwid_name_to_rgb[n] = colors[i][1]
+        # Add an alias so things keep working with the mono palette.
+        _urwid_name_to_rgb['white'] = _urwid_name_to_rgb['light gray']
         return ISO_8613_3_Screen(_urwid_name_to_rgb), urwid_palette
 
 
@@ -463,9 +465,23 @@ class Application:
 
         self.loop.set_alarm_in(0.06, _run_script)
 
+    def toggle_color(self):
+        if self.is_color:
+            new_palette = self.STYLES_MONO
+            self.is_color = False
+        else:
+            new_palette = self.color_palette
+            self.is_color = True
+        self.loop.screen.register_palette(new_palette)
+        self.loop.screen.clear()
+
     def unhandled_input(self, key):
         if key == 'ctrl x':
             self.signal.emit_signal('control-x-quit')
+        elif key == 'f3':
+            self.loop.screen.clear()
+        elif key in ['ctrl t', 'f4']:
+            self.toggle_color()
 
     def load_controllers(self):
         log.debug("load_controllers")
@@ -510,13 +526,15 @@ class Application:
 
     def run(self):
         log.debug("Application.run")
+        screen, self.color_palette = setup_screen(
+            self.COLORS, self.STYLES, self.is_linux_tty)
         if (self.opts.run_on_serial and
                 os.ttyname(0) != "/dev/ttysclp0"):
+            self.is_color = False
             palette = self.STYLES_MONO
-            screen = urwid.raw_display.Screen()
         else:
-            screen, palette = setup_screen(
-                self.COLORS, self.STYLES, self.is_linux_tty)
+            self.is_color = True
+            palette = self.color_palette
 
         self.loop = urwid.MainLoop(
             self.ui, palette=palette, screen=screen,
