@@ -82,8 +82,20 @@ def is_linux_tty():
     return r == b'\x02'
 
 
-def setup_screen(colors, styles, is_linux_tty):
-    """Return a palette and screen to be passed to MainLoop.
+urwid_8_names = (
+    'black',
+    'dark red',
+    'dark green',
+    'brown',
+    'dark blue',
+    'dark magenta',
+    'dark cyan',
+    'light gray',
+)
+
+
+def setup_palette(colors, styles):
+    """Return a palette to be passed to MainLoop.
 
     colors is a list of exactly 8 tuples (name, (r, g, b))
 
@@ -94,29 +106,31 @@ def setup_screen(colors, styles, is_linux_tty):
     # to the basic colors by their "standard" names but we overwrite
     # these colors to mean different things.  So we convert styles into
     # an urwid palette by mapping the names in colors to the standard
-    # name, and then either overwrite the first 8 colors to be the
-    # colors from 'colors' (on the linux vt) or use a custom screen
-    # class that displays maps the standard color name to the value
-    # specified in colors using 24-bit control codes.
+    # name.
     if len(colors) != 8:
         raise Exception(
-            "setup_screen must be passed a list of exactly 8 colors")
-    urwid_8_names = (
-        'black',
-        'dark red',
-        'dark green',
-        'brown',
-        'dark blue',
-        'dark magenta',
-        'dark cyan',
-        'light gray',
-    )
+            "setup_palette must be passed a list of exactly 8 colors")
     urwid_name = dict(zip([c[0] for c in colors], urwid_8_names))
 
     urwid_palette = []
     for name, fg, bg in styles:
         urwid_palette.append((name, urwid_name[fg], urwid_name[bg]))
 
+    return urwid_palette
+
+
+def setup_screen(colors, is_linux_tty):
+    """Return a screen to be passed to MainLoop.
+
+    colors is a list of exactly 8 tuples (name, (r, g, b)), the same as
+    passed to setup_palette.
+    """
+    # On the linux console, we overwrite the first 8 colors to be those
+    # defined by colors. Otherwise, we return a screen that uses ISO
+    # 8613-3 codes to display the colors.
+    if len(colors) != 8:
+        raise Exception(
+            "setup_screen must be passed a list of exactly 8 colors")
     if is_linux_tty:
         curpal = bytearray(16*3)
         fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
@@ -124,14 +138,14 @@ def setup_screen(colors, styles, is_linux_tty):
             for j in range(3):
                 curpal[i*3+j] = colors[i][1][j]
         fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
-        return urwid.raw_display.Screen(), urwid_palette
+        return urwid.raw_display.Screen()
     else:
         _urwid_name_to_rgb = {}
         for i, n in enumerate(urwid_8_names):
             _urwid_name_to_rgb[n] = colors[i][1]
         # Add an alias so things keep working with the mono palette.
         _urwid_name_to_rgb['white'] = _urwid_name_to_rgb['light gray']
-        return ISO_8613_3_Screen(_urwid_name_to_rgb), urwid_palette
+        return ISO_8613_3_Screen(_urwid_name_to_rgb)
 
 
 class KeyCodesFilter:
@@ -247,6 +261,9 @@ class Application:
             log.debug("Loaded answers %s", self.answers)
             if not opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
+
+        self.is_color = False
+        self.color_palette = setup_palette(self.COLORS, self.STYLES)
 
         self.is_linux_tty = is_linux_tty()
 
@@ -526,21 +543,15 @@ class Application:
 
     def run(self):
         log.debug("Application.run")
-        screen, self.color_palette = setup_screen(
-            self.COLORS, self.STYLES, self.is_linux_tty)
-        if (self.opts.run_on_serial and
-                os.ttyname(0) != "/dev/ttysclp0"):
-            self.is_color = False
-            palette = self.STYLES_MONO
-        else:
-            self.is_color = True
-            palette = self.color_palette
+        screen = setup_screen(self.COLORS, self.is_linux_tty)
 
         self.loop = urwid.MainLoop(
-            self.ui, palette=palette, screen=screen,
+            self.ui, palette=self.color_palette, screen=screen,
             handle_mouse=False, pop_ups=True,
             input_filter=self.input_filter.filter,
             unhandled_input=self.unhandled_input)
+
+        self.toggle_color()
 
         self.base_model = self.make_model()
         try:
