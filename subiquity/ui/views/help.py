@@ -112,6 +112,7 @@ GLOBAL_KEY_HELP = _("""\
 The following keys can be used at any time:""")
 
 GLOBAL_KEYS = (
+    (_('Control-L'), _('redraw screen')),
     (_('F1'),        _('open help menu')),
     (_("ESC"),       _('go back')),
     )
