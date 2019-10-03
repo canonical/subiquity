@@ -18,6 +18,8 @@ import json
 import logging
 import os
 
+import urwid
+
 from subiquitycore.controller import BaseController
 
 from subiquity.models.filesystem import (
@@ -119,9 +121,16 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
         self._cur_probe = None
+        self.ui_shown = False
 
     def start(self):
+        urwid.connect_signal(
+            self.app, 'debug-shell-exited', self._maybe_reprobe_block)
         self._start_probe(restricted=False)
+
+    def _maybe_reprobe_block(self):
+        if not self.ui_shown:
+            self._start_probe(restricted=False)
 
     def _start_probe(self, *, restricted=False):
         self._cur_probe = Probe(self, restricted, 5.0, self._probe_done)
@@ -169,6 +178,7 @@ class FilesystemController(BaseController):
         elif self._cur_probe.state == ProbeState.FAILED:
             self.ui.set_body(ProbingFailed(self))
         else:
+            self.ui_shown = True
             # Should display a message if self._cur_probe.restricted,
             # i.e. full device probing failed.
             self.ui.set_body(GuidedFilesystemView(self))
