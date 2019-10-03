@@ -84,6 +84,14 @@ AUTO_ANSWERS_FILE = "/subiquity_config/answers.yaml"
 
 
 def main():
+    # Preffer utils from $SNAP, over system-wide
+    snap = os.environ.get('SNAP')
+    if snap:
+        os.environ['PATH'] = os.pathsep.join([
+            os.path.join(snap, 'bin'),
+            os.path.join(snap, 'usr', 'bin'),
+            os.environ['PATH'],
+        ])
     opts = parse_options(sys.argv[1:])
     global LOGDIR
     if opts.dry_run:

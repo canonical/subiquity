@@ -4,7 +4,6 @@ if [ -n "$1" ]; then
    port=$1
 fi
 /bin/dmesg -n 1
-export PATH=$SNAP/bin:$SNAP/usr/bin:$PATH
 if [ "$port" = "tty1" ]; then
 	$SNAP/usr/bin/subiquity-loadkeys
 	setfont $SNAP/subiquity.psf
