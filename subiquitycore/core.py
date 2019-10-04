@@ -56,20 +56,36 @@ KDGKBMODE = 0x4B44  # gets current keyboard mode
 KDSKBMODE = 0x4B45  # sets current keyboard mode
 
 
-class ISO_8613_3_Screen(urwid.raw_display.Screen):
+class TwentyFourBitScreen(urwid.raw_display.Screen):
 
     def __init__(self, _urwid_name_to_rgb):
-        self._fg_to_rgb = _urwid_name_to_rgb.copy()
-        self._fg_to_rgb['default'] = _urwid_name_to_rgb['light gray']
-        self._bg_to_rgb = _urwid_name_to_rgb.copy()
-        self._bg_to_rgb['default'] = _urwid_name_to_rgb['black']
+        self._urwid_name_to_rgb = _urwid_name_to_rgb
         super().__init__()
 
+    def _cc(self, color):
+        """Return the "SGR" parameter for selecting color.
+
+        See https://en.wikipedia.org/wiki/ANSI_escape_code#SGR for an
+        explanation.  We use the basic codes for black/white/default for
+        maximum compatibility; they are the only colors used when the
+        mono palette is selected.
+        """
+        if color == 'white':
+            return '7'
+        elif color == 'black':
+            return '0'
+        elif color == 'default':
+            return '9'
+        else:
+            # This is almost but not quite a ISO 8613-3 code -- that
+            # would use colons to separate the rgb values instead. But
+            # it's what xterm, and hence everything else, supports.
+            return '8;2;{};{};{}'.format(*self._urwid_name_to_rgb[color])
+
     def _attrspec_to_escape(self, a):
-        f_r, f_g, f_b = self._fg_to_rgb[a.foreground]
-        b_r, b_g, b_b = self._bg_to_rgb[a.background]
-        return "\x1b[38;2;{};{};{};48;2;{};{};{}m".format(f_r, f_g, f_b,
-                                                          b_r, b_g, b_b)
+        return '\x1b[0;3{};4{}m'.format(
+            self._cc(a.foreground),
+            self._cc(a.background))
 
 
 def is_linux_tty():
@@ -82,8 +98,20 @@ def is_linux_tty():
     return r == b'\x02'
 
 
-def setup_screen(colors, styles, is_linux_tty):
-    """Return a palette and screen to be passed to MainLoop.
+urwid_8_names = (
+    'black',
+    'dark red',
+    'dark green',
+    'brown',
+    'dark blue',
+    'dark magenta',
+    'dark cyan',
+    'light gray',
+)
+
+
+def make_palette(colors, styles):
+    """Return a palette to be passed to MainLoop.
 
     colors is a list of exactly 8 tuples (name, (r, g, b))
 
@@ -94,42 +122,46 @@ def setup_screen(colors, styles, is_linux_tty):
     # to the basic colors by their "standard" names but we overwrite
     # these colors to mean different things.  So we convert styles into
     # an urwid palette by mapping the names in colors to the standard
-    # name, and then either overwrite the first 8 colors to be the
-    # colors from 'colors' (on the linux vt) or use a custom screen
-    # class that displays maps the standard color name to the value
-    # specified in colors using 24-bit control codes.
+    # name.
     if len(colors) != 8:
         raise Exception(
-            "setup_screen must be passed a list of exactly 8 colors")
-    urwid_8_names = (
-        'black',
-        'dark red',
-        'dark green',
-        'brown',
-        'dark blue',
-        'dark magenta',
-        'dark cyan',
-        'light gray',
-    )
+            "make_palette must be passed a list of exactly 8 colors")
     urwid_name = dict(zip([c[0] for c in colors], urwid_8_names))
 
     urwid_palette = []
     for name, fg, bg in styles:
         urwid_palette.append((name, urwid_name[fg], urwid_name[bg]))
 
+    return urwid_palette
+
+
+def make_screen(colors, is_linux_tty):
+    """Return a screen to be passed to MainLoop.
+
+    colors is a list of exactly 8 tuples (name, (r, g, b)), the same as
+    passed to make_palette.
+    """
+    # On the linux console, we overwrite the first 8 colors to be those
+    # defined by colors. Otherwise, we return a screen that uses ISO
+    # 8613-3ish codes to display the colors.
+    if len(colors) != 8:
+        raise Exception(
+            "make_screen must be passed a list of exactly 8 colors")
     if is_linux_tty:
+        # Perhaps we ought to return a screen subclass that does this
+        # ioctl-ing in .start() and undoes it in .stop() but well.
         curpal = bytearray(16*3)
         fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
         for i in range(8):
             for j in range(3):
                 curpal[i*3+j] = colors[i][1][j]
         fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
-        return urwid.raw_display.Screen(), urwid_palette
+        return urwid.raw_display.Screen()
     else:
         _urwid_name_to_rgb = {}
         for i, n in enumerate(urwid_8_names):
             _urwid_name_to_rgb[n] = colors[i][1]
-        return ISO_8613_3_Screen(_urwid_name_to_rgb), urwid_palette
+        return TwentyFourBitScreen(_urwid_name_to_rgb)
 
 
 class KeyCodesFilter:
@@ -245,6 +277,9 @@ class Application:
             log.debug("Loaded answers %s", self.answers)
             if not opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
+
+        self.is_color = False
+        self.color_palette = make_palette(self.COLORS, self.STYLES)
 
         self.is_linux_tty = is_linux_tty()
 
@@ -463,9 +498,23 @@ class Application:
 
         self.loop.set_alarm_in(0.06, _run_script)
 
+    def toggle_color(self):
+        if self.is_color:
+            new_palette = self.STYLES_MONO
+            self.is_color = False
+        else:
+            new_palette = self.color_palette
+            self.is_color = True
+        self.loop.screen.register_palette(new_palette)
+        self.loop.screen.clear()
+
     def unhandled_input(self, key):
         if key == 'ctrl x':
             self.signal.emit_signal('control-x-quit')
+        elif key == 'f3':
+            self.loop.screen.clear()
+        elif key in ['ctrl t', 'f4']:
+            self.toggle_color()
 
     def load_controllers(self):
         log.debug("load_controllers")
@@ -510,19 +559,15 @@ class Application:
 
     def run(self):
         log.debug("Application.run")
-        if (self.opts.run_on_serial and
-                os.ttyname(0) != "/dev/ttysclp0"):
-            palette = self.STYLES_MONO
-            screen = urwid.raw_display.Screen()
-        else:
-            screen, palette = setup_screen(
-                self.COLORS, self.STYLES, self.is_linux_tty)
+        screen = make_screen(self.COLORS, self.is_linux_tty)
 
         self.loop = urwid.MainLoop(
-            self.ui, palette=palette, screen=screen,
+            self.ui, palette=self.color_palette, screen=screen,
             handle_mouse=False, pop_ups=True,
             input_filter=self.input_filter.filter,
             unhandled_input=self.unhandled_input)
+
+        self.toggle_color()
 
         self.base_model = self.make_model()
         try:

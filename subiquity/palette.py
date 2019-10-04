@@ -73,8 +73,8 @@ STYLES = [
 
 
 STYLES_MONO = [
-    ('frame_header_fringe', 'black',   'white'),
-    ('frame_header',        'white',   'black'),
+    ('frame_header_fringe', 'white',   'black'),
+    ('frame_header',        'black',   'white'),
     ('body',                'white',   'black'),
 
     ('done_button',         'white',   'black'),
@@ -86,9 +86,12 @@ STYLES_MONO = [
 
     ('menu_button',         'white',   'black'),
     ('menu_button focus',   'black',   'white'),
+    ('frame_button',        'black',   'white'),
+    ('frame_button focus',  'white',   'black'),
 
     ('info_primary',        'white',   'black'),
     ('info_minor',          'white',   'black'),
+    ('info_minor header',   'black',   'white'),
     ('info_error',          'white',   'black'),
 
     ('string_input',        'white',   'black'),

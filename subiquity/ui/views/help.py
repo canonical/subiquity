@@ -112,10 +112,11 @@ GLOBAL_KEY_HELP = _("""\
 The following keys can be used at any time:""")
 
 GLOBAL_KEYS = (
-    (_('Control-Z, F2'), _('switch to shell')),
     (_("ESC"),           _('go back')),
-    (_('Control-L'),     _('redraw screen')),
     (_('F1'),            _('open help menu')),
+    (_('Control-Z, F2'), _('switch to shell')),
+    (_('Control-L, F3'), _('redraw screen')),
+    (_('Control-T, F4'), _('toggle color on and off')),
     )
 
 DRY_RUN_KEYS = (
@@ -173,11 +174,14 @@ class HelpMenu(WidgetWrap):
             _("Help on keyboard shortcuts"), on_press=self._shortcuts)
         drop_to_shell = menu_item(
             _("Switch to shell"), on_press=self._debug_shell)
+        color = menu_item(
+            _("Toggle color on/off"), on_press=self._toggle_color)
         buttons = {
             close,
             about,
             keys,
             drop_to_shell,
+            color,
             }
         local_title, local_doc = parent.app.ui.body.local_help()
         if local_title is not None:
@@ -187,6 +191,9 @@ class HelpMenu(WidgetWrap):
             buttons.add(local)
         else:
             local = Text(('info_minor header', _("Help on this screen")))
+        for button in buttons:
+            connect_signal(button.base_widget, 'click', self._close)
+
         entries = [
             about,
             local,
@@ -194,9 +201,9 @@ class HelpMenu(WidgetWrap):
             keys,
             hline,
             drop_to_shell,
+            hline,
+            color,
             ]
-        for button in buttons:
-            connect_signal(button.base_widget, 'click', self._close)
 
         rows = [
             Columns([
@@ -290,6 +297,9 @@ class HelpMenu(WidgetWrap):
 
     def _debug_shell(self, sender):
         self.parent.app.debug_shell()
+
+    def _toggle_color(self, sender):
+        self.parent.app.toggle_color()
 
 
 class HelpButton(PopUpLauncher):
