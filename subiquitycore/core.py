@@ -164,6 +164,19 @@ def make_screen(colors, is_linux_tty):
         return TwentyFourBitScreen(_urwid_name_to_rgb)
 
 
+def extend_dec_special_charmap():
+    urwid.escape.DEC_SPECIAL_CHARMAP.update({
+        ord('\N{BLACK RIGHT-POINTING SMALL TRIANGLE}'): '>',
+        ord('\N{BLACK LEFT-POINTING SMALL TRIANGLE}'): '<',
+        ord('\N{BLACK DOWN-POINTING SMALL TRIANGLE}'): 'v',
+        ord('\N{BLACK UP-POINTING SMALL TRIANGLE}'): '^',
+        ord('\N{check mark}'): '+',
+        ord('\N{bullet}'): '*',
+        ord('\N{lower half block}'): '=',
+        ord('\N{upper half block}'): '=',
+    })
+
+
 class KeyCodesFilter:
     """input_filter that can pass (medium) raw keycodes to the application
 
@@ -566,6 +579,11 @@ class Application:
             handle_mouse=False, pop_ups=True,
             input_filter=self.input_filter.filter,
             unhandled_input=self.unhandled_input)
+
+        if self.opts.ascii:
+            urwid.util.set_encoding('ascii')
+
+        extend_dec_special_charmap()
 
         self.toggle_color()
 
