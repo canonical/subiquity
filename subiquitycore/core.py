@@ -59,17 +59,33 @@ KDSKBMODE = 0x4B45  # sets current keyboard mode
 class ISO_8613_3_Screen(urwid.raw_display.Screen):
 
     def __init__(self, _urwid_name_to_rgb):
-        self._fg_to_rgb = _urwid_name_to_rgb.copy()
-        self._fg_to_rgb['default'] = _urwid_name_to_rgb['light gray']
-        self._bg_to_rgb = _urwid_name_to_rgb.copy()
-        self._bg_to_rgb['default'] = _urwid_name_to_rgb['black']
+        self._urwid_name_to_rgb = _urwid_name_to_rgb
         super().__init__()
 
+    def _cc(self, color):
+        """Return the "SGR" parameter for selecting color.
+
+        See https://en.wikipedia.org/wiki/ANSI_escape_code#SGR for an
+        explanation.  We use the basic codes for black/white/default for
+        maximum compatibility; they are the only colors used when the
+        mono palette is selected.
+        """
+        if color == 'white':
+            return '7'
+        elif color == 'black':
+            return '0'
+        elif color == 'default':
+            return '9'
+        else:
+            # This is not, pedantically, a ISO 8613-3 code -- that would
+            # use colons to separate the rgb values instead. But it's
+            # what xterm, and hence everything else, supports.
+            return '8;2;{};{};{}'.format(*self._urwid_name_to_rgb[color])
+
     def _attrspec_to_escape(self, a):
-        f_r, f_g, f_b = self._fg_to_rgb[a.foreground]
-        b_r, b_g, b_b = self._bg_to_rgb[a.background]
-        return "\x1b[38;2;{};{};{};48;2;{};{};{}m".format(f_r, f_g, f_b,
-                                                          b_r, b_g, b_b)
+        return '\x1b[0;3{};4{}m'.format(
+            self._cc(a.foreground),
+            self._cc(a.background))
 
 
 def is_linux_tty():
@@ -143,8 +159,6 @@ def setup_screen(colors, is_linux_tty):
         _urwid_name_to_rgb = {}
         for i, n in enumerate(urwid_8_names):
             _urwid_name_to_rgb[n] = colors[i][1]
-        # Add an alias so things keep working with the mono palette.
-        _urwid_name_to_rgb['white'] = _urwid_name_to_rgb['light gray']
         return ISO_8613_3_Screen(_urwid_name_to_rgb)
 
 
