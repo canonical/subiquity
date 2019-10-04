@@ -56,7 +56,7 @@ KDGKBMODE = 0x4B44  # gets current keyboard mode
 KDSKBMODE = 0x4B45  # sets current keyboard mode
 
 
-class ISO_8613_3_Screen(urwid.raw_display.Screen):
+class TwentyFourBitScreen(urwid.raw_display.Screen):
 
     def __init__(self, _urwid_name_to_rgb):
         self._urwid_name_to_rgb = _urwid_name_to_rgb
@@ -77,9 +77,9 @@ class ISO_8613_3_Screen(urwid.raw_display.Screen):
         elif color == 'default':
             return '9'
         else:
-            # This is not, pedantically, a ISO 8613-3 code -- that would
-            # use colons to separate the rgb values instead. But it's
-            # what xterm, and hence everything else, supports.
+            # This is almost but not quite a ISO 8613-3 code -- that
+            # would use colons to separate the rgb values instead. But
+            # it's what xterm, and hence everything else, supports.
             return '8;2;{};{};{}'.format(*self._urwid_name_to_rgb[color])
 
     def _attrspec_to_escape(self, a):
@@ -110,7 +110,7 @@ urwid_8_names = (
 )
 
 
-def setup_palette(colors, styles):
+def make_palette(colors, styles):
     """Return a palette to be passed to MainLoop.
 
     colors is a list of exactly 8 tuples (name, (r, g, b))
@@ -125,7 +125,7 @@ def setup_palette(colors, styles):
     # name.
     if len(colors) != 8:
         raise Exception(
-            "setup_palette must be passed a list of exactly 8 colors")
+            "make_palette must be passed a list of exactly 8 colors")
     urwid_name = dict(zip([c[0] for c in colors], urwid_8_names))
 
     urwid_palette = []
@@ -135,19 +135,21 @@ def setup_palette(colors, styles):
     return urwid_palette
 
 
-def setup_screen(colors, is_linux_tty):
+def make_screen(colors, is_linux_tty):
     """Return a screen to be passed to MainLoop.
 
     colors is a list of exactly 8 tuples (name, (r, g, b)), the same as
-    passed to setup_palette.
+    passed to make_palette.
     """
     # On the linux console, we overwrite the first 8 colors to be those
     # defined by colors. Otherwise, we return a screen that uses ISO
-    # 8613-3 codes to display the colors.
+    # 8613-3ish codes to display the colors.
     if len(colors) != 8:
         raise Exception(
-            "setup_screen must be passed a list of exactly 8 colors")
+            "make_screen must be passed a list of exactly 8 colors")
     if is_linux_tty:
+        # Perhaps we ought to return a screen subclass that does this
+        # ioctl-ing in .start() and undoes it in .stop() but well.
         curpal = bytearray(16*3)
         fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
         for i in range(8):
@@ -159,7 +161,7 @@ def setup_screen(colors, is_linux_tty):
         _urwid_name_to_rgb = {}
         for i, n in enumerate(urwid_8_names):
             _urwid_name_to_rgb[n] = colors[i][1]
-        return ISO_8613_3_Screen(_urwid_name_to_rgb)
+        return TwentyFourBitScreen(_urwid_name_to_rgb)
 
 
 class KeyCodesFilter:
@@ -277,7 +279,7 @@ class Application:
                 open('/run/casper-no-prompt', 'w').close()
 
         self.is_color = False
-        self.color_palette = setup_palette(self.COLORS, self.STYLES)
+        self.color_palette = make_palette(self.COLORS, self.STYLES)
 
         self.is_linux_tty = is_linux_tty()
 
@@ -557,7 +559,7 @@ class Application:
 
     def run(self):
         log.debug("Application.run")
-        screen = setup_screen(self.COLORS, self.is_linux_tty)
+        screen = make_screen(self.COLORS, self.is_linux_tty)
 
         self.loop = urwid.MainLoop(
             self.ui, palette=self.color_palette, screen=screen,
