@@ -35,12 +35,23 @@ def parse_options(argv):
     parser = argparse.ArgumentParser(
         description='SUbiquity - Ubiquity for Servers',
         prog='subiquity')
+    try:
+        ascii_default = os.ttyname(0) == "/dev/ttysclp0"
+    except OSError:
+        ascii_default = False
+    parser.set_defaults(ascii=ascii_default)
     parser.add_argument('--dry-run', action='store_true',
                         dest='dry_run',
                         help='menu-only, do not call installer function')
     parser.add_argument('--serial', action='store_true',
                         dest='run_on_serial',
                         help='Run the installer over serial console.')
+    parser.add_argument('--ascii', action='store_true',
+                        dest='ascii',
+                        help='Run the installer in ascii mode.')
+    parser.add_argument('--unicode', action='store_false',
+                        dest='ascii',
+                        help='Run the installer in unicode mode.')
     parser.add_argument('--machine-config', metavar='CONFIG',
                         dest='machine_config',
                         help="Don't Probe. Use probe data file")
