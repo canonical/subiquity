@@ -65,4 +65,4 @@ class WelcomeView(BaseView):
         self.controller.done(code)
 
     def local_help(self):
-        return _("Language Selection"), _(HELP)
+        return _("Help choosing a language"), _(HELP)
