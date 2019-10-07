@@ -110,7 +110,7 @@ urwid_8_names = (
 )
 
 
-def make_palette(colors, styles):
+def make_palette(colors, styles, ascii):
     """Return a palette to be passed to MainLoop.
 
     colors is a list of exactly 8 tuples (name, (r, g, b))
@@ -130,12 +130,23 @@ def make_palette(colors, styles):
 
     urwid_palette = []
     for name, fg, bg in styles:
-        urwid_palette.append((name, urwid_name[fg], urwid_name[bg]))
+        urwid_fg, urwid_bg = urwid_name[fg], urwid_name[bg]
+        if ascii:
+            # 24bit grey on colored background looks good
+            # but in 16 colors it's unreadable
+            # hence add more contrast
+            if urwid_bg != 'black':
+                urwid_fg = 'black'
+            # Only frame_button doesn't match above rule
+            # fix it to be brown-on-black black-on-brown
+            if name == 'frame_button focus':
+                urwid_fg, urwid_bg = 'brown', 'black'
+        urwid_palette.append((name, urwid_fg, urwid_bg))
 
     return urwid_palette
 
 
-def make_screen(colors, is_linux_tty):
+def make_screen(colors, is_linux_tty, ascii_mode):
     """Return a screen to be passed to MainLoop.
 
     colors is a list of exactly 8 tuples (name, (r, g, b)), the same as
@@ -157,6 +168,8 @@ def make_screen(colors, is_linux_tty):
                 curpal[i*3+j] = colors[i][1][j]
         fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
         return urwid.raw_display.Screen()
+    elif ascii_mode:
+        return urwid.raw_display.Screen()
     else:
         _urwid_name_to_rgb = {}
         for i, n in enumerate(urwid_8_names):
@@ -174,6 +187,8 @@ def extend_dec_special_charmap():
         ord('\N{bullet}'): '*',
         ord('\N{lower half block}'): '=',
         ord('\N{upper half block}'): '=',
+        ord('\N{FULL BLOCK}'): urwid.escape.DEC_SPECIAL_CHARMAP[
+            ord('\N{BOX DRAWINGS LIGHT VERTICAL}')],
     })
 
 
@@ -292,7 +307,7 @@ class Application:
                 open('/run/casper-no-prompt', 'w').close()
 
         self.is_color = False
-        self.color_palette = make_palette(self.COLORS, self.STYLES)
+        self.color_palette = make_palette(self.COLORS, self.STYLES, opts.ascii)
 
         self.is_linux_tty = is_linux_tty()
 
@@ -572,7 +587,7 @@ class Application:
 
     def run(self):
         log.debug("Application.run")
-        screen = make_screen(self.COLORS, self.is_linux_tty)
+        screen = make_screen(self.COLORS, self.is_linux_tty, self.opts.ascii)
 
         self.loop = urwid.MainLoop(
             self.ui, palette=self.color_palette, screen=screen,
