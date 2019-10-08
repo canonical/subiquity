@@ -201,3 +201,12 @@ if [ -e new_iso/boot/ubuntu.ikr ]; then
 	    -b boot/ubuntu.ikr -no-emul-boot \
 	    new_iso/boot new_iso
 fi
+
+if [ -e new_iso/boot/grub/powerpc.elf ]; then
+    xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
+	    -V Ubuntu\ custom\ amd64 \
+	    -o "${NEW_ISO}" \
+	    -cache-inodes -J -l \
+	    -chrp-boot-part \
+	    new_iso/boot new_iso
+fi
