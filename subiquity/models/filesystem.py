@@ -1172,6 +1172,7 @@ class FilesystemModel(object):
         byid = {}
         objs = []
         exclusions = set()
+        seen_multipaths = set()
         for action in config:
             if action['type'] == 'mount':
                 exclusions.add(byid[action['device']])
@@ -1204,6 +1205,12 @@ class FilesystemModel(object):
                 kw['info'] = StorageInfo({path: blockdevs[path]})
             kw['preserve'] = True
             obj = byid[action['id']] = c(m=self, **kw)
+            multipath = kw.get('multipath')
+            if multipath:
+                if multipath in seen_multipaths:
+                    exclusions.add(obj)
+                else:
+                    seen_multipaths.add(multipath)
             if action['type'] == "format":
                 obj.volume._original_fs = obj
             objs.append(obj)
