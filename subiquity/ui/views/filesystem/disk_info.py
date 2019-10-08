@@ -27,6 +27,7 @@ log = logging.getLogger('subiquity.ui.filesystem.disk_info')
 
 labels_keys = [
     ('Path:', 'devname'),
+    ('Multipath:', 'multipath'),
     ('Vendor:', 'vendor'),
     ('Model:', 'model'),
     ('SerialNo:', 'serial'),
