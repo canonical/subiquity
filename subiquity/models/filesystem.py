@@ -643,19 +643,13 @@ class Disk(_Device):
             'bus': bus,
             'devname': self.path,
             'devpath': devpath,
-            'model': self.model,
-            'serial': self.serial,
+            'model': self.model or 'unknown',
+            'serial': self.serial or 'unknown',
             'size': self.size,
             'humansize': humanize_size(self.size),
-            'vendor': self._info.vendor,
+            'vendor': self._info.vendor or 'unknown',
             'rotational': 'true' if rotational == '1' else 'false',
         }
-        if dinfo['serial'] is None:
-            dinfo['serial'] = 'unknown'
-        if dinfo['model'] is None:
-            dinfo['model'] = 'unknown'
-        if dinfo['vendor'] is None:
-            dinfo['vendor'] = 'unknown'
         return dinfo
 
     @property
