@@ -204,7 +204,7 @@ fi
 
 if [ -e new_iso/boot/grub/powerpc.elf ]; then
     xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
-	    -V Ubuntu\ custom\ amd64 \
+	    -V Ubuntu\ custom\ ppc64 \
 	    -o "${NEW_ISO}" \
 	    -cache-inodes -J -l \
 	    -chrp-boot-part \
