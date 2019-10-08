@@ -611,6 +611,8 @@ class _Device(_Formattable, ABC):
 class Disk(_Device):
     ptable = attributes.ptable()
     serial = attr.ib(default=None)
+    wwn = attr.ib(default=None)
+    multipath = attr.ib(default=None)
     path = attr.ib(default=None)
     model = attr.ib(default=None)
     wipe = attr.ib(default=None)
