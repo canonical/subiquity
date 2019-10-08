@@ -645,6 +645,7 @@ class Disk(_Device):
             'devpath': devpath,
             'model': self.model or 'unknown',
             'serial': self.serial or 'unknown',
+            'wwn': self.wwn or 'unknown',
             'size': self.size,
             'humansize': humanize_size(self.size),
             'vendor': self._info.vendor or 'unknown',

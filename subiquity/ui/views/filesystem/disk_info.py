@@ -30,6 +30,7 @@ labels_keys = [
     ('Vendor:', 'vendor'),
     ('Model:', 'model'),
     ('SerialNo:', 'serial'),
+    ('WWN', 'wwn'),
     ('Size:', 'size'),
     ('Bus:', 'bus'),
     ('Rotational:', 'rotational'),
