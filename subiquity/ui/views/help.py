@@ -158,7 +158,7 @@ ltee = Text('├')
 
 
 def menu_item(text, on_press=None):
-    icon = ClickableIcon(_(text), 0)
+    icon = ClickableIcon(" " + text + " ")
     if on_press is not None:
         connect_signal(icon, 'click', on_press)
     return Color.frame_button(icon)
@@ -168,12 +168,12 @@ class HelpMenu(WidgetWrap):
 
     def __init__(self, parent):
         self.parent = parent
-        close = header_btn(_("Help"))
-        about = menu_item(_("About the installer"), on_press=self._about)
+        close = header_btn(parent.base_widget.label)
+        about = menu_item(_("About this installer"), on_press=self._about)
         keys = menu_item(
-            _("Help on keyboard shortcuts"), on_press=self._shortcuts)
+            _("Keyboard shortcuts"), on_press=self._shortcuts)
         drop_to_shell = menu_item(
-            _("Switch to shell"), on_press=self._debug_shell)
+            _("Enter shell"), on_press=self._debug_shell)
         color = menu_item(
             _("Toggle color on/off"), on_press=self._toggle_color)
         buttons = {
@@ -186,7 +186,7 @@ class HelpMenu(WidgetWrap):
         local_title, local_doc = parent.app.ui.body.local_help()
         if local_title is not None:
             local = menu_item(
-                _("Help on {}").format(local_title),
+                local_title,
                 on_press=self._show_local(local_title, local_doc))
             buttons.add(local)
         else:
@@ -195,12 +195,11 @@ class HelpMenu(WidgetWrap):
             connect_signal(button.base_widget, 'click', self._close)
 
         entries = [
-            about,
             local,
-            hline,
             keys,
-            hline,
             drop_to_shell,
+            hline,
+            about,
             hline,
             color,
             ]
