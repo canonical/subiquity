@@ -662,13 +662,13 @@ class Disk(_Device):
         return []
 
     def desc(self):
+        if self.multipath:
+            return "multipath"
         return _("local disk")
 
     @property
     def label(self):
-        if self.serial is not None:
-            return self.serial
-        return self.path
+        return self.wwn or self.serial or self.path
 
     def _potential_boot_partition(self):
         if self._m.bootloader == Bootloader.NONE:
