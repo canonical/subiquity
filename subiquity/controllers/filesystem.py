@@ -18,6 +18,8 @@ import json
 import logging
 import os
 
+import urwid
+
 from subiquitycore.controller import BaseController
 
 from subiquity.models.filesystem import (
@@ -49,9 +51,62 @@ UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 class ProbeState(enum.IntEnum):
     NOT_STARTED = enum.auto()
     PROBING = enum.auto()
-    REPROBING = enum.auto()
     FAILED = enum.auto()
     DONE = enum.auto()
+
+
+class Probe:
+
+    def __init__(self, controller, restricted, timeout, cb):
+        self.controller = controller
+        self.restricted = restricted
+        self.timeout = timeout
+        self.cb = cb
+        self.state = ProbeState.NOT_STARTED
+        self.result = None
+
+    def start(self):
+        block_discover_log.debug(
+            "starting probe restricted=%s", self.restricted)
+        self.state = ProbeState.PROBING
+        self.controller.run_in_bg(self._bg_probe, self._probed)
+        self.controller.loop.set_alarm_in(self.timeout, self._check_timeout)
+
+    def _bg_probe(self):
+        if self.restricted:
+            probe_types = {'blockdev'}
+        else:
+            probe_types = None
+        # Should consider invoking probert in a subprocess here (so we
+        # can kill it if it gets stuck).
+        return self.controller.app.prober.get_storage(probe_types=probe_types)
+
+    def _probed(self, fut):
+        if self.state == ProbeState.FAILED:
+            block_discover_log.debug(
+                "ignoring result %s for timed out probe", fut)
+            return
+        try:
+            self.result = fut.result()
+        except Exception:
+            block_discover_log.exception(
+                "probing failed restricted=%s", self.restricted)
+            # Should make a crash report here!
+            self.state = ProbeState.FAILED
+        else:
+            block_discover_log.exception(
+                "probing successful restricted=%s", self.restricted)
+            self.state = ProbeState.DONE
+        self.cb(self)
+
+    def _check_timeout(self, loop, ud):
+        if self.state != ProbeState.PROBING:
+            return
+        # Should make a crash report here!
+        block_discover_log.exception(
+            "probing timed out restricted=%s", self.restricted)
+        self.state = ProbeState.FAILED
+        self.cb(self)
 
 
 class FilesystemController(BaseController):
@@ -65,72 +120,67 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided', False)
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
-        self._probe_state = ProbeState.NOT_STARTED
+        self._cur_probe = None
+        self.ui_shown = False
 
     def start(self):
-        block_discover_log.info("starting probe")
-        self._probe_state = ProbeState.PROBING
-        self.run_in_bg(self._bg_probe, self._probed)
-        self.loop.set_alarm_in(
-            5.0, lambda loop, ud: self._check_probe_timeout())
+        urwid.connect_signal(
+            self.app, 'debug-shell-exited', self._maybe_reprobe_block)
+        self._start_probe(restricted=False)
 
-    def _bg_probe(self, probe_types=None):
-        return self.app.prober.get_storage(probe_types=probe_types)
+    def _maybe_reprobe_block(self):
+        if not self.ui_shown:
+            self._start_probe(restricted=False)
 
-    def _probed(self, fut, restricted=False):
-        if not restricted and self._probe_state != ProbeState.PROBING:
+    def _start_probe(self, *, restricted=False):
+        self._cur_probe = Probe(self, restricted, 5.0, self._probe_done)
+        self._cur_probe.start()
+
+    def _probe_done(self, probe):
+        if probe is not self._cur_probe:
             block_discover_log.debug(
-                "ignoring result %s for timed out probe", fut)
+                "ignoring result %s for superseded probe", probe.result)
             return
-        try:
-            storage = fut.result()
-            if restricted:
-                fname = 'probe-data-restricted.json'
+        if probe.state == ProbeState.FAILED:
+            if not probe.restricted:
+                self._start_probe(restricted=True)
             else:
-                fname = 'probe-data.json'
-            with open(os.path.join(self.app.block_log_dir, fname), 'w') as fp:
-                json.dump(storage, fp, indent=4)
-            self.model.load_probe_data(storage)
+                if self.showing:
+                    self.start_ui()
+            return
+        if probe.restricted:
+            fname = 'probe-data-restricted.json'
+        else:
+            fname = 'probe-data.json'
+        with open(os.path.join(self.app.block_log_dir, fname), 'w') as fp:
+            json.dump(probe.result, fp, indent=4)
+        try:
+            self.model.load_probe_data(probe.result)
         except Exception:
             block_discover_log.exception(
-                "probing failed restricted=%s", restricted)
-            if not restricted:
-                block_discover_log.info("reprobing for blockdev only")
-                # Should make a crash file for apport, arrange for it to be
-                # copied onto the installed system and tell user all this
-                # happened!
-                self._reprobe()
+                "load_probe_data failed restricted=%s", probe.restricted)
+            # Should make a crash report here!
+            if not probe.restricted:
+                self._start_probe(restricted=True)
             else:
-                self._probe_state = ProbeState.FAILED
+                # OK, this is a hack
+                self._cur_probe.state = ProbeState.FAILED
                 if self.showing:
                     self.start_ui()
         else:
-            self._probe_state = ProbeState.DONE
             # Should do something here if probing found no devices.
             if self.showing:
                 self.start_ui()
 
-    def _check_probe_timeout(self):
-        log.debug("_check_probe_timeout")
-        if self._probe_state == ProbeState.PROBING:
-            log.info(
-                "unrestricted probing timed out, reprobing for blockdev only")
-            self._reprobe()
-
-    def _reprobe(self):
-        self._probe_state = ProbeState.REPROBING
-        self.run_in_bg(
-            lambda: self._bg_probe({"blockdev"}),
-            lambda fut: self._probed(fut, True),
-            )
-
     def start_ui(self):
-        if self._probe_state in [ProbeState.PROBING,
-                                 ProbeState.REPROBING]:
+        if self._cur_probe.state == ProbeState.PROBING:
             self.ui.set_body(SlowProbing(self))
-        elif self._probe_state == ProbeState.FAILED:
+        elif self._cur_probe.state == ProbeState.FAILED:
             self.ui.set_body(ProbingFailed(self))
         else:
+            self.ui_shown = True
+            # Should display a message if self._cur_probe.restricted,
+            # i.e. full device probing failed.
             self.ui.set_body(GuidedFilesystemView(self))
             if self.answers['guided']:
                 self.guided(self.answers.get('guided-method', 'direct'))

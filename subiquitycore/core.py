@@ -268,7 +268,7 @@ class DummyKeycodesFilter:
         return keys
 
 
-class Application:
+class Application(metaclass=urwid.MetaSignals):
 
     # A concrete subclass must set project and controllers attributes, e.g.:
     #
@@ -359,7 +359,8 @@ class Application:
             os.write(pipe, b'x')
         fut.add_done_callback(in_random_thread)
 
-    def run_command_in_foreground(self, cmd, **kw):
+    def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None,
+                                  **kw):
         screen = self.loop.screen
 
         # Calling screen.stop() sends the INPUT_DESCRIPTORS_CHANGED
@@ -386,10 +387,14 @@ class Application:
             urwid.emit_signal(
                 screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
             tty.setraw(0)
+            if after_hook is not None:
+                after_hook()
 
         screen.stop()
         urwid.emit_signal(
             screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
+        if before_hook is not None:
+            before_hook()
         self.run_in_bg(run, restore)
 
     def _connect_base_signals(self):
