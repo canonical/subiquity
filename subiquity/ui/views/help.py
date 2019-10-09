@@ -190,7 +190,8 @@ class HelpMenu(WidgetWrap):
                 on_press=self._show_local(local_title, local_doc))
             buttons.add(local)
         else:
-            local = Text(('info_minor header', _("Help on this screen")))
+            local = Text(
+                ('info_minor header', " " + _("Help on this screen") + " "))
         for button in buttons:
             connect_signal(button.base_widget, 'click', self._close)
 
