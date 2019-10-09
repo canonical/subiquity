@@ -664,7 +664,7 @@ class Disk(_Device):
 
     def desc(self):
         if self.multipath:
-            return "multipath"
+            return "multipath device"
         return _("local disk")
 
     @property
