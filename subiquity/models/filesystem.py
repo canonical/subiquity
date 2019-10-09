@@ -611,6 +611,8 @@ class _Device(_Formattable, ABC):
 class Disk(_Device):
     ptable = attributes.ptable()
     serial = attr.ib(default=None)
+    wwn = attr.ib(default=None)
+    multipath = attr.ib(default=None)
     path = attr.ib(default=None)
     model = attr.ib(default=None)
     wipe = attr.ib(default=None)
@@ -641,19 +643,15 @@ class Disk(_Device):
             'bus': bus,
             'devname': self.path,
             'devpath': devpath,
-            'model': self.model,
-            'serial': self.serial,
+            'model': self.model or 'unknown',
+            'serial': self.serial or 'unknown',
+            'wwn': self.wwn or 'unknown',
+            'multipath': self.multipath or 'unknown',
             'size': self.size,
             'humansize': humanize_size(self.size),
-            'vendor': self._info.vendor,
+            'vendor': self._info.vendor or 'unknown',
             'rotational': 'true' if rotational == '1' else 'false',
         }
-        if dinfo['serial'] is None:
-            dinfo['serial'] = 'unknown'
-        if dinfo['model'] is None:
-            dinfo['model'] = 'unknown'
-        if dinfo['vendor'] is None:
-            dinfo['vendor'] = 'unknown'
         return dinfo
 
     @property
@@ -665,13 +663,13 @@ class Disk(_Device):
         return []
 
     def desc(self):
+        if self.multipath:
+            return "multipath device"
         return _("local disk")
 
     @property
     def label(self):
-        if self.serial is not None:
-            return self.serial
-        return self.path
+        return self.wwn or self.serial or self.path
 
     def _potential_boot_partition(self):
         if self._m.bootloader == Bootloader.NONE:
@@ -1170,6 +1168,7 @@ class FilesystemModel(object):
         byid = {}
         objs = []
         exclusions = set()
+        seen_multipaths = set()
         for action in config:
             if action['type'] == 'mount':
                 exclusions.add(byid[action['device']])
@@ -1202,6 +1201,12 @@ class FilesystemModel(object):
                 kw['info'] = StorageInfo({path: blockdevs[path]})
             kw['preserve'] = True
             obj = byid[action['id']] = c(m=self, **kw)
+            multipath = kw.get('multipath')
+            if multipath:
+                if multipath in seen_multipaths:
+                    exclusions.add(obj)
+                else:
+                    seen_multipaths.add(multipath)
             if action['type'] == "format":
                 obj.volume._original_fs = obj
             objs.append(obj)
