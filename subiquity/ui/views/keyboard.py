@@ -449,7 +449,7 @@ class KeyboardView(BaseView):
         self.form.layout.widget.value = layout
         self.select_layout(None, layout)
         self.form.variant.widget.value = variant
-        self._w.base_widget.focus_position = 5
+        self._w.base_widget.focus_position = 4
 
     def done(self, result):
         layout = self.form.layout.widget.value
