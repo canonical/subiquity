@@ -29,7 +29,10 @@ from subiquitycore.ui.container import (
     ListBox,
     WidgetWrap,
     )
-from subiquitycore.ui.utils import ClickableIcon
+from subiquitycore.ui.utils import (
+    ClickableIcon,
+    Color,
+    )
 
 
 class _PopUpSelectDialog(WidgetWrap):
@@ -58,7 +61,7 @@ class _PopUpSelectDialog(WidgetWrap):
             group.append(btn)
         list_box = ListBox(group)
         list_box.base_widget.focus_position = cur_index
-        super().__init__(LineBox(list_box))
+        super().__init__(Color.body(LineBox(list_box)))
 
     def click(self, btn, index):
         self.parent.index = index
