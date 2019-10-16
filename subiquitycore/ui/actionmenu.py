@@ -88,7 +88,7 @@ class _ActionMenuDialog(WidgetWrap):
                 btn = AttrWrap(btn, 'info_minor')
             group.append(btn)
         self.width = width
-        super().__init__(LineBox(ListBox(group)))
+        super().__init__(Color.body(LineBox(ListBox(group))))
 
     def close(self, sender):
         self.parent.close_pop_up()
