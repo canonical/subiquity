@@ -669,7 +669,9 @@ class Disk(_Device):
 
     @property
     def label(self):
-        return self.wwn or self.serial or self.path
+        if self.multipath:
+            return self.wwn
+        return self.serial or self.path
 
     def _potential_boot_partition(self):
         if self._m.bootloader == Bootloader.NONE:
