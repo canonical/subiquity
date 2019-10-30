@@ -17,29 +17,6 @@ Vcs-Browser: https://github.com/CanonicalLtd/subiquity
 Vcs-Git: https://github.com/CanonicalLtd/subiquity.git
 XS-Ubuntu-Use-Langpack: yes
 
-Package: subiquity
-Architecture: all
-Depends: curtin,
-         iso-codes,
-         python3,
-         subiquitycore,
-         probert-storage,
-         ${misc:Depends},
-         ${python3:Depends}
-Description: Ubuntu Server Installer
- SUbiquity is an installer system for servers, embedded devices and desktops
- or laptops meant to build systems as quickly as possible for users to reach
- a point where their system is usable.
- .
- By default, subiquity provides a "first boot" experience that allows users
- to do initial system configuration such as adding users and login settings,
- along with doing basic network configuration. It can also be used to build
- a new system from the ground up, partitioning and copying a disk image to
- the storage device selected by the user.
- .
- This package provides the installer routines for bootstrapping a system
- with the Subiquity the server installer UI.
-
 Package: subiquitycore
 Architecture: all
 Depends: probert-network,
@@ -78,47 +55,3 @@ Description: Ubuntu Core Pre-Ownership Configurator
  .
  This package provides the setup routines for pre-ownership configuration of
  a system.
-
-Package: subiquity-tools
-Architecture: all
-Depends: cloud-image-utils,
-         devscripts,
-         extlinux,
-         gdisk,
-         git,
-         grub-efi-amd64-signed,
-         grub2-common,
-         kpartx,
-         parted,
-         pep8,
-         pyflakes,
-         python-all,
-         python-mock,
-         python-nose,
-         python-oauthlib,
-         python-yaml,
-         python3-mock,
-         python3-nose,
-         python3-setuptools,
-         qemu-utils,
-         shim,
-         shim-signed,
-         simplestreams,
-         subiquity,
-         syslinux-common,
-         ubuntu-cloudimage-keyring,
-         ${misc:Depends},
-         ${python3:Depends}
-Description: Ubuntu Server Installer
- SUbiquity is an installer system for servers, embedded devices and desktops
- or laptops meant to build systems as quickly as possible for users to reach
- a point where their system is usable.
- .
- By default, subiquity provides a "first boot" experience that allows users
- to do initial system configuration such as adding users and login settings,
- along with doing basic network configuration. It can also be used to build
- a new system from the ground up, partitioning and copying a disk image to
- the storage device selected by the user.
- .
- This package provides the installer which all the necessary utilities to
- complete a new installation.
