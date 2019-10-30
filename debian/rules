@@ -18,7 +18,6 @@ override_dh_auto_clean:
 
 override_dh_install:
 	dh_install
-	dh_missing --fail-missing
 
 override_dh_python3:
 	dh_python3 --ignore-shebangs usr/share/subiquity/
