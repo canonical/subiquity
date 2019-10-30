@@ -18,7 +18,6 @@ override_dh_auto_clean:
 
 override_dh_install:
 	dh_install
-	dh_missing --fail-missing
 
 override_dh_python3:
 	dh_python3 --ignore-shebangs usr/share/subiquity/
@@ -30,16 +29,6 @@ override_dh_installinit:
 	install -m 0644 $(CURDIR)/debian/console-conf.conf $(CURDIR)/debian/console-conf/lib/systemd/system/getty@.service.d/
 	mkdir $(CURDIR)/debian/console-conf/lib/systemd/system/serial-getty@.service.d/
 	install -m 0644 $(CURDIR)/debian/console-conf-serial.conf $(CURDIR)/debian/console-conf/lib/systemd/system/serial-getty@.service.d/
-	dh_installsystemd --no-start --name=subiquity
-	dh_installsystemd --no-start --name=serial-subiquity@
-	dh_installsystemd --no-start --name=subiquity-debug@
-	mkdir $(CURDIR)/debian/subiquity/lib/systemd/system/getty@tty1.service.d/
-	install -m 0644 $(CURDIR)/debian/subiquity-tty1.conf $(CURDIR)/debian/subiquity/lib/systemd/system/getty@tty1.service.d/
-	mkdir $(CURDIR)/debian/subiquity/lib/systemd/system/getty@.service.d/
-	install -m 0644 $(CURDIR)/debian/subiquity-ttyN.conf $(CURDIR)/debian/subiquity/lib/systemd/system/getty@.service.d/
-	ln -s /dev/null $(CURDIR)/debian/subiquity/lib/systemd/system/subiquity-debug@tty1.service
-	mkdir $(CURDIR)/debian/subiquity/lib/systemd/system/serial-getty@.service.d/
-	install -m 0644 $(CURDIR)/debian/subiquity-serial.conf $(CURDIR)/debian/subiquity/lib/systemd/system/serial-getty@.service.d/
 
 override_dh_auto_test:
 	@echo "No tests."
