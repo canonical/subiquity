@@ -16,9 +16,16 @@
 import logging
 import os
 import platform
+import sys
+import traceback
+
+import apport.hookutils
 
 from subiquitycore.core import Application
 
+from subiquity.controllers.error import (
+    ErrorController,
+    )
 from subiquity.models.subiquity import SubiquityModel
 from subiquity.snapd import (
     FakeSnapdConnection,
@@ -128,8 +135,49 @@ class Subiquity(Application):
         self.run_command_in_foreground(
             "bash", before_hook=_before, cwd='/')
 
+    def load_controllers(self):
+        super().load_controllers()
+        self.error_controller = ErrorController(self)
+
+    def start_controllers(self):
+        super().start_controllers()
+        self.error_controller.start()
+
     def note_file_for_apport(self, key, path):
         self._apport_files.append((key, path))
 
     def note_data_for_apport(self, key, value):
         self._apport_data.append((key, value))
+
+    def make_apport_report(self, kind, thing, *, wait=False):
+        log.debug("generating crash report")
+
+        try:
+            report = self.error_controller.create_report(kind)
+        except Exception:
+            log.exception("creating crash report failed")
+            return
+
+        etype = sys.exc_info()[0]
+        if etype is not None:
+            report.pr["Title"] = "{} crashed with {}".format(
+                thing, etype.__name__)
+            report.pr['Traceback'] = traceback.format_exc()
+        else:
+            report.pr["Title"] = thing
+
+        apport_files = self._apport_files[:]
+        apport_data = self._apport_data.copy()
+
+        def _bg_attach_hook():
+            # Attach any stuff other parts of the code think we should know
+            # about.
+            for key, path in apport_files:
+                apport.hookutils.attach_file_if_exists(report.pr, path, key)
+            for key, value in apport_data:
+                report.pr[key] = value
+
+        report.add_info(_bg_attach_hook, wait)
+
+        # In the fullness of time we should do the signature thing here.
+        return report

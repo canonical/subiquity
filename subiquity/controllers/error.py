@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import datetime
 import enum
 import json
 import logging
 import os
+import time
 
 import apport
 import apport.crashdb
@@ -57,21 +57,10 @@ class ErrorReport:
 
     @classmethod
     def new(cls, controller, kind):
-        prefix = "installer.{}.{}".format(
-            datetime.datetime.utcnow().isoformat(timespec='seconds'),
-            kind.name.lower())
-        i = 0
-        while 1:
-            base = "{}.{}".format(prefix, i)
-            crash_path = os.path.join(
-                controller.crash_directory, base + ".crash")
-            try:
-                crash_file = open(crash_path, 'xb')
-            except FileExistsError:
-                i += 1
-                continue
-            else:
-                break
+        base = "installer.{:.9f}.{}".format(time.time(), kind.name.lower())
+        crash_file = open(
+            os.path.join(controller.crash_directory, base + ".crash"),
+            'wb')
 
         pr = apport.Report('Bug')
         pr['CrashDB'] = repr(controller.crashdb_spec)
