@@ -40,6 +40,7 @@ import yaml
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
 
+from subiquity.controllers.error import ErrorReportKind
 from subiquity.ui.views.installprogress import ProgressView
 
 
@@ -161,7 +162,7 @@ class StateMachine:
             raise
         except Exception:
             log.debug("%s failed", name)
-            self.controller.curtin_error(traceback.format_exc())
+            self.controller.curtin_error()
         else:
             log.debug("%s completed", name)
             if 'success' in self._transitions[name]:
@@ -251,12 +252,13 @@ class InstallProgressController(BaseController):
     def snap_config_done(self):
         self._step_done('snap')
 
-    def curtin_error(self, log_text=None):
-        log.debug('curtin_error: %s', log_text)
+    def curtin_error(self):
         self.install_state = InstallState.ERROR
+        self.app.make_apport_report(
+            ErrorReportKind.INSTALL_FAIL, "install failed")
         self.progress_view.spinner.stop()
-        if log_text:
-            self.progress_view.add_log_line(log_text)
+        if sys.exc_info()[0] is not None:
+            self.progress_view.add_log_line(traceback.format_exc())
         self.progress_view.set_status(('info_error',
                                        _("An error has occurred")))
         self.progress_view.show_complete(True)

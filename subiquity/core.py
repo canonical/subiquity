@@ -25,6 +25,7 @@ from subiquitycore.core import Application
 
 from subiquity.controllers.error import (
     ErrorController,
+    ErrorReportKind,
     )
 from subiquity.models.subiquity import SubiquityModel
 from subiquity.snapd import (
@@ -103,6 +104,16 @@ class Subiquity(Application):
             ])
         self._apport_data = []
         self._apport_files = []
+
+    def run(self):
+        try:
+            super().run()
+        except Exception:
+            print("generating crash report")
+            report = self.make_apport_report(
+                ErrorReportKind.UI, "Installer UI", wait=True)
+            print("report saved to {}".format(report.path))
+            raise
 
     def _network_change(self):
         self.signal.emit_signal('snapd-network-change')
