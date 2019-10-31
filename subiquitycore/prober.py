@@ -50,4 +50,10 @@ class Prober():
             results = storage.probe(probe_types=probe_types)
             self.probe_data['storage'] = results
 
+        if self.opts.machine_config is not None and probe_types is not None:
+            r = self.saved_config['storage'].copy()
+            for k in self.saved_config['storage']:
+                if k not in probe_types:
+                    r[k] = {}
+            return r
         return self.probe_data['storage']
