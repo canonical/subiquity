@@ -187,10 +187,14 @@ class FilesystemController(BaseController):
             return
         if probe.restricted:
             fname = 'probe-data-restricted.json'
+            key = "ProbeDataRestricted"
         else:
             fname = 'probe-data.json'
-        with open(os.path.join(self.app.block_log_dir, fname), 'w') as fp:
+            key = "ProbeData"
+        fpath = os.path.join(self.app.block_log_dir, fname)
+        with open(fpath, 'w') as fp:
             json.dump(probe.result, fp, indent=4)
+        self.app.note_file_for_apport(key, fpath)
         try:
             self.model.load_probe_data(probe.result)
         except Exception:

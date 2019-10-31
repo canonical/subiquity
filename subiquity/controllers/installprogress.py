@@ -26,10 +26,16 @@ import tempfile
 import time
 import traceback
 
+from curtin.commands.install import (
+    ERROR_TARFILE,
+    INSTALL_LOG,
+    )
+
 import urwid
-import yaml
 
 from systemd import journal
+
+import yaml
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
@@ -333,6 +339,10 @@ class InstallProgressController(BaseController):
         ident = self._event_syslog_identifier
         self._write_config(config_location,
                            self.model.render(syslog_identifier=ident))
+
+        self.app.note_file_for_apport("CurtinConfig", config_location)
+        self.app.note_file_for_apport("CurtinLog", INSTALL_LOG)
+        self.app.note_file_for_apport("CurtinErrors", ERROR_TARFILE)
 
         return curtin_cmd
 

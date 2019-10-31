@@ -94,6 +94,8 @@ class Subiquity(Application):
             ('network-proxy-set', self._proxy_set),
             ('network-change', self._network_change),
             ])
+        self._apport_data = []
+        self._apport_files = []
 
     def _network_change(self):
         self.signal.emit_signal('snapd-network-change')
@@ -125,3 +127,9 @@ class Subiquity(Application):
 
         self.run_command_in_foreground(
             "bash", before_hook=_before, cwd='/')
+
+    def note_file_for_apport(self, key, path):
+        self._apport_files.append((key, path))
+
+    def note_data_for_apport(self, key, value):
+        self._apport_data.append((key, value))
