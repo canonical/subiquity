@@ -498,6 +498,8 @@ class InstallProgressController(BaseController):
           transitions={'reboot': 'reboot'})
     def _bg_copy_logs_to_target(self):
         if self.opts.dry_run:
+            if 'copy-logs-fail' in self.debug_flags:
+                raise PermissionError()
             return
         target_logs = self.tpath('var/log/installer')
         utils.run_command(['cp', '-aT', '/var/log/installer', target_logs])

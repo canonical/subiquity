@@ -30,4 +30,13 @@ for line in open(json_file):
         report(prev_ev)
         time.sleep(min((time_for_entry(ev) - time_for_entry(prev_ev)), 8)/scale_factor)
     prev_ev = ev
-report(prev_ev)
+rc = 0
+
+# See subiquitycore/controller.py for the other flags that can be in
+# SUBIQUITY_DEBUG.
+debug_flags = os.environ.get('SUBIQUITY_DEBUG', '').split(',')
+if 'install-fail' in debug_flags:
+    ev["CURTIN_RESULT"] = "FAILURE"
+    rc = 1
+report(ev)
+sys.exit(rc)

@@ -121,6 +121,7 @@ GLOBAL_KEYS = (
 
 DRY_RUN_KEYS = (
     (_('Control-X'), _('quit (dry-run only)')),
+    (_('Control-U'), _('crash the ui (dry-run only)')),
     )
 
 

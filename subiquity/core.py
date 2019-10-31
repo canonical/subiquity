@@ -114,6 +114,8 @@ class Subiquity(Application):
         if key == 'f1':
             if not self.ui.right_icon.showing_something:
                 self.ui.right_icon.open_pop_up()
+        elif self.opts.dry_run and key == 'ctrl u':
+            1/0
         elif key in ['ctrl z', 'f2']:
             self.debug_shell()
         else:
