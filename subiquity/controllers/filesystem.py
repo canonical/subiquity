@@ -17,6 +17,7 @@ import enum
 import json
 import logging
 import os
+import time
 
 import urwid
 
@@ -77,6 +78,13 @@ class Probe:
             probe_types = {'blockdev'}
         else:
             probe_types = None
+        debug_flags = self.controller.debug_flags
+        if 'bpfail-full' in debug_flags and not self.restricted:
+            time.sleep(2)
+            1/0
+        if 'bpfail-restricted' in debug_flags and self.restricted:
+            time.sleep(2)
+            1/0
         # Should consider invoking probert in a subprocess here (so we
         # can kill it if it gets stuck).
         return self.controller.app.prober.get_storage(probe_types=probe_types)
