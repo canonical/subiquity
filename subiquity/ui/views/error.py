@@ -126,9 +126,9 @@ class ErrorReportStretchy(Stretchy):
             'debug_shell': other_btn(
                 _("Switch to a shell"), on_press=self.debug_shell),
             'restart': other_btn(
-                _("Restart installer"), on_press=self.restart),
+                _("Restart the installer"), on_press=self.restart),
             'view': other_btn(
-                _("View Full Report"), on_press=self.view_report),
+                _("View full report"), on_press=self.view_report),
             }
         w = 0
         for n, b in self.btns.items():

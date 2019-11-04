@@ -45,8 +45,8 @@ class ProgressView(BaseView):
 
         self.reboot_btn = Toggleable(ok_btn(
             _("Reboot Now"), on_press=self.reboot))
-        self.exit_btn = cancel_btn(
-            _("Exit To Shell"), on_press=self.quit)
+        self.view_error_btn = cancel_btn(
+            _("View error report"), on_press=self.view_error)
         self.view_log_btn = other_btn(
             _("View full log"), on_press=self.view_log)
 
@@ -117,14 +117,19 @@ class ProgressView(BaseView):
         self.reboot_btn.base_widget.set_label(_("Reboot"))
         self._set_button_width()
 
-    def show_complete(self, include_exit=False, running_updates=False):
-        if include_exit:
-            btns = [self.view_log_btn, self.exit_btn, self.reboot_btn]
-        else:
-            btns = [self.view_log_btn, self.reboot_btn]
+    def show_complete(self):
+        btns = [self.view_log_btn, self.reboot_btn]
         self._set_buttons(btns)
         self.event_buttons.base_widget.focus_position = 1
         self.event_pile.base_widget.focus_position = 2
+
+    def show_error(self, crash_report):
+        btns = [self.view_log_btn, self.view_error_btn, self.reboot_btn]
+        self._set_buttons(btns)
+        self.event_buttons.base_widget.focus_position = 1
+        self.event_pile.base_widget.focus_position = 2
+        self.crash_report = crash_report
+        self.controller.app.show_error_report(crash_report)
 
     def reboot(self, btn):
         self.reboot_btn.base_widget.set_label(_("Rebooting..."))
@@ -133,8 +138,8 @@ class ProgressView(BaseView):
         self.controller.click_reboot()
         self._set_button_width()
 
-    def quit(self, btn):
-        self.controller.quit()
+    def view_error(self, btn):
+        self.controller.app.show_error_report(self.crash_report)
 
     def view_log(self, btn):
         self._w = self.log_pile
