@@ -150,6 +150,30 @@ class ErrorReport(metaclass=urwid.MetaSignals):
     def seen(self):
         return self.meta.get("seen", False)
 
+    @property
+    def persistent_details(self):
+        """Return fs-label, path-on-fs to report."""
+        # Not sure if this is more or less sane than shelling out to
+        # findmnt(1).
+        looking_for = os.path.abspath(
+            os.path.normpath(self.controller.crash_directory))
+        for line in open('/proc/self/mountinfo'):
+            parts = line.strip().split()
+            if os.path.normpath(parts[4]) == looking_for:
+                devname = parts[9]
+                root = parts[3]
+                break
+        else:
+            return None, None
+        import pyudev
+        c = pyudev.Context()
+        devs = list(c.list_devices(
+            subsystem='block', DEVNAME=os.path.realpath(devname)))
+        if not devs:
+            return None, None
+        label = devs[0].get('ID_FS_LABEL_ENC', '')
+        return label, root[1:] + '/' + self.base + '.crash'
+
 
 class ErrorController(BaseController):
 

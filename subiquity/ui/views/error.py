@@ -124,6 +124,17 @@ class ErrorReportStretchy(Stretchy):
             self.spinner.stop()
             widgets.append(self.view_btn)
 
+        fs_label, fs_loc = self.report.persistent_details
+        if fs_label is not None:
+            location_text = _(
+                "The error report has been saved to\n\n  {loc}\n\non the "
+                "filesystem with label {label!r}.").format(
+                    loc=fs_loc, label=fs_label)
+            widgets.extend([
+                Text(""),
+                Text(location_text),
+                ])
+
         widgets.extend([
             Text(""),
             self.close_btn,
