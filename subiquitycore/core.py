@@ -268,7 +268,7 @@ class DummyKeycodesFilter:
         return keys
 
 
-class Application(metaclass=urwid.MetaSignals):
+class Application:
 
     # A concrete subclass must set project and controllers attributes, e.g.:
     #
