@@ -317,3 +317,8 @@ def make_action_menu_row(
     connect_signal(menu, 'open', lambda menu: am.set_attr_map(focus_map))
     connect_signal(menu, 'close', lambda menu: am.set_attr_map(attr_map))
     return am
+
+
+def rewrap(text):
+    paras = text.split("\n\n")
+    return "\n\n".join([p.replace('\n', ' ') for p in paras]).strip()

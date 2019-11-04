@@ -132,6 +132,9 @@ class ErrorReport:
         with open(self.meta_path, 'w') as fp:
             json.dump(self.meta, fp, indent=4)
 
+    def mark_seen(self):
+        self.set_meta("seen", True)
+
     @property
     def kind(self):
         k = self.meta.get("kind", "UNKNOWN")

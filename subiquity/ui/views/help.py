@@ -47,6 +47,9 @@ from subiquitycore.ui.table import (
     TablePile,
     TableRow,
     )
+from subiquitycore.ui.utils import (
+    rewrap,
+    )
 from subiquitycore.ui.width import (
     widget_width,
     )
@@ -90,11 +93,6 @@ return) and the occasional bit of typing.
 
 This is version {snap_version} of the installer.
 """)
-
-
-def rewrap(text):
-    paras = text.split("\n\n")
-    return "\n\n".join([p.replace('\n', ' ') for p in paras]).strip()
 
 
 class SimpleTextStretchy(Stretchy):
