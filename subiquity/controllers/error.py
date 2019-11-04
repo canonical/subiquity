@@ -82,7 +82,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
     def from_file(cls, controller, fpath):
         base = os.path.splitext(os.path.basename(fpath))[0]
         report = cls(
-            controller, base, pr=apport.Report(),
+            controller, base, pr=apport.Report(date='???'),
             state=ErrorReportState.LOADING, file=open(fpath, 'rb'))
         try:
             fp = open(report.meta_path, 'r')
@@ -179,6 +179,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
 
     def mark_seen(self):
         self.set_meta("seen", True)
+        urwid.emit_signal(self, "changed")
 
     @property
     def kind(self):

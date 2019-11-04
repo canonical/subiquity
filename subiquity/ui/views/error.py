@@ -188,8 +188,11 @@ class ErrorReportListStretchy(Stretchy):
                 Text(_("STATUS")),
                 Text(""),
             ])]
+        self.report_to_row = {}
         for report in self.ec.reports:
-            rows.append(self.row_for_report(report))
+            connect_signal(report, "changed", self._report_changed, report)
+            r = self.report_to_row[report] = self.row_for_report(report)
+            rows.append(r)
         self.table = TablePile(rows, colspecs={1: ColSpec(can_shrink=True)})
         widgets = [
             Text(_("Select an error report to view:")),
@@ -223,3 +226,13 @@ class ErrorReportListStretchy(Stretchy):
     def row_for_report(self, report):
         return Color.menu_button(
             TableRow(self.cells_for_report(report)))
+
+    def _report_changed(self, report):
+        old_r = self.report_to_row.get(report)
+        if old_r is None:
+            return
+        old_r = old_r.base_widget
+        new_cells = self.cells_for_report(report)
+        for (s1, old_c), new_c in zip(old_r.cells, new_cells):
+            old_c.set_text(new_c.text)
+        self.table.invalidate()
