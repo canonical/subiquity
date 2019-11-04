@@ -25,6 +25,8 @@ import apport.hookutils
 
 import attr
 
+import urwid
+
 from subiquitycore.controller import BaseController
 
 
@@ -46,7 +48,10 @@ class ErrorReportKind(enum.Enum):
 
 
 @attr.s(cmp=False)
-class ErrorReport:
+class ErrorReport(metaclass=urwid.MetaSignals):
+
+    signals = ["changed"]
+
     controller = attr.ib()
     base = attr.ib()
     pr = attr.ib()
@@ -110,6 +115,7 @@ class ErrorReport:
                 self.state = ErrorReportState.DONE
             self._file.close()
             self._file = None
+            urwid.emit_signal(self, "changed")
         if wait:
             _bg_add_info()
         else:

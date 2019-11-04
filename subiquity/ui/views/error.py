@@ -17,6 +17,7 @@ import logging
 
 from urwid import (
     connect_signal,
+    disconnect_signal,
     Padding,
     Text,
     )
@@ -94,7 +95,8 @@ class ErrorReportStretchy(Stretchy):
             setattr(self, a, Padding(b, width=w, align='center'))
 
         self.spinner = Spinner(app.loop, style='dots')
-        self.pile = Pile(self._pile_elements())
+        self.pile = Pile([])
+        self._report_changed()
         super().__init__("", [self.pile], 0, 0)
         connect_signal(self, 'closed', self.spinner.stop)
 
@@ -121,8 +123,18 @@ class ErrorReportStretchy(Stretchy):
 
         return widgets
 
+    def _report_changed(self):
+        self.pile.contents[:] = [
+            (w, self.pile.options('pack')) for w in self._pile_elements()]
+        while not self.pile.focus.selectable():
+            self.pile.focus_position += 1
+
     def view_report(self, sender):
         self.app.run_command_in_foreground(["less", self.report.path])
 
     def opened(self):
         self.report.mark_seen()
+        connect_signal(self.report, 'changed', self._report_changed)
+
+    def closed(self):
+        disconnect_signal(self.report, 'changed', self._report_changed)
