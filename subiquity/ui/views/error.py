@@ -25,9 +25,6 @@ from subiquitycore.ui.buttons import other_btn
 from subiquitycore.ui.container import (
     Pile,
     )
-from subiquitycore.ui.form import (
-    Toggleable,
-    )
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import (
@@ -84,10 +81,9 @@ class ErrorReportStretchy(Stretchy):
         self.report = report
         self.parent = parent
 
-        self.view_btn = Toggleable(
-                other_btn(
-                    _("View Error Report"),
-                    on_press=self.view_report))
+        self.view_btn = other_btn(
+            _("View Error Report"),
+            on_press=self.view_report)
         self.close_btn = close_btn(parent)
         btn_attrs = {'view_btn', 'close_btn'}
         w = 0
@@ -97,8 +93,8 @@ class ErrorReportStretchy(Stretchy):
             b = getattr(self, a)
             setattr(self, a, Padding(b, width=w, align='center'))
 
-        self.pile = Pile(self._pile_elements())
         self.spinner = Spinner(app.loop, style='dots')
+        self.pile = Pile(self._pile_elements())
         super().__init__("", [self.pile], 0, 0)
         connect_signal(self, 'closed', self.spinner.stop)
 

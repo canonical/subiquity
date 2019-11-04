@@ -255,7 +255,7 @@ class InstallProgressController(BaseController):
     def curtin_error(self):
         self.install_state = InstallState.ERROR
         self.app.make_apport_report(
-            ErrorReportKind.INSTALL_FAIL, "install failed")
+            ErrorReportKind.INSTALL_FAIL, "install failed", interrupt=True)
         self.progress_view.spinner.stop()
         if sys.exc_info()[0] is not None:
             self.progress_view.add_log_line(traceback.format_exc())

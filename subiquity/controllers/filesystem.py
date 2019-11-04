@@ -108,7 +108,7 @@ class Probe:
             block_discover_log.exception(
                 "probing failed restricted=%s", self.restricted)
             self.crash_report = self.controller.app.make_apport_report(
-                self.kind, "block probing")
+                self.kind, "block probing", interrupt=False)
             self.state = ProbeState.FAILED
         else:
             block_discover_log.exception(
@@ -120,7 +120,7 @@ class Probe:
         if self.state != ProbeState.PROBING:
             return
         self.crash_report = self.controller.app.make_apport_report(
-            self.kind, "block probing timed out")
+            self.kind, "block probing timed out", interrupt=False)
         block_discover_log.exception(
             "probing timed out restricted=%s", self.restricted)
         self.state = ProbeState.FAILED

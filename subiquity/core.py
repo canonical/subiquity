@@ -33,6 +33,7 @@ from subiquity.snapd import (
     SnapdConnection,
     )
 from subiquity.ui.frame import SubiquityUI
+from subiquity.ui.views.error import ErrorReportStretchy
 
 
 log = logging.getLogger('subiquity.core')
@@ -111,7 +112,7 @@ class Subiquity(Application):
         except Exception:
             print("generating crash report")
             report = self.make_apport_report(
-                ErrorReportKind.UI, "Installer UI", wait=True)
+                ErrorReportKind.UI, "Installer UI", interrupt=False, wait=True)
             print("report saved to {}".format(report.path))
             raise
 
@@ -130,6 +131,13 @@ class Subiquity(Application):
         if key == 'f1':
             if not self.ui.right_icon.showing_something:
                 self.ui.right_icon.open_pop_up()
+        elif self.opts.dry_run and key in ['ctrl e', 'ctrl r']:
+            interrupt = key == 'ctrl e'
+            try:
+                1/0
+            except ZeroDivisionError:
+                self.make_apport_report(
+                    ErrorReportKind.UNKNOWN, "example", interrupt=interrupt)
         elif self.opts.dry_run and key == 'ctrl u':
             1/0
         elif key in ['ctrl z', 'f2']:
@@ -160,7 +168,7 @@ class Subiquity(Application):
     def note_data_for_apport(self, key, value):
         self._apport_data.append((key, value))
 
-    def make_apport_report(self, kind, thing, *, wait=False):
+    def make_apport_report(self, kind, thing, *, interrupt, wait=False):
         log.debug("generating crash report")
 
         try:
@@ -190,5 +198,21 @@ class Subiquity(Application):
 
         report.add_info(_bg_attach_hook, wait)
 
+        if interrupt:
+            self.show_error_report(report)
+
         # In the fullness of time we should do the signature thing here.
         return report
+
+    def show_error_report(self, report):
+        log.debug("show_error_report %r", report.base)
+        w = getattr(self.ui.body._w, 'top_w', None)
+        if isinstance(w, ErrorReportStretchy):
+            # Don't show an error if already looking at one.
+            return
+        self.ui.body.show_stretchy_overlay(
+            ErrorReportStretchy(
+                self,
+                self.error_controller,
+                report,
+                self.ui.body))
