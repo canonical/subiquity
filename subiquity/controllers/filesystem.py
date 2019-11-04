@@ -17,11 +17,13 @@ import enum
 import json
 import logging
 import os
+import select
 import time
 
 import pyudev
 
 from subiquitycore.controller import BaseController
+from subiquitycore.utils import run_command
 
 from subiquity.models.filesystem import (
     align_up,
@@ -130,7 +132,7 @@ class FilesystemController(BaseController):
         self.answers.setdefault('manual', [])
         self._cur_probe = None
         self._monitor = None
-        self.ui_shown = False
+        self._udev_listen_handle = None
 
     def start(self):
         self._start_probe(restricted=False)
@@ -138,17 +140,36 @@ class FilesystemController(BaseController):
         self._monitor = pyudev.Monitor.from_netlink(context)
         self._monitor.filter_by(subsystem='block')
         self._monitor.enable_receiving()
-        self._last_udev_event = time.time()
-        self.loop.watch_file(self._monitor.fileno(), self._udev_event)
+        self.start_listening_udev()
+
+    def start_listening_udev(self):
+        self._udev_listen_handle = self.loop.watch_file(
+            self._monitor.fileno(), self._udev_event)
+
+    def stop_listening_udev(self):
+        if self._udev_listen_handle is not None:
+            self.loop.remove_watch_file(self._udev_listen_handle)
+            self._udev_listen_handle = None
 
     def _udev_event(self):
-        action, dev = self._monitor.receive_device()
-        log.debug("_udev_event %s %s", action, dev)
-        if time.time() - self._last_udev_event > 0.1 and not self.ui_shown:
-            self._start_probe(restricted=False)
-        self._last_udev_event = time.time()
+        cp = run_command(['udevadm', 'settle', '-t', '0'])
+        if cp.returncode != 0:
+            log.debug("waiting 0.1 to let udev event queue settle")
+            self.stop_listening_udev()
+            self.loop.set_alarm_in(
+                0.1, lambda loop, ud: self.start_listening_udev())
+            return
+        # Drain the udev events in the queue -- if we stopped listening to
+        # allow udev to settle, it's good bet there is more than one event to
+        # process and we don't want to kick off a full block probe for each
+        # one.  It's a touch unfortunate that pyudev doesn't have a
+        # non-blocking read so we resort to select().
+        while select.select([self._monitor.fileno()], [], [], 0)[0]:
+            action, dev = self._monitor.receive_device()
+            log.debug("_udev_event %s %s", action, dev)
+        self._start_probe(restricted=False)
 
-    def _start_probe(self, *, restricted=False):
+    def _start_probe(self, *, restricted):
         self._cur_probe = Probe(self, restricted, 5.0, self._probe_done)
         self._cur_probe.start()
 
@@ -194,7 +215,11 @@ class FilesystemController(BaseController):
         elif self._cur_probe.state == ProbeState.FAILED:
             self.ui.set_body(ProbingFailed(self))
         else:
-            self.ui_shown = True
+            # Once we've shown the filesystem UI, we stop listening for udev
+            # events as merging system changes with configuration the user has
+            # performed would be tricky.  Possibly worth doing though! Just
+            # not today.
+            self.stop_listening_udev()
             # Should display a message if self._cur_probe.restricted,
             # i.e. full device probing failed.
             self.ui.set_body(GuidedFilesystemView(self))
