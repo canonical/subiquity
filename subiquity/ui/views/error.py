@@ -93,26 +93,48 @@ Loading the report failed. See the files in /var/log/installer for more.
 """), False),
 }
 
+error_report_options = {
+    ErrorReportKind.BLOCK_PROBE_FAIL: (_("""
+You can continue and the installer will just present the disks present
+in the system and not other block devices, or you may be able to fix
+the issue by switching to a shell and reconfiguring the system's block
+devices manually.
+"""), ['debug_shell', 'continue']),
+    ErrorReportKind.DISK_PROBE_FAIL: (_("""
+You may be able to fix the issue by switching to a shell and
+reconfiguring the system's block devices manually.
+"""), ['debug_shell', 'continue']),
+    ErrorReportKind.INSTALL_FAIL: (_("""
+Do you want to try starting the installation again?
+"""), ['restart', 'close']),
+    ErrorReportKind.UI: (_("Close this dialog to continue."), ['close']),
+    ErrorReportKind.UNKNOWN: ("", ['close']),
+}
+
 
 class ErrorReportStretchy(Stretchy):
 
-    def __init__(self, app, ec, report, parent):
+    def __init__(self, app, parent, report, interrupting=True):
         self.app = app
-        self.ec = ec
         self.report = report
         self.parent = parent
+        self.interrupting = interrupting
 
-        self.view_btn = other_btn(
-            _("View Error Report"),
-            on_press=self.view_report)
-        self.close_btn = close_btn(parent)
-        btn_attrs = {'view_btn', 'close_btn'}
+        self.btns = {
+            'close': close_btn(parent, _("Close report")),
+            'continue': close_btn(parent, _("Continue")),
+            'debug_shell': other_btn(
+                _("Switch to a shell"), on_press=self.debug_shell),
+            'restart': other_btn(
+                _("Restart installer"), on_press=self.restart),
+            'view': other_btn(
+                _("View Full Report"), on_press=self.view_report),
+            }
         w = 0
-        for a in btn_attrs:
-            w = max(w, widget_width(getattr(self, a)))
-        for a in btn_attrs:
-            b = getattr(self, a)
-            setattr(self, a, Padding(b, width=w, align='center'))
+        for n, b in self.btns.items():
+            w = max(w, widget_width(b))
+        for n, b in self.btns.items():
+            self.btns[n] = Padding(b, width=w, align='center')
 
         self.spinner = Spinner(app.loop, style='dots')
         self.pile = Pile([])
@@ -129,7 +151,7 @@ class ErrorReportStretchy(Stretchy):
         self.spinner.stop()
 
         if self.report.state == ErrorReportState.DONE:
-            widgets.append(self.view_btn)
+            widgets.append(self.btns['view'])
         else:
             text, spin = error_report_state_descriptions[self.report.state]
             widgets.append(Text(rewrap(_(text))))
@@ -150,10 +172,18 @@ class ErrorReportStretchy(Stretchy):
                 Text(location_text),
                 ])
 
-        widgets.extend([
-            Text(""),
-            self.close_btn,
-            ])
+        widgets.append(Text(""))
+
+        if self.interrupting:
+            text, btns = error_report_options[self.report.kind]
+            if text:
+                widgets.extend([Text(rewrap(_(text))), Text("")])
+            for b in btns:
+                widgets.append(self.btns[b])
+        else:
+            widgets.extend([
+                self.btns['close'],
+                ])
 
         return widgets
 
@@ -162,6 +192,15 @@ class ErrorReportStretchy(Stretchy):
             (w, self.pile.options('pack')) for w in self._pile_elements()]
         while not self.pile.focus.selectable():
             self.pile.focus_position += 1
+
+    def debug_shell(self, sender):
+        self.parent.remove_overlay()
+        self.app.debug_shell()
+
+    def restart(self, sender):
+        # Should unmount and delete /target.
+        # We rely on systemd restarting us.
+        self.app.exit()
 
     def view_report(self, sender):
         self.app.run_command_in_foreground(["less", self.report.path])
@@ -179,7 +218,6 @@ class ErrorReportListStretchy(Stretchy):
     def __init__(self, app, parent):
         self.app = app
         self.parent = parent
-        self.ec = app.error_controller
         rows = [
             TableRow([
                 Text(""),
@@ -189,7 +227,7 @@ class ErrorReportListStretchy(Stretchy):
                 Text(""),
             ])]
         self.report_to_row = {}
-        for report in self.ec.reports:
+        for report in self.app.error_controller.reports:
             connect_signal(report, "changed", self._report_changed, report)
             r = self.report_to_row[report] = self.row_for_report(report)
             rows.append(r)
@@ -204,7 +242,8 @@ class ErrorReportListStretchy(Stretchy):
         super().__init__("", widgets, 2, 2)
 
     def open_report(self, sender, report):
-        self.app.show_error_report(report)
+        self.parent.show_stretchy_overlay(
+            ErrorReportStretchy(self.app, self.parent, report, False))
 
     def state_for_report(self, report):
         if report.seen:

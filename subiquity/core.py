@@ -219,8 +219,4 @@ class Subiquity(Application):
             # Don't show an error if already looking at one.
             return
         self.ui.body.show_stretchy_overlay(
-            ErrorReportStretchy(
-                self,
-                self.error_controller,
-                report,
-                self.ui.body))
+            ErrorReportStretchy(self, self.ui.body, report))
