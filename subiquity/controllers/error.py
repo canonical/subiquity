@@ -146,6 +146,10 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         k = self.meta.get("kind", "UNKNOWN")
         return getattr(ErrorReportKind, k, ErrorReportKind.UNKNOWN)
 
+    @property
+    def seen(self):
+        return self.meta.get("seen", False)
+
 
 class ErrorController(BaseController):
 

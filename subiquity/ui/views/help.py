@@ -54,6 +54,7 @@ from subiquitycore.ui.width import (
     widget_width,
     )
 
+from subiquity.ui.views.error import ErrorReportListStretchy
 
 log = logging.getLogger('subiquity.ui.help')
 
@@ -119,6 +120,8 @@ GLOBAL_KEYS = (
 
 DRY_RUN_KEYS = (
     (_('Control-X'), _('quit (dry-run only)')),
+    (_('Control-E'), _('generate noisy error report (dry-run only)')),
+    (_('Control-R'), _('generate quiet error report (dry-run only)')),
     (_('Control-U'), _('crash the ui (dry-run only)')),
     )
 
@@ -191,6 +194,16 @@ class HelpMenu(WidgetWrap):
         else:
             local = Text(
                 ('info_minor header', " " + _("Help on this screen") + " "))
+
+        if self.parent.app.error_controller.reports:
+            view_errors = menu_item(
+                _("View error reports").format(local_title),
+                on_press=self._show_errors)
+            buttons.add(view_errors)
+        else:
+            view_errors = Text(
+                ('info_minor header', " " + _("View error reports") + " "))
+
         for button in buttons:
             connect_signal(button.base_widget, 'click', self._close)
 
@@ -198,6 +211,7 @@ class HelpMenu(WidgetWrap):
             local,
             keys,
             drop_to_shell,
+            view_errors,
             hline,
             about,
             hline,
@@ -299,6 +313,12 @@ class HelpMenu(WidgetWrap):
 
     def _toggle_color(self, sender):
         self.parent.app.toggle_color()
+
+    def _show_errors(self, sender):
+        self._show_overlay(
+            ErrorReportListStretchy(
+                self.parent.app,
+                self.parent.app.ui.body))
 
 
 class HelpButton(PopUpLauncher):

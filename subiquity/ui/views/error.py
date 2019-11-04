@@ -28,7 +28,15 @@ from subiquitycore.ui.container import (
     )
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import Stretchy
+from subiquitycore.ui.table import (
+    ColSpec,
+    TablePile,
+    TableRow,
+    )
 from subiquitycore.ui.utils import (
+    button_pile,
+    ClickableIcon,
+    Color,
     rewrap,
     )
 from subiquitycore.ui.width import (
@@ -138,3 +146,54 @@ class ErrorReportStretchy(Stretchy):
 
     def closed(self):
         disconnect_signal(self.report, 'changed', self._report_changed)
+
+
+class ErrorReportListStretchy(Stretchy):
+
+    def __init__(self, app, parent):
+        self.app = app
+        self.parent = parent
+        self.ec = app.error_controller
+        rows = [
+            TableRow([
+                Text(""),
+                Text(_("DATE")),
+                Text(_("KIND")),
+                Text(_("STATUS")),
+                Text(""),
+            ])]
+        for report in self.ec.reports:
+            rows.append(self.row_for_report(report))
+        self.table = TablePile(rows, colspecs={1: ColSpec(can_shrink=True)})
+        widgets = [
+            Text(_("Select an error report to view:")),
+            Text(""),
+            self.table,
+            Text(""),
+            button_pile([close_btn(parent)]),
+            ]
+        super().__init__("", widgets, 2, 2)
+
+    def open_report(self, sender, report):
+        self.app.show_error_report(report)
+
+    def state_for_report(self, report):
+        if report.seen:
+            return _("VIEWED")
+        return _("UNVIEWED")
+
+    def cells_for_report(self, report):
+        date = report.pr.get("Date", "???")
+        icon = ClickableIcon(date)
+        connect_signal(icon, 'click', self.open_report, report)
+        return [
+            Text("["),
+            icon,
+            Text(_(report.kind.value)),
+            Text(_(self.state_for_report(report))),
+            Text("]"),
+            ]
+
+    def row_for_report(self, report):
+        return Color.menu_button(
+            TableRow(self.cells_for_report(report)))
