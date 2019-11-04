@@ -19,10 +19,14 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.ui.buttons import (
+    other_btn,
+    )
 from subiquitycore.ui.spinner import (
     Spinner,
     )
 from subiquitycore.ui.utils import (
+    button_pile,
     screen,
     )
 from subiquitycore.view import BaseView
@@ -45,7 +49,12 @@ class SlowProbing(BaseView):
                        "to. Please wait until it completes.")),
                 Text(""),
                 self.spinner,
-            ]))
+            ],
+            [other_btn(_("Back"), on_press=self.cancel)]
+            ))
+
+    def cancel(self, result=None):
+        self.controller.cancel()
 
 
 fail_text = _(
@@ -60,4 +69,17 @@ class ProbingFailed(BaseView):
 
     def __init__(self, controller):
         self.controller = controller
-        super().__init__(screen([Text(_(fail_text))]))
+        super().__init__(screen([
+            Text(_(fail_text)),
+            Text(""),
+            button_pile(
+                [other_btn("Show Error Report", on_press=self.show_error)]),
+            ],
+            [other_btn(_("Back"), on_press=self.cancel)]))
+
+    def cancel(self, result=None):
+        self.controller.cancel()
+
+    def show_error(self, sender=None):
+        self.controller.app.show_error_report(
+            self.controller._cur_probe.crash_report)
