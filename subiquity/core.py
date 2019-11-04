@@ -116,6 +116,14 @@ class Subiquity(Application):
             print("report saved to {}".format(report.path))
             raise
 
+    def select_initial_screen(self, index):
+        super().select_initial_screen(index)
+        for report in self.error_controller.reports:
+            if report.kind == ErrorReportKind.UI and not report.seen:
+                log.debug("showing new error %r", report.base)
+                self.show_error_report(report)
+                return
+
     def _network_change(self):
         self.signal.emit_signal('snapd-network-change')
 

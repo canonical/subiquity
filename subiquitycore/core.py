@@ -596,6 +596,12 @@ class Application:
         else:
             return 0
 
+    def select_initial_screen(self, index):
+        try:
+            self.select_screen(index)
+        except Skip:
+            self.next_screen()
+
     def run(self):
         log.debug("Application.run")
         screen = make_screen(self.COLORS, self.is_linux_tty, self.opts.ascii)
@@ -625,16 +631,11 @@ class Application:
             if self.updated:
                 initial_controller_index = self.load_serialized_state()
 
-            def select_initial_screen(loop, index):
-                try:
-                    self.select_screen(index)
-                except Skip:
-                    self.next_screen()
-
             self.loop.set_alarm_in(
                 0.00, lambda loop, ud: tty.setraw(0))
             self.loop.set_alarm_in(
-                0.05, select_initial_screen, initial_controller_index)
+                0.05, lambda loop, ud: self.select_initial_screen(
+                    initial_controller_index))
             self._connect_base_signals()
 
             self.start_controllers()
