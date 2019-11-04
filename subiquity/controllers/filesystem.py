@@ -19,7 +19,7 @@ import logging
 import os
 import time
 
-import urwid
+import pyudev
 
 from subiquitycore.controller import BaseController
 
@@ -129,16 +129,24 @@ class FilesystemController(BaseController):
         self.answers.setdefault('guided-index', 0)
         self.answers.setdefault('manual', [])
         self._cur_probe = None
+        self._monitor = None
         self.ui_shown = False
 
     def start(self):
-        urwid.connect_signal(
-            self.app, 'debug-shell-exited', self._maybe_reprobe_block)
         self._start_probe(restricted=False)
+        context = pyudev.Context()
+        self._monitor = pyudev.Monitor.from_netlink(context)
+        self._monitor.filter_by(subsystem='block')
+        self._monitor.enable_receiving()
+        self._last_udev_event = time.time()
+        self.loop.watch_file(self._monitor.fileno(), self._udev_event)
 
-    def _maybe_reprobe_block(self):
-        if not self.ui_shown:
+    def _udev_event(self):
+        action, dev = self._monitor.receive_device()
+        log.debug("_udev_event %s %s", action, dev)
+        if time.time() - self._last_udev_event > 0.1 and not self.ui_shown:
             self._start_probe(restricted=False)
+        self._last_udev_event = time.time()
 
     def _start_probe(self, *, restricted=False):
         self._cur_probe = Probe(self, restricted, 5.0, self._probe_done)
