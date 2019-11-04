@@ -34,9 +34,11 @@ log = logging.getLogger('subiquity.controllers.error')
 
 
 class ErrorReportState(enum.Enum):
-    INCOMPLETE = _("INCOMPLETE")
-    DONE = _("DONE")
-    ERROR = _("ERROR")
+    INCOMPLETE = enum.auto()
+    LOADING = enum.auto()
+    DONE = enum.auto()
+    ERROR_GENERATING = enum.auto()
+    ERROR_LOADING = enum.auto()
 
 
 class ErrorReportKind(enum.Enum):
@@ -76,6 +78,21 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         r.set_meta("kind", kind.name)
         return r
 
+    @classmethod
+    def from_file(cls, controller, fpath):
+        base = os.path.splitext(os.path.basename(fpath))[0]
+        report = cls(
+            controller, base, pr=apport.Report(),
+            state=ErrorReportState.LOADING, file=open(fpath, 'rb'))
+        try:
+            fp = open(report.meta_path, 'r')
+        except FileNotFoundError:
+            pass
+        else:
+            with fp:
+                report.meta = json.load(fp)
+        return report
+
     def add_info(self, _bg_attach_hook, wait=False):
         log.debug("begin adding info for report %s", self.base)
 
@@ -109,7 +126,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             try:
                 fut.result()
             except Exception:
-                self.state = ErrorReportState.ERROR
+                self.state = ErrorReportState.ERROR_GENERATING
                 log.exception("adding info to problem report failed")
             else:
                 self.state = ErrorReportState.DONE
@@ -120,6 +137,28 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             _bg_add_info()
         else:
             self.controller.run_in_bg(_bg_add_info, added_info)
+
+    def load(self, cb):
+        # Load report from disk in background.
+
+        def _bg_load():
+            log.debug("loading report %s", self.base)
+            self.pr.load(self._file)
+
+        def loaded(fut):
+            log.debug("done loading report %s", self.base)
+            try:
+                fut.result()
+            except Exception:
+                self.state = ErrorReportState.ERROR_LOADING
+                log.exception("loading problem report failed")
+            else:
+                self.state = ErrorReportState.DONE
+            self._file.close()
+            self._file = None
+            urwid.emit_signal(self, "changed")
+            cb()
+        self.controller.run_in_bg(_bg_load, loaded)
 
     def _path_with_ext(self, ext):
         return os.path.join(
@@ -190,6 +229,27 @@ class ErrorController(BaseController):
 
     def start(self):
         os.makedirs(self.crash_directory, exist_ok=True)
+        # scan for pre-existing crash reports and start loading them
+        # in the background
+        self.scan_crash_dir()
+
+    def _report_loaded(self, to_load):
+        if to_load:
+            to_load[0].load(
+                lambda: self._report_loaded(to_load[1:]))
+
+    def scan_crash_dir(self):
+        filenames = os.listdir(self.crash_directory)
+        to_load = []
+        for filename in sorted(filenames, reverse=True):
+            base, ext = os.path.splitext(filename)
+            if ext != ".crash":
+                continue
+            path = os.path.join(self.crash_directory, filename)
+            r = ErrorReport.from_file(self, path)
+            self.reports.append(r)
+            to_load.append(r)
+        self._report_loaded(to_load)
 
     def create_report(self, kind):
         r = ErrorReport.new(self, kind)

@@ -76,10 +76,22 @@ Sorry, an unknown error occurred.
 """),
 }
 
-incomplete_text = _("""
+error_report_state_descriptions = {
+    ErrorReportState.INCOMPLETE: (_("""
 Information is being collected from the system that will help the
 developers diagnose the report.
-""")
+"""), True),
+    ErrorReportState.LOADING: (_("""
+Loading report...
+"""), True),
+    ErrorReportState.ERROR_GENERATING: (_("""
+Collecting information from the system failed. See the files in
+/var/log/installer for more.
+"""), False),
+    ErrorReportState.ERROR_LOADING: (_("""
+Loading the report failed. See the files in /var/log/installer for more.
+"""), False),
+}
 
 
 class ErrorReportStretchy(Stretchy):
@@ -114,15 +126,18 @@ class ErrorReportStretchy(Stretchy):
             Text(""),
             ]
 
-        if self.report.state == ErrorReportState.INCOMPLETE:
-            self.spinner.start()
-            widgets.extend([
-                Text(rewrap(_(incomplete_text))),
-                Text(""),
-                self.spinner])
-        else:
-            self.spinner.stop()
+        self.spinner.stop()
+
+        if self.report.state == ErrorReportState.DONE:
             widgets.append(self.view_btn)
+        else:
+            text, spin = error_report_state_descriptions[self.report.state]
+            widgets.append(Text(rewrap(_(text))))
+            if spin:
+                self.spinner.start()
+                widgets.extend([
+                    Text(""),
+                    self.spinner])
 
         fs_label, fs_loc = self.report.persistent_details
         if fs_label is not None:
