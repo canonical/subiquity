@@ -20,11 +20,6 @@ from subiquity.models.filesystem import (
 
 tmpdir = tempfile.mkdtemp()
 
-raids = []
-loopdevs = []
-
-_cmdoutput = []
-
 def run(cmd):
     try:
         subprocess.run(
@@ -35,15 +30,23 @@ def run(cmd):
         print(e.stdout)
         raise
 
+raids = []
+loopdevs = []
 
-def cleanup():
+def cleanraids():
     for raid in raids:
-        subprocess.run(
-            ['mdadm', '--verbose', '--stop', raid])
+        run(['mdadm', '--verbose', '--stop', raid])
+    del raids[:]
+
+def cleanloops():
     for loopdev in loopdevs:
         subprocess.run(
             ['losetup', '-d', loopdev])
-    shutil.rmtree(tmpdir)
+    del loopdevs[:]
+
+def cleanup():
+    cleanraids()
+    cleanloops()
 
 
 def create_devices_for_sizes(sizes):
@@ -89,36 +92,41 @@ class FakeDev:
 
 
 def verify_size_ok(level, sizes):
-    devs = create_devices_for_sizes(sizes)
-    raid = create_raid(level, devs)
-    devs = [FakeDev(size) for size in sizes]
-    calc_size = get_raid_size(level, devs)
-    real_size = get_real_raid_size(raid)
-    if len(set(sizes)) == 1:
-        sz = '[{}]*{}'.format(humanize_size(sizes[0]), len(sizes))
-    else:
-        sz = str([humanize_size(s) for s in sizes])
-    print("level {} sizes {} -> calc_size {} real_size {}".format(
-        level, sz , calc_size, real_size), end=' ')
-    if calc_size > real_size:
-        print("BAAAAAAAAAAAD", real_size - calc_size)
-        r = False
-    else:
-        print("OK by", real_size - calc_size)
-        r = True
-    run(['mdadm', '--verbose', '--stop', raid])
-    raids.remove(raid)
+    r = False
+    try:
+        devs = create_devices_for_sizes(sizes)
+        raid = create_raid(level, devs)
+        devs = [FakeDev(size) for size in sizes]
+        calc_size = get_raid_size(level, devs)
+        real_size = get_real_raid_size(raid)
+        if len(set(sizes)) == 1:
+            sz = '[{}]*{}'.format(humanize_size(sizes[0]), len(sizes))
+        else:
+            sz = str([humanize_size(s) for s in sizes])
+        print("level {} sizes {} -> calc_size {} real_size {}".format(
+            level, sz , calc_size, real_size), end=' ')
+        if calc_size > real_size:
+            print("BAAAAAAAAAAAD", real_size - calc_size)
+        else:
+            print("OK by", real_size - calc_size)
+            r = True
+    finally:
+        cleanup()
     return r
 
 
 fails = 0
-for size in '1G', '10G', '100G', '1T', '10T', '100T':
-    size = dehumanize_size(size)
-    for level in raidlevels:
-        for count in range(2, 10):
-            if count >= level.min_devices:
-                if not verify_size_ok(level.value, [size]*count):
-                    fails += 1
+run(['mount', '-t', 'tmpfs', 'tmpfs', tmpdir])
+try:
+    for size in '1G', '10G', '100G', '1T', '10T', '100T':
+        size = dehumanize_size(size)
+        for level in raidlevels:
+            for count in range(2, 10):
+                if count >= level.min_devices:
+                    if not verify_size_ok(level.value, [size]*count):
+                        fails += 1
+finally:
+    run(['umount', tmpdir])
 
 if fails > 0:
     print("{} fails".format(fails))
