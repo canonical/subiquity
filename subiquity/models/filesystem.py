@@ -239,10 +239,11 @@ def round_raid_size(min_size):
     return min_size - data_offset
 
 
+# This this is tested against reality in ./scripts/get-raid-sizes.py
 def get_raid_size(level, devices):
-    min_size = round_raid_size(min(dev.size for dev in devices))
     if len(devices) == 0:
         return 0
+    min_size = round_raid_size(min(dev.size for dev in devices))
     if min_size <= 0:
         return 0
     if level == "raid0":
