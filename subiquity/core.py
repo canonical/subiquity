@@ -17,8 +17,6 @@ import logging
 import os
 import platform
 
-import urwid
-
 from subiquitycore.core import Application
 
 from subiquity.models.subiquity import SubiquityModel
@@ -45,8 +43,6 @@ installed system will be mounted at /target.""")
 
 
 class Subiquity(Application):
-
-    signals = ['debug-shell-exited']
 
     snapd_socket_path = '/run/snapd.socket'
 
@@ -127,8 +123,5 @@ class Subiquity(Application):
             os.system("clear")
             print(DEBUG_SHELL_INTRO)
 
-        def _after():
-            urwid.emit_signal(self, 'debug-shell-exited')
-
         self.run_command_in_foreground(
-            "bash", before_hook=_before, after_hook=_after, cwd='/')
+            "bash", before_hook=_before, cwd='/')
