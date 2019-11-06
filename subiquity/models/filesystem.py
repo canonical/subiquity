@@ -218,14 +218,28 @@ def dehumanize_size(size):
     return num * mult // div
 
 
-# This is a guess!
-RAID_OVERHEAD = 8 * (1 << 20)
-
-
 def get_raid_size(level, devices):
     if len(devices) == 0:
         return 0
-    min_size = min(dev.size for dev in devices) - RAID_OVERHEAD
+    # The calculation of how much of a device mdadm uses for raid is a
+    # touch ridiculous. What follows is a translation of the code at:
+    # https://git.kernel.org/pub/scm/utils/mdadm/mdadm.git/tree/super1.c?h=mdadm-4.1&id=20e8fe52e7190b3ffda127566852eac2eb7fa1f7#n2770
+    # (note that that calculation is in terms of 512-byte sectors and
+    # this one is in bytes).
+    #
+    # This makes assumptions about the defaults mdadm uses but mostly
+    # that the default metadata version is 1.2, and other formats use
+    # less space.
+    min_size = min(dev.size for dev in devices)
+    bmspace = 128*1024
+    headroom = 128*1024*1024
+    while (headroom << 10) > min_size and headroom > 2*1024*1024:
+        headroom >>= 1
+    # mdadm's Create() can round things a little more so, to be
+    # pessimistic, assume another megabyte gets wasted somewhere.
+    data_offset = align_up(12*1024 + bmspace + headroom) + 1024*1024
+    log.debug("get_raid_size: adjusting for %s bytes of overhead")
+    min_size -= data_offset
     if min_size <= 0:
         return 0
     if level == "raid0":
@@ -233,9 +247,9 @@ def get_raid_size(level, devices):
     elif level == "raid1":
         return min_size
     elif level == "raid5":
-        return (min_size - RAID_OVERHEAD) * (len(devices) - 1)
+        return min_size * (len(devices) - 1)
     elif level == "raid6":
-        return (min_size - RAID_OVERHEAD) * (len(devices) - 2)
+        return min_size * (len(devices) - 2)
     elif level == "raid10":
         return min_size * (len(devices) // 2)
     else:
@@ -1246,6 +1260,10 @@ class FilesystemModel(object):
         emitted_ids = set()
 
         def emit(obj):
+            if isinstance(obj, Raid):
+                log.debug(
+                    "FilesystemModel: estimated size of %s %s is %s",
+                    obj.raidlevel, obj.name, obj.size)
             r.append(asdict(obj))
             emitted_ids.add(obj.id)
 
