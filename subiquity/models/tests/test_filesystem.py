@@ -24,6 +24,7 @@ from subiquity.models.filesystem import (
     FilesystemModel,
     humanize_size,
     Partition,
+    round_raid_size,
     )
 
 
@@ -103,6 +104,12 @@ class TestDehumanizeSize(unittest.TestCase):
                     self.fail(
                         "dehumanize_size({!r}) did not error".format(input))
                 self.assertEqual(expected_error, actual_error)
+
+
+class TestRoundRaidSize(unittest.TestCase):
+
+    def test_lp1816777(self):
+        self.assertLessEqual(round_raid_size(500107862016), 499972571136)
 
 
 FakeStorageInfo = namedtuple(

@@ -218,9 +218,7 @@ def dehumanize_size(size):
     return num * mult // div
 
 
-def get_raid_size(level, devices):
-    if len(devices) == 0:
-        return 0
+def round_raid_size(min_size):
     # The calculation of how much of a device mdadm uses for raid is a
     # touch ridiculous. What follows is a translation of the code at:
     # https://git.kernel.org/pub/scm/utils/mdadm/mdadm.git/tree/super1.c?h=mdadm-4.1&id=20e8fe52e7190b3ffda127566852eac2eb7fa1f7#n2770
@@ -230,7 +228,6 @@ def get_raid_size(level, devices):
     # This makes assumptions about the defaults mdadm uses but mostly
     # that the default metadata version is 1.2, and other formats use
     # less space.
-    min_size = min(dev.size for dev in devices)
     bmspace = 128*1024
     headroom = 128*1024*1024
     while (headroom << 10) > min_size and headroom > 2*1024*1024:
@@ -239,7 +236,13 @@ def get_raid_size(level, devices):
     # pessimistic, assume another megabyte gets wasted somewhere.
     data_offset = align_up(12*1024 + bmspace + headroom) + 1024*1024
     log.debug("get_raid_size: adjusting for %s bytes of overhead")
-    min_size -= data_offset
+    return min_size - data_offset
+
+
+def get_raid_size(level, devices):
+    min_size = round_raid_size(min(dev.size for dev in devices))
+    if len(devices) == 0:
+        return 0
     if min_size <= 0:
         return 0
     if level == "raid0":
