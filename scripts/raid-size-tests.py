@@ -9,6 +9,7 @@
 
 import atexit
 import os
+import random
 import shutil
 import subprocess
 import sys
@@ -18,6 +19,7 @@ import uuid
 import attr
 
 from subiquity.models.filesystem import (
+    align_down,
     dehumanize_size,
     get_raid_size,
     humanize_size,
@@ -71,13 +73,14 @@ def create_devices_for_sizes(sizes):
 
 
 def create_raid(level, images):
-    name = '/dev/md/{}'.format(uuid.uuid4())
+    name = '/dev/md/test-{}'.format(uuid.uuid4())
     cmd = [
         'mdadm',
         '--verbose',
         '--create',
         '--metadata', 'default',
         '--level', level,
+        '--run',
         '-n', str(len(images)),
         '--assume-clean',
         name,
@@ -114,6 +117,8 @@ def verify_size_ok(level, sizes):
             level, sz , calc_size, real_size), end=' ')
         if calc_size > real_size:
             print("BAAAAAAAAAAAD", real_size - calc_size)
+            print(raid)
+            input('waiting: ')
         else:
             print("OK by", real_size - calc_size)
             r = True
@@ -131,6 +136,11 @@ try:
             for count in range(2, 10):
                 if count >= level.min_devices:
                     if not verify_size_ok(level.value, [size]*count):
+                        fails += 1
+                    if not verify_size_ok(level.value, [align_down(random.randrange(size, 10*size))]*count):
+                        fails += 1
+                    sizes = [align_down(random.randrange(size, 10*size)) for _ in range(count)]
+                    if not verify_size_ok(level.value, sizes):
                         fails += 1
 finally:
     run(['umount', '-l', tmpdir])

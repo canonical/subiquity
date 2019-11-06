@@ -218,36 +218,57 @@ def dehumanize_size(size):
     return num * mult // div
 
 
-def round_raid_size(min_size):
+DEFAULT_CHUNK = 512
+
+
+def calculate_data_offset(devsize):
+    devsize >>= 9  # convert to sectors
+
+    devsize = align_down(devsize, DEFAULT_CHUNK)
     # The calculation of how much of a device mdadm uses for raid is a
     # touch ridiculous. What follows is a translation of the code at:
     # https://git.kernel.org/pub/scm/utils/mdadm/mdadm.git/tree/super1.c?h=mdadm-4.1&id=20e8fe52e7190b3ffda127566852eac2eb7fa1f7#n2770
-    # (note that that calculation is in terms of 512-byte sectors and
-    # this one is in bytes).
+    # (note that that calculations are in terms of 512-byte sectors).
     #
     # This makes assumptions about the defaults mdadm uses but mostly
     # that the default metadata version is 1.2, and other formats use
     # less space.
-    bmspace = 128*1024
-    headroom = 128*1024*1024
-    while (headroom << 10) > min_size and headroom > 2*1024*1024:
+
+    # conversion of choose_bm_space:
+    if devsize < 64*2:
+        bmspace = 0
+    elif devsize - 64*2 >= 200*1024*1024*2:
+        bmspace = 128*2
+    elif devsize - 4*2 > 8*1024*1024*2:
+        bmspace = 64*2
+    else:
+        bmspace = 4*2
+
+    headroom = 128*1024*2
+    while (headroom << 10) > devsize and headroom / 2 >= DEFAULT_CHUNK*2*2:
         headroom >>= 1
-    # mdadm's Create() can round things a little more so, to be
-    # pessimistic, assume another megabyte gets wasted somewhere.
-    data_offset = align_up(12*1024 + bmspace + headroom) + 1024*1024
-    log.debug("get_raid_size: adjusting for %s bytes of overhead")
-    return min_size - data_offset
+
+    data_offset = 12*2 + bmspace + headroom
+    log.debug(
+        "get_raid_size: adjusting for %s sectors of overhead", data_offset)
+    data_offset = align_up(data_offset, 2*1024)
+
+    data_offset <<= 9  # convert back to bytes
+
+    return data_offset
 
 
 # This this is tested against reality in ./scripts/get-raid-sizes.py
 def get_raid_size(level, devices):
     if len(devices) == 0:
         return 0
-    min_size = round_raid_size(min(dev.size for dev in devices))
+    data_offset = calculate_data_offset(devices[0].size)
+    sizes = [align_down(dev.size - data_offset) for dev in devices]
+    min_size = min(sizes)
     if min_size <= 0:
         return 0
     if level == "raid0":
-        return min_size * len(devices)
+        return sum(sizes)
     elif level == "raid1":
         return min_size
     elif level == "raid5":
