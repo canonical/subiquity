@@ -1,5 +1,12 @@
 #!/usr/bin/python3
 
+# The fine details of how big a RAID device ends up as a function of the sizes
+# of its components is somewhat hairier than one might think, with a certain
+# fraction of each component device being given over to metadata storage. This
+# script tests the estimates subiquity uses against reality by creating actual
+# raid devices (backed by sparse files in a tmpfs) and comparing their sizes
+# with the estimates. It must be run as root.
+
 import atexit
 import os
 import shutil
@@ -126,7 +133,7 @@ try:
                     if not verify_size_ok(level.value, [size]*count):
                         fails += 1
 finally:
-    run(['umount', tmpdir])
+    run(['umount', '-l', tmpdir])
 
 if fails > 0:
     print("{} fails".format(fails))
