@@ -104,5 +104,5 @@ parts:
     stage-packages: [libc6, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
     source: https://github.com/CanonicalLtd/probert.git
     source-type: git
-    source-commit: b697ab779e7e056301e779f4708a9f1ce51b0027
+    source-commit: ce784ff4dfe8865b271092bef81feb46d2595c0d
     requirements: requirements.txt
