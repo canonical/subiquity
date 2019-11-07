@@ -119,7 +119,7 @@ def verify_size_ok(level, sizes):
             print("exactly right!")
             r = True
         else:
-            print("underestimated size by", real_size - calc_size)
+            print("subiquity wasted space", real_size - calc_size)
             r = True
     finally:
         cleanup()

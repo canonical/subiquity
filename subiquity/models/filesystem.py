@@ -235,8 +235,10 @@ DEFAULT_CHUNK = 512
 # devices vary, which is not normal but also not something we prevent).
 #
 # All this is tested against reality in ./scripts/get-raid-sizes.py
-def calculate_data_offset(devsize):
-    devsize >>= 9  # convert to sectors
+def calculate_data_offset_bytes(devsize):
+    # Convert to sectors to make it easier to compare this code to mdadm's (we
+    # convert back at the end)
+    devsize >>= 9
 
     devsize = align_down(devsize, DEFAULT_CHUNK)
 
@@ -260,9 +262,8 @@ def calculate_data_offset(devsize):
         "get_raid_size: adjusting for %s sectors of overhead", data_offset)
     data_offset = align_up(data_offset, 2*1024)
 
-    data_offset <<= 9  # convert back to bytes
-
-    return data_offset
+    # convert back to bytes
+    return data_offset << 9
 
 
 def raid_device_sort(devices):
@@ -277,7 +278,7 @@ def get_raid_size(level, devices):
     if len(devices) == 0:
         return 0
     devices = raid_device_sort(devices)
-    data_offset = calculate_data_offset(devices[0].size)
+    data_offset = calculate_data_offset_bytes(devices[0].size)
     sizes = [align_down(dev.size - data_offset) for dev in devices]
     min_size = min(sizes)
     if min_size <= 0:
