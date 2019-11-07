@@ -7,16 +7,13 @@
 # raid devices (backed by sparse files in a tmpfs) and comparing their sizes
 # with the estimates. It must be run as root.
 
-import atexit
 import os
 import random
-import shutil
 import subprocess
 import sys
 import tempfile
 import uuid
 
-import attr
 
 from subiquity.models.filesystem import (
     align_down,
@@ -24,6 +21,9 @@ from subiquity.models.filesystem import (
     get_raid_size,
     humanize_size,
     raidlevels,
+    )
+from subiquity.models.tests.test_filesystem import (
+    FakeDev,
     )
 
 
@@ -94,11 +94,6 @@ def get_real_raid_size(raid):
     return int(subprocess.run(
         ['blockdev', '--getsize64', raid],
         stdout=subprocess.PIPE, encoding='ascii').stdout.strip())
-
-
-@attr.s
-class FakeDev:
-    size = attr.ib()
 
 
 def verify_size_ok(level, sizes):

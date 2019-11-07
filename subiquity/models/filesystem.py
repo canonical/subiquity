@@ -258,10 +258,15 @@ def calculate_data_offset(devsize):
     return data_offset
 
 
+def raid_device_sort(devices):
+    return sorted(devices, key=lambda d: d.id)
+
+
 # This this is tested against reality in ./scripts/get-raid-sizes.py
 def get_raid_size(level, devices):
     if len(devices) == 0:
         return 0
+    devices = raid_device_sort(devices)
     data_offset = calculate_data_offset(devices[0].size)
     sizes = [align_down(dev.size - data_offset) for dev in devices]
     min_size = min(sizes)
@@ -893,6 +898,13 @@ class Raid(_Device):
     name = attr.ib()
     raidlevel = attr.ib(converter=lambda x: raidlevels_by_value[x].value)
     devices = attributes.reflist(backlink="_constructed_device")
+
+    def serialize_devices(self):
+        # Surprisingly, the order of devices passed to mdadm --create
+        # matters (see get_raid_size) so we sort devices here the same
+        # way get_raid_size does.
+        return [d.id for d in raid_device_sort(self.devices)]
+
     spare_devices = attributes.reflist(backlink="_constructed_device")
 
     preserve = attr.ib(default=False)

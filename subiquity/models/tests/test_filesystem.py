@@ -19,6 +19,7 @@ import unittest
 import attr
 
 from subiquity.models.filesystem import (
+    attributes,
     Bootloader,
     dehumanize_size,
     DeviceAction,
@@ -108,13 +109,16 @@ class TestDehumanizeSize(unittest.TestCase):
                 self.assertEqual(expected_error, actual_error)
 
 
+@attr.s
+class FakeDev:
+
+    size = attr.ib()
+    id = attributes.idfield("fakedev")
+
+
 class TestRoundRaidSize(unittest.TestCase):
 
     def test_lp1816777(self):
-
-        @attr.s
-        class FakeDev:
-            size = attr.ib()
 
         self.assertLessEqual(
             get_raid_size("raid1", [FakeDev(500107862016)]*2),
