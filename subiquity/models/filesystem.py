@@ -221,18 +221,24 @@ def dehumanize_size(size):
 DEFAULT_CHUNK = 512
 
 
+# The calculation of how much of a device mdadm uses for raid is more than a
+# touch ridiculous. What follows is a translation of the code at:
+# https://git.kernel.org/pub/scm/utils/mdadm/mdadm.git/tree/super1.c,
+# specifically choose_bm_space and the end of validate_geometry1. Note that
+# that calculations are in terms of 512-byte sectors.
+#
+# We make some assumptions about the defaults mdadm uses but mostly that the
+# default metadata version is 1.2, and other formats use less space.
+#
+# Note that data_offset is computed for the first disk mdadm examines and then
+# used for all devices, so the order matters! (Well, if the size of the
+# devices vary, which is not normal but also not something we prevent).
+#
+# All this is tested against reality in ./scripts/get-raid-sizes.py
 def calculate_data_offset(devsize):
     devsize >>= 9  # convert to sectors
 
     devsize = align_down(devsize, DEFAULT_CHUNK)
-    # The calculation of how much of a device mdadm uses for raid is a
-    # touch ridiculous. What follows is a translation of the code at:
-    # https://git.kernel.org/pub/scm/utils/mdadm/mdadm.git/tree/super1.c?h=mdadm-4.1&id=20e8fe52e7190b3ffda127566852eac2eb7fa1f7#n2770
-    # (note that that calculations are in terms of 512-byte sectors).
-    #
-    # This makes assumptions about the defaults mdadm uses but mostly
-    # that the default metadata version is 1.2, and other formats use
-    # less space.
 
     # conversion of choose_bm_space:
     if devsize < 64*2:
@@ -244,6 +250,7 @@ def calculate_data_offset(devsize):
     else:
         bmspace = 4*2
 
+    # From the end of validate_geometry1, assuming metadata 1.2.
     headroom = 128*1024*2
     while (headroom << 10) > devsize and headroom / 2 >= DEFAULT_CHUNK*2*2:
         headroom >>= 1
@@ -259,10 +266,13 @@ def calculate_data_offset(devsize):
 
 
 def raid_device_sort(devices):
+    # Because the device order matters to mdadm, we sort consistently but
+    # arbitrarily when computing the size and when rendering the config (so
+    # curtin passes the devices to mdadm in the order we calculate the size
+    # for)
     return sorted(devices, key=lambda d: d.id)
 
 
-# This this is tested against reality in ./scripts/get-raid-sizes.py
 def get_raid_size(level, devices):
     if len(devices) == 0:
         return 0
