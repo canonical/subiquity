@@ -16,12 +16,16 @@
 from collections import namedtuple
 import unittest
 
+import attr
+
 from subiquity.models.filesystem import (
+    attributes,
     Bootloader,
     dehumanize_size,
     DeviceAction,
     Disk,
     FilesystemModel,
+    get_raid_size,
     humanize_size,
     Partition,
     )
@@ -103,6 +107,22 @@ class TestDehumanizeSize(unittest.TestCase):
                     self.fail(
                         "dehumanize_size({!r}) did not error".format(input))
                 self.assertEqual(expected_error, actual_error)
+
+
+@attr.s
+class FakeDev:
+
+    size = attr.ib()
+    id = attributes.idfield("fakedev")
+
+
+class TestRoundRaidSize(unittest.TestCase):
+
+    def test_lp1816777(self):
+
+        self.assertLessEqual(
+            get_raid_size("raid1", [FakeDev(500107862016)]*2),
+            499972571136)
 
 
 FakeStorageInfo = namedtuple(

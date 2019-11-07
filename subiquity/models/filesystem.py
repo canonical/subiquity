@@ -218,24 +218,79 @@ def dehumanize_size(size):
     return num * mult // div
 
 
-# This is a guess!
-RAID_OVERHEAD = 8 * (1 << 20)
+DEFAULT_CHUNK = 512
+
+
+# The calculation of how much of a device mdadm uses for raid is more than a
+# touch ridiculous. What follows is a translation of the code at:
+# https://git.kernel.org/pub/scm/utils/mdadm/mdadm.git/tree/super1.c,
+# specifically choose_bm_space and the end of validate_geometry1. Note that
+# that calculations are in terms of 512-byte sectors.
+#
+# We make some assumptions about the defaults mdadm uses but mostly that the
+# default metadata version is 1.2, and other formats use less space.
+#
+# Note that data_offset is computed for the first disk mdadm examines and then
+# used for all devices, so the order matters! (Well, if the size of the
+# devices vary, which is not normal but also not something we prevent).
+#
+# All this is tested against reality in ./scripts/get-raid-sizes.py
+def calculate_data_offset_bytes(devsize):
+    # Convert to sectors to make it easier to compare this code to mdadm's (we
+    # convert back at the end)
+    devsize >>= 9
+
+    devsize = align_down(devsize, DEFAULT_CHUNK)
+
+    # conversion of choose_bm_space:
+    if devsize < 64*2:
+        bmspace = 0
+    elif devsize - 64*2 >= 200*1024*1024*2:
+        bmspace = 128*2
+    elif devsize - 4*2 > 8*1024*1024*2:
+        bmspace = 64*2
+    else:
+        bmspace = 4*2
+
+    # From the end of validate_geometry1, assuming metadata 1.2.
+    headroom = 128*1024*2
+    while (headroom << 10) > devsize and headroom / 2 >= DEFAULT_CHUNK*2*2:
+        headroom >>= 1
+
+    data_offset = 12*2 + bmspace + headroom
+    log.debug(
+        "get_raid_size: adjusting for %s sectors of overhead", data_offset)
+    data_offset = align_up(data_offset, 2*1024)
+
+    # convert back to bytes
+    return data_offset << 9
+
+
+def raid_device_sort(devices):
+    # Because the device order matters to mdadm, we sort consistently but
+    # arbitrarily when computing the size and when rendering the config (so
+    # curtin passes the devices to mdadm in the order we calculate the size
+    # for)
+    return sorted(devices, key=lambda d: d.id)
 
 
 def get_raid_size(level, devices):
     if len(devices) == 0:
         return 0
-    min_size = min(dev.size for dev in devices) - RAID_OVERHEAD
+    devices = raid_device_sort(devices)
+    data_offset = calculate_data_offset_bytes(devices[0].size)
+    sizes = [align_down(dev.size - data_offset) for dev in devices]
+    min_size = min(sizes)
     if min_size <= 0:
         return 0
     if level == "raid0":
-        return min_size * len(devices)
+        return sum(sizes)
     elif level == "raid1":
         return min_size
     elif level == "raid5":
-        return (min_size - RAID_OVERHEAD) * (len(devices) - 1)
+        return min_size * (len(devices) - 1)
     elif level == "raid6":
-        return (min_size - RAID_OVERHEAD) * (len(devices) - 2)
+        return min_size * (len(devices) - 2)
     elif level == "raid10":
         return min_size * (len(devices) // 2)
     else:
@@ -854,6 +909,13 @@ class Raid(_Device):
     name = attr.ib()
     raidlevel = attr.ib(converter=lambda x: raidlevels_by_value[x].value)
     devices = attributes.reflist(backlink="_constructed_device")
+
+    def serialize_devices(self):
+        # Surprisingly, the order of devices passed to mdadm --create
+        # matters (see get_raid_size) so we sort devices here the same
+        # way get_raid_size does.
+        return [d.id for d in raid_device_sort(self.devices)]
+
     spare_devices = attributes.reflist(backlink="_constructed_device")
 
     preserve = attr.ib(default=False)
@@ -1246,6 +1308,10 @@ class FilesystemModel(object):
         emitted_ids = set()
 
         def emit(obj):
+            if isinstance(obj, Raid):
+                log.debug(
+                    "FilesystemModel: estimated size of %s %s is %s",
+                    obj.raidlevel, obj.name, obj.size)
             r.append(asdict(obj))
             emitted_ids.add(obj.id)
 
