@@ -129,7 +129,7 @@ def verify_size_ok(level, sizes):
 fails = 0
 run(['mount', '-t', 'tmpfs', 'tmpfs', tmpdir])
 try:
-    for size in '1G', '10G', '100G', '1T', '10T', '100T':
+    for size in '1G', '10G', '100G', '1T', '10T':
         size = dehumanize_size(size)
         for level in raidlevels:
             for count in range(2, 10):
