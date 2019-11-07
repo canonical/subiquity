@@ -112,10 +112,14 @@ def verify_size_ok(level, sizes):
             level, sz , calc_size, real_size), end=' ')
         if calc_size > real_size:
             print("BAAAAAAAAAAAD", real_size - calc_size)
-            print(raid)
-            input('waiting: ')
+            if os.environ.get('DEBUG'):
+                print(raid)
+                input('waiting: ')
+        elif calc_size == real_size:
+            print("exactly right!")
+            r = True
         else:
-            print("OK by", real_size - calc_size)
+            print("underestimated size by", real_size - calc_size)
             r = True
     finally:
         cleanup()
