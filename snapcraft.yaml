@@ -49,6 +49,7 @@ parts:
       - libsystemd0
       - iso-codes
       - lsb-release
+      - python3-apport
       - python3-distutils-extra
       - python3-urwid
       - python3-requests

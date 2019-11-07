@@ -109,7 +109,7 @@ def main():
         LOGDIR = ".subiquity"
         if opts.snaps_from_examples is None:
             opts.snaps_from_examples = True
-    setup_logger(dir=LOGDIR)
+    LOGFILE = setup_logger(dir=LOGDIR)
 
     logger = logging.getLogger('subiquity')
     logger.info("Starting SUbiquity v{}".format(VERSION))
@@ -141,6 +141,8 @@ def main():
             opts.answers = None
 
     subiquity_interface = Subiquity(opts, block_log_dir)
+
+    subiquity_interface.note_file_for_apport("InstallerLog", LOGFILE)
 
     subiquity_interface.run()
 

@@ -25,6 +25,7 @@ import pyudev
 from subiquitycore.controller import BaseController
 from subiquitycore.utils import run_command
 
+from subiquity.controllers.error import ErrorReportKind
 from subiquity.models.filesystem import (
     align_up,
     Bootloader,
@@ -67,6 +68,11 @@ class Probe:
         self.cb = cb
         self.state = ProbeState.NOT_STARTED
         self.result = None
+        if restricted:
+            self.kind = ErrorReportKind.DISK_PROBE_FAIL
+        else:
+            self.kind = ErrorReportKind.BLOCK_PROBE_FAIL
+        self.crash_report = None
 
     def start(self):
         block_discover_log.debug(
@@ -101,7 +107,8 @@ class Probe:
         except Exception:
             block_discover_log.exception(
                 "probing failed restricted=%s", self.restricted)
-            # Should make a crash report here!
+            self.crash_report = self.controller.app.make_apport_report(
+                self.kind, "block probing")
             self.state = ProbeState.FAILED
         else:
             block_discover_log.exception(
@@ -112,7 +119,8 @@ class Probe:
     def _check_timeout(self, loop, ud):
         if self.state != ProbeState.PROBING:
             return
-        # Should make a crash report here!
+        self.crash_report = self.controller.app.make_apport_report(
+            self.kind, "block probing timed out")
         block_discover_log.exception(
             "probing timed out restricted=%s", self.restricted)
         self.state = ProbeState.FAILED
@@ -187,16 +195,21 @@ class FilesystemController(BaseController):
             return
         if probe.restricted:
             fname = 'probe-data-restricted.json'
+            key = "ProbeDataRestricted"
         else:
             fname = 'probe-data.json'
-        with open(os.path.join(self.app.block_log_dir, fname), 'w') as fp:
+            key = "ProbeData"
+        fpath = os.path.join(self.app.block_log_dir, fname)
+        with open(fpath, 'w') as fp:
             json.dump(probe.result, fp, indent=4)
+        self.app.note_file_for_apport(key, fpath)
         try:
             self.model.load_probe_data(probe.result)
         except Exception:
             block_discover_log.exception(
                 "load_probe_data failed restricted=%s", probe.restricted)
-            # Should make a crash report here!
+            probe.crash_report = self.app.make_apport_report(
+                probe.kind, "loading probe data")
             if not probe.restricted:
                 self._start_probe(restricted=True)
             else:

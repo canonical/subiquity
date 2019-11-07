@@ -26,14 +26,21 @@ import tempfile
 import time
 import traceback
 
+from curtin.commands.install import (
+    ERROR_TARFILE,
+    INSTALL_LOG,
+    )
+
 import urwid
-import yaml
 
 from systemd import journal
+
+import yaml
 
 from subiquitycore import utils
 from subiquitycore.controller import BaseController
 
+from subiquity.controllers.error import ErrorReportKind
 from subiquity.ui.views.installprogress import ProgressView
 
 
@@ -155,7 +162,7 @@ class StateMachine:
             raise
         except Exception:
             log.debug("%s failed", name)
-            self.controller.curtin_error(traceback.format_exc())
+            self.controller.curtin_error()
         else:
             log.debug("%s completed", name)
             if 'success' in self._transitions[name]:
@@ -245,12 +252,13 @@ class InstallProgressController(BaseController):
     def snap_config_done(self):
         self._step_done('snap')
 
-    def curtin_error(self, log_text=None):
-        log.debug('curtin_error: %s', log_text)
+    def curtin_error(self):
         self.install_state = InstallState.ERROR
+        self.app.make_apport_report(
+            ErrorReportKind.INSTALL_FAIL, "install failed")
         self.progress_view.spinner.stop()
-        if log_text:
-            self.progress_view.add_log_line(log_text)
+        if sys.exc_info()[0] is not None:
+            self.progress_view.add_log_line(traceback.format_exc())
         self.progress_view.set_status(('info_error',
                                        _("An error has occurred")))
         self.progress_view.show_complete(True)
@@ -333,6 +341,10 @@ class InstallProgressController(BaseController):
         ident = self._event_syslog_identifier
         self._write_config(config_location,
                            self.model.render(syslog_identifier=ident))
+
+        self.app.note_file_for_apport("CurtinConfig", config_location)
+        self.app.note_file_for_apport("CurtinLog", INSTALL_LOG)
+        self.app.note_file_for_apport("CurtinErrors", ERROR_TARFILE)
 
         return curtin_cmd
 
