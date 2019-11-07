@@ -181,7 +181,7 @@ class ErrorReportStretchy(Stretchy):
                     widgets.extend([Text(""), self.btns[b]])
         else:
             widgets.extend([
-                Text(),
+                Text(""),
                 self.btns['close'],
                 ])
 

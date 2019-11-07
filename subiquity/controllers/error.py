@@ -64,7 +64,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
 
     @classmethod
     def new(cls, controller, kind):
-        base = "installer.{:.9f}.{}".format(time.time(), kind.name.lower())
+        base = "{:.9f}.{}".format(time.time(), kind.name.lower())
         crash_file = open(
             os.path.join(controller.crash_directory, base + ".crash"),
             'wb')
@@ -204,6 +204,11 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 root = parts[3]
                 break
         else:
+            if self.controller.opts.dry_run:
+                path = ('install-logs/2019-11-06.0/crash/' +
+                        self.base +
+                        '.crash')
+                return "casper-rw", path
             return None, None
         import pyudev
         c = pyudev.Context()
