@@ -107,7 +107,7 @@ reconfiguring the system's block devices manually.
     ErrorReportKind.INSTALL_FAIL: (_("""
 Do you want to try starting the installation again?
 """), ['restart', 'close']),
-    ErrorReportKind.UI: (_("Close this dialog to continue."), ['close']),
+    ErrorReportKind.UI: (_("Select continue to try again."), ['continue']),
     ErrorReportKind.UNKNOWN: ("", ['close']),
 }
 
@@ -152,6 +152,17 @@ class ErrorReportStretchy(Stretchy):
 
         if self.report.state == ErrorReportState.DONE:
             widgets.append(self.btns['view'])
+
+            fs_label, fs_loc = self.report.persistent_details
+            if fs_label is not None:
+                location_text = _(
+                    "The error report has been saved to\n\n  {loc}\n\non the "
+                    "filesystem with label {label!r}.").format(
+                        loc=fs_loc, label=fs_label)
+                widgets.extend([
+                    Text(""),
+                    Text(location_text),
+                    ])
         else:
             text, spin = error_report_state_descriptions[self.report.state]
             widgets.append(Text(rewrap(_(text))))
@@ -161,27 +172,16 @@ class ErrorReportStretchy(Stretchy):
                     Text(""),
                     self.spinner])
 
-        fs_label, fs_loc = self.report.persistent_details
-        if fs_label is not None:
-            location_text = _(
-                "The error report has been saved to\n\n  {loc}\n\non the "
-                "filesystem with label {label!r}.").format(
-                    loc=fs_loc, label=fs_label)
-            widgets.extend([
-                Text(""),
-                Text(location_text),
-                ])
-
-        widgets.append(Text(""))
-
         if self.interrupting:
-            text, btns = error_report_options[self.report.kind]
-            if text:
-                widgets.extend([Text(rewrap(_(text))), Text("")])
-            for b in btns:
-                widgets.append(self.btns[b])
+            if self.report.state != ErrorReportState.INCOMPLETE:
+                text, btns = error_report_options[self.report.kind]
+                if text:
+                    widgets.extend([Text(""), Text(rewrap(_(text)))])
+                for b in btns:
+                    widgets.extend([Text(""), self.btns[b]])
         else:
             widgets.extend([
+                Text(),
                 self.btns['close'],
                 ])
 
@@ -190,8 +190,9 @@ class ErrorReportStretchy(Stretchy):
     def _report_changed(self):
         self.pile.contents[:] = [
             (w, self.pile.options('pack')) for w in self._pile_elements()]
-        while not self.pile.focus.selectable():
-            self.pile.focus_position += 1
+        if self.pile.selectable():
+            while not self.pile.focus.selectable():
+                self.pile.focus_position += 1
 
     def debug_shell(self, sender):
         self.parent.remove_overlay()
