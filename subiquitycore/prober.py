@@ -15,8 +15,11 @@
 
 import logging
 import yaml
-from probert.network import (StoredDataObserver,
-                             UdevObserver)
+
+from probert.network import (
+    StoredDataObserver,
+    UdevObserver,
+    )
 from probert.storage import Storage
 
 log = logging.getLogger('subiquitycore.prober')
@@ -24,18 +27,14 @@ log = logging.getLogger('subiquitycore.prober')
 
 class Prober():
     def __init__(self, opts):
-        self.opts = opts
-
-        self.probe_data = {}
         self.saved_config = None
-
-        if self.opts.machine_config:
-            with open(self.opts.machine_config) as mc:
-                self.probe_data = self.saved_config = yaml.safe_load(mc)
+        if opts.machine_config:
+            with open(opts.machine_config) as mc:
+                self.saved_config = yaml.safe_load(mc)
         log.debug('Prober() init finished, data:{}'.format(self.saved_config))
 
     def probe_network(self, receiver):
-        if self.opts.machine_config:
+        if self.saved_config is not None:
             observer = StoredDataObserver(
                 self.saved_config['network'], receiver)
         else:
@@ -43,17 +42,11 @@ class Prober():
         return observer, observer.start()
 
     def get_storage(self, probe_types=None):
-        ''' Load a StorageInfo class.  Probe if it's not present '''
-        if 'storage' not in self.probe_data:
-            log.debug('get_storage: no storage in probe_data, fetching')
-            storage = Storage()
-            results = storage.probe(probe_types=probe_types)
-            self.probe_data['storage'] = results
-
-        if self.opts.machine_config is not None and probe_types is not None:
+        if self.saved_config is not None:
             r = self.saved_config['storage'].copy()
-            for k in self.saved_config['storage']:
-                if k not in probe_types:
-                    r[k] = {}
+            if probe_types is not None:
+                for k in self.saved_config['storage']:
+                    if k not in probe_types:
+                        r[k] = {}
             return r
-        return self.probe_data['storage']
+        return Storage().probe(probe_types=probe_types)
