@@ -197,7 +197,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         # findmnt(1).
         looking_for = os.path.abspath(
             os.path.normpath(self.controller.crash_directory))
-        for line in open('/proc/self/mountinfo'):
+        for line in open('/proc/self/mountinfo').readlines():
             parts = line.strip().split()
             if os.path.normpath(parts[4]) == looking_for:
                 devname = parts[9]
