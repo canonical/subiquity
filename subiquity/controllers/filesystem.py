@@ -108,7 +108,7 @@ class Probe:
             block_discover_log.exception(
                 "probing failed restricted=%s", self.restricted)
             self.crash_report = self.controller.app.make_apport_report(
-                self.kind, "block probing")
+                self.kind, "block probing", interrupt=False)
             self.state = ProbeState.FAILED
         else:
             block_discover_log.exception(
@@ -120,7 +120,7 @@ class Probe:
         if self.state != ProbeState.PROBING:
             return
         self.crash_report = self.controller.app.make_apport_report(
-            self.kind, "block probing timed out")
+            self.kind, "block probing timed out", interrupt=False)
         block_discover_log.exception(
             "probing timed out restricted=%s", self.restricted)
         self.state = ProbeState.FAILED
@@ -141,6 +141,7 @@ class FilesystemController(BaseController):
         self._cur_probe = None
         self._monitor = None
         self._udev_listen_handle = None
+        self._probes = {}
 
     def start(self):
         self._start_probe(restricted=False)
@@ -177,9 +178,10 @@ class FilesystemController(BaseController):
             log.debug("_udev_event %s %s", action, dev)
         self._start_probe(restricted=False)
 
-    def _start_probe(self, *, restricted):
-        self._cur_probe = Probe(self, restricted, 5.0, self._probe_done)
-        self._cur_probe.start()
+    def _start_probe(self, *, restricted=False):
+        p = Probe(self, restricted, 5.0, self._probe_done)
+        self._cur_probe = self._probes[restricted] = p
+        p.start()
 
     def _probe_done(self, probe):
         if probe is not self._cur_probe:
@@ -209,7 +211,7 @@ class FilesystemController(BaseController):
             block_discover_log.exception(
                 "load_probe_data failed restricted=%s", probe.restricted)
             probe.crash_report = self.app.make_apport_report(
-                probe.kind, "loading probe data")
+                probe.kind, "loading probe data", interrupt=False)
             if not probe.restricted:
                 self._start_probe(restricted=True)
             else:
@@ -227,15 +229,18 @@ class FilesystemController(BaseController):
             self.ui.set_body(SlowProbing(self))
         elif self._cur_probe.state == ProbeState.FAILED:
             self.ui.set_body(ProbingFailed(self))
+            self.ui.body.show_error()
         else:
             # Once we've shown the filesystem UI, we stop listening for udev
             # events as merging system changes with configuration the user has
             # performed would be tricky.  Possibly worth doing though! Just
             # not today.
             self.stop_listening_udev()
-            # Should display a message if self._cur_probe.restricted,
-            # i.e. full device probing failed.
             self.ui.set_body(GuidedFilesystemView(self))
+            if self._cur_probe.restricted:
+                pr = self._probes[False].crash_report
+                if pr is not None:
+                    self.app.show_error_report(pr)
             if self.answers['guided']:
                 self.guided(self.answers.get('guided-method', 'direct'))
             elif self.answers['manual']:

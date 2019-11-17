@@ -254,15 +254,15 @@ class InstallProgressController(BaseController):
 
     def curtin_error(self):
         self.install_state = InstallState.ERROR
-        self.app.make_apport_report(
-            ErrorReportKind.INSTALL_FAIL, "install failed")
+        crash_report = self.app.make_apport_report(
+            ErrorReportKind.INSTALL_FAIL, "install failed", interrupt=False)
         self.progress_view.spinner.stop()
         if sys.exc_info()[0] is not None:
             self.progress_view.add_log_line(traceback.format_exc())
         self.progress_view.set_status(('info_error',
                                        _("An error has occurred")))
-        self.progress_view.show_complete(True)
         self.start_ui()
+        self.progress_view.show_error(crash_report)
 
     def _bg_run_command_logged(self, cmd, **kwargs):
         cmd = ['systemd-cat', '--level-prefix=false',
