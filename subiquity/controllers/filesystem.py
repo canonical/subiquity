@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import select
+import sys
 import time
 
 import pyudev
@@ -144,12 +145,29 @@ class FilesystemController(BaseController):
         self._probes = {}
 
     def start(self):
-        self._start_probe(restricted=False)
+        self._start_probe(restricted=False, start=False)
+        target = self.app.base_model.target
+        if os.path.exists(target):
+            self.run_in_bg(self._bg_unmount, self._unmounted)
+        else:
+            self._cur_probe.start()
+
+    def _bg_unmount(self):
+        cmd = [
+            sys.executable, '-m', 'curtin', 'unmount',
+            '-t', self.app.base_model.target,
+            ]
+        if self.opts.dry_run:
+            cmd = ['sleep', 0.2]
+        run_command(cmd)
+
+    def _unmounted(self, fut):
         context = pyudev.Context()
         self._monitor = pyudev.Monitor.from_netlink(context)
         self._monitor.filter_by(subsystem='block')
         self._monitor.enable_receiving()
         self.start_listening_udev()
+        self._cur_probe.start()
 
     def start_listening_udev(self):
         self._udev_listen_handle = self.loop.watch_file(
@@ -178,10 +196,11 @@ class FilesystemController(BaseController):
             log.debug("_udev_event %s %s", action, dev)
         self._start_probe(restricted=False)
 
-    def _start_probe(self, *, restricted=False):
+    def _start_probe(self, *, restricted, start=True):
         p = Probe(self, restricted, 5.0, self._probe_done)
         self._cur_probe = self._probes[restricted] = p
-        p.start()
+        if start:
+            p.start()
 
     def _probe_done(self, probe):
         if probe is not self._cur_probe:
