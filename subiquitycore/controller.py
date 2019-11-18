@@ -26,11 +26,8 @@ class BaseController(ABC):
 
     signals = []
 
-    @classmethod
-    def _controller_name(cls):
-        return cls.__name__[:-len("Controller")]
-
     def __init__(self, app):
+        self.name = type(self).__name__[:-len("Controller")]
         self.ui = app.ui
         self.signal = app.signal
         self.opts = app.opts
@@ -47,7 +44,7 @@ class BaseController(ABC):
         self.loop = app.loop
         self.run_in_bg = app.run_in_bg
         self.app = app
-        self.answers = app.answers.get(self._controller_name(), {})
+        self.answers = app.answers.get(self.name, {})
 
     def register_signals(self):
         """Defines signals associated with controller from model."""
@@ -72,10 +69,7 @@ class BaseController(ABC):
 
     @property
     def showing(self):
-        cur_controller = self.app.cur_controller
-        while isinstance(cur_controller, RepeatedController):
-            cur_controller = cur_controller.orig
-        return cur_controller is self
+        return self.app.controllers.cur is self
 
     @abstractmethod
     def start_ui(self):
@@ -144,6 +138,7 @@ class BaseController(ABC):
 class RepeatedController(BaseController):
 
     def __init__(self, orig, index):
+        self.name = "{}-{}".format(orig.name, index)
         self.orig = orig
         self.index = index
 

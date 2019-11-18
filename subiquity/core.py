@@ -24,7 +24,6 @@ import apport.hookutils
 from subiquitycore.core import Application
 
 from subiquity.controllers.error import (
-    ErrorController,
     ErrorReportKind,
     )
 from subiquity.models.subiquity import SubiquityModel
@@ -83,6 +82,7 @@ class Subiquity(Application):
             "SSH",
             "SnapList",
             "InstallProgress",
+            "Error",  # does not have a UI
     ]
 
     def __init__(self, opts, block_log_dir):
@@ -119,7 +119,7 @@ class Subiquity(Application):
 
     def select_initial_screen(self, index):
         super().select_initial_screen(index)
-        for report in self.error_controller.reports:
+        for report in self.controllers.Error.reports:
             if report.kind == ErrorReportKind.UI and not report.seen:
                 log.debug("showing new error %r", report.base)
                 self.show_error_report(report)
@@ -163,14 +163,6 @@ class Subiquity(Application):
         self.run_command_in_foreground(
             "bash", before_hook=_before, cwd='/')
 
-    def load_controllers(self):
-        super().load_controllers()
-        self.error_controller = ErrorController(self)
-
-    def start_controllers(self):
-        super().start_controllers()
-        self.error_controller.start()
-
     def note_file_for_apport(self, key, path):
         self._apport_files.append((key, path))
 
@@ -181,7 +173,7 @@ class Subiquity(Application):
         log.debug("generating crash report")
 
         try:
-            report = self.error_controller.create_report(kind)
+            report = self.controllers.Error.create_report(kind)
         except Exception:
             log.exception("creating crash report failed")
             return

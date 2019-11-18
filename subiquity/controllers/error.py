@@ -32,6 +32,7 @@ import requests
 import urwid
 
 from subiquitycore.controller import BaseController
+from subiquitycore.core import Skip
 
 from subiquity.async_helpers import (
     run_in_thread,
@@ -357,7 +358,7 @@ class ErrorController(BaseController):
         return r
 
     def start_ui(self):
-        pass
+        raise Skip
 
     def cancel(self):
         pass
