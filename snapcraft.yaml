@@ -50,6 +50,7 @@ parts:
       - iso-codes
       - lsb-release
       - python3-apport
+      - python3-bson
       - python3-distutils-extra
       - python3-urwid
       - python3-requests
