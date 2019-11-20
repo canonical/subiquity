@@ -216,6 +216,13 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                     for_upload[k] = v
                 else:
                     log.debug("dropping %s of length %s", k, len(v))
+            if "CurtinLog" in self.pr:
+                logtail = []
+                for line in self.pr["CurtinLog"].splitlines():
+                    logtail.append(line.strip())
+                    while sum(map(len, logtail)) > 2048:
+                        logtail.pop(0)
+                for_upload["CurtinLogTail"] = "\n".join(logtail)
             data = bson.BSON().encode(for_upload)
             self.uploader._bg_update(0, len(data))
             headers = {
