@@ -208,7 +208,9 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 uploader._bg_update(uploader.bytes_sent + chunk_size)
 
         def _bg_upload():
-            for_upload = {}
+            for_upload = {
+                "Kind": self.kind.value
+                }
             for k, v in self.pr.items():
                 if len(v) < 1024 or k in {"Traceback", "ProcCpuinfoMinimal"}:
                     for_upload[k] = v

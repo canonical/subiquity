@@ -329,23 +329,27 @@ class InstallProgressController(BaseController):
 
         if self.opts.dry_run:
             config_location = os.path.join('.subiquity/', config_file_name)
+            log_location = '.subiquity/install.log'
             event_file = "examples/curtin-events.json"
             if 'install-fail' in self.debug_flags:
                 event_file = "examples/curtin-events-fail.json"
-            curtin_cmd = ["python3", "scripts/replay-curtin-log.py",
-                          event_file, self._event_syslog_identifier]
+            curtin_cmd = [
+                "python3", "scripts/replay-curtin-log.py", event_file,
+                self._event_syslog_identifier, log_location,
+                ]
         else:
             config_location = os.path.join('/var/log/installer',
                                            config_file_name)
             curtin_cmd = [sys.executable, '-m', 'curtin', '--showtrace', '-c',
                           config_location, 'install']
+            log_location = INSTALL_LOG
 
         ident = self._event_syslog_identifier
         self._write_config(config_location,
                            self.model.render(syslog_identifier=ident))
 
         self.app.note_file_for_apport("CurtinConfig", config_location)
-        self.app.note_file_for_apport("CurtinLog", INSTALL_LOG)
+        self.app.note_file_for_apport("CurtinLog", log_location)
         self.app.note_file_for_apport("CurtinErrors", ERROR_TARFILE)
 
         return curtin_cmd
