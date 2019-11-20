@@ -15,11 +15,19 @@ scale_factor = float(os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "4"))
 def time_for_entry(e):
     return int(e['__MONOTONIC_TIMESTAMP'])/1e6
 
+rc = 0
+
 def report(e):
+    global rc
     if e['SYSLOG_IDENTIFIER'].startswith("curtin_event"):
         e['SYSLOG_IDENTIFIER'] = event_identifier
         e['CODE_LINE'] = int(e['CODE_LINE'])
         journal.send(**e)
+        r = e.get("CURTIN_RESULT")
+        if r == "SUCCESS":
+            rc = 0
+        elif r == "FAIL":
+            rc = 1
     elif e['SYSLOG_IDENTIFIER'].startswith("curtin_log") and scale_factor < 10:
         print(e['MESSAGE'], flush=True)
 
@@ -30,13 +38,5 @@ for line in open(json_file):
         report(prev_ev)
         time.sleep(min((time_for_entry(ev) - time_for_entry(prev_ev)), 8)/scale_factor)
     prev_ev = ev
-rc = 0
-
-# See subiquitycore/controller.py for the other flags that can be in
-# SUBIQUITY_DEBUG.
-debug_flags = os.environ.get('SUBIQUITY_DEBUG', '').split(',')
-if 'install-fail' in debug_flags:
-    ev["CURTIN_RESULT"] = "FAILURE"
-    rc = 1
 report(ev)
 sys.exit(rc)
