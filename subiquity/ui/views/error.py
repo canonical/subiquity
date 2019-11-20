@@ -19,6 +19,7 @@ from urwid import (
     connect_signal,
     disconnect_signal,
     Padding,
+    ProgressBar,
     Text,
     )
 
@@ -37,6 +38,7 @@ from subiquitycore.ui.utils import (
     button_pile,
     ClickableIcon,
     Color,
+    disabled,
     rewrap,
     )
 from subiquitycore.ui.width import (
@@ -112,6 +114,11 @@ Do you want to try starting the installation again?
 }
 
 
+submit_text = _("""
+If you want to help improve the installer, you can send an error report.
+""")
+
+
 class ErrorReportStretchy(Stretchy):
 
     def __init__(self, app, parent, report, interrupting=True):
@@ -127,6 +134,9 @@ class ErrorReportStretchy(Stretchy):
                 _("Switch to a shell"), on_press=self.debug_shell),
             'restart': other_btn(
                 _("Restart the installer"), on_press=self.restart),
+            'submit': other_btn(
+                _("Send to Canonical"), on_press=self.submit),
+            'submitted': disabled(other_btn(_("Sent to Canonical"))),
             'view': other_btn(
                 _("View full report"), on_press=self.view_report),
             }
@@ -142,6 +152,20 @@ class ErrorReportStretchy(Stretchy):
         super().__init__("", [self.pile], 0, 0)
         connect_signal(self, 'closed', self.spinner.stop)
 
+    def pb(self, upload):
+        pb = ProgressBar(
+            normal='progress_incomplete',
+            complete='progress_complete',
+            current=upload.bytes_sent,
+            done=upload.bytes_to_send)
+
+        def _progress():
+            pb.done = upload.bytes_to_send
+            pb.current = upload.bytes_sent
+        connect_signal(upload, 'progress', _progress)
+
+        return pb
+
     def _pile_elements(self):
         widgets = [
             Text(rewrap(_(error_report_intros[self.report.kind]))),
@@ -152,6 +176,20 @@ class ErrorReportStretchy(Stretchy):
 
         if self.report.state == ErrorReportState.DONE:
             widgets.append(self.btns['view'])
+            widgets.append(Text(""))
+            widgets.append(Text(rewrap(_(submit_text))))
+            widgets.append(Text(""))
+
+            if self.report.uploader:
+                if self.upload_pb is None:
+                    self.upload_pb = self.pb(self.report.uploader)
+                widgets.append(self.upload_pb)
+            else:
+                if self.report.oops_id:
+                    widgets.append(self.btns['submitted'])
+                else:
+                    widgets.append(self.btns['submit'])
+                self.upload_pb = None
 
             fs_label, fs_loc = self.report.persistent_details
             if fs_label is not None:
@@ -205,6 +243,9 @@ class ErrorReportStretchy(Stretchy):
 
     def view_report(self, sender):
         self.app.run_command_in_foreground(["less", self.report.path])
+
+    def submit(self, sender):
+        self.report.upload()
 
     def opened(self):
         self.report.mark_seen()
