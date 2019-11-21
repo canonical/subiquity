@@ -176,7 +176,7 @@ class Subiquity(Application):
     def note_data_for_apport(self, key, value):
         self._apport_data.append((key, value))
 
-    def make_apport_report(self, kind, thing, *, interrupt, wait=False):
+    def make_apport_report(self, kind, thing, *, interrupt, wait=False, **kw):
         log.debug("generating crash report")
 
         try:
@@ -202,6 +202,8 @@ class Subiquity(Application):
             for key, path in apport_files:
                 apport.hookutils.attach_file_if_exists(report.pr, path, key)
             for key, value in apport_data:
+                report.pr[key] = value
+            for key, value in kw.items():
                 report.pr[key] = value
 
         report.add_info(_bg_attach_hook, wait)
