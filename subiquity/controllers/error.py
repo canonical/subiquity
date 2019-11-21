@@ -61,6 +61,7 @@ class Upload(metaclass=urwid.MetaSignals):
     bytes_to_send = attr.ib()
     bytes_sent = attr.ib(default=0)
     pipe_w = attr.ib(default=None)
+    cancelled = attr.ib(default=False)
 
     def start(self):
         self.pipe_w = self.controller.loop.watch_pipe(self._progress)
@@ -204,6 +205,9 @@ class ErrorReport(metaclass=urwid.MetaSignals):
 
         def chunk(data):
             for i in range(0, len(data), chunk_size):
+                if uploader.cancelled:
+                    log.debug("upload for %s cancelled", self.base)
+                    return
                 yield data[i:i+chunk_size]
                 uploader._bg_update(uploader.bytes_sent + chunk_size)
 

@@ -128,6 +128,8 @@ class ErrorReportStretchy(Stretchy):
         self.interrupting = interrupting
 
         self.btns = {
+            'cancel': other_btn(
+                _("Cancel upload"), on_press=self.cancel_upload),
             'close': close_btn(parent, _("Close report")),
             'continue': close_btn(parent, _("Continue")),
             'debug_shell': other_btn(
@@ -167,6 +169,11 @@ class ErrorReportStretchy(Stretchy):
         return pb
 
     def _pile_elements(self):
+        btns = self.btns.copy()
+
+        if self.report.uploader:
+            btns['continue'] = btns['close'] = btns['cancel']
+
         widgets = [
             Text(rewrap(_(error_report_intros[self.report.kind]))),
             Text(""),
@@ -175,7 +182,7 @@ class ErrorReportStretchy(Stretchy):
         self.spinner.stop()
 
         if self.report.state == ErrorReportState.DONE:
-            widgets.append(self.btns['view'])
+            widgets.append(btns['view'])
             widgets.append(Text(""))
             widgets.append(Text(rewrap(_(submit_text))))
             widgets.append(Text(""))
@@ -186,9 +193,9 @@ class ErrorReportStretchy(Stretchy):
                 widgets.append(self.upload_pb)
             else:
                 if self.report.oops_id:
-                    widgets.append(self.btns['submitted'])
+                    widgets.append(btns['submitted'])
                 else:
-                    widgets.append(self.btns['submit'])
+                    widgets.append(btns['submit'])
                 self.upload_pb = None
 
             fs_label, fs_loc = self.report.persistent_details
@@ -212,15 +219,15 @@ class ErrorReportStretchy(Stretchy):
 
         if self.interrupting:
             if self.report.state != ErrorReportState.INCOMPLETE:
-                text, btns = error_report_options[self.report.kind]
+                text, btn_names = error_report_options[self.report.kind]
                 if text:
                     widgets.extend([Text(""), Text(rewrap(_(text)))])
-                for b in btns:
-                    widgets.extend([Text(""), self.btns[b]])
+                for b in btn_names:
+                    widgets.extend([Text(""), btns[b]])
         else:
             widgets.extend([
                 Text(""),
-                self.btns['close'],
+                btns['close'],
                 ])
 
         return widgets
@@ -246,6 +253,11 @@ class ErrorReportStretchy(Stretchy):
 
     def submit(self, sender):
         self.report.upload()
+
+    def cancel_upload(self, sender):
+        self.report.uploader.cancelled = True
+        self.report.uploader = None
+        self._report_changed()
 
     def opened(self):
         self.report.mark_seen()
