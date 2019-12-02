@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import enum
 import json
 import logging
@@ -33,6 +32,11 @@ import requests
 import urwid
 
 from subiquitycore.controller import BaseController
+
+from subiquity.async_helpers import (
+    run_in_thread,
+    schedule_task,
+    )
 
 
 log = logging.getLogger('subiquity.controllers.error')
@@ -174,10 +178,8 @@ class ErrorReport(metaclass=urwid.MetaSignals):
     async def load(self):
         log.debug("loading report %s", self.base)
         # Load report from disk in background.
-        loop = asyncio.get_event_loop()
-
         try:
-            await loop.run_in_executor(None, self.pr.load, self._file)
+            await run_in_thread(self.pr.load, self._file)
         except Exception:
             log.exception("loading problem report failed")
             self.state = ErrorReportState.ERROR_LOADING
@@ -347,7 +349,7 @@ class ErrorController(BaseController):
             r = ErrorReport.from_file(self, path)
             self.reports.append(r)
             to_load.append(r)
-        self.app.schedule_task(self._load_reports(to_load))
+        schedule_task(self._load_reports(to_load))
 
     def create_report(self, kind):
         r = ErrorReport.new(self, kind)

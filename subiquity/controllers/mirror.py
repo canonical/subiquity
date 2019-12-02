@@ -19,6 +19,11 @@ import requests
 from xml.etree import ElementTree
 
 from subiquitycore.controller import BaseController
+
+from subiquity.async_helpers import (
+    run_in_thread,
+    schedule_task,
+    )
 from subiquity.ui.views.mirror import MirrorView
 
 log = logging.getLogger('subiquity.controllers.mirror')
@@ -48,11 +53,11 @@ class MirrorController(BaseController):
     def snapd_network_changed(self):
         if self.check_state != CheckState.DONE:
             self.check_state = CheckState.CHECKING
-            self.app.schedule_task(self.lookup())
+            schedule_task(self.lookup())
 
     async def lookup(self):
         try:
-            response = await self.app.run_in_thread(
+            response = await run_in_thread(
                 requests.get, "https://geoip.ubuntu.com/lookup")
             response.raise_for_status()
         except requests.exceptions.RequestException:

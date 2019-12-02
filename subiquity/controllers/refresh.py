@@ -24,6 +24,11 @@ import requests.exceptions
 from subiquitycore.controller import BaseController
 from subiquitycore.core import Skip
 
+from subiquity.async_helpers import (
+    run_in_thread,
+    schedule_task,
+    )
+
 log = logging.getLogger('subiquity.controllers.refresh')
 
 
@@ -65,11 +70,11 @@ class RefreshController(BaseController):
 
     def start(self):
         self.switch_state = SwitchState.SWITCHING
-        self.app.schedule_task(self.configure_snapd())
+        schedule_task(self.configure_snapd())
 
     async def configure_snapd(self):
         try:
-            response = await self.app.run_in_thread(
+            response = await run_in_thread(
                 self.app.snapd_connection.get,
                 'v2/snaps/{snap_name}'.format(snap_name=self.snap_name))
             response.raise_for_status()
@@ -87,7 +92,7 @@ class RefreshController(BaseController):
         channel = self.get_refresh_channel()
         log.debug("switching %s to %s", self.snap_name, channel)
         try:
-            response = await self.app.run_in_thread(
+            response = await run_in_thread(
                 self.app.snapd_connection.post,
                 'v2/snaps/{}'.format(self.snap_name),
                 {'action': 'switch', 'channel': channel})
@@ -98,7 +103,7 @@ class RefreshController(BaseController):
         change = response.json()["change"]
         while True:
             try:
-                response = await self.app.run_in_thread(
+                response = await run_in_thread(
                     self.app.snapd_connection.get,
                     'v2/changes/{}'.format(change))
                 response.raise_for_status()
@@ -161,11 +166,11 @@ class RefreshController(BaseController):
         if self.check_state.is_definite():
             return
         self.check_state = CheckState.CHECKING
-        self.app.schedule_task(self.check_for_update())
+        schedule_task(self.check_for_update())
 
     async def check_for_update(self):
         try:
-            response = await self.app.run_in_thread(
+            response = await run_in_thread(
                 partial(
                     self.app.snapd_connection.get,
                     'v2/find',
@@ -199,11 +204,11 @@ class RefreshController(BaseController):
     def start_update(self, callback):
         update_marker = os.path.join(self.app.state_dir, 'updating')
         open(update_marker, 'w').close()
-        self.app.schedule_task(self._start_update(callback))
+        schedule_task(self._start_update(callback))
 
     async def _start_update(self, callback):
         try:
-            response = await self.app.run_in_thread(
+            response = await run_in_thread(
                 self.app.snapd_connection.post,
                 'v2/snaps/{}'.format(self.snap_name),
                 {'action': 'refresh'})
@@ -218,11 +223,11 @@ class RefreshController(BaseController):
         callback(result['change'])
 
     def get_progress(self, change, callback):
-        self.app.schedule_task(self._get_progress(change, callback))
+        schedule_task(self._get_progress(change, callback))
 
     async def _get_progress(self, change, callback):
         try:
-            response = await self.app.run_in_thread(
+            response = await run_in_thread(
                 self.app.snapd_connection.get,
                 'v2/changes/{}'.format(change))
             response.raise_for_status()

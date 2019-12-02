@@ -21,6 +21,10 @@ import requests.exceptions
 from subiquitycore.controller import BaseController
 from subiquitycore.core import Skip
 
+from subiquity.async_helpers import (
+    run_in_thread,
+    schedule_task,
+    )
 from subiquity.models.snaplist import SnapSelection
 from subiquity.ui.views.snaplist import SnapListView
 
@@ -45,12 +49,12 @@ class SnapdSnapInfoLoader:
     def start(self):
         self._running = True
         log.debug("loading list of snaps")
-        self.app.schedule_task(self._start())
+        schedule_task(self._start())
 
     async def _start(self):
         self.ongoing[None] = []
         try:
-            response = await self.app.run_in_thread(
+            response = await run_in_thread(
                 partial(
                     self.connection.get,
                     'v2/find',
@@ -80,7 +84,7 @@ class SnapdSnapInfoLoader:
     async def _fetch_info_for_snap(self, snap):
         log.debug('starting fetch for %s', snap.name)
         try:
-            response = await self.app.run_in_thread(
+            response = await run_in_thread(
                 partial(
                     self.connection.get,
                     'v2/find',
@@ -115,8 +119,7 @@ class SnapdSnapInfoLoader:
             if snap in self.pending_snaps:
                 self.pending_snaps.remove(snap)
             self.ongoing[snap] = []
-            self.app.schedule_task(
-                self._fetch_info_for_snap(snap))
+            schedule_task(self._fetch_info_for_snap(snap))
         self.ongoing[snap].append(callback)
 
 

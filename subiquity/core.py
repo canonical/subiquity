@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
 import os
 import platform
@@ -176,14 +175,6 @@ class Subiquity(Application):
 
     def note_data_for_apport(self, key, value):
         self._apport_data.append((key, value))
-
-    def schedule_task(self, coro):
-        loop = asyncio.get_event_loop()
-        loop.call_soon(asyncio.create_task, coro)
-
-    async def run_in_thread(self, func, *args):
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, func, *args)
 
     def make_apport_report(self, kind, thing, *, interrupt, wait=False, **kw):
         log.debug("generating crash report")
