@@ -375,11 +375,12 @@ class SnapListView(BaseView):
         spinner = None
         called = False
 
-        def callback(snap_list):
+        def callback():
             nonlocal called
             called = True
             if spinner is not None:
                 spinner.stop()
+            snap_list = self.model.get_snap_list()
             if len(snap_list) == 0:
                 self.offer_retry()
             else:

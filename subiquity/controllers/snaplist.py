@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from functools import partial
 import logging
 
 import requests.exceptions
@@ -28,9 +29,9 @@ log = logging.getLogger('subiquity.controllers.snaplist')
 
 class SnapdSnapInfoLoader:
 
-    def __init__(self, model, run_in_bg, connection, store_section):
+    def __init__(self, model, app, connection, store_section):
         self.model = model
-        self.run_in_bg = run_in_bg
+        self.app = app
         self.store_section = store_section
 
         self._running = False
@@ -44,41 +45,62 @@ class SnapdSnapInfoLoader:
     def start(self):
         self._running = True
         log.debug("loading list of snaps")
+        self.app.schedule_task(self._start())
 
-        def cb(snap_list):
-            if not self._running:
-                return
-            self.snap_list_fetched = True
-            self.pending_info_snaps = snap_list
-            log.debug("fetched list of %s snaps", len(self.pending_info_snaps))
-            self._fetch_next_info()
-        self.ongoing[None] = [cb]
-        self.run_in_bg(self._bg_fetch_list, self._fetched_list)
-
-    def stop(self):
-        self._running = False
-
-    def _bg_fetch_list(self):
-        return self.connection.get('v2/find', section=self.store_section)
-
-    def _fetched_list(self, fut):
-        if not self._running:
-            return
+    async def _start(self):
+        self.ongoing[None] = []
         try:
-            response = fut.result()
+            response = await self.app.run_in_thread(
+                partial(
+                    self.connection.get,
+                    'v2/find',
+                    section=self.store_section))
             response.raise_for_status()
         except requests.exceptions.RequestException:
             log.exception("loading list of snaps failed")
             self.failed = True
             self._running = False
-        else:
-            self.model.load_find_data(response.json())
+            return
+        if not self._running:
+            return
+        self.model.load_find_data(response.json())
+        self.snap_list_fetched = True
+        self.pending_snaps = self.model.get_snap_list()
+        log.debug("fetched list of %s snaps", len(self.model.get_snap_list()))
         for cb in self.ongoing.pop(None):
-            cb(self.model.get_snap_list())
+            cb()
+        while self.pending_snaps and self._running:
+            snap = self.pending_snaps.pop(0)
+            self.ongoing[snap] = []
+            await self._fetch_info_for_snap(snap)
+
+    def stop(self):
+        self._running = False
+
+    async def _fetch_info_for_snap(self, snap):
+        log.debug('starting fetch for %s', snap.name)
+        try:
+            response = await self.app.run_in_thread(
+                partial(
+                    self.connection.get,
+                    'v2/find',
+                    name=snap.name))
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            log.exception("loading snap info failed")
+            # XXX something better here?
+            return
+        if not self._running:
+            return
+        data = response.json()
+        log.debug('got data for %s', snap.name)
+        self.model.load_info_data(data)
+        for cb in self.ongoing.pop(snap):
+            cb()
 
     def get_snap_list(self, callback):
         if self.snap_list_fetched:
-            callback(self.model.get_snap_list())
+            callback()
         elif None in self.ongoing:
             self.ongoing[None].append(callback)
         else:
@@ -89,43 +111,13 @@ class SnapdSnapInfoLoader:
         if len(snap.channels) > 0:
             callback()
             return
-        if snap in self.ongoing:
-            self.ongoing[snap].append(callback)
-            return
-        if snap in self.pending_info_snaps:
-            self.pending_info_snaps.remove(snap)
-        self._fetch_info_for_snap(snap, callback)
-
-    def _fetch_info_for_snap(self, snap, callback):
-        self.ongoing[snap] = [callback]
-        log.debug('starting fetch for %s', snap.name)
-        self.run_in_bg(
-            lambda: self._bg_fetch_next_info(snap),
-            lambda fut: self._fetched_info(snap, fut))
-
-    def _fetch_next_info(self):
-        if not self.pending_info_snaps:
-            return
-        snap = self.pending_info_snaps.pop(0)
-        self._fetch_info_for_snap(snap, self._fetch_next_info)
-
-    def _bg_fetch_next_info(self, snap):
-        return self.connection.get('v2/find', name=snap.name)
-
-    def _fetched_info(self, snap, fut):
-        if not self._running:
-            return
-        try:
-            response = fut.result()
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
-            log.exception("loading snap info failed")
-            # XXX something better here?
-        else:
-            data = response.json()
-            self.model.load_info_data(data)
-        for cb in self.ongoing.pop(snap):
-            cb()
+        if snap not in self.ongoing:
+            if snap in self.pending_snaps:
+                self.pending_snaps.remove(snap)
+            self.ongoing[snap] = []
+            self.app.schedule_task(
+                self._fetch_info_for_snap(snap))
+        self.ongoing[snap].append(callback)
 
 
 class SnapListController(BaseController):
@@ -136,7 +128,7 @@ class SnapListController(BaseController):
 
     def _make_loader(self):
         return SnapdSnapInfoLoader(
-            self.model, self.run_in_bg, self.app.snapd_connection,
+            self.model, self.app, self.app.snapd_connection,
             self.opts.snap_section)
 
     def __init__(self, app):
