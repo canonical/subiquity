@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import enum
 import json
 import logging
@@ -170,27 +171,22 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         else:
             self.controller.run_in_bg(_bg_add_info, added_info)
 
-    def load(self, cb):
+    async def load(self):
+        log.debug("loading report %s", self.base)
         # Load report from disk in background.
+        loop = asyncio.get_event_loop()
 
-        def _bg_load():
-            log.debug("loading report %s", self.base)
-            self.pr.load(self._file)
-
-        def loaded(fut):
+        try:
+            await loop.run_in_executor(None, self.pr.load, self._file)
+        except Exception:
+            log.exception("loading problem report failed")
+            self.state = ErrorReportState.ERROR_LOADING
+        else:
             log.debug("done loading report %s", self.base)
-            try:
-                fut.result()
-            except Exception:
-                self.state = ErrorReportState.ERROR_LOADING
-                log.exception("loading problem report failed")
-            else:
-                self.state = ErrorReportState.DONE
-            self._file.close()
-            self._file = None
-            urwid.emit_signal(self, "changed")
-            cb()
-        self.controller.run_in_bg(_bg_load, loaded)
+            self.state = ErrorReportState.DONE
+        self._file.close()
+        self._file = None
+        urwid.emit_signal(self, "changed")
 
     def upload(self):
         log.debug("starting upload for %s", self.base)
@@ -336,10 +332,9 @@ class ErrorController(BaseController):
         # in the background
         self.scan_crash_dir()
 
-    def _report_loaded(self, to_load):
-        if to_load:
-            to_load[0].load(
-                lambda: self._report_loaded(to_load[1:]))
+    async def _load_reports(self, to_load):
+        for report in to_load:
+            await report.load()
 
     def scan_crash_dir(self):
         filenames = os.listdir(self.crash_directory)
@@ -352,7 +347,9 @@ class ErrorController(BaseController):
             r = ErrorReport.from_file(self, path)
             self.reports.append(r)
             to_load.append(r)
-        self._report_loaded(to_load)
+        loop = asyncio.get_event_loop()
+        loop.call_later(
+            0.0, lambda: asyncio.create_task(self._load_reports(to_load)))
 
     def create_report(self, kind):
         r = ErrorReport.new(self, kind)
