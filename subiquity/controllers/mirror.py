@@ -48,16 +48,12 @@ class MirrorController(BaseController):
     def snapd_network_changed(self):
         if self.check_state != CheckState.DONE:
             self.check_state = CheckState.CHECKING
-            self.run_in_bg(self._bg_lookup, self.looked_up)
+            self.app.schedule_task(self.lookup())
 
-    def _bg_lookup(self):
-        return requests.get("https://geoip.ubuntu.com/lookup")
-
-    def looked_up(self, fut):
-        if self.check_state == CheckState.DONE:
-            return
+    async def lookup(self):
         try:
-            response = fut.result()
+            response = await self.app.run_in_thread(
+                requests.get, "https://geoip.ubuntu.com/lookup")
             response.raise_for_status()
         except requests.exceptions.RequestException:
             log.exception("geoip lookup failed")

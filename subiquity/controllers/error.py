@@ -347,9 +347,7 @@ class ErrorController(BaseController):
             r = ErrorReport.from_file(self, path)
             self.reports.append(r)
             to_load.append(r)
-        loop = asyncio.get_event_loop()
-        loop.call_later(
-            0.0, lambda: asyncio.create_task(self._load_reports(to_load)))
+        self.app.schedule_task(self._load_reports(to_load))
 
     def create_report(self, kind):
         r = ErrorReport.new(self, kind)
