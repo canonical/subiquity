@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+from functools import partial
 import glob
 import json
 import logging
@@ -23,6 +25,7 @@ from urllib.parse import (
     urlencode,
     )
 
+from subiquity.async_helpers import run_in_thread
 from subiquitycore.utils import run_command
 
 import requests_unixsocket
@@ -157,3 +160,30 @@ class FakeSnapdConnection:
             return rs.next()
         raise Exception(
             "Don't know how to fake GET response to {}".format((path, args)))
+
+
+class AsyncSnapd:
+
+    def __init__(self, connection):
+        self.connection = connection
+
+    async def get(self, path, **args):
+        response = await run_in_thread(
+            partial(self.connection.get, path, **args))
+        response.raise_for_status()
+        return response.json()
+
+    async def post(self, path, body, **args):
+        response = await run_in_thread(
+            partial(self.connection.post, path, body, **args))
+        response.raise_for_status()
+        return response.json()['change']
+
+    async def post_and_wait(self, path, body, **args):
+        change = await self.post(path, body, **args)
+        change_path = 'v2/changes/{}'.format(change)
+        while True:
+            result = await self.get(change_path)
+            if result["result"]["status"] == "Done":
+                break
+            await asyncio.sleep(0.1)

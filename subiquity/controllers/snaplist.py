@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from functools import partial
 import logging
 
 import requests.exceptions
@@ -22,7 +21,6 @@ from subiquitycore.controller import BaseController
 from subiquitycore.core import Skip
 
 from subiquity.async_helpers import (
-    run_in_thread,
     schedule_task,
     )
 from subiquity.models.snaplist import SnapSelection
@@ -33,16 +31,15 @@ log = logging.getLogger('subiquity.controllers.snaplist')
 
 class SnapdSnapInfoLoader:
 
-    def __init__(self, model, app, connection, store_section):
+    def __init__(self, model, snapd, store_section):
         self.model = model
-        self.app = app
         self.store_section = store_section
 
         self._running = False
         self.snap_list_fetched = False
         self.failed = False
 
-        self.connection = connection
+        self.snapd = snapd
         self.pending_info_snaps = []
         self.ongoing = {}  # {snap:[callbacks]}
 
@@ -54,12 +51,8 @@ class SnapdSnapInfoLoader:
     async def _start(self):
         self.ongoing[None] = []
         try:
-            response = await run_in_thread(
-                partial(
-                    self.connection.get,
-                    'v2/find',
-                    section=self.store_section))
-            response.raise_for_status()
+            result = await self.snapd.get(
+                'v2/find', section=self.store_section)
         except requests.exceptions.RequestException:
             log.exception("loading list of snaps failed")
             self.failed = True
@@ -67,7 +60,7 @@ class SnapdSnapInfoLoader:
             return
         if not self._running:
             return
-        self.model.load_find_data(response.json())
+        self.model.load_find_data(result)
         self.snap_list_fetched = True
         self.pending_snaps = self.model.get_snap_list()
         log.debug("fetched list of %s snaps", len(self.model.get_snap_list()))
@@ -84,19 +77,14 @@ class SnapdSnapInfoLoader:
     async def _fetch_info_for_snap(self, snap):
         log.debug('starting fetch for %s', snap.name)
         try:
-            response = await run_in_thread(
-                partial(
-                    self.connection.get,
-                    'v2/find',
-                    name=snap.name))
-            response.raise_for_status()
+            data = await self.snapd.get(
+                'v2/find', name=snap.name)
         except requests.exceptions.RequestException:
             log.exception("loading snap info failed")
             # XXX something better here?
             return
         if not self._running:
             return
-        data = response.json()
         log.debug('got data for %s', snap.name)
         self.model.load_info_data(data)
         for cb in self.ongoing.pop(snap):
@@ -131,7 +119,7 @@ class SnapListController(BaseController):
 
     def _make_loader(self):
         return SnapdSnapInfoLoader(
-            self.model, self.app, self.app.snapd_connection,
+            self.model, self.app.snapd,
             self.opts.snap_section)
 
     def __init__(self, app):

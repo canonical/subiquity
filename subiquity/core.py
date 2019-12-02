@@ -29,6 +29,7 @@ from subiquity.controllers.error import (
     )
 from subiquity.models.subiquity import SubiquityModel
 from subiquity.snapd import (
+    AsyncSnapd,
     FakeSnapdConnection,
     SnapdConnection,
     )
@@ -98,7 +99,7 @@ class Subiquity(Application):
                     "examples", "snaps"))
         else:
             connection = SnapdConnection(self.root, self.snapd_socket_path)
-        self.snapd_connection = connection
+        self.snapd = AsyncSnapd(connection)
         self.signal.connect_signals([
             ('network-proxy-set', self._proxy_set),
             ('network-change', self._network_change),
@@ -129,7 +130,7 @@ class Subiquity(Application):
 
     def _proxy_set(self):
         self.run_in_bg(
-            lambda: self.snapd_connection.configure_proxy(
+            lambda: self.snapd.connection.configure_proxy(
                 self.base_model.proxy),
             lambda fut: (
                 fut.result(), self.signal.emit_signal('snapd-network-change')),

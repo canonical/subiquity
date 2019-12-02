@@ -13,9 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import enum
-from functools import partial
 import logging
 import os
 
@@ -25,7 +23,6 @@ from subiquitycore.controller import BaseController
 from subiquitycore.core import Skip
 
 from subiquity.async_helpers import (
-    run_in_thread,
     schedule_task,
     )
 
@@ -74,14 +71,11 @@ class RefreshController(BaseController):
 
     async def configure_snapd(self):
         try:
-            response = await run_in_thread(
-                self.app.snapd_connection.get,
+            r = await self.app.snapd.get(
                 'v2/snaps/{snap_name}'.format(snap_name=self.snap_name))
-            response.raise_for_status()
         except requests.exceptions.RequestException:
             log.exception("getting snap details")
             return
-        r = response.json()
         self.current_snap_version = r['result']['version']
         for k in 'channel', 'revision', 'version':
             self.app.note_data_for_apport(
@@ -92,27 +86,12 @@ class RefreshController(BaseController):
         channel = self.get_refresh_channel()
         log.debug("switching %s to %s", self.snap_name, channel)
         try:
-            response = await run_in_thread(
-                self.app.snapd_connection.post,
+            await self.app.snapd.post_and_wait(
                 'v2/snaps/{}'.format(self.snap_name),
                 {'action': 'switch', 'channel': channel})
-            response.raise_for_status()
         except requests.exceptions.RequestException:
             log.exception("switching channels")
             return
-        change = response.json()["change"]
-        while True:
-            try:
-                response = await run_in_thread(
-                    self.app.snapd_connection.get,
-                    'v2/changes/{}'.format(change))
-                response.raise_for_status()
-            except requests.exceptions.RequestException:
-                log.exception("checking switch")
-                return
-            if response.json()["result"]["status"] == "Done":
-                break
-            await asyncio.sleep(0.1)
         log.debug("snap switching completed")
         self.switch_state = SwitchState.SWITCHED
         self._maybe_check_for_update()
@@ -170,12 +149,7 @@ class RefreshController(BaseController):
 
     async def check_for_update(self):
         try:
-            response = await run_in_thread(
-                partial(
-                    self.app.snapd_connection.get,
-                    'v2/find',
-                    select='refresh'))
-            response.raise_for_status()
+            result = await self.app.snapd.get('v2/find', select='refresh')
         except requests.exceptions.RequestException as e:
             log.exception("checking for update")
             self.check_error = e
@@ -186,7 +160,6 @@ class RefreshController(BaseController):
         # ones!
         if self.check_state.is_definite():
             return
-        result = response.json()
         log.debug("_check_result %s", result)
         for snap in result["result"]:
             if snap["name"] == self.snap_name:
@@ -208,35 +181,29 @@ class RefreshController(BaseController):
 
     async def _start_update(self, callback):
         try:
-            response = await run_in_thread(
-                self.app.snapd_connection.post,
+            change = await self.app.snapd.post(
                 'v2/snaps/{}'.format(self.snap_name),
                 {'action': 'refresh'})
-            response.raise_for_status()
         except requests.exceptions.RequestException as e:
             log.exception("requesting update")
             self.update_state = CheckState.FAILED
             self.update_failure = e
             return
-        result = response.json()
-        log.debug("refresh requested: %s", result)
-        callback(result['change'])
+        log.debug("refresh requested: %s", change)
+        callback(change)
 
     def get_progress(self, change, callback):
         schedule_task(self._get_progress(change, callback))
 
     async def _get_progress(self, change, callback):
         try:
-            response = await run_in_thread(
-                self.app.snapd_connection.get,
+            result = await self.app.snapd.get(
                 'v2/changes/{}'.format(change))
-            response.raise_for_status()
         except requests.exceptions.RequestException as e:
             log.exception("checking for progress")
             self.update_state = CheckState.FAILED
             self.update_failure = e
             return
-        result = response.json()
         callback(result['result'])
 
     def start_ui(self, index=1):
