@@ -610,7 +610,8 @@ class Application:
             self.ui, palette=self.color_palette, screen=screen,
             handle_mouse=False, pop_ups=True,
             input_filter=self.input_filter.filter,
-            unhandled_input=self.unhandled_input)
+            unhandled_input=self.unhandled_input,
+            event_loop=urwid.AsyncioEventLoop())
 
         if self.opts.ascii:
             urwid.util.set_encoding('ascii')

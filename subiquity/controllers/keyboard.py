@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 
 from subiquitycore.controller import BaseController
@@ -52,14 +53,13 @@ class KeyboardController(BaseController):
             variant = self.answers.get('variant', '')
             self.done(KeyboardSetting(layout=layout, variant=variant))
 
-    def done(self, setting):
-        self.run_in_bg(
-            lambda: self.model.set_keyboard(setting),
-            self._done)
-
-    def _done(self, fut):
+    async def apply_settings(self, setting):
+        await self.model.set_keyboard(setting)
         log.debug("KeyboardController._done next-screen")
         self.signal.emit_signal('next-screen')
+
+    def done(self, setting):
+        asyncio.create_task(self.apply_settings(setting))
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')

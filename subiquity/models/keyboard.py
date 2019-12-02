@@ -1,4 +1,5 @@
 
+import asyncio
 from collections import defaultdict
 import logging
 import os
@@ -198,7 +199,7 @@ class KeyboardModel:
         else:
             return self.layouts.get(code, '?'), None
 
-    def set_keyboard(self, setting):
+    async def set_keyboard(self, setting):
         path = self.config_path
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as fp:
@@ -211,7 +212,9 @@ class KeyboardModel:
                 run_command(['/snap/bin/subiquity.subiquity-loadkeys'])
             else:
                 scale = os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1")
-                run_command(['sleep', str(1/float(scale))])
+                p = await asyncio.create_subprocess_exec(
+                    'sleep', str(1/float(scale)))
+                await p.communicate()
 
     def render(self):
         return {

@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import os
 import tempfile
 import unittest
@@ -26,10 +27,19 @@ from subiquity.models.keyboard import (
 class TestSubiquityModel(unittest.TestCase):
 
     def test_write_config(self):
-        os.environ['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
-        with tempfile.TemporaryDirectory() as tmpdir:
-            model = KeyboardModel(tmpdir)
-            new_setting = KeyboardSetting('fr', 'azerty')
-            model.set_keyboard(new_setting)
-            read_setting = KeyboardSetting.from_config_file(model.config_path)
-            self.assertEqual(new_setting, read_setting)
+        loop = asyncio.new_event_loop()
+        policy = asyncio.get_event_loop_policy()
+        watcher = asyncio.SafeChildWatcher()
+        watcher.attach_loop(loop)
+        policy.set_child_watcher(watcher)
+
+        async def t():
+            os.environ['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
+            with tempfile.TemporaryDirectory() as tmpdir:
+                model = KeyboardModel(tmpdir)
+                new_setting = KeyboardSetting('fr', 'azerty')
+                await model.set_keyboard(new_setting)
+                read_setting = KeyboardSetting.from_config_file(
+                    model.config_path)
+                self.assertEqual(new_setting, read_setting)
+        loop.run_until_complete(t())
