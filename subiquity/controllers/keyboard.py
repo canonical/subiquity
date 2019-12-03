@@ -13,11 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
 
 from subiquitycore.controller import BaseController
 
+from subiquity.async_helpers import schedule_task
 from subiquity.models.keyboard import KeyboardSetting
 from subiquity.ui.views import KeyboardView
 
@@ -59,7 +59,7 @@ class KeyboardController(BaseController):
         self.signal.emit_signal('next-screen')
 
     def done(self, setting):
-        asyncio.create_task(self.apply_settings(setting))
+        schedule_task(self.apply_settings(setting))
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
