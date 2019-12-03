@@ -18,7 +18,7 @@ import asyncio
 
 def schedule_task(coro):
     loop = asyncio.get_event_loop()
-    loop.call_soon(asyncio.create_task, coro)
+    loop.call_soon(asyncio.ensure_future, coro)
 
 
 async def run_in_thread(func, *args):
