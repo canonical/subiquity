@@ -146,22 +146,23 @@ controllers don't have a corresponding model class.
 ### Doing things in the background
 
 If the UI does not block, as promised above, then there needs to be a way of
-running things in the background.  The main way this is done is the `run_in_bg`
-function, which takes two functions: one that takes no arguments and is called
-in a background thread and a callback that takes one argument, and is called in
-the main/UI thread with a `concurrent.futures.Future` representing the result
-of calling the first function. This is a fairly clunky interface that can lead
-to some slightly baffling control flow but, well, it works. I've tried a few
-abstractions that make things clearer -- `subiquity.tasksequence.TaskSequence`
-being the older one that doesn't quite cover all interesting cases and
-`subiquity.controllers.installprogress.StateMachine` being the newer one that I
-hope can be generalized to something useful in many places.
+running things in the background.  Subiquity uses a few different ways to do
+this but new code should use
+[asyncio](https://docs.python.org/3/library/asyncio.html). `subiquity.async_helpers`
+defines two useful helper functions `run_in_thread` (just a nicer wrapper
+around `run_in_executor`) and `schedule_task` (a wrapper around `create_task`
+that works before the event loop is
+started). [trio](https://trio.readthedocs.io/en/stable/) has nicer APIs but is
+a bit too new for now.
 
-Currently subiquity just uses urwid's default event loop (`SelectEventLoop`).
-Switching to `AsyncioEventLoop` would probably be an improvement and might let
-us not use a background thread for absolutely every action we want to run in
-the background (there's no real reason to tie up a thread waiting for a
-subprocess to exit, for example).
+The older approach which is still present in the codebase is the `run_in_bg`
+function, which takes two functions: one that takes no arguments and is called
+in a background thread and a callback that takes one argument, and is called
+in the main/UI thread with a `concurrent.futures.Future` representing the
+result of calling the first function. I tried a few abstractions to try to
+make things clearer -- `subiquity.tasksequence.TaskSequence` and
+`subiquity.controllers.installprogress.StateMachine` being two -- but they
+didn't really help all that much in the end.
 
 A cast-iron rule: Only touch the UI from the main thread.
 
