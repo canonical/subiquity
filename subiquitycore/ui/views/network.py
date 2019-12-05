@@ -398,8 +398,6 @@ class NetworkView(BaseView):
                                 "please verify your settings.")
         elif action == 'down':
             self.error.set_text("Downing network interfaces failed.")
-        elif action == 'canceled':
-            self.error.set_text("Network configuration canceled.")
         elif action == 'add-vlan':
             self.error.set_text("Failed to add a VLAN tag.")
         elif action == 'rm-dev':

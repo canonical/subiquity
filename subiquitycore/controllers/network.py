@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 from functools import partial
 import logging
 import os
@@ -25,18 +26,17 @@ from probert.network import IFF_UP, NetworkEventReceiver
 from subiquitycore.models.network import BondParameters, sanitize_config
 from subiquitycore.tasksequence import (
     BackgroundTask,
-    BackgroundProcess,
-    PythonSleep,
-    TaskSequence,
     TaskWatcher,
     )
 from subiquitycore.ui.views.network import (
     NetworkView,
     )
 from subiquitycore.controller import BaseController
-from subiquitycore.utils import run_command
+from subiquitycore.utils import arun_command, run_command
 from subiquitycore.file_util import write_file
 from subiquitycore import netplan
+
+from subiquity.async_helpers import schedule_task
 
 log = logging.getLogger("subiquitycore.controller.network")
 
@@ -342,7 +342,7 @@ class NetworkController(BaseController):
             self.update_initial_configs()
         self.view = NetworkView(self.model, self)
         if not self.view_shown:
-            self.apply_config(silent=True)
+            schedule_task(self.apply_config(silent=True))
             self.view_shown = True
         self.network_event_receiver.view = self.view
         self.ui.set_body(self.view)
@@ -358,7 +358,7 @@ class NetworkController(BaseController):
             netplan_config_file_name = '00-snapd-config.yaml'
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
-    def apply_config(self, silent=False):
+    async def apply_config(self, silent=False):
         log.debug("apply_config silent=%s", silent)
         if self.dhcp_check_handle is not None:
             self.loop.remove_alarm(self.dhcp_check_handle)
@@ -401,43 +401,58 @@ class NetworkController(BaseController):
 
         self.model.parse_netplan_configs(self.root)
 
-        if self.opts.dry_run:
-            delay = 0.1/self.app.scale_factor
-            tasks = [
-                ('one', BackgroundProcess(['sleep', str(delay)])),
-                ('two', PythonSleep(delay)),
-                ('three', BackgroundProcess(['sleep', str(delay)])),
-                ]
-            if os.path.exists('/lib/netplan/generate'):
-                # If netplan appears to be installed, run generate to at
-                # least test that what we wrote is acceptable to netplan.
-                tasks.append(('generate',
-                              BackgroundProcess(['netplan', 'generate',
-                                                 '--root', self.root])))
-        else:
-            tasks = []
-            if devs_to_down or devs_to_delete:
-                tasks.extend([
-                    ('stop-networkd',
-                     BackgroundProcess(['systemctl',
-                                        'stop', 'systemd-networkd.service'])),
-                    ('down',
-                     DownNetworkDevices(self.observer.rtlistener,
-                                        devs_to_down, devs_to_delete)),
-                    ])
-            tasks.extend([
-                ('apply', BackgroundProcess(['netplan', 'apply'])),
-                ])
-
         if not silent:
             self.view.show_apply_spinner()
-        ts = TaskSequence(self.run_in_bg, tasks, ApplyWatcher(self.view, self))
-        ts.run()
-        if dhcp_device_versions:
-            self.dhcp_check_handle = self.loop.set_alarm_in(
-                10,
-                lambda loop, ud: self.check_dchp_results(ud),
-                dhcp_device_versions)
+
+        def error(stage):
+            if not silent and self.view:
+                self.view.show_network_error(stage)
+
+        try:
+            if self.opts.dry_run:
+                delay = 1/self.app.scale_factor
+                await arun_command(['sleep', str(delay)])
+                if os.path.exists('/lib/netplan/generate'):
+                    # If netplan appears to be installed, run generate to at
+                    # least test that what we wrote is acceptable to netplan.
+                    await arun_command(
+                        ['netplan', 'generate', '--root', self.root], check=True)
+            else:
+                try:
+                    await arun_command(
+                        ['systemctl', 'stop', 'systemd-networkd.service'], check=True)
+                except subprocess.CalledProcessError:
+                    error("stop-networkd")
+                    raise
+                for dev in devs_to_down:
+                    try:
+                        log.debug('downing %s', dev.name)
+                        self.rtlistener.unset_link_flags(dev.ifindex, IFF_UP)
+                    except RuntimeError:
+                        # We don't actually care very much about this
+                        log.exception('unset_link_flags failed for %s', dev.name)
+                for dev in self.devs_to_delete:
+                    # XXX would be nicer to do this via rtlistener eventually.
+                    log.debug('deleting %s', dev.name)
+                    cmd = ['ip', 'link', 'delete', 'dev', dev.name]
+                    try:
+                        await arun_command(cmd, check=True)
+                    except subprocess.CalledProcessError as cp:
+                        log.info("deleting %s failed with %r", dev.name, cp.stderr)
+                try:
+                    await arun_command(['netplan', 'apply'], check=True)
+                except subprocess.CalledProcessError:
+                    error("apply")
+                    raise
+        except subprocess.CalledProcessError:
+            pass
+
+        await asyncio.sleep(10)
+
+        for dev, v in dhcp_device_versions:
+            if not dev.dhcp_addresses()[v]:
+                dev.set_dhcp_state(v, "TIMEDOUT")
+                self.network_event_receiver.update_link(dev.ifindex)
 
     def add_vlan(self, device, vlan):
         return self.model.new_vlan(device, vlan)
