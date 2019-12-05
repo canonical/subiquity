@@ -19,6 +19,7 @@ from urwid import (
     connect_signal,
     disconnect_signal,
     Padding,
+    ProgressBar,
     Text,
     )
 
@@ -37,6 +38,7 @@ from subiquitycore.ui.utils import (
     button_pile,
     ClickableIcon,
     Color,
+    disabled,
     rewrap,
     )
 from subiquitycore.ui.width import (
@@ -112,6 +114,11 @@ Do you want to try starting the installation again?
 }
 
 
+submit_text = _("""
+If you want to help improve the installer, you can send an error report.
+""")
+
+
 class ErrorReportStretchy(Stretchy):
 
     def __init__(self, app, parent, report, interrupting=True):
@@ -121,12 +128,17 @@ class ErrorReportStretchy(Stretchy):
         self.interrupting = interrupting
 
         self.btns = {
+            'cancel': other_btn(
+                _("Cancel upload"), on_press=self.cancel_upload),
             'close': close_btn(parent, _("Close report")),
             'continue': close_btn(parent, _("Continue")),
             'debug_shell': other_btn(
                 _("Switch to a shell"), on_press=self.debug_shell),
             'restart': other_btn(
                 _("Restart the installer"), on_press=self.restart),
+            'submit': other_btn(
+                _("Send to Canonical"), on_press=self.submit),
+            'submitted': disabled(other_btn(_("Sent to Canonical"))),
             'view': other_btn(
                 _("View full report"), on_press=self.view_report),
             }
@@ -142,7 +154,26 @@ class ErrorReportStretchy(Stretchy):
         super().__init__("", [self.pile], 0, 0)
         connect_signal(self, 'closed', self.spinner.stop)
 
+    def pb(self, upload):
+        pb = ProgressBar(
+            normal='progress_incomplete',
+            complete='progress_complete',
+            current=upload.bytes_sent,
+            done=upload.bytes_to_send)
+
+        def _progress():
+            pb.done = upload.bytes_to_send
+            pb.current = upload.bytes_sent
+        connect_signal(upload, 'progress', _progress)
+
+        return pb
+
     def _pile_elements(self):
+        btns = self.btns.copy()
+
+        if self.report.uploader:
+            btns['continue'] = btns['close'] = btns['cancel']
+
         widgets = [
             Text(rewrap(_(error_report_intros[self.report.kind]))),
             Text(""),
@@ -151,7 +182,21 @@ class ErrorReportStretchy(Stretchy):
         self.spinner.stop()
 
         if self.report.state == ErrorReportState.DONE:
-            widgets.append(self.btns['view'])
+            widgets.append(btns['view'])
+            widgets.append(Text(""))
+            widgets.append(Text(rewrap(_(submit_text))))
+            widgets.append(Text(""))
+
+            if self.report.uploader:
+                if self.upload_pb is None:
+                    self.upload_pb = self.pb(self.report.uploader)
+                widgets.append(self.upload_pb)
+            else:
+                if self.report.oops_id:
+                    widgets.append(btns['submitted'])
+                else:
+                    widgets.append(btns['submit'])
+                self.upload_pb = None
 
             fs_label, fs_loc = self.report.persistent_details
             if fs_label is not None:
@@ -174,15 +219,15 @@ class ErrorReportStretchy(Stretchy):
 
         if self.interrupting:
             if self.report.state != ErrorReportState.INCOMPLETE:
-                text, btns = error_report_options[self.report.kind]
+                text, btn_names = error_report_options[self.report.kind]
                 if text:
                     widgets.extend([Text(""), Text(rewrap(_(text)))])
-                for b in btns:
-                    widgets.extend([Text(""), self.btns[b]])
+                for b in btn_names:
+                    widgets.extend([Text(""), btns[b]])
         else:
             widgets.extend([
                 Text(""),
-                self.btns['close'],
+                btns['close'],
                 ])
 
         return widgets
@@ -205,6 +250,14 @@ class ErrorReportStretchy(Stretchy):
 
     def view_report(self, sender):
         self.app.run_command_in_foreground(["less", self.report.path])
+
+    def submit(self, sender):
+        self.report.upload()
+
+    def cancel_upload(self, sender):
+        self.report.uploader.cancelled = True
+        self.report.uploader = None
+        self._report_changed()
 
     def opened(self):
         self.report.mark_seen()

@@ -23,7 +23,11 @@ import apport
 import apport.crashdb
 import apport.hookutils
 
+import bson
+
 import attr
+
+import requests
 
 import urwid
 
@@ -50,6 +54,33 @@ class ErrorReportKind(enum.Enum):
 
 
 @attr.s(cmp=False)
+class Upload(metaclass=urwid.MetaSignals):
+    signals = ['progress']
+
+    controller = attr.ib()
+    bytes_to_send = attr.ib()
+    bytes_sent = attr.ib(default=0)
+    pipe_w = attr.ib(default=None)
+    cancelled = attr.ib(default=False)
+
+    def start(self):
+        self.pipe_w = self.controller.loop.watch_pipe(self._progress)
+
+    def _progress(self, x):
+        urwid.emit_signal(self, 'progress')
+
+    def _bg_update(self, sent, to_send=None):
+        self.bytes_sent = sent
+        if to_send is not None:
+            self.bytes_to_send = to_send
+        os.write(self.pipe_w, b'x')
+
+    def stop(self):
+        self.controller.loop.remove_watch_pipe(self.pipe_w)
+        os.close(self.pipe_w)
+
+
+@attr.s(cmp=False)
 class ErrorReport(metaclass=urwid.MetaSignals):
 
     signals = ["changed"]
@@ -61,6 +92,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
     _file = attr.ib()
 
     meta = attr.ib(default=attr.Factory(dict))
+    uploader = attr.ib(default=None)
 
     @classmethod
     def new(cls, controller, kind):
@@ -160,6 +192,67 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             cb()
         self.controller.run_in_bg(_bg_load, loaded)
 
+    def upload(self):
+        log.debug("starting upload for %s", self.base)
+        uploader = self.uploader = Upload(
+            controller=self.controller, bytes_to_send=1)
+
+        url = "https://daisy.ubuntu.com"
+        if self.controller.opts.dry_run:
+            url = "https://daisy.staging.ubuntu.com"
+
+        chunk_size = 1024
+
+        def chunk(data):
+            for i in range(0, len(data), chunk_size):
+                if uploader.cancelled:
+                    log.debug("upload for %s cancelled", self.base)
+                    return
+                yield data[i:i+chunk_size]
+                uploader._bg_update(uploader.bytes_sent + chunk_size)
+
+        def _bg_upload():
+            for_upload = {
+                "Kind": self.kind.value
+                }
+            for k, v in self.pr.items():
+                if len(v) < 1024 or k in {"Traceback", "ProcCpuinfoMinimal"}:
+                    for_upload[k] = v
+                else:
+                    log.debug("dropping %s of length %s", k, len(v))
+            if "CurtinLog" in self.pr:
+                logtail = []
+                for line in self.pr["CurtinLog"].splitlines():
+                    logtail.append(line.strip())
+                    while sum(map(len, logtail)) > 2048:
+                        logtail.pop(0)
+                for_upload["CurtinLogTail"] = "\n".join(logtail)
+            data = bson.BSON().encode(for_upload)
+            self.uploader._bg_update(0, len(data))
+            headers = {
+                'user-agent': 'subiquity/{}'.format(
+                    os.environ.get("SNAP_VERSION", "SNAP_VERSION")),
+                }
+            response = requests.post(url, data=chunk(data), headers=headers)
+            response.raise_for_status()
+            return response.text.split()[0]
+
+        def uploaded(fut):
+            try:
+                oops_id = fut.result()
+            except requests.exceptions.RequestException:
+                log.exception("upload for %s failed", self.base)
+            else:
+                log.debug("finished upload for %s, %r", self.base, oops_id)
+                self.set_meta("oops-id", oops_id)
+            uploader.stop()
+            self.uploader = None
+            urwid.emit_signal(self, 'changed')
+
+        urwid.emit_signal(self, 'changed')
+        uploader.start()
+        self.controller.run_in_bg(_bg_upload, uploaded)
+
     def _path_with_ext(self, ext):
         return os.path.join(
             self.controller.crash_directory, self.base + '.' + ext)
@@ -189,6 +282,10 @@ class ErrorReport(metaclass=urwid.MetaSignals):
     @property
     def seen(self):
         return self.meta.get("seen", False)
+
+    @property
+    def oops_id(self):
+        return self.meta.get("oops-id")
 
     @property
     def persistent_details(self):

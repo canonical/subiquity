@@ -18,6 +18,7 @@ from concurrent.futures import Future
 import datetime
 import logging
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -205,6 +206,25 @@ class StateMachine:
         self.run()
 
 
+class TracebackExtractor:
+
+    start_marker = re.compile(r"^Traceback \(most recent call last\):")
+    end_marker = re.compile(r"\S")
+
+    def __init__(self):
+        self.traceback = []
+        self.in_traceback = False
+
+    def feed(self, line):
+        if not self.traceback and self.start_marker.match(line):
+            self.in_traceback = True
+        elif self.in_traceback and self.end_marker.match(line):
+            self.traceback.append(line)
+            self.in_traceback = False
+        if self.in_traceback:
+            self.traceback.append(line)
+
+
 class InstallProgressController(BaseController):
     signals = [
         ('installprogress:filesystem-config-done', 'filesystem_config_done'),
@@ -230,6 +250,7 @@ class InstallProgressController(BaseController):
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
         self.sm = None
+        self.tb_extractor = TracebackExtractor()
 
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
@@ -254,8 +275,12 @@ class InstallProgressController(BaseController):
 
     def curtin_error(self):
         self.install_state = InstallState.ERROR
+        kw = {}
+        if self.tb_extractor.traceback:
+            kw["Traceback"] = "\n".join(self.tb_extractor.traceback)
         crash_report = self.app.make_apport_report(
-            ErrorReportKind.INSTALL_FAIL, "install failed", interrupt=False)
+            ErrorReportKind.INSTALL_FAIL, "install failed", interrupt=False,
+            **kw)
         self.progress_view.spinner.stop()
         if sys.exc_info()[0] is not None:
             self.progress_view.add_log_line(traceback.format_exc())
@@ -301,7 +326,9 @@ class InstallProgressController(BaseController):
             self._install_event_finish()
 
     def curtin_log(self, event):
-        self.progress_view.add_log_line(event['MESSAGE'])
+        log_line = event['MESSAGE']
+        self.progress_view.add_log_line(log_line)
+        self.tb_extractor.feed(log_line)
 
     def start_journald_listener(self, identifiers, callback):
         reader = journal.Reader()
@@ -329,23 +356,27 @@ class InstallProgressController(BaseController):
 
         if self.opts.dry_run:
             config_location = os.path.join('.subiquity/', config_file_name)
+            log_location = '.subiquity/install.log'
             event_file = "examples/curtin-events.json"
             if 'install-fail' in self.debug_flags:
                 event_file = "examples/curtin-events-fail.json"
-            curtin_cmd = ["python3", "scripts/replay-curtin-log.py",
-                          event_file, self._event_syslog_identifier]
+            curtin_cmd = [
+                "python3", "scripts/replay-curtin-log.py", event_file,
+                self._event_syslog_identifier, log_location,
+                ]
         else:
             config_location = os.path.join('/var/log/installer',
                                            config_file_name)
             curtin_cmd = [sys.executable, '-m', 'curtin', '--showtrace', '-c',
                           config_location, 'install']
+            log_location = INSTALL_LOG
 
         ident = self._event_syslog_identifier
         self._write_config(config_location,
                            self.model.render(syslog_identifier=ident))
 
         self.app.note_file_for_apport("CurtinConfig", config_location)
-        self.app.note_file_for_apport("CurtinLog", INSTALL_LOG)
+        self.app.note_file_for_apport("CurtinLog", log_location)
         self.app.note_file_for_apport("CurtinErrors", ERROR_TARFILE)
 
         return curtin_cmd
