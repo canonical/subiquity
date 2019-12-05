@@ -146,6 +146,7 @@ class FakeSnapdConnection:
             "Don't know how to fake POST response to {}".format((path, args)))
 
     def get(self, path, **args):
+        time.sleep(1)
         filename = path.replace('/', '-')
         if args:
             filename += '-' + urlencode(sorted(args.items()))
