@@ -304,8 +304,8 @@ class FetchingFailed(WidgetWrap):
 
 class SnapCheckBox(CheckBox):
     states = {
-        True: SelectableIcon("(*)"),
-        False: SelectableIcon("( )"),
+        True: SelectableIcon("[*]"),
+        False: SelectableIcon("[ ]"),
         }
 
     def __init__(self, parent, snap):
