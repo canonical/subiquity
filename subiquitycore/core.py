@@ -310,29 +310,15 @@ class ControllerSet:
 
     @property
     def cur(self):
-        if self.index >= 0:
-            inst = self.instances[self.index]
-            while isinstance(inst, RepeatedController):
-                inst = inst.orig
-            return inst
-        else:
+        if self.out_of_bounds():
             return None
+        inst = self.instances[self.index]
+        while isinstance(inst, RepeatedController):
+            inst = inst.orig
+        return inst
 
-    @property
-    def at_end(self):
-        return self.index == len(self.instances) - 1
-
-    @property
-    def at_start(self):
-        return self.index == 0
-
-    def advance(self):
-        self.index += 1
-        return self.cur
-
-    def back_up(self):
-        self.index -= 1
-        return self.cur
+    def out_of_bounds(self):
+        return self.index < 0 or self.index >= len(self.instances)
 
 
 class Application:
@@ -475,45 +461,35 @@ class Application:
         with open(state_path, 'w') as fp:
             json.dump(cur.serialize(), fp)
 
-    def start_screen(self, new):
+    def _move_screen(self, increment):
+        self.save_state()
         old = self.controllers.cur
         if old is not None:
             old.end_ui()
-        log.debug("moving to screen %s", new.name)
-        if self.opts.screens and new.name not in self.opts.screens:
-            raise Skip
-        new.start_ui()
-        state_path = os.path.join(self.state_dir, 'last-screen')
-        with open(state_path, 'w') as fp:
-            fp.write(new.name)
+        while True:
+            self.controllers.index += increment
+            if self.controllers.out_of_bounds():
+                self.exit()
+            new = self.controllers.cur
+            try:
+                new.start_ui()
+            except Skip:
+                log.debug("skipping screen %s", new.name)
+                continue
+            state_path = os.path.join(self.state_dir, 'last-screen')
+            with open(state_path, 'w') as fp:
+                fp.write(new.name)
+            return
 
     def next_screen(self, *args):
-        self.save_state()
-        while True:
-            if self.controllers.at_end:
-                self.exit()
-            controller = self.controllers.advance()
-            try:
-                self.start_screen(controller)
-            except Skip:
-                log.debug("skipping screen %s", controller.name)
-                continue
-            else:
-                break
+        self._move_screen(1)
 
     def prev_screen(self, *args):
-        self.save_state()
-        while True:
-            if self.controllers.at_start:
-                self.exit()
-            controller = self.controllers.back_up()
-            try:
-                self.start_screen(controller)
-            except Skip:
-                log.debug("skipping screen %s", controller.name)
-                continue
-            else:
-                break
+        self._move_screen(-1)
+
+    def select_initial_screen(self, controller_index):
+        self.controllers.index = controller_index - 1
+        self.next_screen()
 
 # EventLoop -------------------------------------------------------------------
 
@@ -630,13 +606,6 @@ class Application:
             if controller.name == last_screen:
                 controller_index = i
         return controller_index
-
-    def select_initial_screen(self, controller_index):
-        self.controllers.index = controller_index
-        try:
-            self.start_screen(self.controllers.cur)
-        except Skip:
-            self.next_screen()
 
     def run(self):
         log.debug("Application.run")
