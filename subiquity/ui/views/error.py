@@ -109,7 +109,8 @@ reconfiguring the system's block devices manually.
     ErrorReportKind.INSTALL_FAIL: (_("""
 Do you want to try starting the installation again?
 """), ['restart', 'close']),
-    ErrorReportKind.UI: (_("Select continue to try again."), ['continue']),
+    ErrorReportKind.UI: (
+        _("Select continue to try the installation again."), ['continue']),
     ErrorReportKind.UNKNOWN: ("", ['close']),
 }
 
@@ -171,9 +172,6 @@ class ErrorReportStretchy(Stretchy):
     def _pile_elements(self):
         btns = self.btns.copy()
 
-        if self.report.uploader:
-            btns['continue'] = btns['close'] = btns['cancel']
-
         widgets = [
             Text(rewrap(_(error_report_intros[self.report.kind]))),
             Text(""),
@@ -217,7 +215,9 @@ class ErrorReportStretchy(Stretchy):
                     Text(""),
                     self.spinner])
 
-        if self.interrupting:
+        if self.report.uploader:
+            widgets.extend([Text(""), btns['cancel']])
+        elif self.interrupting:
             if self.report.state != ErrorReportState.INCOMPLETE:
                 text, btn_names = error_report_options[self.report.kind]
                 if text:
