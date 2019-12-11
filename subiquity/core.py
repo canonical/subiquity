@@ -105,6 +105,8 @@ class Subiquity(Application):
             ])
         self._apport_data = []
         self._apport_files = []
+        self.note_data_for_apport("SnapUpdated", str(self.updated))
+        self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
     def run(self):
         try:
