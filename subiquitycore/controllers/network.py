@@ -277,13 +277,6 @@ class NetworkController(BaseController):
                 log.debug("disabling %s", dev.name)
                 dev.disabled_reason = _("autoconfiguration failed")
 
-    def check_dchp_results(self, device_versions):
-        log.debug('check_dchp_results for %s', device_versions)
-        for dev, v in device_versions:
-            if not dev.dhcp_addresses()[v]:
-                dev.set_dhcp_state(v, "TIMEDOUT")
-                self.network_event_receiver.update_link(dev.ifindex)
-
     def start_ui(self):
         if not self.view_shown:
             self.update_initial_configs()
@@ -318,10 +311,45 @@ class NetworkController(BaseController):
         self.apply_config_task = asyncio.ensure_future(
             self._apply_config(silent))
 
+    async def _down_devs(self, devs):
+        for dev in devs:
+            try:
+                log.debug('downing %s', dev.name)
+                self.observer.rtlistener.unset_link_flags(dev.ifindex, IFF_UP)
+            except RuntimeError:
+                # We don't actually care very much about this
+                log.exception('unset_link_flags failed for %s', dev.name)
+
+    async def _delete_devs(self, devs):
+        for dev in devs:
+            # XXX would be nicer to do this via rtlistener eventually.
+            log.debug('deleting %s', dev.name)
+            cmd = ['ip', 'link', 'delete', 'dev', dev.name]
+            try:
+                await arun_command(cmd, check=True)
+            except subprocess.CalledProcessError as cp:
+                log.info("deleting %s failed with %r", dev.name, cp.stderr)
+
+    def _write_config(self):
+        config = self.model.render()
+
+        log.debug("network config: \n%s",
+                  yaml.dump(sanitize_config(config), default_flow_style=False))
+
+        for p in netplan.configs_in_root(self.root, masked=True):
+            if p == self.netplan_path:
+                continue
+            os.rename(p, p + ".dist-" + self.opts.project)
+
+        write_file(self.netplan_path, '\n'.join((
+            ("# This is the network config written by '%s'" %
+             self.opts.project),
+            yaml.dump(config, default_flow_style=False))), omode="w")
+
+        self.model.parse_netplan_configs(self.root)
+
     async def _apply_config(self, silent):
         log.debug("apply_config silent=%s", silent)
-
-        config = self.model.render()
 
         devs_to_delete = []
         devs_to_down = []
@@ -343,20 +371,7 @@ class NetworkController(BaseController):
             if dev.config != self.model.config.config_for_device(dev.info):
                 devs_to_down.append(dev)
 
-        log.debug("network config: \n%s",
-                  yaml.dump(sanitize_config(config), default_flow_style=False))
-
-        for p in netplan.configs_in_root(self.root, masked=True):
-            if p == self.netplan_path:
-                continue
-            os.rename(p, p + ".dist-" + self.opts.project)
-
-        write_file(self.netplan_path, '\n'.join((
-            ("# This is the network config written by '%s'" %
-             self.opts.project),
-            yaml.dump(config, default_flow_style=False))), omode="w")
-
-        self.model.parse_netplan_configs(self.root)
+        self._write_config()
 
         if not silent and self.view:
             self.view.show_apply_spinner()
@@ -381,22 +396,8 @@ class NetworkController(BaseController):
             except subprocess.CalledProcessError:
                 error("stop-networkd")
                 raise
-            for dev in devs_to_down:
-                try:
-                    log.debug('downing %s', dev.name)
-                    self.observer.rtlistener.unset_link_flags(
-                        dev.ifindex, IFF_UP)
-                except RuntimeError:
-                    # We don't actually care very much about this
-                    log.exception('unset_link_flags failed for %s', dev.name)
-            for dev in self.devs_to_delete:
-                # XXX would be nicer to do this via rtlistener eventually.
-                log.debug('deleting %s', dev.name)
-                cmd = ['ip', 'link', 'delete', 'dev', dev.name]
-                try:
-                    await arun_command(cmd, check=True)
-                except subprocess.CalledProcessError as cp:
-                    log.info("deleting %s failed with %r", dev.name, cp.stderr)
+            await self._down_devs(devs_to_down)
+            await self._delete_devs(devs_to_delete)
             try:
                 await arun_command(['netplan', 'apply'], check=True)
             except subprocess.CalledProcessError:
