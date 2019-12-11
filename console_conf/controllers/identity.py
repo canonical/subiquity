@@ -236,7 +236,7 @@ class IdentityController(BaseController):
                 login_details_path = '/run/console-conf/login-details.txt'
                 self.model.add_user(result)
         ips = []
-        net_model = self.app.controller_instances['Network'].model
+        net_model = self.app.base_model.network
         for dev in net_model.get_all_netdevs():
             ips.extend(dev.actual_global_ip_addresses)
         with open(login_details_path, 'w') as fp:
@@ -252,7 +252,7 @@ class IdentityController(BaseController):
         title = "Configuration Complete"
         self.ui.set_header(title)
 
-        net_model = self.app.controller_instances['Network'].model
+        net_model = self.app.base_model.network
         ifaces = net_model.get_all_netdevs()
         login_view = LoginView(self.opts, self.model, self, ifaces)
 

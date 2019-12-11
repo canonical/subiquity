@@ -280,7 +280,7 @@ class ErrorReportListStretchy(Stretchy):
                 Text(""),
             ])]
         self.report_to_row = {}
-        for report in self.app.error_controller.reports:
+        for report in self.app.controllers.Error.reports:
             connect_signal(report, "changed", self._report_changed, report)
             r = self.report_to_row[report] = self.row_for_report(report)
             rows.append(r)

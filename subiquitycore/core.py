@@ -282,6 +282,45 @@ class AsyncioEventLoop(urwid.AsyncioEventLoop):
             loop.default_exception_handler(context)
 
 
+class ControllerSet:
+
+    def __init__(self, app, names):
+        self.app = app
+        self.controller_names = names
+        self.index = -1
+        self.instances = []
+
+    def load(self):
+        controllers_mod = __import__(
+            '{}.controllers'.format(self.app.project), None, None, [''])
+        for name in self.controller_names:
+            log.debug("Importing controller: %s", name)
+            klass = getattr(controllers_mod, name+"Controller")
+            if hasattr(self, name):
+                c = 0
+                for instance in self.instances:
+                    if isinstance(instance, klass):
+                        c += 1
+                inst = RepeatedController(getattr(self, name), c)
+                name = inst.name
+            else:
+                inst = klass(self.app)
+            setattr(self, name, inst)
+            self.instances.append(inst)
+
+    @property
+    def cur(self):
+        if self.out_of_bounds():
+            return None
+        inst = self.instances[self.index]
+        while isinstance(inst, RepeatedController):
+            inst = inst.orig
+        return inst
+
+    def out_of_bounds(self):
+        return self.index < 0 or self.index >= len(self.instances)
+
+
 class Application:
 
     # A concrete subclass must set project and controllers attributes, e.g.:
@@ -295,7 +334,7 @@ class Application:
     #         "InstallProgress",
     # ]
     # The 'next-screen' and 'prev-screen' signals move through the list of
-    # controllers in order, calling the default method on the controller
+    # controllers in order, calling the start_ui method on the controller
     # instance.
 
     make_ui = SubiquityCoreUI
@@ -337,21 +376,7 @@ class Application:
         self.prober = prober
         self.loop = None
         self.pool = futures.ThreadPoolExecutor(10)
-        if opts.screens:
-            self.controllers = [c for c in self.controllers
-                                if c in opts.screens]
-        else:
-            self.controllers = self.controllers[:]
-        self.ui.progress_completion = len(self.controllers)
-        self.controller_instances = dict.fromkeys(self.controllers)
-        self.controller_index = -1
-
-    @property
-    def cur_controller(self):
-        if self.controller_index < 0:
-            return None
-        controller_name = self.controllers[self.controller_index]
-        return self.controller_instances[controller_name]
+        self.controllers = ControllerSet(self, self.controllers)
 
     def run_in_bg(self, func, callback):
         """Run func() in a thread and call callback on UI thread.
@@ -423,58 +448,52 @@ class Application:
         self.signal.connect_signals(signals)
 
         # Registers signals from each controller
-        for controller_class in self.controller_instances.values():
-            controller_class.register_signals()
+        for controller in self.controllers.instances:
+            controller.register_signals()
         log.debug("known signals: %s", self.signal.known_signals)
 
     def save_state(self):
-        cur_controller = self.cur_controller
-        if cur_controller is None:
+        cur = self.controllers.cur
+        if cur is None:
             return
         state_path = os.path.join(
-            self.state_dir, 'states', cur_controller._controller_name())
+            self.state_dir, 'states', cur.name)
         with open(state_path, 'w') as fp:
-            json.dump(cur_controller.serialize(), fp)
+            json.dump(cur.serialize(), fp)
 
-    def select_screen(self, index):
-        if self.cur_controller is not None:
-            self.cur_controller.end_ui()
-        self.controller_index = index
-        self.ui.progress_current = index
-        log.debug(
-            "moving to screen %s", self.cur_controller._controller_name())
-        self.cur_controller.start_ui()
+    def select_screen(self, new):
+        new.start_ui()
         state_path = os.path.join(self.state_dir, 'last-screen')
         with open(state_path, 'w') as fp:
-            fp.write(self.cur_controller._controller_name())
+            fp.write(new.name)
+
+    def _move_screen(self, increment):
+        self.save_state()
+        old = self.controllers.cur
+        if old is not None:
+            old.end_ui()
+        while True:
+            self.controllers.index += increment
+            if self.controllers.out_of_bounds():
+                self.exit()
+            new = self.controllers.cur
+            try:
+                self.select_screen(new)
+            except Skip:
+                log.debug("skipping screen %s", new.name)
+                continue
+            else:
+                return
 
     def next_screen(self, *args):
-        self.save_state()
-        while True:
-            if self.controller_index == len(self.controllers) - 1:
-                self.exit()
-            try:
-                self.select_screen(self.controller_index + 1)
-            except Skip:
-                controller_name = self.controllers[self.controller_index]
-                log.debug("skipping screen %s", controller_name)
-                continue
-            else:
-                return
+        self._move_screen(1)
 
     def prev_screen(self, *args):
-        self.save_state()
-        while True:
-            if self.controller_index == 0:
-                self.exit()
-            try:
-                self.select_screen(self.controller_index - 1)
-            except Skip:
-                controller_name = self.controllers[self.controller_index]
-                log.debug("skipping screen %s", controller_name)
-                continue
-            else:
-                return
+        self._move_screen(-1)
+
+    def select_initial_screen(self, controller_index):
+        self.controllers.index = controller_index - 1
+        self.next_screen()
 
 # EventLoop -------------------------------------------------------------------
 
@@ -566,58 +585,31 @@ class Application:
         elif key in ['ctrl t', 'f4']:
             self.toggle_color()
 
-    def load_controllers(self):
-        log.debug("load_controllers")
-        controllers_mod = __import__(
-            '{}.controllers'.format(self.project), None, None, [''])
-        for i, k in enumerate(self.controllers):
-            if self.controller_instances[k] is None:
-                log.debug("Importing controller: {}".format(k))
-                klass = getattr(controllers_mod, k+"Controller")
-                self.controller_instances[k] = klass(self)
-            else:
-                count = 1
-                for k2 in self.controllers[:i]:
-                    if k2 == k or k2.startswith(k + '-'):
-                        count += 1
-                orig = self.controller_instances[k]
-                k += '-' + str(count)
-                self.controllers[i] = k
-                self.controller_instances[k] = RepeatedController(
-                    orig, count)
-        log.debug("load_controllers done")
-
     def start_controllers(self):
         log.debug("starting controllers")
-        for k in self.controllers:
-            self.controller_instances[k].start()
+        for controller in self.controllers.instances:
+            controller.start()
         log.debug("controllers started")
 
     def load_serialized_state(self):
-        for k in self.controllers:
-            state_path = os.path.join(self.state_dir, 'states', k)
+        for controller in self.controllers.instances:
+            state_path = os.path.join(
+                self.state_dir, 'states', controller.name)
             if not os.path.exists(state_path):
                 continue
             with open(state_path) as fp:
-                self.controller_instances[k].deserialize(
-                    json.load(fp))
+                controller.deserialize(json.load(fp))
 
         last_screen = None
         state_path = os.path.join(self.state_dir, 'last-screen')
         if os.path.exists(state_path):
             with open(state_path) as fp:
                 last_screen = fp.read().strip()
-
-        if last_screen in self.controllers:
-            return self.controllers.index(last_screen)
-        else:
-            return 0
-
-    def select_initial_screen(self, index):
-        try:
-            self.select_screen(index)
-        except Skip:
-            self.next_screen()
+        controller_index = 0
+        for i, controller in enumerate(self.controllers.instances):
+            if controller.name == last_screen:
+                controller_index = i
+        return controller_index
 
     def run(self):
         log.debug("Application.run")
@@ -642,7 +634,7 @@ class Application:
             if self.opts.scripts:
                 self.run_scripts(self.opts.scripts)
 
-            self.load_controllers()
+            self.controllers.load()
 
             initial_controller_index = 0
 

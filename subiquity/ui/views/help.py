@@ -195,7 +195,7 @@ class HelpMenu(WidgetWrap):
             local = Text(
                 ('info_minor header', " " + _("Help on this screen") + " "))
 
-        if self.parent.app.error_controller.reports:
+        if self.parent.app.controllers.Error.reports:
             view_errors = menu_item(
                 _("View error reports").format(local_title),
                 on_press=self._show_errors)
