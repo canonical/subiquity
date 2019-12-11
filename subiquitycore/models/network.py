@@ -111,6 +111,7 @@ class NetworkDev(object):
         self.config = {}
         self.info = None
         self.disabled_reason = None
+        self.dhcp_events = {}
         self._dhcp_state = {
             4: None,
             6: None,

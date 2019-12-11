@@ -45,6 +45,7 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
         self.view = None
         self.default_route_watchers = []
         self.default_routes = set()
+        self.dhcp_events = {}
 
     def new_link(self, ifindex, link):
         netdev = self.model.new_link(ifindex, link)
@@ -66,6 +67,10 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
             self.default_routes.remove(ifindex)
             for watcher in self.default_route_watchers:
                 watcher(self.default_routes)
+        for v, e in netdev.dhcp_events.items():
+            if netdev.dhcp_addresses()[v]:
+                e.set()
+
         if self.view is not None:
             self.view.update_link(netdev)
 
@@ -343,7 +348,9 @@ class NetworkController(BaseController):
         devs_to_delete = []
         devs_to_down = []
         dhcp_device_versions = []
+        dhcp_events = set()
         for dev in self.model.get_all_netdevs(include_deleted=True):
+            dev.dhcp_events = {}
             for v in 4, 6:
                 if dev.dhcp_enabled(v):
                     if not silent:
@@ -351,7 +358,8 @@ class NetworkController(BaseController):
                         self.network_event_receiver.update_link(dev.ifindex)
                     else:
                         dev.set_dhcp_state(v, "RECONFIGURE")
-                    dhcp_device_versions.append((dev, v))
+                    dev.dhcp_events[v] = e = asyncio.Event()
+                    dhcp_events.add(e)
             if dev.info is None:
                 continue
             if dev.is_virtual:
@@ -403,12 +411,15 @@ class NetworkController(BaseController):
             self.answers.clear()
             self._run_iterator(self._run_actions(actions))
 
-        if not dhcp_device_versions:
+        if not dhcp_events:
             return
 
-        await asyncio.sleep(10)
+        await asyncio.wait_for(
+            asyncio.wait({e.wait() for e in dhcp_events}),
+            10)
 
         for dev, v in dhcp_device_versions:
+            dev.dhcp_events = {}
             if not dev.dhcp_addresses()[v]:
                 dev.set_dhcp_state(v, "TIMEDOUT")
                 self.network_event_receiver.update_link(dev.ifindex)
