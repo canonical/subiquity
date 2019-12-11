@@ -136,7 +136,7 @@ class NetworkView(BaseView):
         self.del_link(device)
         for dev in touched_devs:
             self.update_link(dev)
-        self.controller.apply_config_start()
+        self.controller.apply_config()
 
     def _action(self, sender, action, device):
         action, meth = action

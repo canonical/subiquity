@@ -16,11 +16,43 @@
 import asyncio
 
 
+def _done(fut):
+    try:
+        fut.result()
+    except asyncio.CancelledError:
+        pass
+
+
 def schedule_task(coro):
     loop = asyncio.get_event_loop()
-    loop.call_soon(asyncio.ensure_future, coro)
+    if asyncio.iscoroutine(coro):
+        task = asyncio.Task(coro)
+    else:
+        task = coro
+    task.add_done_callback(_done)
+    loop.call_soon(asyncio.ensure_future, task)
+    return task
 
 
 async def run_in_thread(func, *args):
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, func, *args)
+
+
+class SingleInstanceTask:
+
+    def __init__(self, func):
+        self.func = func
+        self.task = None
+
+    async def start(self, *args, **kw):
+        if self.task is not None:
+            self.task.cancel()
+            try:
+                await self.task
+            except asyncio.CancelledError:
+                pass
+        self.task = schedule_task(self.func(*args, **kw))
+
+    def start_sync(self, *args, **kw):
+        return schedule_task(self.start(*args, **kw))

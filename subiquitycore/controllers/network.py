@@ -34,7 +34,7 @@ from subiquitycore.utils import (
 from subiquitycore.file_util import write_file
 from subiquitycore import netplan
 
-from subiquity.async_helpers import schedule_task
+from subiquity.async_helpers import SingleInstanceTask
 
 
 log = logging.getLogger("subiquitycore.controller.network")
@@ -129,7 +129,7 @@ class NetworkController(BaseController):
         self.model = app.base_model.network
         self.view = None
         self.view_shown = False
-        self.apply_config_task = None
+        self.apply_config_task = SingleInstanceTask(self._apply_config)
         if self.opts.dry_run:
             self.root = os.path.abspath(".subiquity")
             netplan_path = self.netplan_path
@@ -282,7 +282,7 @@ class NetworkController(BaseController):
             self.update_initial_configs()
         self.view = NetworkView(self.model, self)
         if not self.view_shown:
-            self.apply_config_start()
+            self.apply_config(silent=True)
             self.view_shown = True
         self.network_event_receiver.view = self.view
         self.ui.set_body(self.view)
@@ -298,18 +298,8 @@ class NetworkController(BaseController):
             netplan_config_file_name = '00-snapd-config.yaml'
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
-    def apply_config_start(self, silent=False):
-        schedule_task(self.apply_config(silent))
-
-    async def apply_config(self, silent):
-        if self.apply_config_task is not None:
-            self.apply_config_task.cancel()
-            try:
-                await self.apply_config_task
-            except asyncio.CancelledError:
-                pass
-        self.apply_config_task = asyncio.ensure_future(
-            self._apply_config(silent))
+    def apply_config(self, silent=False):
+        self.apply_config_task.start_sync(silent)
 
     async def _down_devs(self, devs):
         for dev in devs:
