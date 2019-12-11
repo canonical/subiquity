@@ -30,10 +30,9 @@ from subiquitycore.ui.form import (
     Form,
     RadioButtonField,
     simple_field,
+    SubForm,
+    SubFormField,
     WantsToKnowFormField,
-    )
-from subiquitycore.ui.selector import (
-    Option,
     )
 from subiquitycore.ui.table import (
     TablePile,
@@ -74,7 +73,7 @@ class DiskChooser(WidgetWrap, WantsToKnowFormField):
         self.value = disk
 
     def set_bound_form_field(self, bff):
-        model = bff.form.model
+        model = bff.form.parent.model
         rows = []
         group = []
         for disk in model.all_disks():
@@ -98,15 +97,17 @@ DiskField = simple_field(DiskChooser)
 DiskField.takes_default_style = False
 
 
+class DiskChoiceForm(SubForm):
+
+    disk_choice = DiskField("")
+    use_lvm = BooleanField(_("Set up this disk as an LVM group"))
+
+
 class GuidedForm(Form):
 
     radio_group = []
     guided_layout = RadioButtonField(radio_group, _("Use an entire disk"))
-    # pad
-    disk_choice = DiskField("")
-    # pad pad
-    use_lvm = BooleanField(_("Set up this disk as an LVM group"))
-    # pad pad pad even more
+    disk_choice = SubFormField(DiskChoiceForm, " ")
     custom_layout = RadioButtonField(radio_group, _("Custom storage layout"))
 
     cancel_label = _("Back")
@@ -136,7 +137,7 @@ class GuidedForm(Form):
 
         # grey-out guided_layout dependencies
         self.disk_choice.enabled = guided_layout
-        self.use_lvm.enabled = guided_layout
+        #self.use_lvm.enabled = guided_layout
         self.in_signal = False
 
 
@@ -154,12 +155,12 @@ class GuidedDiskSelectionView(BaseView):
 
         self.form = GuidedForm(model=self.model, initial=initial)
 
-        disk_choices = [
-            Option((disk.label, True, disk))
-            for disk in self.model.all_disks()
-        ]
-        self.form.disk_choice.widget.options = disk_choices
-        self.form.disk_choice.widget.value = disk_choices[0].value
+        #disk_choices = [
+        #    Option((disk.label, True, disk))
+        #    for disk in self.model.all_disks()
+        #]
+        #self.form.disk_choice.widget.options = disk_choices
+        #self.form.disk_choice.widget.value = disk_choices[0].value
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
