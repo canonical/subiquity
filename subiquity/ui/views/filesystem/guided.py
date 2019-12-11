@@ -28,6 +28,7 @@ from subiquitycore.ui.container import (
 from subiquitycore.ui.form import (
     BooleanField,
     Form,
+    NO_CAPTION,
     RadioButtonField,
     simple_field,
     SubForm,
@@ -97,9 +98,9 @@ DiskField = simple_field(DiskChooser)
 DiskField.takes_default_style = False
 
 
-class DiskChoiceForm(SubForm):
+class GuidedChoiceForm(SubForm):
 
-    disk_choice = DiskField("")
+    disk_choice = DiskField(caption=NO_CAPTION)
     use_lvm = BooleanField(_("Set up this disk as an LVM group"))
 
 
@@ -107,7 +108,7 @@ class GuidedForm(Form):
 
     radio_group = []
     guided_layout = RadioButtonField(radio_group, _("Use an entire disk"))
-    disk_choice = SubFormField(DiskChoiceForm, " ")
+    disk_choice = SubFormField(DiskChoiceForm, "")
     custom_layout = RadioButtonField(radio_group, _("Custom storage layout"))
 
     cancel_label = _("Back")
@@ -136,7 +137,7 @@ class GuidedForm(Form):
         self.custom_layout.value = not guided_layout
 
         # grey-out guided_layout dependencies
-        self.disk_choice.enabled = guided_layout
+        self.guided_layout.enabled = guided_layout
         #self.use_lvm.enabled = guided_layout
         self.in_signal = False
 
@@ -155,13 +156,6 @@ class GuidedDiskSelectionView(BaseView):
 
         self.form = GuidedForm(model=self.model, initial=initial)
 
-        #disk_choices = [
-        #    Option((disk.label, True, disk))
-        #    for disk in self.model.all_disks()
-        #]
-        #self.form.disk_choice.widget.options = disk_choices
-        #self.form.disk_choice.widget.value = disk_choices[0].value
-
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
@@ -176,7 +170,7 @@ class GuidedDiskSelectionView(BaseView):
             self.method = 'direct'
             if results['use_lvm']:
                 self.method = 'lvm'
-            self.choose_disk(results['disk_choice'])
+            self.choose_disk(results['guided_choice']['disk_choice'])
 
     def cancel(self, btn=None):
         self.controller.cancel()
