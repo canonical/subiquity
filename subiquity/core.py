@@ -195,6 +195,9 @@ class Subiquity(Application):
         else:
             report.pr["Title"] = thing
 
+        log.info(
+            "saving crash report %r to %s", report.pr["Title"], report.path)
+
         apport_files = self._apport_files[:]
         apport_data = self._apport_data.copy()
 

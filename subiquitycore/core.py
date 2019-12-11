@@ -427,7 +427,7 @@ class Application:
             self.cur_controller.end_ui()
         self.controller_index = index
         self.ui.progress_current = index
-        log.debug(
+        log.info(
             "moving to screen %s", self.cur_controller._controller_name())
         self.cur_controller.start_ui()
         state_path = os.path.join(self.state_dir, 'last-screen')

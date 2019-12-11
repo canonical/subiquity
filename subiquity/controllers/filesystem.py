@@ -112,7 +112,7 @@ class Probe:
                 self.kind, "block probing", interrupt=False)
             self.state = ProbeState.FAILED
         else:
-            block_discover_log.exception(
+            block_discover_log.info(
                 "probing successful restricted=%s", self.restricted)
             self.state = ProbeState.DONE
         self.cb(self)
@@ -573,7 +573,7 @@ class FilesystemController(BaseController):
 
         self.create_partition(disk, spec)
 
-        log.info("Successfully added partition")
+        log.debug("Successfully added partition")
 
     def logical_volume_handler(self, vg, lv, spec):
         log.debug('logical_volume_handler: %s %s %s', vg, lv, spec)
