@@ -479,6 +479,9 @@ class Application:
 # EventLoop -------------------------------------------------------------------
 
     def exit(self):
+        state_path = os.path.join(self.state_dir, 'last-screen')
+        if os.path.exists(state_path):
+            os.unlink(state_path)
         raise urwid.ExitMainLoop()
 
     def run_scripts(self, scripts):

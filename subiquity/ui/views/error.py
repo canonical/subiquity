@@ -244,7 +244,6 @@ class ErrorReportStretchy(Stretchy):
         self.app.debug_shell()
 
     def restart(self, sender):
-        # Should unmount and delete /target.
         # We rely on systemd restarting us.
         self.app.exit()
 
