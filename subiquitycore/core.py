@@ -268,6 +268,20 @@ class DummyKeycodesFilter:
         return keys
 
 
+class AsyncioEventLoop(urwid.AsyncioEventLoop):
+    # This is fixed in the latest urwid.
+
+    def _exception_handler(self, loop, context):
+        exc = context.get('exception')
+        if exc:
+            loop.stop()
+            if not isinstance(exc, urwid.ExitMainLoop):
+                # Store the exc_info so we can re-raise after the loop stops
+                self._exc_info = (type(exc), exc, exc.__traceback__)
+        else:
+            loop.default_exception_handler(context)
+
+
 class Application:
 
     # A concrete subclass must set project and controllers attributes, e.g.:
@@ -611,7 +625,7 @@ class Application:
             handle_mouse=False, pop_ups=True,
             input_filter=self.input_filter.filter,
             unhandled_input=self.unhandled_input,
-            event_loop=urwid.AsyncioEventLoop())
+            event_loop=AsyncioEventLoop())
 
         if self.opts.ascii:
             urwid.util.set_encoding('ascii')
