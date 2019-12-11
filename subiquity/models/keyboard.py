@@ -6,7 +6,7 @@ import re
 
 import attr
 
-from subiquitycore.utils import run_command
+from subiquitycore.utils import arun_command
 
 log = logging.getLogger("subiquity.models.keyboard")
 
@@ -198,7 +198,7 @@ class KeyboardModel:
         else:
             return self.layouts.get(code, '?'), None
 
-    def set_keyboard(self, setting):
+    async def set_keyboard(self, setting):
         path = self.config_path
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as fp:
@@ -206,12 +206,12 @@ class KeyboardModel:
         if setting != self.setting:
             self.setting = setting
             if self.root == '/':
-                run_command([
+                await arun_command([
                     'setupcon', '--save', '--force', '--keyboard-only'])
-                run_command(['/snap/bin/subiquity.subiquity-loadkeys'])
+                await arun_command(['/snap/bin/subiquity.subiquity-loadkeys'])
             else:
                 scale = os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1")
-                run_command(['sleep', str(1/float(scale))])
+                await arun_command(['sleep', str(1/float(scale))])
 
     def render(self):
         return {

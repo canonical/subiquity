@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import crypt
 import logging
 import os
@@ -59,6 +60,28 @@ def run_command(cmd, *, input=None, stdout=subprocess.PIPE,
     else:
         log.debug("run_command %s exited with code %s", cp.args, cp.returncode)
         return cp
+
+
+async def arun_command(cmd, *, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                       encoding='utf-8', input=None, errors='replace',
+                       env=None, check=False, **kw):
+    if input is None:
+        kw['stdin'] = subprocess.DEVNULL
+    else:
+        input = input.encode(encoding)
+    log.debug("arun_command called: %s", cmd)
+    proc = await asyncio.create_subprocess_exec(
+        *cmd, stdout=stdout, stderr=stderr, env=_clean_env(env), **kw)
+    stdout, stderr = await proc.communicate(input=input)
+    if encoding:
+        stdout = stdout.decode(encoding)
+        stderr = stderr.decode(encoding)
+    log.debug("arun_command %s exited with code %s", cmd, proc.returncode)
+    if check and proc.returncode != 0:
+        raise subprocess.CalledProcessError(proc.returncode, cmd)
+    else:
+        return subprocess.CompletedProcess(
+            cmd, proc.returncode, stdout, stderr)
 
 
 def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,

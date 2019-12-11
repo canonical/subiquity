@@ -16,12 +16,15 @@
 import enum
 import logging
 import os
-import time
 
 import requests.exceptions
 
 from subiquitycore.controller import BaseController
 from subiquitycore.core import Skip
+
+from subiquity.async_helpers import (
+    schedule_task,
+    )
 
 log = logging.getLogger('subiquity.controllers.refresh')
 
@@ -64,31 +67,34 @@ class RefreshController(BaseController):
 
     def start(self):
         self.switch_state = SwitchState.SWITCHING
-        self.run_in_bg(self._bg_get_snap_details, self._got_snap_details)
+        schedule_task(self.configure_snapd())
 
-    def _bg_get_snap_details(self):
-        return self.app.snapd_connection.get(
-            'v2/snaps/{snap_name}'.format(snap_name=self.snap_name))
-
-    def _got_snap_details(self, fut):
+    async def configure_snapd(self):
         try:
-            response = fut.result()
-            response.raise_for_status()
+            r = await self.app.snapd.get(
+                'v2/snaps/{snap_name}'.format(snap_name=self.snap_name))
         except requests.exceptions.RequestException:
-            log.exception("_got_snap_details")
-        else:
-            r = response.json()
-            self.current_snap_version = r['result']['version']
-            for k in 'channel', 'revision', 'version':
-                self.app.note_data_for_apport(
-                    "Snap" + k.title(), r['result'][k])
-            log.debug(
-                "current version of snap is: %r",
-                self.current_snap_version)
+            log.exception("getting snap details")
+            return
+        self.current_snap_version = r['result']['version']
+        for k in 'channel', 'revision', 'version':
+            self.app.note_data_for_apport(
+                "Snap" + k.title(), r['result'][k])
+        log.debug(
+            "current version of snap is: %r",
+            self.current_snap_version)
         channel = self.get_refresh_channel()
-        self.run_in_bg(
-            lambda: self._bg_switch_snap(channel),
-            self._snap_switched)
+        log.debug("switching %s to %s", self.snap_name, channel)
+        try:
+            await self.app.snapd.post_and_wait(
+                'v2/snaps/{}'.format(self.snap_name),
+                {'action': 'switch', 'channel': channel})
+        except requests.exceptions.RequestException:
+            log.exception("switching channels")
+            return
+        log.debug("snap switching completed")
+        self.switch_state = SwitchState.SWITCHED
+        self._maybe_check_for_update()
 
     def get_refresh_channel(self):
         """Return the channel we should refresh subiquity to."""
@@ -121,41 +127,6 @@ class RefreshController(BaseController):
         release = info.split()[1]
         return 'stable/ubuntu-' + release
 
-    def _bg_switch_snap(self, channel):
-        log.debug("switching %s to %s", self.snap_name, channel)
-        try:
-            response = self.app.snapd_connection.post(
-                'v2/snaps/{}'.format(self.snap_name),
-                {'action': 'switch', 'channel': channel})
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
-            log.exception("switching channels")
-            return
-        change = response.json()["change"]
-        while True:
-            try:
-                response = self.app.snapd_connection.get(
-                    'v2/changes/{}'.format(change))
-                response.raise_for_status()
-            except requests.exceptions.RequestException:
-                log.exception("checking switch")
-                return
-            if response.json()["result"]["status"] == "Done":
-                return True
-            time.sleep(0.1)
-
-    def _snap_switched(self, fut):
-        log.debug("snap switching completed")
-        try:
-            success = fut.result()
-        except Exception:
-            log.exception("_snap_switched")
-            return
-        if not success:
-            return
-        self.switch_state = SwitchState.SWITCHED
-        self._maybe_check_for_update()
-
     def snapd_network_changed(self):
         self.network_state = "up"
         self._maybe_check_for_update()
@@ -174,82 +145,65 @@ class RefreshController(BaseController):
         if self.check_state.is_definite():
             return
         self.check_state = CheckState.CHECKING
-        self.run_in_bg(self._bg_check_for_update, self._check_result)
+        schedule_task(self.check_for_update())
 
-    def _bg_check_for_update(self):
-        return self.app.snapd_connection.get('v2/find', select='refresh')
-
-    def _check_result(self, fut):
-        # If we managed to send concurrent requests and one has
-        # already provided an answer, just forget all about the other
-        # one!
-        if self.check_state.is_definite():
-            return
+    async def check_for_update(self):
         try:
-            response = fut.result()
-            response.raise_for_status()
+            result = await self.app.snapd.get('v2/find', select='refresh')
         except requests.exceptions.RequestException as e:
             log.exception("checking for update")
             self.check_error = e
             self.check_state = CheckState.FAILED
+            return
+        # If we managed to send concurrent requests and one has
+        # already provided an answer, just forget all about the other
+        # ones!
+        if self.check_state.is_definite():
+            return
+        log.debug("_check_result %s", result)
+        for snap in result["result"]:
+            if snap["name"] == self.snap_name:
+                self.check_state = CheckState.AVAILABLE
+                self.new_snap_version = snap["version"]
+                log.debug(
+                    "new version of snap available: %r",
+                    self.new_snap_version)
+                break
         else:
-            result = response.json()
-            log.debug("_check_result %s", result)
-            for snap in result["result"]:
-                if snap["name"] == self.snap_name:
-                    self.check_state = CheckState.AVAILABLE
-                    self.new_snap_version = snap["version"]
-                    log.debug(
-                        "new version of snap available: %r",
-                        self.new_snap_version)
-                    break
-            else:
-                self.check_state = CheckState.UNAVAILABLE
+            self.check_state = CheckState.UNAVAILABLE
         if self.showing:
             self.ui.body.update_check_state()
 
     def start_update(self, callback):
         update_marker = os.path.join(self.app.state_dir, 'updating')
         open(update_marker, 'w').close()
-        self.run_in_bg(
-            self._bg_start_update,
-            lambda fut: self.update_started(fut, callback))
+        schedule_task(self._start_update(callback))
 
-    def _bg_start_update(self):
-        return self.app.snapd_connection.post(
-            'v2/snaps/{}'.format(self.snap_name), {'action': 'refresh'})
-
-    def update_started(self, fut, callback):
+    async def _start_update(self, callback):
         try:
-            response = fut.result()
-            response.raise_for_status()
+            change = await self.app.snapd.post(
+                'v2/snaps/{}'.format(self.snap_name),
+                {'action': 'refresh'})
         except requests.exceptions.RequestException as e:
             log.exception("requesting update")
             self.update_state = CheckState.FAILED
             self.update_failure = e
             return
-        result = response.json()
-        log.debug("refresh requested: %s", result)
-        callback(result['change'])
+        log.debug("refresh requested: %s", change)
+        callback(change)
 
     def get_progress(self, change, callback):
-        self.run_in_bg(
-            lambda: self._bg_get_progress(change),
-            lambda fut: self.got_progress(fut, callback))
+        schedule_task(self._get_progress(change, callback))
 
-    def _bg_get_progress(self, change):
-        return self.app.snapd_connection.get('v2/changes/{}'.format(change))
-
-    def got_progress(self, fut, callback):
+    async def _get_progress(self, change, callback):
         try:
-            response = fut.result()
-            response.raise_for_status()
+            result = await self.app.snapd.get(
+                'v2/changes/{}'.format(change))
         except requests.exceptions.RequestException as e:
             log.exception("checking for progress")
             self.update_state = CheckState.FAILED
             self.update_failure = e
             return
-        result = response.json()
         callback(result['result'])
 
     def start_ui(self, index=1):

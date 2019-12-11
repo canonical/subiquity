@@ -17,6 +17,7 @@ import logging
 
 from subiquitycore.controller import BaseController
 
+from subiquity.async_helpers import schedule_task
 from subiquity.models.keyboard import KeyboardSetting
 from subiquity.ui.views import KeyboardView
 
@@ -52,14 +53,13 @@ class KeyboardController(BaseController):
             variant = self.answers.get('variant', '')
             self.done(KeyboardSetting(layout=layout, variant=variant))
 
-    def done(self, setting):
-        self.run_in_bg(
-            lambda: self.model.set_keyboard(setting),
-            self._done)
-
-    def _done(self, fut):
-        log.debug("KeyboardController._done next-screen")
+    async def apply_settings(self, setting):
+        await self.model.set_keyboard(setting)
+        log.debug("KeyboardController next-screen")
         self.signal.emit_signal('next-screen')
+
+    def done(self, setting):
+        schedule_task(self.apply_settings(setting))
 
     def cancel(self):
         self.signal.emit_signal('prev-screen')
