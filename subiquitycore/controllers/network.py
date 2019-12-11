@@ -386,15 +386,18 @@ class NetworkController(BaseController):
                 await arun_command(
                     ['netplan', 'generate', '--root', self.root], check=True)
         else:
-            try:
-                await arun_command(
-                    ['systemctl', 'stop', 'systemd-networkd.service'],
-                    check=True)
-            except subprocess.CalledProcessError:
-                error("stop-networkd")
+            if devs_to_down or devs_to_delete:
+                try:
+                    await arun_command(
+                        ['systemctl', 'stop', 'systemd-networkd.service'],
+                        check=True)
+                except subprocess.CalledProcessError:
+                    error("stop-networkd")
                 raise
-            await self._down_devs(devs_to_down)
-            await self._delete_devs(devs_to_delete)
+            if devs_to_down:
+                await self._down_devs(devs_to_down)
+            if devs_to_delete:
+                await self._delete_devs(devs_to_delete)
             try:
                 await arun_command(['netplan', 'apply'], check=True)
             except subprocess.CalledProcessError:
