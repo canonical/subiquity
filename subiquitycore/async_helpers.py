@@ -50,7 +50,7 @@ class SingleInstanceTask:
             self.task.cancel()
             try:
                 await self.task
-            except asyncio.CancelledError:
+            except BaseException:
                 pass
         self.task = schedule_task(self.func(*args, **kw))
 
