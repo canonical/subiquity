@@ -84,6 +84,15 @@ async def arun_command(cmd, *, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             cmd, proc.returncode, stdout, stderr)
 
 
+async def astart_command(cmd, *, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, stdin=subprocess.DEVNULL,
+                         env=None, **kw):
+    log.debug("astart_command called: %s", cmd)
+    return await asyncio.create_subprocess_exec(
+        *cmd, stdout=stdout, stderr=stderr,
+        env=_clean_env(env), **kw)
+
+
 def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                   stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
                   env=None, **kw):
