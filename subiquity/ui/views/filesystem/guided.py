@@ -29,6 +29,7 @@ from subiquitycore.ui.form import (
     BooleanField,
     Form,
     NO_CAPTION,
+    NO_HELP,
     PasswordField,
     RadioButtonField,
     simple_field,
@@ -112,8 +113,8 @@ class LVMOptionsForm(SubForm):
     def _toggle(self, sender, val):
         self.luks_options.enabled = val
 
-    encrypt = BooleanField(_("I like LUKS"))
-    luks_options = SubFormField(LUKSOptionsForm, "")
+    encrypt = BooleanField(_("I like LUKS"), help=NO_HELP)
+    luks_options = SubFormField(LUKSOptionsForm, "", help=NO_HELP)
 
 
 class GuidedChoiceForm(SubForm):
@@ -126,18 +127,18 @@ class GuidedChoiceForm(SubForm):
     def _toggle(self, sender, val):
         self.lvm_options.enabled = val
 
-    disk_choice = DiskField(caption=NO_CAPTION)
-    use_lvm = BooleanField(_("Set up this disk as an LVM group"))
-    lvm_options = SubFormField(LVMOptionsForm, "")
+    disk_choice = DiskField(caption=NO_CAPTION, help=NO_HELP)
+    use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
+    lvm_options = SubFormField(LVMOptionsForm, "", help=NO_HELP)
 
 
 
 class GuidedForm(Form):
 
     radio_group = []
-    guided_layout = RadioButtonField(radio_group, _("Use an entire disk"))
-    disk_choice = SubFormField(DiskChoiceForm, "")
-    custom_layout = RadioButtonField(radio_group, _("Custom storage layout"))
+    guided_layout = RadioButtonField(radio_group, _("Use an entire disk"), help=NO_HELP)
+    disk_choice = SubFormField(DiskChoiceForm, "", help=NO_HELP)
+    custom_layout = RadioButtonField(radio_group, _("Custom storage layout"), help=NO_HELP)
 
     cancel_label = _("Back")
 
