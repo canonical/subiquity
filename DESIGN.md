@@ -148,7 +148,7 @@ controllers don't have a corresponding model class.
 If the UI does not block, as promised above, then there needs to be a way of
 running things in the background and subiquity uses
 [asyncio](https://docs.python.org/3/library/asyncio.html) for this.
-`subiquity.async_helpers` defines two useful helper functions:
+`subiquitycore.async_helpers` defines two useful helper functions:
 
  * `run_in_thread` (just a nicer wrapper around `run_in_executor`)
  * `schedule_task` (a wrapper around `create_task` / `ensure_future`)

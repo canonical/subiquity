@@ -18,12 +18,12 @@ import logging
 import requests
 from xml.etree import ElementTree
 
-from subiquitycore.controller import BaseController
-
-from subiquity.async_helpers import (
+from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
+from subiquitycore.controller import BaseController
+
 from subiquity.ui.views.mirror import MirrorView
 
 log = logging.getLogger('subiquity.controllers.mirror')

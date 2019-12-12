@@ -31,13 +31,12 @@ import requests
 
 import urwid
 
-from subiquitycore.controller import BaseController
-from subiquitycore.core import Skip
-
-from subiquity.async_helpers import (
+from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
+from subiquitycore.controller import BaseController
+from subiquitycore.core import Skip
 
 
 log = logging.getLogger('subiquity.controllers.error')

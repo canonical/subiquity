@@ -17,12 +17,12 @@ import logging
 
 import requests.exceptions
 
+from subiquitycore.async_helpers import (
+    schedule_task,
+    )
 from subiquitycore.controller import BaseController
 from subiquitycore.core import Skip
 
-from subiquity.async_helpers import (
-    schedule_task,
-    )
 from subiquity.models.snaplist import SnapSelection
 from subiquity.ui.views.snaplist import SnapListView
 

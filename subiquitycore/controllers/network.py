@@ -22,19 +22,18 @@ import yaml
 
 from probert.network import IFF_UP, NetworkEventReceiver
 
+from subiquitycore.async_helpers import SingleInstanceTask
+from subiquitycore.controller import BaseController
+from subiquitycore.file_util import write_file
 from subiquitycore.models.network import BondParameters, sanitize_config
+from subiquitycore import netplan
 from subiquitycore.ui.views.network import (
     NetworkView,
     )
-from subiquitycore.controller import BaseController
 from subiquitycore.utils import (
     arun_command,
     run_command,
     )
-from subiquitycore.file_util import write_file
-from subiquitycore import netplan
-
-from subiquity.async_helpers import SingleInstanceTask
 
 
 log = logging.getLogger("subiquitycore.controller.network")
