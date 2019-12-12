@@ -66,7 +66,8 @@ async def arun_command(cmd, *, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                        encoding='utf-8', input=None, errors='replace',
                        env=None, check=False, **kw):
     if input is None:
-        kw['stdin'] = subprocess.DEVNULL
+        if 'stdin' not in kw:
+            kw['stdin'] = subprocess.DEVNULL
     else:
         kw['stdin'] = subprocess.PIPE
         input = input.encode(encoding)
@@ -75,8 +76,10 @@ async def arun_command(cmd, *, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         *cmd, stdout=stdout, stderr=stderr, env=_clean_env(env), **kw)
     stdout, stderr = await proc.communicate(input=input)
     if encoding:
-        stdout = stdout.decode(encoding)
-        stderr = stderr.decode(encoding)
+        if stdout is not None:
+            stdout = stdout.decode(encoding)
+        if stderr is not None:
+            stderr = stderr.decode(encoding)
     log.debug("arun_command %s exited with code %s", cmd, proc.returncode)
     if check and proc.returncode != 0:
         raise subprocess.CalledProcessError(proc.returncode, cmd)

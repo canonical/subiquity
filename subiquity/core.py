@@ -164,7 +164,7 @@ class Subiquity(Application):
             print(DEBUG_SHELL_INTRO)
 
         self.run_command_in_foreground(
-            "bash", before_hook=_before, cwd='/')
+            ["bash"], before_hook=_before, cwd='/')
 
     def note_file_for_apport(self, key, path):
         self._apport_files.append((key, path))

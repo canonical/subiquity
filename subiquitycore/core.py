@@ -19,13 +19,13 @@ import json
 import logging
 import os
 import struct
-import subprocess
 import sys
 import tty
 
 import urwid
 import yaml
 
+from subiquitycore.async_helpers import schedule_task
 from subiquitycore.controller import (
     RepeatedController,
     Skip,
@@ -33,6 +33,7 @@ from subiquitycore.controller import (
 from subiquitycore.signals import Signal
 from subiquitycore.prober import Prober
 from subiquitycore.ui.frame import SubiquityCoreUI
+from subiquitycore.utils import arun_command
 
 log = logging.getLogger('subiquitycore.core')
 
@@ -415,10 +416,9 @@ class Application:
         # there the symptom is that we are running in the foreground but not
         # listening to stdin! The fix is the same.
 
-        def run():
-            subprocess.run(cmd, **kw)
-
-        def restore(fut):
+        async def _run():
+            await arun_command(
+                cmd, stdin=None, stdout=None, stderr=None)
             screen.start()
             urwid.emit_signal(
                 screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
@@ -431,7 +431,7 @@ class Application:
             screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
         if before_hook is not None:
             before_hook()
-        self.run_in_bg(run, restore)
+        schedule_task(_run())
 
     def _connect_base_signals(self):
         """Connect signals used in the core controller."""
