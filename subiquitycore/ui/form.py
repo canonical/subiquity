@@ -30,6 +30,7 @@ from urwid import (
 
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.container import (
+    Pile,
     WidgetWrap,
 )
 from subiquitycore.ui.interactive import (
@@ -480,3 +481,42 @@ class Form(object, metaclass=MetaForm):
             if field.enabled:
                 data[field.field.name] = field.value
         return data
+
+
+class SubFormWidget(WidgetWrap, WantsToKnowFormField):
+
+    def __init__(self):
+        super().__init__(Pile([]))
+
+    @property
+    def value(self):
+        return self.form.as_data()
+
+    @value.setter
+    def value(self, data):
+        for k, v in data.items():
+            getattr(self.form, k).value = v
+
+    def set_bound_form_field(self, bff):
+        self.form = bff.field.form_cls(bff.form)
+        o = self._w.options('pack')
+        self._w.contents[:] = [(r, o) for r in self.form.as_rows()]
+
+
+class SubFormField(FormField):
+
+    takes_default_style = False
+
+    def __init__(self, form_cls, caption=None, help=None):
+        super().__init__(caption=caption, help=help)
+        self.form_cls = form_cls
+
+    def _make_widget(self, form):
+        return SubFormWidget()
+
+
+class SubForm(Form):
+
+    def __init__(self, parent):
+        self.parent = parent
+        super().__init__()
