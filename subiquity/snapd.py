@@ -25,7 +25,7 @@ from urllib.parse import (
     urlencode,
     )
 
-from subiquity.async_helpers import run_in_thread
+from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.utils import run_command
 
 import requests_unixsocket

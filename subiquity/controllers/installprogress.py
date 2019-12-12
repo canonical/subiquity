@@ -32,18 +32,17 @@ from curtin.commands.install import (
 from systemd import journal
 
 import yaml
-
+from subiquitycore.async_helpers import (
+    run_in_thread,
+    schedule_task,
+    )
+from subiquitycore.controller import BaseController
 from subiquitycore.utils import (
     arun_command,
     astart_command,
     run_command,
     )
-from subiquitycore.controller import BaseController
 
-from subiquity.async_helpers import (
-    run_in_thread,
-    schedule_task,
-    )
 from subiquity.controllers.error import ErrorReportKind
 from subiquity.ui.views.installprogress import ProgressView
 

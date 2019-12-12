@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from functools import partial
+import asyncio
 import logging
 import os
 import subprocess
@@ -22,81 +22,21 @@ import yaml
 
 from probert.network import IFF_UP, NetworkEventReceiver
 
+from subiquitycore.async_helpers import SingleInstanceTask
+from subiquitycore.controller import BaseController
+from subiquitycore.file_util import write_file
 from subiquitycore.models.network import BondParameters, sanitize_config
-from subiquitycore.tasksequence import (
-    BackgroundTask,
-    BackgroundProcess,
-    PythonSleep,
-    TaskSequence,
-    TaskWatcher,
-    )
+from subiquitycore import netplan
 from subiquitycore.ui.views.network import (
     NetworkView,
     )
-from subiquitycore.controller import BaseController
-from subiquitycore.utils import run_command
-from subiquitycore.file_util import write_file
-from subiquitycore import netplan
+from subiquitycore.utils import (
+    arun_command,
+    run_command,
+    )
+
 
 log = logging.getLogger("subiquitycore.controller.network")
-
-
-class DownNetworkDevices(BackgroundTask):
-
-    def __init__(self, rtlistener, devs_to_down, devs_to_delete):
-        self.rtlistener = rtlistener
-        self.devs_to_down = devs_to_down
-        self.devs_to_delete = devs_to_delete
-
-    def __repr__(self):
-        return 'DownNetworkDevices({}, {})'.format(
-            [dev.name for dev in self.devs_to_down],
-            [dev.name for dev in self.devs_to_delete],
-            )
-
-    def start(self):
-        pass
-
-    def _bg_run(self):
-        for dev in self.devs_to_down:
-            try:
-                log.debug('downing %s', dev.name)
-                self.rtlistener.unset_link_flags(dev.ifindex, IFF_UP)
-            except RuntimeError:
-                # We don't actually care very much about this
-                log.exception('unset_link_flags failed for %s', dev.name)
-        for dev in self.devs_to_delete:
-            # XXX would be nicer to do this via rtlistener eventually.
-            log.debug('deleting %s', dev.name)
-            cmd = ['ip', 'link', 'delete', 'dev', dev.name]
-            try:
-                run_command(cmd, check=True)
-            except subprocess.CalledProcessError as cp:
-                log.info("deleting %s failed with %r", dev.name, cp.stderr)
-
-    def end(self, observer, fut):
-        observer.task_succeeded()
-
-
-class ApplyWatcher(TaskWatcher):
-    def __init__(self, view, controller):
-        self.view = view
-        self.controller = controller
-
-    def task_complete(self, stage):
-        pass
-
-    def tasks_finished(self):
-        self.view.hide_apply_spinner()
-        if self.controller.answers.get('accept-default', False):
-            self.controller.done()
-        elif self.controller.answers.get('actions', False):
-            self.controller._run_iterator(
-                self.controller._run_actions(
-                    self.controller.answers['actions']))
-
-    def task_error(self, stage, info):
-        self.view.show_network_error(stage, info)
 
 
 class SubiquityNetworkEventReceiver(NetworkEventReceiver):
@@ -105,6 +45,7 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
         self.view = None
         self.default_route_watchers = []
         self.default_routes = set()
+        self.dhcp_events = {}
 
     def new_link(self, ifindex, link):
         netdev = self.model.new_link(ifindex, link)
@@ -126,6 +67,10 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
             self.default_routes.remove(ifindex)
             for watcher in self.default_route_watchers:
                 watcher(self.default_routes)
+        for v, e in netdev.dhcp_events.items():
+            if netdev.dhcp_addresses()[v]:
+                e.set()
+
         if self.view is not None:
             self.view.update_link(netdev)
 
@@ -188,7 +133,7 @@ class NetworkController(BaseController):
         self.model = app.base_model.network
         self.view = None
         self.view_shown = False
-        self.dhcp_check_handle = None
+        self.apply_config_task = SingleInstanceTask(self._apply_config)
         if self.opts.dry_run:
             self.root = os.path.abspath(".subiquity")
             netplan_path = self.netplan_path
@@ -201,6 +146,7 @@ class NetworkController(BaseController):
                 fp.write(default_netplan)
         self.model.parse_netplan_configs(self.root)
 
+        self._watching = False
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
         self.network_event_receiver.add_default_route_watcher(
             self.route_watcher)
@@ -216,23 +162,28 @@ class NetworkController(BaseController):
         self.start_watching()
 
     def stop_watching(self):
-        for handle in self._observer_handles:
-            self.loop.remove_watch_file(handle)
-        self._observer_handles = []
+        if not self._watching:
+            return
+        loop = asyncio.get_event_loop()
+        for fd in self._observer_fds:
+            loop.remove_reader(fd)
+        self._watching = False
 
     def start_watching(self):
-        if self._observer_handles:
+        if self._watching:
             return
-        self._observer_handles = [
-            self.loop.watch_file(fd, partial(self._data_ready, fd))
-            for fd in self._observer_fds]
+        loop = asyncio.get_event_loop()
+        for fd in self._observer_fds:
+            loop.add_reader(fd, self._data_ready, fd)
+        self._watching = True
 
     def _data_ready(self, fd):
         cp = run_command(['udevadm', 'settle', '-t', '0'])
         if cp.returncode != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
             self.stop_watching()
-            self.loop.set_alarm_in(0.1, lambda loop, ud: self.start_watching())
+            loop = asyncio.get_event_loop()
+            loop.call_later(0.1, self.start_watching)
             return
         self.observer.data_ready(fd)
         v = self.ui.body
@@ -330,13 +281,6 @@ class NetworkController(BaseController):
                 log.debug("disabling %s", dev.name)
                 dev.disabled_reason = _("autoconfiguration failed")
 
-    def check_dchp_results(self, device_versions):
-        log.debug('check_dchp_results for %s', device_versions)
-        for dev, v in device_versions:
-            if not dev.dhcp_addresses()[v]:
-                dev.set_dhcp_state(v, "TIMEDOUT")
-                self.network_event_receiver.update_link(dev.ifindex)
-
     def start_ui(self):
         if not self.view_shown:
             self.update_initial_configs()
@@ -359,32 +303,29 @@ class NetworkController(BaseController):
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
     def apply_config(self, silent=False):
-        log.debug("apply_config silent=%s", silent)
-        if self.dhcp_check_handle is not None:
-            self.loop.remove_alarm(self.dhcp_check_handle)
-            self.dhcp_check_handle = None
+        self.apply_config_task.start_sync(silent)
 
+    async def _down_devs(self, devs):
+        for dev in devs:
+            try:
+                log.debug('downing %s', dev.name)
+                self.observer.rtlistener.unset_link_flags(dev.ifindex, IFF_UP)
+            except RuntimeError:
+                # We don't actually care very much about this
+                log.exception('unset_link_flags failed for %s', dev.name)
+
+    async def _delete_devs(self, devs):
+        for dev in devs:
+            # XXX would be nicer to do this via rtlistener eventually.
+            log.debug('deleting %s', dev.name)
+            cmd = ['ip', 'link', 'delete', 'dev', dev.name]
+            try:
+                await arun_command(cmd, check=True)
+            except subprocess.CalledProcessError as cp:
+                log.info("deleting %s failed with %r", dev.name, cp.stderr)
+
+    def _write_config(self):
         config = self.model.render()
-
-        devs_to_delete = []
-        devs_to_down = []
-        dhcp_device_versions = []
-        for dev in self.model.get_all_netdevs(include_deleted=True):
-            for v in 4, 6:
-                if dev.dhcp_enabled(v):
-                    if not silent:
-                        dev.set_dhcp_state(v, "PENDING")
-                        self.network_event_receiver.update_link(dev.ifindex)
-                    else:
-                        dev.set_dhcp_state(v, "RECONFIGURE")
-                    dhcp_device_versions.append((dev, v))
-            if dev.info is None:
-                continue
-            if dev.is_virtual:
-                devs_to_delete.append(dev)
-                continue
-            if dev.config != self.model.config.config_for_device(dev.info):
-                devs_to_down.append(dev)
 
         log.debug("network config: \n%s",
                   yaml.dump(sanitize_config(config), default_flow_style=False))
@@ -401,43 +342,90 @@ class NetworkController(BaseController):
 
         self.model.parse_netplan_configs(self.root)
 
+    async def _apply_config(self, silent):
+        log.debug("apply_config silent=%s", silent)
+
+        devs_to_delete = []
+        devs_to_down = []
+        dhcp_device_versions = []
+        dhcp_events = set()
+        for dev in self.model.get_all_netdevs(include_deleted=True):
+            dev.dhcp_events = {}
+            for v in 4, 6:
+                if dev.dhcp_enabled(v):
+                    if not silent:
+                        dev.set_dhcp_state(v, "PENDING")
+                        self.network_event_receiver.update_link(dev.ifindex)
+                    else:
+                        dev.set_dhcp_state(v, "RECONFIGURE")
+                    dev.dhcp_events[v] = e = asyncio.Event()
+                    dhcp_events.add(e)
+            if dev.info is None:
+                continue
+            if dev.is_virtual:
+                devs_to_delete.append(dev)
+                continue
+            if dev.config != self.model.config.config_for_device(dev.info):
+                devs_to_down.append(dev)
+
+        self._write_config()
+
+        if not silent and self.view:
+            self.view.show_apply_spinner()
+
+        def error(stage):
+            if not silent and self.view:
+                self.view.show_network_error(stage)
+
         if self.opts.dry_run:
-            delay = 0.1/self.app.scale_factor
-            tasks = [
-                ('one', BackgroundProcess(['sleep', str(delay)])),
-                ('two', PythonSleep(delay)),
-                ('three', BackgroundProcess(['sleep', str(delay)])),
-                ]
+            delay = 1/self.app.scale_factor
+            await arun_command(['sleep', str(delay)])
             if os.path.exists('/lib/netplan/generate'):
                 # If netplan appears to be installed, run generate to at
                 # least test that what we wrote is acceptable to netplan.
-                tasks.append(('generate',
-                              BackgroundProcess(['netplan', 'generate',
-                                                 '--root', self.root])))
+                await arun_command(
+                    ['netplan', 'generate', '--root', self.root], check=True)
         else:
-            tasks = []
             if devs_to_down or devs_to_delete:
-                tasks.extend([
-                    ('stop-networkd',
-                     BackgroundProcess(['systemctl',
-                                        'stop', 'systemd-networkd.service'])),
-                    ('down',
-                     DownNetworkDevices(self.observer.rtlistener,
-                                        devs_to_down, devs_to_delete)),
-                    ])
-            tasks.extend([
-                ('apply', BackgroundProcess(['netplan', 'apply'])),
-                ])
+                try:
+                    await arun_command(
+                        ['systemctl', 'stop', 'systemd-networkd.service'],
+                        check=True)
+                except subprocess.CalledProcessError:
+                    error("stop-networkd")
+                raise
+            if devs_to_down:
+                await self._down_devs(devs_to_down)
+            if devs_to_delete:
+                await self._delete_devs(devs_to_delete)
+            try:
+                await arun_command(['netplan', 'apply'], check=True)
+            except subprocess.CalledProcessError:
+                error("apply")
+                raise
 
-        if not silent:
-            self.view.show_apply_spinner()
-        ts = TaskSequence(self.run_in_bg, tasks, ApplyWatcher(self.view, self))
-        ts.run()
-        if dhcp_device_versions:
-            self.dhcp_check_handle = self.loop.set_alarm_in(
-                10,
-                lambda loop, ud: self.check_dchp_results(ud),
-                dhcp_device_versions)
+        if not silent and self.view:
+            self.view.hide_apply_spinner()
+
+        if self.answers.get('accept-default', False):
+            self.done()
+        elif self.answers.get('actions', False):
+            actions = self.answers['actions']
+            self.answers.clear()
+            self._run_iterator(self._run_actions(actions))
+
+        if not dhcp_events:
+            return
+
+        await asyncio.wait_for(
+            asyncio.wait({e.wait() for e in dhcp_events}),
+            10)
+
+        for dev, v in dhcp_device_versions:
+            dev.dhcp_events = {}
+            if not dev.dhcp_addresses()[v]:
+                dev.set_dhcp_state(v, "TIMEDOUT")
+                self.network_event_receiver.update_link(dev.ifindex)
 
     def add_vlan(self, device, vlan):
         return self.model.new_vlan(device, vlan)

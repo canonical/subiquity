@@ -148,10 +148,18 @@ controllers don't have a corresponding model class.
 If the UI does not block, as promised above, then there needs to be a way of
 running things in the background and subiquity uses
 [asyncio](https://docs.python.org/3/library/asyncio.html) for this.
-`subiquity.async_helpers` defines two useful helper functions:
+`subiquitycore.async_helpers` defines some useful helpers:
 
- * `run_in_thread` (just a nicer wrapper around `run_in_executor`)
  * `schedule_task` (a wrapper around `create_task` / `ensure_future`)
+ * `run_in_thread` (just a nicer wrapper around `run_in_executor`)
+    * We still use threads for HTTP requests (this could change in the future
+      I guess) and come compute-bound things like generating error reports.
+ * `SingleInstanceTask` is a way of running tasks that only need to run once
+   but might need to be cancelled and restarted.
+   * This is useful for things like checking for snap updates: it's possible
+     that network requests will just hang until a HTTP proxy is configured so
+     if the request hasn't completed yet when a proxy is configured, we cancel
+     and restart.
 
 [trio](https://trio.readthedocs.io/en/stable/) has nicer APIs but is
 a bit too new for now.

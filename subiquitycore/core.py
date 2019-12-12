@@ -274,6 +274,7 @@ class AsyncioEventLoop(urwid.AsyncioEventLoop):
     def _exception_handler(self, loop, context):
         exc = context.get('exception')
         if exc:
+            log.debug("_exception_handler %r", exc)
             loop.stop()
             if not isinstance(exc, urwid.ExitMainLoop):
                 # Store the exc_info so we can re-raise after the loop stops
