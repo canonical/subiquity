@@ -164,12 +164,6 @@ running things in the background and subiquity uses
 [trio](https://trio.readthedocs.io/en/stable/) has nicer APIs but is
 a bit too new for now.
 
-The older approach which is still present in the codebase is the `run_in_bg`
-function, which takes two functions: one that takes no arguments and is called
-in a background thread and a callback that takes one argument, and is called
-in the main/UI thread with a `concurrent.futures.Future` representing the
-result of calling the first function.
-
 A cast-iron rule: Only touch the UI from the main thread.
 
 ### Terminal things

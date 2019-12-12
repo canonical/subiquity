@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from concurrent import futures
 import fcntl
 import json
 import logging
@@ -373,28 +372,7 @@ class Application:
         self.signal = Signal()
         self.prober = prober
         self.loop = None
-        self.pool = futures.ThreadPoolExecutor(10)
         self.controllers = ControllerSet(self, self.controllers)
-
-    def run_in_bg(self, func, callback):
-        """Run func() in a thread and call callback on UI thread.
-
-        callback will be passed a concurrent.futures.Future containing
-        the result of func(). The result of callback is discarded. An
-        exception will crash the process so be careful!
-        """
-        fut = self.pool.submit(func)
-
-        def in_main_thread(ignored):
-            self.loop.remove_watch_pipe(pipe)
-            os.close(pipe)
-            callback(fut)
-
-        pipe = self.loop.watch_pipe(in_main_thread)
-
-        def in_random_thread(ignored):
-            os.write(pipe, b'x')
-        fut.add_done_callback(in_random_thread)
 
     def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None,
                                   **kw):
@@ -652,9 +630,3 @@ class Application:
         except Exception:
             log.exception("Exception in controller.run():")
             raise
-        finally:
-            # concurrent.futures.ThreadPoolExecutor tries to join all
-            # threads before exiting. We don't want that and this
-            # ghastly hack prevents it.
-            from concurrent.futures import thread
-            thread._threads_queues = {}

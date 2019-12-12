@@ -46,7 +46,6 @@ class BaseController(ABC):
             #    subiquity/controllers/installprogress.py
             self.debug_flags = os.environ.get('SUBIQUITY_DEBUG', '').split(',')
         self.loop = app.loop
-        self.run_in_bg = app.run_in_bg
         self.app = app
         self.answers = app.answers.get(self.name, {})
 
