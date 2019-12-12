@@ -1,8 +1,8 @@
-subiquity (19.12.1.1) UNRELEASED; urgency=medium
+subiquity (19.12.1.1) focal; urgency=medium
 
   * Drop crufty .deb packages from the source package build.  LP: #1855727.
 
- -- Steve Langasek <steve.langasek@ubuntu.com>  Thu, 12 Dec 2019 11:14:43 -0800
+ -- Steve Langasek <steve.langasek@ubuntu.com>  Thu, 12 Dec 2019 11:16:22 -0800
 
 subiquity (19.08.1.4) eoan; urgency=medium
 
