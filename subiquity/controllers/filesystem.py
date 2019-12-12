@@ -92,6 +92,8 @@ class FilesystemController(BaseController):
         if 'bpfail-restricted' in debug_flags and restricted:
             await asyncio.sleep(2)
             1/0
+        block_discover_log.exception(
+            "probing restricted=%s", restricted)
         storage = await run_in_thread(
             self.app.prober.get_storage, probe_types)
         block_discover_log.info(
@@ -104,6 +106,9 @@ class FilesystemController(BaseController):
 
     async def _probe(self):
         self._crash_reports = {}
+        if isinstance(self.ui.body, ProbingFailed):
+            self.ui.set_body(SlowProbing(self))
+            schedule_task(self._wait_for_probing())
         for (restricted, kind) in [
                 (False, ErrorReportKind.BLOCK_PROBE_FAIL),
                 (True,  ErrorReportKind.DISK_PROBE_FAIL),
@@ -167,7 +172,7 @@ class FilesystemController(BaseController):
 
     async def _wait_for_probing(self):
         await self._probe_task.task
-        if self.showing:
+        if isinstance(self.ui.body, SlowProbing):
             self.start_ui()
 
     def start_ui(self):
