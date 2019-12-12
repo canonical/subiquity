@@ -295,14 +295,13 @@ class InstallProgressController(BaseController):
                 self.progress_view.update_done()
 
             await self.copy_logs_to_target()
-
-            if not self.auto_reboot:
-                await self.reboot_clicked.wait()
-
-            self.reboot()
         except Exception:
             self.curtin_error()
-            raise
+
+        if not self.auto_reboot:
+            await self.reboot_clicked.wait()
+
+        self.reboot()
 
     async def drain_curtin_events(self):
         waited = 0.0
