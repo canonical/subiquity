@@ -157,10 +157,10 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             del self.pr['ProcMaps']
             self.pr.write(self._file)
 
-        def added_info(fut):
-            log.debug("done adding info for report %s", self.base)
+        async def add_info():
+            log.debug("adding info for report %s", self.base)
             try:
-                fut.result()
+                await run_in_thread(_bg_add_info)
             except Exception:
                 self.state = ErrorReportState.ERROR_GENERATING
                 log.exception("adding info to problem report failed")
@@ -172,7 +172,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         if wait:
             _bg_add_info()
         else:
-            self.controller.run_in_bg(_bg_add_info, added_info)
+            schedule_task(add_info())
 
     async def load(self):
         log.debug("loading report %s", self.base)
