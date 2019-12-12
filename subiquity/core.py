@@ -106,6 +106,8 @@ class Subiquity(Application):
             ])
         self._apport_data = []
         self._apport_files = []
+        self.note_data_for_apport("SnapUpdated", str(self.updated))
+        self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
     def run(self):
         try:
@@ -185,6 +187,9 @@ class Subiquity(Application):
             report.pr['Traceback'] = traceback.format_exc()
         else:
             report.pr["Title"] = thing
+
+        log.info(
+            "saving crash report %r to %s", report.pr["Title"], report.path)
 
         apport_files = self._apport_files[:]
         apport_data = self._apport_data.copy()

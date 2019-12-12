@@ -215,7 +215,11 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 "Kind": self.kind.value
                 }
             for k, v in self.pr.items():
-                if len(v) < 1024 or k in {"Traceback", "ProcCpuinfoMinimal"}:
+                if len(v) < 1024 or k in {
+                        "InstallerLogInfo",
+                        "Traceback",
+                        "ProcCpuinfoMinimal",
+                        }:
                     for_upload[k] = v
                 else:
                     log.debug("dropping %s of length %s", k, len(v))

@@ -462,6 +462,7 @@ class Application:
             json.dump(cur.serialize(), fp)
 
     def select_screen(self, new):
+        log.info("moving to screen %s", new.name)
         new.start_ui()
         state_path = os.path.join(self.state_dir, 'last-screen')
         with open(state_path, 'w') as fp:
