@@ -303,9 +303,7 @@ class SSHView(BaseView):
         if self.form.ssh_import_id.value:
             fsk = FetchingSSHKeys(self)
             self.show_overlay(fsk, width=fsk.width, min_width=None)
-            ssh_import_id = (self.form.ssh_import_id.value +
-                             ":" + self.form.import_username.value)
-            self.controller.fetch_ssh_keys(result, ssh_import_id)
+            self.controller.fetch_ssh_keys(result)
         else:
             self.controller.done(result)
 
