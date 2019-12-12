@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-from functools import partial
 import logging
 import os
 import subprocess
@@ -24,79 +23,21 @@ import yaml
 from probert.network import IFF_UP, NetworkEventReceiver
 
 from subiquitycore.models.network import BondParameters, sanitize_config
-from subiquitycore.tasksequence import (
-    BackgroundTask,
-    TaskWatcher,
-    )
 from subiquitycore.ui.views.network import (
     NetworkView,
     )
 from subiquitycore.controller import BaseController
-from subiquitycore.utils import arun_command, run_command
+from subiquitycore.utils import (
+    arun_command,
+    run_command,
+    )
 from subiquitycore.file_util import write_file
 from subiquitycore import netplan
 
 from subiquity.async_helpers import schedule_task
 
+
 log = logging.getLogger("subiquitycore.controller.network")
-
-
-class DownNetworkDevices(BackgroundTask):
-
-    def __init__(self, rtlistener, devs_to_down, devs_to_delete):
-        self.rtlistener = rtlistener
-        self.devs_to_down = devs_to_down
-        self.devs_to_delete = devs_to_delete
-
-    def __repr__(self):
-        return 'DownNetworkDevices({}, {})'.format(
-            [dev.name for dev in self.devs_to_down],
-            [dev.name for dev in self.devs_to_delete],
-            )
-
-    def start(self):
-        pass
-
-    def _bg_run(self):
-        for dev in self.devs_to_down:
-            try:
-                log.debug('downing %s', dev.name)
-                self.rtlistener.unset_link_flags(dev.ifindex, IFF_UP)
-            except RuntimeError:
-                # We don't actually care very much about this
-                log.exception('unset_link_flags failed for %s', dev.name)
-        for dev in self.devs_to_delete:
-            # XXX would be nicer to do this via rtlistener eventually.
-            log.debug('deleting %s', dev.name)
-            cmd = ['ip', 'link', 'delete', 'dev', dev.name]
-            try:
-                run_command(cmd, check=True)
-            except subprocess.CalledProcessError as cp:
-                log.info("deleting %s failed with %r", dev.name, cp.stderr)
-
-    def end(self, observer, fut):
-        observer.task_succeeded()
-
-
-class ApplyWatcher(TaskWatcher):
-    def __init__(self, view, controller):
-        self.view = view
-        self.controller = controller
-
-    def task_complete(self, stage):
-        pass
-
-    def tasks_finished(self):
-        self.view.hide_apply_spinner()
-        if self.controller.answers.get('accept-default', False):
-            self.controller.done()
-        elif self.controller.answers.get('actions', False):
-            self.controller._run_iterator(
-                self.controller._run_actions(
-                    self.controller.answers['actions']))
-
-    def task_error(self, stage, info):
-        self.view.show_network_error(stage, info)
 
 
 class SubiquityNetworkEventReceiver(NetworkEventReceiver):
@@ -188,7 +129,7 @@ class NetworkController(BaseController):
         self.model = app.base_model.network
         self.view = None
         self.view_shown = False
-        self.dhcp_check_handle = None
+        self.apply_config_task = None
         if self.opts.dry_run:
             self.root = os.path.abspath(".subiquity")
             netplan_path = self.netplan_path
@@ -201,6 +142,7 @@ class NetworkController(BaseController):
                 fp.write(default_netplan)
         self.model.parse_netplan_configs(self.root)
 
+        self._watching = False
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
         self.network_event_receiver.add_default_route_watcher(
             self.route_watcher)
@@ -216,23 +158,28 @@ class NetworkController(BaseController):
         self.start_watching()
 
     def stop_watching(self):
-        for handle in self._observer_handles:
-            self.loop.remove_watch_file(handle)
-        self._observer_handles = []
+        if not self._watching:
+            return
+        loop = asyncio.get_event_loop()
+        for fd in self._observer_fds:
+            loop.remove_reader(fd)
+        self._watching = False
 
     def start_watching(self):
-        if self._observer_handles:
+        if self._watching:
             return
-        self._observer_handles = [
-            self.loop.watch_file(fd, partial(self._data_ready, fd))
-            for fd in self._observer_fds]
+        loop = asyncio.get_event_loop()
+        for fd in self._observer_fds:
+            loop.add_reader(fd, self._data_ready, fd)
+        self._watching = True
 
     def _data_ready(self, fd):
         cp = run_command(['udevadm', 'settle', '-t', '0'])
         if cp.returncode != 0:
             log.debug("waiting 0.1 to let udev event queue settle")
             self.stop_watching()
-            self.loop.set_alarm_in(0.1, lambda loop, ud: self.start_watching())
+            loop = asyncio.get_event_loop()
+            loop.call_later(0.1, self.start_watching)
             return
         self.observer.data_ready(fd)
         v = self.ui.body
@@ -342,7 +289,7 @@ class NetworkController(BaseController):
             self.update_initial_configs()
         self.view = NetworkView(self.model, self)
         if not self.view_shown:
-            schedule_task(self.apply_config(silent=True))
+            self.apply_config_start()
             self.view_shown = True
         self.network_event_receiver.view = self.view
         self.ui.set_body(self.view)
@@ -358,11 +305,21 @@ class NetworkController(BaseController):
             netplan_config_file_name = '00-snapd-config.yaml'
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
-    async def apply_config(self, silent=False):
+    def apply_config_start(self, silent=False):
+        schedule_task(self.apply_config(silent))
+
+    async def apply_config(self, silent):
+        if self.apply_config_task is not None:
+            self.apply_config_task.cancel()
+            try:
+                await self.apply_config_task
+            except asyncio.CancelledError:
+                pass
+        self.apply_config_task = asyncio.ensure_future(
+            self._apply_config(silent))
+
+    async def _apply_config(self, silent):
         log.debug("apply_config silent=%s", silent)
-        if self.dhcp_check_handle is not None:
-            self.loop.remove_alarm(self.dhcp_check_handle)
-            self.dhcp_check_handle = None
 
         config = self.model.render()
 
@@ -401,51 +358,63 @@ class NetworkController(BaseController):
 
         self.model.parse_netplan_configs(self.root)
 
-        if not silent:
+        if not silent and self.view:
             self.view.show_apply_spinner()
 
         def error(stage):
             if not silent and self.view:
                 self.view.show_network_error(stage)
 
-        try:
-            if self.opts.dry_run:
-                delay = 1/self.app.scale_factor
-                await arun_command(['sleep', str(delay)])
-                if os.path.exists('/lib/netplan/generate'):
-                    # If netplan appears to be installed, run generate to at
-                    # least test that what we wrote is acceptable to netplan.
-                    await arun_command(
-                        ['netplan', 'generate', '--root', self.root], check=True)
-            else:
+        if self.opts.dry_run:
+            delay = 1/self.app.scale_factor
+            await arun_command(['sleep', str(delay)])
+            if os.path.exists('/lib/netplan/generate'):
+                # If netplan appears to be installed, run generate to at
+                # least test that what we wrote is acceptable to netplan.
+                await arun_command(
+                    ['netplan', 'generate', '--root', self.root], check=True)
+        else:
+            try:
+                await arun_command(
+                    ['systemctl', 'stop', 'systemd-networkd.service'],
+                    check=True)
+            except subprocess.CalledProcessError:
+                error("stop-networkd")
+                raise
+            for dev in devs_to_down:
                 try:
-                    await arun_command(
-                        ['systemctl', 'stop', 'systemd-networkd.service'], check=True)
-                except subprocess.CalledProcessError:
-                    error("stop-networkd")
-                    raise
-                for dev in devs_to_down:
-                    try:
-                        log.debug('downing %s', dev.name)
-                        self.rtlistener.unset_link_flags(dev.ifindex, IFF_UP)
-                    except RuntimeError:
-                        # We don't actually care very much about this
-                        log.exception('unset_link_flags failed for %s', dev.name)
-                for dev in self.devs_to_delete:
-                    # XXX would be nicer to do this via rtlistener eventually.
-                    log.debug('deleting %s', dev.name)
-                    cmd = ['ip', 'link', 'delete', 'dev', dev.name]
-                    try:
-                        await arun_command(cmd, check=True)
-                    except subprocess.CalledProcessError as cp:
-                        log.info("deleting %s failed with %r", dev.name, cp.stderr)
+                    log.debug('downing %s', dev.name)
+                    self.observer.rtlistener.unset_link_flags(
+                        dev.ifindex, IFF_UP)
+                except RuntimeError:
+                    # We don't actually care very much about this
+                    log.exception('unset_link_flags failed for %s', dev.name)
+            for dev in self.devs_to_delete:
+                # XXX would be nicer to do this via rtlistener eventually.
+                log.debug('deleting %s', dev.name)
+                cmd = ['ip', 'link', 'delete', 'dev', dev.name]
                 try:
-                    await arun_command(['netplan', 'apply'], check=True)
-                except subprocess.CalledProcessError:
-                    error("apply")
-                    raise
-        except subprocess.CalledProcessError:
-            pass
+                    await arun_command(cmd, check=True)
+                except subprocess.CalledProcessError as cp:
+                    log.info("deleting %s failed with %r", dev.name, cp.stderr)
+            try:
+                await arun_command(['netplan', 'apply'], check=True)
+            except subprocess.CalledProcessError:
+                error("apply")
+                raise
+
+        if not silent and self.view:
+            self.view.hide_apply_spinner()
+
+        if self.answers.get('accept-default', False):
+            self.done()
+        elif self.answers.get('actions', False):
+            self._run_iterator(
+                self._run_actions(
+                    self.answers['actions']))
+
+        if not dhcp_device_versions:
+            return
 
         await asyncio.sleep(10)
 
