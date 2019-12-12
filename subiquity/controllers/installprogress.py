@@ -100,19 +100,20 @@ class InstallProgressController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model
-        self.auto_reboot = False
-        if self.answers.get('reboot', False):
-            self.auto_reboot = True
         self.progress_view = ProgressView(self)
         self.install_state = InstallState.NOT_STARTED
         self.journal_listener_handle = None
+
         self.filesystem_event = asyncio.Event()
-        self.reboot_clicked = asyncio.Event()
         self._postinstall_prerequisites = {
             'ssh': asyncio.Event(),
             'identity': asyncio.Event(),
             'snap': asyncio.Event(),
             }
+        self.reboot_clicked = asyncio.Event()
+        if self.answers.get('reboot', False):
+            self.reboot_clicked.set()
+
         self.uu_running = False
         self.uu = None
         self._event_indent = ""
@@ -298,8 +299,7 @@ class InstallProgressController(BaseController):
         except Exception:
             self.curtin_error()
 
-        if not self.auto_reboot:
-            await self.reboot_clicked.wait()
+        await self.reboot_clicked.wait()
 
         self.reboot()
 
