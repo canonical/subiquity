@@ -58,6 +58,11 @@ from subiquitycore.ui.width import (
 log = logging.getLogger("subiquitycore.ui.form")
 
 
+# Passing NO_CAPTION as the caption of a field supresses the caption
+# entirely so the field occupies the full width of the form.
+NO_CAPTION = object()
+
+
 class Toggleable(delegate_to_widget_mixin('_original_widget'),
                  WidgetDecoration):
 
@@ -152,25 +157,31 @@ class BoundFormField(object):
         if self.field.takes_default_style:
             widget = Color.string_input(widget)
 
-        self.caption_text = Text(self.field.caption)
         self.under_text = Text(self.help)
-
-        if self.field.caption_first:
-            self.caption_text.align = 'right'
-            first_row = [self.caption_text, _Validator(self, widget)]
+        if self.field.caption is NO_CAPTION:
+            first_row = [(2, _Validator(self, widget))]
+            second_row = [(2, self.under_text)]
         else:
-            first_row = [
-                _Validator(
-                    self,
-                    UrwidPadding(
-                        widget, align='right', width=widget_width(widget))),
-                self.caption_text,
-                ]
+            self.caption_text = Text(self.field.caption)
+
+            if self.field.caption_first:
+                self.caption_text.align = 'right'
+                first_row = [self.caption_text, _Validator(self, widget)]
+            else:
+                first_row = [
+                    _Validator(
+                        self,
+                        UrwidPadding(
+                            widget, align='right',
+                            width=widget_width(widget))),
+                    self.caption_text,
+                    ]
+            second_row = [Text(""), self.under_text]
 
         self._rows = [
             Toggleable(TableRow(row)) for row in [
                 first_row,
-                [Text(""),          self.under_text],
+                second_row,
                 ]
             ]
 
@@ -437,10 +448,11 @@ class Form(object, metaclass=MetaForm):
             rows.append(t)
         return rows
 
-    def as_screen(self, focus_buttons=True, excerpt=None):
+    def as_screen(self, focus_buttons=True, excerpt=None, narrow_rows=False):
         return screen(
             self.as_rows(), self.buttons,
-            focus_buttons=focus_buttons, excerpt=excerpt)
+            focus_buttons=focus_buttons, excerpt=excerpt,
+            narrow_rows=narrow_rows)
 
     def validated(self):
         in_error = False
