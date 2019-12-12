@@ -62,6 +62,12 @@ log = logging.getLogger("subiquitycore.ui.form")
 # entirely so the field occupies the full width of the form.
 NO_CAPTION = object()
 
+# Passing NO_HELP as the help of a field supresses the gap under a
+# field where the help would go. This means there is nowhere to put
+# validation failures, so don't use this on fields that have any
+# validation at all.
+NO_HELP = object()
+
 
 class Toggleable(delegate_to_widget_mixin('_original_widget'),
                  WidgetDecoration):
@@ -157,7 +163,10 @@ class BoundFormField(object):
         if self.field.takes_default_style:
             widget = Color.string_input(widget)
 
-        self.under_text = Text(self.help)
+        if self.help is not NO_HELP:
+            self.under_text = Text(self.help)
+        else:
+            self.under_text = Text("")
         if self.field.caption is NO_CAPTION:
             first_row = [(2, _Validator(self, widget))]
             second_row = [(2, self.under_text)]
@@ -178,12 +187,11 @@ class BoundFormField(object):
                     ]
             second_row = [Text(""), self.under_text]
 
-        self._rows = [
-            Toggleable(TableRow(row)) for row in [
-                first_row,
-                second_row,
-                ]
-            ]
+        rows = [first_row]
+        if self.help is not NO_HELP:
+            rows.append(second_row)
+
+        self._rows = [Toggleable(TableRow(row)) for row in rows]
 
         self._table = TablePile(self._rows, spacing=2, colspecs=form_colspecs)
 
@@ -206,7 +214,7 @@ class BoundFormField(object):
             if r is not None:
                 return
             self.in_error = False
-            if not self.showing_extra:
+            if not self.showing_extra and self.help is not NO_HELP:
                 self.under_text.set_text(self.help)
             self.form.validated()
 
@@ -230,7 +238,7 @@ class BoundFormField(object):
         r = self._validate()
         if r is None:
             self.in_error = False
-            if not self.showing_extra:
+            if not self.showing_extra and self.help is not NO_HELP:
                 self.under_text.set_text(self.help)
         else:
             self.in_error = True
