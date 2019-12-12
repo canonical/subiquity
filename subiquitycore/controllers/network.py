@@ -400,9 +400,9 @@ class NetworkController(BaseController):
         if self.answers.get('accept-default', False):
             self.done()
         elif self.answers.get('actions', False):
-            self._run_iterator(
-                self._run_actions(
-                    self.answers['actions']))
+            actions = self.answers['actions']
+            self.answers.clear()
+            self._run_iterator(self._run_actions(actions))
 
         if not dhcp_device_versions:
             return
