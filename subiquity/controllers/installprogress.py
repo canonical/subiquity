@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import contextlib
 import datetime
 import logging
 import os
@@ -76,6 +75,18 @@ class TracebackExtractor:
             self.in_traceback = False
         if self.in_traceback:
             self.traceback.append(line)
+
+
+def install_step(label):
+    def decorate(meth):
+        async def decorated(self):
+            self._install_event_start(label)
+            try:
+                await meth(self)
+            finally:
+                self._install_event_finish()
+        return decorated
+    return decorate
 
 
 class InstallProgressController(BaseController):
@@ -262,15 +273,6 @@ class InstallProgressController(BaseController):
         pass
 
     async def install(self):
-
-        @contextlib.contextmanager
-        def install_event(label):
-            self._install_event_start(label)
-            try:
-                yield
-            finally:
-                self._install_event_finish()
-
         try:
             await self.filesystem_event.wait()
 
@@ -280,25 +282,19 @@ class InstallProgressController(BaseController):
                 {e.wait() for e in self._postinstall_prerequisites.values()})
 
             await self.drain_curtin_events()
-            with install_event("final system configuration"):
-                with install_event("configuring cloud-init"):
-                    await run_in_thread(self.model.configure_cloud_init)
-                if self.model.ssh.install_server:
-                    with install_event("installing openssh"):
-                        await self.install_openssh()
-                with install_event("restoring apt configuration"):
-                    await self.restore_apt_config()
+
+            await self.postinstall()
+
             self.ui.set_header(_("Installation complete!"))
             self.progress_view.set_status(_("Finished install!"))
             self.progress_view.show_complete()
+
             if self.model.network.has_network:
                 self.progress_view.update_running()
-                with install_event(
-                        "downloading and installing security updates"):
-                    await self.run_uu()
+                await self.run_unattended_upgrades()
                 self.progress_view.update_done()
-            with install_event("copying logs to installed system"):
-                await self.copy_logs_to_target()
+
+            await self.copy_logs_to_target()
 
             if not self.auto_reboot:
                 await self.reboot_clicked.wait()
@@ -315,6 +311,18 @@ class InstallProgressController(BaseController):
             waited += 0.1
         log.debug("waited %s seconds for events to drain", waited)
 
+    @install_step("final system configuration")
+    async def postinstall(self):
+        await self.configure_cloud_init()
+        if self.model.ssh.install_server:
+            await self.install_openssh()
+        await self.restore_apt_config()
+
+    @install_step("configuring cloud-init")
+    async def configure_cloud_init(self):
+        await run_in_thread(self.model.configure_cloud_init)
+
+    @install_step("installing openssh")
     async def install_openssh(self):
         if self.opts.dry_run:
             cmd = ["sleep", str(2/self.app.scale_factor)]
@@ -326,6 +334,7 @@ class InstallProgressController(BaseController):
                 ]
         await arun_command(self.logged_command(cmd), check=True)
 
+    @install_step("restoring apt configuration")
     async def restore_apt_config(self):
         if self.opts.dry_run:
             cmds = [["sleep", str(1/self.app.scale_factor)]]
@@ -343,7 +352,8 @@ class InstallProgressController(BaseController):
         for cmd in cmds:
             await arun_command(self.logged_command(cmd), check=True)
 
-    async def run_uu(self):
+    @install_step("downloading and installing security updates")
+    async def run_unattended_upgrades(self):
         target_tmp = os.path.join(self.model.target, "tmp")
         os.makedirs(target_tmp, exist_ok=True)
         apt_conf = tempfile.NamedTemporaryFile(
@@ -379,6 +389,7 @@ class InstallProgressController(BaseController):
                 '--stop-only',
                 ], check=True))
 
+    @install_step("copying logs to installed system")
     async def copy_logs_to_target(self):
         if self.opts.dry_run:
             if 'copy-logs-fail' in self.debug_flags:
