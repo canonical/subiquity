@@ -118,8 +118,6 @@ class FilesystemController(BaseController):
                     kind, "block probing", interrupt=False)
                 continue
             break
-        if self.showing:
-            self.start_ui()
 
     def start(self):
         self._start_task = schedule_task(self._start())
@@ -167,9 +165,15 @@ class FilesystemController(BaseController):
             log.debug("_udev_event %s %s", action, dev)
         self._probe_task.start_sync()
 
+    async def _wait_for_probing(self):
+        await self._probe_task.task
+        if self.showing:
+            self.start_ui()
+
     def start_ui(self):
         if not self._probe_task.task.done():
             self.ui.set_body(SlowProbing(self))
+            schedule_task(self._wait_for_probing())
         elif True in self._crash_reports:
             self.ui.set_body(ProbingFailed(self))
             self.ui.body.show_error()
