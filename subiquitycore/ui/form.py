@@ -30,6 +30,7 @@ from urwid import (
 
 from subiquitycore.ui.buttons import cancel_btn, done_btn
 from subiquitycore.ui.container import (
+    Pile,
     WidgetWrap,
 )
 from subiquitycore.ui.interactive import (
@@ -56,6 +57,17 @@ from subiquitycore.ui.width import (
 
 
 log = logging.getLogger("subiquitycore.ui.form")
+
+
+# Passing NO_CAPTION as the caption of a field supresses the caption
+# entirely so the field occupies the full width of the form.
+NO_CAPTION = object()
+
+# Passing NO_HELP as the help of a field supresses the gap under a
+# field where the help would go. This means there is nowhere to put
+# validation failures, so don't use this on fields that have any
+# validation at all.
+NO_HELP = object()
 
 
 class Toggleable(delegate_to_widget_mixin('_original_widget'),
@@ -152,27 +164,35 @@ class BoundFormField(object):
         if self.field.takes_default_style:
             widget = Color.string_input(widget)
 
-        self.caption_text = Text(self.field.caption)
-        self.under_text = Text(self.help)
-
-        if self.field.caption_first:
-            self.caption_text.align = 'right'
-            first_row = [self.caption_text, _Validator(self, widget)]
+        if self.help is not NO_HELP:
+            self.under_text = Text(self.help)
         else:
-            first_row = [
-                _Validator(
-                    self,
-                    UrwidPadding(
-                        widget, align='right', width=widget_width(widget))),
-                self.caption_text,
-                ]
+            self.under_text = Text("")
+        if self.field.caption is NO_CAPTION:
+            first_row = [(2, _Validator(self, widget))]
+            second_row = [(2, self.under_text)]
+        else:
+            self.caption_text = Text(self.field.caption)
 
-        self._rows = [
-            Toggleable(TableRow(row)) for row in [
-                first_row,
-                [Text(""),          self.under_text],
-                ]
-            ]
+            if self.field.caption_first:
+                self.caption_text.align = 'right'
+                first_row = [self.caption_text, _Validator(self, widget)]
+            else:
+                first_row = [
+                    _Validator(
+                        self,
+                        UrwidPadding(
+                            widget, align='right',
+                            width=widget_width(widget))),
+                    self.caption_text,
+                    ]
+            second_row = [Text(""), self.under_text]
+
+        rows = [first_row]
+        if self.help is not NO_HELP:
+            rows.append(second_row)
+
+        self._rows = [Toggleable(TableRow(row)) for row in rows]
 
         self._table = TablePile(self._rows, spacing=2, colspecs=form_colspecs)
 
@@ -195,7 +215,7 @@ class BoundFormField(object):
             if r is not None:
                 return
             self.in_error = False
-            if not self.showing_extra:
+            if not self.showing_extra and self.help is not NO_HELP:
                 self.under_text.set_text(self.help)
             self.form.validated()
 
@@ -219,7 +239,7 @@ class BoundFormField(object):
         r = self._validate()
         if r is None:
             self.in_error = False
-            if not self.showing_extra:
+            if not self.showing_extra and self.help is not NO_HELP:
                 self.under_text.set_text(self.help)
         else:
             self.in_error = True
@@ -437,10 +457,11 @@ class Form(object, metaclass=MetaForm):
             rows.append(t)
         return rows
 
-    def as_screen(self, focus_buttons=True, excerpt=None):
+    def as_screen(self, focus_buttons=True, excerpt=None, narrow_rows=False):
         return screen(
             self.as_rows(), self.buttons,
-            focus_buttons=focus_buttons, excerpt=excerpt)
+            focus_buttons=focus_buttons, excerpt=excerpt,
+            narrow_rows=narrow_rows)
 
     def validated(self):
         in_error = False
@@ -460,3 +481,42 @@ class Form(object, metaclass=MetaForm):
             if field.enabled:
                 data[field.field.name] = field.value
         return data
+
+
+class SubFormWidget(WidgetWrap, WantsToKnowFormField):
+
+    def __init__(self):
+        super().__init__(Pile([]))
+
+    @property
+    def value(self):
+        return self.form.as_data()
+
+    @value.setter
+    def value(self, data):
+        for k, v in data.items():
+            getattr(self.form, k).value = v
+
+    def set_bound_form_field(self, bff):
+        self.form = bff.field.form_cls(bff.form)
+        o = self._w.options('pack')
+        self._w.contents[:] = [(r, o) for r in self.form.as_rows()]
+
+
+class SubFormField(FormField):
+
+    takes_default_style = False
+
+    def __init__(self, form_cls, caption=None, help=None):
+        super().__init__(caption=caption, help=help)
+        self.form_cls = form_cls
+
+    def _make_widget(self, form):
+        return SubFormWidget()
+
+
+class SubForm(Form):
+
+    def __init__(self, parent):
+        self.parent = parent
+        super().__init__()
