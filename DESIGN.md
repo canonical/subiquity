@@ -146,23 +146,21 @@ controllers don't have a corresponding model class.
 ### Doing things in the background
 
 If the UI does not block, as promised above, then there needs to be a way of
-running things in the background.  Subiquity uses a few different ways to do
-this but new code should use
-[asyncio](https://docs.python.org/3/library/asyncio.html). `subiquity.async_helpers`
-defines two useful helper functions `run_in_thread` (just a nicer wrapper
-around `run_in_executor`) and `schedule_task` (a wrapper around `create_task`
-that works before the event loop is
-started). [trio](https://trio.readthedocs.io/en/stable/) has nicer APIs but is
+running things in the background and subiquity uses
+[asyncio](https://docs.python.org/3/library/asyncio.html) for this.
+`subiquity.async_helpers` defines two useful helper functions:
+
+ * `run_in_thread` (just a nicer wrapper around `run_in_executor`)
+ * `schedule_task` (a wrapper around `create_task` / `ensure_future`)
+
+[trio](https://trio.readthedocs.io/en/stable/) has nicer APIs but is
 a bit too new for now.
 
 The older approach which is still present in the codebase is the `run_in_bg`
 function, which takes two functions: one that takes no arguments and is called
 in a background thread and a callback that takes one argument, and is called
 in the main/UI thread with a `concurrent.futures.Future` representing the
-result of calling the first function. I tried a few abstractions to try to
-make things clearer -- `subiquity.tasksequence.TaskSequence` and
-`subiquity.controllers.installprogress.StateMachine` being two -- but they
-didn't really help all that much in the end.
+result of calling the first function.
 
 A cast-iron rule: Only touch the UI from the main thread.
 
