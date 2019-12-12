@@ -82,4 +82,4 @@ class ProbingFailed(BaseView):
 
     def show_error(self, sender=None):
         self.controller.app.show_error_report(
-            self.controller._cur_probe.crash_report)
+            self.controller._crash_reports[False])
