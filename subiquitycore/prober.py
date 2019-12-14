@@ -20,7 +20,6 @@ from probert.network import (
     StoredDataObserver,
     UdevObserver,
     )
-from probert.storage import Storage
 
 log = logging.getLogger('subiquitycore.prober')
 
@@ -49,4 +48,5 @@ class Prober():
                     if k not in probe_types:
                         r[k] = {}
             return r
+        from probert.storage import Storage
         return Storage().probe(probe_types=probe_types)

@@ -38,6 +38,9 @@ def parse_options(argv):
     parser.add_argument('--serial', action='store_true',
                         dest='run_on_serial',
                         help='Run the installer over serial console.')
+    parser.add_argument('--ascii', action='store_true',
+                        dest='ascii',
+                        help='Run the installer in ascii mode.')
     parser.add_argument('--machine-config', metavar='CONFIG',
                         dest='machine_config',
                         help="Don't Probe. Use probe data file")
