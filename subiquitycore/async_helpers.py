@@ -23,13 +23,14 @@ def _done(fut):
         pass
 
 
-def schedule_task(coro):
+def schedule_task(coro, propagate_errors=True):
     loop = asyncio.get_event_loop()
     if asyncio.iscoroutine(coro):
         task = asyncio.Task(coro)
     else:
         task = coro
-    task.add_done_callback(_done)
+    if propagate_errors:
+        task.add_done_callback(_done)
     loop.call_soon(asyncio.ensure_future, task)
     return task
 
@@ -41,8 +42,9 @@ async def run_in_thread(func, *args):
 
 class SingleInstanceTask:
 
-    def __init__(self, func):
+    def __init__(self, func, propagate_errors=True):
         self.func = func
+        self.propagate_errors = propagate_errors
         self.task = None
 
     async def start(self, *args, **kw):
@@ -52,7 +54,9 @@ class SingleInstanceTask:
                 await self.task
             except BaseException:
                 pass
-        self.task = schedule_task(self.func(*args, **kw))
+        self.task = schedule_task(
+            self.func(*args, **kw), self.propagate_errors)
+        return self.task
 
     def start_sync(self, *args, **kw):
         return schedule_task(self.start(*args, **kw))

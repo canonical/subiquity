@@ -73,7 +73,8 @@ class FilesystemController(BaseController):
         self.answers.setdefault('manual', [])
         self._monitor = None
         self._crash_reports = {}
-        self._probe_once_task = SingleInstanceTask(self._probe_once)
+        self._probe_once_task = SingleInstanceTask(
+            self._probe_once, propagate_errors=False)
         self._probe_task = SingleInstanceTask(self._probe)
 
     async def _probe_once(self, restricted):
