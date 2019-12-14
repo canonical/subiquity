@@ -26,16 +26,15 @@ import tty
 import urwid
 import yaml
 
-from subiquitycore.controller import RepeatedController
+from subiquitycore.controller import (
+    RepeatedController,
+    Skip,
+    )
 from subiquitycore.signals import Signal
 from subiquitycore.prober import Prober
 from subiquitycore.ui.frame import SubiquityCoreUI
 
 log = logging.getLogger('subiquitycore.core')
-
-
-class Skip(Exception):
-    """Raise this from a controller's default method to skip a screen."""
 
 
 # From uapi/linux/kd.h:

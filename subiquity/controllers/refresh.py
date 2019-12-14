@@ -22,8 +22,10 @@ import requests.exceptions
 from subiquitycore.async_helpers import (
     schedule_task,
     )
-from subiquitycore.controller import BaseController
-from subiquitycore.core import Skip
+from subiquitycore.controller import (
+    BaseController,
+    Skip,
+    )
 
 
 log = logging.getLogger('subiquity.controllers.refresh')

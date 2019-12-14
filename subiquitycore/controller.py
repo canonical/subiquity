@@ -21,6 +21,10 @@ import os
 log = logging.getLogger("subiquitycore.controller")
 
 
+class Skip(Exception):
+    """Raise this from a controller's start_ui method to skip a screen."""
+
+
 class BaseController(ABC):
     """Base class for controllers."""
 
@@ -150,3 +154,12 @@ class RepeatedController(BaseController):
 
     def cancel(self):
         self.orig.cancel()
+
+
+class NoUIController(BaseController):
+
+    def start_ui(self):
+        raise Skip
+
+    def cancel(self):
+        pass

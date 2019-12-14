@@ -35,8 +35,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
-from subiquitycore.controller import BaseController
-from subiquitycore.core import Skip
+from subiquitycore.controller import NoUIController
 
 
 log = logging.getLogger('subiquity.controllers.error')
@@ -319,7 +318,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         return label, root[1:] + '/' + self.base + '.crash'
 
 
-class ErrorController(BaseController):
+class ErrorController(NoUIController):
 
     def __init__(self, app):
         super().__init__(app)
@@ -359,9 +358,3 @@ class ErrorController(BaseController):
         r = ErrorReport.new(self, kind)
         self.reports.insert(0, r)
         return r
-
-    def start_ui(self):
-        raise Skip
-
-    def cancel(self):
-        pass
