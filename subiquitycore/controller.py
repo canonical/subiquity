@@ -73,7 +73,10 @@ class BaseController(ABC):
 
     @property
     def showing(self):
-        return self.app.controllers.cur is self
+        inst = self.app.controllers.cur
+        while isinstance(inst, RepeatedController):
+            inst = inst.orig
+        return inst is self
 
     @abstractmethod
     def start_ui(self):

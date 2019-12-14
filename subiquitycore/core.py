@@ -297,7 +297,7 @@ class ControllerSet:
             log.debug("Importing controller: %s", name)
             klass = getattr(controllers_mod, name+"Controller")
             if hasattr(self, name):
-                c = 0
+                c = 1
                 for instance in self.instances:
                     if isinstance(instance, klass):
                         c += 1
@@ -312,10 +312,7 @@ class ControllerSet:
     def cur(self):
         if self.out_of_bounds():
             return None
-        inst = self.instances[self.index]
-        while isinstance(inst, RepeatedController):
-            inst = inst.orig
-        return inst
+        return self.instances[self.index]
 
     def out_of_bounds(self):
         return self.index < 0 or self.index >= len(self.instances)
