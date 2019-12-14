@@ -86,13 +86,6 @@ class FilesystemController(BaseController):
             probe_types = None
             fname = 'probe-data.json'
             key = "ProbeData"
-        debug_flags = self.debug_flags
-        if 'bpfail-full' in debug_flags and not restricted:
-            await asyncio.sleep(2)
-            1/0
-        if 'bpfail-restricted' in debug_flags and restricted:
-            await asyncio.sleep(2)
-            1/0
         block_discover_log.exception(
             "probing restricted=%s", restricted)
         storage = await run_in_thread(

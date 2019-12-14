@@ -13,10 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 from abc import ABC, abstractmethod
 import logging
-import os
 
 log = logging.getLogger("subiquitycore.controller")
 
@@ -35,16 +33,6 @@ class BaseController(ABC):
         self.ui = app.ui
         self.signal = app.signal
         self.opts = app.opts
-        self.debug_flags = ()
-        if self.opts.dry_run:
-            # Recognized flags are:
-            #  - install-fail: makes curtin install fail, see
-            #    scripts/replay-curtin-log.py
-            #  - bpfail-full, bpfail-restricted: makes block probing fail, see
-            #    subiquity/controllers/filesystem.py
-            #  - copy-logs-fail: makes post-install copying of logs fail, see
-            #    subiquity/controllers/installprogress.py
-            self.debug_flags = os.environ.get('SUBIQUITY_DEBUG', '').split(',')
         self.loop = app.loop
         self.app = app
         self.answers = app.answers.get(self.name, {})

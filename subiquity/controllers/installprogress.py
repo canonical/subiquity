@@ -226,7 +226,7 @@ class InstallProgressController(BaseController):
             config_location = os.path.join('.subiquity/', config_file_name)
             log_location = '.subiquity/install.log'
             event_file = "examples/curtin-events.json"
-            if 'install-fail' in self.debug_flags:
+            if 'install-fail' in self.app.debug_flags:
                 event_file = "examples/curtin-events-fail.json"
             curtin_cmd = [
                 "python3", "scripts/replay-curtin-log.py", event_file,
@@ -390,7 +390,7 @@ class InstallProgressController(BaseController):
     @install_step("copying logs to installed system")
     async def copy_logs_to_target(self):
         if self.opts.dry_run:
-            if 'copy-logs-fail' in self.debug_flags:
+            if 'copy-logs-fail' in self.app.debug_flags:
                 raise PermissionError()
             return
         target_logs = self.tpath('var/log/installer')
