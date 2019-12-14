@@ -24,6 +24,7 @@ from urwid import (
     emit_signal,
     MetaSignals,
     Padding as UrwidPadding,
+    RadioButton,
     Text,
     WidgetDecoration,
     )
@@ -305,6 +306,41 @@ StringField = simple_field(StringEditor)
 PasswordField = simple_field(PasswordEditor)
 IntegerField = simple_field(IntegerEditor)
 EmailField = simple_field(EmailEditor)
+
+
+class RadioButtonEditor(RadioButton):
+
+    reserve_columns = 3
+
+    @property
+    def value(self):
+        return self.state
+
+    @value.setter
+    def value(self, val):
+        self.state = val
+
+
+class RadioButtonField(FormField):
+
+    caption_first = False
+    takes_default_style = False
+
+    def __init__(self, group, caption=None, help=None):
+        if group is None:
+            group = []
+        group.append(self)
+        self.group = group
+        super().__init__(caption, help)
+
+    def _make_widget(self, form):
+        for bf in form._fields:
+            if bf.field in self.group:
+                group = bf.widget.group
+                break
+        else:
+            group = []
+        return RadioButtonEditor(group, "")
 
 
 class URLEditor(StringEditor, WantsToKnowFormField):
