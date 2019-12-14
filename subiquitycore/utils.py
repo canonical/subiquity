@@ -68,6 +68,7 @@ async def arun_command(cmd, *, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
     if input is None:
         kw['stdin'] = subprocess.DEVNULL
     else:
+        kw['stdin'] = subprocess.PIPE
         input = input.encode(encoding)
     log.debug("arun_command called: %s", cmd)
     proc = await asyncio.create_subprocess_exec(
