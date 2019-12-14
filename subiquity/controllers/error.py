@@ -157,10 +157,10 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             del self.pr['ProcMaps']
             self.pr.write(self._file)
 
-        def added_info(fut):
-            log.debug("done adding info for report %s", self.base)
+        async def add_info():
+            log.debug("adding info for report %s", self.base)
             try:
-                fut.result()
+                await run_in_thread(_bg_add_info)
             except Exception:
                 self.state = ErrorReportState.ERROR_GENERATING
                 log.exception("adding info to problem report failed")
@@ -172,7 +172,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         if wait:
             _bg_add_info()
         else:
-            self.controller.run_in_bg(_bg_add_info, added_info)
+            schedule_task(add_info())
 
     async def load(self):
         log.debug("loading report %s", self.base)
@@ -238,9 +238,9 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             response.raise_for_status()
             return response.text.split()[0]
 
-        def uploaded(fut):
+        async def upload():
             try:
-                oops_id = fut.result()
+                oops_id = await run_in_thread(_bg_upload)
             except requests.exceptions.RequestException:
                 log.exception("upload for %s failed", self.base)
             else:
@@ -252,7 +252,8 @@ class ErrorReport(metaclass=urwid.MetaSignals):
 
         urwid.emit_signal(self, 'changed')
         uploader.start()
-        self.controller.run_in_bg(_bg_upload, uploaded)
+
+        schedule_task(upload())
 
     def _path_with_ext(self, ext):
         return os.path.join(

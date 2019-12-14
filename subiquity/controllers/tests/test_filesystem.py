@@ -34,7 +34,7 @@ class Thing:
 
 
 class MiniApplication:
-    ui = signal = loop = run_in_bg = None
+    ui = signal = loop = None
     answers = {}
     opts = Thing()
     opts.dry_run = True

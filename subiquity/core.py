@@ -21,6 +21,10 @@ import traceback
 
 import apport.hookutils
 
+from subiquitycore.async_helpers import (
+    run_in_thread,
+    schedule_task,
+    )
 from subiquitycore.core import Application
 
 from subiquity.controllers.error import (
@@ -101,7 +105,7 @@ class Subiquity(Application):
             connection = SnapdConnection(self.root, self.snapd_socket_path)
         self.snapd = AsyncSnapd(connection)
         self.signal.connect_signals([
-            ('network-proxy-set', self._proxy_set),
+            ('network-proxy-set', lambda: schedule_task(self._proxy_set())),
             ('network-change', self._network_change),
             ])
         self._apport_data = []
@@ -130,13 +134,10 @@ class Subiquity(Application):
     def _network_change(self):
         self.signal.emit_signal('snapd-network-change')
 
-    def _proxy_set(self):
-        self.run_in_bg(
-            lambda: self.snapd.connection.configure_proxy(
-                self.base_model.proxy),
-            lambda fut: (
-                fut.result(), self.signal.emit_signal('snapd-network-change')),
-            )
+    async def _proxy_set(self):
+        await run_in_thread(
+            self.snapd.connection.configure_proxy, self.base_model.proxy)
+        self.signal.emit_signal('snapd-network-change')
 
     def unhandled_input(self, key):
         if key == 'f1':
@@ -163,7 +164,7 @@ class Subiquity(Application):
             print(DEBUG_SHELL_INTRO)
 
         self.run_command_in_foreground(
-            "bash", before_hook=_before, cwd='/')
+            ["bash"], before_hook=_before, cwd='/')
 
     def note_file_for_apport(self, key, path):
         self._apport_files.append((key, path))
