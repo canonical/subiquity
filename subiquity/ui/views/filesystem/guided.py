@@ -137,7 +137,7 @@ class GuidedForm(Form):
 
     radio_group = []
     guided_layout = RadioButtonField(radio_group, _("Use an entire disk"), help=NO_HELP)
-    disk_choice = SubFormField(DiskChoiceForm, "", help=NO_HELP)
+    guided_choice = SubFormField(GuidedChoiceForm, "", help=NO_HELP)
     custom_layout = RadioButtonField(radio_group, _("Custom storage layout"), help=NO_HELP)
 
     cancel_label = _("Back")
