@@ -13,8 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import json
 import logging
+
+import requests
 
 from urwid import (
     ProgressBar,
@@ -22,6 +25,7 @@ from urwid import (
     WidgetWrap,
     )
 
+from subiquitycore.async_helpers import schedule_task
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox
@@ -187,17 +191,17 @@ class RefreshView(BaseView):
         self.controller.ui.set_header(self.available_title)
         self._w = screen(rows, buttons, excerpt=excerpt)
 
-    def check_state_failed(self):
+    def check_state_failed(self, exc):
         self.spinner.stop()
 
         try:
-            result = self.controller.check_error.response.json()
+            result = exc.response.json()
         except (AttributeError, json.decoder.JSONDecodeError):
             message = None
         else:
             message = result.get("result", {}).get("message")
         if message is None:
-            message = "Unknown error: {}".format(self.controller.check_error)
+            message = "Unknown error: {}".format(exc)
 
         rows = [Text(message)]
 
@@ -228,21 +232,25 @@ class RefreshView(BaseView):
         self.controller.ui.set_header("Downloading update...")
         self._w = screen(
             self.lb_tasks, buttons, excerpt=_(self.progress_excerpt))
-        self.controller.start_update(self.update_started)
+        schedule_task(self._update())
 
-    def update_started(self, change_id):
-        self.change_id = change_id
-        self.update_progress()
-
-    def update_progress(self, loop=None, ud=None):
-        self.controller.get_progress(self.change_id, self.updated_progress)
-
-    def updated_progress(self, change):
-        if change['status'] == 'Done':
-            # Will only get here dry run mode as part of the refresh is us
-            # getting restarted by snapd...
-            self.done()
+    async def _update(self):
+        try:
+            change_id = await self.controller.start_update()
+        except requests.exceptions.RequestException as e:
+            self.check_state_failed(e)
             return
+        while True:
+            change = await self.controller.get_progress(change_id)
+            if change['status'] == 'Done':
+                # Will only get here dry run mode as part of the refresh is us
+                # getting restarted by snapd...
+                self.done()
+                return
+            self.update_progress(change)
+            await asyncio.sleep(0.1)
+
+    def update_progress(self, change):
         for task in change['tasks']:
             tid = task['id']
             if task['status'] == "Done":
@@ -257,7 +265,6 @@ class RefreshView(BaseView):
                 else:
                     bar = self.task_to_bar[tid]
                 bar.update(task)
-        self.controller.loop.set_alarm_in(0.1, self.update_progress)
 
     def done(self, result=None):
         self.spinner.stop()

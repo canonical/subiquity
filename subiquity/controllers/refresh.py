@@ -21,6 +21,7 @@ import requests.exceptions
 
 from subiquitycore.async_helpers import (
     schedule_task,
+    SingleInstanceTask,
     )
 from subiquitycore.controller import (
     BaseController,
@@ -43,12 +44,6 @@ class CheckState(enum.IntEnum):
         return self in [self.AVAILABLE, self.UNAVAILABLE]
 
 
-class SwitchState(enum.IntEnum):
-    NOT_STARTED = enum.auto()
-    SWITCHING = enum.auto()
-    SWITCHED = enum.auto()
-
-
 class RefreshController(BaseController):
 
     signals = [
@@ -59,8 +54,8 @@ class RefreshController(BaseController):
         super().__init__(app)
         self.snap_name = os.environ.get("SNAP_NAME", "subiquity")
         self.check_state = CheckState.NOT_STARTED
-        self.switch_state = SwitchState.NOT_STARTED
-        self.network_state = "down"
+        self.configure_task = None
+        self.check_task = None
 
         self.current_snap_version = "unknown"
         self.new_snap_version = ""
@@ -68,8 +63,9 @@ class RefreshController(BaseController):
         self.offered_first_time = False
 
     def start(self):
-        self.switch_state = SwitchState.SWITCHING
-        schedule_task(self.configure_snapd())
+        self.configure_task = schedule_task(self.configure_snapd())
+        self.check_task = SingleInstanceTask(self.check_for_update)
+        self.check_task.start_sync()
 
     async def configure_snapd(self):
         try:
@@ -95,8 +91,6 @@ class RefreshController(BaseController):
             log.exception("switching channels")
             return
         log.debug("snap switching completed")
-        self.switch_state = SwitchState.SWITCHED
-        self._maybe_check_for_update()
 
     def get_refresh_channel(self):
         """Return the channel we should refresh subiquity to."""
@@ -130,39 +124,23 @@ class RefreshController(BaseController):
         return 'stable/ubuntu-' + release
 
     def snapd_network_changed(self):
-        self.network_state = "up"
-        self._maybe_check_for_update()
-
-    def _maybe_check_for_update(self):
-        # If we have not yet switched to the right channel, wait.
-        if self.switch_state != SwitchState.SWITCHED:
-            return
-        # If the network is not yet up, wait.
-        if self.network_state == "down":
-            return
-        # If we restarted into this version, don't check for a new version.
-        if self.app.updated:
-            return
-        # If we got an answer, don't check again.
-        if self.check_state.is_definite():
-            return
-        self.check_state = CheckState.CHECKING
-        schedule_task(self.check_for_update())
+        if not self.check_state.is_definite():
+            self.check_task.start_sync()
 
     async def check_for_update(self):
+        await self.configure_task
+        # If we restarted into this version, don't check for a new version.
+        if self.app.updated:
+            self.check_state = CheckState.UNAVAILABLE
+            return
+        self.check_state = CheckState.CHECKING
         try:
             result = await self.app.snapd.get('v2/find', select='refresh')
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             log.exception("checking for update")
-            self.check_error = e
             self.check_state = CheckState.FAILED
             return
-        # If we managed to send concurrent requests and one has
-        # already provided an answer, just forget all about the other
-        # ones!
-        if self.check_state.is_definite():
-            return
-        log.debug("_check_result %s", result)
+        log.debug("check_for_update received %s", result)
         for snap in result["result"]:
             if snap["name"] == self.snap_name:
                 self.check_state = CheckState.AVAILABLE
@@ -176,37 +154,18 @@ class RefreshController(BaseController):
         if self.showing:
             self.ui.body.update_check_state()
 
-    def start_update(self, callback):
+    async def start_update(self):
         update_marker = os.path.join(self.app.state_dir, 'updating')
         open(update_marker, 'w').close()
-        schedule_task(self._start_update(callback))
-
-    async def _start_update(self, callback):
-        try:
-            change = await self.app.snapd.post(
-                'v2/snaps/{}'.format(self.snap_name),
-                {'action': 'refresh'})
-        except requests.exceptions.RequestException as e:
-            log.exception("requesting update")
-            self.update_state = CheckState.FAILED
-            self.update_failure = e
-            return
+        change = await self.app.snapd.post(
+            'v2/snaps/{}'.format(self.snap_name),
+            {'action': 'refresh'})
         log.debug("refresh requested: %s", change)
-        callback(change)
+        return change
 
-    def get_progress(self, change, callback):
-        schedule_task(self._get_progress(change, callback))
-
-    async def _get_progress(self, change, callback):
-        try:
-            result = await self.app.snapd.get(
-                'v2/changes/{}'.format(change))
-        except requests.exceptions.RequestException as e:
-            log.exception("checking for progress")
-            self.update_state = CheckState.FAILED
-            self.update_failure = e
-            return
-        callback(result['result'])
+    async def get_progress(self, change):
+        result = await self.app.snapd.get('v2/changes/{}'.format(change))
+        return result['result']
 
     def start_ui(self, index=1):
         from subiquity.ui.views.refresh import RefreshView
