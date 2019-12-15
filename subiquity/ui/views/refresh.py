@@ -163,10 +163,18 @@ class RefreshView(BaseView):
         schedule_task(self._wait_check_result())
 
     async def _wait_check_result(self):
-        try:
-            check_state = await self.controller.check_task.task
-        except Exception as e:
-            self.check_state_failed(e)
+        while True:
+            try:
+                check_state = await self.controller.check_task.task
+            except asyncio.CancelledError:
+                # If the task was cancelled, another will have been
+                # started.
+                continue
+            except Exception as e:
+                self.check_state_failed(e)
+                return
+            else:
+                break
         if check_state == CheckState.AVAILABLE:
             self.check_state_available()
         else:

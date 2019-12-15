@@ -65,9 +65,7 @@ class RefreshController(BaseController):
     @property
     def check_state(self):
         task = self.check_task.task
-        if not task.done():
-            return CheckState.UNKNOWN
-        if task.cancelled():
+        if not task.done() or task.cancelled():
             return CheckState.UNKNOWN
         if task.exception():
             return CheckState.UNAVAILABLE
