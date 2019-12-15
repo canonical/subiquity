@@ -244,7 +244,11 @@ class RefreshView(BaseView):
             self.update_failed(exc_message(e))
             return
         while True:
-            change = await self.controller.get_progress(change_id)
+            try:
+                change = await self.controller.get_progress(change_id)
+            except requests.exceptions.RequestException as e:
+                self.update_failed(exc_message(e))
+                return
             if change['status'] == 'Done':
                 # Will only get here dry run mode as part of the refresh is us
                 # getting restarted by snapd...
