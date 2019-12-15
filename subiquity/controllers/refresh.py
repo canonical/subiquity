@@ -33,15 +33,9 @@ log = logging.getLogger('subiquity.controllers.refresh')
 
 
 class CheckState(enum.IntEnum):
-    NOT_STARTED = enum.auto()
-    CHECKING = enum.auto()
-    FAILED = enum.auto()
-
+    UNKNOWN = enum.auto()
     AVAILABLE = enum.auto()
     UNAVAILABLE = enum.auto()
-
-    def is_definite(self):
-        return self in [self.AVAILABLE, self.UNAVAILABLE]
 
 
 class RefreshController(BaseController):
@@ -53,7 +47,6 @@ class RefreshController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.snap_name = os.environ.get("SNAP_NAME", "subiquity")
-        self.check_state = CheckState.NOT_STARTED
         self.configure_task = None
         self.check_task = None
 
@@ -64,8 +57,20 @@ class RefreshController(BaseController):
 
     def start(self):
         self.configure_task = schedule_task(self.configure_snapd())
-        self.check_task = SingleInstanceTask(self.check_for_update)
-        self.check_task.start_sync()
+        self.check_task_starter = SingleInstanceTask(
+            self.check_for_update, propagate_errors=False)
+        self.check_task_starter.start_sync()
+
+    @property
+    def check_state(self):
+        task = self.check_task_starter.task
+        if task is None:
+            return CheckState.UNKNOWN
+        if not task.done():
+            return CheckState.UNKNOWN
+        if task.exception():
+            return CheckState.UNAVAILABLE
+        return task.result()
 
     async def configure_snapd(self):
         try:
@@ -124,35 +129,24 @@ class RefreshController(BaseController):
         return 'stable/ubuntu-' + release
 
     def snapd_network_changed(self):
-        if not self.check_state.is_definite():
-            self.check_task.start_sync()
+        if self.check_state == CheckState.UNKNOWN:
+            self.check_task_starter.start_sync()
 
     async def check_for_update(self):
         await self.configure_task
         # If we restarted into this version, don't check for a new version.
         if self.app.updated:
-            self.check_state = CheckState.UNAVAILABLE
-            return
-        self.check_state = CheckState.CHECKING
-        try:
-            result = await self.app.snapd.get('v2/find', select='refresh')
-        except requests.exceptions.RequestException:
-            log.exception("checking for update")
-            self.check_state = CheckState.FAILED
-            return
+            return CheckState.UNAVAILABLE
+        result = await self.app.snapd.get('v2/find', select='refresh')
         log.debug("check_for_update received %s", result)
         for snap in result["result"]:
             if snap["name"] == self.snap_name:
-                self.check_state = CheckState.AVAILABLE
                 self.new_snap_version = snap["version"]
                 log.debug(
                     "new version of snap available: %r",
                     self.new_snap_version)
-                break
-        else:
-            self.check_state = CheckState.UNAVAILABLE
-        if self.showing:
-            self.ui.body.update_check_state()
+                return CheckState.AVAILABLE
+        return CheckState.UNAVAILABLE
 
     async def start_update(self):
         update_marker = os.path.join(self.app.state_dir, 'updating')
@@ -178,8 +172,8 @@ class RefreshController(BaseController):
                 self.offered_first_time = True
         elif index == 2:
             if not self.offered_first_time:
-                if self.check_state in [CheckState.AVAILABLE,
-                                        CheckState.CHECKING]:
+                if self.check_state in [CheckState.UNKNOWN,
+                                        CheckState.AVAILABLE]:
                     show = True
         else:
             raise AssertionError("unexpected index {}".format(index))
