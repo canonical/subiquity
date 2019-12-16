@@ -194,10 +194,9 @@ class FilesystemController(BaseController):
                 self.app.show_error_report(pr)
             if self.answers['guided']:
                 disk = self.model.all_disks()[self.answers['guided-index']]
-                method = self.answers.get('guided-method', 'direct')
-                self.ui.body.form.guided_layout.value = True
+                method = self.answers.get('guided-method')
                 self.ui.body.form.guided_choice.value = {
-                    'disk_choice': disk,
+                    'disk': disk,
                     'use_lvm': method == "lvm",
                     }
                 self.ui.body.done(self.ui.body.form)

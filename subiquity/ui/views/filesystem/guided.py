@@ -113,7 +113,7 @@ class GuidedDiskSelectionView (BaseView):
         results = sender.as_data()
         if results['custom']:
             self.controller.manual()
-        else:  #  results['guided']
+        else:  # results['guided']
             self.choose_disk(**results['guided_choice'])
 
     def cancel(self, btn=None):
