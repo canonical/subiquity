@@ -27,7 +27,7 @@ parts:
     plugin: python
     source-type: git
     source: git://git.launchpad.net/curtin
-    source-commit: 04adfd9a83964ccec944b0f015143ea3b5b21473
+    source-commit: b022ed4204f9d78d3199de24e786b55b92e72a7f
     requirements: requirements.txt
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
