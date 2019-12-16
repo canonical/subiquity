@@ -438,6 +438,8 @@ class Application:
 
     def select_screen(self, new):
         log.info("moving to screen %s", new.name)
+        if self.opts.screens and new.name not in self.opts.screens:
+            raise Skip
         new.start_ui()
         state_path = os.path.join(self.state_dir, 'last-screen')
         with open(state_path, 'w') as fp:
