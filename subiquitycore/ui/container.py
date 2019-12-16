@@ -532,7 +532,7 @@ def ListBox(body=None, *, always_scroll=False):
         always_scroll=always_scroll)
 
 
-get_delegate = operator.attrgetter("_wrapped_widget")
+get_delegate = operator.attrgetter("_wrapped_widget.base_widget")
 
 
 class OurWidgetWrap(urwid.WidgetWrap):
