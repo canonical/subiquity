@@ -188,7 +188,7 @@ class FilesystemController(BaseController):
             # performed would be tricky.  Possibly worth doing though! Just
             # not today.
             self.stop_listening_udev()
-            self.ui.set_body(GuidedDiskSelectionView(self.model, self))
+            self.ui.set_body(GuidedDiskSelectionView(self))
             pr = self._crash_reports.get(False)
             if pr is not None:
                 self.app.show_error_report(pr)

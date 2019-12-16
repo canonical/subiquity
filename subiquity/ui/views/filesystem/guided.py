@@ -25,7 +25,6 @@ from subiquitycore.ui.form import (
     Form,
     NO_CAPTION,
     NO_HELP,
-    PasswordField,
     RadioButtonField,
     SubForm,
     SubFormField,
@@ -58,6 +57,9 @@ review and modify the results.""")
 
 class GuidedChoiceForm(SubForm):
 
+    disk = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
+    use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
+
     def __init__(self, parent):
         super().__init__(parent)
         options = []
@@ -70,30 +72,26 @@ class GuidedChoiceForm(SubForm):
         t0 = tables[0]
         for t in tables[1:]:
             t0.bind(t)
-        self.disk_choice.widget.options = options
-        self.disk_choice.widget.index = 0
-
-    disk_choice = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
-    use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
+        self.disk.widget.options = options
+        self.disk.widget.index = 0
 
 
 class GuidedForm(Form):
 
-    radio_group = []
-    guided_layout = RadioButtonField(
-        radio_group, _("Use an entire disk"), help=NO_HELP)
+    group = []
+
+    guided = RadioButtonField(group, _("Use an entire disk"), help=NO_HELP)
     guided_choice = SubFormField(GuidedChoiceForm, "", help=NO_HELP)
-    custom_layout = RadioButtonField(
-        radio_group, _("Custom storage layout"), help=NO_HELP)
+    custom = RadioButtonField(group, _("Custom storage layout"), help=NO_HELP)
 
     cancel_label = _("Back")
 
-    def __init__(self, model, initial):
+    def __init__(self, model):
         self.model = model
-        super().__init__(initial=initial)
-        connect_signal(self.guided_layout.widget, 'change', self._toggle)
+        super().__init__()
+        connect_signal(self.guided.widget, 'change', self._toggle_guided)
 
-    def _toggle(self, sender, new_value):
+    def _toggle_guided(self, sender, new_value):
         self.guided_choice.enabled = new_value
 
 
@@ -101,15 +99,9 @@ class GuidedDiskSelectionView (BaseView):
 
     title = _("Filesystem setup")
 
-    def __init__(self, model, controller):
-        self.model = model
+    def __init__(self, controller):
         self.controller = controller
-
-        initial = {
-            "guided_layout": True
-            }
-
-        self.form = GuidedForm(model=self.model, initial=initial)
+        self.form = GuidedForm(model=controller.model)
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
@@ -117,30 +109,19 @@ class GuidedDiskSelectionView (BaseView):
         super().__init__(self.form.as_screen(
             focus_buttons=False, excerpt=rewrap(_(text))))
 
-    def done(self, result):
-        results = result.as_data()
-        if results['custom_layout']:
+    def done(self, sender):
+        results = sender.as_data()
+        if results['custom']:
             self.controller.manual()
-            return
-        if results['guided_layout']:
-            self.method = 'direct'
-            if results['guided_choice']['use_lvm']:
-                self.method = 'lvm'
-            self.choose_disk(results['guided_choice']['disk_choice'])
+        else:  #  results['guided']
+            self.choose_disk(**results['guided_choice'])
 
     def cancel(self, btn=None):
         self.controller.cancel()
 
-    def choose_disk(self, disk):
+    def choose_disk(self, disk, use_lvm):
         self.controller.reformat(disk)
-        if self.method == "direct":
-            result = {
-                "size": disk.free_for_partitions,
-                "fstype": "ext4",
-                "mount": "/",
-                }
-            self.controller.partition_disk_handler(disk, None, result)
-        elif self.method == 'lvm':
+        if use_lvm:
             if DeviceAction.MAKE_BOOT in disk.supported_actions:
                 self.controller.make_boot_disk(disk)
             self.controller.create_partition(
@@ -165,5 +146,10 @@ class GuidedDiskSelectionView (BaseView):
                     mount="/",
                     ))
         else:
-            raise Exception("unknown guided method '{}'".format(self.method))
+            result = {
+                "size": disk.free_for_partitions,
+                "fstype": "ext4",
+                "mount": "/",
+                }
+            self.controller.partition_disk_handler(disk, None, result)
         self.controller.manual()
