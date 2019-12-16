@@ -206,12 +206,13 @@ class GuidedDiskSelectionView(BaseView):
             focus_buttons=False, excerpt=text))
 
     def done(self, result):
-        results=result.as_data()
+        results = result.as_data()
         if results['custom_layout']:
             self.controller.manual()
+            return
         if results['guided_layout']:
             self.method = 'direct'
-            if results['use_lvm']:
+            if results['guided_choice']['use_lvm']:
                 self.method = 'lvm'
             self.choose_disk(results['guided_choice']['disk_choice'])
 
