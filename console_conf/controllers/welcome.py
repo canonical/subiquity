@@ -25,7 +25,7 @@ class WelcomeController(BaseController):
         self.ui.set_body(view)
 
     def done(self):
-        self.signal.emit_signal('next-screen')
+        self.app.next_screen()
 
     def cancel(self):
         # Can't go back from here!

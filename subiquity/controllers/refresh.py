@@ -188,8 +188,8 @@ class RefreshController(BaseController):
             raise Skip()
 
     def done(self, sender=None):
-        log.debug("RefreshController.done next-screen")
-        self.signal.emit_signal('next-screen')
+        log.debug("RefreshController.done next_screen")
+        self.app.next_screen()
 
     def cancel(self, sender=None):
-        self.signal.emit_signal('prev-screen')
+        self.app.prev_screen()

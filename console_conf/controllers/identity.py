@@ -246,7 +246,7 @@ class IdentityController(BaseController):
     def cancel(self):
         # You can only go back if we haven't created a user yet.
         if self.model.user is None:
-            self.signal.emit_signal('prev-screen')
+            self.app.prev_screen()
 
     def login(self):
         title = "Configuration Complete"
@@ -264,4 +264,4 @@ class IdentityController(BaseController):
             # current process).
             disable_console_conf()
 
-        self.signal.emit_signal('quit')
+        self.app.exit()

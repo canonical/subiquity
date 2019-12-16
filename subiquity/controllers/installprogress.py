@@ -407,7 +407,7 @@ class InstallProgressController(BaseController):
     def reboot(self):
         if self.opts.dry_run:
             log.debug('dry-run enabled, skipping reboot, quitting instead')
-            self.signal.emit_signal('quit')
+            self.app.exit()
         else:
             # TODO Possibly run this earlier, to show a warning; or
             # switch to shutdown if chreipl fails

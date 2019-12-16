@@ -161,11 +161,11 @@ class SnapListController(BaseController):
 
     def done(self, snaps_to_install):
         log.debug(
-            "SnapListController.done next-screen snaps_to_install=%s",
+            "SnapListController.done next_screen snaps_to_install=%s",
             snaps_to_install)
         self.model.set_installed_list(snaps_to_install)
         self.signal.emit_signal("installprogress:snap-config-done")
-        self.signal.emit_signal("next-screen")
+        self.app.next_screen()
 
     def cancel(self, sender=None):
-        self.signal.emit_signal("prev-screen")
+        self.app.prev_screen()

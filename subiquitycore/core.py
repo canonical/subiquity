@@ -330,7 +330,7 @@ class Application:
     #         "Identity",
     #         "InstallProgress",
     # ]
-    # The 'next-screen' and 'prev-screen' signals move through the list of
+    # The 'next_screen' and 'prev-screen' methods move through the list of
     # controllers in order, calling the start_ui method on the controller
     # instance.
 
@@ -425,15 +425,6 @@ class Application:
 
     def _connect_base_signals(self):
         """Connect signals used in the core controller."""
-        signals = [
-            ('quit', self.exit),
-            ('next-screen', self.next_screen),
-            ('prev-screen', self.prev_screen),
-            ]
-        if self.opts.dry_run:
-            signals.append(('control-x-quit', self.exit))
-        self.signal.connect_signals(signals)
-
         # Registers signals from each controller
         for controller in self.controllers.instances:
             controller.register_signals()
@@ -568,8 +559,8 @@ class Application:
         self.loop.screen.clear()
 
     def unhandled_input(self, key):
-        if key == 'ctrl x':
-            self.signal.emit_signal('control-x-quit')
+        if self.opts.dry_run and key == 'ctrl x':
+            self.exit()
         elif key == 'f3':
             self.loop.screen.clear()
         elif key in ['ctrl t', 'f4']:
