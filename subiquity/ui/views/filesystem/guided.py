@@ -27,6 +27,7 @@ from subiquitycore.ui.container import (
     )
 from subiquitycore.ui.form import (
     BooleanField,
+    ChoiceField,
     Form,
     NO_CAPTION,
     NO_HELP,
@@ -37,6 +38,7 @@ from subiquitycore.ui.form import (
     SubFormField,
     WantsToKnowFormField,
     )
+from subiquitycore.ui.selector import Option
 from subiquitycore.ui.table import (
     TablePile,
     TableRow,
@@ -122,12 +124,24 @@ class GuidedChoiceForm(SubForm):
     def __init__(self, parent):
         super().__init__(parent)
         connect_signal(self.use_lvm.widget, 'change', self._toggle)
+        options = []
+        tables = []
+        for disk in parent.model.all_disks():
+            for obj, cells in summarize_device(disk):
+                table = TablePile([TableRow(cells)])
+                tables.append(table)
+                options.append(Option((table, obj is disk, obj)))
+        t0 = tables[0]
+        for t in tables[1:]:
+            t0.bind(t)
+        self.disk_choice.widget.options = options
+        self.disk_choice.widget.index = 0
         self.lvm_options.enabled = self.use_lvm.value
 
     def _toggle(self, sender, val):
         self.lvm_options.enabled = val
 
-    disk_choice = DiskField(caption=NO_CAPTION, help=NO_HELP)
+    disk_choice = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["dummy"])
     use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
     lvm_options = SubFormField(LVMOptionsForm, "", help=NO_HELP)
 
