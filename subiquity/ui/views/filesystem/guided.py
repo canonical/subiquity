@@ -17,25 +17,25 @@ import logging
 
 from urwid import (
     connect_signal,
-    Text,
     )
 
-from subiquitycore.ui.buttons import (
-    back_btn,
-    cancel_btn,
-    ok_btn,
+from subiquitycore.ui.form import (
+    BooleanField,
+    ChoiceField,
+    Form,
+    NO_CAPTION,
+    NO_HELP,
+    RadioButtonField,
+    SubForm,
+    SubFormField,
     )
+from subiquitycore.ui.selector import Option
 from subiquitycore.ui.table import (
-    ColSpec,
-    TableListBox,
+    TablePile,
     TableRow,
     )
 from subiquitycore.ui.utils import (
-    button_pile,
-    ClickableIcon,
-    Color,
-    CursorOverride,
-    screen,
+    rewrap,
     )
 from subiquitycore.view import BaseView
 
@@ -48,120 +48,107 @@ from .helpers import summarize_device
 
 log = logging.getLogger("subiquity.ui.views.filesystem.guided")
 
-
-text = _("""The installer can guide you through partitioning an entire disk \
+text = _("""The installer can guide you through partitioning an entire disk
 either directly or using LVM, or, if you prefer, you can do it manually.
 
-If you choose to partition an entire disk you will still have a chance to \
+If you choose to partition an entire disk you will still have a chance to
 review and modify the results.""")
 
 
-class GuidedFilesystemView(BaseView):
+class GuidedChoiceForm(SubForm):
+
+    disk = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
+    use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        options = []
+        tables = []
+        for disk in parent.model.all_disks():
+            for obj, cells in summarize_device(disk):
+                table = TablePile([TableRow(cells)])
+                tables.append(table)
+                options.append(Option((table, obj is disk, obj)))
+        t0 = tables[0]
+        for t in tables[1:]:
+            t0.bind(t)
+        self.disk.widget.options = options
+        self.disk.widget.index = 0
+
+
+class GuidedForm(Form):
+
+    group = []
+
+    guided = RadioButtonField(group, _("Use an entire disk"), help=NO_HELP)
+    guided_choice = SubFormField(GuidedChoiceForm, "", help=NO_HELP)
+    custom = RadioButtonField(group, _("Custom storage layout"), help=NO_HELP)
+
+    cancel_label = _("Back")
+
+    def __init__(self, model):
+        self.model = model
+        super().__init__()
+        connect_signal(self.guided.widget, 'change', self._toggle_guided)
+
+    def _toggle_guided(self, sender, new_value):
+        self.guided_choice.enabled = new_value
+
+
+HELP = _("""
+
+The "Use an entire disk" option installs Ubuntu onto the selected disk,
+replacing any partitions and data already there.
+
+If the platform requires it, a bootloader partition is created on the disk.
+
+If you choose to use LVM, two partitions are then created, one for /boot and
+one covering the rest of the disk. A LVM volume group is created containing
+the large partition. A 4 gigabyte logical volume is created for the root
+filesystem. It can easily be enlarged with standard LVM command line tools.
+
+If you do not choose to use LVM, a single partition is created covering the
+rest of the disk which is then formatted as ext4 and mounted at /.
+
+In either case, you will still have a chance to review and modify the results.
+
+If you choose to use a custom storage layout, no changes are made to the disks
+and you will have to, at a minimum, select a boot disk and mount a filesystem
+at /.
+
+""")
+
+
+class GuidedDiskSelectionView (BaseView):
 
     title = _("Filesystem setup")
 
     def __init__(self, controller):
         self.controller = controller
-        direct = ok_btn(
-            _("Use An Entire Disk"), on_press=self.guided, user_arg="direct")
-        lvm = ok_btn(
-            _("Use An Entire Disk And Set Up LVM"), on_press=self.guided,
-            user_arg="lvm")
-        manual = ok_btn(_("Manual"), on_press=self.manual)
-        back = back_btn(_("Back"), on_press=self.cancel)
-        super().__init__(screen(
-            rows=[button_pile([direct, lvm, manual, back]), Text("")],
-            buttons=None,
-            focus_buttons=False,
-            excerpt=text))
+        self.form = GuidedForm(model=controller.model)
 
-    def manual(self, btn):
-        log.debug("GuidedFilesystemView.manual")
-        self.controller.manual()
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
 
-    def guided(self, btn, method):
-        log.debug("GuidedFilesystemView.guided")
-        self.controller.guided(method)
+        super().__init__(self.form.as_screen(
+            focus_buttons=False, excerpt=rewrap(_(text))))
+
+    def local_help(self):
+        return (_("Help on guided storage configuration"), rewrap(_(HELP)))
+
+    def done(self, sender):
+        results = sender.as_data()
+        if results['custom']:
+            self.controller.manual()
+        else:  # results['guided']
+            self.choose_disk(**results['guided_choice'])
 
     def cancel(self, btn=None):
         self.controller.cancel()
 
-
-excerpts = {
-    'direct': _("""The selected guided partitioning scheme creates the \
-required bootloader partition on the chosen disk and then creates a single \
-partition covering the rest of the disk, formatted as ext4 and mounted at '/'.\
-"""),
-
-    'lvm': _("""The LVM guided partitioning scheme creates three \
-partitions on the selected disk: one as required by the bootloader, one \
-for '/boot', and one covering the rest of the disk.
-
-A LVM volume group is created containing the large partition. A \
-4 gigabyte logical volume is created for the root filesystem. \
-It can easily be enlarged with standard LVM command line tools."""),
-}
-
-
-def _wrap_button_row(row):
-    return CursorOverride(Color.done_button(row), 2)
-
-
-class GuidedDiskSelectionView(BaseView):
-
-    title = _("Filesystem setup")
-
-    def __init__(self, model, controller, method):
-        self.model = model
-        self.controller = controller
-        self.method = method
-        cancel = cancel_btn(_("Cancel"), on_press=self.cancel)
-        rows = []
-        for disk in self.model.all_disks():
-            for obj, cells in summarize_device(disk):
-                wrap = Color.info_minor
-                if obj is disk:
-                    start, end = '[', ']'
-                    arrow = '\N{BLACK RIGHT-POINTING SMALL TRIANGLE}'
-                    if disk.size >= dehumanize_size("6G"):
-                        arrow = ClickableIcon(arrow)
-                        connect_signal(
-                            arrow, 'click', self.choose_disk, disk)
-                        wrap = _wrap_button_row
-                else:
-                    start, arrow, end = '', '', ''
-                if isinstance(arrow, str):
-                    arrow = Text(arrow)
-                rows.append(wrap(TableRow(
-                    [Text(start)] + cells + [arrow, Text(end)])))
-            rows.append(TableRow([Text("")]))
-        super().__init__(screen(
-            TableListBox(rows[:-1], spacing=2, colspecs={
-                0: ColSpec(rpad=1),
-                2: ColSpec(can_shrink=True),
-                4: ColSpec(min_width=9),
-                5: ColSpec(rpad=1),
-                }, align='center'),
-            button_pile([cancel]),
-            focus_buttons=False,
-            excerpt=(
-                excerpts[method]
-                + "\n\n"
-                + _("Choose the disk to install to:"))))
-
-    def cancel(self, btn=None):
-        self.controller.start_ui()
-
-    def choose_disk(self, btn, disk):
+    def choose_disk(self, disk, use_lvm):
         self.controller.reformat(disk)
-        if self.method == "direct":
-            result = {
-                "size": disk.free_for_partitions,
-                "fstype": "ext4",
-                "mount": "/",
-                }
-            self.controller.partition_disk_handler(disk, None, result)
-        elif self.method == 'lvm':
+        if use_lvm:
             if DeviceAction.MAKE_BOOT in disk.supported_actions:
                 self.controller.make_boot_disk(disk)
             self.controller.create_partition(
@@ -175,11 +162,9 @@ class GuidedDiskSelectionView(BaseView):
                     size=disk.free_for_partitions,
                     fstype=None,
                     ))
-            vg = self.controller.create_volgroup(
-                spec=dict(
-                    name="ubuntu-vg",
-                    devices=set([part]),
-                    ))
+            spec = dict(name="ubuntu-vg", devices=set([part]))
+            # create volume group on partition
+            vg = self.controller.create_volgroup(spec)
             self.controller.create_logical_volume(
                 vg=vg, spec=dict(
                     size=dehumanize_size("4G"),
@@ -188,5 +173,10 @@ class GuidedDiskSelectionView(BaseView):
                     mount="/",
                     ))
         else:
-            raise Exception("unknown guided method '{}'".format(self.method))
+            result = {
+                "size": disk.free_for_partitions,
+                "fstype": "ext4",
+                "mount": "/",
+                }
+            self.controller.partition_disk_handler(disk, None, result)
         self.controller.manual()

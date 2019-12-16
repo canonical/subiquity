@@ -16,7 +16,6 @@
 from .filesystem import (
     FilesystemView,
     GuidedDiskSelectionView,
-    GuidedFilesystemView,
     )
 from .identity import IdentityView
 from .installprogress import ProgressView
@@ -26,7 +25,6 @@ from .zdev import ZdevView
 __all__ = [
     'FilesystemView',
     'GuidedDiskSelectionView',
-    'GuidedFilesystemView',
     'IdentityView',
     'KeyboardView',
     'ProgressView',

@@ -44,7 +44,6 @@ from subiquity.models.filesystem import (
 from subiquity.ui.views import (
     FilesystemView,
     GuidedDiskSelectionView,
-    GuidedFilesystemView,
     )
 from subiquity.ui.views.filesystem.probing import (
     SlowProbing,
@@ -183,12 +182,18 @@ class FilesystemController(BaseController):
             # performed would be tricky.  Possibly worth doing though! Just
             # not today.
             self.stop_listening_udev()
-            self.ui.set_body(GuidedFilesystemView(self))
+            self.ui.set_body(GuidedDiskSelectionView(self))
             pr = self._crash_reports.get(False)
             if pr is not None:
                 self.app.show_error_report(pr)
             if self.answers['guided']:
-                self.guided(self.answers.get('guided-method', 'direct'))
+                disk = self.model.all_disks()[self.answers['guided-index']]
+                method = self.answers.get('guided-method')
+                self.ui.body.form.guided_choice.value = {
+                    'disk': disk,
+                    'use_lvm': method == "lvm",
+                    }
+                self.ui.body.done(self.ui.body.form)
             elif self.answers['manual']:
                 self.manual()
 

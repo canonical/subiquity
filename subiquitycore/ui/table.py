@@ -363,6 +363,14 @@ class AbstractTable(WidgetWrap):
                     row.width = total_width
                 row.base_widget.set_widths(widths)
 
+    def get_natural_width(self):
+        rows = []
+        for table in self.group:
+            rows.extend(table.table_rows)
+        widths, total_width, has_unpacked = _compute_widths_for_size(
+            100000, rows, self.colspecs, self.spacing)
+        return total_width
+
     def rows(self, size, focus):
         self._compute_widths_for_size(size)
         return super().rows(size, focus)
