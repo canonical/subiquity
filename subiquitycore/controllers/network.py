@@ -393,7 +393,7 @@ class NetworkController(BaseController):
                         check=True)
                 except subprocess.CalledProcessError:
                     error("stop-networkd")
-                raise
+                    raise
             if devs_to_down:
                 await self._down_devs(devs_to_down)
             if devs_to_delete:
