@@ -395,7 +395,7 @@ class KeyboardView(BaseView):
         opts = []
         for layout, desc in model.layouts.items():
             opts.append(Option((desc, True, layout)))
-        opts.sort(key=lambda o: o.label)
+        opts.sort(key=lambda o: o.label.text)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
@@ -482,7 +482,7 @@ class KeyboardView(BaseView):
             if variant == "":
                 default_i = i
             opts.append(Option((variant_desc, True, variant)))
-        opts.sort(key=lambda o: o.label)
+        opts.sort(key=lambda o: o.label.text)
         if default_i < 0:
             opts.insert(0, Option(("default", True, "")))
         self.form.variant.widget.options = opts

@@ -16,11 +16,11 @@
 from urwid import (
     ACTIVATE,
     AttrWrap,
+    CompositeCanvas,
     connect_signal,
     LineBox,
     Padding as UrwidPadding,
     PopUpLauncher,
-    SelectableIcon,
     Text,
     )
 
@@ -30,9 +30,39 @@ from subiquitycore.ui.container import (
     WidgetWrap,
     )
 from subiquitycore.ui.utils import (
-    ClickableIcon,
     Color,
     )
+from subiquitycore.ui.width import widget_width
+
+
+class ClickableThing(WidgetWrap):
+    signals = ['click']
+
+    def selectable(self):
+        return True
+
+    def render(self, size, focus=False):
+        c = super().render(size, focus)
+        if focus:
+            # create a new canvas so we can add a cursor
+            c = CompositeCanvas(c)
+            c.cursor = self.get_cursor_coords(size)
+        return c
+
+    def get_cursor_coords(self, size):
+        """
+        Return the position of the cursor if visible.  This method
+        is required for widgets that display a cursor.
+        """
+        return 0, 0
+
+    def move_cursor_to_coords(self, size, x, y):
+        return True
+
+    def keypress(self, size, key):
+        if self._command_map[key] != ACTIVATE:
+            return key
+        self._emit('click')
 
 
 class _PopUpSelectDialog(WidgetWrap):
@@ -43,21 +73,25 @@ class _PopUpSelectDialog(WidgetWrap):
         group = []
         for i, option in enumerate(self.parent._options):
             if option.enabled:
-                btn = ClickableIcon(" " + option.label)
+                btn = ClickableThing(option.label)
                 connect_signal(btn, 'click', self.click, i)
                 if i == cur_index:
                     rhs = '\N{BLACK LEFT-POINTING SMALL TRIANGLE} '
                 else:
-                    rhs = '  '
-                btn = Columns([
-                    btn,
-                    (2, Text(rhs)),
-                    ])
-                btn = AttrWrap(btn, 'menu_button', 'menu_button focus')
+                    rhs = ''
             else:
-                btn = Text(" " + option.label)
-                btn = AttrWrap(btn, 'info_minor')
-            btn = UrwidPadding(btn, width=self.parent._padding.width)
+                btn = option.label
+                rhs = ''
+            row = Columns([
+                (1, Text("")),
+                btn,
+                (2, Text(rhs)),
+                ])
+            if option.enabled:
+                row = AttrWrap(row, 'menu_button', 'menu_button focus')
+            else:
+                row = AttrWrap(row, 'info_minor')
+            btn = UrwidPadding(row, width=self.parent._padding.width)
             group.append(btn)
         list_box = ListBox(group)
         list_box.base_widget.focus_position = cur_index
@@ -106,6 +140,8 @@ class Option:
             self.value = val[2]
         else:
             raise SelectorError("invalid option %r", val)
+        if isinstance(self.label, str):
+            self.label = Text(self.label)
 
 
 class _Launcher(PopUpLauncher):
@@ -137,7 +173,7 @@ class Selector(WidgetWrap):
     signals = ['select']
 
     def __init__(self, opts, index=0):
-        self._icon = SelectableIcon("", 0)
+        self._icon = ClickableThing(Text(""))
         self._padding = UrwidPadding(AttrWrap(
             Columns([
                 (1, Text('[')),
@@ -163,7 +199,7 @@ class Selector(WidgetWrap):
         self.open_pop_up()
 
     def _set_index(self, val):
-        self._icon.set_text(self._options[val].label)
+        self._icon._w = self._options[val].label
         self._index = val
 
     @property
@@ -182,7 +218,8 @@ class Selector(WidgetWrap):
     @options.setter
     def options(self, val):
         self._options = val
-        self._padding.width = max([len(o.label) for o in self._options]) + 6
+        self._padding.width = max(
+            [widget_width(o.label) for o in self._options]) + 6
 
     def option_by_label(self, label):
         for opt in self._options:
