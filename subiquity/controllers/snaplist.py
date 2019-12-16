@@ -37,80 +37,64 @@ class SnapdSnapInfoLoader:
         self.model = model
         self.store_section = store_section
 
-        self._running = False
+        self.main_task = None
         self.snap_list_fetched = False
         self.failed = False
 
         self.snapd = snapd
         self.pending_info_snaps = []
-        self.ongoing = {}  # {snap:[callbacks]}
+        self.tasks = {}  # {snap:task}
 
     def start(self):
-        self._running = True
         log.debug("loading list of snaps")
-        schedule_task(self._start())
+        self.main_task = schedule_task(self._start())
 
     async def _start(self):
-        self.ongoing[None] = []
+        task = self.tasks[None] = schedule_task(self._load_list())
+        await task
+        self.pending_snaps = self.model.get_snap_list()
+        log.debug("fetched list of %s snaps", len(self.pending_snaps))
+        while self.pending_snaps:
+            snap = self.pending_snaps.pop(0)
+            task = self.tasks[snap] = schedule_task(
+                self._fetch_info_for_snap(snap))
+            await task
+
+    async def _load_list(self):
         try:
             result = await self.snapd.get(
                 'v2/find', section=self.store_section)
         except requests.exceptions.RequestException:
             log.exception("loading list of snaps failed")
             self.failed = True
-            self._running = False
-            return
-        if not self._running:
             return
         self.model.load_find_data(result)
         self.snap_list_fetched = True
-        self.pending_snaps = self.model.get_snap_list()
-        log.debug("fetched list of %s snaps", len(self.model.get_snap_list()))
-        for cb in self.ongoing.pop(None):
-            cb()
-        while self.pending_snaps and self._running:
-            snap = self.pending_snaps.pop(0)
-            self.ongoing[snap] = []
-            await self._fetch_info_for_snap(snap)
 
     def stop(self):
-        self._running = False
+        if self.main_task is not None:
+            self.main_task.cancel()
 
     async def _fetch_info_for_snap(self, snap):
         log.debug('starting fetch for %s', snap.name)
         try:
-            data = await self.snapd.get(
-                'v2/find', name=snap.name)
+            data = await self.snapd.get('v2/find', name=snap.name)
         except requests.exceptions.RequestException:
             log.exception("loading snap info failed")
             # XXX something better here?
             return
-        if not self._running:
-            return
         log.debug('got data for %s', snap.name)
         self.model.load_info_data(data)
-        for cb in self.ongoing.pop(snap):
-            cb()
 
-    def get_snap_list(self, callback):
-        if self.snap_list_fetched:
-            callback()
-        elif None in self.ongoing:
-            self.ongoing[None].append(callback)
-        else:
-            self.start()
-            self.ongoing[None].append(callback)
+    def get_snap_list_task(self):
+        return self.tasks[None]
 
-    def get_snap_info(self, snap, callback):
-        if len(snap.channels) > 0:
-            callback()
-            return
-        if snap not in self.ongoing:
+    def get_snap_info_task(self, snap):
+        if snap not in self.tasks:
             if snap in self.pending_snaps:
                 self.pending_snaps.remove(snap)
-            self.ongoing[snap] = []
-            schedule_task(self._fetch_info_for_snap(snap))
-        self.ongoing[snap].append(callback)
+            self.tasks[snap] = schedule_task(self._fetch_info_for_snap(snap))
+        return self.tasks[snap]
 
 
 class SnapListController(BaseController):
@@ -153,11 +137,11 @@ class SnapListController(BaseController):
             return
         self.ui.set_body(SnapListView(self.model, self))
 
-    def get_snap_list(self, callback):
-        self.loader.get_snap_list(callback)
+    def get_snap_list_task(self):
+        return self.loader.get_snap_list_task()
 
-    def get_snap_info(self, snap, callback):
-        self.loader.get_snap_info(snap, callback)
+    def get_snap_info_task(self, snap):
+        return self.loader.get_snap_info_task(snap)
 
     def done(self, snaps_to_install):
         log.debug(

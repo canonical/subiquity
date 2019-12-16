@@ -29,6 +29,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.async_helpers import schedule_task
 from subiquitycore.ui.buttons import ok_btn, cancel_btn, other_btn
 from subiquitycore.ui.container import (
     Columns,
@@ -313,36 +314,37 @@ class SnapCheckBox(CheckBox):
         self.snap = snap
         super().__init__(snap.name, on_state_change=self.state_change)
 
-    def load_info(self):
-        called = False
-        fi = None
+    def loaded(self):
+        if len(self.snap.channels) == 0:  # or other indication of failure
+            ff = FetchingFailed(self, self.snap)
+            self.parent.show_overlay(ff, width=ff.width)
+        else:
+            cur_chan = None
+            if self.snap.name in self.parent.to_install:
+                cur_chan = self.parent.to_install[self.snap.name].channel
+            siv = SnapInfoView(self.parent, self.snap, cur_chan)
+            self.parent.show_screen(screen(
+                siv,
+                [other_btn(
+                    label=_("Close"),
+                    on_press=self.parent.show_main_screen)],
+                focus_buttons=False))
 
-        def callback():
-            nonlocal called
-            called = True
-            if fi is not None:
-                fi.close()
-            if len(self.snap.channels) == 0:  # or other indication of failure
-                ff = FetchingFailed(self, self.snap)
-                self.parent.show_overlay(ff, width=ff.width)
-            else:
-                cur_chan = None
-                if self.snap.name in self.parent.to_install:
-                    cur_chan = self.parent.to_install[self.snap.name].channel
-                siv = SnapInfoView(self.parent, self.snap, cur_chan)
-                self.parent.show_screen(screen(
-                    siv,
-                    [other_btn(
-                        label=_("Close"),
-                        on_press=self.parent.show_main_screen)],
-                    focus_buttons=False))
-        self.parent.controller.get_snap_info(self.snap, callback)
-        # If we didn't get callback synchronously, display a dialog
-        # while the info loads.
-        if not called:
-            fi = FetchingInfo(
-                self.parent, self.snap, self.parent.controller.loop)
-            self.parent.show_overlay(fi, width=fi.width)
+    async def wait(self, t, fi):
+        await t
+        fi.close()
+        self.loaded()
+
+    def load_info(self):
+        t = self.parent.controller.get_snap_info_task(self.snap)
+
+        if t.done():
+            self.loaded()
+            return
+        fi = FetchingInfo(
+            self.parent, self.snap, self.parent.controller.loop)
+        self.parent.show_overlay(fi, width=fi.width)
+        schedule_task(self.wait(t, fi))
 
     def keypress(self, size, key):
         if key.startswith("enter"):
@@ -371,29 +373,30 @@ class SnapListView(BaseView):
         self.to_install = {}  # {snap_name: (channel, is_classic)}
         self.load()
 
-    def load(self, sender=None):
-        spinner = None
-        called = False
+    def loaded(self):
+        snap_list = self.model.get_snap_list()
+        if len(snap_list) == 0:
+            self.offer_retry()
+        else:
+            self.make_main_screen(snap_list)
+            self.show_main_screen()
 
-        def callback():
-            nonlocal called
-            called = True
-            if spinner is not None:
-                spinner.stop()
-            snap_list = self.model.get_snap_list()
-            if len(snap_list) == 0:
-                self.offer_retry()
-            else:
-                self.make_main_screen(snap_list)
-                self.show_main_screen()
-        self.controller.get_snap_list(callback)
-        if called:
+    async def _wait(self, t, spinner):
+        spinner.stop()
+        await t
+        self.loaded()
+
+    def load(self, sender=None):
+        t = self.controller.get_snap_list_task()
+        if t.done():
+            self.loaded()
             return
         spinner = Spinner(self.controller.loop, style='dots')
         spinner.start()
         self._w = screen(
             [spinner], [ok_btn(label=_("Continue"), on_press=self.done)],
             excerpt=_("Loading server snaps from store, please wait..."))
+        schedule_task(self._wait(t, spinner))
 
     def offer_retry(self):
         self._w = screen(
