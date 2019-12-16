@@ -646,11 +646,11 @@ class ZdevController(BaseController):
         self.ui.set_body(ZdevView(self))
 
     def cancel(self):
-        self.signal.emit_signal('prev-screen')
+        self.app.prev_screen()
 
     def done(self):
         # switch to next screen
-        self.signal.emit_signal('next-screen')
+        self.app.next_screen()
 
     def chzdev(self, action, zdevinfo):
         if self.opts.dry_run:

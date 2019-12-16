@@ -41,14 +41,14 @@ class IdentityController(BaseController):
             self.done(d)
 
     def cancel(self):
-        self.signal.emit_signal('prev-screen')
+        self.app.prev_screen()
 
     def done(self, user_spec):
         safe_spec = user_spec.copy()
         safe_spec['password'] = '<REDACTED>'
         log.debug(
-            "IdentityController.done next-screen user_spec=%s",
+            "IdentityController.done next_screen user_spec=%s",
             safe_spec)
         self.model.add_user(user_spec)
         self.signal.emit_signal('installprogress:identity-config-done')
-        self.signal.emit_signal('next-screen')
+        self.app.next_screen()

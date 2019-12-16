@@ -313,14 +313,14 @@ class FilesystemController(BaseController):
         self.manual()
 
     def cancel(self):
-        self.signal.emit_signal('prev-screen')
+        self.app.prev_screen()
 
     def finish(self):
-        log.debug("FilesystemController.finish next-screen")
+        log.debug("FilesystemController.finish next_screen")
         # start curtin install in background
         self.signal.emit_signal('installprogress:filesystem-config-done')
         # switch to next screen
-        self.signal.emit_signal('next-screen')
+        self.app.next_screen()
 
     def create_mount(self, fs, spec):
         if spec.get('mount') is None:

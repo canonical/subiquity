@@ -194,13 +194,13 @@ class NetworkController(BaseController):
         self.observer.trigger_scan(dev.ifindex)
 
     def done(self):
-        log.debug("NetworkController.done next-screen")
+        log.debug("NetworkController.done next_screen")
         self.model.has_network = bool(
             self.network_event_receiver.default_routes)
-        self.signal.emit_signal('next-screen')
+        self.app.next_screen()
 
     def cancel(self):
-        self.signal.emit_signal('prev-screen')
+        self.app.prev_screen()
 
     def _action_get(self, id):
         dev_spec = id[0].split()

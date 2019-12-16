@@ -93,7 +93,7 @@ class MirrorController(BaseController):
             self.done(self.model.mirror)
 
     def cancel(self):
-        self.signal.emit_signal('prev-screen')
+        self.app.prev_screen()
 
     def serialize(self):
         return self.model.mirror
@@ -102,7 +102,7 @@ class MirrorController(BaseController):
         self.model.mirror = data
 
     def done(self, mirror):
-        log.debug("MirrorController.done next-screen mirror=%s", mirror)
+        log.debug("MirrorController.done next_screen mirror=%s", mirror)
         if mirror != self.model.mirror:
             self.model.mirror = mirror
-        self.signal.emit_signal('next-screen')
+        self.app.next_screen()

@@ -58,7 +58,7 @@ class SSHController(BaseController):
             self.fetch_ssh_keys(d)
 
     def cancel(self):
-        self.signal.emit_signal('prev-screen')
+        self.app.prev_screen()
 
     def _fetch_cancel(self):
         if self._fetch_task is None:
@@ -111,10 +111,10 @@ class SSHController(BaseController):
         self._fetch_task = schedule_task(self._fetch_ssh_keys(user_spec))
 
     def done(self, result):
-        log.debug("SSHController.done next-screen result=%s", result)
+        log.debug("SSHController.done next_screen result=%s", result)
         self.model.install_server = result['install_server']
         self.model.authorized_keys = result.get('authorized_keys', [])
         self.model.pwauth = result.get('pwauth', True)
         self.model.ssh_import_id = result.get('ssh_import_id', None)
         self.signal.emit_signal('installprogress:ssh-config-done')
-        self.signal.emit_signal('next-screen')
+        self.app.next_screen()

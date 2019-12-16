@@ -35,7 +35,7 @@ class ProxyController(BaseController):
             self.done(self.answers['proxy'])
 
     def cancel(self):
-        self.signal.emit_signal('prev-screen')
+        self.app.prev_screen()
 
     def serialize(self):
         return self.model.proxy
@@ -44,9 +44,9 @@ class ProxyController(BaseController):
         self.model.proxy = data
 
     def done(self, proxy):
-        log.debug("ProxyController.done next-screen proxy=%s", proxy)
+        log.debug("ProxyController.done next_screen proxy=%s", proxy)
         if proxy != self.model.proxy:
             self.model.proxy = proxy
             os.environ['http_proxy'] = os.environ['https_proxy'] = proxy
             self.signal.emit_signal('network-proxy-set')
-        self.signal.emit_signal('next-screen')
+        self.app.next_screen()

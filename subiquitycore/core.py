@@ -330,7 +330,7 @@ class Application:
     #         "Identity",
     #         "InstallProgress",
     # ]
-    # The 'next-screen' and 'prev-screen' signals move through the list of
+    # The 'next_screen' and 'prev-screen' methods move through the list of
     # controllers in order, calling the start_ui method on the controller
     # instance.
 
@@ -415,8 +415,6 @@ class Application:
         """Connect signals used in the core controller."""
         signals = [
             ('quit', self.exit),
-            ('next-screen', self.next_screen),
-            ('prev-screen', self.prev_screen),
             ]
         if self.opts.dry_run:
             signals.append(('control-x-quit', self.exit))

@@ -55,11 +55,11 @@ class KeyboardController(BaseController):
 
     async def apply_settings(self, setting):
         await self.model.set_keyboard(setting)
-        log.debug("KeyboardController next-screen")
-        self.signal.emit_signal('next-screen')
+        log.debug("KeyboardController next_screen")
+        self.app.next_screen()
 
     def done(self, setting):
         schedule_task(self.apply_settings(setting))
 
     def cancel(self):
-        self.signal.emit_signal('prev-screen')
+        self.app.prev_screen()
