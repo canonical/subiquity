@@ -14,6 +14,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import logging
+
+
+log = logging.getLogger("subiquitycore.async_helpers")
 
 
 def _done(fut):
@@ -47,16 +51,24 @@ class SingleInstanceTask:
         self.propagate_errors = propagate_errors
         self.task = None
 
-    async def start(self, *args, **kw):
-        if self.task is not None:
-            self.task.cancel()
+    async def _start(self, old):
+        if old is not None:
+            old.cancel()
             try:
-                await self.task
+                await old
             except BaseException:
                 pass
-        self.task = schedule_task(
-            self.func(*args, **kw), self.propagate_errors)
+        schedule_task(self.task, self.propagate_errors)
+
+    async def start(self, *args, **kw):
+        await self.start_sync(*args, **kw)
         return self.task
 
     def start_sync(self, *args, **kw):
-        return schedule_task(self.start(*args, **kw))
+        old = self.task
+        coro = self.func(*args, **kw)
+        if asyncio.iscoroutine(coro):
+            self.task = asyncio.Task(coro)
+        else:
+            self.task = coro
+        return schedule_task(self._start(old))

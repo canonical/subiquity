@@ -13,8 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import json
 import logging
+
+import requests
 
 from urwid import (
     ProgressBar,
@@ -22,6 +25,7 @@ from urwid import (
     WidgetWrap,
     )
 
+from subiquitycore.async_helpers import schedule_task
 from subiquitycore.view import BaseView
 from subiquitycore.ui.buttons import done_btn, other_btn
 from subiquitycore.ui.container import Columns, ListBox
@@ -90,6 +94,18 @@ class TaskProgress(WidgetWrap):
             self.spinner.spin()
 
 
+def exc_message(exc):
+    try:
+        result = exc.response.json()
+    except (AttributeError, json.decoder.JSONDecodeError):
+        message = None
+    else:
+        message = result.get("result", {}).get("message")
+    if message is not None:
+        return message
+    return"Unknown error: {}".format(exc)
+
+
 class RefreshView(BaseView):
 
     checking_title = _("Checking for installer update...")
@@ -98,8 +114,8 @@ class RefreshView(BaseView):
         "installer is available."
         )
 
-    failed_title = _("Contacting the snap store failed")
-    failed_excerpt = _(
+    check_failed_title = _("Contacting the snap store failed")
+    check_failed_excerpt = _(
         "Contacting the snap store failed:"
         )
 
@@ -115,32 +131,21 @@ class RefreshView(BaseView):
         "installer will restart automatically when the download is complete."
         )
 
+    update_failed_title = _("Update failed")
+    update_failed_excerpt = _(
+        "Downloading and applying the update:"
+        )
+
     def __init__(self, controller):
         self.controller = controller
         self.spinner = Spinner(self.controller.loop, style="dots")
 
-        if self.controller.check_state == CheckState.CHECKING:
+        if self.controller.check_state == CheckState.UNKNOWN:
             self.check_state_checking()
-        elif self.controller.check_state == CheckState.AVAILABLE:
-            self.check_state_available()
         else:
-            raise AssertionError(
-                "instantiating the view with check_state {}".format(
-                    self.controller.check_state))
+            self.check_state_available()
 
         super().__init__(self._w)
-
-    def update_check_state(self):
-        if self.controller.check_state == CheckState.UNAVAILABLE:
-            self.done()
-        elif self.controller.check_state == CheckState.FAILED:
-            self.check_state_failed()
-        elif self.controller.check_state == CheckState.AVAILABLE:
-            self.check_state_available()
-        else:
-            raise AssertionError(
-                "update_check_state with check_state {}".format(
-                    self.controller.check_state))
 
     def check_state_checking(self):
         self.spinner.start()
@@ -155,6 +160,44 @@ class RefreshView(BaseView):
         self.title = self.checking_title
         self.controller.ui.set_header(self.title)
         self._w = screen(rows, buttons, excerpt=_(self.checking_excerpt))
+        schedule_task(self._wait_check_result())
+
+    async def _wait_check_result(self):
+        while True:
+            try:
+                check_state = await self.controller.check_task.task
+            except asyncio.CancelledError:
+                # If the task was cancelled, another will have been
+                # started.
+                continue
+            except Exception as e:
+                self.check_state_failed(e)
+                return
+            else:
+                break
+        if check_state == CheckState.AVAILABLE:
+            self.check_state_available()
+        else:
+            self.done()
+
+    def check_state_failed(self, exc):
+        self.spinner.stop()
+
+        rows = [Text(exc_message(exc))]
+
+        buttons = button_pile([
+            done_btn(_("Try again"), on_press=self.try_check_again),
+            done_btn(_("Continue without updating"), on_press=self.done),
+            other_btn(_("Back"), on_press=self.cancel),
+            ])
+        buttons.base_widget.focus_position = 1
+
+        self.title = self.failed_title
+        self._w = screen(rows, buttons, excerpt=_(self.failed_excerpt))
+
+    def try_check_again(self, sender=None):
+        self.controller.snapd_network_changed()
+        self.check_state_checking()
 
     def check_state_available(self, sender=None):
         self.spinner.stop()
@@ -187,34 +230,6 @@ class RefreshView(BaseView):
         self.controller.ui.set_header(self.available_title)
         self._w = screen(rows, buttons, excerpt=excerpt)
 
-    def check_state_failed(self):
-        self.spinner.stop()
-
-        try:
-            result = self.controller.check_error.response.json()
-        except (AttributeError, json.decoder.JSONDecodeError):
-            message = None
-        else:
-            message = result.get("result", {}).get("message")
-        if message is None:
-            message = "Unknown error: {}".format(self.controller.check_error)
-
-        rows = [Text(message)]
-
-        buttons = button_pile([
-            done_btn(_("Try again"), on_press=self.try_again),
-            done_btn(_("Continue without updating"), on_press=self.done),
-            other_btn(_("Back"), on_press=self.cancel),
-            ])
-        buttons.base_widget.focus_position = 1
-
-        self.title = self.failed_title
-        self._w = screen(rows, buttons, excerpt=_(self.failed_excerpt))
-
-    def try_again(self, sender=None):
-        self.controller.snapd_network_changed()
-        self.check_state_checking()
-
     def update(self, sender=None):
         self.spinner.stop()
 
@@ -228,21 +243,50 @@ class RefreshView(BaseView):
         self.controller.ui.set_header("Downloading update...")
         self._w = screen(
             self.lb_tasks, buttons, excerpt=_(self.progress_excerpt))
-        self.controller.start_update(self.update_started)
+        schedule_task(self._update())
 
-    def update_started(self, change_id):
-        self.change_id = change_id
-        self.update_progress()
-
-    def update_progress(self, loop=None, ud=None):
-        self.controller.get_progress(self.change_id, self.updated_progress)
-
-    def updated_progress(self, change):
-        if change['status'] == 'Done':
-            # Will only get here dry run mode as part of the refresh is us
-            # getting restarted by snapd...
-            self.done()
+    async def _update(self):
+        try:
+            change_id = await self.controller.start_update()
+        except requests.exceptions.RequestException as e:
+            self.update_failed(exc_message(e))
             return
+        while True:
+            try:
+                change = await self.controller.get_progress(change_id)
+            except requests.exceptions.RequestException as e:
+                self.update_failed(exc_message(e))
+                return
+            if change['status'] == 'Done':
+                # Will only get here dry run mode as part of the refresh is us
+                # getting restarted by snapd...
+                self.done()
+                return
+            if change['status'] not in ['Do', 'Doing']:
+                self.update_failed(change.get('err', "Unknown error"))
+                return
+            self.update_progress(change)
+            await asyncio.sleep(0.1)
+
+    def try_update_again(self, sender=None):
+        self.check_state_available()
+
+    def update_failed(self, msg):
+        self.spinner.stop()
+
+        rows = [Text(msg)]
+
+        buttons = button_pile([
+            done_btn(_("Try again"), on_press=self.try_update_again),
+            done_btn(_("Continue without updating"), on_press=self.done),
+            other_btn(_("Back"), on_press=self.cancel),
+            ])
+        buttons.base_widget.focus_position = 1
+
+        self.title = self.update_failed_title
+        self._w = screen(rows, buttons, excerpt=_(self.update_failed_excerpt))
+
+    def update_progress(self, change):
         for task in change['tasks']:
             tid = task['id']
             if task['status'] == "Done":
@@ -257,7 +301,6 @@ class RefreshView(BaseView):
                 else:
                     bar = self.task_to_bar[tid]
                 bar.update(task)
-        self.controller.loop.set_alarm_in(0.1, self.update_progress)
 
     def done(self, result=None):
         self.spinner.stop()
