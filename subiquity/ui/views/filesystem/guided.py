@@ -91,7 +91,6 @@ class GuidedForm(Form):
     def __init__(self, model, initial):
         self.model = model
         super().__init__(initial=initial)
-        self.in_signal = False
         connect_signal(
             self.guided_layout.widget, 'change', self._toggle_layout)
         connect_signal(
@@ -100,16 +99,12 @@ class GuidedForm(Form):
             self.guided_layout.widget, self.guided_layout.value)
 
     def _toggle_layout(self, sender, new_value):
-        if self.in_signal:
-            return
-        self.in_signal = True
         if sender is self.guided_layout.widget:
             guided_layout = new_value
         if sender is self.custom_layout.widget:
             guided_layout = not new_value
 
         self.guided_choice.enabled = guided_layout
-        self.in_signal = False
 
 
 class GuidedDiskSelectionView (BaseView):

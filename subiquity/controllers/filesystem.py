@@ -193,9 +193,8 @@ class FilesystemController(BaseController):
             if pr is not None:
                 self.app.show_error_report(pr)
             if self.answers['guided']:
-                index = self.answers['guided-index']
-                disk = self.model.all_disks()[index]
-                method = self.answers.get('guided-method')
+                disk = self.model.all_disks()[self.answers['guided-index']]
+                method = self.answers.get('guided-method', 'direct')
                 self.ui.body.form.guided_layout.value = True
                 self.ui.body.form.guided_choice.value = {
                     'disk_choice': disk,
