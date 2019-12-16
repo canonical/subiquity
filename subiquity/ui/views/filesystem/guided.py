@@ -17,14 +17,8 @@ import logging
 
 from urwid import (
     connect_signal,
-    emit_signal,
-    RadioButton,
-    Text,
     )
 
-from subiquitycore.ui.container import (
-    WidgetWrap,
-    )
 from subiquitycore.ui.form import (
     BooleanField,
     ChoiceField,
@@ -33,18 +27,13 @@ from subiquitycore.ui.form import (
     NO_HELP,
     PasswordField,
     RadioButtonField,
-    simple_field,
     SubForm,
     SubFormField,
-    WantsToKnowFormField,
     )
 from subiquitycore.ui.selector import Option
 from subiquitycore.ui.table import (
     TablePile,
     TableRow,
-    )
-from subiquitycore.ui.utils import (
-    Color,
     )
 from subiquitycore.view import BaseView
 
@@ -63,43 +52,6 @@ can do it manually.
 
 If you choose to partition an entire disk you will still have a chance to \
 review and modify the results.""")
-
-
-class DiskChooser(WidgetWrap, WantsToKnowFormField):
-    signals = ['change']
-
-    def __init__(self):
-        self.table = TablePile([], spacing=1)
-        super().__init__(self.table)
-        self.value = None
-
-    def _state_change(self, sender, state, disk):
-        emit_signal(self, "change", self, disk)
-        self.value = disk
-
-    def set_bound_form_field(self, bff):
-        model = bff.form.parent.model
-        rows = []
-        group = []
-        for disk in model.all_disks():
-            for obj, cells in summarize_device(disk):
-                if obj is disk:
-                    if self.value is None:
-                        self.value = disk
-                    but = RadioButton(
-                        group=group, label='',
-                        on_state_change=self._state_change, user_data=disk)
-                    cells.insert(0, but)
-                    a = Color.menu_button
-                else:
-                    cells.insert(0, Text(""))
-                    a = Color.info_minor
-                rows.append(a(TableRow(cells)))
-        self.table.set_contents(rows)
-
-
-DiskField = simple_field(DiskChooser)
-DiskField.takes_default_style = False
 
 
 class LUKSOptionsForm(SubForm):
