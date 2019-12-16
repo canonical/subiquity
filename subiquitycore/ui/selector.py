@@ -56,6 +56,9 @@ class ClickableThing(WidgetWrap):
         """
         return 0, 0
 
+    def move_cursor_to_coords(self, size, x, y):
+        return True
+
     def keypress(self, size, key):
         if self._command_map[key] != ACTIVATE:
             return key
