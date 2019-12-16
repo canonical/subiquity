@@ -172,12 +172,13 @@ class FilesystemController(BaseController):
         self._probe_task.start_sync()
 
     async def _wait_for_probing(self):
+        await self._start_task
         await self._probe_task.task
         if isinstance(self.ui.body, SlowProbing):
             self.start_ui()
 
     def start_ui(self):
-        if not self._probe_task.task.done():
+        if self._probe_task.task is None or not self._probe_task.task.done():
             self.ui.set_body(SlowProbing(self))
             schedule_task(self._wait_for_probing())
         elif True in self._crash_reports:
