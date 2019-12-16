@@ -264,4 +264,4 @@ class IdentityController(BaseController):
             # current process).
             disable_console_conf()
 
-        self.signal.emit_signal('quit')
+        self.app.exit()

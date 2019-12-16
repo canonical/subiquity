@@ -413,13 +413,6 @@ class Application:
 
     def _connect_base_signals(self):
         """Connect signals used in the core controller."""
-        signals = [
-            ('quit', self.exit),
-            ]
-        if self.opts.dry_run:
-            signals.append(('control-x-quit', self.exit))
-        self.signal.connect_signals(signals)
-
         # Registers signals from each controller
         for controller in self.controllers.instances:
             controller.register_signals()
@@ -552,8 +545,8 @@ class Application:
         self.loop.screen.clear()
 
     def unhandled_input(self, key):
-        if key == 'ctrl x':
-            self.signal.emit_signal('control-x-quit')
+        if self.opts.dry_run and key == 'ctrl x':
+            self.exit()
         elif key == 'f3':
             self.loop.screen.clear()
         elif key in ['ctrl t', 'f4']:
