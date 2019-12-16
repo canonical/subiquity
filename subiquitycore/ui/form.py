@@ -519,10 +519,11 @@ class Form(object, metaclass=MetaForm):
         return data
 
 
-class SubFormWidget(WidgetWrap, WantsToKnowFormField):
+class SubFormWidget(WidgetWrap):
 
-    def __init__(self):
-        super().__init__(Pile([]))
+    def __init__(self, form):
+        self.form = form
+        super().__init__(Pile(form.as_rows()))
 
     @property
     def value(self):
@@ -532,11 +533,6 @@ class SubFormWidget(WidgetWrap, WantsToKnowFormField):
     def value(self, data):
         for k, v in data.items():
             getattr(self.form, k).value = v
-
-    def set_bound_form_field(self, bff):
-        self.form = bff.field.form_cls(bff.form)
-        o = self._w.options('pack')
-        self._w.contents[:] = [(r, o) for r in self.form.as_rows()]
 
 
 class SubFormField(FormField):
@@ -548,7 +544,8 @@ class SubFormField(FormField):
         self.form_cls = form_cls
 
     def _make_widget(self, form):
-        return SubFormWidget()
+        form = self.form_cls(form)
+        return SubFormWidget(form)
 
 
 class SubForm(Form):
