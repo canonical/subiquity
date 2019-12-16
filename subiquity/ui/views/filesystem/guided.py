@@ -101,9 +101,11 @@ class DiskChooser(WidgetWrap, WantsToKnowFormField):
 DiskField = simple_field(DiskChooser)
 DiskField.takes_default_style = False
 
+
 class LUKSOptionsForm(SubForm):
 
     passphrase = PasswordField(_("Passphrase"))
+
 
 class LVMOptionsForm(SubForm):
 
@@ -141,18 +143,19 @@ class GuidedChoiceForm(SubForm):
     def _toggle(self, sender, val):
         self.lvm_options.enabled = val
 
-    disk_choice = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["dummy"])
+    disk_choice = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
     use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
     lvm_options = SubFormField(LVMOptionsForm, "", help=NO_HELP)
-
 
 
 class GuidedForm(Form):
 
     radio_group = []
-    guided_layout = RadioButtonField(radio_group, _("Use an entire disk"), help=NO_HELP)
+    guided_layout = RadioButtonField(
+        radio_group, _("Use an entire disk"), help=NO_HELP)
     guided_choice = SubFormField(GuidedChoiceForm, "", help=NO_HELP)
-    custom_layout = RadioButtonField(radio_group, _("Custom storage layout"), help=NO_HELP)
+    custom_layout = RadioButtonField(
+        radio_group, _("Custom storage layout"), help=NO_HELP)
 
     cancel_label = _("Back")
 
@@ -164,7 +167,8 @@ class GuidedForm(Form):
             self.guided_layout.widget, 'change', self._toggle_layout)
         connect_signal(
             self.custom_layout.widget, 'change', self._toggle_layout)
-        self._toggle_layout(self.guided_layout.widget, self.guided_layout.value)
+        self._toggle_layout(
+            self.guided_layout.widget, self.guided_layout.value)
 
     def _toggle_layout(self, sender, new_value):
         if self.in_signal:
@@ -175,17 +179,11 @@ class GuidedForm(Form):
         if sender is self.custom_layout.widget:
             guided_layout = not new_value
 
-        # radio button behaviour
-        self.guided_layout.value = guided_layout
-        self.custom_layout.value = not guided_layout
-
-        # grey-out guided_layout dependencies
         self.guided_choice.enabled = guided_layout
-        #self.use_lvm.enabled = guided_layout
         self.in_signal = False
 
 
-class GuidedDiskSelectionView(BaseView):
+class GuidedDiskSelectionView (BaseView):
 
     title = _("Filesystem setup")
 
