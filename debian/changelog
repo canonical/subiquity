@@ -1,3 +1,9 @@
+subiquity (19.12.1.1+git71gea8d463f) focal; urgency=medium
+
+  * Upload subiquity snapshot to unbreak console-conf on core20.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Mon, 16 Dec 2019 20:48:25 +0000
+
 subiquity (19.12.1.1) focal; urgency=medium
 
   * Drop crufty .deb packages from the source package build.  LP: #1855727.
