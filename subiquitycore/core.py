@@ -337,7 +337,19 @@ class Application:
     make_ui = SubiquityCoreUI
 
     def __init__(self, opts):
-        prober = Prober(opts)
+        self.debug_flags = ()
+        if opts.dry_run:
+            # Recognized flags are:
+            #  - install-fail: makes curtin install fail by replaying curtin
+            #    events from a failed installation, see
+            #    subiquity/controllers/installprogress.py
+            #  - bpfail-full, bpfail-restricted: makes block probing fail, see
+            #    subiquitycore/prober.py
+            #  - copy-logs-fail: makes post-install copying of logs fail, see
+            #    subiquity/controllers/installprogress.py
+            self.debug_flags = os.environ.get('SUBIQUITY_DEBUG', '').split(',')
+
+        prober = Prober(opts.machine_config, self.debug_flags)
 
         self.ui = self.make_ui()
         self.opts = opts
