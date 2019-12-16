@@ -18,24 +18,17 @@ from .filesystem import (
     GuidedDiskSelectionView,
     GuidedFilesystemView,
     )
-from .bcache import BcacheView
-from .ceph import CephDiskView
-from .iscsi import IscsiDiskView
 from .identity import IdentityView
 from .installprogress import ProgressView
 from .keyboard import KeyboardView
 from .welcome import WelcomeView
 from .zdev import ZdevView
 __all__ = [
-    'BcacheView',
-    'CephDiskView',
     'FilesystemView',
     'GuidedDiskSelectionView',
     'GuidedFilesystemView',
     'IdentityView',
-    'IscsiDiskView',
     'KeyboardView',
-    'MAASView',
     'ProgressView',
     'WelcomeView',
     'ZdevView',
