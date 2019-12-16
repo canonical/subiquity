@@ -95,6 +95,30 @@ class GuidedForm(Form):
         self.guided_choice.enabled = new_value
 
 
+HELP = _("""
+
+The "Use an entire disk" option installs Ubuntu onto the selected disk,
+replacing any partitions and data already there.
+
+If the platform requires it, a bootloader partition is created on the disk.
+
+If you choose to use LVM, two partitions are then created, one for /boot and
+one covering the rest of the disk. A LVM volume group is created containing
+the large partition. A 4 gigabyte logical volume is created for the root
+filesystem. It can easily be enlarged with standard LVM command line tools.
+
+If you do not choose to use LVM, a single partition is created covering the
+rest of the disk which is then formatted as ext4 and mounted at /.
+
+In either case, you will still have a chance to review and modify the results.
+
+If you choose to use a custom storage layout, no changes are made to the disks
+and you will have to, at a minimum, select a boot disk and mount a filesystem
+at /.
+
+""")
+
+
 class GuidedDiskSelectionView (BaseView):
 
     title = _("Filesystem setup")
@@ -108,6 +132,9 @@ class GuidedDiskSelectionView (BaseView):
 
         super().__init__(self.form.as_screen(
             focus_buttons=False, excerpt=rewrap(_(text))))
+
+    def local_help(self):
+        return (_("Help on guided storage configuration"), rewrap(_(HELP)))
 
     def done(self, sender):
         results = sender.as_data()
