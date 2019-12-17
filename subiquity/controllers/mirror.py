@@ -38,13 +38,13 @@ class CheckState(enum.IntEnum):
 
 class MirrorController(BaseController):
 
+    model_name = "mirror"
     signals = [
         ('snapd-network-change', 'snapd_network_changed'),
     ]
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = app.base_model.mirror
         self.check_state = CheckState.NOT_STARTED
         if 'country-code' in self.answers:
             self.check_state = CheckState.DONE
@@ -105,4 +105,5 @@ class MirrorController(BaseController):
         log.debug("MirrorController.done next_screen mirror=%s", mirror)
         if mirror != self.model.mirror:
             self.model.mirror = mirror
+        self.configured()
         self.app.next_screen()

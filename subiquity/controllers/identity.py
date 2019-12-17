@@ -24,9 +24,7 @@ log = logging.getLogger('subiquity.controllers.identity')
 
 class IdentityController(BaseController):
 
-    def __init__(self, app):
-        super().__init__(app)
-        self.model = app.base_model.identity
+    model_name = "identity"
 
     def start_ui(self):
         self.ui.set_body(IdentityView(self.model, self))
@@ -50,5 +48,5 @@ class IdentityController(BaseController):
             "IdentityController.done next_screen user_spec=%s",
             safe_spec)
         self.model.add_user(user_spec)
-        self.signal.emit_signal('installprogress:identity-config-done')
+        self.configured()
         self.app.next_screen()

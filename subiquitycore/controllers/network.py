@@ -126,11 +126,11 @@ network:
 
 class NetworkController(BaseController):
 
+    model_name = "network"
     root = "/"
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = app.base_model.network
         self.view = None
         self.view_shown = False
         self.apply_config_task = SingleInstanceTask(self._apply_config)

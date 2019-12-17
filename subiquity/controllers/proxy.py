@@ -25,9 +25,7 @@ log = logging.getLogger('subiquity.controllers.proxy')
 
 class ProxyController(BaseController):
 
-    def __init__(self, app):
-        super().__init__(app)
-        self.model = app.base_model.proxy
+    model_name = "proxy"
 
     def start_ui(self):
         self.ui.set_body(ProxyView(self.model, self))
@@ -49,4 +47,5 @@ class ProxyController(BaseController):
             self.model.proxy = proxy
             os.environ['http_proxy'] = os.environ['https_proxy'] = proxy
             self.signal.emit_signal('network-proxy-set')
+        self.configured()
         self.app.next_screen()

@@ -33,9 +33,10 @@ class FetchSSHKeysFailure(Exception):
 
 class SSHController(BaseController):
 
+    model_name = "ssh"
+
     def __init__(self, app):
         super().__init__(app)
-        self.model = app.base_model.ssh
         self._fetch_task = None
 
     def start_ui(self):
@@ -116,5 +117,5 @@ class SSHController(BaseController):
         self.model.authorized_keys = result.get('authorized_keys', [])
         self.model.pwauth = result.get('pwauth', True)
         self.model.ssh_import_id = result.get('ssh_import_id', None)
-        self.signal.emit_signal('installprogress:ssh-config-done')
+        self.configured()
         self.app.next_screen()

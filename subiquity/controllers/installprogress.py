@@ -89,12 +89,6 @@ def install_step(label):
 
 
 class InstallProgressController(BaseController):
-    signals = [
-        ('installprogress:filesystem-config-done', 'filesystem_config_done'),
-        ('installprogress:identity-config-done',   'identity_config_done'),
-        ('installprogress:ssh-config-done',        'ssh_config_done'),
-        ('installprogress:snap-config-done',       'snap_config_done'),
-    ]
 
     def __init__(self, app):
         super().__init__(app)
@@ -103,12 +97,6 @@ class InstallProgressController(BaseController):
         self.install_state = InstallState.NOT_STARTED
         self.journal_listener_handle = None
 
-        self.filesystem_event = asyncio.Event()
-        self._postinstall_prerequisites = {
-            'ssh': asyncio.Event(),
-            'identity': asyncio.Event(),
-            'snap': asyncio.Event(),
-            }
         self.reboot_clicked = asyncio.Event()
         if self.answers.get('reboot', False):
             self.reboot_clicked.set()
@@ -125,21 +113,6 @@ class InstallProgressController(BaseController):
 
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
-
-    def filesystem_config_done(self):
-        self.filesystem_event.set()
-
-    def _step_done(self, step):
-        self._postinstall_prerequisites[step].set()
-
-    def identity_config_done(self):
-        self._step_done('identity')
-
-    def ssh_config_done(self):
-        self._step_done('ssh')
-
-    def snap_config_done(self):
-        self._step_done('snap')
 
     def curtin_error(self):
         self.install_state = InstallState.ERROR
@@ -274,12 +247,13 @@ class InstallProgressController(BaseController):
 
     async def install(self):
         try:
-            await self.filesystem_event.wait()
+            await asyncio.wait(
+                {e.wait() for e in self.model.install_events})
 
             await self.curtin_install()
 
             await asyncio.wait(
-                {e.wait() for e in self._postinstall_prerequisites.values()})
+                {e.wait() for e in self.model.postinstall_events})
 
             await self.drain_curtin_events()
 

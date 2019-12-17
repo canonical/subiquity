@@ -61,9 +61,10 @@ UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 class FilesystemController(BaseController):
 
+    model_name = "filesystem"
+
     def __init__(self, app):
         super().__init__(app)
-        self.model = app.base_model.filesystem
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
             self.model.bootloader = getattr(Bootloader, name)
@@ -316,9 +317,7 @@ class FilesystemController(BaseController):
 
     def finish(self):
         log.debug("FilesystemController.finish next_screen")
-        # start curtin install in background
-        self.signal.emit_signal('installprogress:filesystem-config-done')
-        # switch to next screen
+        self.configured()
         self.app.next_screen()
 
     def create_mount(self, fs, spec):

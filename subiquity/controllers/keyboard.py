@@ -26,13 +26,10 @@ log = logging.getLogger('subiquity.controllers.keyboard')
 
 class KeyboardController(BaseController):
 
+    model_name = "keyboard"
     signals = [
         ('l10n:language-selected', 'language_selected'),
         ]
-
-    def __init__(self, app):
-        super().__init__(app)
-        self.model = app.base_model.keyboard
 
     def language_selected(self, code):
         log.debug("language_selected %s", code)
@@ -56,6 +53,7 @@ class KeyboardController(BaseController):
     async def apply_settings(self, setting):
         await self.model.set_keyboard(setting)
         log.debug("KeyboardController next_screen")
+        self.configured()
         self.app.next_screen()
 
     def done(self, setting):
