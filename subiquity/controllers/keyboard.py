@@ -56,6 +56,7 @@ class KeyboardController(BaseController):
     async def apply_settings(self, setting):
         await self.model.set_keyboard(setting)
         log.debug("KeyboardController next_screen")
+        self.app.base_model.configured("keyboard")
         self.app.next_screen()
 
     def done(self, setting):

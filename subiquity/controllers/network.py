@@ -17,4 +17,7 @@ from subiquitycore.controllers.network import NetworkController
 
 
 class NetworkController(NetworkController):
-    pass
+
+    def done(self):
+        self.app.base_model.configured("network")
+        super().done()

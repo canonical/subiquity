@@ -50,5 +50,5 @@ class IdentityController(BaseController):
             "IdentityController.done next_screen user_spec=%s",
             safe_spec)
         self.model.add_user(user_spec)
-        self.signal.emit_signal('installprogress:identity-config-done')
+        self.app.base_model.configured("identity")
         self.app.next_screen()

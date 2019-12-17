@@ -49,4 +49,5 @@ class ProxyController(BaseController):
             self.model.proxy = proxy
             os.environ['http_proxy'] = os.environ['https_proxy'] = proxy
             self.signal.emit_signal('network-proxy-set')
+        self.app.base_model.configured("proxy")
         self.app.next_screen()

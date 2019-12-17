@@ -106,7 +106,7 @@ class TestSubiquityModel(unittest.TestCase):
     def test_writes_machine_id_media_info(self):
         model_no_proxy = SubiquityModel('test')
         model_proxy = SubiquityModel('test')
-        model_proxy.proxy = 'http://something'
+        model_proxy.proxy.proxy = 'http://something'
         for model in model_no_proxy, model_proxy:
             config = model.render('ident')
             self.assertConfigWritesFile(config, 'etc/machine-id')

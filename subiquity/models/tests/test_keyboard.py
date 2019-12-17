@@ -43,3 +43,4 @@ class TestSubiquityModel(unittest.TestCase):
                     model.config_path)
                 self.assertEqual(new_setting, read_setting)
         loop.run_until_complete(t())
+        loop.close()

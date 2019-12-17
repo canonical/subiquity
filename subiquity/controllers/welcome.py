@@ -48,6 +48,7 @@ class WelcomeController(BaseController):
         log.debug("WelcomeController.done %s next_screen", code)
         self.signal.emit_signal('l10n:language-selected', code)
         self.model.switch_language(code)
+        self.app.base_model.configured("locale")
         self.app.next_screen()
 
     def cancel(self):

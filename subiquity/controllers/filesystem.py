@@ -312,7 +312,7 @@ class FilesystemController(BaseController):
     def finish(self):
         log.debug("FilesystemController.finish next_screen")
         # start curtin install in background
-        self.signal.emit_signal('installprogress:filesystem-config-done')
+        self.app.base_model.configured("filesystem")
         # switch to next screen
         self.app.next_screen()
 

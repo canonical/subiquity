@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 from collections import OrderedDict
 import logging
 import os
@@ -61,6 +62,25 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 """
 
+# Models that contribute to the curtin config
+INSTALL_MODEL_NAMES = [
+    "keyboard",
+    "network",
+    "proxy",
+    "mirror",
+    "filesystem",
+    ]
+
+# Models that contribute to the cloud-init config
+POSTINSTALL_MODEL_NAMES = [
+    "locale",
+    "identity",
+    "ssh",
+    "snaplist",
+    ]
+
+ALL_MODEL_NAMES = INSTALL_MODEL_NAMES + POSTINSTALL_MODEL_NAMES
+
 
 class SubiquityModel:
     """The overall model for subiquity."""
@@ -78,19 +98,22 @@ class SubiquityModel:
         self.proxy = ProxyModel()
         self.mirror = MirrorModel()
         self.filesystem = FilesystemModel()
-
-        # Collect the models that produce data for the curtin config.
-        self._install_models = [
-            self.keyboard,
-            self.network,
-            self.proxy,
-            self.mirror,
-            self.filesystem,
-            ]
-
         self.identity = IdentityModel()
         self.ssh = SSHModel()
         self.snaplist = SnapListModel()
+
+        self._events = {
+            name: asyncio.Event() for name in ALL_MODEL_NAMES
+            }
+        self.install_events = {
+            self._events[name] for name in INSTALL_MODEL_NAMES
+            }
+        self.postinstall_events = {
+            self._events[name] for name in POSTINSTALL_MODEL_NAMES
+            }
+
+    def configured(self, model_name):
+        self._events[model_name].set()
 
     def get_target_groups(self):
         command = ['chroot', self.target, 'getent', 'group']
@@ -248,7 +271,8 @@ class SubiquityModel:
                 },
             }
 
-        for model in self._install_models:
+        for model_name in INSTALL_MODEL_NAMES:
+            model = getattr(self, model_name)
             log.debug("merging config from %s", model)
             merge_config(config, model.render())
 

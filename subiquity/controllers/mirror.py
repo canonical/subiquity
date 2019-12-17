@@ -105,4 +105,5 @@ class MirrorController(BaseController):
         log.debug("MirrorController.done next_screen mirror=%s", mirror)
         if mirror != self.model.mirror:
             self.model.mirror = mirror
+        self.app.base_model.configured("mirror")
         self.app.next_screen()
