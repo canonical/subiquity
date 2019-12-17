@@ -26,9 +26,7 @@ log = logging.getLogger('subiquity.controllers.welcome')
 
 class WelcomeController(BaseController):
 
-    def __init__(self, app):
-        super().__init__(app)
-        self.model = app.base_model.locale
+    model_name = "locale"
 
     def start(self):
         lang = os.environ.get("LANG")
@@ -48,7 +46,7 @@ class WelcomeController(BaseController):
         log.debug("WelcomeController.done %s next_screen", code)
         self.signal.emit_signal('l10n:language-selected', code)
         self.model.switch_language(code)
-        self.app.base_model.configured("locale")
+        self.configured()
         self.app.next_screen()
 
     def cancel(self):

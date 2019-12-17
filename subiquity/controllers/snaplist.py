@@ -99,6 +99,7 @@ class SnapdSnapInfoLoader:
 
 class SnapListController(BaseController):
 
+    model_name = "snaplist"
     signals = [
         ('snapd-network-change', 'snapd_network_changed'),
     ]
@@ -110,7 +111,6 @@ class SnapListController(BaseController):
 
     def __init__(self, app):
         super().__init__(app)
-        self.model = app.base_model.snaplist
         self.loader = self._make_loader()
 
     def snapd_network_changed(self):
@@ -148,7 +148,7 @@ class SnapListController(BaseController):
             "SnapListController.done next_screen snaps_to_install=%s",
             snaps_to_install)
         self.model.set_installed_list(snaps_to_install)
-        self.app.base_model.configured("snaplist")
+        self.configured()
         self.app.next_screen()
 
     def cancel(self, sender=None):

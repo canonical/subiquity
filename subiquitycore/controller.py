@@ -27,6 +27,7 @@ class BaseController(ABC):
     """Base class for controllers."""
 
     signals = []
+    model_name = None
 
     def __init__(self, app):
         self.name = type(self).__name__[:-len("Controller")]
@@ -36,6 +37,8 @@ class BaseController(ABC):
         self.loop = app.loop
         self.app = app
         self.answers = app.answers.get(self.name, {})
+        if self.model_name is not None:
+            self.model = getattr(self.app.base_model, self.model_name)
 
     def register_signals(self):
         """Defines signals associated with controller from model."""
@@ -80,6 +83,11 @@ class BaseController(ABC):
         stop any background tasks that can be stopped when the UI is not
         running.
         """
+
+    def configured(self):
+        """Let the world know that this controller's model is now configured.
+        """
+        self.app.base_model.configured(self.model_name)
 
     def serialize(self):
         return None
