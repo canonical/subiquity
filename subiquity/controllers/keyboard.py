@@ -16,15 +16,15 @@
 import logging
 
 from subiquitycore.async_helpers import schedule_task
-from subiquitycore.controller import BaseController
 
+from subiquity.controller import SubiquityController
 from subiquity.models.keyboard import KeyboardSetting
 from subiquity.ui.views import KeyboardView
 
 log = logging.getLogger('subiquity.controllers.keyboard')
 
 
-class KeyboardController(BaseController):
+class KeyboardController(SubiquityController):
 
     model_name = "keyboard"
     signals = [

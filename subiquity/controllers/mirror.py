@@ -22,8 +22,8 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     SingleInstanceTask,
     )
-from subiquitycore.controller import BaseController
 
+from subiquity.controller import SubiquityController
 from subiquity.ui.views.mirror import MirrorView
 
 log = logging.getLogger('subiquity.controllers.mirror')
@@ -36,7 +36,7 @@ class CheckState(enum.IntEnum):
     DONE = enum.auto()
 
 
-class MirrorController(BaseController):
+class MirrorController(SubiquityController):
 
     model_name = "mirror"
     signals = [

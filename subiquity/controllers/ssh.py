@@ -17,9 +17,9 @@ import logging
 import subprocess
 
 from subiquitycore.async_helpers import schedule_task
-from subiquitycore.controller import BaseController
 from subiquitycore import utils
 
+from subiquity.controller import SubiquityController
 from subiquity.ui.views.ssh import SSHView
 
 log = logging.getLogger('subiquity.controllers.ssh')
@@ -31,7 +31,7 @@ class FetchSSHKeysFailure(Exception):
         self.output = output
 
 
-class SSHController(BaseController):
+class SSHController(SubiquityController):
 
     model_name = "ssh"
 

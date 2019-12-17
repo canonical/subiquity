@@ -35,7 +35,8 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
-from subiquitycore.controller import NoUIController
+
+from subiquity.controller import NoUIController
 
 
 log = logging.getLogger('subiquity.controllers.error')

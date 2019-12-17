@@ -27,12 +27,12 @@ from subiquitycore.async_helpers import (
     schedule_task,
     SingleInstanceTask,
     )
-from subiquitycore.controller import BaseController
 from subiquitycore.utils import (
     arun_command,
     run_command,
     )
 
+from subiquity.controller import SubiquityController
 from subiquity.controllers.error import ErrorReportKind
 from subiquity.models.filesystem import (
     align_up,
@@ -59,7 +59,7 @@ PREP_GRUB_SIZE_BYTES = 8 * 1024 * 1024    # 8MiB
 UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 
-class FilesystemController(BaseController):
+class FilesystemController(SubiquityController):
 
     model_name = "filesystem"
 
