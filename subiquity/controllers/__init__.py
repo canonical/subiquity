@@ -20,7 +20,7 @@ from .installprogress import InstallProgressController
 from .keyboard import KeyboardController
 from .proxy import ProxyController
 from .mirror import MirrorController
-from subiquitycore.controllers.network import NetworkController
+from .network import NetworkController
 from .refresh import RefreshController
 from .snaplist import SnapListController
 from .ssh import SSHController
