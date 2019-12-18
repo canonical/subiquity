@@ -39,10 +39,6 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import (
-    DeviceAction,
-    dehumanize_size,
-    )
 
 from .helpers import summarize_device
 
@@ -138,45 +134,13 @@ class GuidedDiskSelectionView (BaseView):
 
     def done(self, sender):
         results = sender.as_data()
-        if results['custom']:
-            self.controller.manual()
-        else:  # results['guided']
-            self.choose_disk(**results['guided_choice'])
+        if results['guided']:
+            disk = results['guided_choice']['disk']
+            if results['guided_choice']['use_lvm']:
+                self.controller.guided_lvm(disk)
+            else:
+                self.controller.guided_direct(disk)
+        self.controller.manual()
 
     def cancel(self, btn=None):
         self.controller.cancel()
-
-    def choose_disk(self, disk, use_lvm):
-        self.controller.reformat(disk)
-        if use_lvm:
-            if DeviceAction.MAKE_BOOT in disk.supported_actions:
-                self.controller.make_boot_disk(disk)
-            self.controller.create_partition(
-                device=disk, spec=dict(
-                    size=dehumanize_size('1G'),
-                    fstype="ext4",
-                    mount='/boot'
-                    ))
-            part = self.controller.create_partition(
-                device=disk, spec=dict(
-                    size=disk.free_for_partitions,
-                    fstype=None,
-                    ))
-            spec = dict(name="ubuntu-vg", devices=set([part]))
-            # create volume group on partition
-            vg = self.controller.create_volgroup(spec)
-            self.controller.create_logical_volume(
-                vg=vg, spec=dict(
-                    size=dehumanize_size("4G"),
-                    name="ubuntu-lv",
-                    fstype="ext4",
-                    mount="/",
-                    ))
-        else:
-            result = {
-                "size": disk.free_for_partitions,
-                "fstype": "ext4",
-                "mount": "/",
-                }
-            self.controller.partition_disk_handler(disk, None, result)
-        self.controller.manual()
