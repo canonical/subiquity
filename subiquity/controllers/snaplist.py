@@ -33,9 +33,10 @@ log = logging.getLogger('subiquity.controllers.snaplist')
 
 class SnapdSnapInfoLoader:
 
-    def __init__(self, model, snapd, store_section):
+    def __init__(self, model, snapd, store_section, context):
         self.model = model
         self.store_section = store_section
+        self.context = context
 
         self.main_task = None
         self.snap_list_fetched = False
@@ -50,41 +51,42 @@ class SnapdSnapInfoLoader:
         self.main_task = schedule_task(self._start())
 
     async def _start(self):
-        task = self.tasks[None] = schedule_task(self._load_list())
-        await task
-        self.pending_snaps = self.model.get_snap_list()
-        log.debug("fetched list of %s snaps", len(self.pending_snaps))
-        while self.pending_snaps:
-            snap = self.pending_snaps.pop(0)
-            task = self.tasks[snap] = schedule_task(
-                self._fetch_info_for_snap(snap))
+        with self.context:
+            task = self.tasks[None] = schedule_task(self._load_list())
             await task
+            self.pending_snaps = self.model.get_snap_list()
+            log.debug("fetched list of %s snaps", len(self.pending_snaps))
+            while self.pending_snaps:
+                snap = self.pending_snaps.pop(0)
+                task = self.tasks[snap] = schedule_task(
+                    self._fetch_info_for_snap(snap))
+                await task
 
     async def _load_list(self):
-        try:
-            result = await self.snapd.get(
-                'v2/find', section=self.store_section)
-        except requests.exceptions.RequestException:
-            log.exception("loading list of snaps failed")
-            self.failed = True
-            return
-        self.model.load_find_data(result)
-        self.snap_list_fetched = True
+        with self.context.child("list"):
+            try:
+                result = await self.snapd.get(
+                    'v2/find', section=self.store_section)
+            except requests.exceptions.RequestException:
+                log.exception("loading list of snaps failed")
+                self.failed = True
+                return
+            self.model.load_find_data(result)
+            self.snap_list_fetched = True
 
     def stop(self):
         if self.main_task is not None:
             self.main_task.cancel()
 
     async def _fetch_info_for_snap(self, snap):
-        log.debug('starting fetch for %s', snap.name)
-        try:
-            data = await self.snapd.get('v2/find', name=snap.name)
-        except requests.exceptions.RequestException:
-            log.exception("loading snap info failed")
-            # XXX something better here?
-            return
-        log.debug('got data for %s', snap.name)
-        self.model.load_info_data(data)
+        with self.context.child("fetch").child(snap.name):
+            try:
+                data = await self.snapd.get('v2/find', name=snap.name)
+            except requests.exceptions.RequestException:
+                log.exception("loading snap info failed")
+                # XXX something better here?
+                return
+            self.model.load_info_data(data)
 
     def get_snap_list_task(self):
         return self.tasks[None]
@@ -106,8 +108,8 @@ class SnapListController(BaseController):
 
     def _make_loader(self):
         return SnapdSnapInfoLoader(
-            self.model, self.app.snapd,
-            self.opts.snap_section)
+            self.model, self.app.snapd, self.opts.snap_section,
+            self.context.child("loader"))
 
     def __init__(self, app):
         super().__init__(app)
