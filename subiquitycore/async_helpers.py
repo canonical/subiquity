@@ -72,3 +72,10 @@ class SingleInstanceTask:
         else:
             self.task = coro
         return schedule_task(self._start(old))
+
+    async def wait(self):
+        while True:
+            try:
+                return await self.task
+            except asyncio.CancelledError:
+                pass
