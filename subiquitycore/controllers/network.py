@@ -348,7 +348,8 @@ class NetworkController(BaseController):
         self.model.parse_netplan_configs(self.root)
 
     async def _apply_config(self, silent):
-        with self.context.child("apply_config", "silent={}".format(silent)):
+        with self.context.child(
+                "apply_config", "silent={}".format(silent), level="INFO"):
             devs_to_delete = []
             devs_to_down = []
             dhcp_device_versions = []

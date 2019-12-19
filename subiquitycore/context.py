@@ -45,21 +45,24 @@ class Context:
         context.description = "result was {}".format(result)
     """
 
-    def __init__(self, app, name, description, parent, level):
+    def __init__(self, app, name, description, parent, level, childlevel=None):
         self.app = app
         self.name = name
         self.description = description
         self.parent = parent
         self.level = level
+        if childlevel is None:
+            childlevel = level
+        self.childlevel = childlevel
 
     @classmethod
     def new(self, app):
         return Context(app, app.project, "", None, "INFO")
 
-    def child(self, name, description="", level=None):
+    def child(self, name, description="", level=None, childlevel=None):
         if level is None:
-            level = self.level
-        return Context(self.app, name, description, self, level)
+            level = self.childlevel
+        return Context(self.app, name, description, self, level, childlevel)
 
     def _name(self):
         c = self

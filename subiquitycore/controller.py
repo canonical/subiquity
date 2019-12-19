@@ -36,7 +36,7 @@ class BaseController(ABC):
         self.opts = app.opts
         self.loop = app.loop
         self.app = app
-        self.context = self.app.context.child(self.name)
+        self.context = self.app.context.child(self.name, childlevel="DEBUG")
         self.answers = app.answers.get(self.name, {})
         if self.model_name is not None:
             self.model = getattr(self.app.base_model, self.model_name)
