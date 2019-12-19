@@ -25,7 +25,11 @@ from probert.network import IFF_UP, NetworkEventReceiver
 from subiquitycore.async_helpers import SingleInstanceTask
 from subiquitycore.controller import BaseController
 from subiquitycore.file_util import write_file
-from subiquitycore.models.network import BondParameters, sanitize_config
+from subiquitycore.models.network import (
+    BondParameters,
+    NetDevAction,
+    sanitize_config,
+    )
 from subiquitycore import netplan
 from subiquitycore.ui.views.network import (
     NetworkView,
@@ -231,7 +235,8 @@ class NetworkController(BaseController):
             meth = getattr(
                 self.ui.body,
                 "_action_{}".format(action['action']))
-            meth(obj)
+            action_obj = getattr(NetDevAction, action['action'])
+            self.ui.body._action(None, (action_obj, meth), obj)
             yield
             body = self.ui.body._w
             if not isinstance(body, StretchyOverlay):
