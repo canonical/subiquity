@@ -108,6 +108,9 @@ class FilesystemController(BaseController):
                     desc = "restricted={}".format(restricted)
                     with context.child("probe_once", desc):
                         await self._probe_once_task.start(restricted)
+                        # We wait on the task directly here, not
+                        # self._probe_once_task.wait as if _probe_once_task
+                        # gets cancelled, we should be cancelled too.
                         await asyncio.wait_for(self._probe_once_task.task, 5.0)
                 except Exception:
                     block_discover_log.exception(
@@ -166,7 +169,7 @@ class FilesystemController(BaseController):
 
     async def _wait_for_probing(self):
         await self._start_task
-        await self._probe_task.task
+        await self._probe_task.wait()
         if isinstance(self.ui.body, SlowProbing):
             self.start_ui()
 

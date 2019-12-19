@@ -20,7 +20,7 @@ from xml.etree import ElementTree
 
 from subiquitycore.async_helpers import (
     run_in_thread,
-    schedule_task,
+    SingleInstanceTask,
     )
 from subiquitycore.controller import BaseController
 
@@ -49,11 +49,12 @@ class MirrorController(BaseController):
         if 'country-code' in self.answers:
             self.check_state = CheckState.DONE
             self.model.set_country(self.answers['country-code'])
+        self.lookup_task = SingleInstanceTask(self.lookup)
 
     def snapd_network_changed(self):
         if self.check_state != CheckState.DONE:
             self.check_state = CheckState.CHECKING
-            schedule_task(self.lookup())
+            self.lookup_task.start_sync()
 
     async def lookup(self):
         with self.context.child("lookup"):
