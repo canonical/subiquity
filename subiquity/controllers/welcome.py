@@ -16,15 +16,14 @@
 import logging
 import os
 
-from subiquitycore.controller import BaseController
-
+from subiquity.controller import SubiquityController
 from subiquity.ui.views import WelcomeView
 
 
 log = logging.getLogger('subiquity.controllers.welcome')
 
 
-class WelcomeController(BaseController):
+class WelcomeController(SubiquityController):
 
     model_name = "locale"
 

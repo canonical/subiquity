@@ -13,13 +13,29 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.controllers.network import NetworkController
+import logging
 
-from subiquity.controller import SubiquityController
+from subiquitycore.controller import (
+    BaseController,
+    Skip,
+    )
+
+log = logging.getLogger("subiquity.controller")
 
 
-class NetworkController(NetworkController, SubiquityController):
+class SubiquityController(BaseController):
 
-    def done(self):
-        self.configured()
-        super().done()
+    def configured(self):
+        """Let the world know that this controller's model is now configured.
+        """
+        if self.model_name is not None:
+            self.app.base_model.configured(self.model_name)
+
+
+class NoUIController(SubiquityController):
+
+    def start_ui(self):
+        raise Skip
+
+    def cancel(self):
+        pass

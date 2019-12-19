@@ -16,14 +16,13 @@
 import logging
 import os
 
-from subiquitycore.controller import BaseController
-
+from subiquity.controller import SubiquityController
 from subiquity.ui.views.proxy import ProxyView
 
 log = logging.getLogger('subiquity.controllers.proxy')
 
 
-class ProxyController(BaseController):
+class ProxyController(SubiquityController):
 
     model_name = "proxy"
 

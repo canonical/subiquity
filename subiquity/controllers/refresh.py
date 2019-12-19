@@ -25,8 +25,11 @@ from subiquitycore.async_helpers import (
     SingleInstanceTask,
     )
 from subiquitycore.controller import (
-    BaseController,
     Skip,
+    )
+
+from subiquity.controller import (
+    SubiquityController,
     )
 
 
@@ -39,7 +42,7 @@ class CheckState(enum.IntEnum):
     UNAVAILABLE = enum.auto()
 
 
-class RefreshController(BaseController):
+class RefreshController(SubiquityController):
 
     signals = [
         ('snapd-network-change', 'snapd_network_changed'),

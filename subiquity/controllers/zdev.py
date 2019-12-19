@@ -21,9 +21,10 @@ import shlex
 from collections import OrderedDict
 from urwid import Text
 
-from subiquitycore.controller import BaseController
 from subiquitycore.ui.utils import Color
 from subiquitycore.utils import run_command
+
+from subiquity.controller import SubiquityController
 from subiquity.ui.views import ZdevView
 
 
@@ -627,7 +628,7 @@ class ZdevInfo:
         return self.type
 
 
-class ZdevController(BaseController):
+class ZdevController(SubiquityController):
 
     def __init__(self, app):
         super().__init__(app)

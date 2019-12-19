@@ -85,11 +85,6 @@ class BaseController(ABC):
         running.
         """
 
-    def configured(self):
-        """Let the world know that this controller's model is now configured.
-        """
-        self.app.base_model.configured(self.model_name)
-
     def serialize(self):
         return None
 
@@ -154,12 +149,3 @@ class RepeatedController(BaseController):
 
     def cancel(self):
         self.orig.cancel()
-
-
-class NoUIController(BaseController):
-
-    def start_ui(self):
-        raise Skip
-
-    def cancel(self):
-        pass

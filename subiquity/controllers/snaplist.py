@@ -21,8 +21,11 @@ from subiquitycore.async_helpers import (
     schedule_task,
     )
 from subiquitycore.controller import (
-    BaseController,
     Skip,
+    )
+
+from subiquity.controller import (
+    SubiquityController,
     )
 
 from subiquity.models.snaplist import SnapSelection
@@ -99,7 +102,7 @@ class SnapdSnapInfoLoader:
         return self.tasks[snap]
 
 
-class SnapListController(BaseController):
+class SnapListController(SubiquityController):
 
     model_name = "snaplist"
     signals = [

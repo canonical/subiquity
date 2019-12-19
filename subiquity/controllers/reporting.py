@@ -28,7 +28,7 @@ from curtin.reporter.handlers import (
     LogHandler,
     )
 
-from subiquitycore.controller import NoUIController
+from subiquity.controller import NoUIController
 
 
 class LogHandler(LogHandler):

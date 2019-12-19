@@ -15,14 +15,13 @@
 
 import logging
 
-from subiquitycore.controller import BaseController
-
+from subiquity.controller import SubiquityController
 from subiquity.ui.views import IdentityView
 
 log = logging.getLogger('subiquity.controllers.identity')
 
 
-class IdentityController(BaseController):
+class IdentityController(SubiquityController):
 
     model_name = "identity"
 

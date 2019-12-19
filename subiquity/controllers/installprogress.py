@@ -38,13 +38,13 @@ from subiquitycore.async_helpers import (
     schedule_task,
     )
 from subiquitycore.context import Status
-from subiquitycore.controller import BaseController
 from subiquitycore.utils import (
     arun_command,
     astart_command,
     run_command,
     )
 
+from subiquity.controller import SubiquityController
 from subiquity.controllers.error import ErrorReportKind
 from subiquity.ui.views.installprogress import ProgressView
 
@@ -91,7 +91,7 @@ def install_step(label, level=None, childlevel=None):
     return decorate
 
 
-class InstallProgressController(BaseController):
+class InstallProgressController(SubiquityController):
 
     def __init__(self, app):
         super().__init__(app)
