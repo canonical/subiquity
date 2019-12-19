@@ -56,32 +56,33 @@ class MirrorController(BaseController):
             schedule_task(self.lookup())
 
     async def lookup(self):
-        try:
-            response = await run_in_thread(
-                requests.get, "https://geoip.ubuntu.com/lookup")
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
-            log.exception("geoip lookup failed")
-            self.check_state = CheckState.FAILED
-            return
-        try:
-            e = ElementTree.fromstring(response.text)
-        except ElementTree.ParseError:
-            log.exception("parsing %r failed", response.text)
-            self.check_state = CheckState.FAILED
-            return
-        cc = e.find("CountryCode")
-        if cc is None:
-            log.debug("no CountryCode found in %r", response.text)
-            self.check_state = CheckState.FAILED
-            return
-        cc = cc.text.lower()
-        if len(cc) != 2:
-            log.debug("bogus CountryCode found in %r", response.text)
-            self.check_state = CheckState.FAILED
-            return
-        self.check_state = CheckState.DONE
-        self.model.set_country(cc)
+        with self.context.child("lookup"):
+            try:
+                response = await run_in_thread(
+                    requests.get, "https://geoip.ubuntu.com/lookup")
+                response.raise_for_status()
+            except requests.exceptions.RequestException:
+                log.exception("geoip lookup failed")
+                self.check_state = CheckState.FAILED
+                return
+            try:
+                e = ElementTree.fromstring(response.text)
+            except ElementTree.ParseError:
+                log.exception("parsing %r failed", response.text)
+                self.check_state = CheckState.FAILED
+                return
+            cc = e.find("CountryCode")
+            if cc is None:
+                log.debug("no CountryCode found in %r", response.text)
+                self.check_state = CheckState.FAILED
+                return
+            cc = cc.text.lower()
+            if len(cc) != 2:
+                log.debug("bogus CountryCode found in %r", response.text)
+                self.check_state = CheckState.FAILED
+                return
+            self.check_state = CheckState.DONE
+            self.model.set_country(cc)
 
     def start_ui(self):
         self.check_state = CheckState.DONE
