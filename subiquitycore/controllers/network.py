@@ -417,9 +417,12 @@ class NetworkController(BaseController):
         if not dhcp_events:
             return
 
-        await asyncio.wait_for(
-            asyncio.wait({e.wait() for e in dhcp_events}),
-            10)
+        try:
+            await asyncio.wait_for(
+                asyncio.wait({e.wait() for e in dhcp_events}),
+                10)
+        except asyncio.TimeoutError:
+            pass
 
         for dev, v in dhcp_device_versions:
             dev.dhcp_events = {}
