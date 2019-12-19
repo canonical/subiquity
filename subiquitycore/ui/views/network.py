@@ -158,7 +158,7 @@ class NetworkView(BaseView):
             )
 
     def show_apply_spinner(self):
-        s = Spinner(self.controller.loop)
+        s = Spinner(self.controller.app.aio_loop)
         s.start()
         c = TablePile([
             TableRow([
@@ -202,7 +202,7 @@ class NetworkView(BaseView):
                     address_info.extend(
                         [(label, Text(addr)) for addr in addrs])
                 elif dev.dhcp_state(v) == "PENDING":
-                    s = Spinner(self.controller.loop, align='left')
+                    s = Spinner(self.controller.app.aio_loop, align='left')
                     s.rate = 0.3
                     s.start()
                     address_info.append((label, s))

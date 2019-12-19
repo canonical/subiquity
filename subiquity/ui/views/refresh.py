@@ -138,7 +138,7 @@ class RefreshView(BaseView):
 
     def __init__(self, controller):
         self.controller = controller
-        self.spinner = Spinner(self.controller.loop, style="dots")
+        self.spinner = Spinner(self.controller.app.aio_loop, style="dots")
 
         if self.controller.check_state == CheckState.UNKNOWN:
             self.check_state_checking()

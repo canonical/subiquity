@@ -248,9 +248,9 @@ class SnapInfoView(WidgetWrap):
 
 class FetchingInfo(WidgetWrap):
 
-    def __init__(self, parent, snap, loop):
+    def __init__(self, parent, snap, aio_loop):
         self.parent = parent
-        self.spinner = Spinner(loop, style='dots')
+        self.spinner = Spinner(aio_loop, style='dots')
         self.spinner.start()
         self.closed = False
         text = _("Fetching info for {}").format(snap.name)
@@ -342,7 +342,7 @@ class SnapCheckBox(CheckBox):
             self.loaded()
             return
         fi = FetchingInfo(
-            self.parent, self.snap, self.parent.controller.loop)
+            self.parent, self.snap, self.parent.controller.app.aio_loop)
         self.parent.show_overlay(fi, width=fi.width)
         schedule_task(self.wait(t, fi))
 
@@ -391,7 +391,7 @@ class SnapListView(BaseView):
         if t.done():
             self.loaded()
             return
-        spinner = Spinner(self.controller.loop, style='dots')
+        spinner = Spinner(self.controller.app.aio_loop, style='dots')
         spinner.start()
         self._w = screen(
             [spinner], [ok_btn(label=_("Continue"), on_press=self.done)],

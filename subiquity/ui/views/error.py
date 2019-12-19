@@ -149,7 +149,7 @@ class ErrorReportStretchy(Stretchy):
         for n, b in self.btns.items():
             self.btns[n] = Padding(b, width=w, align='center')
 
-        self.spinner = Spinner(app.loop, style='dots')
+        self.spinner = Spinner(app.aio_loop, style='dots')
         self.pile = Pile([])
         self._report_changed()
         super().__init__("", [self.pile], 0, 0)

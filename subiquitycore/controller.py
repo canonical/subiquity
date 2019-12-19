@@ -34,7 +34,6 @@ class BaseController(ABC):
         self.ui = app.ui
         self.signal = app.signal
         self.opts = app.opts
-        self.loop = app.loop
         self.app = app
         self.context = self.app.context.child(self.name, childlevel="DEBUG")
         self.answers = app.answers.get(self.name, {})
@@ -128,9 +127,7 @@ class BaseController(ABC):
             next(it)
         except StopIteration:
             return
-        self.loop.set_alarm_in(
-            delay,
-            lambda *args: self._run_iterator(it, delay/1.1))
+        self.app.aio_loop.call_later(delay, self._run_iterator, it, delay/1.1)
 
 
 class RepeatedController(BaseController):

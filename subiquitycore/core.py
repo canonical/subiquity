@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import fcntl
 import json
 import logging
@@ -386,13 +387,14 @@ class Application:
         self.updated = os.path.exists(os.path.join(self.state_dir, 'updating'))
         self.signal = Signal()
         self.prober = prober
-        self.loop = None
+        self.aio_loop = asyncio.get_event_loop()
+        self.urwid_loop = None
         self.controllers = ControllerSet(self, self.controllers)
         self.context = Context.new(self)
 
     def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None,
                                   **kw):
-        screen = self.loop.screen
+        screen = self.urwid_loop.screen
 
         # Calling screen.stop() sends the INPUT_DESCRIPTORS_CHANGED
         # signal. This calls _reset_input_descriptors() which calls
@@ -528,14 +530,14 @@ class Application:
 
         ss = ScriptState()
 
-        def _run_script(*args):
+        def _run_script():
             log.debug("running %s", ss.scripts[0])
             exec(ss.scripts[0], ss.ns)
             if ss.waiting:
                 return
             ss.scripts = ss.scripts[1:]
             if ss.scripts:
-                self.loop.set_alarm_in(0.01, _run_script)
+                self.aio_loop.call_soon(_run_script)
 
         def c(pat):
             but = view_helpers.find_button_matching(self.ui, '.*' + pat + '.*')
@@ -552,7 +554,7 @@ class Application:
         def wait(delay, func=None):
             ss.waiting = True
 
-            def next(loop, user_data):
+            def next():
                 ss.waiting = False
                 if func is not None:
                     func()
@@ -560,13 +562,13 @@ class Application:
                     ss.scripts = ss.scripts[1:]
                     if ss.scripts:
                         _run_script()
-            self.loop.set_alarm_in(delay, next)
+            self.aio_loop.call_later(delay, next)
 
         ss.ns['c'] = c
         ss.ns['wait'] = wait
         ss.ns['ui'] = self.ui
 
-        self.loop.set_alarm_in(0.06, _run_script)
+        self.aio_loop.call_later(0.06, _run_script)
 
     def toggle_color(self):
         if self.is_color:
@@ -575,14 +577,14 @@ class Application:
         else:
             new_palette = self.color_palette
             self.is_color = True
-        self.loop.screen.register_palette(new_palette)
-        self.loop.screen.clear()
+        self.urwid_loop.screen.register_palette(new_palette)
+        self.urwid_loop.screen.clear()
 
     def unhandled_input(self, key):
         if self.opts.dry_run and key == 'ctrl x':
             self.exit()
         elif key == 'f3':
-            self.loop.screen.clear()
+            self.urwid_loop.screen.clear()
         elif key in ['ctrl t', 'f4']:
             self.toggle_color()
 
@@ -616,12 +618,12 @@ class Application:
         log.debug("Application.run")
         screen = make_screen(self.COLORS, self.is_linux_tty, self.opts.ascii)
 
-        self.loop = urwid.MainLoop(
+        self.urwid_loop = urwid.MainLoop(
             self.ui, palette=self.color_palette, screen=screen,
             handle_mouse=False, pop_ups=True,
             input_filter=self.input_filter.filter,
             unhandled_input=self.unhandled_input,
-            event_loop=AsyncioEventLoop())
+            event_loop=AsyncioEventLoop(loop=self.aio_loop))
 
         if self.opts.ascii:
             urwid.util.set_encoding('ascii')
@@ -642,16 +644,14 @@ class Application:
             if self.updated:
                 initial_controller_index = self.load_serialized_state()
 
-            self.loop.set_alarm_in(
-                0.00, lambda loop, ud: tty.setraw(0))
-            self.loop.set_alarm_in(
-                0.05, lambda loop, ud: self.select_initial_screen(
-                    initial_controller_index))
+            self.aio_loop.call_soon(tty.setraw, 0)
+            self.aio_loop.call_soon(
+                self.select_initial_screen, initial_controller_index)
             self._connect_base_signals()
 
             self.start_controllers()
 
-            self.loop.run()
+            self.urwid_loop.run()
         except Exception:
             log.exception("Exception in controller.run():")
             raise
