@@ -37,6 +37,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
+from subiquitycore.context import Status
 from subiquitycore.controller import BaseController
 from subiquitycore.utils import (
     arun_command,
@@ -77,13 +78,13 @@ class TracebackExtractor:
             self.traceback.append(line)
 
 
-def install_step(label, level=None):
+def install_step(label, level=None, childlevel=None):
     def decorate(meth):
         name = meth.__name__
 
         async def decorated(self, context):
-            log.debug("%s", context)
-            manager = self.install_context(context, name, label, level)
+            manager = self.install_context(
+                context, name, label, level, childlevel)
             with manager as subcontext:
                 await meth(self, subcontext)
         return decorated
@@ -109,6 +110,7 @@ class InstallProgressController(BaseController):
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
+        self.curtin_context = None
 
     def start(self):
         self.install_task = schedule_task(self.install(self.context))
@@ -144,10 +146,11 @@ class InstallProgressController(BaseController):
             self.curtin_log(event)
 
     @contextlib.contextmanager
-    def install_context(self, context, name, description, level):
+    def install_context(self, context, name, description, level, childlevel):
         self._install_event_start(description)
         try:
-            with context.child(name, description, level) as subcontext:
+            subcontext = context.child(name, description, level, childlevel)
+            with subcontext:
                 yield subcontext
         finally:
             self._install_event_finish()
@@ -162,18 +165,26 @@ class InstallProgressController(BaseController):
         self.progress_view.spinner.stop()
 
     def curtin_event(self, event):
-        e = {}
+        e = {
+            "EVENT_TYPE": "???",
+            "MESSAGE": "???",
+            "NAME": "???",
+            "RESULT": "???",
+            }
+        prefix = "CURTIN_"
         for k, v in event.items():
-            if k.startswith("CURTIN_"):
-                e[k] = v
-        log.debug("curtin_event received %r", e)
-        event_type = event.get("CURTIN_EVENT_TYPE")
-        if event_type not in ['start', 'finish']:
-            return
+            if k.startswith(prefix):
+                e[k[len(prefix):]] = v
+        event_type = e["EVENT_TYPE"]
         if event_type == 'start':
-            self._install_event_start(event.get("CURTIN_MESSAGE", "??"))
+            self._install_event_start(e["MESSAGE"])
+            if self.curtin_context is not None:
+                self.curtin_context.child(e["NAME"], e["MESSAGE"]).enter()
         if event_type == 'finish':
             self._install_event_finish()
+            status = getattr(Status, e["RESULT"], Status.WARN)
+            if self.curtin_context is not None:
+                self.curtin_context.child(e["NAME"], e["MESSAGE"]).exit(status)
 
     def curtin_log(self, event):
         log_line = event['MESSAGE']
@@ -232,10 +243,11 @@ class InstallProgressController(BaseController):
 
         return curtin_cmd
 
-    @install_step("installing system")
+    @install_step("installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, context):
         log.debug('curtin_install')
         self.install_state = InstallState.RUNNING
+        self.curtin_context = context
 
         self.journal_listener_handle = self.start_journald_listener(
             [self._event_syslog_identifier, self._log_syslog_identifier],
@@ -256,7 +268,6 @@ class InstallProgressController(BaseController):
     def cancel(self):
         pass
 
-    @install_step("installation")
     async def install(self, context):
         try:
             await asyncio.wait(
@@ -294,8 +305,10 @@ class InstallProgressController(BaseController):
             await asyncio.sleep(0.1)
             waited += 0.1
         log.debug("waited %s seconds for events to drain", waited)
+        self.curtin_context = None
 
-    @install_step("final system configuration")
+    @install_step(
+        "final system configuration", level="INFO", childlevel="DEBUG")
     async def postinstall(self, context):
         await self.configure_cloud_init(context)
         if self.model.ssh.install_server:
