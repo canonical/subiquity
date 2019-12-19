@@ -41,7 +41,7 @@ class MyLineBox(LineBox):
 class ProgressView(BaseView):
     def __init__(self, controller):
         self.controller = controller
-        self.spinner = Spinner(controller.loop)
+        self.spinner = Spinner(controller.app.aio_loop)
 
         self.reboot_btn = Toggleable(ok_btn(
             _("Reboot Now"), on_press=self.reboot))

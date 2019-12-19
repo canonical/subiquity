@@ -32,8 +32,8 @@ styles = {
 
 
 class Spinner(Text):
-    def __init__(self, loop=None, style='spin', align='center'):
-        self.loop = loop
+    def __init__(self, aio_loop=None, style='spin', align='center'):
+        self.aio_loop = aio_loop
         self.spin_index = 0
         self.spin_text = styles[style]['texts']
         self.rate = styles[style]['rate']
@@ -44,9 +44,9 @@ class Spinner(Text):
         self.spin_index = (self.spin_index + 1) % len(self.spin_text)
         self.set_text(self.spin_text[self.spin_index])
 
-    def _advance(self, sender=None, user_data=None):
+    def _advance(self):
         self.spin()
-        self.handle = self.loop.set_alarm_in(self.rate, self._advance)
+        self.handle = self.aio_loop.call_later(self.rate, self._advance)
 
     def start(self):
         self.stop()
@@ -55,5 +55,5 @@ class Spinner(Text):
     def stop(self):
         self.set_text('')
         if self.handle is not None:
-            self.loop.remove_alarm(self.handle)
+            self.handle.cancel()
             self.handle = None

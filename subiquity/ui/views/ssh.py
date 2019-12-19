@@ -155,7 +155,7 @@ class SSHForm(Form):
 class FetchingSSHKeys(WidgetWrap):
     def __init__(self, parent):
         self.parent = parent
-        spinner = Spinner(parent.controller.loop, style='dots')
+        spinner = Spinner(parent.controller.app.aio_loop, style='dots')
         spinner.start()
         text = _("Fetching SSH keys...")
         button = cancel_btn(label=_("Cancel"), on_press=self.cancel)

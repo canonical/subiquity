@@ -285,8 +285,8 @@ class Detector:
 
 
 class ApplyingConfig(WidgetWrap):
-    def __init__(self, loop):
-        spinner = Spinner(loop, style='dots')
+    def __init__(self, aio_loop):
+        spinner = Spinner(aio_loop, style='dots')
         spinner.start()
         text = _("Applying config")
         # | text |
@@ -465,7 +465,7 @@ class KeyboardView(BaseView):
 
     def really_done(self, setting):
         if setting != self.model.setting:
-            ac = ApplyingConfig(self.controller.loop)
+            ac = ApplyingConfig(self.controller.app.aio_loop)
             self.show_overlay(ac, width=ac.width, min_width=None)
         self.controller.done(setting)
 

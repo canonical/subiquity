@@ -219,7 +219,7 @@ class IdentityController(BaseController):
             self.model.add_user(result)
             login_details_path = '.subiquity/login-details.txt'
         else:
-            self.loop.draw_screen()
+            self.app.urwid_loop.draw_screen()
             cp = run_command(
                 ["snap", "create-user", "--sudoer", "--json", email])
             if cp.returncode != 0:

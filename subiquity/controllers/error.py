@@ -69,7 +69,7 @@ class Upload(metaclass=urwid.MetaSignals):
     cancelled = attr.ib(default=False)
 
     def start(self):
-        self.pipe_w = self.controller.loop.watch_pipe(self._progress)
+        self.pipe_w = self.controller.app.urwid_loop.watch_pipe(self._progress)
 
     def _progress(self, x):
         urwid.emit_signal(self, 'progress')
@@ -81,7 +81,7 @@ class Upload(metaclass=urwid.MetaSignals):
         os.write(self.pipe_w, b'x')
 
     def stop(self):
-        self.controller.loop.remove_watch_pipe(self.pipe_w)
+        self.controller.app.urwid_loop.remove_watch_pipe(self.pipe_w)
         os.close(self.pipe_w)
 
 
