@@ -229,6 +229,11 @@ class RefreshView(BaseView):
         self.title = self.available_title
         self.controller.ui.set_header(self.available_title)
         self._w = screen(rows, buttons, excerpt=excerpt)
+        if 'update' in self.controller.answers:
+            if self.controller.answers['update']:
+                self.update()
+            else:
+                self.controller.done()
 
     def update(self, sender=None):
         self.spinner.stop()
