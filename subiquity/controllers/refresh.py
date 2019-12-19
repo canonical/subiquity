@@ -187,11 +187,6 @@ class RefreshController(BaseController):
             raise AssertionError("unexpected index {}".format(index))
         if show:
             self.ui.set_body(RefreshView(self))
-            if 'update' in self.answers:
-                if self.answers['update']:
-                    self.ui.body.update()
-                else:
-                    self.done()
         else:
             raise Skip()
 
