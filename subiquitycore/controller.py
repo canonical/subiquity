@@ -36,6 +36,7 @@ class BaseController(ABC):
         self.opts = app.opts
         self.loop = app.loop
         self.app = app
+        self.context = self.app.context.child(self.name)
         self.answers = app.answers.get(self.name, {})
         if self.model_name is not None:
             self.model = getattr(self.app.base_model, self.model_name)
@@ -143,6 +144,7 @@ class RepeatedController(BaseController):
         self.name = "{}-{}".format(orig.name, index)
         self.orig = orig
         self.index = index
+        self.context = orig.context
 
     def register_signals(self):
         pass
