@@ -94,6 +94,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
     pr = attr.ib()
     state = attr.ib()
     _file = attr.ib()
+    _context = attr.ib()
 
     meta = attr.ib(default=attr.Factory(dict))
     uploader = attr.ib(default=None)
@@ -110,7 +111,8 @@ class ErrorReport(metaclass=urwid.MetaSignals):
 
         r = cls(
             controller=controller, base=base, pr=pr, file=crash_file,
-            state=ErrorReportState.INCOMPLETE)
+            state=ErrorReportState.INCOMPLETE,
+            context=controller.context.child(base))
         r.set_meta("kind", kind.name)
         return r
 
@@ -119,7 +121,8 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         base = os.path.splitext(os.path.basename(fpath))[0]
         report = cls(
             controller, base, pr=apport.Report(date='???'),
-            state=ErrorReportState.LOADING, file=open(fpath, 'rb'))
+            state=ErrorReportState.LOADING, file=open(fpath, 'rb'),
+            context=controller.context.child(base))
         try:
             fp = open(report.meta_path, 'r')
         except FileNotFoundError:
@@ -130,8 +133,6 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         return report
 
     def add_info(self, _bg_attach_hook, wait=False):
-        log.debug("begin adding info for report %s", self.base)
-
         def _bg_add_info():
             _bg_attach_hook()
             # Add basic info to report.
@@ -158,39 +159,38 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             self.pr.write(self._file)
 
         async def add_info():
-            log.debug("adding info for report %s", self.base)
-            try:
-                await run_in_thread(_bg_add_info)
-            except Exception:
-                self.state = ErrorReportState.ERROR_GENERATING
-                log.exception("adding info to problem report failed")
-            else:
-                self.state = ErrorReportState.DONE
-            self._file.close()
-            self._file = None
-            urwid.emit_signal(self, "changed")
+            with self._context.child("add_info"):
+                try:
+                    await run_in_thread(_bg_add_info)
+                except Exception:
+                    self.state = ErrorReportState.ERROR_GENERATING
+                    log.exception("adding info to problem report failed")
+                else:
+                    self.state = ErrorReportState.DONE
+                self._file.close()
+                self._file = None
+                urwid.emit_signal(self, "changed")
         if wait:
-            _bg_add_info()
+            with self._context.child("add_info"):
+                _bg_add_info()
         else:
             schedule_task(add_info())
 
     async def load(self):
-        log.debug("loading report %s", self.base)
-        # Load report from disk in background.
-        try:
-            await run_in_thread(self.pr.load, self._file)
-        except Exception:
-            log.exception("loading problem report failed")
-            self.state = ErrorReportState.ERROR_LOADING
-        else:
-            log.debug("done loading report %s", self.base)
-            self.state = ErrorReportState.DONE
+        with self._context.child("load"):
+            # Load report from disk in background.
+            try:
+                await run_in_thread(self.pr.load, self._file)
+            except Exception:
+                log.exception("loading problem report failed")
+                self.state = ErrorReportState.ERROR_LOADING
+            else:
+                self.state = ErrorReportState.DONE
         self._file.close()
         self._file = None
         urwid.emit_signal(self, "changed")
 
     def upload(self):
-        log.debug("starting upload for %s", self.base)
         uploader = self.uploader = Upload(
             controller=self.controller, bytes_to_send=1)
 
@@ -239,16 +239,17 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             return response.text.split()[0]
 
         async def upload():
-            try:
-                oops_id = await run_in_thread(_bg_upload)
-            except requests.exceptions.RequestException:
-                log.exception("upload for %s failed", self.base)
-            else:
-                log.debug("finished upload for %s, %r", self.base, oops_id)
-                self.set_meta("oops-id", oops_id)
-            uploader.stop()
-            self.uploader = None
-            urwid.emit_signal(self, 'changed')
+            with self._context.child("upload") as context:
+                try:
+                    oops_id = await run_in_thread(_bg_upload)
+                except requests.exceptions.RequestException:
+                    log.exception("upload for %s failed", self.base)
+                else:
+                    self.set_meta("oops-id", oops_id)
+                    context.description = oops_id
+                uploader.stop()
+                self.uploader = None
+                urwid.emit_signal(self, 'changed')
 
         urwid.emit_signal(self, 'changed')
         uploader.start()
