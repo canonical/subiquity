@@ -444,10 +444,14 @@ class Application:
             json.dump(cur.serialize(), fp)
 
     def select_screen(self, new):
-        log.info("moving to screen %s", new.name)
+        new.context.enter("starting UI")
         if self.opts.screens and new.name not in self.opts.screens:
             raise Skip
-        new.start_ui()
+        try:
+            new.start_ui()
+        except Skip:
+            new.context.exit("(skipped)")
+            raise
         state_path = os.path.join(self.state_dir, 'last-screen')
         with open(state_path, 'w') as fp:
             fp.write(new.name)
@@ -456,6 +460,7 @@ class Application:
         self.save_state()
         old = self.controllers.cur
         if old is not None:
+            old.context.exit("completed")
             old.end_ui()
         while True:
             self.controllers.index += increment
