@@ -72,30 +72,32 @@ class RefreshController(BaseController):
         return task.result()
 
     async def configure_snapd(self):
-        log.debug("configure_snapd")
-        try:
-            r = await self.app.snapd.get(
-                'v2/snaps/{snap_name}'.format(snap_name=self.snap_name))
-        except requests.exceptions.RequestException:
-            log.exception("getting snap details")
-            return
-        self.current_snap_version = r['result']['version']
-        for k in 'channel', 'revision', 'version':
-            self.app.note_data_for_apport(
-                "Snap" + k.title(), r['result'][k])
-        log.debug(
-            "current version of snap is: %r",
-            self.current_snap_version)
-        channel = self.get_refresh_channel()
-        log.debug("switching %s to %s", self.snap_name, channel)
-        try:
-            await self.app.snapd.post_and_wait(
-                'v2/snaps/{}'.format(self.snap_name),
-                {'action': 'switch', 'channel': channel})
-        except requests.exceptions.RequestException:
-            log.exception("switching channels")
-            return
-        log.debug("snap switching completed")
+        with self.context.child("configure_snapd") as context:
+            with context.child("get_details") as subcontext:
+                try:
+                    r = await self.app.snapd.get(
+                        'v2/snaps/{snap_name}'.format(
+                            snap_name=self.snap_name))
+                except requests.exceptions.RequestException:
+                    log.exception("getting snap details")
+                    return
+                self.current_snap_version = r['result']['version']
+                for k in 'channel', 'revision', 'version':
+                    self.app.note_data_for_apport(
+                        "Snap" + k.title(), r['result'][k])
+                subcontext.description = "current version of snap is: %r" % (
+                    self.current_snap_version)
+            channel = self.get_refresh_channel()
+            desc = "switching {} to {}".format(self.snap_name, channel)
+            with context.child("switching", desc) as subcontext:
+                try:
+                    await self.app.snapd.post_and_wait(
+                        'v2/snaps/{}'.format(self.snap_name),
+                        {'action': 'switch', 'channel': channel})
+                except requests.exceptions.RequestException:
+                    log.exception("switching channels")
+                    return
+                subcontext.description = "switched to " + channel
 
     def get_refresh_channel(self):
         """Return the channel we should refresh subiquity to."""
@@ -134,28 +136,34 @@ class RefreshController(BaseController):
 
     async def check_for_update(self):
         await asyncio.shield(self.configure_task)
-        # If we restarted into this version, don't check for a new version.
-        if self.app.updated:
+        with self.context.child("check_for_update") as context:
+            if self.app.updated:
+                context.description = (
+                    "not offered update when already updated")
+                return CheckState.UNAVAILABLE
+            result = await self.app.snapd.get('v2/find', select='refresh')
+            log.debug("check_for_update received %s", result)
+            for snap in result["result"]:
+                if snap["name"] == self.snap_name:
+                    self.new_snap_version = snap["version"]
+                    context.description = (
+                        "new version of snap available: %r"
+                        % self.new_snap_version)
+                    return CheckState.AVAILABLE
+            else:
+                context.description = (
+                    "no new version of snap available")
             return CheckState.UNAVAILABLE
-        result = await self.app.snapd.get('v2/find', select='refresh')
-        log.debug("check_for_update received %s", result)
-        for snap in result["result"]:
-            if snap["name"] == self.snap_name:
-                self.new_snap_version = snap["version"]
-                log.debug(
-                    "new version of snap available: %r",
-                    self.new_snap_version)
-                return CheckState.AVAILABLE
-        return CheckState.UNAVAILABLE
 
     async def start_update(self):
         update_marker = os.path.join(self.app.state_dir, 'updating')
         open(update_marker, 'w').close()
-        change = await self.app.snapd.post(
-            'v2/snaps/{}'.format(self.snap_name),
-            {'action': 'refresh'})
-        log.debug("refresh requested: %s", change)
-        return change
+        with self.context.child("starting_update") as context:
+            change = await self.app.snapd.post(
+                'v2/snaps/{}'.format(self.snap_name),
+                {'action': 'refresh'})
+            context.description = "change id: {}".format(change)
+            return change
 
     async def get_progress(self, change):
         result = await self.app.snapd.get('v2/changes/{}'.format(change))
