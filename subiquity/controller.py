@@ -17,6 +17,7 @@ import logging
 
 from subiquitycore.controller import (
     BaseController,
+    RepeatedController,
     Skip,
     )
 
@@ -39,3 +40,8 @@ class NoUIController(SubiquityController):
 
     def cancel(self):
         pass
+
+
+class RepeatedController(RepeatedController):
+
+    pass
