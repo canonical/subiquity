@@ -387,7 +387,7 @@ class Application:
             screen.start()
             urwid.emit_signal(
                 screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
-            tty.setraw(0)
+            self.setraw()
             if after_hook is not None:
                 after_hook()
 
@@ -583,6 +583,11 @@ class Application:
                 controller_index = i
         return controller_index
 
+    def setraw(self):
+        fd = self.urwid_loop.screen._term_input_file.fileno()
+        if os.isatty(fd):
+            tty.setraw(fd)
+
     def make_screen(self):
         """Return a screen to be passed to MainLoop.
 
@@ -643,7 +648,7 @@ class Application:
             if self.updated:
                 initial_controller_index = self.load_serialized_state()
 
-            self.aio_loop.call_soon(tty.setraw, 0)
+            self.aio_loop.call_soon(self.setraw)
             self.aio_loop.call_soon(
                 self.select_initial_screen, initial_controller_index)
             self._connect_base_signals()
