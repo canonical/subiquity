@@ -76,37 +76,35 @@ class SSHController(BaseController):
 
     async def _fetch_ssh_keys(self, user_spec):
         ssh_import_id = "{ssh_import_id}:{import_username}".format(**user_spec)
-        log.debug(
-            "User input: %s, fetching ssh keys for %s",
-            user_spec, ssh_import_id)
-        try:
-            cp = await self.run_cmd_checked(
-                ['ssh-import-id', '-o-', ssh_import_id],
-                failmsg=_("Importing keys failed:"))
-        except subprocess.CalledProcessError:
-            return
-        key_material = cp.stdout.replace('\r', '').strip()
+        with self.context.child("ssh_import_id", ssh_import_id):
+            try:
+                cp = await self.run_cmd_checked(
+                    ['ssh-import-id', '-o-', ssh_import_id],
+                    failmsg=_("Importing keys failed:"))
+            except subprocess.CalledProcessError:
+                return
+            key_material = cp.stdout.replace('\r', '').strip()
 
-        try:
-            cp = await self.run_cmd_checked(
-                ['ssh-keygen', '-lf-'],
-                failmsg=_(
-                    "ssh-keygen failed to show fingerprint of downloaded "
-                    "keys:"),
-                input=key_material)
-        except subprocess.CalledProcessError:
-            return
+            try:
+                cp = await self.run_cmd_checked(
+                    ['ssh-keygen', '-lf-'],
+                    failmsg=_(
+                        "ssh-keygen failed to show fingerprint of downloaded "
+                        "keys:"),
+                    input=key_material)
+            except subprocess.CalledProcessError:
+                return
 
-        fingerprints = cp.stdout.replace(
-            "# ssh-import-id {}".format(ssh_import_id),
-            "").strip().splitlines()
+            fingerprints = cp.stdout.replace(
+                "# ssh-import-id {}".format(ssh_import_id),
+                "").strip().splitlines()
 
-        if 'ssh-import-id' in self.app.answers.get("Identity", {}):
-            user_spec['authorized_keys'] = key_material.splitlines()
-            self.done(user_spec)
-        else:
-            self.ui.body.confirm_ssh_keys(
-                user_spec, ssh_import_id, key_material, fingerprints)
+            if 'ssh-import-id' in self.app.answers.get("Identity", {}):
+                user_spec['authorized_keys'] = key_material.splitlines()
+                self.done(user_spec)
+            else:
+                self.ui.body.confirm_ssh_keys(
+                    user_spec, ssh_import_id, key_material, fingerprints)
 
     def fetch_ssh_keys(self, user_spec):
         self._fetch_task = schedule_task(self._fetch_ssh_keys(user_spec))

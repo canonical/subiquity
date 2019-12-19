@@ -87,6 +87,7 @@ class Subiquity(Application):
             "SnapList",
             "InstallProgress",
             "Error",  # does not have a UI
+            "Reporting",  # does not have a UI
     ]
 
     def __init__(self, opts, block_log_dir):
@@ -122,6 +123,14 @@ class Subiquity(Application):
                 ErrorReportKind.UI, "Installer UI", interrupt=False, wait=True)
             print("report saved to {}".format(report.path))
             raise
+
+    def report_start_event(self, name, description, level="INFO"):
+        self.controllers.Reporting.report_start_event(
+            name, description, level)
+
+    def report_finish_event(self, name, description, status, level="INFO"):
+        self.controllers.Reporting.report_finish_event(
+            name, description, status, level)
 
     def select_initial_screen(self, index):
         super().select_initial_screen(index)

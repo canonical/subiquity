@@ -25,6 +25,9 @@ import urwid
 import yaml
 
 from subiquitycore.async_helpers import schedule_task
+from subiquitycore.context import (
+    Context,
+    )
 from subiquitycore.controller import (
     RepeatedController,
     Skip,
@@ -385,6 +388,7 @@ class Application:
         self.prober = prober
         self.loop = None
         self.controllers = ControllerSet(self, self.controllers)
+        self.context = Context.new(self)
 
     def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None,
                                   **kw):
@@ -440,10 +444,14 @@ class Application:
             json.dump(cur.serialize(), fp)
 
     def select_screen(self, new):
-        log.info("moving to screen %s", new.name)
+        new.context.enter("starting UI")
         if self.opts.screens and new.name not in self.opts.screens:
             raise Skip
-        new.start_ui()
+        try:
+            new.start_ui()
+        except Skip:
+            new.context.exit("(skipped)")
+            raise
         state_path = os.path.join(self.state_dir, 'last-screen')
         with open(state_path, 'w') as fp:
             fp.write(new.name)
@@ -452,6 +460,7 @@ class Application:
         self.save_state()
         old = self.controllers.cur
         if old is not None:
+            old.context.exit("completed")
             old.end_ui()
         while True:
             self.controllers.index += increment
@@ -475,6 +484,17 @@ class Application:
     def select_initial_screen(self, controller_index):
         self.controllers.index = controller_index - 1
         self.next_screen()
+
+    def report_start_event(self, name, description, level):
+        # See context.py for what calls these.
+        log = logging.getLogger(name)
+        level = getattr(logging, level)
+        log.log(level, "start: %s", description)
+
+    def report_finish_event(self, name, description, status, level):
+        log = logging.getLogger(name)
+        level = getattr(logging, level)
+        log.log(level, "finish: %s %s", description, status.name)
 
 # EventLoop -------------------------------------------------------------------
 

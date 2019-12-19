@@ -78,6 +78,10 @@ class Stretchy(metaclass=urwid.MetaSignals):
     def stretchy_w(self):
         return self.widgets[self.stretchy_index]
 
+    def attach_context(self, context):
+        urwid.connect_signal(self, 'opened', lambda: context.enter("opened"))
+        urwid.connect_signal(self, 'closed', lambda: context.exit("closed"))
+
 
 class StretchyOverlay(urwid.Widget):
     _selectable = True

@@ -86,12 +86,8 @@ class FilesystemController(BaseController):
             probe_types = None
             fname = 'probe-data.json'
             key = "ProbeData"
-        block_discover_log.exception(
-            "probing restricted=%s", restricted)
         storage = await run_in_thread(
             self.app.prober.get_storage, probe_types)
-        block_discover_log.info(
-            "probing successful restricted=%s", restricted)
         fpath = os.path.join(self.app.block_log_dir, fname)
         with open(fpath, 'w') as fp:
             json.dump(storage, fp, indent=4)
@@ -99,24 +95,28 @@ class FilesystemController(BaseController):
         self.model.load_probe_data(storage)
 
     async def _probe(self):
-        self._crash_reports = {}
-        if isinstance(self.ui.body, ProbingFailed):
-            self.ui.set_body(SlowProbing(self))
-            schedule_task(self._wait_for_probing())
-        for (restricted, kind) in [
-                (False, ErrorReportKind.BLOCK_PROBE_FAIL),
-                (True,  ErrorReportKind.DISK_PROBE_FAIL),
-                ]:
-            try:
-                await self._probe_once_task.start(restricted)
-                await asyncio.wait_for(self._probe_once_task.task, 5.0)
-            except Exception:
-                block_discover_log.exception(
-                    "block probing failed restricted=%s", restricted)
-                self._crash_reports[restricted] = self.app.make_apport_report(
-                    kind, "block probing", interrupt=False)
-                continue
-            break
+        with self.context.child("_probe") as context:
+            self._crash_reports = {}
+            if isinstance(self.ui.body, ProbingFailed):
+                self.ui.set_body(SlowProbing(self))
+                schedule_task(self._wait_for_probing())
+            for (restricted, kind) in [
+                    (False, ErrorReportKind.BLOCK_PROBE_FAIL),
+                    (True,  ErrorReportKind.DISK_PROBE_FAIL),
+                    ]:
+                try:
+                    desc = "restricted={}".format(restricted)
+                    with context.child("probe_once", desc):
+                        await self._probe_once_task.start(restricted)
+                        await asyncio.wait_for(self._probe_once_task.task, 5.0)
+                except Exception:
+                    block_discover_log.exception(
+                        "block probing failed restricted=%s", restricted)
+                    report = self.app.make_apport_report(
+                        kind, "block probing", interrupt=False)
+                    self._crash_reports[restricted] = report
+                    continue
+                break
 
     def start(self):
         self._start_task = schedule_task(self._start())

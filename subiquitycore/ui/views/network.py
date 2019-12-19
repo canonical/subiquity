@@ -64,8 +64,10 @@ log = logging.getLogger('subiquitycore.views.network')
 
 
 def _stretchy_shower(cls, *args):
-    def impl(self, device):
-        self.show_stretchy_overlay(cls(self, device, *args))
+    def impl(self, name, device):
+        stretchy = cls(self, device, *args)
+        stretchy.attach_context(self.controller.context.child(name))
+        self.show_stretchy_overlay(stretchy)
     impl.opens_dialog = True
     return impl
 
@@ -140,8 +142,7 @@ class NetworkView(BaseView):
 
     def _action(self, sender, action, device):
         action, meth = action
-        log.debug("_action %s %s", action.name, device.name)
-        meth(device)
+        meth("{}/{}".format(device.name, action.name), device)
 
     def _route_watcher(self, routes):
         log.debug('view route_watcher %s', routes)
@@ -377,8 +378,9 @@ class NetworkView(BaseView):
         return rows
 
     def _create_bond(self, sender=None):
-        log.debug("_create_bond")
-        self.show_stretchy_overlay(BondStretchy(self))
+        stretchy = BondStretchy(self)
+        stretchy.attach_context(self.controller.context.child("add_bond"))
+        self.show_stretchy_overlay(stretchy)
 
     def show_network_error(self, action, info=None):
         self.error_showing = True
