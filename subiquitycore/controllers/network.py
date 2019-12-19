@@ -348,92 +348,93 @@ class NetworkController(BaseController):
         self.model.parse_netplan_configs(self.root)
 
     async def _apply_config(self, silent):
-        log.debug("apply_config silent=%s", silent)
+        with self.context.child("apply_config", "silent={}".format(silent)):
+            devs_to_delete = []
+            devs_to_down = []
+            dhcp_device_versions = []
+            dhcp_events = set()
+            for dev in self.model.get_all_netdevs(include_deleted=True):
+                dev.dhcp_events = {}
+                for v in 4, 6:
+                    if dev.dhcp_enabled(v):
+                        if not silent:
+                            dev.set_dhcp_state(v, "PENDING")
+                            self.network_event_receiver.update_link(
+                                dev.ifindex)
+                        else:
+                            dev.set_dhcp_state(v, "RECONFIGURE")
+                        dev.dhcp_events[v] = e = asyncio.Event()
+                        dhcp_events.add(e)
+                if dev.info is None:
+                    continue
+                if dev.is_virtual:
+                    devs_to_delete.append(dev)
+                    continue
+                if dev.config != self.model.config.config_for_device(dev.info):
+                    devs_to_down.append(dev)
 
-        devs_to_delete = []
-        devs_to_down = []
-        dhcp_device_versions = []
-        dhcp_events = set()
-        for dev in self.model.get_all_netdevs(include_deleted=True):
-            dev.dhcp_events = {}
-            for v in 4, 6:
-                if dev.dhcp_enabled(v):
-                    if not silent:
-                        dev.set_dhcp_state(v, "PENDING")
-                        self.network_event_receiver.update_link(dev.ifindex)
-                    else:
-                        dev.set_dhcp_state(v, "RECONFIGURE")
-                    dev.dhcp_events[v] = e = asyncio.Event()
-                    dhcp_events.add(e)
-            if dev.info is None:
-                continue
-            if dev.is_virtual:
-                devs_to_delete.append(dev)
-                continue
-            if dev.config != self.model.config.config_for_device(dev.info):
-                devs_to_down.append(dev)
+            self._write_config()
 
-        self._write_config()
-
-        if not silent and self.view:
-            self.view.show_apply_spinner()
-
-        def error(stage):
             if not silent and self.view:
-                self.view.show_network_error(stage)
+                self.view.show_apply_spinner()
 
-        if self.opts.dry_run:
-            delay = 1/self.app.scale_factor
-            await arun_command(['sleep', str(delay)])
-            if os.path.exists('/lib/netplan/generate'):
-                # If netplan appears to be installed, run generate to at
-                # least test that what we wrote is acceptable to netplan.
-                await arun_command(
-                    ['netplan', 'generate', '--root', self.root], check=True)
-        else:
-            if devs_to_down or devs_to_delete:
-                try:
+            def error(stage):
+                if not silent and self.view:
+                    self.view.show_network_error(stage)
+
+            if self.opts.dry_run:
+                delay = 1/self.app.scale_factor
+                await arun_command(['sleep', str(delay)])
+                if os.path.exists('/lib/netplan/generate'):
+                    # If netplan appears to be installed, run generate to at
+                    # least test that what we wrote is acceptable to netplan.
                     await arun_command(
-                        ['systemctl', 'stop', 'systemd-networkd.service'],
+                        ['netplan', 'generate', '--root', self.root],
                         check=True)
+            else:
+                if devs_to_down or devs_to_delete:
+                    try:
+                        await arun_command(
+                            ['systemctl', 'stop', 'systemd-networkd.service'],
+                            check=True)
+                    except subprocess.CalledProcessError:
+                        error("stop-networkd")
+                        raise
+                if devs_to_down:
+                    await self._down_devs(devs_to_down)
+                if devs_to_delete:
+                    await self._delete_devs(devs_to_delete)
+                try:
+                    await arun_command(['netplan', 'apply'], check=True)
                 except subprocess.CalledProcessError:
-                    error("stop-networkd")
+                    error("apply")
                     raise
-            if devs_to_down:
-                await self._down_devs(devs_to_down)
-            if devs_to_delete:
-                await self._delete_devs(devs_to_delete)
+
+            if not silent and self.view:
+                self.view.hide_apply_spinner()
+
+            if self.answers.get('accept-default', False):
+                self.done()
+            elif self.answers.get('actions', False):
+                actions = self.answers['actions']
+                self.answers.clear()
+                self._run_iterator(self._run_actions(actions))
+
+            if not dhcp_events:
+                return
+
             try:
-                await arun_command(['netplan', 'apply'], check=True)
-            except subprocess.CalledProcessError:
-                error("apply")
-                raise
+                await asyncio.wait_for(
+                    asyncio.wait({e.wait() for e in dhcp_events}),
+                    10)
+            except asyncio.TimeoutError:
+                pass
 
-        if not silent and self.view:
-            self.view.hide_apply_spinner()
-
-        if self.answers.get('accept-default', False):
-            self.done()
-        elif self.answers.get('actions', False):
-            actions = self.answers['actions']
-            self.answers.clear()
-            self._run_iterator(self._run_actions(actions))
-
-        if not dhcp_events:
-            return
-
-        try:
-            await asyncio.wait_for(
-                asyncio.wait({e.wait() for e in dhcp_events}),
-                10)
-        except asyncio.TimeoutError:
-            pass
-
-        for dev, v in dhcp_device_versions:
-            dev.dhcp_events = {}
-            if not dev.dhcp_addresses()[v]:
-                dev.set_dhcp_state(v, "TIMEDOUT")
-                self.network_event_receiver.update_link(dev.ifindex)
+            for dev, v in dhcp_device_versions:
+                dev.dhcp_events = {}
+                if not dev.dhcp_addresses()[v]:
+                    dev.set_dhcp_state(v, "TIMEDOUT")
+                    self.network_event_receiver.update_link(dev.ifindex)
 
     def add_vlan(self, device, vlan):
         return self.model.new_vlan(device, vlan)
