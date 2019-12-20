@@ -30,7 +30,6 @@ from subiquitycore.context import (
     Context,
     )
 from subiquitycore.controller import (
-    RepeatedController,
     Skip,
     )
 from subiquitycore.signals import Signal
@@ -290,27 +289,35 @@ class ControllerSet:
 
     def __init__(self, app, names):
         self.app = app
-        self.controller_names = names
+        self.controller_names = names[:]
         self.index = -1
         self.instances = []
-
-    def load(self):
-        controllers_mod = __import__(
+        self.controllers_mod = __import__(
             '{}.controllers'.format(self.app.project), None, None, [''])
-        for name in self.controller_names:
-            log.debug("Importing controller: %s", name)
-            klass = getattr(controllers_mod, name+"Controller")
-            if hasattr(self, name):
-                c = 1
-                for instance in self.instances:
-                    if isinstance(instance, klass):
-                        c += 1
-                inst = RepeatedController(getattr(self, name), c)
-                name = inst.name
-            else:
-                inst = klass(self.app)
-            setattr(self, name, inst)
-            self.instances.append(inst)
+
+    def _get_controller_class(self, name):
+        return getattr(self.controllers_mod, name+"Controller")
+
+    def load(self, name):
+        self.controller_names.remove(name)
+        log.debug("Importing controller: %s", name)
+        klass = self._get_controller_class(name)
+        if hasattr(self, name):
+            c = 1
+            for instance in self.instances:
+                if isinstance(instance, klass):
+                    c += 1
+            rep_cls = self._get_controller_class("Repeated")
+            inst = rep_cls(getattr(self, name), c)
+            name = inst.name
+        else:
+            inst = klass(self.app)
+        setattr(self, name, inst)
+        self.instances.append(inst)
+
+    def load_all(self):
+        while self.controller_names:
+            self.load(self.controller_names[0])
 
     @property
     def cur(self):
@@ -637,7 +644,7 @@ class Application:
             if self.opts.scripts:
                 self.run_scripts(self.opts.scripts)
 
-            self.controllers.load()
+            self.controllers.load_all()
 
             initial_controller_index = 0
 
