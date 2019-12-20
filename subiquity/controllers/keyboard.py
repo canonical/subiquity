@@ -26,7 +26,7 @@ log = logging.getLogger('subiquity.controllers.keyboard')
 
 class KeyboardController(SubiquityController):
 
-    model_name = "keyboard"
+    autoinstall_key = model_name = "keyboard"
     signals = [
         ('l10n:language-selected', 'language_selected'),
         ]

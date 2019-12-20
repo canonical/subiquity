@@ -44,6 +44,8 @@ class CheckState(enum.IntEnum):
 
 class RefreshController(SubiquityController):
 
+    autoinstall_key = "refresh-installer"
+
     signals = [
         ('snapd-network-change', 'snapd_network_changed'),
     ]

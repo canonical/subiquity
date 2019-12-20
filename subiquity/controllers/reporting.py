@@ -44,6 +44,8 @@ available_handlers.register_item('log', LogHandler)
 
 class ReportingController(NoUIController):
 
+    autoinstall_key = "reporting"
+
     def __init__(self, app):
         super().__init__(app)
 

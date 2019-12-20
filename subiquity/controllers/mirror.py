@@ -38,6 +38,7 @@ class CheckState(enum.IntEnum):
 
 class MirrorController(SubiquityController):
 
+    autoinstall_key = "apt"
     model_name = "mirror"
     signals = [
         ('snapd-network-change', 'snapd_network_changed'),

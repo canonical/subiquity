@@ -104,6 +104,7 @@ class SnapdSnapInfoLoader:
 
 class SnapListController(SubiquityController):
 
+    autoinstall_key = "snaps"
     model_name = "snaplist"
     signals = [
         ('snapd-network-change', 'snapd_network_changed'),

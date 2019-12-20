@@ -192,7 +192,6 @@ class Subiquity(Application):
     def select_screen(self, new):
         if new.interactive():
             super().select_screen(new)
-            return
         elif self.autoinstall_config and not new.autoinstall_applied:
             schedule_task(self._apply(new))
         else:

@@ -20,6 +20,8 @@ from subiquity.controller import SubiquityController
 
 class NetworkController(NetworkController, SubiquityController):
 
+    autoinstall_key = "network"
+
     def done(self):
         self.configured()
         super().done()
