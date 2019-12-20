@@ -48,7 +48,10 @@ class ReportingController(NoUIController):
         super().__init__(app)
 
     def start(self):
-        update_configuration({'logging': {'type': 'log', 'level': 'INFO'}})
+        conf = {'logging': {'type': 'log'}}
+        if not self.app.interactive():
+            conf['print'] = {'type': 'print'}
+        update_configuration(conf)
 
     def report_start_event(self, name, description, level):
         report_start_event(name, description, level=level)

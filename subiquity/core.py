@@ -19,6 +19,7 @@ import os
 import platform
 import sys
 import traceback
+import urwid
 import yaml
 
 import apport.hookutils
@@ -130,6 +131,16 @@ class Subiquity(Application):
             run_command(["/sbin/reboot"])
         else:
             super().exit()
+
+    def make_screen(self):
+        if self.interactive():
+            return super().make_screen()
+        else:
+            r, w = os.pipe()
+            s = urwid.raw_display.Screen(
+                input=os.fdopen(r), output=open('/dev/null', 'w'))
+            s.get_cols_rows = lambda: (80, 24)
+            return s
 
     def run(self):
         if self.opts.autoinstall:
