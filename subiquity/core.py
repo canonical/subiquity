@@ -79,21 +79,23 @@ class Subiquity(Application):
         return SubiquityUI(self)
 
     controllers = [
-            "Welcome",
-            "Refresh",
-            "Keyboard",
-            "Zdev",
-            "Network",
-            "Proxy",
-            "Mirror",
-            "Refresh",
-            "Filesystem",
-            "Identity",
-            "SSH",
-            "SnapList",
-            "InstallProgress",
-            "Error",  # does not have a UI
-            "Reporting",  # does not have a UI
+        "Early",
+        "Reporting",
+        "Error",
+        "Welcome",
+        "Refresh",
+        "Keyboard",
+        "Zdev",
+        "Network",
+        "Proxy",
+        "Mirror",
+        "Refresh",
+        "Filesystem",
+        "Identity",
+        "SSH",
+        "SnapList",
+        "InstallProgress",
+        "Late",
     ]
 
     def __init__(self, opts, block_log_dir):
@@ -148,8 +150,17 @@ class Subiquity(Application):
                 self.opts.autoinstall, self.merged_autoinstall_path)
             with open(self.merged_autoinstall_path) as fp:
                 self.autoinstall_config = yaml.safe_load(fp)
+            self.controllers.load("Early")
+            self.controllers.load("Reporting")
+            self.controllers.Reporting.start()
+            self.aio_loop.run_until_complete(self.controllers.Early.run())
+            self.new_event_loop()
+            with open(self.merged_autoinstall_path) as fp:
+                self.autoinstall_config = yaml.safe_load(fp)
         try:
             super().run()
+            self.new_event_loop()
+            self.aio_loop.run_until_complete(self.controllers.Late.run())
         except Exception:
             print("generating crash report")
             report = self.make_apport_report(
