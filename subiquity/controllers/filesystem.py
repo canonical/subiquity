@@ -78,7 +78,8 @@ class FilesystemController(SubiquityController):
         self._crash_reports = {}
         self._probe_once_task = SingleInstanceTask(
             self._probe_once, propagate_errors=False)
-        self._probe_task = SingleInstanceTask(self._probe)
+        self._probe_task = SingleInstanceTask(
+            self._probe, propagate_errors=False)
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
@@ -92,6 +93,7 @@ class FilesystemController(SubiquityController):
         self.ai_data = data
 
     async def apply_autoinstall_config(self):
+        self.stop_listening_udev()
         await self._start_task
         await self._probe_task.wait()
         if not self.model.is_root_mounted():
@@ -170,7 +172,8 @@ class FilesystemController(SubiquityController):
         self._monitor = pyudev.Monitor.from_netlink(context)
         self._monitor.filter_by(subsystem='block')
         self._monitor.enable_receiving()
-        self.start_listening_udev()
+        if self.app.interactive():
+            self.start_listening_udev()
         await self._probe_task.start()
 
     def start_listening_udev(self):
