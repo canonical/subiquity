@@ -29,6 +29,15 @@ class SubiquityController(BaseController):
     def deserialize(self, state):
         self.configured()
 
+    def interactive(self):
+        if not self.app.autoinstall_config:
+            return True
+        i_sections = self.app.autoinstall_config.get(
+            'interactive-sections', [])
+        if '*' in i_sections or self.autoinstall_key in i_sections:
+            return True
+        return False
+
     def configured(self):
         """Let the world know that this controller's model is now configured.
         """
@@ -44,7 +53,11 @@ class NoUIController(SubiquityController):
     def cancel(self):
         pass
 
+    def interactive(self):
+        return False
+
 
 class RepeatedController(RepeatedController):
 
-    pass
+    def interactive(self):
+        return self.orig.interactive()

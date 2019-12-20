@@ -152,6 +152,11 @@ class Subiquity(Application):
         self.controllers.Reporting.report_finish_event(
             name, description, status, level)
 
+    def interactive(self):
+        if not self.autoinstall_config:
+            return True
+        return bool(self.autoinstall_config.get('interactive-sections'))
+
     def select_initial_screen(self, index):
         super().select_initial_screen(index)
         for report in self.controllers.Error.reports:

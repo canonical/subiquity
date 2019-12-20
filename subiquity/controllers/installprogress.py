@@ -112,6 +112,9 @@ class InstallProgressController(SubiquityController):
         self.tb_extractor = TracebackExtractor()
         self.curtin_context = None
 
+    def interactive(self):
+        return self.app.interactive()
+
     def start(self):
         self.install_task = schedule_task(self.install(self.context))
 
