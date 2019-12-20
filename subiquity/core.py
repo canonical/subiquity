@@ -26,6 +26,7 @@ from subiquitycore.async_helpers import (
     schedule_task,
     )
 from subiquitycore.core import Application
+from subiquitycore.utils import run_command
 
 from subiquity.controllers.error import (
     ErrorReportKind,
@@ -113,6 +114,14 @@ class Subiquity(Application):
         self._apport_files = []
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
+
+        self.reboot_on_exit = False
+
+    def exit(self):
+        if self.reboot_on_exit and not self.opts.dry_run:
+            run_command(["/sbin/reboot"])
+        else:
+            super().exit()
 
     def run(self):
         try:
