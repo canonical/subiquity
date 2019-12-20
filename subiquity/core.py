@@ -18,6 +18,7 @@ import os
 import platform
 import sys
 import traceback
+import yaml
 
 import apport.hookutils
 
@@ -28,6 +29,7 @@ from subiquitycore.async_helpers import (
 from subiquitycore.core import Application
 from subiquitycore.utils import run_command
 
+from subiquity.autoinstall import merge_autoinstall_configs
 from subiquity.controllers.error import (
     ErrorReportKind,
     )
@@ -112,6 +114,10 @@ class Subiquity(Application):
             ])
         self._apport_data = []
         self._apport_files = []
+
+        self.autoinstall_config = {}
+        self.merged_autoinstall_path = os.path.join(
+            self.root, 'autoinstall.yaml')
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
@@ -124,6 +130,11 @@ class Subiquity(Application):
             super().exit()
 
     def run(self):
+        if self.opts.autoinstall:
+            merge_autoinstall_configs(
+                self.opts.autoinstall, self.merged_autoinstall_path)
+            with open(self.merged_autoinstall_path) as fp:
+                self.autoinstall_config = yaml.safe_load(fp)
         try:
             super().run()
         except Exception:
