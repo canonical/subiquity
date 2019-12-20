@@ -119,9 +119,13 @@ class SnapListController(SubiquityController):
         super().__init__(app)
         self.loader = self._make_loader()
 
+    # XXX load_autoinstall_data / apply_autoinstall_config go here
+
     def snapd_network_changed(self):
         # If the loader managed to load the list of snaps, the
         # network must basically be working.
+        if not self.interactive():
+            return
         if self.loader.snap_list_fetched:
             return
         else:

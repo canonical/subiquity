@@ -25,6 +25,14 @@ class IdentityController(SubiquityController):
 
     autoinstall_key = model_name = "identity"
 
+    def load_autoinstall_data(self, data):
+        if data is not None:
+            self.model.add_user(data)
+
+    async def apply_autoinstall_config(self):
+        if not self.model.user:
+            raise Exception("no identity data provided")
+
     def start_ui(self):
         self.ui.set_body(IdentityView(self.model, self))
         if all(elem in self.answers for elem in

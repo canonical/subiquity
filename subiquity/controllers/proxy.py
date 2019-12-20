@@ -26,6 +26,21 @@ class ProxyController(SubiquityController):
 
     autoinstall_key = model_name = "proxy"
 
+    def load_autoinstall_data(self, data):
+        if data is not None:
+            self.model.proxy = data
+
+    def start(self):
+        if self.model.proxy:
+            os.environ['http_proxy'] = os.environ['https_proxy'] = \
+              self.model.proxy
+            self.signal.emit_signal('network-proxy-set')
+
+    async def apply_autoinstall_config(self):
+        # XXX want to wait until signal sent by .start() has been seen
+        # by everything; don't have a way to do that today.
+        pass
+
     def start_ui(self):
         self.ui.set_body(ProxyView(self.model, self))
         if 'proxy' in self.answers:

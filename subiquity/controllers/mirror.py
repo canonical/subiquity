@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import enum
 import logging
 import requests
@@ -45,6 +46,7 @@ class MirrorController(SubiquityController):
     ]
 
     def __init__(self, app):
+        self.ai_data = {}
         super().__init__(app)
         self.check_state = CheckState.NOT_STARTED
         if 'country-code' in self.answers:
@@ -52,7 +54,26 @@ class MirrorController(SubiquityController):
             self.model.set_country(self.answers['country-code'])
         self.lookup_task = SingleInstanceTask(self.lookup)
 
+    def load_autoinstall_data(self, data):
+        if data is None:
+            return
+        self.ai_data = data
+        if 'mirror' in data:
+            self.model.mirror = data['mirror']
+
+    async def apply_autoinstall_config(self):
+        if 'mirror' in self.ai_data:
+            return
+        if self.lookup_task.task is None:
+            return
+        try:
+            await asyncio.wait_for(self.lookup_task.wait(), 10)
+        except asyncio.TimeoutError:
+            pass
+
     def snapd_network_changed(self):
+        if 'mirror' in self.ai_data:
+            return
         if self.check_state != CheckState.DONE:
             self.check_state = CheckState.CHECKING
             self.lookup_task.start_sync()

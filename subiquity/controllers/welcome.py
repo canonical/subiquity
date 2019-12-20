@@ -26,6 +26,10 @@ log = logging.getLogger('subiquity.controllers.welcome')
 class WelcomeController(SubiquityController):
 
     autoinstall_key = model_name = "locale"
+    autoinstall_default = 'en_US.UTF-8'
+
+    def load_autoinstall_data(self, data):
+        os.environ["LANG"] = data
 
     def start(self):
         lang = os.environ.get("LANG")
@@ -34,6 +38,8 @@ class WelcomeController(SubiquityController):
         for code, name in self.model.supported_languages:
             if code == lang:
                 self.model.switch_language(code)
+        else:
+            self.model.selected_language = code
 
     def start_ui(self):
         view = WelcomeView(self.model, self)

@@ -118,6 +118,9 @@ class InstallProgressController(SubiquityController):
     def start(self):
         self.install_task = schedule_task(self.install(self.context))
 
+    async def apply_autoinstall_config(self):
+        await self.install_task
+
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
 
@@ -297,6 +300,8 @@ class InstallProgressController(SubiquityController):
             await self.copy_logs_to_target(context)
         except Exception:
             self.curtin_error()
+            if not self.interactive():
+                raise
 
     async def move_on(self):
         await asyncio.wait(

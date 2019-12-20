@@ -66,6 +66,7 @@ class FilesystemController(SubiquityController):
     model_name = "filesystem"
 
     def __init__(self, app):
+        self.ai_data = {}
         super().__init__(app)
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
@@ -78,6 +79,27 @@ class FilesystemController(SubiquityController):
         self._probe_once_task = SingleInstanceTask(
             self._probe_once, propagate_errors=False)
         self._probe_task = SingleInstanceTask(self._probe)
+
+    def load_autoinstall_data(self, data):
+        log.debug("load_autoinstall_data %s", data)
+        if not self.interactive() and data is None:
+            data = {
+                'layout': {
+                    'name': 'lvm',
+                    },
+                }
+        log.debug("self.ai_data = %s", data)
+        self.ai_data = data
+
+    async def apply_autoinstall_config(self):
+        await self._start_task
+        await self._probe_task.wait()
+        if not self.model.is_root_mounted():
+            raise Exception("autoinstall config did not mount root")
+        if self.model.needs_bootloader_partition():
+            raise Exception(
+                "autoinstall config did not create needed bootloader "
+                "partition")
 
     async def _probe_once(self, restricted):
         if restricted:
@@ -122,6 +144,14 @@ class FilesystemController(SubiquityController):
                     self._crash_reports[restricted] = report
                     continue
                 break
+        log.debug("self.ai_data = %s", self.ai_data)
+        if 'layout' in self.ai_data:
+            with self.context.child("applying_autoinstall"):
+                meth = getattr(
+                    self, "guided_" + self.ai_data['layout']['name'])
+                disks = self.model.all_disks()
+                disks.sort(key=lambda x: x.size)
+                meth(disks[-1])
 
     def start(self):
         self._start_task = schedule_task(self._start())
