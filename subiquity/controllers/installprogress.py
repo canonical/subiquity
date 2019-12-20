@@ -120,6 +120,7 @@ class InstallProgressController(SubiquityController):
 
     async def apply_autoinstall_config(self):
         await self.install_task
+        self.app.reboot_on_exit = True
 
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
