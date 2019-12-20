@@ -38,6 +38,7 @@ from subiquity.models.filesystem import (
     align_up,
     Bootloader,
     DeviceAction,
+    dehumanize_size,
     Partition,
     raidlevels_by_value,
     )
@@ -613,3 +614,38 @@ class FilesystemController(SubiquityController):
         else:
             new_boot_disk.preserve = False
             self._create_boot_partition(new_boot_disk)
+
+    def guided_direct(self, disk):
+        self.reformat(disk)
+        result = {
+            "size": disk.free_for_partitions,
+            "fstype": "ext4",
+            "mount": "/",
+            }
+        self.partition_disk_handler(disk, None, result)
+
+    def guided_lvm(self, disk):
+        self.reformat(disk)
+        if DeviceAction.MAKE_BOOT in disk.supported_actions:
+            self.make_boot_disk(disk)
+        self.create_partition(
+            device=disk, spec=dict(
+                size=dehumanize_size('1G'),
+                fstype="ext4",
+                mount='/boot'
+                ))
+        part = self.create_partition(
+            device=disk, spec=dict(
+                size=disk.free_for_partitions,
+                fstype=None,
+                ))
+        spec = dict(name="ubuntu-vg", devices=set([part]))
+        # create volume group on partition
+        vg = self.create_volgroup(spec)
+        self.create_logical_volume(
+            vg=vg, spec=dict(
+                size=dehumanize_size("4G"),
+                name="ubuntu-lv",
+                fstype="ext4",
+                mount="/",
+                ))
