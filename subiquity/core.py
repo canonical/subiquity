@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 import os
 import platform
@@ -26,6 +27,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
+from subiquitycore.controller import Skip
 from subiquitycore.core import Application
 from subiquitycore.utils import run_command
 
@@ -164,6 +166,29 @@ class Subiquity(Application):
                 log.debug("showing new error %r", report.base)
                 self.show_error_report(report)
                 return
+
+    def select_screen(self, new):
+        if new.interactive():
+            super().select_screen(new)
+            return
+        elif self.autoinstall_config and not new.autoinstall_applied:
+            schedule_task(self._apply(new))
+        else:
+            raise Skip
+
+    async def _apply(self, controller):
+        with controller.context.child("apply_autoinstall_config"):
+            try:
+                await controller.apply_autoinstall_config()
+            except BaseException:
+                logging.exception(
+                    "%s.apply_autoinstall_config failed", controller.name)
+                # Obviously need to something better here.
+                await asyncio.sleep(1800)
+                raise
+        controller.autoinstall_applied = True
+        controller.configured()
+        self.next_screen()
 
     def _network_change(self):
         self.signal.emit_signal('snapd-network-change')

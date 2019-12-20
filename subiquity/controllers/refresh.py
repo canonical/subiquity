@@ -65,6 +65,9 @@ class RefreshController(SubiquityController):
             self.check_for_update, propagate_errors=False)
         self.check_task.start_sync()
 
+    async def apply_autoinstall_config(self, index=1):
+        pass
+
     @property
     def check_state(self):
         task = self.check_task.task
