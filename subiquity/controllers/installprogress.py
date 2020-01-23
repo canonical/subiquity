@@ -295,9 +295,13 @@ class InstallProgressController(SubiquityController):
         except Exception:
             self.curtin_error()
 
-        await self.reboot_clicked.wait()
-
-        self.reboot()
+    async def move_on(self):
+        await asyncio.wait(
+            {self.reboot_clicked.wait(), self.install_task})
+        self.app.reboot_on_exit = True
+        if not self.opts.dry_run and platform.machine() == 's390x':
+            run_command(["chreipl", "/target/boot"])
+        self.app.next_screen()
 
     async def drain_curtin_events(self, context):
         waited = 0.0
@@ -403,18 +407,6 @@ class InstallProgressController(SubiquityController):
         except Exception:
             log.exception("saving journal failed")
 
-    def reboot(self):
-        if self.opts.dry_run:
-            log.debug('dry-run enabled, skipping reboot, quitting instead')
-            self.app.exit()
-        else:
-            # TODO Possibly run this earlier, to show a warning; or
-            # switch to shutdown if chreipl fails
-            if platform.machine() == 's390x':
-                run_command(["chreipl", "/target/boot"])
-            # Should probably run curtin -c $CONFIG unmount -t TARGET first.
-            run_command(["/sbin/reboot"])
-
     async def _click_reboot(self):
         if self.uu_running:
             await self.stop_uu()
@@ -435,6 +427,7 @@ class InstallProgressController(SubiquityController):
             self.progress_view.title = (
                 _('An error occurred during installation'))
         self.ui.set_body(self.progress_view)
+        schedule_task(self.move_on())
 
 
 uu_apt_conf = """\

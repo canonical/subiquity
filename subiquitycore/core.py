@@ -440,9 +440,13 @@ class Application:
         if old is not None:
             old.context.exit("completed")
             old.end_ui()
+        cur_index = self.controllers.index
         while True:
             self.controllers.index += increment
-            if self.controllers.out_of_bounds():
+            if self.controllers.index < 0:
+                self.controllers.index = cur_index
+                return
+            if self.controllers.index >= len(self.controllers.instances):
                 self.exit()
             new = self.controllers.cur
             try:
@@ -480,7 +484,7 @@ class Application:
         state_path = os.path.join(self.state_dir, 'last-screen')
         if os.path.exists(state_path):
             os.unlink(state_path)
-        raise urwid.ExitMainLoop()
+        self.aio_loop.stop()
 
     def run_scripts(self, scripts):
         # run_scripts runs (or rather arranges to run, it's all async)
