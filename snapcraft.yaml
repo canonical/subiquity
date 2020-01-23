@@ -26,8 +26,8 @@ parts:
   curtin:
     plugin: python
     source-type: git
-    source: git://git.launchpad.net/curtin
-    source-commit: b022ed4204f9d78d3199de24e786b55b92e72a7f
+    source: https://git.launchpad.net/~raharper/curtin
+    source-branch: fix/mpath-partition-wiping
     requirements: requirements.txt
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
