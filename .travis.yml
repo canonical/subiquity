@@ -4,7 +4,8 @@ dist: xenial
 env:
   - IMAGE=ubuntu-daily:bionic SCRIPT="make lint"
   - IMAGE=ubuntu-daily:bionic SCRIPT=./scripts/runtests.sh
-  - IMAGE=ubuntu-daily:disco SCRIPT=./scripts/runtests.sh
+  - IMAGE=ubuntu-daily:eoan SCRIPT=./scripts/runtests.sh
+  - IMAGE=ubuntu-daily:focal SCRIPT=./scripts/runtests.sh
 
 language: bash
 
