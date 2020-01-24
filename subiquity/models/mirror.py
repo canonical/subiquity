@@ -13,35 +13,61 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import logging
-import platform
 from urllib import parse
+
+from curtin.commands.apt_config import (
+    get_arch_mirrorconfig,
+    get_mirror,
+    PRIMARY_ARCHES,
+    )
+from curtin.util import get_architecture
 
 log = logging.getLogger('subiquitycore.models.mirror')
 
-# correct default mirror for most arches
-DEFAULT_MIRROR = 'http://ports.ubuntu.com/ubuntu-ports'
-# apart from the two snowflakes
-if platform.machine() in ['i686', 'x86_64']:
-    DEFAULT_MIRROR = 'http://archive.ubuntu.com/ubuntu'
+
+DEFAULT = {
+    "preserve_sources_list": False,
+    "primary": [
+        {
+            "arches": PRIMARY_ARCHES,
+            "uri": "http://archive.ubuntu.com/ubuntu",
+        },
+        {
+            "arches": ["default"],
+            "uri": "http://ports.ubuntu.com/ubuntu-ports",
+        },
+        ],
+}
+
+
+def get_default_mirror():
+    return get_mirror(DEFAULT, "primary", get_architecture())
 
 
 class MirrorModel(object):
 
     def __init__(self):
-        self.mirror = DEFAULT_MIRROR
+        self.config = copy.deepcopy(DEFAULT)
 
     def set_country(self, cc):
-        parsed = parse.urlparse(DEFAULT_MIRROR)
+        uri = self.get_mirror()
+        if uri != get_default_mirror():
+            return
+        parsed = parse.urlparse(uri)
         new = parsed._replace(netloc=cc + '.' + parsed.netloc)
-        self.mirror = parse.urlunparse(new)
+        self.set_mirror(parse.urlunparse(new))
+
+    def get_mirror(self):
+        return get_mirror(self.config, "primary", get_architecture())
+
+    def set_mirror(self, mirror):
+        config = get_arch_mirrorconfig(
+            self.config, "primary", get_architecture())
+        config["uri"] = mirror
 
     def render(self):
         return {
-             'apt': {
-                 'primary': [{
-                     'arches': ["default"],
-                     'uri': self.mirror,
-                     }],
-                 }
+             'apt': self.config
             }

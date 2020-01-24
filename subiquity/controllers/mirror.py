@@ -92,21 +92,21 @@ class MirrorController(SubiquityController):
             self.done(self.answers['mirror'])
         elif 'country-code' in self.answers \
              or 'accept-default' in self.answers:
-            self.done(self.model.mirror)
+            self.done(self.model.get_mirror())
 
     def cancel(self):
         self.app.prev_screen()
 
     def serialize(self):
-        return self.model.mirror
+        return self.model.get_mirror()
 
     def deserialize(self, data):
         super().deserialize(data)
-        self.model.mirror = data
+        self.model.set_mirror(data)
 
     def done(self, mirror):
         log.debug("MirrorController.done next_screen mirror=%s", mirror)
-        if mirror != self.model.mirror:
-            self.model.mirror = mirror
+        if mirror != self.model.get_mirror():
+            self.model.set_mirror(mirror)
         self.configured()
         self.app.next_screen()

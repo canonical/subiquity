@@ -50,7 +50,7 @@ class MirrorView(BaseView):
         self.model = model
         self.controller = controller
 
-        self.form = MirrorForm(initial={'url': self.model.mirror})
+        self.form = MirrorForm(initial={'url': self.model.get_mirror()})
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
