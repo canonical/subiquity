@@ -101,7 +101,7 @@ else
 fi
 
 
-python -c '
+python3 -c '
 import os, sys, yaml
 with open("new_installer/var/lib/snapd/seed/seed.yaml") as fp:
      old_seed = yaml.safe_load(fp)
