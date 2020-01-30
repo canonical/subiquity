@@ -101,6 +101,7 @@ class MirrorController(SubiquityController):
         return self.model.mirror
 
     def deserialize(self, data):
+        super().deserialize(data)
         self.model.mirror = data
 
     def done(self, mirror):
