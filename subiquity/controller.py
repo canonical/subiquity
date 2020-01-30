@@ -26,6 +26,9 @@ log = logging.getLogger("subiquity.controller")
 
 class SubiquityController(BaseController):
 
+    def deserialize(self, state):
+        self.configured()
+
     def configured(self):
         """Let the world know that this controller's model is now configured.
         """

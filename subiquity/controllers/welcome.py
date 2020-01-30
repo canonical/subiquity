@@ -56,4 +56,5 @@ class WelcomeController(SubiquityController):
         return self.model.selected_language
 
     def deserialize(self, data):
+        super().deserialize(data)
         self.model.switch_language(data)
