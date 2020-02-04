@@ -207,10 +207,6 @@ class SubiquityModel:
 
     def render(self, syslog_identifier):
         config = {
-            'apt': {
-                'preserve_sources_list': False,
-                },
-
             'sources': {
                 'ubuntu00': 'cp:///media/filesystem'
                 },

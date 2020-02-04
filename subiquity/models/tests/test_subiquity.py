@@ -129,9 +129,11 @@ class TestSubiquityModel(unittest.TestCase):
 
     def test_mirror(self):
         model = SubiquityModel('test')
-        mirror_val = model.mirror.mirror = 'http://my-mirror'
+        mirror_val = 'http://my-mirror'
+        model.mirror.set_mirror(mirror_val)
         config = model.render('ident')
-        val = self.configVal(config, 'apt.primary')
-        self.assertEqual(len(val), 1)
-        val = val[0]
-        self.assertEqual(val['uri'], mirror_val)
+        from curtin.commands.apt_config import get_mirror
+        from curtin.util import get_architecture
+        self.assertEqual(
+            get_mirror(config["apt"], "primary", get_architecture()),
+            mirror_val)
