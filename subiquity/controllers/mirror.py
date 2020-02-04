@@ -19,6 +19,8 @@ import logging
 import requests
 from xml.etree import ElementTree
 
+from curtin.config import merge_config
+
 from subiquitycore.async_helpers import (
     run_in_thread,
     SingleInstanceTask,
@@ -53,18 +55,17 @@ class MirrorController(SubiquityController):
             self.check_state = CheckState.DONE
             self.model.set_country(self.answers['country-code'])
         self.lookup_task = SingleInstanceTask(self.lookup)
+        self.geoip_enabled = True
 
     def load_autoinstall_data(self, data):
         if data is None:
             return
-        self.ai_data = data
-        if 'mirror' in data:
-            self.model.mirror = data['mirror']
+        geoip = data.pop('geoip', True)
+        merge_config(self.model.config, data)
+        self.geoip_enabled = geoip and self.model.is_default()
 
     async def apply_autoinstall_config(self):
-        if 'mirror' in self.ai_data:
-            return
-        if self.lookup_task.task is None:
+        if not self.geoip_enabled:
             return
         try:
             await asyncio.wait_for(self.lookup_task.wait(), 10)
@@ -72,7 +73,7 @@ class MirrorController(SubiquityController):
             pass
 
     def snapd_network_changed(self):
-        if 'mirror' in self.ai_data:
+        if not self.geoip_enabled:
             return
         if self.check_state != CheckState.DONE:
             self.check_state = CheckState.CHECKING

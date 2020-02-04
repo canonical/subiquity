@@ -49,10 +49,13 @@ class MirrorModel(object):
         self.architecture = get_architecture()
         self.default_mirror = self.get_mirror()
 
+    def is_default(self):
+        return self.get_mirror() == self.default_mirror
+
     def set_country(self, cc):
-        uri = self.get_mirror()
-        if uri != self.default_mirror:
+        if not self.is_default():
             return
+        uri = self.get_mirror()
         parsed = parse.urlparse(uri)
         new = parsed._replace(netloc=cc + '.' + parsed.netloc)
         self.set_mirror(parse.urlunparse(new))
