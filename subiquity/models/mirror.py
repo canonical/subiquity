@@ -41,28 +41,28 @@ DEFAULT = {
         ],
 }
 
-ARCHITECTURE = get_architecture()
-DEFAULT_MIRROR = get_mirror(DEFAULT, "primary", ARCHITECTURE)
-
 
 class MirrorModel(object):
 
     def __init__(self):
         self.config = copy.deepcopy(DEFAULT)
+        self.architecture = get_architecture()
+        self.default_mirror = self.get_mirror()
 
     def set_country(self, cc):
         uri = self.get_mirror()
-        if uri != DEFAULT_MIRROR:
+        if uri != self.default_mirror:
             return
         parsed = parse.urlparse(uri)
         new = parsed._replace(netloc=cc + '.' + parsed.netloc)
         self.set_mirror(parse.urlunparse(new))
 
     def get_mirror(self):
-        return get_mirror(self.config, "primary", ARCHITECTURE)
+        return get_mirror(self.config, "primary", self.architecture)
 
     def set_mirror(self, mirror):
-        config = get_arch_mirrorconfig(self.config, "primary", ARCHITECTURE)
+        config = get_arch_mirrorconfig(
+            self.config, "primary", self.architecture)
         config["uri"] = mirror
 
     def render(self):
