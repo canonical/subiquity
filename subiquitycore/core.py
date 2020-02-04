@@ -363,10 +363,15 @@ class Application:
         self.updated = os.path.exists(os.path.join(self.state_dir, 'updating'))
         self.signal = Signal()
         self.prober = prober
-        self.aio_loop = asyncio.get_event_loop()
+        self.new_event_loop()
         self.urwid_loop = None
         self.controllers = ControllerSet(self, self.controllers)
         self.context = Context.new(self)
+
+    def new_event_loop(self):
+        new_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(new_loop)
+        self.aio_loop = new_loop
 
     def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None,
                                   **kw):

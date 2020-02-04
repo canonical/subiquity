@@ -31,6 +31,13 @@ class ClickAction(argparse.Action):
         namespace.scripts.append("c(" + repr(values) + ")")
 
 
+AUTO_INSTALL_LOCATIONS = (
+    "/run/initrd-autoinstall.yaml",
+    "/autoinstall.yaml",
+    "/autoinstall/autoinstall.yaml",
+    )
+
+
 def parse_options(argv):
     parser = argparse.ArgumentParser(
         description='SUbiquity - Ubiquity for Servers',
@@ -39,7 +46,9 @@ def parse_options(argv):
         ascii_default = os.ttyname(0) == "/dev/ttysclp0"
     except OSError:
         ascii_default = False
-    parser.set_defaults(ascii=ascii_default)
+    autoinstall_files = [
+        p for p in AUTO_INSTALL_LOCATIONS if os.path.exists(p)]
+    parser.set_defaults(ascii=ascii_default, autoinstall=autoinstall_files)
     parser.add_argument('--dry-run', action='store_true',
                         dest='dry_run',
                         help='menu-only, do not call installer function')
@@ -67,6 +76,7 @@ def parse_options(argv):
     parser.add_argument('--click', metavar="PAT", action=ClickAction,
                         help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
+    parser.add_argument('--autoinstall', action='append')
     parser.add_argument('--source', default=[], action='append',
                         dest='sources', metavar='URL',
                         help='install from url instead of default.')

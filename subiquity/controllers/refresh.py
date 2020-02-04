@@ -44,6 +44,8 @@ class CheckState(enum.IntEnum):
 
 class RefreshController(SubiquityController):
 
+    autoinstall_key = "refresh-installer"
+
     signals = [
         ('snapd-network-change', 'snapd_network_changed'),
     ]
@@ -58,15 +60,47 @@ class RefreshController(SubiquityController):
         self.new_snap_version = ""
 
         self.offered_first_time = False
+        self.active = self.interactive()
+
+    def load_autoinstall_data(self, data):
+        if data is not None and data.get('refresh'):
+            self.active = True
 
     def start(self):
+        if not self.active:
+            return
         self.configure_task = schedule_task(self.configure_snapd())
         self.check_task = SingleInstanceTask(
             self.check_for_update, propagate_errors=False)
         self.check_task.start_sync()
 
+    async def apply_autoinstall_config(self, index=1):
+        if not self.active:
+            return
+        try:
+            await asyncio.wait_for(self.check_task.wait(), 60)
+        except asyncio.TimeoutError:
+            return
+        if self.check_state != CheckState.AVAILABLE:
+            return
+        change_id = await self.start_update()
+        while True:
+            try:
+                change = await self.controller.get_progress(change_id)
+            except requests.exceptions.RequestException as e:
+                raise e
+            if change['status'] == 'Done':
+                # Will only get here dry run mode as part of the refresh is us
+                # getting restarted by snapd...
+                return
+            if change['status'] not in ['Do', 'Doing']:
+                raise Exception("update failed")
+            await asyncio.sleep(0.1)
+
     @property
     def check_state(self):
+        if not self.active:
+            return CheckState.UNAVAILABLE
         task = self.check_task.task
         if not task.done() or task.cancelled():
             return CheckState.UNKNOWN

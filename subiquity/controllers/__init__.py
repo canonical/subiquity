@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .cmdlist import EarlyController, LateController
 from .error import ErrorController
 from .filesystem import FilesystemController
 from .identity import IdentityController
@@ -29,11 +30,13 @@ from .ssh import SSHController
 from .welcome import WelcomeController
 from .zdev import ZdevController
 __all__ = [
+    'EarlyController',
     'ErrorController',
     'FilesystemController',
     'IdentityController',
     'InstallProgressController',
     'KeyboardController',
+    'LateController',
     'ProxyController',
     'MirrorController',
     'NetworkController',

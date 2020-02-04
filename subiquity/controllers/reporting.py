@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import logging
 
 from curtin.reporter import (
@@ -41,14 +42,27 @@ class LogHandler(LogHandler):
 available_handlers.unregister_item('log')
 available_handlers.register_item('log', LogHandler)
 
+INITIAL_CONFIG = {'logging': {'type': 'log'}}
+NON_INTERACTIVE_CONFIG = {'builtin': {'type': 'print'}}
+
 
 class ReportingController(NoUIController):
 
+    autoinstall_key = "reporting"
+
     def __init__(self, app):
+        self.config = copy.deepcopy(INITIAL_CONFIG)
         super().__init__(app)
 
+    def load_autoinstall_data(self, data):
+        if self.app.interactive():
+            return
+        self.config.update(copy.deepcopy(NON_INTERACTIVE_CONFIG))
+        if data is not None:
+            self.config.update(copy.deepcopy(data))
+
     def start(self):
-        update_configuration({'logging': {'type': 'log', 'level': 'INFO'}})
+        update_configuration(self.config)
 
     def report_start_event(self, name, description, level):
         report_start_event(name, description, level=level)

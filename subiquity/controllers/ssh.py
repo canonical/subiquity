@@ -33,11 +33,20 @@ class FetchSSHKeysFailure(Exception):
 
 class SSHController(SubiquityController):
 
-    model_name = "ssh"
+    autoinstall_key = model_name = "ssh"
 
     def __init__(self, app):
         super().__init__(app)
         self._fetch_task = None
+
+    def load_autoinstall_data(self, data):
+        if data is None:
+            return
+        self.model.install_server = data.get('install_server', False)
+        self.model.authorized_keys = self.autoinstall_data.get(
+            'authorized-keys', [])
+        self.model.pwauth = self.autoinstall_data.get(
+            'allow-pw', not self.model.authorized_keys)
 
     def start_ui(self):
         self.ui.set_body(SSHView(self.model, self))

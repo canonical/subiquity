@@ -13,15 +13,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.controllers.network import NetworkController
+import yaml
 
-from subiquity.controller import SubiquityController
+from curtin.config import merge_config
 
 
-class NetworkController(NetworkController, SubiquityController):
-
-    autoinstall_key = "network"
-
-    def done(self):
-        self.configured()
-        super().done()
+def merge_autoinstall_configs(source_paths, target_path):
+    config = {}
+    for path in source_paths:
+        with open(path) as fp:
+            c = yaml.safe_load(fp)
+        merge_config(config, c)
+    with open(target_path, 'w') as fp:
+        yaml.dump(config, fp)

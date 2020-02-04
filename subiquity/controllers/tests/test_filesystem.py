@@ -37,6 +37,7 @@ class Thing:
 class MiniApplication:
     ui = signal = loop = None
     project = "mini"
+    autoinstall_config = {}
     answers = {}
     opts = Thing()
     opts.dry_run = True

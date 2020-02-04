@@ -13,15 +13,31 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.controllers.network import NetworkController
+import asyncio
 
-from subiquity.controller import SubiquityController
+from subiquity.controller import NoUIController
 
 
-class NetworkController(NetworkController, SubiquityController):
+class CmdListController(NoUIController):
 
-    autoinstall_key = "network"
+    autoinstall_default = []
+    cmds = ()
 
-    def done(self):
-        self.configured()
-        super().done()
+    def load_autoinstall_data(self, data):
+        self.cmds = data
+
+    async def run(self):
+        for i, cmd in enumerate(self.cmds):
+            with self.context.child("command_{}".format(i), cmd):
+                proc = await asyncio.create_subprocess_shell(cmd)
+                await proc.communicate()
+
+
+class EarlyController(CmdListController):
+
+    autoinstall_key = 'early-commands'
+
+
+class LateController(CmdListController):
+
+    autoinstall_key = 'late-commands'

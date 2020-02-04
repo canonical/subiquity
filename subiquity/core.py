@@ -13,11 +13,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 import os
 import platform
 import sys
 import traceback
+import urwid
+import yaml
 
 import apport.hookutils
 
@@ -25,9 +28,11 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
+from subiquitycore.controller import Skip
 from subiquitycore.core import Application
 from subiquitycore.utils import run_command
 
+from subiquity.autoinstall import merge_autoinstall_configs
 from subiquity.controllers.error import (
     ErrorReportKind,
     )
@@ -74,21 +79,23 @@ class Subiquity(Application):
         return SubiquityUI(self)
 
     controllers = [
-            "Welcome",
-            "Refresh",
-            "Keyboard",
-            "Zdev",
-            "Network",
-            "Proxy",
-            "Mirror",
-            "Refresh",
-            "Filesystem",
-            "Identity",
-            "SSH",
-            "SnapList",
-            "InstallProgress",
-            "Error",  # does not have a UI
-            "Reporting",  # does not have a UI
+        "Early",
+        "Reporting",
+        "Error",
+        "Welcome",
+        "Refresh",
+        "Keyboard",
+        "Zdev",
+        "Network",
+        "Proxy",
+        "Mirror",
+        "Refresh",
+        "Filesystem",
+        "Identity",
+        "SSH",
+        "SnapList",
+        "InstallProgress",
+        "Late",
     ]
 
     def __init__(self, opts, block_log_dir):
@@ -112,6 +119,10 @@ class Subiquity(Application):
             ])
         self._apport_data = []
         self._apport_files = []
+
+        self.autoinstall_config = {}
+        self.merged_autoinstall_path = os.path.join(
+            self.root, 'autoinstall.yaml')
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
@@ -123,9 +134,33 @@ class Subiquity(Application):
         else:
             super().exit()
 
+    def make_screen(self):
+        if self.interactive():
+            return super().make_screen()
+        else:
+            r, w = os.pipe()
+            s = urwid.raw_display.Screen(
+                input=os.fdopen(r), output=open('/dev/null', 'w'))
+            s.get_cols_rows = lambda: (80, 24)
+            return s
+
     def run(self):
+        if self.opts.autoinstall:
+            merge_autoinstall_configs(
+                self.opts.autoinstall, self.merged_autoinstall_path)
+            with open(self.merged_autoinstall_path) as fp:
+                self.autoinstall_config = yaml.safe_load(fp)
+            self.controllers.load("Early")
+            self.controllers.load("Reporting")
+            self.controllers.Reporting.start()
+            self.aio_loop.run_until_complete(self.controllers.Early.run())
+            self.new_event_loop()
+            with open(self.merged_autoinstall_path) as fp:
+                self.autoinstall_config = yaml.safe_load(fp)
         try:
             super().run()
+            self.new_event_loop()
+            self.aio_loop.run_until_complete(self.controllers.Late.run())
         except Exception:
             print("generating crash report")
             report = self.make_apport_report(
@@ -141,6 +176,11 @@ class Subiquity(Application):
         self.controllers.Reporting.report_finish_event(
             name, description, status, level)
 
+    def interactive(self):
+        if not self.autoinstall_config:
+            return True
+        return bool(self.autoinstall_config.get('interactive-sections'))
+
     def select_initial_screen(self, index):
         super().select_initial_screen(index)
         for report in self.controllers.Error.reports:
@@ -148,6 +188,28 @@ class Subiquity(Application):
                 log.debug("showing new error %r", report.base)
                 self.show_error_report(report)
                 return
+
+    def select_screen(self, new):
+        if new.interactive():
+            super().select_screen(new)
+        elif self.autoinstall_config and not new.autoinstall_applied:
+            schedule_task(self._apply(new))
+        else:
+            raise Skip
+
+    async def _apply(self, controller):
+        with controller.context.child("apply_autoinstall_config"):
+            try:
+                await controller.apply_autoinstall_config()
+            except BaseException:
+                logging.exception(
+                    "%s.apply_autoinstall_config failed", controller.name)
+                # Obviously need to something better here.
+                await asyncio.sleep(1800)
+                raise
+        controller.autoinstall_applied = True
+        controller.configured()
+        self.next_screen()
 
     def _network_change(self):
         self.signal.emit_signal('snapd-network-change')

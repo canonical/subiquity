@@ -112,8 +112,15 @@ class InstallProgressController(SubiquityController):
         self.tb_extractor = TracebackExtractor()
         self.curtin_context = None
 
+    def interactive(self):
+        return self.app.interactive()
+
     def start(self):
         self.install_task = schedule_task(self.install(self.context))
+
+    async def apply_autoinstall_config(self):
+        await self.install_task
+        self.app.reboot_on_exit = True
 
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
@@ -294,6 +301,8 @@ class InstallProgressController(SubiquityController):
             await self.copy_logs_to_target(context)
         except Exception:
             self.curtin_error()
+            if not self.interactive():
+                raise
 
     async def move_on(self):
         await asyncio.wait(
