@@ -15,6 +15,8 @@
 
 import logging
 
+import attr
+
 from subiquitycore.async_helpers import schedule_task
 
 from subiquity.controller import SubiquityController
@@ -68,3 +70,6 @@ class KeyboardController(SubiquityController):
 
     def cancel(self):
         self.app.prev_screen()
+
+    def make_autoinstall(self):
+        return attr.asdict(self.model.setting)

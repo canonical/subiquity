@@ -126,3 +126,10 @@ class SSHController(SubiquityController):
         self.model.ssh_import_id = result.get('ssh_import_id', None)
         self.configured()
         self.app.next_screen()
+
+    def make_autoinstall(self):
+        return {
+            'install-server': self.model.install_server,
+            'authorized-keys': self.model.authorized_keys,
+            'allow-pw': self.model.pwauth,
+            }

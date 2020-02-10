@@ -64,3 +64,6 @@ class ProxyController(SubiquityController):
             self.signal.emit_signal('network-proxy-set')
         self.configured()
         self.app.next_screen()
+
+    def make_autoinstall(self):
+        return self.model.proxy

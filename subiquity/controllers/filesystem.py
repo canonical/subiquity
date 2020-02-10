@@ -688,3 +688,13 @@ class FilesystemController(SubiquityController):
                 fstype="ext4",
                 mount="/",
                 ))
+
+    def make_autoinstall(self):
+        rendered = self.model.render()
+        r = {
+            'config': rendered['storage']['config']
+            }
+        for k in 'swap', 'grub':
+            if k in rendered:
+                r[k] = rendered[k]
+        return r

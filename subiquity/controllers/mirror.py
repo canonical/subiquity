@@ -133,3 +133,8 @@ class MirrorController(SubiquityController):
             self.model.set_mirror(mirror)
         self.configured()
         self.app.next_screen()
+
+    def make_autoinstall(self):
+        r = self.model.render()['apt']
+        r['geoip'] = self.geoip_enabled
+        return r
