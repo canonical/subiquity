@@ -342,8 +342,9 @@ class FilesystemController(SubiquityController):
         self.ui.set_body(v)
         if self.answers['guided']:
             index = self.answers['guided-index']
-            disk = self.model.all_disks()[index]
-            v.choose_disk(None, disk)
+            v.form.guided.value = True
+            v.form.guided_choice.disk.widget.index = index
+            v.form._emit('done')
 
     def reset(self):
         log.info("Resetting Filesystem model")
@@ -658,7 +659,7 @@ class FilesystemController(SubiquityController):
             }
         self.partition_disk_handler(disk, None, result)
 
-    def guided_lvm(self, disk):
+    def guided_lvm(self, disk, lvm_options):
         self.reformat(disk)
         if DeviceAction.MAKE_BOOT in disk.supported_actions:
             self.make_boot_disk(disk)
@@ -674,6 +675,8 @@ class FilesystemController(SubiquityController):
                 fstype=None,
                 ))
         spec = dict(name="ubuntu-vg", devices=set([part]))
+        if lvm_options['encrypt']:
+            spec['password'] = lvm_options['luks_options']['password']
         # create volume group on partition
         vg = self.create_volgroup(spec)
         self.create_logical_volume(

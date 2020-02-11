@@ -25,6 +25,7 @@ from subiquitycore.ui.form import (
     Form,
     NO_CAPTION,
     NO_HELP,
+    PasswordField,
     RadioButtonField,
     SubForm,
     SubFormField,
@@ -39,22 +40,47 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
-
 from .helpers import summarize_device
+
 
 log = logging.getLogger("subiquity.ui.views.filesystem.guided")
 
-text = _("""The installer can guide you through partitioning an entire disk
-either directly or using LVM, or, if you prefer, you can do it manually.
+subtitle = _("Configure a guided storage layout, or create a custom one:")
 
-If you choose to partition an entire disk you will still have a chance to
-review and modify the results.""")
+
+class LUKSOptionsForm(SubForm):
+
+    password = PasswordField(_("Passphrase:"))
+    confirm_password = PasswordField(_("Confirm passphrase:"))
+
+    def validate_password(self):
+        if len(self.password.value) < 1:
+            return _("Password must be set")
+
+    def validate_confirm_password(self):
+        if self.password.value != self.confirm_password.value:
+            return _("Passwords do not match")
+
+
+class LVMOptionsForm(SubForm):
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        connect_signal(self.encrypt.widget, 'change', self._toggle)
+        self.luks_options.enabled = self.encrypt.value
+
+    def _toggle(self, sender, val):
+        self.luks_options.enabled = val
+
+    encrypt = BooleanField(_("Encrypt the LVM group with LUKS"), help=NO_HELP)
+    luks_options = SubFormField(LUKSOptionsForm, "", help=NO_HELP)
 
 
 class GuidedChoiceForm(SubForm):
 
     disk = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
     use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
+    lvm_options = SubFormField(LVMOptionsForm, "", help=NO_HELP)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -70,6 +96,11 @@ class GuidedChoiceForm(SubForm):
             t0.bind(t)
         self.disk.widget.options = options
         self.disk.widget.index = 0
+        connect_signal(self.use_lvm.widget, 'change', self._toggle)
+        self.lvm_options.enabled = self.use_lvm.value
+
+    def _toggle(self, sender, val):
+        self.lvm_options.enabled = val
 
 
 class GuidedForm(Form):
@@ -98,10 +129,15 @@ replacing any partitions and data already there.
 
 If the platform requires it, a bootloader partition is created on the disk.
 
-If you choose to use LVM, two partitions are then created, one for /boot and
-one covering the rest of the disk. A LVM volume group is created containing
-the large partition. A 4 gigabyte logical volume is created for the root
-filesystem. It can easily be enlarged with standard LVM command line tools.
+If you choose to use LVM, two additional partitions are then created,
+one for /boot and one covering the rest of the disk. An LVM volume
+group is created containing the large partition. A 4 gigabyte logical
+volume is created for the root filesystem. It can easily be enlarged
+with standard LVM command line tools.
+
+You can also choose to encrypt LVM volume group. This will require
+setting a password, that one will need to type on every boot before
+the system boots.
 
 If you do not choose to use LVM, a single partition is created covering the
 rest of the disk which is then formatted as ext4 and mounted at /.
@@ -117,7 +153,7 @@ at /.
 
 class GuidedDiskSelectionView (BaseView):
 
-    title = _("Filesystem setup")
+    title = _("Guided storage configuration")
 
     def __init__(self, controller):
         self.controller = controller
@@ -126,8 +162,8 @@ class GuidedDiskSelectionView (BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen(
-            focus_buttons=False, excerpt=rewrap(_(text))))
+        super().__init__(
+            self.form.as_screen(focus_buttons=False, excerpt=_(subtitle)))
 
     def local_help(self):
         return (_("Help on guided storage configuration"), rewrap(_(HELP)))
@@ -137,7 +173,8 @@ class GuidedDiskSelectionView (BaseView):
         if results['guided']:
             disk = results['guided_choice']['disk']
             if results['guided_choice']['use_lvm']:
-                self.controller.guided_lvm(disk)
+                self.controller.guided_lvm(
+                    disk, results['guided_choice']['lvm_options'])
             else:
                 self.controller.guided_direct(disk)
         self.controller.manual()

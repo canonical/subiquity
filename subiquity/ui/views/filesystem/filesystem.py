@@ -432,7 +432,7 @@ class DeviceList(WidgetWrap):
 
 
 class FilesystemView(BaseView):
-    title = _("Filesystem setup")
+    title = _("Storage configuration")
 
     def __init__(self, model, controller):
         self.model = model
