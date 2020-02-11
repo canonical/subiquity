@@ -153,7 +153,7 @@ at /.
 
 class GuidedDiskSelectionView (BaseView):
 
-    title = _("Filesystem setup")
+    title = _("Guided storage configuration")
 
     def __init__(self, controller):
         self.controller = controller
