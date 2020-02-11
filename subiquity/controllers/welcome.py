@@ -39,7 +39,7 @@ class WelcomeController(SubiquityController):
             if code == lang:
                 self.model.switch_language(code)
         else:
-            self.model.selected_language = code
+            self.model.selected_language = lang
 
     def start_ui(self):
         view = WelcomeView(self.model, self)
