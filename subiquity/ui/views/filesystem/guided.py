@@ -25,6 +25,7 @@ from subiquitycore.ui.form import (
     Form,
     NO_CAPTION,
     NO_HELP,
+    PasswordField,
     RadioButtonField,
     SubForm,
     SubFormField,
@@ -51,10 +52,39 @@ If you choose to partition an entire disk you will still have a chance to
 review and modify the results.""")
 
 
+class LUKSOptionsForm(SubForm):
+
+    password = PasswordField(_("Passphrase:"))
+    confirm_password = PasswordField(_("Confirm passphrase:"))
+
+    def validate_password(self):
+        if len(self.password.value) < 1:
+            return _("Password must be set")
+
+    def validate_confirm_password(self):
+        if self.password.value != self.confirm_password.value:
+            return _("Passwords do not match")
+
+
+class LVMOptionsForm(SubForm):
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        connect_signal(self.encrypt.widget, 'change', self._toggle)
+        self.luks_options.enabled = self.encrypt.value
+
+    def _toggle(self, sender, val):
+        self.luks_options.enabled = val
+
+    encrypt = BooleanField(_("Encrypt the LVM group with LUKS"), help=NO_HELP)
+    luks_options = SubFormField(LUKSOptionsForm, "", help=NO_HELP)
+
+
 class GuidedChoiceForm(SubForm):
 
     disk = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
     use_lvm = BooleanField(_("Set up this disk as an LVM group"), help=NO_HELP)
+    lvm_options = SubFormField(LVMOptionsForm, "", help=NO_HELP)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -70,6 +100,11 @@ class GuidedChoiceForm(SubForm):
             t0.bind(t)
         self.disk.widget.options = options
         self.disk.widget.index = 0
+        connect_signal(self.use_lvm.widget, 'change', self._toggle)
+        self.lvm_options.enabled = self.use_lvm.value
+
+    def _toggle(self, sender, val):
+        self.lvm_options.enabled = val
 
 
 class GuidedForm(Form):
@@ -137,7 +172,8 @@ class GuidedDiskSelectionView (BaseView):
         if results['guided']:
             disk = results['guided_choice']['disk']
             if results['guided_choice']['use_lvm']:
-                self.controller.guided_lvm(disk)
+                self.controller.guided_lvm(
+                    disk, results['guided_choice']['lvm_options'])
             else:
                 self.controller.guided_direct(disk)
         self.controller.manual()
