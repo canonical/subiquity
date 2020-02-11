@@ -45,13 +45,6 @@ from .helpers import summarize_device
 
 log = logging.getLogger("subiquity.ui.views.filesystem.guided")
 
-text = _("""The installer can guide you through partitioning an entire disk
-either directly or using LVM, or, if you prefer, you can do it manually.
-
-If you choose to partition an entire disk you will still have a chance to
-review and modify the results.""")
-
-
 class LUKSOptionsForm(SubForm):
 
     password = PasswordField(_("Passphrase:"))
@@ -133,10 +126,15 @@ replacing any partitions and data already there.
 
 If the platform requires it, a bootloader partition is created on the disk.
 
-If you choose to use LVM, two partitions are then created, one for /boot and
-one covering the rest of the disk. A LVM volume group is created containing
-the large partition. A 4 gigabyte logical volume is created for the root
-filesystem. It can easily be enlarged with standard LVM command line tools.
+If you choose to use LVM, two additional partitions are then created,
+one for /boot and one covering the rest of the disk. An LVM volume
+group is created containing the large partition. A 4 gigabyte logical
+volume is created for the root filesystem. It can easily be enlarged
+with standard LVM command line tools.
+
+You can also choose to encrypt LVM volume group. This will require
+setting a password, that one will need to type on every boot before
+the system boots.
 
 If you do not choose to use LVM, a single partition is created covering the
 rest of the disk which is then formatted as ext4 and mounted at /.
@@ -161,8 +159,7 @@ class GuidedDiskSelectionView (BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen(
-            focus_buttons=False, excerpt=rewrap(_(text))))
+        super().__init__(self.form.as_screen(focus_buttons=False))
 
     def local_help(self):
         return (_("Help on guided storage configuration"), rewrap(_(HELP)))
