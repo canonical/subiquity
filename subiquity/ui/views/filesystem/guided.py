@@ -40,10 +40,13 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
-
 from .helpers import summarize_device
 
+
 log = logging.getLogger("subiquity.ui.views.filesystem.guided")
+
+subtitle = _("Configure a guided storage layout, or create a custom one:")
+
 
 class LUKSOptionsForm(SubForm):
 
@@ -159,7 +162,8 @@ class GuidedDiskSelectionView (BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen(focus_buttons=False))
+        super().__init__(
+            self.form.as_screen(focus_buttons=False, excerpt=_(subtitle)))
 
     def local_help(self):
         return (_("Help on guided storage configuration"), rewrap(_(HELP)))
