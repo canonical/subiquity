@@ -311,7 +311,7 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertEqual(
             partition.usage_labels(),
             ["to be formatted as ext4", "not mounted"])
-        partition._original_fs = fs
+        model._orig_config = model._render_actions()
         fs.preserve = True
         partition.preserve = True
         self.assertEqual(
