@@ -795,9 +795,16 @@ class Disk(_Device):
                 return False
         return True
 
-    _can_PARTITION = property(
-        lambda self: not self._has_preexisting_partition() and
-        self.free_for_partitions > 0)
+    @property
+    def _can_PARTITION(self):
+        if self._has_preexisting_partition():
+            return False
+        if self.free_for_partitions <= 0:
+            return False
+        if self.ptable == 'vtoc' and len(self._partitions) >= 3:
+            return False
+        return True
+
     _can_FORMAT = property(
         lambda self: len(self._partitions) == 0 and
         self._constructed_device is None)
