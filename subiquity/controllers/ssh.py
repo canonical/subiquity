@@ -78,7 +78,7 @@ class SSHController(SubiquityController):
     async def run_cmd_checked(self, cmd, *, failmsg, **kw):
         cp = await utils.arun_command(cmd, **kw)
         if cp.returncode != 0:
-            if not isinstance(self.ui.body, SSHView):
+            if isinstance(self.ui.body, SSHView):
                 self.ui.body.fetching_ssh_keys_failed(failmsg, cp.stderr)
             raise subprocess.CalledProcessError(cp.returncode, cmd)
         return cp
