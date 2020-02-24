@@ -587,6 +587,12 @@ class _Device(_Formattable, ABC):
     def ptable_for_new_partition(self):
         if self.ptable is not None:
             return self.ptable
+        for action in self._m._orig_config:
+            if action['id'] == self.id:
+                if action.get('ptable') == 'vtoc':
+                    return action['ptable']
+        if getattr(self, 'path', '').startswith('/dev/dasd'):
+            return 'vtoc'
         return 'gpt'
 
     def partitions(self):
