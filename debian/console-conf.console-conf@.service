@@ -2,6 +2,8 @@
 Description=Ubuntu Core Firstboot Configuration %I
 After=systemd-user-sessions.service plymouth-quit-wait.service
 After=rc-local.service
+# Ubuntu Core specific services
+After=core18.start-snapd.service core.start-snapd.service
 IgnoreOnIsolate=yes
 ConditionPathExists=/dev/tty0
 ConditionPathExists=!/var/lib/console-conf/complete
