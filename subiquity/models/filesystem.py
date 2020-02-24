@@ -584,6 +584,11 @@ class _Device(_Formattable, ABC):
     # [Partition]
     _partitions = attributes.backlink(default=attr.Factory(list))
 
+    def ptable_for_new_partition(self):
+        if self.ptable is not None:
+            return self.ptable
+        return 'gpt'
+
     def partitions(self):
         return self._partitions
 
@@ -1432,7 +1437,7 @@ class FilesystemModel(object):
             m=self, device=disk, size=real_size, flag=flag, wipe=wipe)
         if flag in ("boot", "bios_grub", "prep"):
             disk._partitions.insert(0, disk._partitions.pop())
-        disk.ptable = 'gpt'
+        disk.ptable = disk.ptable_for_new_partition()
         self._actions.append(p)
         return p
 
