@@ -130,7 +130,7 @@ class PartitionViewTests(unittest.TestCase):
         partition.preserve = True
         fs = model.add_filesystem(partition, "ext4")
         fs.preserve = True
-        partition._original_fs = fs
+        model._orig_config = model._render_actions()
         view, stretchy = make_partition_view(model, disk, partition)
         self.assertFalse(stretchy.form.size.enabled)
         self.assertTrue(stretchy.form.done_btn.enabled)
@@ -191,7 +191,7 @@ class PartitionViewTests(unittest.TestCase):
         model, disk = make_model_and_disk()
         partition = model.add_partition(disk, 512*(2**20), "boot")
         fs = model.add_filesystem(partition, "fat32")
-        partition._original_fs = fs
+        model._orig_config = model._render_actions()
         disk.preserve = partition.preserve = fs.preserve = True
         view, stretchy = make_partition_view(model, disk, partition)
 
@@ -213,7 +213,7 @@ class PartitionViewTests(unittest.TestCase):
         model, disk = make_model_and_disk()
         partition = model.add_partition(disk, 512*(2**20), "boot")
         fs = model.add_filesystem(partition, "fat32")
-        partition._original_fs = fs
+        model._orig_config = model._render_actions()
         disk.preserve = partition.preserve = fs.preserve = True
         model.add_mount(fs, '/boot/efi')
         view, stretchy = make_partition_view(model, disk, partition)
@@ -236,7 +236,7 @@ class PartitionViewTests(unittest.TestCase):
         model, disk = make_model_and_disk()
         fs = model.add_filesystem(disk, "ntfs")
         fs.preserve = True
-        disk._original_fs = fs
+        model._orig_config = model._render_actions()
         view, stretchy = make_format_entire_view(model, disk)
         self.assertEqual(
             stretchy.form.fstype.value, None)

@@ -481,7 +481,6 @@ class _Formattable(ABC):
 
     # Filesystem
     _fs = attributes.backlink()
-    _original_fs = attributes.backlink()
     # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
     _constructed_device = attributes.backlink()
 
@@ -498,7 +497,7 @@ class _Formattable(ABC):
         if fs is not None:
             if fs.preserve:
                 format_desc = _("already formatted as {fstype}")
-            elif self.original_fs() is not None:
+            elif self.original_fstype() is not None:
                 format_desc = _("to be reformatted as {fstype}")
             else:
                 format_desc = _("to be formatted as {fstype}")
@@ -524,8 +523,14 @@ class _Formattable(ABC):
     def fs(self):
         return self._fs
 
-    def original_fs(self):
-        return self._original_fs
+    def original_fstype(self):
+        for action in self._m._orig_config:
+            if action['type'] == 'format' and action['volume'] == self.id:
+                return action['fstype']
+        for action in self._m._orig_config:
+            if action['id'] == self.id and action['flag'] == 'swap':
+                return 'swap'
+        return None
 
     def constructed_device(self, skip_dm_crypt=True):
         cd = self._constructed_device
@@ -1199,11 +1204,12 @@ class FilesystemModel(object):
 
     def reset(self):
         if self._probe_data is not None:
-            config = storage_config.extract_storage_config(self._probe_data)
+            self._orig_config = storage_config.extract_storage_config(
+                self._probe_data)["storage"]["config"]
             self._actions = self._actions_from_config(
-                config["storage"]["config"],
-                self._probe_data['blockdev'])
+                self._orig_config, self._probe_data['blockdev'])
         else:
+            self._orig_config = []
             self._actions = []
         self.grub_install_device = None
 
@@ -1271,8 +1277,6 @@ class FilesystemModel(object):
                     exclusions.add(obj)
                 else:
                     seen_multipaths.add(multipath)
-            if action['type'] == "format":
-                obj.volume._original_fs = obj
             objs.append(obj)
 
         while True:
@@ -1291,7 +1295,6 @@ class FilesystemModel(object):
         for o in objs:
             if o.type == "partition" and o.flag == "swap" and o._fs is None:
                 fs = Filesystem(m=self, fstype="swap", volume=o, preserve=True)
-                o._original_fs = fs
                 objs.append(fs)
 
         return objs
@@ -1490,7 +1493,7 @@ class FilesystemModel(object):
         _remove_backlinks(dm_crypt)
         self._actions.remove(dm_crypt)
 
-    def add_filesystem(self, volume, fstype):
+    def add_filesystem(self, volume, fstype, preserve=False):
         log.debug("adding %s to %s", fstype, volume)
         if not volume.available:
             if not isinstance(volume, Partition):
@@ -1499,13 +1502,10 @@ class FilesystemModel(object):
                     raise Exception("{} is not available".format(volume))
         if volume._fs is not None:
             raise Exception("%s is already formatted")
-        fs = Filesystem(m=self, volume=volume, fstype=fstype)
+        fs = Filesystem(
+            m=self, volume=volume, fstype=fstype, preserve=preserve)
         self._actions.append(fs)
         return fs
-
-    def re_add_filesystem(self, fs):
-        _set_backlinks(fs)
-        self._actions.append(fs)
 
     def remove_filesystem(self, fs):
         if fs._mount:

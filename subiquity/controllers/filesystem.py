@@ -377,14 +377,16 @@ class FilesystemController(SubiquityController):
 
     def create_filesystem(self, volume, spec):
         if spec['fstype'] is None:
-            fs = volume.original_fs()
-            if fs is None:
-                return
-            self.model.re_add_filesystem(fs)
+            fstype = volume.original_fstype()
+            if fstype is None:
+                return None
+            preserve = True
         else:
-            fs = self.model.add_filesystem(volume, spec['fstype'])
+            fstype = spec['fstype']
+            preserve = False
+        fs = self.model.add_filesystem(volume, fstype, preserve)
         if isinstance(volume, Partition):
-            if spec['fstype'] == "swap":
+            if fstype == "swap":
                 volume.flag = "swap"
             elif volume.flag == "swap":
                 volume.flag = ""
