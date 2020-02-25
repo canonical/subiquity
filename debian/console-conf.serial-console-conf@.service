@@ -2,7 +2,10 @@
 Description=Ubuntu Core Firstboot Configuration %I
 BindsTo=dev-%i.device
 After=dev-%i.device systemd-user-sessions.service plymouth-quit-wait.service
-After=rc-local.service core18.start-snapd.service
+After=rc-local.service
+# on core20 the firstboot seeding happens via the core.start-snapd service,
+# make sure to start after so that the 'snap' command is available
+After=core.start-snapd.service
 ConditionPathExists=!/var/lib/console-conf/complete
 StartLimitInterval=0
 
