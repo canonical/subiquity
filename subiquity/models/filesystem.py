@@ -678,6 +678,15 @@ class _Device(_Formattable, ABC):
             return _generic_can_DELETE(self)
 
 
+@fsobj("dasd")
+class Dasd(_Device):
+    device_id = attr.ib()
+    blocksize = attr.ib()
+    disk_layout = attr.ib()
+    label = attr.ib(default=None)
+    mode = attr.ib(default=None)
+
+
 @fsobj("disk")
 class Disk(_Device):
     ptable = attributes.ptable()
@@ -690,6 +699,7 @@ class Disk(_Device):
     preserve = attr.ib(default=False)
     name = attr.ib(default="")
     grub_device = attr.ib(default=False)
+    device_id = attr.ib(default=None)
 
     _info = attr.ib(default=None)
 
@@ -743,6 +753,12 @@ class Disk(_Device):
         if self.multipath:
             return self.wwn
         return self.serial or self.path
+
+    def dasd(self):
+        for o in self._m._actions:
+            if o.type == 'dasd' and o.device_id == self.device_id:
+                return o
+        return None
 
     def _potential_boot_partition(self):
         if self._m.bootloader == Bootloader.NONE:
@@ -1451,6 +1467,9 @@ class FilesystemModel(object):
         if flag in ("boot", "bios_grub", "prep"):
             disk._partitions.insert(0, disk._partitions.pop())
         disk.ptable = disk.ptable_for_new_partition()
+        dasd = disk.dasd()
+        if dasd is not None:
+            dasd.disk_layout = 'ldl'
         self._actions.append(p)
         return p
 
