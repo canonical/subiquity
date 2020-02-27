@@ -1455,21 +1455,22 @@ class FilesystemModel(object):
     def all_volgroups(self):
         return [a for a in self._actions if a.type == 'lvm_volgroup']
 
-    def add_partition(self, disk, size, flag="", wipe=None):
-        if size > disk.free_for_partitions:
-            raise Exception("%s > %s", size, disk.free_for_partitions)
+    def add_partition(self, device, size, flag="", wipe=None):
+        if size > device.free_for_partitions:
+            raise Exception("%s > %s", size, device.free_for_partitions)
         real_size = align_up(size)
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
-        if disk._fs is not None:
-            raise Exception("%s is already formatted" % (disk.label,))
+        if device._fs is not None:
+            raise Exception("%s is already formatted" % (device.label,))
         p = Partition(
-            m=self, device=disk, size=real_size, flag=flag, wipe=wipe)
+            m=self, device=device, size=real_size, flag=flag, wipe=wipe)
         if flag in ("boot", "bios_grub", "prep"):
-            disk._partitions.insert(0, disk._partitions.pop())
-        disk.ptable = disk.ptable_for_new_partition()
-        dasd = disk.dasd()
-        if dasd is not None:
-            dasd.disk_layout = 'ldl'
+            device._partitions.insert(0, device._partitions.pop())
+        device.ptable = device.ptable_for_new_partition()
+        if device.type == 'disk':
+            dasd = device.dasd()
+            if dasd is not None:
+                dasd.device_layout = 'ldl'
         self._actions.append(p)
         return p
 
