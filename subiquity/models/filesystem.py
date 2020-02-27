@@ -761,10 +761,7 @@ class Disk(_Device):
         return self.serial or self.path
 
     def dasd(self):
-        for o in self._m._actions:
-            if o.type == 'dasd' and o.device_id == self.device_id:
-                return o
-        return None
+        return self._m._one(type='dasd', device_id=self.device_id)
 
     def _potential_boot_partition(self):
         if self._m.bootloader == Bootloader.NONE:
@@ -1437,17 +1434,27 @@ class FilesystemModel(object):
         self._probe_data = probe_data
         self.reset()
 
-    def disk_by_path(self, path):
+    def _matcher(self, type, kw):
         for a in self._actions:
-            if a.type == 'disk' and a.path == path:
-                return a
-        raise KeyError("no disk with path {} found".format(path))
+            if a.type != type:
+                continue
+            for k, v in kw.items():
+                if getattr(a, k) != v:
+                    break
+            else:
+                yield a
 
-    def all_filesystems(self):
-        return [a for a in self._actions if a.type == 'format']
+    def _one(self, *, type, **kw):
+        try:
+            return next(self._matcher(type, kw))
+        except StopIteration:
+            return None
+
+    def _all(self, *, type, **kw):
+        return list(self._matcher(type, kw))
 
     def all_mounts(self):
-        return [a for a in self._actions if a.type == 'mount']
+        return self._all(type='mount')
 
     def all_devices(self):
         # return:
@@ -1464,19 +1471,14 @@ class FilesystemModel(object):
         disks.sort(key=lambda x: x.label)
         return compounds + disks
 
-    def all_partitions(self):
-        return [a for a in self._actions if a.type == 'partition']
-
     def all_disks(self):
-        return sorted(
-            [a for a in self._actions if a.type == 'disk'],
-            key=lambda x: x.label)
+        return sorted(self._all(type='disk'), key=lambda x: x.label)
 
     def all_raids(self):
-        return [a for a in self._actions if a.type == 'raid']
+        return self._all(type='raid')
 
     def all_volgroups(self):
-        return [a for a in self._actions if a.type == 'lvm_volgroup']
+        return self._all(type='lvm_volgroup')
 
     def add_partition(self, device, size, flag="", wipe=None):
         if size > device.free_for_partitions:
@@ -1599,10 +1601,7 @@ class FilesystemModel(object):
                 "unknown bootloader type {}".format(self.bootloader))
 
     def _mount_for_path(self, path):
-        for mount in self.all_mounts():
-            if mount.path == path:
-                return mount
-        return None
+        return self._one(type='mount', path=path)
 
     def is_root_mounted(self):
         return self._mount_for_path('/') is not None
@@ -1615,7 +1614,7 @@ class FilesystemModel(object):
         mount = self._mount_for_path('/')
         if mount is not None and mount.device.fstype == 'btrfs':
             return False
-        for fs in self.all_filesystems():
-            if fs.fstype == "swap":
+        for swap in self._all(type='format', fstype='swap'):
+            if swap.mount():
                 return False
         return True
