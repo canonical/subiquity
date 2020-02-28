@@ -452,7 +452,8 @@ class PartitionStretchy(Stretchy):
             if isinstance(disk, LVM_VolGroup):
                 add_name = _("logical volume")
             else:
-                add_name = _("partition")
+                add_name = _("{} partition").format(
+                    disk.ptable_for_new_partition().upper())
             title = _("Adding {} to {}").format(add_name, disk.label)
         else:
             if isinstance(disk, LVM_VolGroup):

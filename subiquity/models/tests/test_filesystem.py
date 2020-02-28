@@ -142,6 +142,7 @@ def make_disk(model, **kw):
     model._actions.append(Disk(
         m=model, serial=serial,
         info=FakeStorageInfo(size=100*(2**30)),
+        path='/dev/thing',
         **kw))
     disk = model._actions[-1]
     return disk

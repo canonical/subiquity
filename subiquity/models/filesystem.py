@@ -584,6 +584,17 @@ class _Device(_Formattable, ABC):
     # [Partition]
     _partitions = attributes.backlink(default=attr.Factory(list))
 
+    def ptable_for_new_partition(self):
+        if self.ptable is not None:
+            return self.ptable
+        for action in self._m._orig_config:
+            if action['id'] == self.id:
+                if action.get('ptable') == 'vtoc':
+                    return action['ptable']
+        if getattr(self, 'path', '').startswith('/dev/dasd'):
+            return 'vtoc'
+        return 'gpt'
+
     def partitions(self):
         return self._partitions
 
@@ -667,6 +678,15 @@ class _Device(_Formattable, ABC):
             return _generic_can_DELETE(self)
 
 
+@fsobj("dasd")
+class Dasd(_Device):
+    device_id = attr.ib()
+    blocksize = attr.ib()
+    disk_layout = attr.ib()
+    label = attr.ib(default=None)
+    mode = attr.ib(default=None)
+
+
 @fsobj("disk")
 class Disk(_Device):
     ptable = attributes.ptable()
@@ -679,6 +699,7 @@ class Disk(_Device):
     preserve = attr.ib(default=False)
     name = attr.ib(default="")
     grub_device = attr.ib(default=False)
+    device_id = attr.ib(default=None)
 
     _info = attr.ib(default=None)
 
@@ -733,6 +754,12 @@ class Disk(_Device):
             return self.wwn
         return self.serial or self.path
 
+    def dasd(self):
+        for o in self._m._actions:
+            if o.type == 'dasd' and o.device_id == self.device_id:
+                return o
+        return None
+
     def _potential_boot_partition(self):
         if self._m.bootloader == Bootloader.NONE:
             return None
@@ -784,9 +811,16 @@ class Disk(_Device):
                 return False
         return True
 
-    _can_PARTITION = property(
-        lambda self: not self._has_preexisting_partition() and
-        self.free_for_partitions > 0)
+    @property
+    def _can_PARTITION(self):
+        if self._has_preexisting_partition():
+            return False
+        if self.free_for_partitions <= 0:
+            return False
+        if self.ptable == 'vtoc' and len(self._partitions) >= 3:
+            return False
+        return True
+
     _can_FORMAT = property(
         lambda self: len(self._partitions) == 0 and
         self._constructed_device is None)
@@ -1421,18 +1455,22 @@ class FilesystemModel(object):
     def all_volgroups(self):
         return [a for a in self._actions if a.type == 'lvm_volgroup']
 
-    def add_partition(self, disk, size, flag="", wipe=None):
-        if size > disk.free_for_partitions:
-            raise Exception("%s > %s", size, disk.free_for_partitions)
+    def add_partition(self, device, size, flag="", wipe=None):
+        if size > device.free_for_partitions:
+            raise Exception("%s > %s", size, device.free_for_partitions)
         real_size = align_up(size)
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
-        if disk._fs is not None:
-            raise Exception("%s is already formatted" % (disk.label,))
+        if device._fs is not None:
+            raise Exception("%s is already formatted" % (device.label,))
         p = Partition(
-            m=self, device=disk, size=real_size, flag=flag, wipe=wipe)
+            m=self, device=device, size=real_size, flag=flag, wipe=wipe)
         if flag in ("boot", "bios_grub", "prep"):
-            disk._partitions.insert(0, disk._partitions.pop())
-        disk.ptable = 'gpt'
+            device._partitions.insert(0, device._partitions.pop())
+        device.ptable = device.ptable_for_new_partition()
+        if device.type == 'disk':
+            dasd = device.dasd()
+            if dasd is not None:
+                dasd.device_layout = 'ldl'
         self._actions.append(p)
         return p
 

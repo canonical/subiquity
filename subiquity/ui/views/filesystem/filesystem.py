@@ -353,6 +353,9 @@ class DeviceList(WidgetWrap):
             if action == DeviceAction.REMOVE and device.constructed_device():
                 cd = device.constructed_device()
                 label = _("Remove from {}").format(cd.desc())
+            if action == DeviceAction.PARTITION:
+                label = _("Add {} Partition").format(
+                    device.ptable_for_new_partition().upper())
             enabled, whynot = device.action_possible(action)
             if whynot:
                 assert not enabled
