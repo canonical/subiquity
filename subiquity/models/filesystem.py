@@ -604,6 +604,8 @@ class _Device(_Formattable, ABC):
             return self.size
         r = 0
         for p in self._partitions:
+            if p.flag == "extended":
+                continue
             r += p.size
         return r
 
@@ -878,6 +880,10 @@ class Partition(_Formattable):
             r.append("ESP")
         elif self.flag == "bios_grub":
             r.append("bios_grub")
+        elif self.flag == "extended":
+            r.append("extended")
+        elif self.flag == "logical":
+            r.append("logical")
         return r
 
     def usage_labels(self):
