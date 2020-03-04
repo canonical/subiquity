@@ -134,6 +134,13 @@ class Subiquity(Application):
         else:
             super().exit()
 
+    def restart(self):
+        self.urwid_loop.screen.stop()
+        cmdline = ['snap', 'run', 'subiquity']
+        if self.opts.dry_run:
+            cmdline = [sys.executable] + sys.argv
+        os.execvp(cmdline[0], cmdline)
+
     def make_screen(self):
         if self.interactive():
             return super().make_screen()

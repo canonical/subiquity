@@ -244,8 +244,7 @@ class ErrorReportStretchy(Stretchy):
         self.app.debug_shell()
 
     def restart(self, sender):
-        # We rely on systemd restarting us.
-        self.app.exit()
+        self.app.restart()
 
     def view_report(self, sender):
         self.app.run_command_in_foreground(["less", self.report.path])

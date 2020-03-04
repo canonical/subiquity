@@ -90,9 +90,9 @@ class RefreshController(SubiquityController):
             except requests.exceptions.RequestException as e:
                 raise e
             if change['status'] == 'Done':
-                # Will only get here dry run mode as part of the refresh is us
-                # getting restarted by snapd...
-                return
+                # Clearly if we got here we didn't get restarted by
+                # snapd/systemctl (dry-run mode or logged in via SSH)
+                self.app.restart()
             if change['status'] not in ['Do', 'Doing']:
                 raise Exception("update failed")
             await asyncio.sleep(0.1)
