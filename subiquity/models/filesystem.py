@@ -690,6 +690,7 @@ class Dasd:
     disk_layout = attr.ib()
     label = attr.ib(default=None)
     mode = attr.ib(default=None)
+    preserve = attr.ib(default=False)
 
 
 @fsobj("disk")
@@ -1479,6 +1480,7 @@ class FilesystemModel(object):
         dasd = device.dasd()
         if dasd is not None:
             dasd.device_layout = 'ldl'
+            dasd.preserve = False
         self._actions.append(p)
         return p
 
