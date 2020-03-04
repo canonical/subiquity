@@ -584,6 +584,9 @@ class _Device(_Formattable, ABC):
     # [Partition]
     _partitions = attributes.backlink(default=attr.Factory(list))
 
+    def dasd(self):
+        return None
+
     def ptable_for_new_partition(self):
         if self.ptable is not None:
             return self.ptable
@@ -591,7 +594,7 @@ class _Device(_Formattable, ABC):
             if action['id'] == self.id:
                 if action.get('ptable') == 'vtoc':
                     return action['ptable']
-        if getattr(self, 'path', '').startswith('/dev/dasd'):
+        if self.dasd() is not None:
             return 'vtoc'
         return 'gpt'
 
@@ -1473,10 +1476,9 @@ class FilesystemModel(object):
         if flag in ("boot", "bios_grub", "prep"):
             device._partitions.insert(0, device._partitions.pop())
         device.ptable = device.ptable_for_new_partition()
-        if device.type == 'disk':
-            dasd = device.dasd()
-            if dasd is not None:
-                dasd.device_layout = 'ldl'
+        dasd = device.dasd()
+        if dasd is not None:
+            dasd.device_layout = 'ldl'
         self._actions.append(p)
         return p
 
