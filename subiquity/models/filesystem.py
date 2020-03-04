@@ -681,7 +681,7 @@ class _Device(_Formattable, ABC):
 
 
 @fsobj("dasd")
-class Dasd(_Device):
+class Dasd:
     device_id = attr.ib()
     blocksize = attr.ib()
     disk_layout = attr.ib()
