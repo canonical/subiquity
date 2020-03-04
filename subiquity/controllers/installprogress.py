@@ -418,8 +418,9 @@ class InstallProgressController(SubiquityController):
                     stdout=output, stderr=subprocess.STDOUT)
         except Exception:
             log.exception("saving journal failed")
-        autoinstall_path = os.path.join(target_logs, 'autoinstall.yaml')
-        autoinstall_config = yaml.dump(self.app.make_autoinstall())
+        autoinstall_path = os.path.join(target_logs, 'autoinstall-user-data')
+        autoinstall_config = "#cloud-config\n" + yaml.dump(
+            {"autoinstall": self.app.make_autoinstall()})
         write_file(autoinstall_path, autoinstall_config, mode=0o600)
 
     async def _click_reboot(self):
