@@ -154,6 +154,10 @@ class FilesystemController(SubiquityController):
                 disks = self.model.all_disks()
                 disks.sort(key=lambda x: x.size)
                 meth(disks[-1])
+        elif 'config' in self.ai_data:
+            with self.context.child("applying_autoinstall"):
+                # needs to account for grub and swap data too.
+                self.model.apply_autoinstall_config(self.ai_data['config'])
 
     def start(self):
         self._start_task = schedule_task(self._start())
