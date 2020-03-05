@@ -1257,7 +1257,11 @@ class FilesystemModel(object):
             self._actions = []
         self.grub_install_device = None
 
-    def _actions_from_config(self, config, blockdevs):
+    def apply_autoinstall_config(self, ai_config):
+        self._actions = self._actions_from_config(
+            ai_config, self._probe_data['blockdev'], is_autoinstall=True)
+
+    def _actions_from_config(self, config, blockdevs, is_autoinstall=False):
         """Convert curtin storage config into action instances.
 
         curtin represents storage "actions" as defined in
@@ -1284,7 +1288,7 @@ class FilesystemModel(object):
         exclusions = set()
         seen_multipaths = set()
         for action in config:
-            if action['type'] == 'mount':
+            if not is_autoinstall and action['type'] == 'mount':
                 exclusions.add(byid[action['device']])
                 continue
             c = _type_to_cls.get(action['type'], None)
@@ -1313,7 +1317,8 @@ class FilesystemModel(object):
             if kw['type'] == 'disk':
                 path = kw['path']
                 kw['info'] = StorageInfo({path: blockdevs[path]})
-            kw['preserve'] = True
+            if not is_autoinstall:
+                kw['preserve'] = True
             obj = byid[action['id']] = c(m=self, **kw)
             multipath = kw.get('multipath')
             if multipath:

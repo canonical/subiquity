@@ -83,12 +83,15 @@ class FilesystemController(SubiquityController):
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
-        if not self.interactive() and data is None:
-            data = {
-                'layout': {
-                    'name': 'lvm',
-                    },
-                }
+        if data is None:
+            if not self.interactive():
+                data = {
+                    'layout': {
+                        'name': 'lvm',
+                        },
+                    }
+            else:
+                data = {}
         log.debug("self.ai_data = %s", data)
         self.ai_data = data
 
@@ -154,6 +157,10 @@ class FilesystemController(SubiquityController):
                 disks = self.model.all_disks()
                 disks.sort(key=lambda x: x.size)
                 meth(disks[-1])
+        elif 'config' in self.ai_data:
+            with self.context.child("applying_autoinstall"):
+                # needs to account for grub and swap data too.
+                self.model.apply_autoinstall_config(self.ai_data['config'])
 
     def start(self):
         self._start_task = schedule_task(self._start())
@@ -661,7 +668,7 @@ class FilesystemController(SubiquityController):
             }
         self.partition_disk_handler(disk, None, result)
 
-    def guided_lvm(self, disk, lvm_options):
+    def guided_lvm(self, disk, lvm_options=None):
         self.reformat(disk)
         if DeviceAction.MAKE_BOOT in disk.supported_actions:
             self.make_boot_disk(disk)
@@ -677,7 +684,7 @@ class FilesystemController(SubiquityController):
                 fstype=None,
                 ))
         spec = dict(name="ubuntu-vg", devices=set([part]))
-        if lvm_options['encrypt']:
+        if lvm_options and lvm_options['encrypt']:
             spec['password'] = lvm_options['luks_options']['password']
         # create volume group on partition
         vg = self.create_volgroup(spec)
