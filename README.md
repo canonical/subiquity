@@ -10,7 +10,7 @@ https://bugs.launchpad.net/subiquity. Snappy first boot issues can
 also be discussed in the forum at https://forum.snapcraft.io.
 
 Our localization platform is Launchpad, translations are managed at
-https://translations.launchpad.net/subiquity
+https://translations.launchpad.net/ubuntu/+source/subiquity/
 
 # Acquire subiquity from source
 
