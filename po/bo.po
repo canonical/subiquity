@@ -1,4 +1,4 @@
-# French translation for subiquity
+# Tibetan translation for subiquity
 # Copyright (c) 2019 Rosetta Contributors and Canonical Ltd 2019
 # This file is distributed under the same license as the subiquity package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
@@ -8,9 +8,9 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2020-03-05 10:00+0000\n"
-"PO-Revision-Date: 2019-07-01 14:11+0000\n"
+"PO-Revision-Date: 2019-12-12 00:58+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: French <fr@li.org>\n"
+"Language-Team: Tibetan <bo@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -19,27 +19,27 @@ msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:141
 msgid "An error has occurred"
-msgstr "Une erreur est survenue"
+msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:292
 msgid "Installation complete!"
-msgstr "L'installation est terminée!"
+msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:293
 msgid "Finished install!"
-msgstr "L'installation est finie!"
+msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:432
 msgid "Installing system"
-msgstr "Installation du système"
+msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:434
 msgid "Install complete!"
-msgstr "Installation terminée !"
+msgstr ""
 
 #: ../subiquity/controllers/installprogress.py:437
 msgid "An error occurred during installation"
-msgstr "Une erreur est survenue durant l'installation"
+msgstr ""
 
 #: ../subiquitycore/controllers/network.py:287
 msgid "autoconfiguration failed"
@@ -74,26 +74,26 @@ msgstr ""
 #: ../subiquitycore/models/network.py:43 ../subiquity/models/filesystem.py:401
 #: ../subiquity/ui/views/filesystem/delete.py:82
 msgid "Delete"
-msgstr "Supprimer"
+msgstr ""
 
 #: ../subiquitycore/ui/form.py:362
 msgid ", or "
-msgstr ", ou "
+msgstr ""
 
 #: ../subiquitycore/ui/form.py:364
 msgid " or "
-msgstr " ou "
+msgstr ""
 
 #: ../subiquitycore/ui/form.py:367
 #, python-format
 msgid "This field must be a %s URL."
-msgstr "Ce champ doit être une URL %s."
+msgstr ""
 
 #: ../subiquitycore/ui/form.py:446 ../subiquitycore/ui/views/network.py:150
 #: ../subiquity/ui/views/filesystem/filesystem.py:506
 #: ../subiquity/ui/views/snaplist.py:479
 msgid "Done"
-msgstr "Terminé"
+msgstr ""
 
 #: ../subiquitycore/ui/form.py:447
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:32
@@ -103,19 +103,19 @@ msgstr "Terminé"
 #: ../subiquity/ui/views/snaplist.py:260 ../subiquity/ui/views/snaplist.py:287
 #: ../subiquity/ui/views/ssh.py:161
 msgid "Cancel"
-msgstr "Annuler"
+msgstr ""
 
 #: ../subiquitycore/ui/interactive.py:109 ../subiquity/ui/views/keyboard.py:227
 #: ../subiquity/ui/views/ssh.py:186
 msgid "Yes"
-msgstr "Oui"
+msgstr ""
 
 #: ../subiquitycore/ui/interactive.py:109
 #: ../subiquity/ui/views/filesystem/filesystem.py:98
 #: ../subiquity/ui/views/keyboard.py:228 ../subiquity/ui/views/ssh.py:97
 #: ../subiquity/ui/views/ssh.py:187
 msgid "No"
-msgstr "Non"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:86
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:146
@@ -126,35 +126,35 @@ msgstr "Non"
 #: ../subiquity/ui/views/filesystem/partition.py:342
 #: ../subiquity/ui/views/filesystem/raid.py:141
 msgid "Save"
-msgstr "Sauvegarder"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:88
 msgid "Subnet:"
-msgstr "Masque de sous-réseau:"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:89
 msgid "Address:"
-msgstr "Adresse :"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:90
 msgid "Gateway:"
-msgstr "Passerelle :"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:91
 msgid "Name servers:"
-msgstr "Serveurs DNS :"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:92
 msgid "IP addresses, comma separated"
-msgstr "Adresses IP, séparées par des virgules"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:93
 msgid "Search domains:"
-msgstr "Domaines de recherche :"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:94
 msgid "Domains, comma separated"
-msgstr "Noms de domaines, séparés par des virgules"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:102
 msgid "should be in CIDR form ({})"
@@ -163,7 +163,7 @@ msgstr ""
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:113
 #, python-format
 msgid "'%s' is not contained in '%s'"
-msgstr "« %s » n'est pas contenu dans « %s »"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:139
 msgid "Automatic (DHCP)"
@@ -171,7 +171,7 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:140
 msgid "Manual"
-msgstr "Manuel"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:141
 msgid "Disabled"
@@ -188,7 +188,7 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/partition.py:332
 #: ../subiquity/ui/views/filesystem/raid.py:125
 msgid "Create"
-msgstr "Créer"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:270
 msgid "VLAN ID:"
@@ -209,7 +209,7 @@ msgstr ""
 #: ../subiquity/ui/views/installprogress.py:68
 #: ../subiquity/ui/views/snaplist.py:329 ../subiquity/ui/views/ssh.py:223
 msgid "Close"
-msgstr "Fermer"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:330
 #: ../subiquity/ui/views/filesystem/disk_info.py:55
@@ -257,20 +257,17 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:69
 msgid "Network interface {} WIFI configuration"
-msgstr "Interface réseau {} configuration WIFI"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network.py:76
 msgid "Network connections"
-msgstr "Connections réseau"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network.py:77
 msgid ""
 "Configure at least one interface this server can use to talk to other "
 "machines, and which preferably provides sufficient access for updates."
 msgstr ""
-"Configurez au moins une interface pour que ce serveur puisse communiquer "
-"avec les autres machines sur le réseau, préférablement un réseau avec accès "
-"aux mises à jour."
 
 #. See _route_watcher
 #: ../subiquitycore/ui/views/network.py:108
@@ -284,7 +281,7 @@ msgstr ""
 #: ../subiquity/ui/views/refresh.py:280 ../subiquity/ui/views/snaplist.py:480
 #: ../subiquity/ui/views/ssh.py:107
 msgid "Back"
-msgstr "Retour"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network.py:152
 msgid "Continue without network"
@@ -349,7 +346,7 @@ msgstr ""
 
 #: ../subiquity/models/filesystem.py:194 ../subiquity/models/filesystem.py:204
 msgid "{!r} is not valid input"
-msgstr "{!r} n'est pas une entrée valide"
+msgstr ""
 
 #: ../subiquity/models/filesystem.py:395
 msgid "Edit"
@@ -473,11 +470,11 @@ msgstr ""
 
 #: ../subiquity/models/filesystem.py:755
 msgid "local disk"
-msgstr "disque local"
+msgstr ""
 
 #: ../subiquity/models/filesystem.py:899
 msgid "partition of {}"
-msgstr "partition de {}"
+msgstr ""
 
 #: ../subiquity/models/filesystem.py:903
 msgid "partition {} of {}"
@@ -627,44 +624,37 @@ msgid ""
 "\n"
 "Are you sure you want to continue?"
 msgstr ""
-"Sélectionner Continuer ci-dessous va commencer le processus d'installation "
-"dont va résulter une perte des données sur le disque formaté.\n"
-"\n"
-"Vous ne pourrez pas revenir ici ou à un écran précédent le lancement de "
-"l'installation.\n"
-"\n"
-"Êtes-vous certain de vouloir continuer ?"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:99
 #: ../subiquity/ui/views/snaplist.py:397 ../subiquity/ui/views/snaplist.py:406
 msgid "Continue"
-msgstr "Continuer"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:102
 msgid "Confirm destructive action"
-msgstr "Confirmer l'action"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:168
 msgid "No disks or partitions mounted."
-msgstr "Aucun disque ou partition monté."
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:193
 msgid "MOUNT POINT"
-msgstr "POINT DE MONTAGE"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:194
 #: ../subiquity/ui/views/filesystem/filesystem.py:397
 msgid "SIZE"
-msgstr "TAILLE"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:195
 #: ../subiquity/ui/views/filesystem/filesystem.py:396
 msgid "TYPE"
-msgstr "TYPE"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:196
 msgid "DEVICE TYPE"
-msgstr "TYPE DE PÉRIPHÉRIQUE"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:219
 msgid "Unmount"
@@ -688,11 +678,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:395
 msgid "DEVICE"
-msgstr "PÉRIPHÉRIQUE"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:424
 msgid "free space"
-msgstr "espace libre"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:438
 msgid "Storage configuration"
@@ -708,11 +698,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:459
 msgid "FILE SYSTEM SUMMARY"
-msgstr "SOMMAIRE DU SYSTÈME DE FICHIERS"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:464
 msgid "AVAILABLE DEVICES"
-msgstr "DISQUES DISPONIBLES"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:471
 msgid "USED DEVICES"
@@ -728,7 +718,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:510
 msgid "Reset"
-msgstr "Rétablir"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:48
 msgid "Configure a guided storage layout, or create a custom one:"
@@ -747,12 +737,12 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/guided.py:58
 #: ../subiquity/ui/views/identity.py:125
 msgid "Password must be set"
-msgstr "Le mot de passe doit être défini"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:62
 #: ../subiquity/ui/views/identity.py:129
 msgid "Passwords do not match"
-msgstr "Les mots de passe ne correspondent pas."
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:75
 msgid "Encrypt the LVM group with LUKS"
@@ -939,7 +929,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/partition.py:247
 msgid "Path exceeds PATH_MAX"
-msgstr "Le Path excède PATH_MAX"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/partition.py:250
 msgid "{} is already mounted at {}."
@@ -962,15 +952,6 @@ msgid ""
 "unformatted partition is needed at the start of the disk. It will not "
 "contain a filesystem and will not be mounted, and cannot be edited here."
 msgstr ""
-"Partition bootloader requise\n"
-"\n"
-"GRUB sera installé sur le MBR du disque cible.\n"
-"\n"
-"Cependant, sur un disque avec une table de partition GPT, il n'y a pas "
-"suffisamment d'espace après le MBR de GRUB pour stocker cette seconde couche "
-"core.img, donc une petite partition non-formatée est nécessaire au démarrage "
-"du disque. Elle ne contiendra pas de système de fichier et ne sera pas "
-"montée, et ne peut pas être éditée ici."
 
 #: ../subiquity/ui/views/filesystem/partition.py:284
 msgid ""
@@ -1002,7 +983,7 @@ msgstr ""
 #: ../subiquity/ui/views/keyboard.py:95 ../subiquity/ui/views/keyboard.py:145
 #: ../subiquity/ui/views/keyboard.py:358
 msgid "OK"
-msgstr "Valider"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/partition.py:384
 msgid "Use existing fat32 filesystem"
@@ -1036,7 +1017,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/partition.py:526
 msgid "Format and/or mount {}"
-msgstr "Formater et/ou monter {}"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/probing.py:40
 msgid "Waiting for storage probing to complete"
@@ -1093,68 +1074,63 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:50
 msgid "The characters : , and = are not permitted in this field"
-msgstr "Les caractères : , et = ne sont pas autorisés dans ce champ"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:60
 msgid "The only characters permitted in this field are a-z, 0-9, _ and -"
-msgstr "Les seuls caractères autorisés dans ce champ sont a-z, 0-9, _ et -"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:84
 msgid "Your name:"
-msgstr "Votre nom :"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:86
 msgid "Your server's name:"
-msgstr "Le nom de cette machine:"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:87
 msgid "The name it uses when it talks to other computers."
-msgstr "Le nom qu’il utilise pour communiquer avec d’autres ordinateurs."
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:88
 msgid "Pick a username:"
-msgstr "Choisir un nom d’utilisateur :"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:89
 msgid "Choose a password:"
-msgstr "Choisir un mot de passe :"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:90
 msgid "Confirm your password:"
-msgstr "Confirmer votre mot de passe:"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:94
 msgid "Realname too long, must be < "
-msgstr "Le nom réel est trop long, doit être moins de   caractères "
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:98
 msgid "Server name must not be empty"
-msgstr "Le nom de la machine ne doit pas être vide"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:101
 msgid "Server name too long, must be < "
 msgstr ""
-"Le nom de la machine est trop long, doit être moins de    charactères. "
 
 #: ../subiquity/ui/views/identity.py:105
 msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 msgstr ""
-"Le nom d'hôte doit correspondre à NAME_REGEX, c'est-à-dire [a-z_] [a-z0-9_-]*"
 
 #: ../subiquity/ui/views/identity.py:110
 msgid "Username missing"
-msgstr "Le nom d'utilisateur est manquant"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:113
 msgid "Username too long, must be < "
 msgstr ""
-"Le nom d'utilisateur est trop long, doit être moins de   caractères. "
 
 #: ../subiquity/ui/views/identity.py:116
 msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 msgstr ""
-"Le nom d'utilisateur doit correspondre à NAME_REGEX, c'est-à-dire [a-z_][a-"
-"z0-9_-]*"
 
 #: ../subiquity/ui/views/identity.py:120
 #, python-brace-format
@@ -1168,7 +1144,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:145
 msgid "Profile setup"
-msgstr "Configuration du profil"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:146
 msgid ""
@@ -1183,7 +1159,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:47
 msgid "Reboot Now"
-msgstr "Redémarrer maintenant"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:49
 msgid "View error report"
@@ -1191,11 +1167,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:51
 msgid "View full log"
-msgstr "Voir le journal complet"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:65
 msgid "Full installer output"
-msgstr "Sortie complète de l'installateur"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:113
 msgid "Cancel update and reboot"
@@ -1211,20 +1187,17 @@ msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:64
 msgid "Keyboard auto-detection"
-msgstr "Auto-détection du clavier"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:90
 msgid ""
 "Keyboard detection starting. You will be asked a series of questions about "
 "your keyboard. Press escape at any time to go back to the previous screen."
 msgstr ""
-"Début de la détection du clavier. On vous posera une série de questions sur "
-"votre clavier. Appuyez sur Échap à tout moment pour revenir à l'écran "
-"précédent."
 
 #: ../subiquity/ui/views/keyboard.py:108
 msgid "Keyboard auto detection failed, sorry"
-msgstr "La détection automatique du clavier a échoué, désolé"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:116
 msgid ""
@@ -1232,9 +1205,6 @@ msgid ""
 "\n"
 "Your keyboard was detected as:\n"
 msgstr ""
-"Détection automatique du clavier terminée.\n"
-"\n"
-"Votre clavier a été détecté comme :\n"
 
 #: ../subiquity/ui/views/keyboard.py:121
 msgid ""
@@ -1243,35 +1213,30 @@ msgid ""
 "another layout or run the automated detection again.\n"
 "\n"
 msgstr ""
-"\n"
-"Si cela est correct, sélectionnez Terminé dans l'écran suivant. Sinon, vous "
-"pouvez sélectionner une autre disposition ou exécuter à nouveau la détection "
-"automatique.\n"
-"\n"
 
 #: ../subiquity/ui/views/keyboard.py:135
 msgid "Layout"
-msgstr "Disposition"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:136
 msgid "Variant"
-msgstr "Variante"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:161
 msgid "Please press one of the following keys:"
-msgstr "Veuillez appuyer sur l'une des touches suivantes :"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:197 ../subiquity/ui/views/keyboard.py:205
 msgid "Input was not recognized, try again"
-msgstr "L'entrée n'a pas été reconnue, réessayez"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:222
 msgid "Is the following key present on your keyboard?"
-msgstr "Cette touche est-elle présente sur votre clavier ?"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:291
 msgid "Applying config"
-msgstr "Application de la configuration"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:303
 msgid ""
@@ -1285,125 +1250,110 @@ msgid ""
 "\n"
 "Not all listed keys are present on all keyboards. "
 msgstr ""
-"Vous aurez besoin d'un chemin pour basculer le clavier entre la disposition "
-"nationale et la disposition Latin standard.\n"
-"\n"
-"Les touches Alt Droite ou Verr Maj sont souvent choisies pour des raisons "
-"ergonomiques (dans le second cas, utiliser la combinaison Maj+Verr Maj pour "
-"basculer en majuscule standard). Alt+Maj est aussi une combinaison "
-"populaire, elle sera cependant perdue avec la configuration usuelle de Emacs "
-"et d'autres programmes qui l'utilisent pour des besoins spécifiques.\n"
-"\n"
-"Toutes les touches listées ne sont pas présentes sur tous les claviers. "
 
 #: ../subiquity/ui/views/keyboard.py:316
 msgid "Caps Lock"
-msgstr "Verr. Maj."
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:317
 msgid "Right Alt (AltGr)"
-msgstr "Alt Gr"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:318
 msgid "Right Control"
-msgstr "Ctrl droit"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:319
 msgid "Right Shift"
-msgstr "Majuscule de droite"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:320
 msgid "Right Logo key"
-msgstr "Touche « logo » de droite"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:321
 msgid "Menu key"
-msgstr "Touche Menu"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:322
 msgid "Alt+Shift"
-msgstr "Alt + Maj."
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:323
 msgid "Control+Shift"
-msgstr "Ctrl + Majuscule"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:324
 msgid "Control+Alt"
-msgstr "Ctrl[bnsp]+ Alt"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:325
 msgid "Alt+Caps Lock"
-msgstr "Alt + Verr. maj."
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:326
 msgid "Left Control+Left Shift"
-msgstr "Ctrl gauche + Majuscule gauche"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:327
 msgid "Left Alt"
-msgstr "Alt gauche"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:328
 msgid "Left Control"
-msgstr "Ctrl gauche"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:329
 msgid "Left Shift"
-msgstr "Majuscule gauche"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:330
 msgid "Left Logo key"
-msgstr "Touche « logo » de gauche"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:331
 msgid "Scroll Lock key"
-msgstr "Arrêt défil"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:332
 msgid "No toggling"
-msgstr "Pas de basculement"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:353
 msgid "Shortcut: "
-msgstr "Raccourci : "
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:363
 msgid "Select layout toggle"
-msgstr "Sélectionner la disposition des boutons"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:381
 msgid "Layout:"
-msgstr "Disposition :"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:382
 msgid "Variant:"
-msgstr "Variante :"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:387
 msgid "Keyboard configuration"
-msgstr "Configuration clavier"
+msgstr ""
 
 #: ../subiquity/ui/views/keyboard.py:417
 msgid ""
 "Please select the layout of the keyboard directly attached to the system, if "
 "any."
 msgstr ""
-"Veuillez sélectionner la disposition du clavier directement attaché au "
-"système, le cas échéant."
 
 #: ../subiquity/ui/views/keyboard.py:420
 msgid ""
 "Please select your keyboard layout below, or select \"Identify keyboard\" to "
 "detect your layout automatically."
 msgstr ""
-"Veuillez sélectionner votre disposition de clavier ci-dessous, ou "
-"sélectionner \"Identifier le clavier\" afin de détecter votre disposition "
-"automatiquement."
 
 #: ../subiquity/ui/views/keyboard.py:429
 msgid "Identify keyboard"
-msgstr "Identifier le clavier"
+msgstr ""
 
 #: ../subiquity/ui/views/mirror.py:32
 msgid ""
@@ -1430,27 +1380,20 @@ msgid ""
 "The proxy information should be given in the standard form of "
 "\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
-"Si vous avez besoin d'utiliser un proxy HTTP pour accéder à l'extérieur, "
-"entrez les informations du proxy ici. Autrement, laissez vide.\n"
-"\n"
-"Les informations du proxy devraient être données dans le format standard "
-"\"http://[[user][:pass]@]host[:port]/\"."
 
 #: ../subiquity/ui/views/proxy.py:43
 msgid "Proxy address:"
-msgstr "Adresse du proxy :"
+msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:48
 msgid "Configure proxy"
-msgstr "Configurer le proxy"
+msgstr ""
 
 #: ../subiquity/ui/views/proxy.py:49
 msgid ""
 "If this system requires a proxy to connect to the internet, enter its "
 "details here."
 msgstr ""
-"Si ce système nécessite un proxy pour se connecter à Internet, entrez ses "
-"détails ici."
 
 #: ../subiquity/ui/views/refresh.py:111
 msgid "Checking for installer update..."
@@ -1585,15 +1528,15 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:66
 msgid "Import Username:"
-msgstr "Importer le nom d'utilisateur :"
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:73
 msgid "Github Username:"
-msgstr "Nom d'utilisateur Github :"
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:80
 msgid "Launchpad Username:"
-msgstr "Nom d'utilisateur Launchpad :"
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:92
 msgid "Install OpenSSH server"
@@ -1601,19 +1544,19 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:95
 msgid "Import SSH identity:"
-msgstr "Importer une identité SSH:"
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:98
 msgid "from Github"
-msgstr "depuis Github"
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from Launchpad"
-msgstr "depuis Launchpad"
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:101
 msgid "You can import your SSH keys from Github or Launchpad."
-msgstr "Vous pouvez importer vos clés SSH depuis Github ou Launchpad."
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:105
 msgid "Allow password authentication over SSH"
@@ -1621,11 +1564,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:138
 msgid "This field must not be blank."
-msgstr "Ce champ ne doit pas être vide."
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:140
 msgid "SSH id too long, must be < "
-msgstr "L'identité SSH est trop longue, doit être moins de   caractères. "
+msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:144
 msgid ""
@@ -1639,9 +1582,6 @@ msgid ""
 "A Github username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
-"Un nom d'utilisateur Github ne peut contenir que des caractères "
-"alphanumériques ou des traits d'union simples et ne peut pas commencer ou se "
-"terminer par un trait d'union."
 
 #: ../subiquity/ui/views/ssh.py:160
 msgid "Fetching SSH keys..."
@@ -1685,54 +1625,7 @@ msgstr ""
 #: ../subiquity/ui/views/welcome.py:47
 msgid "Use UP, DOWN and ENTER keys to select your language."
 msgstr ""
-"Utilisez les flèches HAUT et BAS, et ENTRÉE pour sélectionner la langue "
-"d'installation"
 
 #: ../subiquity/ui/views/welcome.py:68
 msgid "Help choosing a language"
 msgstr ""
-
-#~ msgid "Filesystem setup"
-#~ msgstr "Configuration du système de fichiers"
-
-#~ msgid "Choose guided or manual partitioning"
-#~ msgstr "Choisir le partitionnement guidé ou manuel"
-
-#~ msgid "Select available disks to format and mount"
-#~ msgstr "Sélectionner un disque disponible et son point de montage"
-
-#~ msgid "Choose the installation target"
-#~ msgstr "Choisir la cible d'installation"
-
-#~ msgid "Thank you for using Ubuntu!"
-#~ msgstr "Merci d'utiliser Ubuntu!"
-
-#~ msgid "Please report this error in Launchpad"
-#~ msgstr "Veuillez signaler cette erreur sur Launchpad"
-
-#~ msgid "Select an interface to configure it or select Done to continue"
-#~ msgstr ""
-#~ "Selectionnez une interface à configurer ou sélectionnez Terminé pour "
-#~ "continuer."
-
-#~ msgid "Choose the disk to install to:"
-#~ msgstr "Choisir le disque où installer:"
-
-#~ msgid "Use An Entire Disk"
-#~ msgstr "Utiliser un disque entier"
-
-#~ msgid "Use UP, DOWN and ENTER keys to select your keyboard."
-#~ msgstr ""
-#~ "Utilisez les touches HAUT, BAS et ENTRÉE pour sélectionner votre clavier."
-
-#~ msgid "Install complete"
-#~ msgstr "Installation terminée"
-
-#~ msgid "Install in progress:"
-#~ msgstr "Installation en cours :"
-
-#~ msgid "starting..."
-#~ msgstr "démarrage..."
-
-#~ msgid "Exit To Shell"
-#~ msgstr "Sortir Du Shell"

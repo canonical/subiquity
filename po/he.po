@@ -1,234 +1,269 @@
 # Hebrew translation for subiquity
-# Copyright (c) 2018 Rosetta Contributors and Canonical Ltd 2018
+# Copyright (c) 2019 Rosetta Contributors and Canonical Ltd 2019
 # This file is distributed under the same license as the subiquity package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2018.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
-"POT-Creation-Date: 2018-04-20 13:27+1200\n"
-"PO-Revision-Date: 2018-04-18 09:59+0000\n"
+"POT-Creation-Date: 2020-03-05 10:00+0000\n"
+"PO-Revision-Date: 2020-03-05 11:28+0000\n"
 "Last-Translator: Yaron <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <he@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2018-04-23 21:28+0000\n"
-"X-Generator: Launchpad (build 18617)\n"
+"X-Launchpad-Export-Date: 2020-03-05 13:52+0000\n"
+"X-Generator: Launchpad (build e0878392dc799b267dea80578fa65500a5d74155)\n"
 
-#: ../subiquity/controllers/filesystem.py:58
-#: ../subiquity/controllers/filesystem.py:69
-#: ../subiquity/controllers/filesystem.py:78
-msgid "Filesystem setup"
-msgstr "הגדרת מערכת קבצים"
-
-#: ../subiquity/controllers/filesystem.py:59
-msgid "Choose guided or manual partitioning"
-msgstr "נא לבחור בחלוקה מודרכת או ידנית למחיצות"
-
-#: ../subiquity/controllers/filesystem.py:70
-msgid "Select available disks to format and mount"
-msgstr "בחירה מבין הכוננים הזמינים לפרמוט ועיגון"
-
-#: ../subiquity/controllers/filesystem.py:79
-msgid "Choose the installation target"
-msgstr "נא לבחור את יעד ההתקנה"
-
-#: ../subiquity/controllers/filesystem.py:98
-msgid "Filesystem error"
-msgstr "שגיאת מערכת קבצים"
-
-#: ../subiquity/controllers/filesystem.py:99
-msgid "Error while installing Ubuntu"
-msgstr "שגיאה בעת התקנת אובונטו"
-
-#: ../subiquity/controllers/filesystem.py:100
-msgid "Failed to obtain write permissions to /tmp"
-msgstr "השגת ההרשאות ל־‎/tmp נכשלה"
-
-#: ../subiquity/controllers/filesystem.py:114
-msgid "Partition, format, and mount {}"
-msgstr "חלוקה למחיצות, פרמוט ועיגון של {}"
-
-#: ../subiquity/controllers/filesystem.py:115
-msgid "Partition the disk, or format the entire device without partitions"
-msgstr "חלוקת הכונן למחיצות או פרמוט ההתקן כולו ללא מחיצות"
-
-#: ../subiquity/controllers/filesystem.py:125
-msgid "Select whole disk, or partition, to format and mount."
-msgstr "נא לבחור את כל הכונן, או מחיצה לפרמוט ועיגון."
-
-#: ../subiquity/controllers/filesystem.py:132
-msgid "Edit partition details format and mount."
-msgstr "עריכת פרטי המחיצה ועיגון."
-
-#: ../subiquity/controllers/filesystem.py:295
-msgid "Format and/or mount {}"
-msgstr "פרמוט ו/או עיגון של {}"
-
-#: ../subiquity/controllers/filesystem.py:296
-msgid "Format or mount whole disk."
-msgstr "פרמוט או עיגון של כונן מלא."
-
-#: ../subiquity/controllers/filesystem.py:305
-msgid "Mount partition {} of {}"
-msgstr "עיגון מחיצה {} מתוך {}"
-
-#: ../subiquity/controllers/filesystem.py:306
-msgid "Mount partition."
-msgstr "עיגון מחיצה."
-
-#: ../subiquity/controllers/filesystem.py:308
-msgid "Format and mount partition {} of {}"
-msgstr "פרמוט ועיגון מחיצה {} מתוך {}"
-
-#: ../subiquity/controllers/filesystem.py:309
-msgid "Format and mount partition."
-msgstr "פרמוט ועיגון מחיצה."
-
-#: ../subiquity/controllers/filesystem.py:380
-msgid "Select next or previous disks with n and p"
-msgstr "נא לבחור את הכוננים הבאים או הקודמים עם n‏ (next) ועם p‏ (previous)"
-
-#: ../subiquity/controllers/identity.py:34
-msgid "Profile setup"
-msgstr "הגדרת פרופיל"
-
-#: ../subiquity/controllers/identity.py:35
-msgid ""
-"Enter the username and password (or ssh identity) you will use to log in to "
-"the system."
-msgstr ""
-"נא להקליד את שם המשתמש והססמה (או זהות ssh) שמשמשים אותך לכניסה למערכת."
-
-#: ../subiquity/controllers/installpath.py:36
-msgid ""
-"Welcome to Ubuntu! The world's favourite platform for clouds, clusters, and "
-"amazing internet things. This is the installer for Ubuntu on servers and "
-"internet devices."
-msgstr ""
-"ברוך בואך לאובונטו! הפלטפורמה האהובה בעולם לסביבות ענן, קלאסטרים ודברים "
-"מדהימים באינטרנט. זו תכנית ההתקנה עבור אובונטו לשרתים והתקני אינטרנט."
-
-#: ../subiquity/controllers/installpath.py:40
-msgid "Use UP, DOWN arrow keys, and ENTER, to navigate options"
-msgstr "יש להשתמש בחצים: למעלה, למטה וב־Enter כדי לנווט בין האפשרויות"
-
-#: ../subiquity/controllers/installpath.py:72
-msgid ""
-"MAAS is Metal As A Service. Running on Ubuntu, it lets you treat physical "
-"servers like virtual machines (instances) in the cloud. Rather than having "
-"to manage each server individually, MAAS turns your bare metal into an "
-"elastic cloud-like resource. \n"
-"\n"
-"For further details, see https://maas.io/."
-msgstr ""
-"MAAS פירושו Metal As A Service (ברזלים כספקי שירות). כשהשירות הזה פעיל על "
-"אובונטו, הוא מאפשר לך להתייחס לשרתים פיזיים משל היו מכונות וירטואליות בענן. "
-"במקום לנהל כל שרת בנפרד, עם MAAS החומרה הפיזית שלך הופכת להיות משאב ענן "
-"גמיש. \n"
-"\n"
-"לפרטים נוספים, ניתן לבקר באתר https://maas.io/‎."
-
-#: ../subiquity/controllers/installpath.py:86
-msgid ""
-"A MAAS rack controller provides services to machines provisioned by MAAS in "
-"the fabric (group of trunked switches) it is attached to. The rack "
-"controller requires the accessible URL of a MAAS region controller."
-msgstr ""
-"פקד ארון (rack controller) של MAAS מספק שירותים למכונות בפיקוח של MAAS במארג "
-"(קבוצה של סוויצ׳ים שמחוברים זה לזה) אליו הוא מחובר. פקד הארון דורש את הכתובת "
-"החיצונית של הפקד האזורי של MAAS."
-
-#: ../subiquity/controllers/installprogress.py:75
+#: ../subiquity/controllers/installprogress.py:141
 msgid "An error has occurred"
-msgstr ""
+msgstr "אירעה שגיאה"
 
-#: ../subiquity/controllers/installprogress.py:159
-msgid "starting..."
-msgstr ""
-
-#: ../subiquity/controllers/installprogress.py:163
-msgid "Install in progress:"
-msgstr ""
-
-#: ../subiquity/controllers/installprogress.py:193
-msgid "Install complete"
-msgstr ""
-
-#: ../subiquity/controllers/installprogress.py:204
+#: ../subiquity/controllers/installprogress.py:292
 msgid "Installation complete!"
 msgstr "ההתקנה הושלמה!"
 
-#: ../subiquity/controllers/installprogress.py:205
+#: ../subiquity/controllers/installprogress.py:293
 msgid "Finished install!"
 msgstr "ההתקנה הסתיימה!"
 
-#: ../subiquity/controllers/installprogress.py:247
+#: ../subiquity/controllers/installprogress.py:432
 msgid "Installing system"
 msgstr "המערכת בהליכי התקנה"
 
-#: ../subiquity/controllers/installprogress.py:248
-#: ../subiquity/controllers/installprogress.py:251
-msgid "Thank you for using Ubuntu!"
-msgstr "תודה לך על השימוש באובונטו!"
-
-#: ../subiquity/controllers/installprogress.py:250
+#: ../subiquity/controllers/installprogress.py:434
 msgid "Install complete!"
 msgstr "ההתקנה הושלמה!"
 
-#: ../subiquity/controllers/installprogress.py:253
+#: ../subiquity/controllers/installprogress.py:437
 msgid "An error occurred during installation"
 msgstr "אירעה שגיאה במהלך ההתקנה"
 
-#: ../subiquity/controllers/installprogress.py:254
-msgid "Please report this error in Launchpad"
-msgstr "נא לדווח על התקלה הזאת ב־Launchpad"
+#: ../subiquitycore/controllers/network.py:287
+msgid "autoconfiguration failed"
+msgstr "ההגדרה האוטומטית נכשלה"
 
-#: ../subiquity/controllers/keyboard.py:48
-msgid "Keyboard configuration"
-msgstr ""
+#: ../subiquitycore/models/network.py:37 ../subiquity/models/filesystem.py:394
+msgid "Info"
+msgstr "מידע"
 
-#: ../subiquity/controllers/keyboard.py:50
-msgid ""
-"Please select the layout of the keyboard directly attached to the system, if "
-"any."
-msgstr ""
+#: ../subiquitycore/models/network.py:38
+msgid "Edit Wifi"
+msgstr "עריכת רשת אלחוטית"
 
-#: ../subiquity/controllers/keyboard.py:52
-msgid ""
-"Please select your keyboard layout below, or select \"Identify keyboard\" to "
-"detect your layout automatically."
-msgstr ""
+#: ../subiquitycore/models/network.py:39
+msgid "Edit IPv4"
+msgstr "עריכת IPv4"
 
-#: ../subiquity/controllers/keyboard.py:53
-msgid "Use UP, DOWN and ENTER keys to select your keyboard."
-msgstr "ניתן להשתמש בחצים למעלה, למטה וב־Enter כדי לבחור את המקלדת שלך."
+#: ../subiquitycore/models/network.py:40
+msgid "Edit IPv6"
+msgstr "עריכת IPv6"
 
-#: ../subiquity/controllers/proxy.py:33
-msgid "Configure proxy"
-msgstr "הגדרת מתווך"
+#: ../subiquitycore/models/network.py:41
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:431
+msgid "Edit bond"
+msgstr "עריכת מאגד"
 
-#: ../subiquity/controllers/proxy.py:34
-msgid ""
-"If this system requires a proxy to connect to the internet, enter its "
-"details here."
-msgstr ""
+#: ../subiquitycore/models/network.py:42
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:298
+msgid "Add a VLAN tag"
+msgstr "הוספת תגית VLAN"
 
-#: ../subiquity/controllers/welcome.py:34
-msgid "Please choose your preferred language"
-msgstr "נא לבחור את השפה המועדפת עליך"
+#: ../subiquitycore/models/network.py:43 ../subiquity/models/filesystem.py:401
+#: ../subiquity/ui/views/filesystem/delete.py:82
+msgid "Delete"
+msgstr "מחיקה"
 
-#: ../subiquity/controllers/welcome.py:35
-msgid "Use UP, DOWN and ENTER keys to select your language."
-msgstr "יש להשתמש בחצים: למעלה, למטה וב־Enter כדי לבחור את השפה שלך."
+#: ../subiquitycore/ui/form.py:362
+msgid ", or "
+msgstr ", או "
 
-#: ../subiquitycore/controllers/network.py:330
+#: ../subiquitycore/ui/form.py:364
+msgid " or "
+msgstr " או "
+
+#: ../subiquitycore/ui/form.py:367
+#, python-format
+msgid "This field must be a %s URL."
+msgstr "שדה זה חייב להיות %s."
+
+#: ../subiquitycore/ui/form.py:446 ../subiquitycore/ui/views/network.py:150
+#: ../subiquity/ui/views/filesystem/filesystem.py:506
+#: ../subiquity/ui/views/snaplist.py:479
+msgid "Done"
+msgstr "סיום"
+
+#: ../subiquitycore/ui/form.py:447
+#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:32
+#: ../subiquity/ui/views/filesystem/delete.py:87
+#: ../subiquity/ui/views/filesystem/delete.py:150
+#: ../subiquity/ui/views/keyboard.py:96 ../subiquity/ui/views/keyboard.py:359
+#: ../subiquity/ui/views/snaplist.py:260 ../subiquity/ui/views/snaplist.py:287
+#: ../subiquity/ui/views/ssh.py:161
+msgid "Cancel"
+msgstr "ביטול"
+
+#: ../subiquitycore/ui/interactive.py:109 ../subiquity/ui/views/keyboard.py:227
+#: ../subiquity/ui/views/ssh.py:186
+msgid "Yes"
+msgstr "כן"
+
+#: ../subiquitycore/ui/interactive.py:109
+#: ../subiquity/ui/views/filesystem/filesystem.py:98
+#: ../subiquity/ui/views/keyboard.py:228 ../subiquity/ui/views/ssh.py:97
+#: ../subiquity/ui/views/ssh.py:187
+msgid "No"
+msgstr "לא"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:86
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:146
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:390
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:432
+#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:50
+#: ../subiquity/ui/views/filesystem/lvm.py:151
+#: ../subiquity/ui/views/filesystem/partition.py:342
+#: ../subiquity/ui/views/filesystem/raid.py:141
+msgid "Save"
+msgstr "שמירה"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:88
+msgid "Subnet:"
+msgstr "רשת משנה:"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:89
+msgid "Address:"
+msgstr "כתובת:"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:90
+msgid "Gateway:"
+msgstr "שער גישה:"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:91
+msgid "Name servers:"
+msgstr "שרתי שמות:"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:92
+msgid "IP addresses, comma separated"
+msgstr "כתובות IP, מופרדות בפסיקים"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:93
+msgid "Search domains:"
+msgstr "שמות מתחם לחיפוש:"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:94
+msgid "Domains, comma separated"
+msgstr "שמות מתחם לחיפוש, מופרדים בפסיקים"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:102
+msgid "should be in CIDR form ({})"
+msgstr "אמור להיות בצורת CIDR ({})"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:113
+#, python-format
+msgid "'%s' is not contained in '%s'"
+msgstr "‚%s’ לא נכלל בתוך ‚%s’"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:139
+msgid "Automatic (DHCP)"
+msgstr "אוטומטי (DHCP)"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:140
+msgid "Manual"
+msgstr "ידני"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:141
+msgid "Disabled"
+msgstr "מושבת"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:159
+#, python-brace-format
+msgid "IPv{v} Method: "
+msgstr "שיטת IPv{v}: "
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:263
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:419
+#: ../subiquity/ui/views/filesystem/lvm.py:136
+#: ../subiquity/ui/views/filesystem/partition.py:332
+#: ../subiquity/ui/views/filesystem/raid.py:125
+msgid "Create"
+msgstr "יצירה"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:270
+msgid "VLAN ID:"
+msgstr "מזהה VLAN:"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:279
+msgid "VLAN ID must be between 1 and 4095"
+msgstr "מזהה ה־VLAN חייב להיות בין 1 ל־4095"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:286
+#, python-format
+msgid "%s already exists"
+msgstr "%s כבר קיים"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:328
+#: ../subiquity/ui/views/filesystem/disk_info.py:53
+#: ../subiquity/ui/views/filesystem/filesystem.py:265
+#: ../subiquity/ui/views/installprogress.py:68
+#: ../subiquity/ui/views/snaplist.py:329 ../subiquity/ui/views/ssh.py:223
+msgid "Close"
+msgstr "סגירה"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:330
+#: ../subiquity/ui/views/filesystem/disk_info.py:55
+msgid "Info for {}"
+msgstr "מידע על {}"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:384
+#: ../subiquity/ui/views/filesystem/lvm.py:87
+#: ../subiquity/ui/views/filesystem/raid.py:90
+msgid "Name:"
+msgstr "שם:"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:385
+msgid "Devices: "
+msgstr "התקנים: "
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:386
+msgid "Bond mode:"
+msgstr "מצב איגוד:"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:388
+msgid "XMIT hash policy:"
+msgstr "מדיניות גיבוב XMIT:"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:389
+msgid "LACP rate:"
+msgstr "קצב LACP:"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:402
+msgid "There is already a network device named \"{}\""
+msgstr "כבר יש התקן רשת בשם „{}”"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:405
+msgid "Name cannot be empty"
+msgstr "השם לא יכול להישאר ריק"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:407
+msgid "Name cannot be more than 16 characters long"
+msgstr "השם חייב להיות באורך 16 תווים ומטה"
+
+#: ../subiquitycore/ui/views/network_configure_manual_interface.py:418
+#: ../subiquitycore/ui/views/network.py:97
+msgid "Create bond"
+msgstr "יציאת מאגד"
+
+#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:69
+msgid "Network interface {} WIFI configuration"
+msgstr "הגדרות רשת אלחוטית למנשק הרשת {}"
+
+#: ../subiquitycore/ui/views/network.py:76
 msgid "Network connections"
 msgstr "חיבורי רשת"
 
-#: ../subiquitycore/controllers/network.py:331
+#: ../subiquitycore/ui/views/network.py:77
 msgid ""
 "Configure at least one interface this server can use to talk to other "
 "machines, and which preferably provides sufficient access for updates."
@@ -236,293 +271,357 @@ msgstr ""
 "עליך להגדיר לפחות מנשק אחד בשרת הזה כדי לאפשר תקשורת עם התקנים אחרים ועדיף "
 "שגם יאפשר גישה מספקת לעדכונים."
 
-#: ../subiquitycore/controllers/network.py:334
-msgid "Select an interface to configure it or select Done to continue"
-msgstr "נא לבחור מנשק כדי להגדיר אותו או ללחוץ על סיום כדי להמשיך"
-
-#: ../subiquitycore/controllers/network.py:423
-msgid "Network interface {}"
-msgstr ""
-
-#: ../subiquitycore/controllers/network.py:428
-msgid "Network interface {} manual IPv4 configuration"
-msgstr ""
-
-#: ../subiquitycore/controllers/network.py:433
-msgid "Network interface {} WIFI configuration"
-msgstr ""
-
-#: ../subiquitycore/controllers/network.py:438
-msgid "Network interface {} manual IPv6 configuration"
-msgstr ""
-
-#: ../subiquitycore/ui/form.py:279
-msgid ", or "
-msgstr ", או "
-
-#: ../subiquitycore/ui/form.py:281
-msgid " or "
-msgstr " או "
-
-#: ../subiquitycore/ui/form.py:284
-#, python-format
-msgid "This field must be a %s URL."
-msgstr "שדה זה חייב להיות %s."
-
-#: ../subiquitycore/ui/form.py:319
-#: ../subiquitycore/ui/views/network_configure_interface.py:148
-#: ../subiquitycore/ui/views/network.py:135
-#: ../subiquity/ui/views/filesystem/disk_info.py:42
-#: ../subiquity/ui/views/filesystem/disk_partition.py:51
-#: ../subiquity/ui/views/filesystem/filesystem.py:162
-msgid "Done"
-msgstr "סיום"
-
-#: ../subiquitycore/ui/form.py:320
-#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:22
-#: ../subiquitycore/ui/views/network.py:45
-#: ../subiquity/ui/views/filesystem/disk_partition.py:50
-#: ../subiquity/ui/views/filesystem/guided.py:70
-#: ../subiquity/ui/views/keyboard.py:84 ../subiquity/ui/views/keyboard.py:331
-msgid "Cancel"
-msgstr "ביטול"
-
-#: ../subiquitycore/ui/interactive.py:107 ../subiquity/ui/views/keyboard.py:204
-msgid "Yes"
-msgstr "כן"
-
-#: ../subiquitycore/ui/interactive.py:107
-#: ../subiquity/ui/views/filesystem/filesystem.py:61
-#: ../subiquity/ui/views/identity.py:108 ../subiquity/ui/views/keyboard.py:205
-msgid "No"
-msgstr "לא"
-
-#: ../subiquitycore/ui/views/network_configure_interface.py:107
-msgid "Use a static IPv4 configuration"
-msgstr "תצורת IPv4 קבועה"
-
-#: ../subiquitycore/ui/views/network_configure_interface.py:109
-msgid "Use DHCPv4 on this interface"
-msgstr "שימוש ב־DHCPv4 במנשק זה"
-
-#: ../subiquitycore/ui/views/network_configure_interface.py:111
-#: ../subiquitycore/ui/views/network_configure_interface.py:129
-msgid "Do not use"
-msgstr "לא להשתמש"
-
-#: ../subiquitycore/ui/views/network_configure_interface.py:125
-msgid "Use a static IPv6 configuration"
-msgstr "תצורת IPv6 קבועה"
-
-#: ../subiquitycore/ui/views/network_configure_interface.py:127
-msgid "Use DHCPv6 on this interface"
-msgstr "שימוש ב־DHCPv6 במנשק זה"
-
-#: ../subiquitycore/ui/views/network_configure_interface.py:143
-msgid "Configure WIFI settings"
-msgstr "הגדרת חיבור אלחוטי"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:66
-#: ../subiquitycore/ui/views/network_configure_wlan_interface.py:38
-#: ../subiquity/ui/views/filesystem/partition.py:200
-msgid "Save"
-msgstr "שמירה"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:68
-msgid "Subnet:"
-msgstr "רשת משנה:"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:69
-msgid "Address:"
-msgstr "כתובת:"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:70
-msgid "Gateway:"
-msgstr "שער גישה:"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
-msgid "Name servers:"
-msgstr "שרתי שמות:"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:71
-msgid "IP addresses, comma separated"
-msgstr "כתובות IP, מופרדות בפסיקים"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:72
-msgid "Search domains:"
-msgstr "שמות מתחם לחיפוש:"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:72
-msgid "Domains, comma separated"
-msgstr "שמות מתחם לחיפוש, מופרדים בפסיקים"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:77
-msgid "should be in CIDR form (xx.xx.xx.xx/yy)"
-msgstr ""
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:87
-#, python-format
-msgid "'%s' is not contained in '%s'"
-msgstr ""
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:123
-#, python-format
-msgid "Example: %s"
-msgstr "למשל: %s"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
-msgid "Set this as default gateway"
-msgstr "הגדרה כשער גישה כבררת מחדל"
-
-#: ../subiquitycore/ui/views/network_configure_manual_interface.py:155
-msgid "This will be your default gateway"
-msgstr "זה יהיה שער הגישה כבררת המחדל שלך"
-
-#: ../subiquitycore/ui/views/network.py:51
-msgid "Applying network config"
-msgstr "תצורת הרשת חלה"
-
-#: ../subiquitycore/ui/views/network.py:65
-#, python-format
-msgid "Associated to '%s', will associate to '%s'"
-msgstr "משויך אל ‚%s’, ישויך אל ‚%s’"
-
-#: ../subiquitycore/ui/views/network.py:67
-#, python-format
-msgid "Associated to '%s'"
-msgstr "משויך אל ‚%s’"
-
-#: ../subiquitycore/ui/views/network.py:69
-#, python-format
-msgid "No access point configured, but associated to '%s'"
-msgstr "לא הוגדרה נקודת גישה, אבל משוייך אל ‚%s’"
-
-#: ../subiquitycore/ui/views/network.py:72
-#, python-format
-msgid "Will associate to '%s'"
-msgstr "ישוייך אל ‚%s’"
-
-#: ../subiquitycore/ui/views/network.py:74
-msgid "No access point configured"
-msgstr "לא הוגדרה נקודת גישה"
-
-#: ../subiquitycore/ui/views/network.py:94
-#, python-format
-msgid "Will use DHCP for IPv%s, currently has address%%s:"
-msgstr "יעשה שימוש ב־DHCP עבור IPv%s, כרגע עם הכתובת%%s:"
-
-#: ../subiquitycore/ui/views/network.py:95
-#, python-format
-msgid "Will use DHCP for IPv%s"
-msgstr "ישתמש ב־DHCP עבור IPv%s"
-
-#: ../subiquitycore/ui/views/network.py:98
-#, python-format
-msgid "Using static address%%s for IPv%s:"
-msgstr "שימוש בכתובת%%s קבועה עבור IPv%s:"
-
-#: ../subiquitycore/ui/views/network.py:99
-#, python-format
-msgid "Will use static address%%s for IPv%s:"
-msgstr "ישתמש בכתובת%%s קבועה עבור IPv%s:"
-
-#: ../subiquitycore/ui/views/network.py:101
-#, python-format
-msgid "Currently has address%s:"
-msgstr "כרגע עם הכתובת%s:"
-
-#: ../subiquitycore/ui/views/network.py:104
-#, python-format
-msgid "Has no IPv%s configuration, currently has address%%s:"
-msgstr "אין תצורת IPv%s, כרגע עם הכתובת%%s:"
-
-#: ../subiquitycore/ui/views/network.py:106
-#, python-format
-msgid "IPv%s is not configured"
-msgstr "אין הגדרת IPv%s"
-
-#: ../subiquitycore/ui/views/network.py:134
-#: ../subiquity/ui/views/filesystem/filesystem.py:165
-#: ../subiquity/ui/views/filesystem/guided.py:46
-#: ../subiquity/ui/views/installpath.py:44
-#: ../subiquity/ui/views/keyboard.py:351
+#. See _route_watcher
+#: ../subiquitycore/ui/views/network.py:108
+#: ../subiquity/ui/views/filesystem/filesystem.py:511
+#: ../subiquity/ui/views/filesystem/guided.py:114
+#: ../subiquity/ui/views/filesystem/probing.py:53
+#: ../subiquity/ui/views/filesystem/probing.py:78
+#: ../subiquity/ui/views/keyboard.py:379 ../subiquity/ui/views/mirror.py:38
+#: ../subiquity/ui/views/proxy.py:41 ../subiquity/ui/views/refresh.py:157
+#: ../subiquity/ui/views/refresh.py:184 ../subiquity/ui/views/refresh.py:214
+#: ../subiquity/ui/views/refresh.py:280 ../subiquity/ui/views/snaplist.py:480
+#: ../subiquity/ui/views/ssh.py:107
 msgid "Back"
 msgstr "חזרה"
 
-#: ../subiquitycore/ui/views/network.py:161
-msgid "Not connected"
-msgstr "אין חיבור"
+#: ../subiquitycore/ui/views/network.py:152
+msgid "Continue without network"
+msgstr "להמשיך בלי רשת"
 
-#: ../subiquitycore/ui/views/network.py:204
-#, python-format
-msgid "  IPv4 default route %s."
-msgstr "  נתיב  IPv4 כבררת המחדל %s."
+#: ../subiquitycore/ui/views/network.py:165
+msgid "Applying changes"
+msgstr "השינויים חלים"
 
-#: ../subiquity/models/filesystem.py:62 ../subiquity/models/filesystem.py:72
+#: ../subiquitycore/ui/views/network.py:181
+msgid "not connected"
+msgstr "לא מחובר"
+
+#: ../subiquitycore/ui/views/network.py:186
+msgid "enslaved to {}"
+msgstr "משועבד אל {}"
+
+#: ../subiquitycore/ui/views/network.py:210
+msgid "timed out"
+msgstr "זמן הגישה פג"
+
+#: ../subiquitycore/ui/views/network.py:216
+msgid "unknown state {}"
+msgstr "מצב לא ידוע {}"
+
+#: ../subiquitycore/ui/views/network.py:225
+msgid "static"
+msgstr "סטטי"
+
+#: ../subiquitycore/ui/views/network.py:233
+msgid "disabled"
+msgstr "מושבת"
+
+#: ../subiquitycore/ui/views/network.py:351
+#, python-brace-format
+msgid "VLAN {id} on interface {link}"
+msgstr "VLAN {id} במנשק {link}"
+
+#: ../subiquitycore/ui/views/network.py:354
+msgid "bond master for {}"
+msgstr "מוביל המאגד עבור {}"
+
+#: ../subiquity/models/filesystem.py:146
+msgid "0 (striped)"
+msgstr "0 (פיצול)"
+
+#: ../subiquity/models/filesystem.py:147
+msgid "1 (mirrored)"
+msgstr "1 (שיקוף)"
+
+#: ../subiquity/models/filesystem.py:148
+msgid "5"
+msgstr "5"
+
+#: ../subiquity/models/filesystem.py:149
+msgid "6"
+msgstr "6"
+
+#: ../subiquity/models/filesystem.py:150
+msgid "10"
+msgstr "10"
+
+#: ../subiquity/models/filesystem.py:194 ../subiquity/models/filesystem.py:204
 msgid "{!r} is not valid input"
-msgstr ""
+msgstr "{!r} אינו קלט תקני"
 
-#: ../subiquity/models/filesystem.py:164
+#: ../subiquity/models/filesystem.py:395
+msgid "Edit"
+msgstr "עריכה"
+
+#. XXX summarize partitions here?
+#: ../subiquity/models/filesystem.py:396
+#: ../subiquity/ui/views/filesystem/delete.py:144
+msgid "Reformat"
+msgstr "פרמוט מחדש"
+
+#: ../subiquity/models/filesystem.py:397
+msgid "Add Partition"
+msgstr "הוספת מחיצה"
+
+#: ../subiquity/models/filesystem.py:398
+msgid "Create Logical Volume"
+msgstr "יצירת כרך לוגי"
+
+#: ../subiquity/models/filesystem.py:399
+msgid "Format"
+msgstr "פרמוט"
+
+#: ../subiquity/models/filesystem.py:400
+msgid "Remove from RAID/LVM"
+msgstr "הסרה מ־RAID/LVM"
+
+#: ../subiquity/models/filesystem.py:402
+msgid "Make Boot Device"
+msgstr "להפוך להתקן אתחול"
+
+#: ../subiquity/models/filesystem.py:410
+#, python-brace-format
+msgid "Cannot edit {selflabel} as it is part of the {cdtype} {cdname}."
+msgstr "לא ניתן לערוך את {selflabel} כיוון שהוא חלק מתוך {cdtype} {cdname}."
+
+#: ../subiquity/models/filesystem.py:422
+#, python-brace-format
+msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
+msgstr "לא ניתן להסיר את {selflabel} מתוך {cdtype} {cdlabel} קיים."
+
+#: ../subiquity/models/filesystem.py:433
+#, python-brace-format
+msgid ""
+"Removing {selflabel} would leave the {cdtype} {cdlabel} with less than "
+"{min_devices} devices."
+msgstr ""
+"הסרת {selflabel} תותיר את {cdtype} {cdlabel} עם פחות מ־{min_devices} התקנים."
+
+#: ../subiquity/models/filesystem.py:442
+#, python-brace-format
+msgid ""
+"Removing {selflabel} would leave the {cdtype} {cdlabel} with no devices."
+msgstr "הסרת {selflabel} תותיר את {cdtype} {cdlabel} ללא התקנים."
+
+#: ../subiquity/models/filesystem.py:455
+#, python-brace-format
+msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
+msgstr "לא ניתן למחוק את {selflabel} כיוון שהוא חלק מתוך {cdtype} {cdname}."
+
+#: ../subiquity/models/filesystem.py:478
+msgid "existing"
+msgstr "קיים"
+
+#: ../subiquity/models/filesystem.py:480
+msgid "new"
+msgstr "חדש"
+
+#: ../subiquity/models/filesystem.py:491
+#, python-brace-format
+msgid "{component_name} of {desc} {name}"
+msgstr "{component_name} מתוך {desc} {name}"
+
+#: ../subiquity/models/filesystem.py:499
+#, python-brace-format
+msgid "already formatted as {fstype}"
+msgstr "כבר מפורמט בתור {fstype}"
+
+#: ../subiquity/models/filesystem.py:501
+#, python-brace-format
+msgid "to be reformatted as {fstype}"
+msgstr "לפרמוט בתור {fstype}"
+
+#: ../subiquity/models/filesystem.py:503
+#, python-brace-format
+msgid "to be formatted as {fstype}"
+msgstr "לפרמוט בתור {fstype}"
+
+#: ../subiquity/models/filesystem.py:508
+#, python-brace-format
+msgid "mounted at {path}"
+msgstr "מעוגן תחת {path}"
+
+#: ../subiquity/models/filesystem.py:510
+msgid "not mounted"
+msgstr "לא מעוגן"
+
+#: ../subiquity/models/filesystem.py:513 ../subiquity/models/filesystem.py:518
+msgid "unused"
+msgstr "לא בשימוש"
+
+#: ../subiquity/models/filesystem.py:515
+msgid "used"
+msgstr "בשימוש"
+
+#: ../subiquity/models/filesystem.py:665
+#, python-brace-format
+msgid ""
+"Cannot delete {selflabel} as partition {partnum} is part of the {cdtype} "
+"{cdname}."
+msgstr ""
+"לא ניתן למחוק את {selflabel} כיוון שהמחיצה {partnum} היא חלק מתוך {cdtype} "
+"{cdname}."
+
+#: ../subiquity/models/filesystem.py:674
+#, python-brace-format
+msgid "Cannot delete {selflabel} because it has {count} mounted partitions."
+msgstr "לא ניתן למחוק את {selflabel} כיוון שיש לו {count} מחיצות מעוגנות."
+
+#: ../subiquity/models/filesystem.py:680
+#, python-brace-format
+msgid "Cannot delete {selflabel} because it has 1 mounted partition."
+msgstr "לא ניתן למחוק את {selflabel} כיוון שיש לו מחיצה אחת מעוגנת."
+
+#: ../subiquity/models/filesystem.py:755
 msgid "local disk"
-msgstr ""
+msgstr "כונן מקומי"
 
-#: ../subiquity/models/filesystem.py:202
+#: ../subiquity/models/filesystem.py:899
 msgid "partition of {}"
-msgstr ""
+msgstr "מחיצה בתוך {}"
 
-#: ../subiquity/models/installpath.py:36
-msgid "Install Ubuntu"
-msgstr "התקנת אובונטו"
+#: ../subiquity/models/filesystem.py:903
+msgid "partition {} of {}"
+msgstr "מחיצה {} מתוך {}"
 
-#: ../subiquity/models/installpath.py:37
-msgid "Install MAAS bare-metal cloud (region)"
-msgstr ""
+#: ../subiquity/models/filesystem.py:907
+msgid "partition {}"
+msgstr "מחיצה {}"
 
-#: ../subiquity/models/installpath.py:38
-msgid "Install MAAS bare-metal cloud (rack)"
-msgstr ""
+#: ../subiquity/models/filesystem.py:935
+msgid ""
+"Cannot delete a single partition from a device that already has partitions."
+msgstr "אי אפשר למחוק מחיצה בודדת מהתקן שכבר מחולק למחיצות."
 
-#: ../subiquity/ui/mount.py:54
-msgid "other"
+#: ../subiquity/models/filesystem.py:938
+msgid "Cannot delete required bootloader partition"
+msgstr "לא ניתן למחוק מחיצת אתחול הכרחית."
+
+#: ../subiquity/models/filesystem.py:989
+msgid "software RAID {}"
+msgstr "RAID תכנתי {}"
+
+#: ../subiquity/models/filesystem.py:1002
+msgid "Cannot edit pre-existing RAIDs."
+msgstr "לא ניתן לערוך מערכי RAID קיימים."
+
+#: ../subiquity/models/filesystem.py:1005
+#, python-brace-format
+msgid "Cannot edit {selflabel} because it has partitions."
+msgstr "לא ניתן לערוך את {selflabel} כיוון שיש לו מחיצות."
+
+#: ../subiquity/models/filesystem.py:1073
+msgid "Cannot edit pre-existing volume groups."
+msgstr "לא ניתן לערוך קבוצות כרכים קיימות."
+
+#: ../subiquity/models/filesystem.py:1076
+#, python-brace-format
+msgid "Cannot edit {selflabel} because it has logical volumes."
+msgstr "לא ניתן לערוך את {selflabel} כיוון שהוא מכיל כרכים לוגיים."
+
+#: ../subiquity/models/filesystem.py:1133
+msgid ""
+"Cannot delete a single logical volume from a volume group that already has "
+"logical volumes."
+msgstr "לא ניתן למחוק כרך לוגי בודד מקבוצת כרכים שכבר יש בה כרכים לוגיים."
+
+#: ../subiquity/ui/mount.py:71
+msgid "Other"
 msgstr "אחר"
 
-#: ../subiquity/ui/mount.py:56
-msgid "leave unmounted"
-msgstr "להשאיר ללא עגינה"
+#: ../subiquity/ui/mount.py:73
+msgid "Leave unmounted"
+msgstr "להשאיר לא מעוגן"
 
-#: ../subiquity/ui/views/filesystem/disk_partition.py:59
-msgid "Add another partition"
+#: ../subiquity/ui/views/filesystem/compound.py:129
+msgid "formatted as {}"
+msgstr "מפורמט בתור {}"
+
+#: ../subiquity/ui/views/filesystem/compound.py:131
+msgid ", mounted at {}"
+msgstr ", מעוגן תחת {}"
+
+#: ../subiquity/ui/views/filesystem/compound.py:133
+msgid ", not mounted"
+msgstr ", לא מעוגן"
+
+#: ../subiquity/ui/views/filesystem/compound.py:135
+msgid "unused {}"
+msgstr "לא בשימוש {}"
+
+#: ../subiquity/ui/views/filesystem/compound.py:215
+msgid ""
+"If you put all disks into RAIDs or LVM VGs, there will be nowhere to put the "
+"boot partition."
 msgstr ""
+"אם כל הכוננים יוצבו בתוך RAID או קבוצות כרכים (VG) במנהל כרכים לוגי (LVM) לא "
+"יהיה איפה להציב את מחיצת האתחול."
 
-#: ../subiquity/ui/views/filesystem/disk_partition.py:61
-msgid "Add first partition"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/delete.py:40
+#, python-brace-format
+msgid "Do you really want to delete the {desc} {label}?"
+msgstr "למחוק את {desc} {label}?"
 
-#: ../subiquity/ui/views/filesystem/disk_partition.py:88
-msgid "entire disk"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/delete.py:50
+#: ../subiquity/ui/views/filesystem/delete.py:120
+#, python-brace-format
+msgid "It is formatted as {fstype} and mounted at {path}"
+msgstr "הוא מפורמט בתור {fstype} ומעוגן תחת {path}"
 
-#: ../subiquity/ui/views/filesystem/disk_partition.py:91
-msgid "Partition {}"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/delete.py:56
+#: ../subiquity/ui/views/filesystem/delete.py:126
+#, python-brace-format
+msgid "It is formatted as {fstype} and not mounted."
+msgstr "הוא מפורמט בתור {fstype} ולא מעוגן."
 
-#: ../subiquity/ui/views/filesystem/disk_partition.py:98
-msgid "free space"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/delete.py:62
+#: ../subiquity/ui/views/filesystem/partition.py:453
+msgid "logical volume"
+msgstr "כרך לוגי"
 
-#: ../subiquity/ui/views/filesystem/disk_partition.py:107
-msgid "Select as boot disk"
-msgstr "בחירה ככונן אתחול"
+#: ../subiquity/ui/views/filesystem/delete.py:64
+#: ../subiquity/ui/views/filesystem/delete.py:130
+msgid "logical volumes"
+msgstr "כרכים לוגיים"
 
-#: ../subiquity/ui/views/filesystem/disk_partition.py:110
-msgid "Format or create swap on entire device (unusual, advanced)"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/delete.py:67
+msgid "partition"
+msgstr "מחיצה"
 
-#: ../subiquity/ui/views/filesystem/disk_partition.py:126
-msgid "Show disk information"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/delete.py:69
+#: ../subiquity/ui/views/filesystem/delete.py:132
+msgid "partitions"
+msgstr "מחיצות"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:44
+#: ../subiquity/ui/views/filesystem/delete.py:70
+#, python-brace-format
+msgid "It contains {n} {things}:"
+msgstr "הוא מכיל {n} {things}:"
+
+#: ../subiquity/ui/views/filesystem/delete.py:80
+msgid "It is not formatted or mounted."
+msgstr "אינו מפורמט או מעוגן."
+
+#: ../subiquity/ui/views/filesystem/delete.py:109
+msgid "Remove filesystem from {}"
+msgstr "הסרת מערכת קבצים מ־{}"
+
+#: ../subiquity/ui/views/filesystem/delete.py:112
+msgid "Do you really want to remove the existing filesystem from {}?"
+msgstr "להסיר את את מערכת הקבצים הקיימת מ־{}?"
+
+#: ../subiquity/ui/views/filesystem/delete.py:133
+#, python-brace-format
+msgid "Remove all {things} from {obj}"
+msgstr "להסיר את כל ה{things} מתוך {obj}"
+
+#: ../subiquity/ui/views/filesystem/delete.py:137
+#, python-brace-format
+msgid "Do you really want to remove all {things} from {obj}?"
+msgstr "להסיר את כל ה{things} מתוך {obj}?"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:80
 msgid ""
 "Selecting Continue below will begin the installation process and result in "
 "the loss of data on the disks selected to be formatted.\n"
@@ -532,134 +631,335 @@ msgid ""
 "\n"
 "Are you sure you want to continue?"
 msgstr ""
+"בחירה באפשרות המשך שלהלן תתחיל את ההתקנה ותגרום לאבדן הנתונים בכוננים שנבחרו "
+"לאתחול.\n"
+"\n"
+"לא תהיה לך אפשרות לחזור למסך הזה או לכל מסך קודם לאחר התחלת ההתקנה.\n"
+"\n"
+"להמשיך?"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:62
+#: ../subiquity/ui/views/filesystem/filesystem.py:99
+#: ../subiquity/ui/views/snaplist.py:397 ../subiquity/ui/views/snaplist.py:406
 msgid "Continue"
 msgstr "להמשיך"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:65
+#: ../subiquity/ui/views/filesystem/filesystem.py:102
 msgid "Confirm destructive action"
 msgstr "אישור פעולה הרסנית"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:84
+#: ../subiquity/ui/views/filesystem/filesystem.py:168
+msgid "No disks or partitions mounted."
+msgstr "לא עוגנו כוננים או מחיצות."
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:193
+msgid "MOUNT POINT"
+msgstr "נקודת עגינה"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:194
+#: ../subiquity/ui/views/filesystem/filesystem.py:397
+msgid "SIZE"
+msgstr "גודל"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:195
+#: ../subiquity/ui/views/filesystem/filesystem.py:396
+msgid "TYPE"
+msgstr "סוג"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:196
+msgid "DEVICE TYPE"
+msgstr "סוג התקן"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:219
+msgid "Unmount"
+msgstr "ביטול עיגון"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:293
+msgid "No available devices"
+msgstr "אין התקנים זמינים"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:295
+msgid "No used devices"
+msgstr "אין התקנים בשימוש"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:355
+msgid "Remove from {}"
+msgstr "הסרה מ־{}"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:357
+msgid "Add {} Partition"
+msgstr "הוספת מחיצת {}"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:395
+msgid "DEVICE"
+msgstr "התקן"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:424
+msgid "free space"
+msgstr "שטח פנוי"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:438
+msgid "Storage configuration"
+msgstr "הגדרות אחסון"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:449
+msgid "Create software RAID (md)"
+msgstr "יצירת RAID בתכנה (md)"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:452
+msgid "Create volume group (LVM)"
+msgstr "ליצור קבוצת כרכים (LVM)"
+
+#: ../subiquity/ui/views/filesystem/filesystem.py:459
 msgid "FILE SYSTEM SUMMARY"
 msgstr "תקציר מערכת קבצים"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:88
+#: ../subiquity/ui/views/filesystem/filesystem.py:464
 msgid "AVAILABLE DEVICES"
 msgstr "התקנים זמינים"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:123
-msgid "MOUNT POINT"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/filesystem.py:471
+msgid "USED DEVICES"
+msgstr "התקנים בשימוש"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:135
-msgid "SWAP"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/filesystem.py:489
+msgid "Mount a filesystem at /"
+msgstr "עיגון מערכת קבצים תחת /"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:139
-msgid "No disks or partitions mounted."
-msgstr ""
+#: ../subiquity/ui/views/filesystem/filesystem.py:491
+msgid "Select a boot disk"
+msgstr "בחירה בכונן אתחול"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:140
-#: ../subiquity/ui/views/filesystem/filesystem.py:180
-msgid "SIZE"
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/filesystem.py:141
-#: ../subiquity/ui/views/filesystem/filesystem.py:180
-msgid "TYPE"
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/filesystem.py:144
-msgid "DEVICE TYPE"
-msgstr ""
-
-#: ../subiquity/ui/views/filesystem/filesystem.py:164
+#: ../subiquity/ui/views/filesystem/filesystem.py:510
 msgid "Reset"
 msgstr "איפוס"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:180
-msgid "DEVICE"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/guided.py:48
+msgid "Configure a guided storage layout, or create a custom one:"
+msgstr "הגדרת פריסה מודרכת של חלוקה למחיצות או יצירה של פריסה משלך:"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:191
-msgid "entire device, "
-msgstr ""
+#: ../subiquity/ui/views/filesystem/guided.py:53
+#: ../subiquity/ui/views/filesystem/lvm.py:91
+msgid "Passphrase:"
+msgstr "מילת צופן:"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:204
-msgid "partition {}, "
-msgstr ""
+#: ../subiquity/ui/views/filesystem/guided.py:54
+#: ../subiquity/ui/views/filesystem/lvm.py:92
+msgid "Confirm passphrase:"
+msgstr "אימות מילת צופן:"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:214
-msgid "unformatted"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/guided.py:58
+#: ../subiquity/ui/views/identity.py:125
+msgid "Password must be set"
+msgstr "יש להגדיר ססמה"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:229
-msgid "Add/Edit Partitions"
-msgstr "הוספה/עריכה של מחיצות"
+#: ../subiquity/ui/views/filesystem/guided.py:62
+#: ../subiquity/ui/views/identity.py:129
+msgid "Passwords do not match"
+msgstr "הססמאות אינן תואמות"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:232
-msgid "Add First Partition"
-msgstr "הוספת המחיצה הראשונה"
+#: ../subiquity/ui/views/filesystem/guided.py:75
+msgid "Encrypt the LVM group with LUKS"
+msgstr "הצפנת קבוצת ה־LVM עם LUKS"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:235
-msgid "Edit Partitions"
-msgstr "עריכת מחיצות"
+#: ../subiquity/ui/views/filesystem/guided.py:82
+msgid "Set up this disk as an LVM group"
+msgstr "הגדרת הכונן הזה בתור קבוצת LVM"
 
-#: ../subiquity/ui/views/filesystem/filesystem.py:244
-msgid "No disks available."
-msgstr "אין כוננים זמינים."
+#: ../subiquity/ui/views/filesystem/guided.py:110
+msgid "Use an entire disk"
+msgstr "להשתמש בכונן כולו"
 
-#: ../subiquity/ui/views/filesystem/guided.py:33
+#: ../subiquity/ui/views/filesystem/guided.py:112
+msgid "Custom storage layout"
+msgstr "פריסת אחסון מותאמת אישית"
+
+#: ../subiquity/ui/views/filesystem/guided.py:125
 msgid ""
-"The installer can guide you through partitioning an entire disk or, if you "
-"prefer, you can do it manually.\n"
 "\n"
-"If you choose to partition an entire disk you will still have a chance to "
-"review and modify the results."
-msgstr ""
-"תכנית ההתקנה תנחה אותך בתהליך חלוקת הכונן למחיצות, אם העדפתך שונה, ניתן "
-"לעשות זאת גם ידנית.\n"
 "\n"
-"בחירה בחלוקת הכונן כולו למחיצות עדיין תאפשר לך לסקור ולשנות את התוצאות."
-
-#: ../subiquity/ui/views/filesystem/guided.py:44
-msgid "Use An Entire Disk"
-msgstr "ניצול מלוא הכונן"
-
-#: ../subiquity/ui/views/filesystem/guided.py:45
-msgid "Manual"
-msgstr "ידני"
-
-#: ../subiquity/ui/views/filesystem/guided.py:79
-msgid "Choose the disk to install to:"
-msgstr "נא לבחור כונן לביצוע ההתקנה אליו:"
-
-#: ../subiquity/ui/views/filesystem/partition.py:72
-#, python-format
-msgid "Capped partition size at %s"
+"The \"Use an entire disk\" option installs Ubuntu onto the selected disk,\n"
+"replacing any partitions and data already there.\n"
+"\n"
+"If the platform requires it, a bootloader partition is created on the disk.\n"
+"\n"
+"If you choose to use LVM, two additional partitions are then created,\n"
+"one for /boot and one covering the rest of the disk. An LVM volume\n"
+"group is created containing the large partition. A 4 gigabyte logical\n"
+"volume is created for the root filesystem. It can easily be enlarged\n"
+"with standard LVM command line tools.\n"
+"\n"
+"You can also choose to encrypt LVM volume group. This will require\n"
+"setting a password, that one will need to type on every boot before\n"
+"the system boots.\n"
+"\n"
+"If you do not choose to use LVM, a single partition is created covering the\n"
+"rest of the disk which is then formatted as ext4 and mounted at /.\n"
+"\n"
+"In either case, you will still have a chance to review and modify the "
+"results.\n"
+"\n"
+"If you choose to use a custom storage layout, no changes are made to the "
+"disks\n"
+"and you will have to, at a minimum, select a boot disk and mount a "
+"filesystem\n"
+"at /.\n"
+"\n"
 msgstr ""
 
-#: ../subiquity/ui/views/filesystem/partition.py:76
-#, python-format
-msgid "Rounded size up to %s"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/guided.py:156
+msgid "Guided storage configuration"
+msgstr "הגדרת אחסון מודרכת"
 
-#: ../subiquity/ui/views/filesystem/partition.py:90
-msgid "Size (max {})"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/guided.py:169
+msgid "Help on guided storage configuration"
+msgstr "עזרה בהגדרת אחסון מודרכת"
 
-#: ../subiquity/ui/views/filesystem/partition.py:127
+#: ../subiquity/ui/views/filesystem/lvm.py:61
+msgid ""
+"The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
+"9, +, _, . and -"
+msgstr ""
+"התווים היחידים שמותר להשתמש בהם בשם הכרך הם a-z,‏ A-Z,‏ 0-9, +, _, . וגם -"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:84
+msgid "Passphrases"
+msgstr "מילות צופן:"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:88
+#: ../subiquity/ui/views/filesystem/raid.py:92
+msgid "Devices:"
+msgstr "התקנים:"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:89
+#: ../subiquity/ui/views/filesystem/raid.py:93
+msgid "Size:"
+msgstr "גודל:‏"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:90
+msgid "Create encrypted volume"
+msgstr "יצירת כרך מוצפן"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:103
+msgid "Select at least one device to be part of the volume group."
+msgstr "יש לבחור בהתקן אחד לפחות לצירוף לקבוצת הכרכים."
+
+#: ../subiquity/ui/views/filesystem/lvm.py:109
+msgid "The name of a volume group cannot be empty"
+msgstr "שם קבוצת הכרכים לא יכול להישאר ריק"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:111
+msgid "The name of a volume group cannot start with a hyphen"
+msgstr "שם קבוצת הכרכים לא יכול להתחיל במינוס"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:113
+msgid "{} is not a valid name for a volume group"
+msgstr "{} אינו שם תקני לקבוצת הכרכים"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:116
+msgid "There is already a volume group named '{}'"
+msgstr "כבר יש קבוצת כרכים בשם ‚{}’"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:121
+msgid "Passphrase must be set"
+msgstr "יש להגדיר מילת צופן"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:126
+msgid "Passphrases do not match"
+msgstr "מילות הצופן אינן תואמות"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:135
+msgid "Create LVM volume group"
+msgstr "יצירת קבוצת כרכים ב־LVM"
+
+#: ../subiquity/ui/views/filesystem/lvm.py:150
+msgid "Edit volume group \"{}\""
+msgstr "עריכת קבוצת הכרכים „{}”"
+
+#: ../subiquity/ui/views/filesystem/partition.py:74
+msgid "Leave unformatted"
+msgstr "להשאיר לא מפורמט"
+
+#: ../subiquity/ui/views/filesystem/partition.py:77
+msgid "Leave formatted as {}"
+msgstr "להשאיר מפורמט בתור {}"
+
+#: ../subiquity/ui/views/filesystem/partition.py:109
+msgid "Capped partition size at {}"
+msgstr "גודל המחיצה הוגבל לכדי {}"
+
+#: ../subiquity/ui/views/filesystem/partition.py:115
+msgid "Rounded size up to {}"
+msgstr "הגודל עוגל לכדי {}"
+
+#: ../subiquity/ui/views/filesystem/partition.py:126
+msgid ""
+"The only characters permitted in the name of a logical volume are a-z, A-Z, "
+"0-9, +, _, . and -"
+msgstr ""
+"התווים היחידים בהם מותר להשתמש בשם של כרך לוגי הם a-z,‏ A-Z,‏ 0-9, +, _, . "
+"וגם -"
+
+#: ../subiquity/ui/views/filesystem/partition.py:160
+msgid "Size (max {}):"
+msgstr "גודל ({} לכל היותר):"
+
+#: ../subiquity/ui/views/filesystem/partition.py:196
+msgid "Name: "
+msgstr "שם: "
+
+#: ../subiquity/ui/views/filesystem/partition.py:198
+msgid "Format:"
+msgstr "פרמוט:"
+
+#: ../subiquity/ui/views/filesystem/partition.py:199
+msgid "Mount:"
+msgstr "עיגון:"
+
+#: ../subiquity/ui/views/filesystem/partition.py:201
+msgid "Use as swap"
+msgstr "להשתמש כהחלפה"
+
+#: ../subiquity/ui/views/filesystem/partition.py:202
+msgid "Use this swap partition in the installed system."
+msgstr "להשתמש במחיצת החלפה זו במערכת המותקנת."
+
+#: ../subiquity/ui/views/filesystem/partition.py:226
+msgid "The name of a logical volume cannot be empty"
+msgstr "שם הכרך הלוגי לא יכול להישאר ריק"
+
+#: ../subiquity/ui/views/filesystem/partition.py:228
+msgid "The name of a logical volume cannot start with a hyphen"
+msgstr "שם הכרך הלוגי לא יכול להתחיל במינוס"
+
+#: ../subiquity/ui/views/filesystem/partition.py:230
+msgid "A logical volume may not be called {}"
+msgstr "אי אפשר לקרוא לכרך לוגי בשם {}"
+
+#: ../subiquity/ui/views/filesystem/partition.py:235
+msgid "The name of a logical volume may not contain \"{}\""
+msgstr "שם הכרך הלוגי לא יכול להכיל „{}”"
+
+#: ../subiquity/ui/views/filesystem/partition.py:238
+msgid "There is already a logical volume named {}."
+msgstr "כבר יש כרך לוגי בשם {}."
+
+#: ../subiquity/ui/views/filesystem/partition.py:247
 msgid "Path exceeds PATH_MAX"
-msgstr ""
+msgstr "הנתיב חורג מ־PATH_MAX"
 
-#: ../subiquity/ui/views/filesystem/partition.py:130
-#, python-format
-msgid "%s is already mounted at %s"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/partition.py:250
+msgid "{} is already mounted at {}."
+msgstr "{} כבר מעוגן תחת {}."
 
-#: ../subiquity/ui/views/filesystem/partition.py:167
+#: ../subiquity/ui/views/filesystem/partition.py:258
+msgid ""
+"Mounting an existing filesystem at {} is usually a bad idea, proceed only "
+"with caution."
+msgstr ""
+"לעגן מערכת קבצים קיימת תחת {} היא רעיון די גרוע, ניתן להמשיך אם המצב הזה "
+"ברור לך."
+
+#: ../subiquity/ui/views/filesystem/partition.py:274
 msgid ""
 "Required bootloader partition\n"
 "\n"
@@ -670,273 +970,329 @@ msgid ""
 "unformatted partition is needed at the start of the disk. It will not "
 "contain a filesystem and will not be mounted, and cannot be edited here."
 msgstr ""
+"מחיצת אתחול נחוצה\n"
+"\n"
+"GRUB יותקן על ה־MBR (רשומת אתחול ראשית) של כונן היעד.\n"
+"\n"
+"עם זאת, על כונן עם טבלת מחיצות GPT אין מספיק מקום אחרי שה־MBR עבור GRUB "
+"לאחסון ה־core.img שלו עבור השלב השני, לכן, מחיצה קטנה בלתי מפורמטטת נדרשת "
+"בתחילת הכונן. היא לא תכיל מערכת קבצים ולא תעוגן ולא ניתן לערוך אותה דרך כאן."
 
-#: ../subiquity/ui/views/filesystem/partition.py:174
+#: ../subiquity/ui/views/filesystem/partition.py:284
 msgid ""
 "Required bootloader partition\n"
 "\n"
 "This is the ESP / \"EFI system partition\" required by UEFI. Grub will be "
-"installed onto this partition, which must be formatted as fat32. The only "
-"aspect of this partition that can be edited is the size."
+"installed onto this partition, which must be formatted as fat32."
 msgstr ""
+"מחיצת אתמול נחוצה\n"
+"\n"
+"זו ESP‏ / \"EFI system partition\" (מחיצת מערכת מנשק קושחה גמיש) שנדרשת על "
+"ידי UEFI. על מחיצה זו, אותה יש לפרמט ל־fat32, יותקן Grub."
 
-#: ../subiquity/ui/views/filesystem/partition.py:192
-msgid "Create"
+#: ../subiquity/ui/views/filesystem/partition.py:290
+msgid " The only aspect of this partition that can be edited is the size."
+msgstr " ההיבט היחידי בו ניתן לערוך מחיצה זו היא הגודל."
+
+#: ../subiquity/ui/views/filesystem/partition.py:293
+msgid ""
+" You can choose whether to use the existing filesystem on this partition or "
+"reformat it."
 msgstr ""
+" ניתן לבחור האם להשתמש במערכת הקבצים הקיימת במחיצה זו או לפרמט אותה מחדש."
 
-#: ../subiquity/ui/views/filesystem/partition.py:206
-#: ../subiquity/ui/views/keyboard.py:83 ../subiquity/ui/views/keyboard.py:132
-#: ../subiquity/ui/views/keyboard.py:330
+#: ../subiquity/ui/views/filesystem/partition.py:297
+msgid ""
+"Required bootloader partition\n"
+"\n"
+"This is the PReP partion which is required on POWER. Grub will be installed "
+"onto this partition."
+msgstr ""
+"מחיצת אתחול נחוצה\n"
+"\n"
+"זו מחיצת PReP שנחוצה למערכות POWER. למחיצה הזאת יותקן Grub."
+
+#: ../subiquity/ui/views/filesystem/partition.py:377
+#: ../subiquity/ui/views/keyboard.py:95 ../subiquity/ui/views/keyboard.py:145
+#: ../subiquity/ui/views/keyboard.py:358
 msgid "OK"
-msgstr ""
+msgstr "אישור"
 
-#: ../subiquity/ui/views/filesystem/partition.py:232
-msgid "Delete"
-msgstr ""
+#: ../subiquity/ui/views/filesystem/partition.py:384
+msgid "Use existing fat32 filesystem"
+msgstr "להשתמש במערכת קבצים fat32 קיימת"
 
-#: ../subiquity/ui/views/identity.py:51
+#: ../subiquity/ui/views/filesystem/partition.py:390
+msgid "Reformat as fresh fat32 filesystem"
+msgstr "לפרמט מחדש כמערכת קבצים fat32 רעננה"
+
+#: ../subiquity/ui/views/filesystem/partition.py:455
+msgid "{} partition"
+msgstr "מחיצת {}"
+
+#: ../subiquity/ui/views/filesystem/partition.py:457
+msgid "Adding {} to {}"
+msgstr "{} מתווסף אל {}"
+
+#: ../subiquity/ui/views/filesystem/partition.py:460
+msgid "logical volume {}"
+msgstr "כרך לוגי {}"
+
+#: ../subiquity/ui/views/filesystem/partition.py:463
+msgid "Editing {} of {}"
+msgstr "נערך {} מתוך {}"
+
+#: ../subiquity/ui/views/filesystem/partition.py:514
+msgid ""
+"Formatting and mounting a disk directly is unusual. You probably want to add "
+"a partition instead."
+msgstr ""
+"פרמוט ועיגון של כונן ישירות היא פעולה חריגה. יכול להיות שברצונך להוסיף מחיצה "
+"במקום."
+
+#: ../subiquity/ui/views/filesystem/partition.py:526
+msgid "Format and/or mount {}"
+msgstr "פרמוט ו/או עיגון של {}"
+
+#: ../subiquity/ui/views/filesystem/probing.py:40
+msgid "Waiting for storage probing to complete"
+msgstr "בהמתנה לסיום תשאול אחסון"
+
+#: ../subiquity/ui/views/filesystem/probing.py:48
+msgid ""
+"The installer is probing for block devices to install to. Please wait until "
+"it completes."
+msgstr ""
+"תכנית ההתקנה מתשאלת לאיתור התקני בלוק להתקנה אליהם. נא להמתין עד לסיום "
+"התשאול."
+
+#: ../subiquity/ui/views/filesystem/probing.py:61
+msgid ""
+"Unfortunately probing for devices to install to failed. Please report a bug "
+"on Launchpad, and if possible include the contents of the /var/log/installer "
+"directory."
+msgstr ""
+"אתרע מזלך ותשאול ההתקנים להתקנה נכשל. נא לוודא על כך כתקלה מול Launchpad ואם "
+"ניתן אז גם לכלול את תוכן התיקייה ‎/var/log/installer."
+
+#: ../subiquity/ui/views/filesystem/probing.py:68
+msgid "Probing for devices to install to failed"
+msgstr "תשאול התקנים להתקנה נכשל"
+
+#: ../subiquity/ui/views/filesystem/raid.py:67
+msgid "/ is not permitted in the name of a RAID device"
+msgstr "/ לא יכול להיות חלק משם של התקן RAID"
+
+#: ../subiquity/ui/views/filesystem/raid.py:73
+msgid "Whitespace is not permitted in the name of a RAID device"
+msgstr "אין להשתמש ברווח בשם של התקן RAID"
+
+#: ../subiquity/ui/views/filesystem/raid.py:91
+msgid "RAID Level:"
+msgstr "רמת RAID:"
+
+#: ../subiquity/ui/views/filesystem/raid.py:104
+msgid "There is already a RAID named '{}'"
+msgstr "כבר קיים RAID בשם ‚{}’"
+
+#: ../subiquity/ui/views/filesystem/raid.py:107
+msgid ". and .. are not valid names for RAID devices"
+msgstr ". וגם .. אינם שמות תקניים להתקני RAID"
+
+#: ../subiquity/ui/views/filesystem/raid.py:113
+msgid "RAID Level \"{}\" requires at least {} active devices"
+msgstr "רמת ה־RAID „{}” דורשת לפחות {} התקנים פעילים"
+
+#: ../subiquity/ui/views/filesystem/raid.py:124
+msgid "Create software RAID (\"MD\") disk"
+msgstr "יצירת כונן RAID בתכנה („MD”)"
+
+#: ../subiquity/ui/views/filesystem/raid.py:140
+msgid "Edit software RAID disk \"{}\""
+msgstr "עריכת כונן RAID בתכנה „{}”"
+
+#: ../subiquity/ui/views/identity.py:50
 msgid "The characters : , and = are not permitted in this field"
-msgstr ""
+msgstr "אסור להשתמש בתווים: , ו־= בשדה זה"
 
-#: ../subiquity/ui/views/identity.py:59
+#: ../subiquity/ui/views/identity.py:60
 msgid "The only characters permitted in this field are a-z, 0-9, _ and -"
-msgstr ""
+msgstr "התווים היחידים בהם מותר להשתמש בשדה זה הם a-z,‏ 0-9, _ ו־-"
 
-#: ../subiquity/ui/views/identity.py:76
-msgid "Import Username:"
-msgstr "יבוא שם משתמש:"
-
-#: ../subiquity/ui/views/identity.py:83
-msgid "Github Username:"
-msgstr ""
-
-#: ../subiquity/ui/views/identity.py:89
-msgid "Launchpad Username:"
-msgstr ""
-
-#: ../subiquity/ui/views/identity.py:98
+#: ../subiquity/ui/views/identity.py:84
 msgid "Your name:"
 msgstr "השם שלך:"
 
-#: ../subiquity/ui/views/identity.py:100
+#: ../subiquity/ui/views/identity.py:86
 msgid "Your server's name:"
 msgstr "שם השרת שלך:"
 
-#: ../subiquity/ui/views/identity.py:101
+#: ../subiquity/ui/views/identity.py:87
 msgid "The name it uses when it talks to other computers."
 msgstr "השם בו ייעשה שימוש לטובת תקשורת עם מחשבים אחרים."
 
-#: ../subiquity/ui/views/identity.py:102
+#: ../subiquity/ui/views/identity.py:88
 msgid "Pick a username:"
 msgstr "נא לבחור שם משתמש:"
 
-#: ../subiquity/ui/views/identity.py:103
-#: ../subiquity/ui/views/installpath.py:75
+#: ../subiquity/ui/views/identity.py:89
 msgid "Choose a password:"
 msgstr "נא לבחור ססמה:"
 
-#: ../subiquity/ui/views/identity.py:104
+#: ../subiquity/ui/views/identity.py:90
 msgid "Confirm your password:"
 msgstr "אימות הססמה שלך:"
 
-#: ../subiquity/ui/views/identity.py:106
-msgid "Import SSH identity:"
-msgstr "יבוא זהות SSH:"
-
-#: ../subiquity/ui/views/identity.py:109
-msgid "from Github"
-msgstr "מ־Github"
-
-#: ../subiquity/ui/views/identity.py:110
-msgid "from Launchpad"
-msgstr "מ־Launchpad"
-
-#: ../subiquity/ui/views/identity.py:113
-msgid "You can import your SSH keys from Github or Launchpad."
-msgstr ""
-
-#: ../subiquity/ui/views/identity.py:118
-msgid "Real name must not be empty."
-msgstr "השם האמתי לא יכול להישאר ריק"
-
-#: ../subiquity/ui/views/identity.py:120
+#: ../subiquity/ui/views/identity.py:94
 msgid "Realname too long, must be < "
 msgstr "השם האמתי ארוך מדי, עליו להיות < "
 
-#: ../subiquity/ui/views/identity.py:124
+#: ../subiquity/ui/views/identity.py:98
 msgid "Server name must not be empty"
 msgstr "שם השרת לא יכול להישאר ריק"
 
-#: ../subiquity/ui/views/identity.py:127
+#: ../subiquity/ui/views/identity.py:101
 msgid "Server name too long, must be < "
 msgstr "שם השרת ארוך מדי, עליו להיות < "
 
-#: ../subiquity/ui/views/identity.py:130
+#: ../subiquity/ui/views/identity.py:105
 msgid "Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 msgstr ""
 "שם המארח חייב להתאים להגדרת ביטויים רגולריים לשמות - NAME_REGEX, למשל: ‎[a-"
 "z_][a-z0-9_-]*‎"
 
-#: ../subiquity/ui/views/identity.py:134
-#: ../subiquity/ui/views/installpath.py:80
+#: ../subiquity/ui/views/identity.py:110
 msgid "Username missing"
 msgstr "שם המשתמש חסר"
 
-#: ../subiquity/ui/views/identity.py:137
-#: ../subiquity/ui/views/installpath.py:83
+#: ../subiquity/ui/views/identity.py:113
 msgid "Username too long, must be < "
 msgstr "שם המשתמש ארוך מדי, עליו להיות < "
 
-#: ../subiquity/ui/views/identity.py:140
-#: ../subiquity/ui/views/installpath.py:86
+#: ../subiquity/ui/views/identity.py:116
 msgid "Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*"
 msgstr ""
 "שם המשתמש חייב להתאים להגדרת ביטויים רגולריים לשמות - NAME_REGEX, למשל: ‎[a-"
 "z_][a-z0-9_-]*‎"
 
-#: ../subiquity/ui/views/identity.py:144
-#: ../subiquity/ui/views/installpath.py:90
-msgid "Password must be set"
-msgstr "יש להגדיר ססמה"
+#: ../subiquity/ui/views/identity.py:120
+#, python-brace-format
+msgid "The username \"{username}\" is reserved for use by the system."
+msgstr "שם המשתמש „{username}” שמור לשימוש המערכת."
 
-#: ../subiquity/ui/views/identity.py:148 ../subiquity/ui/views/identity.py:205
-msgid "Passwords do not match"
-msgstr "הססמאות אינן תואמות"
+#: ../subiquity/ui/views/identity.py:137
+#, python-brace-format
+msgid "{desc} do not match"
+msgstr "{desc} אינו תואם"
 
-#: ../subiquity/ui/views/identity.py:163
-msgid "This field must not be blank."
-msgstr "שדה זה לא יכול להישאר ריק."
+#: ../subiquity/ui/views/identity.py:145
+msgid "Profile setup"
+msgstr "הגדרת פרופיל"
 
-#: ../subiquity/ui/views/identity.py:165
-msgid "SSH id too long, must be < "
-msgstr "מזהה ה־SSH ארוך מדי, עליו להיות < "
-
-#: ../subiquity/ui/views/identity.py:169
+#: ../subiquity/ui/views/identity.py:146
 msgid ""
-"A Launchpad username must be at least two characters long and start with a "
-"letter or number. All letters must be lower-case. The characters +, - and . "
-"are also allowed after the first character."
+"Enter the username and password you will use to log in to the system. You "
+"can configure SSH access on the next screen but a password is still needed "
+"for sudo."
 msgstr ""
+"נא למלא את שם המשתמש והססמה שישמשו אותך לכניסה למערכת. ניתן להגדיר גישה "
+"ב־SSH במסך הבא אך ססמה עדיין תידרש לטובת sudo."
 
-#: ../subiquity/ui/views/identity.py:174
-msgid ""
-"A Github username may only contain alphanumeric characters or single "
-"hyphens, and cannot begin or end with a hyphen."
-msgstr ""
+#: ../subiquity/ui/views/identity.py:180
+msgid "passwords"
+msgstr "ססמאות"
 
-#: ../subiquity/ui/views/installpath.py:72
-msgid "Pick a username for the admin account:"
-msgstr ""
-
-#: ../subiquity/ui/views/installpath.py:73
-msgid "Enter the administrative username."
-msgstr ""
-
-#: ../subiquity/ui/views/installpath.py:76
-msgid "Please enter the password for this account."
-msgstr ""
-
-#: ../subiquity/ui/views/installpath.py:96
-msgid "Ubuntu MAAS Region API address:"
-msgstr ""
-
-#: ../subiquity/ui/views/installpath.py:98
-msgid ""
-"e.g. \"http://192.168.1.1:5240/MAAS\". localhost or 127.0.0.1 are not useful "
-"values here."
-msgstr ""
-
-#: ../subiquity/ui/views/installpath.py:102
-msgid "MAAS shared secret:"
-msgstr ""
-
-#: ../subiquity/ui/views/installpath.py:104
-msgid ""
-"The secret can be found in /var/lib/maas/secret on the region controller. "
-msgstr ""
-
-#: ../subiquity/ui/views/installpath.py:109
-msgid "API address must be set"
-msgstr ""
-
-#: ../subiquity/ui/views/installpath.py:113
-msgid "Secret must be set"
-msgstr ""
-
-#: ../subiquity/ui/views/installprogress.py:48
-msgid "View full log"
-msgstr ""
-
-#: ../subiquity/ui/views/installprogress.py:60
-msgid "Full installer output"
-msgstr "פלט תכנית ההתקנה המלא"
-
-#: ../subiquity/ui/views/installprogress.py:63
-msgid "Close"
-msgstr "סגירה"
-
-#: ../subiquity/ui/views/installprogress.py:91
+#: ../subiquity/ui/views/installprogress.py:47
 msgid "Reboot Now"
 msgstr "הפעלה מחדש כעת"
 
-#: ../subiquity/ui/views/installprogress.py:94
-msgid "Exit To Shell"
-msgstr "יציאה למעטפת"
+#: ../subiquity/ui/views/installprogress.py:49
+msgid "View error report"
+msgstr "הצגת דוח שגיאות"
 
-#: ../subiquity/ui/views/keyboard.py:57
+#: ../subiquity/ui/views/installprogress.py:51
+msgid "View full log"
+msgstr "הצגת יומן מלא"
+
+#: ../subiquity/ui/views/installprogress.py:65
+msgid "Full installer output"
+msgstr "פלט תכנית ההתקנה המלא"
+
+#: ../subiquity/ui/views/installprogress.py:113
+msgid "Cancel update and reboot"
+msgstr "ביטול העדכון והפעלה מחדש"
+
+#: ../subiquity/ui/views/installprogress.py:117
+msgid "Reboot"
+msgstr "הפעלה מחדש"
+
+#: ../subiquity/ui/views/installprogress.py:135
+msgid "Rebooting..."
+msgstr "המכונה מופעלת מחדש…"
+
+#: ../subiquity/ui/views/keyboard.py:64
 msgid "Keyboard auto-detection"
-msgstr ""
+msgstr "זיהוי מקלדת אוטומטית"
 
-#: ../subiquity/ui/views/keyboard.py:80
+#: ../subiquity/ui/views/keyboard.py:90
 msgid ""
 "Keyboard detection starting. You will be asked a series of questions about "
 "your keyboard. Press escape at any time to go back to the previous screen."
 msgstr ""
+"הליך זיהוי המקלדת מתחיל. בפניך תופענה סדרה של שאלות על המקלדת שלך. ניתן "
+"ללחוץ על Esc בכל עת כדי לחזור למסך הקודם."
 
-#: ../subiquity/ui/views/keyboard.py:96
+#: ../subiquity/ui/views/keyboard.py:108
 msgid "Keyboard auto detection failed, sorry"
-msgstr ""
+msgstr "זיהוי המקלדת אוטומטית נכשל"
 
-#: ../subiquity/ui/views/keyboard.py:103
+#: ../subiquity/ui/views/keyboard.py:116
 msgid ""
 "Keyboard auto detection completed.\n"
 "\n"
 "Your keyboard was detected as:\n"
 msgstr ""
+"זיהוי המקלדת האוטומטי הצליח.\n"
+"\n"
+"המקלדת שלך זוהתה בתור:\n"
 
-#: ../subiquity/ui/views/keyboard.py:108
+#: ../subiquity/ui/views/keyboard.py:121
 msgid ""
 "\n"
 "If this is correct, select Done on the next screen. If not you can select "
 "another layout or run the automated detection again.\n"
 "\n"
 msgstr ""
+"\n"
+"אם הצעה זו נכונה, יש לבחור בסיום במסך הבא. אם לא, ניתן לבחור בפריסה אחרת "
+"ולהריץ את הזיהוי האוטומטי שוב.\n"
+"\n"
 
-#: ../subiquity/ui/views/keyboard.py:122
+#: ../subiquity/ui/views/keyboard.py:135
 msgid "Layout"
-msgstr ""
+msgstr "פריסה"
 
-#: ../subiquity/ui/views/keyboard.py:123
+#: ../subiquity/ui/views/keyboard.py:136
 msgid "Variant"
-msgstr ""
+msgstr "הגוון"
 
-#: ../subiquity/ui/views/keyboard.py:148
+#: ../subiquity/ui/views/keyboard.py:161
 msgid "Please press one of the following keys:"
-msgstr ""
+msgstr "נא ללחוץ על אחד מהתווים הבאים:"
 
-#: ../subiquity/ui/views/keyboard.py:177
+#: ../subiquity/ui/views/keyboard.py:197 ../subiquity/ui/views/keyboard.py:205
 msgid "Input was not recognized, try again"
-msgstr ""
+msgstr "הקלט לא זוהה, נא לנסות שוב"
 
-#: ../subiquity/ui/views/keyboard.py:199
+#: ../subiquity/ui/views/keyboard.py:222
 msgid "Is the following key present on your keyboard?"
-msgstr ""
+msgstr "האם המקש הבא מופיע במקלדת שלך?"
 
-#: ../subiquity/ui/views/keyboard.py:267
+#: ../subiquity/ui/views/keyboard.py:291
 msgid "Applying config"
-msgstr ""
+msgstr "ההגדרות חלות"
 
-#: ../subiquity/ui/views/keyboard.py:279
+#: ../subiquity/ui/views/keyboard.py:303
 msgid ""
 "You will need a way to toggle the keyboard between the national layout and "
 "the standard Latin layout.\n"
@@ -948,94 +1304,137 @@ msgid ""
 "\n"
 "Not all listed keys are present on all keyboards. "
 msgstr ""
+"יהיה לך צורך להחליף בין פריסה מקומית לפריסה הלטיני התקנית.\n"
+"\n"
+"לרוב משתמשים במקשי ה־Alt השמאלי או ב־Caps Lock מטעמים ארגונומיים (במקרה "
+"השני, יש להשתמש ב־Shift+Caps Lock כדי להחליף מצב אותיות גדולות). Alt+Shift "
+"הוא גם צירוף מקובל, עם זאת הוא עשוי לאבד את ההתנהגות הנפוצה שלו ב־Emacs "
+"ובתכניות אחרות שמשתמשים בצירוף לצרכים מסוימים.\n"
+"\n"
+"לא כל המקשים שמופיעים קיימים בכל המקלדות. "
 
-#: ../subiquity/ui/views/keyboard.py:288
+#: ../subiquity/ui/views/keyboard.py:316
 msgid "Caps Lock"
-msgstr ""
+msgstr "Caps Lock"
 
-#: ../subiquity/ui/views/keyboard.py:289
+#: ../subiquity/ui/views/keyboard.py:317
 msgid "Right Alt (AltGr)"
-msgstr ""
+msgstr "Alt ימני (AltGr)"
 
-#: ../subiquity/ui/views/keyboard.py:290
+#: ../subiquity/ui/views/keyboard.py:318
 msgid "Right Control"
-msgstr ""
+msgstr "Control ימני"
 
-#: ../subiquity/ui/views/keyboard.py:291
+#: ../subiquity/ui/views/keyboard.py:319
 msgid "Right Shift"
-msgstr ""
+msgstr "Shift ימני"
 
-#: ../subiquity/ui/views/keyboard.py:292
+#: ../subiquity/ui/views/keyboard.py:320
 msgid "Right Logo key"
-msgstr ""
+msgstr "כפתור סמל ימני"
 
-#: ../subiquity/ui/views/keyboard.py:293
+#: ../subiquity/ui/views/keyboard.py:321
 msgid "Menu key"
-msgstr ""
+msgstr "כפתור תפריט"
 
-#: ../subiquity/ui/views/keyboard.py:294
+#: ../subiquity/ui/views/keyboard.py:322
 msgid "Alt+Shift"
-msgstr ""
+msgstr "Alt+Shift"
 
-#: ../subiquity/ui/views/keyboard.py:295
+#: ../subiquity/ui/views/keyboard.py:323
 msgid "Control+Shift"
-msgstr ""
+msgstr "Control+Shift"
 
-#: ../subiquity/ui/views/keyboard.py:296
+#: ../subiquity/ui/views/keyboard.py:324
 msgid "Control+Alt"
-msgstr ""
-
-#: ../subiquity/ui/views/keyboard.py:297
-msgid "Alt+Caps Lock"
-msgstr ""
-
-#: ../subiquity/ui/views/keyboard.py:298
-msgid "Left Control+Left Shift"
-msgstr ""
-
-#: ../subiquity/ui/views/keyboard.py:299
-msgid "Left Alt"
-msgstr ""
-
-#: ../subiquity/ui/views/keyboard.py:300
-msgid "Left Control"
-msgstr ""
-
-#: ../subiquity/ui/views/keyboard.py:301
-msgid "Left Shift"
-msgstr ""
-
-#: ../subiquity/ui/views/keyboard.py:302
-msgid "Left Logo key"
-msgstr ""
-
-#: ../subiquity/ui/views/keyboard.py:303
-msgid "Scroll Lock key"
-msgstr ""
-
-#: ../subiquity/ui/views/keyboard.py:304
-msgid "No toggling"
-msgstr ""
+msgstr "Control+Alt"
 
 #: ../subiquity/ui/views/keyboard.py:325
-msgid "Shortcut: "
-msgstr ""
+msgid "Alt+Caps Lock"
+msgstr "Alt+Caps Lock"
 
-#: ../subiquity/ui/views/keyboard.py:335
-msgid "Select layout toggle"
-msgstr ""
+#: ../subiquity/ui/views/keyboard.py:326
+msgid "Left Control+Left Shift"
+msgstr "שמאלי Control+שמאלי Shift"
+
+#: ../subiquity/ui/views/keyboard.py:327
+msgid "Left Alt"
+msgstr "Alt שמאלי"
+
+#: ../subiquity/ui/views/keyboard.py:328
+msgid "Left Control"
+msgstr "Control שמאלי"
+
+#: ../subiquity/ui/views/keyboard.py:329
+msgid "Left Shift"
+msgstr "Shift שמאלי"
+
+#: ../subiquity/ui/views/keyboard.py:330
+msgid "Left Logo key"
+msgstr "כפתור סמל שמאלי"
+
+#: ../subiquity/ui/views/keyboard.py:331
+msgid "Scroll Lock key"
+msgstr "מקש ה־Scroll Lock"
+
+#: ../subiquity/ui/views/keyboard.py:332
+msgid "No toggling"
+msgstr "ללא החלפה"
 
 #: ../subiquity/ui/views/keyboard.py:353
+msgid "Shortcut: "
+msgstr "קיצור דרך: "
+
+#: ../subiquity/ui/views/keyboard.py:363
+msgid "Select layout toggle"
+msgstr "נא לבחור צירוף להחלפת פריסה"
+
+#: ../subiquity/ui/views/keyboard.py:381
 msgid "Layout:"
-msgstr ""
+msgstr "פריסה:"
 
-#: ../subiquity/ui/views/keyboard.py:354
+#: ../subiquity/ui/views/keyboard.py:382
 msgid "Variant:"
-msgstr ""
+msgstr "הגוון:"
 
-#: ../subiquity/ui/views/keyboard.py:386
-msgid "Identify keyboard"
+#: ../subiquity/ui/views/keyboard.py:387
+msgid "Keyboard configuration"
+msgstr "הגדרות מקלדת"
+
+#: ../subiquity/ui/views/keyboard.py:417
+msgid ""
+"Please select the layout of the keyboard directly attached to the system, if "
+"any."
+msgstr "נא לבחור את פריסת המקלדת שמחוברת ישירות למערכת, אם יש כזאת."
+
+#: ../subiquity/ui/views/keyboard.py:420
+msgid ""
+"Please select your keyboard layout below, or select \"Identify keyboard\" to "
+"detect your layout automatically."
 msgstr ""
+"נא לבחור את פריסת המקלדת שלך להלן, או לבחור ב„זיהוי מקלדת” כדי לזהות את "
+"הפריסה שלך אוטומטית."
+
+#: ../subiquity/ui/views/keyboard.py:429
+msgid "Identify keyboard"
+msgstr "זיהוי מקלדת"
+
+#: ../subiquity/ui/views/mirror.py:32
+msgid ""
+"You may provide an archive mirror that will be used instead of the default."
+msgstr "ניתן לספק אתר מראת ארכיונים שבה ייעשה שימוש במקום בררת המחדל."
+
+#: ../subiquity/ui/views/mirror.py:40
+msgid "Mirror address:"
+msgstr "כתובת אתר המראה:"
+
+#: ../subiquity/ui/views/mirror.py:45
+msgid "Configure Ubuntu archive mirror"
+msgstr "הגדרת אתר מראת ארכיונים של אובונטו"
+
+#: ../subiquity/ui/views/mirror.py:46
+msgid "If you use an alternative mirror for Ubuntu, enter its details here."
+msgstr "אם משמש אותך אתר מראה חלופי עבור אובונטו, יש להקליד כאן את פרטיו."
 
 #: ../subiquity/ui/views/proxy.py:33
 msgid ""
@@ -1045,7 +1444,364 @@ msgid ""
 "The proxy information should be given in the standard form of "
 "\"http://[[user][:pass]@]host[:port]/\"."
 msgstr ""
+"אם נדרש מתווך HTTP כדי לגשת לעולם, יש להקליד את פרטי המתווך להלן. אם לא, "
+"להשאיר ריק.\n"
+"\n"
+"יש לציין את פרטי המתווך בצורה הבאה „http://[[user][:pass]@]host[:port]/‎”."
 
 #: ../subiquity/ui/views/proxy.py:43
 msgid "Proxy address:"
+msgstr "כתובת מתווך:"
+
+#: ../subiquity/ui/views/proxy.py:48
+msgid "Configure proxy"
+msgstr "הגדרת מתווך"
+
+#: ../subiquity/ui/views/proxy.py:49
+msgid ""
+"If this system requires a proxy to connect to the internet, enter its "
+"details here."
 msgstr ""
+"אם המערכת הזאת דורשת מתווך כדי להתחבר לאינטרנט, יש להקליד את הפרטים שלו כאן."
+
+#: ../subiquity/ui/views/refresh.py:111
+msgid "Checking for installer update..."
+msgstr "מתבצע איתור לעדכון תכנית ההתקנה…"
+
+#: ../subiquity/ui/views/refresh.py:113
+msgid ""
+"Contacting the snap store to check if a new version of the installer is "
+"available."
+msgstr "נוצר קשר עם חנות ה־snap כדי לבדוק אם יש גרסה חדשה של תכנית ההתקנה."
+
+#: ../subiquity/ui/views/refresh.py:117
+msgid "Contacting the snap store failed"
+msgstr "יצירת קשר עם חנות ה־snap נכשלה"
+
+#: ../subiquity/ui/views/refresh.py:119
+msgid "Contacting the snap store failed:"
+msgstr "יצירת קשר עם חנות ה־snap נכשלה:"
+
+#: ../subiquity/ui/views/refresh.py:122
+msgid "Installer update available"
+msgstr "קיים עדכון לתכנית ההתקנה"
+
+#: ../subiquity/ui/views/refresh.py:124
+#, python-brace-format
+msgid ""
+"Version {new} of the installer is now available ({current} is currently "
+"running)."
+msgstr "גרסה {new} של תכנית ההתקנה זמינה ({current} פועלת כעת)."
+
+#: ../subiquity/ui/views/refresh.py:128
+msgid "Downloading update..."
+msgstr "העדכון מתקבל…"
+
+#: ../subiquity/ui/views/refresh.py:130
+msgid ""
+"Please wait while the updated installer is being downloaded. The installer "
+"will restart automatically when the download is complete."
+msgstr ""
+"נא להמתין להורדת תכנית ההתקנה העדכנית. תכנית ההתקנה תפעיל את עצמה מחדש "
+"אוטומטית עם השלמת ההורדה."
+
+#: ../subiquity/ui/views/refresh.py:134
+msgid "Update failed"
+msgstr "העדכון נכשל"
+
+#: ../subiquity/ui/views/refresh.py:136
+msgid "Downloading and applying the update:"
+msgstr "העדכון מתקבל ומת"
+
+#: ../subiquity/ui/views/refresh.py:156 ../subiquity/ui/views/refresh.py:183
+#: ../subiquity/ui/views/refresh.py:213 ../subiquity/ui/views/refresh.py:279
+msgid "Continue without updating"
+msgstr "להמשיך בלי לעדכן"
+
+#: ../subiquity/ui/views/refresh.py:182 ../subiquity/ui/views/refresh.py:278
+#: ../subiquity/ui/views/snaplist.py:286 ../subiquity/ui/views/snaplist.py:405
+msgid "Try again"
+msgstr "ניסיון חוזר"
+
+#: ../subiquity/ui/views/refresh.py:206
+msgid ""
+"If you choose to update, the update will be downloaded and the installation "
+"will continue from here."
+msgstr "אם בחירתך תהיה לעדכן, העדכון יתקבל וההתקנה תמשיך מכאן."
+
+#: ../subiquity/ui/views/refresh.py:212
+msgid "Update to the new installer"
+msgstr "עדכון לתכנית ההתקנה החדשה"
+
+#: ../subiquity/ui/views/refresh.py:238
+msgid "Cancel update"
+msgstr "ביטול עדכון"
+
+#: ../subiquity/ui/views/snaplist.py:79
+msgid "just now"
+msgstr "ממש עכשיו"
+
+#: ../subiquity/ui/views/snaplist.py:83
+msgid "minute"
+msgstr "דקה"
+
+#: ../subiquity/ui/views/snaplist.py:85
+msgid "minutes"
+msgstr "דקות"
+
+#: ../subiquity/ui/views/snaplist.py:89
+msgid "hour"
+msgstr "שעה"
+
+#: ../subiquity/ui/views/snaplist.py:91
+msgid "hours"
+msgstr "שעות"
+
+#: ../subiquity/ui/views/snaplist.py:95
+msgid "day"
+msgstr "יום"
+
+#: ../subiquity/ui/views/snaplist.py:97
+msgid "days"
+msgstr "ימים"
+
+#: ../subiquity/ui/views/snaplist.py:100
+#, python-brace-format
+msgid "{amount:2} {unit} ago"
+msgstr "לפני {amount:2} {unit}"
+
+#: ../subiquity/ui/views/snaplist.py:256
+msgid "Fetching info for {}"
+msgstr "מתקבל מידע על {}"
+
+#: ../subiquity/ui/views/snaplist.py:282
+msgid "Fetching info for {} failed"
+msgstr "קבלת המידע על {} נכשלה"
+
+#: ../subiquity/ui/views/snaplist.py:368
+msgid "Featured Server Snaps"
+msgstr "חבילות Snap מומלצות לשרתים"
+
+#: ../subiquity/ui/views/snaplist.py:398
+msgid "Loading server snaps from store, please wait..."
+msgstr "חבילות ה־snap נטענות מהחנות, נא להמתין…"
+
+#: ../subiquity/ui/views/snaplist.py:403
+msgid "Sorry, loading snaps from the store failed."
+msgstr "טעינת חבילות snap מהחנות נכשלה, עמך הסליחה."
+
+#: ../subiquity/ui/views/snaplist.py:485
+msgid ""
+"These are popular snaps in server environments. Select or deselect with "
+"SPACE, press ENTER to see more details of the package, publisher and "
+"versions available."
+msgstr ""
+"אלו חבילות snap נפוצות לסביבות שרתים. ניתן לבחור או לסלק עם רווח, Enter "
+"להצגת פרטים נוספים על החבילה, מפיץ וגרסאות זמינות."
+
+#: ../subiquity/ui/views/ssh.py:66
+msgid "Import Username:"
+msgstr "יבוא שם משתמש:"
+
+#: ../subiquity/ui/views/ssh.py:73
+msgid "Github Username:"
+msgstr "שם משתמש ב־Github:"
+
+#: ../subiquity/ui/views/ssh.py:80
+msgid "Launchpad Username:"
+msgstr "שם משתמש ב־Launchpad:"
+
+#: ../subiquity/ui/views/ssh.py:92
+msgid "Install OpenSSH server"
+msgstr "התקנת שרת OpenSSH"
+
+#: ../subiquity/ui/views/ssh.py:95
+msgid "Import SSH identity:"
+msgstr "יבוא זהות SSH:"
+
+#: ../subiquity/ui/views/ssh.py:98
+msgid "from Github"
+msgstr "מ־Github"
+
+#: ../subiquity/ui/views/ssh.py:99
+msgid "from Launchpad"
+msgstr "מ־Launchpad"
+
+#: ../subiquity/ui/views/ssh.py:101
+msgid "You can import your SSH keys from Github or Launchpad."
+msgstr "ניתן לייבא את מפתחות ה־SSH שלך מ־Github או מ־Launchpad."
+
+#: ../subiquity/ui/views/ssh.py:105
+msgid "Allow password authentication over SSH"
+msgstr "לאפשר אימות עם ססמה דרך SSH"
+
+#: ../subiquity/ui/views/ssh.py:138
+msgid "This field must not be blank."
+msgstr "שדה זה לא יכול להישאר ריק."
+
+#: ../subiquity/ui/views/ssh.py:140
+msgid "SSH id too long, must be < "
+msgstr "מזהה ה־SSH ארוך מדי, עליו להיות < "
+
+#: ../subiquity/ui/views/ssh.py:144
+msgid ""
+"A Launchpad username must start with a letter or number. All letters must be "
+"lower-case. The characters +, - and . are also allowed after the first "
+"character."
+msgstr ""
+"שם משתמש ב־Launchpad חייב להתחיל באות או במספר. כל האותיות חייביות להיות "
+"קטנות. מותר להשתמש גם בתווים +,- ו־. לאחר התו הראשון."
+
+#: ../subiquity/ui/views/ssh.py:150
+msgid ""
+"A Github username may only contain alphanumeric characters or single "
+"hyphens, and cannot begin or end with a hyphen."
+msgstr ""
+"שם משתמש ב־Github יכול להכיל רק תווים אלפאנומריים או סימני מינוס בודדים ולא "
+"יכול להתחיל או להסתיים במינוס."
+
+#: ../subiquity/ui/views/ssh.py:160
+msgid "Fetching SSH keys..."
+msgstr "מפתחות ה־SSH מתקבלים…"
+
+#: ../subiquity/ui/views/ssh.py:190
+msgid "Confirm SSH keys"
+msgstr "אישור מפתחות SSH"
+
+#: ../subiquity/ui/views/ssh.py:191
+msgid ""
+"Keys with the following fingerprints were fetched. Do you want to use them?"
+msgstr "התקבלו מפתחות עם טביעות האצבעות הבאות. להשתמש בהם?"
+
+#: ../subiquity/ui/views/ssh.py:194
+msgid "Confirm SSH key"
+msgstr "אישור מפתח SSH"
+
+#: ../subiquity/ui/views/ssh.py:195
+msgid ""
+"A key with the following fingerprint was fetched. Do you want to use it?"
+msgstr "התקבל מפתח עם טביעת האצבע הבאה. להשתמש בו?"
+
+#: ../subiquity/ui/views/ssh.py:242
+msgid "SSH Setup"
+msgstr "הקמת SSH"
+
+#: ../subiquity/ui/views/ssh.py:243
+msgid ""
+"You can choose to install the OpenSSH server package to enable secure remote "
+"access to your server."
+msgstr ""
+"ניתן לבחור להתקין את חבילת שרת ה־OpenSSH כדי להפעיל גישה מאובטחת מרחוק לשרת "
+"שלך."
+
+#: ../subiquity/ui/views/welcome.py:31
+msgid ""
+"\n"
+"Select the language to use for the installer and to be configured in the\n"
+"installed system.\n"
+msgstr ""
+"\n"
+"נא לבחור את השפה בה תוצג תכנית ההתקנה וגם תוגדר\n"
+"במערכת המותקנת.\n"
+
+#: ../subiquity/ui/views/welcome.py:47
+msgid "Use UP, DOWN and ENTER keys to select your language."
+msgstr "יש להשתמש בחצים: למעלה, למטה וב־Enter כדי לבחור את השפה שלך."
+
+#: ../subiquity/ui/views/welcome.py:68
+msgid "Help choosing a language"
+msgstr "עזרה בבחירת השפה"
+
+#~ msgid "Filesystem setup"
+#~ msgstr "הגדרת מערכת קבצים"
+
+#~ msgid "Choose guided or manual partitioning"
+#~ msgstr "נא לבחור בחלוקה מודרכת או ידנית למחיצות"
+
+#~ msgid "Select available disks to format and mount"
+#~ msgstr "בחירה מבין הכוננים הזמינים לפרמוט ועיגון"
+
+#~ msgid "Choose the installation target"
+#~ msgstr "נא לבחור את יעד ההתקנה"
+
+#~ msgid "Thank you for using Ubuntu!"
+#~ msgstr "תודה לך על השימוש באובונטו!"
+
+#~ msgid "Select an interface to configure it or select Done to continue"
+#~ msgstr "נא לבחור מנשק כדי להגדיר אותו או ללחוץ על סיום כדי להמשיך"
+
+#~ msgid "Please report this error in Launchpad"
+#~ msgstr "נא לדווח על התקלה הזאת ב־Launchpad"
+
+#~ msgid "Use An Entire Disk"
+#~ msgstr "ניצול מלוא הכונן"
+
+#~ msgid "Choose the disk to install to:"
+#~ msgstr "נא לבחור כונן לביצוע ההתקנה אליו:"
+
+#~ msgid "Exit To Shell"
+#~ msgstr "יציאה למעטפת"
+
+#~ msgid "Use UP, DOWN and ENTER keys to select your keyboard."
+#~ msgstr "ניתן להשתמש בחצים למעלה, למטה וב־Enter כדי לבחור את המקלדת שלך."
+
+#~ msgid "Install complete"
+#~ msgstr "ההתקנה הושלמה"
+
+#~ msgid "Install in progress:"
+#~ msgstr "מתבצעת התקנה:"
+
+#~ msgid "starting..."
+#~ msgstr "בהפעלה…"
+
+#, python-brace-format
+#~ msgid "DHCPv{v}"
+#~ msgstr "DHCPv{v}"
+
+#~ msgid "-"
+#~ msgstr "-"
+
+#~ msgid "Use An Entire Disk And Set Up LVM"
+#~ msgstr "להשתמש בכונן שלם ולהגדיר LVM"
+
+#~ msgid ""
+#~ "The selected guided partitioning scheme creates the required bootloader "
+#~ "partition on the chosen disk and then creates a single partition covering "
+#~ "the rest of the disk, formatted as ext4 and mounted at '/'."
+#~ msgstr ""
+#~ "סכמת החלוקה המודרכת למחיצות הנבחרות יוצרת את מחיצת האתחול על הכונן הנבחר ואז "
+#~ "יוצרת מחיצה בודדת שחולשת על כל שאר הכונן, מפורמטת בתור ext4 ומעוגנת תחת ‚/’."
+
+#, python-brace-format
+#~ msgid "Cannot remove selflabel from pre-exsting {cdtype} {cdlabel}"
+#~ msgstr "לא ניתן להסיר את selflabel מתוך {cdtype} {cdlabel} קיים"
+
+#~ msgid ""
+#~ "The installer can guide you through partitioning an entire disk either "
+#~ "directly or using LVM, or, if you prefer, you can do it manually.\n"
+#~ "\n"
+#~ "If you choose to partition an entire disk you will still have a chance to "
+#~ "review and modify the results."
+#~ msgstr ""
+#~ "תכנית ההתקנה יכולה להנחות אותך כיצד לחלק כונן שלם למחיצות, הן באופן ישיר והן "
+#~ "עם LVM (מנהל כרכים לוגיים), או, אם זו העדפתך, ניתן לבצע זאת ידנית.\n"
+#~ "\n"
+#~ "בחירה בחלוקה של כל הכונן למחיצות עדיין תהיה לך הזדמנות לסקור ולשנות את "
+#~ "התוצאות."
+
+#~ msgid ""
+#~ "The LVM guided partitioning scheme creates three partitions on the selected "
+#~ "disk: one as required by the bootloader, one for '/boot', and one covering "
+#~ "the rest of the disk.\n"
+#~ "\n"
+#~ "A LVM volume group is created containing the large partition. A 4 gigabyte "
+#~ "logical volume is created for the root filesystem. It can easily be enlarged "
+#~ "with standard LVM command line tools."
+#~ msgstr ""
+#~ "הסכמת החלוקה המודרכת למחיצות בתצורת LVM (מנהל כרכים לוגיים) יוצרת שלוש "
+#~ "מחיצות על הכונן הנבחר: אחת נדרשת לטובת מנהל אתחול, אחת לטובת ‚‎/boot’ ואחת "
+#~ "נוספת שחולשת על פני שאר הכונן.\n"
+#~ "\n"
+#~ "קבוצת כרכים של LVM נוצרת וכולל בתוכה את המחיצה הגדולה. לאחר מכן נוצר כרך "
+#~ "לוגי בגודל 4 ג״ב עבור שורש (root) מערכת הקבצים. ניתן להגדיל אותו בקלות "
+#~ "באמצעות כלי שורת פקודה רגילים של LVM."
