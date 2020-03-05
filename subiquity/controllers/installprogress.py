@@ -324,6 +324,11 @@ class InstallProgressController(SubiquityController):
     @install_step(
         "final system configuration", level="INFO", childlevel="DEBUG")
     async def postinstall(self, context):
+        autoinstall_path = os.path.join(
+            self.app.root, 'var/log/installer/autoinstall-user-data')
+        autoinstall_config = "#cloud-config\n" + yaml.dump(
+            {"autoinstall": self.app.make_autoinstall()})
+        write_file(autoinstall_path, autoinstall_config, mode=0o600)
         await self.configure_cloud_init(context)
         if self.model.ssh.install_server:
             await self.install_openssh(context)
@@ -418,10 +423,6 @@ class InstallProgressController(SubiquityController):
                     stdout=output, stderr=subprocess.STDOUT)
         except Exception:
             log.exception("saving journal failed")
-        autoinstall_path = os.path.join(target_logs, 'autoinstall-user-data')
-        autoinstall_config = "#cloud-config\n" + yaml.dump(
-            {"autoinstall": self.app.make_autoinstall()})
-        write_file(autoinstall_path, autoinstall_config, mode=0o600)
 
     async def _click_reboot(self):
         if self.uu_running:
