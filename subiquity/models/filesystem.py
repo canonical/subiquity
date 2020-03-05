@@ -419,8 +419,8 @@ def _generic_can_REMOVE(obj):
     if cd is None:
         return False
     if cd.preserve:
-        return _("Cannot remove selflabel from pre-exsting {cdtype} "
-                 "{cdlabel}").format(
+        return _("Cannot remove {selflabel} from pre-existing {cdtype} "
+                 "{cdlabel}.").format(
                     selflabel=obj.label,
                     cdtype=cd.desc(),
                     cdlabel=cd.label)
