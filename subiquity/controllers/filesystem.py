@@ -665,7 +665,7 @@ class FilesystemController(SubiquityController):
             }
         self.partition_disk_handler(disk, None, result)
 
-    def guided_lvm(self, disk, lvm_options):
+    def guided_lvm(self, disk, lvm_options=None):
         self.reformat(disk)
         if DeviceAction.MAKE_BOOT in disk.supported_actions:
             self.make_boot_disk(disk)
@@ -681,7 +681,7 @@ class FilesystemController(SubiquityController):
                 fstype=None,
                 ))
         spec = dict(name="ubuntu-vg", devices=set([part]))
-        if lvm_options['encrypt']:
+        if lvm_options and lvm_options['encrypt']:
             spec['password'] = lvm_options['luks_options']['password']
         # create volume group on partition
         vg = self.create_volgroup(spec)
