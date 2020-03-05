@@ -83,12 +83,15 @@ class FilesystemController(SubiquityController):
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
-        if not self.interactive() and data is None:
-            data = {
-                'layout': {
-                    'name': 'lvm',
-                    },
-                }
+        if data is None:
+            if not self.interactive():
+                data = {
+                    'layout': {
+                        'name': 'lvm',
+                        },
+                    }
+            else:
+                data = {}
         log.debug("self.ai_data = %s", data)
         self.ai_data = data
 
