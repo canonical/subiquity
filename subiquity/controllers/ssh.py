@@ -43,9 +43,9 @@ class SSHController(SubiquityController):
         if data is None:
             return
         self.model.install_server = data.get('install_server', False)
-        self.model.authorized_keys = self.autoinstall_data.get(
+        self.model.authorized_keys = data.get(
             'authorized-keys', [])
-        self.model.pwauth = self.autoinstall_data.get(
+        self.model.pwauth = data.get(
             'allow-pw', not self.model.authorized_keys)
 
     def start_ui(self):
