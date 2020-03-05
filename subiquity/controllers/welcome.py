@@ -64,3 +64,6 @@ class WelcomeController(SubiquityController):
     def deserialize(self, data):
         super().deserialize(data)
         self.model.switch_language(data)
+
+    def make_autoinstall(self):
+        return self.model.selected_language

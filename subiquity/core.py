@@ -308,3 +308,11 @@ class Subiquity(Application):
             return
         self.ui.body.show_stretchy_overlay(
             ErrorReportStretchy(self, self.ui.body, report))
+
+    def make_autoinstall(self):
+        config = {}
+        for controller in self.controllers.instances:
+            controller_conf = controller.make_autoinstall()
+            if controller_conf:
+                config[controller.autoinstall_key] = controller_conf
+        return config

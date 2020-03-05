@@ -29,6 +29,7 @@ from curtin.commands.install import (
     ERROR_TARFILE,
     INSTALL_LOG,
     )
+from curtin.util import write_file
 
 from systemd import journal
 
@@ -323,6 +324,11 @@ class InstallProgressController(SubiquityController):
     @install_step(
         "final system configuration", level="INFO", childlevel="DEBUG")
     async def postinstall(self, context):
+        autoinstall_path = os.path.join(
+            self.app.root, 'var/log/installer/autoinstall-user-data')
+        autoinstall_config = "#cloud-config\n" + yaml.dump(
+            {"autoinstall": self.app.make_autoinstall()})
+        write_file(autoinstall_path, autoinstall_config, mode=0o600)
         await self.configure_cloud_init(context)
         if self.model.ssh.install_server:
             await self.install_openssh(context)
@@ -401,17 +407,19 @@ class InstallProgressController(SubiquityController):
 
     @install_step("copying logs to installed system")
     async def copy_logs_to_target(self, context):
-        if self.opts.dry_run:
-            if 'copy-logs-fail' in self.app.debug_flags:
-                raise PermissionError()
-            return
+        if self.opts.dry_run and 'copy-logs-fail' in self.app.debug_flags:
+            raise PermissionError()
         target_logs = self.tpath('var/log/installer')
-        await arun_command(['cp', '-aT', '/var/log/installer', target_logs])
+        if self.opts.dry_run:
+            os.makedirs(target_logs, exist_ok=True)
+        else:
+            await arun_command(
+                ['cp', '-aT', '/var/log/installer', target_logs])
+        journal_txt = os.path.join(target_logs, 'installer-journal.txt')
         try:
-            with open(os.path.join(target_logs,
-                                   'installer-journal.txt'), 'w') as output:
+            with open(journal_txt, 'w') as output:
                 await arun_command(
-                    ['journalctl'],
+                    ['journalctl', '-b'],
                     stdout=output, stderr=subprocess.STDOUT)
         except Exception:
             log.exception("saving journal failed")

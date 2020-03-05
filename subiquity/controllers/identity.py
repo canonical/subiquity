@@ -15,6 +15,8 @@
 
 import logging
 
+import attr
+
 from subiquity.controller import SubiquityController
 from subiquity.ui.views import IdentityView
 
@@ -57,3 +59,8 @@ class IdentityController(SubiquityController):
         self.model.add_user(user_spec)
         self.configured()
         self.app.next_screen()
+
+    def make_autoinstall(self):
+        r = attr.asdict(self.model.user)
+        r['hostname'] = self.model.hostname
+        return r

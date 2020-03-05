@@ -74,6 +74,9 @@ class SubiquityController(BaseController):
     def deserialize(self, state):
         self.configured()
 
+    def make_autoinstall(self):
+        return {}
+
 
 class NoUIController(SubiquityController):
 
@@ -101,3 +104,6 @@ class RepeatedController(RepeatedController):
 
     def interactive(self):
         return self.orig.interactive()
+
+    def make_autoinstall(self):
+        return {}
