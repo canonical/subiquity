@@ -28,7 +28,7 @@ install_deps:
 		python3-bson
 
 i18n:
-	$(PYTHON) setup.py build
+	$(PYTHON) setup.py build_i18n
 
 dryrun: probert i18n
 	$(MAKE) ui-view DRYRUN="--dry-run --bootloader uefi"

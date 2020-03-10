@@ -14,6 +14,7 @@ export PYBUILD_OPTION="-v"
 override_dh_auto_clean:
 	rm -f .subiquity/subiquity-debug.log installer/geninstaller.log
 	rm -rf probert/
+	python3 setup.py build_i18n
 	dh_auto_clean
 
 override_dh_install:
