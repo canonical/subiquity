@@ -12,6 +12,18 @@ also be discussed in the forum at https://forum.snapcraft.io.
 Our localization platform is Launchpad, translations are managed at
 https://translations.launchpad.net/ubuntu/+source/subiquity/
 
+To update translation template in launchpad:
+ * update po/POTFILES.in with any new files that contain translations
+ * execute clean target, i.e. $ debuild -S
+ * dput subiquity into Ubuntu
+
+To export and update translations in subiquity:
+ * Wait for new subiquity to publish
+ * Request fresh translation export from Launchpad at
+https://translations.launchpad.net/ubuntu/focal/+source/subiquity/+export
+ * wait for export to generate
+ * download, unpack, rename .po files into po directory, and commit changes
+
 # Acquire subiquity from source
 
 `git clone https://github.com/CanonicalLtd/subiquity`
