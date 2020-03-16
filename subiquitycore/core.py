@@ -395,7 +395,7 @@ class Application:
 
         async def _run():
             await arun_command(
-                cmd, stdin=None, stdout=None, stderr=None)
+                cmd, stdin=None, stdout=None, stderr=None, **kw)
             screen.start()
             urwid.emit_signal(
                 screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
