@@ -485,10 +485,13 @@ class Application:
 
 # EventLoop -------------------------------------------------------------------
 
-    def exit(self):
+    def _remove_last_screen(self):
         state_path = os.path.join(self.state_dir, 'last-screen')
         if os.path.exists(state_path):
             os.unlink(state_path)
+
+    def exit(self):
+        self._remove_last_screen()
         self.aio_loop.stop()
 
     def run_scripts(self, scripts):
