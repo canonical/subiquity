@@ -124,7 +124,6 @@ class MirrorController(SubiquityController):
         return self.model.get_mirror()
 
     def deserialize(self, data):
-        super().deserialize(data)
         self.model.set_mirror(data)
 
     def done(self, mirror):

@@ -131,7 +131,9 @@ class Subiquity(Application):
         else:
             super().exit()
 
-    def restart(self):
+    def restart(self, remove_last_screen=True):
+        if remove_last_screen:
+            self._remove_last_screen()
         self.urwid_loop.screen.stop()
         cmdline = ['snap', 'run', 'subiquity']
         if self.opts.dry_run:
@@ -168,6 +170,7 @@ class Subiquity(Application):
             report = self.make_apport_report(
                 ErrorReportKind.UI, "Installer UI", interrupt=False, wait=True)
             print("report saved to {}".format(report.path))
+            self._remove_last_screen()
             raise
 
     def report_start_event(self, name, description, level="INFO"):

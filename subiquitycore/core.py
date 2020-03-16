@@ -485,10 +485,13 @@ class Application:
 
 # EventLoop -------------------------------------------------------------------
 
-    def exit(self):
+    def _remove_last_screen(self):
         state_path = os.path.join(self.state_dir, 'last-screen')
         if os.path.exists(state_path):
             os.unlink(state_path)
+
+    def exit(self):
+        self._remove_last_screen()
         self.aio_loop.stop()
 
     def run_scripts(self, scripts):
@@ -597,6 +600,9 @@ class Application:
         for i, controller in enumerate(self.controllers.instances):
             if controller.name == last_screen:
                 controller_index = i
+        # Screens that have already been seen should be marked as configured.
+        for controller in self.controllers.instances[:controller_index]:
+            controller.configured()
         return controller_index
 
     def setraw(self):
