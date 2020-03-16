@@ -600,6 +600,9 @@ class Application:
         for i, controller in enumerate(self.controllers.instances):
             if controller.name == last_screen:
                 controller_index = i
+        # Screens that have already been seen should be marked as configured.
+        for controller in self.controllers.instances[:controller_index]:
+            controller.configured()
         return controller_index
 
     def setraw(self):
