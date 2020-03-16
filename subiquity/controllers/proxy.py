@@ -53,7 +53,6 @@ class ProxyController(SubiquityController):
         return self.model.proxy
 
     def deserialize(self, data):
-        super().deserialize(data)
         self.model.proxy = data
 
     def done(self, proxy):

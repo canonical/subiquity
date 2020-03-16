@@ -72,7 +72,7 @@ class SubiquityController(BaseController):
             self.app.base_model.configured(self.model_name)
 
     def deserialize(self, state):
-        self.configured()
+        pass
 
     def make_autoinstall(self):
         return {}
