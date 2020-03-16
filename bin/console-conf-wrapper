@@ -23,7 +23,7 @@ if ! command -v snap >/dev/null; then
     # FIXME: Should we give a root shell here to allow developers to poke
     # around?  The device is most likely unusable anyway if we reached
     # this point because seeding (and/or ordering) failed.
-    echo"Press [enter] to retry"
+    echo "Press [enter] to retry"
     read -r REPLY
     exit 0
 fi
