@@ -10,6 +10,15 @@ trap echo_on EXIT
 # happened and need to force it on. Yay UNIX!
 stty icrnl -echo
 
+if [ -e /run/snapd-recovery-chooser-triggered ]; then
+    # make sure the chooser binary is there to avoid getting into an awkward
+    # state and locking out the user
+    if [ -x /usr/lib/snapd/snap-recovery-chooser ]; then
+        # when recovery chooser is invoked it takes over the terminal
+        exec /usr/lib/snapd/snap-recovery-chooser
+    fi
+fi
+
 if [ "$(snap managed)" = "true" ]; then
     # check if we have extrausers that have no password set
     if grep -qE '^[-a-z0-9+.-_]+:x:' /var/lib/extrausers/passwd && ! grep -qE '^[-a-z0-9+.-_]+:\$[0-9]+\$.*:' /var/lib/extrausers/shadow; then
