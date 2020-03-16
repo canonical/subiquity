@@ -10,6 +10,25 @@ trap echo_on EXIT
 # happened and need to force it on. Yay UNIX!
 stty icrnl -echo
 
+
+# Check if the "snap" command is available - if not that means this
+# script ran too early (which should never happen because we use
+# After=core18.start-snapd.service) or that seeding fails.
+if ! command -v snap >/dev/null; then
+    echo "Cannot find the 'snap' command. This means something went wrong."
+    echo "Press [enter] to see log output that may help diagnose the issue."
+    read -r REPLY
+    journalctl -u core18.start-snapd.service
+
+    # FIXME: Should we give a root shell here to allow developers to poke
+    # around?  The device is most likely unusable anyway if we reached
+    # this point because seeding (and/or ordering) failed.
+    echo"Press [enter] to retry"
+    read -r REPLY
+    exit 0
+fi
+
+
 if [ "$(snap managed)" = "true" ]; then
     # check if we have extrausers that have no password set
     if grep -qE '^[-a-z0-9+.-_]+:x:' /var/lib/extrausers/passwd && ! grep -qE '^[-a-z0-9+.-_]+:\$[0-9]+\$.*:' /var/lib/extrausers/shadow; then
