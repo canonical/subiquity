@@ -403,7 +403,7 @@ class InstallProgressController(SubiquityController):
                 'chroot', '/target',
                 '/usr/share/unattended-upgrades/unattended-upgrade-shutdown',
                 '--stop-only',
-                ], check=True))
+                ]), check=True)
 
     @install_step("copying logs to installed system")
     async def copy_logs_to_target(self, context):
