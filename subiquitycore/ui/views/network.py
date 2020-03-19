@@ -129,16 +129,17 @@ class NetworkView(BaseView):
     _action_EDIT_BOND = _stretchy_shower(BondStretchy)
     _action_ADD_VLAN = _stretchy_shower(AddVlanStretchy)
 
-    def _action_DELETE(self, device):
-        touched_devs = set()
-        if device.type == "bond":
-            for name in device.config['interfaces']:
-                touched_devs.add(self.model.get_netdev_by_name(name))
-        device.config = None
-        self.del_link(device)
-        for dev in touched_devs:
-            self.update_link(dev)
-        self.controller.apply_config()
+    def _action_DELETE(self, name, device):
+        with self.controller.context.child(name):
+            touched_devs = set()
+            if device.type == "bond":
+                for name in device.config['interfaces']:
+                    touched_devs.add(self.model.get_netdev_by_name(name))
+            device.config = None
+            self.del_link(device)
+            for dev in touched_devs:
+                self.update_link(dev)
+            self.controller.apply_config()
 
     def _action(self, sender, action, device):
         action, meth = action
