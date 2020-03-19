@@ -67,7 +67,8 @@ class SubiquityNetworkEventReceiver(NetworkEventReceiver):
         netdev = self.model.update_link(ifindex)
         if netdev is None:
             return
-        if not (netdev.info.flags & IFF_UP) and ifindex in self.default_routes:
+        flags = getattr(netdev.info, "flags", 0)
+        if not (flags & IFF_UP) and ifindex in self.default_routes:
             self.default_routes.remove(ifindex)
             for watcher in self.default_route_watchers:
                 watcher(self.default_routes)
