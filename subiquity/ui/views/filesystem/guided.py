@@ -86,16 +86,22 @@ class GuidedChoiceForm(SubForm):
         super().__init__(parent)
         options = []
         tables = []
+        initial = -1
         for disk in parent.model.all_disks():
             for obj, cells in summarize_device(disk):
                 table = TablePile([TableRow(cells)])
                 tables.append(table)
-                options.append(Option((table, obj is disk, obj)))
+                enabled = False
+                if obj is disk and disk.size > 6*(2**30):
+                    enabled = True
+                    if initial < 0:
+                        initial = len(options)
+                options.append(Option((table, enabled, obj)))
         t0 = tables[0]
         for t in tables[1:]:
             t0.bind(t)
         self.disk.widget.options = options
-        self.disk.widget.index = 0
+        self.disk.widget.index = initial
         connect_signal(self.use_lvm.widget, 'change', self._toggle)
         self.lvm_options.enabled = self.use_lvm.value
 
