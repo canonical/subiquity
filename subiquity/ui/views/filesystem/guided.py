@@ -17,6 +17,7 @@ import logging
 
 from urwid import (
     connect_signal,
+    Text,
     )
 
 from subiquitycore.ui.form import (
@@ -30,6 +31,7 @@ from subiquitycore.ui.form import (
     SubForm,
     SubFormField,
     )
+from subiquitycore.ui.buttons import other_btn
 from subiquitycore.ui.selector import Option
 from subiquitycore.ui.table import (
     TablePile,
@@ -37,6 +39,7 @@ from subiquitycore.ui.table import (
     )
 from subiquitycore.ui.utils import (
     rewrap,
+    screen,
     )
 from subiquitycore.view import BaseView
 
@@ -157,19 +160,51 @@ at /.
 """)
 
 
+no_big_disks = _("""
+Block probing did not discover any disks big enough to support guided storage
+configuration. Manual configuration may still be possible.
+""")
+
+
+no_disks = _("""
+Block probing did not discover any disks. Unfortunately this means that
+installation will not be possible.
+""")
+
+
 class GuidedDiskSelectionView (BaseView):
 
     title = _("Guided storage configuration")
 
     def __init__(self, controller):
         self.controller = controller
-        self.form = GuidedForm(model=controller.model)
 
-        connect_signal(self.form, 'submit', self.done)
-        connect_signal(self.form, 'cancel', self.cancel)
+        found_disk = False
+        found_ok_disk = False
+        for disk in controller.model.all_disks():
+            found_disk = True
+            if disk.size > 6*(2**30):
+                found_ok_disk = True
+                break
 
-        super().__init__(
-            self.form.as_screen(focus_buttons=False, excerpt=_(subtitle)))
+        if found_ok_disk:
+            self.form = GuidedForm(model=controller.model)
+
+            connect_signal(self.form, 'submit', self.done)
+            connect_signal(self.form, 'cancel', self.cancel)
+
+            super().__init__(
+                self.form.as_screen(focus_buttons=False, excerpt=_(subtitle)))
+        elif found_disk:
+            super().__init__(
+                screen(
+                    [Text(_(rewrap(no_big_disks)))],
+                    [other_btn(_("OK"), on_press=self.manual)]))
+        else:
+            super().__init__(
+                screen(
+                    [Text(_(rewrap(no_disks)))],
+                    []))
 
     def local_help(self):
         return (_("Help on guided storage configuration"), rewrap(_(HELP)))
@@ -183,6 +218,9 @@ class GuidedDiskSelectionView (BaseView):
                     disk, results['guided_choice']['lvm_options'])
             else:
                 self.controller.guided_direct(disk)
+        self.controller.manual()
+
+    def manual(self, sender):
         self.controller.manual()
 
     def cancel(self, btn=None):
