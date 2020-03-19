@@ -140,7 +140,8 @@ class FilesystemController(SubiquityController):
                         # We wait on the task directly here, not
                         # self._probe_once_task.wait as if _probe_once_task
                         # gets cancelled, we should be cancelled too.
-                        await asyncio.wait_for(self._probe_once_task.task, 5.0)
+                        await asyncio.wait_for(
+                            self._probe_once_task.task, 15.0)
                 except Exception:
                     block_discover_log.exception(
                         "block probing failed restricted=%s", restricted)
