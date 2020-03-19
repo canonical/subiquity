@@ -528,7 +528,7 @@ class _Formattable(ABC):
             if action['type'] == 'format' and action['volume'] == self.id:
                 return action['fstype']
         for action in self._m._orig_config:
-            if action['id'] == self.id and action['flag'] == 'swap':
+            if action['id'] == self.id and action.get('flag') == 'swap':
                 return 'swap'
         return None
 

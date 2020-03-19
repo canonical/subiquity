@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import select
+import shutil
 import sys
 
 import pyudev
@@ -140,7 +141,8 @@ class FilesystemController(SubiquityController):
                         # We wait on the task directly here, not
                         # self._probe_once_task.wait as if _probe_once_task
                         # gets cancelled, we should be cancelled too.
-                        await asyncio.wait_for(self._probe_once_task.task, 5.0)
+                        await asyncio.wait_for(
+                            self._probe_once_task.task, 15.0)
                 except Exception:
                     block_discover_log.exception(
                         "block probing failed restricted=%s", restricted)
@@ -175,6 +177,8 @@ class FilesystemController(SubiquityController):
             if self.opts.dry_run:
                 cmd = ['sleep', "0.2"]
             await arun_command(cmd)
+            if not self.opts.dry_run:
+                shutil.rmtree(self.app.base_model.target)
         context = pyudev.Context()
         self._monitor = pyudev.Monitor.from_netlink(context)
         self._monitor.filter_by(subsystem='block')

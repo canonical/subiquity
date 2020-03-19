@@ -20,6 +20,17 @@ Network:
         subnet: "10.2.0.0/24"
         address: 10.2.0.1
         searchdomains: lab
+    - obj: [interface name bond10]
+      action: EDIT_IPV4
+      method-data:
+        method: dhcp
+    - obj: [interface name bond10]
+      action: DELETE
+    - action: create-bond
+      data:
+        name: bond10
+        devices:
+          - [interface index 0]
     - action: done
 Proxy:
   proxy: ""
