@@ -45,6 +45,7 @@ parts:
       - python3-distutils-extra
       - python3-urwid
     stage-packages:
+      - cloud-init
       - libc6
       - libsystemd0
       - iso-codes
