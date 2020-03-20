@@ -151,6 +151,14 @@ class Subiquity(Application):
             return s
 
     def run(self):
+        if not os.path.exists(self.opts.autoinstall):
+            from cloudinit import atomic_helper, stages
+            cfg = stages.Init().cfg
+            if 'autoinstall' in cfg:
+                atomic_helper.write_file(
+                    self.opts.autoinstall,
+                    yaml.dump(cfg['autoinstall']),
+                    mode=0o600)
         if os.path.exists(self.opts.autoinstall):
             with open(self.opts.autoinstall) as fp:
                 self.autoinstall_config = yaml.safe_load(fp)
