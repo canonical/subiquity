@@ -18,8 +18,9 @@ import logging
 from subiquitycore.core import Application
 
 from console_conf.models.console_conf import ConsoleConfModel
+from console_conf.models.systems import RecoverySystemsModel
 
-log = logging.getLogger('console_conf.core')
+log = logging.getLogger("console_conf.core")
 
 
 class ConsoleConf(Application):
@@ -35,3 +36,33 @@ class ConsoleConf(Application):
         "Network",
         "Identity",
     ]
+
+
+class RecoveryChooser(Application):
+
+    from console_conf.palette import COLORS, STYLES, STYLES_MONO
+
+    project = "console_conf"
+
+    controllers = [
+        "RecoveryChooserWelcome",
+        "RecoveryChooser",
+        "RecoveryChooserConfirm",
+    ]
+
+    def __init__(self, opts, chooser_input, chooser_output):
+        """Takes the options and raw input/output streams for communicating with the
+        chooser parent process.
+        """
+        self._chooser_output = chooser_output
+        # make_model is used by super()'s constructor, but we need to use the
+        # instance data
+        self.make_model = lambda: RecoverySystemsModel.from_systems_stream(
+            chooser_input
+        )
+
+        super().__init__(opts)
+
+    def respond(self, choice):
+        """Produce a response to the parent process"""
+        self.base_model.to_response_stream(choice, self._chooser_output)
