@@ -16,10 +16,11 @@
 
 import argparse
 import sys
+import os
 import logging
 from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION
-from console_conf.core import ConsoleConf
+from console_conf.core import ConsoleConf, RecoveryChooser
 
 
 class ClickAction(argparse.Action):
@@ -53,6 +54,10 @@ def parse_options(argv):
     parser.add_argument('--click', metavar="PAT", action=ClickAction,
                         help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
+    parser.add_argument('--recovery-chooser-mode', action='store_true',
+                        dest='chooser_systems',
+                        help=('Run as a recovery chooser interacting with the '
+                              'calling process over stdin/stdout streams'))
     return parser.parse_args(argv)
 
 
@@ -69,8 +74,29 @@ def main():
     logger.info("Starting console-conf v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
 
-    interface = ConsoleConf(opts)
+    if opts.chooser_systems:
+        # when running as a chooser, the stdin/stdout streams are set up by the
+        # process that runs us, attempt to restore the tty in/out by looking at
+        # stderr
+        chooser_input, chooser_output = restore_std_streams_from(sys.stderr)
+        interface = RecoveryChooser(opts, chooser_input, chooser_output)
+    else:
+        interface = ConsoleConf(opts)
+
     interface.run()
+
+
+def restore_std_streams_from(from_file):
+    """
+    Attempt to restore the original sys.std{in,out} streams by inspecting the
+    tty that stderr is hooked up to. Returns the chooser input/output streams.
+    """
+    tty = os.ttyname(from_file.fileno())
+    # we have tty now
+    chooser_input, chooser_output = sys.stdin, sys.stdout
+    sys.stdin = open(tty, 'r')
+    sys.stdout = open(tty, 'w')
+    return chooser_input, chooser_output
 
 
 if __name__ == '__main__':
