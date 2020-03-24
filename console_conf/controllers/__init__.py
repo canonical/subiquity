@@ -17,9 +17,17 @@
 
 from .identity import IdentityController
 from subiquitycore.controllers.network import NetworkController
-from .welcome import WelcomeController
+from .welcome import WelcomeController, RecoveryChooserWelcomeController
+from .chooser import (
+    RecoveryChooserController,
+    RecoveryChooserConfirmController
+    )
+
 __all__ = [
     'IdentityController',
     'NetworkController',
     'WelcomeController',
+    'RecoveryChooserWelcomeController',
+    'RecoveryChooserController',
+    'RecoveryChooserConfirmController',
 ]

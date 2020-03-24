@@ -13,15 +13,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from console_conf.ui.views import WelcomeView
+from console_conf.ui.views import WelcomeView, ChooserWelcomeView
 
 from subiquitycore.controller import BaseController
 
 
 class WelcomeController(BaseController):
 
+    welcome_view = WelcomeView
+
     def start_ui(self):
-        view = WelcomeView(self)
+        view = self.welcome_view(self)
         self.ui.set_body(view)
 
     def done(self):
@@ -30,3 +32,7 @@ class WelcomeController(BaseController):
     def cancel(self):
         # Can't go back from here!
         pass
+
+
+class RecoveryChooserWelcomeController(WelcomeController):
+    welcome_view = ChooserWelcomeView
