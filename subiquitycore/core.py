@@ -60,9 +60,9 @@ KDSKBMODE = 0x4B45  # sets current keyboard mode
 
 class TwentyFourBitScreen(urwid.raw_display.Screen):
 
-    def __init__(self, _urwid_name_to_rgb):
+    def __init__(self, _urwid_name_to_rgb, **kwargs):
         self._urwid_name_to_rgb = _urwid_name_to_rgb
-        super().__init__()
+        super().__init__(**kwargs)
 
     def _cc(self, color):
         """Return the "SGR" parameter for selecting color.
@@ -610,7 +610,7 @@ class Application:
         if os.isatty(fd):
             tty.setraw(fd)
 
-    def make_screen(self):
+    def make_screen(self, inputf=None, outputf=None):
         """Return a screen to be passed to MainLoop.
 
         colors is a list of exactly 8 tuples (name, (r, g, b)), the same as
@@ -619,6 +619,11 @@ class Application:
         # On the linux console, we overwrite the first 8 colors to be those
         # defined by colors. Otherwise, we return a screen that uses ISO
         # 8613-3ish codes to display the colors.
+        if inputf is None:
+            inputf = sys.stdin
+        if outputf is None:
+            outputf = sys.stdout
+
         if len(self.COLORS) != 8:
             raise Exception(
                 "make_screen must be passed a list of exactly 8 colors")
@@ -631,18 +636,19 @@ class Application:
                 for j in range(3):
                     curpal[i*3+j] = self.COLORS[i][1][j]
             fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
-            return urwid.raw_display.Screen()
+            return urwid.raw_display.Screen(input=inputf, output=outputf)
         elif self.opts.ascii:
-            return urwid.raw_display.Screen()
+            return urwid.raw_display.Screen(input=inputf, output=outputf)
         else:
             _urwid_name_to_rgb = {}
             for i, n in enumerate(urwid_8_names):
                 _urwid_name_to_rgb[n] = self.COLORS[i][1]
-            return TwentyFourBitScreen(_urwid_name_to_rgb)
+            return TwentyFourBitScreen(_urwid_name_to_rgb,
+                                       input=inputf, output=outputf)
 
-    def run(self):
+    def run(self, input=None, output=None):
         log.debug("Application.run")
-        screen = self.make_screen()
+        screen = self.make_screen(input, output)
 
         self.urwid_loop = urwid.MainLoop(
             self.ui, palette=self.color_palette, screen=screen,

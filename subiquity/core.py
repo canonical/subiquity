@@ -140,9 +140,9 @@ class Subiquity(Application):
             cmdline = [sys.executable] + sys.argv
         os.execvp(cmdline[0], cmdline)
 
-    def make_screen(self):
+    def make_screen(self, input=None, output=None):
         if self.interactive():
-            return super().make_screen()
+            return super().make_screen(input, output)
         else:
             r, w = os.pipe()
             s = urwid.raw_display.Screen(
