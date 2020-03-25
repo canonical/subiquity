@@ -49,6 +49,16 @@ NON_INTERACTIVE_CONFIG = {'builtin': {'type': 'print'}}
 class ReportingController(NoUIController):
 
     autoinstall_key = "reporting"
+    autoinstall_schema = {
+        'type': 'object',
+        'additionalProperties': {
+            'type': 'object',
+            'properties': {
+                'type': {'type': 'string'},
+                'requiredProperties': ['type'],
+                'additionalProperties': True,
+            },
+        }
 
     def __init__(self, app):
         self.config = copy.deepcopy(INITIAL_CONFIG)
