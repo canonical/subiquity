@@ -23,7 +23,11 @@ import urwid
 
 import apport.hookutils
 
-from cloudinit import safeyaml
+from cloudinit import (
+    atomic_helper,
+    safeyaml,
+    stages,
+    )
 
 import yaml
 
@@ -153,14 +157,20 @@ class Subiquity(Application):
             s.get_cols_rows = lambda: (80, 24)
             return s
 
+    def _read_autoinstall_from_cloudinit(self):
+        init = stages.Init()
+        init.read_cfg()
+        init.fetch(existing="trust")
+        cloud = init.cloudify()
+        return cloud.cfg.get('autoinstall')
+
     def run(self):
         if not os.path.exists(self.opts.autoinstall):
-            from cloudinit import atomic_helper, stages
-            cfg = stages.Init().cfg
-            if 'autoinstall' in cfg:
+            cfg = self._read_autoinstall_from_cloudinit()
+            if cfg is not None:
                 atomic_helper.write_file(
                     self.opts.autoinstall,
-                    safeyaml.dumps(cfg['autoinstall']),
+                    safeyaml.dumps(cfg),
                     mode=0o600)
         if os.path.exists(self.opts.autoinstall):
             with open(self.opts.autoinstall) as fp:
