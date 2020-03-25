@@ -143,6 +143,10 @@ class FilesystemController(SubiquityController):
                         # gets cancelled, we should be cancelled too.
                         await asyncio.wait_for(
                             self._probe_once_task.task, 15.0)
+                except asyncio.CancelledError:
+                    # asyncio.CancelledError is a subclass of Exception in
+                    # Python 3.6 (sadface)
+                    raise
                 except Exception:
                     block_discover_log.exception(
                         "block probing failed restricted=%s", restricted)
