@@ -28,7 +28,7 @@ class NetworkController(NetworkController, SubiquityController):
                 'type': 'integer',
                 'minimum': 2,
                 'maximum': 2,
-                }
+                },
             'ethernets': {'type': 'object'},
             'wifis': {'type': 'object'},
             'bridges': {'type': 'object'},

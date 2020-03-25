@@ -321,7 +321,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         return label, root[1:] + '/' + self.base + '.crash'
 
 
-class ErrorController(NoUIController):
+class ErrorController(CmdListController):
 
     autoinstall_key = 'error-commands'
 

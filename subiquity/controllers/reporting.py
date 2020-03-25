@@ -57,6 +57,7 @@ class ReportingController(NoUIController):
                 'type': {'type': 'string'},
                 'requiredProperties': ['type'],
                 'additionalProperties': True,
+                },
             },
         }
 

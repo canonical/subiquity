@@ -42,7 +42,7 @@ class CheckState(enum.IntEnum):
 class MirrorController(SubiquityController):
 
     autoinstall_key = "apt"
-    autoinstall_schema = { # This is obviously incomplete.
+    autoinstall_schema = {  # This is obviously incomplete.
         'type': 'object',
         'properties': {
             'preserve_sources_list': {'type': 'boolean'},

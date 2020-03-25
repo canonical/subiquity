@@ -35,7 +35,7 @@ class SSHController(SubiquityController):
 
     autoinstall_key = model_name = "ssh"
     autoinstall_schema = {
-        'type': {'object'},
+        'type': 'object',
         'properties': {
             'install-server': {'type': 'boolean'},
             'authorized-keys': {
