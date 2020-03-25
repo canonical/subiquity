@@ -34,7 +34,7 @@ class IdentityController(SubiquityController):
             'hostname': {'type': 'string'},
             'password': {'type': 'string'},
             },
-        'requiredProperties': ['username', 'hostname', 'password'],
+        'required': ['username', 'hostname', 'password'],
         'additionalProperties': False,
         }
 

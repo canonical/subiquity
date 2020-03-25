@@ -36,7 +36,7 @@ class KeyboardController(SubiquityController):
             'variant': {'type': 'string'},
             'toggle': {'type': 'string'},
             },
-        'requiredProperties': ['layout'],
+        'required': ['layout'],
         'additionalProperties': False,
         }
     signals = [

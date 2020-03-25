@@ -18,6 +18,8 @@ import copy
 import json
 import sys
 
+import jsonschema
+
 from subiquity.cmd.tui import parse_options
 from subiquity.core import Subiquity
 
@@ -27,10 +29,10 @@ base_schema = {
         'version': {
             'type': 'integer',
             'minumum': 1,
-            'maximum': 2,
+            'maximum': 1,
         },
     },
-    'requiredProperties': ['version'],
+    'required': ['version'],
     'additionalProperties': True,
     }
 
@@ -54,7 +56,9 @@ def main():
     app = Subiquity(opts, None)
     app.base_model = app.make_model()
     app.controllers.load_all()
-    json.dump(make_schema(app), sys.stdout, indent=4)
+    schema = make_schema(app)
+    jsonschema.validate({"version": 1}, schema)
+    print(json.dumps(make_schema(app), indent=4))
 
 
 if __name__ == '__main__':
