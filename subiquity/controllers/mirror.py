@@ -42,6 +42,15 @@ class CheckState(enum.IntEnum):
 class MirrorController(SubiquityController):
 
     autoinstall_key = "apt"
+    autoinstall_schema = { # This is obviously incomplete.
+        'type': 'object',
+        'properties': {
+            'preserve_sources_list': {'type': 'boolean'},
+            'primary': {'type': 'array'},
+            'geoip':  {'type': 'boolean'},
+            'sources': {'type': 'object'},
+            },
+        }
     model_name = "mirror"
     signals = [
         ('snapd-network-change', 'snapd_network_changed'),

@@ -26,6 +26,17 @@ log = logging.getLogger('subiquity.controllers.identity')
 class IdentityController(SubiquityController):
 
     autoinstall_key = model_name = "identity"
+    autoinstall_schema = {
+        'type': 'object',
+        'properties': {
+            'realname': {'type': 'string'},
+            'username': {'type': 'string'},
+            'hostname': {'type': 'string'},
+            'password': {'type': 'string'},
+            },
+        'requiredProperties': ['username', 'hostname', 'password'],
+        'additionalProperties': False,
+        }
 
     def load_autoinstall_data(self, data):
         if data is not None:

@@ -36,7 +36,7 @@ from subiquitycore.async_helpers import (
     schedule_task,
     )
 
-from subiquity.controller import NoUIController
+from subiquity.controllers.cmdlist import CmdListController
 
 
 log = logging.getLogger('subiquity.controllers.error')
@@ -322,6 +322,8 @@ class ErrorReport(metaclass=urwid.MetaSignals):
 
 
 class ErrorController(NoUIController):
+
+    autoinstall_key = 'error-commands'
 
     def __init__(self, app):
         super().__init__(app)

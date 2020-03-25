@@ -21,6 +21,10 @@ from subiquity.controller import NoUIController
 class CmdListController(NoUIController):
 
     autoinstall_default = []
+    autoinstall_schema = {
+        'type': 'array',
+        'items': {'type': 'string'},
+        }
     cmds = ()
 
     def load_autoinstall_data(self, data):
