@@ -20,9 +20,12 @@ import platform
 import sys
 import traceback
 import urwid
-import yaml
 
 import apport.hookutils
+
+from cloudinit import safeyaml
+
+import yaml
 
 from subiquitycore.async_helpers import (
     run_in_thread,
@@ -157,7 +160,7 @@ class Subiquity(Application):
             if 'autoinstall' in cfg:
                 atomic_helper.write_file(
                     self.opts.autoinstall,
-                    yaml.dump(cfg['autoinstall']),
+                    safeyaml.dumps(cfg['autoinstall']),
                     mode=0o600)
         if os.path.exists(self.opts.autoinstall):
             with open(self.opts.autoinstall) as fp:
