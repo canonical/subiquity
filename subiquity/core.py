@@ -158,6 +158,8 @@ class Subiquity(Application):
             return s
 
     def _read_autoinstall_from_cloudinit(self):
+        if self.opts.dry_run:
+            return None
         init = stages.Init()
         init.read_cfg()
         init.fetch(existing="trust")
