@@ -19,9 +19,11 @@ import logging
 import os
 import fcntl
 import sys
+import time
 
-from subiquitycore.log import setup_logger
 from subiquitycore import __version__ as VERSION
+from subiquitycore.log import setup_logger
+from subiquitycore.utils import run_command
 
 from subiquity.core import Subiquity
 
@@ -97,7 +99,7 @@ AUTO_ANSWERS_FILE = "/subiquity_config/answers.yaml"
 
 
 def main():
-    # Preffer utils from $SNAP, over system-wide
+    # Prefer utils from $SNAP, over system-wide
     snap = os.environ.get('SNAP')
     if snap:
         os.environ['PATH'] = os.pathsep.join([
@@ -116,6 +118,10 @@ def main():
     logger = logging.getLogger('subiquity')
     logger.info("Starting SUbiquity v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
+
+    ci_start = time.time()
+    run_command(["cloud-init", "status", "--wait"])
+    logger.debug("waited %ss for cloud-init", time.time() - ci_start)
 
     block_log_dir = os.path.join(LOGDIR, "block")
     os.makedirs(block_log_dir, exist_ok=True)
