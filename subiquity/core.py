@@ -219,14 +219,7 @@ class Subiquity(Application):
 
     async def _apply(self, controller):
         with controller.context.child("apply_autoinstall_config"):
-            try:
-                await controller.apply_autoinstall_config()
-            except BaseException:
-                logging.exception(
-                    "%s.apply_autoinstall_config failed", controller.name)
-                # Obviously need to something better here.
-                await asyncio.sleep(1800)
-                raise
+            await controller.apply_autoinstall_config()
         controller.autoinstall_applied = True
         controller.configured()
         self.next_screen()
