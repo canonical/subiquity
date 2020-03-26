@@ -27,12 +27,18 @@ log = logging.getLogger("subiquity.controller")
 class SubiquityController(BaseController):
 
     autoinstall_key = None
+    autoinstall_schema = None
     autoinstall_default = None
 
     def __init__(self, app):
         super().__init__(app)
         self.autoinstall_applied = False
         if app.autoinstall_config:
+            ai_data = app.autoinstall_config.get(
+                self.autoinstall_key,
+                self.autoinstall_default)
+            if ai_data is not None and self.autoinstall_schema is not None:
+                jsonschema.validate(ai_data, self.autoinstall_schema)
             self.load_autoinstall_data(
                 app.autoinstall_config.get(
                     self.autoinstall_key,
@@ -91,6 +97,9 @@ class NoUIController(SubiquityController):
 
 
 class RepeatedController(RepeatedController):
+
+    autoinstall_key = None
+    autoinstall_schema = None
 
     def __init__(self, orig, index):
         super().__init__(orig, index)

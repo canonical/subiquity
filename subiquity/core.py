@@ -155,8 +155,8 @@ class Subiquity(Application):
         if self.opts.autoinstall is not None:
             with open(self.opts.autoinstall) as fp:
                 self.autoinstall_config = yaml.safe_load(fp)
-            self.controllers.load("Early")
             self.controllers.load("Reporting")
+            self.controllers.load("Early")
             self.controllers.Reporting.start()
             self.aio_loop.run_until_complete(self.controllers.Early.run())
             self.new_event_loop()
