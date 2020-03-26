@@ -119,9 +119,10 @@ def main():
     logger.info("Starting SUbiquity v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
 
-    ci_start = time.time()
-    run_command(["cloud-init", "status", "--wait"])
-    logger.debug("waited %ss for cloud-init", time.time() - ci_start)
+    if not opts.dry_run:
+        ci_start = time.time()
+        run_command(["cloud-init", "status", "--wait"])
+        logger.debug("waited %ss for cloud-init", time.time() - ci_start)
 
     block_log_dir = os.path.join(LOGDIR, "block")
     os.makedirs(block_log_dir, exist_ok=True)
