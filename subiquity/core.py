@@ -23,12 +23,6 @@ import urwid
 
 import apport.hookutils
 
-from cloudinit import (
-    atomic_helper,
-    safeyaml,
-    stages,
-    )
-
 import yaml
 
 from subiquitycore.async_helpers import (
@@ -157,24 +151,8 @@ class Subiquity(Application):
             s.get_cols_rows = lambda: (80, 24)
             return s
 
-    def _read_autoinstall_from_cloudinit(self):
-        if self.opts.dry_run:
-            return None
-        init = stages.Init()
-        init.read_cfg()
-        init.fetch(existing="trust")
-        cloud = init.cloudify()
-        return cloud.cfg.get('autoinstall')
-
     def run(self):
-        if not os.path.exists(self.opts.autoinstall):
-            cfg = self._read_autoinstall_from_cloudinit()
-            if cfg is not None:
-                atomic_helper.write_file(
-                    self.opts.autoinstall,
-                    safeyaml.dumps(cfg),
-                    mode=0o600)
-        if os.path.exists(self.opts.autoinstall):
+        if self.opts.autoinstall is not None:
             with open(self.opts.autoinstall) as fp:
                 self.autoinstall_config = yaml.safe_load(fp)
             self.controllers.load("Early")
