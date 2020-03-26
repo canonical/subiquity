@@ -369,11 +369,11 @@ class NetworkController(BaseController):
                         dhcp_events.add(e)
                 if dev.info is None:
                     continue
-                if dev.is_virtual:
-                    devs_to_delete.append(dev)
-                    continue
                 if dev.config != self.model.config.config_for_device(dev.info):
-                    devs_to_down.append(dev)
+                    if dev.is_virtual:
+                        devs_to_delete.append(dev)
+                    else:
+                        devs_to_down.append(dev)
 
             self._write_config()
 
