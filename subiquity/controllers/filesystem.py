@@ -521,7 +521,7 @@ class FilesystemController(SubiquityController):
     def reformat(self, disk):
         if disk.type == "disk":
             disk.preserve = False
-            disk.wipe = 'superblock-recursive'
+        disk.wipe = 'superblock-recursive'
         self.clear(disk)
         for p in list(disk.partitions()):
             self.delete(p)

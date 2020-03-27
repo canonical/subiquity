@@ -596,8 +596,31 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertActionNotPossible(raid3, DeviceAction.EDIT)
 
     def test_raid_action_REFORMAT(self):
-        model, raid = make_model_and_raid()
-        self.assertActionNotSupported(raid, DeviceAction.REFORMAT)
+        model = make_model()
+
+        raid1 = make_raid(model)
+        self.assertActionNotPossible(raid1, DeviceAction.REFORMAT)
+        raid1p1 = make_partition(model, raid1)
+        self.assertActionPossible(raid1, DeviceAction.REFORMAT)
+        model.add_volgroup('vg0', {raid1p1})
+        self.assertActionNotPossible(raid1, DeviceAction.REFORMAT)
+
+        raid2 = make_raid(model)
+        raid2.preserve = True
+        self.assertActionNotPossible(raid2, DeviceAction.REFORMAT)
+        raid2p1 = make_partition(model, raid2, preserve=True)
+        self.assertActionPossible(raid2, DeviceAction.REFORMAT)
+        model.add_volgroup('vg1', {raid2p1})
+        self.assertActionNotPossible(raid2, DeviceAction.REFORMAT)
+
+        raid3 = make_raid(model)
+        model.add_volgroup('vg2', {raid3})
+        self.assertActionNotPossible(raid3, DeviceAction.REFORMAT)
+
+        raid4 = make_raid(model)
+        raid4.preserve = True
+        model.add_volgroup('vg2', {raid4})
+        self.assertActionNotPossible(raid4, DeviceAction.REFORMAT)
 
     def test_raid_action_PARTITION(self):
         model, raid = make_model_and_raid()
