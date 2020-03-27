@@ -994,6 +994,7 @@ class Raid(_Device):
         DeviceAction.FORMAT,
         DeviceAction.REMOVE,
         DeviceAction.DELETE,
+        DeviceAction.REFORMAT,
         ]
 
     @property
@@ -1008,6 +1009,7 @@ class Raid(_Device):
             return _generic_can_EDIT(self)
 
     _can_PARTITION = Disk._can_PARTITION
+    _can_REFORMAT = Disk._can_REFORMAT
     _can_FORMAT = property(
         lambda self: len(self._partitions) == 0 and
         self._constructed_device is None)

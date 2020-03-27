@@ -330,6 +330,7 @@ class DeviceList(WidgetWrap):
     _raid_EDIT = _stretchy_shower(RaidStretchy)
     _raid_PARTITION = _disk_PARTITION
     _raid_FORMAT = _disk_FORMAT
+    _raid_REFORMAT = _disk_REFORMAT
     _raid_REMOVE = _disk_REMOVE
     _raid_DELETE = _partition_DELETE
 
