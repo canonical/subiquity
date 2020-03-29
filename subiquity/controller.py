@@ -15,6 +15,8 @@
 
 import logging
 
+import jsonschema
+
 from subiquitycore.controller import (
     BaseController,
     RepeatedController,
@@ -36,16 +38,13 @@ class SubiquityController(BaseController):
         self.setup_autoinstall()
 
     def setup_autoinstall(self):
-        if app.autoinstall_config:
-            ai_data = app.autoinstall_config.get(
+        if self.app.autoinstall_config:
+            ai_data = self.app.autoinstall_config.get(
                 self.autoinstall_key,
                 self.autoinstall_default)
             if ai_data is not None and self.autoinstall_schema is not None:
                 jsonschema.validate(ai_data, self.autoinstall_schema)
-            self.load_autoinstall_data(
-                app.autoinstall_config.get(
-                    self.autoinstall_key,
-                    self.autoinstall_default))
+            self.load_autoinstall_data(ai_data)
 
     def load_autoinstall_data(self, data):
         """Load autoinstall data.
