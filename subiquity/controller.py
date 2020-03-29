@@ -33,6 +33,9 @@ class SubiquityController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.autoinstall_applied = False
+        self.setup_autoinstall()
+
+    def setup_autoinstall(self):
         if app.autoinstall_config:
             ai_data = app.autoinstall_config.get(
                 self.autoinstall_key,

@@ -17,6 +17,7 @@ import asyncio
 import logging
 import os
 import platform
+import signal
 import sys
 import traceback
 import urwid
@@ -152,27 +153,40 @@ class Subiquity(Application):
             return s
 
     def run(self):
-        if self.opts.autoinstall is not None:
-            with open(self.opts.autoinstall) as fp:
-                self.autoinstall_config = yaml.safe_load(fp)
-            self.controllers.load("Reporting")
-            self.controllers.load("Early")
-            self.controllers.Reporting.start()
-            self.aio_loop.run_until_complete(self.controllers.Early.run())
-            self.new_event_loop()
-            with open(self.opts.autoinstall) as fp:
-                self.autoinstall_config = yaml.safe_load(fp)
         try:
+            if self.opts.autoinstall is not None:
+                with open(self.opts.autoinstall) as fp:
+                    self.autoinstall_config = yaml.safe_load(fp)
+                    self.controllers.load("Reporting")
+                    self.controllers.Reporting.start()
+                    self.controllers.load("Error")
+                    self.controllers.load("Early")
+                    if self.controllers.Early.cmds:
+                        self.aio_loop.run_until_complete(
+                            self.controllers.Early.run())
+                        self.new_event_loop()
+                        with open(self.opts.autoinstall) as fp:
+                            self.autoinstall_config = yaml.safe_load(fp)
+                        for controller in self.controllers.instances:
+                            controller.setup_autoinstall()
             super().run()
-            self.new_event_loop()
-            self.aio_loop.run_until_complete(self.controllers.Late.run())
+            if self.controllers.Late.cmds:
+                self.new_event_loop()
+                self.aio_loop.run_until_complete(self.controllers.Late.run())
         except Exception:
             print("generating crash report")
             report = self.make_apport_report(
                 ErrorReportKind.UI, "Installer UI", interrupt=False, wait=True)
             print("report saved to {}".format(report.path))
-            self._remove_last_screen()
-            raise
+            Error = getattr(self.controllers, "Error", None)
+            if Error is not None and Error.cmds:
+                self.new_event_loop()
+                self.aio_loop.run_until_complete(Error.run())
+            if self.interactive():
+                self._remove_last_screen()
+                raise
+            else:
+                signal.pause()
 
     def report_start_event(self, name, description, level="INFO"):
         self.controllers.Reporting.report_start_event(
