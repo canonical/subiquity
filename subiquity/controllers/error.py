@@ -160,20 +160,22 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             self.pr.write(self._file)
 
         async def add_info():
-            with self._context.child("add_info"):
+            with self._context.child("add_info") as context:
                 try:
                     await run_in_thread(_bg_add_info)
                 except Exception:
                     self.state = ErrorReportState.ERROR_GENERATING
                     log.exception("adding info to problem report failed")
                 else:
+                    context.description = "written to " + self.path
                     self.state = ErrorReportState.DONE
                 self._file.close()
                 self._file = None
                 urwid.emit_signal(self, "changed")
         if wait:
-            with self._context.child("add_info"):
+            with self._context.child("add_info") as context:
                 _bg_add_info()
+                context.description = "written to " + self.path
         else:
             schedule_task(add_info())
 

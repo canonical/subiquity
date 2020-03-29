@@ -185,6 +185,7 @@ class Subiquity(Application):
                 self._remove_last_screen()
                 raise
             else:
+                traceback.print_exc()
                 signal.pause()
 
     def report_start_event(self, name, description, level="INFO"):
