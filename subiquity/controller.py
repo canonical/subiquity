@@ -39,12 +39,13 @@ class SubiquityController(BaseController):
 
     def setup_autoinstall(self):
         if self.app.autoinstall_config:
-            ai_data = self.app.autoinstall_config.get(
-                self.autoinstall_key,
-                self.autoinstall_default)
-            if ai_data is not None and self.autoinstall_schema is not None:
-                jsonschema.validate(ai_data, self.autoinstall_schema)
-            self.load_autoinstall_data(ai_data)
+            with self.context.child("load_autoinstall_data"):
+                ai_data = self.app.autoinstall_config.get(
+                    self.autoinstall_key,
+                    self.autoinstall_default)
+                if ai_data is not None and self.autoinstall_schema is not None:
+                    jsonschema.validate(ai_data, self.autoinstall_schema)
+                self.load_autoinstall_data(ai_data)
 
     def load_autoinstall_data(self, data):
         """Load autoinstall data.

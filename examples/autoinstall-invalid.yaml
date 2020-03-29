@@ -9,6 +9,10 @@ late-commands:
         - echo a
 error-commands:
         - echo ERROR
+reporting:
+        my:
+                type: journald
+                identifier: my-autoinstall
 keyboard:
         layou: gb
 identity:

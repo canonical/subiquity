@@ -193,12 +193,16 @@ class Subiquity(Application):
                 signal.pause()
 
     def report_start_event(self, name, description, level="INFO"):
-        self.controllers.Reporting.report_start_event(
-            name, description, level)
+        # report_start_event gets called when the Reporting controller
+        # is being loaded...
+        Reporting = getattr(self.controllers, "Reporting", None)
+        if Reporting is not None:
+            Reporting.report_start_event(name, description, level)
 
     def report_finish_event(self, name, description, status, level="INFO"):
-        self.controllers.Reporting.report_finish_event(
-            name, description, status, level)
+        Reporting = getattr(self.controllers, "Reporting", None)
+        if Reporting is not None:
+            Reporting.report_finish_event(name, description, status, level)
 
     def interactive(self):
         if not self.autoinstall_config:
