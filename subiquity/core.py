@@ -119,6 +119,7 @@ class Subiquity(Application):
 
         super().__init__(opts)
         self.block_log_dir = block_log_dir
+        self.kernel_cmdline = opts.kernel_cmdline.split()
         if opts.snaps_from_examples:
             connection = FakeSnapdConnection(
                 os.path.join(

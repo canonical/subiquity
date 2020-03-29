@@ -148,10 +148,8 @@ class RefreshController(SubiquityController):
         """Return the channel we should refresh subiquity to."""
         if 'channel' in self.answers:
             return self.answers['channel']
-        with open('/proc/cmdline') as fp:
-            cmdline = fp.read()
         prefix = "subiquity-channel="
-        for arg in cmdline.split():
+        for arg in self.app.kernel_cmdline:
             if arg.startswith(prefix):
                 log.debug(
                     "get_refresh_channel: found %s on kernel cmdline", arg)
