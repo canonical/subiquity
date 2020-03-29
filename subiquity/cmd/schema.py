@@ -23,6 +23,7 @@ import jsonschema
 from subiquity.cmd.tui import parse_options
 from subiquity.core import Subiquity
 
+
 def make_schema(app):
     schema = copy.deepcopy(app.base_schema)
     for controller in app.controllers.instances:

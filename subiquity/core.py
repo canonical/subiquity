@@ -198,7 +198,8 @@ class Subiquity(Application):
             print("generating crash report")
             try:
                 report = self.make_apport_report(
-                    ErrorReportKind.UI, "Installer UI", interrupt=False, wait=True)
+                    ErrorReportKind.UI, "Installer UI", interrupt=False,
+                    wait=True)
                 print("report saved to {}".format(report.path))
             except Exception:
                 print("report generation failed")
