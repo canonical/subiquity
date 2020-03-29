@@ -244,6 +244,8 @@ class Subiquity(Application):
                     InstallConfirmation(self.ui.body, self))
             else:
                 answer = 'no'
+                if 'autoinstall' in self.kernel_cmdline:
+                    answer = 'yes'
                 while answer != 'yes':
                     print("\n\nContinue with autoinstall? (yes|no)")
                     answer = input()
