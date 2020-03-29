@@ -139,6 +139,7 @@ class Subiquity(Application):
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
+        self.install_confirmed = False
         self.reboot_on_exit = False
 
     def exit(self):
@@ -226,6 +227,21 @@ class Subiquity(Application):
         Reporting = getattr(self.controllers, "Reporting", None)
         if Reporting is not None:
             Reporting.report_finish_event(name, description, status, level)
+
+    def confirm_install(self):
+        self.install_confirmed = True
+        self.controllers.InstallProgress.confirmation.set()
+
+    def next_screen(self):
+        can_install = all(e.is_set() for e in self.base_model.install_events)
+        if can_install and not self.install_confirmed:
+            from subiquity.ui.views.installprogress import (
+                InstallConfirmation,
+                )
+            self.ui.body.show_stretchy_overlay(
+                InstallConfirmation(self.ui.body, self))
+        else:
+            super().next_screen()
 
     def interactive(self):
         if not self.autoinstall_config:

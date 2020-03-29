@@ -112,6 +112,7 @@ class InstallProgressController(SubiquityController):
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
         self.curtin_context = None
+        self.confirmation = asyncio.Event()
 
     def interactive(self):
         return self.app.interactive()
@@ -280,6 +281,8 @@ class InstallProgressController(SubiquityController):
         try:
             await asyncio.wait(
                 {e.wait() for e in self.model.install_events})
+
+            await self.confirmation.wait()
 
             await self.curtin_install(context)
 

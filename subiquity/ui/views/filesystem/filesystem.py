@@ -35,8 +35,6 @@ from subiquitycore.ui.actionmenu import (
     )
 from subiquitycore.ui.buttons import (
     back_btn,
-    cancel_btn,
-    danger_btn,
     done_btn,
     menu_btn,
     other_btn,
@@ -75,40 +73,6 @@ from .partition import PartitionStretchy, FormatEntireStretchy
 from .raid import RaidStretchy
 
 log = logging.getLogger('subiquity.ui.filesystem.filesystem')
-
-
-confirmation_text = _("""\
-Selecting Continue below will begin the installation process and \
-result in the loss of data on the disks selected to be formatted.
-
-You will not be able to return to this or a previous screen once \
-the installation has started.
-
-Are you sure you want to continue?""")
-
-
-class FilesystemConfirmation(Stretchy):
-    def __init__(self, parent, controller):
-        self.parent = parent
-        self.controller = controller
-        widgets = [
-            Text(_(confirmation_text)),
-            Text(""),
-            button_pile([
-                cancel_btn(_("No"), on_press=self.cancel),
-                danger_btn(_("Continue"), on_press=self.ok)]),
-            ]
-        super().__init__(
-            _("Confirm destructive action"),
-            widgets,
-            stretchy_index=0,
-            focus_index=2)
-
-    def ok(self, sender):
-        self.controller.finish()
-
-    def cancel(self, sender):
-        self.parent.remove_overlay()
 
 
 @attr.s
@@ -557,5 +521,4 @@ class FilesystemView(BaseView):
         self.controller.reset()
 
     def done(self, button):
-        self.show_stretchy_overlay(FilesystemConfirmation(self,
-                                                          self.controller))
+        self.controller.finish()

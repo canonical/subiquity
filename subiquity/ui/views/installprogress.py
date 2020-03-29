@@ -20,11 +20,17 @@ from urwid import (
     )
 
 from subiquitycore.view import BaseView
-from subiquitycore.ui.buttons import cancel_btn, ok_btn, other_btn
+from subiquitycore.ui.buttons import (
+    cancel_btn,
+    danger_btn,
+    ok_btn,
+    other_btn,
+    )
 from subiquitycore.ui.container import Columns, ListBox, Pile
 from subiquitycore.ui.form import Toggleable
 from subiquitycore.ui.spinner import Spinner
-from subiquitycore.ui.utils import button_pile, Padding
+from subiquitycore.ui.utils import button_pile, Padding, rewrap
+from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.width import widget_width
 
 log = logging.getLogger("subiquity.views.installprogress")
@@ -146,3 +152,38 @@ class ProgressView(BaseView):
 
     def close_log(self, btn):
         self._w = self.event_pile
+
+
+confirmation_text = _("""\
+Selecting Continue below will begin the installation process and
+result in the loss of data on the disks selected to be formatted.
+
+You will not be able to return to this or a previous screen once
+the installation has started.
+
+Are you sure you want to continue?""")
+
+
+class InstallConfirmation(Stretchy):
+    def __init__(self, parent, app):
+        self.parent = parent
+        self.app = app
+        widgets = [
+            Text(rewrap(_(confirmation_text))),
+            Text(""),
+            button_pile([
+                cancel_btn(_("No"), on_press=self.cancel),
+                danger_btn(_("Continue"), on_press=self.ok)]),
+            ]
+        super().__init__(
+            _("Confirm destructive action"),
+            widgets,
+            stretchy_index=0,
+            focus_index=2)
+
+    def ok(self, sender):
+        self.app.confirm_install()
+        self.app.next_screen()
+
+    def cancel(self, sender):
+        self.parent.remove_overlay()
