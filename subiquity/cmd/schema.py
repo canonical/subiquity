@@ -23,22 +23,8 @@ import jsonschema
 from subiquity.cmd.tui import parse_options
 from subiquity.core import Subiquity
 
-base_schema = {
-    'type': 'object',
-    'properties': {
-        'version': {
-            'type': 'integer',
-            'minumum': 1,
-            'maximum': 1,
-        },
-    },
-    'required': ['version'],
-    'additionalProperties': True,
-    }
-
-
 def make_schema(app):
-    schema = copy.deepcopy(base_schema)
+    schema = copy.deepcopy(app.base_schema)
     for controller in app.controllers.instances:
         ckey = getattr(controller, 'autoinstall_key', None)
         if ckey is None:

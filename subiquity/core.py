@@ -23,6 +23,8 @@ import urwid
 
 import apport.hookutils
 
+import jsonschema
+
 import yaml
 
 from subiquitycore.async_helpers import (
@@ -64,6 +66,19 @@ installed system will be mounted at /target.""")
 class Subiquity(Application):
 
     snapd_socket_path = '/run/snapd.socket'
+
+    base_schema = {
+        'type': 'object',
+        'properties': {
+            'version': {
+                'type': 'integer',
+                'minumum': 1,
+                'maximum': 1,
+                },
+            },
+        'required': ['version'],
+        'additionalProperties': True,
+        }
 
     from subiquity.palette import COLORS, STYLES, STYLES_MONO
 
@@ -151,23 +166,30 @@ class Subiquity(Application):
             s.get_cols_rows = lambda: (80, 24)
             return s
 
+    def load_autoinstall_config(self):
+        with open(self.opts.autoinstall) as fp:
+            self.autoinstall_config = yaml.safe_load(fp)
+        self.controllers.load("Reporting")
+        self.controllers.Reporting.start()
+        self.controllers.load("Error")
+        with self.context.child("core_validation", level="INFO"):
+            jsonschema.validate(self.autoinstall_config, self.base_schema)
+        self.controllers.load("Early")
+        if self.controllers.Early.cmds:
+            self.aio_loop.run_until_complete(
+                self.controllers.Early.run())
+            self.new_event_loop()
+            with open(self.opts.autoinstall) as fp:
+                self.autoinstall_config = yaml.safe_load(fp)
+            with self.context.child("core_validation", level="INFO"):
+                jsonschema.validate(self.autoinstall_config, self.base_schema)
+            for controller in self.controllers.instances:
+                controller.setup_autoinstall()
+
     def run(self):
         try:
             if self.opts.autoinstall is not None:
-                with open(self.opts.autoinstall) as fp:
-                    self.autoinstall_config = yaml.safe_load(fp)
-                    self.controllers.load("Reporting")
-                    self.controllers.Reporting.start()
-                    self.controllers.load("Error")
-                    self.controllers.load("Early")
-                    if self.controllers.Early.cmds:
-                        self.aio_loop.run_until_complete(
-                            self.controllers.Early.run())
-                        self.new_event_loop()
-                        with open(self.opts.autoinstall) as fp:
-                            self.autoinstall_config = yaml.safe_load(fp)
-                        for controller in self.controllers.instances:
-                            controller.setup_autoinstall()
+                self.load_autoinstall_config()
             super().run()
             if self.controllers.Late.cmds:
                 self.new_event_loop()
