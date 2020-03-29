@@ -326,6 +326,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
 class ErrorController(CmdListController):
 
     autoinstall_key = 'error-commands'
+    cmd_check = False
 
     def __init__(self, app):
         super().__init__(app)
