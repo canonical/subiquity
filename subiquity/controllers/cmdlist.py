@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
+from subiquitycore.utils import arun_command
 
 from subiquity.controller import NoUIController
 
@@ -23,9 +23,13 @@ class CmdListController(NoUIController):
     autoinstall_default = []
     autoinstall_schema = {
         'type': 'array',
-        'items': {'type': 'string'},
+        'items': {
+            'type': ['string', 'array'],
+            'items': {'type': 'string'},
+            },
         }
     cmds = ()
+    cmd_check = True
 
     def load_autoinstall_data(self, data):
         self.cmds = data
@@ -33,8 +37,12 @@ class CmdListController(NoUIController):
     async def run(self):
         for i, cmd in enumerate(self.cmds):
             with self.context.child("command_{}".format(i), cmd):
-                proc = await asyncio.create_subprocess_shell(cmd)
-                await proc.communicate()
+                if isinstance(cmd, str):
+                    cmd = ['sh', '-c', cmd]
+                await arun_command(
+                    cmd,
+                    stdin=None, stdout=None, stderr=None,
+                    check=self.cmd_check)
 
 
 class EarlyController(CmdListController):
