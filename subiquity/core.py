@@ -236,11 +236,19 @@ class Subiquity(Application):
     def next_screen(self):
         can_install = all(e.is_set() for e in self.base_model.install_events)
         if can_install and not self.install_confirmed:
-            from subiquity.ui.views.installprogress import (
-                InstallConfirmation,
-                )
-            self.ui.body.show_stretchy_overlay(
-                InstallConfirmation(self.ui.body, self))
+            if self.interactive():
+                from subiquity.ui.views.installprogress import (
+                    InstallConfirmation,
+                    )
+                self.ui.body.show_stretchy_overlay(
+                    InstallConfirmation(self.ui.body, self))
+            else:
+                answer = 'no'
+                while answer != 'yes':
+                    print("\n\nContinue with autoinstall? (yes|no)")
+                    answer = input()
+                self.confirm_install()
+                super().next_screen()
         else:
             super().next_screen()
 
