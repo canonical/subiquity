@@ -174,9 +174,13 @@ class Subiquity(Application):
                 self.aio_loop.run_until_complete(self.controllers.Late.run())
         except Exception:
             print("generating crash report")
-            report = self.make_apport_report(
-                ErrorReportKind.UI, "Installer UI", interrupt=False, wait=True)
-            print("report saved to {}".format(report.path))
+            try:
+                report = self.make_apport_report(
+                    ErrorReportKind.UI, "Installer UI", interrupt=False, wait=True)
+                print("report saved to {}".format(report.path))
+            except Exception:
+                print("report generation failed")
+                traceback.print_exc()
             Error = getattr(self.controllers, "Error", None)
             if Error is not None and Error.cmds:
                 self.new_event_loop()
