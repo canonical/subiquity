@@ -309,10 +309,11 @@ class SnapCheckBox(CheckBox):
         False: SelectableIcon("[ ]"),
         }
 
-    def __init__(self, parent, snap):
+    def __init__(self, parent, snap, state):
         self.parent = parent
         self.snap = snap
-        super().__init__(snap.name, on_state_change=self.state_change)
+        super().__init__(
+            snap.name, state=state, on_state_change=self.state_change)
 
     def loaded(self):
         if len(self.snap.channels) == 0:  # or other indication of failure
@@ -370,7 +371,7 @@ class SnapListView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.to_install = {}  # {snap_name: (channel, is_classic)}
+        self.to_install = model.to_install.copy()
         self.load()
 
     def loaded(self):
@@ -455,7 +456,8 @@ class SnapListView(BaseView):
             if snap.name in preinstalled:
                 log.debug("not offering preseeded snap %r", snap.name)
                 continue
-            box = self.snap_boxes[snap.name] = SnapCheckBox(self, snap)
+            box = self.snap_boxes[snap.name] = SnapCheckBox(
+                self, snap, snap.name in self.to_install)
             publisher = snap.publisher
             if snap.verified:
                 publisher = [publisher, ('verified', '\N{check mark}')]
