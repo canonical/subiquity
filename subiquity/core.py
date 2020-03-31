@@ -249,6 +249,11 @@ class Subiquity(Application):
                 answer = no
                 if 'autoinstall' in self.kernel_cmdline:
                     answer = yes
+                else:
+                    print(_("Confirmation is required to continue."))
+                    print(_("Add 'autoinstall' to your kernel command line to"
+                            " avoid this"))
+                    print()
                 prompt = "\n\n{} ({}|{})".format(
                     _("Continue with autoinstall?"), yes, no)
                 while answer != yes:
