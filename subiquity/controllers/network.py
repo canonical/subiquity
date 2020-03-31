@@ -61,6 +61,8 @@ class NetworkController(NetworkController, SubiquityController):
             self.update_initial_configs()
             self.apply_config()
         await self.apply_config_task.wait()
+        self.model.has_network = bool(
+            self.network_event_receiver.default_routes)
 
     def render_config(self):
         if self.ai_data is not None:
