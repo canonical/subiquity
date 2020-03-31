@@ -107,7 +107,16 @@ class SnapListController(SubiquityController):
     autoinstall_key = "snaps"
     autoinstall_schema = {
         'type': 'array',
-        'items': {'type': 'string'},
+        'items': {
+            'type': 'object',
+            'properties': {
+                'name': {'type': 'string'},
+                'channel': {'type': 'string'},
+                'classic': {'type': 'boolean'},
+                },
+            'required': ['name'],
+            'additionalProperties': False,
+            },
         }
     model_name = "snaplist"
     signals = [
