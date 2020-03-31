@@ -63,6 +63,9 @@ probert:
 		(cd probert && $(PYTHON) setup.py build_ext -i); \
     fi
 
+schema: probert
+	$(PYTHON) -m subiquity.cmd.schema
+
 clean:
 	./debian/rules clean
 

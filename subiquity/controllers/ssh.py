@@ -34,6 +34,17 @@ class FetchSSHKeysFailure(Exception):
 class SSHController(SubiquityController):
 
     autoinstall_key = model_name = "ssh"
+    autoinstall_schema = {
+        'type': 'object',
+        'properties': {
+            'install-server': {'type': 'boolean'},
+            'authorized-keys': {
+                'type': 'array',
+                'items': {'type': 'string'},
+                },
+            'allow-pw': {'type': 'boolean'},
+        },
+    }
 
     def __init__(self, app):
         super().__init__(app)

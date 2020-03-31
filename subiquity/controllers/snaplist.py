@@ -105,6 +105,19 @@ class SnapdSnapInfoLoader:
 class SnapListController(SubiquityController):
 
     autoinstall_key = "snaps"
+    autoinstall_schema = {
+        'type': 'array',
+        'items': {
+            'type': 'object',
+            'properties': {
+                'name': {'type': 'string'},
+                'channel': {'type': 'string'},
+                'classic': {'type': 'boolean'},
+                },
+            'required': ['name'],
+            'additionalProperties': False,
+            },
+        }
     model_name = "snaplist"
     signals = [
         ('snapd-network-change', 'snapd_network_changed'),
@@ -119,13 +132,19 @@ class SnapListController(SubiquityController):
         super().__init__(app)
         self.loader = self._make_loader()
 
-    # XXX load_autoinstall_data / apply_autoinstall_config go here
+    def load_autoinstall_data(self, ai_data):
+        to_install = {}
+        for snap in ai_data:
+            to_install[snap['name']] = SnapSelection(
+                channel=snap.get('channel', 'stable'),
+                is_classic=snap.get('classic', False))
+        self.model.set_installed_list(to_install)
 
     def snapd_network_changed(self):
-        # If the loader managed to load the list of snaps, the
-        # network must basically be working.
         if not self.interactive():
             return
+        # If the loader managed to load the list of snaps, the
+        # network must basically be working.
         if self.loader.snap_list_fetched:
             return
         else:
@@ -163,3 +182,6 @@ class SnapListController(SubiquityController):
 
     def cancel(self, sender=None):
         self.app.prev_screen()
+
+    def make_autoinstall(self):
+        return self.model.to_install

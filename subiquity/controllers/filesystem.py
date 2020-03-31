@@ -64,6 +64,7 @@ UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 class FilesystemController(SubiquityController):
 
     autoinstall_key = "storage"
+    autoinstall_schema = {'type': 'object'}  # ...
     model_name = "filesystem"
 
     def __init__(self, app):
@@ -143,6 +144,10 @@ class FilesystemController(SubiquityController):
                         # gets cancelled, we should be cancelled too.
                         await asyncio.wait_for(
                             self._probe_once_task.task, 15.0)
+                except asyncio.CancelledError:
+                    # asyncio.CancelledError is a subclass of Exception in
+                    # Python 3.6 (sadface)
+                    raise
                 except Exception:
                     block_discover_log.exception(
                         "block probing failed restricted=%s", restricted)
@@ -517,7 +522,7 @@ class FilesystemController(SubiquityController):
     def reformat(self, disk):
         if disk.type == "disk":
             disk.preserve = False
-            disk.wipe = 'superblock-recursive'
+        disk.wipe = 'superblock-recursive'
         self.clear(disk)
         for p in list(disk.partitions()):
             self.delete(p)

@@ -13,16 +13,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
 import os
 import platform
+import signal
 import sys
 import traceback
 import urwid
-import yaml
 
 import apport.hookutils
+
+import jsonschema
+
+import yaml
 
 from subiquitycore.async_helpers import (
     run_in_thread,
@@ -63,6 +66,19 @@ installed system will be mounted at /target.""")
 class Subiquity(Application):
 
     snapd_socket_path = '/run/snapd.socket'
+
+    base_schema = {
+        'type': 'object',
+        'properties': {
+            'version': {
+                'type': 'integer',
+                'minumum': 1,
+                'maximum': 1,
+                },
+            },
+        'required': ['version'],
+        'additionalProperties': True,
+        }
 
     from subiquity.palette import COLORS, STYLES, STYLES_MONO
 
@@ -150,36 +166,66 @@ class Subiquity(Application):
             s.get_cols_rows = lambda: (80, 24)
             return s
 
+    def load_autoinstall_config(self):
+        with open(self.opts.autoinstall) as fp:
+            self.autoinstall_config = yaml.safe_load(fp)
+        self.controllers.load("Reporting")
+        self.controllers.Reporting.start()
+        self.controllers.load("Error")
+        with self.context.child("core_validation", level="INFO"):
+            jsonschema.validate(self.autoinstall_config, self.base_schema)
+        self.controllers.load("Early")
+        if self.controllers.Early.cmds:
+            self.aio_loop.run_until_complete(
+                self.controllers.Early.run())
+            self.new_event_loop()
+            with open(self.opts.autoinstall) as fp:
+                self.autoinstall_config = yaml.safe_load(fp)
+            with self.context.child("core_validation", level="INFO"):
+                jsonschema.validate(self.autoinstall_config, self.base_schema)
+            for controller in self.controllers.instances:
+                controller.setup_autoinstall()
+
     def run(self):
-        if os.path.exists(self.opts.autoinstall):
-            with open(self.opts.autoinstall) as fp:
-                self.autoinstall_config = yaml.safe_load(fp)
-            self.controllers.load("Early")
-            self.controllers.load("Reporting")
-            self.controllers.Reporting.start()
-            self.aio_loop.run_until_complete(self.controllers.Early.run())
-            self.new_event_loop()
-            with open(self.opts.autoinstall) as fp:
-                self.autoinstall_config = yaml.safe_load(fp)
         try:
+            if self.opts.autoinstall is not None:
+                self.load_autoinstall_config()
             super().run()
-            self.new_event_loop()
-            self.aio_loop.run_until_complete(self.controllers.Late.run())
+            if self.controllers.Late.cmds:
+                self.new_event_loop()
+                self.aio_loop.run_until_complete(self.controllers.Late.run())
         except Exception:
             print("generating crash report")
-            report = self.make_apport_report(
-                ErrorReportKind.UI, "Installer UI", interrupt=False, wait=True)
-            print("report saved to {}".format(report.path))
-            self._remove_last_screen()
-            raise
+            try:
+                report = self.make_apport_report(
+                    ErrorReportKind.UI, "Installer UI", interrupt=False,
+                    wait=True)
+                print("report saved to {}".format(report.path))
+            except Exception:
+                print("report generation failed")
+                traceback.print_exc()
+            Error = getattr(self.controllers, "Error", None)
+            if Error is not None and Error.cmds:
+                self.new_event_loop()
+                self.aio_loop.run_until_complete(Error.run())
+            if self.interactive():
+                self._remove_last_screen()
+                raise
+            else:
+                traceback.print_exc()
+                signal.pause()
 
     def report_start_event(self, name, description, level="INFO"):
-        self.controllers.Reporting.report_start_event(
-            name, description, level)
+        # report_start_event gets called when the Reporting controller
+        # is being loaded...
+        Reporting = getattr(self.controllers, "Reporting", None)
+        if Reporting is not None:
+            Reporting.report_start_event(name, description, level)
 
     def report_finish_event(self, name, description, status, level="INFO"):
-        self.controllers.Reporting.report_finish_event(
-            name, description, status, level)
+        Reporting = getattr(self.controllers, "Reporting", None)
+        if Reporting is not None:
+            Reporting.report_finish_event(name, description, status, level)
 
     def interactive(self):
         if not self.autoinstall_config:
@@ -204,14 +250,7 @@ class Subiquity(Application):
 
     async def _apply(self, controller):
         with controller.context.child("apply_autoinstall_config"):
-            try:
-                await controller.apply_autoinstall_config()
-            except BaseException:
-                logging.exception(
-                    "%s.apply_autoinstall_config failed", controller.name)
-                # Obviously need to something better here.
-                await asyncio.sleep(1800)
-                raise
+            await controller.apply_autoinstall_config()
         controller.autoinstall_applied = True
         controller.configured()
         self.next_screen()

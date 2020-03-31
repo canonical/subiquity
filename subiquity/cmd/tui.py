@@ -19,9 +19,13 @@ import logging
 import os
 import fcntl
 import sys
+import time
 
-from subiquitycore.log import setup_logger
+from cloudinit import atomic_helper, safeyaml, stages
+
 from subiquitycore import __version__ as VERSION
+from subiquitycore.log import setup_logger
+from subiquitycore.utils import run_command
 
 from subiquity.core import Subiquity
 
@@ -67,8 +71,7 @@ def parse_options(argv):
     parser.add_argument('--click', metavar="PAT", action=ClickAction,
                         help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
-    parser.add_argument('--autoinstall', action='store',
-                        default="/autoinstall.yaml")
+    parser.add_argument('--autoinstall', action='store')
     parser.add_argument('--source', default=[], action='append',
                         dest='sources', metavar='URL',
                         help='install from url instead of default.')
@@ -97,7 +100,7 @@ AUTO_ANSWERS_FILE = "/subiquity_config/answers.yaml"
 
 
 def main():
-    # Preffer utils from $SNAP, over system-wide
+    # Prefer utils from $SNAP, over system-wide
     snap = os.environ.get('SNAP')
     if snap:
         os.environ['PATH'] = os.pathsep.join([
@@ -116,6 +119,27 @@ def main():
     logger = logging.getLogger('subiquity')
     logger.info("Starting SUbiquity v{}".format(VERSION))
     logger.info("Arguments passed: {}".format(sys.argv))
+
+    if not opts.dry_run:
+        ci_start = time.time()
+        status_txt = run_command(["cloud-init", "status", "--wait"]).stdout
+        logger.debug("waited %ss for cloud-init", time.time() - ci_start)
+        if "status: done" in status_txt:
+            logger.debug("loading cloud config")
+            init = stages.Init()
+            init.read_cfg()
+            init.fetch(existing="trust")
+            cloud = init.cloudify()
+            if 'autoinstall' in cloud.cfg:
+                atomic_helper.write_file(
+                    '/autoinstall.yaml',
+                    safeyaml.dumps(cloud.cfg['autoinstall']).encode('utf-8'),
+                    mode=0o600)
+                opts.autoinstall = '/autoinstall.yaml'
+        else:
+            logger.debug(
+                "cloud-init status: %r, assumed disabled",
+                status_txt)
 
     block_log_dir = os.path.join(LOGDIR, "block")
     os.makedirs(block_log_dir, exist_ok=True)
