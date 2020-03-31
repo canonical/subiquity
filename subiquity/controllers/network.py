@@ -21,6 +21,22 @@ from subiquity.controller import SubiquityController
 class NetworkController(NetworkController, SubiquityController):
 
     autoinstall_key = "network"
+    autoinstall_schema = {
+        'type': 'object',
+        'properties': {
+            'version': {
+                'type': 'integer',
+                'minimum': 2,
+                'maximum': 2,
+                },
+            'ethernets': {'type': 'object'},
+            'wifis': {'type': 'object'},
+            'bridges': {'type': 'object'},
+            'bonds': {'type': 'object'},
+            'tunnels': {'type': 'object'},
+            'vlans': {'type': 'object'},
+            },
+        }
 
     def done(self):
         self.configured()

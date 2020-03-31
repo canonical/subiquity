@@ -25,6 +25,10 @@ log = logging.getLogger('subiquity.controllers.proxy')
 class ProxyController(SubiquityController):
 
     autoinstall_key = model_name = "proxy"
+    autoinstall_schema = {
+        'type': ['string', 'null'],
+        'format': 'uri',
+        }
 
     def load_autoinstall_data(self, data):
         if data is not None:

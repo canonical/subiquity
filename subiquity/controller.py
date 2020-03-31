@@ -15,6 +15,8 @@
 
 import logging
 
+import jsonschema
+
 from subiquitycore.controller import (
     BaseController,
     RepeatedController,
@@ -27,16 +29,23 @@ log = logging.getLogger("subiquity.controller")
 class SubiquityController(BaseController):
 
     autoinstall_key = None
+    autoinstall_schema = None
     autoinstall_default = None
 
     def __init__(self, app):
         super().__init__(app)
         self.autoinstall_applied = False
-        if app.autoinstall_config:
-            self.load_autoinstall_data(
-                app.autoinstall_config.get(
+        self.setup_autoinstall()
+
+    def setup_autoinstall(self):
+        if self.app.autoinstall_config:
+            with self.context.child("load_autoinstall_data"):
+                ai_data = self.app.autoinstall_config.get(
                     self.autoinstall_key,
-                    self.autoinstall_default))
+                    self.autoinstall_default)
+                if ai_data is not None and self.autoinstall_schema is not None:
+                    jsonschema.validate(ai_data, self.autoinstall_schema)
+                self.load_autoinstall_data(ai_data)
 
     def load_autoinstall_data(self, data):
         """Load autoinstall data.
@@ -91,6 +100,9 @@ class NoUIController(SubiquityController):
 
 
 class RepeatedController(RepeatedController):
+
+    autoinstall_key = None
+    autoinstall_schema = None
 
     def __init__(self, orig, index):
         super().__init__(orig, index)
