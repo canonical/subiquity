@@ -169,9 +169,23 @@ class Subiquity(Application):
             s.get_cols_rows = lambda: (80, 24)
             return s
 
+    def get_primary_tty(self):
+        for work in self.kernel_cmdline:
+            if work.startswith('console='):
+                return work[len('console='):]
+        return 'tty1'
+
     def load_autoinstall_config(self):
         with open(self.opts.autoinstall) as fp:
             self.autoinstall_config = yaml.safe_load(fp)
+        if not self.interactive():
+            primary_tty = self.get_primary_tty()
+            our_tty = os.ttyname(0)
+            if our_tty != primary_tty:
+                print(
+                    "the installer running on {} will perform the "
+                    "autoinstall".format(primary_tty))
+                signal.pause()
         self.controllers.load("Reporting")
         self.controllers.Reporting.start()
         self.controllers.load("Error")
