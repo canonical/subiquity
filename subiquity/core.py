@@ -171,10 +171,11 @@ class Subiquity(Application):
             return s
 
     def get_primary_tty(self):
+        tty = 'tty1'
         for work in self.kernel_cmdline:
             if work.startswith('console='):
-                return work[len('console='):]
-        return 'tty1'
+                tty = work[len('console='):]
+        return tty
 
     def load_autoinstall_config(self):
         with open(self.opts.autoinstall) as fp:
