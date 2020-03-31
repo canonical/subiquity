@@ -244,11 +244,15 @@ class Subiquity(Application):
                 self.ui.body.show_stretchy_overlay(
                     InstallConfirmation(self.ui.body, self))
             else:
-                answer = 'no'
+                yes = _('yes')
+                no = _('no')
+                answer = no
                 if 'autoinstall' in self.kernel_cmdline:
-                    answer = 'yes'
-                while answer != 'yes':
-                    print("\n\nContinue with autoinstall? (yes|no)")
+                    answer = yes
+                prompt = "\n\n{} ({}|{})".format(
+                    _("Continue with autoinstall?"), yes, no)
+                while answer != yes:
+                    print(prompt)
                     answer = input()
                 self.confirm_install()
                 super().next_screen()
