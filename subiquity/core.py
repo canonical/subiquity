@@ -16,6 +16,7 @@
 import logging
 import os
 import platform
+import shlex
 import signal
 import sys
 import traceback
@@ -119,7 +120,7 @@ class Subiquity(Application):
 
         super().__init__(opts)
         self.block_log_dir = block_log_dir
-        self.kernel_cmdline = opts.kernel_cmdline.split()
+        self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
         if opts.snaps_from_examples:
             connection = FakeSnapdConnection(
                 os.path.join(
