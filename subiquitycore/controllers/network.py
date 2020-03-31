@@ -330,8 +330,11 @@ class NetworkController(BaseController):
             except subprocess.CalledProcessError as cp:
                 log.info("deleting %s failed with %r", dev.name, cp.stderr)
 
+    def render_config(self):
+        return self.model.render()
+
     def _write_config(self):
-        config = self.model.render()
+        config = self.render_config()
 
         log.debug("network config: \n%s",
                   yaml.dump(sanitize_config(config), default_flow_style=False))
