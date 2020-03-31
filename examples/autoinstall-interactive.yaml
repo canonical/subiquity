@@ -1,3 +1,8 @@
 version: 1
 interactive-sections:
         - keyboard
+        - snaps
+        - identity
+snaps:
+        - name: etcd
+          channel: 3.2/stable
