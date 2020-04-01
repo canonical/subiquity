@@ -129,7 +129,8 @@ class Subiquity(Application):
                 os.path.join(
                     os.path.dirname(
                         os.path.dirname(__file__)),
-                    "examples", "snaps"))
+                    "examples", "snaps"),
+                self.scale_factor)
         else:
             connection = SnapdConnection(self.root, self.snapd_socket_path)
         self.snapd = AsyncSnapd(connection)

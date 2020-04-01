@@ -119,13 +119,14 @@ class ResponseSet:
 
 
 class FakeSnapdConnection:
-    def __init__(self, snap_data_dir):
+    def __init__(self, snap_data_dir, scale_factor):
         self.snap_data_dir = snap_data_dir
+        self.scale_factor = scale_factor
         self.response_sets = {}
 
     def configure_proxy(self, proxy):
         log.debug("pretending to restart snapd to pick up proxy config")
-        time.sleep(2)
+        time.sleep(2/self.scale_factor)
 
     def post(self, path, body, **args):
         if path == "v2/snaps/subiquity" and body['action'] == 'refresh':
@@ -146,7 +147,7 @@ class FakeSnapdConnection:
             "Don't know how to fake POST response to {}".format((path, args)))
 
     def get(self, path, **args):
-        time.sleep(1)
+        time.sleep(1/self.scale_factor)
         filename = path.replace('/', '-')
         if args:
             filename += '-' + urlencode(sorted(args.items()))
