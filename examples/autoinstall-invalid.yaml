@@ -1,7 +1,7 @@
 version: 1
 early-commands:
         - echo a
-        - sleep 1
+        - ["sleep", "1"]
         - echo a
 late-commands:
         - echo a
