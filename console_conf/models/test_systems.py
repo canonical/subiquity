@@ -107,6 +107,7 @@ class RecoverySystemsModelTests(unittest.TestCase):
                 ),
             ])
         self.assertEqual(systems.systems, exp.systems)
+        self.assertEqual(systems.current, exp.systems[0])
 
     def test_from_systems_stream_invalid_empty(self):
         with self.assertRaises(jsonschema.ValidationError):
@@ -204,10 +205,10 @@ class RecoverySystemsModelTests(unittest.TestCase):
         raw = json.dumps(self.reference)
         model = RecoverySystemsModel.from_systems_stream(StringIO(raw))
         model.select(model.systems[1], model.systems[1].actions[0])
-        self.assertEquals(model.selection,
-                          SelectedSystemAction(
-                              system=model.systems[1],
-                              action=model.systems[1].actions[0]))
+        self.assertEqual(model.selection,
+                         SelectedSystemAction(
+                             system=model.systems[1],
+                             action=model.systems[1].actions[0]))
 
     def test_to_response_stream(self):
         raw = json.dumps(self.reference)
@@ -219,6 +220,38 @@ class RecoverySystemsModelTests(unittest.TestCase):
         RecoverySystemsModel.to_response_stream(model.selection, stream)
         fromjson = json.loads(stream.getvalue())
         self.assertEqual(fromjson, {
-            "mode": "install",
             "label": "other",
+            "action": {
+                "mode": "install",
+                "title": "reinstall",
+                },
             })
+
+    def test_no_current(self):
+        reference = {
+            "systems": [
+                {
+                    "current": False,
+                    "label": "1234",
+                    "brand": {
+                        "id": "brand-id",
+                        "username": "brand-username",
+                        "display-name": "this is my brand",
+                        "validation": "verified",
+                    },
+                    "model": {
+                        "model": "core20-amd64",
+                        "brand-id": "brand-id",
+                        "display-name": "Core 20 AMD64 system",
+                    },
+                    "actions": [
+                        {"title": "reinstall", "mode": "install"},
+                        {"title": "recover", "mode": "recover"},
+                    ]
+                },
+            ],
+        }
+        systems = RecoverySystemsModel.from_systems(reference["systems"])
+        self.assertEqual(len(systems.systems), 1)
+        self.assertEqual(systems.systems[0].label, "1234")
+        self.assertIsNone(systems.current)

@@ -85,6 +85,12 @@ class RecoverySystemsModel:
         self.systems = systems_data
         # current selection
         self._selection = None
+        self._current = None
+        # find which system is current one, but be robust if none is marked as
+        # such
+        cs = [s for s in systems_data if s.current]
+        if cs:
+            self._current = cs[0]
 
     def select(self, system, action):
         self._selection = SelectedSystemAction(system=system, action=action)
@@ -92,6 +98,41 @@ class RecoverySystemsModel:
     @property
     def selection(self):
         return self._selection
+
+    @property
+    def current(self):
+        return self._current
+
+    @staticmethod
+    def from_systems(recovery_systems):
+        systems = []
+        for syst in recovery_systems:
+            m = syst["model"]
+            b = syst["brand"]
+            model = SystemModel(
+                model=m["model"],
+                brand_id=m["brand-id"],
+                display_name=m["display-name"]
+            )
+            brand = Brand(
+                ID=b["id"],
+                username=b["username"],
+                display_name=b["display-name"],
+                validation=b.get("validation", "unproven"),
+            )
+            actions = []
+            for a in syst.get("actions", []):
+                actions.append(SystemAction(title=a["title"], mode=a["mode"]))
+            s = RecoverySystem(
+                current=syst.get("current", False),
+                label=syst["label"],
+                model=model,
+                brand=brand,
+                actions=actions,
+            )
+            systems.append(s)
+
+        return RecoverySystemsModel(systems)
 
     @staticmethod
     def from_systems_stream(chooser_input):
@@ -107,34 +148,7 @@ class RecoverySystemsModel:
             log.exception("cannot validate recovery systems data")
             raise
 
-        systems = []
-        for sys in dec["systems"]:
-            m = sys["model"]
-            b = sys["brand"]
-            model = SystemModel(
-                model=m["model"],
-                brand_id=m["brand-id"],
-                display_name=m["display-name"]
-            )
-            brand = Brand(
-                ID=b["id"],
-                username=b["username"],
-                display_name=b["display-name"],
-                validation=b.get("validation", "unproven"),
-            )
-            actions = []
-            for a in sys.get("actions", []):
-                actions.append(SystemAction(title=a["title"], mode=a["mode"]))
-            s = RecoverySystem(
-                current=sys.get("current", False),
-                label=sys["label"],
-                model=model,
-                brand=brand,
-                actions=actions,
-            )
-            systems.append(s)
-
-        return RecoverySystemsModel(systems)
+        return RecoverySystemsModel.from_systems(systems)
 
     @staticmethod
     def to_response_stream(obj, chooser_output):
@@ -146,7 +160,10 @@ class RecoverySystemsModel:
 
         choice = {
             "label": obj.system.label,
-            "mode": obj.action.mode,
+            "action": {
+                "mode": obj.action.mode,
+                "title": obj.action.title,
+            },
         }
         return json.dump(choice, fp=chooser_output)
 
