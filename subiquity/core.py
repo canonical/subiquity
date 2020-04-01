@@ -99,6 +99,7 @@ class Subiquity(Application):
         "Early",
         "Reporting",
         "Error",
+        "Userdata",
         "Package",
         "Debconf",
         "Welcome",

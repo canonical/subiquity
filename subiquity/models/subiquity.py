@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import copy
 from collections import OrderedDict
 import logging
 import os
@@ -79,6 +80,7 @@ POSTINSTALL_MODEL_NAMES = [
     "packages",
     "snaplist",
     "ssh",
+    "userdata",
     ]
 
 ALL_MODEL_NAMES = INSTALL_MODEL_NAMES + POSTINSTALL_MODEL_NAMES
@@ -114,6 +116,7 @@ class SubiquityModel:
         self.proxy = ProxyModel()
         self.snaplist = SnapListModel()
         self.ssh = SSHModel()
+        self.userdata = {}
 
         self._events = {
             name: asyncio.Event() for name in ALL_MODEL_NAMES
@@ -184,7 +187,9 @@ class SubiquityModel:
             config['snap'] = {
                 'commands': cmds,
                 }
-        return config
+        userdata = copy.deepcopy(self.userdata)
+        merge_config(userdata, config)
+        return userdata
 
     def _cloud_init_files(self):
         # TODO, this should be moved to the in-target cloud-config seed so on
