@@ -341,6 +341,7 @@ class FilesystemController(SubiquityController):
         elif action['action'] == 'done':
             if not self.ui.body.done.enabled:
                 raise Exception("answers did not provide complete fs config")
+            self.app.confirm_install()
             self.finish()
         else:
             raise Exception("could not process action {}".format(action))
@@ -348,6 +349,7 @@ class FilesystemController(SubiquityController):
     def manual(self):
         self.ui.set_body(FilesystemView(self.model, self))
         if self.answers['guided']:
+            self.app.confirm_install()
             self.finish()
         if self.answers['manual']:
             self._run_iterator(self._run_actions(self.answers['manual']))

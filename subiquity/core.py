@@ -16,6 +16,7 @@
 import logging
 import os
 import platform
+import shlex
 import signal
 import sys
 import traceback
@@ -119,6 +120,7 @@ class Subiquity(Application):
 
         super().__init__(opts)
         self.block_log_dir = block_log_dir
+        self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
         if opts.snaps_from_examples:
             connection = FakeSnapdConnection(
                 os.path.join(
@@ -139,6 +141,7 @@ class Subiquity(Application):
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
+        self.install_confirmed = False
         self.reboot_on_exit = False
 
     def exit(self):
@@ -226,6 +229,40 @@ class Subiquity(Application):
         Reporting = getattr(self.controllers, "Reporting", None)
         if Reporting is not None:
             Reporting.report_finish_event(name, description, status, level)
+
+    def confirm_install(self):
+        self.install_confirmed = True
+        self.controllers.InstallProgress.confirmation.set()
+
+    def next_screen(self):
+        can_install = all(e.is_set() for e in self.base_model.install_events)
+        if can_install and not self.install_confirmed:
+            if self.interactive():
+                from subiquity.ui.views.installprogress import (
+                    InstallConfirmation,
+                    )
+                self.ui.body.show_stretchy_overlay(
+                    InstallConfirmation(self.ui.body, self))
+            else:
+                yes = _('yes')
+                no = _('no')
+                answer = no
+                if 'autoinstall' in self.kernel_cmdline:
+                    answer = yes
+                else:
+                    print(_("Confirmation is required to continue."))
+                    print(_("Add 'autoinstall' to your kernel command line to"
+                            " avoid this"))
+                    print()
+                prompt = "\n\n{} ({}|{})".format(
+                    _("Continue with autoinstall?"), yes, no)
+                while answer != yes:
+                    print(prompt)
+                    answer = input()
+                self.confirm_install()
+                super().next_screen()
+        else:
+            super().next_screen()
 
     def interactive(self):
         if not self.autoinstall_config:
