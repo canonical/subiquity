@@ -164,8 +164,15 @@ class FilesystemController(SubiquityController):
                 meth(disks[-1])
         elif 'config' in self.ai_data:
             with self.context.child("applying_autoinstall"):
-                # needs to account for grub and swap data too.
                 self.model.apply_autoinstall_config(self.ai_data['config'])
+            grub = self.ai_data.get('grub', {})
+            install_devices = grub.get('install_devices')
+            if install_devices:
+                device = install_devices[0]
+                for action in self.model._actions:
+                    if action['id'] == device:
+                        self.model.grub_install_device = action
+            # Should handle 'swap' here too.
 
     def start(self):
         self._start_task = schedule_task(self._start())
