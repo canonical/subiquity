@@ -99,6 +99,8 @@ class Subiquity(Application):
         "Early",
         "Reporting",
         "Error",
+        "Package",
+        "Debconf",
         "Welcome",
         "Refresh",
         "Keyboard",
@@ -307,6 +309,7 @@ class Subiquity(Application):
         elif self.autoinstall_config and not new.autoinstall_applied:
             schedule_task(self._apply(new))
         else:
+            new.configured()
             raise Skip
 
     async def _apply(self, controller):

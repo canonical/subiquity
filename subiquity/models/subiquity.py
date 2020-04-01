@@ -71,12 +71,13 @@ INSTALL_MODEL_NAMES = [
     "filesystem",
     ]
 
-# Models that contribute to the cloud-init config
+# Models that contribute to the cloud-init config (and other postinstall steps)
 POSTINSTALL_MODEL_NAMES = [
     "locale",
     "identity",
     "ssh",
     "snaplist",
+    "packages",
     ]
 
 ALL_MODEL_NAMES = INSTALL_MODEL_NAMES + POSTINSTALL_MODEL_NAMES
@@ -101,6 +102,8 @@ class SubiquityModel:
         self.identity = IdentityModel()
         self.ssh = SSHModel()
         self.snaplist = SnapListModel()
+        self.packages = []
+        self.debconf_selections = ''
 
         self._events = {
             name: asyncio.Event() for name in ALL_MODEL_NAMES
@@ -113,6 +116,7 @@ class SubiquityModel:
             }
 
     def configured(self, model_name):
+        log.debug("model %s is configured", model_name)
         self._events[model_name].set()
 
     def get_target_groups(self):
@@ -220,6 +224,8 @@ class SubiquityModel:
                     sys.executable, str(self.network.has_network).lower(),
                     ],
                 },
+
+            'debconf_selections': {'subiquity': self.debconf_selections},
 
             'grub': {
                 'terminal': 'unmodified',
