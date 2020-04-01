@@ -23,7 +23,6 @@ import time
 
 from cloudinit import atomic_helper, safeyaml, stages
 
-from subiquitycore import __version__ as VERSION
 from subiquitycore.log import setup_logger
 from subiquitycore.utils import run_command
 
@@ -117,7 +116,8 @@ def main():
     logfiles = setup_logger(dir=LOGDIR)
 
     logger = logging.getLogger('subiquity')
-    logger.info("Starting SUbiquity v{}".format(VERSION))
+    version = os.environ.get("SNAP_REVISION", "unknown")
+    logger.info("Starting Subiquity revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
 
     if not opts.dry_run:
