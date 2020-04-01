@@ -47,7 +47,8 @@ class IdentityView(BaseView):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        super().__init__(self.form.as_screen(excerpt=_(self.excerpt)))
+        super().__init__(self.form.as_screen(focus_buttons=False,
+                                             excerpt=_(self.excerpt)))
 
     def cancel(self, button=None):
         self.controller.cancel()
