@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 import attr
 import collections
 import enum
+import fnmatch
 import itertools
 import logging
 import math
@@ -1258,9 +1259,80 @@ class FilesystemModel(object):
             self._actions = []
         self.grub_install_device = None
 
+    def _make_matchers(self, match):
+        matchers = []
+
+        def match_serial(disk):
+            if disk.serial is not None:
+                return fnmatch.fnmatchcase(disk.serial, match['serial'])
+
+        def match_model(disk):
+            if disk.model is not None:
+                return fnmatch.fnmatchcase(disk.model, match['model'])
+
+        def match_ssd(disk):
+            is_ssd = disk.info_for_display()['rotational'] == 'false'
+            return is_ssd == match['ssd']
+
+        if 'serial' in match:
+            matchers.append(match_serial)
+        if 'model' in match:
+            matchers.append(match_model)
+        if 'ssd' in match:
+            matchers.append(match_ssd)
+
+        return matchers
+
     def apply_autoinstall_config(self, ai_config):
+        disks = self.all_disks()
+        for action in ai_config:
+            if action['type'] == 'disk':
+                disk = None
+                if 'serial' in action:
+                    disk = self._one(type='disk', serial=action['serial'])
+                elif 'path' in action:
+                    disk = self._one(type='disk', path=action['path'])
+                else:
+                    match = action.pop('match', {})
+                    matchers = self._make_matchers(match)
+                    candidates = []
+                    for disk in disks:
+                        for matcher in matchers:
+                            if not matcher(disk):
+                                break
+                        else:
+                            candidates.append(disk)
+                    if match.get('size') == 'largest':
+                        candidates.sort(key=lambda d: d.size, reverse=True)
+                    if candidates:
+                        disk = candidates[0]
+                if not disk:
+                    raise Exception("{} matched no disk".format(action))
+                if disk not in disks:
+                    raise Exception(
+                        "{} matched {} which was already used".format(
+                            action, disk))
+                disks.remove(disk)
+                action['path'] = disk.path
+                action['serial'] = disk.serial
         self._actions = self._actions_from_config(
             ai_config, self._probe_data['blockdev'], is_autoinstall=True)
+        for p in self._all("partition") + self._all("lvm_partition"):
+            [parent] = list(reverse_dependencies(p))
+            if isinstance(p.size, int):
+                if p.size < 0:
+                    if p is not parent.partitions()[-1]:
+                        raise Exception(
+                            "{} has negative size but is not final partition "
+                            "of {}".format(p, parent))
+                    p.size = 0
+                    p.size = parent.free_for_partitions
+            elif isinstance(p.size, str):
+                if p.size.endswith("%"):
+                    percentage = int(p.size[:-1])
+                    p.size = parent.size*percentage//100
+                else:
+                    p.size = dehumanize_size(p.size)
 
     def _actions_from_config(self, config, blockdevs, is_autoinstall=False):
         """Convert curtin storage config into action instances.
@@ -1346,10 +1418,12 @@ class FilesystemModel(object):
 
         objs = [o for o in objs if o not in exclusions]
 
-        for o in objs:
-            if o.type == "partition" and o.flag == "swap" and o._fs is None:
-                fs = Filesystem(m=self, fstype="swap", volume=o, preserve=True)
-                objs.append(fs)
+        if not is_autoinstall:
+            for o in objs:
+                if o.type == "partition" and o.flag == "swap":
+                    if o._fs is None:
+                        objs.append(Filesystem(
+                            m=self, fstype="swap", volume=o, preserve=True))
 
         return objs
 
