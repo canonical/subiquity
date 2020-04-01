@@ -33,6 +33,12 @@ i18n:
 dryrun: probert i18n
 	$(MAKE) ui-view DRYRUN="--dry-run --bootloader uefi"
 
+dryrun-console-conf:
+	$(MAKE) ui-view-console-conf DRYRUN="--dry-run"
+
+ui-view-console-conf:
+	$(PYTHON) -m console_conf.cmd.tui $(DRYRUN) $(MACHARGS)
+
 ui-view:
 	$(PYTHON) -m subiquity $(DRYRUN) $(MACHARGS)
 

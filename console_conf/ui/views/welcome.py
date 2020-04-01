@@ -29,16 +29,28 @@ log = logging.getLogger("console_conf.views.welcome")
 
 class WelcomeView(BaseView):
     title = "Ubuntu Core"
-    excerpt = ("Configure the network and setup an administrator "
-               "account on this all-snap Ubuntu Core system.")
+    excerpt = (
+        "Configure the network and setup an administrator "
+        "account on this all-snap Ubuntu Core system."
+    )
 
     def __init__(self, controller):
         self.controller = controller
-        super().__init__(screen(
-            rows=[],
-            buttons=button_pile([done_btn("OK", on_press=self.confirm)]),
-            focus_buttons=True,
-            excerpt=self.excerpt))
+        super().__init__(
+            screen(
+                rows=[],
+                buttons=button_pile([done_btn("OK", on_press=self.confirm)]),
+                focus_buttons=True,
+                excerpt=self.excerpt,
+            )
+        )
 
     def confirm(self, result):
         self.controller.done()
+
+
+class ChooserWelcomeView(WelcomeView):
+    excerpt = (
+        "System recovery triggered. Proceed to select one of available "
+        "systems and execute a recovery action."
+    )
