@@ -20,6 +20,7 @@ import shlex
 import signal
 import sys
 import traceback
+import time
 import urwid
 
 import apport.hookutils
@@ -169,9 +170,23 @@ class Subiquity(Application):
             s.get_cols_rows = lambda: (80, 24)
             return s
 
+    def get_primary_tty(self):
+        tty = 'tty1'
+        for work in self.kernel_cmdline:
+            if work.startswith('console='):
+                tty = work[len('console='):]
+        return tty
+
     def load_autoinstall_config(self):
         with open(self.opts.autoinstall) as fp:
             self.autoinstall_config = yaml.safe_load(fp)
+        primary_tty = self.get_primary_tty()
+        our_tty = os.ttyname(0)
+        if not self.interactive() and our_tty != primary_tty:
+            print(
+                _("the installer running on {} will perform the "
+                  "autoinstall").format(primary_tty))
+            signal.pause()
         self.controllers.load("Reporting")
         self.controllers.Reporting.start()
         self.controllers.load("Error")
@@ -179,9 +194,18 @@ class Subiquity(Application):
             jsonschema.validate(self.autoinstall_config, self.base_schema)
         self.controllers.load("Early")
         if self.controllers.Early.cmds:
-            self.aio_loop.run_until_complete(
-                self.controllers.Early.run())
-            self.new_event_loop()
+            stamp_file = os.path.join(self.state_dir, "early-commands")
+            if our_tty != primary_tty:
+                print(
+                    _("waiting for installer running on {} to run early "
+                      "commands").format(primary_tty))
+                while not os.path.exists(stamp_file):
+                    time.sleep(1)
+            else:
+                self.aio_loop.run_until_complete(
+                    self.controllers.Early.run())
+                self.new_event_loop()
+                open(stamp_file, 'w').close()
             with open(self.opts.autoinstall) as fp:
                 self.autoinstall_config = yaml.safe_load(fp)
             with self.context.child("core_validation", level="INFO"):
