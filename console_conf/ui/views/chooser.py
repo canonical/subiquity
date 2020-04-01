@@ -57,13 +57,18 @@ class ChooserView(BaseView):
         heading_table = TablePile([
             TableRow([
                 Color.info_minor(Text(header)) for header in [
-                    "LABEL", "MODEL", "PUBLISHER",
+                    "LABEL", "MODEL", "PUBLISHER", ""
                     ]
                 ])
             ],
             spacing=2)
 
         trows = []
+        systems = sorted(systems,
+                         key=lambda s: (s.brand.display_name,
+                                        s.model.display_name,
+                                        s.current,
+                                        s.label))
         for s in systems:
             actions = []
             log.debug('actions: %s', s.actions)
@@ -77,6 +82,7 @@ class ChooserView(BaseView):
                 Text(s.label),
                 Text(s.model.display_name),
                 Text(s.brand.display_name),
+                Text("(current)" if s.current else ""),
                 menu,
             ], menu)
             trows.append(srow)
