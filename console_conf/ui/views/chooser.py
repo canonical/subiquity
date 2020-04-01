@@ -27,12 +27,13 @@ from urwid import (
 from subiquitycore.ui.buttons import (
     danger_btn,
     reset_btn,
+    forward_btn,
     )
 from subiquitycore.ui.actionmenu import (
     Action,
     ActionMenu,
     )
-from subiquitycore.ui.container import Pile
+from subiquitycore.ui.container import Pile, ListBox
 from subiquitycore.ui.utils import (
     button_pile,
     screen,
@@ -44,6 +45,56 @@ from subiquitycore.view import BaseView
 
 
 log = logging.getLogger("console_conf.views.chooser")
+
+
+class ChooserCurrentSystemView(BaseView):
+    title = "Ubuntu Core"
+
+    def __init__(self, controller, current, has_more=False):
+        fmt = "Select one of available actions for \"{}\" by \"{}\"{}."
+        maybe_more = " or view all available systems" if has_more else ""
+        excerpt = fmt.format(current.model.display_name,
+                             current.brand.display_name,
+                             maybe_more)
+
+        self.controller = controller
+        log.debug('current system: %s', current)
+        log.debug('more systems available: %s', has_more)
+
+        actions = []
+        for action in current.actions:
+            actions.append(forward_btn(label=action.title,
+                                       on_press=self._current_system_action,
+                                       user_arg=(current, action)))
+
+        if has_more:
+            # add a button to show the other systems
+            actions.append(Text(""))
+            actions.append(forward_btn(label="Show all available systems",
+                                       on_press=self._more_options))
+
+        lb = ListBox(actions)
+
+        buttons = [
+            reset_btn("ABORT", on_press=self.abort),
+        ]
+
+        super().__init__(screen(
+            lb,
+            buttons=button_pile(buttons),
+            focus_buttons=False,
+            narrow_rows=True,
+            excerpt=excerpt))
+
+    def _current_system_action(self, sender, arg):
+        current, action = arg
+        self.controller.select(current, action)
+
+    def _more_options(self, sender):
+        self.controller.more_options()
+
+    def abort(self, result):
+        self.controller.cancel()
 
 
 class ChooserView(BaseView):
