@@ -94,7 +94,7 @@ class SubiquityModel:
 
         self.locale = LocaleModel()
         self.keyboard = KeyboardModel(self.root)
-        self.network = NetworkModel(support_wlan=False)
+        self.network = NetworkModel("subiquity", support_wlan=False)
         self.proxy = ProxyModel()
         self.mirror = MirrorModel()
         self.filesystem = FilesystemModel()
