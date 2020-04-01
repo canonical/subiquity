@@ -14,7 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 
-from console_conf.ui.views import ChooserView, ChooserConfirmView
+from console_conf.ui.views import (
+    ChooserView,
+    ChooserCurrentSystemView,
+    ChooserConfirmView,
+    )
 
 from subiquitycore.controller import BaseController
 
@@ -33,12 +37,22 @@ class RecoveryChooserBaseController(BaseController):
 
 class RecoveryChooserController(RecoveryChooserBaseController):
     def start_ui(self):
-        view = ChooserView(self, self.model.systems)
+        if self.model.current and self.model.current.actions:
+            # only when we have a current system and it has actions available
+
+            more = len(self.model.systems) > 1
+            view = ChooserCurrentSystemView(self, self.model.current,
+                                            has_more=more)
+        else:
+            view = ChooserView(self, self.model.systems)
         self.ui.set_body(view)
 
     def select(self, system, action):
         self.model.select(system, action)
         self.app.next_screen()
+
+    def more_options(self):
+        self.ui.set_body(ChooserView(self, self.model.systems))
 
 
 class RecoveryChooserConfirmController(RecoveryChooserBaseController):
