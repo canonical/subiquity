@@ -226,7 +226,7 @@ class RefreshView(BaseView):
             if self.controller.answers['update']:
                 self.update()
             else:
-                self.controller.done()
+                self.controller.app.aio_loop.call_soon(self.controller.done)
 
     def update(self, sender=None):
         self.spinner.stop()

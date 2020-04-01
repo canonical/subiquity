@@ -105,6 +105,7 @@ class SnapdSnapInfoLoader:
 class SnapListController(SubiquityController):
 
     autoinstall_key = "snaps"
+    autoinstall_default = []
     autoinstall_schema = {
         'type': 'array',
         'items': {

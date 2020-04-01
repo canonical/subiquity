@@ -14,11 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .cmdlist import EarlyController, LateController
+from .debconf import DebconfController
 from .error import ErrorController
 from .filesystem import FilesystemController
 from .identity import IdentityController
 from .installprogress import InstallProgressController
 from .keyboard import KeyboardController
+from .package import PackageController
 from .proxy import ProxyController
 from .mirror import MirrorController
 from .network import NetworkController
@@ -30,6 +32,7 @@ from .ssh import SSHController
 from .welcome import WelcomeController
 from .zdev import ZdevController
 __all__ = [
+    'DebconfController',
     'EarlyController',
     'ErrorController',
     'FilesystemController',
@@ -37,6 +40,7 @@ __all__ = [
     'InstallProgressController',
     'KeyboardController',
     'LateController',
+    'PackageController',
     'ProxyController',
     'MirrorController',
     'NetworkController',

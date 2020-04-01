@@ -155,7 +155,8 @@ class InstallProgressController(SubiquityController):
             self.curtin_log(event)
 
     @contextlib.contextmanager
-    def install_context(self, context, name, description, level, childlevel):
+    def install_context(self, context, name, description,
+                        level=None, childlevel=None):
         self._install_event_start(description)
         try:
             subcontext = context.child(name, description, level, childlevel)
@@ -333,23 +334,31 @@ class InstallProgressController(SubiquityController):
             {"autoinstall": self.app.make_autoinstall()})
         write_file(autoinstall_path, autoinstall_config, mode=0o600)
         await self.configure_cloud_init(context)
+        packages = []
         if self.model.ssh.install_server:
-            await self.install_openssh(context)
+            packages = ['openssh-server']
+        packages.extend(self.app.base_model.packages)
+        for package in packages:
+            subcontext = self.install_context(
+                context,
+                "install_{}".format(package),
+                "installing {}".format(package))
+            with subcontext:
+                await self.install_package(package)
         await self.restore_apt_config(context)
 
     @install_step("configuring cloud-init")
     async def configure_cloud_init(self, context):
         await run_in_thread(self.model.configure_cloud_init)
 
-    @install_step("installing openssh")
-    async def install_openssh(self, context):
+    async def install_package(self, package):
         if self.opts.dry_run:
             cmd = ["sleep", str(2/self.app.scale_factor)]
         else:
             cmd = [
                 sys.executable, "-m", "curtin", "system-install", "-t",
                 "/target",
-                "--", "openssh-server",
+                "--", package,
                 ]
         await arun_command(self.logged_command(cmd), check=True)
 

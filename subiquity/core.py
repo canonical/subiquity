@@ -99,6 +99,8 @@ class Subiquity(Application):
         "Early",
         "Reporting",
         "Error",
+        "Package",
+        "Debconf",
         "Welcome",
         "Refresh",
         "Keyboard",
@@ -127,7 +129,8 @@ class Subiquity(Application):
                 os.path.join(
                     os.path.dirname(
                         os.path.dirname(__file__)),
-                    "examples", "snaps"))
+                    "examples", "snaps"),
+                self.scale_factor)
         else:
             connection = SnapdConnection(self.root, self.snapd_socket_path)
         self.snapd = AsyncSnapd(connection)
@@ -181,7 +184,10 @@ class Subiquity(Application):
         with open(self.opts.autoinstall) as fp:
             self.autoinstall_config = yaml.safe_load(fp)
         primary_tty = self.get_primary_tty()
-        our_tty = os.ttyname(0)
+        try:
+            our_tty = os.ttyname(0)
+        except OSError:
+            our_tty = "not a tty"
         if not self.interactive() and our_tty != primary_tty:
             print(
                 _("the installer running on {} will perform the "
@@ -307,6 +313,7 @@ class Subiquity(Application):
         elif self.autoinstall_config and not new.autoinstall_applied:
             schedule_task(self._apply(new))
         else:
+            new.configured()
             raise Skip
 
     async def _apply(self, controller):
