@@ -143,27 +143,6 @@ class SubiquityModel:
         return groups
 
     def _cloud_init_config(self):
-        user = self.identity.user
-        users_and_groups_path = (
-            os.path.join(os.environ.get("SNAP", "."),
-                         "users-and-groups"))
-        if os.path.exists(users_and_groups_path):
-            groups = open(users_and_groups_path).read().split()
-        else:
-            groups = ['admin']
-        groups.append('sudo')
-        groups = [group for group in groups
-                  if group in self.get_target_groups()]
-        user_info = {
-            'name': user.username,
-            'gecos': user.realname,
-            'passwd': user.password,
-            'shell': '/bin/bash',
-            'groups': groups,
-            'lock-passwd': False,
-            }
-        if self.ssh.authorized_keys:
-            user_info['ssh_authorized_keys'] = self.ssh.authorized_keys
         config = {
             'growpart': {
                 'mode': 'off',
@@ -171,10 +150,32 @@ class SubiquityModel:
             'locale': self.locale.selected_language + '.UTF-8',
             'preserve_hostname': True,
             'resize_rootfs': False,
-            'users': [user_info],
         }
+        user = self.identity.user
+        if user:
+            users_and_groups_path = (
+                os.path.join(os.environ.get("SNAP", "."),
+                             "users-and-groups"))
+            if os.path.exists(users_and_groups_path):
+                groups = open(users_and_groups_path).read().split()
+            else:
+                groups = ['admin']
+            groups.append('sudo')
+            groups = [group for group in groups
+                      if group in self.get_target_groups()]
+            user_info = {
+                'name': user.username,
+                'gecos': user.realname,
+                'passwd': user.password,
+                'shell': '/bin/bash',
+                'groups': groups,
+                'lock-passwd': False,
+                }
+            config['users'] = [user_info]
         if self.ssh.install_server:
             config['ssh_pwauth'] = self.ssh.pwauth
+        if self.ssh.authorized_keys:
+            config['ssh_authorized_keys'] = self.ssh.authorized_keys
         if self.snaplist.to_install:
             cmds = []
             for snap_name, selection in sorted(
