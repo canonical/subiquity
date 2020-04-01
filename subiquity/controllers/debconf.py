@@ -18,6 +18,7 @@ from subiquity.controller import NoUIController
 
 class DebconfController(NoUIController):
 
+    model_name = "debconf_selections"
     autoinstall_key = "debconf-selections"
     autoinstall_default = ""
     autoinstall_schema = {
@@ -25,7 +26,7 @@ class DebconfController(NoUIController):
         }
 
     def load_autoinstall_data(self, data):
-        self.app.base_model.debconf_selections = data
+        self.model.selections = data
 
     def make_autoinstall(self):
-        return self.app.base_model.debconf_selections
+        return self.model.selections

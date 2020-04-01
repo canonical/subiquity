@@ -64,23 +64,33 @@ ff02::2 ip6-allrouters
 
 # Models that contribute to the curtin config
 INSTALL_MODEL_NAMES = [
+    "debconf_selections",
+    "filesystem",
     "keyboard",
+    "mirror",
     "network",
     "proxy",
-    "mirror",
-    "filesystem",
     ]
 
 # Models that contribute to the cloud-init config (and other postinstall steps)
 POSTINSTALL_MODEL_NAMES = [
-    "locale",
     "identity",
-    "ssh",
-    "snaplist",
+    "locale",
     "packages",
+    "snaplist",
+    "ssh",
     ]
 
 ALL_MODEL_NAMES = INSTALL_MODEL_NAMES + POSTINSTALL_MODEL_NAMES
+
+
+class DebconfSelectionsModel:
+
+    def __init__(self):
+        self.selections = ''
+
+    def render(self):
+        return {'debconf_selections': {'subiquity': self.selections}}
 
 
 class SubiquityModel:
@@ -93,17 +103,17 @@ class SubiquityModel:
         if root != '/':
             self.target = root
 
-        self.locale = LocaleModel()
-        self.keyboard = KeyboardModel(self.root)
-        self.network = NetworkModel("subiquity", support_wlan=False)
-        self.proxy = ProxyModel()
-        self.mirror = MirrorModel()
+        self.debconf_selections = DebconfSelectionsModel()
         self.filesystem = FilesystemModel()
         self.identity = IdentityModel()
-        self.ssh = SSHModel()
-        self.snaplist = SnapListModel()
+        self.keyboard = KeyboardModel(self.root)
+        self.locale = LocaleModel()
+        self.mirror = MirrorModel()
+        self.network = NetworkModel("subiquity", support_wlan=False)
         self.packages = []
-        self.debconf_selections = ''
+        self.proxy = ProxyModel()
+        self.snaplist = SnapListModel()
+        self.ssh = SSHModel()
 
         self._events = {
             name: asyncio.Event() for name in ALL_MODEL_NAMES
@@ -224,9 +234,6 @@ class SubiquityModel:
                     sys.executable, str(self.network.has_network).lower(),
                     ],
                 },
-
-            'debconf_selections': {'subiquity': self.debconf_selections},
-
             'grub': {
                 'terminal': 'unmodified',
                 'probe_additional_os': True
