@@ -13,11 +13,12 @@ class Config:
 
     Call parse_netplan_config() with each piece of yaml config, and then
     call config_for_device to get the config that matches a particular
-    network devices, if any.
+    network device, if any.
     """
 
     def __init__(self):
-        self.devices = []
+        self.physical_devices = []
+        self.virtual_devices = []
         self.config = {}
 
     def parse_netplan_config(self, config):
@@ -34,25 +35,32 @@ class Config:
         if version != 2:
             log.info("network has no/unexpected version %s", version)
             return
-        for ethernet, eth_config in network.get('ethernets', {}).items():
-            self.devices.append(_Device(ethernet, eth_config))
-        for wifi, wifi_config in network.get('wifis', {}).items():
-            self.devices.append(_Device(wifi, wifi_config))
+        for phys_key in 'ethernets', 'wifis':
+            for dev, dev_config in network.get(phys_key, {}).items():
+                self.physical_devices.append(_PhysicalDevice(dev, dev_config))
+        for virt_key in 'bonds', 'vlans':
+            for dev, dev_config in network.get(virt_key, {}).items():
+                self.virtual_devices.append(_VirtualDevice(dev, dev_config))
 
     def config_for_device(self, link):
-        allowed_matches = ('macaddress',)
-        match_key = 'match'
-        for dev in self.devices:
-            if dev.matches_link(link):
-                config = copy.deepcopy(dev.config)
-                if match_key in config:
-                    match = {k: v for k, v in config[match_key].items()
-                             if k in allowed_matches}
-                    if match:
-                        config[match_key] = match
-                    else:
-                        del config[match_key]
-                return config
+        if link.is_virtual:
+            for dev in self.virtual_devices:
+                if dev.name == link.name:
+                    return copy.deepcopy(dev.config)
+        else:
+            allowed_matches = ('macaddress',)
+            match_key = 'match'
+            for dev in self.physical_devices:
+                if dev.matches_link(link):
+                    config = copy.deepcopy(dev.config)
+                    if match_key in config:
+                        match = {k: v for k, v in config[match_key].items()
+                                 if k in allowed_matches}
+                        if match:
+                            config[match_key] = match
+                        else:
+                            del config[match_key]
+                    return config
         return {}
 
     def load_from_root(self, root):
@@ -65,7 +73,7 @@ class Config:
                 self.parse_netplan_config(fp.read())
 
 
-class _Device:
+class _PhysicalDevice:
     def __init__(self, name, config):
         match = config.get('match')
         if match is None:
@@ -93,6 +101,13 @@ class _Device:
         else:
             matches_driver = True
         return matches_name and matches_mac and matches_driver
+
+
+class _VirtualDevice:
+    def __init__(self, name, config):
+        self.name = name
+        self.config = config
+        log.debug("config for %s = %s" % (name, self.config))
 
 
 def configs_in_root(root, masked=False):

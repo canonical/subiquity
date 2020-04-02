@@ -263,15 +263,6 @@ class NetworkModel(object):
     def parse_netplan_configs(self, netplan_root):
         self.config = netplan.Config()
         self.config.load_from_root(netplan_root)
-        for typ, key in ('vlan', 'vlans'), ('bond', 'bonds'):
-            network = self.config.config.get('network', {})
-            for name, config in network.get(key, {}).items():
-                dev = self.devices_by_name.get(name)
-                if dev is None:
-                    dev = self.devices_by_name[name] = NetworkDev(
-                        self, name, typ)
-                # XXX What to do if types don't match??
-                dev.config = config
 
     def new_link(self, ifindex, link):
         log.debug("new_link %s %s %s", ifindex, link.name, link.type)
@@ -292,13 +283,14 @@ class NetworkModel(object):
             else:
                 dev.info = link
         else:
-            if link.is_virtual:
+            config = self.config.config_for_device(link)
+            if link.is_virtual and not config:
                 # If we see a virtual device without there already
                 # being a config for it, we just ignore it.
                 return
             dev = NetworkDev(self, link.name, link.type)
             dev.info = link
-            dev.config = self.config.config_for_device(link)
+            dev.config = config
             log.debug("new_link %s %s with config %s",
                       ifindex, link.name,
                       sanitize_interface_config(dev.config))
