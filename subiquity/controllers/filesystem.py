@@ -67,6 +67,7 @@ class FilesystemController(SubiquityController):
     def __init__(self, app):
         self.ai_data = {}
         super().__init__(app)
+        self.model.target = app.base_model.target
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
             self.model.bootloader = getattr(Bootloader, name)
