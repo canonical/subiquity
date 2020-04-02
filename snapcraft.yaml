@@ -35,7 +35,10 @@ parts:
      - "*"
      - "-lib/python*/site-packages/_yaml.*.so"
      - "-lib/python*/site-packages/jsonschema"
-    stage-packages: [libc6, efibootmgr]
+    stage-packages:
+     - libc6
+     - try:
+       - efibootmgr
   subiquity:
     plugin: python
     build-packages:
