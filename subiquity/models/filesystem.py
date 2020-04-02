@@ -1224,6 +1224,8 @@ class FilesystemModel(object):
 
     lower_size_limit = 128 * (1 << 20)
 
+    target = None
+
     @classmethod
     def is_mounted_filesystem(self, fstype):
         if fstype in [None, 'swap']:
@@ -1291,7 +1293,11 @@ class FilesystemModel(object):
         seen_multipaths = set()
         for action in config:
             if not is_autoinstall and action['type'] == 'mount':
-                exclusions.add(byid[action['device']])
+                if not action['path'].startswith(self.target):
+                    # Completely ignore mounts under /target, they are
+                    # probably leftovers from a previous install
+                    # attempt.
+                    exclusions.add(byid[action['device']])
                 continue
             c = _type_to_cls.get(action['type'], None)
             if c is None:

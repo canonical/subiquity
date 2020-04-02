@@ -18,8 +18,6 @@ import json
 import logging
 import os
 import select
-import shutil
-import sys
 
 import pyudev
 
@@ -29,7 +27,6 @@ from subiquitycore.async_helpers import (
     SingleInstanceTask,
     )
 from subiquitycore.utils import (
-    arun_command,
     run_command,
     )
 
@@ -70,6 +67,7 @@ class FilesystemController(SubiquityController):
     def __init__(self, app):
         self.ai_data = {}
         super().__init__(app)
+        self.model.target = app.base_model.target
         if self.opts.dry_run and self.opts.bootloader:
             name = self.opts.bootloader.upper()
             self.model.bootloader = getattr(Bootloader, name)
@@ -173,17 +171,6 @@ class FilesystemController(SubiquityController):
         self._start_task = schedule_task(self._start())
 
     async def _start(self):
-        target = self.app.base_model.target
-        if os.path.exists(target):
-            cmd = [
-                sys.executable, '-m', 'curtin', 'unmount',
-                '-t', self.app.base_model.target,
-                ]
-            if self.opts.dry_run:
-                cmd = ['sleep', "0.2"]
-            await arun_command(cmd)
-            if not self.opts.dry_run:
-                shutil.rmtree(self.app.base_model.target)
         context = pyudev.Context()
         self._monitor = pyudev.Monitor.from_netlink(context)
         self._monitor.filter_by(subsystem='block')

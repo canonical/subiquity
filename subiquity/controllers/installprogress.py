@@ -18,10 +18,11 @@ import contextlib
 import datetime
 import logging
 import os
+import platform
 import re
+import shutil
 import subprocess
 import sys
-import platform
 import tempfile
 import traceback
 
@@ -83,11 +84,11 @@ def install_step(label, level=None, childlevel=None):
     def decorate(meth):
         name = meth.__name__
 
-        async def decorated(self, context):
+        async def decorated(self, context, *args):
             manager = self.install_context(
                 context, name, label, level, childlevel)
             with manager as subcontext:
-                await meth(self, subcontext)
+                await meth(self, subcontext, *args)
         return decorated
     return decorate
 
@@ -253,6 +254,18 @@ class InstallProgressController(SubiquityController):
 
         return curtin_cmd
 
+    @install_step("umounting /target dir")
+    async def unmount_target(self, context, target):
+        cmd = [
+            sys.executable, '-m', 'curtin', 'unmount',
+            '-t', target,
+            ]
+        if self.opts.dry_run:
+            cmd = ['sleep', str(0.2/self.app.scale_factor)]
+        await arun_command(cmd)
+        if not self.opts.dry_run:
+            shutil.rmtree(target)
+
     @install_step("installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, context):
         log.debug('curtin_install')
@@ -284,6 +297,9 @@ class InstallProgressController(SubiquityController):
                 {e.wait() for e in self.model.install_events})
 
             await self.confirmation.wait()
+
+            if os.path.exists(self.model.target):
+                await self.unmount_target(context, self.model.target)
 
             await self.curtin_install(context)
 

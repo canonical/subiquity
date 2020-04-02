@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import concurrent.futures
 import logging
 
 
@@ -41,7 +42,10 @@ def schedule_task(coro, propagate_errors=True):
 
 async def run_in_thread(func, *args):
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, func, *args)
+    try:
+        return await loop.run_in_executor(None, func, *args)
+    except concurrent.futures.CancelledError:
+        raise asyncio.CancelledError
 
 
 class SingleInstanceTask:

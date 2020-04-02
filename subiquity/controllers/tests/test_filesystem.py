@@ -50,6 +50,7 @@ def make_controller(bootloader=None):
     app = MiniApplication()
     app.base_model = bm = Thing()
     app.context = Context.new(app)
+    bm.target = '/target'
     bm.filesystem = make_model(bootloader)
     controller = FilesystemController(app)
     return controller
