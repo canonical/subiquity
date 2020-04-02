@@ -138,11 +138,13 @@ def make_model(bootloader=None):
 
 
 def make_disk(model, **kw):
-    serial = 'serial%s' % len(model._actions)
+    if 'serial' not in kw:
+        kw['serial'] = 'serial%s' % len(model._actions)
+    if 'path' not in kw:
+        kw['path'] = '/dev/thing'
+    size = kw.pop('size', 100*(2**30))
     model._actions.append(Disk(
-        m=model, serial=serial,
-        info=FakeStorageInfo(size=100*(2**30)),
-        path='/dev/thing',
+        m=model, info=FakeStorageInfo(size=size),
         **kw))
     disk = model._actions[-1]
     return disk
@@ -785,21 +787,41 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertActionNotSupported(lv, DeviceAction.MAKE_BOOT)
 
 
+def fake_up_blockdata(model):
+    bd = {}
+    for disk in model.all_disks():
+        bd[disk.path] = {
+            'DEVTYPE': 'disk',
+            'attrs': {
+                'size': disk.size,
+                },
+            }
+    model._probe_data = {'blockdev': bd}
+
+
 class TestAutoInstallConfig(unittest.TestCase):
 
     def test_basic(self):
         model, disk = make_model_and_disk()
-        model._probe_data = {
-            'blockdev': {
-                disk.path: {
-                    'DEVTYPE':'disk',
-                    'attrs': {
-                        'size': disk.size,
-                        },
-                    },
-                },
-            }
+        fake_up_blockdata(model)
         model.apply_autoinstall_config([{'type': 'disk', 'id': 'disk0'}])
         [new_disk] = model.all_disks()
         self.assertIsNot(new_disk, disk)
         self.assertEqual(new_disk.serial, disk.serial)
+
+    def test_largest(self):
+        model = make_model()
+        make_disk(model, serial='smaller', size=10*(2**30))
+        make_disk(model, serial='larger', size=11*(2**30))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'match': {
+                    'size': 'largest',
+                    },
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.serial, "larger")
