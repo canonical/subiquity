@@ -177,7 +177,7 @@ class KeyCodesFilter:
     """
 
     def __init__(self):
-        self._fd = os.open("/proc/self/fd/0", os.O_RDWR)
+        self._fd = os.open("/proc/self/fd/"+str(sys.stdin.fileno()), os.O_RDWR)
         self.filtering = False
 
     def enter_keycodes_mode(self):
