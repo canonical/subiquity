@@ -906,3 +906,49 @@ class TestAutoInstallConfig(unittest.TestCase):
             ])
         new_disk = model._one(type="disk", id="disk0")
         self.assertEqual(new_disk.serial, "aaaa")
+
+    def test_no_matching_disk(self):
+        model = make_model()
+        make_disk(model, serial='bbbb')
+        fake_up_blockdata(model)
+        with self.assertRaises(Exception) as cm:
+            model.apply_autoinstall_config([{
+                    'type': 'disk',
+                    'id': 'disk0',
+                    'serial': 'aaaa',
+                }])
+        self.assertIn("matched no disk", str(cm.exception))
+
+    def test_reuse_disk(self):
+        model = make_model()
+        make_disk(model, serial='aaaa')
+        fake_up_blockdata(model)
+        with self.assertRaises(Exception) as cm:
+            model.apply_autoinstall_config([{
+                    'type': 'disk',
+                    'id': 'disk0',
+                    'serial': 'aaaa',
+                },
+                {
+                    'type': 'disk',
+                    'id': 'disk0',
+                    'serial': 'aaaa',
+                }])
+        self.assertIn("was already used", str(cm.exception))
+
+    def test_partition_percent(self):
+        model = make_model()
+        make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([{
+            'type': 'disk',
+            'id': 'disk0',
+            },
+            {
+                'type': 'partition',
+                'id': 'part0',
+                'device': 'disk0',
+                'size': '50%',
+            }])
+        part = model._one(type="partition")
+        self.assertEqual(part.size, dehumanize_size("50M"))
