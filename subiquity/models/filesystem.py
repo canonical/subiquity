@@ -1270,6 +1270,10 @@ class FilesystemModel(object):
             if disk.model is not None:
                 return fnmatch.fnmatchcase(disk.model, match['model'])
 
+        def match_path(disk):
+            if disk.path is not None:
+                return fnmatch.fnmatchcase(disk.path, match['path'])
+
         def match_ssd(disk):
             is_ssd = disk.info_for_display()['rotational'] == 'false'
             return is_ssd == match['ssd']
@@ -1278,6 +1282,8 @@ class FilesystemModel(object):
             matchers.append(match_serial)
         if 'model' in match:
             matchers.append(match_model)
+        if 'path' in match:
+            matchers.append(match_path)
         if 'ssd' in match:
             matchers.append(match_ssd)
 
@@ -1296,17 +1302,19 @@ class FilesystemModel(object):
                     match = action.pop('match', {})
                     matchers = self._make_matchers(match)
                     candidates = []
-                    for disk in disks:
+                    for candidate in disks:
                         for matcher in matchers:
-                            if not matcher(disk):
+                            if not matcher(candidate):
                                 break
                         else:
-                            candidates.append(disk)
+                            candidates.append(candidate)
                     if match.get('size') == 'largest':
                         candidates.sort(key=lambda d: d.size, reverse=True)
                     if candidates:
                         disk = candidates[0]
-                if not disk:
+                    else:
+                        action['match'] = match
+                if disk is None:
                     raise Exception("{} matched no disk".format(action))
                 if disk not in disks:
                     raise Exception(

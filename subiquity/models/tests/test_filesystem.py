@@ -137,16 +137,16 @@ def make_model(bootloader=None):
     return model
 
 
-def make_disk(model, **kw):
+def make_disk(fs_model, **kw):
     if 'serial' not in kw:
-        kw['serial'] = 'serial%s' % len(model._actions)
+        kw['serial'] = 'serial%s' % len(fs_model._actions)
     if 'path' not in kw:
         kw['path'] = '/dev/thing'
     size = kw.pop('size', 100*(2**30))
-    model._actions.append(Disk(
-        m=model, info=FakeStorageInfo(size=size),
+    fs_model._actions.append(Disk(
+        m=fs_model, info=FakeStorageInfo(size=size),
         **kw))
-    disk = model._actions[-1]
+    disk = fs_model._actions[-1]
     return disk
 
 
@@ -825,3 +825,84 @@ class TestAutoInstallConfig(unittest.TestCase):
             ])
         new_disk = model._one(type="disk", id="disk0")
         self.assertEqual(new_disk.serial, "larger")
+
+    def test_serial_exact(self):
+        model = make_model()
+        make_disk(model, serial='aaaa', path='/dev/aaa')
+        make_disk(model, serial='bbbb', path='/dev/bbb')
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'serial': 'aaaa',
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.path, "/dev/aaa")
+
+    def test_serial_glob(self):
+        model = make_model()
+        make_disk(model, serial='aaaa', path='/dev/aaa')
+        make_disk(model, serial='bbbb', path='/dev/bbb')
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'match': {
+                    'serial': 'a*',
+                    },
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.path, "/dev/aaa")
+
+    def test_path_exact(self):
+        model = make_model()
+        make_disk(model, serial='aaaa', path='/dev/aaa')
+        make_disk(model, serial='bbbb', path='/dev/bbb')
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'path': '/dev/aaa',
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.serial, "aaaa")
+
+    def test_path_glob(self):
+        model = make_model()
+        make_disk(model, serial='aaaa', path='/dev/aaa')
+        make_disk(model, serial='bbbb', path='/dev/bbb')
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'match': {
+                    'path': '/dev/a*',
+                    },
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.serial, "aaaa")
+
+    def test_model_glob(self):
+        model = make_model()
+        make_disk(model, serial='aaaa', model='aaa')
+        make_disk(model, serial='bbbb', model='bbb')
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'match': {
+                    'model': 'a*',
+                    },
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.serial, "aaaa")
