@@ -29,6 +29,7 @@ from ..controller import RepeatedController
 from .reporting import ReportingController
 from .snaplist import SnapListController
 from .ssh import SSHController
+from .userdata import UserdataController
 from .welcome import WelcomeController
 from .zdev import ZdevController
 __all__ = [
@@ -49,6 +50,7 @@ __all__ = [
     'ReportingController',
     'SnapListController',
     'SSHController',
+    'UserdataController',
     'WelcomeController',
     'ZdevController',
 ]

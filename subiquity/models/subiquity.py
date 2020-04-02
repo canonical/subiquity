@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import copy
 from collections import OrderedDict
 import logging
 import os
@@ -79,6 +80,7 @@ POSTINSTALL_MODEL_NAMES = [
     "packages",
     "snaplist",
     "ssh",
+    "userdata",
     ]
 
 ALL_MODEL_NAMES = INSTALL_MODEL_NAMES + POSTINSTALL_MODEL_NAMES
@@ -114,6 +116,7 @@ class SubiquityModel:
         self.proxy = ProxyModel()
         self.snaplist = SnapListModel()
         self.ssh = SSHModel()
+        self.userdata = {}
 
         self._events = {
             name: asyncio.Event() for name in ALL_MODEL_NAMES
@@ -140,27 +143,6 @@ class SubiquityModel:
         return groups
 
     def _cloud_init_config(self):
-        user = self.identity.user
-        users_and_groups_path = (
-            os.path.join(os.environ.get("SNAP", "."),
-                         "users-and-groups"))
-        if os.path.exists(users_and_groups_path):
-            groups = open(users_and_groups_path).read().split()
-        else:
-            groups = ['admin']
-        groups.append('sudo')
-        groups = [group for group in groups
-                  if group in self.get_target_groups()]
-        user_info = {
-            'name': user.username,
-            'gecos': user.realname,
-            'passwd': user.password,
-            'shell': '/bin/bash',
-            'groups': groups,
-            'lock-passwd': False,
-            }
-        if self.ssh.authorized_keys:
-            user_info['ssh_authorized_keys'] = self.ssh.authorized_keys
         config = {
             'growpart': {
                 'mode': 'off',
@@ -168,10 +150,32 @@ class SubiquityModel:
             'locale': self.locale.selected_language + '.UTF-8',
             'preserve_hostname': True,
             'resize_rootfs': False,
-            'users': [user_info],
         }
+        user = self.identity.user
+        if user:
+            users_and_groups_path = (
+                os.path.join(os.environ.get("SNAP", "."),
+                             "users-and-groups"))
+            if os.path.exists(users_and_groups_path):
+                groups = open(users_and_groups_path).read().split()
+            else:
+                groups = ['admin']
+            groups.append('sudo')
+            groups = [group for group in groups
+                      if group in self.get_target_groups()]
+            user_info = {
+                'name': user.username,
+                'gecos': user.realname,
+                'passwd': user.password,
+                'shell': '/bin/bash',
+                'groups': groups,
+                'lock-passwd': False,
+                }
+            config['users'] = [user_info]
         if self.ssh.install_server:
             config['ssh_pwauth'] = self.ssh.pwauth
+        if self.ssh.authorized_keys:
+            config['ssh_authorized_keys'] = self.ssh.authorized_keys
         if self.snaplist.to_install:
             cmds = []
             for snap_name, selection in sorted(
@@ -184,7 +188,9 @@ class SubiquityModel:
             config['snap'] = {
                 'commands': cmds,
                 }
-        return config
+        userdata = copy.deepcopy(self.userdata)
+        merge_config(userdata, config)
+        return userdata
 
     def _cloud_init_files(self):
         # TODO, this should be moved to the in-target cloud-config seed so on
