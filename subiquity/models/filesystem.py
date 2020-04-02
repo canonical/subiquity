@@ -1317,7 +1317,7 @@ class FilesystemModel(object):
                 action['serial'] = disk.serial
         self._actions = self._actions_from_config(
             ai_config, self._probe_data['blockdev'], is_autoinstall=True)
-        for p in self._all("partition") + self._all("lvm_partition"):
+        for p in self._all(type="partition") + self._all(type="lvm_partition"):
             [parent] = list(reverse_dependencies(p))
             if isinstance(p.size, int):
                 if p.size < 0:

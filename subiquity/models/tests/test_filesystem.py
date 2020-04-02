@@ -783,3 +783,23 @@ class TestFilesystemModel(unittest.TestCase):
     def test_lv_action_MAKE_BOOT(self):
         model, lv = make_model_and_lv()
         self.assertActionNotSupported(lv, DeviceAction.MAKE_BOOT)
+
+
+class TestAutoInstallConfig(unittest.TestCase):
+
+    def test_basic(self):
+        model, disk = make_model_and_disk()
+        model._probe_data = {
+            'blockdev': {
+                disk.path: {
+                    'DEVTYPE':'disk',
+                    'attrs': {
+                        'size': disk.size,
+                        },
+                    },
+                },
+            }
+        model.apply_autoinstall_config([{'type': 'disk', 'id': 'disk0'}])
+        [new_disk] = model.all_disks()
+        self.assertIsNot(new_disk, disk)
+        self.assertEqual(new_disk.serial, disk.serial)
