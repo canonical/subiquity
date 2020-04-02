@@ -37,7 +37,7 @@ class WelcomeController(SubiquityController):
 
     def start(self):
         lang = os.environ.get("LANG")
-        if lang.endswith(".UTF-8"):
+        if lang is not None and lang.endswith(".UTF-8"):
             lang = lang.rsplit('.', 1)[0]
         for code, name in self.model.supported_languages:
             if code == lang:
