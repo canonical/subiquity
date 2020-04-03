@@ -400,7 +400,14 @@ class NetworkController(BaseController):
                 if devs_to_down or devs_to_delete:
                     try:
                         await arun_command(
-                            ['systemctl', 'stop', 'systemd-networkd.service'],
+                            ['systemctl', 'mask', '--runtime',
+                             'systemd-networkd.service',
+                             'systemd-networkd.socket'],
+                            check=True)
+                        await arun_command(
+                            ['systemctl', 'stop',
+                             'systemd-networkd.service',
+                             'systemd-networkd.socket'],
                             check=True)
                     except subprocess.CalledProcessError:
                         error("stop-networkd")
@@ -409,11 +416,22 @@ class NetworkController(BaseController):
                     await self._down_devs(devs_to_down)
                 if devs_to_delete:
                     await self._delete_devs(devs_to_delete)
+                if devs_to_down or devs_to_delete:
+                    await arun_command(
+                        ['systemctl', 'unmask', '--runtime',
+                         'systemd-networkd.service',
+                         'systemd-networkd.socket'],
+                        check=True)
                 try:
                     await arun_command(['netplan', 'apply'], check=True)
                 except subprocess.CalledProcessError:
                     error("apply")
                     raise
+                if devs_to_down or devs_to_delete:
+                    # It's probably running already, but just in case.
+                    await arun_command(
+                        ['systemctl', 'start', 'systemd-networkd.socket'],
+                        check=False)
 
             if not silent and self.view:
                 self.view.hide_apply_spinner()
