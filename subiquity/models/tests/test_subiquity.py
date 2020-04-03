@@ -15,7 +15,6 @@
 
 import fnmatch
 import unittest
-import yaml
 
 from subiquity.models.subiquity import SubiquityModel
 
@@ -118,18 +117,10 @@ class TestSubiquityModel(unittest.TestCase):
         config = model.render('ident')
         self.assertConfigHasVal(config, 'storage.version', 1)
 
-    def test_write_netplan(self):
+    def test_network_version(self):
         model = SubiquityModel('test')
         config = model.render('ident')
-        netplan_content = None
-        for fspec in config['write_files'].values():
-            if fspec['path'].startswith('etc/netplan'):
-                if netplan_content is not None:
-                    self.fail("writing two files to netplan?")
-                netplan_content = fspec['content']
-        self.assertIsNot(netplan_content, None)
-        netplan = yaml.safe_load(netplan_content)
-        self.assertConfigHasVal(netplan, 'network.version', 2)
+        self.assertConfigHasVal(config, 'network.version', 2)
 
     def test_has_sources(self):
         model = SubiquityModel('test')

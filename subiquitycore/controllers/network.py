@@ -331,7 +331,7 @@ class NetworkController(BaseController):
                 log.info("deleting %s failed with %r", dev.name, cp.stderr)
 
     def render_config(self):
-        return self.model.render_config()
+        return self.model.render()
 
     def _write_config(self):
         config = self.render_config()
@@ -344,10 +344,10 @@ class NetworkController(BaseController):
                 continue
             os.rename(p, p + ".dist-" + self.opts.project)
 
-        write_file(
-            self.netplan_path,
-            self.model.stringify_config(config),
-            omode="w")
+        write_file(self.netplan_path, '\n'.join((
+            ("# This is the network config written by '%s'" %
+             self.opts.project),
+            yaml.dump(config, default_flow_style=False))), omode="w")
 
         self.model.parse_netplan_configs(self.root)
 

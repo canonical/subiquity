@@ -17,7 +17,6 @@ import copy
 import enum
 import ipaddress
 import logging
-import yaml
 from socket import AF_INET, AF_INET6
 
 from subiquitycore import netplan
@@ -254,11 +253,10 @@ class NetworkDev(object):
 class NetworkModel(object):
     """ """
 
-    def __init__(self, project, support_wlan=True):
+    def __init__(self, support_wlan=True):
         self.support_wlan = support_wlan
         self.devices_by_name = {}  # Maps interface names to NetworkDev
         self.has_network = False
-        self.project = project
 
     def parse_netplan_configs(self, netplan_root):
         self.config = netplan.Config()
@@ -344,14 +342,7 @@ class NetworkModel(object):
     def get_netdev_by_name(self, name):
         return self.devices_by_name[name]
 
-    def stringify_config(self, config):
-        return '\n'.join([
-            "# This is the network config written by '{}'".format(
-                self.project),
-            yaml.dump(config, default_flow_style=False),
-            ])
-
-    def render_config(self):
+    def render(self):
         config = {
             'network': {
                 'version': 2,
@@ -370,18 +361,3 @@ class NetworkModel(object):
                 configs[dev.name] = dev.config
 
         return config
-
-    def render(self):
-        return {
-            'write_files': {
-                'etc_netplan_installer': {
-                    'path': 'etc/netplan/00-installer-config.yaml',
-                    'content': self.stringify_config(self.render_config()),
-                    },
-                'nonet': {
-                    'path': ('etc/cloud/cloud.cfg.d/'
-                             'subiquity-disable-cloudinit-networking.cfg'),
-                    'content': 'network: {config: disabled}\n',
-                    },
-                },
-            }

@@ -111,7 +111,7 @@ class SubiquityModel:
         self.keyboard = KeyboardModel(self.root)
         self.locale = LocaleModel()
         self.mirror = MirrorModel()
-        self.network = NetworkModel("subiquity", support_wlan=False)
+        self.network = NetworkModel(support_wlan=False)
         self.packages = []
         self.proxy = ProxyModel()
         self.snaplist = SnapListModel()

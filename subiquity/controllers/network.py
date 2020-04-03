@@ -79,4 +79,4 @@ class NetworkController(NetworkController, SubiquityController):
         super().done()
 
     def make_autoinstall(self):
-        return self.model.render_config()['network']
+        return self.model.render()['network']
