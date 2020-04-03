@@ -19,7 +19,7 @@ from subiquity.controller import NoUIController
 class PackageController(NoUIController):
 
     model_name = autoinstall_key = "packages"
-    autoinstall_default = ()
+    autoinstall_default = []
     autoinstall_schema = {
         'type': 'array',
         'items': {'type': 'string'},
