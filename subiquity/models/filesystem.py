@@ -17,6 +17,7 @@ from abc import ABC, abstractmethod
 import attr
 import collections
 import enum
+import fnmatch
 import itertools
 import logging
 import math
@@ -312,6 +313,14 @@ def get_lvm_size(devices, size_overrides={}):
     return r
 
 
+def _conv_size(s):
+    if isinstance(s, str):
+        if '%' in s:
+            return s
+        return human2bytes(s)
+    return s
+
+
 class attributes:
     # Just a namespace to hang our wrappers around attr.ib() off.
 
@@ -351,7 +360,7 @@ class attributes:
 
     @staticmethod
     def size():
-        return attr.ib(converter=human2bytes)
+        return attr.ib(converter=_conv_size)
 
     @staticmethod
     def ptable():
@@ -617,8 +626,12 @@ class _Device(_Formattable, ABC):
         return self.used == 0
 
     @property
+    def available_for_partitions(self):
+        return self.size - GPT_OVERHEAD
+
+    @property
     def free_for_partitions(self):
-        return self.size - self.used - GPT_OVERHEAD
+        return self.available_for_partitions - self.used
 
     def available(self):
         # A _Device is available if:
@@ -761,10 +774,7 @@ class Disk(_Device):
         return self.serial or self.path
 
     def dasd(self):
-        for o in self._m._actions:
-            if o.type == 'dasd' and o.device_id == self.device_id:
-                return o
-        return None
+        return self._m._one(type='dasd', device_id=self.device_id)
 
     def _potential_boot_partition(self):
         if self._m.bootloader == Bootloader.NONE:
@@ -975,11 +985,11 @@ class Raid(_Device):
         return get_raid_size(self.raidlevel, self.devices)
 
     @property
-    def free_for_partitions(self):
+    def available_for_partitions(self):
         # For some reason, the overhead on RAID devices seems to be
         # higher (may be related to alignment of underlying
         # partitions)
-        return self.size - self.used - 2*GPT_OVERHEAD
+        return self.size - 2*GPT_OVERHEAD
 
     @property
     def label(self):
@@ -1045,8 +1055,8 @@ class LVM_VolGroup(_Device):
         return get_lvm_size(self.devices)
 
     @property
-    def free_for_partitions(self):
-        return self.size - self.used
+    def available_for_partitions(self):
+        return self.size
 
     @property
     def annotations(self):
@@ -1261,9 +1271,88 @@ class FilesystemModel(object):
             self._actions = []
         self.grub_install_device = None
 
+    def _make_matchers(self, match):
+        matchers = []
+
+        def match_serial(disk):
+            if disk.serial is not None:
+                return fnmatch.fnmatchcase(disk.serial, match['serial'])
+
+        def match_model(disk):
+            if disk.model is not None:
+                return fnmatch.fnmatchcase(disk.model, match['model'])
+
+        def match_path(disk):
+            if disk.path is not None:
+                return fnmatch.fnmatchcase(disk.path, match['path'])
+
+        def match_ssd(disk):
+            is_ssd = disk.info_for_display()['rotational'] == 'false'
+            return is_ssd == match['ssd']
+
+        if 'serial' in match:
+            matchers.append(match_serial)
+        if 'model' in match:
+            matchers.append(match_model)
+        if 'path' in match:
+            matchers.append(match_path)
+        if 'ssd' in match:
+            matchers.append(match_ssd)
+
+        return matchers
+
     def apply_autoinstall_config(self, ai_config):
+        disks = self.all_disks()
+        for action in ai_config:
+            if action['type'] == 'disk':
+                disk = None
+                if 'serial' in action:
+                    disk = self._one(type='disk', serial=action['serial'])
+                elif 'path' in action:
+                    disk = self._one(type='disk', path=action['path'])
+                else:
+                    match = action.pop('match', {})
+                    matchers = self._make_matchers(match)
+                    candidates = []
+                    for candidate in disks:
+                        for matcher in matchers:
+                            if not matcher(candidate):
+                                break
+                        else:
+                            candidates.append(candidate)
+                    if match.get('size') == 'largest':
+                        candidates.sort(key=lambda d: d.size, reverse=True)
+                    if candidates:
+                        disk = candidates[0]
+                    else:
+                        action['match'] = match
+                if disk is None:
+                    raise Exception("{} matched no disk".format(action))
+                if disk not in disks:
+                    raise Exception(
+                        "{} matched {} which was already used".format(
+                            action, disk))
+                disks.remove(disk)
+                action['path'] = disk.path
+                action['serial'] = disk.serial
         self._actions = self._actions_from_config(
             ai_config, self._probe_data['blockdev'], is_autoinstall=True)
+        for p in self._all(type="partition") + self._all(type="lvm_partition"):
+            [parent] = list(dependencies(p))
+            if isinstance(p.size, int):
+                if p.size < 0:
+                    if p is not parent.partitions()[-1]:
+                        raise Exception(
+                            "{} has negative size but is not final partition "
+                            "of {}".format(p, parent))
+                    p.size = 0
+                    p.size = parent.free_for_partitions
+            elif isinstance(p.size, str):
+                if p.size.endswith("%"):
+                    percentage = int(p.size[:-1])
+                    p.size = parent.available_for_partitions*percentage//100
+                else:
+                    p.size = dehumanize_size(p.size)
 
     def _actions_from_config(self, config, blockdevs, is_autoinstall=False):
         """Convert curtin storage config into action instances.
@@ -1349,10 +1438,12 @@ class FilesystemModel(object):
 
         objs = [o for o in objs if o not in exclusions]
 
-        for o in objs:
-            if o.type == "partition" and o.flag == "swap" and o._fs is None:
-                fs = Filesystem(m=self, fstype="swap", volume=o, preserve=True)
-                objs.append(fs)
+        if not is_autoinstall:
+            for o in objs:
+                if o.type == "partition" and o.flag == "swap":
+                    if o._fs is None:
+                        objs.append(Filesystem(
+                            m=self, fstype="swap", volume=o, preserve=True))
 
         return objs
 
@@ -1437,17 +1528,27 @@ class FilesystemModel(object):
         self._probe_data = probe_data
         self.reset()
 
-    def disk_by_path(self, path):
+    def _matcher(self, type, kw):
         for a in self._actions:
-            if a.type == 'disk' and a.path == path:
-                return a
-        raise KeyError("no disk with path {} found".format(path))
+            if a.type != type:
+                continue
+            for k, v in kw.items():
+                if getattr(a, k) != v:
+                    break
+            else:
+                yield a
 
-    def all_filesystems(self):
-        return [a for a in self._actions if a.type == 'format']
+    def _one(self, *, type, **kw):
+        try:
+            return next(self._matcher(type, kw))
+        except StopIteration:
+            return None
+
+    def _all(self, *, type, **kw):
+        return list(self._matcher(type, kw))
 
     def all_mounts(self):
-        return [a for a in self._actions if a.type == 'mount']
+        return self._all(type='mount')
 
     def all_devices(self):
         # return:
@@ -1464,19 +1565,14 @@ class FilesystemModel(object):
         disks.sort(key=lambda x: x.label)
         return compounds + disks
 
-    def all_partitions(self):
-        return [a for a in self._actions if a.type == 'partition']
-
     def all_disks(self):
-        return sorted(
-            [a for a in self._actions if a.type == 'disk'],
-            key=lambda x: x.label)
+        return sorted(self._all(type='disk'), key=lambda x: x.label)
 
     def all_raids(self):
-        return [a for a in self._actions if a.type == 'raid']
+        return self._all(type='raid')
 
     def all_volgroups(self):
-        return [a for a in self._actions if a.type == 'lvm_volgroup']
+        return self._all(type='lvm_volgroup')
 
     def add_partition(self, device, size, flag="", wipe=None):
         if size > device.free_for_partitions:
@@ -1599,10 +1695,7 @@ class FilesystemModel(object):
                 "unknown bootloader type {}".format(self.bootloader))
 
     def _mount_for_path(self, path):
-        for mount in self.all_mounts():
-            if mount.path == path:
-                return mount
-        return None
+        return self._one(type='mount', path=path)
 
     def is_root_mounted(self):
         return self._mount_for_path('/') is not None
@@ -1615,7 +1708,7 @@ class FilesystemModel(object):
         mount = self._mount_for_path('/')
         if mount is not None and mount.device.fstype == 'btrfs':
             return False
-        for fs in self.all_filesystems():
-            if fs.fstype == "swap":
+        for swap in self._all(type='format', fstype='swap'):
+            if swap.mount():
                 return False
         return True
