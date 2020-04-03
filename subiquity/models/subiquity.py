@@ -171,11 +171,14 @@ class SubiquityModel:
                 'groups': groups,
                 'lock-passwd': False,
                 }
+            if self.ssh.authorized_keys:
+                user_info['ssh_authorized_keys'] = self.ssh.authorized_keys
             config['users'] = [user_info]
+        else:
+            if self.ssh.authorized_keys:
+                config['ssh_authorized_keys'] = self.ssh.authorized_keys
         if self.ssh.install_server:
             config['ssh_pwauth'] = self.ssh.pwauth
-        if self.ssh.authorized_keys:
-            config['ssh_authorized_keys'] = self.ssh.authorized_keys
         if self.snaplist.to_install:
             cmds = []
             for snap_name, selection in sorted(
