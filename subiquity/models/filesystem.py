@@ -313,6 +313,14 @@ def get_lvm_size(devices, size_overrides={}):
     return r
 
 
+def _conv_size(s):
+    if isinstance(s, str):
+        if '%' in s:
+            return s
+        return human2bytes(s)
+    return s
+
+
 class attributes:
     # Just a namespace to hang our wrappers around attr.ib() off.
 
@@ -352,7 +360,7 @@ class attributes:
 
     @staticmethod
     def size():
-        return attr.ib(converter=human2bytes)
+        return attr.ib(converter=_conv_size)
 
     @staticmethod
     def ptable():
@@ -618,8 +626,12 @@ class _Device(_Formattable, ABC):
         return self.used == 0
 
     @property
+    def available_for_partitions(self):
+        return self.size - GPT_OVERHEAD
+
+    @property
     def free_for_partitions(self):
-        return self.size - self.used - GPT_OVERHEAD
+        return self.available_for_partitions - self.used
 
     def available(self):
         # A _Device is available if:
@@ -973,11 +985,11 @@ class Raid(_Device):
         return get_raid_size(self.raidlevel, self.devices)
 
     @property
-    def free_for_partitions(self):
+    def available_for_partitions(self):
         # For some reason, the overhead on RAID devices seems to be
         # higher (may be related to alignment of underlying
         # partitions)
-        return self.size - self.used - 2*GPT_OVERHEAD
+        return self.size - 2*GPT_OVERHEAD
 
     @property
     def label(self):
@@ -1043,8 +1055,8 @@ class LVM_VolGroup(_Device):
         return get_lvm_size(self.devices)
 
     @property
-    def free_for_partitions(self):
-        return self.size - self.used
+    def available_for_partitions(self):
+        return self.size
 
     @property
     def annotations(self):
@@ -1326,7 +1338,7 @@ class FilesystemModel(object):
         self._actions = self._actions_from_config(
             ai_config, self._probe_data['blockdev'], is_autoinstall=True)
         for p in self._all(type="partition") + self._all(type="lvm_partition"):
-            [parent] = list(reverse_dependencies(p))
+            [parent] = list(dependencies(p))
             if isinstance(p.size, int):
                 if p.size < 0:
                     if p is not parent.partitions()[-1]:
@@ -1338,7 +1350,7 @@ class FilesystemModel(object):
             elif isinstance(p.size, str):
                 if p.size.endswith("%"):
                     percentage = int(p.size[:-1])
-                    p.size = parent.size*percentage//100
+                    p.size = parent.available_for_partitions*percentage//100
                 else:
                     p.size = dehumanize_size(p.size)
 

@@ -940,9 +940,10 @@ class TestAutoInstallConfig(unittest.TestCase):
         model = make_model()
         make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
         fake_up_blockdata(model)
-        model.apply_autoinstall_config([{
-            'type': 'disk',
-            'id': 'disk0',
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
             },
             {
                 'type': 'partition',
@@ -950,5 +951,95 @@ class TestAutoInstallConfig(unittest.TestCase):
                 'device': 'disk0',
                 'size': '50%',
             }])
+        disk = model._one(type="disk")
         part = model._one(type="partition")
-        self.assertEqual(part.size, dehumanize_size("50M"))
+        self.assertEqual(part.size, disk.available_for_partitions//2)
+
+    def test_partition_remaining(self):
+        model = make_model()
+        make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+            },
+            {
+                'type': 'partition',
+                'id': 'part0',
+                'device': 'disk0',
+                'size': dehumanize_size('50M'),
+            },
+            {
+                'type': 'partition',
+                'id': 'part1',
+                'device': 'disk0',
+                'size': -1,
+            },
+            ])
+        disk = model._one(type="disk")
+        part1 = model._one(type="partition", id="part1")
+        self.assertEqual(
+            part1.size, disk.available_for_partitions - dehumanize_size('50M'))
+
+    def test_lv_percent(self):
+        model = make_model()
+        make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+            },
+            {
+                'type': 'lvm_volgroup',
+                'id': 'vg0',
+                'name': 'vg0',
+                'devices': ['disk0'],
+            },
+            {
+                'type': 'lvm_partition',
+                'id': 'lv1',
+                'name': 'lv1',
+                'volgroup': 'vg0',
+                'size': "50%",
+            },
+            ])
+        vg = model._one(type="lvm_volgroup")
+        lv1 = model._one(type="lvm_partition")
+        self.assertEqual(lv1.size, vg.available_for_partitions//2)
+
+    def test_lv_remaning(self):
+        model = make_model()
+        make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+            },
+            {
+                'type': 'lvm_volgroup',
+                'id': 'vg0',
+                'name': 'vg0',
+                'devices': ['disk0'],
+            },
+            {
+                'type': 'lvm_partition',
+                'id': 'lv1',
+                'name': 'lv1',
+                'volgroup': 'vg0',
+                'size': dehumanize_size("50M"),
+            },
+            {
+                'type': 'lvm_partition',
+                'id': 'lv2',
+                'name': 'lv2',
+                'volgroup': 'vg0',
+                'size': -1,
+            },
+            ])
+        vg = model._one(type="lvm_volgroup")
+        lv2 = model._one(type="lvm_partition", id='lv2')
+        self.assertEqual(
+            lv2.size, vg.available_for_partitions - dehumanize_size("50M"))
