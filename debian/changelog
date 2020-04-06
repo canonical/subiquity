@@ -1,3 +1,9 @@
+subiquity (20.03.3+git107gb7ae4d06) focal; urgency=medium
+
+  * Upload subiqutiy snapshot with newer translations and consoleconf.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Mon, 06 Apr 2020 17:13:49 +0100
+
 subiquity (19.12.2+git106g3d9374ad) focal; urgency=medium
 
   * Upload subiquity snapshot with newer translations.
