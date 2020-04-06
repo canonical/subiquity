@@ -146,6 +146,7 @@ class Subiquity(Application):
         self._apport_files = []
 
         self.autoinstall_config = {}
+        self.report_to_show = None
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
@@ -309,13 +310,16 @@ class Subiquity(Application):
         super().select_initial_screen(index)
         for report in self.controllers.Error.reports:
             if report.kind == ErrorReportKind.UI and not report.seen:
-                log.debug("showing new error %r", report.base)
-                self.show_error_report(report)
+                self.report_to_show = report
                 return
 
     def select_screen(self, new):
         if new.interactive():
             super().select_screen(new)
+            if self.report_to_show is not None:
+                log.debug("showing new error %r", self.report_to_show.base)
+                self.show_error_report(self.report_to_show)
+                self.report_to_show = None
         elif self.autoinstall_config and not new.autoinstall_applied:
             schedule_task(self._apply(new))
         else:
