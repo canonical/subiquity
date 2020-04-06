@@ -56,15 +56,15 @@ class Context:
         self.childlevel = childlevel
 
     @classmethod
-    def new(self, app):
-        return Context(app, app.project, "", None, "INFO")
+    def new(cls, app):
+        return cls(app, app.project, "", None, "INFO")
 
     def child(self, name, description="", level=None, childlevel=None):
         if level is None:
             level = self.childlevel
-        return Context(self.app, name, description, self, level, childlevel)
+        return type(self)(self.app, name, description, self, level, childlevel)
 
-    def _name(self):
+    def full_name(self):
         c = self
         names = []
         while c is not None:
@@ -75,13 +75,12 @@ class Context:
     def enter(self, description=None):
         if description is None:
             description = self.description
-        self.app.report_start_event(self._name(), description, self.level)
+        self.app.report_start_event(self, description)
 
     def exit(self, description=None, result=Status.SUCCESS):
         if description is None:
             description = self.description
-        self.app.report_finish_event(
-            self._name(), description, result, self.level)
+        self.app.report_finish_event(self, description, result)
 
     def __enter__(self):
         self.enter()

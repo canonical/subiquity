@@ -250,17 +250,19 @@ class Subiquity(Application):
                 traceback.print_exc()
                 signal.pause()
 
-    def report_start_event(self, name, description, level="INFO"):
+    def report_start_event(self, context, description):
         # report_start_event gets called when the Reporting controller
         # is being loaded...
         Reporting = getattr(self.controllers, "Reporting", None)
         if Reporting is not None:
-            Reporting.report_start_event(name, description, level)
+            Reporting.report_start_event(
+                context.full_name(), description, context.level)
 
-    def report_finish_event(self, name, description, status, level="INFO"):
+    def report_finish_event(self, context, description, status):
         Reporting = getattr(self.controllers, "Reporting", None)
         if Reporting is not None:
-            Reporting.report_finish_event(name, description, status, level)
+            Reporting.report_finish_event(
+                context.full_name(), description, status, context.level)
 
     def confirm_install(self):
         self.install_confirmed = True
