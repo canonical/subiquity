@@ -26,6 +26,7 @@ from urwid import (
     )
 
 from subiquitycore.lsb_release import lsb_release
+from subiquitycore.ssh import host_key_info
 from subiquitycore.ui.buttons import (
     header_btn,
     other_btn,
@@ -371,6 +372,8 @@ class HelpMenu(WidgetWrap):
                         ip=str(ips[0])))
                 texts.append("")
                 texts.append(SSH_HELP_EPILOGUE.format(password=password))
+                texts.append("")
+                texts.append(Text(host_key_info()))
             else:
                 texts.append("")
                 texts.append(_(SSH_HELP_NO_ADDRESSES))
