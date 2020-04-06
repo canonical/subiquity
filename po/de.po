@@ -8,14 +8,14 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2020-03-05 10:00+0000\n"
-"PO-Revision-Date: 2020-03-01 20:03+0000\n"
+"PO-Revision-Date: 2020-03-24 19:14+0000\n"
 "Last-Translator: Dan Cooper <Unknown>\n"
 "Language-Team: German <de@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2020-03-05 13:52+0000\n"
-"X-Generator: Launchpad (build e0878392dc799b267dea80578fa65500a5d74155)\n"
+"X-Launchpad-Export-Date: 2020-04-06 15:12+0000\n"
+"X-Generator: Launchpad (build a296f04231dee355be5db73cc878b9e21689a253)\n"
 
 #: ../subiquity/controllers/installprogress.py:141
 msgid "An error has occurred"
@@ -713,7 +713,7 @@ msgstr "freier Speicherplatz"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:438
 msgid "Storage configuration"
-msgstr ""
+msgstr "Speicherplatzkonfiguration"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:449
 msgid "Create software RAID (md)"
@@ -773,15 +773,15 @@ msgstr "Passwörter stimmen nicht überein"
 
 #: ../subiquity/ui/views/filesystem/guided.py:75
 msgid "Encrypt the LVM group with LUKS"
-msgstr ""
+msgstr "Die LVM-Gruppe mit LUKS verschlüsseln"
 
 #: ../subiquity/ui/views/filesystem/guided.py:82
 msgid "Set up this disk as an LVM group"
-msgstr ""
+msgstr "Diese Festplatte als LVM-Gruppe konfigurieren"
 
 #: ../subiquity/ui/views/filesystem/guided.py:110
 msgid "Use an entire disk"
-msgstr ""
+msgstr "Eine ganze Festplatte verwenden"
 
 #: ../subiquity/ui/views/filesystem/guided.py:112
 msgid "Custom storage layout"
@@ -822,7 +822,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:156
 msgid "Guided storage configuration"
-msgstr ""
+msgstr "Begleitete Speicherplatzkonfiguration"
 
 #: ../subiquity/ui/views/filesystem/guided.py:169
 msgid "Help on guided storage configuration"
@@ -1554,7 +1554,7 @@ msgstr "Aktualisierung fehlgeschlagen"
 
 #: ../subiquity/ui/views/refresh.py:136
 msgid "Downloading and applying the update:"
-msgstr ""
+msgstr "Lade die Aktualisierung herunter und wende sie an:"
 
 #: ../subiquity/ui/views/refresh.py:156 ../subiquity/ui/views/refresh.py:183
 #: ../subiquity/ui/views/refresh.py:213 ../subiquity/ui/views/refresh.py:279
@@ -1752,6 +1752,10 @@ msgid ""
 "Select the language to use for the installer and to be configured in the\n"
 "installed system.\n"
 msgstr ""
+"\n"
+"Wählen Sie die Sprache, die für das Installationsprogramm verwendet und im "
+"installierten \n"
+"System konfiguriert werden soll.\n"
 
 #: ../subiquity/ui/views/welcome.py:47
 msgid "Use UP, DOWN and ENTER keys to select your language."

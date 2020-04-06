@@ -8,14 +8,14 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2020-03-05 10:00+0000\n"
-"PO-Revision-Date: 2019-07-01 14:11+0000\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2020-03-31 16:31+0000\n"
+"Last-Translator: Pavel Borecki <Unknown>\n"
 "Language-Team: Czech <cs@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2020-03-05 13:52+0000\n"
-"X-Generator: Launchpad (build e0878392dc799b267dea80578fa65500a5d74155)\n"
+"X-Launchpad-Export-Date: 2020-04-06 15:12+0000\n"
+"X-Generator: Launchpad (build a296f04231dee355be5db73cc878b9e21689a253)\n"
 
 #: ../subiquity/controllers/installprogress.py:141
 msgid "An error has occurred"
@@ -390,7 +390,7 @@ msgstr ""
 #: ../subiquity/models/filesystem.py:422
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
-msgstr ""
+msgstr "Není možné odebrat {selflabel} z už existujícího {cdtype} {cdlabel}."
 
 #: ../subiquity/models/filesystem.py:433
 #, python-brace-format
@@ -697,7 +697,7 @@ msgstr "Odebrat z {}"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:357
 msgid "Add {} Partition"
-msgstr ""
+msgstr "Přidat {} oddíl"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:395
 msgid "DEVICE"
@@ -709,7 +709,7 @@ msgstr "volné místo"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:438
 msgid "Storage configuration"
-msgstr ""
+msgstr "Nastavení úložiště"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:449
 msgid "Create software RAID (md)"
@@ -746,6 +746,7 @@ msgstr "Reset"
 #: ../subiquity/ui/views/filesystem/guided.py:48
 msgid "Configure a guided storage layout, or create a custom one:"
 msgstr ""
+"Nastavit rozvržení úložiště vedeně, nebo vytvořit uživatelsky určené:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:53
 #: ../subiquity/ui/views/filesystem/lvm.py:91
@@ -769,19 +770,19 @@ msgstr "Zadání hesla se neshodují"
 
 #: ../subiquity/ui/views/filesystem/guided.py:75
 msgid "Encrypt the LVM group with LUKS"
-msgstr ""
+msgstr "Šifrovat LVM skupinu pomocí LUKS"
 
 #: ../subiquity/ui/views/filesystem/guided.py:82
 msgid "Set up this disk as an LVM group"
-msgstr ""
+msgstr "Nastavit tuto jednotku coby LVM skupinu"
 
 #: ../subiquity/ui/views/filesystem/guided.py:110
 msgid "Use an entire disk"
-msgstr ""
+msgstr "Použít celou jednotku"
 
 #: ../subiquity/ui/views/filesystem/guided.py:112
 msgid "Custom storage layout"
-msgstr ""
+msgstr "Uživatelsky určené rozvržení úložiště"
 
 #: ../subiquity/ui/views/filesystem/guided.py:125
 msgid ""
@@ -815,14 +816,43 @@ msgid ""
 "at /.\n"
 "\n"
 msgstr ""
+"\n"
+"\n"
+"Volba „Použít celý disk“ nainstaluje Ubuntu na označený disk,\n"
+"na kterém budou nahrazeny jakékoli oddíly a data na nich.\n"
+"\n"
+"Pokud to hardwarová platforma vyžaduje, je vytvořen také oddíl pro zavaděč "
+"systému.\n"
+"\n"
+"Pokud zvolíte použití LVM, budou vytvořeny dva další oddíly,\n"
+"jeden pro /boot a a druhý pokrývající zbytek jdisku. Bude vytvořena\n"
+"skupina LVM svazků, obsahující tento velký oddíl. Pro kořenový soubor.\n"
+"systém bude vytvořen 4 gigabajtový logický svazek. Ten je případně\n"
+"možné zvětšit běžnými nástroji pro příkazový řádek pro práci s LVM.\n"
+"\n"
+"LVM skupinu svazků je možné také šifrovat. Toto bude vyžadovat\n"
+"nastavení hesla, které pak bude vyžadováno při každém spouštění\n"
+"systému.\n"
+"\n"
+"Pokud zvolíte nepoužívat LVM, bude vytvořen jediný oddíl, pokrývají\n"
+"zbytek disku, na něm vytvořen souborový systém ext4 a připojen do /.\n"
+"\n"
+"V obou případech, budete moci zkontrolovat a upravit výsledky.\n"
+"\n"
+"Pokud zvolíte uživatelsky určené uspořádání úložiště, nebudou udělány žádné "
+"změny na disku\n"
+"a bude třeba, abyste zvolili přinejmenším disk pro zavádění systému a "
+"připojení souborového\n"
+"systému do /.\n"
+"\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:156
 msgid "Guided storage configuration"
-msgstr ""
+msgstr "Vedené nastavení úložiště"
 
 #: ../subiquity/ui/views/filesystem/guided.py:169
 msgid "Help on guided storage configuration"
-msgstr ""
+msgstr "Nápověda k vedenému uspořádání úložiště"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:61
 msgid ""
@@ -1045,7 +1075,7 @@ msgstr "Znovu vytvořit čistý souborový systém fat32"
 
 #: ../subiquity/ui/views/filesystem/partition.py:455
 msgid "{} partition"
-msgstr ""
+msgstr "{} oddíl"
 
 #: ../subiquity/ui/views/filesystem/partition.py:457
 msgid "Adding {} to {}"
@@ -1230,7 +1260,7 @@ msgstr "Restartovat nyní"
 
 #: ../subiquity/ui/views/installprogress.py:49
 msgid "View error report"
-msgstr ""
+msgstr "Zobrazit hlášení chyb"
 
 #: ../subiquity/ui/views/installprogress.py:51
 msgid "View full log"
@@ -1541,11 +1571,11 @@ msgstr ""
 
 #: ../subiquity/ui/views/refresh.py:134
 msgid "Update failed"
-msgstr ""
+msgstr "Aktualizace se nezdařila"
 
 #: ../subiquity/ui/views/refresh.py:136
 msgid "Downloading and applying the update:"
-msgstr ""
+msgstr "Stahování a instalace aktualizace:"
 
 #: ../subiquity/ui/views/refresh.py:156 ../subiquity/ui/views/refresh.py:183
 #: ../subiquity/ui/views/refresh.py:213 ../subiquity/ui/views/refresh.py:279
@@ -1748,7 +1778,7 @@ msgstr "Pomocí kláves šipka nahoru nebo dolů a Enter vyberte svůj jazyk."
 
 #: ../subiquity/ui/views/welcome.py:68
 msgid "Help choosing a language"
-msgstr ""
+msgstr "Pomozte zvolením jazyka"
 
 #~ msgid "Filesystem setup"
 #~ msgstr "Nastavení souborového systému"

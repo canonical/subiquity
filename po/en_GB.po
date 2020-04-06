@@ -8,14 +8,14 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2020-03-05 10:00+0000\n"
-"PO-Revision-Date: 2020-01-31 19:54+0000\n"
+"PO-Revision-Date: 2020-03-11 01:56+0000\n"
 "Last-Translator: Andi Chandler <Unknown>\n"
 "Language-Team: English (United Kingdom) <en_GB@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2020-03-05 13:52+0000\n"
-"X-Generator: Launchpad (build e0878392dc799b267dea80578fa65500a5d74155)\n"
+"X-Launchpad-Export-Date: 2020-04-06 15:12+0000\n"
+"X-Generator: Launchpad (build a296f04231dee355be5db73cc878b9e21689a253)\n"
 
 #: ../subiquity/controllers/installprogress.py:141
 msgid "An error has occurred"
@@ -388,7 +388,7 @@ msgstr "Cannot edit {selflabel} as it is part of the {cdtype} {cdname}."
 #: ../subiquity/models/filesystem.py:422
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
-msgstr ""
+msgstr "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
 
 #: ../subiquity/models/filesystem.py:433
 #, python-brace-format
@@ -693,7 +693,7 @@ msgstr "Remove from {}"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:357
 msgid "Add {} Partition"
-msgstr ""
+msgstr "Add {} Partition"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:395
 msgid "DEVICE"
@@ -705,7 +705,7 @@ msgstr "free space"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:438
 msgid "Storage configuration"
-msgstr ""
+msgstr "Storage configuration"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:449
 msgid "Create software RAID (md)"
@@ -741,7 +741,7 @@ msgstr "Reset"
 
 #: ../subiquity/ui/views/filesystem/guided.py:48
 msgid "Configure a guided storage layout, or create a custom one:"
-msgstr ""
+msgstr "Configure a guided storage layout, or create a custom one:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:53
 #: ../subiquity/ui/views/filesystem/lvm.py:91
@@ -765,19 +765,19 @@ msgstr "Passwords do not match"
 
 #: ../subiquity/ui/views/filesystem/guided.py:75
 msgid "Encrypt the LVM group with LUKS"
-msgstr ""
+msgstr "Encrypt the LVM group with LUKS"
 
 #: ../subiquity/ui/views/filesystem/guided.py:82
 msgid "Set up this disk as an LVM group"
-msgstr ""
+msgstr "Set up this disk as an LVM group"
 
 #: ../subiquity/ui/views/filesystem/guided.py:110
 msgid "Use an entire disk"
-msgstr ""
+msgstr "Use an entire disk"
 
 #: ../subiquity/ui/views/filesystem/guided.py:112
 msgid "Custom storage layout"
-msgstr ""
+msgstr "Custom storage layout"
 
 #: ../subiquity/ui/views/filesystem/guided.py:125
 msgid ""
@@ -811,14 +811,43 @@ msgid ""
 "at /.\n"
 "\n"
 msgstr ""
+"\n"
+"\n"
+"The \"Use an entire disk\" option installs Ubuntu onto the selected disk,\n"
+"replacing any partitions and data already there.\n"
+"\n"
+"If the platform requires it, a bootloader partition is created on the disk.\n"
+"\n"
+"If you choose to use LVM, two additional partitions are then created,\n"
+"one for /boot and one covering the rest of the disk. An LVM volume\n"
+"group is created containing the large partition. A 4 gigabyte logical\n"
+"volume is created for the root filesystem. It can easily be enlarged\n"
+"with standard LVM command line tools.\n"
+"\n"
+"You can also choose to encrypt LVM volume group. This will require\n"
+"setting a password, that one will need to type on every boot before\n"
+"the system boots.\n"
+"\n"
+"If you do not choose to use LVM, a single partition is created covering the\n"
+"rest of the disk which is then formatted as ext4 and mounted at /.\n"
+"\n"
+"In either case, you will still have a chance to review and modify the "
+"results.\n"
+"\n"
+"If you choose to use a custom storage layout, no changes are made to the "
+"disks\n"
+"and you will have to, at a minimum, select a boot disk and mount a "
+"filesystem\n"
+"at /.\n"
+"\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:156
 msgid "Guided storage configuration"
-msgstr ""
+msgstr "Guided storage configuration"
 
 #: ../subiquity/ui/views/filesystem/guided.py:169
 msgid "Help on guided storage configuration"
-msgstr ""
+msgstr "Help on guided storage configuration"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:61
 msgid ""
@@ -1038,7 +1067,7 @@ msgstr "Reformat as fresh fat32 filesystem"
 
 #: ../subiquity/ui/views/filesystem/partition.py:455
 msgid "{} partition"
-msgstr ""
+msgstr "{} partition"
 
 #: ../subiquity/ui/views/filesystem/partition.py:457
 msgid "Adding {} to {}"

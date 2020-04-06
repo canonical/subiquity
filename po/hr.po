@@ -8,14 +8,14 @@ msgstr ""
 "Project-Id-Version: subiquity\n"
 "Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2020-03-05 10:00+0000\n"
-"PO-Revision-Date: 2020-01-27 20:52+0000\n"
+"PO-Revision-Date: 2020-04-01 16:06+0000\n"
 "Last-Translator: gogo <trebelnik2@gmail.com>\n"
 "Language-Team: Croatian <hr@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Launchpad-Export-Date: 2020-03-05 13:52+0000\n"
-"X-Generator: Launchpad (build e0878392dc799b267dea80578fa65500a5d74155)\n"
+"X-Launchpad-Export-Date: 2020-04-06 15:12+0000\n"
+"X-Generator: Launchpad (build a296f04231dee355be5db73cc878b9e21689a253)\n"
 
 #: ../subiquity/controllers/installprogress.py:141
 msgid "An error has occurred"
@@ -27,7 +27,7 @@ msgstr "Instalacija završena!"
 
 #: ../subiquity/controllers/installprogress.py:293
 msgid "Finished install!"
-msgstr "Instalacija završena!!"
+msgstr "Instalacija završena!"
 
 #: ../subiquity/controllers/installprogress.py:432
 msgid "Installing system"
@@ -236,7 +236,7 @@ msgstr "XMIT hash pravilo:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:389
 msgid "LACP rate:"
-msgstr ""
+msgstr "LACP brzina:"
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:402
 msgid "There is already a network device named \"{}\""
@@ -300,7 +300,7 @@ msgstr "nije povezano"
 
 #: ../subiquitycore/ui/views/network.py:186
 msgid "enslaved to {}"
-msgstr ""
+msgstr "povezano na {}"
 
 #: ../subiquitycore/ui/views/network.py:210
 msgid "timed out"
@@ -312,7 +312,7 @@ msgstr "nepoznato stanje {}"
 
 #: ../subiquitycore/ui/views/network.py:225
 msgid "static"
-msgstr ""
+msgstr "nepromjenjivo"
 
 #: ../subiquitycore/ui/views/network.py:233
 msgid "disabled"
@@ -329,11 +329,11 @@ msgstr "glavno povezivanje za {}"
 
 #: ../subiquity/models/filesystem.py:146
 msgid "0 (striped)"
-msgstr ""
+msgstr "0 (trakasto)"
 
 #: ../subiquity/models/filesystem.py:147
 msgid "1 (mirrored)"
-msgstr ""
+msgstr "1 (zrcaljeno)"
 
 #: ../subiquity/models/filesystem.py:148
 msgid "5"
@@ -384,12 +384,13 @@ msgstr "Učini uređaj pokretljivim"
 #: ../subiquity/models/filesystem.py:410
 #, python-brace-format
 msgid "Cannot edit {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr ""
+msgstr "Nemoguće je urediti {selflabel} jer je dio {cdtype} {cdname}."
 
 #: ../subiquity/models/filesystem.py:422
 #, python-brace-format
 msgid "Cannot remove {selflabel} from pre-existing {cdtype} {cdlabel}."
 msgstr ""
+"Nemoguće je ukloniti {selflabel} iz predpostojećeg {cdtype} {cdlabel}."
 
 #: ../subiquity/models/filesystem.py:433
 #, python-brace-format
@@ -397,17 +398,19 @@ msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with less than "
 "{min_devices} devices."
 msgstr ""
+"Uklanjanje {selflabel} će ostaviti {cdtype} {cdlabel} s manje od "
+"{min_devices} uređaja."
 
 #: ../subiquity/models/filesystem.py:442
 #, python-brace-format
 msgid ""
 "Removing {selflabel} would leave the {cdtype} {cdlabel} with no devices."
-msgstr ""
+msgstr "Uklanjanje {selflabel} će ostaviti {cdtype} {cdlabel} bez uređaja."
 
 #: ../subiquity/models/filesystem.py:455
 #, python-brace-format
 msgid "Cannot delete {selflabel} as it is part of the {cdtype} {cdname}."
-msgstr ""
+msgstr "Nemoguće je obrisati {selflabel} jer je dio {cdtype} {cdname}."
 
 #: ../subiquity/models/filesystem.py:478
 msgid "existing"
@@ -420,31 +423,31 @@ msgstr "novi"
 #: ../subiquity/models/filesystem.py:491
 #, python-brace-format
 msgid "{component_name} of {desc} {name}"
-msgstr ""
+msgstr "{component_name} od {desc} {name}"
 
 #: ../subiquity/models/filesystem.py:499
 #, python-brace-format
 msgid "already formatted as {fstype}"
-msgstr ""
+msgstr "već formatirana kao {fstype}"
 
 #: ../subiquity/models/filesystem.py:501
 #, python-brace-format
 msgid "to be reformatted as {fstype}"
-msgstr ""
+msgstr "mora se ponovno formatirati kao {fstype}"
 
 #: ../subiquity/models/filesystem.py:503
 #, python-brace-format
 msgid "to be formatted as {fstype}"
-msgstr ""
+msgstr "mora se formatirati kao {fstype}"
 
 #: ../subiquity/models/filesystem.py:508
 #, python-brace-format
 msgid "mounted at {path}"
-msgstr ""
+msgstr "montirana na {path}"
 
 #: ../subiquity/models/filesystem.py:510
 msgid "not mounted"
-msgstr "nije montirano"
+msgstr "nije montirana"
 
 #: ../subiquity/models/filesystem.py:513 ../subiquity/models/filesystem.py:518
 msgid "unused"
@@ -460,16 +463,21 @@ msgid ""
 "Cannot delete {selflabel} as partition {partnum} is part of the {cdtype} "
 "{cdname}."
 msgstr ""
+"Nemoguće je obrisati {selflabel} jer je particija {partnum} dio {cdtype} "
+"{cdname}."
 
 #: ../subiquity/models/filesystem.py:674
 #, python-brace-format
 msgid "Cannot delete {selflabel} because it has {count} mounted partitions."
 msgstr ""
+"Nemoguće je obrisati {selflabel} zato jer sadrži {count} montiranih "
+"particija."
 
 #: ../subiquity/models/filesystem.py:680
 #, python-brace-format
 msgid "Cannot delete {selflabel} because it has 1 mounted partition."
 msgstr ""
+"Nemoguće je obrisati {selflabel} zato jer sadrži 1 montiranu particiju."
 
 #: ../subiquity/models/filesystem.py:755
 msgid "local disk"
@@ -499,124 +507,128 @@ msgstr "Nemoguće brisanje paritcije koja sadrži učitač pokretanja sustava"
 
 #: ../subiquity/models/filesystem.py:989
 msgid "software RAID {}"
-msgstr ""
+msgstr "softverski RAID {}"
 
 #: ../subiquity/models/filesystem.py:1002
 msgid "Cannot edit pre-existing RAIDs."
-msgstr ""
+msgstr "Nemoguće uređivanje predpostojećih RAID-a."
 
 #: ../subiquity/models/filesystem.py:1005
 #, python-brace-format
 msgid "Cannot edit {selflabel} because it has partitions."
-msgstr ""
+msgstr "Nemoguće je urediti {selflabel} zato jer sadrži particiju."
 
 #: ../subiquity/models/filesystem.py:1073
 msgid "Cannot edit pre-existing volume groups."
-msgstr ""
+msgstr "Nemoguće je uređivanje predpostojećih grupa uređaja."
 
 #: ../subiquity/models/filesystem.py:1076
 #, python-brace-format
 msgid "Cannot edit {selflabel} because it has logical volumes."
-msgstr ""
+msgstr "Nemoguće je urediti {selflabel} zato jer sadrži logičke uređaje."
 
 #: ../subiquity/models/filesystem.py:1133
 msgid ""
 "Cannot delete a single logical volume from a volume group that already has "
 "logical volumes."
 msgstr ""
+"Nemoguće je brisanje pojedinog logičkog uređaja iz grupe uređaja koja već "
+"sadrži logičke uređaje."
 
 #: ../subiquity/ui/mount.py:71
 msgid "Other"
-msgstr ""
+msgstr "Ostalo"
 
 #: ../subiquity/ui/mount.py:73
 msgid "Leave unmounted"
-msgstr ""
+msgstr "Ostavi odmontirano"
 
 #: ../subiquity/ui/views/filesystem/compound.py:129
 msgid "formatted as {}"
-msgstr ""
+msgstr "formatirati kao {}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:131
 msgid ", mounted at {}"
-msgstr ""
+msgstr ", montiran na {}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:133
 msgid ", not mounted"
-msgstr ""
+msgstr ", nije montiran"
 
 #: ../subiquity/ui/views/filesystem/compound.py:135
 msgid "unused {}"
-msgstr ""
+msgstr "neiskorišten {}"
 
 #: ../subiquity/ui/views/filesystem/compound.py:215
 msgid ""
 "If you put all disks into RAIDs or LVM VGs, there will be nowhere to put the "
 "boot partition."
 msgstr ""
+"Ako stavite sve diskove u RAID-e ili GU ULU-a, neće biti prostora za "
+"stavljanje particije pokretanja sustava."
 
 #: ../subiquity/ui/views/filesystem/delete.py:40
 #, python-brace-format
 msgid "Do you really want to delete the {desc} {label}?"
-msgstr ""
+msgstr "Sigurno želite obrisati {desc} {label}?"
 
 #: ../subiquity/ui/views/filesystem/delete.py:50
 #: ../subiquity/ui/views/filesystem/delete.py:120
 #, python-brace-format
 msgid "It is formatted as {fstype} and mounted at {path}"
-msgstr ""
+msgstr "Formatiran je kao {fstype} i montiran na {path}"
 
 #: ../subiquity/ui/views/filesystem/delete.py:56
 #: ../subiquity/ui/views/filesystem/delete.py:126
 #, python-brace-format
 msgid "It is formatted as {fstype} and not mounted."
-msgstr ""
+msgstr "Formatiran je kao {fstype} i nije montiran."
 
 #: ../subiquity/ui/views/filesystem/delete.py:62
 #: ../subiquity/ui/views/filesystem/partition.py:453
 msgid "logical volume"
-msgstr ""
+msgstr "logički uređaj"
 
 #: ../subiquity/ui/views/filesystem/delete.py:64
 #: ../subiquity/ui/views/filesystem/delete.py:130
 msgid "logical volumes"
-msgstr ""
+msgstr "logički uređaji"
 
 #: ../subiquity/ui/views/filesystem/delete.py:67
 msgid "partition"
-msgstr ""
+msgstr "particija"
 
 #: ../subiquity/ui/views/filesystem/delete.py:69
 #: ../subiquity/ui/views/filesystem/delete.py:132
 msgid "partitions"
-msgstr ""
+msgstr "particije"
 
 #: ../subiquity/ui/views/filesystem/delete.py:70
 #, python-brace-format
 msgid "It contains {n} {things}:"
-msgstr ""
+msgstr "Sadrži {n} {things}:"
 
 #: ../subiquity/ui/views/filesystem/delete.py:80
 msgid "It is not formatted or mounted."
-msgstr ""
+msgstr "Nije formatiran ili montiran."
 
 #: ../subiquity/ui/views/filesystem/delete.py:109
 msgid "Remove filesystem from {}"
-msgstr ""
+msgstr "Ukloni datotečni sustav iz {}"
 
 #: ../subiquity/ui/views/filesystem/delete.py:112
 msgid "Do you really want to remove the existing filesystem from {}?"
-msgstr ""
+msgstr "Sigurno želite ukloniti postojeći datotečni sustav iz {}?"
 
 #: ../subiquity/ui/views/filesystem/delete.py:133
 #, python-brace-format
 msgid "Remove all {things} from {obj}"
-msgstr ""
+msgstr "Ukloni sve {things} iz {obj}"
 
 #: ../subiquity/ui/views/filesystem/delete.py:137
 #, python-brace-format
 msgid "Do you really want to remove all {things} from {obj}?"
-msgstr ""
+msgstr "Sigurno želite ukloniti sve {things} iz {obj}?"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:80
 msgid ""
@@ -669,23 +681,23 @@ msgstr "VRSTA UREĐAJA"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:219
 msgid "Unmount"
-msgstr ""
+msgstr "Odmontiraj"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:293
 msgid "No available devices"
-msgstr ""
+msgstr "Nema dostupnih uređaja"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:295
 msgid "No used devices"
-msgstr ""
+msgstr "Nema iskorištenih uređaja"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:355
 msgid "Remove from {}"
-msgstr ""
+msgstr "Ukloni iz {}"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:357
 msgid "Add {} Partition"
-msgstr ""
+msgstr "Dodaj {} particiju"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:395
 msgid "DEVICE"
@@ -697,15 +709,15 @@ msgstr "slobodni prostor"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:438
 msgid "Storage configuration"
-msgstr ""
+msgstr "Podešavanje pohrane"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:449
 msgid "Create software RAID (md)"
-msgstr ""
+msgstr "Stvori softverski RAID (VU) višediskovni uređaj"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:452
 msgid "Create volume group (LVM)"
-msgstr ""
+msgstr "Stvori grupu uređaja (ULU)"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:459
 msgid "FILE SYSTEM SUMMARY"
@@ -717,15 +729,15 @@ msgstr "DOSTUPNI UREĐAJI"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:471
 msgid "USED DEVICES"
-msgstr ""
+msgstr "ISKORIŠTENI UREĐAJI"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:489
 msgid "Mount a filesystem at /"
-msgstr ""
+msgstr "Montiraj datotečni sustav na /"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:491
 msgid "Select a boot disk"
-msgstr ""
+msgstr "Odaberi disk pokretanja sustava"
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:510
 msgid "Reset"
@@ -733,17 +745,17 @@ msgstr "Poništi"
 
 #: ../subiquity/ui/views/filesystem/guided.py:48
 msgid "Configure a guided storage layout, or create a custom one:"
-msgstr ""
+msgstr "Podesite navođeni raspored pohrane, ili stvorite jedan prilagođeni:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:53
 #: ../subiquity/ui/views/filesystem/lvm.py:91
 msgid "Passphrase:"
-msgstr ""
+msgstr "Lozinka:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:54
 #: ../subiquity/ui/views/filesystem/lvm.py:92
 msgid "Confirm passphrase:"
-msgstr ""
+msgstr "Potvrdi lozinku:"
 
 #: ../subiquity/ui/views/filesystem/guided.py:58
 #: ../subiquity/ui/views/identity.py:125
@@ -757,19 +769,19 @@ msgstr "Lozinke se ne podudaraju"
 
 #: ../subiquity/ui/views/filesystem/guided.py:75
 msgid "Encrypt the LVM group with LUKS"
-msgstr ""
+msgstr "Šifriraj ULU grupu s LUKS"
 
 #: ../subiquity/ui/views/filesystem/guided.py:82
 msgid "Set up this disk as an LVM group"
-msgstr ""
+msgstr "Postavi ovaj disk kao ULU grupu"
 
 #: ../subiquity/ui/views/filesystem/guided.py:110
 msgid "Use an entire disk"
-msgstr ""
+msgstr "Koristi cijeli disk"
 
 #: ../subiquity/ui/views/filesystem/guided.py:112
 msgid "Custom storage layout"
-msgstr ""
+msgstr "Prilagođeni raspored pohrane"
 
 #: ../subiquity/ui/views/filesystem/guided.py:125
 msgid ""
@@ -803,154 +815,187 @@ msgid ""
 "at /.\n"
 "\n"
 msgstr ""
+"\n"
+"\n"
+"Mogućnost \"Koristi cijeli disk\" će instalirati Ubuntu na odabrani disk,\n"
+"zamjenjujući sve postojeće particije i sadržane podatke.\n"
+"\n"
+"Ako ga platforma zahtijeva, particija učitača pokretanja sustava\n"
+"će biti stvorena na disku.\n"
+"\n"
+"Ako odaberete korištenje ULU, dvije dodatne particije se tada stvore,\n"
+"jedna za /boot a druga obuhvaća ostatak diska. ULU grupa uređaja\n"
+"je stvorena koja sadrži veliku particiju. 4 gigabajta logički uređaj\n"
+"je stvoren za korijenski datotečni sustav. Može se lako povećati\n"
+"sa standardnim ULU alatima naredbenog retka.\n"
+"\n"
+"Možete još odabrati i šifriranje ULU grupe uređaja. To će zahtijevati\n"
+"postavljanje lozinke, koju ćete trebati utipkati pri svakom pokretanju "
+"sustava.\n"
+"\n"
+"Ako ne odaberete korištenje ULU-a, stvoriti će se jedna particija koja će\n"
+"obuhvatiti ostatak diska i biti će formatirana kao ext4 i montirana na /.\n"
+"\n"
+"U oba slučaja i dalje ćete moći pregledati i promijeniti rezultate.\n"
+"\n"
+"Ako odaberete korištenje prilagođenog rasporeda pohrane, neće biti promjena\n"
+"na disku i morati ćete najmanje, odabrati disk pokretanja sustava i "
+"montirati\n"
+"datotečni sustav na /.\n"
+"\n"
 
 #: ../subiquity/ui/views/filesystem/guided.py:156
 msgid "Guided storage configuration"
-msgstr ""
+msgstr "Navođeno podešavanje pohrane"
 
 #: ../subiquity/ui/views/filesystem/guided.py:169
 msgid "Help on guided storage configuration"
-msgstr ""
+msgstr "Pomoć za navođeno podešavanje pohrane"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:61
 msgid ""
 "The only characters permitted in the name of a volume group are a-z, A-Z, 0-"
 "9, +, _, . and -"
 msgstr ""
+"Jedini dopušteni znakovi u nazivu grupe uređaja su a-z, A-Z, 0-9, +, _, . i -"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:84
 msgid "Passphrases"
-msgstr ""
+msgstr "Lozinke"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:88
 #: ../subiquity/ui/views/filesystem/raid.py:92
 msgid "Devices:"
-msgstr ""
+msgstr "Uređaji:"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:89
 #: ../subiquity/ui/views/filesystem/raid.py:93
 msgid "Size:"
-msgstr ""
+msgstr "Veličina:"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:90
 msgid "Create encrypted volume"
-msgstr ""
+msgstr "Stvori šifrirani uređaj"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:103
 msgid "Select at least one device to be part of the volume group."
-msgstr ""
+msgstr "Odaberite najmanje jedan uređaj kao dijela grupe uređaja."
 
 #: ../subiquity/ui/views/filesystem/lvm.py:109
 msgid "The name of a volume group cannot be empty"
-msgstr ""
+msgstr "Naziv grupe uređaja ne može biti prazan"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:111
 msgid "The name of a volume group cannot start with a hyphen"
-msgstr ""
+msgstr "Naziv grupe uređaja ne može započeti s crticom"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:113
 msgid "{} is not a valid name for a volume group"
-msgstr ""
+msgstr "{} nije valjani naziv grupe uređaja"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:116
 msgid "There is already a volume group named '{}'"
-msgstr ""
+msgstr "Već postoji grupa uređaja naziva '{}'"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:121
 msgid "Passphrase must be set"
-msgstr ""
+msgstr "Lozinka mora biti postavljena"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:126
 msgid "Passphrases do not match"
-msgstr ""
+msgstr "Lozinke se ne podudaraju"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:135
 msgid "Create LVM volume group"
-msgstr ""
+msgstr "Stvori ULU grupu uređaja"
 
 #: ../subiquity/ui/views/filesystem/lvm.py:150
 msgid "Edit volume group \"{}\""
-msgstr ""
+msgstr "Uredi grupu uređaja \"{}\""
 
 #: ../subiquity/ui/views/filesystem/partition.py:74
 msgid "Leave unformatted"
-msgstr ""
+msgstr "Ostavi neformatirano"
 
 #: ../subiquity/ui/views/filesystem/partition.py:77
 msgid "Leave formatted as {}"
-msgstr ""
+msgstr "Ostavi formatirano kao {}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:109
 msgid "Capped partition size at {}"
-msgstr ""
+msgstr "Veličina ograničene particije na {}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:115
 msgid "Rounded size up to {}"
-msgstr ""
+msgstr "Zaokružena veličina do {}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:126
 msgid ""
 "The only characters permitted in the name of a logical volume are a-z, A-Z, "
 "0-9, +, _, . and -"
 msgstr ""
+"Jedini dopušteni znakovi u nazivu logičkog uređaja su a-z, A-Z, 0-9, +, _, . "
+"i -"
 
 #: ../subiquity/ui/views/filesystem/partition.py:160
 msgid "Size (max {}):"
-msgstr ""
+msgstr "Veličina (najveća {}):"
 
 #: ../subiquity/ui/views/filesystem/partition.py:196
 msgid "Name: "
-msgstr ""
+msgstr "Naziv: "
 
 #: ../subiquity/ui/views/filesystem/partition.py:198
 msgid "Format:"
-msgstr ""
+msgstr "Formatiraj:"
 
 #: ../subiquity/ui/views/filesystem/partition.py:199
 msgid "Mount:"
-msgstr ""
+msgstr "Montiraj:"
 
 #: ../subiquity/ui/views/filesystem/partition.py:201
 msgid "Use as swap"
-msgstr ""
+msgstr "Koristi kao swap"
 
 #: ../subiquity/ui/views/filesystem/partition.py:202
 msgid "Use this swap partition in the installed system."
-msgstr ""
+msgstr "Koristite swap particiju na instaliranome sustavu."
 
 #: ../subiquity/ui/views/filesystem/partition.py:226
 msgid "The name of a logical volume cannot be empty"
-msgstr ""
+msgstr "Naziv logičkog uređaja ne može biti prazan"
 
 #: ../subiquity/ui/views/filesystem/partition.py:228
 msgid "The name of a logical volume cannot start with a hyphen"
-msgstr ""
+msgstr "Naziv logičkog uređaja ne može započeti s crticom"
 
 #: ../subiquity/ui/views/filesystem/partition.py:230
 msgid "A logical volume may not be called {}"
-msgstr ""
+msgstr "Logički uređaj ne može se nazivati {}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:235
 msgid "The name of a logical volume may not contain \"{}\""
-msgstr ""
+msgstr "Naziv logičkog uređaja ne smije sadržavati \"{}\""
 
 #: ../subiquity/ui/views/filesystem/partition.py:238
 msgid "There is already a logical volume named {}."
-msgstr ""
+msgstr "Već postoji logički uređaj naziva {}."
 
 #: ../subiquity/ui/views/filesystem/partition.py:247
 msgid "Path exceeds PATH_MAX"
-msgstr ""
+msgstr "Putanja premašena PATH_MAX"
 
 #: ../subiquity/ui/views/filesystem/partition.py:250
 msgid "{} is already mounted at {}."
-msgstr ""
+msgstr "{} je već montiran na {}."
 
 #: ../subiquity/ui/views/filesystem/partition.py:258
 msgid ""
 "Mounting an existing filesystem at {} is usually a bad idea, proceed only "
 "with caution."
 msgstr ""
+"Montiranje postojećeg datotečnog uređaja na {} uobičajeno je loša ideja, "
+"nastavite dalje s oprezom."
 
 #: ../subiquity/ui/views/filesystem/partition.py:274
 msgid ""
@@ -980,16 +1025,23 @@ msgid ""
 "This is the ESP / \"EFI system partition\" required by UEFI. Grub will be "
 "installed onto this partition, which must be formatted as fat32."
 msgstr ""
+"Potrebna je particija za učitača pokretanja sustava\n"
+"\n"
+"To je ESP / \"EFI particija sustava\" koju zahtijeva UEFI. Grub će biti "
+"instaliran na tu particiju,\n"
+"koja mora biti formatirana u fat32 datotečnom sustavu."
 
 #: ../subiquity/ui/views/filesystem/partition.py:290
 msgid " The only aspect of this partition that can be edited is the size."
-msgstr ""
+msgstr " Jedina značajka ove particije koja se može uređivati je veličina."
 
 #: ../subiquity/ui/views/filesystem/partition.py:293
 msgid ""
 " You can choose whether to use the existing filesystem on this partition or "
 "reformat it."
 msgstr ""
+" Možete odabrati korištenje postojećeg datotečnog sustava na ovoj particiji "
+"ili ju možete ponovno formatirati."
 
 #: ../subiquity/ui/views/filesystem/partition.py:297
 msgid ""
@@ -998,6 +1050,10 @@ msgid ""
 "This is the PReP partion which is required on POWER. Grub will be installed "
 "onto this partition."
 msgstr ""
+"Potrebna je particija za učitača pokretanja sustava\n"
+"\n"
+"To je PReP particija koju zahtijeva POWER. Grub će biti instaliran na tu "
+"particiju."
 
 #: ../subiquity/ui/views/filesystem/partition.py:377
 #: ../subiquity/ui/views/keyboard.py:95 ../subiquity/ui/views/keyboard.py:145
@@ -1007,33 +1063,35 @@ msgstr "U redu"
 
 #: ../subiquity/ui/views/filesystem/partition.py:384
 msgid "Use existing fat32 filesystem"
-msgstr ""
+msgstr "Koristi postojeći fat32 datotečni sustav"
 
 #: ../subiquity/ui/views/filesystem/partition.py:390
 msgid "Reformat as fresh fat32 filesystem"
-msgstr ""
+msgstr "Ponovno formatiraj kao svježi fat32 datotečni sustav"
 
 #: ../subiquity/ui/views/filesystem/partition.py:455
 msgid "{} partition"
-msgstr ""
+msgstr "{} particija"
 
 #: ../subiquity/ui/views/filesystem/partition.py:457
 msgid "Adding {} to {}"
-msgstr ""
+msgstr "Dodajem {} na {}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:460
 msgid "logical volume {}"
-msgstr ""
+msgstr "logički uređaj {}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:463
 msgid "Editing {} of {}"
-msgstr ""
+msgstr "Uređivanje {} na {}"
 
 #: ../subiquity/ui/views/filesystem/partition.py:514
 msgid ""
 "Formatting and mounting a disk directly is unusual. You probably want to add "
 "a partition instead."
 msgstr ""
+"Formatiranje i montiranje diska izravno je neuobičajeno. Najvjerojatnije "
+"umjesto želite dodati particiju."
 
 #: ../subiquity/ui/views/filesystem/partition.py:526
 msgid "Format and/or mount {}"
@@ -1041,13 +1099,15 @@ msgstr "Formatiraj i/ili montiraj {}"
 
 #: ../subiquity/ui/views/filesystem/probing.py:40
 msgid "Waiting for storage probing to complete"
-msgstr ""
+msgstr "Čeka se sondiranje pohrane za završetak"
 
 #: ../subiquity/ui/views/filesystem/probing.py:48
 msgid ""
 "The installer is probing for block devices to install to. Please wait until "
 "it completes."
 msgstr ""
+"Instalacijski program sondira blok uređaje za instalaciju. Pričekajte "
+"završetak."
 
 #: ../subiquity/ui/views/filesystem/probing.py:61
 msgid ""
@@ -1055,42 +1115,44 @@ msgid ""
 "on Launchpad, and if possible include the contents of the /var/log/installer "
 "directory."
 msgstr ""
+"Nažalost sondiranje uređaja za instalaciju nije uspjelo. Prijavite grešku na "
+"Launchpad i ako je moguće priložite sadržaj  /var/log/installer direktorija."
 
 #: ../subiquity/ui/views/filesystem/probing.py:68
 msgid "Probing for devices to install to failed"
-msgstr ""
+msgstr "Sondiranje uređaja za instalaciju nije uspjelo"
 
 #: ../subiquity/ui/views/filesystem/raid.py:67
 msgid "/ is not permitted in the name of a RAID device"
-msgstr ""
+msgstr "/ nije dopušteno u nazivu RAID uređaja"
 
 #: ../subiquity/ui/views/filesystem/raid.py:73
 msgid "Whitespace is not permitted in the name of a RAID device"
-msgstr ""
+msgstr "Razmaci nisu dopušteni u nazivu RAID uređaja"
 
 #: ../subiquity/ui/views/filesystem/raid.py:91
 msgid "RAID Level:"
-msgstr ""
+msgstr "RAID razina:"
 
 #: ../subiquity/ui/views/filesystem/raid.py:104
 msgid "There is already a RAID named '{}'"
-msgstr ""
+msgstr "Već postoji RAID naziva '{}'"
 
 #: ../subiquity/ui/views/filesystem/raid.py:107
 msgid ". and .. are not valid names for RAID devices"
-msgstr ""
+msgstr ". i .. nisu valjani nazivi RAID uređaja"
 
 #: ../subiquity/ui/views/filesystem/raid.py:113
 msgid "RAID Level \"{}\" requires at least {} active devices"
-msgstr ""
+msgstr "RAID razina \"{}\" zahtijeva najmanje {} aktivnih uređaja"
 
 #: ../subiquity/ui/views/filesystem/raid.py:124
 msgid "Create software RAID (\"MD\") disk"
-msgstr ""
+msgstr "Stvori softverski RAID (\"VD\") disk"
 
 #: ../subiquity/ui/views/filesystem/raid.py:140
 msgid "Edit software RAID disk \"{}\""
-msgstr ""
+msgstr "Uredi softverski RAID disk \"{}\""
 
 #: ../subiquity/ui/views/identity.py:50
 msgid "The characters : , and = are not permitted in this field"
@@ -1158,11 +1220,12 @@ msgstr ""
 #, python-brace-format
 msgid "The username \"{username}\" is reserved for use by the system."
 msgstr ""
+"Korisničko ime \"{username}\" je rezervirano za korištenje od strane sustava."
 
 #: ../subiquity/ui/views/identity.py:137
 #, python-brace-format
 msgid "{desc} do not match"
-msgstr ""
+msgstr "{desc} se ne podudara"
 
 #: ../subiquity/ui/views/identity.py:145
 msgid "Profile setup"
@@ -1174,10 +1237,13 @@ msgid ""
 "can configure SSH access on the next screen but a password is still needed "
 "for sudo."
 msgstr ""
+"Upišite korisničko ime i lozinku koju ćete koristiti za prijavu u sustav. "
+"Možete podesiti SSH pristup na sljedećem zaslonu ali lozinka će još uvijek "
+"biti potrebna za sudo."
 
 #: ../subiquity/ui/views/identity.py:180
 msgid "passwords"
-msgstr ""
+msgstr "lozinke"
 
 #: ../subiquity/ui/views/installprogress.py:47
 msgid "Reboot Now"
@@ -1185,7 +1251,7 @@ msgstr "Ponovno pokreni odmah"
 
 #: ../subiquity/ui/views/installprogress.py:49
 msgid "View error report"
-msgstr ""
+msgstr "Pogledaj izvještaj greške"
 
 #: ../subiquity/ui/views/installprogress.py:51
 msgid "View full log"
@@ -1197,15 +1263,15 @@ msgstr "Potpuni prikaz instalcije"
 
 #: ../subiquity/ui/views/installprogress.py:113
 msgid "Cancel update and reboot"
-msgstr ""
+msgstr "Prekini nadopunu i ponovno pokreni"
 
 #: ../subiquity/ui/views/installprogress.py:117
 msgid "Reboot"
-msgstr ""
+msgstr "Ponovno pokreni"
 
 #: ../subiquity/ui/views/installprogress.py:135
 msgid "Rebooting..."
-msgstr ""
+msgstr "Ponovno pokretanje..."
 
 #: ../subiquity/ui/views/keyboard.py:64
 msgid "Keyboard auto-detection"
@@ -1393,7 +1459,8 @@ msgid ""
 "Please select your keyboard layout below, or select \"Identify keyboard\" to "
 "detect your layout automatically."
 msgstr ""
-"Odaberite raspored tipkovnice ispod ili odaberite \"Otkrij tipkovnicu\""
+"Odaberite raspored tipkovnice ispod ili odaberite \"Otkrij tipkovnicu\", za "
+"automatsko otkrivanje vašeg rasporeda."
 
 #: ../subiquity/ui/views/keyboard.py:429
 msgid "Identify keyboard"
@@ -1403,18 +1470,22 @@ msgstr "Otkrij tipkovnicu"
 msgid ""
 "You may provide an archive mirror that will be used instead of the default."
 msgstr ""
+"Ovdje upišite zrcalni poslužitelj arhive koji će se koristiti umjesto "
+"zadanog."
 
 #: ../subiquity/ui/views/mirror.py:40
 msgid "Mirror address:"
-msgstr ""
+msgstr "Adresa zrcalnog poslužitelja:"
 
 #: ../subiquity/ui/views/mirror.py:45
 msgid "Configure Ubuntu archive mirror"
-msgstr ""
+msgstr "Podešavanje zrcalnog poslužitelja Ubuntu arhive"
 
 #: ../subiquity/ui/views/mirror.py:46
 msgid "If you use an alternative mirror for Ubuntu, enter its details here."
 msgstr ""
+"Ako koristite alternativni zrcalni poslužitelj za Ubuntu, upišite njegove "
+"pojedinosti ovdje."
 
 #: ../subiquity/ui/views/proxy.py:33
 msgid ""
@@ -1436,7 +1507,7 @@ msgstr "Proxy adresa:"
 
 #: ../subiquity/ui/views/proxy.py:48
 msgid "Configure proxy"
-msgstr "Podesi proxy"
+msgstr "Podešavanje proxya"
 
 #: ../subiquity/ui/views/proxy.py:49
 msgid ""
@@ -1448,25 +1519,27 @@ msgstr ""
 
 #: ../subiquity/ui/views/refresh.py:111
 msgid "Checking for installer update..."
-msgstr ""
+msgstr "Provjera daopuna instalacijskog programa..."
 
 #: ../subiquity/ui/views/refresh.py:113
 msgid ""
 "Contacting the snap store to check if a new version of the installer is "
 "available."
 msgstr ""
+"Kontaktiranje snap trgovine u svrhu provjere dostupnosti nove inačice "
+"instalacijskog programa."
 
 #: ../subiquity/ui/views/refresh.py:117
 msgid "Contacting the snap store failed"
-msgstr ""
+msgstr "Kontaktiranje snap trgovine neuspjelo"
 
 #: ../subiquity/ui/views/refresh.py:119
 msgid "Contacting the snap store failed:"
-msgstr ""
+msgstr "Kontaktiranje snap trgovine neuspjelo:"
 
 #: ../subiquity/ui/views/refresh.py:122
 msgid "Installer update available"
-msgstr ""
+msgstr "Dostupne su nadopune instalacijskog programa"
 
 #: ../subiquity/ui/views/refresh.py:124
 #, python-brace-format
@@ -1474,101 +1547,107 @@ msgid ""
 "Version {new} of the installer is now available ({current} is currently "
 "running)."
 msgstr ""
+"Inačica {new} instalacijskog programa je dostupna, a inačica {current} je "
+"trenutno pokrenuta."
 
 #: ../subiquity/ui/views/refresh.py:128
 msgid "Downloading update..."
-msgstr ""
+msgstr "Preuzimanje nadopune..."
 
 #: ../subiquity/ui/views/refresh.py:130
 msgid ""
 "Please wait while the updated installer is being downloaded. The installer "
 "will restart automatically when the download is complete."
 msgstr ""
+"Pričekajte dok se nadopuna instalacijskog programa preuzima. Instalacijski "
+"program će se automatski ponovno pokrenuti kada se preuzimanje završi."
 
 #: ../subiquity/ui/views/refresh.py:134
 msgid "Update failed"
-msgstr ""
+msgstr "Neuspjela nadopuna"
 
 #: ../subiquity/ui/views/refresh.py:136
 msgid "Downloading and applying the update:"
-msgstr ""
+msgstr "Preuzimanje i primijenjivanje nadopune:"
 
 #: ../subiquity/ui/views/refresh.py:156 ../subiquity/ui/views/refresh.py:183
 #: ../subiquity/ui/views/refresh.py:213 ../subiquity/ui/views/refresh.py:279
 msgid "Continue without updating"
-msgstr ""
+msgstr "Nastavi bez nadopunjivanja"
 
 #: ../subiquity/ui/views/refresh.py:182 ../subiquity/ui/views/refresh.py:278
 #: ../subiquity/ui/views/snaplist.py:286 ../subiquity/ui/views/snaplist.py:405
 msgid "Try again"
-msgstr ""
+msgstr "Pokušaj ponovno"
 
 #: ../subiquity/ui/views/refresh.py:206
 msgid ""
 "If you choose to update, the update will be downloaded and the installation "
 "will continue from here."
 msgstr ""
+"Ako odaberete nadopunu, nadopuna će se preuzeti i instalacija će se "
+"nastaviti odavdje."
 
 #: ../subiquity/ui/views/refresh.py:212
 msgid "Update to the new installer"
-msgstr ""
+msgstr "Nadopuni na novu inačicu instalcijski program"
 
 #: ../subiquity/ui/views/refresh.py:238
 msgid "Cancel update"
-msgstr ""
+msgstr "Prekini nadopunu"
 
 #: ../subiquity/ui/views/snaplist.py:79
 msgid "just now"
-msgstr ""
+msgstr "upravo sada"
 
 #: ../subiquity/ui/views/snaplist.py:83
 msgid "minute"
-msgstr ""
+msgstr "minuta"
 
 #: ../subiquity/ui/views/snaplist.py:85
 msgid "minutes"
-msgstr ""
+msgstr "minuta"
 
 #: ../subiquity/ui/views/snaplist.py:89
 msgid "hour"
-msgstr ""
+msgstr "sat"
 
 #: ../subiquity/ui/views/snaplist.py:91
 msgid "hours"
-msgstr ""
+msgstr "sata"
 
 #: ../subiquity/ui/views/snaplist.py:95
 msgid "day"
-msgstr ""
+msgstr "dan"
 
 #: ../subiquity/ui/views/snaplist.py:97
 msgid "days"
-msgstr ""
+msgstr "dana"
 
 #: ../subiquity/ui/views/snaplist.py:100
 #, python-brace-format
 msgid "{amount:2} {unit} ago"
-msgstr ""
+msgstr "{amount:2} {unit} prije"
 
 #: ../subiquity/ui/views/snaplist.py:256
 msgid "Fetching info for {}"
-msgstr ""
+msgstr "Preuzimanje informacija za {}"
 
 #: ../subiquity/ui/views/snaplist.py:282
 msgid "Fetching info for {} failed"
-msgstr ""
+msgstr "Preuzimanje informacija za {} neuspjelo"
 
 #: ../subiquity/ui/views/snaplist.py:368
 msgid "Featured Server Snaps"
-msgstr ""
+msgstr "Istaknuti snap paketi za poslužitelje"
 
 #: ../subiquity/ui/views/snaplist.py:398
 msgid "Loading server snaps from store, please wait..."
-msgstr ""
+msgstr "Učitavanje snap paketa poslužitelja iz trgovine, pričekajte..."
 
 #: ../subiquity/ui/views/snaplist.py:403
 msgid "Sorry, loading snaps from the store failed."
-msgstr ""
+msgstr "Nažalost, učitavanje snap paketa iz trgovine nije uspjelo."
 
 #: ../subiquity/ui/views/snaplist.py:485
 msgid ""
@@ -1576,6 +1655,9 @@ msgid ""
 "SPACE, press ENTER to see more details of the package, publisher and "
 "versions available."
 msgstr ""
+"Ovo su popularni snap paketi u radnim okruženjima poslužitelja. Odaberite "
+"ili uklonite odabir sa SPACE tipkom, ili pritisnite ENTER tipku kako bi "
+"vidjeli više pojedinosti paketa, izdavač i inačica su dostupni."
 
 #: ../subiquity/ui/views/ssh.py:66
 msgid "Import Username:"
@@ -1591,7 +1673,7 @@ msgstr "Launchpad korisničko ime:"
 
 #: ../subiquity/ui/views/ssh.py:92
 msgid "Install OpenSSH server"
-msgstr ""
+msgstr "Instaliraj OpenSSH poslužitelja"
 
 #: ../subiquity/ui/views/ssh.py:95
 msgid "Import SSH identity:"
@@ -1611,7 +1693,7 @@ msgstr "Možete uvesti vaše SSH ključeve iz Githuba ili Launchpada."
 
 #: ../subiquity/ui/views/ssh.py:105
 msgid "Allow password authentication over SSH"
-msgstr ""
+msgstr "Dopusti ovjeru lozinkom putem SSH-a"
 
 #: ../subiquity/ui/views/ssh.py:138
 msgid "This field must not be blank."
@@ -1627,6 +1709,8 @@ msgid ""
 "lower-case. The characters +, - and . are also allowed after the first "
 "character."
 msgstr ""
+"Launchpad korisničko ime mora započeti s brojem ili slovom. Sva slova moraju "
+"biti mala. Znakovi +, - i . su isto dopušteni nakon prvog znaka."
 
 #: ../subiquity/ui/views/ssh.py:150
 msgid ""
@@ -1638,35 +1722,37 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:160
 msgid "Fetching SSH keys..."
-msgstr ""
+msgstr "Preuzimanje  SSH keys..."
 
 #: ../subiquity/ui/views/ssh.py:190
 msgid "Confirm SSH keys"
-msgstr ""
+msgstr "Potvrdite SSH ključeve"
 
 #: ../subiquity/ui/views/ssh.py:191
 msgid ""
 "Keys with the following fingerprints were fetched. Do you want to use them?"
-msgstr ""
+msgstr "Ključevi sa sljedećim otiscima su preuzeti. Želite li ih koristiti?"
 
 #: ../subiquity/ui/views/ssh.py:194
 msgid "Confirm SSH key"
-msgstr ""
+msgstr "Potvrdite SSH ključ"
 
 #: ../subiquity/ui/views/ssh.py:195
 msgid ""
 "A key with the following fingerprint was fetched. Do you want to use it?"
-msgstr ""
+msgstr "Ključ sa sljedećim otiskom je preuzet. Želite li ga koristiti?"
 
 #: ../subiquity/ui/views/ssh.py:242
 msgid "SSH Setup"
-msgstr ""
+msgstr "SSH podešavanje"
 
 #: ../subiquity/ui/views/ssh.py:243
 msgid ""
 "You can choose to install the OpenSSH server package to enable secure remote "
 "access to your server."
 msgstr ""
+"Možete odabrati instalaciju OpenSSH paketa kako bi omogućili siguran "
+"udaljeni pristup vašemu poslužitelju."
 
 #: ../subiquity/ui/views/welcome.py:31
 msgid ""
@@ -1674,6 +1760,9 @@ msgid ""
 "Select the language to use for the installer and to be configured in the\n"
 "installed system.\n"
 msgstr ""
+"\n"
+"Odaberite jezik za korištenje u instalacijskom programu, i za podešavanje\n"
+"i upotrebu na instaliranome sustavu.\n"
 
 #: ../subiquity/ui/views/welcome.py:47
 msgid "Use UP, DOWN and ENTER keys to select your language."
@@ -1681,7 +1770,7 @@ msgstr "Koristite UP, DOWN i ENTER tipke za odabir svoga jezika."
 
 #: ../subiquity/ui/views/welcome.py:68
 msgid "Help choosing a language"
-msgstr ""
+msgstr "Pomoć u odabiru jezika"
 
 #~ msgid "Select an interface to configure it or select Done to continue"
 #~ msgstr "Odaberite sučelje za podešavanje ili odaberite 'Završi' za nastavak"
