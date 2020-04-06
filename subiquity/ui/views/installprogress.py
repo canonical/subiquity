@@ -50,7 +50,7 @@ class ProgressView(BaseView):
 
     def __init__(self, controller):
         self.controller = controller
-        self.spinner = Spinner(controller.app.aio_loop)
+        self.ongoing = {}  # context -> line containing a spinner
 
         self.reboot_btn = Toggleable(ok_btn(
             _("Reboot Now"), on_press=self.reboot))
@@ -81,8 +81,6 @@ class ProgressView(BaseView):
             ]
         self.log_pile = Pile(log_body)
 
-        self._event_indent = ''
-
         super().__init__(self.event_pile)
 
     def _add_line(self, lb, line):
@@ -94,24 +92,31 @@ class ProgressView(BaseView):
             lb.set_focus(len(walker) - 1)
             lb.set_focus_valign('bottom')
 
-    def event_start(self, message):
+    def event_start(self, context, message):
+        self.event_finish(context.parent)
         walker = self.event_listbox.base_widget.body
-        if len(walker) > 0:
-            # Remove the spinner from the line it is currently on, if
-            # there is one.
-            walker[-1] = walker[-1][0]
-        # Add spinner to the line we are inserting.
+        indent = '  ' * (context.full_name().count('/') - 2)
+        spinner = Spinner(self.controller.app.aio_loop)
+        spinner.start()
         new_line = Columns([
-            ('pack', Text(self._event_indent + message)),
-            ('pack', self.spinner),
+            ('pack', Text(indent + message)),
+            ('pack', spinner),
             ], dividechars=1)
+        self.ongoing[context] = len(walker)
         self._add_line(self.event_listbox, new_line)
-        self._event_indent += "  "
-        self.spinner.start()
 
-    def event_finish(self):
-        self._event_indent = self._event_indent[:-2]
-        self.spinner.stop()
+    def event_finish(self, context):
+        index = self.ongoing.pop(context, None)
+        if index is None:
+            return
+        walker = self.event_listbox.base_widget.body
+        spinner = walker[index][1]
+        spinner.stop()
+        walker[index] = walker[index][0]
+
+    def finish_all(self):
+        for context in self.ongoing.copy():
+            self.event_finish(context)
 
     def add_log_line(self, text):
         self._add_line(self.log_listbox, Text(text))
