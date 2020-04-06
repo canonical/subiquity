@@ -37,6 +37,7 @@ from subiquitycore.controller import Skip
 from subiquitycore.core import Application
 from subiquitycore.utils import run_command
 
+from subiquity.context import SubiquityContext
 from subiquity.controllers.error import (
     ErrorReportKind,
     )
@@ -85,6 +86,8 @@ class Subiquity(Application):
     from subiquity.palette import COLORS, STYLES, STYLES_MONO
 
     project = "subiquity"
+
+    context_cls = SubiquityContext
 
     def make_model(self):
         root = '/'
