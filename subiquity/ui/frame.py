@@ -25,6 +25,12 @@ log = logging.getLogger('subiquity.ui.frame')
 
 class SubiquityUI(SubiquityCoreUI):
 
+    block_input = False
+
     def __init__(self, app):
         self.right_icon = HelpButton(app)
         super().__init__()
+
+    def keypress(self, size, key):
+        if not self.block_input:
+            return super().keypress(size, key)
