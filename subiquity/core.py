@@ -266,10 +266,11 @@ class Subiquity(Application):
         InstallProgress = getattr(self.controllers, "InstallProgress", None)
         if InstallProgress is not None and context.controller is not None:
             if self.interactive() and not context.controller.interactive():
-                msg = description
-                if not description:
-                    msg = context.full_name()
-                self.controllers.InstallProgress.progress_view.event_start(msg)
+                msg = context.full_name()
+                if description:
+                    msg += ': ' + description
+                self.controllers.InstallProgress.progress_view.event_start(
+                    context, msg)
 
     def report_finish_event(self, context, description, status):
         Reporting = getattr(self.controllers, "Reporting", None)
@@ -279,7 +280,8 @@ class Subiquity(Application):
         InstallProgress = getattr(self.controllers, "InstallProgress", None)
         if InstallProgress is not None and context.controller is not None:
             if self.interactive() and not context.controller.interactive():
-                self.controllers.InstallProgress.progress_view.event_finish()
+                self.controllers.InstallProgress.progress_view.event_finish(
+                    context)
 
     def confirm_install(self):
         self.install_confirmed = True

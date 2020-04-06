@@ -106,12 +106,12 @@ class InstallProgressController(SubiquityController):
         if self.answers.get('reboot', False):
             self.reboot_clicked.set()
 
-        self.uu_running = False
         self.uu = None
+        self.uu_context = None
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
-        self.curtin_context = None
+        self.curtin_event_contexts = {}
         self.confirmation = asyncio.Event()
 
     def interactive(self):
@@ -138,7 +138,7 @@ class InstallProgressController(SubiquityController):
         crash_report = self.app.make_apport_report(
             ErrorReportKind.INSTALL_FAIL, "install failed", interrupt=False,
             **kw)
-        self.progress_view.spinner.stop()
+        self.progress_view.finish_all()
         self.progress_view.set_status(('info_error',
                                        _("An error has occurred")))
         self.start_ui()
@@ -157,19 +157,13 @@ class InstallProgressController(SubiquityController):
     @contextlib.contextmanager
     def install_context(self, context, name, description,
                         level=None, childlevel=None):
-        self._install_event_start(description)
+        subcontext = context.child(name, description, level, childlevel)
+        self.progress_view.event_start(subcontext, description)
         try:
-            subcontext = context.child(name, description, level, childlevel)
             with subcontext:
                 yield subcontext
         finally:
-            self._install_event_finish()
-
-    def _install_event_start(self, message):
-        self.progress_view.event_start(message)
-
-    def _install_event_finish(self):
-        self.progress_view.event_finish()
+            self.progress_view.event_finish(subcontext)
 
     def curtin_event(self, event):
         e = {
@@ -184,14 +178,27 @@ class InstallProgressController(SubiquityController):
                 e[k[len(prefix):]] = v
         event_type = e["EVENT_TYPE"]
         if event_type == 'start':
-            self._install_event_start(e["MESSAGE"])
-            if self.curtin_context is not None:
-                self.curtin_context.child(e["NAME"], e["MESSAGE"]).enter()
+            def p(name):
+                parts = name.split('/')
+                for i in range(len(parts), -1, -1):
+                    yield '/'.join(parts[:i]), '/'.join(parts[i:])
+
+            cc = None
+            for pre, post in p(e["NAME"]):
+                if pre in self.curtin_event_contexts:
+                    parent = self.curtin_event_contexts[pre]
+                    cc = parent.child(post, e["MESSAGE"])
+                    self.curtin_event_contexts[e["NAME"]] = cc
+                    break
+            if cc:
+                cc.enter()
+                self.progress_view.event_start(cc, e["MESSAGE"])
         if event_type == 'finish':
-            self._install_event_finish()
             status = getattr(Status, e["RESULT"], Status.WARN)
-            if self.curtin_context is not None:
-                self.curtin_context.child(e["NAME"], e["MESSAGE"]).exit(status)
+            cc = self.curtin_event_contexts.pop(e["NAME"], None)
+            if cc is not None:
+                cc.exit(status)
+                self.progress_view.event_finish(cc)
 
     def curtin_log(self, event):
         log_line = event['MESSAGE']
@@ -266,7 +273,7 @@ class InstallProgressController(SubiquityController):
     async def curtin_install(self, context):
         log.debug('curtin_install')
         self.install_state = InstallState.RUNNING
-        self.curtin_context = context
+        self.curtin_event_contexts[''] = context
 
         self.journal_listener_handle = self.start_journald_listener(
             [self._event_syslog_identifier, self._log_syslog_identifier],
@@ -331,11 +338,11 @@ class InstallProgressController(SubiquityController):
 
     async def drain_curtin_events(self, context):
         waited = 0.0
-        while self.progress_view._event_indent and waited < 5.0:
+        while self.progress_view.ongoing and waited < 5.0:
             await asyncio.sleep(0.1)
             waited += 0.1
         log.debug("waited %s seconds for events to drain", waited)
-        self.curtin_context = None
+        self.curtin_event_contexts.pop('', None)
 
     @install_step(
         "final system configuration", level="INFO", childlevel="DEBUG")
@@ -402,7 +409,7 @@ class InstallProgressController(SubiquityController):
         apt_conf.close()
         env = os.environ.copy()
         env["APT_CONFIG"] = apt_conf.name[len(self.model.target):]
-        self.uu_running = True
+        self.uu_context = context
         if self.opts.dry_run:
             self.uu = await astart_command(self.logged_command([
                 "sleep", str(5/self.app.scale_factor)]), env=env)
@@ -412,22 +419,26 @@ class InstallProgressController(SubiquityController):
                 "--", "unattended-upgrades", "-v",
                 ]), env=env)
         await self.uu.communicate()
-        self.uu_running = False
         self.uu = None
+        self.uu_context = None
         os.remove(apt_conf.name)
 
     async def stop_uu(self):
-        self._install_event_finish()
-        self._install_event_start("cancelling update")
-        if self.opts.dry_run:
-            await asyncio.sleep(1)
-            self.uu.terminate()
-        else:
-            await arun_command(self.logged_command([
-                'chroot', '/target',
-                '/usr/share/unattended-upgrades/unattended-upgrade-shutdown',
-                '--stop-only',
-                ]), check=True)
+        self.progress_view.event_finish(self.uu_context)
+        with self.install_context(
+                self.uu_context.parent,
+                "stop_uu",
+                "cancelling update"):
+            if self.opts.dry_run:
+                await asyncio.sleep(1)
+                self.uu.terminate()
+            else:
+                await arun_command(self.logged_command([
+                    'chroot', '/target',
+                    '/usr/share/unattended-upgrades/'
+                    'unattended-upgrade-shutdown',
+                    '--stop-only',
+                    ]), check=True)
 
     @install_step("copying logs to installed system")
     async def copy_logs_to_target(self, context):
@@ -449,7 +460,7 @@ class InstallProgressController(SubiquityController):
             log.exception("saving journal failed")
 
     async def _click_reboot(self):
-        if self.uu_running:
+        if self.uu_context is not None:
             await self.stop_uu()
         self.reboot_clicked.set()
 
