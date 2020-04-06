@@ -15,6 +15,7 @@
 
 import logging
 import os
+import io
 
 from urwid import (
     connect_signal,
@@ -25,6 +26,7 @@ from urwid import (
     )
 
 from subiquitycore.lsb_release import lsb_release
+from subiquitycore.ssh import host_key_info
 from subiquitycore.ui.buttons import (
     header_btn,
     other_btn,
@@ -96,15 +98,48 @@ This is version {snap_version} of the installer.
 """)
 
 
+SSH_HELP_PROLOGUE = _("""
+It is possible to connect to the installer over the network, which
+might allow the use of a more capable terminal.""")
+
+SSH_HELP_MULTIPLE_ADDRESSES = _("""
+To connect, SSH to any of these addresses:
+""")
+
+SSH_HELP_ONE_ADDRESSES = _("""
+To connect, SSH to installer@{ip}.
+""")
+
+SSH_HELP_EPILOGUE = _("""
+The password you should use is "{password}".
+""")
+
+SSH_HELP_NO_ADDRESSES = _("""
+Unfortunately this system seems to have no global IP addresses at this
+time.
+""")
+
+SSH_HELP_NO_PASSWORD = _("""
+Unfortunately the installer was unable to detect the password that has
+been set.
+""")
+
+
 class SimpleTextStretchy(Stretchy):
 
-    def __init__(self, parent, title, text):
-        widgets = [
-            Text(rewrap(text)),
+    def __init__(self, parent, title, *texts):
+        widgets = []
+
+        for text in texts:
+            if isinstance(text, str):
+                text = Text(rewrap(text))
+            widgets.append(text)
+
+        widgets.extend([
             Text(""),
             button_pile([close_btn(parent)]),
-            ]
-        super().__init__(title, widgets, 0, 2)
+            ])
+        super().__init__(title, widgets, 0, len(widgets)-1)
 
 
 GLOBAL_KEY_HELP = _("""\
@@ -172,6 +207,7 @@ class HelpMenu(WidgetWrap):
         self.parent = parent
         close = header_btn(parent.base_widget.label)
         about = menu_item(_("About this installer"), on_press=self._about)
+        ssh_help = menu_item(_("Help on SSH access"), on_press=self._ssh_help)
         keys = menu_item(
             _("Keyboard shortcuts"), on_press=self._shortcuts)
         drop_to_shell = menu_item(
@@ -179,11 +215,12 @@ class HelpMenu(WidgetWrap):
         color = menu_item(
             _("Toggle color on/off"), on_press=self._toggle_color)
         buttons = {
-            close,
             about,
-            keys,
-            drop_to_shell,
+            close,
             color,
+            drop_to_shell,
+            keys,
+            ssh_help,
             }
         local_title, local_doc = parent.app.ui.body.local_help()
         if local_title is not None:
@@ -214,6 +251,7 @@ class HelpMenu(WidgetWrap):
             view_errors,
             hline,
             about,
+            ssh_help,
             hline,
             color,
             ]
@@ -291,6 +329,64 @@ class HelpMenu(WidgetWrap):
                 self.parent.app.ui.body,
                 _("About the installer"),
                 template.format(**info)))
+
+    def get_installer_password(self):
+        if self.parent.app.opts.dry_run:
+            fp = io.StringIO('installer:rAnd0Mpass')
+        else:
+            try:
+                fp = open("/var/log/cloud-init-output.log")
+            except FileNotFoundError:
+                fp = io.StringIO('')
+
+        with fp:
+            for line in fp:
+                if line.startswith("installer:"):
+                    return line[len("installer:"):]
+
+        return None
+
+    def get_global_addresses(self):
+        ips = []
+        net_model = self.parent.app.base_model.network
+        for dev in net_model.get_all_netdevs():
+            ips.extend(dev.actual_global_ip_addresses)
+        return ips
+
+    def _ssh_help(self, sender=None):
+
+        texts = [_(SSH_HELP_PROLOGUE), ""]
+
+        password = self.get_installer_password()
+        if password:
+            ips = self.get_global_addresses()
+            if len(ips) > 0:
+                if len(ips) > 1:
+                    texts.append(_(SSH_HELP_MULTIPLE_ADDRESSES))
+                    texts.append("")
+                    for ip in ips:
+                        texts.append(Text(
+                            "installer@" + str(ip), align='center'))
+                else:
+                    texts.append(_(SSH_HELP_ONE_ADDRESSES).format(
+                        ip=str(ips[0])))
+                texts.append("")
+                texts.append(SSH_HELP_EPILOGUE.format(password=password))
+                texts.append("")
+                texts.append(Text(host_key_info()))
+            else:
+                texts.append("")
+                texts.append(_(SSH_HELP_NO_ADDRESSES))
+        else:
+            texts.append("")
+            texts.append(SSH_HELP_NO_PASSWORD)
+
+        self._show_overlay(
+            SimpleTextStretchy(
+                self.parent.app.ui.body,
+                _("Help on SSH access"),
+                *texts,
+                ))
 
     def _show_local(self, local_title, local_doc):
 
