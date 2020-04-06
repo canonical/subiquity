@@ -16,7 +16,6 @@
 import asyncio
 import copy
 from collections import OrderedDict
-import json
 import logging
 import os
 import sys
@@ -225,13 +224,6 @@ class SubiquityModel:
         else:
             return "media-info"
 
-    def _casper_md5check(self):
-        if os.path.exists('/run/casper-md5check.json'):
-            with open('/run/casper-md5check.json') as fp:
-                return fp.read()
-        else:
-            return json.dumps({'result': 'skip'})
-
     def _machine_id(self):
         with open('/etc/machine-id') as fp:
             return fp.read()
@@ -294,13 +286,16 @@ class SubiquityModel:
                     'content': self._media_info(),
                     'permissions': 0o644,
                     },
-                'md5check': {
-                    'path': 'var/log/installer/casper-md5check.json',
-                    'content': self._casper_md5check(),
-                    'permissions': 0o644,
-                    },
                 },
             }
+
+        if os.path.exists('/run/casper-md5check.json'):
+            with open('/run/casper-md5check.json') as fp:
+                config['write_files']['md5check'] = {
+                    'path': 'var/log/installer/casper-md5check.json',
+                    'content': fp.read(),
+                    'permissions': 0o644,
+                    }
 
         for model_name in INSTALL_MODEL_NAMES:
             model = getattr(self, model_name)
