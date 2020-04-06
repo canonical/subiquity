@@ -315,6 +315,7 @@ class Application:
     # instance.
 
     make_ui = SubiquityCoreUI
+    context_cls = Context
 
     def __init__(self, opts):
         self.debug_flags = ()
@@ -366,7 +367,7 @@ class Application:
         self.new_event_loop()
         self.urwid_loop = None
         self.controllers = ControllerSet(self, self.controllers)
-        self.context = Context.new(self)
+        self.context = self.context_cls.new(self)
 
     def new_event_loop(self):
         new_loop = asyncio.new_event_loop()
