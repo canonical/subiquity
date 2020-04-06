@@ -45,6 +45,9 @@ class MyLineBox(LineBox):
 
 
 class ProgressView(BaseView):
+
+    title = _("Install progress")
+
     def __init__(self, controller):
         self.controller = controller
         self.spinner = Spinner(controller.app.aio_loop)
@@ -193,6 +196,7 @@ class InstallConfirmation(Stretchy):
 
     def ok(self, sender):
         self.app.confirm_install()
+        self.parent.remove_overlay()
         self.app.next_screen()
 
     def cancel(self, sender):
