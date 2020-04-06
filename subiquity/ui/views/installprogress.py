@@ -76,6 +76,8 @@ class ProgressView(BaseView):
             ]
         self.log_pile = Pile(log_body)
 
+        self._event_indent = ''
+
         super().__init__(self.event_pile)
 
     def _add_line(self, lb, line):
@@ -87,16 +89,24 @@ class ProgressView(BaseView):
             lb.set_focus(len(walker) - 1)
             lb.set_focus_valign('bottom')
 
-    def add_event(self, text):
+    def event_start(self, message):
         walker = self.event_listbox.base_widget.body
         if len(walker) > 0:
             # Remove the spinner from the line it is currently on, if
             # there is one.
             walker[-1] = walker[-1][0]
         # Add spinner to the line we are inserting.
-        new_line = Columns([('pack', Text(text)), ('pack', self.spinner)],
-                           dividechars=1)
+        new_line = Columns([
+            ('pack', Text(self._event_indent + message)),
+            ('pack', self.spinner),
+            ], dividechars=1)
         self._add_line(self.event_listbox, new_line)
+        self._event_indent += "  "
+        self.spinner.start()
+
+    def event_finish(self):
+        self._event_indent = self._event_indent[:-2]
+        self.spinner.stop()
 
     def add_log_line(self, text):
         self._add_line(self.log_listbox, Text(text))

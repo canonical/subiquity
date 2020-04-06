@@ -108,7 +108,6 @@ class InstallProgressController(SubiquityController):
 
         self.uu_running = False
         self.uu = None
-        self._event_indent = ""
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
@@ -167,13 +166,10 @@ class InstallProgressController(SubiquityController):
             self._install_event_finish()
 
     def _install_event_start(self, message):
-        self.progress_view.add_event(self._event_indent + message)
-        self._event_indent += "  "
-        self.progress_view.spinner.start()
+        self.progress_view.event_start(message)
 
     def _install_event_finish(self):
-        self._event_indent = self._event_indent[:-2]
-        self.progress_view.spinner.stop()
+        self.progress_view.event_finish()
 
     def curtin_event(self, event):
         e = {
@@ -335,7 +331,7 @@ class InstallProgressController(SubiquityController):
 
     async def drain_curtin_events(self, context):
         waited = 0.0
-        while self._event_indent and waited < 5.0:
+        while self.progress_view._event_indent and waited < 5.0:
             await asyncio.sleep(0.1)
             waited += 0.1
         log.debug("waited %s seconds for events to drain", waited)
