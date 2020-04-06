@@ -58,6 +58,8 @@ class ProgressView(BaseView):
             _("View error report"), on_press=self.view_error)
         self.view_log_btn = other_btn(
             _("View full log"), on_press=self.view_log)
+        self.continue_btn = other_btn(
+            _("Continue"), on_press=self.continue_)
 
         self.event_listbox = ListBox()
         self.event_linebox = MyLineBox(self.event_listbox)
@@ -142,6 +144,21 @@ class ProgressView(BaseView):
         self.event_buttons.base_widget.focus_position = 1
         self.event_pile.base_widget.focus_position = 2
 
+    def show_continue(self):
+        btns = [self.continue_btn, self.reboot_btn]
+        self._set_buttons(btns)
+        self.event_buttons.base_widget.focus_position = 0
+        self.event_pile.base_widget.focus_position = 2
+
+    def continue_(self, sender=None):
+        self.controller.app.next_screen()
+
+    def hide_continue(self):
+        btns = [self.view_log_btn]
+        self._set_buttons(btns)
+        self.event_buttons.base_widget.focus_position = 0
+        self.event_pile.base_widget.focus_position = 2
+
     def show_error(self, crash_report):
         btns = [self.view_log_btn, self.view_error_btn, self.reboot_btn]
         self._set_buttons(btns)
@@ -197,7 +214,11 @@ class InstallConfirmation(Stretchy):
     def ok(self, sender):
         self.app.confirm_install()
         self.parent.remove_overlay()
+        if isinstance(self.parent, ProgressView):
+            self.parent.hide_continue()
         self.app.next_screen()
 
     def cancel(self, sender):
         self.parent.remove_overlay()
+        if isinstance(self.parent, ProgressView):
+            self.parent.show_continue()
