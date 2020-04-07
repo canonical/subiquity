@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical, Ltd.
+# Copyright 2020 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,24 +13,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-
-from subiquitycore.ui.frame import SubiquityCoreUI
-
-from subiquity.ui.views.help import HelpButton
+from subiquitycore.context import Context
 
 
-log = logging.getLogger('subiquity.ui.frame')
+class SubiquityContext(Context):
 
+    controller = None
 
-class SubiquityUI(SubiquityCoreUI):
-
-    block_input = False
-
-    def __init__(self, app):
-        self.right_icon = HelpButton(app)
-        super().__init__()
-
-    def keypress(self, size, key):
-        if not self.block_input:
-            return super().keypress(size, key)
+    def __init__(self, app, name, description, parent, level, childlevel=None):
+        super().__init__(app, name, description, parent, level, childlevel)
+        if parent is not None:
+            self.controller = parent.controller

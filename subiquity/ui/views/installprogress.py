@@ -45,9 +45,12 @@ class MyLineBox(LineBox):
 
 
 class ProgressView(BaseView):
+
+    title = _("Install progress")
+
     def __init__(self, controller):
         self.controller = controller
-        self.spinner = Spinner(controller.app.aio_loop)
+        self.ongoing = {}  # context -> line containing a spinner
 
         self.reboot_btn = Toggleable(ok_btn(
             _("Reboot Now"), on_press=self.reboot))
@@ -55,6 +58,8 @@ class ProgressView(BaseView):
             _("View error report"), on_press=self.view_error)
         self.view_log_btn = other_btn(
             _("View full log"), on_press=self.view_log)
+        self.continue_btn = other_btn(
+            _("Continue"), on_press=self.continue_)
 
         self.event_listbox = ListBox()
         self.event_linebox = MyLineBox(self.event_listbox)
@@ -87,16 +92,31 @@ class ProgressView(BaseView):
             lb.set_focus(len(walker) - 1)
             lb.set_focus_valign('bottom')
 
-    def add_event(self, text):
+    def event_start(self, context, message):
+        self.event_finish(context.parent)
         walker = self.event_listbox.base_widget.body
-        if len(walker) > 0:
-            # Remove the spinner from the line it is currently on, if
-            # there is one.
-            walker[-1] = walker[-1][0]
-        # Add spinner to the line we are inserting.
-        new_line = Columns([('pack', Text(text)), ('pack', self.spinner)],
-                           dividechars=1)
+        indent = '  ' * (context.full_name().count('/') - 2)
+        spinner = Spinner(self.controller.app.aio_loop)
+        spinner.start()
+        new_line = Columns([
+            ('pack', Text(indent + message)),
+            ('pack', spinner),
+            ], dividechars=1)
+        self.ongoing[context] = len(walker)
         self._add_line(self.event_listbox, new_line)
+
+    def event_finish(self, context):
+        index = self.ongoing.pop(context, None)
+        if index is None:
+            return
+        walker = self.event_listbox.base_widget.body
+        spinner = walker[index][1]
+        spinner.stop()
+        walker[index] = walker[index][0]
+
+    def finish_all(self):
+        for context in self.ongoing.copy():
+            self.event_finish(context)
 
     def add_log_line(self, text):
         self._add_line(self.log_listbox, Text(text))
@@ -127,6 +147,21 @@ class ProgressView(BaseView):
         btns = [self.view_log_btn, self.reboot_btn]
         self._set_buttons(btns)
         self.event_buttons.base_widget.focus_position = 1
+        self.event_pile.base_widget.focus_position = 2
+
+    def show_continue(self):
+        btns = [self.continue_btn, self.reboot_btn]
+        self._set_buttons(btns)
+        self.event_buttons.base_widget.focus_position = 0
+        self.event_pile.base_widget.focus_position = 2
+
+    def continue_(self, sender=None):
+        self.controller.app.next_screen()
+
+    def hide_continue(self):
+        btns = [self.view_log_btn]
+        self._set_buttons(btns)
+        self.event_buttons.base_widget.focus_position = 0
         self.event_pile.base_widget.focus_position = 2
 
     def show_error(self, crash_report):
@@ -183,7 +218,12 @@ class InstallConfirmation(Stretchy):
 
     def ok(self, sender):
         self.app.confirm_install()
+        self.parent.remove_overlay()
+        if isinstance(self.parent, ProgressView):
+            self.parent.hide_continue()
         self.app.next_screen()
 
     def cancel(self, sender):
         self.parent.remove_overlay()
+        if isinstance(self.parent, ProgressView):
+            self.parent.show_continue()

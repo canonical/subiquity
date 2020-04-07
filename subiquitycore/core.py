@@ -315,6 +315,7 @@ class Application:
     # instance.
 
     make_ui = SubiquityCoreUI
+    context_cls = Context
 
     def __init__(self, opts):
         self.debug_flags = ()
@@ -366,7 +367,7 @@ class Application:
         self.new_event_loop()
         self.urwid_loop = None
         self.controllers = ControllerSet(self, self.controllers)
-        self.context = Context.new(self)
+        self.context = self.context_cls.new(self)
 
     def new_event_loop(self):
         new_loop = asyncio.new_event_loop()
@@ -472,15 +473,14 @@ class Application:
         self.controllers.index = controller_index - 1
         self.next_screen()
 
-    def report_start_event(self, name, description, level):
-        # See context.py for what calls these.
-        log = logging.getLogger(name)
-        level = getattr(logging, level)
+    def report_start_event(self, context, description):
+        log = logging.getLogger(context.full_name())
+        level = getattr(logging, context.level)
         log.log(level, "start: %s", description)
 
-    def report_finish_event(self, name, description, status, level):
-        log = logging.getLogger(name)
-        level = getattr(logging, level)
+    def report_finish_event(self, context, description, status):
+        log = logging.getLogger(context.full_name())
+        level = getattr(logging, context.level)
         log.log(level, "finish: %s %s", description, status.name)
 
 # EventLoop -------------------------------------------------------------------

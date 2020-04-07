@@ -35,6 +35,7 @@ class SubiquityController(BaseController):
     def __init__(self, app):
         super().__init__(app)
         self.autoinstall_applied = False
+        self.context.controller = self
         self.setup_autoinstall()
 
     def setup_autoinstall(self):

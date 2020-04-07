@@ -37,6 +37,7 @@ from subiquitycore.controller import Skip
 from subiquitycore.core import Application
 from subiquitycore.utils import run_command
 
+from subiquity.context import SubiquityContext
 from subiquity.controllers.error import (
     ErrorReportKind,
     )
@@ -85,6 +86,8 @@ class Subiquity(Application):
     from subiquity.palette import COLORS, STYLES, STYLES_MONO
 
     project = "subiquity"
+
+    context_cls = SubiquityContext
 
     def make_model(self):
         root = '/'
@@ -143,6 +146,10 @@ class Subiquity(Application):
         self._apport_files = []
 
         self.autoinstall_config = {}
+        self.report_to_show = None
+        self.show_progress_handle = None
+        self.progress_shown_time = self.aio_loop.time()
+        self.progress_showing = False
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
@@ -252,17 +259,32 @@ class Subiquity(Application):
                 traceback.print_exc()
                 signal.pause()
 
-    def report_start_event(self, name, description, level="INFO"):
+    def report_start_event(self, context, description):
         # report_start_event gets called when the Reporting controller
         # is being loaded...
         Reporting = getattr(self.controllers, "Reporting", None)
         if Reporting is not None:
-            Reporting.report_start_event(name, description, level)
+            Reporting.report_start_event(
+                context.full_name(), description, context.level)
+        InstallProgress = getattr(self.controllers, "InstallProgress", None)
+        if InstallProgress is not None and context.controller is not None:
+            if self.interactive() and not context.controller.interactive():
+                msg = context.full_name()
+                if description:
+                    msg += ': ' + description
+                self.controllers.InstallProgress.progress_view.event_start(
+                    context, msg)
 
-    def report_finish_event(self, name, description, status, level="INFO"):
+    def report_finish_event(self, context, description, status):
         Reporting = getattr(self.controllers, "Reporting", None)
         if Reporting is not None:
-            Reporting.report_finish_event(name, description, status, level)
+            Reporting.report_finish_event(
+                context.full_name(), description, status, context.level)
+        InstallProgress = getattr(self.controllers, "InstallProgress", None)
+        if InstallProgress is not None and context.controller is not None:
+            if self.interactive() and not context.controller.interactive():
+                self.controllers.InstallProgress.progress_view.event_finish(
+                    context)
 
     def confirm_install(self):
         self.install_confirmed = True
@@ -307,18 +329,43 @@ class Subiquity(Application):
         super().select_initial_screen(index)
         for report in self.controllers.Error.reports:
             if report.kind == ErrorReportKind.UI and not report.seen:
-                log.debug("showing new error %r", report.base)
-                self.show_error_report(report)
+                self.report_to_show = report
                 return
 
     def select_screen(self, new):
         if new.interactive():
+            if self.show_progress_handle is not None:
+                self.ui.block_input = False
+                self.show_progress_handle.cancel()
+                self.show_progress_handle = None
+            if self.progress_showing:
+                shown_for = self.aio_loop.time() - self.progress_shown_time
+                remaining = 1.0 - shown_for
+                if remaining > 0.0:
+                    self.aio_loop.call_later(
+                        remaining, self.select_screen, new)
+                    return
+            self.progress_showing = False
             super().select_screen(new)
+            if self.report_to_show is not None:
+                log.debug("showing new error %r", self.report_to_show.base)
+                self.show_error_report(self.report_to_show)
+                self.report_to_show = None
         elif self.autoinstall_config and not new.autoinstall_applied:
+            if self.interactive() and self.show_progress_handle is None:
+                self.ui.block_input = True
+                self.show_progress_handle = self.aio_loop.call_later(
+                    0.1, self._show_progress)
             schedule_task(self._apply(new))
         else:
             new.configured()
             raise Skip
+
+    def _show_progress(self):
+        self.ui.block_input = False
+        self.progress_shown_time = self.aio_loop.time()
+        self.progress_showing = True
+        self.ui.set_body(self.controllers.InstallProgress.progress_view)
 
     async def _apply(self, controller):
         with controller.context.child("apply_autoinstall_config"):
