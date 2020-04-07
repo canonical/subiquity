@@ -18,7 +18,7 @@ for answers in examples/answers*.yaml; do
         exit 1
     fi
 done
-TTY=$(tty)
+TTY=$(tty || true)
 timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall.yaml \
                                --dry-run --machine-config examples/simple.json \
                                --kernel-cmdline 'autoinstall console=\"${TTY#/dev/}\"'"
