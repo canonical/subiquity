@@ -225,6 +225,8 @@ class Subiquity(Application):
         try:
             if self.opts.autoinstall is not None:
                 self.load_autoinstall_config()
+                if not self.interactive() and not self.opts.dry_run:
+                    open('/run/casper-no-prompt', 'w').close()
             super().run()
             if self.controllers.Late.cmds:
                 self.new_event_loop()
