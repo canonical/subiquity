@@ -18,9 +18,10 @@ for answers in examples/answers*.yaml; do
         exit 1
     fi
 done
+tty=$(tty)
 timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall.yaml \
                                --dry-run --machine-config examples/simple.json \
-                               --kernel-cmdline 'autoinstall console=\"$(tty)\"'"
+                               --kernel-cmdline 'autoinstall console=\"${tty//\/dev\/}\"'"
 python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf \
         debconf_selections.subiquity='"eek"'
 grep 'finish: subiquity/InstallProgress/postinstall/install_package1: SUCCESS: installing package1' \
