@@ -173,7 +173,7 @@ class FilesystemController(SubiquityController):
                 for action in self.model._actions:
                     if action['id'] == device:
                         self.model.grub_install_device = action
-            # Should handle 'swap' here too.
+            self.model.swap = self.ai_data.get('swap')
 
     def start(self):
         self._start_task = schedule_task(self._start())

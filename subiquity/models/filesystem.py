@@ -1270,6 +1270,7 @@ class FilesystemModel(object):
             self._orig_config = []
             self._actions = []
         self.grub_install_device = None
+        self.swap = None
 
     def _make_matchers(self, match):
         matchers = []
@@ -1515,8 +1516,8 @@ class FilesystemModel(object):
                 'config': self._render_actions(),
                 },
             }
-        if not self._should_add_swapfile():
-            config['swap'] = {'size': 0}
+        if self.swap is not None:
+            config['swap'] = self.swap
         if self.grub_install_device:
             dev = self.grub_install_device
             if dev.type == "partition":
@@ -1679,11 +1680,18 @@ class FilesystemModel(object):
             raise Exception("%s is already mounted")
         m = Mount(m=self, device=fs, path=path)
         self._actions.append(m)
+        # Adding a swap partition or mounting btrfs at / suppresses
+        # the swapfile.
+        if not self._should_add_swapfile():
+            self.swap = {'swap': 0}
         return m
 
     def remove_mount(self, mount):
         _remove_backlinks(mount)
         self._actions.remove(mount)
+        # Removing a mount might make it ok to add a swapfile again.
+        if self._should_add_swapfile():
+            self.swap = None
 
     def needs_bootloader_partition(self):
         '''true if no disk have a boot partition, and one is needed'''
