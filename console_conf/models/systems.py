@@ -95,6 +95,9 @@ class RecoverySystemsModel:
     def select(self, system, action):
         self._selection = SelectedSystemAction(system=system, action=action)
 
+    def unselect(self):
+        self._selection = None
+
     @property
     def selection(self):
         return self._selection
