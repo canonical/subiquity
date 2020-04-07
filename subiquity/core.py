@@ -188,7 +188,8 @@ class Subiquity(Application):
         try:
             our_tty = os.ttyname(0)
         except OSError:
-            our_tty = "not a tty"
+            # This is a gross hack for testing in travis.
+            our_tty = "/dev/not a tty"
         if not self.interactive() and our_tty != primary_tty:
             print(
                 _("the installer running on {} will perform the "
