@@ -70,6 +70,9 @@ Sorry, there was a problem examining the storage devices on this system.
     ErrorReportKind.INSTALL_FAIL: _("""
 Sorry, there was a problem completing the installation.
 """),
+    ErrorReportKind.NETWORK_FAIL: _("""
+Sorry, there was a problem applying the network configuration.
+"""),
     ErrorReportKind.UI: _("""
 Sorry, the installer has restarted because of an error.
 """),
@@ -106,6 +109,10 @@ devices manually.
 You may be able to fix the issue by switching to a shell and
 reconfiguring the system's block devices manually.
 """), ['debug_shell', 'continue']),
+    ErrorReportKind.NETWORK_FAIL: (_("""
+You can continue with the installation but it will be assumed the network
+is not functional.
+"""), ['continue']),
     ErrorReportKind.INSTALL_FAIL: (_("""
 Do you want to try starting the installation again?
 """), ['restart', 'close']),
@@ -241,7 +248,6 @@ class ErrorReportStretchy(Stretchy):
 
     def debug_shell(self, sender):
         self.parent.remove_overlay()
-        self.app.debug_shell()
 
     def restart(self, sender):
         self.app.restart()

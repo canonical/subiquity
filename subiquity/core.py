@@ -350,14 +350,14 @@ class Subiquity(Application):
         else:
             super().unhandled_input(key)
 
-    def debug_shell(self):
+    def debug_shell(self, after_hook=None):
 
         def _before():
             os.system("clear")
             print(DEBUG_SHELL_INTRO)
 
         self.run_command_in_foreground(
-            ["bash"], before_hook=_before, cwd='/')
+            ["bash"], before_hook=_before, after_hook=after_hook, cwd='/')
 
     def note_file_for_apport(self, key, path):
         self._apport_files.append((key, path))

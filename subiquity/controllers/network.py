@@ -14,11 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import logging
 
 from subiquitycore.async_helpers import schedule_task
 from subiquitycore.controllers.network import NetworkController
 
 from subiquity.controller import SubiquityController
+from subiquity.controllers.error import ErrorReportKind
+
+
+log = logging.getLogger("subiquity.controllers.network")
 
 
 class NetworkController(NetworkController, SubiquityController):
@@ -41,6 +46,10 @@ class NetworkController(NetworkController, SubiquityController):
             'vlans': {'type': 'object'},
             },
         }
+
+    def __init__(self, app):
+        super().__init__(app)
+        app.note_file_for_apport("NetplanConfig", self.netplan_path)
 
     def load_autoinstall_data(self, data):
         self.ai_data = data
@@ -73,6 +82,20 @@ class NetworkController(NetworkController, SubiquityController):
                 self.ai_data = None
             return r
         return super().render_config()
+
+    async def _apply_config(self, silent):
+        try:
+            await super()._apply_config(silent)
+        except asyncio.CancelledError:
+            # asyncio.CancelledError is a subclass of Exception in
+            # Python 3.6 (sadface)
+            raise
+        except Exception:
+            log.exception("_apply_config failed")
+            self.model.has_network = False
+            self.app.make_apport_report(
+                ErrorReportKind.NETWORK_FAIL, "applying network",
+                interrupt=True)
 
     def done(self):
         self.configured()
