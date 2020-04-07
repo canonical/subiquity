@@ -149,12 +149,15 @@ class NetworkController(BaseController):
             os.makedirs(netplan_dir)
             with open(netplan_path, 'w') as fp:
                 fp.write(default_netplan)
-        self.model.parse_netplan_configs(self.root)
+        self.parse_netplan_configs()
 
         self._watching = False
         self.network_event_receiver = SubiquityNetworkEventReceiver(self.model)
         self.network_event_receiver.add_default_route_watcher(
             self.route_watcher)
+
+    def parse_netplan_configs(self):
+        self.model.parse_netplan_configs(self.root)
 
     def route_watcher(self, routes):
         if routes:
@@ -349,7 +352,7 @@ class NetworkController(BaseController):
             self.model.stringify_config(config),
             omode="w")
 
-        self.model.parse_netplan_configs(self.root)
+        self.parse_netplan_configs()
 
     async def _apply_config(self, silent):
         with self.context.child(
@@ -383,58 +386,60 @@ class NetworkController(BaseController):
             if not silent and self.view:
                 self.view.show_apply_spinner()
 
-            def error(stage):
-                if not silent and self.view:
-                    self.view.show_network_error(stage)
+            try:
+                def error(stage):
+                    if not silent and self.view:
+                        self.view.show_network_error(stage)
 
-            if self.opts.dry_run:
-                delay = 1/self.app.scale_factor
-                await arun_command(['sleep', str(delay)])
-                if os.path.exists('/lib/netplan/generate'):
-                    # If netplan appears to be installed, run generate to at
-                    # least test that what we wrote is acceptable to netplan.
-                    await arun_command(
-                        ['netplan', 'generate', '--root', self.root],
-                        check=True)
-            else:
-                if devs_to_down or devs_to_delete:
+                if self.opts.dry_run:
+                    delay = 1/self.app.scale_factor
+                    await arun_command(['sleep', str(delay)])
+                    if os.path.exists('/lib/netplan/generate'):
+                        # If netplan appears to be installed, run generate to
+                        # at least test that what we wrote is acceptable to
+                        # netplan.
+                        await arun_command(
+                            ['netplan', 'generate', '--root', self.root],
+                            check=True)
+                else:
+                    if devs_to_down or devs_to_delete:
+                        try:
+                            await arun_command(
+                                ['systemctl', 'mask', '--runtime',
+                                 'systemd-networkd.service',
+                                 'systemd-networkd.socket'],
+                                check=True)
+                            await arun_command(
+                                ['systemctl', 'stop',
+                                 'systemd-networkd.service',
+                                 'systemd-networkd.socket'],
+                                check=True)
+                        except subprocess.CalledProcessError:
+                            error("stop-networkd")
+                            raise
+                    if devs_to_down:
+                        await self._down_devs(devs_to_down)
+                    if devs_to_delete:
+                        await self._delete_devs(devs_to_delete)
+                    if devs_to_down or devs_to_delete:
+                        await arun_command(
+                            ['systemctl', 'unmask', '--runtime',
+                             'systemd-networkd.service',
+                             'systemd-networkd.socket'],
+                            check=True)
                     try:
-                        await arun_command(
-                            ['systemctl', 'mask', '--runtime',
-                             'systemd-networkd.service',
-                             'systemd-networkd.socket'],
-                            check=True)
-                        await arun_command(
-                            ['systemctl', 'stop',
-                             'systemd-networkd.service',
-                             'systemd-networkd.socket'],
-                            check=True)
+                        await arun_command(['netplan', 'apply'], check=True)
                     except subprocess.CalledProcessError:
-                        error("stop-networkd")
+                        error("apply")
                         raise
-                if devs_to_down:
-                    await self._down_devs(devs_to_down)
-                if devs_to_delete:
-                    await self._delete_devs(devs_to_delete)
-                if devs_to_down or devs_to_delete:
-                    await arun_command(
-                        ['systemctl', 'unmask', '--runtime',
-                         'systemd-networkd.service',
-                         'systemd-networkd.socket'],
-                        check=True)
-                try:
-                    await arun_command(['netplan', 'apply'], check=True)
-                except subprocess.CalledProcessError:
-                    error("apply")
-                    raise
-                if devs_to_down or devs_to_delete:
-                    # It's probably running already, but just in case.
-                    await arun_command(
-                        ['systemctl', 'start', 'systemd-networkd.socket'],
-                        check=False)
-
-            if not silent and self.view:
-                self.view.hide_apply_spinner()
+                    if devs_to_down or devs_to_delete:
+                        # It's probably running already, but just in case.
+                        await arun_command(
+                            ['systemctl', 'start', 'systemd-networkd.socket'],
+                            check=False)
+            finally:
+                if not silent and self.view:
+                    self.view.hide_apply_spinner()
 
             if self.answers.get('accept-default', False):
                 self.done()
