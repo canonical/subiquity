@@ -1301,6 +1301,21 @@ class FilesystemModel(object):
 
         return matchers
 
+    def disk_for_match(self, disks, match):
+        matchers = self._make_matchers(match)
+        candidates = []
+        for candidate in disks:
+            for matcher in matchers:
+                if not matcher(candidate):
+                    break
+            else:
+                candidates.append(candidate)
+        if match.get('size') == 'largest':
+            candidates.sort(key=lambda d: d.size, reverse=True)
+        if candidates:
+            return candidates[0]
+        return None
+
     def apply_autoinstall_config(self, ai_config):
         disks = self.all_disks()
         for action in ai_config:
@@ -1312,19 +1327,8 @@ class FilesystemModel(object):
                     disk = self._one(type='disk', path=action['path'])
                 else:
                     match = action.pop('match', {})
-                    matchers = self._make_matchers(match)
-                    candidates = []
-                    for candidate in disks:
-                        for matcher in matchers:
-                            if not matcher(candidate):
-                                break
-                        else:
-                            candidates.append(candidate)
-                    if match.get('size') == 'largest':
-                        candidates.sort(key=lambda d: d.size, reverse=True)
-                    if candidates:
-                        disk = candidates[0]
-                    else:
+                    disk = self.disk_for_match(disks, match)
+                    if disk is None:
                         action['match'] = match
                 if disk is None:
                     raise Exception("{} matched no disk".format(action))
