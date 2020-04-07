@@ -35,4 +35,9 @@ class WelcomeController(BaseController):
 
 
 class RecoveryChooserWelcomeController(WelcomeController):
+
     welcome_view = ChooserWelcomeView
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.model = app.base_model
