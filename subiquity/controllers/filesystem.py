@@ -156,12 +156,13 @@ class FilesystemController(SubiquityController):
                 break
         log.debug("self.ai_data = %s", self.ai_data)
         if 'layout' in self.ai_data:
+            layout = self.ai_data['layout']
             with self.context.child("applying_autoinstall"):
-                meth = getattr(
-                    self, "guided_" + self.ai_data['layout']['name'])
-                disks = self.model.all_disks()
-                disks.sort(key=lambda x: x.size)
-                meth(disks[-1])
+                meth = getattr(self, "guided_" + layout['name'])
+                disk = self.model.disk_for_match(
+                    self.model.all_disks(),
+                    layout.get("match", {'size': 'largest'}))
+                meth(disk)
         elif 'config' in self.ai_data:
             with self.context.child("applying_autoinstall"):
                 self.model.apply_autoinstall_config(self.ai_data['config'])
@@ -172,7 +173,7 @@ class FilesystemController(SubiquityController):
                 for action in self.model._actions:
                     if action['id'] == device:
                         self.model.grub_install_device = action
-            # Should handle 'swap' here too.
+            self.model.swap = self.ai_data.get('swap')
 
     def start(self):
         self._start_task = schedule_task(self._start())
