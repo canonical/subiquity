@@ -289,6 +289,14 @@ class SubiquityModel:
                 },
             }
 
+        if os.path.exists('/run/casper-md5check.json'):
+            with open('/run/casper-md5check.json') as fp:
+                config['write_files']['md5check'] = {
+                    'path': 'var/log/installer/casper-md5check.json',
+                    'content': fp.read(),
+                    'permissions': 0o644,
+                    }
+
         for model_name in INSTALL_MODEL_NAMES:
             model = getattr(self, model_name)
             log.debug("merging config from %s", model)
