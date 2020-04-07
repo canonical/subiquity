@@ -106,8 +106,8 @@ class InstallProgressController(SubiquityController):
         if self.answers.get('reboot', False):
             self.reboot_clicked.set()
 
-        self.uu = None
-        self.uu_context = None
+        self.unattended_upgrades_proc = None
+        self.unattended_upgrades_ctx = None
         self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
@@ -183,22 +183,22 @@ class InstallProgressController(SubiquityController):
                 for i in range(len(parts), -1, -1):
                     yield '/'.join(parts[:i]), '/'.join(parts[i:])
 
-            cc = None
+            curtin_ctx = None
             for pre, post in p(e["NAME"]):
                 if pre in self.curtin_event_contexts:
                     parent = self.curtin_event_contexts[pre]
-                    cc = parent.child(post, e["MESSAGE"])
-                    self.curtin_event_contexts[e["NAME"]] = cc
+                    curtin_ctx = parent.child(post, e["MESSAGE"])
+                    self.curtin_event_contexts[e["NAME"]] = curtin_ctx
                     break
-            if cc:
-                cc.enter()
-                self.progress_view.event_start(cc, e["MESSAGE"])
+            if curtin_ctx:
+                curtin_ctx.enter()
+                self.progress_view.event_start(curtin_ctx, e["MESSAGE"])
         if event_type == 'finish':
             status = getattr(Status, e["RESULT"], Status.WARN)
-            cc = self.curtin_event_contexts.pop(e["NAME"], None)
-            if cc is not None:
-                cc.exit(status)
-                self.progress_view.event_finish(cc)
+            curtin_ctx = self.curtin_event_contexts.pop(e["NAME"], None)
+            if curtin_ctx is not None:
+                curtin_ctx.exit(status)
+                self.progress_view.event_finish(curtin_ctx)
 
     def curtin_log(self, event):
         log_line = event['MESSAGE']
@@ -409,29 +409,31 @@ class InstallProgressController(SubiquityController):
         apt_conf.close()
         env = os.environ.copy()
         env["APT_CONFIG"] = apt_conf.name[len(self.model.target):]
-        self.uu_context = context
+        self.unattended_upgrades_ctx = context
         if self.opts.dry_run:
-            self.uu = await astart_command(self.logged_command([
-                "sleep", str(5/self.app.scale_factor)]), env=env)
+            self.unattended_upgrades_proc = await astart_command(
+                self.logged_command(
+                    ["sleep", str(5/self.app.scale_factor)]), env=env)
         else:
-            self.uu = await astart_command(self.logged_command([
-                sys.executable, "-m", "curtin", "in-target", "-t", "/target",
-                "--", "unattended-upgrades", "-v",
-                ]), env=env)
-        await self.uu.communicate()
-        self.uu = None
-        self.uu_context = None
+            self.unattended_upgrades_proc = await astart_command(
+                self.logged_command([
+                    sys.executable, "-m", "curtin", "in-target", "-t",
+                    "/target", "--", "unattended-upgrades", "-v",
+                    ]), env=env)
+        await self.unattended_upgrades_proc.communicate()
+        self.unattended_upgrades_proc = None
+        self.unattended_upgrades_ctx = None
         os.remove(apt_conf.name)
 
-    async def stop_uu(self):
-        self.progress_view.event_finish(self.uu_context)
+    async def stop_unattended_upgrades(self):
+        self.progress_view.event_finish(self.unattended_upgrades_ctx)
         with self.install_context(
-                self.uu_context.parent,
-                "stop_uu",
+                self.unattended_upgrades_ctx.parent,
+                "stop_unattended_uprades",
                 "cancelling update"):
             if self.opts.dry_run:
                 await asyncio.sleep(1)
-                self.uu.terminate()
+                self.unattended_upgrades_proc.terminate()
             else:
                 await arun_command(self.logged_command([
                     'chroot', '/target',
@@ -460,8 +462,8 @@ class InstallProgressController(SubiquityController):
             log.exception("saving journal failed")
 
     async def _click_reboot(self):
-        if self.uu_context is not None:
-            await self.stop_uu()
+        if self.unattended_upgrades_ctx is not None:
+            await self.stop_unattended_uprades()
         self.reboot_clicked.set()
 
     def click_reboot(self):
