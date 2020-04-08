@@ -56,8 +56,8 @@ class ChooserWelcomeView(WelcomeView):
     )
 
     def __init__(self, controller):
+        super().__init__(controller)
+
         current = controller.model.current
         if current is not None:
             self.title = current.model.display_name
-
-        super().__init__(controller)

@@ -51,19 +51,17 @@ class ChooserBaseView(BaseView):
     title = "Ubuntu Core"
 
     def __init__(self, current, scr):
+        super().__init__(scr)
+
         if current is not None:
             self.title = current.model.display_name
-
-        super().__init__(scr)
 
 
 def by_preferred_action_type(action):
     """Order action entries by having the 'run' mode first, then 'recover', then
     'install', the rest is ordered alphabetically."""
-    return (action.mode != "run",
-            action.mode != "recover",
-            action.mode != "install",
-            action.title.lower())
+    priority = {"run": 0, "recover": 1, "install": 2}
+    return (priority.get(action.mode, 100), action.title.lower())
 
 
 class ChooserCurrentSystemView(ChooserBaseView):
