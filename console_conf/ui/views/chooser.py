@@ -176,8 +176,8 @@ class ChooserConfirmView(ChooserBaseView):
         "run": "Continue running the system without any changes.",
         "recover": ("You have requested to reboot the system into recovery "
                     "mode."),
-        "install": ("You are about to {action} the system version {version} "
-                    "for {model} from {publisher}.\n\n"
+        "install": ("You are about to {action_lower} the system version "
+                    "{version} for {model} from {publisher}.\n\n"
                     "This will remove all existing user data on the "
                     "device.\n\n"
                     "The system will reboot in the process."),
@@ -198,6 +198,7 @@ class ChooserConfirmView(ChooserBaseView):
         fmt = self.canned_summary.get(selection.action.mode,
                                       self.default_summary)
         summary = fmt.format(action=selection.action.title,
+                             action_lower=selection.action.title.lower(),
                              model=selection.system.model.display_name,
                              publisher=selection.system.brand.display_name,
                              version=selection.system.label)
