@@ -64,7 +64,7 @@ probert:
     fi
 
 schema: probert
-	$(PYTHON) -m subiquity.cmd.schema
+	@$(PYTHON) -m subiquity.cmd.schema
 
 clean:
 	./debian/rules clean
