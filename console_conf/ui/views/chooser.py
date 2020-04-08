@@ -185,8 +185,8 @@ class ChooserConfirmView(ChooserBaseView):
     default_summary = ("You are about to execute action \"{action}\" using "
                        "system version {version} for device {model} from "
                        "{publisher}.\n\n"
-                       "Make sure you understand the consequences of doing "
-                       "so.")
+                       "Make sure you understand the consequences of "
+                       "performing this action.")
 
     def __init__(self, controller, selection):
         self.controller = controller
