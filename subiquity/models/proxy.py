@@ -21,7 +21,6 @@ dropin_template = '''\
 [Service]
 Environment="HTTP_PROXY={proxy}"
 Environment="HTTPS_PROXY={proxy}"
-EOF
 '''
 
 
