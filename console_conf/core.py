@@ -25,7 +25,7 @@ log = logging.getLogger("console_conf.core")
 
 class ConsoleConf(Application):
 
-    from console_conf.palette import COLORS, STYLES, STYLES_MONO
+    from subiquitycore.palette import COLORS, STYLES, STYLES_MONO
 
     project = "console_conf"
 
@@ -40,7 +40,7 @@ class ConsoleConf(Application):
 
 class RecoveryChooser(Application):
 
-    from console_conf.palette import COLORS, STYLES, STYLES_MONO
+    from subiquitycore.palette import COLORS, STYLES, STYLES_MONO
 
     project = "console_conf"
 

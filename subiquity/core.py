@@ -83,7 +83,7 @@ class Subiquity(Application):
         'additionalProperties': True,
         }
 
-    from subiquity.palette import COLORS, STYLES, STYLES_MONO
+    from subiquitycore.palette import COLORS, STYLES, STYLES_MONO
 
     project = "subiquity"
 
