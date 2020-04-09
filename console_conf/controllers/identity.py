@@ -199,6 +199,7 @@ class IdentityController(BaseController):
         net_model = self.app.base_model.network
         ifaces = net_model.get_all_netdevs()
         login_view = LoginView(self.opts, self.model, self, ifaces)
+        login_view._w.focus_position = 2
 
         self.ui.set_body(login_view)
 
