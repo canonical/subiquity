@@ -16,6 +16,7 @@ subiquitycore/testing/view_helpers.py
 subiquitycore/testing/__init__.py
 subiquitycore/netplan.py
 subiquitycore/core.py
+subiquitycore/palette.py
 subiquitycore/ssh.py
 subiquitycore/__init__.py
 subiquitycore/lsb_release.py
@@ -73,7 +74,6 @@ subiquity/cmd/__init__.py
 subiquity/cmd/tui.py
 subiquity/cmd/schema.py
 subiquity/snapd.py
-subiquity/palette.py
 subiquity/models/identity.py
 subiquity/models/locale.py
 subiquity/models/mirror.py
@@ -145,7 +145,6 @@ console_conf/controllers/chooser.py
 console_conf/cmd/__init__.py
 console_conf/cmd/tui.py
 console_conf/cmd/write_login_details.py
-console_conf/palette.py
 console_conf/models/identity.py
 console_conf/models/systems.py
 console_conf/models/console_conf.py
