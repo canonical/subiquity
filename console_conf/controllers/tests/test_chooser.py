@@ -34,14 +34,18 @@ class MockedApplication:
     opts = None
 
 
-def make_app():
+def make_app(model=None):
     app = MockedApplication()
     app.ui = mock.Mock()
-    app.base_model = mock.Mock()
+    if model is not None:
+        app.base_model = model
+    else:
+        app.base_model = mock.Mock()
     app.context = Context.new(app)
     app.exit = mock.Mock()
     app.respond = mock.Mock()
     app.next_screen = mock.Mock()
+    app.prev_screen = mock.Mock()
     return app
 
 
@@ -92,12 +96,15 @@ def make_model():
 
 class TestChooserConfirmController(unittest.TestCase):
 
-    def test_abort(self):
+    def test_back(self):
         app = make_app()
         c = RecoveryChooserConfirmController(app)
-        c.cancel()
+        c.model = mock.Mock(selection='selection')
+        c.back()
         app.respond.assert_not_called()
-        app.exit.assert_called()
+        app.exit.assert_not_called()
+        app.prev_screen.assert_called()
+        c.model.unselect.assert_called()
 
     def test_confirm(self):
         app = make_app()
@@ -119,17 +126,9 @@ class TestChooserConfirmController(unittest.TestCase):
 
 class TestChooserController(unittest.TestCase):
 
-    def test_abort(self):
-        app = make_app()
-        c = RecoveryChooserController(app)
-        c.cancel()
-        app.respond.assert_not_called()
-        app.exit.assert_called()
-
     def test_select(self):
-        app = make_app()
+        app = make_app(model=make_model())
         c = RecoveryChooserController(app)
-        c.model = make_model()
 
         c.select(c.model.systems[0], c.model.systems[0].actions[0])
         exp = SelectedSystemAction(system=c.model.systems[0],
@@ -140,50 +139,84 @@ class TestChooserController(unittest.TestCase):
         app.respond.assert_not_called()
         app.exit.assert_not_called()
 
-    @mock.patch('console_conf.controllers.chooser.ChooserCurrentSystemView')
-    @mock.patch('console_conf.controllers.chooser.ChooserView')
+    @mock.patch('console_conf.controllers.chooser.ChooserCurrentSystemView',
+                return_value='current')
+    @mock.patch('console_conf.controllers.chooser.ChooserView',
+                return_value='all')
     def test_current_ui_first(self, cv, ccsv):
-        app = make_app()
+        app = make_app(model=make_model())
         c = RecoveryChooserController(app)
-        c.model = make_model()
-
-        c.start_ui()
+        c.ui.start_ui = mock.Mock()
         # current system view is constructed
         ccsv.assert_called_with(c, c.model.current, has_more=True)
-        # but the all systems view is not
-        cv.assert_not_called()
-        ccsv.reset_mock()
+        # as well as all systems view
+        cv.assert_called_with(c, c.model.systems)
+        c.start_ui()
+        c.ui.set_body.assert_called_with('current')
         # user selects more options and the view is replaced
         c.more_options()
-        # we get the all systems view now
-        cv.assert_called_with(c, c.model.systems)
-        # and the current system view was not constructed
-        ccsv.assert_not_called()
+        c.ui.set_body.assert_called_with('all')
 
-    @mock.patch('console_conf.controllers.chooser.ChooserCurrentSystemView')
-    @mock.patch('console_conf.controllers.chooser.ChooserView')
-    def test_only_one_and_current(self, cv, ccsv):
-        app = make_app()
+    @mock.patch('console_conf.controllers.chooser.ChooserCurrentSystemView',
+                return_value='current')
+    @mock.patch('console_conf.controllers.chooser.ChooserView',
+                return_value='all')
+    def test_current_current_all_there_and_back(self, cv, ccsv):
+        app = make_app(model=make_model())
         c = RecoveryChooserController(app)
-        c.model = RecoverySystemsModel.from_systems([model2_current])
+        c.ui.start_ui = mock.Mock()
+        # sanity
+        ccsv.assert_called_with(c, c.model.current, has_more=True)
+        cv.assert_called_with(c, c.model.systems)
 
         c.start_ui()
-        # current system view is constructed
-        ccsv.assert_called_with(c, c.model.current, has_more=False)
-        # but the all systems view is not
-        cv.assert_not_called()
+        c.ui.set_body.assert_called_with('current')
+        # user selects more options and the view is replaced
+        c.more_options()
+        c.ui.set_body.assert_called_with('all')
+        # go back now
+        c.back()
+        c.ui.set_body.assert_called_with('current')
+        # nothing
+        c.back()
+        c.ui.set_body.not_called()
 
-    @mock.patch('console_conf.controllers.chooser.ChooserCurrentSystemView')
-    @mock.patch('console_conf.controllers.chooser.ChooserView')
-    def test_all_systems_first_no_current(self, cv, ccsv):
-        app = make_app()
+    @mock.patch('console_conf.controllers.chooser.ChooserCurrentSystemView',
+                return_value='current')
+    @mock.patch('console_conf.controllers.chooser.ChooserView',
+                return_value='all')
+    def test_only_one_and_current(self, cv, ccsv):
+        model = RecoverySystemsModel.from_systems([model2_current])
+        app = make_app(model=model)
         c = RecoveryChooserController(app)
-        c.model = RecoverySystemsModel.from_systems([model1_non_current])
+        c.ui.start_ui = mock.Mock()
+        # both views are constructed
+        ccsv.assert_called_with(c, c.model.current, has_more=False)
+        cv.assert_called_with(c, c.model.systems)
+
+        c.start_ui()
+        c.ui.set_body.assert_called_with('current')
+        # going back does nothing
+        c.back()
+        c.ui.set_body.not_called()
+
+    @mock.patch('console_conf.controllers.chooser.ChooserCurrentSystemView',
+                return_value='current')
+    @mock.patch('console_conf.controllers.chooser.ChooserView',
+                return_value='all')
+    def test_all_systems_first_no_current(self, cv, ccsv):
+        model = RecoverySystemsModel.from_systems([model1_non_current])
+        app = make_app(model=model)
+        c = RecoveryChooserController(app)
+        c.ui.start_ui = mock.Mock()
+
         # sanity
         self.assertIsNone(c.model.current)
 
-        c.start_ui()
-        # we get the all systems view now
+        # we get the all-systems view now
         cv.assert_called()
-        # current system view is not constructed
+        # current system view is not constructed at all
         ccsv.assert_not_called()
+
+        c.start_ui()
+        c.ui.set_body.assert_called_with('all')

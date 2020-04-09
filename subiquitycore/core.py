@@ -310,7 +310,7 @@ class Application:
     #         "Identity",
     #         "InstallProgress",
     # ]
-    # The 'next_screen' and 'prev-screen' methods move through the list of
+    # The 'next_screen' and 'prev_screen' methods move through the list of
     # controllers in order, calling the start_ui method on the controller
     # instance.
 

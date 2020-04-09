@@ -51,6 +51,13 @@ class WelcomeView(BaseView):
 
 class ChooserWelcomeView(WelcomeView):
     excerpt = (
-        "System recovery triggered. Proceed to select one of available "
-        "systems and execute a recovery action."
+        "System mode selection triggered. Proceed to select one of available "
+        "systems and actions."
     )
+
+    def __init__(self, controller):
+        super().__init__(controller)
+
+        current = controller.model.current
+        if current is not None:
+            self.title = current.model.display_name

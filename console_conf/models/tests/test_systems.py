@@ -209,6 +209,8 @@ class RecoverySystemsModelTests(unittest.TestCase):
                          SelectedSystemAction(
                              system=model.systems[1],
                              action=model.systems[1].actions[0]))
+        model.unselect()
+        self.assertIsNone(model.selection)
 
     def test_to_response_stream(self):
         raw = json.dumps(self.reference)
