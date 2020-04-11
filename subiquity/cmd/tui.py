@@ -133,12 +133,16 @@ def main():
             init.read_cfg()
             init.fetch(existing="trust")
             cloud = init.cloudify()
+            autoinstall_path = '/autoinstall.yaml'
             if 'autoinstall' in cloud.cfg:
-                atomic_helper.write_file(
-                    '/autoinstall.yaml',
-                    safeyaml.dumps(cloud.cfg['autoinstall']).encode('utf-8'),
-                    mode=0o600)
-                opts.autoinstall = '/autoinstall.yaml'
+                if not os.path.exists(autoinstall_path):
+                    atomic_helper.write_file(
+                        autoinstall_path,
+                        safeyaml.dumps(
+                            cloud.cfg['autoinstall']).encode('utf-8'),
+                        mode=0o600)
+            if os.path.exists(autoinstall_path):
+                opts.autoinstall = autoinstall_path
         else:
             logger.debug(
                 "cloud-init status: %r, assumed disabled",
