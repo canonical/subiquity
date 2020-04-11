@@ -27,7 +27,7 @@ parts:
     plugin: python
     source-type: git
     source: git://git.launchpad.net/curtin
-    source-commit: bf03e4f78744449a7dc45f4cff2134ef3b989a3b
+    source-commit: 0832e4efaa6259cbdfd197379bc5da943810d763
     requirements: requirements.txt
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
@@ -110,5 +110,5 @@ parts:
     stage-packages: [libc6, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
     source: https://github.com/CanonicalLtd/probert.git
     source-type: git
-    source-commit: 45413866bbda3345d029ebb2b1f5faa9552372bf
+    source-commit: 4793e16ea1c397c44e115dc90eafa60df0947d5c
     requirements: requirements.txt
