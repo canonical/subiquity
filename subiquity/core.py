@@ -185,7 +185,7 @@ class Subiquity(Application):
         tty = '/dev/tty1'
         for work in self.kernel_cmdline:
             if work.startswith('console='):
-                tty = '/dev/' + work[len('console='):]
+                tty = '/dev/' + work[len('console='):].split(',')[0]
         return tty
 
     def load_autoinstall_config(self):
