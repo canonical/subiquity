@@ -429,7 +429,7 @@ class InstallProgressController(SubiquityController):
         self.progress_view.event_finish(self.unattended_upgrades_ctx)
         with self.install_context(
                 self.unattended_upgrades_ctx.parent,
-                "stop_unattended_uprades",
+                "stop_unattended_upgrades",
                 "cancelling update"):
             if self.opts.dry_run:
                 await asyncio.sleep(1)
@@ -463,7 +463,7 @@ class InstallProgressController(SubiquityController):
 
     async def _click_reboot(self):
         if self.unattended_upgrades_ctx is not None:
-            await self.stop_unattended_uprades()
+            await self.stop_unattended_upgrades()
         self.reboot_clicked.set()
 
     def click_reboot(self):
