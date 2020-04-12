@@ -53,7 +53,7 @@ class SSHController(SubiquityController):
     def load_autoinstall_data(self, data):
         if data is None:
             return
-        self.model.install_server = data.get('install_server', False)
+        self.model.install_server = data.get('install-server', False)
         self.model.authorized_keys = data.get(
             'authorized-keys', [])
         self.model.pwauth = data.get(
