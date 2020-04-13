@@ -260,6 +260,8 @@ class FilesystemController(SubiquityController):
         if dev_spec[0] == "disk":
             if dev_spec[1] == "index":
                 dev = self.model.all_disks()[int(dev_spec[2])]
+            elif dev_spec[1] == "serial":
+                dev = self.model._one(type='disk', serial=dev_spec[2])
         elif dev_spec[0] == "raid":
             if dev_spec[1] == "name":
                 for r in self.model.all_raids():

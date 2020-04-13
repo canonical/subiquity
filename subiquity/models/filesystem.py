@@ -883,6 +883,7 @@ class Partition(_Formattable):
 
     wipe = attr.ib(default=None)
     flag = attr.ib(default=None)
+    number = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
     @property
@@ -925,9 +926,15 @@ class Partition(_Formattable):
             return True
         return self._fs._available()
 
+    def serialize_number(self):
+        return self._number
+
     @property
     def _number(self):
-        return self.device._partitions.index(self) + 1
+        if self.preserve:
+            return self.number
+        else:
+            return self.device._partitions.index(self) + 1
 
     supported_actions = [
         DeviceAction.EDIT,
@@ -1474,6 +1481,8 @@ class FilesystemModel(object):
         def can_emit(obj):
             for dep in dependencies(obj):
                 if dep.id not in emitted_ids:
+                    if dep not in work and dep not in next_work:
+                        next_work.append(dep)
                     return False
             if isinstance(obj, Mount):
                 # Any mount actions for a parent of this one have to be emitted
@@ -1491,7 +1500,10 @@ class FilesystemModel(object):
         mountpoints = {m.path: m.id for m in self.all_mounts()}
         log.debug('mountpoints %s', mountpoints)
 
-        work = self._actions[:]
+        work = [
+            a for a in self._actions
+            if not getattr(a, 'preserve', False)
+            ]
 
         while work:
             next_work = []
@@ -1500,7 +1512,7 @@ class FilesystemModel(object):
                     emit(obj)
                 else:
                     next_work.append(obj)
-            if len(next_work) == len(work):
+            if {a.id for a in next_work} == {a.id for a in work}:
                 msg = ["rendering block devices made no progress processing:"]
                 for w in work:
                     msg.append(" - " + str(w))

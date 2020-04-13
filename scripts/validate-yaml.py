@@ -14,6 +14,7 @@ class StorageChecker:
     def _check_partition(self, action):
         assert 'device' in action
         assert 'size' in action
+        assert 'number' in action
         assert action['device'] in self.actions
         assert 'ptable' in self.actions[action['device']]
         if action['flag'] in ('boot', 'bios_grub', 'prep'):

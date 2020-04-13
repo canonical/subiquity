@@ -129,8 +129,8 @@ class PartitionViewTests(unittest.TestCase):
         partition = model.add_partition(disk, 512*(2**20))
         partition.preserve = True
         fs = model.add_filesystem(partition, "ext4")
-        fs.preserve = True
         model._orig_config = model._render_actions()
+        fs.preserve = True
         view, stretchy = make_partition_view(model, disk, partition)
         self.assertFalse(stretchy.form.size.enabled)
         self.assertTrue(stretchy.form.done_btn.enabled)

@@ -155,12 +155,15 @@ def make_model_and_disk(bootloader=None):
     return model, make_disk(model)
 
 
-def make_partition(model, device=None, *, size=None, **kw):
+def make_partition(model, device=None, *, preserve=False, size=None, **kw):
     if device is None:
         device = make_disk(model)
     if size is None:
         size = device.free_for_partitions//2
-    partition = Partition(m=model, device=device, size=size, **kw)
+    partition = Partition(
+        m=model, device=device, size=size, preserve=preserve, **kw)
+    if preserve:
+        partition.number = len(device._partitions)
     model._actions.append(partition)
     return partition
 
@@ -1009,7 +1012,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         lv1 = model._one(type="lvm_partition")
         self.assertEqual(lv1.size, vg.available_for_partitions//2)
 
-    def test_lv_remaninig(self):
+    def test_lv_remaining(self):
         model = make_model()
         make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
         fake_up_blockdata(model)
@@ -1043,3 +1046,43 @@ class TestAutoInstallConfig(unittest.TestCase):
         lv2 = model._one(type="lvm_partition", id='lv2')
         self.assertEqual(
             lv2.size, vg.available_for_partitions - dehumanize_size("50M"))
+
+    def test_render_does_not_include_unreferenced(self):
+        model = make_model(Bootloader.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk2 = make_disk(model, preserve=True)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        disk2p1 = make_partition(model, disk2, preserve=True)
+        fs = model.add_filesystem(disk1p1, 'ext4')
+        model.add_mount(fs, '/')
+        rendered_ids = {action['id'] for action in model._render_actions()}
+        self.assertTrue(disk1.id in rendered_ids)
+        self.assertTrue(disk1p1.id in rendered_ids)
+        self.assertTrue(disk2.id not in rendered_ids)
+        self.assertTrue(disk2p1.id not in rendered_ids)
+
+    def test_render_numbers_existing_partitions(self):
+        model = make_model(Bootloader.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        fs = model.add_filesystem(disk1p1, 'ext4')
+        model.add_mount(fs, '/')
+        actions = model._render_actions()
+        for action in actions:
+            if action['id'] != disk1p1.id:
+                continue
+            self.assertEqual(action['number'], 1)
+
+    def test_render_includes_unmounted_new_partition(self):
+        model = make_model(Bootloader.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk2 = make_disk(model)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        disk2p1 = make_partition(model, disk2)
+        fs = model.add_filesystem(disk1p1, 'ext4')
+        model.add_mount(fs, '/')
+        rendered_ids = {action['id'] for action in model._render_actions()}
+        self.assertTrue(disk1.id in rendered_ids)
+        self.assertTrue(disk1p1.id in rendered_ids)
+        self.assertTrue(disk2.id in rendered_ids)
+        self.assertTrue(disk2p1.id in rendered_ids)

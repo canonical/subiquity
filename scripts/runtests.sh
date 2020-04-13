@@ -6,8 +6,12 @@ for answers in examples/answers*.yaml; do
     rm -f .subiquity/subiquity-curtin-install.conf
     rm -f .subiquity/subiquity-debug.log
     rm -f .subiquity/run/subiquity/updating
+    config=$(sed -n 's/^#machine-config: \(.*\)/\1/p' $answers || true)
+    if [ -z "$config" ]; then
+        config=examples/simple.json
+    fi
     # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
-    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --answers $answers --dry-run --snaps-from-examples --machine-config examples/simple.json"
+    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --answers $answers --dry-run --snaps-from-examples --machine-config $config"
     python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf
     if [ ! -e .subiquity/subiquity-debug.log ]; then
         echo "log file not created"
