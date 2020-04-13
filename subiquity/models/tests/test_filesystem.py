@@ -1009,7 +1009,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         lv1 = model._one(type="lvm_partition")
         self.assertEqual(lv1.size, vg.available_for_partitions//2)
 
-    def test_lv_remaninig(self):
+    def test_lv_remaining(self):
         model = make_model()
         make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
         fake_up_blockdata(model)
@@ -1043,3 +1043,18 @@ class TestAutoInstallConfig(unittest.TestCase):
         lv2 = model._one(type="lvm_partition", id='lv2')
         self.assertEqual(
             lv2.size, vg.available_for_partitions - dehumanize_size("50M"))
+
+    def test_render_does_not_include_unreferenced(self):
+        model = make_model(Bootloader.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk2 = make_disk(model, preserve=True)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        disk2p1 = make_partition(model, disk2, preserve=True)
+        fs = model.add_filesystem(disk1p1, 'ext4')
+        model.add_mount(fs, '/')
+        actions = model._render_actions()
+        ids = {action['id'] for action in actions}
+        self.assertTrue(disk1.id in ids)
+        self.assertTrue(disk1p1.id in ids)
+        self.assertTrue(disk2.id not in ids)
+        self.assertTrue(disk2p1.id not in ids)

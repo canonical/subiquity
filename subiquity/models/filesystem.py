@@ -1474,6 +1474,8 @@ class FilesystemModel(object):
         def can_emit(obj):
             for dep in dependencies(obj):
                 if dep.id not in emitted_ids:
+                    if dep not in work:
+                        work.append(dep)
                     return False
             if isinstance(obj, Mount):
                 # Any mount actions for a parent of this one have to be emitted
@@ -1491,7 +1493,10 @@ class FilesystemModel(object):
         mountpoints = {m.path: m.id for m in self.all_mounts()}
         log.debug('mountpoints %s', mountpoints)
 
-        work = self._actions[:]
+        work = [
+            a for a in self._actions
+            if not getattr(a, 'preserve', False)
+            ]
 
         while work:
             next_work = []
