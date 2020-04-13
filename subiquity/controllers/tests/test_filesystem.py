@@ -20,6 +20,7 @@ from subiquity.controllers.filesystem import (
     FilesystemController,
     )
 from subiquity.models.tests.test_filesystem import (
+    fake_up_blockdata,
     make_disk,
     make_model,
     )
@@ -247,3 +248,25 @@ class TestFilesystemController(unittest.TestCase):
             disk1, disk1p2, {'fstype': 'ext4', 'mount': '/'})
         efi_mnt = controller.model._mount_for_path("/boot/efi")
         self.assertEqual(efi_mnt.device.volume, disk1p1)
+
+    def test_autoinstall_grub_devices(self):
+        controller = make_controller(Bootloader.BIOS)
+        make_disk(controller.model)
+        fake_up_blockdata(controller.model)
+        controller.ai_data = {
+            'config': [{'type': 'disk', 'id': 'disk0'}],
+            'grub': {
+                'install_devices': ['disk0'],
+                },
+            }
+        controller.convert_autoinstall_config()
+        new_disk = controller.model._one(type="disk", id="disk0")
+        self.assertEqual(controller.model.grub_install_device, new_disk)
+
+    def test_make_autoinstall(self):
+        controller = make_controller(Bootloader.BIOS)
+        disk = make_disk(controller.model)
+        fake_up_blockdata(controller.model)
+        controller.guided_direct(disk)
+        ai_data = controller.make_autoinstall()
+        self.assertEqual(ai_data['grub']['install_devices'], [disk.id])
