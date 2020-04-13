@@ -714,7 +714,10 @@ class FilesystemController(SubiquityController):
         r = {
             'config': rendered['storage']['config']
             }
-        for k in 'swap', 'grub':
-            if k in rendered:
-                r[k] = rendered[k]
+        if 'swap' in rendered:
+            r['swap'] = rendered['swap']
+        if self.model.grub_install_device:
+            r['grub'] = {
+                'install_devices': [self.model.grub_install_device.id],
+                }
         return r

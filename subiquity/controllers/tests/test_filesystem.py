@@ -262,3 +262,11 @@ class TestFilesystemController(unittest.TestCase):
         controller.convert_autoinstall_config()
         new_disk = controller.model._one(type="disk", id="disk0")
         self.assertEqual(controller.model.grub_install_device, new_disk)
+
+    def test_make_autoinstall(self):
+        controller = make_controller(Bootloader.BIOS)
+        disk = make_disk(controller.model)
+        fake_up_blockdata(controller.model)
+        controller.guided_direct(disk)
+        ai_data = controller.make_autoinstall()
+        self.assertEqual(ai_data['grub']['install_devices'], [disk.id])
