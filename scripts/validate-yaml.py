@@ -14,12 +14,11 @@ class StorageChecker:
     def _check_partition(self, action):
         assert 'device' in action
         assert 'size' in action
+        assert 'number' in action
         assert action['device'] in self.actions
         assert 'ptable' in self.actions[action['device']]
         if action['flag'] in ('boot', 'bios_grub', 'prep'):
             assert self.actions[action['device']]['type'] == 'disk'
-        if action.get('preserve', True):
-            assert 'number' in action
 
     def _check_format(self, action):
         assert 'volume' in action

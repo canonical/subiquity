@@ -926,6 +926,9 @@ class Partition(_Formattable):
             return True
         return self._fs._available()
 
+    def serialize_number(self):
+        return self._number
+
     @property
     def _number(self):
         if self.preserve:
