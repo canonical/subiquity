@@ -1072,3 +1072,17 @@ class TestAutoInstallConfig(unittest.TestCase):
             if action['id'] != disk1p1.id:
                 continue
             self.assertEqual(action['number'], 1)
+
+    def test_render_includes_unmounted_new_partition(self):
+        model = make_model(Bootloader.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk2 = make_disk(model)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        disk2p1 = make_partition(model, disk2)
+        fs = model.add_filesystem(disk1p1, 'ext4')
+        model.add_mount(fs, '/')
+        rendered_ids = {action['id'] for action in model._render_actions()}
+        self.assertTrue(disk1.id in rendered_ids)
+        self.assertTrue(disk1p1.id in rendered_ids)
+        self.assertTrue(disk2.id in rendered_ids)
+        self.assertTrue(disk2p1.id in rendered_ids)
