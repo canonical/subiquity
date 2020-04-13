@@ -1009,7 +1009,7 @@ class TestAutoInstallConfig(unittest.TestCase):
         lv1 = model._one(type="lvm_partition")
         self.assertEqual(lv1.size, vg.available_for_partitions//2)
 
-    def test_lv_remaning(self):
+    def test_lv_remaninig(self):
         model = make_model()
         make_disk(model, serial='aaaa', size=dehumanize_size("100M"))
         fake_up_blockdata(model)

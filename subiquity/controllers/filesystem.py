@@ -154,6 +154,9 @@ class FilesystemController(SubiquityController):
                     self._crash_reports[restricted] = report
                     continue
                 break
+        self.convert_autoinstall_config()
+
+    def convert_autoinstall_config(self):
         log.debug("self.ai_data = %s", self.ai_data)
         if 'layout' in self.ai_data:
             layout = self.ai_data['layout']
@@ -171,8 +174,12 @@ class FilesystemController(SubiquityController):
             if install_devices:
                 device = install_devices[0]
                 for action in self.model._actions:
-                    if action['id'] == device:
+                    if action.id == device:
                         self.model.grub_install_device = action
+                        break
+                else:
+                    raise Exception(
+                        "failed to find install_device {!r}".format(device))
             self.model.swap = self.ai_data.get('swap')
 
     def start(self):
