@@ -883,6 +883,7 @@ class Partition(_Formattable):
 
     wipe = attr.ib(default=None)
     flag = attr.ib(default=None)
+    number = attr.ib(default=None)
     preserve = attr.ib(default=False)
 
     @property
@@ -927,7 +928,10 @@ class Partition(_Formattable):
 
     @property
     def _number(self):
-        return self.device._partitions.index(self) + 1
+        if self.preserve:
+            return self.number
+        else:
+            return self.device._partitions.index(self) + 1
 
     supported_actions = [
         DeviceAction.EDIT,
