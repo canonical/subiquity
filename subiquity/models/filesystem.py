@@ -1481,8 +1481,8 @@ class FilesystemModel(object):
         def can_emit(obj):
             for dep in dependencies(obj):
                 if dep.id not in emitted_ids:
-                    if dep not in work:
-                        work.append(dep)
+                    if dep not in work and dep not in next_work:
+                        next_work.append(dep)
                     return False
             if isinstance(obj, Mount):
                 # Any mount actions for a parent of this one have to be emitted
@@ -1512,7 +1512,7 @@ class FilesystemModel(object):
                     emit(obj)
                 else:
                     next_work.append(obj)
-            if len(next_work) == len(work):
+            if {a.id for a in next_work} == {a.id for a in work}:
                 msg = ["rendering block devices made no progress processing:"]
                 for w in work:
                     msg.append(" - " + str(w))
