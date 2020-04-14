@@ -170,7 +170,7 @@ class RefreshView(BaseView):
             return
         if check_state == CheckState.AVAILABLE:
             self.check_state_available()
-        elif self.showing:
+        elif self.controller.showing:
             self.done()
 
     def check_state_failed(self, exc):
