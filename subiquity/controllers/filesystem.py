@@ -465,7 +465,7 @@ class FilesystemController(SubiquityController):
         return part
 
     def create_raid(self, spec):
-        for d in spec['devices']:
+        for d in spec['devices'] | spec['spare_devices']:
             self.clear(d)
         raid = self.model.add_raid(
             spec['name'],
@@ -522,16 +522,16 @@ class FilesystemController(SubiquityController):
         getattr(self, 'delete_' + obj.type)(obj)
 
     def clear(self, obj):
+        if obj.type == "disk":
+            obj.preserve = False
+        obj.wipe = 'superblock'
         for subobj in obj.fs(), obj.constructed_device():
             self.delete(subobj)
 
     def reformat(self, disk):
-        if disk.type == "disk":
-            disk.preserve = False
-        disk.wipe = 'superblock-recursive'
-        self.clear(disk)
         for p in list(disk.partitions()):
-            self.delete(p)
+            self.delete_partition(p)
+        self.clear(disk)
 
     def partition_disk_handler(self, disk, partition, spec):
         log.debug('partition_disk_handler: %s %s %s', disk, partition, spec)
