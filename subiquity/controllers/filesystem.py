@@ -465,7 +465,7 @@ class FilesystemController(SubiquityController):
         return part
 
     def create_raid(self, spec):
-        for d in spec['devices']:
+        for d in spec['devices'] | spec['spare_devices']:
             self.clear(d)
         raid = self.model.add_raid(
             spec['name'],
