@@ -25,8 +25,9 @@ import os
 import pathlib
 import platform
 
-from curtin.util import human2bytes
+from curtin.block import partition_kname
 from curtin import storage_config
+from curtin.util import human2bytes
 
 from probert.storage import StorageInfo
 
@@ -1533,7 +1534,8 @@ class FilesystemModel(object):
         if self.grub_install_device:
             dev = self.grub_install_device
             if dev.type == "partition":
-                devpath = "{}{}".format(dev.device.path, dev._number)
+                disk_kname = dev.device.path[5:]  # chop off "/dev/"
+                devpath = "/dev/" + partition_kname(disk_kname, dev._number)
             else:
                 devpath = dev.path
             config['grub'] = {
