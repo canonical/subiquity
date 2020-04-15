@@ -124,6 +124,7 @@ Unfortunately the installer was unable to detect the password that has
 been set.
 """)
 
+
 def ssh_help_texts(ips, password):
 
     texts = [_(SSH_HELP_PROLOGUE), ""]

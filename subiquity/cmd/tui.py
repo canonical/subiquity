@@ -164,9 +164,11 @@ def main():
     logging.getLogger('block-discover').addHandler(handler)
 
     if opts.ssh:
-        from subiquity.ui.views.help import ssh_help_texts, get_installer_password
-        from console_conf.controllers.identity import get_ips_standalone
-        texts = ssh_help_texts(get_ips_standalone(), get_installer_password(opts.dry_run))
+        from subiquity.ui.views.help import (
+            ssh_help_texts, get_installer_password)
+        from subiquitycore.ssh import get_ips_standalone
+        texts = ssh_help_texts(
+            get_ips_standalone(), get_installer_password(opts.dry_run))
         for line in texts:
             if hasattr(line, 'text'):
                 if line.text.startswith('installer@'):

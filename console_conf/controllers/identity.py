@@ -20,7 +20,7 @@ import shlex
 import sys
 
 from subiquitycore.controller import BaseController
-from subiquitycore.ssh import host_key_info
+from subiquitycore.ssh import host_key_info, get_ips_standalone
 from subiquitycore.utils import disable_console_conf, run_command
 
 from console_conf.ui.views import IdentityView, LoginView
@@ -107,21 +107,6 @@ def write_login_details(fp, username, ips):
                                            tty_name=tty_name,
                                            first_ip=first_ip,
                                            version=version))
-
-def get_ips_standalone():
-    from probert.prober import Prober
-    from subiquitycore.models.network import NETDEV_IGNORED_IFACE_TYPES
-    prober = Prober()
-    prober.probe_network()
-    links = prober.get_results()['network']['links']
-    ips = []
-    for l in sorted(links, key=lambda l: l['netlink_data']['name']):
-        if l['type'] in NETDEV_IGNORED_IFACE_TYPES:
-            continue
-        for addr in l['addresses']:
-            if addr['scope'] == "global":
-                ips.append(addr['address'].split('/')[0])
-    return ips
 
 
 def write_login_details_standalone():
