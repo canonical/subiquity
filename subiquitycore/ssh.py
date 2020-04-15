@@ -75,3 +75,19 @@ def host_key_info():
                                           fingerprint=fingerprint,
                                           width=longest_type))
     return "".join(lines)
+
+
+def get_ips_standalone():
+    from probert.prober import Prober
+    from subiquitycore.models.network import NETDEV_IGNORED_IFACE_TYPES
+    prober = Prober()
+    prober.probe_network()
+    links = prober.get_results()['network']['links']
+    ips = []
+    for l in sorted(links, key=lambda l: l['netlink_data']['name']):
+        if l['type'] in NETDEV_IGNORED_IFACE_TYPES:
+            continue
+        for addr in l['addresses']:
+            if addr['scope'] == "global":
+                ips.append(addr['address'].split('/')[0])
+    return ips

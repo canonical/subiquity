@@ -20,7 +20,7 @@ import shlex
 import sys
 
 from subiquitycore.controller import BaseController
-from subiquitycore.ssh import host_key_info
+from subiquitycore.ssh import host_key_info, get_ips_standalone
 from subiquitycore.utils import disable_console_conf, run_command
 
 from console_conf.ui.views import IdentityView, LoginView
@@ -114,18 +114,7 @@ def write_login_details_standalone():
     if owner is None:
         print("No device owner details found.")
         return 0
-    from probert.prober import Prober
-    from subiquitycore.models.network import NETDEV_IGNORED_IFACE_TYPES
-    prober = Prober()
-    prober.probe_network()
-    links = prober.get_results()['network']['links']
-    ips = []
-    for l in sorted(links, key=lambda l: l['netlink_data']['name']):
-        if l['type'] in NETDEV_IGNORED_IFACE_TYPES:
-            continue
-        for addr in l['addresses']:
-            if addr['scope'] == "global":
-                ips.append(addr['address'].split('/')[0])
+    ips = get_ips_standalone()
     if len(ips) == 0:
         tty_name = os.ttyname(0)[5:]
         version = get_core_version() or "16"

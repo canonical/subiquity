@@ -125,6 +125,33 @@ been set.
 """)
 
 
+def ssh_help_texts(ips, password):
+
+    texts = [_(SSH_HELP_PROLOGUE), ""]
+
+    if len(ips) > 0:
+        if len(ips) > 1:
+            texts.append(rewrap(_(SSH_HELP_MULTIPLE_ADDRESSES)))
+            texts.append("")
+            for ip in ips:
+                texts.append(Text(
+                    "installer@" + str(ip), align='center'))
+        else:
+            texts.append(_(SSH_HELP_ONE_ADDRESSES).format(
+                ip=str(ips[0])))
+        texts.append("")
+        texts.append(
+            rewrap(_(SSH_HELP_EPILOGUE).format(
+                password=password)))
+        texts.append("")
+        texts.append(Text(host_key_info()))
+    else:
+        texts.append("")
+        texts.append(_(SSH_HELP_NO_ADDRESSES))
+
+    return texts
+
+
 class SimpleTextStretchy(Stretchy):
 
     def __init__(self, parent, title, *texts):
@@ -345,29 +372,9 @@ class HelpMenu(WidgetWrap):
         return ips
 
     def _ssh_help(self, sender=None):
-
-        texts = [_(SSH_HELP_PROLOGUE), ""]
-
-        ips = self.get_global_addresses()
-        if len(ips) > 0:
-            if len(ips) > 1:
-                texts.append(rewrap(_(SSH_HELP_MULTIPLE_ADDRESSES)))
-                texts.append("")
-                for ip in ips:
-                    texts.append(Text(
-                        "installer@" + str(ip), align='center'))
-            else:
-                texts.append(_(SSH_HELP_ONE_ADDRESSES).format(
-                    ip=str(ips[0])))
-            texts.append("")
-            texts.append(
-                rewrap(_(SSH_HELP_EPILOGUE).format(
-                    password=self.parent.ssh_password)))
-            texts.append("")
-            texts.append(Text(host_key_info()))
-        else:
-            texts.append("")
-            texts.append(_(SSH_HELP_NO_ADDRESSES))
+        texts = ssh_help_texts(
+            self.get_global_addresses(),
+            self.parent.ssh_password)
 
         self._show_overlay(
             SimpleTextStretchy(
@@ -405,9 +412,9 @@ class HelpMenu(WidgetWrap):
                 self.parent.app.ui.body))
 
 
-def get_installer_password(app):
-    if app.opts.dry_run:
-        fp = io.StringIO('installe:rAnd0Mpass')
+def get_installer_password(dry_run=False):
+    if dry_run:
+        fp = io.StringIO('installer:rAnd0Mpass')
     else:
         try:
             fp = open("/var/log/cloud-init-output.log")
@@ -437,7 +444,7 @@ class HelpButton(PopUpLauncher):
 
     def create_pop_up(self):
         if self.ssh_password is None:
-            self.ssh_password = get_installer_password(self.app)
+            self.ssh_password = get_installer_password(self.app.opts.dry_run)
         self._menu = HelpMenu(self)
         return self._menu
 
