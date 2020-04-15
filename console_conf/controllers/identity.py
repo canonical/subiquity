@@ -108,12 +108,7 @@ def write_login_details(fp, username, ips):
                                            first_ip=first_ip,
                                            version=version))
 
-
-def write_login_details_standalone():
-    owner = get_device_owner()
-    if owner is None:
-        print("No device owner details found.")
-        return 0
+def get_ips_standalone():
     from probert.prober import Prober
     from subiquitycore.models.network import NETDEV_IGNORED_IFACE_TYPES
     prober = Prober()
@@ -126,6 +121,15 @@ def write_login_details_standalone():
         for addr in l['addresses']:
             if addr['scope'] == "global":
                 ips.append(addr['address'].split('/')[0])
+    return ips
+
+
+def write_login_details_standalone():
+    owner = get_device_owner()
+    if owner is None:
+        print("No device owner details found.")
+        return 0
+    ips = get_ips_standalone()
     if len(ips) == 0:
         tty_name = os.ttyname(0)[5:]
         version = get_core_version() or "16"

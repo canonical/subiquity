@@ -47,6 +47,9 @@ def parse_options(argv):
     parser.add_argument('--serial', action='store_true',
                         dest='run_on_serial',
                         help='Run the installer over serial console.')
+    parser.add_argument('--ssh', action='store_true',
+                        dest='ssh',
+                        help='Print ssh login details')
     parser.add_argument('--ascii', action='store_true',
                         dest='ascii',
                         help='Run the installer in ascii mode.')
@@ -159,6 +162,20 @@ def main():
     handler.addFilter(lambda rec: rec.name != 'probert.network')
     logging.getLogger('curtin').addHandler(handler)
     logging.getLogger('block-discover').addHandler(handler)
+
+    if opts.ssh:
+        from subiquity.ui.views.help import ssh_help_texts, get_installer_password
+        from console_conf.controllers.identity import get_ips_standalone
+        texts = ssh_help_texts(get_ips_standalone(), get_installer_password(opts.dry_run))
+        for line in texts:
+            if hasattr(line, 'text'):
+                if line.text.startswith('installer@'):
+                    print(' ' * 4 + line.text)
+                else:
+                    print(line.text)
+            else:
+                print(line)
+        return 0
 
     if opts.answers is None and os.path.exists(AUTO_ANSWERS_FILE):
         logger.debug("Autoloading answers from %s", AUTO_ANSWERS_FILE)
