@@ -1479,11 +1479,19 @@ class FilesystemModel(object):
             r.append(asdict(obj))
             emitted_ids.add(obj.id)
 
+        def ensure_partitions(dev):
+            for part in dev.partitions():
+                if part.id not in emitted_ids:
+                    if part not in work and part not in next_work:
+                        next_work.append(part)
+
         def can_emit(obj):
             for dep in dependencies(obj):
                 if dep.id not in emitted_ids:
                     if dep not in work and dep not in next_work:
                         next_work.append(dep)
+                        if dep.type in ['disk', 'raid']:
+                            ensure_partitions(dep)
                     return False
             if isinstance(obj, Mount):
                 # Any mount actions for a parent of this one have to be emitted

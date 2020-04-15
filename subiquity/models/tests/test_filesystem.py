@@ -1061,6 +1061,18 @@ class TestAutoInstallConfig(unittest.TestCase):
         self.assertTrue(disk2.id not in rendered_ids)
         self.assertTrue(disk2p1.id not in rendered_ids)
 
+    def test_render_includes_all_partitions(self):
+        model = make_model(Bootloader.NONE)
+        disk1 = make_disk(model, preserve=True)
+        disk1p1 = make_partition(model, disk1, preserve=True)
+        disk1p2 = make_partition(model, disk1, preserve=True)
+        fs = model.add_filesystem(disk1p2, 'ext4')
+        model.add_mount(fs, '/')
+        rendered_ids = {action['id'] for action in model._render_actions()}
+        self.assertTrue(disk1.id in rendered_ids)
+        self.assertTrue(disk1p1.id in rendered_ids)
+        self.assertTrue(disk1p2.id in rendered_ids)
+
     def test_render_numbers_existing_partitions(self):
         model = make_model(Bootloader.NONE)
         disk1 = make_disk(model, preserve=True)
