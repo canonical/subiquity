@@ -39,7 +39,7 @@ parts:
      - libc6
      - try:
        - efibootmgr
-  apport-data:
+  apport-hooks:
     plugin: nil
     stage-packages:
       - apport
