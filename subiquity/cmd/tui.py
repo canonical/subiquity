@@ -26,8 +26,6 @@ from cloudinit import atomic_helper, safeyaml, stages
 from subiquitycore.log import setup_logger
 from subiquitycore.utils import run_command
 
-from subiquity.core import Subiquity
-
 
 class ClickAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -110,6 +108,9 @@ def main():
             os.path.join(snap, 'usr', 'bin'),
             os.environ['PATH'],
         ])
+        os.environ["APPORT_DATA_DIR"] = os.path.join(snap, 'usr/share/apport')
+    # This must come after setting $APPORT_DATA_DIR.
+    from subiquity.core import Subiquity
     opts = parse_options(sys.argv[1:])
     global LOGDIR
     if opts.dry_run:

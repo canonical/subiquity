@@ -40,6 +40,12 @@ parts:
      - libc6
      - try:
        - efibootmgr
+  apport-hooks:
+    plugin: nil
+    stage-packages:
+      - apport
+    stage:
+      - usr/share/apport/general-hooks/*
   subiquity:
     plugin: python
     build-packages:
