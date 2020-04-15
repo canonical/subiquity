@@ -110,6 +110,7 @@ def main():
             os.path.join(snap, 'usr', 'bin'),
             os.environ['PATH'],
         ])
+        os.environ["APPORT_DATA_DIR"] = os.path.join(snap, 'usr/share/apport')
     opts = parse_options(sys.argv[1:])
     global LOGDIR
     if opts.dry_run:
