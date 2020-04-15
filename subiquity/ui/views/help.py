@@ -207,7 +207,6 @@ class HelpMenu(WidgetWrap):
         self.parent = parent
         close = header_btn(parent.base_widget.label)
         about = menu_item(_("About this installer"), on_press=self._about)
-        ssh_help = menu_item(_("Help on SSH access"), on_press=self._ssh_help)
         keys = menu_item(
             _("Keyboard shortcuts"), on_press=self._shortcuts)
         drop_to_shell = menu_item(
@@ -220,8 +219,11 @@ class HelpMenu(WidgetWrap):
             color,
             drop_to_shell,
             keys,
-            ssh_help,
             }
+        if self.parent.ssh_password is not None:
+            ssh_help = menu_item(
+                _("Help on SSH access"), on_press=self._ssh_help)
+            buttons.add(ssh_help)
         local_title, local_doc = parent.app.ui.body.local_help()
         if local_title is not None:
             local = menu_item(
@@ -251,10 +253,15 @@ class HelpMenu(WidgetWrap):
             view_errors,
             hline,
             about,
-            ssh_help,
+            ]
+
+        if self.parent.ssh_password is not None:
+            entries.append(ssh_help)
+
+        entries.extend([
             hline,
             color,
-            ]
+            ])
 
         rows = [
             Columns([
@@ -330,22 +337,6 @@ class HelpMenu(WidgetWrap):
                 _("About the installer"),
                 template.format(**info)))
 
-    def get_installer_password(self):
-        if self.parent.app.opts.dry_run:
-            fp = io.StringIO('installer:rAnd0Mpass')
-        else:
-            try:
-                fp = open("/var/log/cloud-init-output.log")
-            except FileNotFoundError:
-                fp = io.StringIO('')
-
-        with fp:
-            for line in fp:
-                if line.startswith("installer:"):
-                    return line[len("installer:"):]
-
-        return None
-
     def get_global_addresses(self):
         ips = []
         net_model = self.parent.app.base_model.network
@@ -357,29 +348,26 @@ class HelpMenu(WidgetWrap):
 
         texts = [_(SSH_HELP_PROLOGUE), ""]
 
-        password = self.get_installer_password()
-        if password:
-            ips = self.get_global_addresses()
-            if len(ips) > 0:
-                if len(ips) > 1:
-                    texts.append(_(SSH_HELP_MULTIPLE_ADDRESSES))
-                    texts.append("")
-                    for ip in ips:
-                        texts.append(Text(
-                            "installer@" + str(ip), align='center'))
-                else:
-                    texts.append(_(SSH_HELP_ONE_ADDRESSES).format(
-                        ip=str(ips[0])))
+        ips = self.get_global_addresses()
+        if len(ips) > 0:
+            if len(ips) > 1:
+                texts.append(rewrap(_(SSH_HELP_MULTIPLE_ADDRESSES)))
                 texts.append("")
-                texts.append(SSH_HELP_EPILOGUE.format(password=password))
-                texts.append("")
-                texts.append(Text(host_key_info()))
+                for ip in ips:
+                    texts.append(Text(
+                        "installer@" + str(ip), align='center'))
             else:
-                texts.append("")
-                texts.append(_(SSH_HELP_NO_ADDRESSES))
+                texts.append(_(SSH_HELP_ONE_ADDRESSES).format(
+                    ip=str(ips[0])))
+            texts.append("")
+            texts.append(
+                rewrap(_(SSH_HELP_EPILOGUE).format(
+                    password=self.parent.ssh_password)))
+            texts.append("")
+            texts.append(Text(host_key_info()))
         else:
             texts.append("")
-            texts.append(SSH_HELP_NO_PASSWORD)
+            texts.append(_(SSH_HELP_NO_ADDRESSES))
 
         self._show_overlay(
             SimpleTextStretchy(
@@ -417,11 +405,29 @@ class HelpMenu(WidgetWrap):
                 self.parent.app.ui.body))
 
 
+def get_installer_password(app):
+    if app.opts.dry_run:
+        fp = io.StringIO('installe:rAnd0Mpass')
+    else:
+        try:
+            fp = open("/var/log/cloud-init-output.log")
+        except FileNotFoundError:
+            fp = io.StringIO('')
+
+    with fp:
+        for line in fp:
+            if line.startswith("installer:"):
+                return line[len("installer:"):]
+
+    return None
+
+
 class HelpButton(PopUpLauncher):
 
     def __init__(self, app):
         self.app = app
         self.btn = header_btn(_("Help"), on_press=self._open)
+        self.ssh_password = None
         self.showing_something = False
         super().__init__(self.btn)
 
@@ -430,6 +436,8 @@ class HelpButton(PopUpLauncher):
         self.open_pop_up()
 
     def create_pop_up(self):
+        if self.ssh_password is None:
+            self.ssh_password = get_installer_password(self.app)
         self._menu = HelpMenu(self)
         return self._menu
 
