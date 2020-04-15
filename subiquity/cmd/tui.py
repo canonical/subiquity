@@ -108,7 +108,7 @@ def main():
             os.path.join(snap, 'usr', 'bin'),
             os.environ['PATH'],
         ])
-        os.environ["APPORT_DATA_DIR"] = os.path.join(snap, 'usr/share/apport')
+        os.environ["APPORT_DATA_DIR"] = os.path.join(snap, 'share/apport')
     # This must come after setting $APPORT_DATA_DIR.
     from subiquity.core import Subiquity
     opts = parse_options(sys.argv[1:])
