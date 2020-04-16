@@ -28,7 +28,7 @@ parts:
     plugin: python
     source-type: git
     source: git://git.launchpad.net/curtin
-    source-commit: 0832e4efaa6259cbdfd197379bc5da943810d763
+    source-commit: e967eebc3a427cd62f12f66473ea8430889bc206
     requirements: [requirements.txt]
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
@@ -38,8 +38,6 @@ parts:
      - "-lib/python*/site-packages/jsonschema"
     stage-packages:
      - libc6
-     - try:
-       - efibootmgr
   apport:
     plugin: python
     source-type: bzr
