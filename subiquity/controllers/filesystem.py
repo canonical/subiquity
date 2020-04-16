@@ -399,12 +399,14 @@ class FilesystemController(SubiquityController):
 
     def create_filesystem(self, volume, spec):
         if spec['fstype'] is None:
+            volume.wipe = None
             fstype = volume.original_fstype()
             if fstype is None:
                 return None
             preserve = True
         else:
             fstype = spec['fstype']
+            volume.wipe = 'superblock'
             preserve = False
         fs = self.model.add_filesystem(volume, fstype, preserve)
         if isinstance(volume, Partition):
