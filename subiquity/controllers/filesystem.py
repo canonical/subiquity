@@ -482,6 +482,8 @@ class FilesystemController(SubiquityController):
         self.clear(raid)
         for p in list(raid.partitions()):
             self.delete_partition(p)
+        for d in raid.devices | raid.spare_devices:
+            d.wipe = 'superblock'
         self.model.remove_raid(raid)
 
     def create_volgroup(self, spec):
@@ -499,6 +501,7 @@ class FilesystemController(SubiquityController):
         for lv in list(vg.partitions()):
             self.delete_logical_volume(lv)
         for d in vg.devices:
+            d.wipe = 'superblock'
             if d.type == "dm_crypt":
                 self.model.remove_dm_crypt(d)
         self.model.remove_volgroup(vg)
