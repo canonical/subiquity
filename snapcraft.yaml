@@ -36,8 +36,6 @@ parts:
      - "*"
      - "-lib/python*/site-packages/_yaml.*.so"
      - "-lib/python*/site-packages/jsonschema"
-    stage-packages:
-     - libc6
   apport:
     plugin: python
     source-type: bzr
@@ -70,7 +68,6 @@ parts:
       - python3-urwid
     stage-packages:
       - cloud-init
-      - libc6
       - libsystemd0
       - iso-codes
       - lsb-release
@@ -103,7 +100,6 @@ parts:
         debconf-communicate user-setup | \
         cut -d ' ' -f 2- > $SNAPCRAFT_PART_INSTALL/users-and-groups
       cp /usr/lib/user-setup/reserved-usernames $SNAPCRAFT_PART_INSTALL/
-    stage-packages: [libc6]
     stage:
       - users-and-groups
       - reserved-usernames
@@ -113,7 +109,6 @@ parts:
       - console-setup
       - locales
       - xkb-data-i18n
-    stage-packages: [libc6]
     override-build: |
       /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl > $SNAPCRAFT_PART_INSTALL/kbdnames.txt
     stage:
@@ -128,7 +123,7 @@ parts:
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
-    stage-packages: [libc6, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
+    stage-packages: [libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
     source: https://github.com/CanonicalLtd/probert.git
     source-type: git
     source-commit: 4793e16ea1c397c44e115dc90eafa60df0947d5c
