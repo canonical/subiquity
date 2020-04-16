@@ -399,6 +399,7 @@ class FilesystemController(SubiquityController):
 
     def create_filesystem(self, volume, spec):
         if spec['fstype'] is None:
+            # prep partitions are always wiped (and never have a filesystem)
             if getattr(volume, 'flag', None) != 'prep':
                 volume.wipe = None
             fstype = volume.original_fstype()
