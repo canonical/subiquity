@@ -529,6 +529,8 @@ class FilesystemController(SubiquityController):
             self.delete(subobj)
 
     def reformat(self, disk):
+        if disk is self.model.grub_install_device:
+            self.model.grub_install_device = None
         for p in list(disk.partitions()):
             self.delete_partition(p)
         self.clear(disk)
