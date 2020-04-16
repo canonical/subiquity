@@ -40,12 +40,28 @@ parts:
      - libc6
      - try:
        - efibootmgr
-  apport-hooks:
-    plugin: nil
+  apport:
+    plugin: python
+    source-type: bzr
+    source: lp:~ubuntu-core-dev/ubuntu/focal/apport/ubuntu
+    build-packages:
+      - python3-distutils-extra
+      - python3-apt
+      - python3-httplib2
+      - python3-problem-report
+      - python3-requests-unixsocket
     stage-packages:
-      - apport
+      - python3-distutils-extra
+      - python3-apt
+      - python3-httplib2
+      - python3-problem-report
+      - python3-requests-unixsocket
     stage:
-      - usr/share/apport/general-hooks/*
+      - "lib/python*/site-packages/"
+      - "-lib/python*/site-packages/etc/*"
+      - "-lib/python*/site-packages/lib/*"
+      - "share/apport/general-hooks/"
+      - "usr/"
   subiquity:
     plugin: python
     build-packages:
@@ -60,7 +76,6 @@ parts:
       - libsystemd0
       - iso-codes
       - lsb-release
-      - python3-apport
       - python3-bson
       - python3-distutils-extra
       - python3-urwid
