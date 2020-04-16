@@ -1601,6 +1601,12 @@ class FilesystemModel(object):
     def all_volgroups(self):
         return self._all(type='lvm_volgroup')
 
+    def _remove(self, obj):
+        if obj is self.grub_install_device:
+            self.grub_install_device = None
+        _remove_backlinks(obj)
+        self._actions.remove(obj)
+
     def add_partition(self, device, size, flag="", wipe=None):
         if size > device.free_for_partitions:
             raise Exception("%s > %s", size, device.free_for_partitions)
@@ -1623,8 +1629,7 @@ class FilesystemModel(object):
     def remove_partition(self, part):
         if part._fs or part._constructed_device:
             raise Exception("can only remove empty partition")
-        _remove_backlinks(part)
-        self._actions.remove(part)
+        self._remove(part)
         if len(part.device._partitions) == 0:
             part.device.ptable = None
 
@@ -1641,8 +1646,7 @@ class FilesystemModel(object):
     def remove_raid(self, raid):
         if raid._fs or raid._constructed_device or len(raid.partitions()):
             raise Exception("can only remove empty RAID")
-        _remove_backlinks(raid)
-        self._actions.remove(raid)
+        self._remove(raid)
 
     def add_volgroup(self, name, devices):
         vg = LVM_VolGroup(m=self, name=name, devices=devices)
@@ -1652,8 +1656,7 @@ class FilesystemModel(object):
     def remove_volgroup(self, vg):
         if len(vg._partitions):
             raise Exception("can only remove empty VG")
-        _remove_backlinks(vg)
-        self._actions.remove(vg)
+        self._remove(vg)
 
     def add_logical_volume(self, vg, name, size):
         lv = LVM_LogicalVolume(m=self, volgroup=vg, name=name, size=size)
@@ -1663,8 +1666,7 @@ class FilesystemModel(object):
     def remove_logical_volume(self, lv):
         if lv._fs:
             raise Exception("can only remove empty LV")
-        _remove_backlinks(lv)
-        self._actions.remove(lv)
+        self._remove(lv)
 
     def add_dm_crypt(self, volume, key):
         if not volume.available:
@@ -1674,8 +1676,7 @@ class FilesystemModel(object):
         return dm_crypt
 
     def remove_dm_crypt(self, dm_crypt):
-        _remove_backlinks(dm_crypt)
-        self._actions.remove(dm_crypt)
+        self._remove(dm_crypt)
 
     def add_filesystem(self, volume, fstype, preserve=False):
         log.debug("adding %s to %s", fstype, volume)
@@ -1694,8 +1695,7 @@ class FilesystemModel(object):
     def remove_filesystem(self, fs):
         if fs._mount:
             raise Exception("can only remove unmounted filesystem")
-        _remove_backlinks(fs)
-        self._actions.remove(fs)
+        self._remove(fs)
 
     def add_mount(self, fs, path):
         if fs._mount is not None:
@@ -1709,8 +1709,7 @@ class FilesystemModel(object):
         return m
 
     def remove_mount(self, mount):
-        _remove_backlinks(mount)
-        self._actions.remove(mount)
+        self._remove(mount)
         # Removing a mount might make it ok to add a swapfile again.
         if self._should_add_swapfile():
             self.swap = None
