@@ -399,7 +399,8 @@ class FilesystemController(SubiquityController):
 
     def create_filesystem(self, volume, spec):
         if spec['fstype'] is None:
-            volume.wipe = None
+            if getattr(volume, 'flag', None) != 'prep':
+                volume.wipe = None
             fstype = volume.original_fstype()
             if fstype is None:
                 return None
