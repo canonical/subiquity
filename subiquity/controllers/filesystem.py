@@ -399,12 +399,16 @@ class FilesystemController(SubiquityController):
 
     def create_filesystem(self, volume, spec):
         if spec['fstype'] is None:
+            # prep partitions are always wiped (and never have a filesystem)
+            if getattr(volume, 'flag', None) != 'prep':
+                volume.wipe = None
             fstype = volume.original_fstype()
             if fstype is None:
                 return None
             preserve = True
         else:
             fstype = spec['fstype']
+            volume.wipe = 'superblock'
             preserve = False
         fs = self.model.add_filesystem(volume, fstype, preserve)
         if isinstance(volume, Partition):
@@ -480,6 +484,8 @@ class FilesystemController(SubiquityController):
         self.clear(raid)
         for p in list(raid.partitions()):
             self.delete_partition(p)
+        for d in raid.devices | raid.spare_devices:
+            d.wipe = 'superblock'
         self.model.remove_raid(raid)
 
     def create_volgroup(self, spec):
@@ -497,6 +503,7 @@ class FilesystemController(SubiquityController):
         for lv in list(vg.partitions()):
             self.delete_logical_volume(lv)
         for d in vg.devices:
+            d.wipe = 'superblock'
             if d.type == "dm_crypt":
                 self.model.remove_dm_crypt(d)
         self.model.remove_volgroup(vg)
