@@ -484,7 +484,7 @@ class FilesystemController(SubiquityController):
         self.clear(raid)
         for p in list(raid.partitions()):
             self.delete_partition(p)
-        for d in raid.devices | raid.spare_devices:
+        for d in set(raid.devices) | set(raid.spare_devices):
             d.wipe = 'superblock'
         self.model.remove_raid(raid)
 
