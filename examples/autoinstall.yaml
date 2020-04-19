@@ -3,6 +3,9 @@ early-commands:
   - echo a
   - sleep 1
   - echo a
+refresh-installer:
+  update: yes
+  channel: edge
 debconf-selections: eek
 packages:
   - package1
