@@ -73,6 +73,8 @@ class IdentityController(SubiquityController):
         self.app.next_screen()
 
     def make_autoinstall(self):
+        if self.model.user is None:
+            return {}
         r = attr.asdict(self.model.user)
         r['hostname'] = self.model.hostname
         return r

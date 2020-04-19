@@ -32,3 +32,8 @@ grep 'finish: subiquity/InstallProgress/postinstall/install_package1: SUCCESS: i
      .subiquity/subiquity-debug.log
 grep 'finish: subiquity/InstallProgress/postinstall/install_package2: SUCCESS: installing package2' \
      .subiquity/subiquity-debug.log
+
+timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall-user-data.yaml \
+                               --dry-run --machine-config examples/simple.json \
+                               --kernel-cmdline 'autoinstall console=\"${TTY#/dev/}\"'"
+python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf 
