@@ -202,14 +202,18 @@ class SubiquityModel:
         # (mwhudson does not entirely know what the above means!)
         userdata = '#cloud-config\n' + yaml.dump(self._cloud_init_config())
         metadata = yaml.dump({'instance-id': str(uuid.uuid4())})
-        hostname = self.identity.hostname.strip()
-        return [
+        files = [
             ('var/lib/cloud/seed/nocloud-net/meta-data', metadata, 0o644),
             ('var/lib/cloud/seed/nocloud-net/user-data', userdata, 0o600),
             ('etc/cloud/ds-identify.cfg', 'policy: enabled\n', 0o644),
-            ('etc/hostname', hostname + "\n", 0o644),
-            ('etc/hosts', HOSTS_CONTENT.format(hostname=hostname), 0o644),
             ]
+        if self.identity.hostname is not None:
+            hostname = self.identity.hostname.strip()
+            files.extend([
+                ('etc/hostname', hostname + "\n", 0o644),
+                ('etc/hosts', HOSTS_CONTENT.format(hostname=hostname), 0o644),
+                ])
+        return files
 
     def configure_cloud_init(self):
         for path, content, mode in self._cloud_init_files():
