@@ -28,12 +28,13 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
                                --kernel-cmdline 'autoinstall console=\"${TTY#/dev/}\"'"
 python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf \
         debconf_selections.subiquity='"eek"'
-grep 'finish: subiquity/InstallProgress/postinstall/install_package1: SUCCESS: installing package1' \
+grep -q 'finish: subiquity/InstallProgress/postinstall/install_package1: SUCCESS: installing package1' \
      .subiquity/subiquity-debug.log
-grep 'finish: subiquity/InstallProgress/postinstall/install_package2: SUCCESS: installing package2' \
+grep -q 'finish: subiquity/InstallProgress/postinstall/install_package2: SUCCESS: installing package2' \
      .subiquity/subiquity-debug.log
+grep -q 'switching subiquity to edge' .subiquity/subiquity-debug.log
 
 timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall-user-data.yaml \
                                --dry-run --machine-config examples/simple.json \
                                --kernel-cmdline 'autoinstall console=\"${TTY#/dev/}\"'"
-python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf 
+python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf

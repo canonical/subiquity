@@ -48,7 +48,7 @@ class RefreshController(SubiquityController):
     autoinstall_schema = {
         'type': 'object',
         'properties': {
-            'refresh': {'type': 'boolean'},
+            'update': {'type': 'boolean'},
             'channel': {'type': 'string'},
             },
         'additionalProperties': False,
@@ -59,6 +59,7 @@ class RefreshController(SubiquityController):
     ]
 
     def __init__(self, app):
+        self.ai_data = {}
         super().__init__(app)
         self.snap_name = os.environ.get("SNAP_NAME", "subiquity")
         self.configure_task = None
@@ -68,11 +69,14 @@ class RefreshController(SubiquityController):
         self.new_snap_version = ""
 
         self.offered_first_time = False
-        self.active = self.interactive()
+        if 'update' in self.ai_data:
+            self.active = self.ai_data['update']
+        else:
+            self.active = self.interactive()
 
     def load_autoinstall_data(self, data):
-        if data is not None and data.get('refresh'):
-            self.active = True
+        if data is not None:
+            self.ai_data = data
 
     def start(self):
         if not self.active:
@@ -94,7 +98,7 @@ class RefreshController(SubiquityController):
         change_id = await self.start_update()
         while True:
             try:
-                change = await self.controller.get_progress(change_id)
+                change = await self.get_progress(change_id)
             except requests.exceptions.RequestException as e:
                 raise e
             if change['status'] == 'Done':
@@ -154,6 +158,8 @@ class RefreshController(SubiquityController):
                 log.debug(
                     "get_refresh_channel: found %s on kernel cmdline", arg)
                 return arg[len(prefix):]
+        if 'channel' in self.ai_data:
+            return self.ai_data['channel']
 
         info_file = '/cdrom/.disk/info'
         try:
