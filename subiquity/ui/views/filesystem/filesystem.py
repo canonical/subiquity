@@ -61,6 +61,7 @@ from subiquitycore.ui.utils import (
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
+    Bootloader,
     DeviceAction,
     humanize_size,
     )
@@ -329,9 +330,10 @@ class DeviceList(WidgetWrap):
         if device._is_boot_device():
             return _("Stop Using As Boot Device")
         else:
-            for other in self.parent.model.all_disks():
-                if other._is_boot_device():
-                    return _("Add As Another Boot Device")
+            if self.parent.model.bootloader != Bootloader.PREP:
+                for other in self.parent.model.all_disks():
+                    if other._is_boot_device():
+                        return _("Add As Another Boot Device")
             return _("Use As Boot Device")
 
     def _action_menu_for_device(self, device):

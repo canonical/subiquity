@@ -215,18 +215,13 @@ class TestFilesystemController(unittest.TestCase):
 
         size_before = disk2p1.size
         controller.add_boot_disk(disk2)
-        self.assertEqual(len(disk1.partitions()), 1)
+        self.assertEqual(len(disk1.partitions()), 0)
         self.assertEqual(len(disk2.partitions()), 2)
         self.assertEqual(disk2.partitions()[1], disk2p1)
         self.assertEqual(
             disk2.partitions()[0].size + disk2p1.size, size_before)
         self.assertEqual(disk2.partitions()[0].flag, "prep")
         self.assertEqual(disk2.partitions()[0].wipe, "zero")
-
-        controller.remove_boot_disk(disk2)
-        self.assertEqual(len(disk2.partitions()), 1)
-        self.assertEqual(disk2.partitions()[0], disk2p1)
-        self.assertEqual(disk2p1.size, size_before)
 
     def test_make_boot_disk_PREP_existing(self):
         controller = make_controller(Bootloader.PREP)

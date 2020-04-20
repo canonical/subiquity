@@ -679,6 +679,10 @@ class FilesystemController(SubiquityController):
 
     def add_boot_disk(self, new_boot_disk):
         bootloader = self.model.bootloader
+        if bootloader == Bootloader.PREP:
+            for disk in self.model.all_disks():
+                if disk._is_boot_device():
+                    self.remove_boot_disk(disk)
         if new_boot_disk._has_preexisting_partition():
             if bootloader == Bootloader.BIOS:
                 new_boot_disk.grub_device = True
