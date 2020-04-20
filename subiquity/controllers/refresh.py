@@ -75,7 +75,8 @@ class RefreshController(SubiquityController):
             self.active = self.interactive()
 
     def load_autoinstall_data(self, data):
-        self.ai_data = data
+        if data is not None:
+            self.ai_data = data
 
     def start(self):
         if not self.active:
@@ -157,6 +158,8 @@ class RefreshController(SubiquityController):
                 log.debug(
                     "get_refresh_channel: found %s on kernel cmdline", arg)
                 return arg[len(prefix):]
+        if 'channel' in self.ai_data:
+            return self.ai_data['channel']
 
         info_file = '/cdrom/.disk/info'
         try:
