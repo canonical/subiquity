@@ -311,16 +311,26 @@ class DeviceList(WidgetWrap):
         log.debug('_action %s %s', action, device.id)
         meth(device)
 
+    def _label_REMOVE(self, action, device):
+        cd = device.constructed_device()
+        if cd:
+            return _("Remove from {}").format(cd.desc())
+        else:
+            return _(action.value)
+
+    def _label_PARTITION(self, action, device):
+        return _("Add {} Partition").format(
+            device.ptable_for_new_partition().upper())
+
+    def _label_TOGGLE_BOOT(self, action, device):
+        return _("Make Boot Device")
+
     def _action_menu_for_device(self, device):
         device_actions = []
         for action in device.supported_actions:
-            label = _(action.value)
-            if action == DeviceAction.REMOVE and device.constructed_device():
-                cd = device.constructed_device()
-                label = _("Remove from {}").format(cd.desc())
-            if action == DeviceAction.PARTITION:
-                label = _("Add {} Partition").format(
-                    device.ptable_for_new_partition().upper())
+            label_meth = getattr(
+                self, '_label_{}'.format(action.name), lambda a, d: _(a.value))
+            label = label_meth(action, device)
             enabled, whynot = device.action_possible(action)
             if whynot:
                 assert not enabled
