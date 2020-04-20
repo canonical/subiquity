@@ -13,7 +13,7 @@ Mirror:
 Filesystem:
   manual:
     - obj: [disk index 0]
-      action: MAKE_BOOT
+      action: TOGGLE_BOOT
     - &newpart
       obj: [disk index 0]
       action: PARTITION

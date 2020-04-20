@@ -409,7 +409,7 @@ class DeviceAction(enum.Enum):
     FORMAT = _("Format")
     REMOVE = _("Remove from RAID/LVM")
     DELETE = _("Delete")
-    MAKE_BOOT = _("Make Boot Device")
+    TOGGLE_BOOT = _("Make Boot Device")
 
 
 def _generic_can_EDIT(obj):
@@ -814,7 +814,7 @@ class Disk(_Device):
             DeviceAction.REMOVE,
             ]
         if self._m.bootloader != Bootloader.NONE:
-            actions.append(DeviceAction.MAKE_BOOT)
+            actions.append(DeviceAction.TOGGLE_BOOT)
         return actions
 
     _can_INFO = True
@@ -844,7 +844,7 @@ class Disk(_Device):
     _can_REMOVE = property(_generic_can_REMOVE)
 
     @property
-    def _can_MAKE_BOOT(self):
+    def _can_TOGGLE_BOOT(self):
         bl = self._m.bootloader
         if bl == Bootloader.BIOS:
             if self._m.grub_install_device is self:

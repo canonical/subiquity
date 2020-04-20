@@ -308,9 +308,12 @@ class FilesystemController(SubiquityController):
         log.debug("_answers_action %r", action)
         if 'obj' in action:
             obj = self._action_get(action['obj'])
+            action_name = action['action']
+            if action_name == "MAKE_BOOT":
+                action_name = "TOGGLE_BOOT"
             meth = getattr(
                 self.ui.body.avail_list,
-                "_{}_{}".format(obj.type, action['action']))
+                "_{}_{}".format(obj.type, action_name))
             meth(obj)
             yield
             body = self.ui.body._w
@@ -562,7 +565,7 @@ class FilesystemController(SubiquityController):
 
         needs_boot = self.model.needs_bootloader_partition()
         log.debug('model needs a bootloader partition? {}'.format(needs_boot))
-        can_be_boot = DeviceAction.MAKE_BOOT in disk.supported_actions
+        can_be_boot = DeviceAction.TOGGLE_BOOT in disk.supported_actions
         if needs_boot and len(disk.partitions()) == 0 and can_be_boot:
             part = self._create_boot_partition(disk)
 
@@ -694,7 +697,7 @@ class FilesystemController(SubiquityController):
 
     def guided_lvm(self, disk, lvm_options=None):
         self.reformat(disk)
-        if DeviceAction.MAKE_BOOT in disk.supported_actions:
+        if DeviceAction.TOGGLE_BOOT in disk.supported_actions:
             self.make_boot_disk(disk)
         self.create_partition(
             device=disk, spec=dict(

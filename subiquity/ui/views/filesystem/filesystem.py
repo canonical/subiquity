@@ -282,7 +282,7 @@ class DeviceList(WidgetWrap):
         disk._constructed_device = None
         self.parent.refresh_model_inputs()
 
-    def _disk_MAKE_BOOT(self, disk):
+    def _disk_TOGGLE_BOOT(self, disk):
         self.parent.controller.make_boot_disk(disk)
         self.parent.refresh_model_inputs()
 

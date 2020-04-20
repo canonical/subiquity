@@ -82,13 +82,13 @@ class TestFilesystemController(unittest.TestCase):
         # controller around.
         for bl in Bootloader:
             controller, disk = make_controller_and_disk(bl)
-            if DeviceAction.MAKE_BOOT not in disk.supported_actions:
+            if DeviceAction.TOGGLE_BOOT not in disk.supported_actions:
                 continue
             controller.make_boot_disk(disk)
             self.assertFalse(
-                disk._can_MAKE_BOOT,
-                "make_boot_disk(disk) did not make _can_MAKE_BOOT false with "
-                "bootloader {}".format(bl))
+                disk._can_TOGGLE_BOOT,
+                "make_boot_disk(disk) did not make _can_TOGGLE_BOOT false "
+                "with bootloader {}".format(bl))
 
     def test_make_boot_disk_BIOS(self):
         controller = make_controller(Bootloader.BIOS)
