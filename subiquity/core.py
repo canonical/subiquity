@@ -290,13 +290,21 @@ class Subiquity(Application):
         self.install_confirmed = True
         self.controllers.InstallProgress.confirmation.set()
 
+    def _cancel_show_progress(self):
+        if self.show_progress_handle is not None:
+            self.ui.block_input = False
+            self.show_progress_handle.cancel()
+            self.show_progress_handle = None
+
     def next_screen(self):
         can_install = all(e.is_set() for e in self.base_model.install_events)
         if can_install and not self.install_confirmed:
             if self.interactive():
+                log.debug("showing InstallConfirmation over %s", self.ui.body)
                 from subiquity.ui.views.installprogress import (
                     InstallConfirmation,
                     )
+                self._cancel_show_progress()
                 self.ui.body.show_stretchy_overlay(
                     InstallConfirmation(self.ui.body, self))
             else:
@@ -334,10 +342,7 @@ class Subiquity(Application):
 
     def select_screen(self, new):
         if new.interactive():
-            if self.show_progress_handle is not None:
-                self.ui.block_input = False
-                self.show_progress_handle.cancel()
-                self.show_progress_handle = None
+            self._cancel_show_progress()
             if self.progress_showing:
                 shown_for = self.aio_loop.time() - self.progress_shown_time
                 remaining = 1.0 - shown_for
