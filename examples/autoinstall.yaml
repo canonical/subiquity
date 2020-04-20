@@ -3,6 +3,7 @@ early-commands:
   - echo a
   - sleep 1
   - echo a
+locale: en_UK.UTF-8
 refresh-installer:
   update: yes
   channel: edge
