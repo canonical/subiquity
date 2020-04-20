@@ -1060,6 +1060,7 @@ class LVM_VolGroup(_Device):
 
     @property
     def size(self):
+        # Should probably query actual size somehow for an existing VG!
         return get_lvm_size(self.devices)
 
     @property
