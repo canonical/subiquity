@@ -169,17 +169,7 @@ class FilesystemController(SubiquityController):
         elif 'config' in self.ai_data:
             with self.context.child("applying_autoinstall"):
                 self.model.apply_autoinstall_config(self.ai_data['config'])
-            grub = self.ai_data.get('grub', {})
-            install_devices = grub.get('install_devices')
-            if install_devices:
-                device = install_devices[0]
-                for action in self.model._actions:
-                    if action.id == device:
-                        self.model.grub_install_device = action
-                        break
-                else:
-                    raise Exception(
-                        "failed to find install_device {!r}".format(device))
+            self.model.grub = self.ai_data.get('grub', {})
             self.model.swap = self.ai_data.get('swap')
 
     def start(self):
@@ -433,8 +423,10 @@ class FilesystemController(SubiquityController):
         self.model.remove_filesystem(fs)
     delete_format = delete_filesystem
 
-    def create_partition(self, device, spec, flag="", wipe=None):
-        part = self.model.add_partition(device, spec["size"], flag, wipe)
+    def create_partition(self, device, spec, flag="", wipe=None,
+                         grub_device=None):
+        part = self.model.add_partition(
+            device, spec["size"], flag, wipe, grub_device)
         self.create_filesystem(part, spec)
         return part
 
@@ -452,7 +444,7 @@ class FilesystemController(SubiquityController):
             part = self.create_partition(
                 disk,
                 dict(size=part_size, fstype='fat32', mount='/boot/efi'),
-                flag="boot")
+                flag="boot", grub_device=True)
         elif bootloader == Bootloader.PREP:
             log.debug('_create_boot_partition - adding PReP partition')
             part = self.create_partition(
@@ -460,15 +452,14 @@ class FilesystemController(SubiquityController):
                 dict(size=PREP_GRUB_SIZE_BYTES, fstype=None, mount=None),
                 # must be wiped or grub-install will fail
                 wipe='zero',
-                flag='prep')
-            self.model.grub_install_device = part
+                flag='prep', grub_device=True)
         elif bootloader == Bootloader.BIOS:
             log.debug('_create_boot_partition - adding bios_grub partition')
             part = self.create_partition(
                 disk,
                 dict(size=BIOS_GRUB_SIZE_BYTES, fstype=None, mount=None),
                 flag='bios_grub')
-            self.model.grub_install_device = disk
+            disk.grub_device = True
         return part
 
     def create_raid(self, spec):
@@ -539,8 +530,7 @@ class FilesystemController(SubiquityController):
             self.delete(subobj)
 
     def reformat(self, disk):
-        if disk is self.model.grub_install_device:
-            self.model.grub_install_device = None
+        disk.grub_device = False
         for p in list(disk.partitions()):
             self.delete_partition(p)
         self.clear(disk)
@@ -641,21 +631,25 @@ class FilesystemController(SubiquityController):
     def make_boot_disk(self, new_boot_disk):
         boot_partition = None
         if self.model.bootloader == Bootloader.BIOS:
-            install_dev = self.model.grub_install_device
+            install_dev = self.model._one(type="disk", grub_device=True)
             if install_dev:
+                install_dev.grub_device = False
                 boot_partition = install_dev._potential_boot_partition()
         elif self.model.bootloader == Bootloader.UEFI:
             mount = self.model._mount_for_path("/boot/efi")
             if mount is not None:
                 boot_partition = mount.device.volume
         elif self.model.bootloader == Bootloader.PREP:
-            boot_partition = self.model.grub_install_device
+            boot_partition = self.model._one(
+                type="partition", flag="prep", grub_device=True)
         if boot_partition is not None:
             if boot_partition.preserve:
                 if self.model.bootloader == Bootloader.PREP:
                     boot_partition.wipe = None
+                    boot_partition.grub_device = False
                 elif self.model.bootloader == Bootloader.UEFI:
                     self.delete_mount(boot_partition.fs().mount())
+                    boot_partition.grub_device = False
             else:
                 boot_disk = boot_partition.device
                 full = boot_disk.free_for_partitions == 0
@@ -672,16 +666,17 @@ class FilesystemController(SubiquityController):
                         new_boot_disk.free_for_partitions)
         if new_boot_disk._has_preexisting_partition():
             if self.model.bootloader == Bootloader.BIOS:
-                self.model.grub_install_device = new_boot_disk
+                new_boot_disk.grub_device = True
             elif self.model.bootloader == Bootloader.UEFI:
                 part = new_boot_disk._potential_boot_partition()
+                part.grub_device = True
                 if part.fs() is None:
                     self.model.add_filesystem(part, 'fat32')
                 self.model.add_mount(part.fs(), '/boot/efi')
             elif self.model.bootloader == Bootloader.PREP:
                 part = new_boot_disk._potential_boot_partition()
                 part.wipe = 'zero'
-                self.model.grub_install_device = part
+                part.grub_device = True
         else:
             new_boot_disk.preserve = False
             self._create_boot_partition(new_boot_disk)
@@ -733,8 +728,4 @@ class FilesystemController(SubiquityController):
             }
         if 'swap' in rendered:
             r['swap'] = rendered['swap']
-        if self.model.grub_install_device:
-            r['grub'] = {
-                'install_devices': [self.model.grub_install_device.id],
-                }
         return r

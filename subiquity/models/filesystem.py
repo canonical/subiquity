@@ -25,7 +25,6 @@ import os
 import pathlib
 import platform
 
-from curtin.block import partition_kname
 from curtin import storage_config
 from curtin.util import human2bytes
 
@@ -847,16 +846,16 @@ class Disk(_Device):
     def _can_TOGGLE_BOOT(self):
         bl = self._m.bootloader
         if bl == Bootloader.BIOS:
-            if self._m.grub_install_device is self:
+            if self.grub_device:
                 return False
         elif bl == Bootloader.UEFI:
             m = self._m._mount_for_path('/boot/efi')
             if m and m.device.volume.device is self:
                 return False
         elif bl == Bootloader.PREP:
-            install_dev = self._m.grub_install_device
-            if install_dev is not None and install_dev.device is self:
-                return False
+            for p in self._partitions:
+                if p.flag == "prep" and p.grub_device:
+                    return False
         if self._has_preexisting_partition():
             return self._can_be_boot_disk()
         else:
@@ -886,6 +885,7 @@ class Partition(_Formattable):
     flag = attr.ib(default=None)
     number = attr.ib(default=None)
     preserve = attr.ib(default=False)
+    grub_device = attr.ib(default=False)
 
     @property
     def annotations(self):
@@ -919,7 +919,7 @@ class Partition(_Formattable):
         return _("partition {}").format(self._number)
 
     def available(self):
-        if self.flag in ['bios_grub', 'prep']:
+        if self.flag in ['bios_grub', 'prep'] or self.grub_device:
             return False
         if self._constructed_device is not None:
             return False
@@ -1278,8 +1278,8 @@ class FilesystemModel(object):
         else:
             self._orig_config = []
             self._actions = []
-        self.grub_install_device = None
         self.swap = None
+        self.grub = None
 
     def _make_matchers(self, match):
         matchers = []
@@ -1545,16 +1545,8 @@ class FilesystemModel(object):
             }
         if self.swap is not None:
             config['swap'] = self.swap
-        if self.grub_install_device:
-            dev = self.grub_install_device
-            if dev.type == "partition":
-                disk_kname = dev.device.path[5:]  # chop off "/dev/"
-                devpath = "/dev/" + partition_kname(disk_kname, dev._number)
-            else:
-                devpath = dev.path
-            config['grub'] = {
-                'install_devices': [devpath],
-                }
+        if self.grub is not None:
+            config['grub'] = self.grub
         return config
 
     def load_probe_data(self, probe_data):
@@ -1608,12 +1600,11 @@ class FilesystemModel(object):
         return self._all(type='lvm_volgroup')
 
     def _remove(self, obj):
-        if obj is self.grub_install_device:
-            self.grub_install_device = None
         _remove_backlinks(obj)
         self._actions.remove(obj)
 
-    def add_partition(self, device, size, flag="", wipe=None):
+    def add_partition(self, device, size, flag="", wipe=None,
+                      grub_device=None):
         if size > device.free_for_partitions:
             raise Exception("%s > %s", size, device.free_for_partitions)
         real_size = align_up(size)
@@ -1621,7 +1612,8 @@ class FilesystemModel(object):
         if device._fs is not None:
             raise Exception("%s is already formatted" % (device.label,))
         p = Partition(
-            m=self, device=device, size=real_size, flag=flag, wipe=wipe)
+            m=self, device=device, size=real_size, flag=flag, wipe=wipe,
+            grub_device=grub_device)
         if flag in ("boot", "bios_grub", "prep"):
             device._partitions.insert(0, device._partitions.pop())
         device.ptable = device.ptable_for_new_partition()
@@ -1725,10 +1717,16 @@ class FilesystemModel(object):
         # s390x has no such thing
         if self.bootloader == Bootloader.NONE:
             return False
-        elif self.bootloader in [Bootloader.BIOS, Bootloader.PREP]:
-            return self.grub_install_device is None
+        elif self.bootloader == Bootloader.BIOS:
+            return self._one(type='disk', grub_device=True) is None
         elif self.bootloader == Bootloader.UEFI:
-            return self._mount_for_path('/boot/efi') is None
+            for esp in self._all(type='partition', grub_device=True):
+                if esp.fs() and esp.fs().mount():
+                    if esp.fs().mount().path == '/boot/efi':
+                        return False
+            return True
+        elif self.bootloader == Bootloader.PREP:
+            return self._one(type='partition', grub_device=True) is None
         else:
             raise AssertionError(
                 "unknown bootloader type {}".format(self.bootloader))

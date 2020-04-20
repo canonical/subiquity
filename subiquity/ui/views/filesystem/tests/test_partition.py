@@ -215,6 +215,7 @@ class PartitionViewTests(unittest.TestCase):
         partition = model.add_partition(disk, 512*(2**20), "boot")
         fs = model.add_filesystem(partition, "fat32")
         model._orig_config = model._render_actions()
+        partition.grub_device = True
         disk.preserve = partition.preserve = fs.preserve = True
         model.add_mount(fs, '/boot/efi')
         view, stretchy = make_partition_view(model, disk, partition)
