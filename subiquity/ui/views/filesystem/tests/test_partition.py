@@ -128,6 +128,7 @@ class PartitionViewTests(unittest.TestCase):
         model, disk = make_model_and_disk()
         partition = model.add_partition(disk, 512*(2**20))
         partition.preserve = True
+        partition.number = 1
         fs = model.add_filesystem(partition, "ext4")
         model._orig_config = model._render_actions()
         fs.preserve = True

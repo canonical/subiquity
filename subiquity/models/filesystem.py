@@ -1486,6 +1486,11 @@ class FilesystemModel(object):
                         next_work.append(part)
 
         def can_emit(obj):
+            if obj.type == "partition":
+                ensure_partitions(obj.device)
+                for p in obj.device.partitions():
+                    if p._number < obj._number and p.id not in emitted_ids:
+                        return False
             for dep in dependencies(obj):
                 if dep.id not in emitted_ids:
                     if dep not in work and dep not in next_work:
