@@ -67,13 +67,6 @@ if [ "$(snap managed)" = "true" ]; then
     exit 0
 fi
 
-if grep -q 'snapd_recovery_mode=install' /proc/cmdline; then
-    snap watch --last=install-system
-    snap tasks --last=install-system
-    read REPLY
-    exit 0
-fi
-
 cat /usr/share/subiquity/console-conf-wait
 read REPLY
 exec console-conf "$@"
