@@ -776,32 +776,22 @@ class Disk(_Device):
     def dasd(self):
         return self._m._one(type='dasd', device_id=self.device_id)
 
-    def _potential_boot_partition(self):
-        if self._m.bootloader == Bootloader.NONE:
-            return None
-        if not self._partitions:
-            return None
-        if self._m.bootloader == Bootloader.BIOS:
-            if self._partitions[0].flag == "bios_grub":
-                return self._partitions[0]
-            else:
-                return None
-        flag = {
-            Bootloader.UEFI: "boot",
-            Bootloader.PREP: "prep",
-            }[self._m.bootloader]
-        for p in self._partitions:
-            # XXX should check not extended in the UEFI case too (until we fix
-            # that bug)
-            if p.flag == flag:
-                return p
-        return None
-
     def _can_be_boot_disk(self):
-        if self._m.bootloader == Bootloader.BIOS and self.ptable == "msdos":
-            return True
+        bl = self._m.bootloader
+        if self._has_preexisting_partition():
+            if bl == Bootloader.BIOS:
+                if self.ptable == "msdos":
+                    return True
+                else:
+                    return self._partitions[0].flag == "bios_grub"
+            else:
+                flag = {Bootloader.UEFI: "boot", Bootloader.PREP: "prep"}[bl]
+                for p in self._partitions:
+                    if p.flag == flag:
+                        return True
+                return False
         else:
-            return self._potential_boot_partition() is not None
+            return True
 
     @property
     def supported_actions(self):
@@ -842,24 +832,29 @@ class Disk(_Device):
         self._constructed_device is None)
     _can_REMOVE = property(_generic_can_REMOVE)
 
+    def _is_boot_device(self):
+        bl = self._m.bootloader
+        if bl == Bootloader.NONE:
+            return False
+        elif bl == Bootloader.BIOS:
+            return self.grub_device
+        elif bl in [Bootloader.PREP, Bootloader.UEFI]:
+            for p in self._partitions:
+                if p.grub_device:
+                    return True
+            return False
+
     @property
     def _can_TOGGLE_BOOT(self):
-        bl = self._m.bootloader
-        if bl == Bootloader.BIOS:
-            if self.grub_device:
-                return False
-        elif bl == Bootloader.UEFI:
-            m = self._m._mount_for_path('/boot/efi')
-            if m and m.device.volume.device is self:
-                return False
-        elif bl == Bootloader.PREP:
-            for p in self._partitions:
-                if p.flag == "prep" and p.grub_device:
-                    return False
-        if self._has_preexisting_partition():
-            return self._can_be_boot_disk()
+        if self._is_boot_device():
+            for disk in self._m.all_disks():
+                if disk is not self and disk._is_boot_device():
+                    return True
+            return False
+        elif self._fs is not None or self._constructed_device is not None:
+            return False
         else:
-            return self._fs is None and self._constructed_device is None
+            return self._can_be_boot_disk()
 
     @property
     def ok_for_raid(self):

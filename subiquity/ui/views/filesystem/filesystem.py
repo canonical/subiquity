@@ -283,7 +283,10 @@ class DeviceList(WidgetWrap):
         self.parent.refresh_model_inputs()
 
     def _disk_TOGGLE_BOOT(self, disk):
-        self.parent.controller.make_boot_disk(disk)
+        if disk._is_boot_device():
+            self.parent.controller.remove_boot_disk(disk)
+        else:
+            self.parent.controller.add_boot_disk(disk)
         self.parent.refresh_model_inputs()
 
     _partition_EDIT = _stretchy_shower(
@@ -323,7 +326,13 @@ class DeviceList(WidgetWrap):
             device.ptable_for_new_partition().upper())
 
     def _label_TOGGLE_BOOT(self, action, device):
-        return _("Make Boot Device")
+        if device._is_boot_device():
+            return _("Stop Using As Boot Device")
+        else:
+            for other in self.parent.model.all_disks():
+                if other._is_boot_device():
+                    return _("Add As Another Boot Device")
+            return _("Use As Boot Device")
 
     def _action_menu_for_device(self, device):
         device_actions = []
