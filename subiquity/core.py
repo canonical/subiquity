@@ -216,7 +216,7 @@ class Subiquity(Application):
                       "commands").format(primary_tty))
                 while not os.path.exists(stamp_file):
                     time.sleep(1)
-            else:
+            elif not os.path.exists(stamp_file):
                 self.aio_loop.run_until_complete(
                     self.controllers.Early.run())
                 self.new_event_loop()
