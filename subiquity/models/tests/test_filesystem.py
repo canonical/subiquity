@@ -216,17 +216,50 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertEqual(disk.annotations, [])
 
     def test_partition_annotations(self):
-        model, disk = make_model_and_disk()
-        part = model.add_partition(disk, size=disk.free_for_partitions)
+        model = make_model()
+        part = make_partition(model)
         self.assertEqual(part.annotations, ['new'])
         part.preserve = True
         self.assertEqual(part.annotations, ['existing'])
-        part.flag = "boot"
-        self.assertEqual(part.annotations, ['existing', 'ESP'])
-        part.flag = "prep"
-        self.assertEqual(part.annotations, ['existing', 'PReP'])
-        part.flag = "bios_grub"
-        self.assertEqual(part.annotations, ['existing', 'bios_grub'])
+
+        model = make_model()
+        part = make_partition(model, flag="bios_grub")
+        self.assertEqual(
+            part.annotations, ['new', 'bios_grub'])
+        part.preserve = True
+        self.assertEqual(
+            part.annotations, ['existing', 'unconfigured', 'bios_grub'])
+        part.device.grub_device = True
+        self.assertEqual(
+            part.annotations, ['existing', 'configured', 'bios_grub'])
+
+        model = make_model()
+        part = make_partition(model, flag="boot", grub_device=True)
+        self.assertEqual(part.annotations, ['new', 'backup ESP'])
+        fs = model.add_filesystem(part, fstype="fat32")
+        model.add_mount(fs, "/boot/efi")
+        self.assertEqual(part.annotations, ['new', 'primary ESP'])
+
+        model = make_model()
+        part = make_partition(model, flag="boot", preserve=True)
+        self.assertEqual(part.annotations, ['existing', 'unused ESP'])
+        part.grub_device = True
+        self.assertEqual(part.annotations, ['existing', 'backup ESP'])
+        fs = model.add_filesystem(part, fstype="fat32")
+        model.add_mount(fs, "/boot/efi")
+        self.assertEqual(part.annotations, ['existing', 'primary ESP'])
+
+        model = make_model()
+        part = make_partition(model, flag="prep", grub_device=True)
+        self.assertEqual(part.annotations, ['new', 'PReP'])
+
+        model = make_model()
+        part = make_partition(model, flag="prep", preserve=True)
+        self.assertEqual(
+            part.annotations, ['existing', 'PReP', 'unconfigured'])
+        part.grub_device = True
+        self.assertEqual(
+            part.annotations, ['existing', 'PReP', 'configured'])
 
     def test_vg_default_annotations(self):
         model, disk = make_model_and_disk()

@@ -515,7 +515,7 @@ class _Formattable(ABC):
                 m = fs.mount()
                 if m:
                     r.append(_("mounted at {path}").format(path=m.path))
-                else:
+                elif getattr(self, 'flag', None) != "boot":
                     r.append(_("not mounted"))
             elif fs.preserve:
                 if fs.mount() is None:
@@ -887,9 +887,24 @@ class Partition(_Formattable):
         r = super().annotations
         if self.flag == "prep":
             r.append("PReP")
+            if self.preserve:
+                if self.grub_device:
+                    r.append("configured")
+                else:
+                    r.append("unconfigured")
         elif self.flag == "boot":
-            r.append("ESP")
+            if self.fs() and self.fs().mount():
+                r.append("primary ESP")
+            elif self.grub_device:
+                r.append("backup ESP")
+            else:
+                r.append("unused ESP")
         elif self.flag == "bios_grub":
+            if self.preserve:
+                if self.device.grub_device:
+                    r.append("configured")
+                else:
+                    r.append("unconfigured")
             r.append("bios_grub")
         elif self.flag == "extended":
             r.append("extended")

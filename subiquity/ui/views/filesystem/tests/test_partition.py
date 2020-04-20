@@ -196,14 +196,13 @@ class PartitionViewTests(unittest.TestCase):
         disk.preserve = partition.preserve = fs.preserve = True
         view, stretchy = make_partition_view(model, disk, partition)
 
-        self.assertTrue(stretchy.form.fstype.enabled)
+        self.assertFalse(stretchy.form.fstype.enabled)
         self.assertEqual(stretchy.form.fstype.value, None)
         self.assertFalse(stretchy.form.mount.enabled)
         self.assertEqual(stretchy.form.mount.value, None)
 
         view_helpers.click(stretchy.form.done_btn.base_widget)
         expected_data = {
-            'fstype': None,
             'mount': None,
             'use_swap': False,
             }

@@ -35,6 +35,7 @@ from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.selector import Option, Selector
 from subiquitycore.ui.container import Pile
 from subiquitycore.ui.stretchy import Stretchy
+from subiquitycore.ui.utils import rewrap
 
 from subiquity.models.filesystem import (
     align_up,
@@ -270,34 +271,65 @@ class PartitionForm(Form):
         return r
 
 
-bios_grub_partition_description = _(
-    "Required bootloader partition\n"
-    "\n"
-    "GRUB will be installed onto the target disk's MBR.\n"
-    "\n"
-    "However, on a disk with a GPT partition table, there is not enough space "
-    "after the MBR for GRUB to store its second-stage core.img, so a small "
-    "unformatted partition is needed at the start of the disk. It will not "
-    "contain a filesystem and will not be mounted, and cannot be edited here.")
+bios_grub_partition_description = _("""\
+Bootloader partition
 
-boot_partition_description = _(
-    "Required bootloader partition\n"
-    "\n"
-    'This is the ESP / "EFI system partition" required by UEFI. Grub will be '
-    'installed onto this partition, which must be formatted as fat32.')
+{middle}
 
-boot_partition_description_size = _(
-    ' The only aspect of this partition that can be edited is the size.')
+However, on a disk with a GPT partition table, there is not enough
+space after the MBR for GRUB to store its second-stage core.img, so a
+small unformatted partition is needed at the start of the disk. It
+will not contain a filesystem and will not be mounted, and cannot be
+edited here.
+""")
 
-boot_partition_description_reformat = _(
-    ' You can choose whether to use the existing filesystem on this '
-    'partition or reformat it.')
+unconfigured_bios_grub_partition_middle = _("""\
+If this disk is selected as a boot device, GRUB will be installed onto
+the target disk's MBR.""")
 
-prep_partition_description = _(
-    "Required bootloader partition\n"
-    "\n"
-    'This is the PReP partion which is required on POWER. Grub will be '
-    'installed onto this partition.')
+configured_bios_grub_partition_middle = _("""\
+As this disk has been selected as a boot device, GRUB will be
+installed onto the target disk's MBR.""")
+
+unconfigured_boot_partition_description = _("""\
+Bootloader partition
+
+This is an ESP / "EFI system partition" as required by UEFI. If this
+disk is selected as a boot device, Grub will be installed onto this
+partition, which must be formatted as fat32.
+""")
+
+configured_boot_partition_description = _("""\
+Bootloader partition
+
+This is an ESP / "EFI system partition" as required by UEFI. As this
+disk has been selected as a boot device, Grub will be installed onto
+this partition, which must be formatted as fat32.
+""")
+
+boot_partition_description_size = _("""\
+The only aspect of this partition that can be edited is the size.
+""")
+
+boot_partition_description_reformat = _("""\
+You can choose whether to use the existing filesystem on this
+partition or reformat it.
+""")
+
+unconfigured_prep_partition_description = _("""\
+Required bootloader partition
+
+This is the PReP partion which is required on POWER. If this disk is
+selected as a boot device, Grub will be installed onto this partition.
+""")
+
+configured_prep_partition_description = _("""\
+Required bootloader partition
+
+This is the PReP partion which is required on POWER. As this disk has
+been selected as a boot device, Grub will be installed onto this
+partition.
+""")
 
 
 def initial_data_for_fs(fs):
@@ -335,9 +367,11 @@ class PartitionStretchy(Stretchy):
         else:
             lvm_names = None
         if self.partition:
-            if self.partition.flag in ["bios_grub", "prep"]:
+            if partition.flag in ["bios_grub", "prep"]:
                 label = None
                 initial['mount'] = None
+            elif partition.flag == "boot" and not partition.grub_device:
+                label = None
             else:
                 label = _("Save")
             initial['size'] = humanize_size(self.partition.size)
@@ -397,6 +431,8 @@ class PartitionStretchy(Stretchy):
                         self.form.fstype.widget.index = 0
                     else:
                         self.form.fstype.widget.index = 2
+                    if not self.partition.grub_device:
+                        self.form.fstype.enabled = False
                     self.form.mount.enabled = False
                 else:
                     opts = [Option(("fat32", True))]
@@ -419,24 +455,37 @@ class PartitionStretchy(Stretchy):
         focus_index = 0
         if partition is not None:
             if self.partition.flag == "boot":
-                desc = boot_partition_description
-                if self.partition.preserve:
-                    desc += boot_partition_description_reformat
+                if self.partition.grub_device:
+                    desc = _(configured_boot_partition_description)
+                    if self.partition.preserve:
+                        desc += _(boot_partition_description_reformat)
+                    else:
+                        desc += _(boot_partition_description_size)
                 else:
-                    desc += boot_partition_description_size
+                    focus_index = 2
+                    desc = _(unconfigured_boot_partition_description)
                 rows.extend([
-                    Text(_(desc)),
+                    Text(rewrap(desc)),
                     Text(""),
                 ])
             elif self.partition.flag == "bios_grub":
+                if self.partition.device.grub_device:
+                    middle = _(configured_bios_grub_partition_middle)
+                else:
+                    middle = _(unconfigured_bios_grub_partition_middle)
+                desc = _(bios_grub_partition_description).format(middle=middle)
                 rows.extend([
-                    Text(_(bios_grub_partition_description)),
+                    Text(rewrap(desc)),
                     Text(""),
                 ])
                 focus_index = 2
             elif self.partition.flag == "prep":
+                if self.partition.grub_device:
+                    desc = _(configured_prep_partition_description)
+                else:
+                    desc = _(unconfigured_prep_partition_description)
                 rows.extend([
-                    Text(_(prep_partition_description)),
+                    Text(rewrap(desc)),
                     Text(""),
                 ])
                 focus_index = 2
