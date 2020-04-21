@@ -424,7 +424,7 @@ def get_installer_password(dry_run=False):
     with fp:
         for line in fp:
             if line.startswith("installer:"):
-                return line[len("installer:"):]
+                return line[len("installer:"):].strip()
 
     return None
 
