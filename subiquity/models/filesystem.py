@@ -25,7 +25,6 @@ import os
 import pathlib
 import platform
 
-from curtin.block import partition_kname
 from curtin import storage_config
 from curtin.util import human2bytes
 
@@ -409,7 +408,7 @@ class DeviceAction(enum.Enum):
     FORMAT = _("Format")
     REMOVE = _("Remove from RAID/LVM")
     DELETE = _("Delete")
-    MAKE_BOOT = _("Make Boot Device")
+    TOGGLE_BOOT = _("Make Boot Device")
 
 
 def _generic_can_EDIT(obj):
@@ -516,7 +515,7 @@ class _Formattable(ABC):
                 m = fs.mount()
                 if m:
                     r.append(_("mounted at {path}").format(path=m.path))
-                else:
+                elif getattr(self, 'flag', None) != "boot":
                     r.append(_("not mounted"))
             elif fs.preserve:
                 if fs.mount() is None:
@@ -777,32 +776,22 @@ class Disk(_Device):
     def dasd(self):
         return self._m._one(type='dasd', device_id=self.device_id)
 
-    def _potential_boot_partition(self):
-        if self._m.bootloader == Bootloader.NONE:
-            return None
-        if not self._partitions:
-            return None
-        if self._m.bootloader == Bootloader.BIOS:
-            if self._partitions[0].flag == "bios_grub":
-                return self._partitions[0]
-            else:
-                return None
-        flag = {
-            Bootloader.UEFI: "boot",
-            Bootloader.PREP: "prep",
-            }[self._m.bootloader]
-        for p in self._partitions:
-            # XXX should check not extended in the UEFI case too (until we fix
-            # that bug)
-            if p.flag == flag:
-                return p
-        return None
-
     def _can_be_boot_disk(self):
-        if self._m.bootloader == Bootloader.BIOS and self.ptable == "msdos":
-            return True
+        bl = self._m.bootloader
+        if self._has_preexisting_partition():
+            if bl == Bootloader.BIOS:
+                if self.ptable == "msdos":
+                    return True
+                else:
+                    return self._partitions[0].flag == "bios_grub"
+            else:
+                flag = {Bootloader.UEFI: "boot", Bootloader.PREP: "prep"}[bl]
+                for p in self._partitions:
+                    if p.flag == flag:
+                        return True
+                return False
         else:
-            return self._potential_boot_partition() is not None
+            return True
 
     @property
     def supported_actions(self):
@@ -814,7 +803,7 @@ class Disk(_Device):
             DeviceAction.REMOVE,
             ]
         if self._m.bootloader != Bootloader.NONE:
-            actions.append(DeviceAction.MAKE_BOOT)
+            actions.append(DeviceAction.TOGGLE_BOOT)
         return actions
 
     _can_INFO = True
@@ -843,24 +832,29 @@ class Disk(_Device):
         self._constructed_device is None)
     _can_REMOVE = property(_generic_can_REMOVE)
 
-    @property
-    def _can_MAKE_BOOT(self):
+    def _is_boot_device(self):
         bl = self._m.bootloader
-        if bl == Bootloader.BIOS:
-            if self._m.grub_install_device is self:
-                return False
-        elif bl == Bootloader.UEFI:
-            m = self._m._mount_for_path('/boot/efi')
-            if m and m.device.volume.device is self:
-                return False
-        elif bl == Bootloader.PREP:
-            install_dev = self._m.grub_install_device
-            if install_dev is not None and install_dev.device is self:
-                return False
-        if self._has_preexisting_partition():
-            return self._can_be_boot_disk()
+        if bl == Bootloader.NONE:
+            return False
+        elif bl == Bootloader.BIOS:
+            return self.grub_device
+        elif bl in [Bootloader.PREP, Bootloader.UEFI]:
+            for p in self._partitions:
+                if p.grub_device:
+                    return True
+            return False
+
+    @property
+    def _can_TOGGLE_BOOT(self):
+        if self._is_boot_device():
+            for disk in self._m.all_disks():
+                if disk is not self and disk._is_boot_device():
+                    return True
+            return False
+        elif self._fs is not None or self._constructed_device is not None:
+            return False
         else:
-            return self._fs is None and self._constructed_device is None
+            return self._can_be_boot_disk()
 
     @property
     def ok_for_raid(self):
@@ -886,15 +880,31 @@ class Partition(_Formattable):
     flag = attr.ib(default=None)
     number = attr.ib(default=None)
     preserve = attr.ib(default=False)
+    grub_device = attr.ib(default=False)
 
     @property
     def annotations(self):
         r = super().annotations
         if self.flag == "prep":
             r.append("PReP")
+            if self.preserve:
+                if self.grub_device:
+                    r.append("configured")
+                else:
+                    r.append("unconfigured")
         elif self.flag == "boot":
-            r.append("ESP")
+            if self.fs() and self.fs().mount():
+                r.append("primary ESP")
+            elif self.grub_device:
+                r.append("backup ESP")
+            else:
+                r.append("unused ESP")
         elif self.flag == "bios_grub":
+            if self.preserve:
+                if self.device.grub_device:
+                    r.append("configured")
+                else:
+                    r.append("unconfigured")
             r.append("bios_grub")
         elif self.flag == "extended":
             r.append("extended")
@@ -919,7 +929,7 @@ class Partition(_Formattable):
         return _("partition {}").format(self._number)
 
     def available(self):
-        if self.flag in ['bios_grub', 'prep']:
+        if self.flag in ['bios_grub', 'prep'] or self.grub_device:
             return False
         if self._constructed_device is not None:
             return False
@@ -1278,8 +1288,8 @@ class FilesystemModel(object):
         else:
             self._orig_config = []
             self._actions = []
-        self.grub_install_device = None
         self.swap = None
+        self.grub = None
 
     def _make_matchers(self, match):
         matchers = []
@@ -1545,16 +1555,8 @@ class FilesystemModel(object):
             }
         if self.swap is not None:
             config['swap'] = self.swap
-        if self.grub_install_device:
-            dev = self.grub_install_device
-            if dev.type == "partition":
-                disk_kname = dev.device.path[5:]  # chop off "/dev/"
-                devpath = "/dev/" + partition_kname(disk_kname, dev._number)
-            else:
-                devpath = dev.path
-            config['grub'] = {
-                'install_devices': [devpath],
-                }
+        if self.grub is not None:
+            config['grub'] = self.grub
         return config
 
     def load_probe_data(self, probe_data):
@@ -1608,12 +1610,11 @@ class FilesystemModel(object):
         return self._all(type='lvm_volgroup')
 
     def _remove(self, obj):
-        if obj is self.grub_install_device:
-            self.grub_install_device = None
         _remove_backlinks(obj)
         self._actions.remove(obj)
 
-    def add_partition(self, device, size, flag="", wipe=None):
+    def add_partition(self, device, size, flag="", wipe=None,
+                      grub_device=None):
         if size > device.free_for_partitions:
             raise Exception("%s > %s", size, device.free_for_partitions)
         real_size = align_up(size)
@@ -1621,7 +1622,8 @@ class FilesystemModel(object):
         if device._fs is not None:
             raise Exception("%s is already formatted" % (device.label,))
         p = Partition(
-            m=self, device=device, size=real_size, flag=flag, wipe=wipe)
+            m=self, device=device, size=real_size, flag=flag, wipe=wipe,
+            grub_device=grub_device)
         if flag in ("boot", "bios_grub", "prep"):
             device._partitions.insert(0, device._partitions.pop())
         device.ptable = device.ptable_for_new_partition()
@@ -1725,10 +1727,16 @@ class FilesystemModel(object):
         # s390x has no such thing
         if self.bootloader == Bootloader.NONE:
             return False
-        elif self.bootloader in [Bootloader.BIOS, Bootloader.PREP]:
-            return self.grub_install_device is None
+        elif self.bootloader == Bootloader.BIOS:
+            return self._one(type='disk', grub_device=True) is None
         elif self.bootloader == Bootloader.UEFI:
-            return self._mount_for_path('/boot/efi') is None
+            for esp in self._all(type='partition', grub_device=True):
+                if esp.fs() and esp.fs().mount():
+                    if esp.fs().mount().path == '/boot/efi':
+                        return False
+            return True
+        elif self.bootloader == Bootloader.PREP:
+            return self._one(type='partition', grub_device=True) is None
         else:
             raise AssertionError(
                 "unknown bootloader type {}".format(self.bootloader))

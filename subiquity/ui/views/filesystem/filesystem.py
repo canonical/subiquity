@@ -61,6 +61,7 @@ from subiquitycore.ui.utils import (
 from subiquitycore.view import BaseView
 
 from subiquity.models.filesystem import (
+    Bootloader,
     DeviceAction,
     humanize_size,
     )
@@ -282,8 +283,11 @@ class DeviceList(WidgetWrap):
         disk._constructed_device = None
         self.parent.refresh_model_inputs()
 
-    def _disk_MAKE_BOOT(self, disk):
-        self.parent.controller.make_boot_disk(disk)
+    def _disk_TOGGLE_BOOT(self, disk):
+        if disk._is_boot_device():
+            self.parent.controller.remove_boot_disk(disk)
+        else:
+            self.parent.controller.add_boot_disk(disk)
         self.parent.refresh_model_inputs()
 
     _partition_EDIT = _stretchy_shower(
@@ -311,16 +315,33 @@ class DeviceList(WidgetWrap):
         log.debug('_action %s %s', action, device.id)
         meth(device)
 
+    def _label_REMOVE(self, action, device):
+        cd = device.constructed_device()
+        if cd:
+            return _("Remove from {}").format(cd.desc())
+        else:
+            return _(action.value)
+
+    def _label_PARTITION(self, action, device):
+        return _("Add {} Partition").format(
+            device.ptable_for_new_partition().upper())
+
+    def _label_TOGGLE_BOOT(self, action, device):
+        if device._is_boot_device():
+            return _("Stop Using As Boot Device")
+        else:
+            if self.parent.model.bootloader != Bootloader.PREP:
+                for other in self.parent.model.all_disks():
+                    if other._is_boot_device():
+                        return _("Add As Another Boot Device")
+            return _("Use As Boot Device")
+
     def _action_menu_for_device(self, device):
         device_actions = []
         for action in device.supported_actions:
-            label = _(action.value)
-            if action == DeviceAction.REMOVE and device.constructed_device():
-                cd = device.constructed_device()
-                label = _("Remove from {}").format(cd.desc())
-            if action == DeviceAction.PARTITION:
-                label = _("Add {} Partition").format(
-                    device.ptable_for_new_partition().upper())
+            label_meth = getattr(
+                self, '_label_{}'.format(action.name), lambda a, d: _(a.value))
+            label = label_meth(action, device)
             enabled, whynot = device.action_possible(action)
             if whynot:
                 assert not enabled
