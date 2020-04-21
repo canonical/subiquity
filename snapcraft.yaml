@@ -25,6 +25,10 @@ apps:
 
 parts:
   curtin:
+    override-pull: |
+      snapcraftctl pull
+      PACKAGED_VERSION="$(git describe --long --abbrev=9 --match=[0-9][0-9]*)"
+      sed -e "s,@@PACKAGED_VERSION@@,$PACKAGED_VERSION,g" -i curtin/version.py
     plugin: python
     source-type: git
     source: git://git.launchpad.net/curtin
