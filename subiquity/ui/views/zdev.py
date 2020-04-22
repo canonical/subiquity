@@ -33,12 +33,11 @@ from subiquitycore.ui.buttons import (
     done_btn,
     )
 from subiquitycore.ui.container import (
-    ListBox,
     WidgetWrap,
     )
 from subiquitycore.ui.table import (
     ColSpec,
-    TablePile,
+    TableListBox,
     TableRow,
     )
 from subiquitycore.ui.utils import (
@@ -55,7 +54,7 @@ class ZdevList(WidgetWrap):
 
     def __init__(self, parent):
         self.parent = parent
-        self.table = TablePile([], spacing=2, colspecs={
+        self.table = TableListBox([], spacing=2, colspecs={
             0: ColSpec(rpad=2),
             1: ColSpec(rpad=2),
             2: ColSpec(rpad=2),
@@ -118,11 +117,12 @@ class ZdevList(WidgetWrap):
                 focus_map={
                     None: 'menu_button focus',
                     'info_minor': 'menu_button focus',
-                })
+                },
+                cursor_x=0)
             rows.append(row)
         self.table.set_contents(rows)
-        if self.table._w.focus_position >= len(rows):
-            self.table._w.focus_position = len(rows) - 1
+        if self.table._w.base_widget.focus_position >= len(rows):
+            self.table._w.base_widget.focus_position = len(rows) - 1
 
 
 class ZdevView(BaseView):
@@ -133,17 +133,14 @@ class ZdevView(BaseView):
         self.controller = controller
         self.zdev_list = ZdevList(self)
 
-        body = [
-            self.zdev_list,
-            Text(""),
-            ]
-
-        self.lb = ListBox(body, always_scroll=True)
         frame = screen(
-            self.lb, self._build_buttons(),
+            self.zdev_list, self._build_buttons(),
             focus_buttons=False)
         super().__init__(frame)
         self.refresh_model_inputs()
+        # Prevent urwid from putting the first focused widget at the
+        # very top of the display (obscuring the headings)
+        self.zdev_list._w._w.base_widget.set_focus_valign("bottom")
 
     def _build_buttons(self):
         return [
