@@ -32,7 +32,7 @@ parts:
     plugin: python
     source-type: git
     source: https://git.launchpad.net/~ubuntu-core-dev/curtin
-    source-commit: 8ef4aba5c2b5d2041d4b7eebc3fdfe8062392371
+    source-commit: a6cd01f01fccb61e89f37a2cdd11e9c103fdff65
     requirements: [requirements.txt]
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
