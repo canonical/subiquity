@@ -235,9 +235,6 @@ class Subiquity(Application):
                 if not self.interactive() and not self.opts.dry_run:
                     open('/run/casper-no-prompt', 'w').close()
             super().run()
-            if self.controllers.Late.cmds:
-                self.new_event_loop()
-                self.aio_loop.run_until_complete(self.controllers.Late.run())
         except Exception:
             print("generating crash report")
             try:

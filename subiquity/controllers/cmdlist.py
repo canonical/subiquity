@@ -53,3 +53,6 @@ class EarlyController(CmdListController):
 class LateController(CmdListController):
 
     autoinstall_key = 'late-commands'
+
+    async def apply_autoinstall_config(self):
+        await self.run()

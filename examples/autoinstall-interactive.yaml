@@ -4,9 +4,9 @@ early-commands:
   - sleep 1
   - echo a
 late-commands:
-  - echo a
+  - echo late
   - sleep 1
-  - echo a
+  - echo late
 keyboard:
   layout: gb
 interactive-sections:
