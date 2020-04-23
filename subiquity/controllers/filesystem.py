@@ -26,9 +26,11 @@ from subiquitycore.async_helpers import (
     schedule_task,
     SingleInstanceTask,
     )
+from subiquitycore.lsb_release import lsb_release
 from subiquitycore.utils import (
     run_command,
     )
+
 
 from subiquity.controller import SubiquityController
 from subiquity.controllers.error import ErrorReportKind
@@ -80,6 +82,11 @@ class FilesystemController(SubiquityController):
             self._probe_once, propagate_errors=False)
         self._probe_task = SingleInstanceTask(
             self._probe, propagate_errors=False)
+        if self.model.bootloader == Bootloader.PREP:
+            self.supports_resilient_boot = False
+        else:
+            release = lsb_release()['release']
+            self.supports_resilient_boot = release >= '20.04'
 
     def load_autoinstall_data(self, data):
         log.debug("load_autoinstall_data %s", data)
@@ -679,7 +686,7 @@ class FilesystemController(SubiquityController):
 
     def add_boot_disk(self, new_boot_disk):
         bootloader = self.model.bootloader
-        if bootloader == Bootloader.PREP:
+        if not self.supports_resilient_boot:
             for disk in self.model.all_disks():
                 if disk._is_boot_device():
                     self.remove_boot_disk(disk)
