@@ -18,10 +18,8 @@ import contextlib
 import datetime
 import logging
 import os
-import platform
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import traceback
@@ -43,7 +41,6 @@ from subiquitycore.context import Status
 from subiquitycore.utils import (
     arun_command,
     astart_command,
-    run_command,
     )
 
 from subiquity.controller import SubiquityController
@@ -322,18 +319,13 @@ class InstallProgressController(SubiquityController):
                 await self.run_unattended_upgrades(context)
                 self.progress_view.update_done()
 
-            await self.copy_logs_to_target(context)
         except Exception:
             self.curtin_error()
             if not self.interactive():
                 raise
 
     async def move_on(self):
-        await asyncio.wait(
-            {self.reboot_clicked.wait(), self.install_task})
-        self.app.reboot_on_exit = True
-        if not self.opts.dry_run and platform.machine() == 's390x':
-            run_command(["chreipl", "/target/boot"])
+        await self.install_task
         self.app.next_screen()
 
     async def drain_curtin_events(self, context):
@@ -441,25 +433,6 @@ class InstallProgressController(SubiquityController):
                     'unattended-upgrade-shutdown',
                     '--stop-only',
                     ]), check=True)
-
-    @install_step("copying logs to installed system")
-    async def copy_logs_to_target(self, context):
-        if self.opts.dry_run and 'copy-logs-fail' in self.app.debug_flags:
-            raise PermissionError()
-        target_logs = self.tpath('var/log/installer')
-        if self.opts.dry_run:
-            os.makedirs(target_logs, exist_ok=True)
-        else:
-            await arun_command(
-                ['cp', '-aT', '/var/log/installer', target_logs])
-        journal_txt = os.path.join(target_logs, 'installer-journal.txt')
-        try:
-            with open(journal_txt, 'w') as output:
-                await arun_command(
-                    ['journalctl', '-b'],
-                    stdout=output, stderr=subprocess.STDOUT)
-        except Exception:
-            log.exception("saving journal failed")
 
     async def _click_reboot(self):
         if self.unattended_upgrades_ctx is not None:

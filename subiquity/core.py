@@ -35,7 +35,6 @@ from subiquitycore.async_helpers import (
     )
 from subiquitycore.controller import Skip
 from subiquitycore.core import Application
-from subiquitycore.utils import run_command
 
 from subiquity.controllers.error import (
     ErrorReportKind,
@@ -116,6 +115,7 @@ class Subiquity(Application):
         "SnapList",
         "InstallProgress",
         "Late",
+        "Reboot",
     ]
 
     def __init__(self, opts, block_log_dir):
@@ -151,13 +151,6 @@ class Subiquity(Application):
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
         self.install_confirmed = False
-        self.reboot_on_exit = False
-
-    def exit(self):
-        if self.reboot_on_exit and not self.opts.dry_run:
-            run_command(["/sbin/reboot"])
-        else:
-            super().exit()
 
     def restart(self, remove_last_screen=True):
         if remove_last_screen:
@@ -258,6 +251,8 @@ class Subiquity(Application):
             return False
         InstallProgress = getattr(self.controllers, "InstallProgress", None)
         if InstallProgress is None:
+            return False
+        if context.get('hidden', False):
             return False
         controller = context.get('controller')
         if controller is None or controller.interactive():
