@@ -123,7 +123,6 @@ parts:
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
-    stage-packages: [libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
     source: https://github.com/CanonicalLtd/probert.git
     source-type: git
     source-commit: 4793e16ea1c397c44e115dc90eafa60df0947d5c
