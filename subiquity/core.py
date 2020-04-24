@@ -37,7 +37,6 @@ from subiquitycore.controller import Skip
 from subiquitycore.core import Application
 from subiquitycore.utils import run_command
 
-from subiquity.context import SubiquityContext
 from subiquity.controllers.error import (
     ErrorReportKind,
     )
@@ -86,8 +85,6 @@ class Subiquity(Application):
     from subiquitycore.palette import COLORS, STYLES, STYLES_MONO
 
     project = "subiquity"
-
-    context_cls = SubiquityContext
 
     def make_model(self):
         root = '/'
@@ -256,6 +253,17 @@ class Subiquity(Application):
                 traceback.print_exc()
                 signal.pause()
 
+    def _push_to_progress(self, context):
+        if not self.interactive():
+            return False
+        InstallProgress = getattr(self.controllers, "InstallProgress", None)
+        if InstallProgress is None:
+            return False
+        controller = context.get('controller')
+        if controller is None or controller.interactive():
+            return False
+        return True
+
     def report_start_event(self, context, description):
         # report_start_event gets called when the Reporting controller
         # is being loaded...
@@ -263,25 +271,21 @@ class Subiquity(Application):
         if Reporting is not None:
             Reporting.report_start_event(
                 context.full_name(), description, context.level)
-        InstallProgress = getattr(self.controllers, "InstallProgress", None)
-        if InstallProgress is not None and context.controller is not None:
-            if self.interactive() and not context.controller.interactive():
-                msg = context.full_name()
-                if description:
-                    msg += ': ' + description
-                self.controllers.InstallProgress.progress_view.event_start(
-                    context, msg)
+        if self._push_to_progress(context):
+            msg = context.full_name()
+            if description:
+                msg += ': ' + description
+            self.controllers.InstallProgress.progress_view.event_start(
+                context, msg)
 
     def report_finish_event(self, context, description, status):
         Reporting = getattr(self.controllers, "Reporting", None)
         if Reporting is not None:
             Reporting.report_finish_event(
                 context.full_name(), description, status, context.level)
-        InstallProgress = getattr(self.controllers, "InstallProgress", None)
-        if InstallProgress is not None and context.controller is not None:
-            if self.interactive() and not context.controller.interactive():
-                self.controllers.InstallProgress.progress_view.event_finish(
-                    context)
+        if self._push_to_progress(context):
+            self.controllers.InstallProgress.progress_view.event_finish(
+                context)
 
     def confirm_install(self):
         self.install_confirmed = True

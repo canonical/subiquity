@@ -54,6 +54,7 @@ class Context:
         if childlevel is None:
             childlevel = level
         self.childlevel = childlevel
+        self.data = {}
 
     @classmethod
     def new(cls, app):
@@ -97,3 +98,14 @@ class Context:
             result = Status.SUCCESS
             description = None
         self.exit(description, result)
+
+    def set(self, key, value):
+        self.data[key] = value
+
+    def get(self, key, default=None):
+        c = self
+        while c is not None:
+            if key in c.data:
+                return c.data[key]
+            c = c.parent
+        return default
