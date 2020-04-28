@@ -752,12 +752,9 @@ class FilesystemController(SubiquityController):
             spec['password'] = lvm_options['luks_options']['password']
         # create volume group on partition
         vg = self.create_volgroup(spec)
-        target_size = dehumanize_size("4G")
-        if target_size > vg.free_for_partitions:
-            target_size = int(vg.size*0.8)
         self.create_logical_volume(
             vg=vg, spec=dict(
-                size=target_size,
+                size=vg.size*8//10,
                 name="ubuntu-lv",
                 fstype="ext4",
                 mount="/",
