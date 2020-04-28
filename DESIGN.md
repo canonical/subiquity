@@ -27,9 +27,11 @@
     3. Make the common case as easy as possible by doing things like thinking
        about which widget should be highlighted when a screen is first shown.
 
-4. Subiquity is functional in an 80x24 terminal.  It doesn't matter if it falls
-   apart in a smaller terminal and obviously you can get more information on a
-   larger terminal at once, but it needs to work in 80x24.
+4. Subiquity is functional in an 80x24 terminal.  It doesn't matter if it
+   becomes unusable in a smaller terminal (although it shouldn't crash, as we
+   support people logging in via ssh and they can resize their terminal
+   however they like) and obviously you can get more information on a larger
+   terminal at once, but it needs to work in 80x24.
 
 ### urwid specific ranting
 
