@@ -52,10 +52,29 @@ class Lockfile:
 
     def __init__(self, path):
         self.path = path
-        self.fp = open(path, 'w')
+        self.fp = open(path, 'a+')
+
+    def read_content(self):
+        self.fp.seek(0)
+        return self.fp.read()
+
+    def set_content(self, content):
+        self.fp.seek(0)
+        self.fp.truncate()
+        self.fp.write(content)
+        self.fp.flush()
 
     def exclusive(self):
         return _LockContext(self, fcntl.LOCK_EX)
 
     def shared(self):
         return _LockContext(self, fcntl.LOCK_SH)
+
+    def is_exclusively_locked(self):
+        try:
+            fcntl.flock(self.fp, fcntl.LOCK_SH | fcntl.LOCK_NB)
+        except OSError:
+            return True
+        else:
+            fcntl.flock(self.fp, fcntl.LOCK_UN)
+            return False

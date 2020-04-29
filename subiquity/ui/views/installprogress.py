@@ -33,6 +33,7 @@ from subiquitycore.ui.utils import button_pile, Padding, rewrap
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.width import widget_width
 
+
 log = logging.getLogger("subiquity.views.installprogress")
 
 
@@ -227,3 +228,36 @@ class InstallConfirmation(Stretchy):
         self.parent.remove_overlay()
         if isinstance(self.parent, ProgressView):
             self.parent.show_continue()
+
+
+running_text = _("""\
+The installer running on {tty} is currently installing the system.
+
+You can wait for this to complete or switch to a shell.
+""")
+
+
+class InstallRunning(Stretchy):
+    def __init__(self, parent, app, tty):
+        self.parent = parent
+        self.app = app
+        self.btn = Toggleable(other_btn(
+                _("Switch to a shell"), on_press=self._debug_shell))
+        self.btn.enabled = False
+        self.app.aio_loop.call_later(0.5, self._enable)
+        widgets = [
+            Text(rewrap(_(running_text).format(tty=tty))),
+            Text(''),
+            button_pile([self.btn]),
+            ]
+        super().__init__(
+            _(""),
+            widgets,
+            stretchy_index=0,
+            focus_index=2)
+
+    def _enable(self):
+        self.btn.enabled = True
+
+    def _debug_shell(self, sender):
+        self.app.debug_shell()
