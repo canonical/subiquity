@@ -18,7 +18,7 @@ validate () {
 clean () {
     rm -f .subiquity/subiquity-curtin-install.conf
     rm -f .subiquity/subiquity-debug.log
-    rm -f .subiquity/run/subiquity/updating
+    rm -rf .subiquity/run/
 }
 
 export SUBIQUITY_REPLAY_TIMESCALE=100
