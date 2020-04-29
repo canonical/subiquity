@@ -25,26 +25,60 @@ from subiquity.controllers.error import ErrorReportKind
 
 log = logging.getLogger("subiquity.controllers.network")
 
+MATCH = {
+    'type': 'object',
+    'properties': {
+        'name': {'type': 'string'},
+        'macaddress': {'type': 'string'},
+        'driver': {'type': 'string'},
+        },
+    'additionalProperties': False,
+    }
+
+NETPLAN_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'version': {
+            'type': 'integer',
+            'minimum': 2,
+            'maximum': 2,
+            },
+        'ethernets': {
+            'type': 'object',
+            'properties': {
+                'match': MATCH,
+                }
+            },
+        'wifis': {
+            'type': 'object',
+            'properties': {
+                'match': MATCH,
+                }
+            },
+        'bridges': {'type': 'object'},
+        'bonds': {'type': 'object'},
+        'tunnels': {'type': 'object'},
+        'vlans': {'type': 'object'},
+        },
+    'required': ['version'],
+    }
+
 
 class NetworkController(NetworkController, SubiquityController):
 
     ai_data = None
     autoinstall_key = "network"
     autoinstall_schema = {
-        'type': 'object',
-        'properties': {
-            'version': {
-                'type': 'integer',
-                'minimum': 2,
-                'maximum': 2,
-                },
-            'ethernets': {'type': 'object'},
-            'wifis': {'type': 'object'},
-            'bridges': {'type': 'object'},
-            'bonds': {'type': 'object'},
-            'tunnels': {'type': 'object'},
-            'vlans': {'type': 'object'},
+        'oneOf': [
+            NETPLAN_SCHEMA,
+            {
+                'type': 'object',
+                'properties': {
+                    'network': NETPLAN_SCHEMA,
+                    },
+                'required': ['network'],
             },
+            ],
         }
 
     def __init__(self, app):
@@ -52,7 +86,19 @@ class NetworkController(NetworkController, SubiquityController):
         app.note_file_for_apport("NetplanConfig", self.netplan_path)
 
     def load_autoinstall_data(self, data):
-        self.ai_data = data
+        if data is not None:
+            self.ai_data = data
+            # The version included with 20.04 accidentally required
+            # that you put:
+            #
+            # network:
+            #   network:
+            #     version: 2
+            #
+            # in your autoinstall config. Continue to support that for
+            # backwards compatibility.
+            if 'network' in self.ai_data:
+                self.ai_data = self.ai_data['network']
 
     def start(self):
         if self.ai_data is not None:
@@ -80,7 +126,7 @@ class NetworkController(NetworkController, SubiquityController):
                 # If we're interactive, we want later renders to
                 # incorporate any changes from the UI.
                 self.ai_data = None
-            return r
+            return {'network': r}
         return super().render_config()
 
     async def _apply_config(self, silent):
@@ -96,6 +142,8 @@ class NetworkController(NetworkController, SubiquityController):
             self.app.make_apport_report(
                 ErrorReportKind.NETWORK_FAIL, "applying network",
                 interrupt=True)
+            if not self.interactive():
+                raise
 
     def done(self):
         self.configured()

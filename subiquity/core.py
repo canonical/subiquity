@@ -158,7 +158,9 @@ class Subiquity(Application):
         self.urwid_loop.screen.stop()
         cmdline = ['snap', 'run', 'subiquity']
         if self.opts.dry_run:
-            cmdline = [sys.executable] + sys.argv
+            cmdline = [
+                sys.executable, '-m', 'subiquity.cmd.tui',
+                ] + sys.argv[1:]
         os.execvp(cmdline[0], cmdline)
 
     def make_screen(self, input=None, output=None):
@@ -460,7 +462,7 @@ class Subiquity(Application):
 
         report.add_info(_bg_attach_hook, wait)
 
-        if interrupt:
+        if interrupt and self.interactive():
             self.show_error_report(report)
 
         # In the fullness of time we should do the signature thing here.
