@@ -205,8 +205,7 @@ class RefreshController(SubiquityController):
             return CheckState.UNAVAILABLE
 
     async def start_update(self):
-        update_marker = os.path.join(self.app.state_dir, 'updating')
-        open(update_marker, 'w').close()
+        open(self.app.state_path('updating'), 'w').close()
         with self.context.child("starting_update") as context:
             change = await self.app.snapd.post(
                 'v2/snaps/{}'.format(self.snap_name),

@@ -201,7 +201,7 @@ class Subiquity(Application):
             jsonschema.validate(self.autoinstall_config, self.base_schema)
         self.controllers.load("Early")
         if self.controllers.Early.cmds:
-            stamp_file = os.path.join(self.state_dir, "early-commands")
+            stamp_file = self.state_path("early-commands")
             if our_tty != primary_tty:
                 print(
                     _("waiting for installer running on {} to run early "
