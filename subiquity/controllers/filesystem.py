@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import fcntl
 import json
 import logging
 import os
@@ -106,6 +107,7 @@ class FilesystemController(SubiquityController):
         self.stop_listening_udev()
         await self._start_task
         await self._probe_task.wait()
+        self.convert_autoinstall_config()
         if not self.model.is_root_mounted():
             raise Exception("autoinstall config did not mount root")
         if self.model.needs_bootloader_partition():
@@ -132,36 +134,40 @@ class FilesystemController(SubiquityController):
 
     async def _probe(self):
         with self.context.child("_probe") as context:
-            self._crash_reports = {}
-            if isinstance(self.ui.body, ProbingFailed):
-                self.ui.set_body(SlowProbing(self))
-                schedule_task(self._wait_for_probing())
-            for (restricted, kind) in [
-                    (False, ErrorReportKind.BLOCK_PROBE_FAIL),
-                    (True,  ErrorReportKind.DISK_PROBE_FAIL),
-                    ]:
-                try:
-                    desc = "restricted={}".format(restricted)
-                    with context.child("probe_once", desc):
-                        await self._probe_once_task.start(restricted)
-                        # We wait on the task directly here, not
-                        # self._probe_once_task.wait as if _probe_once_task
-                        # gets cancelled, we should be cancelled too.
-                        await asyncio.wait_for(
-                            self._probe_once_task.task, 15.0)
-                except asyncio.CancelledError:
-                    # asyncio.CancelledError is a subclass of Exception in
-                    # Python 3.6 (sadface)
-                    raise
-                except Exception:
-                    block_discover_log.exception(
-                        "block probing failed restricted=%s", restricted)
-                    report = self.app.make_apport_report(
-                        kind, "block probing", interrupt=False)
-                    self._crash_reports[restricted] = report
-                    continue
-                break
-        self.convert_autoinstall_config()
+            await run_in_thread(
+                fcntl.flock, self.app.install_lock_file, fcntl.LOCK_SH)
+            try:
+                self._crash_reports = {}
+                if isinstance(self.ui.body, ProbingFailed):
+                    self.ui.set_body(SlowProbing(self))
+                    schedule_task(self._wait_for_probing())
+                for (restricted, kind) in [
+                        (False, ErrorReportKind.BLOCK_PROBE_FAIL),
+                        (True,  ErrorReportKind.DISK_PROBE_FAIL),
+                        ]:
+                    try:
+                        desc = "restricted={}".format(restricted)
+                        with context.child("probe_once", desc):
+                            await self._probe_once_task.start(restricted)
+                            # We wait on the task directly here, not
+                            # self._probe_once_task.wait as if _probe_once_task
+                            # gets cancelled, we should be cancelled too.
+                            await asyncio.wait_for(
+                                self._probe_once_task.task, 15.0)
+                    except asyncio.CancelledError:
+                        # asyncio.CancelledError is a subclass of Exception in
+                        # Python 3.6 (sadface)
+                        raise
+                    except Exception:
+                        block_discover_log.exception(
+                            "block probing failed restricted=%s", restricted)
+                        report = self.app.make_apport_report(
+                            kind, "block probing", interrupt=False)
+                        self._crash_reports[restricted] = report
+                        continue
+                    break
+            finally:
+                fcntl.flock(self.app.install_lock_file, fcntl.LOCK_UN)
 
     def convert_autoinstall_config(self):
         log.debug("self.ai_data = %s", self.ai_data)
@@ -187,8 +193,7 @@ class FilesystemController(SubiquityController):
         self._monitor = pyudev.Monitor.from_netlink(context)
         self._monitor.filter_by(subsystem='block')
         self._monitor.enable_receiving()
-        if self.app.interactive():
-            self.start_listening_udev()
+        self.start_listening_udev()
         await self._probe_task.start()
 
     def start_listening_udev(self):
@@ -235,6 +240,7 @@ class FilesystemController(SubiquityController):
             # events as merging system changes with configuration the user has
             # performed would be tricky.  Possibly worth doing though! Just
             # not today.
+            self.convert_autoinstall_config()
             self.stop_listening_udev()
             self.ui.set_body(GuidedDiskSelectionView(self))
             pr = self._crash_reports.get(False)

@@ -123,6 +123,7 @@ class Subiquity(Application):
             self.controllers.remove("Zdev")
 
         super().__init__(opts)
+        self.install_lock_file = open(self.state_path("installing"), 'w')
         self.block_log_dir = block_log_dir
         self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
         if opts.snaps_from_examples:
