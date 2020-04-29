@@ -96,6 +96,8 @@ class NetworkController(NetworkController, SubiquityController):
             self.app.make_apport_report(
                 ErrorReportKind.NETWORK_FAIL, "applying network",
                 interrupt=True)
+            if not self.interactive():
+                raise
 
     def done(self):
         self.configured()
