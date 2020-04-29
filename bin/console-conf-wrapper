@@ -19,6 +19,11 @@ if [ -e /run/snapd-recovery-chooser-triggered ]; then
     fi
 fi
 
+if grep -q 'snapd_recovery_mode=install' /proc/cmdline ; then
+    echo "Installing the system, please wait for reboot"
+    sleep infinity
+fi
+
 if [ "$(snap managed)" = "true" ]; then
     # check if we have extrausers that have no password set
     if grep -qE '^[-a-z0-9+.-_]+:x:' /var/lib/extrausers/passwd && ! grep -qE '^[-a-z0-9+.-_]+:\$[0-9]+\$.*:' /var/lib/extrausers/shadow; then
