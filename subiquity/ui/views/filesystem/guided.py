@@ -140,9 +140,10 @@ If the platform requires it, a bootloader partition is created on the disk.
 
 If you choose to use LVM, two additional partitions are then created,
 one for /boot and one covering the rest of the disk. An LVM volume
-group is created containing the large partition. A 4 gigabyte logical
-volume is created for the root filesystem. It can easily be enlarged
-with standard LVM command line tools.
+group is created containing the large partition. A logical volume is
+created for the root filesystem, sized using some simple heuristic. It
+can easily be enlarged with standard LVM command line tools (or on the
+next screen).
 
 You can also choose to encrypt LVM volume group. This will require
 setting a password, that one will need to type on every boot before

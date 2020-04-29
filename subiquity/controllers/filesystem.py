@@ -750,11 +750,26 @@ class FilesystemController(SubiquityController):
         spec = dict(name="ubuntu-vg", devices=set([part]))
         if lvm_options and lvm_options['encrypt']:
             spec['password'] = lvm_options['luks_options']['password']
-        # create volume group on partition
         vg = self.create_volgroup(spec)
+        # There's no point using LVM and unconditionally filling the
+        # VG with a single LV, but we should use more of a smaller
+        # disk to avoid the user running into out of space errors
+        # earlier than they probably expect to.
+        if vg.size < 10 * (2 << 30):
+            # Use all of a small (<10G) disk.
+            lv_size = vg.size
+        elif vg.size < 20 * (2 << 30):
+            # Use 10G of a smallish (<20G) disk.
+            lv_size = 10 * (2 << 30)
+        elif vg.size < 200 * (2 << 30):
+            # Use half of a larger (<200G) disk.
+            lv_size = vg.size // 2
+        else:
+            # Use at most 100G of a large disk.
+            lv_size = 100 * (2 << 30)
         self.create_logical_volume(
             vg=vg, spec=dict(
-                size=vg.size*8//10,
+                size=lv_size,
                 name="ubuntu-lv",
                 fstype="ext4",
                 mount="/",
