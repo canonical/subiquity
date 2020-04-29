@@ -217,6 +217,15 @@ class Subiquity(Application):
                 jsonschema.validate(self.autoinstall_config, self.base_schema)
             for controller in self.controllers.instances:
                 controller.setup_autoinstall()
+        if not self.interactive() and self.opts.run_on_serial:
+            # Thanks to the fact that we are launched with agetty's
+            # --skip-login option, on serial lines we can end up starting with
+            # some strange terminal settings (see the docs for --skip-login in
+            # agetty(8)). For an interactive install this does not matter as
+            # the settings will soon be clobbered but for a non-interactive
+            # one we need to clear things up or the prompting for confirmation
+            # in next_screen below will be confusing.
+            os.system('stty sane')
 
     def run(self):
         try:
