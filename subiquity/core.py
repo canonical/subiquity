@@ -462,7 +462,7 @@ class Subiquity(Application):
 
         report.add_info(_bg_attach_hook, wait)
 
-        if interrupt:
+        if interrupt and self.interactive():
             self.show_error_report(report)
 
         # In the fullness of time we should do the signature thing here.
