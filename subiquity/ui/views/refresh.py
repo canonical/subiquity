@@ -256,9 +256,9 @@ class RefreshView(BaseView):
                 self.update_failed(exc_message(e))
                 return
             if change['status'] == 'Done':
-                # Will only get here dry run mode as part of the refresh is us
-                # getting restarted by snapd...
-                self.done()
+                # Clearly if we got here we didn't get restarted by
+                # snapd/systemctl (dry-run mode or logged in via SSH)
+                self.controller.app.restart(remove_last_screen=False)
                 return
             if change['status'] not in ['Do', 'Doing']:
                 self.update_failed(change.get('err', "Unknown error"))
