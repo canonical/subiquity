@@ -7,6 +7,13 @@ locale: en_UK.UTF-8
 refresh-installer:
   update: yes
   channel: edge
+network:
+  version: 2
+  ethernets:
+    all-eth:
+      match:
+        name: "eth*"
+      dhcp4: yes
 debconf-selections: eek
 packages:
   - package1
