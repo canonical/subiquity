@@ -268,7 +268,12 @@ class InstallProgressController(SubiquityController):
         log.debug('curtin install cmd: {}'.format(curtin_cmd))
 
         async with self.app.install_lock_file.exclusive():
-            self.app.install_lock_file.write_content(os.ttyname(0))
+            try:
+                our_tty = os.ttyname(0)
+            except OSError:
+                # This is a gross hack for testing in travis.
+                our_tty = "/dev/not a tty"
+            self.app.install_lock_file.write_content(our_tty)
             journal.send("starting install", SYSLOG_IDENTIFIER="subiquity")
             cp = await arun_command(
                 self.logged_command(curtin_cmd), check=True)
