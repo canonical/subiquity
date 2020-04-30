@@ -39,6 +39,8 @@ from subiquitycore.core import Application
 from subiquity.controllers.error import (
     ErrorReportKind,
     )
+from subiquity.journald import journald_listener
+from subiquity.lockfile import Lockfile
 from subiquity.models.subiquity import SubiquityModel
 from subiquity.snapd import (
     AsyncSnapd,
@@ -122,7 +124,11 @@ class Subiquity(Application):
         if not opts.bootloader == 'none' and platform.machine() != 's390x':
             self.controllers.remove("Zdev")
 
+        self.journal_fd, self.journal_watcher = journald_listener(
+            ["subiquity"], self.subiquity_event, seek=True)
         super().__init__(opts)
+        self.install_lock_file = Lockfile(self.state_path("installing"))
+        self.install_running = None
         self.block_log_dir = block_log_dir
         self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
         if opts.snaps_from_examples:
@@ -151,6 +157,27 @@ class Subiquity(Application):
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
         self.install_confirmed = False
+
+    def subiquity_event(self, event):
+        if event["MESSAGE"] == "starting install":
+            if event["_PID"] == os.getpid():
+                return
+            if not self.install_lock_file.is_exclusively_locked():
+                return
+            from subiquity.ui.views.installprogress import (
+                InstallRunning,
+                )
+            tty = self.install_lock_file.read_content()
+            self.install_running = InstallRunning(self.ui.body, self, tty)
+            self.ui.body.show_stretchy_overlay(self.install_running)
+            schedule_task(self._hide_install_running())
+
+    async def _hide_install_running(self):
+        # Wait until the install has completed...
+        async with self.install_lock_file.shared():
+            # And remove the overlay.
+            self.install_running = None
+            self.ui.body.remove_overlay()
 
     def restart(self, remove_last_screen=True):
         if remove_last_screen:
@@ -201,7 +228,7 @@ class Subiquity(Application):
             jsonschema.validate(self.autoinstall_config, self.base_schema)
         self.controllers.load("Early")
         if self.controllers.Early.cmds:
-            stamp_file = os.path.join(self.state_dir, "early-commands")
+            stamp_file = self.state_path("early-commands")
             if our_tty != primary_tty:
                 print(
                     _("waiting for installer running on {} to run early "
@@ -228,6 +255,10 @@ class Subiquity(Application):
             # one we need to clear things up or the prompting for confirmation
             # in next_screen below will be confusing.
             os.system('stty sane')
+
+    def new_event_loop(self):
+        super().new_event_loop()
+        self.aio_loop.add_reader(self.journal_fd, self.journal_watcher)
 
     def run(self):
         try:
@@ -363,6 +394,8 @@ class Subiquity(Application):
                 log.debug("showing new error %r", self.report_to_show.base)
                 self.show_error_report(self.report_to_show)
                 self.report_to_show = None
+            if self.install_running is not None:
+                self.ui.body.show_stretchy_overlay(self.install_running)
         elif self.autoinstall_config and not new.autoinstall_applied:
             if self.interactive() and self.show_progress_handle is None:
                 self.ui.block_input = True

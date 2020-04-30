@@ -339,7 +339,7 @@ class Application:
         if opts.dry_run:
             self.root = '.subiquity'
         self.state_dir = os.path.join(self.root, 'run', self.project)
-        os.makedirs(os.path.join(self.state_dir, 'states'), exist_ok=True)
+        os.makedirs(self.state_path('states'), exist_ok=True)
 
         self.answers = {}
         if opts.answers is not None:
@@ -360,7 +360,7 @@ class Application:
 
         self.scale_factor = float(
             os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
-        self.updated = os.path.exists(os.path.join(self.state_dir, 'updating'))
+        self.updated = os.path.exists(self.state_path('updating'))
         self.signal = Signal()
         self.prober = prober
         self.new_event_loop()
@@ -417,13 +417,14 @@ class Application:
             controller.register_signals()
         log.debug("known signals: %s", self.signal.known_signals)
 
+    def state_path(self, *parts):
+        return os.path.join(self.state_dir, *parts)
+
     def save_state(self):
         cur = self.controllers.cur
         if cur is None:
             return
-        state_path = os.path.join(
-            self.state_dir, 'states', cur.name)
-        with open(state_path, 'w') as fp:
+        with open(self.state_path('states', cur.name), 'w') as fp:
             json.dump(cur.serialize(), fp)
 
     def select_screen(self, new):
@@ -435,8 +436,7 @@ class Application:
         except Skip:
             new.context.exit("(skipped)")
             raise
-        state_path = os.path.join(self.state_dir, 'last-screen')
-        with open(state_path, 'w') as fp:
+        with open(self.state_path('last-screen'), 'w') as fp:
             fp.write(new.name)
 
     def _move_screen(self, increment):
@@ -485,9 +485,9 @@ class Application:
 # EventLoop -------------------------------------------------------------------
 
     def _remove_last_screen(self):
-        state_path = os.path.join(self.state_dir, 'last-screen')
-        if os.path.exists(state_path):
-            os.unlink(state_path)
+        last_screen = self.state_path('last-screen')
+        if os.path.exists(last_screen):
+            os.unlink(last_screen)
 
     def exit(self):
         self._remove_last_screen()
@@ -583,15 +583,14 @@ class Application:
 
     def load_serialized_state(self):
         for controller in self.controllers.instances:
-            state_path = os.path.join(
-                self.state_dir, 'states', controller.name)
+            state_path = self.state_path('states', controller.name)
             if not os.path.exists(state_path):
                 continue
             with open(state_path) as fp:
                 controller.deserialize(json.load(fp))
 
         last_screen = None
-        state_path = os.path.join(self.state_dir, 'last-screen')
+        state_path = self.state_path('last-screen')
         if os.path.exists(state_path):
             with open(state_path) as fp:
                 last_screen = fp.read().strip()
