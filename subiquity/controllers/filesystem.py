@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import fcntl
 import json
 import logging
 import os
@@ -134,9 +133,7 @@ class FilesystemController(SubiquityController):
 
     async def _probe(self):
         with self.context.child("_probe") as context:
-            await run_in_thread(
-                fcntl.flock, self.app.install_lock_file, fcntl.LOCK_SH)
-            try:
+            async with self.app.install_lock_file.shared():
                 self._crash_reports = {}
                 if isinstance(self.ui.body, ProbingFailed):
                     self.ui.set_body(SlowProbing(self))
@@ -166,8 +163,6 @@ class FilesystemController(SubiquityController):
                         self._crash_reports[restricted] = report
                         continue
                     break
-            finally:
-                fcntl.flock(self.app.install_lock_file, fcntl.LOCK_UN)
 
     def convert_autoinstall_config(self):
         log.debug("self.ai_data = %s", self.ai_data)

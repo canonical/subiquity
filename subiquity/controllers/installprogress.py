@@ -16,7 +16,6 @@
 import asyncio
 import contextlib
 import datetime
-import fcntl
 import logging
 import os
 import re
@@ -281,13 +280,9 @@ class InstallProgressController(SubiquityController):
 
         log.debug('curtin install cmd: {}'.format(curtin_cmd))
 
-        await run_in_thread(
-            fcntl.flock, self.app.install_lock_file, fcntl.LOCK_EX)
-        try:
+        async with self.app.install_lock_file.exclusive():
             cp = await arun_command(
                 self.logged_command(curtin_cmd), check=True)
-        finally:
-            fcntl.flock(self.app.install_lock_file, fcntl.LOCK_UN)
 
         log.debug('curtin_install completed: %s', cp.returncode)
 

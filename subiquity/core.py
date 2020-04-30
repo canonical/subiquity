@@ -39,6 +39,7 @@ from subiquitycore.core import Application
 from subiquity.controllers.error import (
     ErrorReportKind,
     )
+from subiquity.lockfile import Lockfile
 from subiquity.models.subiquity import SubiquityModel
 from subiquity.snapd import (
     AsyncSnapd,
@@ -123,7 +124,7 @@ class Subiquity(Application):
             self.controllers.remove("Zdev")
 
         super().__init__(opts)
-        self.install_lock_file = open(self.state_path("installing"), 'w')
+        self.install_lock_file = Lockfile(self.state_path("installing"))
         self.block_log_dir = block_log_dir
         self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
         if opts.snaps_from_examples:
