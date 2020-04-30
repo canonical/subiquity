@@ -125,9 +125,7 @@ network:
          name: "eth*"
        dhcp4: true
   wifis:
-    "all-wifi":
-       match:
-         name: "wl*"
+    "wlsp4":
        dhcp4: true
        access-points:
          "some-ap":
