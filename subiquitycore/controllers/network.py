@@ -107,7 +107,9 @@ default_netplan = '''
 network:
   version: 2
   ethernets:
-    "en*":
+    "all-en":
+       match:
+         name: "en*"
        addresses:
          - 10.0.2.15/24
        gateway4: 10.0.2.2
@@ -118,10 +120,14 @@ network:
          search:
            - foo
            - bar
-    "eth*":
+    "all-eth":
+       match:
+         name: "eth*"
        dhcp4: true
   wifis:
-    "wl*":
+    "all-wifi":
+       match:
+         name: "wl*"
        dhcp4: true
        access-points:
          "some-ap":
