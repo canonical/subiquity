@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import fcntl
 import logging
 import os
 import platform
@@ -176,10 +175,9 @@ class Subiquity(Application):
     async def _hide_install_running(self):
         # Wait until the install has completed...
         async with self.install_lock_file.shared():
-            pass
-        # And remove the overlay.
-        self.install_running = None
-        self.ui.body.remove_overlay()
+            # And remove the overlay.
+            self.install_running = None
+            self.ui.body.remove_overlay()
 
     def restart(self, remove_last_screen=True):
         if remove_last_screen:

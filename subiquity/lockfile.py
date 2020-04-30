@@ -58,7 +58,7 @@ class Lockfile:
         self.fp.seek(0)
         return self.fp.read()
 
-    def set_content(self, content):
+    def write_content(self, content):
         self.fp.seek(0)
         self.fp.truncate()
         self.fp.write(content)

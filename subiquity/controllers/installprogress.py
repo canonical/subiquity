@@ -268,7 +268,7 @@ class InstallProgressController(SubiquityController):
         log.debug('curtin install cmd: {}'.format(curtin_cmd))
 
         async with self.app.install_lock_file.exclusive():
-            self.app.install_lock_file.set_content(os.ttyname(0))
+            self.app.install_lock_file.write_content(os.ttyname(0))
             journal.send("starting install", SYSLOG_IDENTIFIER="subiquity")
             cp = await arun_command(
                 self.logged_command(curtin_cmd), check=True)
