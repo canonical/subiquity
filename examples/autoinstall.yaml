@@ -13,7 +13,7 @@ network:
     all-eth:
       match:
         name: "eth*"
-      dhcp4: yes
+      dhcp6: yes
 debconf-selections: eek
 packages:
   - package1

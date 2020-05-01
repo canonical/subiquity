@@ -24,7 +24,6 @@ import yaml
 
 from curtin.config import merge_config
 
-from subiquitycore.models.network import NetworkModel
 from subiquitycore.file_util import write_file
 from subiquitycore.utils import run_command
 
@@ -33,6 +32,7 @@ from .keyboard import KeyboardModel
 from .locale import LocaleModel
 from .proxy import ProxyModel
 from .mirror import MirrorModel
+from .network import NetworkModel
 from .snaplist import SnapListModel
 from .ssh import SSHModel
 from .identity import IdentityModel
@@ -111,7 +111,7 @@ class SubiquityModel:
         self.keyboard = KeyboardModel(self.root)
         self.locale = LocaleModel()
         self.mirror = MirrorModel()
-        self.network = NetworkModel("subiquity", support_wlan=False)
+        self.network = NetworkModel()
         self.packages = []
         self.proxy = ProxyModel()
         self.snaplist = SnapListModel()

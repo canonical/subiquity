@@ -103,10 +103,20 @@ class NetworkController(NetworkController, SubiquityController):
 
     def start(self):
         if self.ai_data is not None:
+            self.model.override_config = {'network': self.ai_data}
             self.apply_config()
+            if self.interactive():
+                # If interactive, we want edits in the UI to override
+                # the provided config. If not, we just splat the
+                # autoinstall config onto the target system.
+                schedule_task(self.unset_override_config())
         elif not self.interactive():
             self.initial_delay = schedule_task(self.delay())
         super().start()
+
+    async def unset_override_config(self):
+        await self.apply_config_task.wait()
+        self.model.override_config = None
 
     async def delay(self):
         await asyncio.sleep(10)
@@ -121,16 +131,6 @@ class NetworkController(NetworkController, SubiquityController):
         await self.apply_config_task.wait()
         self.model.has_network = bool(
             self.network_event_receiver.default_routes)
-
-    def render_config(self):
-        if self.ai_data is not None:
-            r = self.ai_data
-            if self.interactive():
-                # If we're interactive, we want later renders to
-                # incorporate any changes from the UI.
-                self.ai_data = None
-            return {'network': r}
-        return super().render_config()
 
     async def _apply_config(self, context=None, *, silent):
         try:
