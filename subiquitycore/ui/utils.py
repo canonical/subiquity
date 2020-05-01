@@ -212,6 +212,14 @@ def disabled(w):
     return WidgetDisable(AttrMap(w, _disable_everything_map))
 
 
+def undisabled(w):
+    if isinstance(w, WidgetDisable):
+        w = w.original_widget
+    if isinstance(w, AttrMap):
+        w = w.original_widget
+    return w
+
+
 def button_pile(buttons):
     width = 14
     for button in buttons:
