@@ -431,17 +431,34 @@ class Subiquity(Application):
         if key == 'f1':
             if not self.ui.right_icon.showing_something:
                 self.ui.right_icon.open_pop_up()
-        elif self.opts.dry_run and key in ['ctrl e', 'ctrl r']:
+        elif key in ['ctrl z', 'f2']:
+            self.debug_shell()
+        elif self.opts.dry_run:
+            self.unhandled_input_dry_run(key)
+        else:
+            super().unhandled_input(key)
+
+    def unhandled_input_dry_run(self, key):
+        if key == 'ctrl g':
+            import asyncio
+            from systemd import journal
+
+            async def mock_install():
+                async with self.install_lock_file.exclusive():
+                    self.install_lock_file.write_content("nowhere")
+                    journal.send(
+                        "starting install", SYSLOG_IDENTIFIER="subiquity")
+                    await asyncio.sleep(5)
+            schedule_task(mock_install())
+        elif key in ['ctrl e', 'ctrl r']:
             interrupt = key == 'ctrl e'
             try:
                 1/0
             except ZeroDivisionError:
                 self.make_apport_report(
                     ErrorReportKind.UNKNOWN, "example", interrupt=interrupt)
-        elif self.opts.dry_run and key == 'ctrl u':
+        elif key == 'ctrl u':
             1/0
-        elif key in ['ctrl z', 'f2']:
-            self.debug_shell()
         else:
             super().unhandled_input(key)
 

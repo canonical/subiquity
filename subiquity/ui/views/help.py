@@ -181,10 +181,11 @@ GLOBAL_KEYS = (
     )
 
 DRY_RUN_KEYS = (
-    (_('Control-X'), _('quit (dry-run only)')),
-    (_('Control-E'), _('generate noisy error report (dry-run only)')),
-    (_('Control-R'), _('generate quiet error report (dry-run only)')),
-    (_('Control-U'), _('crash the ui (dry-run only)')),
+    (_('Control-X'), _('quit')),
+    (_('Control-E'), _('generate noisy error report')),
+    (_('Control-R'), _('generate quiet error report')),
+    (_('Control-G'), _('pretend to run an install')),
+    (_('Control-U'), _('crash the ui')),
     )
 
 
@@ -195,8 +196,11 @@ class GlobalKeyStretchy(Stretchy):
         for key, text in GLOBAL_KEYS:
             rows.append(TableRow([Text(_(key)), Text(_(text))]))
         if app.opts.dry_run:
+            dro = _('(dry-run only)')
             for key, text in DRY_RUN_KEYS:
-                rows.append(TableRow([Text(_(key)), Text(_(text))]))
+                rows.append(TableRow([
+                    Text(_(key)),
+                    Text(_(text) + ' ' + dro)]))
         table = TablePile(
             rows, spacing=2, colspecs={1: ColSpec(can_shrink=True)})
         widgets = [
