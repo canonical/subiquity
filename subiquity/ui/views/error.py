@@ -54,10 +54,12 @@ from subiquity.controllers.error import (
 log = logging.getLogger('subiquity.ui.error')
 
 
-def close_btn(parent, label=None):
+def close_btn(stretchy, label=None):
     if label is None:
         label = _("Close")
-    return other_btn(label, on_press=lambda sender: parent.remove_overlay())
+    return other_btn(
+        label,
+        on_press=lambda sender: stretchy.app.remove_global_overlay(stretchy))
 
 
 error_report_intros = {
@@ -129,17 +131,16 @@ If you want to help improve the installer, you can send an error report.
 
 class ErrorReportStretchy(Stretchy):
 
-    def __init__(self, app, parent, report, interrupting=True):
+    def __init__(self, app, report, interrupting=True):
         self.app = app
         self.report = report
-        self.parent = parent
         self.interrupting = interrupting
 
         self.btns = {
             'cancel': other_btn(
                 _("Cancel upload"), on_press=self.cancel_upload),
-            'close': close_btn(parent, _("Close report")),
-            'continue': close_btn(parent, _("Continue")),
+            'close': close_btn(self, _("Close report")),
+            'continue': close_btn(self, _("Continue")),
             'debug_shell': other_btn(
                 _("Switch to a shell"), on_press=self.debug_shell),
             'restart': other_btn(
@@ -247,7 +248,7 @@ class ErrorReportStretchy(Stretchy):
                 self.pile.focus_position += 1
 
     def debug_shell(self, sender):
-        self.parent.remove_overlay()
+        self.app.debug_shell()
 
     def restart(self, sender):
         self.app.restart()
@@ -273,9 +274,8 @@ class ErrorReportStretchy(Stretchy):
 
 class ErrorReportListStretchy(Stretchy):
 
-    def __init__(self, app, parent):
+    def __init__(self, app):
         self.app = app
-        self.parent = parent
         rows = [
             TableRow([
                 Text(""),
@@ -295,13 +295,13 @@ class ErrorReportListStretchy(Stretchy):
             Text(""),
             self.table,
             Text(""),
-            button_pile([close_btn(parent)]),
+            button_pile([close_btn(self)]),
             ]
         super().__init__("", widgets, 2, 2)
 
     def open_report(self, sender, report):
-        self.parent.show_stretchy_overlay(
-            ErrorReportStretchy(self.app, self.parent, report, False))
+        self.app.add_global_overlay(
+            ErrorReportStretchy(self.app, report, False))
 
     def state_for_report(self, report):
         if report.seen:

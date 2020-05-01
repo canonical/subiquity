@@ -61,9 +61,10 @@ from subiquity.ui.views.error import ErrorReportListStretchy
 log = logging.getLogger('subiquity.ui.help')
 
 
-def close_btn(parent):
+def close_btn(app, stretchy):
     return other_btn(
-        _("Close"), on_press=lambda sender: parent.remove_overlay())
+        _("Close"),
+        on_press=lambda sender: app.remove_global_overlay(stretchy))
 
 
 ABOUT_INSTALLER = _("""
@@ -154,7 +155,7 @@ def ssh_help_texts(ips, password):
 
 class SimpleTextStretchy(Stretchy):
 
-    def __init__(self, parent, title, *texts):
+    def __init__(self, app, title, *texts):
         widgets = []
 
         for text in texts:
@@ -164,7 +165,7 @@ class SimpleTextStretchy(Stretchy):
 
         widgets.extend([
             Text(""),
-            button_pile([close_btn(parent)]),
+            button_pile([close_btn(app, self)]),
             ])
         super().__init__(title, widgets, 0, len(widgets)-1)
 
@@ -181,22 +182,26 @@ GLOBAL_KEYS = (
     )
 
 DRY_RUN_KEYS = (
-    (_('Control-X'), _('quit (dry-run only)')),
-    (_('Control-E'), _('generate noisy error report (dry-run only)')),
-    (_('Control-R'), _('generate quiet error report (dry-run only)')),
-    (_('Control-U'), _('crash the ui (dry-run only)')),
+    (_('Control-X'), _('quit')),
+    (_('Control-E'), _('generate noisy error report')),
+    (_('Control-R'), _('generate quiet error report')),
+    (_('Control-G'), _('pretend to run an install')),
+    (_('Control-U'), _('crash the ui')),
     )
 
 
 class GlobalKeyStretchy(Stretchy):
 
-    def __init__(self, app, parent):
+    def __init__(self, app):
         rows = []
         for key, text in GLOBAL_KEYS:
             rows.append(TableRow([Text(_(key)), Text(_(text))]))
         if app.opts.dry_run:
+            dro = _('(dry-run only)')
             for key, text in DRY_RUN_KEYS:
-                rows.append(TableRow([Text(_(key)), Text(_(text))]))
+                rows.append(TableRow([
+                    Text(_(key)),
+                    Text(_(text) + ' ' + dro)]))
         table = TablePile(
             rows, spacing=2, colspecs={1: ColSpec(can_shrink=True)})
         widgets = [
@@ -206,7 +211,7 @@ class GlobalKeyStretchy(Stretchy):
                 ('pack', table),
                 ]),
             Text(""),
-            button_pile([close_btn(parent)]),
+            button_pile([close_btn(app, self)]),
             ]
         super().__init__(_("Shortcut Keys"), widgets, 0, 2)
 
@@ -335,18 +340,18 @@ class HelpMenu(WidgetWrap):
 
         # We don't let help dialogs pile up: if one is already
         # showing, remove it before showing the new one.
-        if self.parent.showing_something:
-            ui.body.remove_overlay()
-        self.parent.showing_something = True
+        if self.parent.current_help:
+            self.parent.app.remove_global_overlay(self.parent.current_help)
+        self.parent.current_help = stretchy
         fp, ui.pile.focus_position = ui.pile.focus_position, 1
 
         def on_close():
-            self.parent.showing_something = False
+            self.parent.current_help = None
             ui.pile.focus_position = fp
 
         connect_signal(stretchy, 'closed', on_close)
 
-        ui.body.show_stretchy_overlay(stretchy)
+        self.parent.app.add_global_overlay(stretchy)
 
     def _about(self, sender=None):
         info = lsb_release()
@@ -360,7 +365,7 @@ class HelpMenu(WidgetWrap):
             })
         self._show_overlay(
             SimpleTextStretchy(
-                self.parent.app.ui.body,
+                self.parent.app,
                 _("About the installer"),
                 template.format(**info)))
 
@@ -378,7 +383,7 @@ class HelpMenu(WidgetWrap):
 
         self._show_overlay(
             SimpleTextStretchy(
-                self.parent.app.ui.body,
+                self.parent.app,
                 _("Help on SSH access"),
                 *texts,
                 ))
@@ -388,16 +393,13 @@ class HelpMenu(WidgetWrap):
         def cb(sender=None):
             self._show_overlay(
                 SimpleTextStretchy(
-                    self.parent.app.ui.body,
+                    self.parent.app,
                     local_title,
                     local_doc))
         return cb
 
     def _shortcuts(self, sender):
-        self._show_overlay(
-            GlobalKeyStretchy(
-                self.parent.app,
-                self.parent.app.ui.body))
+        self._show_overlay(GlobalKeyStretchy(self.parent.app))
 
     def _debug_shell(self, sender):
         self.parent.app.debug_shell()
@@ -406,10 +408,7 @@ class HelpMenu(WidgetWrap):
         self.parent.app.toggle_color()
 
     def _show_errors(self, sender):
-        self._show_overlay(
-            ErrorReportListStretchy(
-                self.parent.app,
-                self.parent.app.ui.body))
+        self._show_overlay(ErrorReportListStretchy(self.parent.app))
 
 
 def get_installer_password(dry_run=False):
@@ -435,7 +434,7 @@ class HelpButton(PopUpLauncher):
         self.app = app
         self.btn = header_btn(_("Help"), on_press=self._open)
         self.ssh_password = None
-        self.showing_something = False
+        self.current_help = None
         super().__init__(self.btn)
 
     def _open(self, sender):

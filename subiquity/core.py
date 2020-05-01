@@ -35,6 +35,7 @@ from subiquitycore.async_helpers import (
     )
 from subiquitycore.controller import Skip
 from subiquitycore.core import Application
+from subiquitycore.view import BaseView
 
 from subiquity.controllers.error import (
     ErrorReportKind,
@@ -128,7 +129,7 @@ class Subiquity(Application):
             ["subiquity"], self.subiquity_event, seek=True)
         super().__init__(opts)
         self.install_lock_file = Lockfile(self.state_path("installing"))
-        self.install_running = None
+        self.global_overlays = []
         self.block_log_dir = block_log_dir
         self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
         if opts.snaps_from_examples:
@@ -168,16 +169,15 @@ class Subiquity(Application):
                 InstallRunning,
                 )
             tty = self.install_lock_file.read_content()
-            self.install_running = InstallRunning(self.ui.body, self, tty)
-            self.ui.body.show_stretchy_overlay(self.install_running)
-            schedule_task(self._hide_install_running())
+            install_running = InstallRunning(self.ui.body, self, tty)
+            self.add_global_overlay(install_running)
+            schedule_task(self._hide_install_running(install_running))
 
-    async def _hide_install_running(self):
+    async def _hide_install_running(self, install_running):
         # Wait until the install has completed...
         async with self.install_lock_file.shared():
             # And remove the overlay.
-            self.install_running = None
-            self.ui.body.remove_overlay()
+            self.remove_global_overlay(install_running)
 
     def restart(self, remove_last_screen=True):
         if remove_last_screen:
@@ -343,7 +343,7 @@ class Subiquity(Application):
                     InstallConfirmation,
                     )
                 self._cancel_show_progress()
-                self.ui.body.show_stretchy_overlay(
+                self.add_global_overlay(
                     InstallConfirmation(self.ui.body, self))
             else:
                 yes = _('yes')
@@ -371,12 +371,22 @@ class Subiquity(Application):
             return True
         return bool(self.autoinstall_config.get('interactive-sections'))
 
+    def add_global_overlay(self, overlay):
+        self.global_overlays.append(overlay)
+        if isinstance(self.ui.body, BaseView):
+            self.ui.body.show_stretchy_overlay(overlay)
+
+    def remove_global_overlay(self, overlay):
+        self.global_overlays.remove(overlay)
+        if isinstance(self.ui.body, BaseView):
+            self.ui.body.remove_overlay(overlay)
+
     def select_initial_screen(self, index):
-        super().select_initial_screen(index)
         for report in self.controllers.Error.reports:
             if report.kind == ErrorReportKind.UI and not report.seen:
-                self.report_to_show = report
-                return
+                self.show_error_report(report)
+                break
+        super().select_initial_screen(index)
 
     def select_screen(self, new):
         if new.interactive():
@@ -390,12 +400,6 @@ class Subiquity(Application):
                     return
             self.progress_showing = False
             super().select_screen(new)
-            if self.report_to_show is not None:
-                log.debug("showing new error %r", self.report_to_show.base)
-                self.show_error_report(self.report_to_show)
-                self.report_to_show = None
-            if self.install_running is not None:
-                self.ui.body.show_stretchy_overlay(self.install_running)
         elif self.autoinstall_config and not new.autoinstall_applied:
             if self.interactive() and self.show_progress_handle is None:
                 self.ui.block_input = True
@@ -431,17 +435,34 @@ class Subiquity(Application):
         if key == 'f1':
             if not self.ui.right_icon.showing_something:
                 self.ui.right_icon.open_pop_up()
-        elif self.opts.dry_run and key in ['ctrl e', 'ctrl r']:
+        elif key in ['ctrl z', 'f2']:
+            self.debug_shell()
+        elif self.opts.dry_run:
+            self.unhandled_input_dry_run(key)
+        else:
+            super().unhandled_input(key)
+
+    def unhandled_input_dry_run(self, key):
+        if key == 'ctrl g':
+            import asyncio
+            from systemd import journal
+
+            async def mock_install():
+                async with self.install_lock_file.exclusive():
+                    self.install_lock_file.write_content("nowhere")
+                    journal.send(
+                        "starting install", SYSLOG_IDENTIFIER="subiquity")
+                    await asyncio.sleep(5)
+            schedule_task(mock_install())
+        elif key in ['ctrl e', 'ctrl r']:
             interrupt = key == 'ctrl e'
             try:
                 1/0
             except ZeroDivisionError:
                 self.make_apport_report(
                     ErrorReportKind.UNKNOWN, "example", interrupt=interrupt)
-        elif self.opts.dry_run and key == 'ctrl u':
+        elif key == 'ctrl u':
             1/0
-        elif key in ['ctrl z', 'f2']:
-            self.debug_shell()
         else:
             super().unhandled_input(key)
 
@@ -503,12 +524,12 @@ class Subiquity(Application):
 
     def show_error_report(self, report):
         log.debug("show_error_report %r", report.base)
-        w = getattr(self.ui.body._w, 'top_w', None)
-        if isinstance(w, ErrorReportStretchy):
-            # Don't show an error if already looking at one.
-            return
-        self.ui.body.show_stretchy_overlay(
-            ErrorReportStretchy(self, self.ui.body, report))
+        if isinstance(self.ui.body, BaseView):
+            w = getattr(self.ui.body._w, 'stretchy', None)
+            if isinstance(w, ErrorReportStretchy):
+                # Don't show an error if already looking at one.
+                return
+        self.add_global_overlay(ErrorReportStretchy(self, report))
 
     def make_autoinstall(self):
         config = {}
