@@ -111,24 +111,47 @@ class NetworkController(NetworkController, SubiquityController):
                 # autoinstall config onto the target system.
                 schedule_task(self.unset_override_config())
         elif not self.interactive():
-            self.initial_delay = schedule_task(self.delay())
+            self.initial_config = schedule_task(self.wait_for_initial_config())
         super().start()
 
     async def unset_override_config(self):
         await self.apply_config_task.wait()
         self.model.override_config = None
 
-    async def delay(self):
-        await asyncio.sleep(10)
+    @with_context()
+    async def wait_for_initial_config(self, context):
+        # In interactive mode, we disable all nics that haven't got an
+        # address by the time we get to the network screen. But in
+        # non-interactive mode we might get to that screen much faster
+        # so we wait for up to 10 seconds for any device configured
+        # to use dhcp to get an address.
+        dhcp_events = set()
+        for dev in self.model.get_all_netdevs(include_deleted=True):
+            dev.dhcp_events = {}
+            for v in 4, 6:
+                if dev.dhcp_enabled(v) and not dev.dhcp_addresses()[v]:
+                    dev.dhcp_events[v] = e = asyncio.Event()
+                    dhcp_events.add(e)
+        if not dhcp_events:
+            return
+
+        with context.child("wait_dhcp"):
+            try:
+                await asyncio.wait_for(
+                    asyncio.wait({e.wait() for e in dhcp_events}),
+                    10)
+            except asyncio.TimeoutError:
+                pass
 
     @with_context()
     async def apply_autoinstall_config(self, context):
         if self.ai_data is None:
-            with context.child("initial_delay"):
-                await self.initial_delay
+            with context.child("wait_initial_config"):
+                await self.initial_config
             self.update_initial_configs()
             self.apply_config(context)
-        await self.apply_config_task.wait()
+        with context.child("wait_for_apply"):
+            await self.apply_config_task.wait()
         self.model.has_network = bool(
             self.network_event_receiver.default_routes)
 
