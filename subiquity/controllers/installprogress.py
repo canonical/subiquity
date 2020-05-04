@@ -98,6 +98,7 @@ class InstallProgressController(SubiquityController):
         super().__init__(app)
         self.model = app.base_model
         self.progress_view = ProgressView(self)
+        app.add_event_listener(self)
         self.install_state = InstallState.NOT_STARTED
 
         self.reboot_clicked = asyncio.Event()
@@ -122,6 +123,27 @@ class InstallProgressController(SubiquityController):
     async def apply_autoinstall_config(self, context):
         await self.install_task
         self.app.reboot_on_exit = True
+
+    def _push_to_progress(self, context):
+        if not self.app.interactive():
+            return False
+        if context.get('hidden', False):
+            return False
+        controller = context.get('controller')
+        if controller is None or controller.interactive():
+            return False
+        return True
+
+    def report_start_event(self, context, description):
+        if self._push_to_progress(context):
+            msg = context.full_name()
+            if description:
+                msg += ': ' + description
+            self.progress_view.event_start(context, msg)
+
+    def report_finish_event(self, context, description, status):
+        if self._push_to_progress(context):
+            self.progress_view.event_finish(context)
 
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
