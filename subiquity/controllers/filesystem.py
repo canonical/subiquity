@@ -26,6 +26,7 @@ from subiquitycore.async_helpers import (
     schedule_task,
     SingleInstanceTask,
     )
+from subiquitycore.context import with_context
 from subiquitycore.lsb_release import lsb_release
 from subiquitycore.utils import (
     run_command,
@@ -102,7 +103,8 @@ class FilesystemController(SubiquityController):
         log.debug("self.ai_data = %s", data)
         self.ai_data = data
 
-    async def apply_autoinstall_config(self):
+    @with_context()
+    async def apply_autoinstall_config(self, context):
         self.stop_listening_udev()
         await self._start_task
         await self._probe_task.wait()

@@ -128,6 +128,7 @@ class Subiquity(Application):
         self.journal_fd, self.journal_watcher = journald_listener(
             ["subiquity"], self.subiquity_event, seek=True)
         super().__init__(opts)
+        self.event_listeners = []
         self.install_lock_file = Lockfile(self.state_path("installing"))
         self.global_overlays = []
         self.block_log_dir = block_log_dir
@@ -288,41 +289,16 @@ class Subiquity(Application):
                 traceback.print_exc()
                 signal.pause()
 
-    def _push_to_progress(self, context):
-        if not self.interactive():
-            return False
-        InstallProgress = getattr(self.controllers, "InstallProgress", None)
-        if InstallProgress is None:
-            return False
-        if context.get('hidden', False):
-            return False
-        controller = context.get('controller')
-        if controller is None or controller.interactive():
-            return False
-        return True
+    def add_event_listener(self, listener):
+        self.event_listeners.append(listener)
 
     def report_start_event(self, context, description):
-        # report_start_event gets called when the Reporting controller
-        # is being loaded...
-        Reporting = getattr(self.controllers, "Reporting", None)
-        if Reporting is not None:
-            Reporting.report_start_event(
-                context.full_name(), description, context.level)
-        if self._push_to_progress(context):
-            msg = context.full_name()
-            if description:
-                msg += ': ' + description
-            self.controllers.InstallProgress.progress_view.event_start(
-                context, msg)
+        for listener in self.event_listeners:
+            listener.report_start_event(context, description)
 
     def report_finish_event(self, context, description, status):
-        Reporting = getattr(self.controllers, "Reporting", None)
-        if Reporting is not None:
-            Reporting.report_finish_event(
-                context.full_name(), description, status, context.level)
-        if self._push_to_progress(context):
-            self.controllers.InstallProgress.progress_view.event_finish(
-                context)
+        for listener in self.event_listeners:
+            listener.report_finish_event(context, description, status)
 
     def confirm_install(self):
         self.install_confirmed = True
@@ -417,8 +393,7 @@ class Subiquity(Application):
         self.ui.set_body(self.controllers.InstallProgress.progress_view)
 
     async def _apply(self, controller):
-        with controller.context.child("apply_autoinstall_config"):
-            await controller.apply_autoinstall_config()
+        await controller.apply_autoinstall_config()
         controller.autoinstall_applied = True
         controller.configured()
         self.next_screen()

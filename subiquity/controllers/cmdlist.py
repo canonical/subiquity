@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command
 
 from subiquity.controller import NoUIController
@@ -34,7 +35,8 @@ class CmdListController(NoUIController):
     def load_autoinstall_data(self, data):
         self.cmds = data
 
-    async def run(self):
+    @with_context()
+    async def run(self, context):
         for i, cmd in enumerate(self.cmds):
             with self.context.child("command_{}".format(i), cmd):
                 if isinstance(cmd, str):
@@ -54,5 +56,6 @@ class LateController(CmdListController):
 
     autoinstall_key = 'late-commands'
 
-    async def apply_autoinstall_config(self):
-        await self.run()
+    @with_context()
+    async def apply_autoinstall_config(self, context):
+        await self.run(context)
