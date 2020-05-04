@@ -96,11 +96,13 @@ class ProgressView(BaseView):
     def event_start(self, context, message):
         self.event_finish(context.parent)
         walker = self.event_listbox.base_widget.body
-        indent = '  ' * (context.full_name().count('/') - 2)
+        indent = context.full_name().count('/') - 2
+        if context.get('is-install-context'):
+            indent -= 1
         spinner = Spinner(self.controller.app.aio_loop)
         spinner.start()
         new_line = Columns([
-            ('pack', Text(indent + message)),
+            ('pack', Text('  ' * indent + message)),
             ('pack', spinner),
             ], dividechars=1)
         self.ongoing[context] = len(walker)

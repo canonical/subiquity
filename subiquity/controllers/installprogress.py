@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import contextlib
 import datetime
 import logging
 import os
@@ -79,19 +78,6 @@ class TracebackExtractor:
             self.traceback.append(line)
 
 
-def install_step(label, level=None, childlevel=None):
-    def decorate(meth):
-        name = meth.__name__
-
-        async def decorated(self, context, *args):
-            manager = self.install_context(
-                context, name, label, level, childlevel)
-            with manager as subcontext:
-                await meth(self, subcontext, *args)
-        return decorated
-    return decorate
-
-
 class InstallProgressController(SubiquityController):
 
     def __init__(self, app):
@@ -117,7 +103,7 @@ class InstallProgressController(SubiquityController):
         return self.app.interactive()
 
     def start(self):
-        self.install_task = schedule_task(self.install(self.context))
+        self.install_task = schedule_task(self.install())
 
     @with_context()
     async def apply_autoinstall_config(self, context):
@@ -140,9 +126,13 @@ class InstallProgressController(SubiquityController):
             if description:
                 msg += ': ' + description
             self.progress_view.event_start(context, msg)
+        if context.get('is-install-context'):
+            self.progress_view.event_start(context, context.description)
 
     def report_finish_event(self, context, description, status):
         if self._push_to_progress(context):
+            self.progress_view.event_finish(context)
+        if context.get('is-install-context'):
             self.progress_view.event_finish(context)
 
     def tpath(self, *path):
@@ -175,17 +165,6 @@ class InstallProgressController(SubiquityController):
         elif event['SYSLOG_IDENTIFIER'] == self._log_syslog_identifier:
             self.curtin_log(event)
 
-    @contextlib.contextmanager
-    def install_context(self, context, name, description,
-                        level=None, childlevel=None):
-        subcontext = context.child(name, description, level, childlevel)
-        self.progress_view.event_start(subcontext, description)
-        try:
-            with subcontext:
-                yield subcontext
-        finally:
-            self.progress_view.event_finish(subcontext)
-
     def curtin_event(self, event):
         e = {
             "EVENT_TYPE": "???",
@@ -213,13 +192,11 @@ class InstallProgressController(SubiquityController):
                     break
             if curtin_ctx:
                 curtin_ctx.enter()
-                self.progress_view.event_start(curtin_ctx, e["MESSAGE"])
         if event_type == 'finish':
             status = getattr(Status, e["RESULT"], Status.WARN)
             curtin_ctx = self.curtin_event_contexts.pop(e["NAME"], None)
             if curtin_ctx is not None:
                 curtin_ctx.exit(status)
-                self.progress_view.event_finish(curtin_ctx)
 
     def curtin_log(self, event):
         log_line = event['MESSAGE']
@@ -263,7 +240,7 @@ class InstallProgressController(SubiquityController):
 
         return curtin_cmd
 
-    @install_step("umounting /target dir")
+    @with_context(description="umounting /target dir")
     async def unmount_target(self, context, target):
         cmd = [
             sys.executable, '-m', 'curtin', 'unmount',
@@ -275,7 +252,8 @@ class InstallProgressController(SubiquityController):
         if not self.opts.dry_run:
             shutil.rmtree(target)
 
-    @install_step("installing system", level="INFO", childlevel="DEBUG")
+    @with_context(
+        description="installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, context):
         log.debug('curtin_install')
         self.install_state = InstallState.RUNNING
@@ -309,7 +287,9 @@ class InstallProgressController(SubiquityController):
     def cancel(self):
         pass
 
+    @with_context()
     async def install(self, context):
+        context.set('is-install-context', True)
         try:
             await asyncio.wait(
                 {e.wait() for e in self.model.install_events})
@@ -354,8 +334,9 @@ class InstallProgressController(SubiquityController):
         log.debug("waited %s seconds for events to drain", waited)
         self.curtin_event_contexts.pop('', None)
 
-    @install_step(
-        "final system configuration", level="INFO", childlevel="DEBUG")
+    @with_context(
+        description="final system configuration", level="INFO",
+        childlevel="DEBUG")
     async def postinstall(self, context):
         autoinstall_path = os.path.join(
             self.app.root, 'var/log/installer/autoinstall-user-data')
@@ -368,15 +349,14 @@ class InstallProgressController(SubiquityController):
             packages = ['openssh-server']
         packages.extend(self.app.base_model.packages)
         for package in packages:
-            subcontext = self.install_context(
-                context,
+            subcontext = context.child(
                 "install_{}".format(package),
                 "installing {}".format(package))
             with subcontext:
                 await self.install_package(package)
         await self.restore_apt_config(context)
 
-    @install_step("configuring cloud-init")
+    @with_context(description="configuring cloud-init")
     async def configure_cloud_init(self, context):
         await run_in_thread(self.model.configure_cloud_init)
 
@@ -391,7 +371,7 @@ class InstallProgressController(SubiquityController):
                 ]
         await arun_command(self.logged_command(cmd), check=True)
 
-    @install_step("restoring apt configuration")
+    @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
         if self.opts.dry_run:
             cmds = [["sleep", str(1/self.app.scale_factor)]]
@@ -409,7 +389,7 @@ class InstallProgressController(SubiquityController):
         for cmd in cmds:
             await arun_command(self.logged_command(cmd), check=True)
 
-    @install_step("downloading and installing security updates")
+    @with_context(description="downloading and installing security updates")
     async def run_unattended_upgrades(self, context):
         target_tmp = os.path.join(self.model.target, "tmp")
         os.makedirs(target_tmp, exist_ok=True)
@@ -437,8 +417,7 @@ class InstallProgressController(SubiquityController):
 
     async def stop_unattended_upgrades(self):
         self.progress_view.event_finish(self.unattended_upgrades_ctx)
-        with self.install_context(
-                self.unattended_upgrades_ctx.parent,
+        with self.unattended_upgrades_ctx.parent.child(
                 "stop_unattended_upgrades",
                 "cancelling update"):
             if self.opts.dry_run:
