@@ -219,15 +219,15 @@ class InstallConfirmation(Stretchy):
 
     def ok(self, sender):
         self.app.confirm_install()
-        self.parent.remove_overlay()
-        if isinstance(self.parent, ProgressView):
-            self.parent.hide_continue()
+        self.app.remove_global_overlay(self)
+        if isinstance(self.app.ui.body, ProgressView):
+            self.app.ui.body.hide_continue()
         self.app.next_screen()
 
     def cancel(self, sender):
-        self.parent.remove_overlay()
-        if isinstance(self.parent, ProgressView):
-            self.parent.show_continue()
+        self.app.remove_global_overlay(self)
+        if isinstance(self.app.ui.body, ProgressView):
+            self.app.ui.body.show_continue()
 
 
 running_text = _("""\
