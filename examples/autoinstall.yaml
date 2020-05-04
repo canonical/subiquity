@@ -12,8 +12,8 @@ network:
   ethernets:
     all-eth:
       match:
-        name: "eth*"
-      dhcp4: yes
+        name: "en*"
+      dhcp6: yes
 debconf-selections: eek
 packages:
   - package1
