@@ -17,7 +17,7 @@ class StorageChecker:
         assert 'number' in action
         assert action['device'] in self.actions
         assert 'ptable' in self.actions[action['device']]
-        if action['flag'] in ('boot', 'bios_grub', 'prep'):
+        if action.get('flag') in ('boot', 'bios_grub', 'prep'):
             assert self.actions[action['device']]['type'] == 'disk'
 
     def _check_format(self, action):
@@ -68,17 +68,6 @@ class StorageChecker:
 
         # Check we mounted /
         assert '/' in self.path_to_mount
-
-        # Check /boot is on a physical disk
-        if '/boot' in self.path_to_mount:
-            boot_mount = self.path_to_mount['/boot']
-        else:
-            boot_mount = self.path_to_mount['/']
-        boot_fs = self.actions[boot_mount['device']]
-        boot_part = self.actions[boot_fs['volume']]
-        assert boot_part['type'] == 'partition', boot_part['type']
-        boot_device = self.actions[boot_part['device']]
-        assert boot_device['type'] == 'disk'
 
 
 config = yaml.safe_load(open(sys.argv[1]))
