@@ -36,7 +36,7 @@ done
 TTY=$(tty || true)
 clean
 timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall.yaml \
-                               --dry-run --machine-config examples/simple.json \
+                               --dry-run --machine-config examples/existing-partitions.json \
                                --kernel-cmdline 'autoinstall console=\"${TTY#/dev/}\"'"
 validate
 python3 scripts/check-yaml-fields.py .subiquity/subiquity-curtin-install.conf \

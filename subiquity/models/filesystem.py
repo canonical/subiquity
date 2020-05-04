@@ -317,7 +317,7 @@ def _conv_size(s):
     if isinstance(s, str):
         if '%' in s:
             return s
-        return human2bytes(s)
+        return int(human2bytes(s))
     return s
 
 
@@ -993,7 +993,8 @@ class Raid(_Device):
         # way get_raid_size does.
         return [d.id for d in raid_device_sort(self.devices)]
 
-    spare_devices = attributes.reflist(backlink="_constructed_device")
+    spare_devices = attributes.reflist(
+        backlink="_constructed_device", default=attr.Factory)
 
     preserve = attr.ib(default=False)
     ptable = attributes.ptable()
