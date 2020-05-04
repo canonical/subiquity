@@ -17,6 +17,8 @@ import logging
 
 import attr
 
+from subiquitycore.context import with_context
+
 from subiquity.controller import SubiquityController
 from subiquity.ui.views import IdentityView
 
@@ -42,7 +44,8 @@ class IdentityController(SubiquityController):
         if data is not None:
             self.model.add_user(data)
 
-    async def apply_autoinstall_config(self):
+    @with_context()
+    async def apply_autoinstall_config(self, context):
         if not self.model.user:
             if 'user-data' not in self.app.autoinstall_config:
                 raise Exception("no identity data provided")

@@ -17,6 +17,7 @@ import logging
 
 import jsonschema
 
+from subiquitycore.context import with_context
 from subiquitycore.controller import (
     BaseController,
     RepeatedController,
@@ -57,7 +58,8 @@ class SubiquityController(BaseController):
         """
         pass
 
-    async def apply_autoinstall_config(self):
+    @with_context()
+    async def apply_autoinstall_config(self, context):
         """Apply autoinstall configuration.
 
         This is only called for a non-interactive controller. It should
@@ -110,7 +112,7 @@ class RepeatedController(RepeatedController):
         self.autoinstall_applied = False
 
     async def apply_autoinstall_config(self):
-        await self.orig.apply_autoinstall_config(self.index)
+        await self.orig.apply_autoinstall_config(index=self.index)
 
     def configured(self):
         self.orig.configured()

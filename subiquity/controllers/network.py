@@ -17,6 +17,7 @@ import asyncio
 import logging
 
 from subiquitycore.async_helpers import schedule_task
+from subiquitycore.context import with_context
 from subiquitycore.controllers.network import NetworkController
 
 from subiquity.controller import SubiquityController
@@ -110,11 +111,13 @@ class NetworkController(NetworkController, SubiquityController):
     async def delay(self):
         await asyncio.sleep(10)
 
-    async def apply_autoinstall_config(self):
+    @with_context()
+    async def apply_autoinstall_config(self, context):
         if self.ai_data is None:
-            await self.initial_delay
+            with context.child("initial_delay"):
+                await self.initial_delay
             self.update_initial_configs()
-            self.apply_config()
+            self.apply_config(context)
         await self.apply_config_task.wait()
         self.model.has_network = bool(
             self.network_event_receiver.default_routes)
@@ -129,9 +132,9 @@ class NetworkController(NetworkController, SubiquityController):
             return {'network': r}
         return super().render_config()
 
-    async def _apply_config(self, silent):
+    async def _apply_config(self, context=None, *, silent):
         try:
-            await super()._apply_config(silent)
+            await super()._apply_config(context, silent=silent)
         except asyncio.CancelledError:
             # asyncio.CancelledError is a subclass of Exception in
             # Python 3.6 (sadface)

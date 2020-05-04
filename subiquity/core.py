@@ -417,8 +417,7 @@ class Subiquity(Application):
         self.ui.set_body(self.controllers.InstallProgress.progress_view)
 
     async def _apply(self, controller):
-        with controller.context.child("apply_autoinstall_config"):
-            await controller.apply_autoinstall_config()
+        await controller.apply_autoinstall_config()
         controller.autoinstall_applied = True
         controller.configured()
         self.next_screen()

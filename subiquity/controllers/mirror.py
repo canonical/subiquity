@@ -25,6 +25,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     SingleInstanceTask,
     )
+from subiquitycore.context import with_context
 
 from subiquity.controller import SubiquityController
 from subiquity.ui.views.mirror import MirrorView
@@ -73,7 +74,8 @@ class MirrorController(SubiquityController):
         merge_config(self.model.config, data)
         self.geoip_enabled = geoip and self.model.is_default()
 
-    async def apply_autoinstall_config(self):
+    @with_context()
+    async def apply_autoinstall_config(self, context):
         if not self.geoip_enabled:
             return
         try:

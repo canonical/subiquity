@@ -109,3 +109,20 @@ class Context:
                 return c.data[key]
             c = c.parent
         return default
+
+
+def with_context(name=None, description="", **context_kw):
+    def decorate(meth):
+        nonlocal name
+        if name is None:
+            name = meth.__name__
+
+        async def decorated(self, context=None, *args, **kw):
+            if context is None:
+                context = self.context
+            manager = context.child(
+                name, description=description.format(**kw), **context_kw)
+            with manager as subcontext:
+                await meth(self, subcontext, *args, **kw)
+        return decorated
+    return decorate

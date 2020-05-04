@@ -19,6 +19,7 @@ import platform
 import subprocess
 
 from subiquitycore.async_helpers import schedule_task
+from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command, run_command
 
 from subiquity.controller import SubiquityController
@@ -63,7 +64,8 @@ class RebootController(SubiquityController):
                 run_command(["chreipl", "/target/boot"])
             run_command(["/sbin/reboot"])
 
-    async def apply_autoinstall_config(self):
+    @with_context()
+    async def apply_autoinstall_config(self, context):
         await self.copy_logs_to_target()
         self.reboot()
 

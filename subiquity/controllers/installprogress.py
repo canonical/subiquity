@@ -38,7 +38,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
-from subiquitycore.context import Status
+from subiquitycore.context import Status, with_context
 from subiquitycore.utils import (
     arun_command,
     astart_command,
@@ -118,7 +118,8 @@ class InstallProgressController(SubiquityController):
     def start(self):
         self.install_task = schedule_task(self.install(self.context))
 
-    async def apply_autoinstall_config(self):
+    @with_context()
+    async def apply_autoinstall_config(self, context):
         await self.install_task
         self.app.reboot_on_exit = True
 
