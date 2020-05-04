@@ -343,11 +343,11 @@ class attributes:
         return attr.ib(metadata=metadata)
 
     @staticmethod
-    def reflist(*, backlink=None):
+    def reflist(*, backlink=None, default=attr.NOTHING):
         metadata = {'reflist': True}
         if backlink:
             metadata['backlink'] = backlink
-        return attr.ib(metadata=metadata)
+        return attr.ib(metadata=metadata, default=default)
 
     @staticmethod
     def backlink(*, default=None):
@@ -994,7 +994,7 @@ class Raid(_Device):
         return [d.id for d in raid_device_sort(self.devices)]
 
     spare_devices = attributes.reflist(
-        backlink="_constructed_device", default=attr.Factory)
+        backlink="_constructed_device", default=attr.Factory(set))
 
     preserve = attr.ib(default=False)
     ptable = attributes.ptable()
