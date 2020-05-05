@@ -78,8 +78,11 @@ class MirrorController(SubiquityController):
     async def apply_autoinstall_config(self, context):
         if not self.geoip_enabled:
             return
+        if self.lookup_task.task is None:
+            return
         try:
-            await asyncio.wait_for(self.lookup_task.wait(), 10)
+            with context.child('waiting'):
+                await asyncio.wait_for(self.lookup_task.wait(), 10)
         except asyncio.TimeoutError:
             pass
 
@@ -90,34 +93,34 @@ class MirrorController(SubiquityController):
             self.check_state = CheckState.CHECKING
             self.lookup_task.start_sync()
 
-    async def lookup(self):
-        with self.context.child("lookup"):
-            try:
-                response = await run_in_thread(
-                    requests.get, "https://geoip.ubuntu.com/lookup")
-                response.raise_for_status()
-            except requests.exceptions.RequestException:
-                log.exception("geoip lookup failed")
-                self.check_state = CheckState.FAILED
-                return
-            try:
-                e = ElementTree.fromstring(response.text)
-            except ElementTree.ParseError:
-                log.exception("parsing %r failed", response.text)
-                self.check_state = CheckState.FAILED
-                return
-            cc = e.find("CountryCode")
-            if cc is None:
-                log.debug("no CountryCode found in %r", response.text)
-                self.check_state = CheckState.FAILED
-                return
-            cc = cc.text.lower()
-            if len(cc) != 2:
-                log.debug("bogus CountryCode found in %r", response.text)
-                self.check_state = CheckState.FAILED
-                return
-            self.check_state = CheckState.DONE
-            self.model.set_country(cc)
+    @with_context()
+    async def lookup(self, context):
+        try:
+            response = await run_in_thread(
+                requests.get, "https://geoip.ubuntu.com/lookup")
+            response.raise_for_status()
+        except requests.exceptions.RequestException:
+            log.exception("geoip lookup failed")
+            self.check_state = CheckState.FAILED
+            return
+        try:
+            e = ElementTree.fromstring(response.text)
+        except ElementTree.ParseError:
+            log.exception("parsing %r failed", response.text)
+            self.check_state = CheckState.FAILED
+            return
+        cc = e.find("CountryCode")
+        if cc is None:
+            log.debug("no CountryCode found in %r", response.text)
+            self.check_state = CheckState.FAILED
+            return
+        cc = cc.text.lower()
+        if len(cc) != 2:
+            log.debug("bogus CountryCode found in %r", response.text)
+            self.check_state = CheckState.FAILED
+            return
+        self.check_state = CheckState.DONE
+        self.model.set_country(cc)
 
     def start_ui(self):
         self.check_state = CheckState.DONE
