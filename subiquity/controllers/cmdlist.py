@@ -38,7 +38,7 @@ class CmdListController(NoUIController):
     @with_context()
     async def run(self, context):
         for i, cmd in enumerate(self.cmds):
-            with self.context.child("command_{}".format(i), cmd):
+            with context.child("command_{}".format(i), cmd):
                 if isinstance(cmd, str):
                     cmd = ['sh', '-c', cmd]
                 await arun_command(
@@ -58,4 +58,4 @@ class LateController(CmdListController):
 
     @with_context()
     async def apply_autoinstall_config(self, context):
-        await self.run(context)
+        await self.run(context=context)

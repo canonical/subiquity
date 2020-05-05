@@ -45,7 +45,7 @@ class IdentityController(SubiquityController):
             self.model.add_user(data)
 
     @with_context()
-    async def apply_autoinstall_config(self, context):
+    async def apply_autoinstall_config(self, context=None):
         if not self.model.user:
             if 'user-data' not in self.app.autoinstall_config:
                 raise Exception("no identity data provided")

@@ -155,9 +155,9 @@ class NetworkController(NetworkController, SubiquityController):
         self.model.has_network = bool(
             self.network_event_receiver.default_routes)
 
-    async def _apply_config(self, context=None, *, silent):
+    async def _apply_config(self, *, context=None, silent=False):
         try:
-            await super()._apply_config(context, silent=silent)
+            await super()._apply_config(context=context, silent=silent)
         except asyncio.CancelledError:
             # asyncio.CancelledError is a subclass of Exception in
             # Python 3.6 (sadface)

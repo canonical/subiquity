@@ -241,7 +241,7 @@ class InstallProgressController(SubiquityController):
         return curtin_cmd
 
     @with_context(description="umounting /target dir")
-    async def unmount_target(self, context, target):
+    async def unmount_target(self, *, context, target):
         cmd = [
             sys.executable, '-m', 'curtin', 'unmount',
             '-t', target,
@@ -254,7 +254,7 @@ class InstallProgressController(SubiquityController):
 
     @with_context(
         description="installing system", level="INFO", childlevel="DEBUG")
-    async def curtin_install(self, context):
+    async def curtin_install(self, *, context):
         log.debug('curtin_install')
         self.install_state = InstallState.RUNNING
         self.curtin_event_contexts[''] = context
@@ -288,7 +288,7 @@ class InstallProgressController(SubiquityController):
         pass
 
     @with_context()
-    async def install(self, context):
+    async def install(self, *, context):
         context.set('is-install-context', True)
         try:
             await asyncio.wait(
@@ -297,16 +297,17 @@ class InstallProgressController(SubiquityController):
             await self.confirmation.wait()
 
             if os.path.exists(self.model.target):
-                await self.unmount_target(context, self.model.target)
+                await self.unmount_target(
+                    context=context, target=self.model.target)
 
-            await self.curtin_install(context)
+            await self.curtin_install(context=context)
 
             await asyncio.wait(
                 {e.wait() for e in self.model.postinstall_events})
 
-            await self.drain_curtin_events(context)
+            await self.drain_curtin_events(context=context)
 
-            await self.postinstall(context)
+            await self.postinstall(context=context)
 
             self.ui.set_header(_("Installation complete!"))
             self.progress_view.set_status(_("Finished install!"))
@@ -314,7 +315,7 @@ class InstallProgressController(SubiquityController):
 
             if self.model.network.has_network:
                 self.progress_view.update_running()
-                await self.run_unattended_upgrades(context)
+                await self.run_unattended_upgrades(context=context)
                 self.progress_view.update_done()
 
         except Exception:
@@ -326,7 +327,7 @@ class InstallProgressController(SubiquityController):
         await self.install_task
         self.app.next_screen()
 
-    async def drain_curtin_events(self, context):
+    async def drain_curtin_events(self, *, context):
         waited = 0.0
         while self.progress_view.ongoing and waited < 5.0:
             await asyncio.sleep(0.1)
@@ -337,30 +338,29 @@ class InstallProgressController(SubiquityController):
     @with_context(
         description="final system configuration", level="INFO",
         childlevel="DEBUG")
-    async def postinstall(self, context):
+    async def postinstall(self, *, context):
         autoinstall_path = os.path.join(
             self.app.root, 'var/log/installer/autoinstall-user-data')
         autoinstall_config = "#cloud-config\n" + yaml.dump(
             {"autoinstall": self.app.make_autoinstall()})
         write_file(autoinstall_path, autoinstall_config, mode=0o600)
-        await self.configure_cloud_init(context)
+        await self.configure_cloud_init(context=context)
         packages = []
         if self.model.ssh.install_server:
             packages = ['openssh-server']
         packages.extend(self.app.base_model.packages)
         for package in packages:
-            subcontext = context.child(
-                "install_{}".format(package),
-                "installing {}".format(package))
-            with subcontext:
-                await self.install_package(package)
-        await self.restore_apt_config(context)
+            await self.install_package(context=context, package=package)
+        await self.restore_apt_config(context=context)
 
     @with_context(description="configuring cloud-init")
     async def configure_cloud_init(self, context):
         await run_in_thread(self.model.configure_cloud_init)
 
-    async def install_package(self, package):
+    @with_context(
+        name="install_{package}",
+        description="installing {package}")
+    async def install_package(self, *, context, package):
         if self.opts.dry_run:
             cmd = ["sleep", str(2/self.app.scale_factor)]
         else:

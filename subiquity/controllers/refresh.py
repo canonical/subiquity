@@ -97,7 +97,7 @@ class RefreshController(SubiquityController):
             return
         if self.check_state != CheckState.AVAILABLE:
             return
-        change_id = await self.start_update(context)
+        change_id = await self.start_update(context=context)
         while True:
             try:
                 change = await self.get_progress(change_id)

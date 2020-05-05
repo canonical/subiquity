@@ -317,7 +317,7 @@ class NetworkController(BaseController):
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
     def apply_config(self, context=None, silent=False):
-        self.apply_config_task.start_sync(context, silent=silent)
+        self.apply_config_task.start_sync(context=context, silent=silent)
 
     async def _down_devs(self, devs):
         for dev in devs:
@@ -358,7 +358,7 @@ class NetworkController(BaseController):
 
     @with_context(
         name="apply_config", description="silent={silent}", level="INFO")
-    async def _apply_config(self, context, *, silent):
+    async def _apply_config(self, *, context, silent):
         devs_to_delete = []
         devs_to_down = []
         dhcp_device_versions = []

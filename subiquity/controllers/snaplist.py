@@ -20,6 +20,7 @@ import requests.exceptions
 from subiquitycore.async_helpers import (
     schedule_task,
     )
+from subiquitycore.context import with_context
 from subiquitycore.controller import (
     Skip,
     )
@@ -62,34 +63,34 @@ class SnapdSnapInfoLoader:
             while self.pending_snaps:
                 snap = self.pending_snaps.pop(0)
                 task = self.tasks[snap] = schedule_task(
-                    self._fetch_info_for_snap(snap))
+                    self._fetch_info_for_snap(snap=snap))
                 await task
 
-    async def _load_list(self):
-        with self.context.child("list"):
-            try:
-                result = await self.snapd.get(
-                    'v2/find', section=self.store_section)
-            except requests.exceptions.RequestException:
-                log.exception("loading list of snaps failed")
-                self.failed = True
-                return
-            self.model.load_find_data(result)
-            self.snap_list_fetched = True
+    @with_context(name="list")
+    async def _load_list(self, context=None):
+        try:
+            result = await self.snapd.get(
+                'v2/find', section=self.store_section)
+        except requests.exceptions.RequestException:
+            log.exception("loading list of snaps failed")
+            self.failed = True
+            return
+        self.model.load_find_data(result)
+        self.snap_list_fetched = True
 
     def stop(self):
         if self.main_task is not None:
             self.main_task.cancel()
 
-    async def _fetch_info_for_snap(self, snap):
-        with self.context.child("fetch").child(snap.name):
-            try:
-                data = await self.snapd.get('v2/find', name=snap.name)
-            except requests.exceptions.RequestException:
-                log.exception("loading snap info failed")
-                # XXX something better here?
-                return
-            self.model.load_info_data(data)
+    @with_context(name="fetch/{snap.name}")
+    async def _fetch_info_for_snap(self, snap, context=None):
+        try:
+            data = await self.snapd.get('v2/find', name=snap.name)
+        except requests.exceptions.RequestException:
+            log.exception("loading snap info failed")
+            # XXX something better here?
+            return
+        self.model.load_info_data(data)
 
     def get_snap_list_task(self):
         return self.tasks[None]
@@ -98,7 +99,8 @@ class SnapdSnapInfoLoader:
         if snap not in self.tasks:
             if snap in self.pending_snaps:
                 self.pending_snaps.remove(snap)
-            self.tasks[snap] = schedule_task(self._fetch_info_for_snap(snap))
+            self.tasks[snap] = schedule_task(
+                self._fetch_info_for_snap(snap=snap))
         return self.tasks[snap]
 
 
