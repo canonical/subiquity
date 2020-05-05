@@ -104,11 +104,11 @@ class FilesystemController(SubiquityController):
         self.ai_data = data
 
     @with_context()
-    async def apply_autoinstall_config(self, context):
+    async def apply_autoinstall_config(self, context=None):
         self.stop_listening_udev()
         await self._start_task
         await self._probe_task.wait()
-        self.convert_autoinstall_config()
+        self.convert_autoinstall_config(context=context)
         if not self.model.is_root_mounted():
             raise Exception("autoinstall config did not mount root")
         if self.model.needs_bootloader_partition():
@@ -116,7 +116,8 @@ class FilesystemController(SubiquityController):
                 "autoinstall config did not create needed bootloader "
                 "partition")
 
-    async def _probe_once(self, restricted):
+    @with_context(name='probe_once', description='restricted={restricted}')
+    async def _probe_once(self, *, context, restricted):
         if restricted:
             probe_types = {'blockdev'}
             fname = 'probe-data-restricted.json'
@@ -133,52 +134,49 @@ class FilesystemController(SubiquityController):
         self.app.note_file_for_apport(key, fpath)
         self.model.load_probe_data(storage)
 
-    async def _probe(self):
-        with self.context.child("_probe") as context:
-            async with self.app.install_lock_file.shared():
-                self._crash_reports = {}
-                if isinstance(self.ui.body, ProbingFailed):
-                    self.ui.set_body(SlowProbing(self))
-                    schedule_task(self._wait_for_probing())
-                for (restricted, kind) in [
-                        (False, ErrorReportKind.BLOCK_PROBE_FAIL),
-                        (True,  ErrorReportKind.DISK_PROBE_FAIL),
-                        ]:
-                    try:
-                        desc = "restricted={}".format(restricted)
-                        with context.child("probe_once", desc):
-                            await self._probe_once_task.start(restricted)
-                            # We wait on the task directly here, not
-                            # self._probe_once_task.wait as if _probe_once_task
-                            # gets cancelled, we should be cancelled too.
-                            await asyncio.wait_for(
-                                self._probe_once_task.task, 15.0)
-                    except asyncio.CancelledError:
-                        # asyncio.CancelledError is a subclass of Exception in
-                        # Python 3.6 (sadface)
-                        raise
-                    except Exception:
-                        block_discover_log.exception(
-                            "block probing failed restricted=%s", restricted)
-                        report = self.app.make_apport_report(
-                            kind, "block probing", interrupt=False)
-                        self._crash_reports[restricted] = report
-                        continue
-                    break
+    @with_context()
+    async def _probe(self, *, context=None):
+        async with self.app.install_lock_file.shared():
+            self._crash_reports = {}
+            if isinstance(self.ui.body, ProbingFailed):
+                self.ui.set_body(SlowProbing(self))
+                schedule_task(self._wait_for_probing())
+            for (restricted, kind) in [
+                    (False, ErrorReportKind.BLOCK_PROBE_FAIL),
+                    (True,  ErrorReportKind.DISK_PROBE_FAIL),
+                    ]:
+                try:
+                    await self._probe_once_task.start(
+                        context=context, restricted=restricted)
+                    # We wait on the task directly here, not
+                    # self._probe_once_task.wait as if _probe_once_task
+                    # gets cancelled, we should be cancelled too.
+                    await asyncio.wait_for(self._probe_once_task.task, 15.0)
+                except asyncio.CancelledError:
+                    # asyncio.CancelledError is a subclass of Exception in
+                    # Python 3.6 (sadface)
+                    raise
+                except Exception:
+                    block_discover_log.exception(
+                        "block probing failed restricted=%s", restricted)
+                    report = self.app.make_apport_report(
+                        kind, "block probing", interrupt=False)
+                    self._crash_reports[restricted] = report
+                    continue
+                break
 
-    def convert_autoinstall_config(self):
+    @with_context()
+    def convert_autoinstall_config(self, context=None):
         log.debug("self.ai_data = %s", self.ai_data)
         if 'layout' in self.ai_data:
             layout = self.ai_data['layout']
-            with self.context.child("applying_autoinstall"):
-                meth = getattr(self, "guided_" + layout['name'])
-                disk = self.model.disk_for_match(
-                    self.model.all_disks(),
-                    layout.get("match", {'size': 'largest'}))
-                meth(disk)
+            meth = getattr(self, "guided_" + layout['name'])
+            disk = self.model.disk_for_match(
+                self.model.all_disks(),
+                layout.get("match", {'size': 'largest'}))
+            meth(disk)
         elif 'config' in self.ai_data:
-            with self.context.child("applying_autoinstall"):
-                self.model.apply_autoinstall_config(self.ai_data['config'])
+            self.model.apply_autoinstall_config(self.ai_data['config'])
             self.model.grub = self.ai_data.get('grub', {})
             self.model.swap = self.ai_data.get('swap')
 

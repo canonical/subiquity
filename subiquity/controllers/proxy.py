@@ -43,7 +43,7 @@ class ProxyController(SubiquityController):
             self.signal.emit_signal('network-proxy-set')
 
     @with_context()
-    async def apply_autoinstall_config(self, context):
+    async def apply_autoinstall_config(self, context=None):
         # XXX want to wait until signal sent by .start() has been seen
         # by everything; don't have a way to do that today.
         pass

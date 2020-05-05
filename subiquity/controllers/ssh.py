@@ -17,6 +17,7 @@ import logging
 import subprocess
 
 from subiquitycore.async_helpers import schedule_task
+from subiquitycore.context import with_context
 from subiquitycore import utils
 
 from subiquity.controller import SubiquityController
@@ -94,7 +95,10 @@ class SSHController(SubiquityController):
             raise subprocess.CalledProcessError(cp.returncode, cmd)
         return cp
 
-    async def _fetch_ssh_keys(self, user_spec):
+    @with_context(
+        name="ssh_import_id",
+        description="{user_spec[ssh_import_id]}:{user_spec[import_username]}")
+    async def _fetch_ssh_keys(self, *, context, user_spec):
         ssh_import_id = "{ssh_import_id}:{import_username}".format(**user_spec)
         with self.context.child("ssh_import_id", ssh_import_id):
             try:
@@ -127,7 +131,8 @@ class SSHController(SubiquityController):
                     user_spec, ssh_import_id, key_material, fingerprints)
 
     def fetch_ssh_keys(self, user_spec):
-        self._fetch_task = schedule_task(self._fetch_ssh_keys(user_spec))
+        self._fetch_task = schedule_task(
+            self._fetch_ssh_keys(user_spec=user_spec))
 
     def done(self, result):
         log.debug("SSHController.done next_screen result=%s", result)

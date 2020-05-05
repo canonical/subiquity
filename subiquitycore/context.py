@@ -15,6 +15,8 @@
 
 import asyncio
 import enum
+import functools
+import inspect
 
 
 class Status(enum.Enum):
@@ -117,12 +119,30 @@ def with_context(name=None, description="", **context_kw):
         if name is None:
             name = meth.__name__
 
-        async def decorated(self, context=None, *args, **kw):
+        def convargs(self, kw):
+            context = kw.get('context')
             if context is None:
                 context = self.context
-            manager = context.child(
-                name, description=description.format(**kw), **context_kw)
-            with manager as subcontext:
-                await meth(self, subcontext, *args, **kw)
-        return decorated
+            kw['context'] = context.child(
+                name=name.format(**kw),
+                description=description.format(**kw),
+                **context_kw)
+            return kw
+
+        @functools.wraps(meth)
+        def decorated_sync(self, **kw):
+            kw = convargs(self, kw)
+            with kw['context']:
+                return meth(self, **kw)
+
+        @functools.wraps(meth)
+        async def decorated_async(self, **kw):
+            kw = convargs(self, kw)
+            with kw['context']:
+                return await meth(self, **kw)
+
+        if inspect.iscoroutinefunction(meth):
+            return decorated_async
+        else:
+            return decorated_sync
     return decorate

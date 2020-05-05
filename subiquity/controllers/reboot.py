@@ -36,25 +36,25 @@ class RebootController(SubiquityController):
     def interactive(self):
         return self.app.interactive()
 
-    async def copy_logs_to_target(self):
-        with self.context.child("copy_logs_to_target"):
-            if self.opts.dry_run and 'copy-logs-fail' in self.app.debug_flags:
-                raise PermissionError()
-            target_logs = os.path.join(
-                self.app.base_model.target, 'var/log/installer')
-            if self.opts.dry_run:
-                os.makedirs(target_logs, exist_ok=True)
-            else:
+    @with_context()
+    async def copy_logs_to_target(self, context):
+        if self.opts.dry_run and 'copy-logs-fail' in self.app.debug_flags:
+            raise PermissionError()
+        target_logs = os.path.join(
+            self.app.base_model.target, 'var/log/installer')
+        if self.opts.dry_run:
+            os.makedirs(target_logs, exist_ok=True)
+        else:
+            await arun_command(
+                ['cp', '-aT', '/var/log/installer', target_logs])
+        journal_txt = os.path.join(target_logs, 'installer-journal.txt')
+        try:
+            with open(journal_txt, 'w') as output:
                 await arun_command(
-                    ['cp', '-aT', '/var/log/installer', target_logs])
-            journal_txt = os.path.join(target_logs, 'installer-journal.txt')
-            try:
-                with open(journal_txt, 'w') as output:
-                    await arun_command(
-                        ['journalctl', '-b'],
-                        stdout=output, stderr=subprocess.STDOUT)
-            except Exception:
-                log.exception("saving journal failed")
+                    ['journalctl', '-b'],
+                    stdout=output, stderr=subprocess.STDOUT)
+        except Exception:
+            log.exception("saving journal failed")
 
     def reboot(self):
         if self.opts.dry_run:
@@ -66,7 +66,7 @@ class RebootController(SubiquityController):
 
     @with_context()
     async def apply_autoinstall_config(self, context):
-        await self.copy_logs_to_target()
+        await self.copy_logs_to_target(context=context)
         self.reboot()
 
     async def _run(self):
