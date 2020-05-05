@@ -1375,7 +1375,8 @@ class FilesystemModel(object):
             elif isinstance(p.size, str):
                 if p.size.endswith("%"):
                     percentage = int(p.size[:-1])
-                    p.size = parent.available_for_partitions*percentage//100
+                    p.size = align_down(
+                        parent.available_for_partitions*percentage//100)
                 else:
                     p.size = dehumanize_size(p.size)
 
