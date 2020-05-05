@@ -37,8 +37,8 @@ storage:
   - {type: partition, device: disk-2, size: 1M, wipe: superblock, flag: bios_grub, number: 1, preserve: false, id: partition-grub-2}
   - {type: partition, device: disk-1, size: 1G, wipe: superblock, number: 2, preserve: false, id: partition-boot-1}
   - {type: partition, device: disk-2, size: 1G, wipe: superblock, number: 2, preserve: false, id: partition-boot-2}
-  - {type: partition, device: disk-1, size: 3G, wipe: superblock, number: 3, preserve: false, id: partition-system-1}
-  - {type: partition, device: disk-2, size: 3G, wipe: superblock, number: 3, preserve: false, id: partition-system-2}
+  - {type: partition, device: disk-1, size: 17%, wipe: superblock, number: 3, preserve: false, id: partition-system-1}
+  - {type: partition, device: disk-2, size: 17%, wipe: superblock, number: 3, preserve: false, id: partition-system-2}
   - {type: raid, name: md0, raidlevel: raid1, devices: [partition-boot-1, partition-boot-2], preserve: false, id: raid-boot}
   - {type: raid, name: md1, raidlevel: raid1, devices: [partition-system-1, partition-system-2], preserve: false, id: raid-system}
   - {type: format, fstype: ext4, volume: raid-boot, preserve: false, id: format-boot}

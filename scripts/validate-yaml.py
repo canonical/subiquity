@@ -14,6 +14,7 @@ class StorageChecker:
     def _check_partition(self, action):
         assert 'device' in action
         assert 'size' in action
+        assert action['size'] % 512 == 0
         assert 'number' in action
         assert action['device'] in self.actions
         assert 'ptable' in self.actions[action['device']]
@@ -49,6 +50,7 @@ class StorageChecker:
         assert 'name' in action
         assert 'size' in action
         assert isinstance(action['size'], str)
+        assert int(action['size'][:-1]) % 512 == 0
         assert action['volgroup'] in self.actions
 
     def check(self, action):
