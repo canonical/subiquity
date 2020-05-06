@@ -71,18 +71,18 @@ _ssh_import_data = {
         },
     'gh': {
         'caption': _("Github Username:"),
-        'help': "Enter your Github username.",
+        'help': _("Enter your Github username."),
         'valid_char': r'[a-zA-Z0-9\-]',
-        'error_invalid_char': ('A Github username may only contain '
-                               'alphanumeric characters or hyphens.'),
+        'error_invalid_char': _('A Github username may only contain '
+                                'alphanumeric characters or hyphens.'),
         },
     'lp': {
         'caption': _("Launchpad Username:"),
         'help': "Enter your Launchpad username.",
         'valid_char': r'[a-z0-9\+\.\-]',
-        'error_invalid_char': ('A Launchpad username may only contain '
-                               'lower-case alphanumeric characters, hyphens, '
-                               'plus, or periods.'),
+        'error_invalid_char': _('A Launchpad username may only contain '
+                                'lower-case alphanumeric characters, hyphens, '
+                                'plus, or periods.'),
         },
     }
 

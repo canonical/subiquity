@@ -95,9 +95,9 @@ class MountInfo:
     def fstype(self):
         fstype = self.mount.device.fstype
         if self.mount.device.preserve:
-            fstype = "existing" + " " + fstype
+            fstype = _("existing {fstype}").format(fstype=fstype)
         else:
-            fstype = "new" + " " + fstype
+            fstype = _("new {fstype}").format(fstype=fstype)
         return fstype
 
     @property
@@ -317,13 +317,13 @@ class DeviceList(WidgetWrap):
     def _label_REMOVE(self, action, device):
         cd = device.constructed_device()
         if cd:
-            return _("Remove from {}").format(cd.desc())
+            return _("Remove from {device}").format(device=cd.desc())
         else:
             return _(action.value)
 
     def _label_PARTITION(self, action, device):
-        return _("Add {} Partition").format(
-            device.ptable_for_new_partition().upper())
+        return _("Add {ptype} Partition").format(
+            ptype=device.ptable_for_new_partition().upper())
 
     def _label_TOGGLE_BOOT(self, action, device):
         if device._is_boot_device():
@@ -478,7 +478,7 @@ class FilesystemView(BaseView):
             return None
         rows = [
             TableRow([
-                Text("To continue you need to:"),
+                Text(_("To continue you need to:")),
                 Text(todos[0]),
                 ]),
             ]

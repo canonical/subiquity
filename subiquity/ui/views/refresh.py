@@ -196,7 +196,7 @@ class RefreshView(BaseView):
         self.spinner.stop()
 
         rows = [
-            Text("You can read the release notes for each version at:"),
+            Text(_("You can read the release notes for each version at:")),
             Text(""),
             Text(
                 "https://github.com/CanonicalLtd/subiquity/releases",
@@ -238,7 +238,7 @@ class RefreshView(BaseView):
             other_btn(_("Cancel update"), on_press=self.check_state_available),
             ]
 
-        self.controller.ui.set_header("Downloading update...")
+        self.controller.ui.set_header(_(self.progress_title))
         self._w = screen(
             self.lb_tasks, buttons, excerpt=_(self.progress_excerpt))
         schedule_task(self._update())

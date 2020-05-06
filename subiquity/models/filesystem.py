@@ -764,7 +764,7 @@ class Disk(_Device):
 
     def desc(self):
         if self.multipath:
-            return "multipath device"
+            return _("multipath device")
         return _("local disk")
 
     @property
@@ -889,27 +889,27 @@ class Partition(_Formattable):
             r.append("PReP")
             if self.preserve:
                 if self.grub_device:
-                    r.append("configured")
+                    r.append(_("configured"))
                 else:
-                    r.append("unconfigured")
+                    r.append(_("unconfigured"))
         elif self.flag == "boot":
             if self.fs() and self.fs().mount():
-                r.append("primary ESP")
+                r.append(_("primary ESP"))
             elif self.grub_device:
-                r.append("backup ESP")
+                r.append(_("backup ESP"))
             else:
-                r.append("unused ESP")
+                r.append(_("unused ESP"))
         elif self.flag == "bios_grub":
             if self.preserve:
                 if self.device.grub_device:
-                    r.append("configured")
+                    r.append(_("configured"))
                 else:
-                    r.append("unconfigured")
+                    r.append(_("unconfigured"))
             r.append("bios_grub")
         elif self.flag == "extended":
-            r.append("extended")
+            r.append(_("extended"))
         elif self.flag == "logical":
-            r.append("logical")
+            r.append(_("logical"))
         return r
 
     def usage_labels(self):
@@ -918,15 +918,16 @@ class Partition(_Formattable):
         return super().usage_labels()
 
     def desc(self):
-        return _("partition of {}").format(self.device.desc())
+        return _("partition of {device}").format(device=self.device.desc())
 
     @property
     def label(self):
-        return _("partition {} of {}").format(self._number, self.device.label)
+        return _("partition {number} of {device}").format(
+            number=self._number, device=self.device.label)
 
     @property
     def short_label(self):
-        return _("partition {}").format(self._number)
+        return _("partition {number}").format(number=self._number)
 
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:
@@ -1015,7 +1016,7 @@ class Raid(_Device):
         return self.name
 
     def desc(self):
-        return _("software RAID {}").format(self.raidlevel[4:])
+        return _("software RAID {level}").format(level=self.raidlevel[4:])
 
     supported_actions = [
         DeviceAction.EDIT,
@@ -1083,7 +1084,7 @@ class LVM_VolGroup(_Device):
         r = super().annotations
         member = next(iter(self.devices))
         if member.type == "dm_crypt":
-            r.append("encrypted")
+            r.append(_("encrypted"))
         return r
 
     @property
@@ -1091,7 +1092,7 @@ class LVM_VolGroup(_Device):
         return self.name
 
     def desc(self):
-        return "LVM volume group"
+        return _("LVM volume group")
 
     supported_actions = [
         DeviceAction.EDIT,
@@ -1144,7 +1145,7 @@ class LVM_LogicalVolume(_Formattable):
         return None  # hack!
 
     def desc(self):
-        return "LVM logical volume"
+        return _("LVM logical volume")
 
     @property
     def short_label(self):

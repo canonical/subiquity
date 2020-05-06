@@ -34,7 +34,7 @@ class NetworkList(WidgetWrap):
                      for ssid in ssids if ssid]
         p = Pile([BoxAdapter(ListBox(ssid_list), height=10),
                   Padding.fixed_10(button)])
-        box = LineBox(p, title="Select a network")
+        box = LineBox(p, title=_("Select a network"))
         super().__init__(box)
 
     def do_network(self, sender):
@@ -66,8 +66,8 @@ class NetworkConfigureWLANStretchy(Stretchy):
     def __init__(self, parent, device):
         self.parent = parent
         self.device = device
-        title = _("Network interface {} WIFI configuration").format(
-            device.name)
+        title = _("Network interface {nic} WIFI configuration").format(
+            nic=device.name)
 
         self.form = WLANForm()
 

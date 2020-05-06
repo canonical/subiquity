@@ -75,7 +75,8 @@ class FSTypeField(FormField):
                 (_('Leave unformatted'), True, None),
                 ]
         else:
-            label = _('Leave formatted as {}').format(form.existing_fs_type)
+            label = _('Leave formatted as {fstype}').format(
+                fstype=form.existing_fs_type)
             options = [
                 (label, True, None),
                 ('---', False),
@@ -107,13 +108,15 @@ class SizeWidget(StringEditor):
             self.value = self.form.size_str
             self.form.size.show_extra(
                 ('info_minor',
-                 _("Capped partition size at {}").format(self.form.size_str)))
+                 _("Capped partition size at {size}").format(
+                     size=self.form.size_str)))
         elif (align_up(sz) != sz and
               humanize_size(align_up(sz)) != self.form.size.value):
             sz_str = humanize_size(align_up(sz))
             self.value = sz_str
             self.form.size.show_extra(
-                ('info_minor', _("Rounded size up to {}").format(sz_str)))
+                ('info_minor', _("Rounded size up to {size}").format(
+                    size=sz_str)))
 
 
 class SizeField(FormField):
@@ -158,7 +161,8 @@ class PartitionForm(Form):
         self.max_size = max_size
         if max_size is not None:
             self.size_str = humanize_size(max_size)
-            self.size.caption = _("Size (max {}):").format(self.size_str)
+            self.size.caption = _("Size (max {size}):").format(
+                size=self.size_str)
         self.lvm_names = lvm_names
         super().__init__(initial)
         if max_size is None:
@@ -248,17 +252,18 @@ class PartitionForm(Form):
             return _('Path exceeds PATH_MAX')
         dev = self.mountpoints.get(mount)
         if dev is not None:
-            return _("{} is already mounted at {}.").format(
-                dev.label.title(), mount)
+            return _("{device} is already mounted at {path}.").format(
+                device=dev.label.title(), path=mount)
         if self.existing_fs_type is not None:
             if self.fstype.value is None:
                 if mount in common_mountpoints:
                     if mount not in suitable_mountpoints_for_existing_fs:
                         self.mount.show_extra(
                             ('info_error',
-                             _("Mounting an existing filesystem at {} is "
-                               "usually a bad idea, proceed only with "
-                               "caution.").format(mount)))
+                             _("Mounting an existing filesystem at "
+                               "{mountpoint} is usually a bad idea, "
+                               "proceed only with caution.").format(
+                                   mountpoint=mount)))
 
     def as_rows(self):
         r = super().as_rows()
@@ -499,17 +504,23 @@ class PartitionStretchy(Stretchy):
 
         if partition is None:
             if isinstance(disk, LVM_VolGroup):
-                add_name = _("logical volume")
+                title = _("Adding logical volume to {vgname}").format(
+                    vgname=disk.label)
             else:
-                add_name = _("{} partition").format(
-                    disk.ptable_for_new_partition().upper())
-            title = _("Adding {} to {}").format(add_name, disk.label)
+                title = _("Adding {ptype} partition to {device}").format(
+                    ptype=disk.ptable_for_new_partition().upper(),
+                    device=disk.label)
         else:
             if isinstance(disk, LVM_VolGroup):
-                desc = _("logical volume {}").format(partition.name)
+                title = _(
+                    "Editing logical volume {lvname} of {vgname}"
+                    ).format(
+                        lvname=partition.name,
+                        vgname=disk.label)
             else:
-                desc = partition.short_label
-            title = _("Editing {} of {}").format(desc, disk.label)
+                title = _("Editing partition {number} of {device}").format(
+                    number=partition.number,
+                    device=disk.label)
 
         super().__init__(title, widgets, 0, focus_index)
 
