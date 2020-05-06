@@ -110,8 +110,10 @@ class RaidForm(CompoundDiskForm):
         active_device_count = len(self.devices.widget.active_devices)
         if active_device_count < self.level.value.min_devices:
             return _(
-                'RAID Level "{}" requires at least {} active devices').format(
-                self.level.value.name, self.level.value.min_devices)
+                'RAID Level "{level}" requires at least {min_active} active'
+                ' devices').format(
+                    level=self.level.value.name,
+                    min_active=self.level.value.min_devices)
         return super().validate_devices()
 
 
@@ -137,7 +139,8 @@ class RaidStretchy(Stretchy):
                 }
         else:
             raid_names.remove(existing.name)
-            title = _('Edit software RAID disk "{}"').format(existing.name)
+            title = _('Edit software RAID disk "{name}"').format(
+                name=existing.name)
             label = _('Save')
             name = existing.name
             if name.startswith('md/'):

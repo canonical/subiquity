@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from gettext import ngettext
 import logging
 from urwid import Text
 
@@ -58,17 +59,16 @@ class ConfirmDeleteStretchy(Stretchy):
         elif hasattr(obj, 'partitions') and len(obj.partitions()) > 0:
             n = len(obj.partitions())
             if obj.type == "lvm_volgroup":
-                if n == 1:
-                    things = _("logical volume")
-                else:
-                    things = _("logical volumes")
+                line = ngettext(
+                    _("It contains 1 logical volume"),
+                    _("It contains {n} logical volumes"),
+                    n)
             else:
-                if n == 1:
-                    things = _("partition")
-                else:
-                    things = _("partitions")
-            lines.append(Text(_("It contains {n} {things}:").format(
-                n=n, things=things)))
+                line = ngettext(
+                    _("It contains 1 partition"),
+                    _("It contains {n} partitions"),
+                    n)
+            lines.append(Text(line.format(n=n)))
             lines.append(Text(""))
             stretchy_index = len(lines)
             rows = []

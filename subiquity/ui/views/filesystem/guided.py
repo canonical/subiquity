@@ -199,12 +199,12 @@ class GuidedDiskSelectionView (BaseView):
         elif found_disk:
             super().__init__(
                 screen(
-                    [Text(_(rewrap(no_big_disks)))],
+                    [Text(rewrap(_(no_big_disks)))],
                     [other_btn(_("OK"), on_press=self.manual)]))
         else:
             super().__init__(
                 screen(
-                    [Text(_(rewrap(no_disks)))],
+                    [Text(rewrap(_(no_disks)))],
                     []))
 
     def local_help(self):

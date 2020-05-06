@@ -120,7 +120,7 @@ class NetworkView(BaseView):
             rows=rows,
             buttons=self.bottom,
             focus_buttons=True,
-            excerpt=self.excerpt))
+            excerpt=_(self.excerpt)))
 
     _action_INFO = _stretchy_shower(ViewInterfaceInfo)
     _action_EDIT_WLAN = _stretchy_shower(NetworkConfigureWLANStretchy)
@@ -184,7 +184,8 @@ class NetworkView(BaseView):
             if dev2.type != "bond":
                 continue
             if dev.name in dev2.config.get('interfaces', []):
-                notes.append(_("enslaved to {}").format(dev2.name))
+                notes.append(
+                    _("enslaved to {device}").format(device=dev2.name))
                 break
         if notes:
             notes = ", ".join(notes)
@@ -214,7 +215,9 @@ class NetworkView(BaseView):
                 else:
                     address_info.append((
                         label,
-                        Text(_("unknown state {}".format(dev.dhcp_state(v))))
+                        Text(
+                            _("unknown state {state}".format(
+                                state=dev.dhcp_state(v))))
                         ))
             else:
                 addrs = []
@@ -352,8 +355,8 @@ class NetworkView(BaseView):
             info = _("VLAN {id} on interface {link}").format(
                 **dev.config)
         elif dev.type == "bond":
-            info = _("bond master for {}").format(
-                ', '.join(dev.config['interfaces']))
+            info = _("bond master for {interfaces}").format(
+                interfaces=', '.join(dev.config['interfaces']))
         else:
             info = " / ".join([
                 dev.info.hwaddr, dev.info.vendor, dev.info.model])

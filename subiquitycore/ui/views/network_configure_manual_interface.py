@@ -99,7 +99,8 @@ class NetworkConfigForm(Form):
                 example = "xx.xx.xx.xx/yy"
             else:
                 example = "xx:xx:..:xx/yy"
-            raise ValueError(_("should be in CIDR form ({})").format(example))
+            raise ValueError(_("should be in CIDR form ({example})").format(
+                example=example))
         return self.ip_network_cls(subnet)
 
     def clean_address(self, address):
@@ -327,7 +328,7 @@ class ViewInterfaceInfo(Stretchy):
             Text(""),
             button_pile([done_btn(_("Close"), on_press=self.close)]),
             ]
-        title = _("Info for {}").format(device.name)
+        title = _("Info for {device}").format(device=device.name)
         super().__init__(title, widgets, 0, 2)
 
     def close(self, button=None):
@@ -399,8 +400,8 @@ class BondForm(Form):
         name = self.name.value
         if name in self.all_netdev_names:
             return _(
-                'There is already a network device named "{}"'
-                ).format(name)
+                'There is already a network device named "{netdev}"'
+                ).format(netdev=name)
         if len(name) == 0:
             return _("Name cannot be empty")
         if len(name) > 16:

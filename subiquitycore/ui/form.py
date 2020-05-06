@@ -173,7 +173,7 @@ class BoundFormField(object):
             first_row = [(2, _Validator(self, widget))]
             second_row = [(2, self.under_text)]
         else:
-            self.caption_text = Text(self.field.caption)
+            self.caption_text = Text(_(self.field.caption))
 
             if self.field.caption_first:
                 self.caption_text.align = 'right'
@@ -265,7 +265,10 @@ class BoundFormField(object):
         if self._help is not None:
             return self._help
         elif self.field.help is not None:
-            return self.field.help
+            if isinstance(self.field.help, str):
+                return _(self.field.help)
+            else:
+                return self.field.help
         else:
             return ""
 

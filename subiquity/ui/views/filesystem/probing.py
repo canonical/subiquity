@@ -73,7 +73,7 @@ class ProbingFailed(BaseView):
             Text(_(fail_text)),
             Text(""),
             button_pile(
-                [other_btn("Show Error Report", on_press=self.show_error)]),
+                [other_btn(_("Show Error Report"), on_press=self.show_error)]),
             ],
             [other_btn(_("Back"), on_press=self.cancel)]))
 
