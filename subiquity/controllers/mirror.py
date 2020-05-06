@@ -59,13 +59,13 @@ class MirrorController(SubiquityController):
 
     def __init__(self, app):
         self.ai_data = {}
+        self.geoip_enabled = True
         super().__init__(app)
         self.check_state = CheckState.NOT_STARTED
         if 'country-code' in self.answers:
             self.check_state = CheckState.DONE
             self.model.set_country(self.answers['country-code'])
         self.lookup_task = SingleInstanceTask(self.lookup)
-        self.geoip_enabled = True
 
     def load_autoinstall_data(self, data):
         if data is None:
