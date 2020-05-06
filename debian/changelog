@@ -1,3 +1,10 @@
+subiquity (20.04.1+git45g5f9fae19ubuntu0.1) focal; urgency=medium
+
+  * Cherrypick fix to disable consoleconf during UC20 install mode. LP:
+    #1877111
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Wed, 06 May 2020 13:45:09 +0100
+
 subiquity (20.04.1+git45g5f9fae19) focal; urgency=medium
 
   * Upload subquity snapshot with reverted consoleconf patch.
