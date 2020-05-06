@@ -1,3 +1,9 @@
+subiquity (20.04.1+git45g5f9fae19) focal; urgency=medium
+
+  * Upload subquity snapshot with reverted consoleconf patch.
+
+ -- Dimitri John Ledkov <xnox@ubuntu.com>  Mon, 20 Apr 2020 15:31:39 +0100
+
 subiquity (20.03.3+git147gb34aeda0) focal; urgency=medium
 
   * Upload subiquity snapshot with newer translations and consoleconf.
