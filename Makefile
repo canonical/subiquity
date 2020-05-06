@@ -29,6 +29,7 @@ install_deps:
 
 i18n:
 	$(PYTHON) setup.py build_i18n
+	cd po; intltool-update -r -g subiquity
 
 dryrun: probert i18n
 	$(MAKE) ui-view DRYRUN="--dry-run --bootloader uefi"
