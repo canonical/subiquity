@@ -31,8 +31,8 @@ parts:
       sed -e "s,@@PACKAGED_VERSION@@,$PACKAGED_VERSION,g" -i curtin/version.py
     plugin: python
     source-type: git
-    source: https://git.launchpad.net/~ubuntu-core-dev/curtin
-    source-commit: a6cd01f01fccb61e89f37a2cdd11e9c103fdff65
+    source: https://git.launchpad.net/curtin
+    source-commit: 145e493938b7296fab46a56560ec4e62b4326b62
     requirements: [requirements.txt]
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
