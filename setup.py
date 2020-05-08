@@ -50,6 +50,7 @@ class build(distutils.command.build.build):
             '--directory=.',
             '--add-comments',
             '--from-code=UTF-8',
+            '--keyword=pgettext:1c,2',
             '--output=subiquity.pot',
             '--files-from=POTFILES.in.tmp',
             ], cwd="po")

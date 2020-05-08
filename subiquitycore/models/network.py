@@ -20,6 +20,7 @@ import logging
 import yaml
 from socket import AF_INET, AF_INET6
 
+from subiquitycore import gettext38
 from subiquitycore import netplan
 
 
@@ -36,7 +37,7 @@ def addr_version(ip):
 
 class NetDevAction(enum.Enum):
     # Information about a network interface
-    INFO = _("Info")
+    INFO = gettext38.pgettext("NetDevAction", "Info")
     EDIT_WLAN = _("Edit Wifi")
     EDIT_IPV4 = _("Edit IPv4")
     EDIT_IPV6 = _("Edit IPv6")
