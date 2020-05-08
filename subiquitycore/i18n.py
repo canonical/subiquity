@@ -39,7 +39,7 @@ def switch_language(code='en_US'):
             return message
     elif code:
         translation = gettext38.translation('subiquity', localedir=localedir,
-                                          languages=[code], fallback=True)
+                                            languages=[code], fallback=True)
 
         def my_gettext(message):
             if not message:
