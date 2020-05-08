@@ -20,7 +20,7 @@ import logging
 import yaml
 from socket import AF_INET, AF_INET6
 
-from subiquitycore import gettext38
+from subiquitycore.gettext38 import pgettext
 from subiquitycore import netplan
 
 
@@ -37,13 +37,16 @@ def addr_version(ip):
 
 class NetDevAction(enum.Enum):
     # Information about a network interface
-    INFO = gettext38.pgettext("NetDevAction", "Info")
-    EDIT_WLAN = _("Edit Wifi")
-    EDIT_IPV4 = _("Edit IPv4")
-    EDIT_IPV6 = _("Edit IPv6")
-    EDIT_BOND = _("Edit bond")
-    ADD_VLAN = _("Add a VLAN tag")
-    DELETE = _("Delete")
+    INFO = pgettext("NetDevAction", "Info")
+    EDIT_WLAN = pgettext("NetDevAction", "Edit Wifi")
+    EDIT_IPV4 = pgettext("NetDevAction", "Edit IPv4")
+    EDIT_IPV6 = pgettext("NetDevAction", "Edit IPv6")
+    EDIT_BOND = pgettext("NetDevAction", "Edit bond")
+    ADD_VLAN = pgettext("NetDevAction", "Add a VLAN tag")
+    DELETE = pgettext("NetDevAction", "Delete")
+
+    def str(self):
+        return pgettext(type(self).__name__, self.value)
 
 
 def _sanitize_inteface_config(iface_config):

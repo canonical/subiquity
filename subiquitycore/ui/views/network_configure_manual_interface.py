@@ -139,8 +139,11 @@ class NetworkConfigForm(Form):
 
 
 network_choices = [
+    # A choice for how to configure a network interface
     (_("Automatic (DHCP)"), True, "dhcp"),
+    # A choice for how to configure a network interface
     (_("Manual"), True, "manual"),
+    # A choice for how to configure a network interface
     (_("Disabled"), True, "disable"),
     ]
 
@@ -286,7 +289,7 @@ class VlanForm(Form):
         new_name = '%s.%s' % (self.device.name, self.vlan.value)
         if new_name in self.parent.model.devices_by_name:
             if self.parent.model.devices_by_name[new_name].config is not None:
-                return _("%s already exists") % new_name
+                return _("{netdev} already exists").format(netdev=new_name)
 
 
 class AddVlanStretchy(Stretchy):
@@ -330,6 +333,7 @@ class ViewInterfaceInfo(Stretchy):
             Text(""),
             button_pile([done_btn(_("Close"), on_press=self.close)]),
             ]
+        # {device} is the name of a network device
         title = _("Info for {device}").format(device=device.name)
         super().__init__(title, widgets, 0, 2)
 

@@ -614,10 +614,13 @@ class ZdevInfo:
     @property
     def status(self):
         if self.failed:
+            # for translator: failed is a zdev device status
             return Color.info_error(Text(_("failed"), align="center"))
         if self.auto and self.on:
+            # for translator: auto is a zdev device status
             return Color.info_minor(Text(_("auto"), align="center"))
         if self.pers and self.on:
+            # for translator: online is a zdev device status
             return Text(_("online"), align="center")
         return Text("", align="center")
 

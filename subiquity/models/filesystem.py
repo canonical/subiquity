@@ -30,6 +30,9 @@ from curtin.util import human2bytes
 
 from probert.storage import StorageInfo
 
+from subiquitycore.gettext38 import pgettext
+
+
 log = logging.getLogger('subiquity.models.filesystem')
 
 
@@ -144,7 +147,9 @@ class RaidLevel:
 
 
 raidlevels = [
+    # for translators: this is a description of a RAID level
     RaidLevel(_("0 (striped)"),  "raid0",  2, False),
+    # for translators: this is a description of a RAID level
     RaidLevel(_("1 (mirrored)"), "raid1",  2),
     RaidLevel(_("5"),            "raid5",  3),
     RaidLevel(_("6"),            "raid6",  4),
@@ -182,7 +187,8 @@ def dehumanize_size(size):
     size_in = size
 
     if not size:
-        raise ValueError("input cannot be empty")
+        # Attempting to convert input to a size
+        raise ValueError(_("input cannot be empty"))
 
     if not size[-1].isdigit():
         suffix = size[-1].upper()
@@ -192,7 +198,9 @@ def dehumanize_size(size):
 
     parts = size.split('.')
     if len(parts) > 2:
-        raise ValueError(_("{!r} is not valid input").format(size_in))
+        raise ValueError(
+            # Attempting to convert input to a size
+            _("{input!r} is not valid input").format(input=size_in))
     elif len(parts) == 2:
         div = 10 ** len(parts[1])
         size = parts[0] + parts[1]
@@ -202,19 +210,23 @@ def dehumanize_size(size):
     try:
         num = int(size)
     except ValueError:
-        raise ValueError(_("{!r} is not valid input").format(size_in))
+        raise ValueError(
+            # Attempting to convert input to a size
+            _("{input!r} is not valid input").format(input=size_in))
 
     if suffix is not None:
         if suffix not in HUMAN_UNITS:
             raise ValueError(
-                "unrecognized suffix {!r} in {!r}".format(size_in[-1],
-                                                          size_in))
+                # Attempting to convert input to a size
+                "unrecognized suffix {suffix!r} in {input!r}".format(
+                    suffix=size_in[-1], input=size_in))
         mult = 2 ** (10 * HUMAN_UNITS.index(suffix))
     else:
         mult = 1
 
     if num < 0:
-        raise ValueError("{!r}: cannot be negative".format(size_in))
+        # Attempting to convert input to a size
+        raise ValueError("{input=!r}: cannot be negative".format(size_in))
 
     return num * mult // div
 
@@ -401,16 +413,19 @@ def asdict(inst):
 
 class DeviceAction(enum.Enum):
     # Information about a drive
-    INFO = _("Info")
+    INFO = pgettext("DeviceAction", "Info")
     # Edit a device (partition, logical volume, RAID, etc)
-    EDIT = _("Edit")
-    REFORMAT = _("Reformat")
-    PARTITION = _("Add Partition")
-    CREATE_LV = _("Create Logical Volume")
-    FORMAT = _("Format")
-    REMOVE = _("Remove from RAID/LVM")
-    DELETE = _("Delete")
-    TOGGLE_BOOT = _("Make Boot Device")
+    EDIT = pgettext("DeviceAction", "Edit")
+    REFORMAT = pgettext("DeviceAction", "Reformat")
+    PARTITION = pgettext("DeviceAction", "Add Partition")
+    CREATE_LV = pgettext("DeviceAction", "Create Logical Volume")
+    FORMAT = pgettext("DeviceAction", "Format")
+    REMOVE = pgettext("DeviceAction", "Remove from RAID/LVM")
+    DELETE = pgettext("DeviceAction", "Delete")
+    TOGGLE_BOOT = pgettext("DeviceAction", "Make Boot Device")
+
+    def str(self):
+        return pgettext(type(self).__name__, self.value)
 
 
 def _generic_can_EDIT(obj):
@@ -486,8 +501,10 @@ class _Formattable(ABC):
         if preserve is None:
             return []
         elif preserve:
+            # A pre-existing device such as a partition or RAID
             return [_("existing")]
         else:
+            # A newly created device such as a partition or RAID
             return [_("new")]
 
     # Filesystem
@@ -516,13 +533,19 @@ class _Formattable(ABC):
             if self._m.is_mounted_filesystem(fs.fstype):
                 m = fs.mount()
                 if m:
+                    # A filesytem
                     r.append(_("mounted at {path}").format(path=m.path))
                 elif getattr(self, 'flag', None) != "boot":
+                    # A filesytem
                     r.append(_("not mounted"))
             elif fs.preserve:
                 if fs.mount() is None:
+                    # A filesytem that cannot be mounted (i.e. swap)
+                    # is used or unused
                     r.append(_("unused"))
                 else:
+                    # A filesytem that cannot be mounted (i.e. swap)
+                    # is used or unused
                     r.append(_("used"))
             return r
         else:
