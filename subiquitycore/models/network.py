@@ -35,6 +35,7 @@ def addr_version(ip):
 
 
 class NetDevAction(enum.Enum):
+    # Information about a network interface
     INFO = _("Info")
     EDIT_WLAN = _("Edit Wifi")
     EDIT_IPV4 = _("Edit IPv4")

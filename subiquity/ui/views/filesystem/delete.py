@@ -60,13 +60,13 @@ class ConfirmDeleteStretchy(Stretchy):
             n = len(obj.partitions())
             if obj.type == "lvm_volgroup":
                 line = ngettext(
-                    _("It contains 1 logical volume"),
-                    _("It contains {n} logical volumes"),
+                    "It contains 1 logical volume",
+                    "It contains {n} logical volumes",
                     n)
             else:
                 line = ngettext(
-                    _("It contains 1 partition"),
-                    _("It contains {n} partitions"),
+                    "It contains 1 partition",
+                    "It contains {n} partitions",
                     n)
             lines.append(Text(line.format(n=n)))
             lines.append(Text(""))

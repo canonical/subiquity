@@ -400,7 +400,9 @@ def asdict(inst):
 
 
 class DeviceAction(enum.Enum):
+    # Information about a drive
     INFO = _("Info")
+    # Edit a device (partition, logical volume, RAID, etc)
     EDIT = _("Edit")
     REFORMAT = _("Reformat")
     PARTITION = _("Add Partition")

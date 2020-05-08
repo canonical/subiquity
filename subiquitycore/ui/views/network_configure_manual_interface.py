@@ -111,7 +111,9 @@ class NetworkConfigForm(Form):
             return
         if address not in subnet:
             raise ValueError(
-                _("'%s' is not contained in '%s'") % (address, subnet))
+                _("'{address}' is not contained in '{subnet}'").format(
+                    address, subnet)
+                )
         return address
 
     def clean_gateway(self, gateway):
