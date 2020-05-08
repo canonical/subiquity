@@ -226,7 +226,7 @@ def dehumanize_size(size):
 
     if num < 0:
         # Attempting to convert input to a size
-        raise ValueError("{input=!r}: cannot be negative".format(size_in))
+        raise ValueError("{input!r}: cannot be negative".format(input=size_in))
 
     return num * mult // div
 
