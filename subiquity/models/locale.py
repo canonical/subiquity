@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import gettext
 import logging
 
+from subiquitycore import gettext38
 from subiquitycore import i18n
 
 
@@ -53,9 +53,9 @@ class LocaleModel(object):
         languages = []
         for code, name in self.supported_languages:
             native = name
-            if gettext.find('iso_639_3', languages=[code]):
-                native_lang = gettext.translation('iso_639_3',
-                                                  languages=[code])
+            if gettext38.find('iso_639_3', languages=[code]):
+                native_lang = gettext38.translation('iso_639_3',
+                                                    languages=[code])
                 native = native_lang.gettext(name).capitalize()
             languages.append((code, native))
         return languages
