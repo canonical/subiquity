@@ -129,10 +129,9 @@ parts:
     build-packages:
       - localechooser-data
     override-build: |
-      scripts/make-language-lists
+      $SNAPCRAFT_PROJECT_DIR/scripts/make-language-lists $SNAPCRAFT_PROJECT_DIR/po > $SNAPCRAFT_PART_INSTALL/languagelist
     stage:
-      - languagelist-console
-      - languagelist-ssh
+      - languagelist
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]

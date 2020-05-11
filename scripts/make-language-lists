@@ -8,10 +8,17 @@ import sys
 
 DATA_PATH = '/usr/share/localechooser/languagelist.data.gz'
 
+lang_dir = 'po'
+if len(sys.argv) > 1:
+    lang_dir = sys.argv[1]
+
 translations = set()
-for fname in glob.glob('po/*.po'):
+for fname in glob.glob('{}/*.po'.format(lang_dir)):
     translations.add(os.path.splitext(os.path.basename(fname))[0])
 
+if not translations:
+    print("found no languages", file=sys.stderr)
+    sys.exit(1)
 
 langs = [
     ('console', 'en_US', 'English'),
@@ -55,9 +62,8 @@ for code in translations:
         native = native_lang.gettext(name).capitalize()
         langs.append(('ssh', code, native))
     else:
-        print('do not know native name for {}'.format(code))
+        print('do not know native name for {}'.format(code), file=sys.stderr)
         sys.exit(1)
 
-with open('languagelist', 'w') as langlist:
-    for level, code, name in langs:
-        langlist.write("{}:{}:{}\n".format(level, code, name))
+for level, code, name in langs:
+    sys.stdout.write("{}:{}:{}\n".format(level, code, name))
