@@ -24,6 +24,7 @@ Ubuntu Server Installer
 
 import distutils.cmd
 import distutils.command.build
+import distutils.spawn
 import glob
 import os
 import subprocess
@@ -45,7 +46,8 @@ class build(distutils.command.build.build):
                         continue
                     out_fp.write('../' + line)
 
-        subprocess.run([
+        os.chdir('po')
+        distutils.spawn.spawn([
             'xgettext',
             '--directory=.',
             '--add-comments',
@@ -53,7 +55,8 @@ class build(distutils.command.build.build):
             '--keyword=pgettext:1c,2',
             '--output=subiquity.pot',
             '--files-from=POTFILES.in.tmp',
-            ], cwd="po")
+            ])
+        os.chdir('..')
         os.unlink('po/POTFILES.in.tmp')
 
         for po_file in glob.glob("po/*.po"):
@@ -62,7 +65,7 @@ class build(distutils.command.build.build):
             mo_file = os.path.join(mo_dir, "subiquity.mo")
             if not os.path.exists(mo_dir):
                 os.makedirs(mo_dir)
-            subprocess.run(["msgfmt", po_file, "-o", mo_file])
+            distutils.spawn.spawn(["msgfmt", po_file, "-o", mo_file])
             targetpath = os.path.join("share/locale", lang, "LC_MESSAGES")
             data_files.append((targetpath, (mo_file,)))
 
