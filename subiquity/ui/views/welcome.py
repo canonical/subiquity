@@ -40,6 +40,7 @@ class WelcomeView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
+        self.is_linux_tty = controller.app.is_linux_tty
         super().__init__(screen(
             self._build_model_inputs(),
             buttons=None,
@@ -49,7 +50,12 @@ class WelcomeView(BaseView):
     def _build_model_inputs(self):
         btns = []
         current_index = None
-        for i, (code, native) in enumerate(self.model.get_languages()):
+        langs = self.model.get_languages(self.is_linux_tty)
+        cur = self.model.selected_language
+        if cur in ["C", None]:
+            cur = "en_US"
+        for i, (code, native) in enumerate(langs):
+            log.debug("%s", (code, self.model.selected_language))
             if code == self.model.selected_language:
                 current_index = i
             btns.append(forward_btn(label=native, on_press=self.confirm,

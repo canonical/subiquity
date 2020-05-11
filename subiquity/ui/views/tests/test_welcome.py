@@ -14,6 +14,8 @@ class WelcomeViewTests(unittest.TestCase):
 
     def make_view_with_languages(self, languages):
         controller = mock.create_autospec(spec=WelcomeController)
+        controller.app = mock.Mock()
+        controller.app.is_linux_tty = True
         model = mock.create_autospec(spec=LocaleModel)
         model.get_languages.return_value = languages
         return WelcomeView(model, controller)
