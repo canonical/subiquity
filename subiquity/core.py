@@ -274,7 +274,8 @@ class Subiquity(Application):
                 report = self.make_apport_report(
                     ErrorReportKind.UI, "Installer UI", interrupt=False,
                     wait=True)
-                print("report saved to {}".format(report.path))
+                if report is not None:
+                    print("report saved to {}".format(report.path))
             except Exception:
                 print("report generation failed")
                 traceback.print_exc()
@@ -457,6 +458,9 @@ class Subiquity(Application):
         self._apport_data.append((key, value))
 
     def make_apport_report(self, kind, thing, *, interrupt, wait=False, **kw):
+        if not self.opts.dry_run and not os.path.exists('/cdrom/.disk/info'):
+            return None
+
         log.debug("generating crash report")
 
         try:

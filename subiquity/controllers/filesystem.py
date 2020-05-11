@@ -161,7 +161,8 @@ class FilesystemController(SubiquityController):
                         "block probing failed restricted=%s", restricted)
                     report = self.app.make_apport_report(
                         kind, "block probing", interrupt=False)
-                    self._crash_reports[restricted] = report
+                    if report is not None:
+                        self._crash_reports[restricted] = report
                     continue
                 break
 
