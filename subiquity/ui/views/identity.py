@@ -91,15 +91,18 @@ class IdentityForm(Form):
 
     def validate_realname(self):
         if len(self.realname.value) > REALNAME_MAXLEN:
-            return _("Realname too long, must be < ") + str(REALNAME_MAXLEN)
+            return _(
+                "Name too long, must be less than {limit}"
+                ).format(limit=REALNAME_MAXLEN)
 
     def validate_hostname(self):
         if len(self.hostname.value) < 1:
             return _("Server name must not be empty")
 
         if len(self.hostname.value) > HOSTNAME_MAXLEN:
-            return (_("Server name too long, must be < ") +
-                    str(HOSTNAME_MAXLEN))
+            return _(
+                "Server name too long, must be less than {limit}"
+                ).format(limit=HOSTNAME_MAXLEN)
 
         if not re.match(r'[a-z_][a-z0-9_-]*', self.hostname.value):
             return _("Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
@@ -110,7 +113,9 @@ class IdentityForm(Form):
             return _("Username missing")
 
         if len(username) > USERNAME_MAXLEN:
-            return _("Username too long, must be < ") + str(USERNAME_MAXLEN)
+            return _(
+                "Username too long, must be less than {limit}"
+                ).format(limit=USERNAME_MAXLEN)
 
         if not re.match(r'[a-z_][a-z0-9_-]*', username):
             return _("Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
@@ -134,6 +139,7 @@ def setup_password_validation(form, desc):
         password = form.password.value
         if not password.startswith(new_text):
             form.confirm_password.show_extra(
+                # desc is "passwords" or "passphrases"
                 ("info_error", _("{desc} do not match").format(desc=desc)))
         else:
             form.confirm_password.show_extra('')

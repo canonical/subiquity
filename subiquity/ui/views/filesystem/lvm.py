@@ -81,7 +81,7 @@ class VolGroupForm(CompoundDiskForm):
         self.vg_names = vg_names
         super().__init__(model, possible_components, initial)
         connect_signal(self.encrypt.widget, 'change', self._change_encrypt)
-        setup_password_validation(self, _("Passphrases"))
+        setup_password_validation(self, _("passphrases"))
         self._change_encrypt(None, self.encrypt.value)
 
     name = VGNameField(_("Name:"))

@@ -106,7 +106,9 @@ class ConfirmReformatStretchy(Stretchy):
 
         fs = obj.fs()
         if fs is not None:
-            title = _("Remove filesystem from {}").format(obj.desc())
+            title = _(
+                "Remove filesystem from {device}"
+                ).format(device=obj.desc())
             lines = [
                 _(
                     "Do you really want to remove the existing filesystem "
@@ -130,6 +132,7 @@ class ConfirmReformatStretchy(Stretchy):
                 things = _("logical volumes")
             else:
                 things = _("partitions")
+            # things is either "logical volumes" or "partitions"
             title = _("Remove all {things} from {obj}").format(
                 things=things, obj=obj.desc())
             lines = [

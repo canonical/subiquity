@@ -101,8 +101,8 @@ class RaidForm(CompoundDiskForm):
 
     def validate_name(self):
         if self.name.value in self.raid_names:
-            return _("There is already a RAID named '{}'").format(
-                self.name.value)
+            return _("There is already a RAID named '{name}'").format(
+                name=self.name.value)
         if self.name.value in ('/dev/md/.', '/dev/md/..'):
             return _(". and .. are not valid names for RAID devices")
 

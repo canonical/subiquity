@@ -219,8 +219,8 @@ class Subiquity(Application):
             our_tty = "/dev/not a tty"
         if not self.interactive() and our_tty != primary_tty:
             print(
-                _("the installer running on {} will perform the "
-                  "autoinstall").format(primary_tty))
+                _("the installer running on {tty} will perform the "
+                  "autoinstall").format(tty=primary_tty))
             signal.pause()
         self.controllers.load("Reporting")
         self.controllers.Reporting.start()
@@ -232,8 +232,8 @@ class Subiquity(Application):
             stamp_file = self.state_path("early-commands")
             if our_tty != primary_tty:
                 print(
-                    _("waiting for installer running on {} to run early "
-                      "commands").format(primary_tty))
+                    _("waiting for installer running on {tty} to run early "
+                      "commands").format(tty=primary_tty))
                 while not os.path.exists(stamp_file):
                     time.sleep(1)
             elif not os.path.exists(stamp_file):
@@ -274,7 +274,7 @@ class Subiquity(Application):
                 report = self.make_apport_report(
                     ErrorReportKind.UI, "Installer UI", interrupt=False,
                     wait=True)
-                print("report saved to {}".format(report.path))
+                print("report saved to {path}".format(report.path))
             except Exception:
                 print("report generation failed")
                 traceback.print_exc()

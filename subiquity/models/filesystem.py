@@ -914,8 +914,10 @@ class Partition(_Formattable):
             r.append("PReP")
             if self.preserve:
                 if self.grub_device:
+                    # boot loader partition
                     r.append(_("configured"))
                 else:
+                    # boot loader partition
                     r.append(_("unconfigured"))
         elif self.flag == "boot":
             if self.fs() and self.fs().mount():
@@ -932,8 +934,10 @@ class Partition(_Formattable):
                     r.append(_("unconfigured"))
             r.append("bios_grub")
         elif self.flag == "extended":
+            # extended partition
             r.append(_("extended"))
         elif self.flag == "logical":
+            # logical partition
             r.append(_("logical"))
         return r
 
@@ -1109,6 +1113,7 @@ class LVM_VolGroup(_Device):
         r = super().annotations
         member = next(iter(self.devices))
         if member.type == "dm_crypt":
+            # Flag for a LVM volume group
             r.append(_("encrypted"))
         return r
 
