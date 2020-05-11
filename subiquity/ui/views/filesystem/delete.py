@@ -112,8 +112,8 @@ class ConfirmReformatStretchy(Stretchy):
             lines = [
                 _(
                     "Do you really want to remove the existing filesystem "
-                    "from {}?"
-                    ).format(obj.label),
+                    "from {device}?"
+                    ).format(device=obj.label),
                 "",
             ]
             m = fs.mount()

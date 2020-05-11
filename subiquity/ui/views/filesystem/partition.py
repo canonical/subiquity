@@ -232,7 +232,9 @@ class PartitionForm(Form):
         if v.startswith('-'):
             return _("The name of a logical volume cannot start with a hyphen")
         if v in ('.', '..', 'snapshot', 'pvmove'):
-            return _("A logical volume may not be called {}").format(v)
+            return _(
+                "A logical volume may not be called {name}"
+                ).format(name=v)
         for substring in ['_cdata', '_cmeta',   '_corig',  '_mlog',  '_mimage',
                           '_pmspare',  '_rimage',  '_rmeta',  '_tdata',
                           '_tmeta', '_vorigin']:
