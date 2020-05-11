@@ -153,7 +153,7 @@ raidlevels = [
 
 
 def _raidlevels_by_value():
-    r = {l.value: l for l in raidlevels}
+    r = {level.value: level for level in raidlevels}
     for n in 0, 1, 5, 6, 10:
         r[str(n)] = r[n] = r["raid"+str(n)]
     r["stripe"] = r["raid0"]
