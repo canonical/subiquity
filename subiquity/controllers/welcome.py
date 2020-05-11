@@ -42,6 +42,7 @@ class WelcomeController(SubiquityController):
         for code, name in self.model.get_languages(self.app.is_linux_tty):
             if code == lang:
                 self.model.switch_language(code)
+                break
         else:
             self.model.selected_language = lang
 

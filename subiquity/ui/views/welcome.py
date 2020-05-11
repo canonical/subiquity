@@ -52,11 +52,12 @@ class WelcomeView(BaseView):
         current_index = None
         langs = self.model.get_languages(self.is_linux_tty)
         cur = self.model.selected_language
+        log.debug("_build_model_inputs selected_language=%s", cur)
         if cur in ["C", None]:
             cur = "en_US"
         for i, (code, native) in enumerate(langs):
             log.debug("%s", (code, self.model.selected_language))
-            if code == self.model.selected_language:
+            if code == cur:
                 current_index = i
             btns.append(forward_btn(label=native, on_press=self.confirm,
                                     user_arg=code))
