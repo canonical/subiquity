@@ -24,6 +24,7 @@ import math
 import os
 import pathlib
 import platform
+import tempfile
 
 from curtin import storage_config
 from curtin.util import human2bytes
@@ -1178,6 +1179,16 @@ LUKS_OVERHEAD = 16*(2**20)
 class DM_Crypt:
     volume = attributes.ref(backlink="_constructed_device")  # _Formattable
     key = attr.ib(metadata={'redact': True})
+
+    def serialize_key(self):
+        if self.key:
+            f = tempfile.NamedTemporaryFile(
+                prefix='luks-key-', mode='w', delete=False)
+            f.write(self.key)
+            f.close()
+            return {'keyfile': f.name}
+        else:
+            return {}
 
     dm_name = attr.ib(default=None)
     preserve = attr.ib(default=False)
