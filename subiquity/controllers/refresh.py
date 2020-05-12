@@ -54,6 +54,7 @@ class RefreshController(SubiquityController):
             },
         'additionalProperties': False,
         }
+    autoinstall_default = {'update': True}
 
     signals = [
         ('snapd-network-change', 'snapd_network_changed'),
@@ -70,14 +71,13 @@ class RefreshController(SubiquityController):
         self.new_snap_version = ""
 
         self.offered_first_time = False
-        if 'update' in self.ai_data:
-            self.active = self.ai_data['update']
-        else:
-            self.active = self.interactive()
+        self.active = self.interactive()
 
     def load_autoinstall_data(self, data):
         if data is not None:
             self.ai_data = data
+        if 'update' in self.ai_data:
+            self.active = self.ai_data['update']
 
     def start(self):
         if not self.active:

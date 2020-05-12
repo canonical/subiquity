@@ -213,7 +213,7 @@ class RefreshView(BaseView):
             done_btn(_("Continue without updating"), on_press=self.done),
             other_btn(_("Back"), on_press=self.cancel),
             ])
-        buttons.base_widget.focus_position = 1
+        buttons.base_widget.focus_position = 0
 
         excerpt = _(self.available_excerpt).format(
             current=self.controller.current_snap_version,
