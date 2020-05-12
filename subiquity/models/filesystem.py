@@ -379,7 +379,7 @@ def asdict(inst):
             continue
         m = getattr(inst, 'serialize_' + field.name, None)
         if m:
-            r[field.name] = m()
+            r.update(m())
         else:
             v = getattr(inst, field.name)
             if v is not None:
@@ -939,7 +939,7 @@ class Partition(_Formattable):
         return self._fs._available()
 
     def serialize_number(self):
-        return self._number
+        return {'number': self._number}
 
     @property
     def _number(self):
@@ -992,7 +992,7 @@ class Raid(_Device):
         # Surprisingly, the order of devices passed to mdadm --create
         # matters (see get_raid_size) so we sort devices here the same
         # way get_raid_size does.
-        return [d.id for d in raid_device_sort(self.devices)]
+        return {'devices': [d.id for d in raid_device_sort(self.devices)]}
 
     spare_devices = attributes.reflist(
         backlink="_constructed_device", default=attr.Factory(set))
@@ -1131,7 +1131,7 @@ class LVM_LogicalVolume(_Formattable):
     preserve = attr.ib(default=False)
 
     def serialize_size(self):
-        return "{}B".format(self.size)
+        return {'size': "{}B".format(self.size)}
 
     def available(self):
         if self._constructed_device is not None:
