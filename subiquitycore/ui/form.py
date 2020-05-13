@@ -553,6 +553,6 @@ class SubFormField(FormField):
 
 class SubForm(Form):
 
-    def __init__(self, parent):
+    def __init__(self, parent, **kw):
         self.parent = parent
-        super().__init__()
+        super().__init__(**kw)
