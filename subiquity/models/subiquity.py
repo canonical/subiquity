@@ -149,9 +149,10 @@ class SubiquityModel:
                 'mode': 'off',
                 },
             'locale': self.locale.selected_language + '.UTF-8',
-            'preserve_hostname': True,
             'resize_rootfs': False,
         }
+        if self.identity.hostname is not None:
+            config['preserve_hostname'] = True
         user = self.identity.user
         if user:
             users_and_groups_path = (
