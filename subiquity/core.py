@@ -511,7 +511,7 @@ class Subiquity(Application):
         self.add_global_overlay(ErrorReportStretchy(self, report))
 
     def make_autoinstall(self):
-        config = {}
+        config = {'version': 1}
         for controller in self.controllers.instances:
             controller_conf = controller.make_autoinstall()
             if controller_conf:
