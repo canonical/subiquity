@@ -161,6 +161,7 @@ class NetworkConfigureWLANStretchy(Stretchy):
         else:
             psk = None
         self.device.set_ssid_psk(ssid, psk)
+        self.parent.update_link(self.device)
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
