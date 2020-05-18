@@ -74,10 +74,11 @@ class NetworkConfigureWLANStretchy(Stretchy):
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        if self.device.configured_ssid is not None:
-            self.form.ssid.value = self.device.configured_ssid
-        if self.device.configured_wifi_psk is not None:
-            self.form.psk.value = self.device.configured_wifi_psk
+        ssid, psk = self.device.configured_ssid
+        if ssid:
+            self.form.ssid.value = ssid
+        if psk:
+            self.form.psk.value = psk
 
         self.ssid_row = self.form.ssid._table
         self.psk_row = self.form.psk._table
@@ -95,7 +96,8 @@ class NetworkConfigureWLANStretchy(Stretchy):
 
     def show_ssid_list(self, sender):
         self.parent.show_overlay(
-            NetworkList(self, self.device.actual_ssids), width=60)
+            NetworkList(
+                self, self.device.info.wlan['visible_ssids']), width=60)
 
     def start_scan(self, sender):
         fp = self.inputs.focus_position - 1
@@ -109,13 +111,13 @@ class NetworkConfigureWLANStretchy(Stretchy):
             self.error.set_text("%s" % (r,))
 
     def _build_iface_inputs(self):
-        if len(self.device.actual_ssids) > 0:
+        if len(self.device.info.wlan['visible_ssids']) > 0:
             networks_btn = menu_btn("Choose a visible network",
                                     on_press=self.show_ssid_list)
         else:
             networks_btn = disabled(menu_btn("No visible networks"))
 
-        if not self.device.scan_state:
+        if not self.device.info.wlan['scan_state']:
             scan_btn = menu_btn("Scan for networks", on_press=self.start_scan)
         else:
             scan_btn = disabled(menu_btn("Scanning for networks"))
@@ -146,7 +148,7 @@ class NetworkConfigureWLANStretchy(Stretchy):
                                 for obj in self._build_iface_inputs()]
 
     def done(self, sender):
-        if self.device.configured_ssid is None and self.form.ssid.value:
+        if self.device.configured_ssid[0] is None and self.form.ssid.value:
             # Turn DHCP4 on by default when specifying an SSID for
             # the first time...
             self.device.dhcp4 = True
