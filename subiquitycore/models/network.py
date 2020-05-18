@@ -172,6 +172,21 @@ class NetworkDev(object):
         return getattr(self, "_supports_" + action.name)
 
     @property
+    def configured_ssid(self):
+        for ssid, settings in self.config.get('access-points', {}):
+            psk = settings.get('password')
+            return ssid, psk
+        return None, None
+
+    def set_ssid_psk(self, ssid, psk):
+        aps = self.config.setdefault('access-points', {})
+        aps.clear()
+        if ssid is not None:
+            aps[ssid] = {}
+            if psk is not None:
+                aps[ssid]['password'] = psk
+
+    @property
     def ifindex(self):
         if self.info is not None:
             return self.info.ifindex
