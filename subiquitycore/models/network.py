@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import copy
 import enum
 import ipaddress
 import logging
@@ -42,27 +41,6 @@ class NetDevAction(enum.Enum):
     EDIT_BOND = _("Edit bond")
     ADD_VLAN = _("Add a VLAN tag")
     DELETE = _("Delete")
-
-
-def _sanitize_inteface_config(iface_config):
-    for ap, ap_config in iface_config.get('access-points', {}).items():
-        if 'password' in ap_config:
-            ap_config['password'] = '<REDACTED>'
-
-
-def sanitize_interface_config(iface_config):
-    iface_config = copy.deepcopy(iface_config)
-    _sanitize_inteface_config(iface_config)
-    return iface_config
-
-
-def sanitize_config(config):
-    """Return a copy of config with passwords redacted."""
-    config = copy.deepcopy(config)
-    interfaces = config.get('network', {}).get('wifis', {}).items()
-    for iface, iface_config in interfaces:
-        _sanitize_inteface_config(iface_config)
-    return config
 
 
 class BondParameters:
@@ -308,7 +286,7 @@ class NetworkModel(object):
             dev.config = config
             log.debug("new_link %s %s with config %s",
                       ifindex, link.name,
-                      sanitize_interface_config(dev.config))
+                      netplan.sanitize_interface_config(dev.config))
             self.devices_by_name[link.name] = dev
         return dev
 
