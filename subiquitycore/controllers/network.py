@@ -29,7 +29,6 @@ from subiquitycore.file_util import write_file
 from subiquitycore.models.network import (
     BondParameters,
     NetDevAction,
-    sanitize_config,
     )
 from subiquitycore import netplan
 from subiquitycore.ui.views.network import (
@@ -342,7 +341,9 @@ class NetworkController(BaseController):
         config = self.model.render_config()
 
         log.debug("network config: \n%s",
-                  yaml.dump(sanitize_config(config), default_flow_style=False))
+                  yaml.dump(
+                      netplan.sanitize_config(config),
+                      default_flow_style=False))
 
         for p in netplan.configs_in_root(self.root, masked=True):
             if p == self.netplan_path:
