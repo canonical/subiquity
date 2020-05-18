@@ -156,8 +156,9 @@ class IdentityController(BaseController):
             cp = run_command(
                 ["snap", "create-user", "--sudoer", "--json", email])
             if cp.returncode != 0:
-                self.ui.body.error.set_text(
-                    "Creating user failed:\n" + cp.stderr)
+                if isinstance(self.ui.body, IdentityView):
+                    self.ui.body.snap_create_user_failed(
+                        "Creating user failed:", cp.stderr)
                 return
             else:
                 data = json.loads(cp.stdout)
