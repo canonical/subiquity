@@ -173,7 +173,7 @@ class NetworkDev(object):
 
     @property
     def configured_ssid(self):
-        for ssid, settings in self.config.get('access-points', {}):
+        for ssid, settings in self.config.get('access-points', {}).items():
             psk = settings.get('password')
             return ssid, psk
         return None, None
