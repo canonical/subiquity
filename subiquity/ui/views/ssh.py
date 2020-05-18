@@ -28,7 +28,6 @@ from subiquitycore.view import (
 from subiquitycore.ui.buttons import (
     cancel_btn,
     ok_btn,
-    other_btn,
     )
 from subiquitycore.ui.container import (
     ListBox,
@@ -49,6 +48,7 @@ from subiquitycore.ui.stretchy import (
 from subiquitycore.ui.utils import (
     button_pile,
     screen,
+    SomethingFailed,
     )
 
 from subiquity.ui.views.identity import (
@@ -217,26 +217,6 @@ class ConfirmSSHKeys(Stretchy):
         self.parent.controller.done(self.result)
 
 
-class FetchingSSHKeysFailed(Stretchy):
-    def __init__(self, parent, msg, stderr):
-        self.parent = parent
-        ok = other_btn(label=_("Close"), on_press=self.close)
-        widgets = [
-            Text(msg),
-            Text(""),
-            Text(stderr.strip('\n')),
-            Text(""),
-            button_pile([ok]),
-            ]
-        super().__init__(
-            "",
-            widgets,
-            2, 4)
-
-    def close(self, sender):
-        self.parent.remove_overlay()
-
-
 class SSHView(BaseView):
 
     title = _("SSH Setup")
@@ -318,4 +298,4 @@ class SSHView(BaseView):
 
     def fetching_ssh_keys_failed(self, msg, stderr):
         self.remove_overlay()
-        self.show_stretchy_overlay(FetchingSSHKeysFailed(self, msg, stderr))
+        self.show_stretchy_overlay(SomethingFailed(self, msg, stderr))
