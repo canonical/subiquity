@@ -151,7 +151,7 @@ class NetworkConfigureWLANStretchy(Stretchy):
         if self.device.configured_ssid[0] is None and self.form.ssid.value:
             # Turn DHCP4 on by default when specifying an SSID for
             # the first time...
-            self.device.dhcp4 = True
+            self.device.config['dhcp4'] = True
         if self.form.ssid.value:
             ssid = self.form.ssid.value
         else:
