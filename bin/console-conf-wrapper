@@ -21,6 +21,9 @@ fi
 
 if grep -q 'snapd_recovery_mode=install' /proc/cmdline ; then
     echo "Installing the system, please wait for reboot"
+    snap watch --last=install-system || true
+    snap change --last=install-system || true
+    journalctl -u snapd.service -f
     sleep infinity
 fi
 
