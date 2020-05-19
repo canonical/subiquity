@@ -317,13 +317,16 @@ class TestFilesystemModel(unittest.TestCase):
             return make_partition(model)
         self._test_ok_for_xxx(model, make_new_device, "ok_for_raid", False)
         self._test_ok_for_xxx(model, make_new_device, "ok_for_lvm_vg", False)
-        for flag in 'bios_grub', 'boot', 'prep':
-            # Possibly we should change this to only care about the
-            # flag that matters to the current bootloader.
-            p = make_new_device()
-            p.flag = flag
-            self.assertFalse(p.ok_for_raid)
-            self.assertFalse(p.ok_for_lvm_vg)
+
+        part = make_partition(make_model(Bootloader.BIOS), flag='bios_grub')
+        self.assertFalse(part.ok_for_raid)
+        self.assertFalse(part.ok_for_lvm_vg)
+        part = make_partition(make_model(Bootloader.UEFI), flag='boot')
+        self.assertFalse(part.ok_for_raid)
+        self.assertFalse(part.ok_for_lvm_vg)
+        part = make_partition(make_model(Bootloader.PREP), flag='prep')
+        self.assertFalse(part.ok_for_raid)
+        self.assertFalse(part.ok_for_lvm_vg)
 
     def test_raid_ok_for_xxx(self):
         model = make_model()
@@ -598,12 +601,12 @@ class TestFilesystemModel(unittest.TestCase):
         model.add_volgroup('vg1', {part2})
         self.assertActionNotPossible(part2, DeviceAction.DELETE)
 
-        for flag in 'bios_grub', 'boot', 'prep':
-            # Possibly we should change this to only prevent the
-            # deletion of a partition with a flag that matters to the
-            # current bootloader.
-            part = make_partition(model, flag=flag)
-            self.assertActionNotPossible(part, DeviceAction.DELETE)
+        part = make_partition(make_model(Bootloader.BIOS), flag='bios_grub')
+        self.assertActionNotPossible(part, DeviceAction.DELETE)
+        part = make_partition(make_model(Bootloader.UEFI), flag='boot')
+        self.assertActionNotPossible(part, DeviceAction.DELETE)
+        part = make_partition(make_model(Bootloader.PREP), flag='prep')
+        self.assertActionNotPossible(part, DeviceAction.DELETE)
 
         # You cannot delete a partition from a disk that has
         # pre-existing partitions (only reformat)
