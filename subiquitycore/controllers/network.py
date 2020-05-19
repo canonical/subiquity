@@ -31,6 +31,7 @@ from subiquitycore.models.network import (
     NetDevAction,
     )
 from subiquitycore import netplan
+from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.views.network import (
     NetworkView,
     )
@@ -199,8 +200,9 @@ class NetworkController(BaseController):
             return
         self.observer.data_ready(fd)
         v = self.ui.body
-        if hasattr(v, 'refresh_model_inputs'):
-            v.refresh_model_inputs()
+        if isinstance(v._w, StretchyOverlay):
+            if hasattr(v._w.stretchy, 'refresh_model_inputs'):
+                v._w.stretchy.refresh_model_inputs()
 
     def start_scan(self, dev):
         self.observer.trigger_scan(dev.ifindex)
