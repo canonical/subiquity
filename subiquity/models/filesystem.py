@@ -27,6 +27,7 @@ import platform
 import tempfile
 
 from curtin import storage_config
+from curtin.block import partition_kname
 from curtin.util import human2bytes
 
 from probert.storage import StorageInfo
@@ -982,9 +983,23 @@ class Partition(_Formattable):
         else:
             return self.device._partitions.index(self) + 1
 
+    def _path(self):
+        return partition_kname(self.device.path, self._number)
+
     @property
     def is_esp(self):
-        return self.flag == "boot"
+        if self.device.type != "disk":
+            return False
+        if self.device.ptable == "gpt":
+            return self.flag == "boot"
+        else:
+            blockdev_raw = self._m._probe_data['blockdev'].get(self._path())
+            if blockdev_raw is None:
+                return False
+            typecode = blockdev_raw.get("ID_PART_ENTRY_TYPE")
+            if typecode is None:
+                return False
+            return int(typecode, 0) == 0xef
 
     @property
     def is_bootloader_partition(self):

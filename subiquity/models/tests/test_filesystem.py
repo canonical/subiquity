@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections import namedtuple
 import unittest
 
 import attr
@@ -125,9 +124,14 @@ class TestRoundRaidSize(unittest.TestCase):
             499972571136)
 
 
-FakeStorageInfo = namedtuple(
-    'FakeStorageInfo', ['name', 'size', 'free', 'serial', 'model'])
-FakeStorageInfo.__new__.__defaults__ = (None,) * len(FakeStorageInfo._fields)
+@attr.s
+class FakeStorageInfo:
+    name = attr.ib(default=None)
+    size = attr.ib(default=None)
+    free = attr.ib(default=None)
+    serial = attr.ib(default=None)
+    model = attr.ib(default=None)
+    raw = attr.ib(default=attr.Factory(dict))
 
 
 def make_model(bootloader=None):
@@ -142,10 +146,11 @@ def make_disk(fs_model, **kw):
         kw['serial'] = 'serial%s' % len(fs_model._actions)
     if 'path' not in kw:
         kw['path'] = '/dev/thing'
+    if 'ptable' not in kw:
+        kw['ptable'] = 'gpt'
     size = kw.pop('size', 100*(2**30))
     fs_model._actions.append(Disk(
-        m=fs_model, info=FakeStorageInfo(size=size),
-        **kw))
+        m=fs_model, info=FakeStorageInfo(size=size), **kw))
     disk = fs_model._actions[-1]
     return disk
 
@@ -540,7 +545,7 @@ class TestFilesystemModel(unittest.TestCase):
 
         # A disk with an existing but empty partitions can also be the
         # UEFI/PREP boot disk.
-        old_disk = make_disk(model, preserve=True)
+        old_disk = make_disk(model, preserve=True, ptable='gpt')
         self.assertActionPossible(old_disk, DeviceAction.TOGGLE_BOOT)
         # If there is an existing partition though, it cannot.
         make_partition(model, old_disk, preserve=True)
@@ -824,6 +829,26 @@ class TestFilesystemModel(unittest.TestCase):
     def test_lv_action_TOGGLE_BOOT(self):
         model, lv = make_model_and_lv()
         self.assertActionNotSupported(lv, DeviceAction.TOGGLE_BOOT)
+
+    def test_is_esp(self):
+        model = make_model(Bootloader.UEFI)
+        gpt_disk = make_disk(model, ptable='gpt')
+        not_gpt_esp = make_partition(model, gpt_disk)
+        self.assertFalse(not_gpt_esp.is_esp)
+        gpt_esp = make_partition(model, gpt_disk, flag='boot')
+        self.assertTrue(gpt_esp.is_esp)
+
+        dos_disk = make_disk(model, ptable='msdos')
+        not_dos_esp = make_partition(model, dos_disk)
+        dos_esp = make_partition(model, dos_disk)
+        model._probe_data = {
+            'blockdev': {
+                dos_esp._path(): {'ID_PART_ENTRY_TYPE': '0xef'},
+                not_dos_esp._path(): {'ID_PART_ENTRY_TYPE': '0x83'},
+                }
+            }
+        self.assertFalse(not_dos_esp.is_esp)
+        self.assertTrue(dos_esp.is_esp)
 
 
 def fake_up_blockdata(model):
