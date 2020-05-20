@@ -84,10 +84,10 @@ def get_ips_standalone():
     prober.probe_network()
     links = prober.get_results()['network']['links']
     ips = []
-    for l in sorted(links, key=lambda l: l['netlink_data']['name']):
-        if l['type'] in NETDEV_IGNORED_IFACE_TYPES:
+    for link in sorted(links, key=lambda link: link['netlink_data']['name']):
+        if link['type'] in NETDEV_IGNORED_IFACE_TYPES:
             continue
-        for addr in l['addresses']:
+        for addr in link['addresses']:
             if addr['scope'] == "global":
                 ips.append(addr['address'].split('/')[0])
     return ips

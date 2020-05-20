@@ -17,6 +17,9 @@ if [ -e /run/snapd-recovery-chooser-triggered ]; then
         # when recovery chooser is invoked it takes over the terminal
         exec /usr/lib/snapd/snap-recovery-chooser
     fi
+    if [ -e /var/lib/console-conf/complete ]; then
+        exit 0
+    fi
 fi
 
 if grep -q 'snapd_recovery_mode=install' /proc/cmdline ; then

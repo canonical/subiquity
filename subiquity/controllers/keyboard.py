@@ -35,7 +35,7 @@ class KeyboardController(SubiquityController):
         'properties': {
             'layout': {'type': 'string'},
             'variant': {'type': 'string'},
-            'toggle': {'type': 'string'},
+            'toggle': {'type': ['string', 'null']},
             },
         'required': ['layout'],
         'additionalProperties': False,

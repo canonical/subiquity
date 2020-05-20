@@ -153,7 +153,8 @@ class InstallProgressController(SubiquityController):
         self.progress_view.set_status(('info_error',
                                        _("An error has occurred")))
         self.start_ui()
-        self.progress_view.show_error(crash_report)
+        if crash_report is not None:
+            self.progress_view.show_error(crash_report)
 
     def logged_command(self, cmd):
         return ['systemd-cat', '--level-prefix=false',

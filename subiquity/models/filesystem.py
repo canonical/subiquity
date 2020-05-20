@@ -24,6 +24,7 @@ import math
 import os
 import pathlib
 import platform
+import tempfile
 
 from curtin import storage_config
 from curtin.util import human2bytes
@@ -158,7 +159,7 @@ raidlevels = [
 
 
 def _raidlevels_by_value():
-    r = {l.value: l for l in raidlevels}
+    r = {level.value: level for level in raidlevels}
     for n in 0, 1, 5, 6, 10:
         r[str(n)] = r[n] = r["raid"+str(n)]
     r["stripe"] = r["raid0"]
@@ -391,7 +392,7 @@ def asdict(inst):
             continue
         m = getattr(inst, 'serialize_' + field.name, None)
         if m:
-            r[field.name] = m()
+            r.update(m())
         else:
             v = getattr(inst, field.name)
             if v is not None:
@@ -968,7 +969,7 @@ class Partition(_Formattable):
         return self._fs._available()
 
     def serialize_number(self):
-        return self._number
+        return {'number': self._number}
 
     @property
     def _number(self):
@@ -1021,7 +1022,7 @@ class Raid(_Device):
         # Surprisingly, the order of devices passed to mdadm --create
         # matters (see get_raid_size) so we sort devices here the same
         # way get_raid_size does.
-        return [d.id for d in raid_device_sort(self.devices)]
+        return {'devices': [d.id for d in raid_device_sort(self.devices)]}
 
     spare_devices = attributes.reflist(
         backlink="_constructed_device", default=attr.Factory(set))
@@ -1161,7 +1162,7 @@ class LVM_LogicalVolume(_Formattable):
     preserve = attr.ib(default=False)
 
     def serialize_size(self):
-        return "{}B".format(self.size)
+        return {'size': "{}B".format(self.size)}
 
     def available(self):
         if self._constructed_device is not None:
@@ -1208,6 +1209,16 @@ LUKS_OVERHEAD = 16*(2**20)
 class DM_Crypt:
     volume = attributes.ref(backlink="_constructed_device")  # _Formattable
     key = attr.ib(metadata={'redact': True})
+
+    def serialize_key(self):
+        if self.key:
+            f = tempfile.NamedTemporaryFile(
+                prefix='luks-key-', mode='w', delete=False)
+            f.write(self.key)
+            f.close()
+            return {'keyfile': f.name}
+        else:
+            return {}
 
     dm_name = attr.ib(default=None)
     preserve = attr.ib(default=False)

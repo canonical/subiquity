@@ -10,7 +10,8 @@ After=core18.start-snapd.service core.start-snapd.service
 After=snapd.recovery-chooser-trigger.service
 IgnoreOnIsolate=yes
 ConditionPathExists=/dev/tty0
-ConditionPathExists=!/var/lib/console-conf/complete
+ConditionPathExists=|!/var/lib/console-conf/complete
+ConditionPathExists=|/run/snapd-recovery-chooser-triggered
 StartLimitInterval=0
 
 [Service]

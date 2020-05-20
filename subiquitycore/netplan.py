@@ -8,6 +8,27 @@ import yaml
 log = logging.getLogger("subiquitycore.netplan")
 
 
+def _sanitize_inteface_config(iface_config):
+    for ap, ap_config in iface_config.get('access-points', {}).items():
+        if 'password' in ap_config:
+            ap_config['password'] = '<REDACTED>'
+
+
+def sanitize_interface_config(iface_config):
+    iface_config = copy.deepcopy(iface_config)
+    _sanitize_inteface_config(iface_config)
+    return iface_config
+
+
+def sanitize_config(config):
+    """Return a copy of config with passwords redacted."""
+    config = copy.deepcopy(config)
+    interfaces = config.get('network', {}).get('wifis', {}).items()
+    for iface, iface_config in interfaces:
+        _sanitize_inteface_config(iface_config)
+    return config
+
+
 class Config:
     """A NetplanConfig represents the network config for a system.
 
@@ -85,7 +106,9 @@ class _PhysicalDevice:
             self.match_mac = match.get('macaddress')
             self.match_driver = match.get('driver')
         self.config = config
-        log.debug("config for %s = %s" % (name, self.config))
+        log.debug(
+            "config for %s = %s" % (
+                name, sanitize_interface_config(self.config)))
 
     def matches_link(self, link):
         if self.match_name is not None:
@@ -107,7 +130,9 @@ class _VirtualDevice:
     def __init__(self, name, config):
         self.name = name
         self.config = config
-        log.debug("config for %s = %s" % (name, self.config))
+        log.debug(
+            "config for %s = %s" % (
+                name, sanitize_interface_config(self.config)))
 
 
 def configs_in_root(root, masked=False):

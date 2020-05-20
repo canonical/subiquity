@@ -86,7 +86,7 @@ class GuidedChoiceForm(SubForm):
     lvm_options = SubFormField(LVMOptionsForm, "", help=NO_HELP)
 
     def __init__(self, parent):
-        super().__init__(parent)
+        super().__init__(parent, initial={'use_lvm': True})
         options = []
         tables = []
         initial = -1
