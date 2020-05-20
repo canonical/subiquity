@@ -67,6 +67,7 @@ class WelcomeView(BaseView):
         self.controller = controller
         if controller.app.opts.run_on_serial and not controller.app.rich_mode:
             s = self.make_serial_choices()
+            self.title = "Welcome!"
         else:
             s = self.make_language_choices()
         super().__init__(s)
@@ -122,6 +123,8 @@ class WelcomeView(BaseView):
 
     def enable_rich(self, sender):
         self.controller.app.toggle_rich()
+        self.title = self.__class__.title
+        self.controller.ui.set_header(self.title)
         self._w = self.make_language_choices()
 
     def ssh_help(self, sender, password):
