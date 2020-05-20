@@ -239,6 +239,31 @@ def menu_item(text, on_press=None):
     return Color.frame_button(icon)
 
 
+def get_global_addresses(app):
+    ips = []
+    net_model = app.base_model.network
+    for dev in net_model.get_all_netdevs():
+        ips.extend(dev.actual_global_ip_addresses)
+    return ips
+
+
+def get_installer_password(dry_run=False):
+    if dry_run:
+        fp = io.StringIO('installer:rAnd0Mpass')
+    else:
+        try:
+            fp = open("/var/log/cloud-init-output.log")
+        except FileNotFoundError:
+            fp = io.StringIO('')
+
+    with fp:
+        for line in fp:
+            if line.startswith("installer:"):
+                return line[len("installer:"):].strip()
+
+    return None
+
+
 class HelpMenu(WidgetWrap):
 
     def __init__(self, parent):
@@ -377,16 +402,9 @@ class HelpMenu(WidgetWrap):
                 _("About the installer"),
                 template.format(**info)))
 
-    def get_global_addresses(self):
-        ips = []
-        net_model = self.parent.app.base_model.network
-        for dev in net_model.get_all_netdevs():
-            ips.extend(dev.actual_global_ip_addresses)
-        return ips
-
     def _ssh_help(self, sender=None):
         texts = ssh_help_texts(
-            self.get_global_addresses(),
+            get_global_addresses(self.parent.app),
             self.parent.ssh_password)
 
         self._show_overlay(
@@ -417,23 +435,6 @@ class HelpMenu(WidgetWrap):
 
     def _show_errors(self, sender):
         self._show_overlay(ErrorReportListStretchy(self.parent.app))
-
-
-def get_installer_password(dry_run=False):
-    if dry_run:
-        fp = io.StringIO('installer:rAnd0Mpass')
-    else:
-        try:
-            fp = open("/var/log/cloud-init-output.log")
-        except FileNotFoundError:
-            fp = io.StringIO('')
-
-    with fp:
-        for line in fp:
-            if line.startswith("installer:"):
-                return line[len("installer:"):].strip()
-
-    return None
 
 
 class HelpButton(PopUpLauncher):
