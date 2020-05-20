@@ -27,16 +27,22 @@ import distutils.command.build
 import distutils.spawn
 import glob
 import os
-import subprocess
 import sys
 
 from setuptools import setup, find_packages
 
 
-class build(distutils.command.build.build):
+class build_i18n(distutils.cmd.Command):
+
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
 
     def run(self):
-        super().run()
         data_files = self.distribution.data_files
 
         with open('po/POTFILES.in') as in_fp:
@@ -68,6 +74,12 @@ class build(distutils.command.build.build):
             distutils.spawn.spawn(["msgfmt", po_file, "-o", mo_file])
             targetpath = os.path.join("share/locale", lang, "LC_MESSAGES")
             data_files.append((targetpath, (mo_file,)))
+
+
+class build(distutils.command.build.build):
+
+    sub_commands = distutils.command.build.build.sub_commands + [
+        ("build_i18n", None)]
 
 
 with open(os.path.join(os.path.dirname(__file__),
@@ -110,5 +122,8 @@ setup(name='subiquity',
           ],
       },
       data_files=[],
-      cmdclass={'build': build},
+      cmdclass={
+          'build': build,
+          'build_i18n': build_i18n,
+          },
       )
