@@ -265,16 +265,17 @@ def get_installer_password(dry_run=False):
     return None
 
 
-class HelpMenu(WidgetWrap):
+class OpenHelpMenu(WidgetWrap):
 
     def __init__(self, parent):
         self.parent = parent
         close = header_btn(parent.base_widget.label)
-        about = menu_item(_("About this installer"), on_press=self._about)
+        about = menu_item(
+            _("About this installer"), on_press=self.parent.about)
         keys = menu_item(
-            _("Keyboard shortcuts"), on_press=self._shortcuts)
+            _("Keyboard shortcuts"), on_press=self.parent.shortcuts)
         drop_to_shell = menu_item(
-            _("Enter shell"), on_press=self._debug_shell)
+            _("Enter shell"), on_press=self.parent.debug_shell)
         buttons = {
             about,
             close,
@@ -283,17 +284,17 @@ class HelpMenu(WidgetWrap):
             }
         if self.parent.ssh_password is not None:
             ssh_help = menu_item(
-                _("Help on SSH access"), on_press=self._ssh_help)
+                _("Help on SSH access"), on_press=self.parent.ssh_help)
             buttons.add(ssh_help)
         if self.parent.app.opts.run_on_serial:
             rich = menu_item(
-                _("Toggle rich mode"), on_press=self._toggle_rich)
+                _("Toggle rich mode"), on_press=self.parent.toggle_rich)
             buttons.add(rich)
         local_title, local_doc = parent.app.ui.body.local_help()
         if local_title is not None:
             local = menu_item(
                 local_title,
-                on_press=self._show_local(local_title, local_doc))
+                on_press=self.parent.show_local(local_title, local_doc))
             buttons.add(local)
         else:
             local = Text(
@@ -302,7 +303,7 @@ class HelpMenu(WidgetWrap):
         if self.parent.app.controllers.Error.reports:
             view_errors = menu_item(
                 _("View error reports").format(local_title),
-                on_press=self._show_errors)
+                on_press=self.parent.show_errors)
             buttons.add(view_errors)
         else:
             view_errors = Text(
@@ -369,76 +370,8 @@ class HelpMenu(WidgetWrap):
     def _close(self, sender):
         self.parent.close_pop_up()
 
-    def _show_overlay(self, stretchy):
-        ui = self.parent.app.ui
 
-        # We don't let help dialogs pile up: if one is already
-        # showing, remove it before showing the new one.
-        if self.parent.current_help:
-            self.parent.app.remove_global_overlay(self.parent.current_help)
-        self.parent.current_help = stretchy
-        fp, ui.pile.focus_position = ui.pile.focus_position, 1
-
-        def on_close():
-            self.parent.current_help = None
-            ui.pile.focus_position = fp
-
-        connect_signal(stretchy, 'closed', on_close)
-
-        self.parent.app.add_global_overlay(stretchy)
-
-    def _about(self, sender=None):
-        info = lsb_release()
-        if 'LTS' in info['description']:
-            template = _(ABOUT_INSTALLER_LTS)
-        else:
-            template = _(ABOUT_INSTALLER)
-        info.update({
-            'snap_version': os.environ.get("SNAP_VERSION", "SNAP_VERSION"),
-            'snap_revision': os.environ.get("SNAP_REVISION", "SNAP_REVISION"),
-            })
-        self._show_overlay(
-            SimpleTextStretchy(
-                self.parent.app,
-                _("About the installer"),
-                template.format(**info)))
-
-    def _ssh_help(self, sender=None):
-        texts = ssh_help_texts(
-            get_global_addresses(self.parent.app),
-            self.parent.ssh_password)
-
-        self._show_overlay(
-            SimpleTextStretchy(
-                self.parent.app,
-                _("Help on SSH access"),
-                *texts,
-                ))
-
-    def _show_local(self, local_title, local_doc):
-
-        def cb(sender=None):
-            self._show_overlay(
-                SimpleTextStretchy(
-                    self.parent.app,
-                    local_title,
-                    local_doc))
-        return cb
-
-    def _shortcuts(self, sender):
-        self._show_overlay(GlobalKeyStretchy(self.parent.app))
-
-    def _debug_shell(self, sender):
-        self.parent.app.debug_shell()
-
-    def _toggle_rich(self, sender):
-        self.parent.app.toggle_rich()
-
-    def _show_errors(self, sender):
-        self._show_overlay(ErrorReportListStretchy(self.parent.app))
-
-
-class HelpButton(PopUpLauncher):
+class HelpMenu(PopUpLauncher):
 
     def __init__(self, app):
         self.app = app
@@ -454,7 +387,7 @@ class HelpButton(PopUpLauncher):
     def create_pop_up(self):
         if self.ssh_password is None:
             self.ssh_password = get_installer_password(self.app.opts.dry_run)
-        self._menu = HelpMenu(self)
+        self._menu = OpenHelpMenu(self)
         return self._menu
 
     def get_pop_up_parameters(self):
@@ -464,3 +397,71 @@ class HelpButton(PopUpLauncher):
             'overlay_width': self._menu.width,
             'overlay_height': self._menu.height,
             }
+
+    def _show_overlay(self, stretchy):
+        ui = self.app.ui
+
+        # We don't let help dialogs pile up: if one is already
+        # showing, remove it before showing the new one.
+        if self.current_help:
+            self.app.remove_global_overlay(self.parent.current_help)
+        self.current_help = stretchy
+        fp, ui.pile.focus_position = ui.pile.focus_position, 1
+
+        def on_close():
+            self.current_help = None
+            ui.pile.focus_position = fp
+
+        connect_signal(stretchy, 'closed', on_close)
+
+        self.app.add_global_overlay(stretchy)
+
+    def about(self, sender=None):
+        info = lsb_release()
+        if 'LTS' in info['description']:
+            template = _(ABOUT_INSTALLER_LTS)
+        else:
+            template = _(ABOUT_INSTALLER)
+        info.update({
+            'snap_version': os.environ.get("SNAP_VERSION", "SNAP_VERSION"),
+            'snap_revision': os.environ.get("SNAP_REVISION", "SNAP_REVISION"),
+            })
+        self._show_overlay(
+            SimpleTextStretchy(
+                self.app,
+                _("About the installer"),
+                template.format(**info)))
+
+    def ssh_help(self, sender=None):
+        texts = ssh_help_texts(
+            get_global_addresses(self.app),
+            self.ssh_password)
+
+        self._show_overlay(
+            SimpleTextStretchy(
+                self.app,
+                _("Help on SSH access"),
+                *texts,
+                ))
+
+    def show_local(self, local_title, local_doc):
+
+        def cb(sender=None):
+            self._show_overlay(
+                SimpleTextStretchy(
+                    self.app,
+                    local_title,
+                    local_doc))
+        return cb
+
+    def shortcuts(self, sender):
+        self._show_overlay(GlobalKeyStretchy(self.app))
+
+    def debug_shell(self, sender):
+        self.app.debug_shell()
+
+    def toggle_rich(self, sender):
+        self.app.toggle_rich()
+
+    def show_errors(self, sender):
+        self._show_overlay(ErrorReportListStretchy(self.app))
