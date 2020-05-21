@@ -112,7 +112,7 @@ urwid_8_names = (
 )
 
 
-def make_palette(colors, styles, ascii):
+def make_palette(colors, styles):
     """Return a palette to be passed to MainLoop.
 
     colors is a list of exactly 8 tuples (name, (r, g, b))
@@ -133,16 +133,6 @@ def make_palette(colors, styles, ascii):
     urwid_palette = []
     for name, fg, bg in styles:
         urwid_fg, urwid_bg = urwid_name[fg], urwid_name[bg]
-        if ascii:
-            # 24bit grey on colored background looks good
-            # but in 16 colors it's unreadable
-            # hence add more contrast
-            if urwid_bg != 'black':
-                urwid_fg = 'black'
-            # Only frame_button doesn't match above rule
-            # fix it to be brown-on-black black-on-brown
-            if name == 'frame_button focus':
-                urwid_fg, urwid_bg = 'brown', 'black'
         urwid_palette.append((name, urwid_fg, urwid_bg))
 
     return urwid_palette
@@ -348,8 +338,10 @@ class Application:
             if not opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
 
-        self.is_color = False
-        self.color_palette = make_palette(self.COLORS, self.STYLES, opts.ascii)
+        # Set rich_mode to the opposite of what we want, so we can
+        # call toggle_rich to get the right things set up.
+        self.rich_mode = opts.run_on_serial
+        self.color_palette = make_palette(self.COLORS, self.STYLES)
 
         self.is_linux_tty = is_linux_tty()
 
@@ -557,13 +549,16 @@ class Application:
 
         self.aio_loop.call_later(0.06, _run_script)
 
-    def toggle_color(self):
-        if self.is_color:
+    def toggle_rich(self):
+        if self.rich_mode:
+            urwid.util.set_encoding('ascii')
             new_palette = self.STYLES_MONO
-            self.is_color = False
+            self.rich_mode = False
         else:
+            urwid.util.set_encoding('utf-8')
             new_palette = self.color_palette
-            self.is_color = True
+            self.rich_mode = True
+        urwid.CanvasCache.clear()
         self.urwid_loop.screen.register_palette(new_palette)
         self.urwid_loop.screen.clear()
 
@@ -572,8 +567,8 @@ class Application:
             self.exit()
         elif key == 'f3':
             self.urwid_loop.screen.clear()
-        elif key in ['ctrl t', 'f4']:
-            self.toggle_color()
+        elif self.opts.run_on_serial and key in ['ctrl t', 'f4']:
+            self.toggle_rich()
 
     def start_controllers(self):
         log.debug("starting controllers")
@@ -655,12 +650,9 @@ class Application:
             unhandled_input=self.unhandled_input,
             event_loop=AsyncioEventLoop(loop=self.aio_loop))
 
-        if self.opts.ascii:
-            urwid.util.set_encoding('ascii')
-
         extend_dec_special_charmap()
 
-        self.toggle_color()
+        self.toggle_rich()
 
         self.base_model = self.make_model()
         try:
