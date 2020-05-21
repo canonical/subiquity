@@ -275,7 +275,7 @@ class Subiquity(Application):
                     ErrorReportKind.UI, "Installer UI", interrupt=False,
                     wait=True)
                 if report is not None:
-                    print("report saved to {path}".format(report.path))
+                    print("report saved to {path}".format(path=report.path))
             except Exception:
                 print("report generation failed")
                 traceback.print_exc()
