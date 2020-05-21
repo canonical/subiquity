@@ -30,7 +30,6 @@ from subiquitycore.view import BaseView
 from subiquity.ui.views.help import (
     get_installer_password,
     get_global_addresses,
-    HelpMenu,
     )
 
 log = logging.getLogger("subiquity.views.welcome")
@@ -128,10 +127,9 @@ class WelcomeView(BaseView):
         self._w = self.make_language_choices()
 
     def ssh_help(self, sender, password):
-        # This is gross, make nicer before landing!
-        btn = self.controller.ui.right_icon
-        btn.ssh_password = password
-        HelpMenu(btn)._ssh_help()
+        menu = self.controller.app.help_menu
+        menu.ssh_password = password
+        menu.ssh_help()
 
     def choose_language(self, sender, code):
         log.debug('WelcomeView %s', code)

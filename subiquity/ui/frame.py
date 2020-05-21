@@ -18,8 +18,6 @@ import logging
 from subiquitycore.ui.frame import SubiquityCoreUI
 from subiquitycore.view import BaseView
 
-from subiquity.ui.views.help import HelpButton
-
 
 log = logging.getLogger('subiquity.ui.frame')
 
@@ -28,9 +26,9 @@ class SubiquityUI(SubiquityCoreUI):
 
     block_input = False
 
-    def __init__(self, app):
+    def __init__(self, app, right_icon):
         self.app = app
-        self.right_icon = HelpButton(app)
+        self.right_icon = right_icon
         super().__init__()
 
     def keypress(self, size, key):
