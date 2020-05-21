@@ -367,7 +367,9 @@ class URLEditor(StringEditor, WantsToKnowFormField):
                 schemes = schemes[0] + _(" or ") + schemes[1]
             else:
                 schemes = schemes[0]
-            raise ValueError(_("This field must be a %s URL.") % schemes)
+            raise ValueError(
+                _("This field must be a {schemes} URL.").format(
+                    schemes=schemes))
         return v
 
 

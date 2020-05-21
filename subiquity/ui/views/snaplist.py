@@ -253,7 +253,7 @@ class FetchingInfo(WidgetWrap):
         self.spinner = Spinner(aio_loop, style='dots')
         self.spinner.start()
         self.closed = False
-        text = _("Fetching info for {}").format(snap.name)
+        text = _("Fetching info for {snap}").format(snap=snap.name)
         # | text |
         # 12    34
         self.width = len(text) + 4
@@ -279,7 +279,7 @@ class FetchingFailed(WidgetWrap):
     def __init__(self, row, snap):
         self.row = row
         self.closed = False
-        text = _("Fetching info for {} failed").format(snap.name)
+        text = _("Fetching info for {snap} failed").format(snap=snap.name)
         # | text |
         # 12    34
         self.width = len(text) + 4

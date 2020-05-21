@@ -232,16 +232,21 @@ class PartitionForm(Form):
         if v.startswith('-'):
             return _("The name of a logical volume cannot start with a hyphen")
         if v in ('.', '..', 'snapshot', 'pvmove'):
-            return _("A logical volume may not be called {}").format(v)
+            return _(
+                "A logical volume may not be called {name}"
+                ).format(name=v)
         for substring in ['_cdata', '_cmeta',   '_corig',  '_mlog',  '_mimage',
                           '_pmspare',  '_rimage',  '_rmeta',  '_tdata',
                           '_tmeta', '_vorigin']:
             if substring in v:
-                return _('The name of a logical volume may not contain '
-                         '"{}"').format(substring)
+                return _(
+                    'The name of a logical volume may not contain '
+                    '"{substring}"'
+                    ).format(substring=substring)
         if v in self.lvm_names:
-            return _("There is already a logical volume named {}.").format(
-                self.name.value)
+            return _(
+                "There is already a logical volume named {name}."
+                ).format(name=self.name.value)
 
     def validate_mount(self):
         mount = self.mount.value
@@ -583,7 +588,7 @@ class FormatEntireStretchy(Stretchy):
             self.form.buttons,
         ]
 
-        title = _("Format and/or mount {}").format(device.label)
+        title = _("Format and/or mount {device}").format(device=device.label)
 
         super().__init__(title, widgets, 0, 0)
 

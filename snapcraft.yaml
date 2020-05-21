@@ -68,7 +68,6 @@ parts:
       - libsystemd-dev
       - lsb-release
       - pkg-config
-      - python3-distutils-extra
       - python3-urwid
     stage-packages:
       - cloud-init
@@ -76,7 +75,6 @@ parts:
       - iso-codes
       - lsb-release
       - python3-bson
-      - python3-distutils-extra
       - python3-urwid
       - python3-requests
       - python3-requests-unixsocket

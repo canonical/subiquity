@@ -22,18 +22,64 @@ subiquity
 Ubuntu Server Installer
 """
 
-from setuptools import setup, find_packages
-
+import distutils.cmd
+import distutils.command.build
+import distutils.spawn
+import glob
 import os
 import sys
 
-setup_kwargs = {}
-# dpkg build uses build and install, tox uses sdist
-if 'SUBIQUITY_NO_I18N' not in os.environ:
-    from DistUtilsExtra.command import build_extra
-    from DistUtilsExtra.command import build_i18n
-    setup_kwargs['cmdclass'] = {'build': build_extra.build_extra,
-                                'build_i18n': build_i18n.build_i18n}
+from setuptools import setup, find_packages
+
+
+class build_i18n(distutils.cmd.Command):
+
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        data_files = self.distribution.data_files
+
+        with open('po/POTFILES.in') as in_fp:
+            with open('po/POTFILES.in.tmp', 'w') as out_fp:
+                for line in in_fp:
+                    if line.startswith('['):
+                        continue
+                    out_fp.write('../' + line)
+
+        os.chdir('po')
+        distutils.spawn.spawn([
+            'xgettext',
+            '--directory=.',
+            '--add-comments',
+            '--from-code=UTF-8',
+            '--keyword=pgettext:1c,2',
+            '--output=subiquity.pot',
+            '--files-from=POTFILES.in.tmp',
+            ])
+        os.chdir('..')
+        os.unlink('po/POTFILES.in.tmp')
+
+        for po_file in glob.glob("po/*.po"):
+            lang = os.path.basename(po_file[:-3])
+            mo_dir = os.path.join("build", "mo", lang, "LC_MESSAGES")
+            mo_file = os.path.join(mo_dir, "subiquity.mo")
+            if not os.path.exists(mo_dir):
+                os.makedirs(mo_dir)
+            distutils.spawn.spawn(["msgfmt", po_file, "-o", mo_file])
+            targetpath = os.path.join("share/locale", lang, "LC_MESSAGES")
+            data_files.append((targetpath, (mo_file,)))
+
+
+class build(distutils.command.build.build):
+
+    sub_commands = distutils.command.build.build.sub_commands + [
+        ("build_i18n", None)]
 
 
 with open(os.path.join(os.path.dirname(__file__),
@@ -42,6 +88,7 @@ with open(os.path.join(os.path.dirname(__file__),
     ns = {}
     exec('\n'.join(lines), ns)
     version = ns['__version__']
+
 
 if sys.argv[-1] == 'clean':
     print("Cleaning up ...")
@@ -75,4 +122,8 @@ setup(name='subiquity',
           ],
       },
       data_files=[],
-      **setup_kwargs)
+      cmdclass={
+          'build': build,
+          'build_i18n': build_i18n,
+          },
+      )

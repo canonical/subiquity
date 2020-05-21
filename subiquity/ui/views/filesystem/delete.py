@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from gettext import ngettext
 import logging
 from urwid import Text
 
+from subiquitycore.gettext38 import ngettext
 from subiquitycore.ui.buttons import danger_btn, other_btn
 from subiquitycore.ui.table import (
     TablePile,
@@ -60,13 +60,13 @@ class ConfirmDeleteStretchy(Stretchy):
             n = len(obj.partitions())
             if obj.type == "lvm_volgroup":
                 line = ngettext(
-                    _("It contains 1 logical volume"),
-                    _("It contains {n} logical volumes"),
+                    "It contains 1 logical volume",
+                    "It contains {n} logical volumes",
                     n)
             else:
                 line = ngettext(
-                    _("It contains 1 partition"),
-                    _("It contains {n} partitions"),
+                    "It contains 1 partition",
+                    "It contains {n} partitions",
                     n)
             lines.append(Text(line.format(n=n)))
             lines.append(Text(""))
@@ -106,12 +106,14 @@ class ConfirmReformatStretchy(Stretchy):
 
         fs = obj.fs()
         if fs is not None:
-            title = _("Remove filesystem from {}").format(obj.desc())
+            title = _(
+                "Remove filesystem from {device}"
+                ).format(device=obj.desc())
             lines = [
                 _(
                     "Do you really want to remove the existing filesystem "
-                    "from {}?"
-                    ).format(obj.label),
+                    "from {device}?"
+                    ).format(device=obj.label),
                 "",
             ]
             m = fs.mount()
@@ -130,6 +132,7 @@ class ConfirmReformatStretchy(Stretchy):
                 things = _("logical volumes")
             else:
                 things = _("partitions")
+            # things is either "logical volumes" or "partitions"
             title = _("Remove all {things} from {obj}").format(
                 things=things, obj=obj.desc())
             lines = [
