@@ -64,6 +64,7 @@ class WelcomeView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
+        self.is_linux_tty = controller.app.is_linux_tty
         if controller.app.opts.run_on_serial and not controller.app.rich_mode:
             s = self.make_serial_choices()
             self.title = "Welcome!"
@@ -74,8 +75,14 @@ class WelcomeView(BaseView):
     def make_language_choices(self):
         btns = []
         current_index = None
-        for i, (code, native) in enumerate(self.model.get_languages()):
-            if code == self.model.selected_language:
+        langs = self.model.get_languages(self.is_linux_tty)
+        cur = self.model.selected_language
+        log.debug("_build_model_inputs selected_language=%s", cur)
+        if cur in ["C", None]:
+            cur = "en_US"
+        for i, (code, native) in enumerate(langs):
+            log.debug("%s", (code, self.model.selected_language))
+            if code == cur:
                 current_index = i
             btns.append(
                 forward_btn(

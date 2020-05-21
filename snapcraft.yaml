@@ -122,6 +122,14 @@ parts:
       font/subiquity.psf: subiquity.psf
     stage:
       - subiquity.psf
+  languagelists:
+    plugin: nil
+    build-packages:
+      - localechooser-data
+    override-build: |
+      $SNAPCRAFT_PROJECT_DIR/scripts/make-language-lists $SNAPCRAFT_PROJECT_DIR/po > $SNAPCRAFT_PART_INSTALL/languagelist
+    stage:
+      - languagelist
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]

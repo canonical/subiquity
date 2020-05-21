@@ -14,8 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 
-from subiquitycore import gettext38
 from subiquitycore import i18n
 
 
@@ -28,36 +28,20 @@ class LocaleModel(object):
     XXX Only represents *language* selection for now.
     """
 
-    supported_languages = [
-        ('en_US', 'English'),
-        ('ast_ES', 'Asturian'),
-        ('ca_EN', 'Catalan'),
-        ('hr_HR', 'Croatian'),
-        ('nl_NL', 'Dutch'),
-        ('fi_FI', 'Finnish'),
-        ('fr_FR', 'French'),
-        ('de_DE', 'German'),
-        ('el_GR', 'Greek, Modern (1453-)'),
-        # ('he_IL', 'Hebrew'),  # noqa: disabled as it does not render correctly on a vt with default font
-        ('hu_HU', 'Hungarian'),
-        ('lv_LV', 'Latvian'),
-        ('nb_NO', 'Norsk bokmål'),  # noqa: iso_639_3 for nb does not translate Norwgian
-        ('pl_PL', 'Polish'),
-        ('ru_RU', 'Russian'),
-        ('es_ES', 'Spanish'),
-        ('uk_UA', 'Ukrainian'),
-    ]
     selected_language = None
 
-    def get_languages(self):
+    def get_languages(self, is_linux_tty):
+        base = os.environ.get("SNAP", ".")
+        lang_path = os.path.join(base, "languagelist")
+
         languages = []
-        for code, name in self.supported_languages:
-            native = name
-            if gettext38.find('iso_639_3', languages=[code]):
-                native_lang = gettext38.translation('iso_639_3',
-                                                    languages=[code])
-                native = native_lang.gettext(name).capitalize()
-            languages.append((code, native))
+        with open(lang_path) as lang_file:
+            for line in lang_file:
+                level, code, name = line.strip().split(':')
+                if is_linux_tty and level != "console":
+                    continue
+                languages.append((code, name))
+        languages.sort(key=lambda x: x[1])
         return languages
 
     def switch_language(self, code):

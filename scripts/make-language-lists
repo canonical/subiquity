@@ -1,0 +1,69 @@
+#!/usr/bin/python3
+
+import gettext
+import glob
+import gzip
+import os
+import sys
+
+DATA_PATH = '/usr/share/localechooser/languagelist.data.gz'
+
+lang_dir = 'po'
+if len(sys.argv) > 1:
+    lang_dir = sys.argv[1]
+
+translations = set()
+for fname in glob.glob('{}/*.po'.format(lang_dir)):
+    translations.add(os.path.splitext(os.path.basename(fname))[0])
+
+if not translations:
+    print("found no languages", file=sys.stderr)
+    sys.exit(1)
+
+langs = [
+    ('console', 'en_US', 'English'),
+    ('console', 'en_GB', 'English (UK)'),
+    ('ssh',     'kab',   'Tamaziɣt Taqbaylit'),
+]
+
+for level, code, name in langs:
+    if code in translations:
+        translations.remove(code)
+
+
+def kind_for_level(level):
+    if int(level) <= 2:
+        return "console"
+    else:
+        return "ssh"
+
+
+with gzip.open(DATA_PATH, mode='rt') as data:
+    for line in data:
+        level, code, name, desc = line.strip().split(':')
+        if code not in translations:
+            continue
+        langs.append((kind_for_level(level), code, desc))
+        translations.remove(code)
+
+with gzip.open(DATA_PATH, mode='rt') as data:
+    for line in data:
+        level, code, name, desc = line.strip().split(':')
+        code = code.split("_", 1)[0]
+        if code not in translations:
+            continue
+        level = int(level)
+        langs.append((kind_for_level(level), code, desc))
+        translations.remove(code)
+
+for code in translations:
+    if gettext.find('iso_639_3', languages=[code]):
+        native_lang = gettext.translation('iso_639_3', languages=[code])
+        native = native_lang.gettext(name).capitalize()
+        langs.append(('ssh', code, native))
+    else:
+        print('do not know native name for {}'.format(code), file=sys.stderr)
+        sys.exit(1)
+
+for level, code, name in langs:
+    sys.stdout.write("{}:{}:{}\n".format(level, code, name))

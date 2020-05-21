@@ -10,6 +10,8 @@ from subiquity.ui.views.welcome import WelcomeView
 
 
 class FakeApp:
+    is_linux_tty = True
+
     class opts:
         run_on_serial = False
 

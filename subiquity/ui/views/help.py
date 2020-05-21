@@ -101,7 +101,8 @@ This is version {snap_version} of the installer.
 
 SSH_HELP_PROLOGUE = _("""
 It is possible to connect to the installer over the network, which
-might allow the use of a more capable terminal.""")
+might allow the use of a more capable terminal and can offer more languages
+than can be rendered in the Linux console.""")
 
 SSH_HELP_MULTIPLE_ADDRESSES = _("""
 To connect, SSH to any of these addresses:
