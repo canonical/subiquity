@@ -126,13 +126,13 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
     def _summarize(self, prefix, device):
         if device.fs() is not None:
             fs = device.fs()
-            text = prefix + _("formatted as {}").format(fs.fstype)
+            text = prefix + _("formatted as {fstype}").format(fstype=fs.fstype)
             if fs.mount():
-                text += _(", mounted at {}").format(fs.mount().path)
+                text += _(", mounted at {path}").format(path=fs.mount().path)
             else:
                 text += _(", not mounted")
         else:
-            text = prefix + _("unused {}").format(device.desc())
+            text = prefix + _("unused {device}").format(device=device.desc())
         return TableRow([(2, Color.info_minor(Text(text)))])
 
     def set_bound_form_field(self, bff):

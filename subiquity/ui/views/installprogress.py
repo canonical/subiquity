@@ -253,7 +253,7 @@ class InstallRunning(Stretchy):
             button_pile([self.btn]),
             ]
         super().__init__(
-            _(""),
+            "",
             widgets,
             stretchy_index=0,
             focus_index=2)

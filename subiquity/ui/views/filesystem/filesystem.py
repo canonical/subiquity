@@ -319,7 +319,7 @@ class DeviceList(WidgetWrap):
         if cd:
             return _("Remove from {device}").format(device=cd.desc())
         else:
-            return _(action.value)
+            return action.str()
 
     def _label_PARTITION(self, action, device):
         return _("Add {ptype} Partition").format(
@@ -339,7 +339,7 @@ class DeviceList(WidgetWrap):
         device_actions = []
         for action in device.supported_actions:
             label_meth = getattr(
-                self, '_label_{}'.format(action.name), lambda a, d: _(a.value))
+                self, '_label_{}'.format(action.name), lambda a, d: a.str())
             label = label_meth(action, device)
             enabled, whynot = device.action_possible(action)
             if whynot:

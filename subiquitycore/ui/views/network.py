@@ -226,6 +226,7 @@ class NetworkView(BaseView):
                         addrs.append(str(ip))
                 if addrs:
                     address_info.append(
+                        # Network addressing mode (static/dhcp/disabled)
                         (Text(_('static')), Text(', '.join(addrs))))
         if len(address_info) == 0:
             # Do not show an interface as disabled if it is part of a bond or
@@ -234,6 +235,7 @@ class NetworkView(BaseView):
                 reason = dev.disabled_reason
                 if reason is None:
                     reason = ""
+                # Network addressing mode (static/dhcp/disabled)
                 address_info.append((Text(_("disabled")), Text(reason)))
         rows = []
         for label, value in address_info:
@@ -333,7 +335,7 @@ class NetworkView(BaseView):
             opens_dialog = getattr(meth, 'opens_dialog', False)
             if dev.supports_action(action):
                 actions.append(
-                    (_(action.value), True, (action, meth), opens_dialog))
+                    (action.str(), True, (action, meth), opens_dialog))
 
         menu = ActionMenu(actions)
         connect_signal(menu, 'action', self._action, dev)
