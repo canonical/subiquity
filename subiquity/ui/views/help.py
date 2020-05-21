@@ -179,7 +179,10 @@ GLOBAL_KEYS = (
     (_('F1'),            _('open help menu')),
     (_('Control-Z, F2'), _('switch to shell')),
     (_('Control-L, F3'), _('redraw screen')),
-    (_('Control-T, F4'), _('toggle color on and off')),
+    )
+
+SERIAL_GLOBAL_HELP_KEYS = (
+    (_('Control-T, F4'), _('toggle rich mode (colour, unicode) on and off')),
     )
 
 DRY_RUN_KEYS = (
@@ -195,7 +198,10 @@ class GlobalKeyStretchy(Stretchy):
 
     def __init__(self, app):
         rows = []
-        for key, text in GLOBAL_KEYS:
+        keys = GLOBAL_KEYS
+        if app.opts.run_on_serial:
+            keys += SERIAL_GLOBAL_HELP_KEYS
+        for key, text in keys:
             rows.append(TableRow([Text(_(key)), Text(_(text))]))
         if app.opts.dry_run:
             dro = _('(dry-run only)')
@@ -234,6 +240,31 @@ def menu_item(text, on_press=None):
     return Color.frame_button(icon)
 
 
+def get_global_addresses(app):
+    ips = []
+    net_model = app.base_model.network
+    for dev in net_model.get_all_netdevs():
+        ips.extend(dev.actual_global_ip_addresses)
+    return ips
+
+
+def get_installer_password(dry_run=False):
+    if dry_run:
+        fp = io.StringIO('installer:rAnd0Mpass')
+    else:
+        try:
+            fp = open("/var/log/cloud-init-output.log")
+        except FileNotFoundError:
+            fp = io.StringIO('')
+
+    with fp:
+        for line in fp:
+            if line.startswith("installer:"):
+                return line[len("installer:"):].strip()
+
+    return None
+
+
 class HelpMenu(WidgetWrap):
 
     def __init__(self, parent):
@@ -244,12 +275,9 @@ class HelpMenu(WidgetWrap):
             _("Keyboard shortcuts"), on_press=self._shortcuts)
         drop_to_shell = menu_item(
             _("Enter shell"), on_press=self._debug_shell)
-        color = menu_item(
-            _("Toggle color on/off"), on_press=self._toggle_color)
         buttons = {
             about,
             close,
-            color,
             drop_to_shell,
             keys,
             }
@@ -257,6 +285,10 @@ class HelpMenu(WidgetWrap):
             ssh_help = menu_item(
                 _("Help on SSH access"), on_press=self._ssh_help)
             buttons.add(ssh_help)
+        if self.parent.app.opts.run_on_serial:
+            rich = menu_item(
+                _("Toggle rich mode"), on_press=self._toggle_rich)
+            buttons.add(rich)
         local_title, local_doc = parent.app.ui.body.local_help()
         if local_title is not None:
             local = menu_item(
@@ -291,10 +323,11 @@ class HelpMenu(WidgetWrap):
         if self.parent.ssh_password is not None:
             entries.append(ssh_help)
 
-        entries.extend([
-            hline,
-            color,
-            ])
+        if self.parent.app.opts.run_on_serial:
+            entries.extend([
+                hline,
+                rich,
+                ])
 
         rows = [
             Columns([
@@ -370,16 +403,9 @@ class HelpMenu(WidgetWrap):
                 _("About the installer"),
                 template.format(**info)))
 
-    def get_global_addresses(self):
-        ips = []
-        net_model = self.parent.app.base_model.network
-        for dev in net_model.get_all_netdevs():
-            ips.extend(dev.actual_global_ip_addresses)
-        return ips
-
     def _ssh_help(self, sender=None):
         texts = ssh_help_texts(
-            self.get_global_addresses(),
+            get_global_addresses(self.parent.app),
             self.parent.ssh_password)
 
         self._show_overlay(
@@ -405,28 +431,11 @@ class HelpMenu(WidgetWrap):
     def _debug_shell(self, sender):
         self.parent.app.debug_shell()
 
-    def _toggle_color(self, sender):
-        self.parent.app.toggle_color()
+    def _toggle_rich(self, sender):
+        self.parent.app.toggle_rich()
 
     def _show_errors(self, sender):
         self._show_overlay(ErrorReportListStretchy(self.parent.app))
-
-
-def get_installer_password(dry_run=False):
-    if dry_run:
-        fp = io.StringIO('installer:rAnd0Mpass')
-    else:
-        try:
-            fp = open("/var/log/cloud-init-output.log")
-        except FileNotFoundError:
-            fp = io.StringIO('')
-
-    with fp:
-        for line in fp:
-            if line.startswith("installer:"):
-                return line[len("installer:"):].strip()
-
-    return None
 
 
 class HelpButton(PopUpLauncher):
