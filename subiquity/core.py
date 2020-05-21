@@ -50,6 +50,7 @@ from subiquity.snapd import (
     )
 from subiquity.ui.frame import SubiquityUI
 from subiquity.ui.views.error import ErrorReportStretchy
+from subiquity.ui.views.help import HelpMenu
 
 
 log = logging.getLogger('subiquity.core')
@@ -95,7 +96,7 @@ class Subiquity(Application):
         return SubiquityModel(root, self.opts.sources)
 
     def make_ui(self):
-        return SubiquityUI(self)
+        return SubiquityUI(self, self.help_menu)
 
     controllers = [
         "Early",
@@ -127,6 +128,7 @@ class Subiquity(Application):
 
         self.journal_fd, self.journal_watcher = journald_listener(
             ["subiquity"], self.subiquity_event, seek=True)
+        self.help_menu = HelpMenu(self)
         super().__init__(opts)
         self.event_listeners = []
         self.install_lock_file = Lockfile(self.state_path("installing"))
