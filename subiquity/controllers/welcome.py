@@ -39,9 +39,10 @@ class WelcomeController(SubiquityController):
         lang = os.environ.get("LANG")
         if lang is not None and lang.endswith(".UTF-8"):
             lang = lang.rsplit('.', 1)[0]
-        for code, name in self.model.supported_languages:
+        for code, name in self.model.get_languages(self.app.is_linux_tty):
             if code == lang:
                 self.model.switch_language(code)
+                break
         else:
             self.model.selected_language = lang
 

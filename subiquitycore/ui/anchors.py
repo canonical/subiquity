@@ -54,6 +54,9 @@ class HeaderColumns(Columns):
         center = max(int_scale(79, 101, maxcol + 1), 76)
         message = center - btn
         pad = (maxcol - center)//2
+        if pad <= 0:
+            pad = 1
+            message = maxcol - 2 - btn
         return [pad, message, btn, pad]
 
 

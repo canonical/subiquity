@@ -18,6 +18,7 @@ import logging
 import attr
 
 from subiquitycore.async_helpers import schedule_task
+from subiquitycore.context import with_context
 
 from subiquity.controller import SubiquityController
 from subiquity.models.keyboard import KeyboardSetting
@@ -34,7 +35,7 @@ class KeyboardController(SubiquityController):
         'properties': {
             'layout': {'type': 'string'},
             'variant': {'type': 'string'},
-            'toggle': {'type': 'string'},
+            'toggle': {'type': ['string', 'null']},
             },
         'required': ['layout'],
         'additionalProperties': False,
@@ -47,7 +48,8 @@ class KeyboardController(SubiquityController):
         if data is not None:
             self.model.setting = KeyboardSetting(**data)
 
-    async def apply_autoinstall_config(self):
+    @with_context()
+    async def apply_autoinstall_config(self, context):
         await self.model.set_keyboard(self.model.setting)
 
     def language_selected(self, code):

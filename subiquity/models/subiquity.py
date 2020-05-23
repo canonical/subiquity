@@ -22,9 +22,9 @@ import sys
 import uuid
 import yaml
 
+from curtin.commands.install import CONFIG_BUILTIN
 from curtin.config import merge_config
 
-from subiquitycore.models.network import NetworkModel
 from subiquitycore.file_util import write_file
 from subiquitycore.utils import run_command
 
@@ -33,6 +33,7 @@ from .keyboard import KeyboardModel
 from .locale import LocaleModel
 from .proxy import ProxyModel
 from .mirror import MirrorModel
+from .network import NetworkModel
 from .snaplist import SnapListModel
 from .ssh import SSHModel
 from .identity import IdentityModel
@@ -111,7 +112,7 @@ class SubiquityModel:
         self.keyboard = KeyboardModel(self.root)
         self.locale = LocaleModel()
         self.mirror = MirrorModel()
-        self.network = NetworkModel("subiquity", support_wlan=False)
+        self.network = NetworkModel()
         self.packages = []
         self.proxy = ProxyModel()
         self.snaplist = SnapListModel()
@@ -148,9 +149,10 @@ class SubiquityModel:
                 'mode': 'off',
                 },
             'locale': self.locale.selected_language + '.UTF-8',
-            'preserve_hostname': True,
             'resize_rootfs': False,
         }
+        if self.identity.hostname is not None:
+            config['preserve_hostname'] = True
         user = self.identity.user
         if user:
             users_and_groups_path = (
@@ -233,7 +235,15 @@ class SubiquityModel:
             return fp.read()
 
     def render(self, syslog_identifier):
+        # Until https://bugs.launchpad.net/curtin/+bug/1876984 gets
+        # fixed, the only way to get curtin to leave the network
+        # config entirely alone is to omit the 'network' stage.
+        stages = [
+            stage for stage in CONFIG_BUILTIN['stages'] if stage != 'network'
+            ]
         config = {
+            'stages': stages,
+
             'sources': {
                 'ubuntu00': 'cp:///media/filesystem'
                 },

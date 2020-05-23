@@ -86,7 +86,7 @@ class GuidedChoiceForm(SubForm):
     lvm_options = SubFormField(LVMOptionsForm, "", help=NO_HELP)
 
     def __init__(self, parent):
-        super().__init__(parent)
+        super().__init__(parent, initial={'use_lvm': True})
         options = []
         tables = []
         initial = -1
@@ -140,9 +140,10 @@ If the platform requires it, a bootloader partition is created on the disk.
 
 If you choose to use LVM, two additional partitions are then created,
 one for /boot and one covering the rest of the disk. An LVM volume
-group is created containing the large partition. A 4 gigabyte logical
-volume is created for the root filesystem. It can easily be enlarged
-with standard LVM command line tools.
+group is created containing the large partition. A logical volume is
+created for the root filesystem, sized using some simple heuristic. It
+can easily be enlarged with standard LVM command line tools (or on the
+next screen).
 
 You can also choose to encrypt LVM volume group. This will require
 setting a password, that one will need to type on every boot before
@@ -198,12 +199,12 @@ class GuidedDiskSelectionView (BaseView):
         elif found_disk:
             super().__init__(
                 screen(
-                    [Text(_(rewrap(no_big_disks)))],
+                    [Text(rewrap(_(no_big_disks)))],
                     [other_btn(_("OK"), on_press=self.manual)]))
         else:
             super().__init__(
                 screen(
-                    [Text(_(rewrap(no_disks)))],
+                    [Text(rewrap(_(no_disks)))],
                     []))
 
     def local_help(self):

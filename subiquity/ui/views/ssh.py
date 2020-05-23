@@ -28,7 +28,6 @@ from subiquitycore.view import (
 from subiquitycore.ui.buttons import (
     cancel_btn,
     ok_btn,
-    other_btn,
     )
 from subiquitycore.ui.container import (
     ListBox,
@@ -49,6 +48,7 @@ from subiquitycore.ui.stretchy import (
 from subiquitycore.ui.utils import (
     button_pile,
     screen,
+    SomethingFailed,
     )
 
 from subiquity.ui.views.identity import (
@@ -71,18 +71,18 @@ _ssh_import_data = {
         },
     'gh': {
         'caption': _("Github Username:"),
-        'help': "Enter your Github username.",
+        'help': _("Enter your Github username."),
         'valid_char': r'[a-zA-Z0-9\-]',
-        'error_invalid_char': ('A Github username may only contain '
-                               'alphanumeric characters or hyphens.'),
+        'error_invalid_char': _('A Github username may only contain '
+                                'alphanumeric characters or hyphens.'),
         },
     'lp': {
         'caption': _("Launchpad Username:"),
         'help': "Enter your Launchpad username.",
         'valid_char': r'[a-z0-9\+\.\-]',
-        'error_invalid_char': ('A Launchpad username may only contain '
-                               'lower-case alphanumeric characters, hyphens, '
-                               'plus, or periods.'),
+        'error_invalid_char': _('A Launchpad username may only contain '
+                                'lower-case alphanumeric characters, hyphens, '
+                                'plus, or periods.'),
         },
     }
 
@@ -217,26 +217,6 @@ class ConfirmSSHKeys(Stretchy):
         self.parent.controller.done(self.result)
 
 
-class FetchingSSHKeysFailed(Stretchy):
-    def __init__(self, parent, msg, stderr):
-        self.parent = parent
-        ok = other_btn(label=_("Close"), on_press=self.close)
-        widgets = [
-            Text(msg),
-            Text(""),
-            Text(stderr.strip('\n')),
-            Text(""),
-            button_pile([ok]),
-            ]
-        super().__init__(
-            "",
-            widgets,
-            2, 4)
-
-    def close(self, sender):
-        self.parent.remove_overlay()
-
-
 class SSHView(BaseView):
 
     title = _("SSH Setup")
@@ -318,4 +298,4 @@ class SSHView(BaseView):
 
     def fetching_ssh_keys_failed(self, msg, stderr):
         self.remove_overlay()
-        self.show_stretchy_overlay(FetchingSSHKeysFailed(self, msg, stderr))
+        self.show_stretchy_overlay(SomethingFailed(self, msg, stderr))

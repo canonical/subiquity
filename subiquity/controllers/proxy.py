@@ -16,6 +16,8 @@
 import logging
 import os
 
+from subiquitycore.context import with_context
+
 from subiquity.controller import SubiquityController
 from subiquity.ui.views.proxy import ProxyView
 
@@ -40,7 +42,8 @@ class ProxyController(SubiquityController):
               self.model.proxy
             self.signal.emit_signal('network-proxy-set')
 
-    async def apply_autoinstall_config(self):
+    @with_context()
+    async def apply_autoinstall_config(self, context=None):
         # XXX want to wait until signal sent by .start() has been seen
         # by everything; don't have a way to do that today.
         pass

@@ -13,13 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import copy
 import enum
 import ipaddress
 import logging
 import yaml
 from socket import AF_INET, AF_INET6
 
+from subiquitycore.gettext38 import pgettext
 from subiquitycore import netplan
 
 
@@ -35,34 +35,17 @@ def addr_version(ip):
 
 
 class NetDevAction(enum.Enum):
-    INFO = _("Info")
-    EDIT_WLAN = _("Edit Wifi")
-    EDIT_IPV4 = _("Edit IPv4")
-    EDIT_IPV6 = _("Edit IPv6")
-    EDIT_BOND = _("Edit bond")
-    ADD_VLAN = _("Add a VLAN tag")
-    DELETE = _("Delete")
+    # Information about a network interface
+    INFO = pgettext("NetDevAction", "Info")
+    EDIT_WLAN = pgettext("NetDevAction", "Edit Wifi")
+    EDIT_IPV4 = pgettext("NetDevAction", "Edit IPv4")
+    EDIT_IPV6 = pgettext("NetDevAction", "Edit IPv6")
+    EDIT_BOND = pgettext("NetDevAction", "Edit bond")
+    ADD_VLAN = pgettext("NetDevAction", "Add a VLAN tag")
+    DELETE = pgettext("NetDevAction", "Delete")
 
-
-def _sanitize_inteface_config(iface_config):
-    for ap, ap_config in iface_config.get('access-points', {}).items():
-        if 'password' in ap_config:
-            ap_config['password'] = '<REDACTED>'
-
-
-def sanitize_interface_config(iface_config):
-    iface_config = copy.deepcopy(iface_config)
-    _sanitize_inteface_config(iface_config)
-    return iface_config
-
-
-def sanitize_config(config):
-    """Return a copy of config with passwords redacted."""
-    config = copy.deepcopy(config)
-    interfaces = config.get('network', {}).get('wifis', {}).items()
-    for iface, iface_config in interfaces:
-        _sanitize_inteface_config(iface_config)
-    return config
+    def str(self):
+        return pgettext(type(self).__name__, self.value)
 
 
 class BondParameters:
@@ -170,6 +153,21 @@ class NetworkDev(object):
 
     def supports_action(self, action):
         return getattr(self, "_supports_" + action.name)
+
+    @property
+    def configured_ssid(self):
+        for ssid, settings in self.config.get('access-points', {}).items():
+            psk = settings.get('password')
+            return ssid, psk
+        return None, None
+
+    def set_ssid_psk(self, ssid, psk):
+        aps = self.config.setdefault('access-points', {})
+        aps.clear()
+        if ssid is not None:
+            aps[ssid] = {}
+            if psk is not None:
+                aps[ssid]['password'] = psk
 
     @property
     def ifindex(self):
@@ -293,7 +291,7 @@ class NetworkModel(object):
             dev.config = config
             log.debug("new_link %s %s with config %s",
                       ifindex, link.name,
-                      sanitize_interface_config(dev.config))
+                      netplan.sanitize_interface_config(dev.config))
             self.devices_by_name[link.name] = dev
         return dev
 

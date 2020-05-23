@@ -25,10 +25,14 @@ apps:
 
 parts:
   curtin:
+    override-pull: |
+      snapcraftctl pull
+      PACKAGED_VERSION="$(git describe --long --abbrev=9 --match=[0-9][0-9]*)"
+      sed -e "s,@@PACKAGED_VERSION@@,$PACKAGED_VERSION,g" -i curtin/version.py
     plugin: python
     source-type: git
-    source: git://git.launchpad.net/curtin
-    source-commit: e967eebc3a427cd62f12f66473ea8430889bc206
+    source: https://git.launchpad.net/curtin
+    source-commit: 145e493938b7296fab46a56560ec4e62b4326b62
     requirements: [requirements.txt]
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
@@ -36,8 +40,6 @@ parts:
      - "*"
      - "-lib/python*/site-packages/_yaml.*.so"
      - "-lib/python*/site-packages/jsonschema"
-    stage-packages:
-     - libc6
   apport:
     plugin: python
     source-type: bzr
@@ -66,16 +68,13 @@ parts:
       - libsystemd-dev
       - lsb-release
       - pkg-config
-      - python3-distutils-extra
       - python3-urwid
     stage-packages:
       - cloud-init
-      - libc6
       - libsystemd0
       - iso-codes
       - lsb-release
       - python3-bson
-      - python3-distutils-extra
       - python3-urwid
       - python3-requests
       - python3-requests-unixsocket
@@ -103,7 +102,6 @@ parts:
         debconf-communicate user-setup | \
         cut -d ' ' -f 2- > $SNAPCRAFT_PART_INSTALL/users-and-groups
       cp /usr/lib/user-setup/reserved-usernames $SNAPCRAFT_PART_INSTALL/
-    stage-packages: [libc6]
     stage:
       - users-and-groups
       - reserved-usernames
@@ -113,7 +111,6 @@ parts:
       - console-setup
       - locales
       - xkb-data-i18n
-    stage-packages: [libc6]
     override-build: |
       /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl > $SNAPCRAFT_PART_INSTALL/kbdnames.txt
     stage:
@@ -125,11 +122,18 @@ parts:
       font/subiquity.psf: subiquity.psf
     stage:
       - subiquity.psf
+  languagelists:
+    plugin: nil
+    build-packages:
+      - localechooser-data
+    override-build: |
+      $SNAPCRAFT_PROJECT_DIR/scripts/make-language-lists $SNAPCRAFT_PROJECT_DIR/po > $SNAPCRAFT_PART_INSTALL/languagelist
+    stage:
+      - languagelist
   probert:
     plugin: python
     build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
-    stage-packages: [libc6, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
     source: https://github.com/CanonicalLtd/probert.git
     source-type: git
-    source-commit: 4793e16ea1c397c44e115dc90eafa60df0947d5c
+    source-commit: b6329b0dfe2c2deef1b3f862a451e28d5c1f7cf3
     requirements: [requirements.txt]

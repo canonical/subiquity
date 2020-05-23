@@ -24,12 +24,15 @@ import math
 import os
 import pathlib
 import platform
+import tempfile
 
-from curtin.block import partition_kname
 from curtin import storage_config
 from curtin.util import human2bytes
 
 from probert.storage import StorageInfo
+
+from subiquitycore.gettext38 import pgettext
+
 
 log = logging.getLogger('subiquity.models.filesystem')
 
@@ -145,7 +148,9 @@ class RaidLevel:
 
 
 raidlevels = [
+    # for translators: this is a description of a RAID level
     RaidLevel(_("0 (striped)"),  "raid0",  2, False),
+    # for translators: this is a description of a RAID level
     RaidLevel(_("1 (mirrored)"), "raid1",  2),
     RaidLevel(_("5"),            "raid5",  3),
     RaidLevel(_("6"),            "raid6",  4),
@@ -154,7 +159,7 @@ raidlevels = [
 
 
 def _raidlevels_by_value():
-    r = {l.value: l for l in raidlevels}
+    r = {level.value: level for level in raidlevels}
     for n in 0, 1, 5, 6, 10:
         r[str(n)] = r[n] = r["raid"+str(n)]
     r["stripe"] = r["raid0"]
@@ -183,7 +188,8 @@ def dehumanize_size(size):
     size_in = size
 
     if not size:
-        raise ValueError("input cannot be empty")
+        # Attempting to convert input to a size
+        raise ValueError(_("input cannot be empty"))
 
     if not size[-1].isdigit():
         suffix = size[-1].upper()
@@ -193,7 +199,9 @@ def dehumanize_size(size):
 
     parts = size.split('.')
     if len(parts) > 2:
-        raise ValueError(_("{!r} is not valid input").format(size_in))
+        raise ValueError(
+            # Attempting to convert input to a size
+            _("{input!r} is not valid input").format(input=size_in))
     elif len(parts) == 2:
         div = 10 ** len(parts[1])
         size = parts[0] + parts[1]
@@ -203,19 +211,23 @@ def dehumanize_size(size):
     try:
         num = int(size)
     except ValueError:
-        raise ValueError(_("{!r} is not valid input").format(size_in))
+        raise ValueError(
+            # Attempting to convert input to a size
+            _("{input!r} is not valid input").format(input=size_in))
 
     if suffix is not None:
         if suffix not in HUMAN_UNITS:
             raise ValueError(
-                "unrecognized suffix {!r} in {!r}".format(size_in[-1],
-                                                          size_in))
+                # Attempting to convert input to a size
+                "unrecognized suffix {suffix!r} in {input!r}".format(
+                    suffix=size_in[-1], input=size_in))
         mult = 2 ** (10 * HUMAN_UNITS.index(suffix))
     else:
         mult = 1
 
     if num < 0:
-        raise ValueError("{!r}: cannot be negative".format(size_in))
+        # Attempting to convert input to a size
+        raise ValueError("{input!r}: cannot be negative".format(input=size_in))
 
     return num * mult // div
 
@@ -318,7 +330,7 @@ def _conv_size(s):
     if isinstance(s, str):
         if '%' in s:
             return s
-        return human2bytes(s)
+        return int(human2bytes(s))
     return s
 
 
@@ -344,11 +356,11 @@ class attributes:
         return attr.ib(metadata=metadata)
 
     @staticmethod
-    def reflist(*, backlink=None):
+    def reflist(*, backlink=None, default=attr.NOTHING):
         metadata = {'reflist': True}
         if backlink:
             metadata['backlink'] = backlink
-        return attr.ib(metadata=metadata)
+        return attr.ib(metadata=metadata, default=default)
 
     @staticmethod
     def backlink(*, default=None):
@@ -380,7 +392,7 @@ def asdict(inst):
             continue
         m = getattr(inst, 'serialize_' + field.name, None)
         if m:
-            r[field.name] = m()
+            r.update(m())
         else:
             v = getattr(inst, field.name)
             if v is not None:
@@ -401,15 +413,20 @@ def asdict(inst):
 
 
 class DeviceAction(enum.Enum):
-    INFO = _("Info")
-    EDIT = _("Edit")
-    REFORMAT = _("Reformat")
-    PARTITION = _("Add Partition")
-    CREATE_LV = _("Create Logical Volume")
-    FORMAT = _("Format")
-    REMOVE = _("Remove from RAID/LVM")
-    DELETE = _("Delete")
-    MAKE_BOOT = _("Make Boot Device")
+    # Information about a drive
+    INFO = pgettext("DeviceAction", "Info")
+    # Edit a device (partition, logical volume, RAID, etc)
+    EDIT = pgettext("DeviceAction", "Edit")
+    REFORMAT = pgettext("DeviceAction", "Reformat")
+    PARTITION = pgettext("DeviceAction", "Add Partition")
+    CREATE_LV = pgettext("DeviceAction", "Create Logical Volume")
+    FORMAT = pgettext("DeviceAction", "Format")
+    REMOVE = pgettext("DeviceAction", "Remove from RAID/LVM")
+    DELETE = pgettext("DeviceAction", "Delete")
+    TOGGLE_BOOT = pgettext("DeviceAction", "Make Boot Device")
+
+    def str(self):
+        return pgettext(type(self).__name__, self.value)
 
 
 def _generic_can_EDIT(obj):
@@ -485,8 +502,10 @@ class _Formattable(ABC):
         if preserve is None:
             return []
         elif preserve:
+            # A pre-existing device such as a partition or RAID
             return [_("existing")]
         else:
+            # A newly created device such as a partition or RAID
             return [_("new")]
 
     # Filesystem
@@ -515,13 +534,19 @@ class _Formattable(ABC):
             if self._m.is_mounted_filesystem(fs.fstype):
                 m = fs.mount()
                 if m:
+                    # A filesytem
                     r.append(_("mounted at {path}").format(path=m.path))
-                else:
+                elif getattr(self, 'flag', None) != "boot":
+                    # A filesytem
                     r.append(_("not mounted"))
             elif fs.preserve:
                 if fs.mount() is None:
+                    # A filesytem that cannot be mounted (i.e. swap)
+                    # is used or unused
                     r.append(_("unused"))
                 else:
+                    # A filesytem that cannot be mounted (i.e. swap)
+                    # is used or unused
                     r.append(_("used"))
             return r
         else:
@@ -765,7 +790,7 @@ class Disk(_Device):
 
     def desc(self):
         if self.multipath:
-            return "multipath device"
+            return _("multipath device")
         return _("local disk")
 
     @property
@@ -777,32 +802,22 @@ class Disk(_Device):
     def dasd(self):
         return self._m._one(type='dasd', device_id=self.device_id)
 
-    def _potential_boot_partition(self):
-        if self._m.bootloader == Bootloader.NONE:
-            return None
-        if not self._partitions:
-            return None
-        if self._m.bootloader == Bootloader.BIOS:
-            if self._partitions[0].flag == "bios_grub":
-                return self._partitions[0]
-            else:
-                return None
-        flag = {
-            Bootloader.UEFI: "boot",
-            Bootloader.PREP: "prep",
-            }[self._m.bootloader]
-        for p in self._partitions:
-            # XXX should check not extended in the UEFI case too (until we fix
-            # that bug)
-            if p.flag == flag:
-                return p
-        return None
-
     def _can_be_boot_disk(self):
-        if self._m.bootloader == Bootloader.BIOS and self.ptable == "msdos":
-            return True
+        bl = self._m.bootloader
+        if self._has_preexisting_partition():
+            if bl == Bootloader.BIOS:
+                if self.ptable == "msdos":
+                    return True
+                else:
+                    return self._partitions[0].flag == "bios_grub"
+            else:
+                flag = {Bootloader.UEFI: "boot", Bootloader.PREP: "prep"}[bl]
+                for p in self._partitions:
+                    if p.flag == flag:
+                        return True
+                return False
         else:
-            return self._potential_boot_partition() is not None
+            return True
 
     @property
     def supported_actions(self):
@@ -814,7 +829,7 @@ class Disk(_Device):
             DeviceAction.REMOVE,
             ]
         if self._m.bootloader != Bootloader.NONE:
-            actions.append(DeviceAction.MAKE_BOOT)
+            actions.append(DeviceAction.TOGGLE_BOOT)
         return actions
 
     _can_INFO = True
@@ -843,24 +858,29 @@ class Disk(_Device):
         self._constructed_device is None)
     _can_REMOVE = property(_generic_can_REMOVE)
 
-    @property
-    def _can_MAKE_BOOT(self):
+    def _is_boot_device(self):
         bl = self._m.bootloader
-        if bl == Bootloader.BIOS:
-            if self._m.grub_install_device is self:
-                return False
-        elif bl == Bootloader.UEFI:
-            m = self._m._mount_for_path('/boot/efi')
-            if m and m.device.volume.device is self:
-                return False
-        elif bl == Bootloader.PREP:
-            install_dev = self._m.grub_install_device
-            if install_dev is not None and install_dev.device is self:
-                return False
-        if self._has_preexisting_partition():
-            return self._can_be_boot_disk()
+        if bl == Bootloader.NONE:
+            return False
+        elif bl == Bootloader.BIOS:
+            return self.grub_device
+        elif bl in [Bootloader.PREP, Bootloader.UEFI]:
+            for p in self._partitions:
+                if p.grub_device:
+                    return True
+            return False
+
+    @property
+    def _can_TOGGLE_BOOT(self):
+        if self._is_boot_device():
+            for disk in self._m.all_disks():
+                if disk is not self and disk._is_boot_device():
+                    return True
+            return False
+        elif self._fs is not None or self._constructed_device is not None:
+            return False
         else:
-            return self._fs is None and self._constructed_device is None
+            return self._can_be_boot_disk()
 
     @property
     def ok_for_raid(self):
@@ -886,20 +906,40 @@ class Partition(_Formattable):
     flag = attr.ib(default=None)
     number = attr.ib(default=None)
     preserve = attr.ib(default=False)
+    grub_device = attr.ib(default=False)
 
     @property
     def annotations(self):
         r = super().annotations
         if self.flag == "prep":
             r.append("PReP")
+            if self.preserve:
+                if self.grub_device:
+                    # boot loader partition
+                    r.append(_("configured"))
+                else:
+                    # boot loader partition
+                    r.append(_("unconfigured"))
         elif self.flag == "boot":
-            r.append("ESP")
+            if self.fs() and self.fs().mount():
+                r.append(_("primary ESP"))
+            elif self.grub_device:
+                r.append(_("backup ESP"))
+            else:
+                r.append(_("unused ESP"))
         elif self.flag == "bios_grub":
+            if self.preserve:
+                if self.device.grub_device:
+                    r.append(_("configured"))
+                else:
+                    r.append(_("unconfigured"))
             r.append("bios_grub")
         elif self.flag == "extended":
-            r.append("extended")
+            # extended partition
+            r.append(_("extended"))
         elif self.flag == "logical":
-            r.append("logical")
+            # logical partition
+            r.append(_("logical"))
         return r
 
     def usage_labels(self):
@@ -908,18 +948,19 @@ class Partition(_Formattable):
         return super().usage_labels()
 
     def desc(self):
-        return _("partition of {}").format(self.device.desc())
+        return _("partition of {device}").format(device=self.device.desc())
 
     @property
     def label(self):
-        return _("partition {} of {}").format(self._number, self.device.label)
+        return _("partition {number} of {device}").format(
+            number=self._number, device=self.device.label)
 
     @property
     def short_label(self):
-        return _("partition {}").format(self._number)
+        return _("partition {number}").format(number=self._number)
 
     def available(self):
-        if self.flag in ['bios_grub', 'prep']:
+        if self.flag in ['bios_grub', 'prep'] or self.grub_device:
             return False
         if self._constructed_device is not None:
             return False
@@ -928,7 +969,7 @@ class Partition(_Formattable):
         return self._fs._available()
 
     def serialize_number(self):
-        return self._number
+        return {'number': self._number}
 
     @property
     def _number(self):
@@ -981,9 +1022,10 @@ class Raid(_Device):
         # Surprisingly, the order of devices passed to mdadm --create
         # matters (see get_raid_size) so we sort devices here the same
         # way get_raid_size does.
-        return [d.id for d in raid_device_sort(self.devices)]
+        return {'devices': [d.id for d in raid_device_sort(self.devices)]}
 
-    spare_devices = attributes.reflist(backlink="_constructed_device")
+    spare_devices = attributes.reflist(
+        backlink="_constructed_device", default=attr.Factory(set))
 
     preserve = attr.ib(default=False)
     ptable = attributes.ptable()
@@ -1004,7 +1046,7 @@ class Raid(_Device):
         return self.name
 
     def desc(self):
-        return _("software RAID {}").format(self.raidlevel[4:])
+        return _("software RAID {level}").format(level=self.raidlevel[4:])
 
     supported_actions = [
         DeviceAction.EDIT,
@@ -1072,7 +1114,8 @@ class LVM_VolGroup(_Device):
         r = super().annotations
         member = next(iter(self.devices))
         if member.type == "dm_crypt":
-            r.append("encrypted")
+            # Flag for a LVM volume group
+            r.append(_("encrypted"))
         return r
 
     @property
@@ -1080,7 +1123,7 @@ class LVM_VolGroup(_Device):
         return self.name
 
     def desc(self):
-        return "LVM volume group"
+        return _("LVM volume group")
 
     supported_actions = [
         DeviceAction.EDIT,
@@ -1119,7 +1162,7 @@ class LVM_LogicalVolume(_Formattable):
     preserve = attr.ib(default=False)
 
     def serialize_size(self):
-        return "{}B".format(self.size)
+        return {'size': "{}B".format(self.size)}
 
     def available(self):
         if self._constructed_device is not None:
@@ -1133,7 +1176,7 @@ class LVM_LogicalVolume(_Formattable):
         return None  # hack!
 
     def desc(self):
-        return "LVM logical volume"
+        return _("LVM logical volume")
 
     @property
     def short_label(self):
@@ -1166,6 +1209,16 @@ LUKS_OVERHEAD = 16*(2**20)
 class DM_Crypt:
     volume = attributes.ref(backlink="_constructed_device")  # _Formattable
     key = attr.ib(metadata={'redact': True})
+
+    def serialize_key(self):
+        if self.key:
+            f = tempfile.NamedTemporaryFile(
+                prefix='luks-key-', mode='w', delete=False)
+            f.write(self.key)
+            f.close()
+            return {'keyfile': f.name}
+        else:
+            return {}
 
     dm_name = attr.ib(default=None)
     preserve = attr.ib(default=False)
@@ -1278,8 +1331,8 @@ class FilesystemModel(object):
         else:
             self._orig_config = []
             self._actions = []
-        self.grub_install_device = None
         self.swap = None
+        self.grub = None
 
     def _make_matchers(self, match):
         matchers = []
@@ -1364,7 +1417,8 @@ class FilesystemModel(object):
             elif isinstance(p.size, str):
                 if p.size.endswith("%"):
                     percentage = int(p.size[:-1])
-                    p.size = parent.available_for_partitions*percentage//100
+                    p.size = align_down(
+                        parent.available_for_partitions*percentage//100)
                 else:
                     p.size = dehumanize_size(p.size)
 
@@ -1545,16 +1599,8 @@ class FilesystemModel(object):
             }
         if self.swap is not None:
             config['swap'] = self.swap
-        if self.grub_install_device:
-            dev = self.grub_install_device
-            if dev.type == "partition":
-                disk_kname = dev.device.path[5:]  # chop off "/dev/"
-                devpath = "/dev/" + partition_kname(disk_kname, dev._number)
-            else:
-                devpath = dev.path
-            config['grub'] = {
-                'install_devices': [devpath],
-                }
+        if self.grub is not None:
+            config['grub'] = self.grub
         return config
 
     def load_probe_data(self, probe_data):
@@ -1608,12 +1654,11 @@ class FilesystemModel(object):
         return self._all(type='lvm_volgroup')
 
     def _remove(self, obj):
-        if obj is self.grub_install_device:
-            self.grub_install_device = None
         _remove_backlinks(obj)
         self._actions.remove(obj)
 
-    def add_partition(self, device, size, flag="", wipe=None):
+    def add_partition(self, device, size, flag="", wipe=None,
+                      grub_device=None):
         if size > device.free_for_partitions:
             raise Exception("%s > %s", size, device.free_for_partitions)
         real_size = align_up(size)
@@ -1621,7 +1666,8 @@ class FilesystemModel(object):
         if device._fs is not None:
             raise Exception("%s is already formatted" % (device.label,))
         p = Partition(
-            m=self, device=device, size=real_size, flag=flag, wipe=wipe)
+            m=self, device=device, size=real_size, flag=flag, wipe=wipe,
+            grub_device=grub_device)
         if flag in ("boot", "bios_grub", "prep"):
             device._partitions.insert(0, device._partitions.pop())
         device.ptable = device.ptable_for_new_partition()
@@ -1725,10 +1771,16 @@ class FilesystemModel(object):
         # s390x has no such thing
         if self.bootloader == Bootloader.NONE:
             return False
-        elif self.bootloader in [Bootloader.BIOS, Bootloader.PREP]:
-            return self.grub_install_device is None
+        elif self.bootloader == Bootloader.BIOS:
+            return self._one(type='disk', grub_device=True) is None
         elif self.bootloader == Bootloader.UEFI:
-            return self._mount_for_path('/boot/efi') is None
+            for esp in self._all(type='partition', grub_device=True):
+                if esp.fs() and esp.fs().mount():
+                    if esp.fs().mount().path == '/boot/efi':
+                        return False
+            return True
+        elif self.bootloader == Bootloader.PREP:
+            return self._one(type='partition', grub_device=True) is None
         else:
             raise AssertionError(
                 "unknown bootloader type {}".format(self.bootloader))

@@ -99,7 +99,8 @@ class NetworkConfigForm(Form):
                 example = "xx.xx.xx.xx/yy"
             else:
                 example = "xx:xx:..:xx/yy"
-            raise ValueError(_("should be in CIDR form ({})").format(example))
+            raise ValueError(_("should be in CIDR form ({example})").format(
+                example=example))
         return self.ip_network_cls(subnet)
 
     def clean_address(self, address):
@@ -110,7 +111,9 @@ class NetworkConfigForm(Form):
             return
         if address not in subnet:
             raise ValueError(
-                _("'%s' is not contained in '%s'") % (address, subnet))
+                _("'{address}' is not contained in '{subnet}'").format(
+                    address, subnet)
+                )
         return address
 
     def clean_gateway(self, gateway):
@@ -136,8 +139,11 @@ class NetworkConfigForm(Form):
 
 
 network_choices = [
+    # A choice for how to configure a network interface
     (_("Automatic (DHCP)"), True, "dhcp"),
+    # A choice for how to configure a network interface
     (_("Manual"), True, "manual"),
+    # A choice for how to configure a network interface
     (_("Disabled"), True, "disable"),
     ]
 
@@ -283,7 +289,7 @@ class VlanForm(Form):
         new_name = '%s.%s' % (self.device.name, self.vlan.value)
         if new_name in self.parent.model.devices_by_name:
             if self.parent.model.devices_by_name[new_name].config is not None:
-                return _("%s already exists") % new_name
+                return _("{netdev} already exists").format(netdev=new_name)
 
 
 class AddVlanStretchy(Stretchy):
@@ -327,7 +333,8 @@ class ViewInterfaceInfo(Stretchy):
             Text(""),
             button_pile([done_btn(_("Close"), on_press=self.close)]),
             ]
-        title = _("Info for {}").format(device.name)
+        # {device} is the name of a network device
+        title = _("Info for {device}").format(device=device.name)
         super().__init__(title, widgets, 0, 2)
 
     def close(self, button=None):
@@ -399,8 +406,8 @@ class BondForm(Form):
         name = self.name.value
         if name in self.all_netdev_names:
             return _(
-                'There is already a network device named "{}"'
-                ).format(name)
+                'There is already a network device named "{netdev}"'
+                ).format(netdev=name)
         if len(name) == 0:
             return _("Name cannot be empty")
         if len(name) > 16:

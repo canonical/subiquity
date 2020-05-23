@@ -29,6 +29,7 @@ install_deps:
 
 i18n:
 	$(PYTHON) setup.py build_i18n
+	cd po; intltool-update -r -g subiquity
 
 dryrun: probert i18n
 	$(MAKE) ui-view DRYRUN="--dry-run --bootloader uefi"
@@ -49,7 +50,7 @@ lint: flake8
 
 flake8:
 	@echo 'tox -e flake8' is preferred to 'make flake8'
-	$(PYTHON) -m flake8 $(CHECK_DIRS)
+	$(PYTHON) -m flake8 $(CHECK_DIRS) --exclude gettext38.py
 
 unit:
 	echo "Running unit tests..."

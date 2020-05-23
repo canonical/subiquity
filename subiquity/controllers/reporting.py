@@ -64,6 +64,7 @@ class ReportingController(NoUIController):
     def __init__(self, app):
         self.config = copy.deepcopy(INITIAL_CONFIG)
         super().__init__(app)
+        app.add_event_listener(self)
 
     def load_autoinstall_data(self, data):
         if self.app.interactive():
@@ -75,9 +76,11 @@ class ReportingController(NoUIController):
     def start(self):
         update_configuration(self.config)
 
-    def report_start_event(self, name, description, level):
-        report_start_event(name, description, level=level)
+    def report_start_event(self, context, description):
+        report_start_event(
+            context.full_name(), description, level=context.level)
 
-    def report_finish_event(self, name, description, result, level):
+    def report_finish_event(self, context, description, result):
         result = getattr(status, result.name, status.WARN)
-        report_finish_event(name, description, result, level=level)
+        report_finish_event(
+            context.full_name(), description, result, level=context.level)

@@ -14,14 +14,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import contextlib
 import datetime
 import logging
 import os
-import platform
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import traceback
@@ -35,19 +32,20 @@ from curtin.util import write_file
 from systemd import journal
 
 import yaml
+
 from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
-from subiquitycore.context import Status
+from subiquitycore.context import Status, with_context
 from subiquitycore.utils import (
     arun_command,
     astart_command,
-    run_command,
     )
 
 from subiquity.controller import SubiquityController
 from subiquity.controllers.error import ErrorReportKind
+from subiquity.journald import journald_listener
 from subiquity.ui.views.installprogress import ProgressView
 
 
@@ -80,27 +78,14 @@ class TracebackExtractor:
             self.traceback.append(line)
 
 
-def install_step(label, level=None, childlevel=None):
-    def decorate(meth):
-        name = meth.__name__
-
-        async def decorated(self, context, *args):
-            manager = self.install_context(
-                context, name, label, level, childlevel)
-            with manager as subcontext:
-                await meth(self, subcontext, *args)
-        return decorated
-    return decorate
-
-
 class InstallProgressController(SubiquityController):
 
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model
         self.progress_view = ProgressView(self)
+        app.add_event_listener(self)
         self.install_state = InstallState.NOT_STARTED
-        self.journal_listener_handle = None
 
         self.reboot_clicked = asyncio.Event()
         if self.answers.get('reboot', False):
@@ -118,11 +103,37 @@ class InstallProgressController(SubiquityController):
         return self.app.interactive()
 
     def start(self):
-        self.install_task = schedule_task(self.install(self.context))
+        self.install_task = schedule_task(self.install())
 
-    async def apply_autoinstall_config(self):
+    @with_context()
+    async def apply_autoinstall_config(self, context):
         await self.install_task
         self.app.reboot_on_exit = True
+
+    def _push_to_progress(self, context):
+        if not self.app.interactive():
+            return False
+        if context.get('hidden', False):
+            return False
+        controller = context.get('controller')
+        if controller is None or controller.interactive():
+            return False
+        return True
+
+    def report_start_event(self, context, description):
+        if self._push_to_progress(context):
+            msg = context.full_name()
+            if description:
+                msg += ': ' + description
+            self.progress_view.event_start(context, msg)
+        if context.get('is-install-context'):
+            self.progress_view.event_start(context, context.description)
+
+    def report_finish_event(self, context, description, status):
+        if self._push_to_progress(context):
+            self.progress_view.event_finish(context)
+        if context.get('is-install-context'):
+            self.progress_view.event_finish(context)
 
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
@@ -142,7 +153,8 @@ class InstallProgressController(SubiquityController):
         self.progress_view.set_status(('info_error',
                                        _("An error has occurred")))
         self.start_ui()
-        self.progress_view.show_error(crash_report)
+        if crash_report is not None:
+            self.progress_view.show_error(crash_report)
 
     def logged_command(self, cmd):
         return ['systemd-cat', '--level-prefix=false',
@@ -153,17 +165,6 @@ class InstallProgressController(SubiquityController):
             self.curtin_event(event)
         elif event['SYSLOG_IDENTIFIER'] == self._log_syslog_identifier:
             self.curtin_log(event)
-
-    @contextlib.contextmanager
-    def install_context(self, context, name, description,
-                        level=None, childlevel=None):
-        subcontext = context.child(name, description, level, childlevel)
-        self.progress_view.event_start(subcontext, description)
-        try:
-            with subcontext:
-                yield subcontext
-        finally:
-            self.progress_view.event_finish(subcontext)
 
     def curtin_event(self, event):
         e = {
@@ -192,33 +193,16 @@ class InstallProgressController(SubiquityController):
                     break
             if curtin_ctx:
                 curtin_ctx.enter()
-                self.progress_view.event_start(curtin_ctx, e["MESSAGE"])
         if event_type == 'finish':
             status = getattr(Status, e["RESULT"], Status.WARN)
             curtin_ctx = self.curtin_event_contexts.pop(e["NAME"], None)
             if curtin_ctx is not None:
                 curtin_ctx.exit(status)
-                self.progress_view.event_finish(curtin_ctx)
 
     def curtin_log(self, event):
         log_line = event['MESSAGE']
         self.progress_view.add_log_line(log_line)
         self.tb_extractor.feed(log_line)
-
-    def start_journald_listener(self, identifiers, callback):
-        reader = journal.Reader()
-        args = []
-        for identifier in identifiers:
-            args.append("SYSLOG_IDENTIFIER={}".format(identifier))
-        reader.add_match(*args)
-
-        def watch():
-            if reader.process() != journal.APPEND:
-                return
-            for event in reader:
-                callback(event)
-        loop = asyncio.get_event_loop()
-        return loop.add_reader(reader.fileno(), watch)
 
     def _write_config(self, path, config):
         with open(path, 'w') as conf:
@@ -257,8 +241,8 @@ class InstallProgressController(SubiquityController):
 
         return curtin_cmd
 
-    @install_step("umounting /target dir")
-    async def unmount_target(self, context, target):
+    @with_context(description="umounting /target dir")
+    async def unmount_target(self, *, context, target):
         cmd = [
             sys.executable, '-m', 'curtin', 'unmount',
             '-t', target,
@@ -269,22 +253,32 @@ class InstallProgressController(SubiquityController):
         if not self.opts.dry_run:
             shutil.rmtree(target)
 
-    @install_step("installing system", level="INFO", childlevel="DEBUG")
-    async def curtin_install(self, context):
+    @with_context(
+        description="installing system", level="INFO", childlevel="DEBUG")
+    async def curtin_install(self, *, context):
         log.debug('curtin_install')
         self.install_state = InstallState.RUNNING
         self.curtin_event_contexts[''] = context
 
-        self.journal_listener_handle = self.start_journald_listener(
+        journal_fd, watcher = journald_listener(
             [self._event_syslog_identifier, self._log_syslog_identifier],
             self._journal_event)
+        self.app.aio_loop.add_reader(journal_fd, watcher)
 
         curtin_cmd = self._get_curtin_command()
 
         log.debug('curtin install cmd: {}'.format(curtin_cmd))
 
-        cp = await arun_command(
-            self.logged_command(curtin_cmd), check=True)
+        async with self.app.install_lock_file.exclusive():
+            try:
+                our_tty = os.ttyname(0)
+            except OSError:
+                # This is a gross hack for testing in travis.
+                our_tty = "/dev/not a tty"
+            self.app.install_lock_file.write_content(our_tty)
+            journal.send("starting install", SYSLOG_IDENTIFIER="subiquity")
+            cp = await arun_command(
+                self.logged_command(curtin_cmd), check=True)
 
         log.debug('curtin_install completed: %s', cp.returncode)
 
@@ -294,7 +288,9 @@ class InstallProgressController(SubiquityController):
     def cancel(self):
         pass
 
-    async def install(self, context):
+    @with_context()
+    async def install(self, *, context):
+        context.set('is-install-context', True)
         try:
             await asyncio.wait(
                 {e.wait() for e in self.model.install_events})
@@ -302,16 +298,17 @@ class InstallProgressController(SubiquityController):
             await self.confirmation.wait()
 
             if os.path.exists(self.model.target):
-                await self.unmount_target(context, self.model.target)
+                await self.unmount_target(
+                    context=context, target=self.model.target)
 
-            await self.curtin_install(context)
+            await self.curtin_install(context=context)
 
             await asyncio.wait(
                 {e.wait() for e in self.model.postinstall_events})
 
-            await self.drain_curtin_events(context)
+            await self.drain_curtin_events(context=context)
 
-            await self.postinstall(context)
+            await self.postinstall(context=context)
 
             self.ui.set_header(_("Installation complete!"))
             self.progress_view.set_status(_("Finished install!"))
@@ -319,24 +316,19 @@ class InstallProgressController(SubiquityController):
 
             if self.model.network.has_network:
                 self.progress_view.update_running()
-                await self.run_unattended_upgrades(context)
+                await self.run_unattended_upgrades(context=context)
                 self.progress_view.update_done()
 
-            await self.copy_logs_to_target(context)
         except Exception:
             self.curtin_error()
             if not self.interactive():
                 raise
 
     async def move_on(self):
-        await asyncio.wait(
-            {self.reboot_clicked.wait(), self.install_task})
-        self.app.reboot_on_exit = True
-        if not self.opts.dry_run and platform.machine() == 's390x':
-            run_command(["chreipl", "/target/boot"])
+        await self.install_task
         self.app.next_screen()
 
-    async def drain_curtin_events(self, context):
+    async def drain_curtin_events(self, *, context):
         waited = 0.0
         while self.progress_view.ongoing and waited < 5.0:
             await asyncio.sleep(0.1)
@@ -344,33 +336,32 @@ class InstallProgressController(SubiquityController):
         log.debug("waited %s seconds for events to drain", waited)
         self.curtin_event_contexts.pop('', None)
 
-    @install_step(
-        "final system configuration", level="INFO", childlevel="DEBUG")
-    async def postinstall(self, context):
+    @with_context(
+        description="final system configuration", level="INFO",
+        childlevel="DEBUG")
+    async def postinstall(self, *, context):
         autoinstall_path = os.path.join(
             self.app.root, 'var/log/installer/autoinstall-user-data')
         autoinstall_config = "#cloud-config\n" + yaml.dump(
             {"autoinstall": self.app.make_autoinstall()})
         write_file(autoinstall_path, autoinstall_config, mode=0o600)
-        await self.configure_cloud_init(context)
+        await self.configure_cloud_init(context=context)
         packages = []
         if self.model.ssh.install_server:
             packages = ['openssh-server']
         packages.extend(self.app.base_model.packages)
         for package in packages:
-            subcontext = self.install_context(
-                context,
-                "install_{}".format(package),
-                "installing {}".format(package))
-            with subcontext:
-                await self.install_package(package)
-        await self.restore_apt_config(context)
+            await self.install_package(context=context, package=package)
+        await self.restore_apt_config(context=context)
 
-    @install_step("configuring cloud-init")
+    @with_context(description="configuring cloud-init")
     async def configure_cloud_init(self, context):
         await run_in_thread(self.model.configure_cloud_init)
 
-    async def install_package(self, package):
+    @with_context(
+        name="install_{package}",
+        description="installing {package}")
+    async def install_package(self, *, context, package):
         if self.opts.dry_run:
             cmd = ["sleep", str(2/self.app.scale_factor)]
         else:
@@ -381,7 +372,7 @@ class InstallProgressController(SubiquityController):
                 ]
         await arun_command(self.logged_command(cmd), check=True)
 
-    @install_step("restoring apt configuration")
+    @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
         if self.opts.dry_run:
             cmds = [["sleep", str(1/self.app.scale_factor)]]
@@ -399,7 +390,7 @@ class InstallProgressController(SubiquityController):
         for cmd in cmds:
             await arun_command(self.logged_command(cmd), check=True)
 
-    @install_step("downloading and installing security updates")
+    @with_context(description="downloading and installing security updates")
     async def run_unattended_upgrades(self, context):
         target_tmp = os.path.join(self.model.target, "tmp")
         os.makedirs(target_tmp, exist_ok=True)
@@ -427,8 +418,7 @@ class InstallProgressController(SubiquityController):
 
     async def stop_unattended_upgrades(self):
         self.progress_view.event_finish(self.unattended_upgrades_ctx)
-        with self.install_context(
-                self.unattended_upgrades_ctx.parent,
+        with self.unattended_upgrades_ctx.parent.child(
                 "stop_unattended_upgrades",
                 "cancelling update"):
             if self.opts.dry_run:
@@ -441,25 +431,6 @@ class InstallProgressController(SubiquityController):
                     'unattended-upgrade-shutdown',
                     '--stop-only',
                     ]), check=True)
-
-    @install_step("copying logs to installed system")
-    async def copy_logs_to_target(self, context):
-        if self.opts.dry_run and 'copy-logs-fail' in self.app.debug_flags:
-            raise PermissionError()
-        target_logs = self.tpath('var/log/installer')
-        if self.opts.dry_run:
-            os.makedirs(target_logs, exist_ok=True)
-        else:
-            await arun_command(
-                ['cp', '-aT', '/var/log/installer', target_logs])
-        journal_txt = os.path.join(target_logs, 'installer-journal.txt')
-        try:
-            with open(journal_txt, 'w') as output:
-                await arun_command(
-                    ['journalctl', '-b'],
-                    stdout=output, stderr=subprocess.STDOUT)
-        except Exception:
-            log.exception("saving journal failed")
 
     async def _click_reboot(self):
         if self.unattended_upgrades_ctx is not None:

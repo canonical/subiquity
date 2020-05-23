@@ -17,6 +17,7 @@ import logging
 from urwid import connect_signal
 
 from subiquitycore.view import BaseView
+from subiquitycore.ui.utils import SomethingFailed
 from subiquitycore.ui.form import (
     Form,
     EmailField,
@@ -55,3 +56,6 @@ class IdentityView(BaseView):
 
     def done(self, result):
         self.controller.identity_done(result.email.value)
+
+    def snap_create_user_failed(self, msg, stderr):
+        self.show_stretchy_overlay(SomethingFailed(self, msg, stderr))

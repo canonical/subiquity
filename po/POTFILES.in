@@ -9,6 +9,7 @@ subiquitycore/signals.py
 subiquitycore/log.py
 subiquitycore/utils.py
 subiquitycore/async_helpers.py
+subiquitycore/palette.py
 subiquitycore/prober.py
 subiquitycore/models/__init__.py
 subiquitycore/models/network.py
@@ -16,11 +17,11 @@ subiquitycore/testing/view_helpers.py
 subiquitycore/testing/__init__.py
 subiquitycore/netplan.py
 subiquitycore/core.py
-subiquitycore/palette.py
 subiquitycore/ssh.py
 subiquitycore/__init__.py
 subiquitycore/lsb_release.py
 subiquitycore/i18n.py
+subiquitycore/tests/test_view.py
 subiquitycore/tests/__init__.py
 subiquitycore/tests/test_netplan.py
 subiquitycore/context.py
@@ -52,6 +53,7 @@ subiquitycore/view.py
 subiquity/controllers/identity.py
 subiquity/controllers/package.py
 subiquity/controllers/refresh.py
+subiquity/controllers/reboot.py
 subiquity/controllers/mirror.py
 subiquity/controllers/userdata.py
 subiquity/controllers/cmdlist.py
@@ -73,7 +75,9 @@ subiquity/controllers/zdev.py
 subiquity/cmd/__init__.py
 subiquity/cmd/tui.py
 subiquity/cmd/schema.py
+subiquity/journald.py
 subiquity/snapd.py
+subiquity/lockfile.py
 subiquity/models/identity.py
 subiquity/models/locale.py
 subiquity/models/mirror.py
@@ -82,6 +86,7 @@ subiquity/models/ssh.py
 subiquity/models/snaplist.py
 subiquity/models/keyboard.py
 subiquity/models/__init__.py
+subiquity/models/network.py
 subiquity/models/tests/test_keyboard.py
 subiquity/models/tests/test_subiquity.py
 subiquity/models/tests/test_filesystem.py
@@ -135,6 +140,7 @@ subiquity/__main__.py
 scripts/zdev-generate.py
 scripts/validate-yaml.py
 scripts/raid-size-tests.py
+scripts/check-yaml-fields.py
 scripts/replay-curtin-log.py
 console_conf/controllers/identity.py
 console_conf/controllers/welcome.py
@@ -157,6 +163,8 @@ console_conf/ui/views/identity.py
 console_conf/ui/views/login.py
 console_conf/ui/views/welcome.py
 console_conf/ui/views/__init__.py
+console_conf/ui/views/tests/__init__.py
+console_conf/ui/views/tests/test_chooser.py
 console_conf/ui/views/chooser.py
 console_conf/ui/__init__.py
 setup.py

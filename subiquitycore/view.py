@@ -18,6 +18,8 @@
 Contains some default key navigations
 """
 
+import logging
+
 from urwid import (
     emit_signal,
     Overlay,
@@ -30,7 +32,10 @@ from subiquitycore.ui.container import (
     WidgetWrap,
     )
 from subiquitycore.ui.stretchy import StretchyOverlay
-from subiquitycore.ui.utils import disabled
+from subiquitycore.ui.utils import disabled, undisabled
+
+
+log = logging.getLogger('subiquitycore.view')
 
 
 class BaseView(WidgetWrap):
@@ -73,12 +78,27 @@ class BaseView(WidgetWrap):
         stretchy.opened()
         self._w = StretchyOverlay(disabled(self._w), stretchy)
 
-    def remove_overlay(self):
-        if isinstance(self._w, StretchyOverlay):
-            emit_signal(self._w.stretchy, 'closed')
-            self._w.stretchy.closed()
-        # disabled() wraps a widget in two decorations.
-        self._w = self._w.bottom_w.original_widget.original_widget
+    def remove_overlay(self, stretchy=None):
+        if stretchy is not None:
+            one_above = None
+            cur = self._w
+            while isinstance(cur, (StretchyOverlay, Overlay)):
+                cur_stretchy = getattr(cur, 'stretchy', None)
+                if cur_stretchy is stretchy:
+                    emit_signal(stretchy, 'closed')
+                    stretchy.closed()
+                    if one_above is not None:
+                        one_above.bottom_w = cur.bottom_w
+                    else:
+                        self._w = undisabled(cur.bottom_w)
+                    return
+                one_above = cur
+                cur = undisabled(cur.bottom_w)
+        else:
+            if isinstance(self._w, StretchyOverlay):
+                emit_signal(self._w.stretchy, 'closed')
+                self._w.stretchy.closed()
+            self._w = undisabled(self._w.bottom_w)
 
     def cancel(self):
         pass

@@ -35,12 +35,13 @@ from subiquitycore.async_helpers import (
     )
 from subiquitycore.controller import Skip
 from subiquitycore.core import Application
-from subiquitycore.utils import run_command
+from subiquitycore.view import BaseView
 
-from subiquity.context import SubiquityContext
 from subiquity.controllers.error import (
     ErrorReportKind,
     )
+from subiquity.journald import journald_listener
+from subiquity.lockfile import Lockfile
 from subiquity.models.subiquity import SubiquityModel
 from subiquity.snapd import (
     AsyncSnapd,
@@ -49,6 +50,7 @@ from subiquity.snapd import (
     )
 from subiquity.ui.frame import SubiquityUI
 from subiquity.ui.views.error import ErrorReportStretchy
+from subiquity.ui.views.help import HelpMenu
 
 
 log = logging.getLogger('subiquity.core')
@@ -87,8 +89,6 @@ class Subiquity(Application):
 
     project = "subiquity"
 
-    context_cls = SubiquityContext
-
     def make_model(self):
         root = '/'
         if self.opts.dry_run:
@@ -96,7 +96,7 @@ class Subiquity(Application):
         return SubiquityModel(root, self.opts.sources)
 
     def make_ui(self):
-        return SubiquityUI(self)
+        return SubiquityUI(self, self.help_menu)
 
     controllers = [
         "Early",
@@ -119,13 +119,20 @@ class Subiquity(Application):
         "SnapList",
         "InstallProgress",
         "Late",
+        "Reboot",
     ]
 
     def __init__(self, opts, block_log_dir):
         if not opts.bootloader == 'none' and platform.machine() != 's390x':
             self.controllers.remove("Zdev")
 
+        self.journal_fd, self.journal_watcher = journald_listener(
+            ["subiquity"], self.subiquity_event, seek=True)
+        self.help_menu = HelpMenu(self)
         super().__init__(opts)
+        self.event_listeners = []
+        self.install_lock_file = Lockfile(self.state_path("installing"))
+        self.global_overlays = []
         self.block_log_dir = block_log_dir
         self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
         if opts.snaps_from_examples:
@@ -154,13 +161,26 @@ class Subiquity(Application):
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
         self.install_confirmed = False
-        self.reboot_on_exit = False
 
-    def exit(self):
-        if self.reboot_on_exit and not self.opts.dry_run:
-            run_command(["/sbin/reboot"])
-        else:
-            super().exit()
+    def subiquity_event(self, event):
+        if event["MESSAGE"] == "starting install":
+            if event["_PID"] == os.getpid():
+                return
+            if not self.install_lock_file.is_exclusively_locked():
+                return
+            from subiquity.ui.views.installprogress import (
+                InstallRunning,
+                )
+            tty = self.install_lock_file.read_content()
+            install_running = InstallRunning(self.ui.body, self, tty)
+            self.add_global_overlay(install_running)
+            schedule_task(self._hide_install_running(install_running))
+
+    async def _hide_install_running(self, install_running):
+        # Wait until the install has completed...
+        async with self.install_lock_file.shared():
+            # And remove the overlay.
+            self.remove_global_overlay(install_running)
 
     def restart(self, remove_last_screen=True):
         if remove_last_screen:
@@ -168,7 +188,9 @@ class Subiquity(Application):
         self.urwid_loop.screen.stop()
         cmdline = ['snap', 'run', 'subiquity']
         if self.opts.dry_run:
-            cmdline = [sys.executable] + sys.argv
+            cmdline = [
+                sys.executable, '-m', 'subiquity.cmd.tui',
+                ] + sys.argv[1:]
         os.execvp(cmdline[0], cmdline)
 
     def make_screen(self, input=None, output=None):
@@ -199,8 +221,8 @@ class Subiquity(Application):
             our_tty = "/dev/not a tty"
         if not self.interactive() and our_tty != primary_tty:
             print(
-                _("the installer running on {} will perform the "
-                  "autoinstall").format(primary_tty))
+                _("the installer running on {tty} will perform the "
+                  "autoinstall").format(tty=primary_tty))
             signal.pause()
         self.controllers.load("Reporting")
         self.controllers.Reporting.start()
@@ -209,11 +231,11 @@ class Subiquity(Application):
             jsonschema.validate(self.autoinstall_config, self.base_schema)
         self.controllers.load("Early")
         if self.controllers.Early.cmds:
-            stamp_file = os.path.join(self.state_dir, "early-commands")
+            stamp_file = self.state_path("early-commands")
             if our_tty != primary_tty:
                 print(
-                    _("waiting for installer running on {} to run early "
-                      "commands").format(primary_tty))
+                    _("waiting for installer running on {tty} to run early "
+                      "commands").format(tty=primary_tty))
                 while not os.path.exists(stamp_file):
                     time.sleep(1)
             elif not os.path.exists(stamp_file):
@@ -227,6 +249,19 @@ class Subiquity(Application):
                 jsonschema.validate(self.autoinstall_config, self.base_schema)
             for controller in self.controllers.instances:
                 controller.setup_autoinstall()
+        if not self.interactive() and self.opts.run_on_serial:
+            # Thanks to the fact that we are launched with agetty's
+            # --skip-login option, on serial lines we can end up starting with
+            # some strange terminal settings (see the docs for --skip-login in
+            # agetty(8)). For an interactive install this does not matter as
+            # the settings will soon be clobbered but for a non-interactive
+            # one we need to clear things up or the prompting for confirmation
+            # in next_screen below will be confusing.
+            os.system('stty sane')
+
+    def new_event_loop(self):
+        super().new_event_loop()
+        self.aio_loop.add_reader(self.journal_fd, self.journal_watcher)
 
     def run(self):
         try:
@@ -235,16 +270,14 @@ class Subiquity(Application):
                 if not self.interactive() and not self.opts.dry_run:
                     open('/run/casper-no-prompt', 'w').close()
             super().run()
-            if self.controllers.Late.cmds:
-                self.new_event_loop()
-                self.aio_loop.run_until_complete(self.controllers.Late.run())
         except Exception:
             print("generating crash report")
             try:
                 report = self.make_apport_report(
                     ErrorReportKind.UI, "Installer UI", interrupt=False,
                     wait=True)
-                print("report saved to {}".format(report.path))
+                if report is not None:
+                    print("report saved to {path}".format(path=report.path))
             except Exception:
                 print("report generation failed")
                 traceback.print_exc()
@@ -259,32 +292,16 @@ class Subiquity(Application):
                 traceback.print_exc()
                 signal.pause()
 
+    def add_event_listener(self, listener):
+        self.event_listeners.append(listener)
+
     def report_start_event(self, context, description):
-        # report_start_event gets called when the Reporting controller
-        # is being loaded...
-        Reporting = getattr(self.controllers, "Reporting", None)
-        if Reporting is not None:
-            Reporting.report_start_event(
-                context.full_name(), description, context.level)
-        InstallProgress = getattr(self.controllers, "InstallProgress", None)
-        if InstallProgress is not None and context.controller is not None:
-            if self.interactive() and not context.controller.interactive():
-                msg = context.full_name()
-                if description:
-                    msg += ': ' + description
-                self.controllers.InstallProgress.progress_view.event_start(
-                    context, msg)
+        for listener in self.event_listeners:
+            listener.report_start_event(context, description)
 
     def report_finish_event(self, context, description, status):
-        Reporting = getattr(self.controllers, "Reporting", None)
-        if Reporting is not None:
-            Reporting.report_finish_event(
-                context.full_name(), description, status, context.level)
-        InstallProgress = getattr(self.controllers, "InstallProgress", None)
-        if InstallProgress is not None and context.controller is not None:
-            if self.interactive() and not context.controller.interactive():
-                self.controllers.InstallProgress.progress_view.event_finish(
-                    context)
+        for listener in self.event_listeners:
+            listener.report_finish_event(context, description, status)
 
     def confirm_install(self):
         self.install_confirmed = True
@@ -305,7 +322,7 @@ class Subiquity(Application):
                     InstallConfirmation,
                     )
                 self._cancel_show_progress()
-                self.ui.body.show_stretchy_overlay(
+                self.add_global_overlay(
                     InstallConfirmation(self.ui.body, self))
             else:
                 yes = _('yes')
@@ -333,12 +350,22 @@ class Subiquity(Application):
             return True
         return bool(self.autoinstall_config.get('interactive-sections'))
 
+    def add_global_overlay(self, overlay):
+        self.global_overlays.append(overlay)
+        if isinstance(self.ui.body, BaseView):
+            self.ui.body.show_stretchy_overlay(overlay)
+
+    def remove_global_overlay(self, overlay):
+        self.global_overlays.remove(overlay)
+        if isinstance(self.ui.body, BaseView):
+            self.ui.body.remove_overlay(overlay)
+
     def select_initial_screen(self, index):
-        super().select_initial_screen(index)
         for report in self.controllers.Error.reports:
             if report.kind == ErrorReportKind.UI and not report.seen:
-                self.report_to_show = report
-                return
+                self.show_error_report(report)
+                break
+        super().select_initial_screen(index)
 
     def select_screen(self, new):
         if new.interactive():
@@ -352,10 +379,6 @@ class Subiquity(Application):
                     return
             self.progress_showing = False
             super().select_screen(new)
-            if self.report_to_show is not None:
-                log.debug("showing new error %r", self.report_to_show.base)
-                self.show_error_report(self.report_to_show)
-                self.report_to_show = None
         elif self.autoinstall_config and not new.autoinstall_applied:
             if self.interactive() and self.show_progress_handle is None:
                 self.ui.block_input = True
@@ -373,8 +396,7 @@ class Subiquity(Application):
         self.ui.set_body(self.controllers.InstallProgress.progress_view)
 
     async def _apply(self, controller):
-        with controller.context.child("apply_autoinstall_config"):
-            await controller.apply_autoinstall_config()
+        await controller.apply_autoinstall_config()
         controller.autoinstall_applied = True
         controller.configured()
         self.next_screen()
@@ -389,19 +411,36 @@ class Subiquity(Application):
 
     def unhandled_input(self, key):
         if key == 'f1':
-            if not self.ui.right_icon.showing_something:
+            if not self.ui.right_icon.current_help:
                 self.ui.right_icon.open_pop_up()
-        elif self.opts.dry_run and key in ['ctrl e', 'ctrl r']:
+        elif key in ['ctrl z', 'f2']:
+            self.debug_shell()
+        elif self.opts.dry_run:
+            self.unhandled_input_dry_run(key)
+        else:
+            super().unhandled_input(key)
+
+    def unhandled_input_dry_run(self, key):
+        if key == 'ctrl g':
+            import asyncio
+            from systemd import journal
+
+            async def mock_install():
+                async with self.install_lock_file.exclusive():
+                    self.install_lock_file.write_content("nowhere")
+                    journal.send(
+                        "starting install", SYSLOG_IDENTIFIER="subiquity")
+                    await asyncio.sleep(5)
+            schedule_task(mock_install())
+        elif key in ['ctrl e', 'ctrl r']:
             interrupt = key == 'ctrl e'
             try:
                 1/0
             except ZeroDivisionError:
                 self.make_apport_report(
                     ErrorReportKind.UNKNOWN, "example", interrupt=interrupt)
-        elif self.opts.dry_run and key == 'ctrl u':
+        elif key == 'ctrl u':
             1/0
-        elif key in ['ctrl z', 'f2']:
-            self.debug_shell()
         else:
             super().unhandled_input(key)
 
@@ -421,6 +460,9 @@ class Subiquity(Application):
         self._apport_data.append((key, value))
 
     def make_apport_report(self, kind, thing, *, interrupt, wait=False, **kw):
+        if not self.opts.dry_run and not os.path.exists('/cdrom/.disk/info'):
+            return None
+
         log.debug("generating crash report")
 
         try:
@@ -455,7 +497,7 @@ class Subiquity(Application):
 
         report.add_info(_bg_attach_hook, wait)
 
-        if interrupt:
+        if interrupt and self.interactive():
             self.show_error_report(report)
 
         # In the fullness of time we should do the signature thing here.
@@ -463,15 +505,15 @@ class Subiquity(Application):
 
     def show_error_report(self, report):
         log.debug("show_error_report %r", report.base)
-        w = getattr(self.ui.body._w, 'top_w', None)
-        if isinstance(w, ErrorReportStretchy):
-            # Don't show an error if already looking at one.
-            return
-        self.ui.body.show_stretchy_overlay(
-            ErrorReportStretchy(self, self.ui.body, report))
+        if isinstance(self.ui.body, BaseView):
+            w = getattr(self.ui.body._w, 'stretchy', None)
+            if isinstance(w, ErrorReportStretchy):
+                # Don't show an error if already looking at one.
+                return
+        self.add_global_overlay(ErrorReportStretchy(self, report))
 
     def make_autoinstall(self):
-        config = {}
+        config = {'version': 1}
         for controller in self.controllers.instances:
             controller_conf = controller.make_autoinstall()
             if controller_conf:

@@ -112,7 +112,7 @@ urwid_8_names = (
 )
 
 
-def make_palette(colors, styles, ascii):
+def make_palette(colors, styles):
     """Return a palette to be passed to MainLoop.
 
     colors is a list of exactly 8 tuples (name, (r, g, b))
@@ -133,16 +133,6 @@ def make_palette(colors, styles, ascii):
     urwid_palette = []
     for name, fg, bg in styles:
         urwid_fg, urwid_bg = urwid_name[fg], urwid_name[bg]
-        if ascii:
-            # 24bit grey on colored background looks good
-            # but in 16 colors it's unreadable
-            # hence add more contrast
-            if urwid_bg != 'black':
-                urwid_fg = 'black'
-            # Only frame_button doesn't match above rule
-            # fix it to be brown-on-black black-on-brown
-            if name == 'frame_button focus':
-                urwid_fg, urwid_bg = 'brown', 'black'
         urwid_palette.append((name, urwid_fg, urwid_bg))
 
     return urwid_palette
@@ -315,7 +305,6 @@ class Application:
     # instance.
 
     make_ui = SubiquityCoreUI
-    context_cls = Context
 
     def __init__(self, opts):
         self.debug_flags = ()
@@ -340,7 +329,7 @@ class Application:
         if opts.dry_run:
             self.root = '.subiquity'
         self.state_dir = os.path.join(self.root, 'run', self.project)
-        os.makedirs(os.path.join(self.state_dir, 'states'), exist_ok=True)
+        os.makedirs(self.state_path('states'), exist_ok=True)
 
         self.answers = {}
         if opts.answers is not None:
@@ -349,8 +338,10 @@ class Application:
             if not opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
 
-        self.is_color = False
-        self.color_palette = make_palette(self.COLORS, self.STYLES, opts.ascii)
+        # Set rich_mode to the opposite of what we want, so we can
+        # call toggle_rich to get the right things set up.
+        self.rich_mode = opts.run_on_serial
+        self.color_palette = make_palette(self.COLORS, self.STYLES)
 
         self.is_linux_tty = is_linux_tty()
 
@@ -361,13 +352,13 @@ class Application:
 
         self.scale_factor = float(
             os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
-        self.updated = os.path.exists(os.path.join(self.state_dir, 'updating'))
+        self.updated = os.path.exists(self.state_path('updating'))
         self.signal = Signal()
         self.prober = prober
         self.new_event_loop()
         self.urwid_loop = None
         self.controllers = ControllerSet(self, self.controllers)
-        self.context = self.context_cls.new(self)
+        self.context = Context.new(self)
 
     def new_event_loop(self):
         new_loop = asyncio.new_event_loop()
@@ -418,13 +409,14 @@ class Application:
             controller.register_signals()
         log.debug("known signals: %s", self.signal.known_signals)
 
+    def state_path(self, *parts):
+        return os.path.join(self.state_dir, *parts)
+
     def save_state(self):
         cur = self.controllers.cur
         if cur is None:
             return
-        state_path = os.path.join(
-            self.state_dir, 'states', cur.name)
-        with open(state_path, 'w') as fp:
+        with open(self.state_path('states', cur.name), 'w') as fp:
             json.dump(cur.serialize(), fp)
 
     def select_screen(self, new):
@@ -436,8 +428,7 @@ class Application:
         except Skip:
             new.context.exit("(skipped)")
             raise
-        state_path = os.path.join(self.state_dir, 'last-screen')
-        with open(state_path, 'w') as fp:
+        with open(self.state_path('last-screen'), 'w') as fp:
             fp.write(new.name)
 
     def _move_screen(self, increment):
@@ -486,9 +477,9 @@ class Application:
 # EventLoop -------------------------------------------------------------------
 
     def _remove_last_screen(self):
-        state_path = os.path.join(self.state_dir, 'last-screen')
-        if os.path.exists(state_path):
-            os.unlink(state_path)
+        last_screen = self.state_path('last-screen')
+        if os.path.exists(last_screen):
+            os.unlink(last_screen)
 
     def exit(self):
         self._remove_last_screen()
@@ -558,13 +549,16 @@ class Application:
 
         self.aio_loop.call_later(0.06, _run_script)
 
-    def toggle_color(self):
-        if self.is_color:
+    def toggle_rich(self):
+        if self.rich_mode:
+            urwid.util.set_encoding('ascii')
             new_palette = self.STYLES_MONO
-            self.is_color = False
+            self.rich_mode = False
         else:
+            urwid.util.set_encoding('utf-8')
             new_palette = self.color_palette
-            self.is_color = True
+            self.rich_mode = True
+        urwid.CanvasCache.clear()
         self.urwid_loop.screen.register_palette(new_palette)
         self.urwid_loop.screen.clear()
 
@@ -573,8 +567,8 @@ class Application:
             self.exit()
         elif key == 'f3':
             self.urwid_loop.screen.clear()
-        elif key in ['ctrl t', 'f4']:
-            self.toggle_color()
+        elif self.opts.run_on_serial and key in ['ctrl t', 'f4']:
+            self.toggle_rich()
 
     def start_controllers(self):
         log.debug("starting controllers")
@@ -584,15 +578,14 @@ class Application:
 
     def load_serialized_state(self):
         for controller in self.controllers.instances:
-            state_path = os.path.join(
-                self.state_dir, 'states', controller.name)
+            state_path = self.state_path('states', controller.name)
             if not os.path.exists(state_path):
                 continue
             with open(state_path) as fp:
                 controller.deserialize(json.load(fp))
 
         last_screen = None
-        state_path = os.path.join(self.state_dir, 'last-screen')
+        state_path = self.state_path('last-screen')
         if os.path.exists(state_path):
             with open(state_path) as fp:
                 last_screen = fp.read().strip()
@@ -657,12 +650,9 @@ class Application:
             unhandled_input=self.unhandled_input,
             event_loop=AsyncioEventLoop(loop=self.aio_loop))
 
-        if self.opts.ascii:
-            urwid.util.set_encoding('ascii')
-
         extend_dec_special_charmap()
 
-        self.toggle_color()
+        self.toggle_rich()
 
         self.base_model = self.make_model()
         try:

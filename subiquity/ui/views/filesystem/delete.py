@@ -16,6 +16,7 @@
 import logging
 from urwid import Text
 
+from subiquitycore.gettext38 import ngettext
 from subiquitycore.ui.buttons import danger_btn, other_btn
 from subiquitycore.ui.table import (
     TablePile,
@@ -58,17 +59,16 @@ class ConfirmDeleteStretchy(Stretchy):
         elif hasattr(obj, 'partitions') and len(obj.partitions()) > 0:
             n = len(obj.partitions())
             if obj.type == "lvm_volgroup":
-                if n == 1:
-                    things = _("logical volume")
-                else:
-                    things = _("logical volumes")
+                line = ngettext(
+                    "It contains 1 logical volume",
+                    "It contains {n} logical volumes",
+                    n)
             else:
-                if n == 1:
-                    things = _("partition")
-                else:
-                    things = _("partitions")
-            lines.append(Text(_("It contains {n} {things}:").format(
-                n=n, things=things)))
+                line = ngettext(
+                    "It contains 1 partition",
+                    "It contains {n} partitions",
+                    n)
+            lines.append(Text(line.format(n=n)))
             lines.append(Text(""))
             stretchy_index = len(lines)
             rows = []
@@ -106,12 +106,14 @@ class ConfirmReformatStretchy(Stretchy):
 
         fs = obj.fs()
         if fs is not None:
-            title = _("Remove filesystem from {}").format(obj.desc())
+            title = _(
+                "Remove filesystem from {device}"
+                ).format(device=obj.desc())
             lines = [
                 _(
                     "Do you really want to remove the existing filesystem "
-                    "from {}?"
-                    ).format(obj.label),
+                    "from {device}?"
+                    ).format(device=obj.label),
                 "",
             ]
             m = fs.mount()
@@ -130,6 +132,7 @@ class ConfirmReformatStretchy(Stretchy):
                 things = _("logical volumes")
             else:
                 things = _("partitions")
+            # things is either "logical volumes" or "partitions"
             title = _("Remove all {things} from {obj}").format(
                 things=things, obj=obj.desc())
             lines = [

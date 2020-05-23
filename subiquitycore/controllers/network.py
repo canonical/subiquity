@@ -23,14 +23,15 @@ import yaml
 from probert.network import IFF_UP, NetworkEventReceiver
 
 from subiquitycore.async_helpers import SingleInstanceTask
+from subiquitycore.context import with_context
 from subiquitycore.controller import BaseController
 from subiquitycore.file_util import write_file
 from subiquitycore.models.network import (
     BondParameters,
     NetDevAction,
-    sanitize_config,
     )
 from subiquitycore import netplan
+from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.views.network import (
     NetworkView,
     )
@@ -107,7 +108,9 @@ default_netplan = '''
 network:
   version: 2
   ethernets:
-    "en*":
+    "all-en":
+       match:
+         name: "en*"
        addresses:
          - 10.0.2.15/24
        gateway4: 10.0.2.2
@@ -118,10 +121,12 @@ network:
          search:
            - foo
            - bar
-    "eth*":
+    "all-eth":
+       match:
+         name: "eth*"
        dhcp4: true
   wifis:
-    "wl*":
+    "wlsp4":
        dhcp4: true
        access-points:
          "some-ap":
@@ -195,8 +200,9 @@ class NetworkController(BaseController):
             return
         self.observer.data_ready(fd)
         v = self.ui.body
-        if hasattr(v, 'refresh_model_inputs'):
-            v.refresh_model_inputs()
+        if isinstance(v._w, StretchyOverlay):
+            if hasattr(v._w.stretchy, 'refresh_model_inputs'):
+                v._w.stretchy.refresh_model_inputs()
 
     def start_scan(self, dev):
         self.observer.trigger_scan(dev.ifindex)
@@ -311,8 +317,8 @@ class NetworkController(BaseController):
             netplan_config_file_name = '00-snapd-config.yaml'
         return os.path.join(self.root, 'etc/netplan', netplan_config_file_name)
 
-    def apply_config(self, silent=False):
-        self.apply_config_task.start_sync(silent)
+    def apply_config(self, context=None, silent=False):
+        self.apply_config_task.start_sync(context=context, silent=silent)
 
     async def _down_devs(self, devs):
         for dev in devs:
@@ -333,14 +339,13 @@ class NetworkController(BaseController):
             except subprocess.CalledProcessError as cp:
                 log.info("deleting %s failed with %r", dev.name, cp.stderr)
 
-    def render_config(self):
-        return self.model.render_config()
-
     def _write_config(self):
-        config = self.render_config()
+        config = self.model.render_config()
 
         log.debug("network config: \n%s",
-                  yaml.dump(sanitize_config(config), default_flow_style=False))
+                  yaml.dump(
+                      netplan.sanitize_config(config),
+                      default_flow_style=False))
 
         for p in netplan.configs_in_root(self.root, masked=True):
             if p == self.netplan_path:
@@ -354,115 +359,115 @@ class NetworkController(BaseController):
 
         self.parse_netplan_configs()
 
-    async def _apply_config(self, silent):
-        with self.context.child(
-                "apply_config", "silent={}".format(silent), level="INFO"):
-            devs_to_delete = []
-            devs_to_down = []
-            dhcp_device_versions = []
-            dhcp_events = set()
-            for dev in self.model.get_all_netdevs(include_deleted=True):
-                dev.dhcp_events = {}
-                for v in 4, 6:
-                    if dev.dhcp_enabled(v):
-                        if not silent:
-                            dev.set_dhcp_state(v, "PENDING")
-                            self.network_event_receiver.update_link(
-                                dev.ifindex)
-                        else:
-                            dev.set_dhcp_state(v, "RECONFIGURE")
-                        dev.dhcp_events[v] = e = asyncio.Event()
-                        dhcp_events.add(e)
-                if dev.info is None:
-                    continue
-                if dev.config != self.model.config.config_for_device(dev.info):
-                    if dev.is_virtual:
-                        devs_to_delete.append(dev)
+    @with_context(
+        name="apply_config", description="silent={silent}", level="INFO")
+    async def _apply_config(self, *, context, silent):
+        devs_to_delete = []
+        devs_to_down = []
+        dhcp_device_versions = []
+        dhcp_events = set()
+        for dev in self.model.get_all_netdevs(include_deleted=True):
+            dev.dhcp_events = {}
+            for v in 4, 6:
+                if dev.dhcp_enabled(v):
+                    if not silent:
+                        dev.set_dhcp_state(v, "PENDING")
+                        self.network_event_receiver.update_link(
+                            dev.ifindex)
                     else:
-                        devs_to_down.append(dev)
-
-            self._write_config()
-
-            if not silent and self.view:
-                self.view.show_apply_spinner()
-
-            try:
-                def error(stage):
-                    if not silent and self.view:
-                        self.view.show_network_error(stage)
-
-                if self.opts.dry_run:
-                    delay = 1/self.app.scale_factor
-                    await arun_command(['sleep', str(delay)])
-                    if os.path.exists('/lib/netplan/generate'):
-                        # If netplan appears to be installed, run generate to
-                        # at least test that what we wrote is acceptable to
-                        # netplan.
-                        await arun_command(
-                            ['netplan', 'generate', '--root', self.root],
-                            check=True)
+                        dev.set_dhcp_state(v, "RECONFIGURE")
+                    dev.dhcp_events[v] = e = asyncio.Event()
+                    dhcp_events.add(e)
+            if dev.info is None:
+                continue
+            if dev.config != self.model.config.config_for_device(dev.info):
+                if dev.is_virtual:
+                    devs_to_delete.append(dev)
                 else:
-                    if devs_to_down or devs_to_delete:
-                        try:
-                            await arun_command(
-                                ['systemctl', 'mask', '--runtime',
-                                 'systemd-networkd.service',
-                                 'systemd-networkd.socket'],
-                                check=True)
-                            await arun_command(
-                                ['systemctl', 'stop',
-                                 'systemd-networkd.service',
-                                 'systemd-networkd.socket'],
-                                check=True)
-                        except subprocess.CalledProcessError:
-                            error("stop-networkd")
-                            raise
-                    if devs_to_down:
-                        await self._down_devs(devs_to_down)
-                    if devs_to_delete:
-                        await self._delete_devs(devs_to_delete)
-                    if devs_to_down or devs_to_delete:
+                    devs_to_down.append(dev)
+
+        self._write_config()
+
+        if not silent and self.view:
+            self.view.show_apply_spinner()
+
+        try:
+            def error(stage):
+                if not silent and self.view:
+                    self.view.show_network_error(stage)
+
+            if self.opts.dry_run:
+                delay = 1/self.app.scale_factor
+                await arun_command(['sleep', str(delay)])
+                if os.path.exists('/lib/netplan/generate'):
+                    # If netplan appears to be installed, run generate to
+                    # at least test that what we wrote is acceptable to
+                    # netplan.
+                    await arun_command(
+                        ['netplan', 'generate', '--root', self.root],
+                        check=True)
+            else:
+                if devs_to_down or devs_to_delete:
+                    try:
                         await arun_command(
-                            ['systemctl', 'unmask', '--runtime',
+                            ['systemctl', 'mask', '--runtime',
                              'systemd-networkd.service',
                              'systemd-networkd.socket'],
                             check=True)
-                    try:
-                        await arun_command(['netplan', 'apply'], check=True)
-                    except subprocess.CalledProcessError:
-                        error("apply")
-                        raise
-                    if devs_to_down or devs_to_delete:
-                        # It's probably running already, but just in case.
                         await arun_command(
-                            ['systemctl', 'start', 'systemd-networkd.socket'],
-                            check=False)
-            finally:
-                if not silent and self.view:
-                    self.view.hide_apply_spinner()
+                            ['systemctl', 'stop',
+                             'systemd-networkd.service',
+                             'systemd-networkd.socket'],
+                            check=True)
+                    except subprocess.CalledProcessError:
+                        error("stop-networkd")
+                        raise
+                if devs_to_down:
+                    await self._down_devs(devs_to_down)
+                if devs_to_delete:
+                    await self._delete_devs(devs_to_delete)
+                if devs_to_down or devs_to_delete:
+                    await arun_command(
+                        ['systemctl', 'unmask', '--runtime',
+                         'systemd-networkd.service',
+                         'systemd-networkd.socket'],
+                        check=True)
+                try:
+                    await arun_command(['netplan', 'apply'], check=True)
+                except subprocess.CalledProcessError:
+                    error("apply")
+                    raise
+                if devs_to_down or devs_to_delete:
+                    # It's probably running already, but just in case.
+                    await arun_command(
+                        ['systemctl', 'start', 'systemd-networkd.socket'],
+                        check=False)
+        finally:
+            if not silent and self.view:
+                self.view.hide_apply_spinner()
 
-            if self.answers.get('accept-default', False):
-                self.done()
-            elif self.answers.get('actions', False):
-                actions = self.answers['actions']
-                self.answers.clear()
-                self._run_iterator(self._run_actions(actions))
+        if self.answers.get('accept-default', False):
+            self.done()
+        elif self.answers.get('actions', False):
+            actions = self.answers['actions']
+            self.answers.clear()
+            self._run_iterator(self._run_actions(actions))
 
-            if not dhcp_events:
-                return
+        if not dhcp_events:
+            return
 
-            try:
-                await asyncio.wait_for(
-                    asyncio.wait({e.wait() for e in dhcp_events}),
-                    10)
-            except asyncio.TimeoutError:
-                pass
+        try:
+            await asyncio.wait_for(
+                asyncio.wait({e.wait() for e in dhcp_events}),
+                10)
+        except asyncio.TimeoutError:
+            pass
 
-            for dev, v in dhcp_device_versions:
-                dev.dhcp_events = {}
-                if not dev.dhcp_addresses()[v]:
-                    dev.set_dhcp_state(v, "TIMEDOUT")
-                    self.network_event_receiver.update_link(dev.ifindex)
+        for dev, v in dhcp_device_versions:
+            dev.dhcp_events = {}
+            if not dev.dhcp_addresses()[v]:
+                dev.set_dhcp_state(v, "TIMEDOUT")
+                self.network_event_receiver.update_link(dev.ifindex)
 
     def add_vlan(self, device, vlan):
         return self.model.new_vlan(device, vlan)

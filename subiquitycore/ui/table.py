@@ -436,6 +436,22 @@ class TableListBox(AbstractTable):
     def _make(self, rows):
         return ListBox(rows)
 
+    def set_contents(self, rows):
+        """Update the list of rows. """
+        self.invalidate()
+        rows = [urwid.Padding(row) for row in rows]
+        self.table_rows = rows
+        body = self._w.base_widget.body
+        empty_before = len(body) == 0
+        body[:] = rows
+        empty_after = len(body) == 0
+        # Pile / MonitoredFocusList have this strange behaviour where
+        # when you add rows to an empty pile by assigning to contents,
+        # the last row added ends up being the focus even if it's not
+        # selectable.
+        if empty_before and not empty_after:
+            self._select_first_selectable()
+
 
 if __name__ == '__main__':
     from subiquitycore.log import setup_logger

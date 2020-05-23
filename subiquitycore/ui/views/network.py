@@ -120,7 +120,7 @@ class NetworkView(BaseView):
             rows=rows,
             buttons=self.bottom,
             focus_buttons=True,
-            excerpt=self.excerpt))
+            excerpt=_(self.excerpt)))
 
     _action_INFO = _stretchy_shower(ViewInterfaceInfo)
     _action_EDIT_WLAN = _stretchy_shower(NetworkConfigureWLANStretchy)
@@ -184,7 +184,8 @@ class NetworkView(BaseView):
             if dev2.type != "bond":
                 continue
             if dev.name in dev2.config.get('interfaces', []):
-                notes.append(_("enslaved to {}").format(dev2.name))
+                notes.append(
+                    _("enslaved to {device}").format(device=dev2.name))
                 break
         if notes:
             notes = ", ".join(notes)
@@ -214,7 +215,9 @@ class NetworkView(BaseView):
                 else:
                     address_info.append((
                         label,
-                        Text(_("unknown state {}".format(dev.dhcp_state(v))))
+                        Text(
+                            _("unknown state {state}".format(
+                                state=dev.dhcp_state(v))))
                         ))
             else:
                 addrs = []
@@ -223,6 +226,7 @@ class NetworkView(BaseView):
                         addrs.append(str(ip))
                 if addrs:
                     address_info.append(
+                        # Network addressing mode (static/dhcp/disabled)
                         (Text(_('static')), Text(', '.join(addrs))))
         if len(address_info) == 0:
             # Do not show an interface as disabled if it is part of a bond or
@@ -231,6 +235,7 @@ class NetworkView(BaseView):
                 reason = dev.disabled_reason
                 if reason is None:
                     reason = ""
+                # Network addressing mode (static/dhcp/disabled)
                 address_info.append((Text(_("disabled")), Text(reason)))
         rows = []
         for label, value in address_info:
@@ -330,7 +335,7 @@ class NetworkView(BaseView):
             opens_dialog = getattr(meth, 'opens_dialog', False)
             if dev.supports_action(action):
                 actions.append(
-                    (_(action.value), True, (action, meth), opens_dialog))
+                    (action.str(), True, (action, meth), opens_dialog))
 
         menu = ActionMenu(actions)
         connect_signal(menu, 'action', self._action, dev)
@@ -352,8 +357,8 @@ class NetworkView(BaseView):
             info = _("VLAN {id} on interface {link}").format(
                 **dev.config)
         elif dev.type == "bond":
-            info = _("bond master for {}").format(
-                ', '.join(dev.config['interfaces']))
+            info = _("bond master for {interfaces}").format(
+                interfaces=', '.join(dev.config['interfaces']))
         else:
             info = " / ".join([
                 dev.info.hwaddr, dev.info.vendor, dev.info.model])

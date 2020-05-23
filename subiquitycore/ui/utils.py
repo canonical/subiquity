@@ -30,7 +30,9 @@ from urwid import (
     WidgetDisable,
     )
 
+from subiquitycore.ui.buttons import other_btn
 from subiquitycore.ui.container import ListBox, Pile
+from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import TableRow
 from subiquitycore.ui.width import widget_width
 
@@ -212,6 +214,14 @@ def disabled(w):
     return WidgetDisable(AttrMap(w, _disable_everything_map))
 
 
+def undisabled(w):
+    if isinstance(w, WidgetDisable):
+        w = w.original_widget
+    if isinstance(w, AttrMap):
+        w = w.original_widget
+    return w
+
+
 def button_pile(buttons):
     width = 14
     for button in buttons:
@@ -322,3 +332,23 @@ def make_action_menu_row(
 def rewrap(text):
     paras = text.split("\n\n")
     return "\n\n".join([p.replace('\n', ' ') for p in paras]).strip()
+
+
+class SomethingFailed(Stretchy):
+    def __init__(self, parent, msg, stderr):
+        self.parent = parent
+        ok = other_btn(label=_("Close"), on_press=self.close)
+        widgets = [
+            Text(msg),
+            Text(""),
+            Text(stderr.strip('\n')),
+            Text(""),
+            button_pile([ok]),
+            ]
+        super().__init__(
+            "",
+            widgets,
+            2, 4)
+
+    def close(self, sender):
+        self.parent.remove_overlay()

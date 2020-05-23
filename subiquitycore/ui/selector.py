@@ -141,7 +141,7 @@ class Option:
         else:
             raise SelectorError("invalid option %r", val)
         if isinstance(self.label, str):
-            self.label = Text(self.label)
+            self.label = Text(_(self.label))
 
 
 class _Launcher(PopUpLauncher):

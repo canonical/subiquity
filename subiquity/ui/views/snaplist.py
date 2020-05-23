@@ -141,21 +141,21 @@ class SnapInfoView(WidgetWrap):
         first_info_row = TableRow([
             (3, Text(
                 [
-                    ('info_minor', "LICENSE: "),
+                    ('info_minor', _("LICENSE: ")),
                     snap.license,
                 ], wrap='clip')),
             (3, Text(
                 [
-                    ('info_minor', "LAST UPDATED: "),
+                    ('info_minor', _("LAST UPDATED: ")),
                     format_datetime(latest_update),
                 ])),
             ])
         heading_row = Color.info_minor(TableRow([
-            Text("CHANNEL"),
-            (2, Text("VERSION")),
-            Text("SIZE"),
-            Text("PUBLISHED"),
-            Text("CONFINEMENT"),
+            Text(_("CHANNEL")),
+            (2, Text(_("VERSION"))),
+            Text(_("SIZE")),
+            Text(_("PUBLISHED")),
+            Text(_("CONFINEMENT")),
             ]))
         colspecs = {
             1: ColSpec(can_shrink=True),
@@ -173,7 +173,7 @@ class SnapInfoView(WidgetWrap):
         info_table.bind(self.lb_channels)
         self.info_padding = Padding.pull_1(info_table)
 
-        publisher = [('info_minor', "by: "), snap.publisher]
+        publisher = [('info_minor', _("by: ")), snap.publisher]
         if snap.verified:
             publisher.append(('verified', ' \N{check mark}'))
 
@@ -253,7 +253,7 @@ class FetchingInfo(WidgetWrap):
         self.spinner = Spinner(aio_loop, style='dots')
         self.spinner.start()
         self.closed = False
-        text = _("Fetching info for {}").format(snap.name)
+        text = _("Fetching info for {snap}").format(snap=snap.name)
         # | text |
         # 12    34
         self.width = len(text) + 4
@@ -279,7 +279,7 @@ class FetchingFailed(WidgetWrap):
     def __init__(self, row, snap):
         self.row = row
         self.closed = False
-        text = _("Fetching info for {} failed").format(snap.name)
+        text = _("Fetching info for {snap} failed").format(snap=snap.name)
         # | text |
         # 12    34
         self.width = len(text) + 4

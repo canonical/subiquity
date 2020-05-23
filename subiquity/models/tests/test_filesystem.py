@@ -216,17 +216,50 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertEqual(disk.annotations, [])
 
     def test_partition_annotations(self):
-        model, disk = make_model_and_disk()
-        part = model.add_partition(disk, size=disk.free_for_partitions)
+        model = make_model()
+        part = make_partition(model)
         self.assertEqual(part.annotations, ['new'])
         part.preserve = True
         self.assertEqual(part.annotations, ['existing'])
-        part.flag = "boot"
-        self.assertEqual(part.annotations, ['existing', 'ESP'])
-        part.flag = "prep"
-        self.assertEqual(part.annotations, ['existing', 'PReP'])
-        part.flag = "bios_grub"
-        self.assertEqual(part.annotations, ['existing', 'bios_grub'])
+
+        model = make_model()
+        part = make_partition(model, flag="bios_grub")
+        self.assertEqual(
+            part.annotations, ['new', 'bios_grub'])
+        part.preserve = True
+        self.assertEqual(
+            part.annotations, ['existing', 'unconfigured', 'bios_grub'])
+        part.device.grub_device = True
+        self.assertEqual(
+            part.annotations, ['existing', 'configured', 'bios_grub'])
+
+        model = make_model()
+        part = make_partition(model, flag="boot", grub_device=True)
+        self.assertEqual(part.annotations, ['new', 'backup ESP'])
+        fs = model.add_filesystem(part, fstype="fat32")
+        model.add_mount(fs, "/boot/efi")
+        self.assertEqual(part.annotations, ['new', 'primary ESP'])
+
+        model = make_model()
+        part = make_partition(model, flag="boot", preserve=True)
+        self.assertEqual(part.annotations, ['existing', 'unused ESP'])
+        part.grub_device = True
+        self.assertEqual(part.annotations, ['existing', 'backup ESP'])
+        fs = model.add_filesystem(part, fstype="fat32")
+        model.add_mount(fs, "/boot/efi")
+        self.assertEqual(part.annotations, ['existing', 'primary ESP'])
+
+        model = make_model()
+        part = make_partition(model, flag="prep", grub_device=True)
+        self.assertEqual(part.annotations, ['new', 'PReP'])
+
+        model = make_model()
+        part = make_partition(model, flag="prep", preserve=True)
+        self.assertEqual(
+            part.annotations, ['existing', 'PReP', 'unconfigured'])
+        part.grub_device = True
+        self.assertEqual(
+            part.annotations, ['existing', 'PReP', 'configured'])
 
     def test_vg_default_annotations(self):
         model, disk = make_model_and_disk()
@@ -443,81 +476,81 @@ class TestFilesystemModel(unittest.TestCase):
         model, disk = make_model_and_disk()
         self.assertActionNotSupported(disk, DeviceAction.DELETE)
 
-    def test_disk_action_MAKE_BOOT_NONE(self):
+    def test_disk_action_TOGGLE_BOOT_NONE(self):
         model, disk = make_model_and_disk(Bootloader.NONE)
-        self.assertActionNotSupported(disk, DeviceAction.MAKE_BOOT)
+        self.assertActionNotSupported(disk, DeviceAction.TOGGLE_BOOT)
 
-    def test_disk_action_MAKE_BOOT_BIOS(self):
+    def test_disk_action_TOGGLE_BOOT_BIOS(self):
         model = make_model(Bootloader.BIOS)
         # Disks with msdos partition tables can always be the BIOS boot disk.
         dos_disk = make_disk(model, ptable='msdos', preserve=True)
-        self.assertActionPossible(dos_disk, DeviceAction.MAKE_BOOT)
+        self.assertActionPossible(dos_disk, DeviceAction.TOGGLE_BOOT)
         # Even if they have existing partitions
         make_partition(
             model, dos_disk, size=dos_disk.free_for_partitions, preserve=True)
-        self.assertActionPossible(dos_disk, DeviceAction.MAKE_BOOT)
+        self.assertActionPossible(dos_disk, DeviceAction.TOGGLE_BOOT)
         # (we never create dos partition tables so no need to test
         # preserve=False case).
 
         # GPT disks with new partition tables can always be the BIOS boot disk
         gpt_disk = make_disk(model, ptable='gpt', preserve=False)
-        self.assertActionPossible(gpt_disk, DeviceAction.MAKE_BOOT)
+        self.assertActionPossible(gpt_disk, DeviceAction.TOGGLE_BOOT)
         # Even if they are filled with partitions (we resize partitions to fit)
         make_partition(model, gpt_disk, size=dos_disk.free_for_partitions)
-        self.assertActionPossible(gpt_disk, DeviceAction.MAKE_BOOT)
+        self.assertActionPossible(gpt_disk, DeviceAction.TOGGLE_BOOT)
 
         # GPT disks with existing partition tables but no partitions can be the
         # BIOS boot disk (in general we ignore existing empty partition tables)
         gpt_disk2 = make_disk(model, ptable='gpt', preserve=True)
-        self.assertActionPossible(gpt_disk2, DeviceAction.MAKE_BOOT)
+        self.assertActionPossible(gpt_disk2, DeviceAction.TOGGLE_BOOT)
         # If there is an existing *partition* though, it cannot be the boot
         # disk
         make_partition(model, gpt_disk2, preserve=True)
-        self.assertActionNotPossible(gpt_disk2, DeviceAction.MAKE_BOOT)
+        self.assertActionNotPossible(gpt_disk2, DeviceAction.TOGGLE_BOOT)
         # Unless there is already a bios_grub partition we can reuse
         gpt_disk3 = make_disk(model, ptable='gpt', preserve=True)
         make_partition(
             model, gpt_disk3, flag="bios_grub", preserve=True)
         make_partition(
             model, gpt_disk3, preserve=True)
-        self.assertActionPossible(gpt_disk3, DeviceAction.MAKE_BOOT)
+        self.assertActionPossible(gpt_disk3, DeviceAction.TOGGLE_BOOT)
         # Edge case city: the bios_grub partition has to be first
         gpt_disk4 = make_disk(model, ptable='gpt', preserve=True)
         make_partition(
             model, gpt_disk4, preserve=True)
         make_partition(
             model, gpt_disk4, flag="bios_grub", preserve=True)
-        self.assertActionNotPossible(gpt_disk4, DeviceAction.MAKE_BOOT)
+        self.assertActionNotPossible(gpt_disk4, DeviceAction.TOGGLE_BOOT)
 
-    def _test_MAKE_BOOT_boot_partition(self, bl, flag):
-        # The logic for when MAKE_BOOT is enabled for both UEFI and PREP
+    def _test_TOGGLE_BOOT_boot_partition(self, bl, flag):
+        # The logic for when TOGGLE_BOOT is enabled for both UEFI and PREP
         # bootloaders turns out to be the same, modulo the special flag that
         # has to be present on a partition.
         model = make_model(bl)
         # A disk with a new partition table can always be the UEFI/PREP boot
         # disk.
         new_disk = make_disk(model, preserve=False)
-        self.assertActionPossible(new_disk, DeviceAction.MAKE_BOOT)
+        self.assertActionPossible(new_disk, DeviceAction.TOGGLE_BOOT)
         # Even if they are filled with partitions (we resize partitions to fit)
         make_partition(model, new_disk, size=new_disk.free_for_partitions)
-        self.assertActionPossible(new_disk, DeviceAction.MAKE_BOOT)
+        self.assertActionPossible(new_disk, DeviceAction.TOGGLE_BOOT)
 
         # A disk with an existing but empty partitions can also be the
         # UEFI/PREP boot disk.
         old_disk = make_disk(model, preserve=True)
-        self.assertActionPossible(old_disk, DeviceAction.MAKE_BOOT)
+        self.assertActionPossible(old_disk, DeviceAction.TOGGLE_BOOT)
         # If there is an existing partition though, it cannot.
         make_partition(model, old_disk, preserve=True)
-        self.assertActionNotPossible(old_disk, DeviceAction.MAKE_BOOT)
+        self.assertActionNotPossible(old_disk, DeviceAction.TOGGLE_BOOT)
         # If there is an existing ESP/PReP partition though, fine!
         make_partition(model, old_disk, flag=flag, preserve=True)
-        self.assertActionPossible(old_disk, DeviceAction.MAKE_BOOT)
+        self.assertActionPossible(old_disk, DeviceAction.TOGGLE_BOOT)
 
-    def test_disk_action_MAKE_BOOT_UEFI(self):
-        self._test_MAKE_BOOT_boot_partition(Bootloader.UEFI, "boot")
+    def test_disk_action_TOGGLE_BOOT_UEFI(self):
+        self._test_TOGGLE_BOOT_boot_partition(Bootloader.UEFI, "boot")
 
-    def test_disk_action_MAKE_BOOT_PREP(self):
-        self._test_MAKE_BOOT_boot_partition(Bootloader.PREP, "prep")
+    def test_disk_action_TOGGLE_BOOT_PREP(self):
+        self._test_TOGGLE_BOOT_boot_partition(Bootloader.PREP, "prep")
 
     def test_partition_action_INFO(self):
         model, part = make_model_and_partition()
@@ -578,9 +611,9 @@ class TestFilesystemModel(unittest.TestCase):
         disk2p1 = make_partition(model, disk2, preserve=True)
         self.assertActionNotPossible(disk2p1, DeviceAction.DELETE)
 
-    def test_partition_action_MAKE_BOOT(self):
+    def test_partition_action_TOGGLE_BOOT(self):
         model, part = make_model_and_partition()
-        self.assertActionNotSupported(part, DeviceAction.MAKE_BOOT)
+        self.assertActionNotSupported(part, DeviceAction.TOGGLE_BOOT)
 
     def test_raid_action_INFO(self):
         model, raid = make_model_and_raid()
@@ -684,9 +717,9 @@ class TestFilesystemModel(unittest.TestCase):
         model.add_volgroup('vg0', {raid2})
         self.assertActionNotPossible(raid2, DeviceAction.DELETE)
 
-    def test_raid_action_MAKE_BOOT(self):
+    def test_raid_action_TOGGLE_BOOT(self):
         model, raid = make_model_and_raid()
-        self.assertActionNotSupported(raid, DeviceAction.MAKE_BOOT)
+        self.assertActionNotSupported(raid, DeviceAction.TOGGLE_BOOT)
 
     def test_vg_action_INFO(self):
         model, vg = make_model_and_vg()
@@ -741,9 +774,9 @@ class TestFilesystemModel(unittest.TestCase):
         model.add_mount(fs, '/')
         self.assertActionNotPossible(vg, DeviceAction.DELETE)
 
-    def test_vg_action_MAKE_BOOT(self):
+    def test_vg_action_TOGGLE_BOOT(self):
         model, vg = make_model_and_vg()
-        self.assertActionNotSupported(vg, DeviceAction.MAKE_BOOT)
+        self.assertActionNotSupported(vg, DeviceAction.TOGGLE_BOOT)
 
     def test_lv_action_INFO(self):
         model, lv = make_model_and_lv()
@@ -785,9 +818,9 @@ class TestFilesystemModel(unittest.TestCase):
         lv2.preserve = lv2.volgroup.preserve = True
         self.assertActionNotPossible(lv2, DeviceAction.DELETE)
 
-    def test_lv_action_MAKE_BOOT(self):
+    def test_lv_action_TOGGLE_BOOT(self):
         model, lv = make_model_and_lv()
-        self.assertActionNotSupported(lv, DeviceAction.MAKE_BOOT)
+        self.assertActionNotSupported(lv, DeviceAction.TOGGLE_BOOT)
 
 
 def fake_up_blockdata(model):

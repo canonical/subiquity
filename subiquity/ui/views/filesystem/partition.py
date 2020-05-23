@@ -35,6 +35,7 @@ from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.selector import Option, Selector
 from subiquitycore.ui.container import Pile
 from subiquitycore.ui.stretchy import Stretchy
+from subiquitycore.ui.utils import rewrap
 
 from subiquity.models.filesystem import (
     align_up,
@@ -74,7 +75,8 @@ class FSTypeField(FormField):
                 (_('Leave unformatted'), True, None),
                 ]
         else:
-            label = _('Leave formatted as {}').format(form.existing_fs_type)
+            label = _('Leave formatted as {fstype}').format(
+                fstype=form.existing_fs_type)
             options = [
                 (label, True, None),
                 ('---', False),
@@ -106,13 +108,15 @@ class SizeWidget(StringEditor):
             self.value = self.form.size_str
             self.form.size.show_extra(
                 ('info_minor',
-                 _("Capped partition size at {}").format(self.form.size_str)))
+                 _("Capped partition size at {size}").format(
+                     size=self.form.size_str)))
         elif (align_up(sz) != sz and
               humanize_size(align_up(sz)) != self.form.size.value):
             sz_str = humanize_size(align_up(sz))
             self.value = sz_str
             self.form.size.show_extra(
-                ('info_minor', _("Rounded size up to {}").format(sz_str)))
+                ('info_minor', _("Rounded size up to {size}").format(
+                    size=sz_str)))
 
 
 class SizeField(FormField):
@@ -157,7 +161,8 @@ class PartitionForm(Form):
         self.max_size = max_size
         if max_size is not None:
             self.size_str = humanize_size(max_size)
-            self.size.caption = _("Size (max {}):").format(self.size_str)
+            self.size.caption = _("Size (max {size}):").format(
+                size=self.size_str)
         self.lvm_names = lvm_names
         super().__init__(initial)
         if max_size is None:
@@ -227,16 +232,21 @@ class PartitionForm(Form):
         if v.startswith('-'):
             return _("The name of a logical volume cannot start with a hyphen")
         if v in ('.', '..', 'snapshot', 'pvmove'):
-            return _("A logical volume may not be called {}").format(v)
+            return _(
+                "A logical volume may not be called {name}"
+                ).format(name=v)
         for substring in ['_cdata', '_cmeta',   '_corig',  '_mlog',  '_mimage',
                           '_pmspare',  '_rimage',  '_rmeta',  '_tdata',
                           '_tmeta', '_vorigin']:
             if substring in v:
-                return _('The name of a logical volume may not contain '
-                         '"{}"').format(substring)
+                return _(
+                    'The name of a logical volume may not contain '
+                    '"{substring}"'
+                    ).format(substring=substring)
         if v in self.lvm_names:
-            return _("There is already a logical volume named {}.").format(
-                self.name.value)
+            return _(
+                "There is already a logical volume named {name}."
+                ).format(name=self.name.value)
 
     def validate_mount(self):
         mount = self.mount.value
@@ -247,17 +257,18 @@ class PartitionForm(Form):
             return _('Path exceeds PATH_MAX')
         dev = self.mountpoints.get(mount)
         if dev is not None:
-            return _("{} is already mounted at {}.").format(
-                dev.label.title(), mount)
+            return _("{device} is already mounted at {path}.").format(
+                device=dev.label.title(), path=mount)
         if self.existing_fs_type is not None:
             if self.fstype.value is None:
                 if mount in common_mountpoints:
                     if mount not in suitable_mountpoints_for_existing_fs:
                         self.mount.show_extra(
                             ('info_error',
-                             _("Mounting an existing filesystem at {} is "
-                               "usually a bad idea, proceed only with "
-                               "caution.").format(mount)))
+                             _("Mounting an existing filesystem at "
+                               "{mountpoint} is usually a bad idea, "
+                               "proceed only with caution.").format(
+                                   mountpoint=mount)))
 
     def as_rows(self):
         r = super().as_rows()
@@ -270,34 +281,65 @@ class PartitionForm(Form):
         return r
 
 
-bios_grub_partition_description = _(
-    "Required bootloader partition\n"
-    "\n"
-    "GRUB will be installed onto the target disk's MBR.\n"
-    "\n"
-    "However, on a disk with a GPT partition table, there is not enough space "
-    "after the MBR for GRUB to store its second-stage core.img, so a small "
-    "unformatted partition is needed at the start of the disk. It will not "
-    "contain a filesystem and will not be mounted, and cannot be edited here.")
+bios_grub_partition_description = _("""\
+Bootloader partition
 
-boot_partition_description = _(
-    "Required bootloader partition\n"
-    "\n"
-    'This is the ESP / "EFI system partition" required by UEFI. Grub will be '
-    'installed onto this partition, which must be formatted as fat32.')
+{middle}
 
-boot_partition_description_size = _(
-    ' The only aspect of this partition that can be edited is the size.')
+However, on a disk with a GPT partition table, there is not enough
+space after the MBR for GRUB to store its second-stage core.img, so a
+small unformatted partition is needed at the start of the disk. It
+will not contain a filesystem and will not be mounted, and cannot be
+edited here.
+""")
 
-boot_partition_description_reformat = _(
-    ' You can choose whether to use the existing filesystem on this '
-    'partition or reformat it.')
+unconfigured_bios_grub_partition_middle = _("""\
+If this disk is selected as a boot device, GRUB will be installed onto
+the target disk's MBR.""")
 
-prep_partition_description = _(
-    "Required bootloader partition\n"
-    "\n"
-    'This is the PReP partion which is required on POWER. Grub will be '
-    'installed onto this partition.')
+configured_bios_grub_partition_middle = _("""\
+As this disk has been selected as a boot device, GRUB will be
+installed onto the target disk's MBR.""")
+
+unconfigured_boot_partition_description = _("""\
+Bootloader partition
+
+This is an ESP / "EFI system partition" as required by UEFI. If this
+disk is selected as a boot device, Grub will be installed onto this
+partition, which must be formatted as fat32.
+""")
+
+configured_boot_partition_description = _("""\
+Bootloader partition
+
+This is an ESP / "EFI system partition" as required by UEFI. As this
+disk has been selected as a boot device, Grub will be installed onto
+this partition, which must be formatted as fat32.
+""")
+
+boot_partition_description_size = _("""\
+The only aspect of this partition that can be edited is the size.
+""")
+
+boot_partition_description_reformat = _("""\
+You can choose whether to use the existing filesystem on this
+partition or reformat it.
+""")
+
+unconfigured_prep_partition_description = _("""\
+Required bootloader partition
+
+This is the PReP partion which is required on POWER. If this disk is
+selected as a boot device, Grub will be installed onto this partition.
+""")
+
+configured_prep_partition_description = _("""\
+Required bootloader partition
+
+This is the PReP partion which is required on POWER. As this disk has
+been selected as a boot device, Grub will be installed onto this
+partition.
+""")
 
 
 def initial_data_for_fs(fs):
@@ -335,9 +377,11 @@ class PartitionStretchy(Stretchy):
         else:
             lvm_names = None
         if self.partition:
-            if self.partition.flag in ["bios_grub", "prep"]:
+            if partition.flag in ["bios_grub", "prep"]:
                 label = None
                 initial['mount'] = None
+            elif partition.flag == "boot" and not partition.grub_device:
+                label = None
             else:
                 label = _("Save")
             initial['size'] = humanize_size(self.partition.size)
@@ -397,6 +441,8 @@ class PartitionStretchy(Stretchy):
                         self.form.fstype.widget.index = 0
                     else:
                         self.form.fstype.widget.index = 2
+                    if not self.partition.grub_device:
+                        self.form.fstype.enabled = False
                     self.form.mount.enabled = False
                 else:
                     opts = [Option(("fat32", True))]
@@ -419,24 +465,37 @@ class PartitionStretchy(Stretchy):
         focus_index = 0
         if partition is not None:
             if self.partition.flag == "boot":
-                desc = boot_partition_description
-                if self.partition.preserve:
-                    desc += boot_partition_description_reformat
+                if self.partition.grub_device:
+                    desc = _(configured_boot_partition_description)
+                    if self.partition.preserve:
+                        desc += _(boot_partition_description_reformat)
+                    else:
+                        desc += _(boot_partition_description_size)
                 else:
-                    desc += boot_partition_description_size
+                    focus_index = 2
+                    desc = _(unconfigured_boot_partition_description)
                 rows.extend([
-                    Text(_(desc)),
+                    Text(rewrap(desc)),
                     Text(""),
                 ])
             elif self.partition.flag == "bios_grub":
+                if self.partition.device.grub_device:
+                    middle = _(configured_bios_grub_partition_middle)
+                else:
+                    middle = _(unconfigured_bios_grub_partition_middle)
+                desc = _(bios_grub_partition_description).format(middle=middle)
                 rows.extend([
-                    Text(_(bios_grub_partition_description)),
+                    Text(rewrap(desc)),
                     Text(""),
                 ])
                 focus_index = 2
             elif self.partition.flag == "prep":
+                if self.partition.grub_device:
+                    desc = _(configured_prep_partition_description)
+                else:
+                    desc = _(unconfigured_prep_partition_description)
                 rows.extend([
-                    Text(_(prep_partition_description)),
+                    Text(rewrap(desc)),
                     Text(""),
                 ])
                 focus_index = 2
@@ -450,17 +509,23 @@ class PartitionStretchy(Stretchy):
 
         if partition is None:
             if isinstance(disk, LVM_VolGroup):
-                add_name = _("logical volume")
+                title = _("Adding logical volume to {vgname}").format(
+                    vgname=disk.label)
             else:
-                add_name = _("{} partition").format(
-                    disk.ptable_for_new_partition().upper())
-            title = _("Adding {} to {}").format(add_name, disk.label)
+                title = _("Adding {ptype} partition to {device}").format(
+                    ptype=disk.ptable_for_new_partition().upper(),
+                    device=disk.label)
         else:
             if isinstance(disk, LVM_VolGroup):
-                desc = _("logical volume {}").format(partition.name)
+                title = _(
+                    "Editing logical volume {lvname} of {vgname}"
+                    ).format(
+                        lvname=partition.name,
+                        vgname=disk.label)
             else:
-                desc = partition.short_label
-            title = _("Editing {} of {}").format(desc, disk.label)
+                title = _("Editing partition {number} of {device}").format(
+                    number=partition.number,
+                    device=disk.label)
 
         super().__init__(title, widgets, 0, focus_index)
 
@@ -523,7 +588,7 @@ class FormatEntireStretchy(Stretchy):
             self.form.buttons,
         ]
 
-        title = _("Format and/or mount {}").format(device.label)
+        title = _("Format and/or mount {device}").format(device=device.label)
 
         super().__init__(title, widgets, 0, 0)
 

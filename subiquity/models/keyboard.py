@@ -135,7 +135,7 @@ class KeyboardSetting:
 # Non-latin keyboard layouts that are handled in a uniform way
 standard_non_latin_layouts = set(
     ('af', 'am', 'ara', 'ben', 'bd', 'bg', 'bt', 'by', 'et', 'ge',
-     'gh', 'gr', 'guj', 'guru', 'il', ''in'', 'iq', 'ir', 'iku', 'kan',
+     'gh', 'gr', 'guj', 'guru', 'il', 'in', 'iq', 'ir', 'iku', 'kan',
      'kh', 'kz', 'la', 'lao', 'lk', 'kg', 'ma', 'mk', 'mm', 'mn', 'mv',
      'mal', 'np', 'ori', 'pk', 'ru', 'scc', 'sy', 'syr', 'tel', 'th',
      'tj', 'tam', 'tib', 'ua', 'ug', 'uz')

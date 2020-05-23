@@ -16,8 +16,7 @@
 import logging
 
 from subiquitycore.ui.frame import SubiquityCoreUI
-
-from subiquity.ui.views.help import HelpButton
+from subiquitycore.view import BaseView
 
 
 log = logging.getLogger('subiquity.ui.frame')
@@ -27,10 +26,17 @@ class SubiquityUI(SubiquityCoreUI):
 
     block_input = False
 
-    def __init__(self, app):
-        self.right_icon = HelpButton(app)
+    def __init__(self, app, right_icon):
+        self.app = app
+        self.right_icon = right_icon
         super().__init__()
 
     def keypress(self, size, key):
         if not self.block_input:
             return super().keypress(size, key)
+
+    def set_body(self, widget):
+        super().set_body(widget)
+        if isinstance(widget, BaseView):
+            for overlay in self.app.global_overlays:
+                widget.show_stretchy_overlay(overlay)

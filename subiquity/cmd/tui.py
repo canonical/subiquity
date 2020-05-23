@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import locale
 import logging
 import os
 import fcntl
@@ -103,6 +104,13 @@ AUTO_ANSWERS_FILE = "/subiquity_config/answers.yaml"
 
 
 def main():
+    # Python 3.7+ does more or less this by default, but we need to
+    # work with the Python 3.6 in bionic.
+    try:
+        locale.setlocale(locale.LC_ALL, "")
+    except locale.Error:
+        locale.setlocale(locale.LC_CTYPE, "C.UTF-8")
+
     # Prefer utils from $SNAP, over system-wide
     snap = os.environ.get('SNAP')
     if snap:

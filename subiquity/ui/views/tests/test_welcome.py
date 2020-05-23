@@ -1,6 +1,5 @@
 import unittest
 from unittest import mock
-
 import urwid
 
 from subiquitycore.testing import view_helpers
@@ -10,10 +9,18 @@ from subiquity.models.locale import LocaleModel
 from subiquity.ui.views.welcome import WelcomeView
 
 
+class FakeApp:
+    is_linux_tty = True
+
+    class opts:
+        run_on_serial = False
+
+
 class WelcomeViewTests(unittest.TestCase):
 
     def make_view_with_languages(self, languages):
         controller = mock.create_autospec(spec=WelcomeController)
+        controller.app = FakeApp()
         model = mock.create_autospec(spec=LocaleModel)
         model.get_languages.return_value = languages
         return WelcomeView(model, controller)

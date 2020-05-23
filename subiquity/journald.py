@@ -13,14 +13,22 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.context import Context
+from systemd import journal
 
 
-class SubiquityContext(Context):
+def journald_listener(identifiers, callback, seek=False):
+    reader = journal.Reader()
+    args = []
+    for identifier in identifiers:
+        args.append("SYSLOG_IDENTIFIER={}".format(identifier))
+    reader.add_match(*args)
 
-    controller = None
+    if seek:
+        reader.seek_tail()
 
-    def __init__(self, app, name, description, parent, level, childlevel=None):
-        super().__init__(app, name, description, parent, level, childlevel)
-        if parent is not None:
-            self.controller = parent.controller
+    def watch():
+        if reader.process() != journal.APPEND:
+            return
+        for event in reader:
+            callback(event)
+    return reader.fileno(), watch
