@@ -1604,8 +1604,8 @@ msgid "Import Username:"
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:73
-msgid "Github Username:"
-msgstr "Github-käyttäjätunnus:"
+msgid "GitHub Username:"
+msgstr "GitHub-käyttäjätunnus:"
 
 #: ../subiquity/ui/views/ssh.py:80
 msgid "Launchpad Username:"
@@ -1620,15 +1620,15 @@ msgid "Import SSH identity:"
 msgstr "Tuo SSH-identiteetti:"
 
 #: ../subiquity/ui/views/ssh.py:98
-msgid "from Github"
-msgstr "Githubista"
+msgid "from GitHub"
+msgstr "GitHubista"
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from Launchpad"
 msgstr "Launchpadilta"
 
 #: ../subiquity/ui/views/ssh.py:101
-msgid "You can import your SSH keys from Github or Launchpad."
+msgid "You can import your SSH keys from GitHub or Launchpad."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:105
@@ -1652,7 +1652,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:150
 msgid ""
-"A Github username may only contain alphanumeric characters or single "
+"A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
 

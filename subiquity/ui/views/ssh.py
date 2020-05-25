@@ -70,10 +70,10 @@ _ssh_import_data = {
         'regex': '.*',
         },
     'gh': {
-        'caption': _("Github Username:"),
-        'help': _("Enter your Github username."),
+        'caption': _("GitHub Username:"),
+        'help': _("Enter your GitHub username."),
         'valid_char': r'[a-zA-Z0-9\-]',
-        'error_invalid_char': _('A Github username may only contain '
+        'error_invalid_char': _('A GitHub username may only contain '
                                 'alphanumeric characters or hyphens.'),
         },
     'lp': {
@@ -95,10 +95,10 @@ class SSHForm(Form):
         _("Import SSH identity:"),
         choices=[
             (_("No"), True, None),
-            (_("from Github"), True, "gh"),
+            (_("from GitHub"), True, "gh"),
             (_("from Launchpad"), True, "lp"),
             ],
-        help=_("You can import your SSH keys from Github or Launchpad."))
+        help=_("You can import your SSH keys from GitHub or Launchpad."))
 
     import_username = UsernameField(_ssh_import_data[None]['caption'])
 
@@ -147,7 +147,7 @@ class SSHForm(Form):
                          "the first character.""")
         elif self.ssh_import_id_value == 'gh':
             if not re.match(r'^[a-zA-Z0-9\-]+$', username):
-                return _("A Github username may only contain alphanumeric "
+                return _("A GitHub username may only contain alphanumeric "
                          "characters or single hyphens, and cannot begin or "
                          "end with a hyphen.")
 

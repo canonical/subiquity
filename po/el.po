@@ -1608,7 +1608,7 @@ msgid "Import Username:"
 msgstr "Όνομα χρήστη εισαγωγής:"
 
 #: ../subiquity/ui/views/ssh.py:73
-msgid "Github Username:"
+msgid "GitHub Username:"
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:80
@@ -1624,15 +1624,15 @@ msgid "Import SSH identity:"
 msgstr "Εισαγωγή ταυτότητας SSH:"
 
 #: ../subiquity/ui/views/ssh.py:98
-msgid "from Github"
-msgstr "από Github"
+msgid "from GitHub"
+msgstr "από GitHub"
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from Launchpad"
 msgstr "από Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:101
-msgid "You can import your SSH keys from Github or Launchpad."
+msgid "You can import your SSH keys from GitHub or Launchpad."
 msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:105
@@ -1656,7 +1656,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:150
 msgid ""
-"A Github username may only contain alphanumeric characters or single "
+"A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
 
