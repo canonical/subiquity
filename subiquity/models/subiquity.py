@@ -171,7 +171,7 @@ class SubiquityModel:
                 'passwd': user.password,
                 'shell': '/bin/bash',
                 'groups': groups,
-                'lock-passwd': False,
+                'lock_passwd': False,
                 }
             if self.ssh.authorized_keys:
                 user_info['ssh_authorized_keys'] = self.ssh.authorized_keys
