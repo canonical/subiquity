@@ -142,7 +142,10 @@ class TestSubiquityModel(unittest.TestCase):
         model.mirror.set_mirror(mirror_val)
         config = model.render('ident')
         from curtin.commands.apt_config import get_mirror
-        from curtin.util import get_architecture
+        try:
+            from curtin.distro import get_architecture
+        except ImportError:
+            from curtin.util import get_architecture
         self.assertEqual(
             get_mirror(config["apt"], "primary", get_architecture()),
             mirror_val)
