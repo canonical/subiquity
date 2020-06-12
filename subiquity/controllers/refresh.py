@@ -191,7 +191,12 @@ class RefreshController(SubiquityController):
         if self.app.updated:
             context.description = "not offered update when already updated"
             return CheckState.UNAVAILABLE
-        result = await self.app.snapd.get('v2/find', select='refresh')
+        try:
+            result = await self.app.snapd.get('v2/find', select='refresh')
+        except requests.exceptions.RequestException:
+            log.exception("checking for snap update failed")
+            context.description = "checking for snap update failed"
+            return CheckState.UNAVAILABLE
         log.debug("check_for_update received %s", result)
         for snap in result["result"]:
             if snap["name"] == self.snap_name:
