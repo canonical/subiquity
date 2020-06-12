@@ -200,7 +200,7 @@ class NetworkController(BaseController):
             return
         self.observer.data_ready(fd)
         v = self.ui.body
-        if isinstance(v._w, StretchyOverlay):
+        if isinstance(getattr(v, '_w', None), StretchyOverlay):
             if hasattr(v._w.stretchy, 'refresh_model_inputs'):
                 v._w.stretchy.refresh_model_inputs()
 
