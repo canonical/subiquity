@@ -15,6 +15,10 @@ network:
         name: "en*"
       dhcp6: yes
 debconf-selections: eek
+apt:
+  primary:
+    - arches: [default]
+      uri: "http://mymirror.local/repository/Apt/ubuntu/"
 packages:
   - package1
   - package2
