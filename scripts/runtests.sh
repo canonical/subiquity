@@ -41,7 +41,7 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
 validate
 python3 scripts/check-yaml-fields.py .subiquity/subiquity-curtin-install.conf \
         debconf_selections.subiquity='"eek"'
-python3 scripts/check-yaml-fields.py .subiquity/var/lib/cloud/seed/nocloud-net/user-data \
+python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py .subiquity/etc/cloud/cloud.cfg.d/installer.cfg datasource.None.userdata_raw) \
         locale='"en_GB.UTF-8"'
 grep -q 'finish: subiquity/InstallProgress/install/postinstall/install_package1: SUCCESS: installing package1' \
      .subiquity/subiquity-debug.log
