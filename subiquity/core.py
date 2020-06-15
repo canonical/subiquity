@@ -220,10 +220,14 @@ class Subiquity(Application):
             # This is a gross hack for testing in travis.
             our_tty = "/dev/not a tty"
         if not self.interactive() and our_tty != primary_tty:
-            print(
-                _("the installer running on {tty} will perform the "
-                  "autoinstall").format(tty=primary_tty))
-            signal.pause()
+            while True:
+                print(
+                    _("the installer running on {tty} will perform the "
+                      "autoinstall").format(tty=primary_tty))
+                print()
+                print(_("press enter to start a shell"))
+                input()
+                os.system("cd / && bash")
         self.controllers.load("Reporting")
         self.controllers.Reporting.start()
         self.controllers.load("Error")
