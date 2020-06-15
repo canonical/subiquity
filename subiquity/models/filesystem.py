@@ -1392,6 +1392,8 @@ class FilesystemModel(object):
                     break
             else:
                 candidates.append(candidate)
+        if match.get('size') == 'smallest':
+            candidates.sort(key=lambda d: d.size)
         if match.get('size') == 'largest':
             candidates.sort(key=lambda d: d.size, reverse=True)
         if candidates:
