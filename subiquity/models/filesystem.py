@@ -980,7 +980,11 @@ class Partition(_Formattable):
             typecode = blockdev_raw.get("ID_PART_ENTRY_TYPE")
             if typecode is None:
                 return False
-            return int(typecode, 0) == 0xef
+            try:
+                return int(typecode, 0) == 0xef
+            except ValueError:
+                # In case there was garbage in the udev entry...
+                return False
 
     @property
     def is_bootloader_partition(self):
