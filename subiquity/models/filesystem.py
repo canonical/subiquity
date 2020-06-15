@@ -675,23 +675,13 @@ class _Device(_Formattable, ABC):
         if self.free_for_partitions > 0:
             if not self._has_preexisting_partition():
                 return True
-        for p in self._partitions:
-            if p.available():
-                return True
-        return False
+        return any(p.available() for p in self._partitions)
 
     def has_unavailable_partition(self):
-        for p in self._partitions:
-            if not p.available():
-                return True
-        return False
+        return any(not p.available() for p in self._partitions)
 
     def _has_preexisting_partition(self):
-        for p in self._partitions:
-            if p.preserve:
-                return True
-        else:
-            return False
+        return any(p.preserve for p in self._partitions)
 
     @property
     def _can_DELETE(self):
@@ -812,15 +802,9 @@ class Disk(_Device):
                 else:
                     return self._partitions[0].flag == "bios_grub"
             elif bl == Bootloader.UEFI:
-                for p in self._partitions:
-                    if p.is_esp:
-                        return True
-                return False
+                return any(p.is_esp for p in self._partitions)
             elif bl == Bootloader.PREP:
-                for p in self._partitions:
-                    if p.flag == "prep":
-                        return True
-                return False
+                return any(p.flag == "prep" for p in self._partitions)
         else:
             return True
 
@@ -870,10 +854,7 @@ class Disk(_Device):
         elif bl == Bootloader.BIOS:
             return self.grub_device
         elif bl in [Bootloader.PREP, Bootloader.UEFI]:
-            for p in self._partitions:
-                if p.grub_device:
-                    return True
-            return False
+            return any(p.grub_device for p in self._partitions)
 
     @property
     def _can_TOGGLE_BOOT(self):
