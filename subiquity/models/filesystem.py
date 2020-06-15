@@ -27,6 +27,7 @@ import platform
 import tempfile
 
 from curtin import storage_config
+from curtin.block import partition_kname
 from curtin.util import human2bytes
 
 from probert.storage import StorageInfo
@@ -536,7 +537,7 @@ class _Formattable(ABC):
                 if m:
                     # A filesytem
                     r.append(_("mounted at {path}").format(path=m.path))
-                elif getattr(self, 'flag', None) != "boot":
+                elif not getattr(self, 'is_esp', False):
                     # A filesytem
                     r.append(_("not mounted"))
             elif fs.preserve:
@@ -674,23 +675,13 @@ class _Device(_Formattable, ABC):
         if self.free_for_partitions > 0:
             if not self._has_preexisting_partition():
                 return True
-        for p in self._partitions:
-            if p.available():
-                return True
-        return False
+        return any(p.available() for p in self._partitions)
 
     def has_unavailable_partition(self):
-        for p in self._partitions:
-            if not p.available():
-                return True
-        return False
+        return any(not p.available() for p in self._partitions)
 
     def _has_preexisting_partition(self):
-        for p in self._partitions:
-            if p.preserve:
-                return True
-        else:
-            return False
+        return any(p.preserve for p in self._partitions)
 
     @property
     def _can_DELETE(self):
@@ -810,12 +801,10 @@ class Disk(_Device):
                     return True
                 else:
                     return self._partitions[0].flag == "bios_grub"
-            else:
-                flag = {Bootloader.UEFI: "boot", Bootloader.PREP: "prep"}[bl]
-                for p in self._partitions:
-                    if p.flag == flag:
-                        return True
-                return False
+            elif bl == Bootloader.UEFI:
+                return any(p.is_esp for p in self._partitions)
+            elif bl == Bootloader.PREP:
+                return any(p.flag == "prep" for p in self._partitions)
         else:
             return True
 
@@ -865,10 +854,7 @@ class Disk(_Device):
         elif bl == Bootloader.BIOS:
             return self.grub_device
         elif bl in [Bootloader.PREP, Bootloader.UEFI]:
-            for p in self._partitions:
-                if p.grub_device:
-                    return True
-            return False
+            return any(p.grub_device for p in self._partitions)
 
     @property
     def _can_TOGGLE_BOOT(self):
@@ -920,7 +906,7 @@ class Partition(_Formattable):
                 else:
                     # boot loader partition
                     r.append(_("unconfigured"))
-        elif self.flag == "boot":
+        elif self.is_esp:
             if self.fs() and self.fs().mount():
                 r.append(_("primary ESP"))
             elif self.grub_device:
@@ -978,6 +964,39 @@ class Partition(_Formattable):
         else:
             return self.device._partitions.index(self) + 1
 
+    def _path(self):
+        return partition_kname(self.device.path, self._number)
+
+    @property
+    def is_esp(self):
+        if self.device.type != "disk":
+            return False
+        if self.device.ptable == "gpt":
+            return self.flag == "boot"
+        else:
+            blockdev_raw = self._m._probe_data['blockdev'].get(self._path())
+            if blockdev_raw is None:
+                return False
+            typecode = blockdev_raw.get("ID_PART_ENTRY_TYPE")
+            if typecode is None:
+                return False
+            try:
+                return int(typecode, 0) == 0xef
+            except ValueError:
+                # In case there was garbage in the udev entry...
+                return False
+
+    @property
+    def is_bootloader_partition(self):
+        if self._m.bootloader == Bootloader.BIOS:
+            return self.flag == "bios_grub"
+        elif self._m.bootloader == Bootloader.UEFI:
+            return self.is_esp
+        elif self._m.bootloader == Bootloader.PREP:
+            return self.flag == "prep"
+        else:
+            return False
+
     supported_actions = [
         DeviceAction.EDIT,
         DeviceAction.REMOVE,
@@ -993,13 +1012,13 @@ class Partition(_Formattable):
         if self.device._has_preexisting_partition():
             return _("Cannot delete a single partition from a device that "
                      "already has partitions.")
-        if self.flag in ('boot', 'bios_grub', 'prep'):
+        if self.is_bootloader_partition:
             return _("Cannot delete required bootloader partition")
         return _generic_can_DELETE(self)
 
     @property
     def ok_for_raid(self):
-        if self.flag in ('boot', 'bios_grub', 'prep'):
+        if self.is_bootloader_partition:
             return False
         if self._fs is not None:
             if self._fs.preserve:
@@ -1271,7 +1290,7 @@ class Mount:
         if not isinstance(self.device.volume, Partition):
             # Can't be /boot/efi if volume is not a partition
             return True
-        if self.device.volume.flag == "boot":
+        if self.device.volume.is_esp:
             # /boot/efi
             return False
         return True
@@ -1668,7 +1687,7 @@ class FilesystemModel(object):
         p = Partition(
             m=self, device=device, size=real_size, flag=flag, wipe=wipe,
             grub_device=grub_device)
-        if flag in ("boot", "bios_grub", "prep"):
+        if p.is_bootloader_partition:
             device._partitions.insert(0, device._partitions.pop())
         device.ptable = device.ptable_for_new_partition()
         dasd = device.dasd()
@@ -1738,7 +1757,7 @@ class FilesystemModel(object):
                         volume.flag == 'bios_grub' and fstype == 'fat32')):
                     raise Exception("{} is not available".format(volume))
         if volume._fs is not None:
-            raise Exception("%s is already formatted")
+            raise Exception("%s is already formatted", volume)
         fs = Filesystem(
             m=self, volume=volume, fstype=fstype, preserve=preserve)
         self._actions.append(fs)
@@ -1751,7 +1770,7 @@ class FilesystemModel(object):
 
     def add_mount(self, fs, path):
         if fs._mount is not None:
-            raise Exception("%s is already mounted")
+            raise Exception("%s is already mounted", fs)
         m = Mount(m=self, device=fs, path=path)
         self._actions.append(m)
         # Adding a swap partition or mounting btrfs at / suppresses

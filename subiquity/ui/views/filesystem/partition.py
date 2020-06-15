@@ -188,7 +188,7 @@ class PartitionForm(Form):
                     self.form_pile.contents[i] = (self.use_swap._table, o)
                 elif w is self.use_swap._table and not show_use:
                     self.form_pile.contents[i] = (self.mount._table, o)
-        if getattr(self.device, 'flag', None) != "boot":
+        if not getattr(self.device, 'is_esp', False):
             fstype_for_check = fstype
             if fstype_for_check is None:
                 fstype_for_check = self.existing_fs_type
@@ -380,14 +380,14 @@ class PartitionStretchy(Stretchy):
             if partition.flag in ["bios_grub", "prep"]:
                 label = None
                 initial['mount'] = None
-            elif partition.flag == "boot" and not partition.grub_device:
+            elif partition.is_esp and not partition.grub_device:
                 label = None
             else:
                 label = _("Save")
             initial['size'] = humanize_size(self.partition.size)
             max_size += self.partition.size
 
-            if partition.flag != "boot":
+            if not partition.is_esp:
                 initial.update(initial_data_for_fs(self.partition.fs()))
             else:
                 if partition.fs() and partition.fs().mount():
@@ -421,7 +421,7 @@ class PartitionStretchy(Stretchy):
             self.form.buttons.base_widget[0].set_label(_("OK"))
 
         if partition is not None:
-            if partition.flag == "boot":
+            if partition.is_esp:
                 if partition.original_fstype():
                     opts = [
                         Option((
@@ -464,7 +464,7 @@ class PartitionStretchy(Stretchy):
         rows = []
         focus_index = 0
         if partition is not None:
-            if self.partition.flag == "boot":
+            if self.partition.is_esp:
                 if self.partition.grub_device:
                     desc = _(configured_boot_partition_description)
                     if self.partition.preserve:
@@ -535,7 +535,7 @@ class PartitionStretchy(Stretchy):
     def done(self, form):
         log.debug("Add Partition Result: {}".format(form.as_data()))
         data = form.as_data()
-        if self.partition is not None and self.partition.flag == "boot":
+        if self.partition is not None and self.partition.is_esp:
             if self.partition.original_fstype() is None:
                 data['fstype'] = self.partition.fs().fstype
             if self.partition.fs().mount() is not None:
