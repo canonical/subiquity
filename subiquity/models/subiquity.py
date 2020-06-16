@@ -204,7 +204,7 @@ class SubiquityModel:
         # (mwhudson does not entirely know what the above means!)
         userdata = '#cloud-config\n' + yaml.dump(self._cloud_init_config())
         metadata = {'instance-id': str(uuid.uuid4())}
-        config = {
+        config = yaml.dump({
             'datasource_list': ["None"],
             'datasource': {
                 "None": {
@@ -212,9 +212,9 @@ class SubiquityModel:
                     'metadata': metadata,
                     },
                 },
-            }
+            })
         files = [
-            ('etc/cloud/cloud.cfg.d/installer.cfg', yaml.dump(config), 0o600),
+            ('etc/cloud/cloud.cfg.d/99-installer.cfg', config, 0o600),
             ('etc/cloud/ds-identify.cfg', 'policy: enabled\n', 0o644),
             ]
         if self.identity.hostname is not None:
