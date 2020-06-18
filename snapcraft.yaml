@@ -8,6 +8,8 @@ confinement: classic
 apps:
   subiquity:
     command: usr/bin/subiquity
+    environment:
+      PYTHONIOENCODING: utf-8
   subiquity-loadkeys:
     command: usr/bin/subiquity-loadkeys
   subiquity-configure-apt:
@@ -22,6 +24,8 @@ apps:
     command: usr/bin/subiquity-service
     daemon: simple
     restart-condition: always
+    environment:
+      PYTHONIOENCODING: utf-8
 
 parts:
   curtin:
