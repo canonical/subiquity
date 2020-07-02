@@ -49,6 +49,7 @@ subiquitycore/ui/stretchy.py
 subiquitycore/ui/container.py
 subiquitycore/ui/frame.py
 subiquitycore/file_util.py
+subiquitycore/snapd.py
 subiquitycore/view.py
 subiquity/controllers/identity.py
 subiquity/controllers/package.py
@@ -76,7 +77,6 @@ subiquity/cmd/__init__.py
 subiquity/cmd/tui.py
 subiquity/cmd/schema.py
 subiquity/journald.py
-subiquity/snapd.py
 subiquity/lockfile.py
 subiquity/models/identity.py
 subiquity/models/locale.py

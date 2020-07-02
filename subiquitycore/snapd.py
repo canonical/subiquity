@@ -31,7 +31,7 @@ from subiquitycore.utils import run_command
 import requests_unixsocket
 
 
-log = logging.getLogger('subiquity.snapd')
+log = logging.getLogger('subiquitycore.snapd')
 
 # Every method in this module blocks. Do not call them from the main thread!
 
