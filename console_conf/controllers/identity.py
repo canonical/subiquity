@@ -16,34 +16,44 @@
 import json
 import logging
 import os
+import pwd
 import sys
 
 from subiquitycore.controller import BaseController
 from subiquitycore.models import IdentityModel
+from subiquitycore.snapd import SnapdConnection
 from subiquitycore.utils import disable_console_conf, run_command
 
 from console_conf.ui.views import IdentityView, LoginView
 
 log = logging.getLogger('console_conf.controllers.identity')
 
-def get_device_owner():
-    """ Check if device is owned """
 
-    # TODO: use proper snap APIs.
+def get_managed():
+    """ Check if device is managed """
+    con = SnapdConnection('', '/run/snapd.socket')
+    return con.get('v2/system-info').json()['result']['managed']
+
+
+def get_realname(username):
     try:
-        extrausers_fp = open('/var/lib/extrausers/passwd', 'r')
-    except FileNotFoundError:
-        return None
-    with extrausers_fp:
-        passwd_line = extrausers_fp.readline()
-        if passwd_line and len(passwd_line) > 0:
-            passwd = passwd_line.split(':')
-            result = {
-                'realname': passwd[4].split(',')[0],
-                'username': passwd[0],
-                'homedir': passwd[5],
+        info = pwd.getpwnam(username)
+    except KeyError:
+        return ''
+    return info.pw_gecos.split(',', 1)[0]
+
+
+def get_device_owner():
+    """ Get device owner, if any """
+    con = SnapdConnection('', '/run/snapd.socket')
+    for user in con.get('v2/users').json()['result']:
+        user = user['email'].split('@')[0]
+        if os.path.isdir('/home/' + user):
+            return {
+                'username': user,
+                'realname': get_realname(user),
+                'homedir': '/home/' + user,
                 }
-            return result
     return None
 
 def host_key_fingerprints():
@@ -130,9 +140,6 @@ def write_login_details(fp, username, ips):
 
 def write_login_details_standalone():
     owner = get_device_owner()
-    if owner is None:
-        print("No device owner details found.")
-        return 0
     from probert import network
     from subiquitycore.models.network import NETDEV_IGNORED_IFACE_NAMES, NETDEV_IGNORED_IFACE_TYPES
     import operator
@@ -148,13 +155,20 @@ def write_login_details_standalone():
             if addr.scope == "global":
                 ips.append(addr.ip)
     if len(ips) == 0:
-        tty_name = os.ttyname(0)[5:]
-        print("Ubuntu Core 16 on <no ip address> ({})".format(tty_name))
-        print()
-        print("You cannot log in until the system has an IP address.")
-        print("(Is there supposed to be a DHCP server running on your network?)")
-        return 2
-    write_login_details(sys.stdout, owner['username'], ips)
+        if owner is None:
+            print("device managed without user")
+            return 2
+        else:
+            tty_name = os.ttyname(0)[5:]
+            print("Ubuntu Core 16 on <no ip address> ({})".format(tty_name))
+            print()
+            print("You cannot log in until the system has an IP address.")
+            print("(Is there supposed to be a DHCP server running on your network?)")
+            return 2
+    if owner is None:
+        print("device managed without user @ {}".format(', '.join(ips)))
+    else:
+        write_login_details(sys.stdout, owner['username'], ips)
     return 0
 
 
@@ -172,10 +186,15 @@ class IdentityController(BaseController):
         self.ui.set_footer(footer, 40)
         self.ui.set_body(IdentityView(self.model, self, self.opts, self.loop))
         device_owner = get_device_owner()
-        if device_owner is not None:
-            self.model.add_user(device_owner)
-            key_file = os.path.join(device_owner['homedir'], ".ssh/authorized_keys")
-            self.model.user.fingerprints = run_command(['ssh-keygen', '-lf', key_file])['output'].replace('\r', '').splitlines()
+        if get_managed():
+            device_owner = get_device_owner()
+            if device_owner:
+                self.model.add_user(device_owner)
+                key_file = os.path.join(device_owner['homedir'],
+                                        ".ssh/authorized_keys")
+                cp = run_command(['ssh-keygen', '-lf', key_file])
+                self.model.user.fingerprints = (
+                    cp.stdout.replace('\r', '').splitlines())
             self.login()
 
     def identity_done(self, email):
