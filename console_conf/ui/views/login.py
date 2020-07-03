@@ -57,6 +57,17 @@ class LoginView(BaseView):
         ]
 
     def _build_model_inputs(self):
+        user = self.model.user
+        ips = []
+        for dev in self.netdevs:
+            for addr in dev.actual_global_ip_addresses:
+                ips.append(addr)
+
+        if not user:
+            sl = []
+            sl.append(Text("no owner"))
+            return sl
+
         local_tpl = (
             "This device is registered to {realname}.")
 
@@ -67,17 +78,12 @@ class LoginView(BaseView):
             "device via SSH:")
 
         sl = []
-        user = self.model.user
         login_info = {
             'realname': user.realname,
             'username': user.username,
         }
         login_text = local_tpl.format(**login_info)
         login_text += remote_tpl.format(**login_info)
-        ips = []
-        for dev in self.netdevs:
-            for addr in dev.actual_global_ip_addresses:
-                ips.append(addr)
 
         sl += [Text(login_text), Padding.line_break("")]
         for ip in ips:
