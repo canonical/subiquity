@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# snapd will always start subiquity.service, but when we are not
+# booted off the server.iso there is not enough things in place to run
+# subiquity. Keep subiquity installed, but do not start the
+# service. This way, one can use --dry-run mode for example.
+if [ ! -e /cdrom/.disk/info ]; then
+    snapctl stop --disable "$SNAP_NAME.subiquity-service"
+fi
