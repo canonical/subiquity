@@ -47,12 +47,15 @@ def get_device_owner():
     """ Get device owner, if any """
     con = SnapdConnection('', '/run/snapd.socket')
     for user in con.get('v2/users').json()['result']:
-        user = user['email'].split('@')[0]
-        if os.path.isdir('/home/' + user):
+        if 'username' not in user:
+            continue
+        username = user['username']
+        homedir = '/home/' + username
+        if os.path.isdir(homedir):
             return {
                 'username': user,
                 'realname': get_realname(user),
-                'homedir': '/home/' + user,
+                'homedir': homedir,
                 }
     return None
 
