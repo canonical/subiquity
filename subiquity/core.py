@@ -35,6 +35,11 @@ from subiquitycore.async_helpers import (
     )
 from subiquitycore.controller import Skip
 from subiquitycore.core import Application
+from subiquitycore.snapd import (
+    AsyncSnapd,
+    FakeSnapdConnection,
+    SnapdConnection,
+    )
 from subiquitycore.view import BaseView
 
 from subiquity.controllers.error import (
@@ -43,11 +48,6 @@ from subiquity.controllers.error import (
 from subiquity.journald import journald_listener
 from subiquity.lockfile import Lockfile
 from subiquity.models.subiquity import SubiquityModel
-from subiquity.snapd import (
-    AsyncSnapd,
-    FakeSnapdConnection,
-    SnapdConnection,
-    )
 from subiquity.ui.frame import SubiquityUI
 from subiquity.ui.views.error import ErrorReportStretchy
 from subiquity.ui.views.help import HelpMenu
