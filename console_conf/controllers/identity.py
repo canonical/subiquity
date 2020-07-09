@@ -76,8 +76,8 @@ def get_device_owner():
         homedir = '/home/' + username
         if os.path.isdir(homedir):
             return {
-                'username': user,
-                'realname': get_realname(user),
+                'username': username,
+                'realname': get_realname(username),
                 'homedir': homedir,
                 }
     return None
