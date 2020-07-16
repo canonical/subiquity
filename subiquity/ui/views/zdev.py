@@ -22,9 +22,12 @@ import logging
 
 from urwid import (
     connect_signal,
+    LineBox,
+    Pile,
     Text,
     )
 
+from subiquitycore.async_helpers import schedule_task
 from subiquitycore.ui.actionmenu import (
     ActionMenu,
     )
@@ -35,6 +38,7 @@ from subiquitycore.ui.buttons import (
 from subiquitycore.ui.container import (
     WidgetWrap,
     )
+from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.table import (
     ColSpec,
     TableListBox,
@@ -48,6 +52,25 @@ from subiquitycore.ui.utils import (
 from subiquitycore.view import BaseView
 
 log = logging.getLogger('subiquity.ui.zdev')
+
+
+class Chzdeving(WidgetWrap):
+    def __init__(self, enable, device_id, aio_loop):
+        spinner = Spinner(aio_loop, style='dots')
+        spinner.start()
+        if enable:
+            text = _("Enabling {device_id}").format(device_id=device_id)
+        else:
+            text = _("Disabling {device_id}").format(device_id=device_id)
+        # | text |
+        # 12    34
+        self.width = len(text) + 4
+        super().__init__(
+            LineBox(
+                Pile([
+                    ('pack', Text(' ' + text)),
+                    ('pack', spinner),
+                    ])))
 
 
 class ZdevList(WidgetWrap):
@@ -64,10 +87,17 @@ class ZdevList(WidgetWrap):
             Text(_("No zdev devices found.")))
         super().__init__(self.table)
 
+    async def _chzdev(self, action, zdevinfo):
+        await self.parent.controller.chzdev(action, zdevinfo)
+        self.parent.refresh_model_inputs()
+        self.parent.remove_overlay()
+
     def _zdev_action(self, sender, action, zdevinfo):
-        if action in ('disable', 'enable'):
-            self.parent.controller.chzdev(action, zdevinfo)
-            self.parent.refresh_model_inputs()
+        overlay = Chzdeving(
+            action == "enable", zdevinfo.id,
+            self.parent.controller.app.aio_loop)
+        self.parent.show_overlay(overlay, width=overlay.width, min_width=None)
+        schedule_task(self._chzdev(action, zdevinfo))
 
     def refresh_model_inputs(self):
         zdevinfos = self.parent.controller.get_zdevinfos()

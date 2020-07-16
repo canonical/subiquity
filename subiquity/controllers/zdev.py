@@ -13,16 +13,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import attr
+import asyncio
+from collections import OrderedDict
 import logging
 import platform
 import shlex
 
-from collections import OrderedDict
+import attr
+
 from urwid import Text
 
 from subiquitycore.ui.utils import Color
-from subiquitycore.utils import run_command
+from subiquitycore.utils import arun_command, run_command
 
 from subiquity.controller import SubiquityController
 from subiquity.ui.views import ZdevView
@@ -656,14 +658,15 @@ class ZdevController(SubiquityController):
         # switch to next screen
         self.app.next_screen()
 
-    def chzdev(self, action, zdevinfo):
+    async def chzdev(self, action, zdevinfo):
         if self.opts.dry_run:
             on = action == 'enable'
             self.zdevinfos[zdevinfo.id].on = on
             self.zdevinfos[zdevinfo.id].pers = on
+            await asyncio.sleep(2)
         else:
             chzdev_cmd = ['chzdev', '--%s' % action, zdevinfo.id]
-            run_command(chzdev_cmd)
+            await arun_command(chzdev_cmd)
 
     def get_zdevinfos(self):
         if self.opts.dry_run:
