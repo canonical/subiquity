@@ -23,6 +23,8 @@ Depends: probert-network,
          python3-urwid (>= 1.2.1),
          python3-attr,
          python3-yaml,
+         python3-requests,
+         python3-requests-unixsocket,
          ${misc:Depends},
          ${python3:Depends}
 Description: Ubuntu Server Installer - core libraries

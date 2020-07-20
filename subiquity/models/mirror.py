@@ -22,7 +22,10 @@ from curtin.commands.apt_config import (
     get_mirror,
     PRIMARY_ARCHES,
     )
-from curtin.util import get_architecture
+try:
+    from curtin.distro import get_architecture
+except ImportError:
+    from curtin.util import get_architecture
 
 log = logging.getLogger('subiquitycore.models.mirror')
 

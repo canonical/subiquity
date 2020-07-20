@@ -646,12 +646,10 @@ class FilesystemController(SubiquityController):
     def remove_boot_disk(self, boot_disk):
         if self.model.bootloader == Bootloader.BIOS:
             boot_disk.grub_device = False
-            flag = 'bios_grub'
-        elif self.model.bootloader == Bootloader.UEFI:
-            flag = 'boot'
-        elif self.model.bootloader == Bootloader.PREP:
-            flag = 'prep'
-        partitions = [p for p in boot_disk.partitions() if p.flag == flag]
+        partitions = [
+            p for p in boot_disk.partitions()
+            if p.is_bootloader_partition
+            ]
         remount = False
         if boot_disk.preserve:
             if self.model.bootloader == Bootloader.BIOS:
@@ -698,7 +696,7 @@ class FilesystemController(SubiquityController):
             elif bootloader == Bootloader.UEFI:
                 should_mount = self.model._mount_for_path('/boot/efi') is None
                 for p in new_boot_disk.partitions():
-                    if p.flag == 'boot':
+                    if p.is_esp:
                         p.grub_device = True
                         if should_mount:
                             self._mount_esp(p)

@@ -171,7 +171,7 @@ class SubiquityModel:
                 'passwd': user.password,
                 'shell': '/bin/bash',
                 'groups': groups,
-                'lock-passwd': False,
+                'lock_passwd': False,
                 }
             if self.ssh.authorized_keys:
                 user_info['ssh_authorized_keys'] = self.ssh.authorized_keys
@@ -203,10 +203,18 @@ class SubiquityModel:
         # for subsequent boots.
         # (mwhudson does not entirely know what the above means!)
         userdata = '#cloud-config\n' + yaml.dump(self._cloud_init_config())
-        metadata = yaml.dump({'instance-id': str(uuid.uuid4())})
+        metadata = {'instance-id': str(uuid.uuid4())}
+        config = yaml.dump({
+            'datasource_list': ["None"],
+            'datasource': {
+                "None": {
+                    'userdata_raw': userdata,
+                    'metadata': metadata,
+                    },
+                },
+            })
         files = [
-            ('var/lib/cloud/seed/nocloud-net/meta-data', metadata, 0o644),
-            ('var/lib/cloud/seed/nocloud-net/user-data', userdata, 0o600),
+            ('etc/cloud/cloud.cfg.d/99-installer.cfg', config, 0o600),
             ('etc/cloud/ds-identify.cfg', 'policy: enabled\n', 0o644),
             ]
         if self.identity.hostname is not None:

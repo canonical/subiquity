@@ -404,7 +404,7 @@ class HelpMenu(PopUpLauncher):
         # We don't let help dialogs pile up: if one is already
         # showing, remove it before showing the new one.
         if self.current_help:
-            self.app.remove_global_overlay(self.parent.current_help)
+            self.app.remove_global_overlay(self.current_help)
         self.current_help = stretchy
         fp, ui.pile.focus_position = ui.pile.focus_position, 1
 
