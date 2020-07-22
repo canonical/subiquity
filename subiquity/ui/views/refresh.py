@@ -185,7 +185,7 @@ class RefreshView(BaseView):
             ])
         buttons.base_widget.focus_position = 1
 
-        self.title = self.failed_title
+        self.title = self.check_failed_title
         self._w = screen(rows, buttons, excerpt=_(self.failed_excerpt))
 
     def try_check_again(self, sender=None):
