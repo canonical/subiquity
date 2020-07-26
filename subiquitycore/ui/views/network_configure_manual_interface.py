@@ -112,7 +112,7 @@ class NetworkConfigForm(Form):
         if address not in subnet:
             raise ValueError(
                 _("'{address}' is not contained in '{subnet}'").format(
-                    address, subnet)
+                    address=address, subnet=subnet)
                 )
         return address
 

@@ -1199,6 +1199,10 @@ class LVM_LogicalVolume(_Formattable):
     def flag(self):
         return None  # hack!
 
+    @property
+    def is_esp(self):
+        return False  # another hack!
+
     def desc(self):
         return _("LVM logical volume")
 
