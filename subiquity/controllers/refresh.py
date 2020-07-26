@@ -196,7 +196,7 @@ class RefreshController(SubiquityController):
         except requests.exceptions.RequestException:
             log.exception("checking for snap update failed")
             context.description = "checking for snap update failed"
-            return CheckState.UNAVAILABLE
+            return CheckState.UNKNOWN
         log.debug("check_for_update received %s", result)
         for snap in result["result"]:
             if snap["name"] == self.snap_name:
