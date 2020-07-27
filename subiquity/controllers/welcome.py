@@ -16,6 +16,8 @@
 import logging
 import os
 
+from subiquitycore.screen import is_linux_tty
+
 from subiquity.controller import SubiquityController
 from subiquity.ui.views import WelcomeView
 
@@ -39,7 +41,7 @@ class WelcomeController(SubiquityController):
         lang = os.environ.get("LANG")
         if lang is not None and lang.endswith(".UTF-8"):
             lang = lang.rsplit('.', 1)[0]
-        for code, name in self.model.get_languages(self.app.is_linux_tty):
+        for code, name in self.model.get_languages(is_linux_tty()):
             if code == lang:
                 self.model.switch_language(code)
                 break
