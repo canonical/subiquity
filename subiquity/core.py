@@ -77,7 +77,7 @@ class Subiquity(Application):
         'properties': {
             'version': {
                 'type': 'integer',
-                'minumum': 1,
+                'minimum': 1,
                 'maximum': 1,
                 },
             },
