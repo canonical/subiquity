@@ -23,8 +23,6 @@ import traceback
 import time
 import urwid
 
-import apport.hookutils
-
 import jsonschema
 
 import yaml
@@ -42,7 +40,8 @@ from subiquitycore.snapd import (
     )
 from subiquitycore.view import BaseView
 
-from subiquity.controllers.error import (
+from subiquity.common.errorreport import (
+    ErrorReporter,
     ErrorReportKind,
     )
 from subiquity.journald import journald_listener
@@ -149,14 +148,15 @@ class Subiquity(Application):
             ('network-proxy-set', lambda: schedule_task(self._proxy_set())),
             ('network-change', self._network_change),
             ])
-        self._apport_data = []
-        self._apport_files = []
 
         self.autoinstall_config = {}
         self.report_to_show = None
         self.show_progress_handle = None
         self.progress_shown_time = self.aio_loop.time()
         self.progress_showing = False
+        self.error_reporter = ErrorReporter(
+            self.context.child("ErrorReporter"), self.opts.dry_run, self.root)
+
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
@@ -365,7 +365,8 @@ class Subiquity(Application):
             self.ui.body.remove_overlay(overlay)
 
     def select_initial_screen(self, index):
-        for report in self.controllers.Error.reports:
+        self.error_reporter.start_loading_reports()
+        for report in self.error_reporter.reports:
             if report.kind == ErrorReportKind.UI and not report.seen:
                 self.show_error_report(report)
                 break
@@ -458,53 +459,18 @@ class Subiquity(Application):
             ["bash"], before_hook=_before, after_hook=after_hook, cwd='/')
 
     def note_file_for_apport(self, key, path):
-        self._apport_files.append((key, path))
+        self.error_reporter.note_file_for_apport(key, path)
 
     def note_data_for_apport(self, key, value):
-        self._apport_data.append((key, value))
+        self.error_reporter.note_data_for_apport(key, value)
 
     def make_apport_report(self, kind, thing, *, interrupt, wait=False, **kw):
-        if not self.opts.dry_run and not os.path.exists('/cdrom/.disk/info'):
-            return None
+        report = self.error_reporter.make_apport_report(
+            kind, thing, wait=wait, **kw)
 
-        log.debug("generating crash report")
-
-        try:
-            report = self.controllers.Error.create_report(kind)
-        except Exception:
-            log.exception("creating crash report failed")
-            return
-
-        etype = sys.exc_info()[0]
-        if etype is not None:
-            report.pr["Title"] = "{} crashed with {}".format(
-                thing, etype.__name__)
-            report.pr['Traceback'] = traceback.format_exc()
-        else:
-            report.pr["Title"] = thing
-
-        log.info(
-            "saving crash report %r to %s", report.pr["Title"], report.path)
-
-        apport_files = self._apport_files[:]
-        apport_data = self._apport_data.copy()
-
-        def _bg_attach_hook():
-            # Attach any stuff other parts of the code think we should know
-            # about.
-            for key, path in apport_files:
-                apport.hookutils.attach_file_if_exists(report.pr, path, key)
-            for key, value in apport_data:
-                report.pr[key] = value
-            for key, value in kw.items():
-                report.pr[key] = value
-
-        report.add_info(_bg_attach_hook, wait)
-
-        if interrupt and self.interactive():
+        if report is not None and interrupt and self.interactive():
             self.show_error_report(report)
 
-        # In the fullness of time we should do the signature thing here.
         return report
 
     def show_error_report(self, report):

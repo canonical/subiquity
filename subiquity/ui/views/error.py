@@ -45,7 +45,7 @@ from subiquitycore.ui.width import (
     widget_width,
     )
 
-from subiquity.controllers.error import (
+from subiquity.common.errorreport import (
     ErrorReportKind,
     ErrorReportState,
     )
@@ -285,7 +285,7 @@ class ErrorReportListStretchy(Stretchy):
                 Text(""),
             ])]
         self.report_to_row = {}
-        for report in self.app.controllers.Error.reports:
+        for report in self.app.error_reporter.reports:
             connect_signal(report, "changed", self._report_changed, report)
             r = self.report_to_row[report] = self.row_for_report(report)
             rows.append(r)
