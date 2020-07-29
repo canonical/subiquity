@@ -177,8 +177,14 @@ elif [ -n "${source_filesystem}" ]; then
     cp "${source_filesystem}" new_iso/casper/filesystem.squashfs
 fi
 
-rm new_iso/casper/installer.squashfs
+rm new_iso/casper/installer.squashfs new_iso/casper/installer.squashfs.gpg
 mksquashfs new_installer new_iso/casper/installer.squashfs
+
+(
+    cd new_iso
+    sed -i'' '/\.\/casper\/installer.squashfs/d' md5sum.txt
+    md5sum ./casper/installer.squashfs >> md5sum.txt
+)
 
 if [ -e new_iso/boot/grub/efi.img ]; then
     xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
