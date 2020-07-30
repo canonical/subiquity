@@ -122,13 +122,7 @@ class Application:
 
 # EventLoop -------------------------------------------------------------------
 
-    def _remove_last_screen(self):
-        last_screen = self.state_path('last-screen')
-        if os.path.exists(last_screen):
-            os.unlink(last_screen)
-
     def exit(self):
-        self._remove_last_screen()
         self.aio_loop.stop()
 
     def start_controllers(self):
@@ -145,24 +139,11 @@ class Application:
             with open(state_path) as fp:
                 controller.deserialize(json.load(fp))
 
-        last_screen = None
-        state_path = self.state_path('last-screen')
-        if os.path.exists(state_path):
-            with open(state_path) as fp:
-                last_screen = fp.read().strip()
-        controller_index = 0
-        for i, controller in enumerate(self.controllers.instances):
-            if controller.name == last_screen:
-                controller_index = i
-        # Screens that have already been seen should be marked as configured.
-        for controller in self.controllers.instances[:controller_index]:
-            controller.configured()
-        return controller_index
-
     def run(self):
         self.base_model = self.make_model()
         try:
             self.controllers.load_all()
+            self.load_serialized_state()
             self._connect_base_signals()
             self.start_controllers()
             self.aio_loop.run_forever()

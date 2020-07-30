@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 import yaml
 
 import urwid
@@ -67,6 +68,15 @@ class TuiApplication(Application):
         self.rich_mode = opts.run_on_serial
 
         self.urwid_loop = None
+
+    def _remove_last_screen(self):
+        last_screen = self.state_path('last-screen')
+        if os.path.exists(last_screen):
+            os.unlink(last_screen)
+
+    def exit(self):
+        self._remove_last_screen()
+        super().exit()
 
     def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None,
                                   **kw):
@@ -129,6 +139,8 @@ class TuiApplication(Application):
         self._move_screen(-1)
 
     def select_initial_screen(self, controller_index):
+        for controller in self.controllers.instances[:controller_index]:
+            controller.configured()
         self.controllers.index = controller_index - 1
         self.next_screen()
 
@@ -237,17 +249,27 @@ class TuiApplication(Application):
         self.toggle_rich()
         self.urwid_loop.start()
 
+    def initial_controller_index(self):
+        if not self.updated:
+            return 0
+        state_path = self.state_path('last-screen')
+        if not os.path.exists(state_path):
+            return 0
+        with open(state_path) as fp:
+            last_screen = fp.read().strip()
+        controller_index = 0
+        for i, controller in enumerate(self.controllers.instances):
+            if controller.name == last_screen:
+                controller_index = i
+        return controller_index
+
     def run(self):
         if self.opts.scripts:
             self.run_scripts(self.opts.scripts)
         self.aio_loop.call_soon(self.start_urwid)
-
-        initial_controller_index = 0
-        if self.updated:
-            initial_controller_index = self.load_serialized_state()
         self.aio_loop.call_soon(
-            self.select_initial_screen, initial_controller_index)
-
+            lambda: self.select_initial_screen(
+                self.initial_controller_index()))
         try:
             super().run()
         finally:
