@@ -32,6 +32,7 @@ from subiquitycore.controller import (
     Skip,
     )
 from subiquitycore.palette import PALETTE_COLOR, PALETTE_MONO
+from subiquitycore.controllerset import ControllerSet
 from subiquitycore.prober import Prober
 from subiquitycore.screen import is_linux_tty, make_screen
 from subiquitycore.signals import Signal
@@ -158,50 +159,6 @@ class AsyncioEventLoop(urwid.AsyncioEventLoop):
             loop.default_exception_handler(context)
 
 
-class ControllerSet:
-
-    def __init__(self, app, names):
-        self.app = app
-        self.controller_names = names[:]
-        self.index = -1
-        self.instances = []
-        self.controllers_mod = __import__(
-            '{}.controllers'.format(self.app.project), None, None, [''])
-
-    def _get_controller_class(self, name):
-        return getattr(self.controllers_mod, name+"Controller")
-
-    def load(self, name):
-        self.controller_names.remove(name)
-        log.debug("Importing controller: %s", name)
-        klass = self._get_controller_class(name)
-        if hasattr(self, name):
-            c = 1
-            for instance in self.instances:
-                if isinstance(instance, klass):
-                    c += 1
-            rep_cls = self._get_controller_class("Repeated")
-            inst = rep_cls(getattr(self, name), c)
-            name = inst.name
-        else:
-            inst = klass(self.app)
-        setattr(self, name, inst)
-        self.instances.append(inst)
-
-    def load_all(self):
-        while self.controller_names:
-            self.load(self.controller_names[0])
-
-    @property
-    def cur(self):
-        if self.out_of_bounds():
-            return None
-        return self.instances[self.index]
-
-    def out_of_bounds(self):
-        return self.index < 0 or self.index >= len(self.instances)
-
-
 class Application:
 
     # A concrete subclass must set project and controllers attributes, e.g.:
@@ -268,7 +225,10 @@ class Application:
         self.prober = prober
         self.new_event_loop()
         self.urwid_loop = None
-        self.controllers = ControllerSet(self, self.controllers)
+        controllers_mod = __import__(
+            '{}.controllers'.format(self.project), None, None, [''])
+        self.controllers = ControllerSet(
+            controllers_mod, self.controllers, init_args=(self,))
         self.context = Context.new(self)
 
     def new_event_loop(self):
