@@ -84,6 +84,7 @@ class Subiquity(TuiApplication):
         'additionalProperties': True,
         }
 
+    from subiquity import controllers as controllers_mod
     project = "subiquity"
 
     def make_model(self):

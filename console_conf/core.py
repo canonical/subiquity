@@ -25,6 +25,7 @@ log = logging.getLogger("console_conf.core")
 
 class ConsoleConf(TuiApplication):
 
+    from console_conf import controllers as controllers_mod
     project = "console_conf"
 
     make_model = ConsoleConfModel
@@ -38,6 +39,7 @@ class ConsoleConf(TuiApplication):
 
 class RecoveryChooser(TuiApplication):
 
+    from console_conf import controllers as controllers_mod
     project = "console_conf"
 
     controllers = [

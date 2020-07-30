@@ -75,10 +75,8 @@ class Application:
         self.signal = Signal()
         self.prober = prober
         self.new_event_loop()
-        controllers_mod = __import__(
-            '{}.controllers'.format(self.project), None, None, [''])
         self.controllers = ControllerSet(
-            controllers_mod, self.controllers, init_args=(self,))
+            self.controllers_mod, self.controllers, init_args=(self,))
         self.context = Context.new(self)
 
     def _exception_handler(self, loop, context):
