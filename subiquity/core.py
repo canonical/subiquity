@@ -32,7 +32,7 @@ from subiquitycore.async_helpers import (
     schedule_task,
     )
 from subiquitycore.controller import Skip
-from subiquitycore.core import Application
+from subiquitycore.tui import TuiApplication
 from subiquitycore.snapd import (
     AsyncSnapd,
     FakeSnapdConnection,
@@ -67,7 +67,7 @@ environment will not survive a reboot. If the install has started, the
 installed system will be mounted at /target.""")
 
 
-class Subiquity(Application):
+class Subiquity(TuiApplication):
 
     snapd_socket_path = '/run/snapd.socket'
 
