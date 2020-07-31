@@ -19,13 +19,13 @@ import attr
 
 from subiquitycore.context import with_context
 
-from subiquity.controller import SubiquityController
+from subiquity.controller import SubiquityTuiController
 from subiquity.ui.views import IdentityView
 
 log = logging.getLogger('subiquity.controllers.identity')
 
 
-class IdentityController(SubiquityController):
+class IdentityController(SubiquityTuiController):
 
     autoinstall_key = model_name = "identity"
     autoinstall_schema = {

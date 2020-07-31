@@ -20,8 +20,10 @@ import jsonschema
 from subiquitycore.context import with_context
 from subiquitycore.controller import (
     BaseController,
+    )
+from subiquitycore.tuicontroller import (
     RepeatedController,
-    Skip,
+    TuiController,
     )
 
 log = logging.getLogger("subiquity.controller")
@@ -38,6 +40,9 @@ class SubiquityController(BaseController):
         self.autoinstall_applied = False
         self.context.set('controller', self)
         self.setup_autoinstall()
+
+    def interactive(self):
+        return False
 
     def setup_autoinstall(self):
         if self.app.autoinstall_config:
@@ -68,15 +73,6 @@ class SubiquityController(BaseController):
         """
         pass
 
-    def interactive(self):
-        if not self.app.autoinstall_config:
-            return True
-        i_sections = self.app.autoinstall_config.get(
-            'interactive-sections', [])
-        if '*' in i_sections or self.autoinstall_key in i_sections:
-            return True
-        return False
-
     def configured(self):
         """Let the world know that this controller's model is now configured.
         """
@@ -90,15 +86,15 @@ class SubiquityController(BaseController):
         return {}
 
 
-class NoUIController(SubiquityController):
-
-    def start_ui(self):
-        raise Skip
-
-    def cancel(self):
-        pass
+class SubiquityTuiController(SubiquityController, TuiController):
 
     def interactive(self):
+        if not self.app.autoinstall_config:
+            return True
+        i_sections = self.app.autoinstall_config.get(
+            'interactive-sections', [])
+        if '*' in i_sections or self.autoinstall_key in i_sections:
+            return True
         return False
 
 

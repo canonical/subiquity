@@ -44,7 +44,7 @@ from subiquitycore.utils import (
     )
 
 from subiquity.common.errorreport import ErrorReportKind
-from subiquity.controller import SubiquityController
+from subiquity.controller import SubiquityTuiController
 from subiquity.journald import journald_listener
 from subiquity.ui.views.installprogress import ProgressView
 
@@ -78,7 +78,7 @@ class TracebackExtractor:
             self.traceback.append(line)
 
 
-class InstallProgressController(SubiquityController):
+class InstallProgressController(SubiquityTuiController):
 
     def __init__(self, app):
         super().__init__(app)

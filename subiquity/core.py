@@ -31,7 +31,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
-from subiquitycore.controller import Skip
+from subiquitycore.tuicontroller import Skip
 from subiquitycore.tui import TuiApplication
 from subiquitycore.snapd import (
     AsyncSnapd,

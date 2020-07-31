@@ -20,9 +20,9 @@ import pwd
 import shlex
 import sys
 
-from subiquitycore.controller import BaseController
 from subiquitycore.ssh import host_key_info, get_ips_standalone
 from subiquitycore.snapd import SnapdConnection
+from subiquitycore.tuicontroller import TuiController
 from subiquitycore.utils import disable_console_conf, run_command
 
 from console_conf.ui.views import IdentityView, LoginView
@@ -141,7 +141,7 @@ def write_login_details_standalone():
     return 0
 
 
-class IdentityController(BaseController):
+class IdentityController(TuiController):
 
     def __init__(self, app):
         super().__init__(app)

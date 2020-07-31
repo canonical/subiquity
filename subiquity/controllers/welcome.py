@@ -18,14 +18,14 @@ import os
 
 from subiquitycore.screen import is_linux_tty
 
-from subiquity.controller import SubiquityController
+from subiquity.controller import SubiquityTuiController
 from subiquity.ui.views import WelcomeView
 
 
 log = logging.getLogger('subiquity.controllers.welcome')
 
 
-class WelcomeController(SubiquityController):
+class WelcomeController(SubiquityTuiController):
 
     autoinstall_key = model_name = "locale"
     autoinstall_schema = {'type': 'string'}

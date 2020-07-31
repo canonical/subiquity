@@ -21,7 +21,7 @@ from subiquitycore.context import with_context
 from subiquitycore.controllers.network import NetworkController
 
 from subiquity.common.errorreport import ErrorReportKind
-from subiquity.controller import SubiquityController
+from subiquity.controller import SubiquityTuiController
 
 
 log = logging.getLogger("subiquity.controllers.network")
@@ -65,7 +65,7 @@ NETPLAN_SCHEMA = {
     }
 
 
-class NetworkController(NetworkController, SubiquityController):
+class NetworkController(NetworkController, SubiquityTuiController):
 
     ai_data = None
     autoinstall_key = "network"

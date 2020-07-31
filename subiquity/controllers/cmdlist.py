@@ -18,10 +18,10 @@ import os
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command
 
-from subiquity.controller import NoUIController
+from subiquity.controller import SubiquityController
 
 
-class CmdListController(NoUIController):
+class CmdListController(SubiquityController):
 
     autoinstall_default = []
     autoinstall_schema = {

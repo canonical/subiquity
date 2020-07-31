@@ -20,13 +20,13 @@ import yaml
 import urwid
 
 from subiquitycore.async_helpers import schedule_task
-from subiquitycore.controller import Skip
 from subiquitycore.core import Application
 from subiquitycore.palette import (
     PALETTE_COLOR,
     PALETTE_MONO,
     )
 from subiquitycore.screen import make_screen
+from subiquitycore.tuicontroller import Skip
 from subiquitycore.ui.frame import SubiquityCoreUI
 from subiquitycore.utils import arun_command
 
@@ -66,8 +66,8 @@ class TuiApplication(Application):
         # Set rich_mode to the opposite of what we want, so we can
         # call toggle_rich to get the right things set up.
         self.rich_mode = opts.run_on_serial
-
         self.urwid_loop = None
+        self.cur_screen = None
 
     def _remove_last_screen(self):
         last_screen = self.state_path('last-screen')
@@ -102,6 +102,7 @@ class TuiApplication(Application):
             raise Skip
         try:
             new.start_ui()
+            self.cur_screen = new
         except Skip:
             new.context.exit("(skipped)")
             raise
@@ -110,7 +111,7 @@ class TuiApplication(Application):
 
     def _move_screen(self, increment):
         self.save_state()
-        old = self.controllers.cur
+        old, self.cur_screen = self.cur_screen, None
         if old is not None:
             old.context.exit("completed")
             old.end_ui()
@@ -142,6 +143,8 @@ class TuiApplication(Application):
         for controller in self.controllers.instances[:controller_index]:
             controller.configured()
         self.controllers.index = controller_index - 1
+        for controller in self.controllers.instances[:controller_index]:
+            controller.configured()
         self.next_screen()
 
     def run_scripts(self, scripts):

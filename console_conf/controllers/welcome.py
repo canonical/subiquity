@@ -15,10 +15,10 @@
 
 from console_conf.ui.views import WelcomeView, ChooserWelcomeView
 
-from subiquitycore.controller import BaseController
+from subiquitycore.tuicontroller import TuiController
 
 
-class WelcomeController(BaseController):
+class WelcomeController(TuiController):
 
     welcome_view = WelcomeView
 

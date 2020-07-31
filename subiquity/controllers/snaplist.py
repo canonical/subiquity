@@ -21,12 +21,12 @@ from subiquitycore.async_helpers import (
     schedule_task,
     )
 from subiquitycore.context import with_context
-from subiquitycore.controller import (
+from subiquitycore.tuicontroller import (
     Skip,
     )
 
 from subiquity.controller import (
-    SubiquityController,
+    SubiquityTuiController,
     )
 
 from subiquity.models.snaplist import SnapSelection
@@ -104,7 +104,7 @@ class SnapdSnapInfoLoader:
         return self.tasks[snap]
 
 
-class SnapListController(SubiquityController):
+class SnapListController(SubiquityTuiController):
 
     autoinstall_key = "snaps"
     autoinstall_default = []
