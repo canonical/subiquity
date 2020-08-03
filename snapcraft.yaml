@@ -131,12 +131,16 @@ parts:
     build-packages:
       - localechooser-data
     override-build: |
+      grep '^path-exclude=.*LC_MESSAGES.*' /etc/dpkg/dpkg.cfg.d/excludes && {
+        sed -i 's/^path-exclude.*LC_MESSAGES.*/#\0/g' /etc/dpkg/dpkg.cfg.d/excludes
+        apt-get -y install --reinstall iso-codes
+      } || true
       $SNAPCRAFT_PROJECT_DIR/scripts/make-language-lists $SNAPCRAFT_PROJECT_DIR/po > $SNAPCRAFT_PART_INSTALL/languagelist
     stage:
       - languagelist
   probert:
     plugin: python
-    build-packages: [python-setuptools, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
+    build-packages: [python-setuptools, build-essential, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
     source: https://github.com/CanonicalLtd/probert.git
     source-type: git
     source-commit: b6329b0dfe2c2deef1b3f862a451e28d5c1f7cf3
