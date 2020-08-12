@@ -51,6 +51,7 @@ from subiquitycore.ui.utils import (
     SomethingFailed,
     )
 
+from subiquity.common.types import SSHData
 from subiquity.ui.views.identity import (
     UsernameField,
     )
@@ -176,11 +177,9 @@ class FetchingSSHKeys(WidgetWrap):
 
 
 class ConfirmSSHKeys(Stretchy):
-    def __init__(self, parent, result, ssh_import_id, key_material,
-                 fingerprints):
+    def __init__(self, parent, ssh_data, key_material, fingerprints):
         self.parent = parent
-        self.result = result
-        self.ssh_import_id = ssh_import_id
+        self.ssh_data = ssh_data
         self.key_material = key_material
 
         ok = ok_btn(label=_("Yes"), on_press=self.ok)
@@ -212,9 +211,8 @@ class ConfirmSSHKeys(Stretchy):
         self.parent.remove_overlay()
 
     def ok(self, sender):
-        self.result['authorized_keys'] = self.key_material.splitlines()
-        self.result['ssh_import_id'] = self.ssh_import_id
-        self.parent.controller.done(self.result)
+        self.ssh_data.authorized_keys = self.key_material.splitlines()
+        self.parent.controller.done(self.ssh_data)
 
 
 class SSHView(BaseView):
@@ -223,18 +221,13 @@ class SSHView(BaseView):
     excerpt = _("You can choose to install the OpenSSH server package to "
                 "enable secure remote access to your server.")
 
-    def __init__(self, model, controller):
-        self.model = model
+    def __init__(self, controller, ssh_data):
         self.controller = controller
 
         initial = {
-            "install_server": self.model.install_server,
-            "pwauth": self.model.pwauth,
+            "install_server": ssh_data.install_server,
+            "pwauth": ssh_data.allow_pw,
             }
-        if self.model.ssh_import_id:
-            prefix, username = self.model.ssh_import_id.split(':', 1)
-            initial['ssh_import_id'] = prefix
-            initial['import_username'] = username
 
         self.form = SSHForm(initial=initial)
 
@@ -276,25 +269,28 @@ class SSHView(BaseView):
             iu.validate()
 
     def done(self, sender):
-        result = self.form.as_data()
-        log.debug("User input: {}".format(result))
+        log.debug("User input: {}".format(self.form.as_data()))
+        ssh_data = SSHData(
+            install_server=self.form.install_server.value,
+            allow_pw=self.form.pwauth.value)
 
         # if user specifed a value, allow user to validate fingerprint
         if self.form.ssh_import_id.value:
+            ssh_import_id = self.form.ssh_import_id.value + ":" + \
+              self.form.import_username.value
             fsk = FetchingSSHKeys(self)
             self.show_overlay(fsk, width=fsk.width, min_width=None)
-            self.controller.fetch_ssh_keys(result)
+            self.controller.fetch_ssh_keys(ssh_data, ssh_import_id)
         else:
-            self.controller.done(result)
+            self.controller.done(ssh_data)
 
     def cancel(self, result=None):
         self.controller.cancel()
 
-    def confirm_ssh_keys(self, result, ssh_import_id, ssh_key, fingerprints):
+    def confirm_ssh_keys(self, ssh_data, ssh_import_id, ssh_key, fingerprints):
         self.remove_overlay()
         self.show_stretchy_overlay(
-            ConfirmSSHKeys(
-                self, result, ssh_import_id, ssh_key, fingerprints))
+            ConfirmSSHKeys(self, ssh_data, ssh_key, fingerprints))
 
     def fetching_ssh_keys_failed(self, msg, stderr):
         self.remove_overlay()

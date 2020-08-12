@@ -20,6 +20,7 @@ from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
 from subiquitycore import utils
 
+from subiquity.common.types import SSHData
 from subiquity.controller import SubiquityController
 from subiquity.ui.views.ssh import SSHView
 
@@ -61,23 +62,20 @@ class SSHController(SubiquityController):
             'allow-pw', not self.model.authorized_keys)
 
     def start_ui(self):
-        self.ui.set_body(SSHView(self.model, self))
+        ssh_data = SSHData(
+            install_server=self.model.install_server,
+            allow_pw=self.model.pwauth)
+        self.ui.set_body(SSHView(self, ssh_data))
         if self.answers:
-            d = {
-                "install_server": self.answers.get("install_server", False),
-                "authorized_keys": self.answers.get("authorized_keys", []),
-                "pwauth": self.answers.get("pwauth", True),
-            }
-            self.done(d)
+            ssh_data = SSHData(
+                install_server=self.answers.get("install_server", False),
+                authorized_keys=self.answers.get("authorized_keys", []),
+                allow_pw=self.answers.get("pwauth", True))
+            self.done(ssh_data)
         elif 'ssh-import-id' in self.app.answers.get('Identity', {}):
             import_id = self.app.answers['Identity']['ssh-import-id']
-            d = {
-                "ssh_import_id": import_id.split(":", 1)[0],
-                "import_username": import_id.split(":", 1)[1],
-                "install_server": True,
-                "pwauth": True,
-            }
-            self.fetch_ssh_keys(d)
+            ssh_data = SSHData(install_server=True, allow_pw=True)
+            self.fetch_ssh_keys(ssh_data, import_id)
 
     def cancel(self):
         self.app.prev_screen()
@@ -97,49 +95,47 @@ class SSHController(SubiquityController):
 
     @with_context(
         name="ssh_import_id",
-        description="{user_spec[ssh_import_id]}:{user_spec[import_username]}")
-    async def _fetch_ssh_keys(self, *, context, user_spec):
-        ssh_import_id = "{ssh_import_id}:{import_username}".format(**user_spec)
-        with self.context.child("ssh_import_id", ssh_import_id):
-            try:
-                cp = await self.run_cmd_checked(
-                    ['ssh-import-id', '-o-', ssh_import_id],
-                    failmsg=_("Importing keys failed:"))
-            except subprocess.CalledProcessError:
-                return
-            key_material = cp.stdout.replace('\r', '').strip()
+        description="{ssh_import_id}")
+    async def _fetch_ssh_keys(self, *, context, ssh_data, ssh_import_id):
+        try:
+            cp = await self.run_cmd_checked(
+                ['ssh-import-id', '-o-', ssh_import_id],
+                failmsg=_("Importing keys failed:"))
+        except subprocess.CalledProcessError:
+            return
+        key_material = cp.stdout.replace('\r', '').strip()
 
-            try:
-                cp = await self.run_cmd_checked(
-                    ['ssh-keygen', '-lf-'],
-                    failmsg=_(
-                        "ssh-keygen failed to show fingerprint of downloaded "
-                        "keys:"),
-                    input=key_material)
-            except subprocess.CalledProcessError:
-                return
+        try:
+            cp = await self.run_cmd_checked(
+                ['ssh-keygen', '-lf-'],
+                failmsg=_(
+                    "ssh-keygen failed to show fingerprint of downloaded "
+                    "keys:"),
+                input=key_material)
+        except subprocess.CalledProcessError:
+            return
 
-            fingerprints = cp.stdout.replace(
-                "# ssh-import-id {}".format(ssh_import_id),
-                "").strip().splitlines()
+        fingerprints = cp.stdout.replace(
+            "# ssh-import-id {}".format(ssh_import_id),
+            "").strip().splitlines()
 
-            if 'ssh-import-id' in self.app.answers.get("Identity", {}):
-                user_spec['authorized_keys'] = key_material.splitlines()
-                self.done(user_spec)
-            else:
-                self.ui.body.confirm_ssh_keys(
-                    user_spec, ssh_import_id, key_material, fingerprints)
+        if 'ssh-import-id' in self.app.answers.get("Identity", {}):
+            ssh_data.authorized_keys = key_material.splitlines()
+            self.done(ssh_data)
+        else:
+            self.ui.body.confirm_ssh_keys(
+                ssh_data, ssh_import_id, key_material, fingerprints)
 
-    def fetch_ssh_keys(self, user_spec):
+    def fetch_ssh_keys(self, ssh_data, ssh_import_id):
         self._fetch_task = schedule_task(
-            self._fetch_ssh_keys(user_spec=user_spec))
+            self._fetch_ssh_keys(
+                ssh_data=ssh_data, ssh_import_id=ssh_import_id))
 
-    def done(self, result):
-        log.debug("SSHController.done next_screen result=%s", result)
-        self.model.install_server = result['install_server']
-        self.model.authorized_keys = result.get('authorized_keys', [])
-        self.model.pwauth = result.get('pwauth', True)
-        self.model.ssh_import_id = result.get('ssh_import_id', None)
+    def done(self, ssh_data):
+        log.debug("SSHController.done next_screen result=%s", ssh_data)
+        self.model.install_server = ssh_data.install_server
+        self.model.authorized_keys = ssh_data.authorized_keys
+        self.model.pwauth = ssh_data.allow_pw
         self.configured()
         self.app.next_screen()
 

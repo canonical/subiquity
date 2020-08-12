@@ -4,7 +4,7 @@ from unittest import mock
 from subiquitycore.signals import Signal
 from subiquitycore.testing import view_helpers
 
-from subiquity.models.identity import IdentityModel
+from subiquity.common.types import IdentityData
 from subiquity.controllers.identity import IdentityController
 from subiquity.ui.views.identity import IdentityView
 
@@ -21,10 +21,9 @@ valid_data = {
 class IdentityViewTests(unittest.TestCase):
 
     def make_view(self):
-        model = mock.create_autospec(spec=IdentityModel)
         controller = mock.create_autospec(spec=IdentityController)
         controller.signal = mock.create_autospec(spec=Signal)
-        return IdentityView(model, controller)
+        return IdentityView(controller, IdentityData())
 
     def test_initial_focus(self):
         view = self.make_view()
@@ -46,16 +45,17 @@ class IdentityViewTests(unittest.TestCase):
 
     def test_click_done(self):
         view = self.make_view()
-        view_helpers.enter_data(view.form, valid_data)
         CRYPTED = '<crypted>'
-        view.model.encrypt_password.side_effect = lambda p: CRYPTED
-        expected = valid_data.copy()
-        expected['password'] = CRYPTED
-        del expected['confirm_password']
-
-        done_btn = view_helpers.find_button_matching(view, "^Done$")
-        view_helpers.click(done_btn)
-
+        with mock.patch('subiquity.ui.views.identity.crypt_password') as cp:
+            cp.side_effect = lambda p: CRYPTED
+            view_helpers.enter_data(view.form, valid_data)
+            done_btn = view_helpers.find_button_matching(view, "^Done$")
+            view_helpers.click(done_btn)
+        expected = IdentityData(
+            realname=valid_data['realname'],
+            username=valid_data['username'],
+            hostname=valid_data['hostname'],
+            crypted_password=CRYPTED)
         view.controller.done.assert_called_once_with(expected)
 
     def test_can_tab_to_done_when_valid(self):

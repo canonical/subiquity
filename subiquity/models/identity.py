@@ -17,8 +17,6 @@ import logging
 
 import attr
 
-from subiquitycore.utils import crypt_password
-
 
 log = logging.getLogger('subiquity.models.identity')
 
@@ -38,12 +36,15 @@ class IdentityModel(object):
         self._user = None
         self._hostname = None
 
-    def add_user(self, result):
-        result = result.copy()
-        self._hostname = result.pop('hostname')
-        if not result.get('realname'):
-            result['realname'] = result['username']
-        self._user = User(**result)
+    def add_user(self, identity_data):
+        self._hostname = identity_data.hostname
+        d = {}
+        d['realname'] = identity_data.realname
+        d['username'] = identity_data.username
+        d['password'] = identity_data.crypted_password
+        if not d['realname']:
+            d['realname'] = identity_data.username
+        self._user = User(**d)
 
     @property
     def hostname(self):
@@ -52,9 +53,6 @@ class IdentityModel(object):
     @property
     def user(self):
         return self._user
-
-    def encrypt_password(self, passinput):
-        return crypt_password(passinput)
 
     def __repr__(self):
         return "<LocalUser: {} {}>".format(self.user, self.hostname)
