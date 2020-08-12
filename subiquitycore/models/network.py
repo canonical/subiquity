@@ -23,7 +23,9 @@ from subiquitycore.gettext38 import pgettext
 from subiquitycore import netplan
 
 
-NETDEV_IGNORED_IFACE_TYPES = ['lo', 'bridge', 'tun', 'tap', 'dummy', 'sit']
+NETDEV_IGNORED_IFACE_TYPES = [
+    'lo', 'bridge', 'tun', 'tap', 'dummy', 'sit', 'can', '???'
+]
 NETDEV_ALLOWED_VIRTUAL_IFACE_TYPES = ['vlan', 'bond']
 
 
