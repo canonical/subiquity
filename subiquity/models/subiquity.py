@@ -181,14 +181,13 @@ class SubiquityModel:
                 config['ssh_authorized_keys'] = self.ssh.authorized_keys
         if self.ssh.install_server:
             config['ssh_pwauth'] = self.ssh.pwauth
-        if self.snaplist.to_install:
+        if self.snaplist.selections:
             cmds = []
-            for snap_name, selection in sorted(
-                    self.snaplist.to_install.items()):
+            for selection in self.snaplist.selections:
                 cmd = ['snap', 'install', '--channel=' + selection.channel]
                 if selection.is_classic:
                     cmd.append('--classic')
-                cmd.append(snap_name)
+                cmd.append(selection.name)
                 cmds.append(' '.join(cmd))
             config['snap'] = {
                 'commands': cmds,

@@ -16,49 +16,12 @@
 import datetime
 import logging
 
-import attr
+from subiquity.common.types import (
+    ChannelSnapInfo,
+    SnapInfo)
 
 
 log = logging.getLogger("subiquity.models.snaplist")
-
-
-@attr.s(cmp=False)
-class SnapInfo:
-    name = attr.ib()
-    summary = attr.ib(default='')
-    publisher = attr.ib(default='')
-    verified = attr.ib(default=False)
-    description = attr.ib(default='')
-    confinement = attr.ib(default='')
-    license = attr.ib(default='')
-    channels = attr.ib(default=attr.Factory(list))
-    partial = attr.ib(default=True)
-
-    def update(self, data):
-        self.summary = data['summary']
-        self.publisher = data['developer']
-        self.verified = data['publisher']['validation'] == "verified"
-        self.description = data['description']
-        self.confinement = data['confinement']
-        self.license = data['license']
-        self.partial = False
-
-
-@attr.s(cmp=False)
-class ChannelSnapInfo:
-    channel_name = attr.ib()
-    revision = attr.ib()
-    confinement = attr.ib()
-    version = attr.ib()
-    size = attr.ib()
-    released_at = attr.ib()
-
-
-@attr.s(cmp=False)
-class SnapSelection:
-    channel = attr.ib()
-    is_classic = attr.ib()
-
 
 risks = ["stable", "candidate", "beta", "edge"]
 
@@ -69,7 +32,8 @@ class SnapListModel:
     def __init__(self):
         self._snap_info = []
         self._snaps_by_name = {}
-        self.to_install = {}  # snap_name -> SnapSelection
+        self.selections = []  # [SnapSelection]
+        self.complete_snaps = set()
 
     def _snap_for_name(self, name):
         s = self._snaps_by_name.get(name)
@@ -80,18 +44,27 @@ class SnapListModel:
 
     def load_find_data(self, data):
         for info in data['result']:
-            self._snap_for_name(info['name']).update(info)
+            self.update(self._snap_for_name(info['name']), info)
 
     def add_partial_snap(self, name):
         self._snaps_for_name(name)
+
+    def update(self, snap, data):
+        snap.summary = data['summary']
+        snap.publisher = data['developer']
+        snap.verified = data['publisher']['validation'] == "verified"
+        snap.description = data['description']
+        snap.confinement = data['confinement']
+        snap.license = data['license']
+        self.complete_snaps.add(snap)
 
     def load_info_data(self, data):
         info = data['result'][0]
         snap = self._snaps_by_name.get(info['name'])
         if snap is None:
             return
-        if snap.partial:
-            snap.update(info)
+        if snap not in self.complete_snaps:
+            self.update_snap(snap, info)
         channel_map = info['channels']
         for track in info['tracks']:
             for risk in risks:
@@ -115,7 +88,7 @@ class SnapListModel:
     def get_snap_list(self):
         return self._snap_info[:]
 
-    def set_installed_list(self, to_install):
-        for name in to_install.keys():
-            self._snap_for_name(name)
-        self.to_install = to_install
+    def set_installed_list(self, selections):
+        for selection in selections:
+            self._snap_for_name(selection.name)
+        self.selections = selections

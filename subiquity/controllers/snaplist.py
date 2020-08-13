@@ -15,6 +15,8 @@
 
 import logging
 
+import attr
+
 import requests.exceptions
 
 from subiquitycore.async_helpers import (
@@ -25,11 +27,14 @@ from subiquitycore.controller import (
     Skip,
     )
 
+from subiquity.common.types import (
+    SnapCheckState,
+    SnapListData,
+    SnapSelection,
+    )
 from subiquity.controller import (
     SubiquityController,
     )
-
-from subiquity.models.snaplist import SnapSelection
 from subiquity.ui.views.snaplist import SnapListView
 
 log = logging.getLogger('subiquity.controllers.snaplist')
@@ -136,11 +141,12 @@ class SnapListController(SubiquityController):
         self.loader = self._make_loader()
 
     def load_autoinstall_data(self, ai_data):
-        to_install = {}
+        to_install = []
         for snap in ai_data:
-            to_install[snap['name']] = SnapSelection(
+            to_install.append(SnapSelection(
+                name=snap['name'],
                 channel=snap.get('channel', 'stable'),
-                is_classic=snap.get('classic', False))
+                is_classic=snap.get('classic', False)))
         self.model.set_installed_list(to_install)
 
     def snapd_network_changed(self):
@@ -162,24 +168,37 @@ class SnapListController(SubiquityController):
             self.configured()
             raise Skip()
         if 'snaps' in self.answers:
-            to_install = {}
+            selections = []
             for snap_name, selection in self.answers['snaps'].items():
-                to_install[snap_name] = SnapSelection(**selection)
-            self.done(to_install)
+                selections.append(SnapSelection(name=snap_name, **selection))
+            self.done(selections)
             return
-        self.ui.set_body(SnapListView(self.model, self))
+        self.ui.set_body(SnapListView(self))
 
-    def get_snap_list_task(self):
-        return self.loader.get_snap_list_task()
+    @property
+    def snap_list_data(self):
+        if self.loader.failed or not self.app.base_model.network.has_network:
+            return SnapListData(status=SnapCheckState.FAILED)
+        elif not self.loader.snap_list_fetched:
+            return SnapListData(status=SnapCheckState.LOADING)
+        else:
+            return SnapListData(
+                status=SnapCheckState.DONE,
+                snaps=self.model.get_snap_list(),
+                selections=self.model.selections)
 
-    def get_snap_info_task(self, snap):
-        return self.loader.get_snap_info_task(snap)
+    async def snap_list_data_wait(self):
+        await self.loader.get_snap_list_task()
+        return self.snap_list_data
 
-    def done(self, snaps_to_install):
+    async def get_snap_info(self, snap):
+        return await self.loader.get_snap_info_task(snap)
+
+    def done(self, selections):
         log.debug(
-            "SnapListController.done next_screen snaps_to_install=%s",
-            snaps_to_install)
-        self.model.set_installed_list(snaps_to_install)
+            "SnapListController.done next_screen selections=%s",
+            selections)
+        self.model.set_installed_list(selections)
         self.configured()
         self.app.next_screen()
 
@@ -187,4 +206,4 @@ class SnapListController(SubiquityController):
         self.app.prev_screen()
 
     def make_autoinstall(self):
-        return self.model.to_install
+        return [attr.asdict(selection) for selection in self.model.selections]
