@@ -32,7 +32,7 @@ from subiquitycore.ui.container import Columns, ListBox
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.utils import button_pile, Color, screen
 
-from subiquity.controllers.refresh import CheckState
+from subiquity.common.types import RefreshCheckState
 
 log = logging.getLogger('subiquity.ui.views.refresh')
 
@@ -140,7 +140,7 @@ class RefreshView(BaseView):
         self.controller = controller
         self.spinner = Spinner(self.controller.app.aio_loop, style="dots")
 
-        if self.controller.check_state == CheckState.UNKNOWN:
+        if self.controller.status.availability == RefreshCheckState.UNKNOWN:
             self.check_state_checking()
         else:
             self.check_state_available()
@@ -164,11 +164,11 @@ class RefreshView(BaseView):
 
     async def _wait_check_result(self):
         try:
-            check_state = await self.controller.check_task.wait()
+            status = await self.controller.status_wait()
         except Exception as e:
             self.check_state_failed(e)
             return
-        if check_state == CheckState.AVAILABLE:
+        if status.availability == RefreshCheckState.AVAILABLE:
             self.check_state_available()
         elif self.controller.showing:
             self.done()
@@ -216,8 +216,8 @@ class RefreshView(BaseView):
         buttons.base_widget.focus_position = 1
 
         excerpt = _(self.available_excerpt).format(
-            current=self.controller.current_snap_version,
-            new=self.controller.new_snap_version)
+            current=self.controller.status.current_snap_version,
+            new=self.controller.status.new_snap_version)
 
         self.title = self.available_title
         self.controller.ui.set_header(self.available_title)

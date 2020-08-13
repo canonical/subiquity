@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import enum
 import logging
 import os
 
@@ -29,18 +28,17 @@ from subiquitycore.controller import (
     Skip,
     )
 
+from subiquity.common.types import (
+    RefreshCheckState,
+    RefreshStatus,
+    )
 from subiquity.controller import (
     SubiquityController,
     )
+from subiquity.ui.views.refresh import RefreshView
 
 
 log = logging.getLogger('subiquity.controllers.refresh')
-
-
-class CheckState(enum.IntEnum):
-    UNKNOWN = enum.auto()
-    AVAILABLE = enum.auto()
-    UNAVAILABLE = enum.auto()
 
 
 class RefreshController(SubiquityController):
@@ -67,7 +65,6 @@ class RefreshController(SubiquityController):
         self.check_task = None
 
         self.current_snap_version = "unknown"
-        self.new_snap_version = ""
 
         self.offered_first_time = False
         if 'update' in self.ai_data:
@@ -95,7 +92,7 @@ class RefreshController(SubiquityController):
             await asyncio.wait_for(self.check_task.wait(), 60)
         except asyncio.TimeoutError:
             return
-        if self.check_state != CheckState.AVAILABLE:
+        if self.status.availability != RefreshCheckState.AVAILABLE:
             return
         change_id = await self.start_update(context=context)
         while True:
@@ -112,15 +109,18 @@ class RefreshController(SubiquityController):
             await asyncio.sleep(0.1)
 
     @property
-    def check_state(self):
+    def status(self):
         if not self.active:
-            return CheckState.UNAVAILABLE
+            return RefreshStatus(RefreshCheckState.UNAVAILABLE)
         task = self.check_task.task
         if not task.done() or task.cancelled():
-            return CheckState.UNKNOWN
+            return RefreshStatus(RefreshCheckState.UNKNOWN)
         if task.exception():
-            return CheckState.UNAVAILABLE
+            return RefreshStatus(RefreshCheckState.UNAVAILABLE)
         return task.result()
+
+    async def status_wait(self):
+        return await self.check_task.wait()
 
     @with_context()
     async def configure_snapd(self, context):
@@ -182,7 +182,7 @@ class RefreshController(SubiquityController):
         return 'stable/ubuntu-' + release
 
     def snapd_network_changed(self):
-        if self.check_state == CheckState.UNKNOWN:
+        if self.status.availability == RefreshCheckState.UNKNOWN:
             self.check_task.start_sync()
 
     @with_context()
@@ -190,24 +190,27 @@ class RefreshController(SubiquityController):
         await asyncio.shield(self.configure_task)
         if self.app.updated:
             context.description = "not offered update when already updated"
-            return CheckState.UNAVAILABLE
+            return RefreshStatus(RefreshCheckState.UNAVAILABLE)
         try:
             result = await self.app.snapd.get('v2/find', select='refresh')
         except requests.exceptions.RequestException:
             log.exception("checking for snap update failed")
             context.description = "checking for snap update failed"
-            return CheckState.UNKNOWN
+            return RefreshStatus(RefreshCheckState.UNKNOWN)
         log.debug("check_for_update received %s", result)
         for snap in result["result"]:
             if snap["name"] == self.snap_name:
-                self.new_snap_version = snap["version"]
+                new_snap_version = snap["version"]
                 context.description = (
                     "new version of snap available: %r"
-                    % self.new_snap_version)
-                return CheckState.AVAILABLE
+                    % new_snap_version)
+                return RefreshStatus(
+                    RefreshCheckState.AVAILABLE,
+                    self.current_snap_version,
+                    new_snap_version)
         else:
             context.description = "no new version of snap available"
-        return CheckState.UNAVAILABLE
+        return RefreshStatus(RefreshCheckState.UNAVAILABLE)
 
     @with_context()
     async def start_update(self, context):
@@ -223,18 +226,17 @@ class RefreshController(SubiquityController):
         return result['result']
 
     def start_ui(self, index=1):
-        from subiquity.ui.views.refresh import RefreshView
         if self.app.updated:
             raise Skip()
         show = False
         if index == 1:
-            if self.check_state == CheckState.AVAILABLE:
+            if self.status.availability == RefreshCheckState.AVAILABLE:
                 show = True
                 self.offered_first_time = True
         elif index == 2:
             if not self.offered_first_time:
-                if self.check_state in [CheckState.UNKNOWN,
-                                        CheckState.AVAILABLE]:
+                if self.status.availability in [RefreshCheckState.UNKNOWN,
+                                                RefreshCheckState.AVAILABLE]:
                     show = True
         else:
             raise AssertionError("unexpected index {}".format(index))
