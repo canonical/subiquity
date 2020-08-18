@@ -125,12 +125,16 @@ class SnapInfoView(WidgetWrap):
         channel_rows = []
         for csi in snap.channels:
             latest_update = max(latest_update, csi.released_at)
+            selection = SnapSelection(
+                name=self.snap.name,
+                channel=csi.channel_name,
+                is_classic=csi.confinement == "classic")
             btn = StarRadioButton(
                 radio_group,
                 csi.channel_name,
                 state=csi.channel_name == cur_channel,
                 on_state_change=self.state_change,
-                user_data=(csi.channel_name, csi.confinement == "classic"))
+                user_data=selection)
             channel_rows.append(Color.menu_button(TableRow([
                 btn,
                 Text(csi.version),
@@ -202,9 +206,9 @@ class SnapInfoView(WidgetWrap):
     def state_change(self, sender, state, selection):
         if state:
             log.debug(
-                "selecting %s from %s", self.snap.name, selection[0])
+                "selecting %s from %s", self.snap.name, selection.channel)
             self.parent.snap_boxes[self.snap.name].set_state(True)
-            self.parent.to_install[self.snap.name] = selection
+            self.parent.selections_by_name[self.snap.name] = selection
 
     def render(self, size, focus):
         maxcol, maxrow = size
@@ -334,8 +338,9 @@ class SnapCheckBox(CheckBox):
             self.parent.show_overlay(ff, width=ff.width)
         else:
             cur_chan = None
-            if self.snap.name in self.parent.to_install:
-                cur_chan = self.parent.to_install[self.snap.name][0]
+            selection = self.parent.selections_by_name.get(self.snap.name)
+            if selection is not None:
+                cur_chan = selection.channel
             siv = SnapInfoView(self.parent, self.snap, cur_chan)
             self.parent.show_screen(screen(
                 siv,
@@ -362,11 +367,13 @@ class SnapCheckBox(CheckBox):
     def state_change(self, sender, new_state):
         if new_state:
             log.debug("selecting %s", self.snap.name)
-            self.parent.to_install[self.snap.name] = (
-                'stable', self.snap.confinement == "classic")
+            self.parent.selections_by_name[self.snap.name] = SnapSelection(
+                name=self.snap.name,
+                channel='stable',
+                is_classic=self.snap.confinement == "classic")
         else:
             log.debug("unselecting %s", self.snap.name)
-            self.parent.to_install.pop(self.snap.name, None)
+            self.parent.selections_by_name.pop(self.snap.name, None)
 
 
 class SnapListView(BaseView):
@@ -455,9 +462,8 @@ class SnapListView(BaseView):
         return names
 
     def make_main_screen(self, data):
-        self.to_install = {
-            selection.name: (selection.channel, selection.is_classic)
-            for selection in data.selections
+        self.selections_by_name = {
+            selection.name: selection for selection in data.selections
             }
         self.snap_boxes = {}
         body = []
@@ -467,7 +473,7 @@ class SnapListView(BaseView):
                 log.debug("not offering preseeded snap %r", snap.name)
                 continue
             box = self.snap_boxes[snap.name] = SnapCheckBox(
-                self, snap, snap.name in self.to_install)
+                self, snap, snap.name in self.selections_by_name)
             publisher = snap.publisher
             if snap.verified:
                 publisher = [publisher, ('verified', '\N{check mark}')]
@@ -499,12 +505,10 @@ class SnapListView(BaseView):
                 "package, publisher and versions available."))
 
     def done(self, sender=None):
-        log.debug("snaps to install %s", self.to_install)
-        selections = [
-            SnapSelection(name=k, channel=v[0], is_classic=v[1])
-            for k, v in self.to_install.items()
-            ]
-        self.controller.done(selections)
+        log.debug("snaps to install %s", self.selections_by_name)
+        self.controller.done(sorted(
+            self.selections_by_name.values(),
+            key=lambda s: s.name))
 
     def cancel(self, sender=None):
         if self._w is self._main_screen:
