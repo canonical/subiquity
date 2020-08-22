@@ -13,16 +13,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import attr
+import asyncio
+from collections import OrderedDict
 import logging
 import platform
 import shlex
 
-from collections import OrderedDict
+import attr
+
 from urwid import Text
 
+from subiquitycore.async_helpers import schedule_task
+from subiquitycore.context import with_context
 from subiquitycore.ui.utils import Color
-from subiquitycore.utils import run_command
+from subiquitycore.utils import arun_command, run_command
 
 from subiquity.controller import SubiquityController
 from subiquity.ui.views import ZdevView
@@ -633,7 +637,15 @@ class ZdevInfo:
 
 class ZdevController(SubiquityController):
 
+    autoinstall_key = "s390x-devices"
+    autoinstall_default = ()
+    autoinstall_schema = {
+        'type': 'array',
+        'items': {'type': 'string'},
+        }
+
     def __init__(self, app):
+        self.activated_zdevs = []
         super().__init__(app)
         if self.opts.dry_run:
             if platform.machine() == 's390x':
@@ -643,6 +655,27 @@ class ZdevController(SubiquityController):
                 devices.sort()
                 zdevinfos = [ZdevInfo.from_row(row) for row in devices]
             self.zdevinfos = OrderedDict([(i.id, i) for i in zdevinfos])
+        self.zdev_activating_task = None
+
+    def load_autoinstall_data(self, data):
+        self.activated_zdevs = data
+
+    @with_context()
+    async def apply_autoinstall_config(self, context, index=1):
+        if self.zdev_activating_task is not None:
+            await self.zdev_activating_task
+
+    def start(self):
+        if self.activated_zdevs:
+            self.zdev_activating_task = schedule_task(
+                self.activate_zdevs())
+
+    def make_autoinstall(self):
+        return self.activated_zdevs
+
+    async def activate_zdevs(self):
+        for dev in self.activated_zdevs:
+            await self.chzdev(self, "enable", dev)
 
     def start_ui(self):
         if 'accept-default' in self.answers:
@@ -656,14 +689,19 @@ class ZdevController(SubiquityController):
         # switch to next screen
         self.app.next_screen()
 
-    def chzdev(self, action, zdevinfo):
+    async def chzdev(self, action, zdevinfo):
+        on = action == 'enable'
+        if on and zdevinfo.id not in self.activated_zdevs:
+            self.activated_zdevs.append(zdevinfo.id)
+        elif not on and zdevinfo.id in self.activated_zdevs:
+            self.activated_zdevs.remove(zdevinfo.id)
         if self.opts.dry_run:
-            on = action == 'enable'
             self.zdevinfos[zdevinfo.id].on = on
             self.zdevinfos[zdevinfo.id].pers = on
+            await asyncio.sleep(2)
         else:
             chzdev_cmd = ['chzdev', '--%s' % action, zdevinfo.id]
-            run_command(chzdev_cmd)
+            await arun_command(chzdev_cmd)
 
     def get_zdevinfos(self):
         if self.opts.dry_run:
