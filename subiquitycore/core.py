@@ -20,7 +20,6 @@ import logging
 import os
 import struct
 import sys
-import tty
 
 import urwid
 import yaml
@@ -32,20 +31,15 @@ from subiquitycore.context import (
 from subiquitycore.controller import (
     Skip,
     )
-from subiquitycore.signals import Signal
+from subiquitycore.palette import PALETTE_COLOR, PALETTE_MONO
 from subiquitycore.prober import Prober
+from subiquitycore.screen import is_linux_tty, make_screen
+from subiquitycore.signals import Signal
 from subiquitycore.ui.frame import SubiquityCoreUI
 from subiquitycore.utils import arun_command
 
 log = logging.getLogger('subiquitycore.core')
 
-
-# From uapi/linux/kd.h:
-KDGKBTYPE = 0x4B33  # get keyboard type
-
-GIO_CMAP = 0x4B70  # gets colour palette on VGA+
-PIO_CMAP = 0x4B71  # sets colour palette on VGA+
-UO_R, UO_G, UO_B = 0xe9, 0x54, 0x20
 
 # /usr/include/linux/kd.h
 K_RAW = 0x00
@@ -56,86 +50,6 @@ K_OFF = 0x04
 
 KDGKBMODE = 0x4B44  # gets current keyboard mode
 KDSKBMODE = 0x4B45  # sets current keyboard mode
-
-
-class TwentyFourBitScreen(urwid.raw_display.Screen):
-
-    def __init__(self, _urwid_name_to_rgb, **kwargs):
-        self._urwid_name_to_rgb = _urwid_name_to_rgb
-        super().__init__(**kwargs)
-
-    def _cc(self, color):
-        """Return the "SGR" parameter for selecting color.
-
-        See https://en.wikipedia.org/wiki/ANSI_escape_code#SGR for an
-        explanation.  We use the basic codes for black/white/default for
-        maximum compatibility; they are the only colors used when the
-        mono palette is selected.
-        """
-        if color == 'white':
-            return '7'
-        elif color == 'black':
-            return '0'
-        elif color == 'default':
-            return '9'
-        else:
-            # This is almost but not quite a ISO 8613-3 code -- that
-            # would use colons to separate the rgb values instead. But
-            # it's what xterm, and hence everything else, supports.
-            return '8;2;{};{};{}'.format(*self._urwid_name_to_rgb[color])
-
-    def _attrspec_to_escape(self, a):
-        return '\x1b[0;3{};4{}m'.format(
-            self._cc(a.foreground),
-            self._cc(a.background))
-
-
-def is_linux_tty():
-    try:
-        r = fcntl.ioctl(sys.stdout.fileno(), KDGKBTYPE, ' ')
-    except IOError as e:
-        log.debug("KDGKBTYPE failed %r", e)
-        return False
-    log.debug("KDGKBTYPE returned %r, is_linux_tty %s", r, r == b'\x02')
-    return r == b'\x02'
-
-
-urwid_8_names = (
-    'black',
-    'dark red',
-    'dark green',
-    'brown',
-    'dark blue',
-    'dark magenta',
-    'dark cyan',
-    'light gray',
-)
-
-
-def make_palette(colors, styles):
-    """Return a palette to be passed to MainLoop.
-
-    colors is a list of exactly 8 tuples (name, (r, g, b))
-
-    styles is a list of tuples (stylename, fg_color, bg_color) where
-    fg_color and bg_color are defined in 'colors'
-    """
-    # The part that makes this "fun" is that urwid insists on referring
-    # to the basic colors by their "standard" names but we overwrite
-    # these colors to mean different things.  So we convert styles into
-    # an urwid palette by mapping the names in colors to the standard
-    # name.
-    if len(colors) != 8:
-        raise Exception(
-            "make_palette must be passed a list of exactly 8 colors")
-    urwid_name = dict(zip([c[0] for c in colors], urwid_8_names))
-
-    urwid_palette = []
-    for name, fg, bg in styles:
-        urwid_fg, urwid_bg = urwid_name[fg], urwid_name[bg]
-        urwid_palette.append((name, urwid_fg, urwid_bg))
-
-    return urwid_palette
 
 
 def extend_dec_special_charmap():
@@ -341,11 +255,8 @@ class Application:
         # Set rich_mode to the opposite of what we want, so we can
         # call toggle_rich to get the right things set up.
         self.rich_mode = opts.run_on_serial
-        self.color_palette = make_palette(self.COLORS, self.STYLES)
 
-        self.is_linux_tty = is_linux_tty()
-
-        if self.is_linux_tty:
+        if is_linux_tty():
             self.input_filter = KeyCodesFilter()
         else:
             self.input_filter = DummyKeycodesFilter()
@@ -369,29 +280,10 @@ class Application:
                                   **kw):
         screen = self.urwid_loop.screen
 
-        # Calling screen.stop() sends the INPUT_DESCRIPTORS_CHANGED
-        # signal. This calls _reset_input_descriptors() which calls
-        # unhook_event_loop / hook_event_loop on the screen. But this all
-        # happens before _started is set to False on the screen and so this
-        # does not actually do anything -- we end up attempting to read from
-        # stdin while in a background process group, something that gets the
-        # kernel upset at us.
-        #
-        # The cleanest fix seems to be to just send the signal again once
-        # stop() has returned which, now that screen._started is False,
-        # correctly stops listening from stdin.
-        #
-        # There is an exactly analagous problem with screen.start() except
-        # there the symptom is that we are running in the foreground but not
-        # listening to stdin! The fix is the same.
-
         async def _run():
             await arun_command(
                 cmd, stdin=None, stdout=None, stderr=None, **kw)
             screen.start()
-            urwid.emit_signal(
-                screen, urwid.display_common.INPUT_DESCRIPTORS_CHANGED)
-            self.setraw()
             if after_hook is not None:
                 after_hook()
 
@@ -552,11 +444,11 @@ class Application:
     def toggle_rich(self):
         if self.rich_mode:
             urwid.util.set_encoding('ascii')
-            new_palette = self.STYLES_MONO
+            new_palette = PALETTE_MONO
             self.rich_mode = False
         else:
             urwid.util.set_encoding('utf-8')
-            new_palette = self.color_palette
+            new_palette = PALETTE_COLOR
             self.rich_mode = True
         urwid.CanvasCache.clear()
         self.urwid_loop.screen.register_palette(new_palette)
@@ -598,53 +490,14 @@ class Application:
             controller.configured()
         return controller_index
 
-    def setraw(self):
-        fd = self.urwid_loop.screen._term_input_file.fileno()
-        if os.isatty(fd):
-            tty.setraw(fd)
-
     def make_screen(self, inputf=None, outputf=None):
-        """Return a screen to be passed to MainLoop.
-
-        colors is a list of exactly 8 tuples (name, (r, g, b)), the same as
-        passed to make_palette.
-        """
-        # On the linux console, we overwrite the first 8 colors to be those
-        # defined by colors. Otherwise, we return a screen that uses ISO
-        # 8613-3ish codes to display the colors.
-        if inputf is None:
-            inputf = sys.stdin
-        if outputf is None:
-            outputf = sys.stdout
-
-        if len(self.COLORS) != 8:
-            raise Exception(
-                "make_screen must be passed a list of exactly 8 colors")
-        if self.is_linux_tty:
-            # Perhaps we ought to return a screen subclass that does this
-            # ioctl-ing in .start() and undoes it in .stop() but well.
-            curpal = bytearray(16*3)
-            fcntl.ioctl(sys.stdout.fileno(), GIO_CMAP, curpal)
-            for i in range(8):
-                for j in range(3):
-                    curpal[i*3+j] = self.COLORS[i][1][j]
-            fcntl.ioctl(sys.stdout.fileno(), PIO_CMAP, curpal)
-            return urwid.raw_display.Screen(input=inputf, output=outputf)
-        elif self.opts.ascii:
-            return urwid.raw_display.Screen(input=inputf, output=outputf)
-        else:
-            _urwid_name_to_rgb = {}
-            for i, n in enumerate(urwid_8_names):
-                _urwid_name_to_rgb[n] = self.COLORS[i][1]
-            return TwentyFourBitScreen(_urwid_name_to_rgb,
-                                       input=inputf, output=outputf)
+        return make_screen(self.opts.ascii, inputf, outputf)
 
     def run(self, input=None, output=None):
         log.debug("Application.run")
-        screen = self.make_screen(input, output)
 
         self.urwid_loop = urwid.MainLoop(
-            self.ui, palette=self.color_palette, screen=screen,
+            self.ui, screen=self.make_screen(input, output),
             handle_mouse=False, pop_ups=True,
             input_filter=self.input_filter.filter,
             unhandled_input=self.unhandled_input,
@@ -666,7 +519,6 @@ class Application:
             if self.updated:
                 initial_controller_index = self.load_serialized_state()
 
-            self.aio_loop.call_soon(self.setraw)
             self.aio_loop.call_soon(
                 self.select_initial_screen, initial_controller_index)
             self._connect_base_signals()

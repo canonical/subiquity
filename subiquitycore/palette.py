@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2020 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,13 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Palette definitions """
-
 
 COLORS = [
     # black
     ("bg",        (0x11, 0x11, 0x11)),
-    # dark read
+    # dark red
     ("danger",    (0xff, 0x00, 0x00)),
     # dark green
     ("good",      (0x0e, 0x84, 0x20)),
@@ -35,7 +33,7 @@ COLORS = [
     ("fg",        (0xff, 0xff, 0xff)),
 ]
 
-STYLES = [
+PALETTE_COLOR = [
     ('frame_header_fringe', 'orange',  'bg'),
     ('frame_header',        'fg',      'orange'),
     ('body',                'fg',      'bg'),
@@ -71,8 +69,7 @@ STYLES = [
     ('verified focus',      'good',    'gray'),
 ]
 
-
-STYLES_MONO = [
+PALETTE_MONO = [
     ('frame_header_fringe', 'white',   'black'),
     ('frame_header',        'black',   'white'),
     ('body',                'white',   'black'),
@@ -102,3 +99,43 @@ STYLES_MONO = [
     ('scrollbar_fg',        'white',   'black'),
     ('scrollbar_bg',        'white',   'black'),
 ]
+
+urwid_8_names = (
+    'black',
+    'dark red',
+    'dark green',
+    'brown',
+    'dark blue',
+    'dark magenta',
+    'dark cyan',
+    'light gray',
+)
+
+
+def _urwidize_palette(colors, styles):
+    """Return a palette to be passed to MainLoop.
+
+    colors is a list of exactly 8 tuples (name, (r, g, b))
+
+    styles is a list of tuples (stylename, fg_color, bg_color) where
+    fg_color and bg_color are defined in 'colors'
+    """
+    # The part that makes this "fun" is that urwid insists on referring
+    # to the basic colors by their "standard" names but we overwrite
+    # these colors to mean different things.  So we convert styles into
+    # an urwid palette by mapping the names in colors to the standard
+    # name.
+    if len(colors) != 8:
+        raise Exception(
+            "make_palette must be passed a list of exactly 8 colors")
+    urwid_name = dict(zip([c[0] for c in colors], urwid_8_names))
+
+    urwid_palette = []
+    for name, fg, bg in styles:
+        urwid_fg, urwid_bg = urwid_name[fg], urwid_name[bg]
+        urwid_palette.append((name, urwid_fg, urwid_bg))
+
+    return urwid_palette
+
+
+PALETTE_COLOR = _urwidize_palette(COLORS, PALETTE_COLOR)

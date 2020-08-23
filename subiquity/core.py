@@ -85,8 +85,6 @@ class Subiquity(Application):
         'additionalProperties': True,
         }
 
-    from subiquitycore.palette import COLORS, STYLES, STYLES_MONO
-
     project = "subiquity"
 
     def make_model(self):
