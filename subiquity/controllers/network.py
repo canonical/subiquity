@@ -20,8 +20,8 @@ from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
 from subiquitycore.controllers.network import NetworkController
 
+from subiquity.common.errorreport import ErrorReportKind
 from subiquity.controller import SubiquityController
-from subiquity.controllers.error import ErrorReportKind
 
 
 log = logging.getLogger("subiquity.controllers.network")

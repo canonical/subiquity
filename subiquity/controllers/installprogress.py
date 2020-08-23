@@ -43,8 +43,8 @@ from subiquitycore.utils import (
     astart_command,
     )
 
+from subiquity.common.errorreport import ErrorReportKind
 from subiquity.controller import SubiquityController
-from subiquity.controllers.error import ErrorReportKind
 from subiquity.journald import journald_listener
 from subiquity.ui.views.installprogress import ProgressView
 
