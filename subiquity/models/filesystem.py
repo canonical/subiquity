@@ -786,7 +786,7 @@ class Disk(_Device):
 
     @property
     def label(self):
-        if self.multipath:
+        if self.multipath and self.wwn:
             return self.wwn
         return self.serial or self.path
 
