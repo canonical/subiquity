@@ -11,9 +11,6 @@ keyboard:
   layout: gb
 interactive-sections:
   - network
-snaps:
-  - name: etcd
-    channel: 3.2/stable
 identity:
   realname: ''
   username: ubuntu
