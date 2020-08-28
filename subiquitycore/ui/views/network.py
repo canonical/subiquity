@@ -27,7 +27,7 @@ from urwid import (
     )
 
 from subiquitycore.models.network import (
-    addr_version,
+    DHCPState,
     NetDevAction,
     )
 from subiquitycore.ui.actionmenu import ActionMenu
@@ -38,6 +38,7 @@ from subiquitycore.ui.buttons import (
     )
 from subiquitycore.ui.container import (
     Pile,
+    WidgetWrap,
     )
 from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import StretchyOverlay
@@ -72,17 +73,151 @@ def _stretchy_shower(cls, *args):
     return impl
 
 
+class NetworkDeviceTable(WidgetWrap):
+    def __init__(self, parent, dev_info):
+        self.parent = parent
+        self.dev_info = dev_info
+        super().__init__(self._create())
+
+    def _create(self):
+        # Create the widget for a nic. This consists of a Pile containing a
+        # table, an info line and a blank line. The first row of the table is
+        # the one that can be focused and has a menu for manipulating the nic,
+        # the other rows summarize its address config.
+        #   [ name type notes   ▸ ]   \
+        #     address info            | <- table
+        #     more address info       /
+        #   mac / vendor info / model info
+        #   <blank line>
+
+        actions = []
+        for action in NetDevAction:
+            meth = getattr(self.parent, '_action_' + action.name)
+            opens_dialog = getattr(meth, 'opens_dialog', False)
+            if action in self.dev_info.enabled_actions:
+                actions.append(
+                    (action.str(), True, (action, meth), opens_dialog))
+
+        menu = ActionMenu(actions)
+        connect_signal(menu, 'action', self.parent._action, self)
+
+        trows = [make_action_menu_row([
+            Text("["),
+            Text(self.dev_info.name),
+            Text(self.dev_info.type),
+            Text(self._notes(), wrap='clip'),
+            menu,
+            Text("]"),
+            ], menu)] + self._address_rows()
+
+        self.table = TablePile(
+            trows, colspecs=self.parent.device_colspecs, spacing=2)
+        self.table.bind(self.parent.heading_table)
+
+        if self.dev_info.type == "vlan":
+            info = _("VLAN {id} on interface {link}").format(
+                id=self.dev_info.vlan.id, link=self.dev_info.vlan.link)
+        elif self.dev_info.type == "bond":
+            info = _("bond master for {interfaces}").format(
+                interfaces=', '.join(self.dev_info.bond.interfaces))
+        else:
+            info = " / ".join([
+                self.dev_info.hwaddr,
+                self.dev_info.vendor,
+                self.dev_info.model,
+                ])
+
+        return Pile([
+            ('pack', self.table),
+            ('pack', Color.info_minor(Text("  " + info))),
+            ('pack', Text("")),
+            ])
+
+    def _notes(self):
+        notes = []
+        if self.dev_info.type == "wlan":
+            config = self.dev_info.wlan.config
+            if config.ssid is not None:
+                notes.append(_("ssid: {ssid}".format(ssid=config.ssid)))
+            else:
+                notes.append(_("not connected"))
+        if not self.dev_info.is_connected:
+            notes.append(_("not connected"))
+        if self.dev_info.bond_master:
+            notes.append(
+                _("enslaved to {device}").format(
+                    device=self.dev_info.bond_master))
+        if notes:
+            notes = ", ".join(notes)
+        else:
+            notes = '-'
+        return notes
+
+    def _address_rows(self):
+        address_info = []
+        for v, dhcp_status, static_config in (
+                (4, self.dev_info.dhcp4, self.dev_info.static4),
+                (6, self.dev_info.dhcp6, self.dev_info.static6),
+                ):
+            if dhcp_status.enabled:
+                label = Text("DHCPv{v}".format(v=v))
+                addrs = dhcp_status.addresses
+                if addrs:
+                    address_info.extend(
+                        [(label, Text(addr)) for addr in addrs])
+                elif dhcp_status.state == DHCPState.PENDING:
+                    s = Spinner(
+                        self.parent.controller.app.aio_loop, align='left')
+                    s.rate = 0.3
+                    s.start()
+                    address_info.append((label, s))
+                elif dhcp_status.state == DHCPState.TIMED_OUT:
+                    address_info.append((label, Text(_("timed out"))))
+                elif dhcp_status.state == DHCPState.RECONFIGURE:
+                    address_info.append((label, Text("-")))
+            elif static_config.addresses:
+                address_info.append((
+                    Text(_('static')),
+                    Text(', '.join(static_config.addresses)),
+                    ))
+        if len(address_info) == 0 and not self.dev_info.is_used:
+            reason = self.dev_info.disabled_reason
+            if reason is None:
+                reason = ""
+            address_info.append((Text(_("disabled")), Text(reason)))
+        rows = []
+        for label, value in address_info:
+            rows.append(TableRow([Text(""), label, (2, value)]))
+        return rows
+
+    def update(self, dev_info):
+        # Update the display of dev to represent the current state.
+        #
+        # The easiest way of doing this would be to just create a new table
+        # widget for the device and replace the current one with it. But that
+        # is jarring if the menu for the current device is open, so instead we
+        # overwrite the contents of the first (menu) row of the table, and
+        # replace all other rows of the with new content (which is OK as they
+        # cannot be focused).
+        self.dev_info = dev_info
+        first_row = self.table.table_rows[0].base_widget
+        first_row.cells[1][1].set_text(dev_info.name)
+        first_row.cells[2][1].set_text(dev_info.type)
+        first_row.cells[3][1].set_text(self._notes())
+        self.table.remove_rows(1, len(self.table.table_rows))
+        self.table.insert_rows(1, self._address_rows())
+
+
 class NetworkView(BaseView):
     title = _("Network connections")
     excerpt = _("Configure at least one interface this server can use to talk "
                 "to other machines, and which preferably provides sufficient "
                 "access for updates.")
 
-    def __init__(self, model, controller):
-        self.model = model
+    def __init__(self, controller, netdev_infos):
         self.controller = controller
-        self.dev_to_table = {}
-        self.cur_netdevs = []
+        self.dev_name_to_table = {}
+        self.cur_netdev_names = []
         self.error = Text("", align='center')
 
         self.device_colspecs = {
@@ -91,7 +226,19 @@ class NetworkView(BaseView):
             4: ColSpec(can_shrink=True, rpad=1),
             }
 
-        self.device_pile = Pile(self._build_model_inputs())
+        self.heading_table = TablePile([
+            TableRow([
+                Color.info_minor(Text(header)) for header in [
+                    "", "NAME", "TYPE", "NOTES", "",
+                    ]
+                ])
+            ],
+            spacing=2, colspecs=self.device_colspecs)
+
+        self.device_pile = Pile([self.heading_table])
+
+        for dev_info in netdev_infos:
+            self.new_link(dev_info)
 
         self._create_bond_btn = menu_btn(
             _("Create bond"), on_press=self._create_bond)
@@ -111,9 +258,6 @@ class NetworkView(BaseView):
             ('pack', self.buttons),
         ])
 
-        self.controller.network_event_receiver.add_default_route_watcher(
-            self._route_watcher)
-
         self.error_showing = False
 
         super().__init__(screen(
@@ -126,26 +270,27 @@ class NetworkView(BaseView):
     _action_EDIT_WLAN = _stretchy_shower(NetworkConfigureWLANStretchy)
     _action_EDIT_IPV4 = _stretchy_shower(EditNetworkStretchy, 4)
     _action_EDIT_IPV6 = _stretchy_shower(EditNetworkStretchy, 6)
-    _action_EDIT_BOND = _stretchy_shower(BondStretchy)
     _action_ADD_VLAN = _stretchy_shower(AddVlanStretchy)
 
-    def _action_DELETE(self, name, device):
+    def _action_EDIT_BOND(self, name, dev_info):
+        stretchy = BondStretchy(
+            self, dev_info, self.get_candidate_bond_member_names())
+        stretchy.attach_context(self.controller.context.child(name))
+        self.show_stretchy_overlay(stretchy)
+
+    _action_EDIT_BOND.opens_dialog = True
+
+    def _action_DELETE(self, name, dev_info):
         with self.controller.context.child(name):
-            touched_devs = set()
-            if device.type == "bond":
-                for name in device.config['interfaces']:
-                    touched_devs.add(self.model.get_netdev_by_name(name))
-            device.config = None
-            self.del_link(device)
-            for dev in touched_devs:
-                self.update_link(dev)
-            self.controller.apply_config()
+            self.controller.delete_link(dev_info)
+            self.del_link(dev_info)
 
-    def _action(self, sender, action, device):
+    def _action(self, sender, action, netdev_table):
         action, meth = action
-        meth("{}/{}".format(device.name, action.name), device)
+        dev_info = netdev_table.dev_info
+        meth("{}/{}".format(dev_info.name, action.name), dev_info)
 
-    def _route_watcher(self, routes):
+    def update_default_routes(self, routes):
         log.debug('view route_watcher %s', routes)
         if routes:
             label = _("Done")
@@ -176,111 +321,31 @@ class NetworkView(BaseView):
         if len(self.bottom.contents) > 2:
             self.bottom.contents[0:2] = []
 
-    def _notes_for_device(self, dev):
-        notes = []
-        if dev.type == "eth" and not dev.info.is_connected:
-            notes.append(_("not connected"))
-        for dev2 in self.model.get_all_netdevs():
-            if dev2.type != "bond":
-                continue
-            if dev.name in dev2.config.get('interfaces', []):
-                notes.append(
-                    _("enslaved to {device}").format(device=dev2.name))
-                break
-        if notes:
-            notes = ", ".join(notes)
-        else:
-            notes = '-'
-        return notes
-
-    def _address_rows_for_device(self, dev):
-        address_info = []
-        dhcp_addresses = dev.dhcp_addresses()
-        for v in 4, 6:
-            if dev.dhcp_enabled(v):
-                label = Text("DHCPv{v}".format(v=v))
-                addrs = dhcp_addresses.get(v)
-                if addrs:
-                    address_info.extend(
-                        [(label, Text(addr)) for addr in addrs])
-                elif dev.dhcp_state(v) == "PENDING":
-                    s = Spinner(self.controller.app.aio_loop, align='left')
-                    s.rate = 0.3
-                    s.start()
-                    address_info.append((label, s))
-                elif dev.dhcp_state(v) == "TIMEDOUT":
-                    address_info.append((label, Text(_("timed out"))))
-                elif dev.dhcp_state(v) == "RECONFIGURE":
-                    address_info.append((label, Text("-")))
-                else:
-                    address_info.append((
-                        label,
-                        Text(
-                            _("unknown state {state}".format(
-                                state=dev.dhcp_state(v))))
-                        ))
-            else:
-                addrs = []
-                for ip in dev.config.get('addresses', []):
-                    if addr_version(ip) == v:
-                        addrs.append(str(ip))
-                if addrs:
-                    address_info.append(
-                        # Network addressing mode (static/dhcp/disabled)
-                        (Text(_('static')), Text(', '.join(addrs))))
-        if len(address_info) == 0:
-            # Do not show an interface as disabled if it is part of a bond or
-            # has a vlan on it.
-            if not dev.is_used:
-                reason = dev.disabled_reason
-                if reason is None:
-                    reason = ""
-                # Network addressing mode (static/dhcp/disabled)
-                address_info.append((Text(_("disabled")), Text(reason)))
-        rows = []
-        for label, value in address_info:
-            rows.append(TableRow([Text(""), label, (2, value)]))
-        return rows
-
-    def new_link(self, new_dev):
+    def new_link(self, new_dev_info):
         log.debug(
-            "new_link %s %s %s",
-            new_dev.name, new_dev.ifindex, (new_dev in self.cur_netdevs))
-        if new_dev in self.dev_to_table:
-            self.update_link(new_dev)
+            "new_link %s %s",
+            new_dev_info.name, (new_dev_info.name in self.cur_netdev_names))
+        if new_dev_info.name in self.dev_name_to_table:
+            self.update_link(new_dev_info)
             return
-        for i, cur_dev in enumerate(self.cur_netdevs):
-            if cur_dev.name > new_dev.name:
-                netdev_i = i
-                break
-        else:
-            netdev_i = len(self.cur_netdevs)
-        w = self._device_widget(new_dev, netdev_i)
+        self.cur_netdev_names.append(new_dev_info.name)
+        self.cur_netdev_names.sort()
+        netdev_i = self.cur_netdev_names.index(new_dev_info.name)
+        device_table = NetworkDeviceTable(self, new_dev_info)
+        self.dev_name_to_table[new_dev_info.name] = device_table
         self.device_pile.contents[netdev_i+1:netdev_i+1] = [
-            (w, self.device_pile.options('pack'))]
+            (device_table, self.device_pile.options('pack'))]
 
-    def update_link(self, dev):
+    def update_link(self, dev_info):
+        if isinstance(self._w, StretchyOverlay):
+            if hasattr(self._w.stretchy, 'update_link'):
+                self._w.stretchy.update_link(dev_info)
         log.debug(
-            "update_link %s %s %s",
-            dev.name, dev.ifindex, (dev in self.cur_netdevs))
-        if dev not in self.cur_netdevs:
+            "update_link %s %s",
+            dev_info.name, (dev_info.name in self.cur_netdev_names))
+        if dev_info.name not in self.cur_netdev_names:
             return
-        # Update the display of dev to represent the current state.
-        #
-        # The easiest way of doing this would be to just create a new table
-        # widget for the device and replace the current one with it. But that
-        # is jarring if the menu for the current device is open, so instead we
-        # overwrite the content of the first (menu) row of the old table with
-        # the contents of the first row of the new table, and replace all other
-        # rows of the old table with new content (which is OK as they cannot be
-        # focused).
-        old_table = self.dev_to_table[dev]
-        first_row = old_table.table_rows[0].base_widget
-        first_row.cells[1][1].set_text(dev.name)
-        first_row.cells[2][1].set_text(dev.type)
-        first_row.cells[3][1].set_text(self._notes_for_device(dev))
-        old_table.remove_rows(1, len(old_table.table_rows))
-        old_table.insert_rows(1, self._address_rows_for_device(dev))
+        self.dev_name_to_table[dev_info.name].update(dev_info)
 
     def _remove_row(self, netdev_i):
         # MonitoredFocusList clamps the focus position to the new
@@ -297,94 +362,38 @@ class NetworkView(BaseView):
                 self.device_pile.focus_position += 1
             self.device_pile.focus._select_first_selectable()
 
-    def del_link(self, dev):
+    def del_link(self, dev_info):
         log.debug(
-            "del_link %s %s %s",
-            dev.name, dev.ifindex, (dev in self.cur_netdevs))
+            "del_link %s %s",
+            dev_info.name, (dev_info.name in self.cur_netdev_names))
         # If a virtual device disappears while we still have config
         # for it, we assume it will be back soon.
-        if dev.is_virtual and dev.config is not None:
+        if dev_info.is_virtual and dev_info.has_config:
             return
-        if dev in self.cur_netdevs:
-            netdev_i = self.cur_netdevs.index(dev)
+        if dev_info.name in self.cur_netdev_names:
+            netdev_i = self.cur_netdev_names.index(dev_info.name)
             self._remove_row(netdev_i+1)
-            del self.cur_netdevs[netdev_i]
-            del self.dev_to_table[dev]
+            del self.cur_netdev_names[netdev_i]
+            del self.dev_name_to_table[dev_info.name]
         if isinstance(self._w, StretchyOverlay):
             stretchy = self._w.stretchy
-            if getattr(stretchy, 'device', None) is dev:
+            if getattr(stretchy, 'device', None) is dev_info:
                 self.remove_overlay()
 
-    def _device_widget(self, dev, netdev_i=None):
-        # Create the widget for a nic. This consists of a Pile containing a
-        # table, an info line and a blank line. The first row of the table is
-        # the one that can be focused and has a menu for manipulating the nic,
-        # the other rows summarize its address config.
-        #   [ name type notes   ▸ ]   \
-        #     address info            | <- table
-        #     more address info       /
-        #   mac / vendor info / model info
-        #   <blank line>
-        if netdev_i is None:
-            netdev_i = len(self.cur_netdevs)
-        self.cur_netdevs[netdev_i:netdev_i] = [dev]
-
-        actions = []
-        for action in NetDevAction:
-            meth = getattr(self, '_action_' + action.name)
-            opens_dialog = getattr(meth, 'opens_dialog', False)
-            if dev.supports_action(action):
-                actions.append(
-                    (action.str(), True, (action, meth), opens_dialog))
-
-        menu = ActionMenu(actions)
-        connect_signal(menu, 'action', self._action, dev)
-
-        trows = [make_action_menu_row([
-            Text("["),
-            Text(dev.name),
-            Text(dev.type),
-            Text(self._notes_for_device(dev), wrap='clip'),
-            menu,
-            Text("]"),
-            ], menu)] + self._address_rows_for_device(dev)
-
-        table = TablePile(trows, colspecs=self.device_colspecs, spacing=2)
-        self.dev_to_table[dev] = table
-        table.bind(self.heading_table)
-
-        if dev.type == "vlan":
-            info = _("VLAN {id} on interface {link}").format(
-                **dev.config)
-        elif dev.type == "bond":
-            info = _("bond master for {interfaces}").format(
-                interfaces=', '.join(dev.config['interfaces']))
-        else:
-            info = " / ".join([
-                dev.info.hwaddr, dev.info.vendor, dev.info.model])
-
-        return Pile([
-            ('pack', table),
-            ('pack', Color.info_minor(Text("  " + info))),
-            ('pack', Text("")),
-            ])
-
-    def _build_model_inputs(self):
-        self.heading_table = TablePile([
-            TableRow([
-                Color.info_minor(Text(header)) for header in [
-                    "", "NAME", "TYPE", "NOTES", "",
-                    ]
-                ])
-            ],
-            spacing=2, colspecs=self.device_colspecs)
-        rows = [self.heading_table]
-        for dev in self.model.get_all_netdevs():
-            rows.append(self._device_widget(dev))
-        return rows
+    def get_candidate_bond_member_names(self):
+        names = []
+        for table in self.dev_name_to_table.values():
+            dev_info = table.dev_info
+            if dev_info.type in ("vlan", "bond"):
+                continue
+            if dev_info.bond_master is not None:
+                continue
+            names.append(dev_info.name)
+        return names
 
     def _create_bond(self, sender=None):
-        stretchy = BondStretchy(self)
+        stretchy = BondStretchy(
+            self, None, self.get_candidate_bond_member_names())
         stretchy.attach_context(self.controller.context.child("add_bond"))
         self.show_stretchy_overlay(stretchy)
 
@@ -417,11 +426,7 @@ class NetworkView(BaseView):
     def done(self, result=None):
         if self.error_showing:
             self.bottom.contents[0:2] = []
-        self.controller.network_event_receiver.remove_default_route_watcher(
-            self._route_watcher)
         self.controller.done()
 
     def cancel(self, button=None):
-        self.controller.network_event_receiver.remove_default_route_watcher(
-            self._route_watcher)
         self.controller.cancel()
