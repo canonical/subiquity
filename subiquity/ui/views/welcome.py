@@ -49,7 +49,7 @@ colours.
 
 If you are connecting from a terminal emulator such as gnome-terminal
 that supports unicode and rich colours you can switch to "rich mode"
-which uses unicde, colours and supports many languages.
+which uses unicode, colours and supports many languages.
 
 """
 
