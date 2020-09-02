@@ -290,7 +290,9 @@ class OpenHelpMenu(WidgetWrap):
             rich = menu_item(
                 _("Toggle rich mode"), on_press=self.parent.toggle_rich)
             buttons.add(rich)
-        local_title, local_doc = parent.app.ui.body.local_help()
+        local_title = None
+        if hasattr(parent.app.ui.body, 'local_help'):
+            local_title, local_doc = parent.app.ui.body.local_help()
         if local_title is not None:
             local = menu_item(
                 local_title,
@@ -300,7 +302,7 @@ class OpenHelpMenu(WidgetWrap):
             local = Text(
                 ('info_minor header', " " + _("Help on this screen") + " "))
 
-        if self.parent.app.controllers.Error.reports:
+        if self.parent.app.error_reporter.reports:
             view_errors = menu_item(
                 _("View error reports").format(local_title),
                 on_press=self.parent.show_errors)

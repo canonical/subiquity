@@ -23,7 +23,9 @@ from subiquitycore.gettext38 import pgettext
 from subiquitycore import netplan
 
 
-NETDEV_IGNORED_IFACE_TYPES = ['lo', 'bridge', 'tun', 'tap', 'dummy', 'sit']
+NETDEV_IGNORED_IFACE_TYPES = [
+    'lo', 'bridge', 'tun', 'tap', 'dummy', 'sit', 'can', '???'
+]
 NETDEV_ALLOWED_VIRTUAL_IFACE_TYPES = ['vlan', 'bond']
 
 
@@ -143,8 +145,8 @@ class NetworkDev(object):
                 raise RuntimeError(
                     "renaming {old_name} over {new_name}".format(
                         old_name=self.name, new_name=new_name))
-            self.model.devices_by_name[new_name] = self
-            dead_device = self.model.devices_by_name[self.name] = NetworkDev(
+            self._model.devices_by_name[new_name] = self
+            dead_device = self._model.devices_by_name[self.name] = NetworkDev(
                 self.name, self.type)
             dead_device.config = None
             dead_device.info = self.info

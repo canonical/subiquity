@@ -25,6 +25,7 @@ from urwid import Text
 from subiquitycore.ui.buttons import forward_btn, other_btn
 from subiquitycore.ui.container import ListBox
 from subiquitycore.ui.utils import button_pile, rewrap, screen
+from subiquitycore.screen import is_linux_tty
 from subiquitycore.view import BaseView
 
 from subiquity.ui.views.help import (
@@ -64,7 +65,6 @@ class WelcomeView(BaseView):
     def __init__(self, model, controller):
         self.model = model
         self.controller = controller
-        self.is_linux_tty = controller.app.is_linux_tty
         if controller.app.opts.run_on_serial and not controller.app.rich_mode:
             s = self.make_serial_choices()
             self.title = "Welcome!"
@@ -75,7 +75,7 @@ class WelcomeView(BaseView):
     def make_language_choices(self):
         btns = []
         current_index = None
-        langs = self.model.get_languages(self.is_linux_tty)
+        langs = self.model.get_languages(is_linux_tty())
         cur = self.model.selected_language
         log.debug("_build_model_inputs selected_language=%s", cur)
         if cur in ["C", None]:

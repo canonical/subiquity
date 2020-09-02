@@ -426,7 +426,7 @@ class SnapListView(BaseView):
     file: lxd_59.snap
 '''
         seed_location = '/media/filesystem/var/lib/snapd/seed/seed.yaml'
-        content = ""
+        content = "{}"
         try:
             with open(seed_location, encoding='utf-8', errors='replace') as fp:
                 content = fp.read()

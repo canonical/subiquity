@@ -177,36 +177,36 @@ elif [ -n "${source_filesystem}" ]; then
     cp "${source_filesystem}" new_iso/casper/filesystem.squashfs
 fi
 
-rm new_iso/casper/installer.squashfs
+rm new_iso/casper/installer.squashfs new_iso/casper/installer.squashfs.gpg
 mksquashfs new_installer new_iso/casper/installer.squashfs
+
+(
+    cd new_iso
+    sed -i'' '/\.\/casper\/installer.squashfs/d' md5sum.txt
+    md5sum ./casper/installer.squashfs >> md5sum.txt
+)
 
 if [ -e new_iso/boot/grub/efi.img ]; then
     xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
-	    -V Ubuntu\ custom\ amd64 \
-	    -o "${NEW_ISO}" \
-	    -cache-inodes -J -l \
+	    -V Ubuntu\ custom\ amd64 -o "${NEW_ISO}" -J -l \
 	    -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot \
 	    -boot-load-size 4 -boot-info-table \
 	    -eltorito-alt-boot -e boot/grub/efi.img -no-emul-boot \
 	    -isohybrid-gpt-basdat -isohybrid-apm-hfsplus \
 	    -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin  \
-	    new_iso/boot new_iso
+	    new_iso
 fi
 
 if [ -e new_iso/boot/ubuntu.ikr ]; then
     xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
-	    -V Ubuntu\ custom\ s390x \
-	    -o "${NEW_ISO}" \
-	    -cache-inodes -J -l \
+	    -V Ubuntu\ custom\ s390x -o "${NEW_ISO}" -J -l \
 	    -b boot/ubuntu.ikr -no-emul-boot \
-	    new_iso/boot new_iso
+	    new_iso
 fi
 
 if [ -e new_iso/boot/grub/powerpc.elf ]; then
     xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
-	    -V Ubuntu\ custom\ ppc64 \
-	    -o "${NEW_ISO}" \
-	    -cache-inodes -J -l \
+	    -V Ubuntu\ custom\ ppc64 -o "${NEW_ISO}" -J -l \
 	    -chrp-boot-part \
-	    new_iso/boot new_iso
+	    new_iso
 fi
