@@ -282,7 +282,7 @@ class NetworkView(BaseView):
 
     def _action_DELETE(self, name, dev_info):
         with self.controller.context.child(name):
-            self.controller.delete_link(dev_info)
+            self.controller.delete_link(dev_info.name)
             self.del_link(dev_info)
 
     def _action(self, sender, action, netdev_table):

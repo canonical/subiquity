@@ -243,15 +243,15 @@ class EditNetworkStretchy(Stretchy):
                 "EditNetworkStretchy %s manual config=%s",
                 self.ip_version, config)
             self.parent.controller.set_static_config(
-                self.dev_info, self.ip_version, config)
+                self.dev_info.name, self.ip_version, config)
         elif self.method_form.method.value == "dhcp":
-            self.parent.controller.enable_dhcp(self.dev_info, self.ip_version)
+            self.parent.controller.enable_dhcp(
+                self.dev_info.name, self.ip_version)
             log.debug("EditNetworkStretchy %s, dhcp", self.ip_version)
         else:
             self.parent.controller.disable_network(
-                self.dev_info, self.ip_version)
+                self.dev_info.name, self.ip_version)
             log.debug("EditNetworkStretchy %s, disabled", self.ip_version)
-        self.parent.update_link(self.dev_info)
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
@@ -262,9 +262,9 @@ class VlanForm(Form):
 
     ok_label = _("Create")
 
-    def __init__(self, parent, dev_info):
+    def __init__(self, parent, dev_name):
         self.parent = parent
-        self.dev_info = dev_info
+        self.dev_name = dev_name
         super().__init__()
 
     vlan = StringField(_("VLAN ID:"))
@@ -280,17 +280,17 @@ class VlanForm(Form):
         return vlanid
 
     def validate_vlan(self):
-        new_name = '%s.%s' % (self.dev_info.name, self.vlan.value)
+        new_name = '%s.%s' % (self.dev_name, self.vlan.value)
         if new_name in self.parent.cur_netdev_names:
             return _("{netdev} already exists").format(netdev=new_name)
 
 
 class AddVlanStretchy(Stretchy):
 
-    def __init__(self, parent, device):
+    def __init__(self, parent, dev_info):
         self.parent = parent
-        self.device = device
-        self.form = VlanForm(parent, device)
+        self.dev_name = dev_info.name
+        self.form = VlanForm(parent, self.dev_name)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         super().__init__(
@@ -301,11 +301,10 @@ class AddVlanStretchy(Stretchy):
     def done(self, sender):
         log.debug(
             "AddVlanStretchy.done %s %s",
-            self.device.name, self.form.vlan.value)
+            self.dev_name, self.form.vlan.value)
+        self.parent.controller.add_vlan(
+            self.dev_name, self.form.vlan.value)
         self.parent.remove_overlay()
-        dev_info = self.parent.controller.add_vlan(
-            self.device, self.form.vlan.value)
-        self.parent.new_link(dev_info)
 
     def cancel(self, sender=None):
         self.parent.remove_overlay()
@@ -315,7 +314,7 @@ class ViewInterfaceInfo(Stretchy):
     def __init__(self, parent, dev_info):
         self.parent = parent
         widgets = [
-            Text(self.parent.controller.get_info_for_netdev(dev_info)),
+            Text(self.parent.controller.get_info_for_netdev(dev_info.name)),
             Text(""),
             button_pile([done_btn(_("Close"), on_press=self.close)]),
             ]

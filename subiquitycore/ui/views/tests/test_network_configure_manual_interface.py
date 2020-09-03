@@ -120,7 +120,7 @@ class TestNetworkConfigureIPv4InterfaceView(unittest.TestCase):
         view_helpers.click(but)
 
         view.controller.set_static_config.assert_called_once_with(
-            stretchy.dev_info, 4, expected)
+            stretchy.dev_info.name, 4, expected)
 
 
 class FakeLink:

@@ -17,6 +17,7 @@ import asyncio
 import logging
 import os
 import subprocess
+from typing import Optional
 
 import yaml
 
@@ -30,9 +31,7 @@ from subiquitycore.models.network import (
     BondConfig,
     DHCPState,
     NetDevAction,
-    NetDevInfo,
     StaticConfig,
-    VLANConfig,
     WLANConfig,
     )
 from subiquitycore import netplan
@@ -476,12 +475,9 @@ class NetworkController(BaseController):
     def cancel(self):
         self.app.prev_screen()
 
-    def set_static_config(self, dev_info: NetDevInfo, ip_version: int,
+    def set_static_config(self, dev_name: str, ip_version: int,
                           static_config: StaticConfig) -> None:
-        setattr(dev_info, 'static' + str(ip_version), static_config)
-        getattr(dev_info, 'dhcp' + str(ip_version)).enabled = False
-
-        dev = self.model.get_netdev_by_name(dev_info.name)
+        dev = self.model.get_netdev_by_name(dev_name)
         dev.remove_ip_networks_for_version(ip_version)
         dev.config.setdefault('addresses', []).extend(static_config.addresses)
         gwkey = 'gateway{v}'.format(v=ip_version)
@@ -492,55 +488,48 @@ class NetworkController(BaseController):
         ns = dev.config.setdefault('nameservers', {})
         ns.setdefault('addresses', []).extend(static_config.nameservers)
         ns.setdefault('search', []).extend(static_config.searchdomains)
+        self.update_link(dev)
         self.apply_config()
 
-    def enable_dhcp(self, dev_info: NetDevInfo, ip_version: int) -> None:
-        setattr(dev_info, 'static' + str(ip_version), StaticConfig())
-        getattr(dev_info, 'dhcp' + str(ip_version)).enabled = True
-        getattr(dev_info, 'dhcp' + str(ip_version)).state = DHCPState.PENDING
-
-        dev = self.model.get_netdev_by_name(dev_info.name)
+    def enable_dhcp(self, dev_name: str, ip_version: int) -> None:
+        dev = self.model.get_netdev_by_name(dev_name)
         dev.remove_ip_networks_for_version(ip_version)
         dhcpkey = 'dhcp{v}'.format(v=ip_version)
         dev.config[dhcpkey] = True
-        self.apply_config()
-
-    def disable_network(self, dev_info: NetDevInfo, ip_version: int) -> None:
-        setattr(dev_info, 'static' + str(ip_version), StaticConfig())
-        getattr(dev_info, 'dhcp' + str(ip_version)).enabled = False
-
-        dev = self.model.get_netdev_by_name(dev_info.name)
-        dev.remove_ip_networks_for_version(ip_version)
-
-        self.apply_config()
-
-    def add_vlan(self, dev_info: NetDevInfo, vlan_config: VLANConfig):
-        new = self.model.new_vlan(dev_info.name, vlan_config)
-        dev = self.model.get_netdev_by_name(dev_info.name)
         self.update_link(dev)
         self.apply_config()
-        return new.netdev_info()
 
-    def delete_link(self, dev_info: NetDevInfo):
+    def disable_network(self, dev_name: str, ip_version: int) -> None:
+        dev = self.model.get_netdev_by_name(dev_name)
+        dev.remove_ip_networks_for_version(ip_version)
+        self.update_link(dev)
+        self.apply_config()
+
+    def add_vlan(self, dev_name: str, id: int):
+        new = self.model.new_vlan(dev_name, id)
+        self.new_link(new)
+        dev = self.model.get_netdev_by_name(dev_name)
+        self.update_link(dev)
+        self.apply_config()
+
+    def delete_link(self, dev_name: str):
+        dev = self.model.get_netdev_by_name(dev_name)
         touched_devices = set()
-        if dev_info.type == "bond":
-            for device_name in dev_info.bond.interfaces:
+        if dev.type == "bond":
+            for device_name in dev.config['interfaces']:
                 interface = self.model.get_netdev_by_name(device_name)
                 touched_devices.add(interface)
-        elif dev_info.type == "vlan":
-            link = self.model.get_netdev_by_name(dev_info.vlan.link)
+        elif dev.type == "vlan":
+            link = self.model.get_netdev_by_name(dev.config['link'])
             touched_devices.add(link)
-        dev_info.has_config = False
-
-        device = self.model.get_netdev_by_name(dev_info.name)
-        self.del_link(device)
-        device.config = None
+        dev.config = None
+        self.del_link(dev)
         for dev in touched_devices:
             self.update_link(dev)
         self.apply_config()
 
-    def add_or_update_bond(self, existing_name: NetDevInfo, new_name: str,
-                           new_info: BondConfig) -> None:
+    def add_or_update_bond(self, existing_name: Optional[str],
+                           new_name: str, new_info: BondConfig) -> None:
         get_netdev_by_name = self.model.get_netdev_by_name
         touched_devices = set()
         for device_name in new_info.interfaces:
@@ -564,12 +553,12 @@ class NetworkController(BaseController):
                 self.new_link(existing)
             else:
                 touched_devices.add(existing)
-        self.apply_config()
         for dev in touched_devices:
             self.update_link(dev)
+        self.apply_config()
 
-    def get_info_for_netdev(self, dev_info: NetDevInfo) -> str:
-        device = self.model.get_netdev_by_name(dev_info.name)
+    def get_info_for_netdev(self, dev_name: str) -> str:
+        device = self.model.get_netdev_by_name(dev_name)
         if device.info is not None:
             return yaml.dump(
                 device.info.serialize(), default_flow_style=False)
@@ -577,14 +566,12 @@ class NetworkController(BaseController):
             return "Configured but not yet created {type} interface.".format(
                 type=device.type)
 
-    def set_wlan(self, dev_info: NetDevInfo, wlan: WLANConfig) -> None:
-        dev_info.wlan = wlan
-
-        device = self.model.get_netdev_by_name(dev_info.name)
+    def set_wlan(self, dev_name: str, wlan: WLANConfig) -> None:
+        device = self.model.get_netdev_by_name(dev_name)
         device.set_ssid_psk(wlan.ssid, wlan.psk)
         self.update_link(device)
 
-    def start_scan(self, dev_info: NetDevInfo) -> None:
-        device = self.model.get_netdev_by_name(dev_info.name)
+    def start_scan(self, dev_name: str) -> None:
+        device = self.model.get_netdev_by_name(dev_name)
         self.observer.trigger_scan(device.ifindex)
         self.update_link(device)
