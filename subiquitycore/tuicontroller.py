@@ -76,7 +76,6 @@ class TuiController(BaseController):
                 field.widget._emit('select', v)
             field.value = v
             yield
-        yield
         for bf in form._fields:
             bf.validate()
         form.validated()

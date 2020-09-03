@@ -93,9 +93,7 @@ class SubiquityTuiController(SubiquityController, TuiController):
             return True
         i_sections = self.app.autoinstall_config.get(
             'interactive-sections', [])
-        if '*' in i_sections or self.autoinstall_key in i_sections:
-            return True
-        return False
+        return '*' in i_sections or self.autoinstall_key in i_sections
 
 
 class RepeatedController(RepeatedController):
