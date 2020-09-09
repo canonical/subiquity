@@ -18,13 +18,13 @@ import os
 
 from subiquitycore.context import with_context
 
-from subiquity.controller import SubiquityController
+from subiquity.controller import SubiquityTuiController
 from subiquity.ui.views.proxy import ProxyView
 
 log = logging.getLogger('subiquity.controllers.proxy')
 
 
-class ProxyController(SubiquityController):
+class ProxyController(SubiquityTuiController):
 
     autoinstall_key = model_name = "proxy"
     autoinstall_schema = {

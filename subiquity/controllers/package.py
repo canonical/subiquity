@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquity.controller import NoUIController
+from subiquity.controller import SubiquityController
 
 
-class PackageController(NoUIController):
+class PackageController(SubiquityController):
 
     model_name = autoinstall_key = "packages"
     autoinstall_default = []

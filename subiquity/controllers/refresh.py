@@ -25,12 +25,12 @@ from subiquitycore.async_helpers import (
     SingleInstanceTask,
     )
 from subiquitycore.context import with_context
-from subiquitycore.controller import (
+from subiquitycore.tuicontroller import (
     Skip,
     )
 
 from subiquity.controller import (
-    SubiquityController,
+    SubiquityTuiController,
     )
 
 
@@ -43,7 +43,7 @@ class CheckState(enum.IntEnum):
     UNAVAILABLE = enum.auto()
 
 
-class RefreshController(SubiquityController):
+class RefreshController(SubiquityTuiController):
 
     autoinstall_key = "refresh-installer"
     autoinstall_schema = {

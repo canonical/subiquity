@@ -20,12 +20,12 @@ from console_conf.ui.views import (
     ChooserConfirmView,
     )
 
-from subiquitycore.controller import BaseController
+from subiquitycore.tuicontroller import TuiController
 
 log = logging.getLogger("console_conf.controllers.chooser")
 
 
-class RecoveryChooserBaseController(BaseController):
+class RecoveryChooserBaseController(TuiController):
 
     def __init__(self, app):
         super().__init__(app)

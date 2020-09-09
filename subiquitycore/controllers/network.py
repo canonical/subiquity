@@ -24,13 +24,13 @@ from probert.network import IFF_UP, NetworkEventReceiver
 
 from subiquitycore.async_helpers import SingleInstanceTask
 from subiquitycore.context import with_context
-from subiquitycore.controller import BaseController
 from subiquitycore.file_util import write_file
 from subiquitycore.models.network import (
     BondParameters,
     NetDevAction,
     )
 from subiquitycore import netplan
+from subiquitycore.tuicontroller import TuiController
 from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.views.network import (
     NetworkView,
@@ -134,7 +134,7 @@ network:
 '''
 
 
-class NetworkController(BaseController):
+class NetworkController(TuiController):
 
     model_name = "network"
     root = "/"

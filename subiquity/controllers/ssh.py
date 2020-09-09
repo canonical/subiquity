@@ -20,7 +20,7 @@ from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
 from subiquitycore import utils
 
-from subiquity.controller import SubiquityController
+from subiquity.controller import SubiquityTuiController
 from subiquity.ui.views.ssh import SSHView
 
 log = logging.getLogger('subiquity.controllers.ssh')
@@ -32,7 +32,7 @@ class FetchSSHKeysFailure(Exception):
         self.output = output
 
 
-class SSHController(SubiquityController):
+class SSHController(SubiquityTuiController):
 
     autoinstall_key = model_name = "ssh"
     autoinstall_schema = {

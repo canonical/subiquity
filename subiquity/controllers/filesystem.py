@@ -34,7 +34,7 @@ from subiquitycore.utils import (
 
 
 from subiquity.common.errorreport import ErrorReportKind
-from subiquity.controller import SubiquityController
+from subiquity.controller import SubiquityTuiController
 from subiquity.models.filesystem import (
     align_up,
     Bootloader,
@@ -61,7 +61,7 @@ PREP_GRUB_SIZE_BYTES = 8 * 1024 * 1024    # 8MiB
 UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
 
-class FilesystemController(SubiquityController):
+class FilesystemController(SubiquityTuiController):
 
     autoinstall_key = "storage"
     autoinstall_schema = {'type': 'object'}  # ...

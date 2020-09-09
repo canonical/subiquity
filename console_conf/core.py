@@ -15,7 +15,7 @@
 
 import logging
 
-from subiquitycore.core import Application
+from subiquitycore.tui import TuiApplication
 
 from console_conf.models.console_conf import ConsoleConfModel
 from console_conf.models.systems import RecoverySystemsModel
@@ -23,8 +23,9 @@ from console_conf.models.systems import RecoverySystemsModel
 log = logging.getLogger("console_conf.core")
 
 
-class ConsoleConf(Application):
+class ConsoleConf(TuiApplication):
 
+    from console_conf import controllers as controllers_mod
     project = "console_conf"
 
     make_model = ConsoleConfModel
@@ -36,8 +37,9 @@ class ConsoleConf(Application):
     ]
 
 
-class RecoveryChooser(Application):
+class RecoveryChooser(TuiApplication):
 
+    from console_conf import controllers as controllers_mod
     project = "console_conf"
 
     controllers = [

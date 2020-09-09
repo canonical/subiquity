@@ -22,12 +22,12 @@ from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command, run_command
 
-from subiquity.controller import SubiquityController
+from subiquity.controller import SubiquityTuiController
 
 log = logging.getLogger("subiquity.controllers.restart")
 
 
-class RebootController(SubiquityController):
+class RebootController(SubiquityTuiController):
 
     def __init__(self, app):
         super().__init__(app)
