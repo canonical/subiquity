@@ -11,4 +11,5 @@ jsonschema
 pyudev
 requests
 requests-unixsocket
+aiohttp
 -e git+https://github.com/CanonicalLtd/probert@b697ab779e7e056301e779f4708a9f1ce51b0027#egg=probert
