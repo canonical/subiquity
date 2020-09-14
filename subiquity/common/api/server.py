@@ -102,24 +102,25 @@ def _make_handler(controller, definition, implementation, serializer):
         with context:
             context.set('request', request)
             args = {}
-            if data_annotation is not None:
-                payload = json.loads(await request.text())
-                args[data_arg] = serializer.deserialize(
-                    data_annotation, payload)
-            for arg, ann, default in query_args_anns:
-                if arg in request.query:
-                    v = serializer.deserialize(
-                        ann, json.loads(request.query[arg]))
-                elif default != inspect._empty:
-                    v = default
-                else:
-                    1/0
-                args[arg] = v
-            if 'context' in impl_params:
-                args['context'] = context
-            if 'request' in impl_params:
-                args['request'] = request
             try:
+                if data_annotation is not None:
+                    payload = json.loads(await request.text())
+                    args[data_arg] = serializer.deserialize(
+                        data_annotation, payload)
+                for arg, ann, default in query_args_anns:
+                    if arg in request.query:
+                        v = serializer.deserialize(
+                            ann, json.loads(request.query[arg]))
+                    elif default != inspect._empty:
+                        v = default
+                    else:
+                        raise TypeError(
+                            'missing required argument "{}"'.format(arg))
+                    args[arg] = v
+                if 'context' in impl_params:
+                    args['context'] = context
+                if 'request' in impl_params:
+                    args['request'] = request
                 result = await implementation(**args)
                 resp = web.json_response(
                     serializer.serialize(def_ret_ann, result),
@@ -127,7 +128,11 @@ def _make_handler(controller, definition, implementation, serializer):
             except Exception as exc:
                 resp = web.Response(
                     status=500,
-                    headers={'x-status': 'error'})
+                    headers={
+                        'x-status': 'error',
+                        'x-error-type': type(exc).__name__,
+                        'x-error-msg': str(exc),
+                        })
                 resp['exception'] = exc
             context.description = '{} {}'.format(resp.status, trim(resp.text))
             return resp

@@ -36,17 +36,17 @@ def _wrap(make_request, path, meth, serializer):
 
     async def impl(*args, **kw):
         args = sig.bind(*args, **kw)
-        params = {
-            k: json.dumps(serializer.serialize(meth_params[k].annotation, v))
-            for (k, v) in args.arguments.items() if k != payload_arg
-            }
-        if payload_arg in args.arguments:
-            v = args.arguments[payload_arg]
-            data = serializer.serialize(payload_ann, v)
-        else:
-            data = None
+        query_args = {}
+        data = None
+        for arg_name, value in args.arguments.items():
+            if arg_name == payload_arg:
+                data = serializer.serialize(payload_ann, value)
+            else:
+                query_args[arg_name] = json.dumps(
+                    serializer.serialize(
+                        meth_params[arg_name].annotation, value))
         async with make_request(
-                meth.__name__, path, json=data, params=params) as resp:
+                meth.__name__, path, json=data, params=query_args) as resp:
             resp.raise_for_status()
             return serializer.deserialize(r_ann, await resp.json())
     return impl
@@ -74,9 +74,16 @@ def make_client_for_conn(
     async def make_request(method, path, *, params, json):
         async with aiohttp.ClientSession(
                 connector=conn, connector_owner=False) as session:
+            # session.request needs a full URL with scheme and host
+            # even though that's in some ways a bit silly with a unix
+            # socket, so we just hardcode something here (I guess the
+            # "a" gets sent a long to the server inthe Host: header
+            # and the server could in principle do something like
+            # virtual host based selection but well....)
+            url = 'http://a' + path
             async with session.request(
-                    method, 'http://a' + path, json=json,
-                    params=params, timeout=0) as response:
+                    method, url, json=json, params=params,
+                    timeout=0) as response:
                 yield resp_hook(response)
 
     return make_client(endpoint_cls, make_request, serializer)

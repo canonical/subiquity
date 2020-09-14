@@ -117,6 +117,46 @@ class TestBind(unittest.TestCase):
 
         run_coro(run())
 
+    def test_missing_argument(self):
+        @api
+        class API:
+            def GET(arg: str): ...
+
+        class Impl(TestControllerBase):
+            async def GET(self, arg: str):
+                return arg
+
+        async def run():
+            async with makeTestClient(API, Impl()) as client:
+                resp = await client.get('/')
+                self.assertEqual(resp.status, 500)
+                self.assertEqual(resp.headers['x-status'], 'error')
+                self.assertEqual(resp.headers['x-error-type'], 'TypeError')
+                self.assertEqual(
+                    resp.headers['x-error-msg'],
+                    'missing required argument "arg"')
+
+        run_coro(run())
+
+    def test_error(self):
+        @api
+        class API:
+            def GET(): ...
+
+        class Impl(TestControllerBase):
+            async def GET(self):
+                return 1/0
+
+        async def run():
+            async with makeTestClient(API, Impl()) as client:
+                resp = await client.get('/')
+                self.assertEqual(resp.status, 500)
+                self.assertEqual(resp.headers['x-status'], 'error')
+                self.assertEqual(
+                    resp.headers['x-error-type'], 'ZeroDivisionError')
+
+        run_coro(run())
+
     def test_post(self):
         @api
         class API:
