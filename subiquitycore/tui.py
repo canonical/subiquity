@@ -251,6 +251,7 @@ class TuiApplication(Application):
         extend_dec_special_charmap()
         self.toggle_rich()
         self.urwid_loop.start()
+        self.select_initial_screen(self.initial_controller_index())
 
     def initial_controller_index(self):
         if not self.updated:
@@ -266,14 +267,15 @@ class TuiApplication(Application):
                 controller_index = i
         return controller_index
 
+    async def start(self):
+        await super().start()
+        self.start_urwid()
+
     def run(self):
         if self.opts.scripts:
             self.run_scripts(self.opts.scripts)
-        self.aio_loop.call_soon(self.start_urwid)
-        self.aio_loop.call_soon(
-            lambda: self.select_initial_screen(
-                self.initial_controller_index()))
         try:
             super().run()
         finally:
-            self.urwid_loop.stop()
+            if self.urwid_loop is not None:
+                self.urwid_loop.stop()
