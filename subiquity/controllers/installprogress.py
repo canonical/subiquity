@@ -45,7 +45,7 @@ from subiquitycore.utils import (
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.controller import SubiquityTuiController
-from subiquity.journald import journald_listener
+from subiquity.journald import journald_listen
 from subiquity.ui.views.installprogress import ProgressView
 
 
@@ -260,10 +260,10 @@ class InstallProgressController(SubiquityTuiController):
         self.install_state = InstallState.RUNNING
         self.curtin_event_contexts[''] = context
 
-        journal_fd, watcher = journald_listener(
+        journald_listen(
+            self.app.aio_loop,
             [self._event_syslog_identifier, self._log_syslog_identifier],
             self._journal_event)
-        self.app.aio_loop.add_reader(journal_fd, watcher)
 
         curtin_cmd = self._get_curtin_command()
 

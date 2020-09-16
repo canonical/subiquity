@@ -46,7 +46,7 @@ from subiquity.common.errorreport import (
     ErrorReporter,
     ErrorReportKind,
     )
-from subiquity.journald import journald_listener
+from subiquity.journald import journald_listen
 from subiquity.keycodes import (
     DummyKeycodesFilter,
     KeyCodesFilter,
@@ -135,10 +135,10 @@ class Subiquity(TuiApplication):
         else:
             self.input_filter = DummyKeycodesFilter()
 
-        self.journal_fd, self.journal_watcher = journald_listener(
-            ["subiquity"], self.subiquity_event, seek=True)
         self.help_menu = HelpMenu(self)
         super().__init__(opts)
+        journald_listen(
+            self.aio_loop, ["subiquity"], self.subiquity_event, seek=True)
         self.event_listeners = []
         self.install_lock_file = Lockfile(self.state_path("installing"))
         self.global_overlays = []
