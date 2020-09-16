@@ -195,7 +195,8 @@ class Subiquity(TuiApplication):
     def restart(self, remove_last_screen=True):
         if remove_last_screen:
             self._remove_last_screen()
-        self.urwid_loop.screen.stop()
+        if self.urwid_loop is not None:
+            self.urwid_loop.screen.stop()
         cmdline = ['snap', 'run', 'subiquity']
         if self.opts.dry_run:
             cmdline = [
@@ -276,7 +277,9 @@ class Subiquity(TuiApplication):
             await self.load_autoinstall_config()
             if not self.interactive() and not self.opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
-        await super().start()
+        await super().start(start_urwid=self.interactive())
+        if not self.interactive():
+            self.select_initial_screen(0)
 
     def extra_urwid_loop_args(self):
         return dict(input_filter=self.input_filter.filter)

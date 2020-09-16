@@ -267,9 +267,10 @@ class TuiApplication(Application):
                 controller_index = i
         return controller_index
 
-    async def start(self):
+    async def start(self, start_urwid=True):
         await super().start()
-        self.start_urwid()
+        if start_urwid:
+            self.start_urwid()
 
     def run(self):
         if self.opts.scripts:
