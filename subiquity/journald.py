@@ -16,7 +16,7 @@
 from systemd import journal
 
 
-def journald_listener(identifiers, callback, seek=False):
+def journald_listen(loop, identifiers, callback, seek=False):
     reader = journal.Reader()
     args = []
     for identifier in identifiers:
@@ -31,4 +31,4 @@ def journald_listener(identifiers, callback, seek=False):
             return
         for event in reader:
             callback(event)
-    return reader.fileno(), watch
+    loop.add_reader(reader.fileno(), watch)

@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 import os
 import platform
@@ -45,7 +46,7 @@ from subiquity.common.errorreport import (
     ErrorReporter,
     ErrorReportKind,
     )
-from subiquity.journald import journald_listener
+from subiquity.journald import journald_listen
 from subiquity.keycodes import (
     DummyKeycodesFilter,
     KeyCodesFilter,
@@ -134,10 +135,10 @@ class Subiquity(TuiApplication):
         else:
             self.input_filter = DummyKeycodesFilter()
 
-        self.journal_fd, self.journal_watcher = journald_listener(
-            ["subiquity"], self.subiquity_event, seek=True)
         self.help_menu = HelpMenu(self)
         super().__init__(opts)
+        journald_listen(
+            self.aio_loop, ["subiquity"], self.subiquity_event, seek=True)
         self.event_listeners = []
         self.install_lock_file = Lockfile(self.state_path("installing"))
         self.global_overlays = []
@@ -194,7 +195,8 @@ class Subiquity(TuiApplication):
     def restart(self, remove_last_screen=True):
         if remove_last_screen:
             self._remove_last_screen()
-        self.urwid_loop.screen.stop()
+        if self.urwid_loop is not None:
+            self.urwid_loop.screen.stop()
         cmdline = ['snap', 'run', 'subiquity']
         if self.opts.dry_run:
             cmdline = [
@@ -219,7 +221,7 @@ class Subiquity(TuiApplication):
                 tty = '/dev/' + work[len('console='):].split(',')[0]
         return tty
 
-    def load_autoinstall_config(self):
+    async def load_autoinstall_config(self):
         with open(self.opts.autoinstall) as fp:
             self.autoinstall_config = yaml.safe_load(fp)
         primary_tty = self.get_primary_tty()
@@ -252,9 +254,7 @@ class Subiquity(TuiApplication):
                 while not os.path.exists(stamp_file):
                     time.sleep(1)
             elif not os.path.exists(stamp_file):
-                self.aio_loop.run_until_complete(
-                    self.controllers.Early.run())
-                self.new_event_loop()
+                await self.controllers.Early.run()
                 open(stamp_file, 'w').close()
             with open(self.opts.autoinstall) as fp:
                 self.autoinstall_config = yaml.safe_load(fp)
@@ -272,19 +272,20 @@ class Subiquity(TuiApplication):
             # in next_screen below will be confusing.
             os.system('stty sane')
 
-    def new_event_loop(self):
-        super().new_event_loop()
-        self.aio_loop.add_reader(self.journal_fd, self.journal_watcher)
+    async def start(self):
+        if self.opts.autoinstall is not None:
+            await self.load_autoinstall_config()
+            if not self.interactive() and not self.opts.dry_run:
+                open('/run/casper-no-prompt', 'w').close()
+        await super().start(start_urwid=self.interactive())
+        if not self.interactive():
+            self.select_initial_screen(0)
 
     def extra_urwid_loop_args(self):
         return dict(input_filter=self.input_filter.filter)
 
     def run(self):
         try:
-            if self.opts.autoinstall is not None:
-                self.load_autoinstall_config()
-                if not self.interactive() and not self.opts.dry_run:
-                    open('/run/casper-no-prompt', 'w').close()
             super().run()
         except Exception:
             print("generating crash report")
@@ -299,8 +300,9 @@ class Subiquity(TuiApplication):
                 traceback.print_exc()
             Error = getattr(self.controllers, "Error", None)
             if Error is not None and Error.cmds:
-                self.new_event_loop()
-                self.aio_loop.run_until_complete(Error.run())
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                new_loop.run_until_complete(Error.run())
             if self.interactive():
                 self._remove_last_screen()
                 raise

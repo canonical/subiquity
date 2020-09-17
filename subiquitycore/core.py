@@ -74,7 +74,8 @@ class Application:
         self.updated = os.path.exists(self.state_path('updating'))
         self.signal = Signal()
         self.prober = prober
-        self.new_event_loop()
+        self.aio_loop = asyncio.get_event_loop()
+        self.aio_loop.set_exception_handler(self._exception_handler)
         self.controllers = ControllerSet(
             self.controllers_mod, self.controllers, init_args=(self,))
         self.context = Context.new(self)
@@ -86,12 +87,6 @@ class Application:
             self._exc = exc
         else:
             loop.default_exception_handler(context)
-
-    def new_event_loop(self):
-        new_loop = asyncio.new_event_loop()
-        new_loop.set_exception_handler(self._exception_handler)
-        asyncio.set_event_loop(new_loop)
-        self.aio_loop = new_loop
 
     def _connect_base_signals(self):
         """Connect signals used in the core controller."""
@@ -139,13 +134,16 @@ class Application:
             with open(state_path) as fp:
                 controller.deserialize(json.load(fp))
 
+    async def start(self):
+        self.controllers.load_all()
+        self.load_serialized_state()
+        self._connect_base_signals()
+        self.start_controllers()
+
     def run(self):
         self.base_model = self.make_model()
         try:
-            self.controllers.load_all()
-            self.load_serialized_state()
-            self._connect_base_signals()
-            self.start_controllers()
+            self.aio_loop.create_task(self.start())
             self.aio_loop.run_forever()
         finally:
             self.aio_loop.run_until_complete(
