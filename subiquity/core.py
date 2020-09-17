@@ -386,7 +386,7 @@ class Subiquity(TuiApplication):
                 break
         super().select_initial_screen(index)
 
-    def select_screen(self, new):
+    async def select_screen(self, new):
         if new.interactive():
             self._cancel_show_progress()
             if self.progress_showing:
@@ -397,7 +397,7 @@ class Subiquity(TuiApplication):
                         remaining, self.select_screen, new)
                     return
             self.progress_showing = False
-            super().select_screen(new)
+            await super().select_screen(new)
             if new.answers:
                 new.run_answers()
         elif self.autoinstall_config and not new.autoinstall_applied:

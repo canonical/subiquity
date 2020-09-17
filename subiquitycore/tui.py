@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import inspect
 import logging
 import os
 import yaml
@@ -96,20 +97,28 @@ class TuiApplication(Application):
             before_hook()
         schedule_task(_run())
 
-    def select_screen(self, new):
+    async def select_screen(self, new):
         new.context.enter("starting UI")
         if self.opts.screens and new.name not in self.opts.screens:
             raise Skip
         try:
-            self.ui.set_body(new.make_ui())
-            self.cur_screen = new
+            maybe_view = new.make_ui()
+            if inspect.iscoroutine(maybe_view):
+                view = await maybe_view
+            else:
+                view = maybe_view
         except Skip:
             new.context.exit("(skipped)")
             raise
+        else:
+            self.ui.set_body(view)
+            self.cur_screen = new
         with open(self.state_path('last-screen'), 'w') as fp:
             fp.write(new.name)
 
-    def _move_screen(self, increment):
+    async def _move_screen(self, increment, coro):
+        if coro is not None:
+            await coro
         self.save_state()
         old, self.cur_screen = self.cur_screen, None
         if old is not None:
@@ -126,18 +135,18 @@ class TuiApplication(Application):
                 return
             new = self.controllers.cur
             try:
-                self.select_screen(new)
+                await self.select_screen(new)
             except Skip:
                 log.debug("skipping screen %s", new.name)
                 continue
             else:
                 return
 
-    def next_screen(self, *args):
-        self._move_screen(1)
+    def next_screen(self, coro=None):
+        self.aio_loop.create_task(self._move_screen(1, coro))
 
-    def prev_screen(self, *args):
-        self._move_screen(-1)
+    def prev_screen(self):
+        self.aio_loop.create_task(self._move_screen(-1, None))
 
     def select_initial_screen(self, controller_index):
         for controller in self.controllers.instances[:controller_index]:
