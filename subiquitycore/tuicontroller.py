@@ -112,8 +112,15 @@ class RepeatedController(BaseController):
     def start_ui(self):
         self.orig.start_ui(self.index)
 
+    def run_answers(self):
+        self.orig.run_answers()
+
     def end_ui(self):
         self.orig.end_ui()
 
     def cancel(self):
         self.orig.cancel()
+
+    @property
+    def answers(self):
+        return self.orig.answers

@@ -454,6 +454,9 @@ class InstallProgressController(SubiquityTuiController):
         self.ui.set_body(self.progress_view)
         schedule_task(self.move_on())
 
+    def run_answers(self):
+        pass
+
 
 uu_apt_conf = """\
 # Config for the unattended-upgrades run to avoid failing on battery power or

@@ -253,6 +253,11 @@ class FilesystemController(SubiquityTuiController):
             elif self.answers['manual']:
                 self.manual()
 
+    def run_answers(self):
+        # Handled above as we only want to run answers when probing
+        # completes.
+        pass
+
     def _action_get(self, id):
         dev_spec = id[0].split()
         dev = None

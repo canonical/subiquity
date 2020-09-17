@@ -52,6 +52,8 @@ class IdentityController(SubiquityTuiController):
 
     def start_ui(self):
         self.ui.set_body(IdentityView(self.model, self))
+
+    def run_answers(self):
         if all(elem in self.answers for elem in
                ['realname', 'username', 'password', 'hostname']):
             d = {

@@ -161,13 +161,14 @@ class SnapListController(SubiquityTuiController):
             # screen.
             self.configured()
             raise Skip()
+        self.ui.set_body(SnapListView(self.model, self))
+
+    def run_answers(self):
         if 'snaps' in self.answers:
             to_install = {}
             for snap_name, selection in self.answers['snaps'].items():
                 to_install[snap_name] = SnapSelection(**selection)
             self.done(to_install)
-            return
-        self.ui.set_body(SnapListView(self.model, self))
 
     def get_snap_list_task(self):
         return self.loader.get_snap_list_task()

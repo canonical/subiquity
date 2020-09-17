@@ -66,6 +66,8 @@ class KeyboardController(SubiquityTuiController):
             self.model.load_language('C')
         view = KeyboardView(self.model, self, self.opts)
         self.ui.set_body(view)
+
+    def run_answers(self):
         if 'layout' in self.answers:
             layout = self.answers['layout']
             variant = self.answers.get('variant', '')

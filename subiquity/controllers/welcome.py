@@ -51,6 +51,8 @@ class WelcomeController(SubiquityTuiController):
     def start_ui(self):
         view = WelcomeView(self.model, self)
         self.ui.set_body(view)
+
+    def run_answers(self):
         if 'lang' in self.answers:
             self.done(self.answers['lang'])
 

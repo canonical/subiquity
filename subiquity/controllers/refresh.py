@@ -243,6 +243,10 @@ class RefreshController(SubiquityTuiController):
         else:
             raise Skip()
 
+    def run_answers(self):
+        # Handled in the view
+        pass
+
     def done(self, sender=None):
         log.debug("RefreshController.done next_screen")
         self.app.next_screen()
