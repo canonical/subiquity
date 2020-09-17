@@ -48,8 +48,8 @@ class ProxyController(SubiquityTuiController):
         # by everything; don't have a way to do that today.
         pass
 
-    def start_ui(self):
-        self.ui.set_body(ProxyView(self.model, self))
+    def make_ui(self):
+        return ProxyView(self.model, self)
 
     def run_answers(self):
         if 'proxy' in self.answers:

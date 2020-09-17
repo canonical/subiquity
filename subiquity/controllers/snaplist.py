@@ -155,13 +155,13 @@ class SnapListController(SubiquityTuiController):
         self.loader = self._make_loader()
         self.loader.start()
 
-    def start_ui(self):
+    def make_ui(self):
         if self.loader.failed or not self.app.base_model.network.has_network:
             # If loading snaps failed or the network is disabled, skip the
             # screen.
             self.configured()
             raise Skip()
-        self.ui.set_body(SnapListView(self.model, self))
+        return SnapListView(self.model, self)
 
     def run_answers(self):
         if 'snaps' in self.answers:

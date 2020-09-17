@@ -74,8 +74,9 @@ class RebootController(SubiquityTuiController):
         await self.app.controllers.InstallProgress.reboot_clicked.wait()
         self.reboot()
 
-    def start_ui(self):
+    def make_ui(self):
         schedule_task(self._run())
+        return self.ui.body
 
     def cancel(self):
         pass

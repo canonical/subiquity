@@ -22,9 +22,8 @@ class WelcomeController(TuiController):
 
     welcome_view = WelcomeView
 
-    def start_ui(self):
-        view = self.welcome_view(self)
-        self.ui.set_body(view)
+    def make_ui(self):
+        return self.welcome_view(self)
 
     def done(self):
         self.app.next_screen()

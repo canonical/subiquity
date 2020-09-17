@@ -120,7 +120,7 @@ class TestChooserConfirmController(unittest.TestCase):
         c = RecoveryChooserConfirmController(app)
         c.model = make_model()
         c.model.select(c.model.systems[0], c.model.systems[0].actions[0])
-        c.start_ui()
+        c.make_ui()
         ccv.assert_called()
 
 
@@ -146,13 +146,12 @@ class TestChooserController(unittest.TestCase):
     def test_current_ui_first(self, cv, ccsv):
         app = make_app(model=make_model())
         c = RecoveryChooserController(app)
-        c.ui.start_ui = mock.Mock()
         # current system view is constructed
         ccsv.assert_called_with(c, c.model.current, has_more=True)
         # as well as all systems view
         cv.assert_called_with(c, c.model.systems)
-        c.start_ui()
-        c.ui.set_body.assert_called_with('current')
+        v = c.make_ui()
+        self.assertEqual(v, 'current')
         # user selects more options and the view is replaced
         c.more_options()
         c.ui.set_body.assert_called_with('all')
@@ -164,13 +163,12 @@ class TestChooserController(unittest.TestCase):
     def test_current_current_all_there_and_back(self, cv, ccsv):
         app = make_app(model=make_model())
         c = RecoveryChooserController(app)
-        c.ui.start_ui = mock.Mock()
         # sanity
         ccsv.assert_called_with(c, c.model.current, has_more=True)
         cv.assert_called_with(c, c.model.systems)
 
-        c.start_ui()
-        c.ui.set_body.assert_called_with('current')
+        v = c.make_ui()
+        self.assertEqual(v, 'current')
         # user selects more options and the view is replaced
         c.more_options()
         c.ui.set_body.assert_called_with('all')
@@ -189,13 +187,12 @@ class TestChooserController(unittest.TestCase):
         model = RecoverySystemsModel.from_systems([model2_current])
         app = make_app(model=model)
         c = RecoveryChooserController(app)
-        c.ui.start_ui = mock.Mock()
         # both views are constructed
         ccsv.assert_called_with(c, c.model.current, has_more=False)
         cv.assert_called_with(c, c.model.systems)
 
-        c.start_ui()
-        c.ui.set_body.assert_called_with('current')
+        v = c.make_ui()
+        self.assertEqual(v, 'current')
         # going back does nothing
         c.back()
         c.ui.set_body.not_called()
@@ -208,7 +205,6 @@ class TestChooserController(unittest.TestCase):
         model = RecoverySystemsModel.from_systems([model1_non_current])
         app = make_app(model=model)
         c = RecoveryChooserController(app)
-        c.ui.start_ui = mock.Mock()
 
         # sanity
         self.assertIsNone(c.model.current)
@@ -218,5 +214,5 @@ class TestChooserController(unittest.TestCase):
         # current system view is not constructed at all
         ccsv.assert_not_called()
 
-        c.start_ui()
-        c.ui.set_body.assert_called_with('all')
+        v = c.make_ui()
+        self.assertEqual(v, 'all')

@@ -65,8 +65,8 @@ class SSHController(SubiquityTuiController):
         self.model.pwauth = data.get(
             'allow-pw', not self.model.authorized_keys)
 
-    def start_ui(self):
-        self.ui.set_body(SSHView(self.model, self))
+    def make_ui(self):
+        return SSHView(self.model, self)
 
     def run_answers(self):
         if 'ssh-import-id' in self.answers:

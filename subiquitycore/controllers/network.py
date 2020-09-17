@@ -449,7 +449,7 @@ class NetworkController(TuiController):
                 dev.set_dhcp_state(v, DHCPState.TIMED_OUT)
                 self.network_event_receiver.update_link(dev.ifindex)
 
-    def start_ui(self):
+    def make_ui(self):
         if not self.view_shown:
             self.update_initial_configs()
         netdev_infos = [
@@ -461,7 +461,7 @@ class NetworkController(TuiController):
             self.view_shown = True
         self.view.update_default_routes(
             self.network_event_receiver.default_routes)
-        self.ui.set_body(self.view)
+        return self.view
 
     def end_ui(self):
         self.view = None

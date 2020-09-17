@@ -222,15 +222,17 @@ class FilesystemController(SubiquityTuiController):
         await self._start_task
         await self._probe_task.wait()
         if isinstance(self.ui.body, SlowProbing):
-            self.start_ui()
+            self.ui.set_body(self.make_ui())
 
-    def start_ui(self):
+    def make_ui(self):
         if self._probe_task.task is None or not self._probe_task.task.done():
-            self.ui.set_body(SlowProbing(self))
             schedule_task(self._wait_for_probing())
+            return SlowProbing(self)
         elif True in self._crash_reports:
-            self.ui.set_body(ProbingFailed(self))
-            self.ui.body.show_error()
+            pr = self._crash_reports[True]
+            if pr is not None:
+                self.app.show_error_report(pr)
+            return ProbingFailed(self)
         else:
             # Once we've shown the filesystem UI, we stop listening for udev
             # events as merging system changes with configuration the user has
@@ -238,20 +240,24 @@ class FilesystemController(SubiquityTuiController):
             # not today.
             self.convert_autoinstall_config()
             self.stop_listening_udev()
-            self.ui.set_body(GuidedDiskSelectionView(self))
             pr = self._crash_reports.get(False)
             if pr is not None:
                 self.app.show_error_report(pr)
-            if self.answers['guided']:
-                disk = self.model.all_disks()[self.answers['guided-index']]
-                method = self.answers.get('guided-method')
-                self.ui.body.form.guided_choice.value = {
-                    'disk': disk,
-                    'use_lvm': method == "lvm",
-                    }
-                self.ui.body.done(self.ui.body.form)
-            elif self.answers['manual']:
-                self.manual()
+            if self.answers:
+                self.app.aio_loop.call_soon(self._start_answers)
+            return GuidedDiskSelectionView(self)
+
+    def _start_answers(self):
+        if self.answers['guided']:
+            disk = self.model.all_disks()[self.answers['guided-index']]
+            method = self.answers.get('guided-method')
+            self.ui.body.form.guided_choice.value = {
+                'disk': disk,
+                'use_lvm': method == "lvm",
+                }
+            self.ui.body.done(self.ui.body.form)
+        elif self.answers['manual']:
+            self.manual()
 
     def run_answers(self):
         # Handled above as we only want to run answers when probing
@@ -366,14 +372,8 @@ class FilesystemController(SubiquityTuiController):
             self._run_iterator(self._run_actions(self.answers['manual']))
             self.answers['manual'] = []
 
-    def guided(self, method):
-        v = GuidedDiskSelectionView(self.model, self, method)
-        self.ui.set_body(v)
-        if self.answers['guided']:
-            index = self.answers['guided-index']
-            v.form.guided.value = True
-            v.form.guided_choice.disk.widget.index = index
-            v.form._emit('done')
+    def guided(self):
+        self.ui.set_body(GuidedDiskSelectionView(self))
 
     def reset(self):
         log.info("Resetting Filesystem model")

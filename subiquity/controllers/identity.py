@@ -50,8 +50,8 @@ class IdentityController(SubiquityTuiController):
             if 'user-data' not in self.app.autoinstall_config:
                 raise Exception("no identity data provided")
 
-    def start_ui(self):
-        self.ui.set_body(IdentityView(self.model, self))
+    def make_ui(self):
+        return IdentityView(self.model, self)
 
     def run_answers(self):
         if all(elem in self.answers for elem in
