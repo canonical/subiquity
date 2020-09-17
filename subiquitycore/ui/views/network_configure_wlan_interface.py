@@ -7,6 +7,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.models.network import WLANConfig
 from subiquitycore.ui.buttons import cancel_btn, menu_btn
 from subiquitycore.ui.container import (
     ListBox,
@@ -63,22 +64,21 @@ class WLANForm(Form):
 
 
 class NetworkConfigureWLANStretchy(Stretchy):
-    def __init__(self, parent, device):
+    def __init__(self, parent, dev_info):
         self.parent = parent
-        self.device = device
+        self.dev_info = dev_info
         title = _("Network interface {nic} WIFI configuration").format(
-            nic=device.name)
+            nic=dev_info.name)
 
         self.form = WLANForm()
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
 
-        ssid, psk = self.device.configured_ssid
-        if ssid:
-            self.form.ssid.value = ssid
-        if psk:
-            self.form.psk.value = psk
+        if self.dev_info.wlan.config.ssid:
+            self.form.ssid.value = self.dev_info.wlan.config.ssid
+        if self.dev_info.wlan.config.psk:
+            self.form.psk.value = self.dev_info.wlan.config.psk
 
         self.ssid_row = self.form.ssid._table
         self.psk_row = self.form.psk._table
@@ -96,8 +96,8 @@ class NetworkConfigureWLANStretchy(Stretchy):
 
     def show_ssid_list(self, sender):
         self.parent.show_overlay(
-            NetworkList(
-                self, self.device.info.wlan['visible_ssids']), width=60)
+            NetworkList(self, self.dev_info.wlan.visible_ssids),
+            width=60)
 
     def start_scan(self, sender):
         fp = self.inputs.focus_position - 1
@@ -105,19 +105,20 @@ class NetworkConfigureWLANStretchy(Stretchy):
             fp -= 1
         self.inputs.focus_position = fp
         try:
-            self.parent.controller.start_scan(self.device)
+            self.parent.controller.start_scan(self.dev_info)
         except RuntimeError as r:
             log.exception("start_scan failed")
             self.error.set_text("%s" % (r,))
 
     def _build_iface_inputs(self):
-        if len(self.device.info.wlan['visible_ssids']) > 0:
+        visible_ssids = self.dev_info.wlan.visible_ssids
+        if len(visible_ssids) > 0:
             networks_btn = menu_btn("Choose a visible network",
                                     on_press=self.show_ssid_list)
         else:
             networks_btn = disabled(menu_btn("No visible networks"))
 
-        if not self.device.info.wlan['scan_state']:
+        if not self.dev_info.wlan.scan_state:
             scan_btn = menu_btn("Scan for networks", on_press=self.start_scan)
         else:
             scan_btn = disabled(menu_btn("Scanning for networks"))
@@ -136,22 +137,16 @@ class NetworkConfigureWLANStretchy(Stretchy):
         ]
         return col
 
-    def refresh_model_inputs(self):
-        try:
-            self.device = self.parent.model.get_netdev_by_name(
-                self.device.name)
-        except KeyError:
-            # The interface is gone
-            self.parent.remove_overlay()
-            return
+    def update_link(self, dev_info):
+        self.dev_info = dev_info
         self.inputs.contents = [(obj, ('pack', None))
                                 for obj in self._build_iface_inputs()]
 
     def done(self, sender):
-        if self.device.configured_ssid[0] is None and self.form.ssid.value:
+        if self.dev_info.wlan.config.ssid is None and self.form.ssid.value:
             # Turn DHCP4 on by default when specifying an SSID for
             # the first time...
-            self.device.config['dhcp4'] = True
+            self.parent.controller.enable_dhcp(self.dev_info, 4)
         if self.form.ssid.value:
             ssid = self.form.ssid.value
         else:
@@ -160,8 +155,9 @@ class NetworkConfigureWLANStretchy(Stretchy):
             psk = self.form.psk.value
         else:
             psk = None
-        self.device.set_ssid_psk(ssid, psk)
-        self.parent.update_link(self.device)
+        self.parent.controller.set_wlan(
+            self.dev_info, WLANConfig(ssid=ssid, psk=psk))
+        self.parent.update_link(self.dev_info)
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
