@@ -20,6 +20,7 @@ from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
 from subiquitycore import utils
 
+from subiquity.common.types import SSHData
 from subiquity.controller import SubiquityTuiController
 from subiquity.ui.views.ssh import SSHView
 
@@ -66,25 +67,25 @@ class SSHController(SubiquityTuiController):
             'allow-pw', not self.model.authorized_keys)
 
     def make_ui(self):
-        return SSHView(self.model, self)
+        ssh_data = SSHData(
+            install_server=self.model.install_server,
+            allow_pw=self.model.pwauth)
+        return SSHView(self, ssh_data)
 
     def run_answers(self):
         if 'ssh-import-id' in self.answers:
             import_id = self.answers['ssh-import-id']
-            d = {
-                "ssh_import_id": import_id.split(":", 1)[0],
-                "import_username": import_id.split(":", 1)[1],
-                "install_server": True,
-                "pwauth": True,
-            }
-            self.fetch_ssh_keys(d)
+            ssh = SSHData(
+                install_server=True,
+                authorized_keys=[],
+                allow_pw=True)
+            self.fetch_ssh_keys(ssh_import_id=import_id, ssh_data=ssh)
         else:
-            d = {
-                "install_server": self.answers.get("install_server", False),
-                "authorized_keys": self.answers.get("authorized_keys", []),
-                "pwauth": self.answers.get("pwauth", True),
-            }
-            self.done(d)
+            ssh = SSHData(
+                install_server=self.answers.get("install_server", False),
+                authorized_keys=self.answers.get("authorized_keys", []),
+                allow_pw=self.answers.get("pwauth", True))
+            self.done(ssh)
 
     def cancel(self):
         self.app.prev_screen()
@@ -103,10 +104,8 @@ class SSHController(SubiquityTuiController):
         return cp
 
     @with_context(
-        name="ssh_import_id",
-        description="{user_spec[ssh_import_id]}:{user_spec[import_username]}")
-    async def _fetch_ssh_keys(self, *, context, user_spec):
-        ssh_import_id = "{ssh_import_id}:{import_username}".format(**user_spec)
+        name="ssh_import_id", description="{ssh_import_id}")
+    async def _fetch_ssh_keys(self, *, context, ssh_import_id, ssh_data):
         with self.context.child("ssh_import_id", ssh_import_id):
             try:
                 cp = await self.run_cmd_checked(
@@ -131,22 +130,21 @@ class SSHController(SubiquityTuiController):
                 "").strip().splitlines()
 
             if 'ssh-import-id' in self.app.answers.get("Identity", {}):
-                user_spec['authorized_keys'] = key_material.splitlines()
-                self.done(user_spec)
+                ssh_data.authorized_keys = key_material.splitlines()
+                self.done(ssh_data)
             else:
                 self.ui.body.confirm_ssh_keys(
-                    user_spec, ssh_import_id, key_material, fingerprints)
+                    ssh_data, ssh_import_id, key_material, fingerprints)
 
-    def fetch_ssh_keys(self, user_spec):
+    def fetch_ssh_keys(self, ssh_import_id, ssh_data):
         self._fetch_task = schedule_task(
-            self._fetch_ssh_keys(user_spec=user_spec))
+            self._fetch_ssh_keys(
+                ssh_import_id=ssh_import_id, ssh_data=ssh_data))
 
-    def done(self, result):
-        log.debug("SSHController.done next_screen result=%s", result)
-        self.model.install_server = result['install_server']
-        self.model.authorized_keys = result.get('authorized_keys', [])
-        self.model.pwauth = result.get('pwauth', True)
-        self.model.ssh_import_id = result.get('ssh_import_id', None)
+    def done(self, data: SSHData):
+        self.model.install_server = data.install_server
+        self.model.authorized_keys = data.authorized_keys
+        self.model.pwauth = data.allow_pw
         self.configured()
         self.app.next_screen()
 

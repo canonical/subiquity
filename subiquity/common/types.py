@@ -17,6 +17,8 @@
 # split into client and server processes.  View code should only use these
 # types!
 
+from typing import List
+
 import attr
 
 
@@ -26,3 +28,10 @@ class IdentityData:
     username: str = ''
     crypted_password: str = attr.ib(default='', repr=False)
     hostname: str = ''
+
+
+@attr.s(auto_attribs=True)
+class SSHData:
+    install_server: bool
+    allow_pw: bool
+    authorized_keys: List[str] = attr.Factory(list)
