@@ -19,6 +19,7 @@ import attr
 
 from subiquitycore.context import with_context
 
+from subiquity.common.types import IdentityData
 from subiquity.controller import SubiquityTuiController
 from subiquity.ui.views import IdentityView
 
@@ -42,7 +43,13 @@ class IdentityController(SubiquityTuiController):
 
     def load_autoinstall_data(self, data):
         if data is not None:
-            self.model.add_user(data)
+            identity_data = IdentityData(
+                realname=data.get('realname', ''),
+                username=data['username'],
+                hostname=data['hostname'],
+                crypted_password=data['password'],
+                )
+            self.model.add_user(identity_data)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -51,29 +58,32 @@ class IdentityController(SubiquityTuiController):
                 raise Exception("no identity data provided")
 
     def make_ui(self):
-        return IdentityView(self.model, self)
+        data = IdentityData()
+        if self.model.user is not None:
+            data.username = self.model.user.username
+            data.realname = self.model.user.realname
+        if self.model.hostname:
+            data.hostname = self.model.hostname
+        return IdentityView(self, data)
 
     def run_answers(self):
         if all(elem in self.answers for elem in
                ['realname', 'username', 'password', 'hostname']):
-            d = {
-                'realname': self.answers['realname'],
-                'username': self.answers['username'],
-                'hostname': self.answers['hostname'],
-                'password': self.answers['password'],
-                }
-            self.done(d)
+            identity = IdentityData(
+                realname=self.answers['realname'],
+                username=self.answers['username'],
+                hostname=self.answers['hostname'],
+                crypted_password=self.answers['password'])
+            self.done(identity)
 
     def cancel(self):
         self.app.prev_screen()
 
-    def done(self, user_spec):
-        safe_spec = user_spec.copy()
-        safe_spec['password'] = '<REDACTED>'
+    def done(self, identity_data):
         log.debug(
             "IdentityController.done next_screen user_spec=%s",
-            safe_spec)
-        self.model.add_user(user_spec)
+            identity_data)
+        self.model.add_user(identity_data)
         self.configured()
         self.app.next_screen()
 
