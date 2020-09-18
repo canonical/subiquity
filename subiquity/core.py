@@ -21,7 +21,6 @@ import shlex
 import signal
 import sys
 import traceback
-import time
 import urwid
 
 import jsonschema
@@ -253,7 +252,7 @@ class Subiquity(TuiApplication):
                     _("waiting for installer running on {tty} to run early "
                       "commands").format(tty=primary_tty))
                 while not os.path.exists(stamp_file):
-                    time.sleep(1)
+                    await asyncio.sleep(1)
             elif not os.path.exists(stamp_file):
                 await self.controllers.Early.run()
                 open(stamp_file, 'w').close()
@@ -426,7 +425,6 @@ class Subiquity(TuiApplication):
 
     def unhandled_input_dry_run(self, key):
         if key == 'ctrl g':
-            import asyncio
             from systemd import journal
 
             async def mock_install():

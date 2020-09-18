@@ -133,7 +133,7 @@ class TuiApplication(Application):
         time, we want to tell the user if it takes more than a moment
         (defined as MAX_BLOCK_TIME) but make sure that we display any
         indication for long enough that the UI is not flickering
-        incomprehensively (MIN_SHOW_PROGRESS_TIME).
+        incomprehensibly (MIN_SHOW_PROGRESS_TIME).
         """
         min_show_task = None
 
