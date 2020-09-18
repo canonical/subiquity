@@ -29,6 +29,10 @@ from subiquitycore.tuicontroller import (
 log = logging.getLogger("subiquity.controller")
 
 
+class Confirm(Exception):
+    pass
+
+
 class SubiquityController(BaseController):
 
     autoinstall_key = None
