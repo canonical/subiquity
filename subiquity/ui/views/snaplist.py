@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import datetime
 import logging
 
@@ -246,34 +247,6 @@ class SnapInfoView(WidgetWrap):
         return self.pile.render(size, focus)
 
 
-class FetchingInfo(WidgetWrap):
-
-    def __init__(self, parent, snap, aio_loop):
-        self.parent = parent
-        self.spinner = Spinner(aio_loop, style='dots')
-        self.spinner.start()
-        self.closed = False
-        text = _("Fetching info for {snap}").format(snap=snap.name)
-        # | text |
-        # 12    34
-        self.width = len(text) + 4
-        cancel = cancel_btn(label=_("Cancel"), on_press=self.close)
-        super().__init__(
-            LineBox(
-                Pile([
-                    ('pack', Text(' ' + text)),
-                    ('pack', self.spinner),
-                    ('pack', button_pile([cancel])),
-                    ])))
-
-    def close(self, sender=None):
-        if self.closed:
-            return
-        self.closed = True
-        self.spinner.stop()
-        self.parent.remove_overlay()
-
-
 class FetchingFailed(WidgetWrap):
 
     def __init__(self, row, snap):
@@ -294,7 +267,7 @@ class FetchingFailed(WidgetWrap):
 
     def load(self, sender=None):
         self.close()
-        self.row.load_info()
+        schedule_task(self.row.load_info())
 
     def close(self, sender=None):
         if self.closed:
@@ -331,25 +304,18 @@ class SnapCheckBox(CheckBox):
                     on_press=self.parent.show_main_screen)],
                 focus_buttons=False))
 
-    async def wait(self, t, fi):
-        await t
-        fi.close()
+    async def load_info(self):
+        app = self.parent.controller.app
+        await app.wait_with_text_dialog(
+            asyncio.shield(
+                self.parent.controller.get_snap_info_task(self.snap)),
+            _("Fetching info for {snap}").format(snap=self.snap.name),
+            can_cancel=True)
         self.loaded()
-
-    def load_info(self):
-        t = self.parent.controller.get_snap_info_task(self.snap)
-
-        if t.done():
-            self.loaded()
-            return
-        fi = FetchingInfo(
-            self.parent, self.snap, self.parent.controller.app.aio_loop)
-        self.parent.show_overlay(fi, width=fi.width)
-        schedule_task(self.wait(t, fi))
 
     def keypress(self, size, key):
         if key.startswith("enter"):
-            self.load_info()
+            schedule_task(self.load_info())
         else:
             return super().keypress(size, key)
 

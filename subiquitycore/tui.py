@@ -29,6 +29,7 @@ from subiquitycore.palette import (
     )
 from subiquitycore.screen import make_screen
 from subiquitycore.tuicontroller import Skip
+from subiquitycore.ui.utils import LoadingDialog
 from subiquitycore.ui.frame import SubiquityCoreUI
 from subiquitycore.utils import arun_command
 
@@ -160,6 +161,30 @@ class TuiApplication(Application):
 
     def show_progress(self):
         raise NotImplementedError
+
+    async def wait_with_text_dialog(self, awaitable, message,
+                                    *, can_cancel=False):
+        ld = None
+
+        task_to_cancel = None
+        if can_cancel:
+            if not isinstance(awaitable, asyncio.Task):
+                async def w():
+                    return await awaitable
+                task_to_cancel = self.aio_loop.create_task(w())
+            else:
+                task_to_cancel = awaitable
+
+        def show_load():
+            nonlocal ld
+            ld = LoadingDialog(
+                self.ui.body, self.aio_loop, message, task_to_cancel)
+            self.ui.body.show_overlay(ld, width=ld.width)
+
+        def hide_load():
+            ld.close()
+
+        await self._wait_with_indication(awaitable, show_load, hide_load)
 
     async def _move_screen(self, increment, coro):
         if coro is not None:
