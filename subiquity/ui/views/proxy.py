@@ -49,11 +49,10 @@ class ProxyView(BaseView):
     excerpt = _("If this system requires a proxy to connect to the internet, "
                 "enter its details here.")
 
-    def __init__(self, model, controller):
-        self.model = model
+    def __init__(self, controller, proxy):
         self.controller = controller
 
-        self.form = ProxyForm(initial={'url': self.model.proxy})
+        self.form = ProxyForm(initial={'url': proxy})
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)

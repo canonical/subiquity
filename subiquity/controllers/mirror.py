@@ -124,7 +124,7 @@ class MirrorController(SubiquityTuiController):
 
     def make_ui(self):
         self.check_state = CheckState.DONE
-        return MirrorView(self.model, self)
+        return MirrorView(self, self.model.get_mirror())
 
     def run_answers(self):
         if 'mirror' in self.answers:

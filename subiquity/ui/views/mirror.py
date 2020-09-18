@@ -46,11 +46,10 @@ class MirrorView(BaseView):
     excerpt = _("If you use an alternative mirror for Ubuntu, enter its "
                 "details here.")
 
-    def __init__(self, model, controller):
-        self.model = model
+    def __init__(self, controller, mirror):
         self.controller = controller
 
-        self.form = MirrorForm(initial={'url': self.model.get_mirror()})
+        self.form = MirrorForm(initial={'url': mirror})
 
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
