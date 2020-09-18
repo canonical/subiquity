@@ -48,9 +48,10 @@ class WelcomeController(SubiquityTuiController):
         else:
             self.model.selected_language = lang
 
-    def start_ui(self):
-        view = WelcomeView(self.model, self)
-        self.ui.set_body(view)
+    def make_ui(self):
+        return WelcomeView(self.model, self)
+
+    def run_answers(self):
         if 'lang' in self.answers:
             self.done(self.answers['lang'])
 

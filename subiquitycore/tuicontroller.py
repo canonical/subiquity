@@ -22,7 +22,7 @@ log = logging.getLogger("subiquitycore.tuicontroller")
 
 
 class Skip(Exception):
-    """Raise this from a controller's start_ui method to skip a screen."""
+    """Raise this from a controller's make_ui method to skip a screen."""
 
 
 class TuiController(BaseController):
@@ -45,11 +45,8 @@ class TuiController(BaseController):
         return inst is self
 
     @abstractmethod
-    def start_ui(self):
-        """Start running this controller's UI.
-
-        This method should call self.ui.set_body.
-        """
+    def make_ui(self):
+        """Return the view for this controller's UI."""
 
     def end_ui(self):
         """Stop running this controller's UI.
@@ -109,11 +106,18 @@ class RepeatedController(BaseController):
     def register_signals(self):
         pass
 
-    def start_ui(self):
-        self.orig.start_ui(self.index)
+    def make_ui(self):
+        return self.orig.make_ui(self.index)
+
+    def run_answers(self):
+        self.orig.run_answers()
 
     def end_ui(self):
         self.orig.end_ui()
 
     def cancel(self):
         self.orig.cancel()
+
+    @property
+    def answers(self):
+        return self.orig.answers

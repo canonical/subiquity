@@ -152,7 +152,7 @@ class InstallProgressController(SubiquityTuiController):
         self.progress_view.finish_all()
         self.progress_view.set_status(('info_error',
                                        _("An error has occurred")))
-        self.start_ui()
+        self.ui.set_body(self.make_ui())
         if crash_report is not None:
             self.progress_view.show_error(crash_report)
 
@@ -440,7 +440,7 @@ class InstallProgressController(SubiquityTuiController):
     def click_reboot(self):
         schedule_task(self._click_reboot())
 
-    def start_ui(self):
+    def make_ui(self):
         if self.install_state in [
                 InstallState.NOT_STARTED,
                 InstallState.RUNNING,
@@ -451,8 +451,11 @@ class InstallProgressController(SubiquityTuiController):
         elif self.install_state == InstallState.ERROR:
             self.progress_view.title = (
                 _('An error occurred during installation'))
-        self.ui.set_body(self.progress_view)
         schedule_task(self.move_on())
+        return self.progress_view
+
+    def run_answers(self):
+        pass
 
 
 uu_apt_conf = """\

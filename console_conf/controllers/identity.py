@@ -147,8 +147,7 @@ class IdentityController(TuiController):
         super().__init__(app)
         self.model = app.base_model.identity
 
-    def start_ui(self):
-        self.ui.set_body(IdentityView(self.model, self))
+    def make_ui(self):
         if get_managed():
             device_owner = get_device_owner()
             if device_owner:
@@ -158,7 +157,9 @@ class IdentityController(TuiController):
                 cp = run_command(['ssh-keygen', '-lf', key_file])
                 self.model.user.fingerprints = (
                     cp.stdout.replace('\r', '').splitlines())
-            self.login()
+            return self.make_login_view()
+        else:
+            return IdentityView(self.model, self)
 
     def identity_done(self, email):
         if self.opts.dry_run:
@@ -199,7 +200,7 @@ class IdentityController(TuiController):
         if self.model.user is None:
             self.app.prev_screen()
 
-    def login(self):
+    def make_login_view(self):
         title = "Configuration Complete"
         self.ui.set_header(title)
 
@@ -208,7 +209,8 @@ class IdentityController(TuiController):
         login_view = LoginView(self.opts, self.model, self, ifaces)
         login_view._w.focus_position = 2
 
-        self.ui.set_body(login_view)
+    def login(self):
+        self.ui.set_body(self.make_login_view())
 
     def login_done(self):
         if not self.opts.dry_run:

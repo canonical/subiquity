@@ -61,11 +61,12 @@ class KeyboardController(SubiquityTuiController):
         log.debug("loading launguage %s", code)
         self.model.load_language(code)
 
-    def start_ui(self):
+    def make_ui(self):
         if self.model.current_lang is None:
             self.model.load_language('C')
-        view = KeyboardView(self.model, self, self.opts)
-        self.ui.set_body(view)
+        return KeyboardView(self.model, self, self.opts)
+
+    def run_answers(self):
         if 'layout' in self.answers:
             layout = self.answers['layout']
             variant = self.answers.get('variant', '')

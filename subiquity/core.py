@@ -398,6 +398,8 @@ class Subiquity(TuiApplication):
                     return
             self.progress_showing = False
             super().select_screen(new)
+            if new.answers:
+                new.run_answers()
         elif self.autoinstall_config and not new.autoinstall_applied:
             if self.interactive() and self.show_progress_handle is None:
                 self.ui.block_input = True

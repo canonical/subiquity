@@ -41,7 +41,7 @@ class Application:
     #         "InstallProgress",
     # ]
     # The 'next_screen' and 'prev_screen' methods move through the list of
-    # controllers in order, calling the start_ui method on the controller
+    # controllers in order, calling the make_ui method on the controller
     # instance.
 
     def __init__(self, opts):

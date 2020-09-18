@@ -122,9 +122,11 @@ class MirrorController(SubiquityTuiController):
         self.check_state = CheckState.DONE
         self.model.set_country(cc)
 
-    def start_ui(self):
+    def make_ui(self):
         self.check_state = CheckState.DONE
-        self.ui.set_body(MirrorView(self.model, self))
+        return MirrorView(self.model, self)
+
+    def run_answers(self):
         if 'mirror' in self.answers:
             self.done(self.answers['mirror'])
         elif 'country-code' in self.answers \

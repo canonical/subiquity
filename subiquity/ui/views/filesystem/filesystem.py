@@ -535,7 +535,7 @@ class FilesystemView(BaseView):
         self.show_stretchy_overlay(VolGroupStretchy(self))
 
     def cancel(self, button=None):
-        self.controller.start_ui()
+        self.controller.guided()
 
     def reset(self, button):
         self.controller.reset()

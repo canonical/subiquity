@@ -50,6 +50,11 @@ class SSHController(SubiquityTuiController):
     def __init__(self, app):
         super().__init__(app)
         self._fetch_task = None
+        if not self.answers:
+            identity_answers = self.app.answers.get('Identity', {})
+            if 'ssh-import-id' in identity_answers:
+                self.answers['ssh-import-id'] = identity_answers[
+                    'ssh-import-id']
 
     def load_autoinstall_data(self, data):
         if data is None:
@@ -60,17 +65,12 @@ class SSHController(SubiquityTuiController):
         self.model.pwauth = data.get(
             'allow-pw', not self.model.authorized_keys)
 
-    def start_ui(self):
-        self.ui.set_body(SSHView(self.model, self))
-        if self.answers:
-            d = {
-                "install_server": self.answers.get("install_server", False),
-                "authorized_keys": self.answers.get("authorized_keys", []),
-                "pwauth": self.answers.get("pwauth", True),
-            }
-            self.done(d)
-        elif 'ssh-import-id' in self.app.answers.get('Identity', {}):
-            import_id = self.app.answers['Identity']['ssh-import-id']
+    def make_ui(self):
+        return SSHView(self.model, self)
+
+    def run_answers(self):
+        if 'ssh-import-id' in self.answers:
+            import_id = self.answers['ssh-import-id']
             d = {
                 "ssh_import_id": import_id.split(":", 1)[0],
                 "import_username": import_id.split(":", 1)[1],
@@ -78,6 +78,13 @@ class SSHController(SubiquityTuiController):
                 "pwauth": True,
             }
             self.fetch_ssh_keys(d)
+        else:
+            d = {
+                "install_server": self.answers.get("install_server", False),
+                "authorized_keys": self.answers.get("authorized_keys", []),
+                "pwauth": self.answers.get("pwauth", True),
+            }
+            self.done(d)
 
     def cancel(self):
         self.app.prev_screen()

@@ -101,7 +101,7 @@ class TuiApplication(Application):
         if self.opts.screens and new.name not in self.opts.screens:
             raise Skip
         try:
-            new.start_ui()
+            self.ui.set_body(new.make_ui())
             self.cur_screen = new
         except Skip:
             new.context.exit("(skipped)")

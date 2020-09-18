@@ -222,7 +222,7 @@ class RefreshController(SubiquityTuiController):
         result = await self.app.snapd.get('v2/changes/{}'.format(change))
         return result['result']
 
-    def start_ui(self, index=1):
+    def make_ui(self, index=1):
         from subiquity.ui.views.refresh import RefreshView
         if self.app.updated:
             raise Skip()
@@ -239,9 +239,13 @@ class RefreshController(SubiquityTuiController):
         else:
             raise AssertionError("unexpected index {}".format(index))
         if show:
-            self.ui.set_body(RefreshView(self))
+            return RefreshView(self)
         else:
             raise Skip()
+
+    def run_answers(self):
+        # Handled in the view
+        pass
 
     def done(self, sender=None):
         log.debug("RefreshController.done next_screen")

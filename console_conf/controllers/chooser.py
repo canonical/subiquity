@@ -47,7 +47,7 @@ class RecoveryChooserController(RecoveryChooserBaseController):
         # one of the current views
         self._current_view = None
 
-    def start_ui(self):
+    def make_ui(self):
         # current view is preserved, so going back comes back to the right
         # screen
         if self._current_view is None:
@@ -57,7 +57,7 @@ class RecoveryChooserController(RecoveryChooserBaseController):
             if self._model_view is not None:
                 self._current_view = self._model_view
 
-        self.ui.set_body(self._current_view)
+        return self._current_view
 
     def _make_views(self):
         current_view = None
@@ -89,9 +89,8 @@ class RecoveryChooserController(RecoveryChooserBaseController):
 
 
 class RecoveryChooserConfirmController(RecoveryChooserBaseController):
-    def start_ui(self):
-        view = ChooserConfirmView(self, self.model.selection)
-        self.ui.set_body(view)
+    def make_ui(self):
+        return ChooserConfirmView(self, self.model.selection)
 
     def confirm(self):
         log.warning("user action %s", self.model.selection)

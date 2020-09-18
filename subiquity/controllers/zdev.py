@@ -644,10 +644,12 @@ class ZdevController(SubiquityTuiController):
                 zdevinfos = [ZdevInfo.from_row(row) for row in devices]
             self.zdevinfos = OrderedDict([(i.id, i) for i in zdevinfos])
 
-    def start_ui(self):
+    def make_ui(self):
+        self.ui.set_body(ZdevView(self))
+
+    def run_answers(self):
         if 'accept-default' in self.answers:
             self.done()
-        self.ui.set_body(ZdevView(self))
 
     def cancel(self):
         self.app.prev_screen()
