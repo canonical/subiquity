@@ -31,7 +31,10 @@ from subiquitycore.ui.form import (
     WantsToKnowFormField,
     )
 from subiquitycore.ui.utils import screen
+from subiquitycore.utils import crypt_password
 from subiquitycore.view import BaseView
+
+from subiquity.common.types import IdentityData
 
 
 log = logging.getLogger("subiquity.views.identity")
@@ -153,10 +156,8 @@ class IdentityView(BaseView):
                 "the system. You can configure SSH access on the next screen "
                 "but a password is still needed for sudo.")
 
-    def __init__(self, model, controller):
-        self.model = model
+    def __init__(self, controller, identity_data):
         self.controller = controller
-        self.signal = controller.signal
 
         reserved_usernames_path = (
             os.path.join(os.environ.get("SNAP", "."), "reserved-usernames"))
@@ -171,14 +172,11 @@ class IdentityView(BaseView):
         else:
             reserved_usernames.add('root')
 
-        if model.user:
-            initial = {
-                'realname': model.user.realname,
-                'username': model.user.username,
-                'hostname': model.hostname,
+        initial = {
+            'realname': identity_data.realname,
+            'username': identity_data.username,
+            'hostname': identity_data.hostname,
             }
-        else:
-            initial = {}
 
         self.form = IdentityForm(reserved_usernames, initial)
 
@@ -193,10 +191,9 @@ class IdentityView(BaseView):
                 focus_buttons=False))
 
     def done(self, result):
-        result = {
-            "hostname": self.form.hostname.value,
-            "realname": self.form.realname.value,
-            "username": self.form.username.value,
-            "password": self.model.encrypt_password(self.form.password.value),
-        }
-        self.controller.done(result)
+        self.controller.done(IdentityData(
+            hostname=self.form.hostname.value,
+            realname=self.form.realname.value,
+            username=self.form.username.value,
+            crypted_password=crypt_password(self.form.password.value),
+            ))

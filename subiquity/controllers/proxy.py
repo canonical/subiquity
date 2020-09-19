@@ -49,7 +49,7 @@ class ProxyController(SubiquityTuiController):
         pass
 
     def make_ui(self):
-        return ProxyView(self.model, self)
+        return ProxyView(self, self.model.proxy)
 
     def run_answers(self):
         if 'proxy' in self.answers:
