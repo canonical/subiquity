@@ -23,6 +23,7 @@ from urwid import (
     AttrMap,
     CompositeCanvas,
     connect_signal,
+    LineBox,
     Padding as _Padding,
     SelectableIcon,
     Text,
@@ -30,8 +31,16 @@ from urwid import (
     WidgetDisable,
     )
 
-from subiquitycore.ui.buttons import other_btn
-from subiquitycore.ui.container import ListBox, Pile
+from subiquitycore.ui.buttons import (
+    cancel_btn,
+    other_btn,
+    )
+from subiquitycore.ui.container import (
+    ListBox,
+    Pile,
+    WidgetWrap,
+    )
+from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import TableRow
 from subiquitycore.ui.width import widget_width
@@ -351,4 +360,34 @@ class SomethingFailed(Stretchy):
             2, 4)
 
     def close(self, sender):
+        self.parent.remove_overlay()
+
+
+class LoadingDialog(WidgetWrap):
+
+    def __init__(self, parent, aio_loop, msg, task_to_cancel):
+        self.parent = parent
+        self.spinner = Spinner(aio_loop, style='dots')
+        self.spinner.start()
+        self.closed = False
+        # | text |
+        # 12    34
+        self.width = len(msg) + 4
+        widgets = [
+            ('pack', Text(' ' + msg)),
+            ('pack', self.spinner),
+            ]
+        if task_to_cancel is not None:
+            self.task_to_cancel = task_to_cancel
+            cancel = cancel_btn(label=_("Cancel"), on_press=self.close)
+            widgets.append(('pack', button_pile([cancel])))
+        super().__init__(LineBox(Pile(widgets)))
+
+    def close(self, sender=None):
+        if self.closed:
+            return
+        if sender is not None:
+            self.task_to_cancel.cancel()
+        self.closed = True
+        self.spinner.stop()
         self.parent.remove_overlay()

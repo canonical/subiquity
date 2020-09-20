@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+import inspect
 import logging
 import os
 import yaml
@@ -27,6 +29,7 @@ from subiquitycore.palette import (
     )
 from subiquitycore.screen import make_screen
 from subiquitycore.tuicontroller import Skip
+from subiquitycore.ui.utils import LoadingDialog
 from subiquitycore.ui.frame import SubiquityCoreUI
 from subiquitycore.utils import arun_command
 
@@ -46,6 +49,14 @@ def extend_dec_special_charmap():
         ord('\N{FULL BLOCK}'): urwid.escape.DEC_SPECIAL_CHARMAP[
             ord('\N{BOX DRAWINGS LIGHT VERTICAL}')],
     })
+
+
+# When waiting for something of unknown duration, block the UI for at
+# most this long before showing an indication of progress.
+MAX_BLOCK_TIME = 0.1
+# If an indication of progress is shown, show it for at least this
+# long to avoid excessive flicker in the UI.
+MIN_SHOW_PROGRESS_TIME = 1.0
 
 
 class TuiApplication(Application):
@@ -96,20 +107,88 @@ class TuiApplication(Application):
             before_hook()
         schedule_task(_run())
 
-    def select_screen(self, new):
+    async def make_view_for_controller(self, new):
         new.context.enter("starting UI")
         if self.opts.screens and new.name not in self.opts.screens:
             raise Skip
         try:
-            self.ui.set_body(new.make_ui())
-            self.cur_screen = new
+            maybe_view = new.make_ui()
+            if inspect.iscoroutine(maybe_view):
+                view = await maybe_view
+            else:
+                view = maybe_view
         except Skip:
             new.context.exit("(skipped)")
             raise
-        with open(self.state_path('last-screen'), 'w') as fp:
-            fp.write(new.name)
+        else:
+            self.cur_screen = new
+            with open(self.state_path('last-screen'), 'w') as fp:
+                fp.write(new.name)
+            return view
 
-    def _move_screen(self, increment):
+    async def _wait_with_indication(self, awaitable, show, hide=None):
+        """Wait for something but tell the user if it takes a while.
+
+        When waiting for something that can take an unknown length of
+        time, we want to tell the user if it takes more than a moment
+        (defined as MAX_BLOCK_TIME) but make sure that we display any
+        indication for long enough that the UI is not flickering
+        incomprehensibly (MIN_SHOW_PROGRESS_TIME).
+        """
+        min_show_task = None
+
+        def _show():
+            self.ui.block_input = False
+            nonlocal min_show_task
+            min_show_task = self.aio_loop.create_task(
+                asyncio.sleep(MIN_SHOW_PROGRESS_TIME))
+            show()
+
+        self.ui.block_input = True
+        show_handle = self.aio_loop.call_later(MAX_BLOCK_TIME, _show)
+        try:
+            result = await awaitable
+        finally:
+            if min_show_task:
+                await min_show_task
+                if hide is not None:
+                    hide()
+            else:
+                self.ui.block_input = False
+                show_handle.cancel()
+
+        return result
+
+    def show_progress(self):
+        raise NotImplementedError
+
+    async def wait_with_text_dialog(self, awaitable, message,
+                                    *, can_cancel=False):
+        ld = None
+
+        task_to_cancel = None
+        if can_cancel:
+            if not isinstance(awaitable, asyncio.Task):
+                async def w():
+                    return await awaitable
+                task_to_cancel = self.aio_loop.create_task(w())
+            else:
+                task_to_cancel = awaitable
+
+        def show_load():
+            nonlocal ld
+            ld = LoadingDialog(
+                self.ui.body, self.aio_loop, message, task_to_cancel)
+            self.ui.body.show_overlay(ld, width=ld.width)
+
+        def hide_load():
+            ld.close()
+
+        await self._wait_with_indication(awaitable, show_load, hide_load)
+
+    async def _move_screen(self, increment, coro):
+        if coro is not None:
+            await coro
         self.save_state()
         old, self.cur_screen = self.cur_screen, None
         if old is not None:
@@ -120,24 +199,33 @@ class TuiApplication(Application):
             self.controllers.index += increment
             if self.controllers.index < 0:
                 self.controllers.index = cur_index
-                return
+                return None
             if self.controllers.index >= len(self.controllers.instances):
                 self.exit()
-                return
+                return None
             new = self.controllers.cur
             try:
-                self.select_screen(new)
+                return await self.make_view_for_controller(new)
             except Skip:
                 log.debug("skipping screen %s", new.name)
                 continue
+            except Exception:
+                self.controllers.index = cur_index
+                raise
             else:
                 return
 
-    def next_screen(self, *args):
-        self._move_screen(1)
+    async def move_screen(self, increment, coro):
+        view = await self._wait_with_indication(
+            self._move_screen(increment, coro), self.show_progress)
+        if view is not None:
+            self.ui.set_body(view)
 
-    def prev_screen(self, *args):
-        self._move_screen(-1)
+    def next_screen(self, coro=None):
+        self.aio_loop.create_task(self.move_screen(1, coro))
+
+    def prev_screen(self):
+        self.aio_loop.create_task(self.move_screen(-1, None))
 
     def select_initial_screen(self, controller_index):
         for controller in self.controllers.instances[:controller_index]:

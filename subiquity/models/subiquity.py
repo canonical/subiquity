@@ -130,8 +130,21 @@ class SubiquityModel:
             }
 
     def configured(self, model_name):
-        log.debug("model %s is configured", model_name)
         self._events[model_name].set()
+        if model_name in INSTALL_MODEL_NAMES:
+            unconfigured = {
+                mn for mn in INSTALL_MODEL_NAMES
+                if not self.is_configured(mn)
+                }
+        elif model_name in POSTINSTALL_MODEL_NAMES:
+            unconfigured = {
+                mn for mn in POSTINSTALL_MODEL_NAMES
+                if not self.is_configured(mn)
+                }
+        log.debug("model %s is configured, to go %s", model_name, unconfigured)
+
+    def is_configured(self, model_name):
+        return self._events[model_name].is_set()
 
     def get_target_groups(self):
         command = ['chroot', self.target, 'getent', 'group']

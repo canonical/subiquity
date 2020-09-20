@@ -21,7 +21,6 @@ import shlex
 import signal
 import sys
 import traceback
-import time
 import urwid
 
 import jsonschema
@@ -46,6 +45,7 @@ from subiquity.common.errorreport import (
     ErrorReporter,
     ErrorReportKind,
     )
+from subiquity.controller import Confirm
 from subiquity.journald import journald_listen
 from subiquity.keycodes import (
     DummyKeycodesFilter,
@@ -252,7 +252,7 @@ class Subiquity(TuiApplication):
                     _("waiting for installer running on {tty} to run early "
                       "commands").format(tty=primary_tty))
                 while not os.path.exists(stamp_file):
-                    time.sleep(1)
+                    await asyncio.sleep(1)
             elif not os.path.exists(stamp_file):
                 await self.controllers.Early.run()
                 open(stamp_file, 'w').close()
@@ -331,38 +331,6 @@ class Subiquity(TuiApplication):
             self.show_progress_handle.cancel()
             self.show_progress_handle = None
 
-    def next_screen(self):
-        can_install = all(e.is_set() for e in self.base_model.install_events)
-        if can_install and not self.install_confirmed:
-            if self.interactive():
-                log.debug("showing InstallConfirmation over %s", self.ui.body)
-                from subiquity.ui.views.installprogress import (
-                    InstallConfirmation,
-                    )
-                self._cancel_show_progress()
-                self.add_global_overlay(
-                    InstallConfirmation(self.ui.body, self))
-            else:
-                yes = _('yes')
-                no = _('no')
-                answer = no
-                if 'autoinstall' in self.kernel_cmdline:
-                    answer = yes
-                else:
-                    print(_("Confirmation is required to continue."))
-                    print(_("Add 'autoinstall' to your kernel command line to"
-                            " avoid this"))
-                    print()
-                prompt = "\n\n{} ({}|{})".format(
-                    _("Continue with autoinstall?"), yes, no)
-                while answer != yes:
-                    print(prompt)
-                    answer = input()
-                self.confirm_install()
-                super().next_screen()
-        else:
-            super().next_screen()
-
     def interactive(self):
         if not self.autoinstall_config:
             return True
@@ -386,41 +354,55 @@ class Subiquity(TuiApplication):
                 break
         super().select_initial_screen(index)
 
-    def select_screen(self, new):
+    async def move_screen(self, increment, coro):
+        try:
+            await super().move_screen(increment, coro)
+        except Confirm:
+            if self.interactive():
+                log.debug("showing InstallConfirmation over %s", self.ui.body)
+                from subiquity.ui.views.installprogress import (
+                    InstallConfirmation,
+                    )
+                self.add_global_overlay(
+                    InstallConfirmation(self.ui.body, self))
+            else:
+                yes = _('yes')
+                no = _('no')
+                answer = no
+                if 'autoinstall' in self.kernel_cmdline:
+                    answer = yes
+                else:
+                    print(_("Confirmation is required to continue."))
+                    print(_("Add 'autoinstall' to your kernel command line to"
+                            " avoid this"))
+                    print()
+                prompt = "\n\n{} ({}|{})".format(
+                    _("Continue with autoinstall?"), yes, no)
+                while answer != yes:
+                    print(prompt)
+                    answer = input()
+                self.confirm_install()
+                self.next_screen()
+
+    async def make_view_for_controller(self, new):
+        can_install = all(e.is_set() for e in self.base_model.install_events)
+        if can_install and not self.install_confirmed:
+            if new.model_name:
+                if not self.base_model.is_configured(new.model_name):
+                    raise Confirm
         if new.interactive():
-            self._cancel_show_progress()
-            if self.progress_showing:
-                shown_for = self.aio_loop.time() - self.progress_shown_time
-                remaining = 1.0 - shown_for
-                if remaining > 0.0:
-                    self.aio_loop.call_later(
-                        remaining, self.select_screen, new)
-                    return
-            self.progress_showing = False
-            super().select_screen(new)
             if new.answers:
-                new.run_answers()
-        elif self.autoinstall_config and not new.autoinstall_applied:
-            if self.interactive() and self.show_progress_handle is None:
-                self.ui.block_input = True
-                self.show_progress_handle = self.aio_loop.call_later(
-                    0.1, self._show_progress)
-            schedule_task(self._apply(new))
+                self.aio_loop.call_soon(new.run_answers)
+            return await super().make_view_for_controller(new)
         else:
+            if self.autoinstall_config and not new.autoinstall_applied:
+                await new.apply_autoinstall_config()
+                new.autoinstall_applied = True
             new.configured()
             raise Skip
 
-    def _show_progress(self):
-        self.ui.block_input = False
-        self.progress_shown_time = self.aio_loop.time()
-        self.progress_showing = True
+    def show_progress(self):
         self.ui.set_body(self.controllers.InstallProgress.progress_view)
-
-    async def _apply(self, controller):
-        await controller.apply_autoinstall_config()
-        controller.autoinstall_applied = True
-        controller.configured()
-        self.next_screen()
 
     def _network_change(self):
         self.signal.emit_signal('snapd-network-change')
@@ -443,7 +425,6 @@ class Subiquity(TuiApplication):
 
     def unhandled_input_dry_run(self, key):
         if key == 'ctrl g':
-            import asyncio
             from systemd import journal
 
             async def mock_install():
