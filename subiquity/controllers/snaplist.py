@@ -160,19 +160,13 @@ class SnapListController(SubiquityTuiController):
         self.loader = self._make_loader()
         self.loader.start()
 
-    def make_ui(self):
-        if self.loader.failed or not self.app.base_model.network.has_network:
+    async def make_ui(self):
+        data = await self.get_snap_list(wait=False)
+        if data.status == SnapCheckState.FAILED:
             # If loading snaps failed or the network is disabled, skip the
             # screen.
             self.configured()
             raise Skip()
-        if not self.loader.snap_list_fetched:
-            data = SnapListResponse(status=SnapCheckState.LOADING)
-        else:
-            data = SnapListResponse(
-                status=SnapCheckState.DONE,
-                snaps=self.model.get_snap_list(),
-                selections=self.model.selections)
         return SnapListView(self, data)
 
     def run_answers(self):
@@ -182,7 +176,11 @@ class SnapListController(SubiquityTuiController):
                 selections.append(SnapSelection(name=snap_name, **selection))
             self.done(selections)
 
-    async def get_list_wait(self):
+    async def get_snap_list(self, *, wait: bool) -> SnapListResponse:
+        if self.loader.failed or not self.app.base_model.network.has_network:
+            return SnapListResponse(status=SnapCheckState.FAILED)
+        if not self.loader.snap_list_fetched and not wait:
+            return SnapListResponse(status=SnapCheckState.LOADING)
         await self.loader.get_snap_list_task()
         return SnapListResponse(
             status=SnapCheckState.DONE,
