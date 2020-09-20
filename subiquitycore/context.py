@@ -25,6 +25,9 @@ class Status(enum.Enum):
     WARN = enum.auto()
 
 
+context_id = 0
+
+
 class Context:
     """Class to report when things start and finish.
 
@@ -48,6 +51,9 @@ class Context:
     """
 
     def __init__(self, app, name, description, parent, level, childlevel=None):
+        global context_id
+        self.id = context_id
+        context_id += 1
         self.app = app
         self.name = name
         self.description = description

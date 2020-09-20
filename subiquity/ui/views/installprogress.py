@@ -51,7 +51,7 @@ class ProgressView(BaseView):
 
     def __init__(self, controller):
         self.controller = controller
-        self.ongoing = {}  # context -> line containing a spinner
+        self.ongoing = {}  # context_id -> line containing a spinner
 
         self.reboot_btn = Toggleable(ok_btn(
             _("Reboot Now"), on_press=self.reboot))
@@ -93,23 +93,19 @@ class ProgressView(BaseView):
             lb.set_focus(len(walker) - 1)
             lb.set_focus_valign('bottom')
 
-    def event_start(self, context, message):
-        self.event_finish(context.parent)
+    def event_start(self, context_id, message):
         walker = self.event_listbox.base_widget.body
-        indent = context.full_name().count('/') - 2
-        if context.get('is-install-context'):
-            indent -= 1
         spinner = Spinner(self.controller.app.aio_loop)
         spinner.start()
         new_line = Columns([
-            ('pack', Text('  ' * indent + message)),
+            ('pack', Text(message)),
             ('pack', spinner),
             ], dividechars=1)
-        self.ongoing[context] = len(walker)
+        self.ongoing[context_id] = len(walker)
         self._add_line(self.event_listbox, new_line)
 
-    def event_finish(self, context):
-        index = self.ongoing.pop(context, None)
+    def event_finish(self, context_id):
+        index = self.ongoing.pop(context_id, None)
         if index is None:
             return
         walker = self.event_listbox.base_widget.body
@@ -118,8 +114,8 @@ class ProgressView(BaseView):
         walker[index] = walker[index][0]
 
     def finish_all(self):
-        for context in self.ongoing.copy():
-            self.event_finish(context)
+        for context_id in list(self.ongoing):
+            self.event_finish(context_id)
 
     def add_log_line(self, text):
         self._add_line(self.log_listbox, Text(text))

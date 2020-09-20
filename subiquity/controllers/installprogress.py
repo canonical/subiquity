@@ -125,15 +125,19 @@ class InstallProgressController(SubiquityTuiController):
             msg = context.full_name()
             if description:
                 msg += ': ' + description
-            self.progress_view.event_start(context, msg)
         if context.get('is-install-context'):
-            self.progress_view.event_start(context, context.description)
+            indent = context.full_name().count('/') - 2
+            if context.get('is-install-context'):
+                indent -= 1
+            msg = '  ' * indent + context.description
+        else:
+            return
+        if context.parent:
+            self.progress_view.event_finish(context.parent.id)
+        self.progress_view.event_start(context.id, msg)
 
     def report_finish_event(self, context, description, status):
-        if self._push_to_progress(context):
-            self.progress_view.event_finish(context)
-        if context.get('is-install-context'):
-            self.progress_view.event_finish(context)
+        self.progress_view.event_finish(context.id)
 
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
