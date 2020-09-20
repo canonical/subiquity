@@ -54,8 +54,11 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
+from subiquity.common.types import (
+    SnapCheckState,
+    SnapSelection,
+    )
 from subiquity.models.filesystem import humanize_size
-from subiquity.models.snaplist import SnapSelection
 
 log = logging.getLogger("subiquity.views.snaplist")
 
@@ -122,14 +125,16 @@ class SnapInfoView(WidgetWrap):
         channel_rows = []
         for csi in snap.channels:
             latest_update = max(latest_update, csi.released_at)
+            selection = SnapSelection(
+                name=self.snap.name,
+                channel=csi.channel_name,
+                is_classic=csi.confinement == "classic")
             btn = StarRadioButton(
                 radio_group,
                 csi.channel_name,
                 state=csi.channel_name == cur_channel,
                 on_state_change=self.state_change,
-                user_data=SnapSelection(
-                    channel=csi.channel_name,
-                    is_classic=csi.confinement == "classic"))
+                user_data=selection)
             channel_rows.append(Color.menu_button(TableRow([
                 btn,
                 Text(csi.version),
@@ -203,7 +208,7 @@ class SnapInfoView(WidgetWrap):
             log.debug(
                 "selecting %s from %s", self.snap.name, selection.channel)
             self.parent.snap_boxes[self.snap.name].set_state(True)
-            self.parent.to_install[self.snap.name] = selection
+            self.parent.selections_by_name[self.snap.name] = selection
 
     def render(self, size, focus):
         maxcol, maxrow = size
@@ -288,22 +293,6 @@ class SnapCheckBox(CheckBox):
         super().__init__(
             snap.name, state=state, on_state_change=self.state_change)
 
-    def loaded(self):
-        if len(self.snap.channels) == 0:  # or other indication of failure
-            ff = FetchingFailed(self, self.snap)
-            self.parent.show_overlay(ff, width=ff.width)
-        else:
-            cur_chan = None
-            if self.snap.name in self.parent.to_install:
-                cur_chan = self.parent.to_install[self.snap.name].channel
-            siv = SnapInfoView(self.parent, self.snap, cur_chan)
-            self.parent.show_screen(screen(
-                siv,
-                [other_btn(
-                    label=_("Close"),
-                    on_press=self.parent.show_main_screen)],
-                focus_buttons=False))
-
     async def load_info(self):
         app = self.parent.controller.app
         await app.wait_with_text_dialog(
@@ -311,7 +300,21 @@ class SnapCheckBox(CheckBox):
                 self.parent.controller.get_snap_info_task(self.snap)),
             _("Fetching info for {snap}").format(snap=self.snap.name),
             can_cancel=True)
-        self.loaded()
+        if len(self.snap.channels) == 0:  # or other indication of failure
+            ff = FetchingFailed(self, self.snap)
+            self.parent.show_overlay(ff, width=ff.width)
+        else:
+            cur_chan = None
+            selection = self.parent.selections_by_name.get(self.snap.name)
+            if selection is not None:
+                cur_chan = selection.channel
+            siv = SnapInfoView(self.parent, self.snap, cur_chan)
+            self.parent.show_screen(screen(
+                siv,
+                [other_btn(
+                    label=_("Close"),
+                    on_press=self.parent.show_main_screen)],
+                focus_buttons=False))
 
     def keypress(self, size, key):
         if key.startswith("enter"):
@@ -322,54 +325,55 @@ class SnapCheckBox(CheckBox):
     def state_change(self, sender, new_state):
         if new_state:
             log.debug("selecting %s", self.snap.name)
-            self.parent.to_install[self.snap.name] = SnapSelection(
+            self.parent.selections_by_name[self.snap.name] = SnapSelection(
+                name=self.snap.name,
                 channel='stable',
                 is_classic=self.snap.confinement == "classic")
         else:
             log.debug("unselecting %s", self.snap.name)
-            self.parent.to_install.pop(self.snap.name, None)
+            self.parent.selections_by_name.pop(self.snap.name, None)
 
 
 class SnapListView(BaseView):
 
     title = _("Featured Server Snaps")
 
-    def __init__(self, model, controller):
-        self.model = model
+    def __init__(self, controller, data):
         self.controller = controller
-        self.to_install = model.to_install.copy()
-        self.load()
-
-    def loaded(self):
-        snap_list = self.model.get_snap_list()
-        if len(snap_list) == 0:
-            self.offer_retry()
+        if data.status == SnapCheckState.LOADING:
+            self.wait_load()
         else:
-            self.make_main_screen(snap_list)
-            self.show_main_screen()
+            self.loaded(data)
 
-    async def _wait(self, t, spinner):
-        spinner.stop()
-        await t
-        self.loaded()
-
-    def load(self, sender=None):
-        t = self.controller.get_snap_list_task()
-        if t.done():
-            self.loaded()
-            return
+    def wait_load(self):
         spinner = Spinner(self.controller.app.aio_loop, style='dots')
         spinner.start()
         self._w = screen(
             [spinner], [ok_btn(label=_("Continue"), on_press=self.done)],
             excerpt=_("Loading server snaps from store, please wait..."))
-        schedule_task(self._wait(t, spinner))
+        schedule_task(self._wait_load(spinner))
+
+    async def _wait_load(self, spinner):
+        # If we show the loading screen at all, we want to show it for
+        # at least a second to avoid flickering at the user.
+        min_wait = self.controller.app.aio_loop.create_task(asyncio.sleep(1))
+        data = await self.controller.get_list_wait()
+        await min_wait
+        spinner.stop()
+        if data.status == SnapCheckState.FAILED:
+            self.offer_retry()
+        else:
+            self.loaded(data)
+
+    def loaded(self, data):
+        self.make_main_screen(data)
+        self.show_main_screen()
 
     def offer_retry(self):
         self._w = screen(
             [Text(_("Sorry, loading snaps from the store failed."))],
             [
-                other_btn(label=_("Try again"), on_press=self.load),
+                other_btn(label=_("Try again"), on_press=self.wait_load),
                 ok_btn(label=_("Continue"), on_press=self.done),
             ])
 
@@ -414,16 +418,19 @@ class SnapListView(BaseView):
         log.debug("pre-seeded snaps %s", names)
         return names
 
-    def make_main_screen(self, snap_list):
+    def make_main_screen(self, data):
+        self.selections_by_name = {
+            selection.name: selection for selection in data.selections
+            }
         self.snap_boxes = {}
         body = []
         preinstalled = self.get_preinstalled_snaps()
-        for snap in snap_list:
+        for snap in data.snaps:
             if snap.name in preinstalled:
                 log.debug("not offering preseeded snap %r", snap.name)
                 continue
             box = self.snap_boxes[snap.name] = SnapCheckBox(
-                self, snap, snap.name in self.to_install)
+                self, snap, snap.name in self.selections_by_name)
             publisher = snap.publisher
             if snap.verified:
                 publisher = [publisher, ('verified', '\N{check mark}')]
@@ -455,8 +462,10 @@ class SnapListView(BaseView):
                 "package, publisher and versions available."))
 
     def done(self, sender=None):
-        log.debug("snaps to install %s", self.to_install)
-        self.controller.done(self.to_install)
+        log.debug("snaps to install %s", self.selections_by_name)
+        self.controller.done(sorted(
+            self.selections_by_name.values(),
+            key=lambda s: s.name))
 
     def cancel(self, sender=None):
         if self._w is self._main_screen:

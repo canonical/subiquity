@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from typing import List
 
 import requests.exceptions
 
@@ -29,7 +30,11 @@ from subiquity.controller import (
     SubiquityTuiController,
     )
 
-from subiquity.models.snaplist import SnapSelection
+from subiquity.common.types import (
+    SnapListResponse,
+    SnapCheckState,
+    SnapSelection,
+    )
 from subiquity.ui.views.snaplist import SnapListView
 
 log = logging.getLogger('subiquity.controllers.snaplist')
@@ -161,26 +166,37 @@ class SnapListController(SubiquityTuiController):
             # screen.
             self.configured()
             raise Skip()
-        return SnapListView(self.model, self)
+        if not self.loader.snap_list_fetched:
+            data = SnapListResponse(status=SnapCheckState.LOADING)
+        else:
+            data = SnapListResponse(
+                status=SnapCheckState.DONE,
+                snaps=self.model.get_snap_list(),
+                selections=self.model.selections)
+        return SnapListView(self, data)
 
     def run_answers(self):
         if 'snaps' in self.answers:
-            to_install = {}
+            selections = []
             for snap_name, selection in self.answers['snaps'].items():
-                to_install[snap_name] = SnapSelection(**selection)
-            self.done(to_install)
+                selections.append(SnapSelection(name=snap_name, **selection))
+            self.done(selections)
 
-    def get_snap_list_task(self):
-        return self.loader.get_snap_list_task()
+    async def get_list_wait(self):
+        await self.loader.get_snap_list_task()
+        return SnapListResponse(
+            status=SnapCheckState.DONE,
+            snaps=self.model.get_snap_list(),
+            selections=self.model.selections)
 
     def get_snap_info_task(self, snap):
         return self.loader.get_snap_info_task(snap)
 
-    def done(self, snaps_to_install):
+    def done(self, selections: List[SnapSelection]):
         log.debug(
             "SnapListController.done next_screen snaps_to_install=%s",
-            snaps_to_install)
-        self.model.set_installed_list(snaps_to_install)
+            selections)
+        self.model.set_installed_list(selections)
         self.configured()
         self.app.next_screen()
 
@@ -188,4 +204,4 @@ class SnapListController(SubiquityTuiController):
         self.app.prev_screen()
 
     def make_autoinstall(self):
-        return self.model.to_install
+        return self.model.selections
