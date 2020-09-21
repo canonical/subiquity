@@ -44,7 +44,8 @@ from subiquitycore.ui.stretchy import (
 from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
-from subiquity.models.keyboard import KeyboardSetting
+from subiquity.common.types import KeyboardSetting
+from subiquity.keyboard import latinizable, for_ui
 from subiquity.ui.views import pc105
 
 log = logging.getLogger("subiquity.ui.views.keyboard")
@@ -129,8 +130,8 @@ another layout or run the automated detection again.
         self.keyboard_detector.keyboard_view.found_layout(self.step.result)
 
     def make_body(self):
-        model = self.keyboard_detector.keyboard_view.model
-        layout, variant = model.lookup(self.step.result)
+        kl = self.keyboard_detector.keyboard_view.keyboard_list
+        layout, variant = kl.lookup(self.step.result)
         var_desc = []
         layout_text = _("Layout")
         var_text = _("Variant")
@@ -340,9 +341,9 @@ class ToggleQuestion(Stretchy):
         self.setting = setting
         self.selector = Selector(toggle_options)
         self.selector.value = 'alt_shift_toggle'
-        if self.parent.model.setting.toggle:
+        if self.parent.initial_setting.toggle:
             try:
-                self.selector.value = self.parent.model.setting.toggle
+                self.selector.value = self.parent.initial_setting.toggle
             except AttributeError:
                 pass
 
@@ -386,21 +387,21 @@ class KeyboardView(BaseView):
 
     title = _("Keyboard configuration")
 
-    def __init__(self, model, controller, opts):
-        self.model = model
+    def __init__(self, controller, initial_setting):
         self.controller = controller
-        self.opts = opts
+        self.keyboard_list = controller.keyboard_list
+        self.initial_setting = initial_setting
 
         self.form = KeyboardForm()
         opts = []
-        for layout, desc in model.layouts.items():
+        for layout, desc in self.keyboard_list.layouts.items():
             opts.append(Option((desc, True, layout)))
         opts.sort(key=lambda o: o.label.text)
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget.options = opts
-        setting = model.setting.for_ui()
+        setting = for_ui(initial_setting)
         try:
             self.form.layout.widget.value = setting.layout
         except AttributeError:
@@ -413,7 +414,7 @@ class KeyboardView(BaseView):
             # Don't crash on pre-existing invalid config.
             pass
 
-        if self.opts.run_on_serial:
+        if self.controller.opts.run_on_serial:
             excerpt = _('Please select the layout of the keyboard directly '
                         'attached to the system, if any.')
         else:
@@ -422,7 +423,7 @@ class KeyboardView(BaseView):
                         'automatically.')
 
         lb_contents = self.form.as_rows()
-        if not self.opts.run_on_serial:
+        if not self.controller.opts.run_on_serial:
             lb_contents.extend([
                 Text(""),
                 button_pile([
@@ -457,17 +458,19 @@ class KeyboardView(BaseView):
         if self.form.variant.widget.value is not None:
             variant = self.form.variant.widget.value
         setting = KeyboardSetting(layout=layout, variant=variant)
-        new_setting = setting.latinizable()
+        new_setting = latinizable(setting)
         if new_setting != setting:
             self.show_stretchy_overlay(ToggleQuestion(self, new_setting))
             return
         self.really_done(setting)
 
     def really_done(self, setting):
-        if setting != self.model.setting:
+        apply = False
+        if setting != self.initial_setting:
+            apply = True
             ac = ApplyingConfig(self.controller.app.aio_loop)
             self.show_overlay(ac, width=ac.width, min_width=None)
-        self.controller.done(setting)
+        self.controller.done(setting, apply=apply)
 
     def cancel(self, result=None):
         self.controller.cancel()
@@ -477,7 +480,7 @@ class KeyboardView(BaseView):
             log.debug("select_layout %s", layout)
         opts = []
         default_i = -1
-        layout_items = enumerate(self.model.variants[layout].items())
+        layout_items = enumerate(self.keyboard_list.variants[layout].items())
         for i, (variant, variant_desc) in layout_items:
             if variant == "":
                 default_i = i
