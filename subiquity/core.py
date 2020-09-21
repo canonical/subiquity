@@ -347,10 +347,10 @@ class Subiquity(TuiApplication):
             self.ui.body.remove_overlay(overlay)
 
     def select_initial_screen(self, index):
-        self.error_reporter.start_loading_reports()
+        self.error_reporter.load_reports()
         for report in self.error_reporter.reports:
             if report.kind == ErrorReportKind.UI and not report.seen:
-                self.show_error_report(report)
+                self.show_error_report(report.ref())
                 break
         super().select_initial_screen(index)
 
@@ -464,18 +464,18 @@ class Subiquity(TuiApplication):
             kind, thing, wait=wait, **kw)
 
         if report is not None and interrupt and self.interactive():
-            self.show_error_report(report)
+            self.show_error_report(report.ref())
 
         return report
 
-    def show_error_report(self, report):
-        log.debug("show_error_report %r", report.base)
+    def show_error_report(self, error_ref):
+        log.debug("show_error_report %r", error_ref.base)
         if isinstance(self.ui.body, BaseView):
             w = getattr(self.ui.body._w, 'stretchy', None)
             if isinstance(w, ErrorReportStretchy):
                 # Don't show an error if already looking at one.
                 return
-        self.add_global_overlay(ErrorReportStretchy(self, report))
+        self.add_global_overlay(ErrorReportStretchy(self, error_ref))
 
     def make_autoinstall(self):
         config = {'version': 1}

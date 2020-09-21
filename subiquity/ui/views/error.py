@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 
 from urwid import (
@@ -131,10 +132,15 @@ If you want to help improve the installer, you can send an error report.
 
 class ErrorReportStretchy(Stretchy):
 
-    def __init__(self, app, report, interrupting=True):
+    def __init__(self, app, ref, interrupting=True):
         self.app = app
-        self.report = report
+        self.error_ref = ref
+        self.report = app.error_reporter.get(ref)
+        self.pending = None
+        connect_signal(self.report, 'changed', self._report_changed)
+        self.report.mark_seen()
         self.interrupting = interrupting
+        self.min_wait = self.app.aio_loop.create_task(asyncio.sleep(0.1))
 
         self.btns = {
             'cancel': other_btn(
@@ -159,7 +165,8 @@ class ErrorReportStretchy(Stretchy):
 
         self.spinner = Spinner(app.aio_loop, style='dots')
         self.pile = Pile([])
-        self._report_changed()
+        self.pile.contents[:] = [
+            (w, self.pile.options('pack')) for w in self._pile_elements()]
         super().__init__("", [self.pile], 0, 0)
         connect_signal(self, 'closed', self.spinner.stop)
 
@@ -181,13 +188,14 @@ class ErrorReportStretchy(Stretchy):
         btns = self.btns.copy()
 
         widgets = [
-            Text(rewrap(_(error_report_intros[self.report.kind]))),
+            Text(rewrap(_(error_report_intros[self.error_ref.kind]))),
             Text(""),
             ]
 
         self.spinner.stop()
 
-        if self.report.state == ErrorReportState.DONE:
+        if self.error_ref.state == ErrorReportState.DONE:
+            assert self.report
             widgets.append(btns['view'])
             widgets.append(Text(""))
             widgets.append(Text(rewrap(_(submit_text))))
@@ -215,7 +223,7 @@ class ErrorReportStretchy(Stretchy):
                     Text(location_text),
                     ])
         else:
-            text, spin = error_report_state_descriptions[self.report.state]
+            text, spin = error_report_state_descriptions[self.error_ref.state]
             widgets.append(Text(rewrap(_(text))))
             if spin:
                 self.spinner.start()
@@ -223,11 +231,11 @@ class ErrorReportStretchy(Stretchy):
                     Text(""),
                     self.spinner])
 
-        if self.report.uploader:
+        if self.report and self.report.uploader:
             widgets.extend([Text(""), btns['cancel']])
         elif self.interrupting:
-            if self.report.state != ErrorReportState.INCOMPLETE:
-                text, btn_names = error_report_options[self.report.kind]
+            if self.error_ref.state != ErrorReportState.INCOMPLETE:
+                text, btn_names = error_report_options[self.error_ref.kind]
                 if text:
                     widgets.extend([Text(""), Text(rewrap(_(text)))])
                 for b in btn_names:
@@ -241,6 +249,19 @@ class ErrorReportStretchy(Stretchy):
         return widgets
 
     def _report_changed(self):
+        if self.pending:
+            self.pending.cancel()
+        self.pending = self.app.aio_loop.create_task(asyncio.sleep(0.1))
+        self.change_task = self.app.aio_loop.create_task(
+            self._report_changed_())
+
+    async def _report_changed_(self):
+        await self.pending
+        self.pending = None
+        await self.min_wait
+        self.min_wait = self.app.aio_loop.create_task(asyncio.sleep(1))
+        if self.report:
+            self.error_ref = self.report.ref()
         self.pile.contents[:] = [
             (w, self.pile.options('pack')) for w in self._pile_elements()]
         if self.pile.selectable():
@@ -264,12 +285,9 @@ class ErrorReportStretchy(Stretchy):
         self.report.uploader = None
         self._report_changed()
 
-    def opened(self):
-        self.report.mark_seen()
-        connect_signal(self.report, 'changed', self._report_changed)
-
     def closed(self):
-        disconnect_signal(self.report, 'changed', self._report_changed)
+        if self.report:
+            disconnect_signal(self.report, 'changed', self._report_changed)
 
 
 class ErrorReportListStretchy(Stretchy):
@@ -285,6 +303,7 @@ class ErrorReportListStretchy(Stretchy):
                 Text(""),
             ])]
         self.report_to_row = {}
+        self.app.error_reporter.load_reports()
         for report in self.app.error_reporter.reports:
             connect_signal(report, "changed", self._report_changed, report)
             r = self.report_to_row[report] = self.row_for_report(report)

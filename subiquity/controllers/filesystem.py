@@ -231,7 +231,7 @@ class FilesystemController(SubiquityTuiController):
         elif True in self._crash_reports:
             pr = self._crash_reports[True]
             if pr is not None:
-                self.app.show_error_report(pr)
+                self.app.show_error_report(pr.ref())
             return ProbingFailed(self)
         else:
             # Once we've shown the filesystem UI, we stop listening for udev
@@ -242,7 +242,7 @@ class FilesystemController(SubiquityTuiController):
             self.stop_listening_udev()
             pr = self._crash_reports.get(False)
             if pr is not None:
-                self.app.show_error_report(pr)
+                self.app.show_error_report(pr.ref())
             if self.answers:
                 self.app.aio_loop.call_soon(self._start_answers)
             return GuidedDiskSelectionView(self)
