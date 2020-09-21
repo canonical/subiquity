@@ -184,7 +184,8 @@ class TuiApplication(Application):
         def hide_load():
             ld.close()
 
-        await self._wait_with_indication(awaitable, show_load, hide_load)
+        return await self._wait_with_indication(
+            awaitable, show_load, hide_load)
 
     async def _move_screen(self, increment, coro):
         if coro is not None:

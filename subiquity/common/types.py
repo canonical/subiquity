@@ -19,6 +19,7 @@
 
 import datetime
 import enum
+import shlex
 from typing import List, Optional
 
 import attr
@@ -29,6 +30,34 @@ class KeyboardSetting:
     layout: str
     variant: str = ''
     toggle: Optional[str] = None
+
+
+@attr.s(auto_attribs=True)
+class ZdevInfo:
+    id: str
+    type: str
+    on: bool
+    exists: bool
+    pers: bool
+    auto: bool
+    failed: bool
+    names: str
+
+    @classmethod
+    def from_row(cls, row):
+        row = dict((k.split('=', 1) for k in shlex.split(row)))
+        for k, v in row.items():
+            if v == "yes":
+                row[k] = True
+            if v == "no":
+                row[k] = False
+        return ZdevInfo(**row)
+
+    @property
+    def typeclass(self):
+        if self.type.startswith('zfcp'):
+            return 'zfcp'
+        return self.type
 
 
 @attr.s(auto_attribs=True)
