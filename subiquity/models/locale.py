@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import os
 
 from subiquitycore import i18n
 
@@ -29,20 +28,6 @@ class LocaleModel(object):
     """
 
     selected_language = None
-
-    def get_languages(self, is_linux_tty):
-        base = os.environ.get("SNAP", ".")
-        lang_path = os.path.join(base, "languagelist")
-
-        languages = []
-        with open(lang_path) as lang_file:
-            for line in lang_file:
-                level, code, name = line.strip().split(':')
-                if is_linux_tty and level != "console":
-                    continue
-                languages.append((code, name))
-        languages.sort(key=lambda x: x[1])
-        return languages
 
     def switch_language(self, code):
         self.selected_language = code

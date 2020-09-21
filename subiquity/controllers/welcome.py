@@ -16,10 +16,9 @@
 import logging
 import os
 
-from subiquitycore.screen import is_linux_tty
-
 from subiquity.controller import SubiquityTuiController
-from subiquity.ui.views import WelcomeView
+from subiquity.ui.views.welcome import get_languages, WelcomeView
+from subiquity.ui.views.help import get_global_addresses
 
 
 log = logging.getLogger('subiquity.controllers.welcome')
@@ -41,7 +40,7 @@ class WelcomeController(SubiquityTuiController):
         lang = os.environ.get("LANG")
         if lang is not None and lang.endswith(".UTF-8"):
             lang = lang.rsplit('.', 1)[0]
-        for code, name in self.model.get_languages(is_linux_tty()):
+        for code, name in get_languages():
             if code == lang:
                 self.model.switch_language(code)
                 break
@@ -49,7 +48,13 @@ class WelcomeController(SubiquityTuiController):
             self.model.selected_language = lang
 
     def make_ui(self):
-        return WelcomeView(self.model, self)
+        language = self.model.selected_language
+        serial = self.app.opts.run_on_serial
+        if serial:
+            ips = get_global_addresses()
+        else:
+            ips = None
+        return WelcomeView(self, language, serial, ips)
 
     def run_answers(self):
         if 'lang' in self.answers:
