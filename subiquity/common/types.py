@@ -51,6 +51,19 @@ class ErrorReportRef:
     oops_id: Optional[str]
 
 
+class RefreshCheckState(enum.Enum):
+    UNKNOWN = enum.auto()
+    AVAILABLE = enum.auto()
+    UNAVAILABLE = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class RefreshStatus:
+    availability: RefreshCheckState
+    current_snap_version: str = ''
+    new_snap_version: str = ''
+
+
 @attr.s(auto_attribs=True)
 class KeyboardSetting:
     layout: str
