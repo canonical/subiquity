@@ -44,19 +44,13 @@ from subiquitycore.utils import (
     )
 
 from subiquity.common.errorreport import ErrorReportKind
+from subiquity.common.types import InstallState
 from subiquity.controller import SubiquityTuiController
 from subiquity.journald import journald_listen
 from subiquity.ui.views.installprogress import ProgressView
 
 
 log = logging.getLogger("subiquitycore.controller.installprogress")
-
-
-class InstallState:
-    NOT_STARTED = 0
-    RUNNING = 1
-    DONE = 2
-    ERROR = -1
 
 
 class TracebackExtractor:
@@ -85,7 +79,8 @@ class InstallProgressController(SubiquityTuiController):
         self.model = app.base_model
         self.progress_view = ProgressView(self)
         app.add_event_listener(self)
-        self.install_state = InstallState.NOT_STARTED
+        self.crash_report = None
+        self._install_state = InstallState.NOT_STARTED
 
         self.reboot_clicked = asyncio.Event()
         if self.answers.get('reboot', False):
@@ -109,6 +104,14 @@ class InstallProgressController(SubiquityTuiController):
     async def apply_autoinstall_config(self, context):
         await self.install_task
         self.app.reboot_on_exit = True
+
+    @property
+    def install_state(self):
+        return self._install_state
+
+    def update_state(self, state):
+        self._install_state = state
+        self.progress_view.update_for_state(state)
 
     def _push_to_progress(self, context):
         if not self.app.interactive():
@@ -143,14 +146,13 @@ class InstallProgressController(SubiquityTuiController):
         return os.path.join(self.model.target, *path)
 
     def curtin_error(self):
-        self.install_state = InstallState.ERROR
         kw = {}
         if sys.exc_info()[0] is not None:
             log.exception("curtin_error")
             self.progress_view.add_log_line(traceback.format_exc())
         if self.tb_extractor.traceback:
             kw["Traceback"] = "\n".join(self.tb_extractor.traceback)
-        crash_report = self.app.make_apport_report(
+        self.crash_report = self.app.make_apport_report(
             ErrorReportKind.INSTALL_FAIL, "install failed", interrupt=False,
             **kw)
         self.progress_view.finish_all()
@@ -159,8 +161,9 @@ class InstallProgressController(SubiquityTuiController):
         if not self.showing:
             self.app.controllers.index = self.controller_index - 1
             self.app.next_screen()
-        if crash_report is not None:
-            self.app.show_error_report(crash_report)
+        self.update_state(InstallState.ERROR)
+        if self.crash_report is not None:
+            self.app.show_error_report(self.crash_report)
 
     def logged_command(self, cmd):
         return ['systemd-cat', '--level-prefix=false',
@@ -263,7 +266,6 @@ class InstallProgressController(SubiquityTuiController):
         description="installing system", level="INFO", childlevel="DEBUG")
     async def curtin_install(self, *, context):
         log.debug('curtin_install')
-        self.install_state = InstallState.RUNNING
         self.curtin_event_contexts[''] = context
 
         journald_listen(
@@ -288,7 +290,7 @@ class InstallProgressController(SubiquityTuiController):
 
         log.debug('curtin_install completed: %s', cp.returncode)
 
-        self.install_state = InstallState.DONE
+        self.update_state(InstallState.DONE)
         log.debug('After curtin install OK')
 
     def cancel(self):
@@ -301,7 +303,11 @@ class InstallProgressController(SubiquityTuiController):
             await asyncio.wait(
                 {e.wait() for e in self.model.install_events})
 
+            self.update_state(InstallState.NEEDS_CONFIRMATION)
+
             await self.confirmation.wait()
+
+            self.update_state(InstallState.RUNNING)
 
             if os.path.exists(self.model.target):
                 await self.unmount_target(
@@ -318,13 +324,12 @@ class InstallProgressController(SubiquityTuiController):
 
             self.ui.set_header(_("Installation complete!"))
             self.progress_view.set_status(_("Finished install!"))
-            self.progress_view.show_complete()
 
             if self.model.network.has_network:
-                self.progress_view.update_running()
+                self.update_state(InstallState.UU_RUNNING)
                 await self.run_unattended_upgrades(context=context)
-                self.progress_view.update_done()
 
+            self.update_state(InstallState.DONE)
         except Exception:
             self.curtin_error()
             if not self.interactive():
@@ -440,6 +445,7 @@ class InstallProgressController(SubiquityTuiController):
 
     async def _click_reboot(self):
         if self.unattended_upgrades_ctx is not None:
+            self.update_state(InstallState.UU_CANCELLING)
             await self.stop_unattended_upgrades()
         self.reboot_clicked.set()
 
@@ -447,16 +453,6 @@ class InstallProgressController(SubiquityTuiController):
         schedule_task(self._click_reboot())
 
     def make_ui(self):
-        if self.install_state in [
-                InstallState.NOT_STARTED,
-                InstallState.RUNNING,
-                ]:
-            self.progress_view.title = _("Installing system")
-        elif self.install_state == InstallState.DONE:
-            self.progress_view.title = _("Install complete!")
-        elif self.install_state == InstallState.ERROR:
-            self.progress_view.title = (
-                _('An error occurred during installation'))
         schedule_task(self.move_on())
         return self.progress_view
 

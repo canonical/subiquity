@@ -358,16 +358,14 @@ class FilesystemController(SubiquityTuiController):
         elif action['action'] == 'done':
             if not self.ui.body.done.enabled:
                 raise Exception("answers did not provide complete fs config")
-            self.app.confirm_install()
-            self.finish()
+            self.finish(self.app.confirm_install())
         else:
             raise Exception("could not process action {}".format(action))
 
     def manual(self):
         self.ui.set_body(FilesystemView(self.model, self))
         if self.answers['guided']:
-            self.app.confirm_install()
-            self.finish()
+            self.finish(self.app.confirm_install())
         if self.answers['manual']:
             self._run_iterator(self._run_actions(self.answers['manual']))
             self.answers['manual'] = []
@@ -383,10 +381,10 @@ class FilesystemController(SubiquityTuiController):
     def cancel(self):
         self.app.prev_screen()
 
-    def finish(self):
+    def finish(self, coro=None):
         log.debug("FilesystemController.finish next_screen")
         self.configured()
-        self.app.next_screen()
+        self.app.next_screen(coro)
 
     def create_mount(self, fs, spec):
         if spec.get('mount') is None:
