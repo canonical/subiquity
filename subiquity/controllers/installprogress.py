@@ -150,11 +150,13 @@ class InstallProgressController(SubiquityTuiController):
             ErrorReportKind.INSTALL_FAIL, "install failed", interrupt=False,
             **kw)
         self.progress_view.finish_all()
-        self.progress_view.set_status(('info_error',
-                                       _("An error has occurred")))
-        self.ui.set_body(self.make_ui())
+        self.progress_view.set_status(
+            ('info_error', _("An error has occurred")))
+        if not self.showing:
+            self.app.controllers.index = self.controller_index - 1
+            self.app.next_screen()
         if crash_report is not None:
-            self.progress_view.show_error(crash_report)
+            self.app.show_error_report(crash_report)
 
     def logged_command(self, cmd):
         return ['systemd-cat', '--level-prefix=false',
