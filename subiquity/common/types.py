@@ -80,3 +80,13 @@ class SnapListResponse:
     status: SnapCheckState
     snaps: List[SnapInfo] = attr.Factory(list)
     selections: List[SnapSelection] = attr.Factory(list)
+
+
+class InstallState(enum.Enum):
+    NOT_STARTED = enum.auto()
+    NEEDS_CONFIRMATION = enum.auto()
+    RUNNING = enum.auto()
+    UU_RUNNING = enum.auto()
+    UU_CANCELLING = enum.auto()
+    DONE = enum.auto()
+    ERROR = enum.auto()

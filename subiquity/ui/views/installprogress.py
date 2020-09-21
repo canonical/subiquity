@@ -33,6 +33,8 @@ from subiquitycore.ui.utils import button_pile, Padding, rewrap
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.width import widget_width
 
+from subiquity.common.types import InstallState
+
 
 log = logging.getLogger("subiquity.views.installprogress")
 
@@ -51,7 +53,7 @@ class ProgressView(BaseView):
 
     def __init__(self, controller):
         self.controller = controller
-        self.ongoing = {}  # context -> line containing a spinner
+        self.ongoing = {}  # context_id -> line containing a spinner
 
         self.reboot_btn = Toggleable(ok_btn(
             _("Reboot Now"), on_press=self.reboot))
@@ -93,23 +95,19 @@ class ProgressView(BaseView):
             lb.set_focus(len(walker) - 1)
             lb.set_focus_valign('bottom')
 
-    def event_start(self, context, message):
-        self.event_finish(context.parent)
+    def event_start(self, context_id, message):
         walker = self.event_listbox.base_widget.body
-        indent = context.full_name().count('/') - 2
-        if context.get('is-install-context'):
-            indent -= 1
         spinner = Spinner(self.controller.app.aio_loop)
         spinner.start()
         new_line = Columns([
-            ('pack', Text('  ' * indent + message)),
+            ('pack', Text(message)),
             ('pack', spinner),
             ], dividechars=1)
-        self.ongoing[context] = len(walker)
+        self.ongoing[context_id] = len(walker)
         self._add_line(self.event_listbox, new_line)
 
-    def event_finish(self, context):
-        index = self.ongoing.pop(context, None)
+    def event_finish(self, context_id):
+        index = self.ongoing.pop(context_id, None)
         if index is None:
             return
         walker = self.event_listbox.base_widget.body
@@ -118,8 +116,8 @@ class ProgressView(BaseView):
         walker[index] = walker[index][0]
 
     def finish_all(self):
-        for context in self.ongoing.copy():
-            self.event_finish(context)
+        for context_id in list(self.ongoing):
+            self.event_finish(context_id)
 
     def add_log_line(self, text):
         self._add_line(self.log_listbox, Text(text))
@@ -138,19 +136,53 @@ class ProgressView(BaseView):
         p.contents[:] = [(b, p.options('pack')) for b in buttons]
         self._set_button_width()
 
-    def update_running(self):
-        self.reboot_btn.base_widget.set_label(_("Cancel update and reboot"))
-        self._set_button_width()
-
-    def update_done(self):
-        self.reboot_btn.base_widget.set_label(_("Reboot"))
-        self._set_button_width()
-
-    def show_complete(self):
-        btns = [self.view_log_btn, self.reboot_btn]
+    def update_for_state(self, state):
+        if state == InstallState.NOT_STARTED:
+            self.title = _("Installing system")
+            btns = []
+        elif state == InstallState.NEEDS_CONFIRMATION:
+            self.title = _("Installing system")
+            btns = []
+        elif state == InstallState.RUNNING:
+            self.title = _("Installing system")
+            btns = [self.view_log_btn]
+        elif state == InstallState.UU_RUNNING:
+            self.title = _("Install complete!")
+            self.reboot_btn.base_widget.set_label(
+                _("Cancel update and reboot"))
+            btns = [
+                self.view_log_btn,
+                self.reboot_btn,
+                ]
+        elif state == InstallState.UU_CANCELLING:
+            self.title = _("Install complete!")
+            self.reboot_btn.base_widget.set_label(_("Rebooting..."))
+            self.reboot_btn.enabled = False
+            btns = [
+                self.view_log_btn,
+                self.reboot_btn,
+                ]
+        elif state == InstallState.DONE:
+            self.title = _("Install complete!")
+            self.reboot_btn.base_widget.set_label(_("Reboot Now"))
+            btns = [
+                self.view_log_btn,
+                self.reboot_btn,
+                ]
+        elif state == InstallState.ERROR:
+            self.title = _('An error occurred during installation')
+            self.reboot_btn.base_widget.set_label(_("Reboot Now"))
+            self.reboot_btn.enabled = True
+            btns = [
+                self.view_log_btn,
+                self.view_error_btn,
+                self.reboot_btn,
+                ]
+        else:
+            raise Exception(state)
+        if self.controller.showing:
+            self.controller.app.ui.set_header(self.title)
         self._set_buttons(btns)
-        self.event_buttons.base_widget.focus_position = 1
-        self.event_pile.base_widget.focus_position = 2
 
     def show_continue(self):
         btns = [self.continue_btn, self.reboot_btn]
@@ -159,7 +191,10 @@ class ProgressView(BaseView):
         self.event_pile.base_widget.focus_position = 2
 
     def continue_(self, sender=None):
-        self.controller.app.next_screen()
+        if self.controller.showing:
+            self.controller.app.show_confirm_install()
+        else:
+            self.controller.app.next_screen()
 
     def hide_continue(self):
         btns = [self.view_log_btn]
@@ -167,15 +202,8 @@ class ProgressView(BaseView):
         self.event_buttons.base_widget.focus_position = 0
         self.event_pile.base_widget.focus_position = 2
 
-    def show_error(self, crash_report):
-        btns = [self.view_log_btn, self.view_error_btn, self.reboot_btn]
-        self._set_buttons(btns)
-        self.event_buttons.base_widget.focus_position = 1
-        self.event_pile.base_widget.focus_position = 2
-        self.crash_report = crash_report
-        self.controller.app.show_error_report(crash_report)
-
     def reboot(self, btn):
+        log.debug('reboot clicked')
         self.reboot_btn.base_widget.set_label(_("Rebooting..."))
         self.reboot_btn.enabled = False
         self.event_buttons.original_widget._select_first_selectable()
@@ -183,7 +211,7 @@ class ProgressView(BaseView):
         self._set_button_width()
 
     def view_error(self, btn):
-        self.controller.app.show_error_report(self.crash_report)
+        self.controller.app.show_error_report(self.controller.crash_report)
 
     def view_log(self, btn):
         self._w = self.log_pile
@@ -203,8 +231,7 @@ Are you sure you want to continue?""")
 
 
 class InstallConfirmation(Stretchy):
-    def __init__(self, parent, app):
-        self.parent = parent
+    def __init__(self, app):
         self.app = app
         widgets = [
             Text(rewrap(_(confirmation_text))),
@@ -220,11 +247,14 @@ class InstallConfirmation(Stretchy):
             focus_index=2)
 
     def ok(self, sender):
-        self.app.confirm_install()
-        self.app.remove_global_overlay(self)
         if isinstance(self.app.ui.body, ProgressView):
             self.app.ui.body.hide_continue()
-        self.app.next_screen()
+        if self.app.controllers.InstallProgress.showing:
+            self.app.remove_global_overlay(self)
+            self.app.aio_loop.create_task(self.app.confirm_install())
+        else:
+            self.app.global_overlays.remove(self)
+            self.app.next_screen(self.app.confirm_install())
 
     def cancel(self, sender):
         self.app.remove_global_overlay(self)

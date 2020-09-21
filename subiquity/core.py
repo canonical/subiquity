@@ -321,7 +321,7 @@ class Subiquity(TuiApplication):
         for listener in self.event_listeners:
             listener.report_finish_event(context, description, status)
 
-    def confirm_install(self):
+    async def confirm_install(self):
         self.install_confirmed = True
         self.controllers.InstallProgress.confirmation.set()
 
@@ -363,8 +363,7 @@ class Subiquity(TuiApplication):
                 from subiquity.ui.views.installprogress import (
                     InstallConfirmation,
                     )
-                self.add_global_overlay(
-                    InstallConfirmation(self.ui.body, self))
+                self.add_global_overlay(InstallConfirmation(self))
             else:
                 yes = _('yes')
                 no = _('no')
@@ -381,8 +380,7 @@ class Subiquity(TuiApplication):
                 while answer != yes:
                     print(prompt)
                     answer = input()
-                self.confirm_install()
-                self.next_screen()
+                self.next_screen(self.confirm_install())
 
     async def make_view_for_controller(self, new):
         can_install = all(e.is_set() for e in self.base_model.install_events)

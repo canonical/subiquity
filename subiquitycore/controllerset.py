@@ -41,6 +41,7 @@ class ControllerSet:
         else:
             inst = klass(*self.init_args)
         setattr(self, name, inst)
+        inst.controller_index = len(self.instances)
         self.instances.append(inst)
 
     def load_all(self):
