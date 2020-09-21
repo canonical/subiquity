@@ -25,6 +25,32 @@ from typing import List, Optional
 import attr
 
 
+class ErrorReportState(enum.Enum):
+    INCOMPLETE = enum.auto()
+    LOADING = enum.auto()
+    DONE = enum.auto()
+    ERROR_GENERATING = enum.auto()
+    ERROR_LOADING = enum.auto()
+
+
+class ErrorReportKind(enum.Enum):
+    BLOCK_PROBE_FAIL = _("Block device probe failure")
+    DISK_PROBE_FAIL = _("Disk probe failure")
+    INSTALL_FAIL = _("Install failure")
+    UI = _("Installer crash")
+    NETWORK_FAIL = _("Network error")
+    UNKNOWN = _("Unknown error")
+
+
+@attr.s(auto_attribs=True)
+class ErrorReportRef:
+    state: ErrorReportState
+    base: str
+    kind: ErrorReportKind
+    seen: bool
+    oops_id: Optional[str]
+
+
 @attr.s(auto_attribs=True)
 class KeyboardSetting:
     layout: str

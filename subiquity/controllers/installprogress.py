@@ -79,7 +79,7 @@ class InstallProgressController(SubiquityTuiController):
         self.model = app.base_model
         self.progress_view = ProgressView(self)
         app.add_event_listener(self)
-        self.crash_report = None
+        self.crash_report_ref = None
         self._install_state = InstallState.NOT_STARTED
 
         self.reboot_clicked = asyncio.Event()
@@ -152,9 +152,11 @@ class InstallProgressController(SubiquityTuiController):
             self.progress_view.add_log_line(traceback.format_exc())
         if self.tb_extractor.traceback:
             kw["Traceback"] = "\n".join(self.tb_extractor.traceback)
-        self.crash_report = self.app.make_apport_report(
+        crash_report = self.app.make_apport_report(
             ErrorReportKind.INSTALL_FAIL, "install failed", interrupt=False,
             **kw)
+        if crash_report is not None:
+            self.crash_report_ref = crash_report.ref()
         self.progress_view.finish_all()
         self.progress_view.set_status(
             ('info_error', _("An error has occurred")))
@@ -162,8 +164,8 @@ class InstallProgressController(SubiquityTuiController):
             self.app.controllers.index = self.controller_index - 1
             self.app.next_screen()
         self.update_state(InstallState.ERROR)
-        if self.crash_report is not None:
-            self.app.show_error_report(self.crash_report)
+        if self.crash_report_ref is not None:
+            self.app.show_error_report(self.crash_report_ref)
 
     def logged_command(self, cmd):
         return ['systemd-cat', '--level-prefix=false',

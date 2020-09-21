@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import enum
 import fcntl
 import json
 import logging
@@ -40,24 +39,14 @@ from subiquitycore.async_helpers import (
     schedule_task,
     )
 
+from subiquity.common.types import (
+    ErrorReportKind,
+    ErrorReportRef,
+    ErrorReportState,
+    )
+
+
 log = logging.getLogger('subiquitycore.common.errorreport')
-
-
-class ErrorReportState(enum.Enum):
-    INCOMPLETE = enum.auto()
-    LOADING = enum.auto()
-    DONE = enum.auto()
-    ERROR_GENERATING = enum.auto()
-    ERROR_LOADING = enum.auto()
-
-
-class ErrorReportKind(enum.Enum):
-    BLOCK_PROBE_FAIL = _("Block device probe failure")
-    DISK_PROBE_FAIL = _("Disk probe failure")
-    INSTALL_FAIL = _("Install failure")
-    UI = _("Installer crash")
-    NETWORK_FAIL = _("Network error")
-    UNKNOWN = _("Unknown error")
 
 
 @attr.s(cmp=False)
@@ -99,9 +88,10 @@ class ErrorReport(metaclass=urwid.MetaSignals):
     reporter = attr.ib()
     base = attr.ib()
     pr = attr.ib()
-    state = attr.ib()
+    state: ErrorReportState = attr.ib()
     _file = attr.ib()
     _context = attr.ib()
+    _info_task = attr.ib(default=None)
 
     meta = attr.ib(default=attr.Factory(dict))
     uploader = attr.ib(default=None)
@@ -183,7 +173,7 @@ class ErrorReport(metaclass=urwid.MetaSignals):
                 _bg_add_info()
                 context.description = "written to " + self.path
         else:
-            schedule_task(add_info())
+            self._info_task = asyncio.get_event_loop().create_task(add_info())
 
     async def load(self):
         with self._context.child("load"):
@@ -327,6 +317,15 @@ class ErrorReport(metaclass=urwid.MetaSignals):
         label = devs[0].get('ID_FS_LABEL_ENC', '')
         return label, root[1:] + '/' + self.base + '.crash'
 
+    def ref(self):
+        return ErrorReportRef(
+            state=self.state,
+            base=self.base,
+            kind=self.kind,
+            seen=self.seen,
+            oops_id=self.oops_id,
+            )
+
 
 class ErrorReporter(object):
 
@@ -334,6 +333,7 @@ class ErrorReporter(object):
         self.context = context
         self.dry_run = dry_run
         self.reports = []
+        self._reports_by_base = {}
         self.crash_directory = os.path.join(root, 'var/crash')
         self.crashdb_spec = {
             'impl': 'launchpad',
@@ -344,7 +344,7 @@ class ErrorReporter(object):
         self._apport_data = []
         self._apport_files = []
 
-    def start_loading_reports(self):
+    def load_reports(self):
         os.makedirs(self.crash_directory, exist_ok=True)
         filenames = os.listdir(self.crash_directory)
         to_load = []
@@ -352,10 +352,12 @@ class ErrorReporter(object):
             base, ext = os.path.splitext(filename)
             if ext != ".crash":
                 continue
-            path = os.path.join(self.crash_directory, filename)
-            r = ErrorReport.from_file(self, path)
-            self.reports.append(r)
-            to_load.append(r)
+            if base not in self._reports_by_base:
+                path = os.path.join(self.crash_directory, filename)
+                r = ErrorReport.from_file(self, path)
+                self.reports.append(r)
+                self._reports_by_base[base] = r
+                to_load.append(r)
         schedule_task(self._load_reports(to_load))
 
     async def _load_reports(self, to_load):
@@ -377,6 +379,7 @@ class ErrorReporter(object):
         try:
             report = ErrorReport.new(self, kind)
             self.reports.insert(0, report)
+            self._reports_by_base[report.base] = report
         except Exception:
             log.exception("creating crash report failed")
             return
@@ -409,3 +412,6 @@ class ErrorReporter(object):
 
         # In the fullness of time we should do the signature thing here.
         return report
+
+    def get(self, error_ref):
+        return self._reports_by_base.get(error_ref.base)
