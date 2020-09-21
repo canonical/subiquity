@@ -19,9 +19,16 @@
 
 import datetime
 import enum
-from typing import List
+from typing import List, Optional
 
 import attr
+
+
+@attr.s(auto_attribs=True)
+class KeyboardSetting:
+    layout: str
+    variant: str = ''
+    toggle: Optional[str] = None
 
 
 @attr.s(auto_attribs=True)

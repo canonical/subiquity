@@ -18,10 +18,11 @@ import os
 import tempfile
 import unittest
 
-from subiquity.models.keyboard import (
-    KeyboardModel,
-    KeyboardSetting,
+from subiquity.common.keyboard import (
+    from_config_file,
+    set_keyboard,
     )
+from subiquity.common.types import KeyboardSetting
 
 
 class TestSubiquityModel(unittest.TestCase):
@@ -36,11 +37,10 @@ class TestSubiquityModel(unittest.TestCase):
         async def t():
             os.environ['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
             with tempfile.TemporaryDirectory() as tmpdir:
-                model = KeyboardModel(tmpdir)
                 new_setting = KeyboardSetting('fr', 'azerty')
-                await model.set_keyboard(new_setting)
-                read_setting = KeyboardSetting.from_config_file(
-                    model.config_path)
+                await set_keyboard(tmpdir, new_setting, True)
+                read_setting = from_config_file(
+                    os.path.join(tmpdir, 'etc', 'default', 'keyboard'))
                 self.assertEqual(new_setting, read_setting)
         loop.run_until_complete(t())
         loop.close()
