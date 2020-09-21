@@ -13,17 +13,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import attr
+import asyncio
 import logging
 import platform
-import shlex
+import random
 
 from collections import OrderedDict
-from urwid import Text
 
-from subiquitycore.ui.utils import Color
-from subiquitycore.utils import run_command
+from subiquitycore.tuicontroller import (
+    Skip,
+    )
+from subiquitycore.utils import arun_command, run_command
 
+from subiquity.common.types import ZdevInfo
 from subiquity.controller import SubiquityTuiController
 from subiquity.ui.views import ZdevView
 
@@ -590,47 +592,6 @@ id="0.0.f1fe:0.0.f1ff" type="ctc" on="no" exists="yes" pers="no" auto="no" faile
 id="0.0.c0fe" type="generic-ccw" on="no" exists="yes" pers="no" auto="no" failed="yes" names=""'''  # noqa: E501
 
 
-@attr.s
-class ZdevInfo:
-    id = attr.ib()
-    type = attr.ib()
-    on = attr.ib()
-    exists = attr.ib()
-    pers = attr.ib()
-    auto = attr.ib()
-    failed = attr.ib()
-    names = attr.ib()
-
-    @classmethod
-    def from_row(cls, row):
-        row = dict((k.split('=', 1) for k in shlex.split(row)))
-        for k, v in row.items():
-            if v == "yes":
-                row[k] = True
-            if v == "no":
-                row[k] = False
-        return ZdevInfo(**row)
-
-    @property
-    def status(self):
-        if self.failed:
-            # for translator: failed is a zdev device status
-            return Color.info_error(Text(_("failed"), align="center"))
-        if self.auto and self.on:
-            # for translator: auto is a zdev device status
-            return Color.info_minor(Text(_("auto"), align="center"))
-        if self.pers and self.on:
-            # for translator: online is a zdev device status
-            return Text(_("online"), align="center")
-        return Text("", align="center")
-
-    @property
-    def typeclass(self):
-        if self.type.startswith('zfcp'):
-            return 'zfcp'
-        return self.type
-
-
 class ZdevController(SubiquityTuiController):
 
     def __init__(self, app):
@@ -645,7 +606,10 @@ class ZdevController(SubiquityTuiController):
             self.zdevinfos = OrderedDict([(i.id, i) for i in zdevinfos])
 
     def make_ui(self):
-        self.ui.set_body(ZdevView(self))
+        if not self.app.opts.bootloader == 'none' \
+          and platform.machine() != 's390x':
+            raise Skip
+        return ZdevView(self, self.get_zdevinfos())
 
     def run_answers(self):
         if 'accept-default' in self.answers:
@@ -658,14 +622,16 @@ class ZdevController(SubiquityTuiController):
         # switch to next screen
         self.app.next_screen()
 
-    def chzdev(self, action, zdevinfo):
+    async def chzdev(self, action, zdevinfo):
         if self.opts.dry_run:
+            await asyncio.sleep(random.random()*0.4)
             on = action == 'enable'
             self.zdevinfos[zdevinfo.id].on = on
             self.zdevinfos[zdevinfo.id].pers = on
         else:
             chzdev_cmd = ['chzdev', '--%s' % action, zdevinfo.id]
-            run_command(chzdev_cmd)
+            await arun_command(chzdev_cmd)
+        return self.get_zdevinfos()
 
     def get_zdevinfos(self):
         if self.opts.dry_run:
