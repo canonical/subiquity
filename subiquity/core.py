@@ -23,6 +23,8 @@ import sys
 import traceback
 import urwid
 
+import aiohttp
+
 import jsonschema
 
 import yaml
@@ -31,6 +33,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     schedule_task,
     )
+from subiquitycore.prober import Prober
 from subiquitycore.screen import is_linux_tty
 from subiquitycore.tuicontroller import Skip
 from subiquitycore.tui import TuiApplication
@@ -41,6 +44,8 @@ from subiquitycore.snapd import (
     )
 from subiquitycore.view import BaseView
 
+from subiquity.common.api.client import make_client_for_conn
+from subiquity.common.apidef import API
 from subiquity.common.errorreport import (
     ErrorReporter,
     ErrorReportKind,
@@ -137,6 +142,7 @@ class Subiquity(TuiApplication):
 
         self.help_menu = HelpMenu(self)
         super().__init__(opts)
+        self.prober = Prober(opts.machine_config, self.debug_flags)
         journald_listen(
             self.aio_loop, ["subiquity"], self.subiquity_event, seek=True)
         self.event_listeners = []
@@ -158,6 +164,9 @@ class Subiquity(TuiApplication):
             ('network-proxy-set', lambda: schedule_task(self._proxy_set())),
             ('network-change', self._network_change),
             ])
+
+        self.conn = aiohttp.UnixConnector(self.opts.socket)
+        self.client = make_client_for_conn(API, self.conn)
 
         self.autoinstall_config = {}
         self.report_to_show = None
@@ -272,7 +281,20 @@ class Subiquity(TuiApplication):
             # in next_screen below will be confusing.
             os.system('stty sane')
 
+    async def connect(self):
+        print("connecting...", end='', flush=True)
+        while True:
+            try:
+                await self.client.meta.status.GET()
+            except aiohttp.ClientError:
+                await asyncio.sleep(1)
+                print(".", end='', flush=True)
+            else:
+                print()
+                break
+
     async def start(self):
+        await self.connect()
         if self.opts.autoinstall is not None:
             await self.load_autoinstall_config()
             if not self.interactive() and not self.opts.dry_run:

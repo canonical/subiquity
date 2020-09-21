@@ -15,6 +15,7 @@
 
 import logging
 
+from subiquitycore.prober import Prober
 from subiquitycore.tui import TuiApplication
 
 from console_conf.models.console_conf import ConsoleConfModel
@@ -60,6 +61,7 @@ class RecoveryChooser(TuiApplication):
         )
 
         super().__init__(opts)
+        self.prober = Prober(opts.machine_config, self.debug_flags)
 
     def respond(self, choice):
         """Produce a response to the parent process"""

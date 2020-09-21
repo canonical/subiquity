@@ -25,6 +25,10 @@ from typing import List, Optional
 import attr
 
 
+class ApplicationState(enum.Enum):
+    STARTING = enum.auto()
+
+
 class ErrorReportState(enum.Enum):
     INCOMPLETE = enum.auto()
     LOADING = enum.auto()
