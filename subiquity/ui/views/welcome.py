@@ -13,12 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Welcome
+"""Welcome
 
 Welcome provides user with language selection
-
 """
+
 import logging
+import os
 
 from urwid import Text
 
@@ -30,7 +31,6 @@ from subiquitycore.view import BaseView
 
 from subiquity.ui.views.help import (
     get_installer_password,
-    get_global_addresses,
     )
 
 log = logging.getLogger("subiquity.views.welcome")
@@ -59,14 +59,29 @@ will allow use of rich mode.
 """
 
 
+def get_languages():
+    base = os.environ.get("SNAP", ".")
+    lang_path = os.path.join(base, "languagelist")
+
+    languages = []
+    with open(lang_path) as lang_file:
+        for line in lang_file:
+            level, code, name = line.strip().split(':')
+            if is_linux_tty() and level != "console":
+                continue
+            languages.append((code, name))
+    languages.sort(key=lambda x: x[1])
+    return languages
+
+
 class WelcomeView(BaseView):
     title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
 
-    def __init__(self, model, controller):
-        self.model = model
+    def __init__(self, controller, cur_lang, serial, ips):
         self.controller = controller
-        if controller.app.opts.run_on_serial and not controller.app.rich_mode:
-            s = self.make_serial_choices()
+        self.cur_lang = cur_lang
+        if serial and not controller.app.rich_mode:
+            s = self.make_serial_choices(ips)
             self.title = "Welcome!"
         else:
             s = self.make_language_choices()
@@ -75,13 +90,12 @@ class WelcomeView(BaseView):
     def make_language_choices(self):
         btns = []
         current_index = None
-        langs = self.model.get_languages(is_linux_tty())
-        cur = self.model.selected_language
-        log.debug("_build_model_inputs selected_language=%s", cur)
+        langs = get_languages()
+        cur = self.cur_lang
         if cur in ["C", None]:
             cur = "en_US"
         for i, (code, native) in enumerate(langs):
-            log.debug("%s", (code, self.model.selected_language))
+            log.debug("%s", (code, cur))
             if code == cur:
                 current_index = i
             btns.append(
@@ -97,9 +111,8 @@ class WelcomeView(BaseView):
             lb, buttons=None, narrow_rows=True,
             excerpt=_("Use UP, DOWN and ENTER keys to select your language."))
 
-    def make_serial_choices(self):
+    def make_serial_choices(self, ips):
         ssh_password = get_installer_password(self.controller.opts.dry_run)
-        ips = get_global_addresses(self.controller.app)
         btns = [
             other_btn(
                 label="Switch to rich mode",
