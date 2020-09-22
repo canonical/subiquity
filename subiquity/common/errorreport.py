@@ -329,12 +329,14 @@ class ErrorReport(metaclass=urwid.MetaSignals):
 
 class ErrorReporter(object):
 
-    def __init__(self, context, dry_run, root):
+    def __init__(self, context, dry_run, root, client=None):
         self.context = context
         self.dry_run = dry_run
+        self.crash_directory = os.path.join(root, 'var/crash')
+        self.client = client
+
         self.reports = []
         self._reports_by_base = {}
-        self.crash_directory = os.path.join(root, 'var/crash')
         self.crashdb_spec = {
             'impl': 'launchpad',
             'project': 'subiquity',
@@ -370,7 +372,7 @@ class ErrorReporter(object):
     def note_data_for_apport(self, key, value):
         self._apport_data.append((key, value))
 
-    def make_apport_report(self, kind, thing, *, wait=False, **kw):
+    def make_apport_report(self, kind, thing, *, wait=False, exc=None, **kw):
         if not self.dry_run and not os.path.exists('/cdrom/.disk/info'):
             return None
 
@@ -384,11 +386,13 @@ class ErrorReporter(object):
             log.exception("creating crash report failed")
             return
 
-        etype = sys.exc_info()[0]
-        if etype is not None:
+        if exc is None:
+            exc = sys.exc_info()[1]
+        if exc is not None:
             report.pr["Title"] = "{} crashed with {}".format(
-                thing, etype.__name__)
-            report.pr['Traceback'] = traceback.format_exc()
+                thing, type(exc).__name__)
+            tb = traceback.TracebackException.from_exception(exc)
+            report.pr['Traceback'] = "".join(tb.format())
         else:
             report.pr["Title"] = thing
 
@@ -415,3 +419,22 @@ class ErrorReporter(object):
 
     def get(self, error_ref):
         return self._reports_by_base.get(error_ref.base)
+
+    async def get_wait(self, error_ref):
+        report = self._reports_by_base.get(error_ref.base)
+        if report is not None:
+            return report
+
+        loop = asyncio.get_event_loop()
+
+        await self.client.errors.wait.GET(error_ref)
+
+        path = os.path.join(
+            self.crash_directory, error_ref.base + '.crash')
+        report = ErrorReport.from_file(self, path)
+        self.reports.insert(0, report)
+        self._reports_by_base[error_ref.base] = report
+
+        loop.call_soon(loop.create_task, report.load())
+
+        return report

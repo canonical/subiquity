@@ -24,11 +24,15 @@ from subiquitycore.core import Application
 from subiquity.common.api.server import bind
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import (
+    ErrorReportKind,
     ErrorReporter,
     )
+from subiquity.common.serialize import to_json
 from subiquity.common.types import (
     ApplicationState,
+    ErrorReportRef,
     )
+from subiquity.server.errors import ErrorController
 
 
 log = logging.getLogger('subiquity.server.server')
@@ -73,9 +77,25 @@ class SubiquityServer(Application):
         return self.error_reporter.make_apport_report(
             kind, thing, wait=wait, **kw)
 
+    @web.middleware
+    async def middleware(self, request, handler):
+        resp = await handler(request)
+        if resp.get('exception'):
+            exc = resp['exception']
+            log.debug(
+                'request to {} crashed'.format(request.raw_path), exc_info=exc)
+            report = self.make_apport_report(
+                ErrorReportKind.SERVER_REQUEST_FAIL,
+                "request to {}".format(request.raw_path),
+                exc=exc)
+            resp.headers['x-error-report'] = to_json(
+                ErrorReportRef, report.ref())
+        return resp
+
     async def start_api_server(self):
-        app = web.Application()
+        app = web.Application(middlewares=[self.middleware])
         bind(app.router, API.meta, MetaController(self))
+        bind(app.router, API.errors, ErrorController(self))
         if self.opts.dry_run:
             from .dryrun import DryRunController
             bind(app.router, API.dry_run, DryRunController(self))

@@ -48,7 +48,11 @@ from subiquity.common.api.client import make_client_for_conn
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import (
     ErrorReporter,
+    )
+from subiquity.common.serialize import from_json
+from subiquity.common.types import (
     ErrorReportKind,
+    ErrorReportRef,
     )
 from subiquity.controller import Confirm
 from subiquity.journald import journald_listen
@@ -180,7 +184,8 @@ class Subiquity(TuiApplication):
         self.progress_shown_time = self.aio_loop.time()
         self.progress_showing = False
         self.error_reporter = ErrorReporter(
-            self.context.child("ErrorReporter"), self.opts.dry_run, self.root)
+            self.context.child("ErrorReporter"), self.opts.dry_run, self.root,
+            self.client)
 
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
@@ -308,6 +313,9 @@ class Subiquity(TuiApplication):
             os.system('stty sane')
 
     def resp_hook(self, response):
+        if response.headers.get('x-error-report') is not None:
+            ref = from_json(ErrorReportRef, response.headers['x-error-report'])
+            raise Abort(ref)
         try:
             response.raise_for_status()
         except aiohttp.ClientError:

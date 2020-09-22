@@ -16,6 +16,7 @@
 from subiquity.common.api.defs import api
 from subiquity.common.types import (
     ApplicationState,
+    ErrorReportRef,
     )
 
 
@@ -31,6 +32,10 @@ class API:
         class restart:
             def POST() -> None:
                 """Restart the server process."""
+    class errors:
+        class wait:
+            def GET(error_ref: ErrorReportRef) -> ErrorReportRef:
+                """Block until the error report is fully populated."""
 
     class dry_run:
         """This endpoint only works in dry-run mode."""
