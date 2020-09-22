@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+import sys
 
 from aiohttp import web
 
@@ -40,6 +42,9 @@ class MetaController:
 
     async def status_GET(self) -> ApplicationState:
         return self.app.status
+
+    async def restart_POST(self) -> None:
+        self.app.restart()
 
 
 class SubiquityServer(Application):
@@ -82,3 +87,11 @@ class SubiquityServer(Application):
     async def start(self):
         await super().start()
         await self.start_api_server()
+
+    def restart(self):
+        cmdline = ['snap', 'run', 'subiquity']
+        if self.opts.dry_run:
+            cmdline = [
+                sys.executable, '-m', 'subiquity.cmd.server',
+                ] + sys.argv[1:]
+        os.execvp(cmdline[0], cmdline)

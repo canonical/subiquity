@@ -28,6 +28,10 @@ class API:
             def GET() -> ApplicationState:
                 """Get the installer state."""
 
+        class restart:
+            def POST() -> None:
+                """Restart the server process."""
+
     class dry_run:
         """This endpoint only works in dry-run mode."""
 

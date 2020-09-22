@@ -278,7 +278,7 @@ class ErrorReportStretchy(Stretchy):
         self.app.debug_shell()
 
     def restart(self, sender):
-        self.app.restart()
+        self.app.restart(restart_server=True)
 
     def view_report(self, sender):
         self.app.run_command_in_foreground(["less", self.report.path])

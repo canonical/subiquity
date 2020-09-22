@@ -147,6 +147,7 @@ class Subiquity(TuiApplication):
 
         self.help_menu = HelpMenu(self)
         super().__init__(opts)
+        self.restarting_server = False
         self.prober = Prober(opts.machine_config, self.debug_flags)
         journald_listen(
             self.aio_loop, ["subiquity"], self.subiquity_event, seek=True)
@@ -206,13 +207,33 @@ class Subiquity(TuiApplication):
             # And remove the overlay.
             self.remove_global_overlay(install_running)
 
-    def restart(self, remove_last_screen=True):
+    async def _restart_server(self):
+        log.debug("_restart_server")
+        try:
+            await self.client.meta.restart.POST()
+        except aiohttp.ServerDisconnectedError:
+            pass
+        self.restart(remove_last_screen=False)
+
+    def restart(self, remove_last_screen=True, restart_server=False):
+        log.debug(f"restart {remove_last_screen} {restart_server}")
+        if remove_last_screen:
+            self._remove_last_screen()
+        if restart_server:
+            self.restarting_server = True
+            self.ui.block_input = True
+            self.aio_loop.create_task(self._restart_server())
+            return
         if remove_last_screen:
             self._remove_last_screen()
         if self.urwid_loop is not None:
-            self.urwid_loop.screen.stop()
+            self.urwid_loop.stop()
         cmdline = ['snap', 'run', 'subiquity']
         if self.opts.dry_run:
+            if self.server_proc is not None and not restart_server:
+                print('killing server {}'.format(self.server_proc.pid))
+                self.server_proc.send_signal(2)
+                self.server_proc.wait()
             cmdline = [
                 sys.executable, '-m', 'subiquity.cmd.tui',
                 ] + sys.argv[1:]
@@ -320,6 +341,9 @@ class Subiquity(TuiApplication):
 
     def _exception_handler(self, loop, context):
         exc = context.get('exception')
+        if self.restarting_server:
+            log.debug('ignoring %s %s during restart', exc, type(exc))
+            return
         if isinstance(exc, Abort):
             self.show_error_report(exc.error_report_ref)
             return
