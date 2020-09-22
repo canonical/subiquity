@@ -71,6 +71,9 @@ class SubiquityServer(Application):
     async def start_api_server(self):
         app = web.Application()
         bind(app.router, API.meta, MetaController(self))
+        if self.opts.dry_run:
+            from .dryrun import DryRunController
+            bind(app.router, API.dry_run, DryRunController(self))
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.UnixSite(runner, self.opts.socket)

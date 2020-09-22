@@ -13,24 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquity.common.api.defs import api
-from subiquity.common.types import (
-    ApplicationState,
-    )
 
+class DryRunController:
 
-@api
-class API:
-    """The API offered by the subiquity installer process."""
+    def __init__(self, app):
+        self.app = app
+        self.context = app.context.child("DryRun")
 
-    class meta:
-        class status:
-            def GET() -> ApplicationState:
-                """Get the installer state."""
-
-    class dry_run:
-        """This endpoint only works in dry-run mode."""
-
-        class crash:
-            def GET() -> None:
-                """Requests to this method will fail with a HTTP 500."""
+    async def crash_GET(self) -> None:
+        1/0

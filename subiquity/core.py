@@ -463,6 +463,8 @@ class Subiquity(TuiApplication):
                     ErrorReportKind.UNKNOWN, "example", interrupt=interrupt)
         elif key == 'ctrl u':
             1/0
+        elif key == 'ctrl b':
+            self.aio_loop.create_task(self.client.dry_run.crash.GET())
         else:
             super().unhandled_input(key)
 
