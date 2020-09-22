@@ -66,6 +66,11 @@ from subiquity.ui.views.help import HelpMenu
 log = logging.getLogger('subiquity.core')
 
 
+class Abort(Exception):
+    def __init__(self, error_report_ref):
+        self.error_report_ref = error_report_ref
+
+
 DEBUG_SHELL_INTRO = _("""\
 Installer shell session activated.
 
@@ -166,7 +171,7 @@ class Subiquity(TuiApplication):
             ])
 
         self.conn = aiohttp.UnixConnector(self.opts.socket)
-        self.client = make_client_for_conn(API, self.conn)
+        self.client = make_client_for_conn(API, self.conn, self.resp_hook)
 
         self.autoinstall_config = {}
         self.report_to_show = None
@@ -281,6 +286,16 @@ class Subiquity(TuiApplication):
             # in next_screen below will be confusing.
             os.system('stty sane')
 
+    def resp_hook(self, response):
+        try:
+            response.raise_for_status()
+        except aiohttp.ClientError:
+            report = self.error_reporter.make_apport_report(
+                ErrorReportKind.SERVER_REQUEST_FAIL,
+                "request to {}".format(response.url.path))
+            raise Abort(report.ref())
+        return response
+
     async def connect(self):
         print("connecting...", end='', flush=True)
         while True:
@@ -302,6 +317,13 @@ class Subiquity(TuiApplication):
         await super().start(start_urwid=self.interactive())
         if not self.interactive():
             self.select_initial_screen(0)
+
+    def _exception_handler(self, loop, context):
+        exc = context.get('exception')
+        if isinstance(exc, Abort):
+            self.show_error_report(exc.error_report_ref)
+            return
+        super()._exception_handler(loop, context)
 
     def extra_urwid_loop_args(self):
         return dict(input_filter=self.input_filter.filter)

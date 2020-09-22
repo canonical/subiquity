@@ -76,6 +76,9 @@ Sorry, there was a problem completing the installation.
     ErrorReportKind.NETWORK_FAIL: _("""
 Sorry, there was a problem applying the network configuration.
 """),
+    ErrorReportKind.SERVER_REQUEST_FAIL: _("""
+Sorry, the installer has encountered an internal error.
+"""),
     ErrorReportKind.UI: _("""
 Sorry, the installer has restarted because of an error.
 """),
@@ -116,6 +119,9 @@ reconfiguring the system's block devices manually.
 You can continue with the installation but it will be assumed the network
 is not functional.
 """), ['continue']),
+    ErrorReportKind.SERVER_REQUEST_FAIL: (_("""
+You can continue or restart the installer.
+"""), ['continue', 'restart']),
     ErrorReportKind.INSTALL_FAIL: (_("""
 Do you want to try starting the installation again?
 """), ['restart', 'close']),
