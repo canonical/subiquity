@@ -15,6 +15,7 @@
 
 import datetime
 import enum
+import json
 import inspect
 import typing
 
@@ -124,3 +125,14 @@ class Serializer:
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
             return getattr(annotation, value)
         return self.type_deserializers[annotation](annotation, value, metadata)
+
+    def to_json(self, annotation, value):
+        return json.dumps(self.serialize(annotation, value))
+
+    def from_json(self, annotation, value):
+        return self.deserialize(annotation, json.loads(value))
+
+
+_serializer = Serializer()
+to_json = _serializer.to_json
+from_json = _serializer.from_json

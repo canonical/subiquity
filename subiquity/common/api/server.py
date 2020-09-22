@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
-import json
 
 from aiohttp import web
 
@@ -104,13 +103,11 @@ def _make_handler(controller, definition, implementation, serializer):
             args = {}
             try:
                 if data_annotation is not None:
-                    payload = json.loads(await request.text())
-                    args[data_arg] = serializer.deserialize(
-                        data_annotation, payload)
+                    args[data_arg] = serializer.from_json(
+                        data_annotation, await request.text())
                 for arg, ann, default in query_args_anns:
                     if arg in request.query:
-                        v = serializer.deserialize(
-                            ann, json.loads(request.query[arg]))
+                        v = serializer.from_json(ann, request.query[arg])
                     elif default != inspect._empty:
                         v = default
                     else:

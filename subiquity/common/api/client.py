@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
-import json
 
 import aiohttp
 
@@ -42,9 +41,8 @@ def _wrap(make_request, path, meth, serializer):
             if arg_name == payload_arg:
                 data = serializer.serialize(payload_ann, value)
             else:
-                query_args[arg_name] = json.dumps(
-                    serializer.serialize(
-                        meth_params[arg_name].annotation, value))
+                query_args[arg_name] = serializer.to_json(
+                        meth_params[arg_name].annotation, value)
         async with make_request(
                 meth.__name__, path, json=data, params=query_args) as resp:
             resp.raise_for_status()
@@ -77,7 +75,7 @@ def make_client_for_conn(
             # session.request needs a full URL with scheme and host
             # even though that's in some ways a bit silly with a unix
             # socket, so we just hardcode something here (I guess the
-            # "a" gets sent a long to the server inthe Host: header
+            # "a" gets sent along to the server in the Host: header
             # and the server could in principle do something like
             # virtual host based selection but well....)
             url = 'http://a' + path
