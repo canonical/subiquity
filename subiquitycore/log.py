@@ -17,7 +17,7 @@ import logging
 import os
 
 
-def setup_logger(dir):
+def setup_logger(dir, base='subiquity'):
     os.makedirs(dir, exist_ok=True)
 
     logger = logging.getLogger("")
@@ -26,7 +26,7 @@ def setup_logger(dir):
     r = {}
 
     for level in 'info', 'debug':
-        nopid_file = os.path.join(dir, "subiquity-{}.log".format(level))
+        nopid_file = os.path.join(dir, "{}-{}.log".format(base, level))
         logfile = "{}.{}".format(nopid_file, os.getpid())
         handler = logging.FileHandler(logfile, mode='w')
         # os.symlink cannot replace an existing file or symlink so create

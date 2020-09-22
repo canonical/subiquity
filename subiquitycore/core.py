@@ -22,7 +22,6 @@ from subiquitycore.context import (
     Context,
     )
 from subiquitycore.controllerset import ControllerSet
-from subiquitycore.prober import Prober
 from subiquitycore.signals import Signal
 
 log = logging.getLogger('subiquitycore.core')
@@ -58,8 +57,6 @@ class Application:
             #    subiquity/controllers/installprogress.py
             self.debug_flags = os.environ.get('SUBIQUITY_DEBUG', '').split(',')
 
-        prober = Prober(opts.machine_config, self.debug_flags)
-
         self.opts = opts
         opts.project = self.project
 
@@ -73,7 +70,6 @@ class Application:
             os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
         self.updated = os.path.exists(self.state_path('updating'))
         self.signal = Signal()
-        self.prober = prober
         self.aio_loop = asyncio.get_event_loop()
         self.aio_loop.set_exception_handler(self._exception_handler)
         self.controllers = ControllerSet(

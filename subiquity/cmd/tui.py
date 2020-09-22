@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
-import locale
 import logging
 import os
 import fcntl
+import subprocess
 import sys
 import time
 
@@ -27,13 +27,19 @@ from cloudinit import atomic_helper, safeyaml, stages
 from subiquitycore.log import setup_logger
 from subiquitycore.utils import run_command
 
+from .common import (
+    LOGDIR,
+    setup_environment,
+    )
+from .server import make_server_args_parser
+
 
 class ClickAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         namespace.scripts.append("c(" + repr(values) + ")")
 
 
-def parse_options(argv):
+def make_client_args_parser():
     parser = argparse.ArgumentParser(
         description='SUbiquity - Ubiquity for Servers',
         prog='subiquity')
@@ -45,6 +51,7 @@ def parse_options(argv):
     parser.add_argument('--dry-run', action='store_true',
                         dest='dry_run',
                         help='menu-only, do not call installer function')
+    parser.add_argument('--socket')
     parser.add_argument('--serial', action='store_true',
                         dest='run_on_serial',
                         help='Run the installer over serial console.')
@@ -95,40 +102,48 @@ def parse_options(argv):
         '--snap-section', action='store', default='server',
         help=("Show snaps from this section of the store in the snap "
               "list screen."))
-    return parser.parse_args(argv)
+    return parser
 
-
-LOGDIR = "/var/log/installer/"
 
 AUTO_ANSWERS_FILE = "/subiquity_config/answers.yaml"
 
 
 def main():
-    # Python 3.7+ does more or less this by default, but we need to
-    # work with the Python 3.6 in bionic.
-    try:
-        locale.setlocale(locale.LC_ALL, "")
-    except locale.Error:
-        locale.setlocale(locale.LC_CTYPE, "C.UTF-8")
-
-    # Prefer utils from $SNAP, over system-wide
-    snap = os.environ.get('SNAP')
-    if snap:
-        os.environ['PATH'] = os.pathsep.join([
-            os.path.join(snap, 'bin'),
-            os.path.join(snap, 'usr', 'bin'),
-            os.environ['PATH'],
-        ])
-        os.environ["APPORT_DATA_DIR"] = os.path.join(snap, 'share/apport')
-    # This must come after setting $APPORT_DATA_DIR.
+    setup_environment()
+    # setup_environment sets $APPORT_DATA_DIR which must be set before
+    # apport is imported, which is done by this import:
     from subiquity.core import Subiquity
-    opts = parse_options(sys.argv[1:])
-    global LOGDIR
+    parser = make_client_args_parser()
+    args = sys.argv[1:]
+    server_proc = None
+    if '--dry-run' in args:
+        opts, unknown = parser.parse_known_args(args)
+        if opts.socket is None:
+            os.makedirs('.subiquity', exist_ok=True)
+            sock_path = '.subiquity/socket'
+            opts.socket = sock_path
+            server_args = ['--dry-run', '--socket=' + sock_path] + unknown
+            server_parser = make_server_args_parser()
+            server_parser.parse_args(server_args)  # just to check
+            server_output = open('.subiquity/server-output', 'w')
+            server_cmd = [sys.executable, '-m', 'subiquity.cmd.server'] + \
+                server_args
+            server_proc = subprocess.Popen(
+                server_cmd, stdout=server_output, stderr=subprocess.STDOUT)
+            print("running server pid {}".format(server_proc.pid))
+        else:
+            opts = parser.parse_args(args)
+    else:
+        opts = parser.parse_args(args)
+        if opts.socket is None:
+            opts.socket = '/run/subiquity/socket'
+    os.makedirs(os.path.basename(opts.socket), exist_ok=True)
+    logdir = LOGDIR
     if opts.dry_run:
-        LOGDIR = ".subiquity"
         if opts.snaps_from_examples is None:
             opts.snaps_from_examples = True
-    logfiles = setup_logger(dir=LOGDIR)
+        logdir = ".subiquity"
+    logfiles = setup_logger(dir=logdir, base='subiquity')
 
     logger = logging.getLogger('subiquity')
     version = os.environ.get("SNAP_REVISION", "unknown")
@@ -160,7 +175,7 @@ def main():
                 "cloud-init status: %r, assumed disabled",
                 status_txt)
 
-    block_log_dir = os.path.join(LOGDIR, "block")
+    block_log_dir = os.path.join(logdir, "block")
     os.makedirs(block_log_dir, exist_ok=True)
     handler = logging.FileHandler(os.path.join(block_log_dir, 'discover.log'))
     handler.setLevel('DEBUG')
@@ -202,13 +217,20 @@ def main():
             opts.answers = None
 
     subiquity_interface = Subiquity(opts, block_log_dir)
+    subiquity_interface.server_proc = server_proc
 
     subiquity_interface.note_file_for_apport(
         "InstallerLog", logfiles['debug'])
     subiquity_interface.note_file_for_apport(
         "InstallerLogInfo", logfiles['info'])
 
-    subiquity_interface.run()
+    try:
+        subiquity_interface.run()
+    finally:
+        if server_proc is not None:
+            print('killing server {}'.format(server_proc.pid))
+            server_proc.send_signal(2)
+            server_proc.wait()
 
 
 if __name__ == '__main__':
