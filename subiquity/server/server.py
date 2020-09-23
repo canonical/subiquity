@@ -79,7 +79,12 @@ class SubiquityServer(Application):
 
     @web.middleware
     async def middleware(self, request, handler):
+        if self.updated:
+            updated = 'yes'
+        else:
+            updated = 'no'
         resp = await handler(request)
+        resp.headers['x-updated'] = updated
         if resp.get('exception'):
             exc = resp['exception']
             log.debug(

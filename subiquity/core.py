@@ -151,6 +151,7 @@ class Subiquity(TuiApplication):
 
         self.help_menu = HelpMenu(self)
         super().__init__(opts)
+        self.server_updated = None
         self.restarting_server = False
         self.prober = Prober(opts.machine_config, self.debug_flags)
         journald_listen(
@@ -313,8 +314,14 @@ class Subiquity(TuiApplication):
             os.system('stty sane')
 
     def resp_hook(self, response):
-        if response.headers.get('x-error-report') is not None:
-            ref = from_json(ErrorReportRef, response.headers['x-error-report'])
+        headers = response.headers
+        if 'x-updated' in headers:
+            if self.server_updated is None:
+                self.server_updated = headers['x-updated']
+            elif self.server_updated != headers['x-updated']:
+                self.restart(remove_last_screen=False)
+        if headers.get('x-error-report') is not None:
+            ref = from_json(ErrorReportRef, headers['x-error-report'])
             raise Abort(ref)
         try:
             response.raise_for_status()
