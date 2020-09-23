@@ -318,6 +318,11 @@ class Subiquity(TuiApplication):
                 self.server_updated = headers['x-updated']
             elif self.server_updated != headers['x-updated']:
                 self.restart(remove_last_screen=False)
+        status = response.headers.get('x-status')
+        if status == 'skip':
+            raise Skip
+        elif status == 'confirm':
+            raise Confirm
         if headers.get('x-error-report') is not None:
             ref = from_json(ErrorReportRef, headers['x-error-report'])
             raise Abort(ref)

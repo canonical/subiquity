@@ -21,7 +21,10 @@ from aiohttp import web
 
 from subiquitycore.core import Application
 
-from subiquity.common.api.server import bind
+from subiquity.common.api.server import (
+    bind,
+    controller_for_request,
+    )
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import (
     ErrorReportKind,
@@ -32,6 +35,7 @@ from subiquity.common.types import (
     ApplicationState,
     ErrorReportRef,
     )
+from subiquity.server.controller import SubiquityController
 from subiquity.server.errors import ErrorController
 
 
@@ -83,6 +87,14 @@ class SubiquityServer(Application):
             updated = 'yes'
         else:
             updated = 'no'
+        controller = await controller_for_request(request)
+        if isinstance(controller, SubiquityController):
+            if not controller.interactive():
+                return web.Response(
+                    headers={'x-status': 'skip', 'x-updated': updated})
+            elif self.base_model.needs_confirmation(controller.model_name):
+                return web.Response(
+                    headers={'x-status': 'confirm', 'x-updated': updated})
         resp = await handler(request)
         resp.headers['x-updated'] = updated
         if resp.get('exception'):
