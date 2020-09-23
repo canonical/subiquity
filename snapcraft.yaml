@@ -20,6 +20,12 @@ apps:
     command: usr/bin/console-conf
   probert:
     command: bin/probert
+  subiquity-server:
+    command: usr/bin/subiquity-server
+    daemon: simple
+    restart-condition: always
+    environment:
+      PYTHONIOENCODING: utf-8
   subiquity-service:
     command: usr/bin/subiquity-service
     daemon: simple
@@ -87,6 +93,7 @@ parts:
       - attrs
       - pyyaml
       - systemd-python
+      - aiohttp
       #- urwid
     source: .
     source-type: git
@@ -95,6 +102,7 @@ parts:
       'bin/subiquity-tui': usr/bin/subiquity
       'bin/subiquity-loadkeys': usr/bin/subiquity-loadkeys
       'bin/subiquity-service': usr/bin/subiquity-service
+      'bin/subiquity-server': usr/bin/subiquity-server
       'bin/subiquity-configure-apt': usr/bin/subiquity-configure-apt
       'bin/subiquity-configure-run': usr/bin/subiquity-configure-run
   users-and-groups:
