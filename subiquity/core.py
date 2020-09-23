@@ -191,8 +191,6 @@ class Subiquity(TuiApplication):
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
 
-        self.install_confirmed = False
-
     def subiquity_event(self, event):
         if event["MESSAGE"] == "starting install":
             if event["_PID"] == os.getpid():
@@ -405,8 +403,7 @@ class Subiquity(TuiApplication):
             listener.report_finish_event(context, description, status)
 
     async def confirm_install(self):
-        self.install_confirmed = True
-        self.controllers.InstallProgress.confirmation.set()
+        self.base_model.confirm()
 
     def _cancel_show_progress(self):
         if self.show_progress_handle is not None:
@@ -466,11 +463,8 @@ class Subiquity(TuiApplication):
                 self.next_screen(self.confirm_install())
 
     async def make_view_for_controller(self, new):
-        can_install = all(e.is_set() for e in self.base_model.install_events)
-        if can_install and not self.install_confirmed:
-            if new.model_name:
-                if not self.base_model.is_configured(new.model_name):
-                    raise Confirm
+        if self.base_model.needs_confirmation(new.model_name):
+            raise Confirm
         if new.interactive():
             if new.answers:
                 self.aio_loop.call_soon(new.run_answers)

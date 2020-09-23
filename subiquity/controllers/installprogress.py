@@ -92,7 +92,6 @@ class InstallProgressController(SubiquityTuiController):
         self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
         self.curtin_event_contexts = {}
-        self.confirmation = asyncio.Event()
 
     def interactive(self):
         return self.app.interactive()
@@ -307,7 +306,7 @@ class InstallProgressController(SubiquityTuiController):
 
             self.update_state(InstallState.NEEDS_CONFIRMATION)
 
-            await self.confirmation.wait()
+            await self.model.confirmation.wait()
 
             self.update_state(InstallState.RUNNING)
 
