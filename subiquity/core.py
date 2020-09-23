@@ -48,7 +48,11 @@ from subiquity.common.api.client import make_client_for_conn
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import (
     ErrorReporter,
+    )
+from subiquity.common.serialize import from_json
+from subiquity.common.types import (
     ErrorReportKind,
+    ErrorReportRef,
     )
 from subiquity.controller import Confirm
 from subiquity.journald import journald_listen
@@ -64,6 +68,11 @@ from subiquity.ui.views.help import HelpMenu
 
 
 log = logging.getLogger('subiquity.core')
+
+
+class Abort(Exception):
+    def __init__(self, error_report_ref):
+        self.error_report_ref = error_report_ref
 
 
 DEBUG_SHELL_INTRO = _("""\
@@ -142,6 +151,7 @@ class Subiquity(TuiApplication):
 
         self.help_menu = HelpMenu(self)
         super().__init__(opts)
+        self.restarting_server = False
         self.prober = Prober(opts.machine_config, self.debug_flags)
         journald_listen(
             self.aio_loop, ["subiquity"], self.subiquity_event, seek=True)
@@ -166,7 +176,7 @@ class Subiquity(TuiApplication):
             ])
 
         self.conn = aiohttp.UnixConnector(self.opts.socket)
-        self.client = make_client_for_conn(API, self.conn)
+        self.client = make_client_for_conn(API, self.conn, self.resp_hook)
 
         self.autoinstall_config = {}
         self.report_to_show = None
@@ -174,7 +184,8 @@ class Subiquity(TuiApplication):
         self.progress_shown_time = self.aio_loop.time()
         self.progress_showing = False
         self.error_reporter = ErrorReporter(
-            self.context.child("ErrorReporter"), self.opts.dry_run, self.root)
+            self.context.child("ErrorReporter"), self.opts.dry_run, self.root,
+            self.client)
 
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.note_data_for_apport("UsingAnswers", str(bool(self.answers)))
@@ -201,13 +212,33 @@ class Subiquity(TuiApplication):
             # And remove the overlay.
             self.remove_global_overlay(install_running)
 
-    def restart(self, remove_last_screen=True):
+    async def _restart_server(self):
+        log.debug("_restart_server")
+        try:
+            await self.client.meta.restart.POST()
+        except aiohttp.ServerDisconnectedError:
+            pass
+        self.restart(remove_last_screen=False)
+
+    def restart(self, remove_last_screen=True, restart_server=False):
+        log.debug(f"restart {remove_last_screen} {restart_server}")
+        if remove_last_screen:
+            self._remove_last_screen()
+        if restart_server:
+            self.restarting_server = True
+            self.ui.block_input = True
+            self.aio_loop.create_task(self._restart_server())
+            return
         if remove_last_screen:
             self._remove_last_screen()
         if self.urwid_loop is not None:
-            self.urwid_loop.screen.stop()
+            self.urwid_loop.stop()
         cmdline = ['snap', 'run', 'subiquity']
         if self.opts.dry_run:
+            if self.server_proc is not None and not restart_server:
+                print('killing server {}'.format(self.server_proc.pid))
+                self.server_proc.send_signal(2)
+                self.server_proc.wait()
             cmdline = [
                 sys.executable, '-m', 'subiquity.cmd.tui',
                 ] + sys.argv[1:]
@@ -281,6 +312,19 @@ class Subiquity(TuiApplication):
             # in next_screen below will be confusing.
             os.system('stty sane')
 
+    def resp_hook(self, response):
+        if response.headers.get('x-error-report') is not None:
+            ref = from_json(ErrorReportRef, response.headers['x-error-report'])
+            raise Abort(ref)
+        try:
+            response.raise_for_status()
+        except aiohttp.ClientError:
+            report = self.error_reporter.make_apport_report(
+                ErrorReportKind.SERVER_REQUEST_FAIL,
+                "request to {}".format(response.url.path))
+            raise Abort(report.ref())
+        return response
+
     async def connect(self):
         print("connecting...", end='', flush=True)
         while True:
@@ -302,6 +346,16 @@ class Subiquity(TuiApplication):
         await super().start(start_urwid=self.interactive())
         if not self.interactive():
             self.select_initial_screen(0)
+
+    def _exception_handler(self, loop, context):
+        exc = context.get('exception')
+        if self.restarting_server:
+            log.debug('ignoring %s %s during restart', exc, type(exc))
+            return
+        if isinstance(exc, Abort):
+            self.show_error_report(exc.error_report_ref)
+            return
+        super()._exception_handler(loop, context)
 
     def extra_urwid_loop_args(self):
         return dict(input_filter=self.input_filter.filter)
@@ -463,6 +517,8 @@ class Subiquity(TuiApplication):
                     ErrorReportKind.UNKNOWN, "example", interrupt=interrupt)
         elif key == 'ctrl u':
             1/0
+        elif key == 'ctrl b':
+            self.aio_loop.create_task(self.client.dry_run.crash.GET())
         else:
             super().unhandled_input(key)
 

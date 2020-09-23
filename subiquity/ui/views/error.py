@@ -76,6 +76,9 @@ Sorry, there was a problem completing the installation.
     ErrorReportKind.NETWORK_FAIL: _("""
 Sorry, there was a problem applying the network configuration.
 """),
+    ErrorReportKind.SERVER_REQUEST_FAIL: _("""
+Sorry, the installer has encountered an internal error.
+"""),
     ErrorReportKind.UI: _("""
 Sorry, the installer has restarted because of an error.
 """),
@@ -116,6 +119,9 @@ reconfiguring the system's block devices manually.
 You can continue with the installation but it will be assumed the network
 is not functional.
 """), ['continue']),
+    ErrorReportKind.SERVER_REQUEST_FAIL: (_("""
+You can continue or restart the installer.
+"""), ['continue', 'restart']),
     ErrorReportKind.INSTALL_FAIL: (_("""
 Do you want to try starting the installation again?
 """), ['restart', 'close']),
@@ -137,8 +143,11 @@ class ErrorReportStretchy(Stretchy):
         self.error_ref = ref
         self.report = app.error_reporter.get(ref)
         self.pending = None
-        connect_signal(self.report, 'changed', self._report_changed)
-        self.report.mark_seen()
+        if self.report is None:
+            self.app.aio_loop.create_task(self._wait())
+        else:
+            connect_signal(self.report, 'changed', self._report_changed)
+            self.report.mark_seen()
         self.interrupting = interrupting
         self.min_wait = self.app.aio_loop.create_task(asyncio.sleep(0.1))
 
@@ -169,6 +178,14 @@ class ErrorReportStretchy(Stretchy):
             (w, self.pile.options('pack')) for w in self._pile_elements()]
         super().__init__("", [self.pile], 0, 0)
         connect_signal(self, 'closed', self.spinner.stop)
+
+    async def _wait(self):
+        self.report = await self.app.error_reporter.get_wait(
+            self.error_ref)
+        self.error_ref = self.report.ref()
+        connect_signal(self.report, 'changed', self._report_changed)
+        self.report.mark_seen()
+        await self._report_changed_()
 
     def pb(self, upload):
         pb = ProgressBar(
@@ -272,7 +289,7 @@ class ErrorReportStretchy(Stretchy):
         self.app.debug_shell()
 
     def restart(self, sender):
-        self.app.restart()
+        self.app.restart(restart_server=True)
 
     def view_report(self, sender):
         self.app.run_command_in_foreground(["less", self.report.path])
