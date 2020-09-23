@@ -16,12 +16,10 @@
 import asyncio
 import logging
 import os
-import platform
 import shlex
 import signal
 import sys
 import traceback
-import urwid
 
 import aiohttp
 
@@ -141,9 +139,6 @@ class Subiquity(TuiApplication):
     ]
 
     def __init__(self, opts, block_log_dir):
-        if not opts.bootloader == 'none' and platform.machine() != 's390x':
-            self.controllers.remove("Zdev")
-
         if is_linux_tty():
             self.input_filter = KeyCodesFilter()
         else:
@@ -180,10 +175,6 @@ class Subiquity(TuiApplication):
         self.client = make_client_for_conn(API, self.conn, self.resp_hook)
 
         self.autoinstall_config = {}
-        self.report_to_show = None
-        self.show_progress_handle = None
-        self.progress_shown_time = self.aio_loop.time()
-        self.progress_showing = False
         self.error_reporter = ErrorReporter(
             self.context.child("ErrorReporter"), self.opts.dry_run, self.root,
             self.client)
@@ -244,16 +235,6 @@ class Subiquity(TuiApplication):
                 sys.executable, '-m', 'subiquity.cmd.tui',
                 ] + sys.argv[1:]
         os.execvp(cmdline[0], cmdline)
-
-    def make_screen(self, input=None, output=None):
-        if self.interactive():
-            return super().make_screen(input, output)
-        else:
-            r, w = os.pipe()
-            s = urwid.raw_display.Screen(
-                input=os.fdopen(r), output=open('/dev/null', 'w'))
-            s.get_cols_rows = lambda: (80, 24)
-            return s
 
     def get_primary_tty(self):
         tty = '/dev/tty1'
@@ -407,12 +388,6 @@ class Subiquity(TuiApplication):
     async def confirm_install(self):
         self.install_confirmed = True
         self.controllers.InstallProgress.confirmation.set()
-
-    def _cancel_show_progress(self):
-        if self.show_progress_handle is not None:
-            self.ui.block_input = False
-            self.show_progress_handle.cancel()
-            self.show_progress_handle = None
 
     def interactive(self):
         if not self.autoinstall_config:
