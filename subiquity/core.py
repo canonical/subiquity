@@ -472,9 +472,10 @@ class Subiquity(TuiApplication):
                 if not self.base_model.is_configured(new.model_name):
                     raise Confirm
         if new.interactive():
+            view = await super().make_view_for_controller(new)
             if new.answers:
                 self.aio_loop.call_soon(new.run_answers)
-            return await super().make_view_for_controller(new)
+            return view
         else:
             if self.autoinstall_config and not new.autoinstall_applied:
                 await new.apply_autoinstall_config()
