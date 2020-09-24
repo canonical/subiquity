@@ -198,7 +198,7 @@ class NetworkDev(object):
 
     def netdev_info(self) -> NetDevInfo:
         if self.type == 'eth':
-            is_connected = self.info.is_connected
+            is_connected = bool(self.info.is_connected)
         else:
             is_connected = True
         bond_master = None
