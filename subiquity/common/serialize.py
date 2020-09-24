@@ -41,90 +41,103 @@ class Serializer:
         self.type_serializers[datetime.datetime] = self._serialize_datetime
         self.type_deserializers[datetime.datetime] = self._deserialize_datetime
 
-    def _scalar(self, annotation, value, metadata):
-        assert type(value) is annotation, "{} is not a {}".format(
-            value, annotation)
+    def _scalar(self, annotation, value, metadata, path):
+        assert type(value) is annotation, "at {}, {} is not a {}".format(
+            path, value, annotation)
         return value
 
-    def _walk_Union(self, meth, args, value, metadata):
+    def _walk_Union(self, meth, args, value, metadata, path):
         NoneType = type(None)
-        assert NoneType in args, "can only serialize Optional"
+        assert NoneType in args, "at {}, can only serialize Optional"
         args = [a for a in args if a is not NoneType]
-        assert len(args) == 1, "can only serialize Optional"
+        assert len(args) == 1, "at {}, can only serialize Optional"
         if value is None:
             return value
-        return meth(args[0], value, metadata)
+        return meth(args[0], value, metadata, path)
 
-    def _walk_List(self, meth, args, value, metadata):
-        return [meth(args[0], v, metadata) for v in value]
+    def _walk_List(self, meth, args, value, metadata, path):
+        return [
+            meth(args[0], v, metadata, f'{path}[{i}]')
+            for i, v in enumerate(value)
+            ]
 
-    def _serialize_datetime(self, annotation, value, metadata):
-        assert type(value) is annotation
+    def _serialize_datetime(self, annotation, value, metadata, path):
+        assert type(value) is annotation, "at {}, {} is not a {}".format(
+            path, value, annotation)
         if metadata is not None and 'time_fmt' in metadata:
             return value.strftime(metadata['time_fmt'])
         else:
             return str(value)
 
-    def _serialize_field(self, field, value):
-        return {field.name: self.serialize(field.type, value, field.metadata)}
+    def _serialize_field(self, field, value, path):
+        path = f'{path}.{field.name}'
+        return {
+            field.name: self.serialize(field.type, value, field.metadata, path)
+            }
 
-    def _serialize_attr(self, annotation, value, metadata):
+    def _serialize_attr(self, annotation, value, metadata, path):
         r = {}
         for field in attr.fields(annotation):
-            r.update(self._serialize_field(field, getattr(value, field.name)))
+            r.update(self._serialize_field(
+                field, getattr(value, field.name), path))
         return r
 
-    def serialize(self, annotation, value, metadata=None):
+    def serialize(self, annotation, value, metadata=None, path=''):
         if annotation is None:
             assert value is None
             return None
         if annotation is inspect.Signature.empty:
             return value
         if attr.has(annotation):
-            return self._serialize_attr(annotation, value, metadata)
+            return self._serialize_attr(annotation, value, metadata, path)
         origin = getattr(annotation, '__origin__', None)
         if origin is not None:
             args = annotation.__args__
             return self.typing_walkers[origin](
-                self.serialize, args, value, metadata)
+                self.serialize, args, value, metadata, path)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
             return value.name
-        return self.type_serializers[annotation](annotation, value, metadata)
+        return self.type_serializers[annotation](
+            annotation, value, metadata, path)
 
-    def _deserialize_datetime(self, annotation, value, metadata):
-        assert type(value) is str
+    def _deserialize_datetime(self, annotation, value, metadata, path):
+        assert type(value) is str, f'at {path}'
         if metadata is not None and 'time_fmt' in metadata:
             return datetime.datetime.strptime(value, metadata['time_fmt'])
         else:
             1/0
 
-    def _deserialize_field(self, field, value):
+    def _deserialize_field(self, field, value, path):
+        path = f'{path}.{field.name}'
         return {
-            field.name: self.deserialize(field.type, value, field.metadata)
+            field.name: self.deserialize(
+                field.type, value, field.metadata, path)
             }
 
-    def _deserialize_attr(self, annotation, value, metadata):
+    def _deserialize_attr(self, annotation, value, metadata, path):
         args = {}
         for field in attr.fields(annotation):
-            args.update(self._deserialize_field(field, value[field.name]))
+            args.update(self._deserialize_field(
+                field, value[field.name], path))
         return annotation(**args)
 
-    def deserialize(self, annotation, value, metadata=None):
+    def deserialize(self, annotation, value, metadata=None, path=''):
         if annotation is None:
             assert value is None
             return None
         if annotation is inspect.Signature.empty:
             return value
         if attr.has(annotation):
-            return self._deserialize_attr(annotation, value, metadata)
+            return self._deserialize_attr(annotation, value, metadata, path)
         origin = getattr(annotation, '__origin__', None)
         if origin is not None:
             args = annotation.__args__
             return self.typing_walkers[origin](
-                self.deserialize, args, value, metadata)
+                self.deserialize, args, value, metadata, path)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
             return getattr(annotation, value)
-        return self.type_deserializers[annotation](annotation, value, metadata)
+        return self.type_deserializers[annotation](
+            annotation, value, metadata, path)
 
     def to_json(self, annotation, value):
         return json.dumps(self.serialize(annotation, value))
