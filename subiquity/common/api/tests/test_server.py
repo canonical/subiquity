@@ -64,6 +64,10 @@ class TestBind(unittest.TestCase):
 
     async def assertResponse(self, coro, value):
         resp = await coro
+        if resp.headers.get('x-error-msg'):
+            raise Exception(
+                resp.headers['x-error-type'] + ': ' +
+                resp.headers['x-error-msg'])
         self.assertEqual(resp.status, 200)
         self.assertEqual(await resp.json(), value)
 
