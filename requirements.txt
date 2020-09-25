@@ -11,5 +11,6 @@ jsonschema
 pyudev
 requests
 requests-unixsocket
+yarl==1.5.1 # see https://github.com/aio-libs/aiohttp/issues/4972
 aiohttp
 -e git+https://github.com/CanonicalLtd/probert@b697ab779e7e056301e779f4708a9f1ce51b0027#egg=probert
