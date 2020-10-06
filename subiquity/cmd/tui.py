@@ -102,6 +102,7 @@ def make_client_args_parser():
         '--snap-section', action='store', default='server',
         help=("Show snaps from this section of the store in the snap "
               "list screen."))
+    parser.add_argument('--server-pid')
     return parser
 
 
@@ -115,7 +116,6 @@ def main():
     from subiquity.core import Subiquity
     parser = make_client_args_parser()
     args = sys.argv[1:]
-    server_proc = None
     if '--dry-run' in args:
         opts, unknown = parser.parse_known_args(args)
         if opts.socket is None:
@@ -130,7 +130,10 @@ def main():
                 server_args
             server_proc = subprocess.Popen(
                 server_cmd, stdout=server_output, stderr=subprocess.STDOUT)
+            opts.server_pid = str(server_proc.pid)
             print("running server pid {}".format(server_proc.pid))
+        elif opts.server_pid is not None:
+            print("reconnecting to server pid {}".format(opts.server_pid))
         else:
             opts = parser.parse_args(args)
     else:
@@ -217,20 +220,13 @@ def main():
             opts.answers = None
 
     subiquity_interface = Subiquity(opts, block_log_dir)
-    subiquity_interface.server_proc = server_proc
 
     subiquity_interface.note_file_for_apport(
         "InstallerLog", logfiles['debug'])
     subiquity_interface.note_file_for_apport(
         "InstallerLogInfo", logfiles['info'])
 
-    try:
-        subiquity_interface.run()
-    finally:
-        if server_proc is not None:
-            print('killing server {}'.format(server_proc.pid))
-            server_proc.send_signal(2)
-            server_proc.wait()
+    subiquity_interface.run()
 
 
 if __name__ == '__main__':
