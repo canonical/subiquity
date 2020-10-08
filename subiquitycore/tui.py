@@ -16,7 +16,6 @@
 import asyncio
 import inspect
 import logging
-import os
 import yaml
 
 import urwid
@@ -80,15 +79,6 @@ class TuiApplication(Application):
         self.urwid_loop = None
         self.cur_screen = None
 
-    def _remove_last_screen(self):
-        last_screen = self.state_path('last-screen')
-        if os.path.exists(last_screen):
-            os.unlink(last_screen)
-
-    def exit(self):
-        self._remove_last_screen()
-        super().exit()
-
     def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None,
                                   **kw):
         screen = self.urwid_loop.screen
@@ -122,8 +112,6 @@ class TuiApplication(Application):
             raise
         else:
             self.cur_screen = new
-            with open(self.state_path('last-screen'), 'w') as fp:
-                fp.write(new.name)
             return view
 
     async def _wait_with_indication(self, awaitable, show, hide=None):
@@ -190,7 +178,6 @@ class TuiApplication(Application):
     async def _move_screen(self, increment, coro):
         if coro is not None:
             await coro
-        self.save_state()
         old, self.cur_screen = self.cur_screen, None
         if old is not None:
             old.context.exit("completed")
@@ -232,8 +219,6 @@ class TuiApplication(Application):
         for controller in self.controllers.instances[:controller_index]:
             controller.configured()
         self.controllers.index = controller_index - 1
-        for controller in self.controllers.instances[:controller_index]:
-            controller.configured()
         self.next_screen()
 
     def run_scripts(self, scripts):
@@ -343,18 +328,7 @@ class TuiApplication(Application):
         self.select_initial_screen(self.initial_controller_index())
 
     def initial_controller_index(self):
-        if not self.updated:
-            return 0
-        state_path = self.state_path('last-screen')
-        if not os.path.exists(state_path):
-            return 0
-        with open(state_path) as fp:
-            last_screen = fp.read().strip()
-        controller_index = 0
-        for i, controller in enumerate(self.controllers.instances):
-            if controller.name == last_screen:
-                controller_index = i
-        return controller_index
+        return 0
 
     async def start(self, start_urwid=True):
         await super().start()

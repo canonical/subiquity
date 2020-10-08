@@ -122,17 +122,8 @@ class Application:
             controller.start()
         log.debug("controllers started")
 
-    def load_serialized_state(self):
-        for controller in self.controllers.instances:
-            state_path = self.state_path('states', controller.name)
-            if not os.path.exists(state_path):
-                continue
-            with open(state_path) as fp:
-                controller.deserialize(json.load(fp))
-
     async def start(self):
         self.controllers.load_all()
-        self.load_serialized_state()
         self._connect_base_signals()
         self.start_controllers()
 

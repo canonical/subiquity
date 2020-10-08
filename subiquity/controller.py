@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
 import logging
+import os
 
 import jsonschema
 
@@ -79,8 +81,17 @@ class SubiquityController(BaseController):
     def configured(self):
         """Let the world know that this controller's model is now configured.
         """
+        with open(self.app.state_path('states', self.name), 'w') as fp:
+            json.dump(self.serialize(), fp)
         if self.model_name is not None:
             self.app.base_model.configured(self.model_name)
+
+    def load_state(self):
+        state_path = self.app.state_path('states', self.name)
+        if not os.path.exists(state_path):
+            return
+        with open(state_path) as fp:
+            self.deserialize(json.load(fp))
 
     def deserialize(self, state):
         pass
@@ -122,3 +133,6 @@ class RepeatedController(RepeatedController):
 
     def make_autoinstall(self):
         return {}
+
+    def load_state(self):
+        pass
