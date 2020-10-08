@@ -1,8 +1,11 @@
 [encoding: UTF-8]
+subiquity/cmd/common.py
 subiquity/cmd/__init__.py
 subiquity/cmd/schema.py
+subiquity/cmd/server.py
 subiquity/cmd/tui.py
 subiquity/common/api/client.py
+subiquity/common/apidef.py
 subiquity/common/api/defs.py
 subiquity/common/api/__init__.py
 subiquity/common/api/server.py
@@ -115,6 +118,12 @@ subiquity/models/tests/__init__.py
 subiquity/models/tests/test_filesystem.py
 subiquity/models/tests/test_mirror.py
 subiquity/models/tests/test_subiquity.py
+subiquity/server/controller.py
+subiquity/server/controllers/__init__.py
+subiquity/server/dryrun.py
+subiquity/server/errors.py
+subiquity/server/__init__.py
+subiquity/server/server.py
 subiquity/tests/fakes.py
 subiquity/tests/__init__.py
 subiquity/ui/frame.py
