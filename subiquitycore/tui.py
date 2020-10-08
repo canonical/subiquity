@@ -215,8 +215,7 @@ class TuiApplication(Application):
     def prev_screen(self):
         self.aio_loop.create_task(self.move_screen(-1, None))
 
-    def select_initial_screen(self, controller_index):
-        self.controllers.index = controller_index - 1
+    def select_initial_screen(self):
         self.next_screen()
 
     def run_scripts(self, scripts):
@@ -323,10 +322,7 @@ class TuiApplication(Application):
         extend_dec_special_charmap()
         self.toggle_rich()
         self.urwid_loop.start()
-        self.select_initial_screen(self.initial_controller_index())
-
-    def initial_controller_index(self):
-        return 0
+        self.select_initial_screen()
 
     async def start(self, start_urwid=True):
         await super().start()

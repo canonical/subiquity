@@ -340,7 +340,7 @@ class Subiquity(TuiApplication):
                 open('/run/casper-no-prompt', 'w').close()
         await super().start(start_urwid=self.interactive())
         if not self.interactive():
-            self.select_initial_screen(0)
+            self.select_initial_screen()
 
     def _exception_handler(self, loop, context):
         exc = context.get('exception')
@@ -439,15 +439,17 @@ class Subiquity(TuiApplication):
                 controller_index = i
         return controller_index
 
-    def select_initial_screen(self, index):
+    def select_initial_screen(self):
         self.error_reporter.load_reports()
         for report in self.error_reporter.reports:
             if report.kind == ErrorReportKind.UI and not report.seen:
                 self.show_error_report(report.ref())
                 break
+        index = self.initial_controller_index()
         for controller in self.controllers.instances[:index]:
             controller.configured()
-        super().select_initial_screen(index)
+        self.controllers.index = index - 1
+        self.next_screen()
 
     async def move_screen(self, increment, coro):
         try:
