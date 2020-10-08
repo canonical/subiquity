@@ -216,8 +216,6 @@ class TuiApplication(Application):
         self.aio_loop.create_task(self.move_screen(-1, None))
 
     def select_initial_screen(self, controller_index):
-        for controller in self.controllers.instances[:controller_index]:
-            controller.configured()
         self.controllers.index = controller_index - 1
         self.next_screen()
 

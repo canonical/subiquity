@@ -445,6 +445,8 @@ class Subiquity(TuiApplication):
             if report.kind == ErrorReportKind.UI and not report.seen:
                 self.show_error_report(report.ref())
                 break
+        for controller in self.controllers.instances[:index]:
+            controller.configured()
         super().select_initial_screen(index)
 
     async def move_screen(self, increment, coro):
