@@ -43,7 +43,6 @@ class SubiquityController(BaseController):
         super().__init__(app)
         self.autoinstall_applied = False
         self.context.set('controller', self)
-        self.setup_autoinstall()
 
     def interactive(self):
         return False
@@ -108,6 +107,9 @@ class RepeatedController(RepeatedController):
     def __init__(self, orig, index):
         super().__init__(orig, index)
         self.autoinstall_applied = False
+
+    def setup_autoinstall(self):
+        pass
 
     async def apply_autoinstall_config(self):
         await self.orig.apply_autoinstall_config(index=self.index)

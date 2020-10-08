@@ -257,12 +257,12 @@ class Subiquity(TuiApplication):
                 print(_("press enter to start a shell"))
                 input()
                 os.system("cd / && bash")
-        self.controllers.load("Reporting")
         self.controllers.Reporting.start()
-        self.controllers.load("Error")
         with self.context.child("core_validation", level="INFO"):
             jsonschema.validate(self.autoinstall_config, self.base_schema)
-        self.controllers.load("Early")
+        self.controllers.Reporting.setup_autoinstall()
+        self.controllers.Early.setup_autoinstall()
+        self.controllers.Error.setup_autoinstall()
         if self.controllers.Early.cmds:
             stamp_file = self.state_path("early-commands")
             if our_tty != primary_tty:
@@ -278,8 +278,8 @@ class Subiquity(TuiApplication):
                 self.autoinstall_config = yaml.safe_load(fp)
             with self.context.child("core_validation", level="INFO"):
                 jsonschema.validate(self.autoinstall_config, self.base_schema)
-            for controller in self.controllers.instances:
-                controller.setup_autoinstall()
+        for controller in self.controllers.instances:
+            controller.setup_autoinstall()
         if not self.interactive() and self.opts.run_on_serial:
             # Thanks to the fact that we are launched with agetty's
             # --skip-login option, on serial lines we can end up starting with
@@ -327,6 +327,7 @@ class Subiquity(TuiApplication):
                 break
 
     async def start(self):
+        self.controllers.load_all()
         await self.connect()
         if self.opts.autoinstall is not None:
             await self.load_autoinstall_config()
