@@ -134,9 +134,10 @@ class InstallProgressController(SubiquityTuiController):
             msg = '  ' * indent + context.description
         else:
             return
+        parent_id = None
         if context.parent:
-            self.progress_view.event_finish(context.parent.id)
-        self.progress_view.event_start(context.id, msg)
+            parent_id = context.parent.id
+        self.progress_view.event_start(context.id, parent_id, msg)
 
     def report_finish_event(self, context, description, status):
         self.progress_view.event_finish(context.id)
