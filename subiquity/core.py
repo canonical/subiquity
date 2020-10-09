@@ -257,12 +257,12 @@ class Subiquity(TuiApplication):
                 print(_("press enter to start a shell"))
                 input()
                 os.system("cd / && bash")
-        self.controllers.load("Reporting")
         self.controllers.Reporting.start()
-        self.controllers.load("Error")
         with self.context.child("core_validation", level="INFO"):
             jsonschema.validate(self.autoinstall_config, self.base_schema)
-        self.controllers.load("Early")
+        self.controllers.Reporting.setup_autoinstall()
+        self.controllers.Early.setup_autoinstall()
+        self.controllers.Error.setup_autoinstall()
         if self.controllers.Early.cmds:
             stamp_file = self.state_path("early-commands")
             if our_tty != primary_tty:
@@ -278,8 +278,8 @@ class Subiquity(TuiApplication):
                 self.autoinstall_config = yaml.safe_load(fp)
             with self.context.child("core_validation", level="INFO"):
                 jsonschema.validate(self.autoinstall_config, self.base_schema)
-            for controller in self.controllers.instances:
-                controller.setup_autoinstall()
+        for controller in self.controllers.instances:
+            controller.setup_autoinstall()
         if not self.interactive() and self.opts.run_on_serial:
             # Thanks to the fact that we are launched with agetty's
             # --skip-login option, on serial lines we can end up starting with
@@ -326,7 +326,13 @@ class Subiquity(TuiApplication):
                 print()
                 break
 
+    def load_serialized_state(self):
+        for controller in self.controllers.instances:
+            controller.load_state()
+
     async def start(self):
+        self.controllers.load_all()
+        self.load_serialized_state()
         await self.connect()
         if self.opts.autoinstall is not None:
             await self.load_autoinstall_config()
@@ -334,7 +340,7 @@ class Subiquity(TuiApplication):
                 open('/run/casper-no-prompt', 'w').close()
         await super().start(start_urwid=self.interactive())
         if not self.interactive():
-            self.select_initial_screen(0)
+            self.select_initial_screen()
 
     def _exception_handler(self, loop, context):
         exc = context.get('exception')
@@ -345,6 +351,15 @@ class Subiquity(TuiApplication):
             self.show_error_report(exc.error_report_ref)
             return
         super()._exception_handler(loop, context)
+
+    def _remove_last_screen(self):
+        last_screen = self.state_path('last-screen')
+        if os.path.exists(last_screen):
+            os.unlink(last_screen)
+
+    def exit(self):
+        self._remove_last_screen()
+        super().exit()
 
     def extra_urwid_loop_args(self):
         return dict(input_filter=self.input_filter.filter)
@@ -410,13 +425,31 @@ class Subiquity(TuiApplication):
         if isinstance(self.ui.body, BaseView):
             self.ui.body.remove_overlay(overlay)
 
-    def select_initial_screen(self, index):
+    def initial_controller_index(self):
+        if not self.updated:
+            return 0
+        state_path = self.state_path('last-screen')
+        if not os.path.exists(state_path):
+            return 0
+        with open(state_path) as fp:
+            last_screen = fp.read().strip()
+        controller_index = 0
+        for i, controller in enumerate(self.controllers.instances):
+            if controller.name == last_screen:
+                controller_index = i
+        return controller_index
+
+    def select_initial_screen(self):
         self.error_reporter.load_reports()
         for report in self.error_reporter.reports:
             if report.kind == ErrorReportKind.UI and not report.seen:
                 self.show_error_report(report.ref())
                 break
-        super().select_initial_screen(index)
+        index = self.initial_controller_index()
+        for controller in self.controllers.instances[:index]:
+            controller.configured()
+        self.controllers.index = index - 1
+        self.next_screen()
 
     async def move_screen(self, increment, coro):
         try:
@@ -453,6 +486,8 @@ class Subiquity(TuiApplication):
             view = await super().make_view_for_controller(new)
             if new.answers:
                 self.aio_loop.call_soon(new.run_answers)
+            with open(self.state_path('last-screen'), 'w') as fp:
+                fp.write(new.name)
             return view
         else:
             if self.autoinstall_config and not new.autoinstall_applied:
