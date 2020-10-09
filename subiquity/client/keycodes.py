@@ -19,7 +19,7 @@ import os
 import struct
 import sys
 
-log = logging.getLogger('subiquity.keycodes')
+log = logging.getLogger('subiquity.client.keycodes')
 
 # /usr/include/linux/kd.h
 K_RAW = 0x00

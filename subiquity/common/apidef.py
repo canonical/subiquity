@@ -13,9 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List, Optional
+
 from subiquity.common.api.defs import api
 from subiquity.common.types import (
     ApplicationState,
+    ApplicationStatus,
     ErrorReportRef,
     )
 
@@ -26,8 +29,17 @@ class API:
 
     class meta:
         class status:
-            def GET() -> ApplicationState:
+            def GET(cur: Optional[ApplicationState] = None) \
+              -> ApplicationStatus:
                 """Get the installer state."""
+
+        class mark_configured:
+            def POST(endpoint_names: List[str]) -> None:
+                """Mark the controllers for endpoint_names as configured."""
+
+        class confirm:
+            def POST(tty: str) -> None:
+                """Confirm that the installation should proceed."""
 
         class restart:
             def POST() -> None:

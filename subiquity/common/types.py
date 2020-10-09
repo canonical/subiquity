@@ -27,6 +27,17 @@ import attr
 
 class ApplicationState(enum.Enum):
     STARTING = enum.auto()
+    EARLY_COMMANDS = enum.auto()
+    INTERACTIVE = enum.auto()
+    NON_INTERACTIVE = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class ApplicationStatus:
+    state: ApplicationState
+    early_commands_syslog_id: str
+    log_syslog_id: str
+    event_syslog_id: str
 
 
 class ErrorReportState(enum.Enum):

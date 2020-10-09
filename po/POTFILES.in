@@ -1,4 +1,7 @@
 [encoding: UTF-8]
+subiquity/client/client.py
+subiquity/client/__init__.py
+subiquity/client/keycodes.py
 subiquity/cmd/common.py
 subiquity/cmd/__init__.py
 subiquity/cmd/schema.py
@@ -61,7 +64,6 @@ subiquitycore/models/network.py
 subiquitycore/netplan.py
 subiquitycore/palette.py
 subiquitycore/prober.py
-subiquity/core.py
 subiquitycore/screen.py
 subiquitycore/signals.py
 subiquitycore/snapd.py
@@ -100,7 +102,6 @@ subiquitycore/view.py
 subiquity/__init__.py
 subiquity/journald.py
 subiquity/keyboard.py
-subiquity/keycodes.py
 subiquity/lockfile.py
 subiquity/__main__.py
 subiquity/models/filesystem.py
