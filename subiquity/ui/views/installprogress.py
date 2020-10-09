@@ -95,7 +95,8 @@ class ProgressView(BaseView):
             lb.set_focus(len(walker) - 1)
             lb.set_focus_valign('bottom')
 
-    def event_start(self, context_id, message):
+    def event_start(self, context_id, context_parent_id, message):
+        self.event_finish(context_parent_id)
         walker = self.event_listbox.base_widget.body
         spinner = Spinner(self.controller.app.aio_loop)
         spinner.start()
