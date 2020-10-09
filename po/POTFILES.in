@@ -1,6 +1,8 @@
 [encoding: UTF-8]
 subiquity/client/client.py
 subiquity/client/controller.py
+subiquity/client/controllers/__init__.py
+subiquity/client/controllers/progress.py
 subiquity/client/__init__.py
 subiquity/client/keycodes.py
 subiquity/cmd/common.py
@@ -30,7 +32,6 @@ subiquity/controllers/error.py
 subiquity/controllers/filesystem.py
 subiquity/controllers/identity.py
 subiquity/controllers/__init__.py
-subiquity/controllers/installprogress.py
 subiquity/controllers/keyboard.py
 subiquity/controllers/mirror.py
 subiquity/controllers/network.py
@@ -122,6 +123,7 @@ subiquity/models/tests/test_mirror.py
 subiquity/models/tests/test_subiquity.py
 subiquity/server/controller.py
 subiquity/server/controllers/__init__.py
+subiquity/server/controllers/install.py
 subiquity/server/dryrun.py
 subiquity/server/errors.py
 subiquity/server/__init__.py

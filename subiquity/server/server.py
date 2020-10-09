@@ -111,7 +111,9 @@ class SubiquityServer(Application):
 
     project = "subiquity"
     from subiquity.server import controllers as controllers_mod
-    controllers = []
+    controllers = [
+        "Install",
+        ]
 
     def make_model(self):
         root = '/'

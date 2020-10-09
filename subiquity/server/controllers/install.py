@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2020 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,7 @@ import re
 import shutil
 import sys
 import tempfile
-import traceback
+from typing import Optional
 
 from curtin.commands.install import (
     ERROR_TARFILE,
@@ -29,13 +29,10 @@ from curtin.commands.install import (
     )
 from curtin.util import write_file
 
-from systemd import journal
-
 import yaml
 
 from subiquitycore.async_helpers import (
     run_in_thread,
-    schedule_task,
     )
 from subiquitycore.context import Status, with_context
 from subiquitycore.utils import (
@@ -43,14 +40,18 @@ from subiquitycore.utils import (
     astart_command,
     )
 
+from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
-from subiquity.common.types import InstallState
-from subiquity.controller import SubiquityTuiController
+from subiquity.server.controller import (
+    SubiquityController,
+    )
+from subiquity.common.types import (
+    InstallState,
+    InstallStatus,
+    )
 from subiquity.journald import journald_listen
-from subiquity.ui.views.installprogress import ProgressView
 
-
-log = logging.getLogger("subiquitycore.controller.installprogress")
+log = logging.getLogger("subiquity.server.controllers.install")
 
 
 class TracebackExtractor:
@@ -72,18 +73,16 @@ class TracebackExtractor:
             self.traceback.append(line)
 
 
-class InstallProgressController(SubiquityTuiController):
+class InstallController(SubiquityController):
+
+    endpoint = API.install
 
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model
-        self.progress_view = ProgressView(self)
-        self.crash_report_ref = None
         self._install_state = InstallState.NOT_STARTED
-
-        self.reboot_clicked = asyncio.Event()
-        if self.answers.get('reboot', False):
-            self.reboot_clicked.set()
+        self._install_state_event = asyncio.Event()
+        self.error_ref = None
 
         self.unattended_upgrades_proc = None
         self.unattended_upgrades_ctx = None
@@ -91,70 +90,52 @@ class InstallProgressController(SubiquityTuiController):
         self.tb_extractor = TracebackExtractor()
         self.curtin_event_contexts = {}
 
-    def event(self, event):
-        if event["SUBIQUITY_EVENT_TYPE"] == "start":
-            self.progress_view.event_start(
-                event["SUBIQUITY_CONTEXT_ID"],
-                event.get("SUBIQUITY_CONTEXT_PARENT_ID"),
-                event["MESSAGE"])
-        elif event["SUBIQUITY_EVENT_TYPE"] == "finish":
-            self.progress_view.event_finish(
-                event["SUBIQUITY_CONTEXT_ID"])
-
-    def log_line(self, event):
-        log_line = event['MESSAGE']
-        self.progress_view.add_log_line(log_line)
-
     def interactive(self):
-        return self.app.interactive()
+        return True
+
+    async def status_GET(
+            self, cur: Optional[InstallState] = None) -> InstallStatus:
+        if cur == self.install_state:
+            await self._install_state_event.wait()
+        return InstallStatus(
+            self.install_state,
+            self.app.confirming_tty,
+            self.error_ref)
+
+    def stop_uu(self):
+        if self.install_state == InstallState.UU_RUNNING:
+            self.update_state(InstallState.UU_CANCELLING)
+            self.app.aio_loop.create_task(self.stop_unattended_upgrades())
 
     def start(self):
-        self.install_task = schedule_task(self.install())
-
-    @with_context()
-    async def apply_autoinstall_config(self, context):
-        await self.install_task
-        self.app.reboot_on_exit = True
+        self.install_task = self.app.aio_loop.create_task(self.install())
 
     @property
     def install_state(self):
         return self._install_state
 
     def update_state(self, state):
+        self._install_state_event.set()
+        self._install_state_event.clear()
         self._install_state = state
-        self.progress_view.update_for_state(state)
 
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
 
     def curtin_error(self):
+        self.update_state(InstallState.ERROR)
         kw = {}
         if sys.exc_info()[0] is not None:
             log.exception("curtin_error")
-            self.progress_view.add_log_line(traceback.format_exc())
+            # send traceback.format_exc() to journal?
         if self.tb_extractor.traceback:
             kw["Traceback"] = "\n".join(self.tb_extractor.traceback)
-        crash_report = self.app.make_apport_report(
-            ErrorReportKind.INSTALL_FAIL, "install failed", interrupt=False,
-            **kw)
-        if crash_report is not None:
-            self.crash_report_ref = crash_report.ref()
-        self.progress_view.finish_all()
-        self.progress_view.set_status(
-            ('info_error', _("An error has occurred")))
-        if not self.showing:
-            self.app.controllers.index = self.controller_index - 1
-            self.app.next_screen()
-        self.update_state(InstallState.ERROR)
-        if self.crash_report_ref is not None:
-            self.app.show_error_report(self.crash_report_ref)
+        self.error_ref = self.app.make_apport_report(
+            ErrorReportKind.INSTALL_FAIL, "install failed", **kw).ref()
 
     def logged_command(self, cmd):
         return ['systemd-cat', '--level-prefix=false',
                 '--identifier=' + self.app.log_syslog_id] + cmd
-
-    def log_event(self, event):
-        self.curtin_log(event)
 
     def curtin_event(self, event):
         e = {
@@ -189,7 +170,7 @@ class InstallProgressController(SubiquityTuiController):
             if curtin_ctx is not None:
                 curtin_ctx.exit(result=status)
 
-    def curtin_log(self, event):
+    def log_event(self, event):
         self.tb_extractor.feed(event['MESSAGE'])
 
     def _write_config(self, path, config):
@@ -202,7 +183,7 @@ class InstallProgressController(SubiquityTuiController):
     def _get_curtin_command(self):
         config_file_name = 'subiquity-curtin-install.conf'
 
-        if self.opts.dry_run:
+        if self.app.opts.dry_run:
             config_location = os.path.join('.subiquity/', config_file_name)
             log_location = '.subiquity/install.log'
             event_file = "examples/curtin-events.json"
@@ -219,9 +200,9 @@ class InstallProgressController(SubiquityTuiController):
                           config_location, 'install']
             log_location = INSTALL_LOG
 
-        self._write_config(
-            config_location,
-            self.model.render(syslog_identifier=self._event_syslog_id))
+        ident = self._event_syslog_id
+        self._write_config(config_location,
+                           self.model.render(syslog_identifier=ident))
 
         self.app.note_file_for_apport("CurtinConfig", config_location)
         self.app.note_file_for_apport("CurtinLog", log_location)
@@ -235,10 +216,10 @@ class InstallProgressController(SubiquityTuiController):
             sys.executable, '-m', 'curtin', 'unmount',
             '-t', target,
             ]
-        if self.opts.dry_run:
+        if self.app.opts.dry_run:
             cmd = ['sleep', str(0.2/self.app.scale_factor)]
         await arun_command(cmd)
-        if not self.opts.dry_run:
+        if not self.app.opts.dry_run:
             shutil.rmtree(target)
 
     @with_context(
@@ -250,7 +231,7 @@ class InstallProgressController(SubiquityTuiController):
         loop = self.app.aio_loop
 
         fds = [
-            journald_listen(loop, [self.app.log_syslog_id], self.curtin_log),
+            journald_listen(loop, [self.app.log_syslog_id], self.log_event),
             journald_listen(loop, [self._event_syslog_id], self.curtin_event),
             ]
 
@@ -258,32 +239,24 @@ class InstallProgressController(SubiquityTuiController):
 
         log.debug('curtin install cmd: {}'.format(curtin_cmd))
 
-        async with self.app.install_lock_file.exclusive():
-            try:
-                our_tty = os.ttyname(0)
-            except OSError:
-                # This is a gross hack for testing in travis.
-                our_tty = "/dev/not a tty"
-            self.app.install_lock_file.write_content(our_tty)
-            journal.send("starting install", SYSLOG_IDENTIFIER="subiquity")
-            try:
-                cp = await arun_command(
-                    self.logged_command(curtin_cmd), check=True)
-            finally:
-                for fd in fds:
-                    loop.remove_reader(fd)
+        try:
+            cp = await arun_command(
+                self.logged_command(curtin_cmd), check=True)
+        finally:
+            for fd in fds:
+                loop.remove_reader(fd)
 
         log.debug('curtin_install completed: %s', cp.returncode)
-
-    def cancel(self):
-        pass
 
     @with_context()
     async def install(self, *, context):
         context.set('is-install-context', True)
         try:
-            await asyncio.wait(
-                {e.wait() for e in self.model.install_events})
+            await asyncio.wait({e.wait() for e in self.model.install_events})
+
+            if not self.app.interactive():
+                if 'autoinstall' in self.app.kernel_cmdline:
+                    self.model.confirm()
 
             self.update_state(InstallState.NEEDS_CONFIRMATION)
 
@@ -315,16 +288,10 @@ class InstallProgressController(SubiquityTuiController):
             self.update_state(InstallState.DONE)
         except Exception:
             self.curtin_error()
-            if not self.interactive():
-                raise
-
-    async def move_on(self):
-        await self.install_task
-        self.app.next_screen()
 
     async def drain_curtin_events(self, *, context):
         waited = 0.0
-        while self.progress_view.ongoing and waited < 5.0:
+        while len(self.curtin_event_contexts) > 1 and waited < 5.0:
             await asyncio.sleep(0.1)
             waited += 0.1
         log.debug("waited %s seconds for events to drain", waited)
@@ -356,7 +323,7 @@ class InstallProgressController(SubiquityTuiController):
         name="install_{package}",
         description="installing {package}")
     async def install_package(self, *, context, package):
-        if self.opts.dry_run:
+        if self.app.opts.dry_run:
             cmd = ["sleep", str(2/self.app.scale_factor)]
         else:
             cmd = [
@@ -368,7 +335,7 @@ class InstallProgressController(SubiquityTuiController):
 
     @with_context(description="restoring apt configuration")
     async def restore_apt_config(self, context):
-        if self.opts.dry_run:
+        if self.app.opts.dry_run:
             cmds = [["sleep", str(1/self.app.scale_factor)]]
         else:
             cmds = [
@@ -395,7 +362,7 @@ class InstallProgressController(SubiquityTuiController):
         env = os.environ.copy()
         env["APT_CONFIG"] = apt_conf.name[len(self.model.target):]
         self.unattended_upgrades_ctx = context
-        if self.opts.dry_run:
+        if self.app.opts.dry_run:
             self.unattended_upgrades_proc = await astart_command(
                 self.logged_command(
                     ["sleep", str(5/self.app.scale_factor)]), env=env)
@@ -411,11 +378,10 @@ class InstallProgressController(SubiquityTuiController):
         os.remove(apt_conf.name)
 
     async def stop_unattended_upgrades(self):
-        self.progress_view.event_finish(self.unattended_upgrades_ctx)
         with self.unattended_upgrades_ctx.parent.child(
                 "stop_unattended_upgrades",
                 "cancelling update"):
-            if self.opts.dry_run:
+            if self.app.opts.dry_run:
                 await asyncio.sleep(1)
                 self.unattended_upgrades_proc.terminate()
             else:
@@ -425,22 +391,6 @@ class InstallProgressController(SubiquityTuiController):
                     'unattended-upgrade-shutdown',
                     '--stop-only',
                     ]), check=True)
-
-    async def _click_reboot(self):
-        if self.unattended_upgrades_ctx is not None:
-            self.update_state(InstallState.UU_CANCELLING)
-            await self.stop_unattended_upgrades()
-        self.reboot_clicked.set()
-
-    def click_reboot(self):
-        schedule_task(self._click_reboot())
-
-    def make_ui(self):
-        schedule_task(self.move_on())
-        return self.progress_view
-
-    def run_answers(self):
-        pass
 
 
 uu_apt_conf = """\

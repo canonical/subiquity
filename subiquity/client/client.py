@@ -89,7 +89,9 @@ class SubiquityClient(TuiApplication):
     def make_ui(self):
         return SubiquityUI(self, self.help_menu)
 
-    controllers = []
+    controllers = [
+        "Progress",
+        ]
 
     def __init__(self, opts):
         if is_linux_tty():

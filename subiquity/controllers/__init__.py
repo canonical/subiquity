@@ -19,7 +19,6 @@ from .debconf import DebconfController
 from .error import ErrorController
 from .filesystem import FilesystemController
 from .identity import IdentityController
-from .installprogress import InstallProgressController
 from .keyboard import KeyboardController
 from .mirror import MirrorController
 from .network import NetworkController
@@ -40,7 +39,6 @@ __all__ = [
     'ErrorController',
     'FilesystemController',
     'IdentityController',
-    'InstallProgressController',
     'KeyboardController',
     'LateController',
     'MirrorController',

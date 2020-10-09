@@ -20,6 +20,8 @@ from subiquity.common.types import (
     ApplicationState,
     ApplicationStatus,
     ErrorReportRef,
+    InstallState,
+    InstallStatus,
     )
 
 
@@ -55,3 +57,7 @@ class API:
         class crash:
             def GET() -> None:
                 """Requests to this method will fail with a HTTP 500."""
+
+    class install:
+        class status:
+            def GET(cur: Optional[InstallState] = None) -> InstallStatus: ...
