@@ -32,3 +32,4 @@ def journald_listen(loop, identifiers, callback, seek=False):
         for event in reader:
             callback(event)
     loop.add_reader(reader.fileno(), watch)
+    return reader.fileno()

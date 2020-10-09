@@ -25,6 +25,8 @@ import aiohttp
 
 import jsonschema
 
+from systemd import journal
+
 import yaml
 
 from subiquitycore.async_helpers import (
@@ -146,6 +148,10 @@ class Subiquity(TuiApplication):
 
         self.help_menu = HelpMenu(self)
         super().__init__(opts)
+
+        self.event_syslog_id = 'subiquity_event.{}'.format(os.getpid())
+        self.log_syslog_id = 'subiquity_log.{}'.format(os.getpid())
+
         self.server_updated = None
         self.restarting_server = False
         self.prober = Prober(opts.machine_config, self.debug_flags)
@@ -314,6 +320,15 @@ class Subiquity(TuiApplication):
             raise Abort(report.ref())
         return response
 
+    def subiquity_event_noninteractive(self, event):
+        if event['SUBIQUITY_EVENT_TYPE'] == 'start':
+            print('start: ' + event["MESSAGE"])
+        elif event['SUBIQUITY_EVENT_TYPE'] == 'finish':
+            print('finish: ' + event["MESSAGE"])
+            context_name = event.get('SUBIQUITY_CONTEXT_NAME', '')
+            if context_name == 'subiquity/Reboot/reboot':
+                self.exit()
+
     async def connect(self):
         print("connecting...", end='', flush=True)
         while True:
@@ -338,8 +353,25 @@ class Subiquity(TuiApplication):
             await self.load_autoinstall_config()
             if not self.interactive() and not self.opts.dry_run:
                 open('/run/casper-no-prompt', 'w').close()
-        await super().start(start_urwid=self.interactive())
-        if not self.interactive():
+        interactive = self.interactive()
+        if interactive:
+            journald_listen(
+                self.aio_loop,
+                [self.event_syslog_id],
+                self.controllers.InstallProgress.event)
+            journald_listen(
+                self.aio_loop,
+                [self.log_syslog_id],
+                self.controllers.InstallProgress.log_line)
+        else:
+            journald_listen(
+                self.aio_loop,
+                [self.event_syslog_id],
+                self.subiquity_event_noninteractive,
+                seek=True)
+            await asyncio.sleep(1)
+        await super().start(start_urwid=interactive)
+        if not interactive:
             self.select_initial_screen()
 
     def _exception_handler(self, loop, context):
@@ -402,10 +434,41 @@ class Subiquity(TuiApplication):
     def report_start_event(self, context, description):
         for listener in self.event_listeners:
             listener.report_start_event(context, description)
+        self._maybe_push_to_journal('start', context, description)
 
     def report_finish_event(self, context, description, status):
         for listener in self.event_listeners:
             listener.report_finish_event(context, description, status)
+        self._maybe_push_to_journal('finish', context, description)
+
+    def _maybe_push_to_journal(self, event_type, context, description):
+        if not context.get('is-install-context') and self.interactive():
+            controller = context.get('controller')
+            if controller is None or controller.interactive():
+                return
+        if context.get('request'):
+            return
+        indent = context.full_name().count('/') - 2
+        if context.get('is-install-context') and self.interactive():
+            indent -= 1
+            msg = context.description
+        else:
+            msg = context.full_name()
+            if description:
+                msg += ': ' + description
+        msg = '  ' * indent + msg
+        if context.parent:
+            parent_id = str(context.parent.id)
+        else:
+            parent_id = ''
+        journal.send(
+            msg,
+            PRIORITY=context.level,
+            SYSLOG_IDENTIFIER=self.event_syslog_id,
+            SUBIQUITY_CONTEXT_NAME=context.full_name(),
+            SUBIQUITY_EVENT_TYPE=event_type,
+            SUBIQUITY_CONTEXT_ID=str(context.id),
+            SUBIQUITY_CONTEXT_PARENT_ID=parent_id)
 
     async def confirm_install(self):
         self.base_model.confirm()

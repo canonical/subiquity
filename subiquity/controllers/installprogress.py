@@ -78,7 +78,6 @@ class InstallProgressController(SubiquityTuiController):
         super().__init__(app)
         self.model = app.base_model
         self.progress_view = ProgressView(self)
-        app.add_event_listener(self)
         self.crash_report_ref = None
         self._install_state = InstallState.NOT_STARTED
 
@@ -88,10 +87,23 @@ class InstallProgressController(SubiquityTuiController):
 
         self.unattended_upgrades_proc = None
         self.unattended_upgrades_ctx = None
-        self._event_syslog_identifier = 'curtin_event.%s' % (os.getpid(),)
-        self._log_syslog_identifier = 'curtin_log.%s' % (os.getpid(),)
+        self._event_syslog_id = 'curtin_event.%s' % (os.getpid(),)
         self.tb_extractor = TracebackExtractor()
         self.curtin_event_contexts = {}
+
+    def event(self, event):
+        if event["SUBIQUITY_EVENT_TYPE"] == "start":
+            self.progress_view.event_start(
+                event["SUBIQUITY_CONTEXT_ID"],
+                event.get("SUBIQUITY_CONTEXT_PARENT_ID"),
+                event["MESSAGE"])
+        elif event["SUBIQUITY_EVENT_TYPE"] == "finish":
+            self.progress_view.event_finish(
+                event["SUBIQUITY_CONTEXT_ID"])
+
+    def log_line(self, event):
+        log_line = event['MESSAGE']
+        self.progress_view.add_log_line(log_line)
 
     def interactive(self):
         return self.app.interactive()
@@ -111,36 +123,6 @@ class InstallProgressController(SubiquityTuiController):
     def update_state(self, state):
         self._install_state = state
         self.progress_view.update_for_state(state)
-
-    def _push_to_progress(self, context):
-        if not self.app.interactive():
-            return False
-        if context.get('hidden', False):
-            return False
-        controller = context.get('controller')
-        if controller is None or controller.interactive():
-            return False
-        return True
-
-    def report_start_event(self, context, description):
-        if self._push_to_progress(context):
-            msg = context.full_name()
-            if description:
-                msg += ': ' + description
-        if context.get('is-install-context'):
-            indent = context.full_name().count('/') - 2
-            if context.get('is-install-context'):
-                indent -= 1
-            msg = '  ' * indent + context.description
-        else:
-            return
-        parent_id = None
-        if context.parent:
-            parent_id = context.parent.id
-        self.progress_view.event_start(context.id, parent_id, msg)
-
-    def report_finish_event(self, context, description, status):
-        self.progress_view.event_finish(context.id)
 
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
@@ -169,13 +151,10 @@ class InstallProgressController(SubiquityTuiController):
 
     def logged_command(self, cmd):
         return ['systemd-cat', '--level-prefix=false',
-                '--identifier=' + self._log_syslog_identifier] + cmd
+                '--identifier=' + self.app.log_syslog_id] + cmd
 
-    def _journal_event(self, event):
-        if event['SYSLOG_IDENTIFIER'] == self._event_syslog_identifier:
-            self.curtin_event(event)
-        elif event['SYSLOG_IDENTIFIER'] == self._log_syslog_identifier:
-            self.curtin_log(event)
+    def log_event(self, event):
+        self.curtin_log(event)
 
     def curtin_event(self, event):
         e = {
@@ -208,12 +187,10 @@ class InstallProgressController(SubiquityTuiController):
             status = getattr(Status, e["RESULT"], Status.WARN)
             curtin_ctx = self.curtin_event_contexts.pop(e["NAME"], None)
             if curtin_ctx is not None:
-                curtin_ctx.exit(status)
+                curtin_ctx.exit(result=status)
 
     def curtin_log(self, event):
-        log_line = event['MESSAGE']
-        self.progress_view.add_log_line(log_line)
-        self.tb_extractor.feed(log_line)
+        self.tb_extractor.feed(event['MESSAGE'])
 
     def _write_config(self, path, config):
         with open(path, 'w') as conf:
@@ -233,7 +210,7 @@ class InstallProgressController(SubiquityTuiController):
                 event_file = "examples/curtin-events-fail.json"
             curtin_cmd = [
                 "python3", "scripts/replay-curtin-log.py", event_file,
-                self._event_syslog_identifier, log_location,
+                self._event_syslog_id, log_location,
                 ]
         else:
             config_location = os.path.join('/var/log/installer',
@@ -242,9 +219,9 @@ class InstallProgressController(SubiquityTuiController):
                           config_location, 'install']
             log_location = INSTALL_LOG
 
-        ident = self._event_syslog_identifier
-        self._write_config(config_location,
-                           self.model.render(syslog_identifier=ident))
+        self._write_config(
+            config_location,
+            self.model.render(syslog_identifier=self._event_syslog_id))
 
         self.app.note_file_for_apport("CurtinConfig", config_location)
         self.app.note_file_for_apport("CurtinLog", log_location)
@@ -270,10 +247,12 @@ class InstallProgressController(SubiquityTuiController):
         log.debug('curtin_install')
         self.curtin_event_contexts[''] = context
 
-        journald_listen(
-            self.app.aio_loop,
-            [self._event_syslog_identifier, self._log_syslog_identifier],
-            self._journal_event)
+        loop = self.app.aio_loop
+
+        fds = [
+            journald_listen(loop, [self.app.log_syslog_id], self.curtin_log),
+            journald_listen(loop, [self._event_syslog_id], self.curtin_event),
+            ]
 
         curtin_cmd = self._get_curtin_command()
 
@@ -287,8 +266,12 @@ class InstallProgressController(SubiquityTuiController):
                 our_tty = "/dev/not a tty"
             self.app.install_lock_file.write_content(our_tty)
             journal.send("starting install", SYSLOG_IDENTIFIER="subiquity")
-            cp = await arun_command(
-                self.logged_command(curtin_cmd), check=True)
+            try:
+                cp = await arun_command(
+                    self.logged_command(curtin_cmd), check=True)
+            finally:
+                for fd in fds:
+                    loop.remove_reader(fd)
 
         log.debug('curtin_install completed: %s', cp.returncode)
 
