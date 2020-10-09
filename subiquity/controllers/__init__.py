@@ -14,42 +14,29 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from ..controller import RepeatedController
-from .cmdlist import EarlyController, LateController
-from .debconf import DebconfController
-from .error import ErrorController
 from .filesystem import FilesystemController
 from .identity import IdentityController
 from .keyboard import KeyboardController
 from .mirror import MirrorController
 from .network import NetworkController
-from .package import PackageController
 from .proxy import ProxyController
 from .reboot import RebootController
 from .refresh import RefreshController
-from .reporting import ReportingController
 from .snaplist import SnapListController
 from .ssh import SSHController
-from .userdata import UserdataController
 from .zdev import ZdevController
 
 __all__ = [
-    'DebconfController',
-    'EarlyController',
-    'ErrorController',
     'FilesystemController',
     'IdentityController',
     'KeyboardController',
-    'LateController',
     'MirrorController',
     'NetworkController',
-    'PackageController',
     'ProxyController',
     'RebootController',
     'RefreshController',
     'RepeatedController',
-    'ReportingController',
     'SnapListController',
     'SSHController',
-    'UserdataController',
     'ZdevController',
 ]

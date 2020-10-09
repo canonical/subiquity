@@ -13,15 +13,19 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import os
+
+from systemd import journal
 
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command
 
-from subiquity.controller import SubiquityController
+from subiquity.common.types import InstallState
+from subiquity.server.controller import NonInteractiveController
 
 
-class CmdListController(SubiquityController):
+class CmdListController(NonInteractiveController):
 
     autoinstall_default = []
     autoinstall_schema = {
@@ -33,6 +37,11 @@ class CmdListController(SubiquityController):
         }
     cmds = ()
     cmd_check = True
+    send_to_journal = False
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.run_event = asyncio.Event()
 
     def load_autoinstall_data(self, data):
         self.cmds = data
@@ -44,18 +53,32 @@ class CmdListController(SubiquityController):
     async def run(self, context):
         env = self.env()
         for i, cmd in enumerate(self.cmds):
-            with context.child("command_{}".format(i), cmd):
+            if isinstance(cmd, str):
+                desc = cmd
+            else:
+                desc = ' '.join(cmd)
+            with context.child("command_{}".format(i), desc):
                 if isinstance(cmd, str):
                     cmd = ['sh', '-c', cmd]
+                if self.send_to_journal:
+                    journal.send(
+                        "  running " + desc,
+                        SYSLOG_IDENTIFIER=self.app.early_commands_syslog_id)
+                    cmd = [
+                        'systemd-cat', '--level-prefix=false',
+                        '--identifier=' + self.app.early_commands_syslog_id,
+                        ] + cmd
                 await arun_command(
                     cmd, env=env,
                     stdin=None, stdout=None, stderr=None,
                     check=self.cmd_check)
+        self.run_event.set()
 
 
 class EarlyController(CmdListController):
 
     autoinstall_key = 'early-commands'
+    send_to_journal = True
 
 
 class LateController(CmdListController):
@@ -67,6 +90,17 @@ class LateController(CmdListController):
         env['TARGET_MOUNT_POINT'] = self.app.base_model.target
         return env
 
-    @with_context()
-    async def apply_autoinstall_config(self, context):
-        await self.run(context=context)
+    def start(self):
+        self.app.aio_loop.create_task(self._run())
+
+    async def _run(self):
+        Install = self.app.controllers.Install
+        await Install.install_task
+        if Install.install_state == InstallState.DONE:
+            await self.run()
+
+
+class ErrorController(CmdListController):
+
+    autoinstall_key = 'error-commands'
+    cmd_check = False

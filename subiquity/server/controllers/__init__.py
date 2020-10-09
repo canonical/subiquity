@@ -13,10 +13,22 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .cmdlist import EarlyController, LateController, ErrorController
+from .debconf import DebconfController
 from .install import InstallController
 from .locale import LocaleController
+from .package import PackageController
+from .reporting import ReportingController
+from .userdata import UserdataController
 
 __all__ = [
+    'DebconfController',
+    'EarlyController',
+    'ErrorController',
     'InstallController',
+    'LateController',
     'LocaleController',
+    'PackageController',
+    'ReportingController',
+    'UserdataController',
 ]

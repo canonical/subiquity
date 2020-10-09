@@ -29,7 +29,7 @@ from curtin.reporter.handlers import (
     LogHandler,
     )
 
-from subiquity.controller import SubiquityController
+from subiquity.server.controller import NonInteractiveController
 
 
 class LogHandler(LogHandler):
@@ -42,10 +42,13 @@ class LogHandler(LogHandler):
 available_handlers.unregister_item('log')
 available_handlers.register_item('log', LogHandler)
 
-INITIAL_CONFIG = {'logging': {'type': 'log'}}
+INITIAL_CONFIG = {
+    'logging': {'type': 'log'},
+    }
+NON_INTERACTIVE_CONFIG = {'builtin': {'type': 'print'}}
 
 
-class ReportingController(SubiquityController):
+class ReportingController(NonInteractiveController):
 
     autoinstall_key = "reporting"
     autoinstall_schema = {
@@ -61,13 +64,14 @@ class ReportingController(SubiquityController):
         }
 
     def __init__(self, app):
-        self.config = copy.deepcopy(INITIAL_CONFIG)
         super().__init__(app)
+        self.config = copy.deepcopy(INITIAL_CONFIG)
         app.add_event_listener(self)
 
     def load_autoinstall_data(self, data):
         if self.app.interactive():
             return
+        self.config.update(copy.deepcopy(NON_INTERACTIVE_CONFIG))
         if data is not None:
             self.config.update(copy.deepcopy(data))
 

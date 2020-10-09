@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical, Ltd.
+# Copyright 2020 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,15 +13,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-
-from subiquity.controllers.cmdlist import CmdListController
+from subiquity.server.controller import NonInteractiveController
 
 
-log = logging.getLogger('subiquity.controllers.error')
+class PackageController(NonInteractiveController):
 
+    model_name = autoinstall_key = "packages"
+    autoinstall_default = []
+    autoinstall_schema = {
+        'type': 'array',
+        'items': {'type': 'string'},
+        }
 
-class ErrorController(CmdListController):
+    def load_autoinstall_data(self, data):
+        self.model[:] = data
 
-    autoinstall_key = 'error-commands'
-    cmd_check = False
+    def make_autoinstall(self):
+        return self.model

@@ -112,8 +112,15 @@ class SubiquityServer(Application):
     project = "subiquity"
     from subiquity.server import controllers as controllers_mod
     controllers = [
+        "Early",
+        "Reporting",
+        "Error",
+        "Userdata",
+        "Package",
+        "Debconf",
         "Locale",
         "Install",
+        "Late",
         ]
 
     def make_model(self):

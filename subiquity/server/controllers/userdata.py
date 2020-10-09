@@ -13,20 +13,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquity.controller import SubiquityController
+from subiquity.server.controller import NonInteractiveController
 
 
-class DebconfController(SubiquityController):
+class UserdataController(NonInteractiveController):
 
-    model_name = "debconf_selections"
-    autoinstall_key = "debconf-selections"
-    autoinstall_default = ""
+    model_name = 'userdata'
+    autoinstall_key = "user-data"
+    autoinstall_default = {}
     autoinstall_schema = {
-        'type': 'string',
+        'type': 'object',
         }
 
     def load_autoinstall_data(self, data):
-        self.model.selections = data
+        self.model.clear()
+        self.model.update(data)
 
     def make_autoinstall(self):
-        return self.model.selections
+        return self.app.base_model.userdata
