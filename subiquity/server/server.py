@@ -112,6 +112,7 @@ class SubiquityServer(Application):
     project = "subiquity"
     from subiquity.server import controllers as controllers_mod
     controllers = [
+        "Locale",
         "Install",
         ]
 

@@ -14,7 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .install import InstallController
+from .locale import LocaleController
 
 __all__ = [
     'InstallController',
+    'LocaleController',
 ]

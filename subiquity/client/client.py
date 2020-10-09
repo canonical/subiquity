@@ -90,6 +90,7 @@ class SubiquityClient(TuiApplication):
         return SubiquityUI(self, self.help_menu)
 
     controllers = [
+        "Welcome",
         "Progress",
         ]
 
