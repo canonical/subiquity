@@ -291,9 +291,6 @@ class InstallProgressController(SubiquityTuiController):
 
         log.debug('curtin_install completed: %s', cp.returncode)
 
-        self.update_state(InstallState.DONE)
-        log.debug('After curtin install OK')
-
     def cancel(self):
         pass
 
@@ -316,15 +313,16 @@ class InstallProgressController(SubiquityTuiController):
 
             await self.curtin_install(context=context)
 
+            self.update_state(InstallState.POST_WAIT)
+
             await asyncio.wait(
                 {e.wait() for e in self.model.postinstall_events})
 
             await self.drain_curtin_events(context=context)
 
-            await self.postinstall(context=context)
+            self.update_state(InstallState.POST_RUNNING)
 
-            self.ui.set_header(_("Installation complete!"))
-            self.progress_view.set_status(_("Finished install!"))
+            await self.postinstall(context=context)
 
             if self.model.network.has_network:
                 self.update_state(InstallState.UU_RUNNING)
