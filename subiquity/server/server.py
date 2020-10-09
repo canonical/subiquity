@@ -119,6 +119,7 @@ class SubiquityServer(Application):
         "Package",
         "Debconf",
         "Locale",
+        "Refresh",
         "Install",
         "Late",
         ]

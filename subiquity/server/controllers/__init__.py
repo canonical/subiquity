@@ -18,6 +18,7 @@ from .debconf import DebconfController
 from .install import InstallController
 from .locale import LocaleController
 from .package import PackageController
+from .refresh import RefreshController
 from .reporting import ReportingController
 from .userdata import UserdataController
 
@@ -29,6 +30,7 @@ __all__ = [
     'LateController',
     'LocaleController',
     'PackageController',
+    'RefreshController',
     'ReportingController',
     'UserdataController',
 ]

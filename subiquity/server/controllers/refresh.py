@@ -24,24 +24,23 @@ from subiquitycore.async_helpers import (
     SingleInstanceTask,
     )
 from subiquitycore.context import with_context
-from subiquitycore.tuicontroller import (
-    Skip,
-    )
 
+from subiquity.common.apidef import API
 from subiquity.common.types import (
     RefreshCheckState,
     RefreshStatus,
     )
-from subiquity.controller import (
-    SubiquityTuiController,
+from subiquity.server.controller import (
+    SubiquityController,
     )
-from subiquity.ui.views.refresh import RefreshView
 
 
-log = logging.getLogger('subiquity.controllers.refresh')
+log = logging.getLogger('subiquity.server.controllers.refresh')
 
 
-class RefreshController(SubiquityTuiController):
+class RefreshController(SubiquityController):
+
+    endpoint = API.refresh
 
     autoinstall_key = "refresh-installer"
     autoinstall_schema = {
@@ -58,22 +57,23 @@ class RefreshController(SubiquityTuiController):
     ]
 
     def __init__(self, app):
-        self.ai_data = {}
         super().__init__(app)
+        self.ai_data = {}
         self.snap_name = os.environ.get("SNAP_NAME", "subiquity")
         self.configure_task = None
         self.check_task = None
         self.status = RefreshStatus(availability=RefreshCheckState.UNKNOWN)
 
-        self.offered_first_time = False
-        if 'update' in self.ai_data:
-            self.active = self.ai_data['update']
-        else:
-            self.active = self.interactive()
-
     def load_autoinstall_data(self, data):
         if data is not None:
             self.ai_data = data
+
+    @property
+    def active(self):
+        if 'update' in self.ai_data:
+            return True
+        else:
+            return self.interactive()
 
     def start(self):
         if not self.active:
@@ -95,16 +95,9 @@ class RefreshController(SubiquityTuiController):
             return
         change_id = await self.start_update(context=context)
         while True:
-            try:
-                change = await self.get_progress(change_id)
-            except requests.exceptions.RequestException as e:
-                raise e
-            if change['status'] == 'Done':
-                # Clearly if we got here we didn't get restarted by
-                # snapd/systemctl (dry-run mode or logged in via SSH)
-                self.app.restart(remove_last_screen=False)
-            if change['status'] not in ['Do', 'Doing']:
-                raise Exception("update failed")
+            change = await self.get_progress(change_id)
+            if change['status'] not in ['Do', 'Doing', 'Done']:
+                raise Exception("update failed: %s", change['status'])
             await asyncio.sleep(0.1)
 
     @with_context()
@@ -137,8 +130,6 @@ class RefreshController(SubiquityTuiController):
 
     def get_refresh_channel(self):
         """Return the channel we should refresh subiquity to."""
-        if 'channel' in self.answers:
-            return self.answers['channel']
         prefix = "subiquity-channel="
         for arg in self.app.kernel_cmdline:
             if arg.startswith(prefix):
@@ -209,39 +200,20 @@ class RefreshController(SubiquityTuiController):
 
     async def get_progress(self, change):
         result = await self.app.snapd.get('v2/changes/{}'.format(change))
-        return result['result']
+        change = result['result']
+        if change['status'] == 'Done':
+            # Clearly if we got here we didn't get restarted by
+            # snapd/systemctl (dry-run mode)
+            self.app.restart()
+        return change
 
-    def make_ui(self, index=1):
-        if self.app.updated:
-            raise Skip()
-        show = False
-        if index == 1:
-            if self.status.availability == RefreshCheckState.AVAILABLE:
-                show = True
-                self.offered_first_time = True
-        elif index == 2:
-            if not self.offered_first_time:
-                if self.status.availability in [RefreshCheckState.UNKNOWN,
-                                                RefreshCheckState.AVAILABLE]:
-                    show = True
-        else:
-            raise AssertionError("unexpected index {}".format(index))
-        if show:
-            return RefreshView(self)
-        else:
-            raise Skip()
-
-    async def wait_for_check(self):
-        await self.check_task.task
+    async def GET(self, wait: bool = False) -> RefreshStatus:
+        if wait:
+            await self.check_task.wait()
         return self.status
 
-    def run_answers(self):
-        # Handled in the view
-        pass
+    async def POST(self, context) -> int:
+        return await self.start_update(context=context)
 
-    def done(self, sender=None):
-        log.debug("RefreshController.done next_screen")
-        self.app.next_screen()
-
-    def cancel(self, sender=None):
-        self.app.prev_screen()
+    async def progress_GET(self, change_id: int) -> dict:
+        return await self.get_progress(change_id)

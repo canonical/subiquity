@@ -21,7 +21,6 @@ from .mirror import MirrorController
 from .network import NetworkController
 from .proxy import ProxyController
 from .reboot import RebootController
-from .refresh import RefreshController
 from .snaplist import SnapListController
 from .ssh import SSHController
 from .zdev import ZdevController
@@ -34,7 +33,6 @@ __all__ = [
     'NetworkController',
     'ProxyController',
     'RebootController',
-    'RefreshController',
     'RepeatedController',
     'SnapListController',
     'SSHController',
