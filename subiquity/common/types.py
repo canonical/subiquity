@@ -166,6 +166,8 @@ class InstallState(enum.Enum):
     NOT_STARTED = enum.auto()
     NEEDS_CONFIRMATION = enum.auto()
     RUNNING = enum.auto()
+    POST_WAIT = enum.auto()
+    POST_RUNNING = enum.auto()
     UU_RUNNING = enum.auto()
     UU_CANCELLING = enum.auto()
     DONE = enum.auto()
