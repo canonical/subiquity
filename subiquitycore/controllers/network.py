@@ -230,6 +230,15 @@ class NetworkController(TuiController):
             self.ui.body._action(None, (action_obj, meth), table)
             yield
             body = self.ui.body._w
+            if action['action'] == "DELETE":
+                t = 0.0
+                while table.dev_info.name in self.view.cur_netdev_names:
+                    await asyncio.sleep(0.1)
+                    t += 0.1
+                    if t > 5.0:
+                        raise Exception(
+                            "interface did not disappear in 5 secs")
+                log.debug("waited %s for interface to disappear", t)
             if not isinstance(body, StretchyOverlay):
                 return
             for k, v in action.items():
@@ -258,6 +267,15 @@ class NetworkController(TuiController):
                         data,
                         action.get("submit", True)):
                     pass
+            t = 0.0
+            while data['name'] not in self.view.cur_netdev_names:
+                await asyncio.sleep(0.1)
+                t += 0.1
+                if t > 5.0:
+                    raise Exception("bond did not appear in 5 secs")
+            if t > 0:
+                log.debug("waited %s for bond to appear", t)
+            yield
         elif action['action'] == 'done':
             self.ui.body.done()
         else:
