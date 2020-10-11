@@ -171,10 +171,6 @@ class NetworkController(NetworkController, SubiquityTuiController):
             if not self.interactive():
                 raise
 
-    def run_answers(self):
-        # handled elsewhere
-        pass
-
     def done(self):
         self.configured()
         super().done()

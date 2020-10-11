@@ -338,14 +338,6 @@ class NetworkController(TuiController):
             if not silent:
                 self.apply_stopping()
 
-        if self.answers.get('accept-default', False):
-            self.done()
-        elif self.answers.get('actions', False):
-            actions = self.answers['actions']
-            self.answers.clear()
-            self.app.aio_loop.create_task(
-                self._run_actions(actions))
-
         if not dhcp_events:
             return
 
@@ -476,6 +468,15 @@ class NetworkController(TuiController):
         self.view.update_default_routes(
             self.network_event_receiver.default_routes)
         return self.view
+
+    def run_answers(self):
+        if self.answers.get('accept-default', False):
+            self.done()
+        elif self.answers.get('actions', False):
+            actions = self.answers['actions']
+            self.answers.clear()
+            self.app.aio_loop.create_task(
+                self._run_actions(actions))
 
     def end_ui(self):
         self.view = None
