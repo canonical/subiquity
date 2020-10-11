@@ -18,13 +18,15 @@ import os
 
 from subiquitycore.context import with_context
 
-from subiquity.controller import SubiquityTuiController
-from subiquity.ui.views.proxy import ProxyView
+from subiquity.common.apidef import API
+from subiquity.server.controller import SubiquityController
 
-log = logging.getLogger('subiquity.controllers.proxy')
+log = logging.getLogger('subiquity.server.controllers.proxy')
 
 
-class ProxyController(SubiquityTuiController):
+class ProxyController(SubiquityController):
+
+    endpoint = API.proxy
 
     autoinstall_key = model_name = "proxy"
     autoinstall_schema = {
@@ -48,30 +50,19 @@ class ProxyController(SubiquityTuiController):
         # by everything; don't have a way to do that today.
         pass
 
-    def make_ui(self):
-        return ProxyView(self, self.model.proxy)
-
-    def run_answers(self):
-        if 'proxy' in self.answers:
-            self.done(self.answers['proxy'])
-
-    def cancel(self):
-        self.app.prev_screen()
-
     def serialize(self):
         return self.model.proxy
 
     def deserialize(self, data):
         self.model.proxy = data
 
-    def done(self, proxy):
-        log.debug("ProxyController.done next_screen proxy=%s", proxy)
-        if proxy != self.model.proxy:
-            self.model.proxy = proxy
-            os.environ['http_proxy'] = os.environ['https_proxy'] = proxy
-            self.signal.emit_signal('network-proxy-set')
-        self.configured()
-        self.app.next_screen()
-
     def make_autoinstall(self):
         return self.model.proxy
+
+    async def GET(self) -> str:
+        return self.model.proxy
+
+    async def POST(self, data: str):
+        self.model.proxy = data
+        self.signal.emit_signal('network-proxy-set')
+        self.configured()

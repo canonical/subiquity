@@ -20,6 +20,7 @@ from .keyboard import KeyboardController
 from .locale import LocaleController
 from .network import NetworkController
 from .package import PackageController
+from .proxy import ProxyController
 from .refresh import RefreshController
 from .reporting import ReportingController
 from .userdata import UserdataController
@@ -35,6 +36,7 @@ __all__ = [
     'LocaleController',
     'NetworkController',
     'PackageController',
+    'ProxyController',
     'RefreshController',
     'ReportingController',
     'UserdataController',

@@ -123,6 +123,7 @@ class SubiquityServer(Application):
         "Keyboard",
         "Zdev",
         "Network",
+        "Proxy",
         "Install",
         "Late",
         ]

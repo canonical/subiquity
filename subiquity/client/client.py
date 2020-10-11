@@ -95,6 +95,7 @@ class SubiquityClient(TuiApplication):
         "Keyboard",
         "Zdev",
         "Network",
+        "Proxy",
         "Progress",
         ]
 

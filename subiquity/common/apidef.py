@@ -40,6 +40,7 @@ class API:
     """The API offered by the subiquity installer process."""
     locale = simple_endpoint(str)
     keyboard = simple_endpoint(KeyboardSetting)
+    proxy = simple_endpoint(str)
 
     class meta:
         class status:

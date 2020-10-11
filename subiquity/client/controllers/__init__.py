@@ -16,6 +16,7 @@
 from .keyboard import KeyboardController
 from .network import NetworkController
 from .progress import ProgressController
+from .proxy import ProxyController
 from .refresh import RefreshController
 from .welcome import WelcomeController
 from .zdev import ZdevController
@@ -24,6 +25,7 @@ __all__ = [
     'KeyboardController',
     'NetworkController',
     'ProgressController',
+    'ProxyController',
     'RefreshController',
     'WelcomeController',
     'ZdevController',
