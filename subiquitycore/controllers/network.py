@@ -206,36 +206,27 @@ class NetworkController(TuiController):
 
     def _action_get(self, id):
         dev_spec = id[0].split()
-        dev = None
         if dev_spec[0] == "interface":
             if dev_spec[1] == "index":
-                dev = self.model.get_all_netdevs()[int(dev_spec[2])]
+                name = self.view.cur_netdev_names[int(dev_spec[2])]
             elif dev_spec[1] == "name":
-                dev = self.model.get_netdev_by_name(dev_spec[2])
-        if dev is None:
-            raise Exception("could not resolve {}".format(id))
-        if len(id) > 1:
-            part, index = id[1].split()
-            if part == "part":
-                return dev.partitions()[int(index)]
-        else:
-            return dev
+                name = dev_spec[2]
+            return self.view.dev_name_to_table[name]
         raise Exception("could not resolve {}".format(id))
 
     def _action_clean_interfaces(self, devices):
-        r = [self._action_get(device).name for device in devices]
+        r = [self._action_get(device).dev_info.name for device in devices]
         log.debug("%s", r)
         return r
 
     async def _answers_action(self, action):
         log.debug("_answers_action %r", action)
         if 'obj' in action:
-            obj = self._action_get(action['obj']).netdev_info()
+            table = self._action_get(action['obj'])
             meth = getattr(
                 self.ui.body,
                 "_action_{}".format(action['action']))
             action_obj = getattr(NetDevAction, action['action'])
-            table = self.ui.body.dev_name_to_table[obj.name]
             self.ui.body._action(None, (action_obj, meth), table)
             yield
             body = self.ui.body._w
