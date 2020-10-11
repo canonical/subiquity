@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .keyboard import KeyboardController
+from .network import NetworkController
 from .progress import ProgressController
 from .refresh import RefreshController
 from .welcome import WelcomeController
@@ -21,6 +22,7 @@ from .zdev import ZdevController
 
 __all__ = [
     'KeyboardController',
+    'NetworkController',
     'ProgressController',
     'RefreshController',
     'WelcomeController',

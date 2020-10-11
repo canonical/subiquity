@@ -18,6 +18,7 @@ from .debconf import DebconfController
 from .install import InstallController
 from .keyboard import KeyboardController
 from .locale import LocaleController
+from .network import NetworkController
 from .package import PackageController
 from .refresh import RefreshController
 from .reporting import ReportingController
@@ -32,6 +33,7 @@ __all__ = [
     'KeyboardController',
     'LateController',
     'LocaleController',
+    'NetworkController',
     'PackageController',
     'RefreshController',
     'ReportingController',

@@ -17,7 +17,6 @@ from ..controller import RepeatedController
 from .filesystem import FilesystemController
 from .identity import IdentityController
 from .mirror import MirrorController
-from .network import NetworkController
 from .proxy import ProxyController
 from .reboot import RebootController
 from .snaplist import SnapListController
@@ -27,7 +26,6 @@ __all__ = [
     'FilesystemController',
     'IdentityController',
     'MirrorController',
-    'NetworkController',
     'ProxyController',
     'RebootController',
     'RepeatedController',

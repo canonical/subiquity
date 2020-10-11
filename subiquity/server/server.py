@@ -122,6 +122,7 @@ class SubiquityServer(Application):
         "Refresh",
         "Keyboard",
         "Zdev",
+        "Network",
         "Install",
         "Late",
         ]

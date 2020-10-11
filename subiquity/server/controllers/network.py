@@ -15,16 +15,30 @@
 
 import asyncio
 import logging
+from typing import List, Optional
+
+import aiohttp
 
 from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
-from subiquitycore.controllers.network import NetworkController
+from subiquitycore.controllers.network import BaseNetworkController
+from subiquitycore.models.network import (
+    BondConfig,
+    NetDevInfo,
+    StaticConfig,
+    )
 
+from subiquity.common.api.client import make_client_for_conn
+from subiquity.common.apidef import (
+    API,
+    LinkAction,
+    NetEventAPI,
+    )
 from subiquity.common.errorreport import ErrorReportKind
-from subiquity.controller import SubiquityTuiController
+from subiquity.server.controller import SubiquityController
 
 
-log = logging.getLogger("subiquity.controllers.network")
+log = logging.getLogger("subiquity.server.controllers.network")
 
 MATCH = {
     'type': 'object',
@@ -65,7 +79,9 @@ NETPLAN_SCHEMA = {
     }
 
 
-class NetworkController(NetworkController, SubiquityTuiController):
+class NetworkController(BaseNetworkController, SubiquityController):
+
+    endpoint = API.network
 
     ai_data = None
     autoinstall_key = "network"
@@ -85,6 +101,8 @@ class NetworkController(NetworkController, SubiquityTuiController):
     def __init__(self, app):
         super().__init__(app)
         app.note_file_for_apport("NetplanConfig", self.netplan_path)
+        self.view_shown = False
+        self.clients = {}
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -171,9 +189,119 @@ class NetworkController(NetworkController, SubiquityTuiController):
             if not self.interactive():
                 raise
 
-    def done(self):
-        self.configured()
-        super().done()
-
     def make_autoinstall(self):
         return self.model.render_config()['network']
+
+    async def GET(self) -> List[NetDevInfo]:
+        if not self.view_shown:
+            self.apply_config(silent=True)
+            self.view_shown = True
+        return [
+            netdev.netdev_info() for netdev in self.model.get_all_netdevs()
+            ]
+
+    def configured(self):
+        self.model.has_network = bool(
+            self.network_event_receiver.default_routes)
+        super().configured()
+
+    async def POST(self) -> None:
+        self.configured()
+
+    async def global_addresses_GET(self) -> List[str]:
+        ips = []
+        for dev in self.model.get_all_netdevs():
+            ips.extend(map(str, dev.actual_global_ip_addresses))
+        return ips
+
+    async def subscription_PUT(self, socket_path: str) -> None:
+        log.debug('added subscription %s', socket_path)
+        conn = aiohttp.UnixConnector(socket_path)
+        client = make_client_for_conn(NetEventAPI, conn)
+        lock = asyncio.Lock()
+        self.clients[socket_path] = (client, conn, lock)
+        self.app.aio_loop.create_task(
+            self._call_client(
+                client, conn, lock, "route_watch",
+                self.network_event_receiver.default_routes))
+
+    async def subscription_DELETE(self, socket_path: str) -> None:
+        if socket_path not in self.clients:
+            return
+        log.debug('removed subscription %s', socket_path)
+        client, conn, lock = self.clients.pop(socket_path)
+        async with lock:
+            await conn.close()
+
+    async def _call_client(self, client, conn, lock, meth_name, *args):
+        async with lock:
+            log.debug("_call_client %s %s", meth_name, conn.path)
+            if conn.closed:
+                log.debug('closed')
+                return
+            await getattr(client, meth_name).POST(*args)
+
+    def _call_clients(self, meth_name, *args):
+        for client, conn, lock in self.clients.values():
+            log.debug('creating _call_client task %s %s', conn.path, meth_name)
+            self.app.aio_loop.create_task(
+                self._call_client(client, conn, lock, meth_name, *args))
+
+    def apply_starting(self):
+        super().apply_starting()
+        self._call_clients("apply_starting")
+
+    def apply_stopping(self):
+        super().apply_stopping()
+        self._call_clients("apply_stopping")
+
+    def apply_error(self, stage):
+        super().apply_error()
+        self._call_clients("apply_error", stage)
+
+    def update_default_routes(self, routes):
+        super().update_default_routes(routes)
+        self._call_clients("route_watch", routes)
+
+    def _send_update(self, act, dev):
+        with self.context.child(
+                "_send_update", "{} {}".format(act.name, dev.name)):
+            log.debug("dev_info {} {}".format(dev.name, dev.config))
+            dev_info = dev.netdev_info()
+            self._call_clients("update_link", act, dev_info)
+
+    def new_link(self, dev):
+        super().new_link(dev)
+        self._send_update(LinkAction.NEW, dev)
+
+    def update_link(self, dev):
+        super().update_link(dev)
+        self._send_update(LinkAction.CHANGE, dev)
+
+    def del_link(self, dev):
+        super().del_link(dev)
+        self._send_update(LinkAction.DEL, dev)
+
+    async def set_static_config_POST(self, dev_name: str, ip_version: int,
+                                     static_config: StaticConfig) -> None:
+        self.set_static_config(dev_name, ip_version, static_config)
+
+    async def enable_dhcp_POST(self, dev_name: str, ip_version: int) -> None:
+        self.enable_dhcp(dev_name, ip_version)
+
+    async def disable_POST(self, dev_name: str, ip_version: int) -> None:
+        self.disable_network(dev_name, ip_version)
+
+    async def vlan_PUT(self, dev_name: str, vlan_id: int) -> None:
+        self.add_vlan(dev_name, vlan_id)
+
+    async def add_or_edit_bond_POST(self, existing_name: Optional[str],
+                                    new_name: str,
+                                    bond_config: BondConfig) -> None:
+        self.add_or_update_bond(existing_name, new_name, bond_config)
+
+    async def delete_POST(self, dev_name: str) -> None:
+        self.delete_link(dev_name)
+
+    async def info_GET(self, dev_name: str) -> str:
+        return await self.get_info_for_netdev(dev_name)
