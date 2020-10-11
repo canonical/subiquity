@@ -16,7 +16,6 @@
 from ..controller import RepeatedController
 from .filesystem import FilesystemController
 from .identity import IdentityController
-from .mirror import MirrorController
 from .reboot import RebootController
 from .snaplist import SnapListController
 from .ssh import SSHController
@@ -24,7 +23,6 @@ from .ssh import SSHController
 __all__ = [
     'FilesystemController',
     'IdentityController',
-    'MirrorController',
     'RebootController',
     'RepeatedController',
     'SnapListController',

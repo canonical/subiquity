@@ -96,6 +96,7 @@ class SubiquityClient(TuiApplication):
         "Zdev",
         "Network",
         "Proxy",
+        "Mirror",
         "Progress",
         ]
 

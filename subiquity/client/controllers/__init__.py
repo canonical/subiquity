@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .keyboard import KeyboardController
+from .mirror import MirrorController
 from .network import NetworkController
 from .progress import ProgressController
 from .proxy import ProxyController
@@ -23,6 +24,7 @@ from .zdev import ZdevController
 
 __all__ = [
     'KeyboardController',
+    'MirrorController',
     'NetworkController',
     'ProgressController',
     'ProxyController',

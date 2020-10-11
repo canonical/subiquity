@@ -18,6 +18,7 @@ from .debconf import DebconfController
 from .install import InstallController
 from .keyboard import KeyboardController
 from .locale import LocaleController
+from .mirror import MirrorController
 from .network import NetworkController
 from .package import PackageController
 from .proxy import ProxyController
@@ -34,6 +35,7 @@ __all__ = [
     'KeyboardController',
     'LateController',
     'LocaleController',
+    'MirrorController',
     'NetworkController',
     'PackageController',
     'ProxyController',

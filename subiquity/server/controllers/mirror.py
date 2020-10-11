@@ -27,10 +27,10 @@ from subiquitycore.async_helpers import (
     )
 from subiquitycore.context import with_context
 
-from subiquity.controller import SubiquityTuiController
-from subiquity.ui.views.mirror import MirrorView
+from subiquity.common.apidef import API
+from subiquity.server.controller import SubiquityController
 
-log = logging.getLogger('subiquity.controllers.mirror')
+log = logging.getLogger('subiquity.server.controllers.mirror')
 
 
 class CheckState(enum.IntEnum):
@@ -40,7 +40,9 @@ class CheckState(enum.IntEnum):
     DONE = enum.auto()
 
 
-class MirrorController(SubiquityTuiController):
+class MirrorController(SubiquityController):
+
+    endpoint = API.mirror
 
     autoinstall_key = "apt"
     autoinstall_schema = {  # This is obviously incomplete.
@@ -58,13 +60,9 @@ class MirrorController(SubiquityTuiController):
     ]
 
     def __init__(self, app):
-        self.ai_data = {}
-        self.geoip_enabled = True
         super().__init__(app)
+        self.geoip_enabled = True
         self.check_state = CheckState.NOT_STARTED
-        if 'country-code' in self.answers:
-            self.check_state = CheckState.DONE
-            self.model.set_country(self.answers['country-code'])
         self.lookup_task = SingleInstanceTask(self.lookup)
 
     def load_autoinstall_data(self, data):
@@ -122,34 +120,20 @@ class MirrorController(SubiquityTuiController):
         self.check_state = CheckState.DONE
         self.model.set_country(cc)
 
-    def make_ui(self):
-        self.check_state = CheckState.DONE
-        return MirrorView(self, self.model.get_mirror())
-
-    def run_answers(self):
-        if 'mirror' in self.answers:
-            self.done(self.answers['mirror'])
-        elif 'country-code' in self.answers \
-             or 'accept-default' in self.answers:
-            self.done(self.model.get_mirror())
-
-    def cancel(self):
-        self.app.prev_screen()
-
     def serialize(self):
         return self.model.get_mirror()
 
     def deserialize(self, data):
         self.model.set_mirror(data)
 
-    def done(self, mirror):
-        log.debug("MirrorController.done next_screen mirror=%s", mirror)
-        if mirror != self.model.get_mirror():
-            self.model.set_mirror(mirror)
-        self.configured()
-        self.app.next_screen()
-
     def make_autoinstall(self):
         r = self.model.render()['apt']
         r['geoip'] = self.geoip_enabled
         return r
+
+    async def GET(self) -> str:
+        return self.model.get_mirror()
+
+    async def POST(self, data: str):
+        self.model.set_mirror(data)
+        self.configured()

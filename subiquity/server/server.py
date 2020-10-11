@@ -124,6 +124,7 @@ class SubiquityServer(Application):
         "Zdev",
         "Network",
         "Proxy",
+        "Mirror",
         "Install",
         "Late",
         ]
