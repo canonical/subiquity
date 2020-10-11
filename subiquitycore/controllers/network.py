@@ -227,7 +227,7 @@ class NetworkController(TuiController):
         log.debug("%s", r)
         return r
 
-    def _answers_action(self, action):
+    async def _answers_action(self, action):
         log.debug("_answers_action %r", action)
         if 'obj' in action:
             obj = self._action_get(action['obj']).netdev_info()
@@ -250,10 +250,11 @@ class NetworkController(TuiController):
                     prefix = k.split('-')[0]
                     form_name = prefix + "_form"
                     submit_key = prefix + "-submit"
-                yield from self._enter_form_data(
-                    getattr(body.stretchy, form_name),
-                    v,
-                    action.get(submit_key, True))
+                async for _ in self._enter_form_data(
+                        getattr(body.stretchy, form_name),
+                        v,
+                        action.get(submit_key, True)):
+                    pass
         elif action['action'] == 'create-bond':
             self.ui.body._create_bond()
             yield
@@ -261,10 +262,11 @@ class NetworkController(TuiController):
             data = action['data'].copy()
             if 'devices' in data:
                 data['interfaces'] = data.pop('devices')
-            yield from self._enter_form_data(
-                body.stretchy.form,
-                data,
-                action.get("submit", True))
+                async for _ in self._enter_form_data(
+                        body.stretchy.form,
+                        data,
+                        action.get("submit", True)):
+                    pass
         elif action['action'] == 'done':
             self.ui.body.done()
         else:
@@ -431,7 +433,8 @@ class NetworkController(TuiController):
         elif self.answers.get('actions', False):
             actions = self.answers['actions']
             self.answers.clear()
-            self._run_iterator(self._run_actions(actions))
+            self.app.aio_loop.create_task(
+                self._run_actions(actions))
 
         if not dhcp_events:
             return

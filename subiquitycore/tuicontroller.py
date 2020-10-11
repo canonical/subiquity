@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from abc import abstractmethod
+import asyncio
 import logging
 
 from subiquitycore.controller import BaseController
@@ -60,7 +61,7 @@ class TuiController(BaseController):
     # Stuff for fine grained actions, used by filesystem and network
     # controller at time of writing this comment.
 
-    def _enter_form_data(self, form, data, submit, clean_suffix=''):
+    async def _enter_form_data(self, form, data, submit, clean_suffix=''):
         for k, v in data.items():
             c = getattr(
                 self, '_action_clean_{}_{}'.format(k, clean_suffix), None)
@@ -81,18 +82,12 @@ class TuiController(BaseController):
                 raise Exception("answers left form invalid!")
             form._click_done(None)
 
-    def _run_actions(self, actions):
+    async def _run_actions(self, actions):
+        delay = 0.2/self.app.scale_factor
         for action in actions:
-            yield from self._answers_action(action)
-
-    def _run_iterator(self, it, delay=None):
-        if delay is None:
-            delay = 0.2/self.app.scale_factor
-        try:
-            next(it)
-        except StopIteration:
-            return
-        self.app.aio_loop.call_later(delay, self._run_iterator, it, delay/1.1)
+            async for _ in self._answers_action(action):
+                await asyncio.sleep(delay)
+                delay /= 1.1
 
 
 class RepeatedController(BaseController):
