@@ -120,6 +120,7 @@ class SubiquityServer(Application):
         "Debconf",
         "Locale",
         "Refresh",
+        "Keyboard",
         "Install",
         "Late",
         ]

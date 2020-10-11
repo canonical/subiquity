@@ -92,6 +92,7 @@ class SubiquityClient(TuiApplication):
     controllers = [
         "Welcome",
         "Refresh",
+        "Keyboard",
         "Progress",
         ]
 

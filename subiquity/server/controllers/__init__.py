@@ -16,6 +16,7 @@
 from .cmdlist import EarlyController, LateController, ErrorController
 from .debconf import DebconfController
 from .install import InstallController
+from .keyboard import KeyboardController
 from .locale import LocaleController
 from .package import PackageController
 from .refresh import RefreshController
@@ -27,6 +28,7 @@ __all__ = [
     'EarlyController',
     'ErrorController',
     'InstallController',
+    'KeyboardController',
     'LateController',
     'LocaleController',
     'PackageController',

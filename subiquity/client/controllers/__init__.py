@@ -13,11 +13,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .keyboard import KeyboardController
 from .progress import ProgressController
 from .refresh import RefreshController
 from .welcome import WelcomeController
 
 __all__ = [
+    'KeyboardController',
     'ProgressController',
     'RefreshController',
     'WelcomeController',

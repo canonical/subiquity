@@ -20,6 +20,7 @@ from subiquity.common.types import (
     ApplicationState,
     ApplicationStatus,
     ErrorReportRef,
+    KeyboardSetting,
     InstallState,
     InstallStatus,
     RefreshStatus,
@@ -30,6 +31,7 @@ from subiquity.common.types import (
 class API:
     """The API offered by the subiquity installer process."""
     locale = simple_endpoint(str)
+    keyboard = simple_endpoint(KeyboardSetting)
 
     class meta:
         class status:
