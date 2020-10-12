@@ -97,6 +97,7 @@ class SubiquityClient(TuiApplication):
         "Network",
         "Proxy",
         "Mirror",
+        "Refresh",
         "Progress",
         ]
 
