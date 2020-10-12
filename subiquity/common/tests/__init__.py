@@ -12,27 +12,3 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-from subiquitycore.tuicontroller import RepeatedController
-from .filesystem import FilesystemController
-from .keyboard import KeyboardController
-from .mirror import MirrorController
-from .network import NetworkController
-from .progress import ProgressController
-from .proxy import ProxyController
-from .refresh import RefreshController
-from .welcome import WelcomeController
-from .zdev import ZdevController
-
-__all__ = [
-    'FilesystemController',
-    'KeyboardController',
-    'MirrorController',
-    'NetworkController',
-    'ProgressController',
-    'ProxyController',
-    'RefreshController',
-    'RepeatedController',
-    'WelcomeController',
-    'ZdevController',
-]

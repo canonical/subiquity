@@ -1233,10 +1233,11 @@ LUKS_OVERHEAD = 16*(2**20)
 @fsobj("dm_crypt")
 class DM_Crypt:
     volume = attributes.ref(backlink="_constructed_device")  # _Formattable
-    key = attr.ib(metadata={'redact': True})
+    key = attr.ib(metadata={'redact': True}, default=None)
+    keyfile = attr.ib(default=None)
 
     def serialize_key(self):
-        if self.key:
+        if self.key and not self.keyfile:
             f = tempfile.NamedTemporaryFile(
                 prefix='luks-key-', mode='w', delete=False)
             f.write(self.key)
@@ -1335,8 +1336,10 @@ class FilesystemModel(object):
         else:
             return Bootloader.BIOS
 
-    def __init__(self):
-        self.bootloader = self._probe_bootloader()
+    def __init__(self, bootloader=None):
+        if bootloader is None:
+            bootloader = self._probe_bootloader()
+        self.bootloader = bootloader
         self._probe_data = None
         self.reset()
 
@@ -1345,10 +1348,22 @@ class FilesystemModel(object):
             self._orig_config = storage_config.extract_storage_config(
                 self._probe_data)["storage"]["config"]
             self._actions = self._actions_from_config(
-                self._orig_config, self._probe_data['blockdev'])
+                self._orig_config,
+                self._probe_data['blockdev'],
+                is_probe_data=True)
         else:
             self._orig_config = []
             self._actions = []
+        self.swap = None
+        self.grub = None
+
+    def load_server_data(self, status):
+        log.debug('load_server_data %s', status)
+        self._orig_config = status.orig_config
+        self._probe_data = {'blockdev': status.blockdev}
+        self._actions = self._actions_from_config(
+            status.config,
+            status.blockdev)
         self.swap = None
         self.grub = None
 
@@ -1423,7 +1438,7 @@ class FilesystemModel(object):
                 action['path'] = disk.path
                 action['serial'] = disk.serial
         self._actions = self._actions_from_config(
-            ai_config, self._probe_data['blockdev'], is_autoinstall=True)
+            ai_config, self._probe_data['blockdev'], is_probe_data=False)
         for p in self._all(type="partition") + self._all(type="lvm_partition"):
             [parent] = list(dependencies(p))
             if isinstance(p.size, int):
@@ -1442,7 +1457,7 @@ class FilesystemModel(object):
                 else:
                     p.size = dehumanize_size(p.size)
 
-    def _actions_from_config(self, config, blockdevs, is_autoinstall=False):
+    def _actions_from_config(self, config, blockdevs, is_probe_data=False):
         """Convert curtin storage config into action instances.
 
         curtin represents storage "actions" as defined in
@@ -1469,7 +1484,7 @@ class FilesystemModel(object):
         exclusions = set()
         seen_multipaths = set()
         for action in config:
-            if not is_autoinstall and action['type'] == 'mount':
+            if is_probe_data and action['type'] == 'mount':
                 if not action['path'].startswith(self.target):
                     # Completely ignore mounts under /target, they are
                     # probably leftovers from a previous install
@@ -1502,7 +1517,7 @@ class FilesystemModel(object):
             if kw['type'] == 'disk':
                 path = kw['path']
                 kw['info'] = StorageInfo({path: blockdevs[path]})
-            if not is_autoinstall:
+            if is_probe_data:
                 kw['preserve'] = True
             obj = byid[action['id']] = c(m=self, **kw)
             multipath = kw.get('multipath')
@@ -1526,7 +1541,7 @@ class FilesystemModel(object):
 
         objs = [o for o in objs if o not in exclusions]
 
-        if not is_autoinstall:
+        if is_probe_data:
             for o in objs:
                 if o.type == "partition" and o.flag == "swap":
                     if o._fs is None:
@@ -1535,7 +1550,7 @@ class FilesystemModel(object):
 
         return objs
 
-    def _render_actions(self):
+    def _render_actions(self, include_all=False):
         # The curtin storage config has the constraint that an action must be
         # preceded by all the things that it depends on.  We handle this by
         # repeatedly iterating over all actions and checking if we can emit
@@ -1591,7 +1606,7 @@ class FilesystemModel(object):
 
         work = [
             a for a in self._actions
-            if not getattr(a, 'preserve', False)
+            if not getattr(a, 'preserve', False) or include_all
             ]
 
         while work:

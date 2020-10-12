@@ -256,7 +256,7 @@ class InstallConfirmation(Stretchy):
     def ok(self, sender):
         if isinstance(self.app.ui.body, ProgressView):
             self.app.ui.body.hide_continue()
-        if self.app.controllers.InstallProgress.showing:
+        if self.app.controllers.Progress.showing:
             self.app.remove_global_overlay(self)
             self.app.aio_loop.create_task(self.app.confirm_install())
         else:
@@ -277,8 +277,7 @@ You can wait for this to complete or switch to a shell.
 
 
 class InstallRunning(Stretchy):
-    def __init__(self, parent, app, tty):
-        self.parent = parent
+    def __init__(self, app, tty):
         self.app = app
         self.btn = Toggleable(other_btn(
                 _("Switch to a shell"), on_press=self._debug_shell))

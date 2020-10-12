@@ -5,7 +5,7 @@ import urwid
 
 from subiquitycore.testing import view_helpers
 
-from subiquity.controllers.filesystem import FilesystemController
+from subiquity.client.controllers.filesystem import FilesystemController
 from subiquity.models.filesystem import (
     Bootloader,
     Disk,

@@ -31,6 +31,7 @@ from subiquity.common.types import (
     InstallState,
     InstallStatus,
     RefreshStatus,
+    StorageResponse,
     ZdevInfo,
     )
 
@@ -159,6 +160,13 @@ class API:
 
         class info:
             def GET(dev_name: str) -> str: ...
+
+    class storage:
+        def GET(wait: bool = False) -> StorageResponse: ...
+        def POST(config: Payload[list]): ...
+
+        class reset:
+            def POST() -> StorageResponse: ...
 
     class install:
         class status:

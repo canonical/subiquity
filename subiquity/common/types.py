@@ -115,11 +115,27 @@ class ZdevInfo:
         return self.type
 
 
+class ProbeStatus(enum.Enum):
+    PROBING = enum.auto()
+    FAILED = enum.auto()
+    DONE = enum.auto()
+
+
 class Bootloader(enum.Enum):
     NONE = "NONE"  # a system where the bootloader is external, e.g. s390x
     BIOS = "BIOS"  # BIOS, where the bootloader dd-ed to the start of a device
     UEFI = "UEFI"  # UEFI, ESPs and /boot/efi and all that (amd64 and arm64)
     PREP = "PREP"  # ppc64el, which puts grub on a PReP partition
+
+
+@attr.s(auto_attribs=True)
+class StorageResponse:
+    status: ProbeStatus
+    bootloader: Optional[Bootloader] = None
+    error_report: Optional[ErrorReportRef] = None
+    orig_config: Optional[list] = None
+    config: Optional[list] = None
+    blockdev: Optional[dict] = None
 
 
 @attr.s(auto_attribs=True)
