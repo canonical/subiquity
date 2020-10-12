@@ -93,6 +93,7 @@ class SubiquityClient(TuiApplication):
         "Welcome",
         "Refresh",
         "Keyboard",
+        "Zdev",
         "Progress",
         ]
 

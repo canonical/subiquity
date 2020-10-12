@@ -121,6 +121,7 @@ class SubiquityServer(Application):
         "Locale",
         "Refresh",
         "Keyboard",
+        "Zdev",
         "Install",
         "Late",
         ]

@@ -22,6 +22,7 @@ from .package import PackageController
 from .refresh import RefreshController
 from .reporting import ReportingController
 from .userdata import UserdataController
+from .zdev import ZdevController
 
 __all__ = [
     'DebconfController',
@@ -35,4 +36,5 @@ __all__ = [
     'RefreshController',
     'ReportingController',
     'UserdataController',
+    'ZdevController',
 ]

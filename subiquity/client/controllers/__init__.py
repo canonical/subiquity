@@ -17,10 +17,12 @@ from .keyboard import KeyboardController
 from .progress import ProgressController
 from .refresh import RefreshController
 from .welcome import WelcomeController
+from .zdev import ZdevController
 
 __all__ = [
     'KeyboardController',
     'ProgressController',
     'RefreshController',
     'WelcomeController',
+    'ZdevController',
 ]

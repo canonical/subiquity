@@ -17,20 +17,18 @@ import asyncio
 import logging
 import platform
 import random
+from typing import List
 
 from collections import OrderedDict
 
-from subiquitycore.tuicontroller import (
-    Skip,
-    )
 from subiquitycore.utils import arun_command, run_command
 
-from subiquity.common.types import ZdevInfo
-from subiquity.controller import SubiquityTuiController
-from subiquity.ui.views import ZdevView
+from subiquity.common.apidef import API
+from subiquity.common.types import Bootloader, ZdevInfo
+from subiquity.server.controller import SubiquityController
 
 
-log = logging.getLogger("subiquitycore.controller.zdev")
+log = logging.getLogger("subiquity.server.controller.zdev")
 
 lszdev_cmd = ['lszdev', '--pairs', '--columns',
               'id,type,on,exists,pers,auto,failed,names']
@@ -592,7 +590,9 @@ id="0.0.f1fe:0.0.f1ff" type="ctc" on="no" exists="yes" pers="no" auto="no" faile
 id="0.0.c0fe" type="generic-ccw" on="no" exists="yes" pers="no" auto="no" failed="yes" names=""'''  # noqa: E501
 
 
-class ZdevController(SubiquityTuiController):
+class ZdevController(SubiquityController):
+
+    endpoint = API.zdev
 
     def __init__(self, app):
         super().__init__(app)
@@ -605,35 +605,23 @@ class ZdevController(SubiquityTuiController):
                 zdevinfos = [ZdevInfo.from_row(row) for row in devices]
             self.zdevinfos = OrderedDict([(i.id, i) for i in zdevinfos])
 
-    def make_ui(self):
-        if not self.app.opts.bootloader == 'none' \
-          and platform.machine() != 's390x':
-            raise Skip
-        return ZdevView(self, self.get_zdevinfos())
+    def interactive(self):
+        if self.app.base_model.filesystem.bootloader != Bootloader.NONE:
+            return False
+        return super().interactive()
 
-    def run_answers(self):
-        if 'accept-default' in self.answers:
-            self.done()
-
-    def cancel(self):
-        self.app.prev_screen()
-
-    def done(self):
-        # switch to next screen
-        self.app.next_screen()
-
-    async def chzdev(self, action, zdevinfo):
+    async def chzdev_POST(self, action: str, zdev: ZdevInfo) -> List[ZdevInfo]:
         if self.opts.dry_run:
             await asyncio.sleep(random.random()*0.4)
             on = action == 'enable'
-            self.zdevinfos[zdevinfo.id].on = on
-            self.zdevinfos[zdevinfo.id].pers = on
+            self.zdevinfos[zdev.id].on = on
+            self.zdevinfos[zdev.id].pers = on
         else:
-            chzdev_cmd = ['chzdev', '--%s' % action, zdevinfo.id]
+            chzdev_cmd = ['chzdev', '--%s' % action, zdev.id]
             await arun_command(chzdev_cmd)
-        return self.get_zdevinfos()
+        return await self.GET()
 
-    def get_zdevinfos(self):
+    async def GET(self) -> List[ZdevInfo]:
         if self.opts.dry_run:
             return self.zdevinfos.values()
         else:

@@ -34,6 +34,8 @@ from probert.storage import StorageInfo
 
 from subiquitycore.gettext38 import pgettext
 
+from subiquity.common.types import Bootloader
+
 
 log = logging.getLogger('subiquity.models.filesystem')
 
@@ -1306,13 +1308,6 @@ def align_up(size, block_size=1 << 20):
 
 def align_down(size, block_size=1 << 20):
     return size & ~(block_size - 1)
-
-
-class Bootloader(enum.Enum):
-    NONE = "NONE"  # a system where the bootloader is external, e.g. s390x
-    BIOS = "BIOS"  # BIOS, where the bootloader dd-ed to the start of a device
-    UEFI = "UEFI"  # UEFI, ESPs and /boot/efi and all that (amd64 and arm64)
-    PREP = "PREP"  # ppc64el, which puts grub on a PReP partition
 
 
 class FilesystemModel(object):

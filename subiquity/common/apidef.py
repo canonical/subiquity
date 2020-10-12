@@ -24,6 +24,7 @@ from subiquity.common.types import (
     InstallState,
     InstallStatus,
     RefreshStatus,
+    ZdevInfo,
     )
 
 
@@ -61,7 +62,6 @@ class API:
         class crash:
             def GET() -> None:
                 """Requests to this method will fail with a HTTP 500."""
-
     class refresh:
         def GET(wait: bool = False) -> RefreshStatus:
             """Get information about the snap refresh status.
@@ -73,6 +73,12 @@ class API:
 
         class progress:
             def GET(change_id: int) -> dict: ...
+
+    class zdev:
+        def GET() -> List[ZdevInfo]: ...
+
+        class chzdev:
+            def POST(action: str, zdev: ZdevInfo) -> List[ZdevInfo]: ...
 
     class install:
         class status:

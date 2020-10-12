@@ -34,10 +34,10 @@ from subiquitycore.utils import (
 
 
 from subiquity.common.errorreport import ErrorReportKind
+from subiquity.common.types import Bootloader
 from subiquity.controller import SubiquityTuiController
 from subiquity.models.filesystem import (
     align_up,
-    Bootloader,
     DeviceAction,
     dehumanize_size,
     Partition,

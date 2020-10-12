@@ -6,6 +6,7 @@ subiquity/client/controllers/keyboard.py
 subiquity/client/controllers/progress.py
 subiquity/client/controllers/refresh.py
 subiquity/client/controllers/welcome.py
+subiquity/client/controllers/zdev.py
 subiquity/client/__init__.py
 subiquity/client/keyboard.py
 subiquity/client/keycodes.py
@@ -41,7 +42,6 @@ subiquity/controllers/snaplist.py
 subiquity/controllers/ssh.py
 subiquity/controllers/tests/__init__.py
 subiquity/controllers/tests/test_filesystem.py
-subiquity/controllers/zdev.py
 subiquitycore/async_helpers.py
 subiquitycore/contextlib38.py
 subiquitycore/context.py
@@ -126,6 +126,7 @@ subiquity/server/controllers/package.py
 subiquity/server/controllers/refresh.py
 subiquity/server/controllers/reporting.py
 subiquity/server/controllers/userdata.py
+subiquity/server/controllers/zdev.py
 subiquity/server/dryrun.py
 subiquity/server/errors.py
 subiquity/server/__init__.py
