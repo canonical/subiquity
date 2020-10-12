@@ -20,11 +20,11 @@ from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
 from subiquitycore import utils
 
+from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import SSHData
-from subiquity.controller import SubiquityTuiController
 from subiquity.ui.views.ssh import SSHView
 
-log = logging.getLogger('subiquity.controllers.ssh')
+log = logging.getLogger('subiquity.client.controllers.ssh')
 
 
 class FetchSSHKeysFailure(Exception):
@@ -35,18 +35,7 @@ class FetchSSHKeysFailure(Exception):
 
 class SSHController(SubiquityTuiController):
 
-    autoinstall_key = model_name = "ssh"
-    autoinstall_schema = {
-        'type': 'object',
-        'properties': {
-            'install-server': {'type': 'boolean'},
-            'authorized-keys': {
-                'type': 'array',
-                'items': {'type': 'string'},
-                },
-            'allow-pw': {'type': 'boolean'},
-        },
-    }
+    endpoint_name = 'ssh'
 
     def __init__(self, app):
         super().__init__(app)
@@ -57,19 +46,8 @@ class SSHController(SubiquityTuiController):
                 self.answers['ssh-import-id'] = identity_answers[
                     'ssh-import-id']
 
-    def load_autoinstall_data(self, data):
-        if data is None:
-            return
-        self.model.install_server = data.get('install-server', False)
-        self.model.authorized_keys = data.get(
-            'authorized-keys', [])
-        self.model.pwauth = data.get(
-            'allow-pw', not self.model.authorized_keys)
-
-    def make_ui(self):
-        ssh_data = SSHData(
-            install_server=self.model.install_server,
-            allow_pw=self.model.pwauth)
+    async def make_ui(self):
+        ssh_data = await self.endpoint.GET()
         return SSHView(self, ssh_data)
 
     def run_answers(self):
@@ -141,16 +119,6 @@ class SSHController(SubiquityTuiController):
             self._fetch_ssh_keys(
                 ssh_import_id=ssh_import_id, ssh_data=ssh_data))
 
-    def done(self, data: SSHData):
-        self.model.install_server = data.install_server
-        self.model.authorized_keys = data.authorized_keys
-        self.model.pwauth = data.allow_pw
-        self.configured()
-        self.app.next_screen()
-
-    def make_autoinstall(self):
-        return {
-            'install-server': self.model.install_server,
-            'authorized-keys': self.model.authorized_keys,
-            'allow-pw': self.model.pwauth,
-            }
+    def done(self, result):
+        log.debug("SSHController.done next_screen result=%s", result)
+        self.app.next_screen(self.endpoint.POST(result))

@@ -127,6 +127,7 @@ class SubiquityServer(Application):
         "Mirror",
         "Filesystem",
         "Identity",
+        "SSH",
         "Install",
         "Late",
         ]

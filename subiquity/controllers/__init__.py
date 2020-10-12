@@ -15,10 +15,8 @@
 
 from .reboot import RebootController
 from .snaplist import SnapListController
-from .ssh import SSHController
 
 __all__ = [
     'RebootController',
     'SnapListController',
-    'SSHController',
 ]

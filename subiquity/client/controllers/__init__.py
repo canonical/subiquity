@@ -22,6 +22,7 @@ from .network import NetworkController
 from .progress import ProgressController
 from .proxy import ProxyController
 from .refresh import RefreshController
+from .ssh import SSHController
 from .welcome import WelcomeController
 from .zdev import ZdevController
 
@@ -35,6 +36,7 @@ __all__ = [
     'ProxyController',
     'RefreshController',
     'RepeatedController',
+    'SSHController',
     'WelcomeController',
     'ZdevController',
 ]

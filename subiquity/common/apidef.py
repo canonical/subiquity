@@ -32,6 +32,7 @@ from subiquity.common.types import (
     InstallState,
     InstallStatus,
     RefreshStatus,
+    SSHData,
     StorageResponse,
     ZdevInfo,
     )
@@ -45,6 +46,7 @@ class API:
     proxy = simple_endpoint(str)
     mirror = simple_endpoint(str)
     identity = simple_endpoint(IdentityData)
+    ssh = simple_endpoint(SSHData)
 
     class meta:
         class status:
