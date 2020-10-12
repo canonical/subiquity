@@ -131,6 +131,7 @@ class SubiquityServer(Application):
         "SnapList",
         "Install",
         "Late",
+        "Reboot",
         ]
 
     def make_model(self):

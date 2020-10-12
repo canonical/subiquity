@@ -13,28 +13,49 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 import os
 import platform
 import subprocess
 
-from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command, run_command
 
-from subiquity.controller import SubiquityTuiController
+from subiquity.common.apidef import API
+from subiquity.server.controller import SubiquityController
+from subiquity.server.controllers.install import InstallState
 
 log = logging.getLogger("subiquity.controllers.restart")
 
 
-class RebootController(SubiquityTuiController):
+class RebootController(SubiquityController):
+
+    endpoint = API.reboot
 
     def __init__(self, app):
         super().__init__(app)
-        self.context.set('hidden', True)
+        self.user_reboot_event = asyncio.Event()
+        self.rebooting_event = asyncio.Event()
 
-    def interactive(self):
-        return self.app.interactive()
+    async def POST(self):
+        self.app.controllers.Install.stop_uu()
+        self.user_reboot_event.set()
+        await self.rebooting_event.wait()
+
+    def start(self):
+        self.app.aio_loop.create_task(self._run())
+
+    async def _run(self):
+        Install = self.app.controllers.Install
+        await Install.install_task
+        await self.app.controllers.Late.run_event.wait()
+        await self.copy_logs_to_target()
+        if self.app.interactive():
+            await self.user_reboot_event.wait()
+            self.reboot()
+        elif Install.install_state == InstallState.DONE:
+            self.reboot()
 
     @with_context()
     async def copy_logs_to_target(self, context):
@@ -56,27 +77,12 @@ class RebootController(SubiquityTuiController):
         except Exception:
             log.exception("saving journal failed")
 
-    def reboot(self):
+    @with_context()
+    def reboot(self, context):
+        self.rebooting_event.set()
         if self.opts.dry_run:
             self.app.exit()
         else:
             if platform.machine() == 's390x':
                 run_command(["chreipl", "/target/boot"])
             run_command(["/sbin/reboot"])
-
-    @with_context()
-    async def apply_autoinstall_config(self, context):
-        await self.copy_logs_to_target(context=context)
-        self.reboot()
-
-    async def _run(self):
-        await self.copy_logs_to_target()
-        await self.app.controllers.InstallProgress.reboot_clicked.wait()
-        self.reboot()
-
-    def make_ui(self):
-        schedule_task(self._run())
-        return self.ui.body
-
-    def cancel(self):
-        pass

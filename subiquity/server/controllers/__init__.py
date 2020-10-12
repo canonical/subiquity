@@ -24,6 +24,7 @@ from .mirror import MirrorController
 from .network import NetworkController
 from .package import PackageController
 from .proxy import ProxyController
+from .reboot import RebootController
 from .refresh import RefreshController
 from .reporting import ReportingController
 from .snaplist import SnapListController
@@ -45,6 +46,7 @@ __all__ = [
     'NetworkController',
     'PackageController',
     'ProxyController',
+    'RebootController',
     'RefreshController',
     'ReportingController',
     'SnapListController',
