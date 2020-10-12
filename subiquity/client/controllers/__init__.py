@@ -15,6 +15,7 @@
 
 from subiquitycore.tuicontroller import RepeatedController
 from .filesystem import FilesystemController
+from .identity import IdentityController
 from .keyboard import KeyboardController
 from .mirror import MirrorController
 from .network import NetworkController
@@ -26,6 +27,7 @@ from .zdev import ZdevController
 
 __all__ = [
     'FilesystemController',
+    'IdentityController',
     'KeyboardController',
     'MirrorController',
     'NetworkController',

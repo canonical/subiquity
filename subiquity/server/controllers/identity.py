@@ -19,14 +19,16 @@ import attr
 
 from subiquitycore.context import with_context
 
+from subiquity.common.apidef import API
 from subiquity.common.types import IdentityData
-from subiquity.controller import SubiquityTuiController
-from subiquity.ui.views import IdentityView
+from subiquity.server.controller import SubiquityController
 
-log = logging.getLogger('subiquity.controllers.identity')
+log = logging.getLogger('subiquity.server.controllers.identity')
 
 
-class IdentityController(SubiquityTuiController):
+class IdentityController(SubiquityController):
+
+    endpoint = API.identity
 
     autoinstall_key = model_name = "identity"
     autoinstall_schema = {
@@ -57,39 +59,22 @@ class IdentityController(SubiquityTuiController):
             if 'user-data' not in self.app.autoinstall_config:
                 raise Exception("no identity data provided")
 
-    def make_ui(self):
-        data = IdentityData()
-        if self.model.user is not None:
-            data.username = self.model.user.username
-            data.realname = self.model.user.realname
-        if self.model.hostname:
-            data.hostname = self.model.hostname
-        return IdentityView(self, data)
-
-    def run_answers(self):
-        if all(elem in self.answers for elem in
-               ['realname', 'username', 'password', 'hostname']):
-            identity = IdentityData(
-                realname=self.answers['realname'],
-                username=self.answers['username'],
-                hostname=self.answers['hostname'],
-                crypted_password=self.answers['password'])
-            self.done(identity)
-
-    def cancel(self):
-        self.app.prev_screen()
-
-    def done(self, identity_data):
-        log.debug(
-            "IdentityController.done next_screen user_spec=%s",
-            identity_data)
-        self.model.add_user(identity_data)
-        self.configured()
-        self.app.next_screen()
-
     def make_autoinstall(self):
         if self.model.user is None:
             return {}
         r = attr.asdict(self.model.user)
         r['hostname'] = self.model.hostname
         return r
+
+    async def GET(self) -> IdentityData:
+        data = IdentityData()
+        if self.model.user is not None:
+            data.username = self.model.user.username
+            data.realname = self.model.user.realname
+        if self.model.hostname:
+            data.hostname = self.model.hostname
+        return data
+
+    async def POST(self, data: IdentityData):
+        self.model.add_user(data)
+        self.configured()

@@ -4,7 +4,7 @@ from unittest import mock
 from subiquitycore.signals import Signal
 from subiquitycore.testing import view_helpers
 
-from subiquity.controllers.identity import IdentityController
+from subiquity.client.controllers.identity import IdentityController
 from subiquity.common.types import IdentityData
 from subiquity.ui.views.identity import IdentityView
 

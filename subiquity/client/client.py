@@ -99,6 +99,7 @@ class SubiquityClient(TuiApplication):
         "Mirror",
         "Refresh",
         "Filesystem",
+        "Identity",
         "Progress",
         ]
 

@@ -126,6 +126,7 @@ class SubiquityServer(Application):
         "Proxy",
         "Mirror",
         "Filesystem",
+        "Identity",
         "Install",
         "Late",
         ]

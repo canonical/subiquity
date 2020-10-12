@@ -2,6 +2,7 @@
 subiquity/client/client.py
 subiquity/client/controller.py
 subiquity/client/controllers/filesystem.py
+subiquity/client/controllers/identity.py
 subiquity/client/controllers/__init__.py
 subiquity/client/controllers/keyboard.py
 subiquity/client/controllers/mirror.py
@@ -38,7 +39,6 @@ subiquity/common/tests/test_filesystem.py
 subiquity/common/tests/test_keyboard.py
 subiquity/common/types.py
 subiquity/controller.py
-subiquity/controllers/identity.py
 subiquity/controllers/__init__.py
 subiquity/controllers/reboot.py
 subiquity/controllers/snaplist.py
@@ -120,6 +120,7 @@ subiquity/server/controller.py
 subiquity/server/controllers/cmdlist.py
 subiquity/server/controllers/debconf.py
 subiquity/server/controllers/filesystem.py
+subiquity/server/controllers/identity.py
 subiquity/server/controllers/__init__.py
 subiquity/server/controllers/install.py
 subiquity/server/controllers/keyboard.py
