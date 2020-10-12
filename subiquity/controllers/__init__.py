@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2020 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from ..controller import RepeatedController
 from .cmdlist import EarlyController, LateController
 from .debconf import DebconfController
 from .error import ErrorController
@@ -20,19 +21,19 @@ from .filesystem import FilesystemController
 from .identity import IdentityController
 from .installprogress import InstallProgressController
 from .keyboard import KeyboardController
-from .package import PackageController
-from .proxy import ProxyController
 from .mirror import MirrorController
 from .network import NetworkController
+from .package import PackageController
+from .proxy import ProxyController
 from .reboot import RebootController
 from .refresh import RefreshController
-from ..controller import RepeatedController
 from .reporting import ReportingController
 from .snaplist import SnapListController
 from .ssh import SSHController
 from .userdata import UserdataController
 from .welcome import WelcomeController
 from .zdev import ZdevController
+
 __all__ = [
     'DebconfController',
     'EarlyController',
@@ -42,12 +43,12 @@ __all__ = [
     'InstallProgressController',
     'KeyboardController',
     'LateController',
-    'PackageController',
-    'ProxyController',
     'MirrorController',
     'NetworkController',
-    'RefreshController',
+    'PackageController',
+    'ProxyController',
     'RebootController',
+    'RefreshController',
     'RepeatedController',
     'ReportingController',
     'SnapListController',
