@@ -7,13 +7,11 @@
 1. Subiquity is entirely usable by pressing up, down, space (or return) and the
    occasional bit of typing.
 
-2. The UI never blocks.  If something takes more than about 0.1s, it is done
-   in the background, possibly with some kind of indication in the UI and the
-   ability to cancel if appropriate.  (We should consider making sure that if
-   we pop up a progress dialog while something happens -- e.g. applying
-   keyboard configuration, which the user just has to wait for until going on
-   to the next screen -- that the dialog appears for at least, say, 0.5s to
-   avoid flickering the UI).
+2. The UI never blocks.  If something takes more than about 0.1s, it is done in
+   the background, possibly with some kind of indication in the UI and the
+   ability to cancel if appropriate.  If indication is shown, it is shown for
+   at least 1s to avoid flickering the UI.  There is a helper,
+   `wait_with_text_dialog` for this.
 
 3. General UX principles that it is worth keeping in mind:
 
@@ -124,13 +122,25 @@ complicated, but the ability to start easily makes it well worth it IMHO.
 
 ## Code structure
 
-Subiquity follows a model / view / controller sort of approach.
+### Overall architecture
+
+Subiquity has a client / server model: there is one server, which collects the
+data that will go into the curtin config and runs the install, and one or more
+client processes which connect to it.  One client runs on tty1 (apart from on
+s390x) and others run on any configured serial console.  One can also ssh into
+the live session as another way of starting a client.
+
+Subiquity follows a model / view / controller sort of approach, where the model
+lives in the server and the view in the client, and controller classes in both
+the server and client handle the communication.
 
 The model is ultimately the config that will be passed to curtin, which is
 broken apart into classes for the configuration of the network, the filesystem,
 the language, etc, etc.  The full model lives in `subiquity.models.subiquity`
 and the submodels live in modules like `subiquitycore.models.network` and
-`subiquity.models.keyboard`.
+`subiquity.models.keyboard`. Each model object gets an `asyncio.Event` object
+associated with it that is set when the model is ready to be used as part of
+the installation.
 
 Subiquity presents itself as a series of screens -- Welcome, Keyboard, Network,
 etc etc -- as described above.  Each screen is managed by an instance of a
@@ -139,11 +149,243 @@ outside world and the model and views -- in the network view, it is the
 controller that listens to netlink events and calls methods on the model and
 view instances in response to, say, a NIC gaining an address.
 
-The views display the model and call methods on the controller to make changes.
+Obviously for most screens there is a tuple (model class, server controller
+class, client controller class, view class), but this isn't always true -- some
+screens like the one offering the installer refresh don't have a corresponding
+model class.
 
-Obviously for most screens there is a triple of a model class, controller class
-and a view class for the initial view, but this isn't always true -- some
-controllers don't have a corresponding model class.
+### API details
+
+The api is HTTP over a unix socket (/run/subiquity/socket). It is defined in
+the `subiquity.common.apidef` module, and is all fairly ad hoc and designed as
+needed.  The API uses basic Python types, classes defined by
+[attrs](https://attrs.org) and enums and there is general machinery for
+converting these to and from JSON, building a client from the api definition
+and serving bits of the API from a particular class.
+
+The API takes a "long poll" approach to status updates. For example,
+`refresh.GET()` takes a wait boolean. The refresh view calls this with
+`wait=False` and if the result indicates that the check for updates is still in
+progress it shows a screen indicating this and calls it again with `wait=True`,
+which will not return until the check has completed (or failed). In a similar
+vein, `install.status.GET()` takes an argument indicating what the client
+thinks the install state currently is and will block until that changes.
+
+### Examples and common patterns
+
+Adding a typical screen requires:
+
+ 1. Implementing the model class.
+ 2. Defining the API
+ 3. Implementing the server controller
+ 4. Implementing the client controller
+ 5. Implementing the view
+
+(Although it often makes most sense to work in the opposite order when
+designing a new feature).
+
+#### Implementing the model class
+
+There is no generic way to describe the data being modelled of course.  Model
+classes live in `subiquity.models`.  An instance of each model class is
+attached as an attribute to the `SubiquityModel` class and the name of the
+attribute added to `INSTALL_MODEL_NAMES` or `POSTINSTALL_MODEL_NAMES` as
+appropriate. Models that go into `INSTALL_MODEL_NAMES` need to define a
+render() method that returns a fragment of curtin config.
+
+#### Defining the API
+
+The simplest API is one where the values are retrieved with a GET request when
+the screen is shown and set with a POST when the screen is finished. This can
+be done by adding a line like:
+
+```
+    example = simple_endpoint(Type)
+```
+
+to `subiquity.common.apidef`.
+
+#### Implementing the server controller
+
+The simplest possible server controller would be something like this:
+
+```
+import logging
+
+from subiquity.common.apidef import API
+from subiquity.server.controller import SubiquityController
+
+log = logging.getLogger('subiquity.server.controllers.example')
+
+
+class ExampleController(SubiquityController):
+
+    endpoint = API.example
+    model_name = 'example'
+
+    async def GET(self) -> Type:
+        return self.model.thing
+
+    async def POST(self, data: Type):
+        self.model.thing = data
+        self.configured()
+```
+
+Setting `endpoint` is how the API methods are routed to this class.
+
+There are other attributes to set and methods to implement to handle
+autoinstalls and starting asynchronous tasks when the installer starts up.
+
+The `GET` method can raise `Skip` to indicate that this screen should not be
+shown to the user.
+
+The name of the controller needs to be added to the list in
+`subiquity.server.server`.
+
+The `configured` method needs to be called when the associated model object is
+ready to be used by other parts of the installer.
+
+#### Implementing the client controller
+
+The simplest possible client controller would be something like this:
+
+```
+import logging
+
+from subiquity.client.controller import SubiquityTuiController
+from subiquity.ui.views.example import ExampleView
+
+log = logging.getLogger('subiquity.client.controllers.example')
+
+
+class ExampleController(SubiquityTuiController):
+
+    endpoint_name = 'example'
+
+    async def make_ui(self):
+        thing = await self.endpoint.GET()
+        return ExampleView(self, thing)
+
+    def cancel(self):
+        self.app.prev_screen()
+
+    def done(self, thing):
+        self.app.next_screen(self.endpoint.POST(thing))
+```
+
+Setting `endpoint_name` means that self.client gets set to an implementation of
+that part of the API.
+
+The name of the controller needs to be added to the list in
+`subiquity.client.client`.
+
+#### Implementing the view
+
+A simple view might look like this:
+
+```
+import logging
+from urwid import connect_signal
+
+from subiquitycore.view import BaseView
+from subiquitycore.ui.form import (
+    Form,
+    ThingField,
+)
+
+
+log = logging.getLogger('subiquity.ui.views.example')
+
+
+class ExampleForm(Form):
+
+    thing = ThingField(_("Thing:"))
+
+
+class ExampleView(BaseView):
+
+    title = _("Configure example")
+
+    def __init__(self, controller, thing):
+        self.controller = controller
+
+        self.form = ThingForm(initial={'thing': thing})
+
+        connect_signal(self.form, 'submit', self.done)
+        connect_signal(self.form, 'cancel', self.cancel)
+
+        super().__init__(self.form.as_screen())
+
+    def done(self, result):
+        self.controller.done(result.thing.value)
+
+    def cancel(self, result=None):
+        self.controller.cancel()
+```
+
+### autoinstalls
+
+As documented at https://ubuntu.com/server/docs/install/autoinstall,
+autoinstalls are subiquity's way of doing a automated, or partially automated
+install. This mostly impacts the server, which loads the config and the server
+controllers have methods that are called to load and apply the autoinstall data
+for each controller. The only real difference to the client is that it behaves
+totally differently if the install is to be totally automated: in this case it
+does not start the urwid-based UI at all and mostly just "listens" to install
+progress via journald and the `install.status.GET()` API call.
+
+### Starting and confirming the install
+
+The installation code proceeds in stages:
+
+ 1. First it waits for all the model objects that feed into the curtin config
+    to be configured.
+ 2. It waits for confirmation.
+ 3. It runs "curtin install" and waits for that to finish.
+ 4. It waits for the model objects that feed into the cloud-init config to be
+    configured.
+ 5. If there appears to be a working network connection, it downloads and
+    installs security updates.
+ 6. It waits for the user to click "reboot".
+
+Each of these states gets a different value of the `InstallState` enum, so the
+client gets notified via long-polling `install.status.GET()` of progress.
+
+### Refreshing the snap
+
+The installer checks for a snap update and offers it to the user if one is
+available. If the users says yes, the new version is downloaded and the
+installer, both server and client restarts where it left off. This restarting
+is all a bit more complicated that it perhaps needs to be.
+
+For the server process and the client running on tty1, the actual restarting of
+the processes is trivial: systemd does it as part of the snap refresh. There is
+also a snap hook that restarts any clients running on serial lines. But any
+clients running over SSH have to notice the snap update has completed and
+restart themselves.
+
+In dry-run mode, there is some more hair:
+
+ * the server notices when the canned snapd progress updates indicate the
+   refresh has completed and restarts itself to simulate systemd doing it.
+
+ * as the client autostarts a server process if needed and there is some
+   complication around making sure that the server is killed when the client
+   exits, even after a restart.
+
+But this is all hidden away behind "if dry_run:" checks so I don't feel too bad
+about it being a bit fragile.
+
+The "Restarting where it left off" is also a bit complicated.
+
+The server records any needed state in /run/subiquity/$controller_name to be
+read on restart (the keyboard controller does not need to do this, for example,
+because the keyboard settings can be reconstructed from
+/etc/default/keyboard. The proxy controller does need to do this though).
+
+The client records which screen it is on in /run/subiquity/last-screen and when
+it restarts it checks this file and skips to this screen (it also asks the
+server to mark all controllers before this screen as configured).
 
 ### Doing things in the background
 
@@ -155,16 +397,13 @@ running things in the background and subiquity uses
  * `schedule_task` (a wrapper around `create_task` / `ensure_future`)
  * `run_in_thread` (just a nicer wrapper around `run_in_executor`)
     * We still use threads for HTTP requests (this could change in the future
-      I guess) and come compute-bound things like generating error reports.
+      I guess) and some compute-bound things like generating error reports.
  * `SingleInstanceTask` is a way of running tasks that only need to run once
    but might need to be cancelled and restarted.
    * This is useful for things like checking for snap updates: it's possible
      that network requests will just hang until a HTTP proxy is configured so
      if the request hasn't completed yet when a proxy is configured, we cancel
      and restart.
-
-[trio](https://trio.readthedocs.io/en/stable/) has nicer APIs but is
-a bit too new for now.
 
 A cast-iron rule: Only touch the UI from the main thread.
 
@@ -185,7 +424,7 @@ does not use, so we can add support for at least a dozen or so more glyphs if
 there's a need.
 
 `subiquity.palette` defines the 8 RGB colors and a bunch of named "styles" in
-terms of foreground and background colors.  `subiquitycore.core` contains some
+terms of foreground and background colors.  `subiquitycore.screen` contains some
 rather hair-raising code for mangling these definitions so that using these
 style names in urwid comes out in the right color both in gnome-terminal (using
 ISO-8613-3 color codes) and in the linux tty (using the PIO_CMAP ioctl).
@@ -198,9 +437,8 @@ makes writing them a bit easier.
 
 subiquity supports a limited form of automation in the form of an "answers
 file". This yaml file provides data that controllers can use to drive the UI
-automatically (this is not a replacement for preseeding: that is to be designed
-during the 18.10 cycle).  There are some answers files in the `examples/`
-directory that are run as a sort of integration test for the UI.
+automatically.  There are some answers files in the `examples/` directory that
+are run as a sort of integration test for the UI.
 
 Tests (and lint checks) are run by travis using lxd.  See `.travis.yml` and
 `./scripts/test-in-lxd.sh` and so on.
