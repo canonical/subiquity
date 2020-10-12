@@ -32,6 +32,9 @@ from subiquity.common.types import (
     InstallState,
     InstallStatus,
     RefreshStatus,
+    SnapInfo,
+    SnapListResponse,
+    SnapSelection,
     SSHData,
     StorageResponse,
     ZdevInfo,
@@ -171,6 +174,13 @@ class API:
 
         class reset:
             def POST() -> StorageResponse: ...
+
+    class snaplist:
+        def GET(wait: bool = False) -> SnapListResponse: ...
+        def POST(data: Payload[List[SnapSelection]]): ...
+
+        class snap_info:
+            def GET(snap_name: str) -> SnapInfo: ...
 
     class install:
         class status:

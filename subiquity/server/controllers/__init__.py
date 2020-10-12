@@ -26,6 +26,7 @@ from .package import PackageController
 from .proxy import ProxyController
 from .refresh import RefreshController
 from .reporting import ReportingController
+from .snaplist import SnapListController
 from .ssh import SSHController
 from .userdata import UserdataController
 from .zdev import ZdevController
@@ -46,6 +47,7 @@ __all__ = [
     'ProxyController',
     'RefreshController',
     'ReportingController',
+    'SnapListController',
     'SSHController',
     'UserdataController',
     'ZdevController',

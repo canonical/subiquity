@@ -16,28 +16,28 @@
 import logging
 from typing import List
 
+import attr
+
 import requests.exceptions
 
 from subiquitycore.async_helpers import (
     schedule_task,
     )
 from subiquitycore.context import with_context
-from subiquitycore.tuicontroller import (
-    Skip,
-    )
 
-from subiquity.controller import (
-    SubiquityTuiController,
-    )
-
+from subiquity.common.apidef import API
 from subiquity.common.types import (
-    SnapListResponse,
     SnapCheckState,
+    SnapInfo,
+    SnapListResponse,
     SnapSelection,
     )
-from subiquity.ui.views.snaplist import SnapListView
+from subiquity.server.controller import (
+    SubiquityController,
+    )
 
-log = logging.getLogger('subiquity.controllers.snaplist')
+
+log = logging.getLogger('subiquity.server.controllers.snaplist')
 
 
 class SnapdSnapInfoLoader:
@@ -52,7 +52,7 @@ class SnapdSnapInfoLoader:
         self.failed = False
 
         self.snapd = snapd
-        self.pending_info_snaps = []
+        self.pending_snaps = []
         self.tasks = {}  # {snap:task}
 
     def start(self):
@@ -109,7 +109,9 @@ class SnapdSnapInfoLoader:
         return self.tasks[snap]
 
 
-class SnapListController(SubiquityTuiController):
+class SnapListController(SubiquityController):
+
+    endpoint = API.snaplist
 
     autoinstall_key = "snaps"
     autoinstall_default = []
@@ -141,11 +143,12 @@ class SnapListController(SubiquityTuiController):
         self.loader = self._make_loader()
 
     def load_autoinstall_data(self, ai_data):
-        to_install = {}
+        to_install = []
         for snap in ai_data:
-            to_install[snap['name']] = SnapSelection(
+            to_install.append(SnapSelection(
+                name=snap['name'],
                 channel=snap.get('channel', 'stable'),
-                is_classic=snap.get('classic', False))
+                is_classic=snap.get('classic', False)))
         self.model.set_installed_list(to_install)
 
     def snapd_network_changed(self):
@@ -160,24 +163,12 @@ class SnapListController(SubiquityTuiController):
         self.loader = self._make_loader()
         self.loader.start()
 
-    async def make_ui(self):
-        data = await self.get_snap_list(wait=False)
-        if data.status == SnapCheckState.FAILED:
-            # If loading snaps failed or the network is disabled, skip the
-            # screen.
-            self.configured()
-            raise Skip()
-        return SnapListView(self, data)
+    def make_autoinstall(self):
+        return [attr.asdict(sel) for sel in self.model.selections]
 
-    def run_answers(self):
-        if 'snaps' in self.answers:
-            selections = []
-            for snap_name, selection in self.answers['snaps'].items():
-                selections.append(SnapSelection(name=snap_name, **selection))
-            self.done(selections)
-
-    async def get_snap_list(self, *, wait: bool) -> SnapListResponse:
+    async def GET(self, wait: bool = False) -> SnapListResponse:
         if self.loader.failed or not self.app.base_model.network.has_network:
+            self.configured()
             return SnapListResponse(status=SnapCheckState.FAILED)
         if not self.loader.snap_list_fetched and not wait:
             return SnapListResponse(status=SnapCheckState.LOADING)
@@ -187,19 +178,11 @@ class SnapListController(SubiquityTuiController):
             snaps=self.model.get_snap_list(),
             selections=self.model.selections)
 
-    def get_snap_info_task(self, snap):
-        return self.loader.get_snap_info_task(snap)
-
-    def done(self, selections: List[SnapSelection]):
-        log.debug(
-            "SnapListController.done next_screen snaps_to_install=%s",
-            selections)
-        self.model.set_installed_list(selections)
+    async def POST(self, data: List[SnapSelection]):
+        self.model.set_installed_list(data)
         self.configured()
-        self.app.next_screen()
 
-    def cancel(self, sender=None):
-        self.app.prev_screen()
-
-    def make_autoinstall(self):
-        return self.model.selections
+    async def snap_info_GET(self, snap_name: str) -> SnapInfo:
+        snap = self.model._snap_for_name(snap_name)
+        await self.loader.get_snap_info_task(snap)
+        return snap

@@ -128,6 +128,7 @@ class SubiquityServer(Application):
         "Filesystem",
         "Identity",
         "SSH",
+        "SnapList",
         "Install",
         "Late",
         ]

@@ -14,9 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .reboot import RebootController
-from .snaplist import SnapListController
 
 __all__ = [
     'RebootController',
-    'SnapListController',
 ]
