@@ -51,7 +51,7 @@ class WelcomeController(SubiquityTuiController):
         language = self.model.selected_language
         serial = self.app.opts.run_on_serial
         if serial:
-            ips = get_global_addresses()
+            ips = get_global_addresses(self.app)
         else:
             ips = None
         return WelcomeView(self, language, serial, ips)
