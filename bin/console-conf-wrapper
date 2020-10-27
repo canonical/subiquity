@@ -79,4 +79,8 @@ fi
 
 cat /usr/share/subiquity/console-conf-wait
 read REPLY
+# start the console-conf routine in snapd to delay any new refreshes, and wait
+# for current refreshes to complete, this will print off messages if there are
+# on-going refreshes
+snap routine console-conf-start
 exec console-conf "$@"
