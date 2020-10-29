@@ -162,6 +162,9 @@ class Subiquity(TuiApplication):
         self.global_overlays = []
         self.block_log_dir = block_log_dir
         self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
+        if "noinstall" in self.kernel_cmdline:
+          logging.Info("Exiting due to noinstall kernel parameter")
+          sys.exit(0)
         if opts.snaps_from_examples:
             connection = FakeSnapdConnection(
                 os.path.join(
