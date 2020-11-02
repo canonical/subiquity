@@ -82,5 +82,7 @@ read REPLY
 # start the console-conf routine in snapd to delay any new refreshes, and wait
 # for current refreshes to complete, this will print off messages if there are
 # on-going refreshes
-snap routine console-conf-start
+if snap routine console-conf-start --help >/dev/null 2>/dev/null; then
+    snap routine console-conf-start
+fi
 exec console-conf "$@"
