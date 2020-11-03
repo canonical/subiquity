@@ -186,5 +186,5 @@ mksquashfs new_installer new_iso/casper/installer.squashfs
     md5sum ./casper/installer.squashfs >> md5sum.txt
 )
 
-opts=$(xorriso -indev ${OLD_ISO} -report_el_torito as_mkisofs 2>/dev/null)
-xorriso -as mkisofs $opts -o ${NEW_ISO} -V Ubuntu\ custom new_iso
+eval set -- $(xorriso -indev ${OLD_ISO} -report_el_torito as_mkisofs 2>/dev/null)
+xorriso -as mkisofs "$@" -o ${NEW_ISO} -V Ubuntu\ custom new_iso
