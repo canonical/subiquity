@@ -17,7 +17,7 @@ import asyncio
 import json
 import logging
 
-import requests
+import aiohttp
 
 from urwid import (
     ProgressBar,
@@ -246,15 +246,11 @@ class RefreshView(BaseView):
     async def _update(self):
         try:
             change_id = await self.controller.start_update()
-        except requests.exceptions.RequestException as e:
+        except aiohttp.ClientError as e:
             self.update_failed(exc_message(e))
             return
         while True:
-            try:
-                change = await self.controller.get_progress(change_id)
-            except requests.exceptions.RequestException as e:
-                self.update_failed(exc_message(e))
-                return
+            change = await self.controller.get_progress(change_id)
             if change['status'] == 'Done':
                 # Clearly if we got here we didn't get restarted by
                 # snapd/systemctl (dry-run mode or logged in via SSH)

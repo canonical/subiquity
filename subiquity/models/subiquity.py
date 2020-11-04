@@ -136,27 +136,22 @@ class SubiquityModel:
         if model_name in INSTALL_MODEL_NAMES:
             unconfigured = {
                 mn for mn in INSTALL_MODEL_NAMES
-                if not self.is_configured(mn)
+                if not self._events[model_name].is_set()
                 }
         elif model_name in POSTINSTALL_MODEL_NAMES:
             unconfigured = {
                 mn for mn in POSTINSTALL_MODEL_NAMES
-                if not self.is_configured(mn)
+                if not self._events[model_name].is_set()
                 }
         log.debug("model %s is configured, to go %s", model_name, unconfigured)
 
-    def needs_confirmation(self, model_name):
+    def needs_configuration(self, model_name):
         if model_name is None:
             return False
-        if not all(e.is_set() for e in self.install_events):
-            return None
-        return not self.confirmation.is_set()
+        return not self._events[model_name].is_set()
 
     def confirm(self):
         self.confirmation.set()
-
-    def is_configured(self, model_name):
-        return self._events[model_name].is_set()
 
     def get_target_groups(self):
         command = ['chroot', self.target, 'getent', 'group']

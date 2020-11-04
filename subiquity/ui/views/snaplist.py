@@ -297,7 +297,7 @@ class SnapCheckBox(CheckBox):
         app = self.parent.controller.app
         await app.wait_with_text_dialog(
             asyncio.shield(
-                self.parent.controller.get_snap_info_task(self.snap)),
+                self.parent.controller.get_snap_info(self.snap)),
             _("Fetching info for {snap}").format(snap=self.snap.name),
             can_cancel=True)
         if len(self.snap.channels) == 0:  # or other indication of failure
@@ -357,7 +357,7 @@ class SnapListView(BaseView):
         # If we show the loading screen at all, we want to show it for
         # at least a second to avoid flickering at the user.
         min_wait = self.controller.app.aio_loop.create_task(asyncio.sleep(1))
-        data = await self.controller.get_snap_list(wait=True)
+        data = await self.controller.get_list_wait()
         await min_wait
         spinner.stop()
         if data.status == SnapCheckState.FAILED:

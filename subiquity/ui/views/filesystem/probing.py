@@ -67,8 +67,9 @@ class ProbingFailed(BaseView):
 
     title = _("Probing for devices to install to failed")
 
-    def __init__(self, controller):
+    def __init__(self, controller, error_ref):
         self.controller = controller
+        self.error_ref = error_ref
         super().__init__(screen([
             Text(_(fail_text)),
             Text(""),
@@ -81,5 +82,4 @@ class ProbingFailed(BaseView):
         self.controller.cancel()
 
     def show_error(self, sender=None):
-        self.controller.app.show_error_report(
-            self.controller._crash_reports[False])
+        self.controller.app.show_error_report(self.error_ref)

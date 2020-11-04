@@ -64,12 +64,6 @@ def make_client_args_parser():
     parser.add_argument('--unicode', action='store_false',
                         dest='ascii',
                         help='Run the installer in unicode mode.')
-    parser.add_argument('--machine-config', metavar='CONFIG',
-                        dest='machine_config',
-                        help="Don't Probe. Use probe data file")
-    parser.add_argument('--bootloader',
-                        choices=['none', 'bios', 'prep', 'uefi'],
-                        help='Override style of bootloader to use')
     parser.add_argument('--screens', action='append', dest='screens',
                         default=[])
     parser.add_argument('--script', metavar="SCRIPT", action='append',
@@ -79,29 +73,6 @@ def make_client_args_parser():
     parser.add_argument('--click', metavar="PAT", action=ClickAction,
                         help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
-    parser.add_argument('--autoinstall', action='store')
-    with open('/proc/cmdline') as fp:
-        cmdline = fp.read()
-    parser.add_argument('--kernel-cmdline', action='store', default=cmdline)
-    parser.add_argument('--source', default=[], action='append',
-                        dest='sources', metavar='URL',
-                        help='install from url instead of default.')
-    parser.add_argument(
-        '--snaps-from-examples', action='store_const', const=True,
-        dest="snaps_from_examples",
-        help=("Load snap details from examples/snaps instead of store. "
-              "Default in dry-run mode.  "
-              "See examples/snaps/README.md for more."))
-    parser.add_argument(
-        '--no-snaps-from-examples', action='store_const', const=False,
-        dest="snaps_from_examples",
-        help=("Load snap details from store instead of examples. "
-              "Default in when not in dry-run mode.  "
-              "See examples/snaps/README.md for more."))
-    parser.add_argument(
-        '--snap-section', action='store', default='server',
-        help=("Show snaps from this section of the store in the snap "
-              "list screen."))
     parser.add_argument('--server-pid')
     return parser
 
@@ -113,7 +84,7 @@ def main():
     setup_environment()
     # setup_environment sets $APPORT_DATA_DIR which must be set before
     # apport is imported, which is done by this import:
-    from subiquity.core import Subiquity
+    from subiquity.client.client import SubiquityClient
     parser = make_client_args_parser()
     args = sys.argv[1:]
     if '--dry-run' in args:
@@ -143,10 +114,8 @@ def main():
     os.makedirs(os.path.basename(opts.socket), exist_ok=True)
     logdir = LOGDIR
     if opts.dry_run:
-        if opts.snaps_from_examples is None:
-            opts.snaps_from_examples = True
         logdir = ".subiquity"
-    logfiles = setup_logger(dir=logdir, base='subiquity')
+    logfiles = setup_logger(dir=logdir, base='subiquity-client')
 
     logger = logging.getLogger('subiquity')
     version = os.environ.get("SNAP_REVISION", "unknown")
@@ -178,17 +147,6 @@ def main():
                 "cloud-init status: %r, assumed disabled",
                 status_txt)
 
-    block_log_dir = os.path.join(logdir, "block")
-    os.makedirs(block_log_dir, exist_ok=True)
-    handler = logging.FileHandler(os.path.join(block_log_dir, 'discover.log'))
-    handler.setLevel('DEBUG')
-    handler.setFormatter(
-        logging.Formatter("%(asctime)s %(name)s:%(lineno)d %(message)s"))
-    logging.getLogger('probert').addHandler(handler)
-    handler.addFilter(lambda rec: rec.name != 'probert.network')
-    logging.getLogger('curtin').addHandler(handler)
-    logging.getLogger('block-discover').addHandler(handler)
-
     if opts.ssh:
         from subiquity.ui.views.help import (
             ssh_help_texts, get_installer_password)
@@ -219,7 +177,7 @@ def main():
             opts.answers.close()
             opts.answers = None
 
-    subiquity_interface = Subiquity(opts, block_log_dir)
+    subiquity_interface = SubiquityClient(opts)
 
     subiquity_interface.note_file_for_apport(
         "InstallerLog", logfiles['debug'])

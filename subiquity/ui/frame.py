@@ -36,8 +36,6 @@ class SubiquityUI(SubiquityCoreUI):
             return super().keypress(size, key)
 
     def set_body(self, widget):
-        if widget is self.body:
-            return
         super().set_body(widget)
         if isinstance(widget, BaseView):
             for overlay in self.app.global_overlays:

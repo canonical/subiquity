@@ -129,12 +129,8 @@ class Application:
 
     def run(self):
         self.base_model = self.make_model()
-        try:
-            self.aio_loop.create_task(self.start())
-            self.aio_loop.run_forever()
-        finally:
-            self.aio_loop.run_until_complete(
-                self.aio_loop.shutdown_asyncgens())
+        self.aio_loop.create_task(self.start())
+        self.aio_loop.run_forever()
         if self._exc:
             exc, self._exc = self._exc, None
             raise exc

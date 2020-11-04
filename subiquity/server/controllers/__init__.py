@@ -12,3 +12,45 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from .cmdlist import EarlyController, LateController, ErrorController
+from .debconf import DebconfController
+from .filesystem import FilesystemController
+from .identity import IdentityController
+from .install import InstallController
+from .keyboard import KeyboardController
+from .locale import LocaleController
+from .mirror import MirrorController
+from .network import NetworkController
+from .package import PackageController
+from .proxy import ProxyController
+from .reboot import RebootController
+from .refresh import RefreshController
+from .reporting import ReportingController
+from .snaplist import SnapListController
+from .ssh import SSHController
+from .userdata import UserdataController
+from .zdev import ZdevController
+
+__all__ = [
+    'DebconfController',
+    'EarlyController',
+    'ErrorController',
+    'FilesystemController',
+    'IdentityController',
+    'InstallController',
+    'KeyboardController',
+    'LateController',
+    'LocaleController',
+    'MirrorController',
+    'NetworkController',
+    'PackageController',
+    'ProxyController',
+    'RebootController',
+    'RefreshController',
+    'ReportingController',
+    'SnapListController',
+    'SSHController',
+    'UserdataController',
+    'ZdevController',
+]

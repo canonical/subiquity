@@ -94,6 +94,7 @@ parts:
       - pyyaml
       - systemd-python
       - aiohttp
+      - yarl==1.5.1
       #- urwid
     source: .
     source-type: git
