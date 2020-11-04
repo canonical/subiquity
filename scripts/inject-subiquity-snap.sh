@@ -186,27 +186,5 @@ mksquashfs new_installer new_iso/casper/installer.squashfs
     md5sum ./casper/installer.squashfs >> md5sum.txt
 )
 
-if [ -e new_iso/boot/grub/efi.img ]; then
-    xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
-	    -V Ubuntu\ custom\ amd64 -o "${NEW_ISO}" -J -l \
-	    -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot \
-	    -boot-load-size 4 -boot-info-table \
-	    -eltorito-alt-boot -e boot/grub/efi.img -no-emul-boot \
-	    -isohybrid-gpt-basdat -isohybrid-apm-hfsplus \
-	    -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin  \
-	    new_iso
-fi
-
-if [ -e new_iso/boot/ubuntu.ikr ]; then
-    xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
-	    -V Ubuntu\ custom\ s390x -o "${NEW_ISO}" -J -l \
-	    -b boot/ubuntu.ikr -no-emul-boot \
-	    new_iso
-fi
-
-if [ -e new_iso/boot/grub/powerpc.elf ]; then
-    xorriso -as mkisofs -r -checksum_algorithm_iso md5,sha1 \
-	    -V Ubuntu\ custom\ ppc64 -o "${NEW_ISO}" -J -l \
-	    -chrp-boot-part \
-	    new_iso
-fi
+eval set -- $(xorriso -indev ${OLD_ISO} -report_el_torito as_mkisofs 2>/dev/null)
+xorriso -as mkisofs "$@" -o ${NEW_ISO} -V Ubuntu\ custom new_iso
