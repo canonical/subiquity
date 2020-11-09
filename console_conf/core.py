@@ -37,6 +37,10 @@ class ConsoleConf(TuiApplication):
         "Identity",
     ]
 
+    def __init__(self, opts):
+        super().__init__(opts)
+        self.prober = Prober(opts.machine_config, self.debug_flags)
+
 
 class RecoveryChooser(TuiApplication):
 

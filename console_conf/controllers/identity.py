@@ -208,6 +208,7 @@ class IdentityController(TuiController):
         ifaces = net_model.get_all_netdevs()
         login_view = LoginView(self.opts, self.model, self, ifaces)
         login_view._w.focus_position = 2
+        return login_view
 
     def login(self):
         self.ui.set_body(self.make_login_view())
