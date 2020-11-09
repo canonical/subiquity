@@ -25,7 +25,7 @@ install_deps:
 		python3-yaml python3-coverage python3-dev pkg-config libnl-genl-3-dev \
 		libnl-route-3-dev python3-attr python3-distutils-extra python3-requests \
 		python3-requests-unixsocket python3-jsonschema python3-curtin python3-apport \
-		python3-bson xorriso isolinux
+		python3-bson xorriso isolinux python3-aiohttp probert cloud-init ssh-import-id
 
 i18n:
 	$(PYTHON) setup.py build_i18n
@@ -54,7 +54,7 @@ flake8:
 
 unit:
 	echo "Running unit tests..."
-	$(PYTHON) -m nose $(CHECK_DIRS)
+	./scripts/runtests.sh
 
 check: unit
 
