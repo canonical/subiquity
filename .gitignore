@@ -68,3 +68,6 @@ venv
 
 # installer isos
 *.iso
+
+# Runtime output
+.subiquity
