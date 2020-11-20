@@ -636,12 +636,6 @@ class _Device(_Formattable, ABC):
     def ptable_for_new_partition(self):
         if self.ptable is not None:
             return self.ptable
-        for action in self._m._orig_config:
-            if action['id'] == self.id:
-                if action.get('ptable') == 'vtoc':
-                    return action['ptable']
-        if self.dasd() is not None:
-            return 'vtoc'
         return 'gpt'
 
     def partitions(self):
@@ -781,6 +775,17 @@ class Disk(_Device):
         }
         return dinfo
 
+    def ptable_for_new_partition(self):
+        if self.ptable is not None:
+            return self.ptable
+        dasd_config = self._m._probe_data.get('dasd', {}).get(self.path)
+        if dasd_config is not None:
+            if dasd_config['type'] == "FBA":
+                return 'msdos'
+            else:
+                return 'vtoc'
+        return 'gpt'
+
     @property
     def size(self):
         return align_down(self._info.size)
@@ -848,7 +853,10 @@ class Disk(_Device):
             return False
         if self.free_for_partitions <= 0:
             return False
-        if self.ptable == 'vtoc' and len(self._partitions) >= 3:
+        # We only create msdos partition tables with FBA dasds, which
+        # only support 3 partitions. As and when we support editing
+        # partition msdos tables we'll need to be more clever here.
+        if self.ptable in ['vtoc', 'msdos'] and len(self._partitions) >= 3:
             return False
         return True
 
