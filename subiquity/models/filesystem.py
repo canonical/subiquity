@@ -1655,6 +1655,24 @@ class FilesystemModel(object):
         return config
 
     def load_probe_data(self, probe_data):
+        for devname, devdata in probe_data['blockdev'].items():
+            if int(devdata['attrs']['size']) != 0:
+                continue
+            # An unformatted (ECKD) dasd reports a size of 0 via e.g. blockdev
+            # --getsize64. So figuring out how big it is requires a bit more
+            # work.
+            data = probe_data.get('dasd', {}).get(devname)
+            if data is None or data['type'] != 'ECKD':
+                continue
+            tracks_per_cylinder = data['tracks_per_cylinder']
+            cylinders = data['cylinders']
+            blocksize = 4096  # hard coded for us!
+            blocks_per_track = 12  # just a mystery fact that has to be known
+            size = \
+                blocksize * blocks_per_track * tracks_per_cylinder * cylinders
+            log.debug(
+                "computing size on unformatted dasd from %s as %s", data, size)
+            devdata['attrs']['size'] = str(size)
         self._probe_data = probe_data
         self.reset()
 
