@@ -16,6 +16,7 @@
 import argparse
 import logging
 import os
+import subprocess
 import sys
 import time
 
@@ -108,9 +109,15 @@ def main():
     logger.info("Starting Subiquity server revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
 
+    cloud_init_ok = True
     if not opts.dry_run:
         ci_start = time.time()
-        status_txt = run_command(["cloud-init", "status", "--wait"]).stdout
+        try:
+            status_txt = run_command(
+                ["cloud-init", "status", "--wait"], timeout=600).stdout
+        except subprocess.TimeoutExpired:
+            status_txt = '<timeout>'
+            cloud_init_ok = False
         logger.debug("waited %ss for cloud-init", time.time() - ci_start)
         if "status: done" in status_txt:
             logger.debug("loading cloud config")
@@ -133,7 +140,7 @@ def main():
                 "cloud-init status: %r, assumed disabled",
                 status_txt)
 
-    server = SubiquityServer(opts, block_log_dir)
+    server = SubiquityServer(opts, block_log_dir, cloud_init_ok)
 
     server.note_file_for_apport(
         "InstallerServerLog", logfiles['debug'])
