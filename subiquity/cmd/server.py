@@ -16,9 +16,14 @@
 import argparse
 import logging
 import os
+import subprocess
 import sys
+import time
+
+from cloudinit import atomic_helper, safeyaml, stages
 
 from subiquitycore.log import setup_logger
+from subiquitycore.utils import run_command
 
 from .common import (
     LOGDIR,
@@ -104,7 +109,38 @@ def main():
     logger.info("Starting Subiquity server revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
 
-    server = SubiquityServer(opts, block_log_dir)
+    cloud_init_ok = True
+    if not opts.dry_run:
+        ci_start = time.time()
+        try:
+            status_txt = run_command(
+                ["cloud-init", "status", "--wait"], timeout=600).stdout
+        except subprocess.TimeoutExpired:
+            status_txt = '<timeout>'
+            cloud_init_ok = False
+        logger.debug("waited %ss for cloud-init", time.time() - ci_start)
+        if "status: done" in status_txt:
+            logger.debug("loading cloud config")
+            init = stages.Init()
+            init.read_cfg()
+            init.fetch(existing="trust")
+            cloud = init.cloudify()
+            autoinstall_path = '/autoinstall.yaml'
+            if 'autoinstall' in cloud.cfg:
+                if not os.path.exists(autoinstall_path):
+                    atomic_helper.write_file(
+                        autoinstall_path,
+                        safeyaml.dumps(
+                            cloud.cfg['autoinstall']).encode('utf-8'),
+                        mode=0o600)
+            if os.path.exists(autoinstall_path):
+                opts.autoinstall = autoinstall_path
+        else:
+            logger.debug(
+                "cloud-init status: %r, assumed disabled",
+                status_txt)
+
+    server = SubiquityServer(opts, block_log_dir, cloud_init_ok)
 
     server.note_file_for_apport(
         "InstallerServerLog", logfiles['debug'])

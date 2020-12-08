@@ -35,6 +35,7 @@ class ApplicationState(enum.Enum):
 @attr.s(auto_attribs=True)
 class ApplicationStatus:
     state: ApplicationState
+    cloud_init_ok: bool
     early_commands_syslog_id: str
     log_syslog_id: str
     event_syslog_id: str

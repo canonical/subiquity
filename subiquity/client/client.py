@@ -54,6 +54,9 @@ from subiquity.ui.views.help import HelpMenu
 from subiquity.ui.views.installprogress import (
     InstallConfirmation,
     )
+from subiquity.ui.views.welcome import (
+    CloudInitFail,
+    )
 
 
 log = logging.getLogger('subiquity.client.client')
@@ -273,6 +276,8 @@ class SubiquityClient(TuiApplication):
                 self.aio_loop,
                 [status.log_syslog_id],
                 self.controllers.Progress.log_line)
+            if not status.cloud_init_ok:
+                self.add_global_overlay(CloudInitFail(self))
             self.error_reporter.load_reports()
             for report in self.error_reporter.reports:
                 if report.kind == ErrorReportKind.UI and not report.seen:

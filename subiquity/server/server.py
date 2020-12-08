@@ -74,6 +74,7 @@ class MetaController:
             await self.app.state_event.wait()
         return ApplicationStatus(
             self.app.state,
+            cloud_init_ok=self.app.cloud_init_ok,
             early_commands_syslog_id=self.app.early_commands_syslog_id,
             event_syslog_id=self.app.event_syslog_id,
             log_syslog_id=self.app.log_syslog_id)
@@ -140,9 +141,10 @@ class SubiquityServer(Application):
             root = os.path.abspath('.subiquity')
         return SubiquityModel(root, self.opts.sources)
 
-    def __init__(self, opts, block_log_dir):
+    def __init__(self, opts, block_log_dir, cloud_init_ok):
         super().__init__(opts)
         self.block_log_dir = block_log_dir
+        self.cloud_init_ok = cloud_init_ok
         self._state = ApplicationState.STARTING
         self.state_event = asyncio.Event()
         self.confirming_tty = ''

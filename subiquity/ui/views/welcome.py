@@ -25,6 +25,7 @@ from urwid import Text
 
 from subiquitycore.ui.buttons import forward_btn, other_btn
 from subiquitycore.ui.container import ListBox
+from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import button_pile, rewrap, screen
 from subiquitycore.screen import is_linux_tty
 from subiquitycore.view import BaseView
@@ -56,6 +57,13 @@ which uses unicode, colours and supports many languages.
 SSH_TEXT = """
 You can also connect to the installer over the network via SSH, which
 will allow use of rich mode.
+"""
+
+CLOUD_INIT_FAIL_TEXT = """
+cloud-init failed to complete after 10 minutes of waiting. This
+suggests a bug, which we would appreciate help understanding.  If you
+could file a bug at https://bugs.launchpad.net/subiquity/+filebug and
+attach the contents of /var/log, it would be most appreciated.
 """
 
 
@@ -157,3 +165,28 @@ class WelcomeView(BaseView):
 
     def local_help(self):
         return _("Help choosing a language"), _(HELP)
+
+
+class CloudInitFail(Stretchy):
+    def __init__(self, app):
+        self.app = app
+        self.shell_btn = other_btn(
+            _("Switch to a shell"), on_press=self._debug_shell)
+        self.close_btn = other_btn(
+            _("Close"), on_press=self._close)
+        widgets = [
+            Text(rewrap(_(CLOUD_INIT_FAIL_TEXT))),
+            Text(''),
+            button_pile([self.shell_btn, self.close_btn]),
+            ]
+        super().__init__(
+            "",
+            widgets,
+            stretchy_index=0,
+            focus_index=2)
+
+    def _debug_shell(self, sender):
+        self.app.debug_shell()
+
+    def _close(self, sender):
+        self.app.remove_global_overlay(self)
