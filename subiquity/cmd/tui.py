@@ -20,12 +20,8 @@ import os
 import fcntl
 import subprocess
 import sys
-import time
-
-from cloudinit import atomic_helper, safeyaml, stages
 
 from subiquitycore.log import setup_logger
-from subiquitycore.utils import run_command
 
 from .common import (
     LOGDIR,
@@ -121,31 +117,6 @@ def main():
     version = os.environ.get("SNAP_REVISION", "unknown")
     logger.info("Starting Subiquity revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
-
-    if not opts.dry_run:
-        ci_start = time.time()
-        status_txt = run_command(["cloud-init", "status", "--wait"]).stdout
-        logger.debug("waited %ss for cloud-init", time.time() - ci_start)
-        if "status: done" in status_txt:
-            logger.debug("loading cloud config")
-            init = stages.Init()
-            init.read_cfg()
-            init.fetch(existing="trust")
-            cloud = init.cloudify()
-            autoinstall_path = '/autoinstall.yaml'
-            if 'autoinstall' in cloud.cfg:
-                if not os.path.exists(autoinstall_path):
-                    atomic_helper.write_file(
-                        autoinstall_path,
-                        safeyaml.dumps(
-                            cloud.cfg['autoinstall']).encode('utf-8'),
-                        mode=0o600)
-            if os.path.exists(autoinstall_path):
-                opts.autoinstall = autoinstall_path
-        else:
-            logger.debug(
-                "cloud-init status: %r, assumed disabled",
-                status_txt)
 
     if opts.ssh:
         from subiquity.ui.views.help import (
