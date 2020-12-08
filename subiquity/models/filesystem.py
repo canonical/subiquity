@@ -1378,17 +1378,23 @@ class FilesystemModel(object):
     def _make_matchers(self, match):
         matchers = []
 
+        def _udev_val(disk, key):
+            return self._probe_data['blockdev'].get(disk.path, {}).get(key, '')
+
         def match_serial(disk):
-            if disk.serial is not None:
-                return fnmatch.fnmatchcase(disk.serial, match['serial'])
+            return fnmatch.fnmatchcase(
+               _udev_val(disk, "ID_SERIAL"), match['serial'])
 
         def match_model(disk):
-            if disk.model is not None:
-                return fnmatch.fnmatchcase(disk.model, match['model'])
+            return fnmatch.fnmatchcase(
+                _udev_val(disk, "ID_MODEL"), match['model'])
+
+        def match_vendor(disk):
+            return fnmatch.fnmatchcase(
+                _udev_val(disk, "ID_VENDOR"), match['vendor'])
 
         def match_path(disk):
-            if disk.path is not None:
-                return fnmatch.fnmatchcase(disk.path, match['path'])
+            return fnmatch.fnmatchcase(disk.path, match['path'])
 
         def match_ssd(disk):
             is_ssd = disk.info_for_display()['rotational'] == 'false'
@@ -1398,6 +1404,8 @@ class FilesystemModel(object):
             matchers.append(match_serial)
         if 'model' in match:
             matchers.append(match_model)
+        if 'vendor' in match:
+            matchers.append(match_vendor)
         if 'path' in match:
             matchers.append(match_path)
         if 'ssd' in match:

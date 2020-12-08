@@ -145,7 +145,7 @@ def make_disk(fs_model, **kw):
     if 'serial' not in kw:
         kw['serial'] = 'serial%s' % len(fs_model._actions)
     if 'path' not in kw:
-        kw['path'] = '/dev/thing'
+        kw['path'] = '/dev/thing%s' % len(fs_model._actions)
     if 'ptable' not in kw:
         kw['ptable'] = 'gpt'
     size = kw.pop('size', 100*(2**30))
@@ -856,6 +856,8 @@ def fake_up_blockdata(model):
     for disk in model.all_disks():
         bd[disk.path] = {
             'DEVTYPE': 'disk',
+            'ID_SERIAL': disk.serial,
+            'ID_MODEL': disk.model,
             'attrs': {
                 'size': disk.size,
                 },
