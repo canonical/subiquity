@@ -1742,7 +1742,8 @@ class FilesystemModel(object):
         device.ptable = device.ptable_for_new_partition()
         dasd = device.dasd()
         if dasd is not None:
-            dasd.device_layout = 'cdl'
+            dasd.disk_layout = 'cdl'
+            dasd.blocksize = 4096
             dasd.preserve = False
         self._actions.append(p)
         return p
