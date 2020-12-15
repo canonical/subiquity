@@ -88,10 +88,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug("self.ai_data = %s", data)
         self.ai_data = data
 
+    def configured(self):
+        super().configured()
+        self.stop_listening_udev()
+
     @with_context()
     async def apply_autoinstall_config(self, context=None):
         await self._start_task
-        self.stop_listening_udev()
         await self._probe_task.wait()
         self.convert_autoinstall_config(context=context)
         if not self.model.is_root_mounted():
