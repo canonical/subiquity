@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import inspect
 import logging
 import os
 import signal
@@ -403,10 +404,20 @@ class SubiquityClient(TuiApplication):
         log.debug("showing InstallConfirmation over %s", self.ui.body)
         self.add_global_overlay(InstallConfirmation(self))
 
+    async def _start_answers_for_view(self, controller, view):
+        # The view returned by make_view_for_controller is not always shown
+        # immediately (if progress is being shown, but has not yet been shown
+        # for a full second) so wait until it is before starting the answers.
+        while self.ui.body is not view:
+            await asyncio.sleep(0.1)
+        coro = controller.run_answers()
+        if inspect.iscoroutine(coro):
+            await coro
+
     async def make_view_for_controller(self, new):
         view = await super().make_view_for_controller(new)
         if new.answers:
-            self.aio_loop.call_soon(new.run_answers)
+            self.aio_loop.create_task(self._start_answers_for_view(new, view))
         with open(self.state_path('last-screen'), 'w') as fp:
             fp.write(new.name)
         return view
