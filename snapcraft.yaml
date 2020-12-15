@@ -42,7 +42,7 @@ parts:
     plugin: python
     source-type: git
     source: https://git.launchpad.net/curtin
-    source-branch: ubuntu/devel
+    source-commit: 6b34b6aa1b43becab5d50e90435ea7a9092dd38f
     requirements: [requirements.txt]
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
@@ -152,5 +152,5 @@ parts:
     build-packages: [python-setuptools, build-essential, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
     source: https://github.com/CanonicalLtd/probert.git
     source-type: git
-    source-commit: e34bee1a363615e71d38aff15d00e1837c62729b
+    source-commit: 844c957b7f61f78bbd814cceef87f0d8eb218675
     requirements: [requirements.txt]
