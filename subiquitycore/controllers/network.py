@@ -491,14 +491,13 @@ class BaseNetworkController(BaseController):
 
 class NetworkAnswersMixin:
 
-    def run_answers(self):
+    async def run_answers(self):
         if self.answers.get('accept-default', False):
             self.done()
         elif self.answers.get('actions', False):
             actions = self.answers['actions']
             self.answers.clear()
-            self.app.aio_loop.create_task(
-                self._run_actions(actions))
+            await self._run_actions(actions)
 
     def _action_get(self, id):
         dev_spec = id[0].split()

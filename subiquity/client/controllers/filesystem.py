@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 
 from subiquitycore.lsb_release import lsb_release
@@ -82,11 +83,13 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             self.supports_resilient_boot = release >= '20.04'
         if status.error_report:
             self.app.show_error_report(status.error_report)
-        if self.answers:
-            self.app.aio_loop.call_soon(self._start_answers)
         return GuidedDiskSelectionView(self)
 
-    def _start_answers(self):
+    async def run_answers(self):
+        # Wait for probing to finish.
+        while not isinstance(self.ui.body, GuidedDiskSelectionView):
+            await asyncio.sleep(0.1)
+
         if self.answers['guided']:
             disk = self.model.all_disks()[self.answers['guided-index']]
             method = self.answers.get('guided-method')
@@ -95,13 +98,12 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                 'use_lvm': method == "lvm",
                 }
             self.ui.body.done(self.ui.body.form)
+            await self.app.confirm_install()
+            self.finish()
         elif self.answers['manual']:
             self.manual()
-
-    def run_answers(self):
-        # Handled above as we only want to run answers when probing
-        # completes.
-        pass
+            await self._run_actions(self.answers['manual'])
+            self.answers['manual'] = []
 
     def _action_get(self, id):
         dev_spec = id[0].split()
@@ -207,17 +209,6 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
     def manual(self):
         self.ui.set_body(FilesystemView(self.model, self))
-        if self.answers['guided']:
-            async def t():
-                await self.app.confirm_install()
-                self.finish()
-            self.app.aio_loop.create_task(t())
-        if self.answers['manual']:
-            self.app.aio_loop.create_task(self._manual_answers())
-
-    async def _manual_answers(self):
-        await self._run_actions(self.answers['manual'])
-        self.answers['manual'] = []
 
     def guided(self):
         self.ui.set_body(GuidedDiskSelectionView(self))
