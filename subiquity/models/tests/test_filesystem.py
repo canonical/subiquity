@@ -851,18 +851,25 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertTrue(dos_esp.is_esp)
 
 
+def fake_up_blockdata_disk(disk, **kw):
+    model = disk._m
+    if model._probe_data is None:
+        model._probe_data = {}
+    blockdev = model._probe_data.setdefault('blockdev', {})
+    d = blockdev[disk.path] = {
+        'DEVTYPE': 'disk',
+        'ID_SERIAL': disk.serial,
+        'ID_MODEL': disk.model,
+        'attrs': {
+            'size': disk.size,
+            },
+        }
+    d.update(kw)
+
+
 def fake_up_blockdata(model):
-    bd = {}
     for disk in model.all_disks():
-        bd[disk.path] = {
-            'DEVTYPE': 'disk',
-            'ID_SERIAL': disk.serial,
-            'ID_MODEL': disk.model,
-            'attrs': {
-                'size': disk.size,
-                },
-            }
-    model._probe_data = {'blockdev': bd}
+        fake_up_blockdata_disk(disk)
 
 
 class TestAutoInstallConfig(unittest.TestCase):
@@ -941,9 +948,10 @@ class TestAutoInstallConfig(unittest.TestCase):
 
     def test_path_glob(self):
         model = make_model()
-        make_disk(model, serial='aaaa', path='/dev/aaa')
-        make_disk(model, serial='bbbb', path='/dev/bbb')
-        fake_up_blockdata(model)
+        d1 = make_disk(model, serial='aaaa', path='/dev/aaa')
+        d2 = make_disk(model, serial='bbbb', path='/dev/bbb')
+        fake_up_blockdata_disk(d1)
+        fake_up_blockdata_disk(d2)
         model.apply_autoinstall_config([
             {
                 'type': 'disk',
@@ -954,13 +962,14 @@ class TestAutoInstallConfig(unittest.TestCase):
             },
             ])
         new_disk = model._one(type="disk", id="disk0")
-        self.assertEqual(new_disk.serial, "aaaa")
+        self.assertEqual(new_disk.serial, d1.serial)
 
     def test_model_glob(self):
         model = make_model()
-        make_disk(model, serial='aaaa', model='aaa')
-        make_disk(model, serial='bbbb', model='bbb')
-        fake_up_blockdata(model)
+        d1 = make_disk(model, serial='aaaa')
+        d2 = make_disk(model, serial='bbbb')
+        fake_up_blockdata_disk(d1, ID_MODEL='aaa')
+        fake_up_blockdata_disk(d2, ID_MODEL='bbb')
         model.apply_autoinstall_config([
             {
                 'type': 'disk',
@@ -971,7 +980,25 @@ class TestAutoInstallConfig(unittest.TestCase):
             },
             ])
         new_disk = model._one(type="disk", id="disk0")
-        self.assertEqual(new_disk.serial, "aaaa")
+        self.assertEqual(new_disk.serial, d1.serial)
+
+    def test_vendor_glob(self):
+        model = make_model()
+        d1 = make_disk(model, serial='aaaa')
+        d2 = make_disk(model, serial='bbbb')
+        fake_up_blockdata_disk(d1, ID_VENDOR='aaa')
+        fake_up_blockdata_disk(d2, ID_VENDOR='bbb')
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'match': {
+                    'vendor': 'a*',
+                    },
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.serial, d1.serial)
 
     def test_no_matching_disk(self):
         model = make_model()
