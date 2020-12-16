@@ -31,7 +31,7 @@ class FilesystemViewTests(unittest.TestCase):
 
     def test_one_disk(self):
         model = mock.create_autospec(spec=FilesystemModel)
-        model._orig_config = []
+        model._probe_data = {}
         model._actions = []
         disk = Disk(
             m=model, serial="DISK-SERIAL", path='/dev/thing',
