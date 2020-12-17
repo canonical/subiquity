@@ -4,7 +4,7 @@ from unittest import mock
 from subiquitycore.testing import view_helpers
 
 from subiquity.client.controllers.progress import ProgressController
-from subiquity.common.types import InstallState
+from subiquity.common.types import ApplicationState
 from subiquity.ui.views.installprogress import ProgressView
 
 
@@ -28,7 +28,7 @@ class IdentityViewTests(unittest.TestCase):
         view = self.make_view()
         btn = view_helpers.find_button_matching(view, "^Reboot Now$")
         self.assertIs(btn, None)
-        view.update_for_state(InstallState.DONE)
+        view.update_for_state(ApplicationState.DONE)
         btn = view_helpers.find_button_matching(view, "^Reboot Now$")
         self.assertIsNot(btn, None)
         view_helpers.click(btn)

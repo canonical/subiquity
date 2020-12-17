@@ -21,7 +21,6 @@ import re
 import shutil
 import sys
 import tempfile
-from typing import Optional
 
 from curtin.commands.install import (
     ERROR_TARFILE,
@@ -40,14 +39,12 @@ from subiquitycore.utils import (
     astart_command,
     )
 
-from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.server.controller import (
     SubiquityController,
     )
 from subiquity.common.types import (
-    InstallState,
-    InstallStatus,
+    ApplicationState,
     )
 from subiquity.journald import journald_listen
 
@@ -75,14 +72,9 @@ class TracebackExtractor:
 
 class InstallController(SubiquityController):
 
-    endpoint = API.install
-
     def __init__(self, app):
         super().__init__(app)
         self.model = app.base_model
-        self._install_state = InstallState.NOT_STARTED
-        self._install_state_event = asyncio.Event()
-        self.error_ref = None
 
         self.unattended_upgrades_proc = None
         self.unattended_upgrades_ctx = None
@@ -90,48 +82,27 @@ class InstallController(SubiquityController):
         self.tb_extractor = TracebackExtractor()
         self.curtin_event_contexts = {}
 
-    def interactive(self):
-        return True
-
-    async def status_GET(
-            self, cur: Optional[InstallState] = None) -> InstallStatus:
-        if cur == self.install_state:
-            await self._install_state_event.wait()
-        return InstallStatus(
-            self.install_state,
-            self.app.confirming_tty,
-            self.error_ref)
-
     def stop_uu(self):
-        if self.install_state == InstallState.UU_RUNNING:
-            self.update_state(InstallState.UU_CANCELLING)
+        if self.app.state == ApplicationState.UU_RUNNING:
+            self.app.update_state(ApplicationState.UU_CANCELLING)
             self.app.aio_loop.create_task(self.stop_unattended_upgrades())
 
     def start(self):
         self.install_task = self.app.aio_loop.create_task(self.install())
 
-    @property
-    def install_state(self):
-        return self._install_state
-
-    def update_state(self, state):
-        self._install_state_event.set()
-        self._install_state_event.clear()
-        self._install_state = state
-
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
 
     def curtin_error(self):
-        self.update_state(InstallState.ERROR)
         kw = {}
         if sys.exc_info()[0] is not None:
             log.exception("curtin_error")
             # send traceback.format_exc() to journal?
         if self.tb_extractor.traceback:
             kw["Traceback"] = "\n".join(self.tb_extractor.traceback)
-        self.error_ref = self.app.make_apport_report(
-            ErrorReportKind.INSTALL_FAIL, "install failed", **kw).ref()
+        self.app.fatal_error = self.app.make_apport_report(
+            ErrorReportKind.INSTALL_FAIL, "install failed", **kw)
+        self.app.update_state(ApplicationState.ERROR)
 
     def logged_command(self, cmd):
         return ['systemd-cat', '--level-prefix=false',
@@ -254,15 +225,15 @@ class InstallController(SubiquityController):
         try:
             await asyncio.wait({e.wait() for e in self.model.install_events})
 
-            if not self.app.interactive():
+            if not self.app.interactive:
                 if 'autoinstall' in self.app.kernel_cmdline:
                     self.model.confirm()
 
-            self.update_state(InstallState.NEEDS_CONFIRMATION)
+            self.app.update_state(ApplicationState.NEEDS_CONFIRMATION)
 
             await self.model.confirmation.wait()
 
-            self.update_state(InstallState.RUNNING)
+            self.app.update_state(ApplicationState.RUNNING)
 
             if os.path.exists(self.model.target):
                 await self.unmount_target(
@@ -270,22 +241,22 @@ class InstallController(SubiquityController):
 
             await self.curtin_install(context=context)
 
-            self.update_state(InstallState.POST_WAIT)
+            self.app.update_state(ApplicationState.POST_WAIT)
 
             await asyncio.wait(
                 {e.wait() for e in self.model.postinstall_events})
 
             await self.drain_curtin_events(context=context)
 
-            self.update_state(InstallState.POST_RUNNING)
+            self.app.update_state(ApplicationState.POST_RUNNING)
 
             await self.postinstall(context=context)
 
             if self.model.network.has_network:
-                self.update_state(InstallState.UU_RUNNING)
+                self.app.update_state(ApplicationState.UU_RUNNING)
                 await self.run_unattended_upgrades(context=context)
 
-            self.update_state(InstallState.DONE)
+            self.app.update_state(ApplicationState.DONE)
         except Exception:
             self.curtin_error()
 

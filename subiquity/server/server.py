@@ -47,7 +47,6 @@ from subiquity.common.types import (
     ApplicationState,
     ApplicationStatus,
     ErrorReportRef,
-    InstallState,
     )
 from subiquity.server.controller import SubiquityController
 from subiquity.models.subiquity import SubiquityModel
@@ -73,8 +72,11 @@ class MetaController:
         if cur == self.app.state:
             await self.app.state_event.wait()
         return ApplicationStatus(
-            self.app.state,
+            state=self.app.state,
+            confirming_tty=self.app.confirming_tty,
+            error=self.app.fatal_error,
             cloud_init_ok=self.app.cloud_init_ok,
+            interactive=self.app.interactive,
             echo_syslog_id=self.app.echo_syslog_id,
             event_syslog_id=self.app.event_syslog_id,
             log_syslog_id=self.app.log_syslog_id)
@@ -145,9 +147,11 @@ class SubiquityServer(Application):
         super().__init__(opts)
         self.block_log_dir = block_log_dir
         self.cloud_init_ok = cloud_init_ok
-        self._state = ApplicationState.STARTING
+        self._state = ApplicationState.STARTING_UP
         self.state_event = asyncio.Event()
+        self.interactive = None
         self.confirming_tty = ''
+        self.fatal_error = None
 
         self.echo_syslog_id = 'subiquity_echo.{}'.format(os.getpid())
         self.event_syslog_id = 'subiquity_event.{}'.format(os.getpid())
@@ -184,14 +188,14 @@ class SubiquityServer(Application):
         self.event_listeners.append(listener)
 
     def _maybe_push_to_journal(self, event_type, context, description):
-        if not context.get('is-install-context') and self.interactive():
+        if not context.get('is-install-context') and self.interactive:
             controller = context.get('controller')
             if controller is None or controller.interactive():
                 return
         if context.get('request'):
             return
         indent = context.full_name().count('/') - 2
-        if context.get('is-install-context') and self.interactive():
+        if context.get('is-install-context') and self.interactive:
             indent -= 1
             msg = context.description
         else:
@@ -241,20 +245,14 @@ class SubiquityServer(Application):
         return self.error_reporter.make_apport_report(
             kind, thing, wait=wait, **kw)
 
-    def interactive(self):
-        if not self.autoinstall_config:
-            return True
-        return bool(self.autoinstall_config.get('interactive-sections'))
-
     @web.middleware
     async def middleware(self, request, handler):
         override_status = None
         controller = await controller_for_request(request)
         if isinstance(controller, SubiquityController):
-            install_state = self.controllers.Install.install_state
             if not controller.interactive():
                 override_status = 'skip'
-            elif install_state == InstallState.NEEDS_CONFIRMATION:
+            elif self.state == ApplicationState.NEEDS_CONFIRMATION:
                 if self.base_model.needs_configuration(controller.model_name):
                     override_status = 'confirm'
         if override_status is not None:
@@ -326,18 +324,19 @@ class SubiquityServer(Application):
         if self.autoinstall_config and self.controllers.Early.cmds:
             stamp_file = self.state_path("early-commands")
             if not os.path.exists(stamp_file):
-                self.update_state(ApplicationState.EARLY_COMMANDS)
                 await self.controllers.Early.run()
                 open(stamp_file, 'w').close()
+                await asyncio.sleep(1)
         self.load_autoinstall_config(only_early=False)
-        if not self.interactive() and not self.opts.dry_run:
+        if self.autoinstall_config:
+            self.interactive = bool(
+                self.autoinstall_config.get('interactive-sections'))
+        else:
+            self.interactive = True
+        if not self.interactive and not self.opts.dry_run:
             open('/run/casper-no-prompt', 'w').close()
         self.load_serialized_state()
-        if self.interactive():
-            self.update_state(ApplicationState.INTERACTIVE)
-        else:
-            self.update_state(ApplicationState.NON_INTERACTIVE)
-            await asyncio.sleep(1)
+        self.update_state(ApplicationState.WAITING)
         await super().start()
         await self.apply_autoinstall_config()
 
