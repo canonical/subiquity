@@ -245,6 +245,20 @@ class SubiquityServer(Application):
         return self.error_reporter.make_apport_report(
             kind, thing, wait=wait, **kw)
 
+    def _exception_handler(self, loop, context):
+        exc = context.get('exception')
+        if exc is None:
+            super()._exception_handler(loop, context)
+            return
+        report = self.error_reporter.report_for_exc(exc)
+        log.error("top level error", exc_info=exc)
+        if not report:
+            report = self.make_apport_report(
+                ErrorReportKind.UNKNOWN, "unknown error",
+                exc=exc)
+        self.fatal_error = report
+        self.update_state(ApplicationState.ERROR)
+
     @web.middleware
     async def middleware(self, request, handler):
         override_status = None
