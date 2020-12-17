@@ -75,7 +75,7 @@ class MetaController:
         return ApplicationStatus(
             self.app.state,
             cloud_init_ok=self.app.cloud_init_ok,
-            early_commands_syslog_id=self.app.early_commands_syslog_id,
+            echo_syslog_id=self.app.echo_syslog_id,
             event_syslog_id=self.app.event_syslog_id,
             log_syslog_id=self.app.log_syslog_id)
 
@@ -149,8 +149,7 @@ class SubiquityServer(Application):
         self.state_event = asyncio.Event()
         self.confirming_tty = ''
 
-        self.early_commands_syslog_id = 'subiquity_commands.{}'.format(
-            os.getpid())
+        self.echo_syslog_id = 'subiquity_echo.{}'.format(os.getpid())
         self.event_syslog_id = 'subiquity_event.{}'.format(os.getpid())
         self.log_syslog_id = 'subiquity_log.{}'.format(os.getpid())
 
