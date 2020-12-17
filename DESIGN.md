@@ -358,6 +358,51 @@ enum, so the client gets notified via long-polling `meta.status.GET()`
 of progress. In addition, `ApplicationState.ERROR` indicates something
 has gone wrong.
 
+### Error handling
+
+As hard as it is to believe, things do go wrong during
+installation. It was helpful to me when working on this to categorize
+4 kinds of error:
+
+ * **immediate** errors need to be shown to the user immediately and
+   mean no further progress can be made.
+   * The installation failing is the canonical example of this.
+   * Other immediate errors include:
+     * A bug leading to an unhandled exception in the server process.
+     * The autoinstall.yaml file not being valid yaml.
+     * The autoinstall config failing schema validation.
+     * An early-command failing.
+     * A late-command failing.
+   * An immediate error results in the error-commands from the
+     autoinstall config, if any, being run.
+ * **delayed** errors are not shown to the user until they become critical.
+   * The only example of this at the time of writing is block probe
+     errors. These are not reported until the filesystem screen, at
+     least in part because a snap update may resolve them, so the user
+     needs to be able to get to that screen before being bothered about them.
+   * When the filesystem screen is not interactive, these errors
+     errors are handled as if an immediate error occured when the
+     filesystem config is needed.
+ * **API** errors are when an exception occurs while handling an API
+   call from the client.
+   * These are always bugs and perhaps could be handled as immediate
+     errors but it is easy to let the user try something else in this
+     context so we do that.
+   * For a non-interactive install, the client does not make API calls
+     (well apart from the status-tracking one: if that fails, the
+     client treats it as an internal error) so no special handling is
+     required.
+ * **client** errors are when a bug in the client leads to an
+   unhandled error.
+
+All of these errors result in an error report (using the same format
+as apport) being generated, before the error-commands (if any) are
+run.
+
+Some things that could be considered "errors", like failing to contact
+the snap store are ignored and not presented to the user, instead the
+relevant screens are skipped.
+
 ### Refreshing the snap
 
 The installer checks for a snap update and offers it to the user if one is

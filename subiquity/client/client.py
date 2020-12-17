@@ -297,8 +297,9 @@ class SubiquityClient(TuiApplication):
             log.debug('ignoring %s %s during restart', exc, type(exc))
             return
         if isinstance(exc, Abort):
-            self.show_error_report(exc.error_report_ref)
-            return
+            if self.interactive:
+                self.show_error_report(exc.error_report_ref)
+                return
         super()._exception_handler(loop, context)
 
     def extra_urwid_loop_args(self):
