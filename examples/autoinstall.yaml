@@ -26,6 +26,10 @@ late-commands:
   - echo late
   - sleep 1
   - echo late
+error-commands:
+  - echo OH NOES
+  - sleep 5
+  - echo OH WELL
 keyboard:
   layout: gb
 identity:

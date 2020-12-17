@@ -152,6 +152,7 @@ class SubiquityServer(Application):
         self.interactive = None
         self.confirming_tty = ''
         self.fatal_error = None
+        self.running_error_commands = False
 
         self.echo_syslog_id = 'subiquity_echo.{}'.format(os.getpid())
         self.event_syslog_id = 'subiquity_event.{}'.format(os.getpid())
@@ -245,6 +246,12 @@ class SubiquityServer(Application):
         return self.error_reporter.make_apport_report(
             kind, thing, wait=wait, **kw)
 
+    async def _run_error_cmds(self, report):
+        await report._info_task
+        Error = getattr(self.controllers, "Error", None)
+        if Error is not None and Error.cmds:
+            await Error.run()
+
     def _exception_handler(self, loop, context):
         exc = context.get('exception')
         if exc is None:
@@ -258,6 +265,9 @@ class SubiquityServer(Application):
                 exc=exc)
         self.fatal_error = report
         self.update_state(ApplicationState.ERROR)
+        if not self.running_error_commands:
+            self.running_error_commands = True
+            self.aio_loop.create_task(self._run_error_cmds(report))
 
     @web.middleware
     async def middleware(self, request, handler):

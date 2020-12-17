@@ -319,11 +319,6 @@ class SubiquityClient(TuiApplication):
             except Exception:
                 print("report generation failed")
                 traceback.print_exc()
-            Error = getattr(self.controllers, "Error", None)
-            if Error is not None and Error.cmds:
-                new_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(new_loop)
-                new_loop.run_until_complete(Error.run())
             if self.interactive:
                 self._remove_last_screen()
                 raise
