@@ -68,7 +68,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             name = self.opts.bootloader.upper()
             self.model.bootloader = getattr(Bootloader, name)
         self._monitor = None
-        self._crash_reports = {}
+        self._errors = {}
         self._probe_once_task = SingleInstanceTask(
             self._probe_once, propagate_errors=False)
         self._probe_task = SingleInstanceTask(
@@ -96,6 +96,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def apply_autoinstall_config(self, context=None):
         await self._start_task
         await self._probe_task.wait()
+        if False in self._errors:
+            raise self._errors[False][0]
+        if True in self._errors:
+            raise self._errors[True][0]
         self.convert_autoinstall_config(context=context)
         if not self.model.is_root_mounted():
             raise Exception("autoinstall config did not mount root")
@@ -111,13 +115,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 await self._probe_task.wait()
             else:
                 return StorageResponse(status=ProbeStatus.PROBING)
-        if True in self._crash_reports:
+        if True in self._errors:
             return StorageResponse(
                 status=ProbeStatus.FAILED,
-                error_report=self._crash_reports[True].ref())
+                error_report=self._errors[True][1].ref())
         else:
-            if False in self._crash_reports:
-                err_ref = self._crash_reports[False].ref()
+            if False in self._errors:
+                err_ref = self._errors[False][1].ref()
             else:
                 err_ref = None
             return StorageResponse(
@@ -158,7 +162,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     @with_context()
     async def _probe(self, *, context=None):
-        self._crash_reports = {}
+        self._errors = {}
         for (restricted, kind) in [
                 (False, ErrorReportKind.BLOCK_PROBE_FAIL),
                 (True,  ErrorReportKind.DISK_PROBE_FAIL),
@@ -174,12 +178,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 # asyncio.CancelledError is a subclass of Exception in
                 # Python 3.6 (sadface)
                 raise
-            except Exception:
+            except Exception as exc:
                 block_discover_log.exception(
                     "block probing failed restricted=%s", restricted)
                 report = self.app.make_apport_report(kind, "block probing")
                 if report is not None:
-                    self._crash_reports[restricted] = report
+                    self._errors[restricted] = (exc, report)
                 continue
             break
 
