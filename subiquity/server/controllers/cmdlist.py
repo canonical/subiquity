@@ -37,7 +37,7 @@ class CmdListController(NonInteractiveController):
         }
     cmds = ()
     cmd_check = True
-    send_to_journal = False
+    syslog_id = None
 
     def __init__(self, app):
         super().__init__(app)
@@ -60,13 +60,12 @@ class CmdListController(NonInteractiveController):
             with context.child("command_{}".format(i), desc):
                 if isinstance(cmd, str):
                     cmd = ['sh', '-c', cmd]
-                if self.send_to_journal:
+                if self.syslog_id is not None:
                     journal.send(
-                        "  running " + desc,
-                        SYSLOG_IDENTIFIER=self.app.early_commands_syslog_id)
+                        "  running " + desc, SYSLOG_IDENTIFIER=self.syslog_id)
                     cmd = [
                         'systemd-cat', '--level-prefix=false',
-                        '--identifier=' + self.app.early_commands_syslog_id,
+                        '--identifier=' + self.syslog_id,
                         ] + cmd
                 await arun_command(
                     cmd, env=env,
@@ -78,12 +77,19 @@ class CmdListController(NonInteractiveController):
 class EarlyController(CmdListController):
 
     autoinstall_key = 'early-commands'
-    send_to_journal = True
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.syslog_id = app.echo_syslog_id
 
 
 class LateController(CmdListController):
 
     autoinstall_key = 'late-commands'
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.syslog_id = app.log_syslog_id
 
     def env(self):
         env = super().env()
@@ -104,3 +110,11 @@ class ErrorController(CmdListController):
 
     autoinstall_key = 'error-commands'
     cmd_check = False
+
+    @with_context()
+    async def run(self, context):
+        if self.app.interactive():
+            self.syslog_id = self.app.log_syslog_id
+        else:
+            self.syslog_id = self.app.echo_syslog_id
+        await super().run(context=context)

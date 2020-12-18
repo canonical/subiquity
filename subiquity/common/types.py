@@ -36,7 +36,7 @@ class ApplicationState(enum.Enum):
 class ApplicationStatus:
     state: ApplicationState
     cloud_init_ok: bool
-    early_commands_syslog_id: str
+    echo_syslog_id: str
     log_syslog_id: str
     event_syslog_id: str
 

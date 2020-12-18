@@ -245,7 +245,10 @@ class SubiquityClient(TuiApplication):
             else:
                 break
         print()
-        self.event_syslog_id = status.event_syslog_id
+        journald_listen(
+            self.aio_loop,
+            [status.echo_syslog_id],
+            lambda e: print(e['MESSAGE']))
         if status.state == ApplicationState.STARTING:
             print("server is starting...", end='', flush=True)
             while status.state == ApplicationState.STARTING:
@@ -255,13 +258,8 @@ class SubiquityClient(TuiApplication):
             print()
         if status.state == ApplicationState.EARLY_COMMANDS:
             print("running early commands...")
-            fd = journald_listen(
-                self.aio_loop,
-                [status.early_commands_syslog_id],
-                lambda e: print(e['MESSAGE']))
-            status.state = await self.client.meta.status.GET(cur=status.state)
+            status = await self.client.meta.status.GET(cur=status.state)
             await asyncio.sleep(0.5)
-            self.aio_loop.remove_reader(fd)
         return status
 
     async def start(self):
