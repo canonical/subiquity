@@ -71,7 +71,7 @@ class RefreshController(SubiquityController):
     @property
     def active(self):
         if 'update' in self.ai_data:
-            return True
+            return self.ai_data['update']
         else:
             return self.interactive()
 
