@@ -93,17 +93,6 @@ class InstallController(SubiquityController):
     def tpath(self, *path):
         return os.path.join(self.model.target, *path)
 
-    def curtin_error(self):
-        kw = {}
-        if sys.exc_info()[0] is not None:
-            log.exception("curtin_error")
-            # send traceback.format_exc() to journal?
-        if self.tb_extractor.traceback:
-            kw["Traceback"] = "\n".join(self.tb_extractor.traceback)
-        self.app.fatal_error = self.app.make_apport_report(
-            ErrorReportKind.INSTALL_FAIL, "install failed", **kw)
-        self.app.update_state(ApplicationState.ERROR)
-
     def logged_command(self, cmd):
         return ['systemd-cat', '--level-prefix=false',
                 '--identifier=' + self.app.log_syslog_id] + cmd
@@ -258,7 +247,12 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.DONE)
         except Exception:
-            self.curtin_error()
+            kw = {}
+            if self.tb_extractor.traceback:
+                kw["Traceback"] = "\n".join(self.tb_extractor.traceback)
+            self.app.make_apport_report(
+                ErrorReportKind.INSTALL_FAIL, "install failed", **kw)
+            raise
 
     async def drain_curtin_events(self, *, context):
         waited = 0.0

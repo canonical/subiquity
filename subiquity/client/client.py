@@ -297,8 +297,9 @@ class SubiquityClient(TuiApplication):
             log.debug('ignoring %s %s during restart', exc, type(exc))
             return
         if isinstance(exc, Abort):
-            self.show_error_report(exc.error_report_ref)
-            return
+            if self.interactive:
+                self.show_error_report(exc.error_report_ref)
+                return
         super()._exception_handler(loop, context)
 
     def extra_urwid_loop_args(self):
@@ -318,11 +319,6 @@ class SubiquityClient(TuiApplication):
             except Exception:
                 print("report generation failed")
                 traceback.print_exc()
-            Error = getattr(self.controllers, "Error", None)
-            if Error is not None and Error.cmds:
-                new_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(new_loop)
-                new_loop.run_until_complete(Error.run())
             if self.interactive:
                 self._remove_last_screen()
                 raise
