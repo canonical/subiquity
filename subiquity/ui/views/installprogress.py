@@ -33,7 +33,7 @@ from subiquitycore.ui.utils import button_pile, Padding, rewrap
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.width import widget_width
 
-from subiquity.common.types import InstallState
+from subiquity.common.types import ApplicationState
 
 
 log = logging.getLogger("subiquity.views.installprogress")
@@ -138,22 +138,22 @@ class ProgressView(BaseView):
         self._set_button_width()
 
     def update_for_state(self, state):
-        if state == InstallState.NOT_STARTED:
+        if state == ApplicationState.WAITING:
             self.title = _("Installing system")
             btns = []
-        elif state == InstallState.NEEDS_CONFIRMATION:
+        elif state == ApplicationState.NEEDS_CONFIRMATION:
             self.title = _("Installing system")
             btns = []
-        elif state == InstallState.RUNNING:
+        elif state == ApplicationState.RUNNING:
             self.title = _("Installing system")
             btns = [self.view_log_btn]
-        elif state == InstallState.POST_WAIT:
+        elif state == ApplicationState.POST_WAIT:
             self.title = _("Installing system")
             btns = [self.view_log_btn]
-        elif state == InstallState.POST_RUNNING:
+        elif state == ApplicationState.POST_RUNNING:
             self.title = _("Installing system")
             btns = [self.view_log_btn]
-        elif state == InstallState.UU_RUNNING:
+        elif state == ApplicationState.UU_RUNNING:
             self.title = _("Install complete!")
             self.reboot_btn.base_widget.set_label(
                 _("Cancel update and reboot"))
@@ -161,7 +161,7 @@ class ProgressView(BaseView):
                 self.view_log_btn,
                 self.reboot_btn,
                 ]
-        elif state == InstallState.UU_CANCELLING:
+        elif state == ApplicationState.UU_CANCELLING:
             self.title = _("Install complete!")
             self.reboot_btn.base_widget.set_label(_("Rebooting..."))
             self.reboot_btn.enabled = False
@@ -169,14 +169,14 @@ class ProgressView(BaseView):
                 self.view_log_btn,
                 self.reboot_btn,
                 ]
-        elif state == InstallState.DONE:
+        elif state == ApplicationState.DONE:
             self.title = _("Install complete!")
             self.reboot_btn.base_widget.set_label(_("Reboot Now"))
             btns = [
                 self.view_log_btn,
                 self.reboot_btn,
                 ]
-        elif state == InstallState.ERROR:
+        elif state == ApplicationState.ERROR:
             self.title = _('An error occurred during installation')
             self.reboot_btn.base_widget.set_label(_("Reboot Now"))
             self.reboot_btn.enabled = True

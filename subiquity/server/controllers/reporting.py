@@ -69,7 +69,7 @@ class ReportingController(NonInteractiveController):
         app.add_event_listener(self)
 
     def load_autoinstall_data(self, data):
-        if self.app.interactive():
+        if self.app.interactive:
             return
         self.config.update(copy.deepcopy(NON_INTERACTIVE_CONFIG))
         if data is not None:

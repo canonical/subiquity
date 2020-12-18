@@ -25,22 +25,6 @@ from typing import List, Optional
 import attr
 
 
-class ApplicationState(enum.Enum):
-    STARTING = enum.auto()
-    EARLY_COMMANDS = enum.auto()
-    INTERACTIVE = enum.auto()
-    NON_INTERACTIVE = enum.auto()
-
-
-@attr.s(auto_attribs=True)
-class ApplicationStatus:
-    state: ApplicationState
-    cloud_init_ok: bool
-    echo_syslog_id: str
-    log_syslog_id: str
-    event_syslog_id: str
-
-
 class ErrorReportState(enum.Enum):
     INCOMPLETE = enum.auto()
     LOADING = enum.auto()
@@ -66,6 +50,31 @@ class ErrorReportRef:
     kind: ErrorReportKind
     seen: bool
     oops_id: Optional[str]
+
+
+class ApplicationState(enum.Enum):
+    STARTING_UP = enum.auto()
+    WAITING = enum.auto()
+    NEEDS_CONFIRMATION = enum.auto()
+    RUNNING = enum.auto()
+    POST_WAIT = enum.auto()
+    POST_RUNNING = enum.auto()
+    UU_RUNNING = enum.auto()
+    UU_CANCELLING = enum.auto()
+    DONE = enum.auto()
+    ERROR = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class ApplicationStatus:
+    state: ApplicationState
+    confirming_tty: str
+    error: Optional[ErrorReportRef]
+    cloud_init_ok: bool
+    interactive: Optional[bool]
+    echo_syslog_id: str
+    log_syslog_id: str
+    event_syslog_id: str
 
 
 class RefreshCheckState(enum.Enum):
@@ -195,22 +204,3 @@ class SnapListResponse:
     status: SnapCheckState
     snaps: List[SnapInfo] = attr.Factory(list)
     selections: List[SnapSelection] = attr.Factory(list)
-
-
-class InstallState(enum.Enum):
-    NOT_STARTED = enum.auto()
-    NEEDS_CONFIRMATION = enum.auto()
-    RUNNING = enum.auto()
-    POST_WAIT = enum.auto()
-    POST_RUNNING = enum.auto()
-    UU_RUNNING = enum.auto()
-    UU_CANCELLING = enum.auto()
-    DONE = enum.auto()
-    ERROR = enum.auto()
-
-
-@attr.s(auto_attribs=True)
-class InstallStatus:
-    state: InstallState
-    confirming_tty: str = ''
-    error: Optional[ErrorReportRef] = None

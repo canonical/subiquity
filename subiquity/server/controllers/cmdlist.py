@@ -21,7 +21,7 @@ from systemd import journal
 from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command
 
-from subiquity.common.types import InstallState
+from subiquity.common.types import ApplicationState
 from subiquity.server.controller import NonInteractiveController
 
 
@@ -102,7 +102,7 @@ class LateController(CmdListController):
     async def _run(self):
         Install = self.app.controllers.Install
         await Install.install_task
-        if Install.install_state == InstallState.DONE:
+        if self.app.state == ApplicationState.DONE:
             await self.run()
 
 
@@ -113,7 +113,7 @@ class ErrorController(CmdListController):
 
     @with_context()
     async def run(self, context):
-        if self.app.interactive():
+        if self.app.interactive:
             self.syslog_id = self.app.log_syslog_id
         else:
             self.syslog_id = self.app.echo_syslog_id

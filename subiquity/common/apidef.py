@@ -29,8 +29,6 @@ from subiquity.common.types import (
     ErrorReportRef,
     KeyboardSetting,
     IdentityData,
-    InstallState,
-    InstallStatus,
     RefreshStatus,
     SnapInfo,
     SnapListResponse,
@@ -79,6 +77,7 @@ class API:
         class crash:
             def GET() -> None:
                 """Requests to this method will fail with a HTTP 500."""
+
     class refresh:
         def GET(wait: bool = False) -> RefreshStatus:
             """Get information about the snap refresh status.
@@ -181,10 +180,6 @@ class API:
 
         class snap_info:
             def GET(snap_name: str) -> SnapInfo: ...
-
-    class install:
-        class status:
-            def GET(cur: Optional[InstallState] = None) -> InstallStatus: ...
 
     class reboot:
         def POST(): ...

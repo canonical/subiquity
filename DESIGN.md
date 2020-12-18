@@ -168,8 +168,8 @@ The API takes a "long poll" approach to status updates. For example,
 `wait=False` and if the result indicates that the check for updates is still in
 progress it shows a screen indicating this and calls it again with `wait=True`,
 which will not return until the check has completed (or failed). In a similar
-vein, `install.status.GET()` takes an argument indicating what the client
-thinks the install state currently is and will block until that changes.
+vein, `meta.status.GET()` takes an argument indicating what the client
+thinks the application state currently is and will block until that changes.
 
 ### Examples and common patterns
 
@@ -332,24 +332,31 @@ controllers have methods that are called to load and apply the autoinstall data
 for each controller. The only real difference to the client is that it behaves
 totally differently if the install is to be totally automated: in this case it
 does not start the urwid-based UI at all and mostly just "listens" to install
-progress via journald and the `install.status.GET()` API call.
+progress via journald and the `meta.status.GET()` API call.
 
-### Starting and confirming the install
+### The server state machine
 
-The installation code proceeds in stages:
+The server code proceeds in stages:
 
- 1. First it waits for all the model objects that feed into the curtin config
-    to be configured.
- 2. It waits for confirmation.
- 3. It runs "curtin install" and waits for that to finish.
- 4. It waits for the model objects that feed into the cloud-init config to be
+ 1. It starts up, checks for an autoinstall config and runs any early
+    commands.
+ 2. Then it waits for all the model objects that feed into the curtin
+    config to be configured.
+ 3. It waits for confirmation.
+ 4. It runs "curtin install" and waits for that to finish.
+ 5. It waits for the model objects that feed into the cloud-init config to be
     configured.
- 5. If there appears to be a working network connection, it downloads and
+ 6. It creates the cloud-init config for the first boot of the
+    installed system.
+ 7. If there appears to be a working network connection, it downloads and
     installs security updates.
- 6. It waits for the user to click "reboot".
+ 8. It runs any late commands.
+ 9. It waits for the user to click "reboot".
 
-Each of these states gets a different value of the `InstallState` enum, so the
-client gets notified via long-polling `install.status.GET()` of progress.
+Each of these states gets a different value of the `ApplicationState`
+enum, so the client gets notified via long-polling `meta.status.GET()`
+of progress. In addition, `ApplicationState.ERROR` indicates something
+has gone wrong.
 
 ### Refreshing the snap
 

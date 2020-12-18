@@ -46,7 +46,6 @@ from subiquity.common.types import (
     ApplicationState,
     ErrorReportKind,
     ErrorReportRef,
-    InstallState,
     )
 from subiquity.journald import journald_listen
 from subiquity.ui.frame import SubiquityUI
@@ -206,24 +205,24 @@ class SubiquityClient(TuiApplication):
             answer = await run_in_thread(input)
         await self.confirm_install()
 
-    async def noninteractive_watch_install_state(self):
-        install_state = None
+    async def noninteractive_watch_app_state(self, initial_status):
+        app_status = initial_status
         confirm_task = None
         while True:
-            try:
-                install_status = await self.client.install.status.GET(
-                    cur=install_state)
-                install_state = install_status.state
-            except aiohttp.ClientError:
-                await asyncio.sleep(1)
-                continue
-            if install_state == InstallState.NEEDS_CONFIRMATION:
-                if confirm_task is not None:
+            app_state = app_status.state
+            if app_state == ApplicationState.NEEDS_CONFIRMATION:
+                if confirm_task is None:
                     confirm_task = self.aio_loop.create_task(
                         self.noninteractive_confirmation())
             elif confirm_task is not None:
                 confirm_task.cancel()
                 confirm_task = None
+            try:
+                app_status = await self.client.meta.status.GET(
+                    cur=app_state)
+            except aiohttp.ClientError:
+                await asyncio.sleep(1)
+                continue
 
     def subiquity_event_noninteractive(self, event):
         if event['SUBIQUITY_EVENT_TYPE'] == 'start':
@@ -244,28 +243,20 @@ class SubiquityClient(TuiApplication):
                 print(".", end='', flush=True)
             else:
                 break
-        print()
+        print("\nconnected")
         journald_listen(
             self.aio_loop,
             [status.echo_syslog_id],
             lambda e: print(e['MESSAGE']))
-        if status.state == ApplicationState.STARTING:
-            print("server is starting...", end='', flush=True)
-            while status.state == ApplicationState.STARTING:
-                await asyncio.sleep(1)
-                print(".", end='', flush=True)
-                status = await self.client.meta.status.GET()
-            print()
-        if status.state == ApplicationState.EARLY_COMMANDS:
-            print("running early commands...")
+        if status.state == ApplicationState.STARTING_UP:
             status = await self.client.meta.status.GET(cur=status.state)
             await asyncio.sleep(0.5)
         return status
 
     async def start(self):
         status = await self.connect()
-        if status.state == ApplicationState.INTERACTIVE:
-            self.interactive = True
+        self.interactive = status.interactive
+        if self.interactive:
             await super().start()
             journald_listen(
                 self.aio_loop,
@@ -283,7 +274,6 @@ class SubiquityClient(TuiApplication):
                     self.show_error_report(report.ref())
                     break
         else:
-            self.interactive = False
             if self.opts.run_on_serial:
                 # Thanks to the fact that we are launched with agetty's
                 # --skip-login option, on serial lines we can end up starting
@@ -299,7 +289,7 @@ class SubiquityClient(TuiApplication):
                 self.subiquity_event_noninteractive,
                 seek=True)
             self.aio_loop.create_task(
-                self.noninteractive_watch_install_state())
+                self.noninteractive_watch_app_state(status))
 
     def _exception_handler(self, loop, context):
         exc = context.get('exception')

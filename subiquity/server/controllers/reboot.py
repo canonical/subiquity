@@ -24,7 +24,7 @@ from subiquitycore.utils import arun_command, run_command
 
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
-from subiquity.server.controllers.install import InstallState
+from subiquity.server.controllers.install import ApplicationState
 
 log = logging.getLogger("subiquity.controllers.restart")
 
@@ -51,10 +51,10 @@ class RebootController(SubiquityController):
         await Install.install_task
         await self.app.controllers.Late.run_event.wait()
         await self.copy_logs_to_target()
-        if self.app.interactive():
+        if self.app.interactive:
             await self.user_reboot_event.wait()
             self.reboot()
-        elif Install.install_state == InstallState.DONE:
+        elif self.app.state == ApplicationState.DONE:
             self.reboot()
 
     @with_context()
