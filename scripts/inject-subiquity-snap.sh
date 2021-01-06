@@ -61,11 +61,16 @@ cd "${tmpdir}"
 
 _MOUNTS=()
 
+do_mount_existing () {
+    local mountpoint="${!#}"
+    mount "$@"
+    _MOUNTS=("${mountpoint}" "${_MOUNTS[@]+"${_MOUNTS[@]}"}")
+}
+
 do_mount () {
     local mountpoint="${!#}"
     mkdir "${mountpoint}"
-    mount "$@"
-    _MOUNTS=("${mountpoint}" "${_MOUNTS[@]+"${_MOUNTS[@]}"}")
+    do_mount_existing "$@"
 }
 
 cleanup () {
@@ -91,19 +96,19 @@ add_overlay() {
 }
 
 do_mount -t iso9660 -o loop,ro "${OLD_ISO}" old_iso
-if [ -n "$snapd_pkg" ]; then
-    # Setting up the overlay to install a custom snapd requires
-    # new_installer to be a real directory it seems.
-    unsquashfs -d new_installer "${source_installer}"
-else
-    do_mount -t squashfs "${source_installer}" old_installer
-    add_overlay old_installer new_installer
-fi
+unsquashfs -d new_installer "${source_installer}"
+do_mount -t squashfs ${source_filesystem:-old_iso/casper/filesystem.squashfs} old_filesystem
+add_overlay old_filesystem tree new_installer
+do_mount_existing dev-live -t devtmpfs "tree/dev"
+do_mount_existing devpts-live -t devpts "tree/dev/pts"
+do_mount_existing proc-live -t proc "tree/proc"
+do_mount_existing sysfs-live -t sysfs "tree/sys"
+do_mount_existing securityfs-live -t securityfs "tree/sys/kernel/security"
 
 
 python3 -c '
 import os, sys, yaml
-with open("new_installer/var/lib/snapd/seed/seed.yaml") as fp:
+with open("tree/var/lib/snapd/seed/seed.yaml") as fp:
      old_seed = yaml.safe_load(fp)
 new_snaps = []
 
@@ -123,21 +128,19 @@ for snap in old_seed["snaps"]:
     else:
         new_snaps.append(snap)
 
-with open("new_installer/var/lib/snapd/seed/seed.yaml", "w") as fp:
+with open("tree/var/lib/snapd/seed/seed.yaml", "w") as fp:
      yaml.dump({"snaps": new_snaps}, fp)
 ' "$SUBIQUITY_SNAP" "$SUBIQUITY_ASSERTION" "$tracking"
 
-rm -f new_installer/var/lib/snapd/seed/assertions/subiquity*.assert
-rm -f new_installer/var/lib/snapd/seed/snaps/subiquity*.snap
-cp "${SUBIQUITY_SNAP_PATH}" new_installer/var/lib/snapd/seed/snaps/
+rm -f tree/var/lib/snapd/seed/assertions/subiquity*.assert
+rm -f tree/var/lib/snapd/seed/snaps/subiquity*.snap
+cp "${SUBIQUITY_SNAP_PATH}" tree/var/lib/snapd/seed/snaps/
 if [ -n "${SUBIQUITY_ASSERTION}" ]; then
-    cp "${SUBIQUITY_ASSERTION}" new_installer/var/lib/snapd/seed/assertions/
+    cp "${SUBIQUITY_ASSERTION}" tree/var/lib/snapd/seed/assertions/
 fi
 
-
-
 if [ -n "$store_url" ]; then
-    STORE_CONFIG=new_installer/etc/systemd/system/snapd.service.d/store.conf
+    STORE_CONFIG=tree/etc/systemd/system/snapd.service.d/store.conf
     mkdir -p "$(dirname $STORE_CONFIG)"
     cat > "$STORE_CONFIG" <<EOF
 [Service]
@@ -147,11 +150,9 @@ EOF
 fi
 
 if [ -n "$snapd_pkg" ]; then
-    do_mount -t squashfs ${source_filesystem:-old_iso/casper/filesystem.squashfs} old_filesystem
-    add_overlay old_filesystem combined new_installer
-    cp "$snapd_pkg" combined/
-    chroot combined dpkg -i $(basename "$snapd_pkg")
-    rm combined/$(basename "$snapd_pkg")
+    cp "$snapd_pkg" tree/
+    chroot tree dpkg -i $(basename "$snapd_pkg")
+    rm tree/$(basename "$snapd_pkg")
 fi
 
 add_overlay old_iso new_iso
@@ -168,6 +169,10 @@ fi
 if [ "$interactive" = "yes" ]; then
     bash
 fi
+
+/usr/lib/snapd/snap-preseed --reset $(realpath tree)
+/usr/lib/snapd/snap-preseed $(realpath tree)
+chroot tree apparmor_parser --skip-read-cache --write-cache --skip-kernel-load --verbose  -j `nproc` /etc/apparmor.d
 
 if [ "$edit_filesystem" = "yes" ]; then
     rm new_iso/casper/filesystem.squashfs
