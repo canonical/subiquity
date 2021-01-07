@@ -257,6 +257,22 @@ class SubiquityClient(TuiApplication):
         status = await self.connect()
         self.interactive = status.interactive
         if self.interactive:
+            if self.opts.ssh:
+                from subiquity.ui.views.help import (
+                    ssh_help_texts, get_installer_password)
+                from subiquitycore.ssh import get_ips_standalone
+                texts = ssh_help_texts(
+                    get_ips_standalone(),
+                    get_installer_password(self.opts.dry_run))
+                for line in texts:
+                    if hasattr(line, 'text'):
+                        if line.text.startswith('installer@'):
+                            print(' ' * 4 + line.text)
+                        else:
+                            print(line.text)
+                    else:
+                        print(line)
+                return
             await super().start()
             journald_listen(
                 self.aio_loop,
