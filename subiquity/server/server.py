@@ -373,7 +373,7 @@ class SubiquityServer(Application):
         self.signal.emit_signal('snapd-network-change')
 
     def restart(self):
-        cmdline = ['snap', 'run', 'subiquity']
+        cmdline = ['snap', 'run', 'subiquity.subiquity-server']
         if self.opts.dry_run:
             cmdline = [
                 sys.executable, '-m', 'subiquity.cmd.server',
