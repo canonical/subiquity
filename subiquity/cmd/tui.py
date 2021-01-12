@@ -118,22 +118,6 @@ def main():
     logger.info("Starting Subiquity revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
 
-    if opts.ssh:
-        from subiquity.ui.views.help import (
-            ssh_help_texts, get_installer_password)
-        from subiquitycore.ssh import get_ips_standalone
-        texts = ssh_help_texts(
-            get_ips_standalone(), get_installer_password(opts.dry_run))
-        for line in texts:
-            if hasattr(line, 'text'):
-                if line.text.startswith('installer@'):
-                    print(' ' * 4 + line.text)
-                else:
-                    print(line.text)
-            else:
-                print(line)
-        return 0
-
     if opts.answers is None and os.path.exists(AUTO_ANSWERS_FILE):
         logger.debug("Autoloading answers from %s", AUTO_ANSWERS_FILE)
         opts.answers = AUTO_ANSWERS_FILE
