@@ -1376,7 +1376,10 @@ class FilesystemModel(object):
     def load_server_data(self, status):
         log.debug('load_server_data %s', status)
         self._orig_config = status.orig_config
-        self._probe_data = {'blockdev': status.blockdev}
+        self._probe_data = {
+            'blockdev': status.blockdev,
+            'dasd': status.dasd,
+            }
         self._actions = self._actions_from_config(
             status.config,
             status.blockdev)
