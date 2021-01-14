@@ -130,7 +130,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 error_report=err_ref,
                 orig_config=self.model._orig_config,
                 config=self.model._render_actions(include_all=True),
-                blockdev=self.model._probe_data['blockdev'])
+                blockdev=self.model._probe_data['blockdev'],
+                dasd=self.model._probe_data.get('dasd', {}))
 
     async def POST(self, config: list):
         self.model._actions = self.model._actions_from_config(
