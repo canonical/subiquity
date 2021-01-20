@@ -43,7 +43,11 @@ parts:
     source-type: git
     source: https://git.launchpad.net/curtin
     source-commit: 6b34b6aa1b43becab5d50e90435ea7a9092dd38f
-    requirements: [requirements.txt]
+    python-packages:
+      - pyyaml==5.3.1
+      - oauthlib
+      - jsonschema
+      - pyrsistent
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
     stage:
@@ -91,7 +95,7 @@ parts:
       - ssh-import-id
     python-packages:
       - attrs
-      - pyyaml
+      - pyyaml==5.3.1
       - systemd-python
       - aiohttp
       - yarl==1.5.1
