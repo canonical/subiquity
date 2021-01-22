@@ -54,6 +54,8 @@ class ErrorReportRef:
 
 class ApplicationState(enum.Enum):
     STARTING_UP = enum.auto()
+    CLOUD_INIT_WAIT = enum.auto()
+    EARLY_COMMANDS = enum.auto()
     WAITING = enum.auto()
     NEEDS_CONFIRMATION = enum.auto()
     RUNNING = enum.auto()
@@ -70,7 +72,7 @@ class ApplicationStatus:
     state: ApplicationState
     confirming_tty: str
     error: Optional[ErrorReportRef]
-    cloud_init_ok: bool
+    cloud_init_ok: Optional[bool]
     interactive: Optional[bool]
     echo_syslog_id: str
     log_syslog_id: str

@@ -234,21 +234,46 @@ class SubiquityClient(TuiApplication):
                 self.exit()
 
     async def connect(self):
-        print("connecting...", end='', flush=True)
-        while True:
+
+        def p(s):
+            print(s, end='', flush=True)
+
+        async def spin(message):
+            p(message + '...  ')
+            while True:
+                for t in ['-', '\\', '|', '/']:
+                    p('\x08' + t)
+                    await asyncio.sleep(0.5)
+
+        async def spinning_wait(message, task):
+            spinner = self.aio_loop.create_task(spin(message))
             try:
-                status = await self.client.meta.status.GET()
-            except aiohttp.ClientError:
-                await asyncio.sleep(1)
-                print(".", end='', flush=True)
-            else:
-                break
-        print("\nconnected")
+                return await task
+            finally:
+                spinner.cancel()
+                p('\x08 \n')
+
+        async def _connect():
+            while True:
+                try:
+                    return await self.client.meta.status.GET()
+                except aiohttp.ClientError:
+                    await asyncio.sleep(1)
+
+        status = await spinning_wait("connecting", _connect())
         journald_listen(
             self.aio_loop,
             [status.echo_syslog_id],
             lambda e: print(e['MESSAGE']))
         if status.state == ApplicationState.STARTING_UP:
+            status = await spinning_wait(
+                "starting up", self.client.meta.status.GET(cur=status.state))
+        if status.state == ApplicationState.CLOUD_INIT_WAIT:
+            status = await spinning_wait(
+                "waiting for cloud-init",
+                self.client.meta.status.GET(cur=status.state))
+        if status.state == ApplicationState.EARLY_COMMANDS:
+            print("running early commands")
             status = await self.client.meta.status.GET(cur=status.state)
             await asyncio.sleep(0.5)
         return status
