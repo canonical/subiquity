@@ -157,11 +157,13 @@ class TuiApplication(Application):
         task_to_cancel = None
         if can_cancel:
             if not isinstance(awaitable, asyncio.Task):
+                orig = awaitable
+
                 async def w():
-                    return await awaitable
-                task_to_cancel = self.aio_loop.create_task(w())
+                    return await orig
+                awaitable = task_to_cancel = self.aio_loop.create_task(w())
             else:
-                task_to_cancel = awaitable
+                task_to_cancel = None
 
         def show_load():
             nonlocal ld

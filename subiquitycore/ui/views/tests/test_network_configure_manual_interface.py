@@ -131,11 +131,8 @@ class FakeLink:
 class TestViewInterfaceInfo(unittest.TestCase):
 
     def make_view(self, *, info):
-        dev_info = create_test_instance(NetDevInfo)
         base_view = BaseView(urwid.Text(""))
-        base_view.controller = mock.Mock()
-        base_view.controller.get_info_for_netdev.return_value = "INFO"
-        stretchy = ViewInterfaceInfo(base_view, dev_info)
+        stretchy = ViewInterfaceInfo(base_view, "nicname0", "INFO")
         base_view.show_stretchy_overlay(stretchy)
         return base_view, stretchy
 
