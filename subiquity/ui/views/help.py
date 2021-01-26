@@ -25,6 +25,7 @@ from urwid import (
     Text,
     )
 
+from subiquitycore.async_helpers import schedule_task
 from subiquitycore.lsb_release import lsb_release
 from subiquitycore.ssh import host_key_info
 from subiquitycore.ui.buttons import (
@@ -240,12 +241,13 @@ def menu_item(text, on_press=None):
     return Color.frame_button(icon)
 
 
-def get_global_addresses(app):
-    ips = []
-    net_model = app.base_model.network
-    for dev in net_model.get_all_netdevs():
-        ips.extend(dev.actual_global_ip_addresses)
-    return ips
+async def get_global_addresses(app):
+    task = app.aio_loop.create_task(
+           app.client.network.global_addresses.GET())
+    return await app.wait_with_text_dialog(
+        task,
+        _("getting network info"),
+        can_cancel=True)
 
 
 def get_installer_password(dry_run=False):
@@ -435,9 +437,9 @@ class HelpMenu(PopUpLauncher):
                 _("About the installer"),
                 template.format(**info)))
 
-    def ssh_help(self, sender=None):
+    async def _ssh_help(self):
         texts = ssh_help_texts(
-            get_global_addresses(self.app),
+            await get_global_addresses(self.app),
             self.ssh_password)
 
         self._show_overlay(
@@ -446,6 +448,9 @@ class HelpMenu(PopUpLauncher):
                 _("Help on SSH access"),
                 *texts,
                 ))
+
+    def ssh_help(self, sender=None):
+        schedule_task(self._ssh_help())
 
     def show_local(self, local_title, local_doc):
 
