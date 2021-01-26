@@ -304,4 +304,4 @@ class NetworkController(BaseNetworkController, SubiquityController):
         self.delete_link(dev_name)
 
     async def info_GET(self, dev_name: str) -> str:
-        return await self.get_info_for_netdev(dev_name)
+        return self.get_info_for_netdev(dev_name)

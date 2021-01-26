@@ -266,7 +266,19 @@ class NetworkView(BaseView):
             focus_buttons=True,
             excerpt=_(self.excerpt)))
 
-    _action_INFO = _stretchy_shower(ViewInterfaceInfo)
+    async def _show_INFO(self, name):
+        info = await self.controller.app.wait_with_text_dialog(
+            self.controller.get_info_for_netdev(name), "Loading info",
+            can_cancel=True)
+        stretchy = ViewInterfaceInfo(self, name, info)
+        stretchy.attach_context(self.controller.context.child("INFO"))
+        self.show_stretchy_overlay(stretchy)
+
+    def _action_INFO(self, name, dev_info):
+        self.controller.app.aio_loop.create_task(
+            self._show_INFO(dev_info.name))
+    _action_INFO.opens_dialog = True
+
     _action_EDIT_WLAN = _stretchy_shower(NetworkConfigureWLANStretchy)
     _action_EDIT_IPV4 = _stretchy_shower(EditNetworkStretchy, 4)
     _action_EDIT_IPV6 = _stretchy_shower(EditNetworkStretchy, 6)
