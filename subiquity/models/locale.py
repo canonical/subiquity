@@ -15,9 +15,6 @@
 
 import logging
 
-from subiquitycore import i18n
-
-
 log = logging.getLogger('subiquity.models.locale')
 
 
@@ -31,7 +28,6 @@ class LocaleModel(object):
 
     def switch_language(self, code):
         self.selected_language = code
-        i18n.switch_language(code)
 
     def __repr__(self):
         return "<Selected: {}>".format(self.selected_language)
