@@ -242,11 +242,9 @@ def menu_item(text, on_press=None):
 
 
 async def get_global_addresses(app):
-    task = app.aio_loop.create_task(
-           app.client.network.global_addresses.GET())
     return await app.wait_with_text_dialog(
-        task,
-        _("getting network info"),
+        app.client.network.global_addresses.GET(),
+        _("Getting network info"),
         can_cancel=True)
 
 
