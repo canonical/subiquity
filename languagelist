@@ -1,5 +1,7 @@
 console:en_US:English
 console:en_GB:English (UK)
+console:ar_SA:العربية (المملكة العربية السعودية)
+console:ar_EG:العربية (جمهورية مصر العربية)
 ssh:kab:Tamaziɣt Taqbaylit
 console:ca:Català
 ssh:zh_CN:中文(简体)
