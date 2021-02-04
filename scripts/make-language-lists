@@ -25,7 +25,6 @@ if not translations:
 langs = [
     ('console', 'en_US', 'English'),
     ('console', 'en_GB', 'English (UK)'),
-    ('ssh',     'kab',   'Tamaziɣt Taqbaylit'),
 ]
 
 for level, code, name in langs:
@@ -63,10 +62,15 @@ for code in translations:
     import json
     langcodes = json.load(open(JSON_CODES))["639-3"]
     for lang in langcodes:
-        if lang.get("alpha_2") == code:
-            name = lang.get("name")
-    if name and gettext.find('iso_639_3', languages=[code]):
-        native_lang = gettext.translation('iso_639_3', languages=[code])
+        if code in [lang.get('alpha_2'), lang.get('alpha_3')]:
+            name = lang.get('name')
+    langdb = None
+    for db in ['iso_639_3', 'iso_639']:
+        if gettext.find(db, languages=[code]):
+            langdb = db
+            break
+    if name and langdb:
+        native_lang = gettext.translation(langdb, languages=[code])
         native = native_lang.gettext(name).capitalize()
         langs.append(('ssh', code, native))
     else:
