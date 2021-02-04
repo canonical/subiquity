@@ -1,6 +1,5 @@
 console:en_US:English
 console:en_GB:English (UK)
-ssh:kab:Tamaziɣt Taqbaylit
 console:ca:Català
 ssh:zh_CN:中文(简体)
 console:hr:Hrvatski
@@ -25,4 +24,5 @@ console:sv:Svenska
 ssh:bo:བོད་ཡིག
 console:uk:Українська
 console:nb:Norsk bokmål
-ssh:oc:Galés
+ssh:kab:Taqbaylit
+ssh:oc:Occitan (aprèp 1500)
