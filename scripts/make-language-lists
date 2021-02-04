@@ -8,6 +8,8 @@ import sys
 
 DATA_PATH = '/usr/share/localechooser/languagelist.data.gz'
 
+JSON_CODES = '/usr/share/iso-codes/json/iso_639-3.json'
+
 lang_dir = 'po'
 if len(sys.argv) > 1:
     lang_dir = sys.argv[1]
@@ -57,7 +59,13 @@ with gzip.open(DATA_PATH, mode='rt') as data:
         translations.remove(code)
 
 for code in translations:
-    if gettext.find('iso_639_3', languages=[code]):
+    name = None
+    import json
+    langcodes = json.load(open(JSON_CODES))["639-3"]
+    for lang in langcodes:
+        if lang.get("alpha_2") == code:
+            name = lang.get("name")
+    if name and gettext.find('iso_639_3', languages=[code]):
         native_lang = gettext.translation('iso_639_3', languages=[code])
         native = native_lang.gettext(name).capitalize()
         langs.append(('ssh', code, native))
