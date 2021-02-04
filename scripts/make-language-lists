@@ -23,7 +23,7 @@ if not translations:
 langs = [
     ('console', 'en_US', 'English'),
     ('console', 'en_GB', 'English (UK)'),
-    ('ssh',     'kab',   'Tamaziɣt Taqbaylit'),
+    ('ssh',     'kab',   'Taqbaylit'),
 ]
 
 for level, code, name in langs:
