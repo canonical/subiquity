@@ -1,28 +1,28 @@
-console:en_US:English
-console:en_GB:English (UK)
-ssh:kab:Taqbaylit
-console:ca:Català
-ssh:zh_CN:中文(简体)
-console:hr:Hrvatski
-console:cs:Čeština
-console:ast:Asturianu
-console:be:Беларуская
-console:nl:Nederlands
-console:fi:Suomi
-console:fr:Français
-console:de:Deutsch
-console:el:Ελληνικά
-ssh:he:עברית
-console:hu:Magyar
-console:id:Bahasa Indonesia
-console:lv:Latviski
-console:lt:Lietuviškai
-console:pl:Polski
-console:ru:Русский
-console:sr:Српски
-console:es:Español
-console:sv:Svenska
-ssh:bo:བོད་ཡིག
-console:uk:Українська
+console:en_US.UTF-8:English
+console:en_GB.UTF-8:English (UK)
+ssh:kab_DZ.UTF-8:Taqbaylit
+console:ca_ES.UTF-8:Català
+ssh:zh_CN.UTF-8:中文(简体)
+console:hr_HR.UTF-8:Hrvatski
+console:cs_CZ.UTF-8:Čeština
+console:ast_ES.UTF-8:Asturianu
+console:be_BY.UTF-8:Беларуская
+console:nl_NL.UTF-8:Nederlands
+console:fi_FI.UTF-8:Suomi
+console:fr_FR.UTF-8:Français
+console:de_DE.UTF-8:Deutsch
+console:el_GR.UTF-8:Ελληνικά
+ssh:he_IL.UTF-8:עברית
+console:hu_HU.UTF-8:Magyar
+console:id_ID.UTF-8:Bahasa Indonesia
+console:lv_LV.UTF-8:Latviski
+console:lt_LT.UTF-8:Lietuviškai
+console:pl_PL.UTF-8:Polski
+console:ru_RU.UTF-8:Русский
+console:sr_RS:Српски
+console:es_ES.UTF-8:Español
+console:sv_SE.UTF-8:Svenska
+ssh:bo_IN:བོད་ཡིག
+console:uk_UA.UTF-8:Українська
 console:nb:Norsk bokmål
 ssh:oc:Occitan (aprèp 1500)
