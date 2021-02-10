@@ -168,7 +168,7 @@ class SubiquityModel:
             'growpart': {
                 'mode': 'off',
                 },
-            'locale': self.locale.selected_language + '.UTF-8',
+            'locale': self.locale.selected_language,
             'resize_rootfs': False,
         }
         if self.identity.hostname is not None:
