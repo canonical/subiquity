@@ -1,8 +1,31 @@
 #!/usr/bin/python3
 
+"""Generate the language list used by subiquity.
+
+Subiquity has translations checked into git (in the po/ directory) and
+we want to show these to the user. The subtleties are 1) we want to
+show the native name for the language ("Latviski" rather than
+"Latvian" or "lv") and 2) some languages cannot reasonably be
+displayed on the linux console.
+
+debian-installer has both these issues as well of course, and stores
+information about languages in an idiosyncratically formatted file
+'/usr/share/localechooser/languagelist.data.gz'.  Not every language
+we have translations for appears in here though, and for these
+languages we use the files that are part of the iso-codes package to
+find the native name (and assume they cannot be represented in the
+console).
+
+Even then we still have some special cases!
+
+The information subiquity needs is recorded in its own idiosyncratic
+format at $SNAP/languagelist.
+"""
+
 import gettext
 import glob
 import gzip
+import json
 import os
 import sys
 
@@ -58,10 +81,12 @@ with gzip.open(DATA_PATH, mode='rt') as data:
         langs.append((kind_for_level(level), code, desc))
         translations.remove(code)
 
+
+langcodes = json.load(open(JSON_CODES))["639-3"]
+
+
 for code in translations:
     name = None
-    import json
-    langcodes = json.load(open(JSON_CODES))["639-3"]
     for lang in langcodes:
         if code in [lang.get('alpha_2'), lang.get('alpha_3')]:
             name = lang.get('name')
