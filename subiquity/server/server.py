@@ -352,13 +352,14 @@ class SubiquityServer(Application):
             self.cloud_init_ok = True
             return
         ci_start = time.time()
+        status_coro = arun_command(["cloud-init", "status", "--wait"])
         try:
-            status_txt = arun_command(
-                ["cloud-init", "status", "--wait"], timeout=600).stdout
-        except subprocess.TimeoutExpired:
+            status_cp = await asyncio.wait_for(status_coro, 600)
+        except asyncio.CancelledError:
             status_txt = '<timeout>'
             self.cloud_init_ok = False
         else:
+            status_txt = status_cp.stdout
             self.cloud_init_ok = True
         log.debug("waited %ss for cloud-init", time.time() - ci_start)
         if "status: done" in status_txt:
