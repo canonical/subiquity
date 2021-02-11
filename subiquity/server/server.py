@@ -17,10 +17,14 @@ import asyncio
 import logging
 import os
 import shlex
+import subprocess
 import sys
+import time
 from typing import List, Optional
 
 from aiohttp import web
+
+from cloudinit import atomic_helper, safeyaml, stages
 
 import jsonschema
 
@@ -32,6 +36,7 @@ from subiquitycore.async_helpers import run_in_thread, schedule_task
 from subiquitycore.context import with_context
 from subiquitycore.core import Application
 from subiquitycore.prober import Prober
+from subiquitycore.utils import arun_command
 
 from subiquity.common.api.server import (
     bind,
@@ -143,10 +148,10 @@ class SubiquityServer(Application):
             root = os.path.abspath('.subiquity')
         return SubiquityModel(root, self.opts.sources)
 
-    def __init__(self, opts, block_log_dir, cloud_init_ok):
+    def __init__(self, opts, block_log_dir):
         super().__init__(opts)
         self.block_log_dir = block_log_dir
-        self.cloud_init_ok = cloud_init_ok
+        self.cloud_init_ok = None
         self._state = ApplicationState.STARTING_UP
         self.state_event = asyncio.Event()
         self.interactive = None
@@ -189,7 +194,8 @@ class SubiquityServer(Application):
         self.event_listeners.append(listener)
 
     def _maybe_push_to_journal(self, event_type, context, description):
-        if not context.get('is-install-context') and self.interactive:
+        if not context.get('is-install-context') and \
+          self.interactive in [True, None]:
             controller = context.get('controller')
             if controller is None or controller.interactive():
                 return
@@ -310,7 +316,7 @@ class SubiquityServer(Application):
             await controller.apply_autoinstall_config()
             controller.configured()
 
-    def load_autoinstall_config(self, only_early):
+    def load_autoinstall_config(self, *, only_early):
         log.debug("load_autoinstall_config only_early %s", only_early)
         if self.opts.autoinstall is None:
             return
@@ -341,13 +347,54 @@ class SubiquityServer(Application):
         site = web.UnixSite(runner, self.opts.socket)
         await site.start()
 
+    async def wait_for_cloudinit(self):
+        if self.opts.dry_run:
+            self.cloud_init_ok = True
+            return
+        ci_start = time.time()
+        try:
+            status_txt = arun_command(
+                ["cloud-init", "status", "--wait"], timeout=600).stdout
+        except subprocess.TimeoutExpired:
+            status_txt = '<timeout>'
+            self.cloud_init_ok = False
+        else:
+            self.cloud_init_ok = True
+        log.debug("waited %ss for cloud-init", time.time() - ci_start)
+        if "status: done" in status_txt:
+            log.debug("loading cloud config")
+            init = stages.Init()
+            init.read_cfg()
+            init.fetch(existing="trust")
+            cloud = init.cloudify()
+            autoinstall_path = '/autoinstall.yaml'
+            if 'autoinstall' in cloud.cfg:
+                if not os.path.exists(autoinstall_path):
+                    atomic_helper.write_file(
+                        autoinstall_path,
+                        safeyaml.dumps(
+                            cloud.cfg['autoinstall']).encode('utf-8'),
+                        mode=0o600)
+            if os.path.exists(autoinstall_path):
+                self.opts.autoinstall = autoinstall_path
+        else:
+            log.debug(
+                "cloud-init status: %r, assumed disabled",
+                status_txt)
+
     async def start(self):
         self.controllers.load_all()
         await self.start_api_server()
+        self.update_state(ApplicationState.CLOUD_INIT_WAIT)
+        await self.wait_for_cloudinit()
         self.load_autoinstall_config(only_early=True)
         if self.autoinstall_config and self.controllers.Early.cmds:
             stamp_file = self.state_path("early-commands")
             if not os.path.exists(stamp_file):
+                self.update_state(ApplicationState.EARLY_COMMANDS)
+                # Just wait a second for any clients to get ready to print
+                # output.
+                await asyncio.sleep(1)
                 await self.controllers.Early.run()
                 open(stamp_file, 'w').close()
                 await asyncio.sleep(1)
