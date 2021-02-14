@@ -84,11 +84,11 @@ class API:
 
             If wait is true, block until the status is known."""
 
-        def POST() -> int:
+        def POST() -> str:
             """Start the update and return the change id."""
 
         class progress:
-            def GET(change_id: int) -> dict: ...
+            def GET(change_id: str) -> dict: ...
 
     class zdev:
         def GET() -> List[ZdevInfo]: ...

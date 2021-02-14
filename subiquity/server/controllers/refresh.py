@@ -212,8 +212,8 @@ class RefreshController(SubiquityController):
             await self.check_task.wait()
         return self.status
 
-    async def POST(self, context) -> int:
+    async def POST(self, context) -> str:
         return await self.start_update(context=context)
 
-    async def progress_GET(self, change_id: int) -> dict:
+    async def progress_GET(self, change_id: str) -> dict:
         return await self.get_progress(change_id)
