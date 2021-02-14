@@ -164,11 +164,14 @@ class SubiquityModel:
         return groups
 
     def _cloud_init_config(self):
+        locale = self.locale.selected_language
+        if '.' not in locale and '_' in locale:
+            locale += '.UTF-8'
         config = {
             'growpart': {
                 'mode': 'off',
                 },
-            'locale': self.locale.selected_language + '.UTF-8',
+            'locale': locale,
             'resize_rootfs': False,
         }
         if self.identity.hostname is not None:

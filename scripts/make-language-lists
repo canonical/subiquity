@@ -29,8 +29,8 @@ import json
 import os
 import sys
 
+LANGLIST_PATH = '/usr/share/localechooser/languagelist'
 DATA_PATH = '/usr/share/localechooser/languagelist.data.gz'
-
 JSON_CODES = '/usr/share/iso-codes/json/iso_639-3.json'
 
 lang_dir = 'po'
@@ -46,14 +46,15 @@ if not translations:
     sys.exit(1)
 
 langs = [
-    ('console', 'en_US', 'English'),
-    ('console', 'en_GB', 'English (UK)'),
-    ('ssh',     'kab',   'Taqbaylit'),
+    ('console', 'en_US.UTF-8',  'English'),
+    ('console', 'en_GB.UTF-8',  'English (UK)'),
+    ('ssh',     'kab_DZ.UTF-8', 'Taqbaylit'),
 ]
 
 for level, code, name in langs:
-    if code in translations:
-        translations.remove(code)
+    for subcode in (code, code.split('.')[0], code.split('_')[0]):
+        if subcode in translations:
+            translations.remove(subcode)
 
 
 def kind_for_level(level):
@@ -62,6 +63,15 @@ def kind_for_level(level):
     else:
         return "ssh"
 
+
+code_to_fallbacklocale = {}
+
+
+with open(LANGLIST_PATH) as data:
+    for line in data:
+        (code, supported_environments, countrycode, fallbacklocale, langlist,
+         console_setup) = line.strip().split(';')
+        code_to_fallbacklocale[code] = fallbacklocale
 
 with gzip.open(DATA_PATH, mode='rt') as data:
     for line in data:
@@ -104,4 +114,5 @@ for code in translations:
         sys.exit(1)
 
 for level, code, name in langs:
-    sys.stdout.write("{}:{}:{}\n".format(level, code, name))
+    locale = code_to_fallbacklocale.get(code, code)
+    sys.stdout.write("{}:{}:{}\n".format(level, locale, name))
