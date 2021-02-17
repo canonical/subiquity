@@ -21,6 +21,8 @@ clean () {
     rm -rf .subiquity/run/
 }
 
+tty=$(tty) || tty=/dev/console
+
 export SUBIQUITY_REPLAY_TIMESCALE=100
 for answers in examples/answers*.yaml; do
     clean
@@ -29,7 +31,7 @@ for answers in examples/answers*.yaml; do
         config=examples/simple.json
     fi
     # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
-    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --answers $answers --dry-run --snaps-from-examples --machine-config $config"
+    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --answers $answers --dry-run --snaps-from-examples --machine-config $config" < $tty
     validate
 done
 

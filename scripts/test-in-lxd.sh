@@ -3,15 +3,7 @@ set -eux
 IMAGE=$1
 SCRIPT=$2
 
-apt-get -qq update
-apt install -y lxd
-
-sed -i 's/LXD_IPV4_ADDR=".*"/LXD_IPV4_ADDR="192.168.123.1"/' /etc/default/lxd-bridge
-sed -i 's/LXD_IPV4_NETMASK=".*"/LXD_IPV4_NETMASK="255.255.255.0"/' /etc/default/lxd-bridge
-sed -i 's/LXD_IPV4_NETWORK=".*"/LXD_IPV4_NETWORK="192.168.123.0\/24"/' /etc/default/lxd-bridge
-sed -i 's/LXD_IPV4_DHCP_RANGE=".*"/LXD_IPV4_DHCP_RANGE="192.168.123.2,192.168.123.12"/' /etc/default/lxd-bridge
-sed -i 's/LXD_IPV4_DHCP_MAX=".*"/LXD_IPV4_DHCP_MAX="10"/' /etc/default/lxd-bridge
-sed -i 's/LXD_IPV6_PROXY=".*"/LXD_IPV6_PROXY="false"/' /etc/default/lxd-bridge
+snap install lxd --channel=3.0/stable
 
 lxd init --auto
 service lxd restart
