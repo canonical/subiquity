@@ -3,10 +3,7 @@ set -eux
 IMAGE=$1
 SCRIPT=$2
 
-snap install lxd --channel=3.0/stable
-
 lxd init --auto
-service lxd restart
 
 lxc launch $IMAGE tester -c security.privileged=true
 lxc config device add tester code disk source=`pwd` path=/subiquity
