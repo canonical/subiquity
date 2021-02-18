@@ -154,7 +154,7 @@ parts:
   probert:
     plugin: python
     build-packages: [python-setuptools, build-essential, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
-    source: https://github.com/CanonicalLtd/probert.git
+    source: https://github.com/canonical/probert.git
     source-type: git
     source-commit: 844c957b7f61f78bbd814cceef87f0d8eb218675
     requirements: [requirements.txt]
