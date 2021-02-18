@@ -28,6 +28,7 @@ class WelcomeController(SubiquityTuiController):
 
     async def make_ui(self):
         language = await self.endpoint.GET()
+        i18n.switch_language(language)
         serial = self.app.opts.run_on_serial
         if serial:
             ips = await self.app.client.network.global_addresses.GET()
