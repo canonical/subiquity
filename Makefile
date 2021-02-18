@@ -5,7 +5,7 @@ NAME=subiquity
 PYTHONSRC=$(NAME)
 PYTHONPATH=$(shell pwd):$(shell pwd)/probert
 PROBERTDIR=./probert
-PROBERT_REPO=https://github.com/CanonicalLtd/probert
+PROBERT_REPO=https://github.com/canonical/probert
 export PYTHONPATH
 CWD := $(shell pwd)
 
