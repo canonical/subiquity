@@ -6,7 +6,7 @@ mkdir -p /etc/systemd/system/zfs-mount.service.d/
 cat >/etc/systemd/system/zfs-mount.service.d/override.conf <<EOF
 [Unit]
 After=zfs-load-module.service
-ConditionPathExists=/sys/module/zfs
+ConditionPathExists=/dev/zfs
 
 EOF
 cp -r /etc/systemd/system/zfs-mount.service.d/ /etc/systemd/system/zfs-share.service.d/
