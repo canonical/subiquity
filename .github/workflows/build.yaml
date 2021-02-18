@@ -1,0 +1,24 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - ubuntu-daily:bionic
+          - ubuntu-daily:focal
+          - ubuntu-daily:groovy
+          - ubuntu-daily:hirsute
+    steps:
+    - uses: actions/checkout@v2
+    - name: run
+      run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} ./scripts/runtests.sh
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: lint
+      run: sudo ./scripts/test-in-lxd.sh ubuntu-daily:focal "make lint"
