@@ -100,8 +100,8 @@ class WelcomeView(BaseView):
         current_index = None
         langs = get_languages()
         cur = self.cur_lang
-        if cur in ["C", None]:
-            cur = "en_US"
+        if cur in ["C.UTF-8", None]:
+            cur = "en_US.UTF-8"
         for i, (code, native) in enumerate(langs):
             log.debug("%s", (code, cur))
             if code == cur:
