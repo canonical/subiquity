@@ -46,7 +46,7 @@ from subiquity.server.controller import (
 from subiquity.common.types import (
     ApplicationState,
     )
-from subiquity.journald import journald_listen
+from subiquity.journald import journald_subscriptions
 
 log = logging.getLogger("subiquity.server.controllers.install")
 
@@ -188,23 +188,11 @@ class InstallController(SubiquityController):
         log.debug('curtin_install')
         self.curtin_event_contexts[''] = context
 
-        loop = self.app.aio_loop
-
-        fds = [
-            journald_listen(loop, [self.app.log_syslog_id], self.log_event),
-            journald_listen(loop, [self._event_syslog_id], self.curtin_event),
-            ]
-
         curtin_cmd = self._get_curtin_command()
 
         log.debug('curtin install cmd: {}'.format(curtin_cmd))
 
-        try:
-            cp = await arun_command(
-                self.logged_command(curtin_cmd), check=True)
-        finally:
-            for fd in fds:
-                loop.remove_reader(fd)
+        cp = await arun_command(self.logged_command(curtin_cmd), check=True)
 
         log.debug('curtin_install completed: %s', cp.returncode)
 
@@ -228,14 +216,17 @@ class InstallController(SubiquityController):
                 await self.unmount_target(
                     context=context, target=self.model.target)
 
-            await self.curtin_install(context=context)
+            with journald_subscriptions(
+                    self.app.aio_loop,
+                    [(self.app.log_syslog_id, self.log_event),
+                     (self._event_syslog_id, self.curtin_event)]):
+                await self.curtin_install(context=context)
+                await self.drain_curtin_events(context=context)
 
             self.app.update_state(ApplicationState.POST_WAIT)
 
             await asyncio.wait(
                 {e.wait() for e in self.model.postinstall_events})
-
-            await self.drain_curtin_events(context=context)
 
             self.app.update_state(ApplicationState.POST_RUNNING)
 
