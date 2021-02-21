@@ -15,6 +15,8 @@
 
 from systemd import journal
 
+from subiquitycore import contextlib38
+
 
 def journald_listen(loop, identifiers, callback, seek=False):
     reader = journal.Reader()
@@ -33,3 +35,15 @@ def journald_listen(loop, identifiers, callback, seek=False):
             callback(event)
     loop.add_reader(reader.fileno(), watch)
     return reader.fileno()
+
+
+@contextlib38.contextmanager
+def journald_subscriptions(loop, ids_callbacks):
+    fds = set()
+    for id, callback in ids_callbacks:
+        fds.add(journald_listen(loop, [id], callback))
+    try:
+        yield
+    finally:
+        for fd in fds:
+            loop.remove_reader(fd)
