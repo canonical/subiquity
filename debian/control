@@ -12,9 +12,9 @@ Build-Depends: debhelper (>= 9.20160709),
                python3-setuptools,
                python3-yaml
 Standards-Version: 4.3.0
-Homepage: https://github.com/CanonicalLtd/subiquity
-Vcs-Browser: https://github.com/CanonicalLtd/subiquity
-Vcs-Git: https://github.com/CanonicalLtd/subiquity.git
+Homepage: https://github.com/canonical/subiquity
+Vcs-Browser: https://github.com/canonical/subiquity
+Vcs-Git: https://github.com/canonical/subiquity.git
 XS-Ubuntu-Use-Langpack: yes
 
 Package: subiquitycore

@@ -199,7 +199,7 @@ class RefreshView(BaseView):
             Text(_("You can read the release notes for each version at:")),
             Text(""),
             Text(
-                "https://github.com/CanonicalLtd/subiquity/releases",
+                "https://github.com/canonical/subiquity/releases",
                 align='center'),
             Text(""),
             Text(
