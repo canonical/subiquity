@@ -26,7 +26,7 @@ https://translations.launchpad.net/ubuntu/focal/+source/subiquity/+export
 
 # Acquire subiquity from source
 
-`git clone https://github.com/CanonicalLtd/subiquity`
+`git clone https://github.com/canonical/subiquity`
 
 `cd subiquity && make install_deps`
 

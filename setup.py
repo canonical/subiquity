@@ -101,7 +101,7 @@ setup(name='subiquity',
       long_description=__doc__,
       author='Canonical Engineering',
       author_email='ubuntu-dev@lists.ubuntu.com',
-      url='https://github.com/CanonicalLtd/subiquity',
+      url='https://github.com/canonical/subiquity',
       license="AGPLv3+",
       packages=find_packages(exclude=["tests"]),
       scripts=[
