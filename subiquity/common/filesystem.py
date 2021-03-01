@@ -18,7 +18,6 @@ import logging
 from subiquity.common.types import Bootloader
 from subiquity.models.filesystem import (
     align_up,
-    dehumanize_size,
     DeviceAction,
     Partition,
     )
@@ -373,60 +372,3 @@ class FilesystemManipulator:
                 largest_part.size -= (
                     part_size - new_boot_disk.free_for_partitions)
             self._create_boot_partition(new_boot_disk)
-
-    def guided_direct(self, disk):
-        self.reformat(disk)
-        result = {
-            "size": disk.free_for_partitions,
-            "fstype": "ext4",
-            "mount": "/",
-            }
-        self.partition_disk_handler(disk, None, result)
-
-    def guided_lvm(self, disk, lvm_options=None):
-        self.reformat(disk)
-        if DeviceAction.TOGGLE_BOOT in disk.supported_actions:
-            self.add_boot_disk(disk)
-        self.create_partition(
-            device=disk, spec=dict(
-                size=dehumanize_size('1G'),
-                fstype="ext4",
-                mount='/boot'
-                ))
-        part = self.create_partition(
-            device=disk, spec=dict(
-                size=disk.free_for_partitions,
-                fstype=None,
-                ))
-        vg_name = 'ubuntu-vg'
-        i = 0
-        while self.model._one(type='lvm_volgroup', name=vg_name) is not None:
-            i += 1
-            vg_name = 'ubuntu-vg-{}'.format(i)
-        spec = dict(name=vg_name, devices=set([part]))
-        if lvm_options and lvm_options['encrypt']:
-            spec['password'] = lvm_options['luks_options']['password']
-        vg = self.create_volgroup(spec)
-        # There's no point using LVM and unconditionally filling the
-        # VG with a single LV, but we should use more of a smaller
-        # disk to avoid the user running into out of space errors
-        # earlier than they probably expect to.
-        if vg.size < 10 * (2 << 30):
-            # Use all of a small (<10G) disk.
-            lv_size = vg.size
-        elif vg.size < 20 * (2 << 30):
-            # Use 10G of a smallish (<20G) disk.
-            lv_size = 10 * (2 << 30)
-        elif vg.size < 200 * (2 << 30):
-            # Use half of a larger (<200G) disk.
-            lv_size = vg.size // 2
-        else:
-            # Use at most 100G of a large disk.
-            lv_size = 100 * (2 << 30)
-        self.create_logical_volume(
-            vg=vg, spec=dict(
-                size=lv_size,
-                name="ubuntu-lv",
-                fstype="ext4",
-                mount="/",
-                ))
