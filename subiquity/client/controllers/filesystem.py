@@ -55,32 +55,25 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.answers.setdefault('manual', [])
 
     async def make_ui(self):
-        status = await self.endpoint.GET()
+        status = await self.endpoint.guided.GET()
         if status.status == ProbeStatus.PROBING:
             self.app.aio_loop.create_task(self._wait_for_probing())
             return SlowProbing(self)
         else:
-            return await self.make_ui_real(status)
+            return self.make_guided_ui(status)
 
     async def _wait_for_probing(self):
-        status = await self.endpoint.GET(wait=True)
+        status = await self.endpoint.guided.GET(wait=True)
         if isinstance(self.ui.body, SlowProbing):
-            self.ui.set_body(await self.make_ui_real(status))
+            self.ui.set_body(self.make_guided_ui(status))
 
-    async def make_ui_real(self, status):
+    def make_guided_ui(self, status):
         if status.status == ProbeStatus.FAILED:
             self.app.show_error_report(status.error_report)
             return ProbingFailed(self, status.error_report)
-        self.model = FilesystemModel(status.bootloader)
-        self.model.load_server_data(status)
-        if self.model.bootloader == Bootloader.PREP:
-            self.supports_resilient_boot = False
-        else:
-            release = lsb_release()['release']
-            self.supports_resilient_boot = release >= '20.04'
         if status.error_report:
             self.app.show_error_report(status.error_report)
-        return GuidedDiskSelectionView(self)
+        return GuidedDiskSelectionView(self, status.disks)
 
     async def run_answers(self):
         # Wait for probing to finish.
@@ -88,7 +81,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             await asyncio.sleep(0.1)
 
         if self.answers['guided']:
-            disk = self.model.all_disks()[self.answers['guided-index']]
+            disk = self.ui.body.form.disks[self.answers['guided-index']]
             method = self.answers.get('guided-method')
             self.ui.body.form.guided_choice.value = {
                 'disk': disk,
@@ -96,9 +89,11 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
                 }
             self.ui.body.done(self.ui.body.form)
             await self.app.confirm_install()
+            while not isinstance(self.ui.body, FilesystemView):
+                await asyncio.sleep(0.1)
             self.finish()
         elif self.answers['manual']:
-            self.manual()
+            await self._guided_choice(None)
             await self._run_actions(self.answers['manual'])
             self.answers['manual'] = []
 
@@ -204,11 +199,26 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         else:
             raise Exception("could not process action {}".format(action))
 
-    def manual(self):
+    async def _guided_choice(self, choice):
+        status = await self.app.wait_with_progress(
+            self.endpoint.guided.POST(choice))
+        self.model = FilesystemModel(status.bootloader)
+        self.model.load_server_data(status)
+        if self.model.bootloader == Bootloader.PREP:
+            self.supports_resilient_boot = False
+        else:
+            release = lsb_release()['release']
+            self.supports_resilient_boot = release >= '20.04'
         self.ui.set_body(FilesystemView(self.model, self))
 
+    def guided_choice(self, choice):
+        self.app.aio_loop.create_task(self._guided_choice(choice))
+
+    async def _guided(self):
+        self.ui.set_body(await self.make_ui())
+
     def guided(self):
-        self.ui.set_body(GuidedDiskSelectionView(self))
+        self.app.aio_loop.create_task(self._guided())
 
     def reset(self):
         log.info("Resetting Filesystem model")

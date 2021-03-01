@@ -177,6 +177,9 @@ class TuiApplication(Application):
         return await self._wait_with_indication(
             awaitable, show_load, hide_load)
 
+    async def wait_with_progress(self, awaitable):
+        return await self._wait_with_indication(awaitable, self.show_progress)
+
     async def _move_screen(self, increment, coro):
         if coro is not None:
             await coro
@@ -206,8 +209,8 @@ class TuiApplication(Application):
                 return
 
     async def move_screen(self, increment, coro):
-        view = await self._wait_with_indication(
-            self._move_screen(increment, coro), self.show_progress)
+        view = await self.wait_with_progress(
+            self._move_screen(increment, coro))
         if view is not None:
             self.ui.set_body(view)
 
