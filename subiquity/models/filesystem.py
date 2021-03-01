@@ -900,6 +900,16 @@ class Disk(_Device):
 
     ok_for_lvm_vg = ok_for_raid
 
+    def for_client(self):
+        from subiquity.common.types import Disk
+        return Disk(
+            id=self.id,
+            label=self.label,
+            type=self.desc(),
+            size=self.size,
+            usage_labels=self.usage_labels(),
+            partitions=[p.for_client() for p in self._partitions])
+
 
 @fsobj("partition")
 class Partition(_Formattable):
@@ -1047,6 +1057,13 @@ class Partition(_Formattable):
         return True
 
     ok_for_lvm_vg = ok_for_raid
+
+    def for_client(self):
+        from subiquity.common.types import Partition
+        return Partition(
+            size=self.size,
+            number=self._number,
+            annotations=self.annotations + self.usage_labels())
 
 
 @fsobj("raid")

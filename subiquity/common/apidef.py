@@ -28,6 +28,8 @@ from subiquity.common.types import (
     ApplicationState,
     ApplicationStatus,
     ErrorReportRef,
+    GuidedChoice,
+    GuidedStorageResponse,
     KeyboardSetting,
     KeyboardSetup,
     IdentityData,
@@ -184,6 +186,14 @@ class API:
             def GET(dev_name: str) -> str: ...
 
     class storage:
+        class guided:
+            def GET(wait: bool = False) -> GuidedStorageResponse:
+                pass
+
+            def POST(choice: Optional[GuidedChoice]) \
+                    -> StorageResponse:
+                pass
+
         def GET(wait: bool = False) -> StorageResponse: ...
         def POST(config: Payload[list]): ...
 

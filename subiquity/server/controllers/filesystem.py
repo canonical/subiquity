@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import select
+from typing import Optional
 
 import pyudev
 
@@ -37,11 +38,11 @@ from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem import FilesystemManipulator
 from subiquity.common.types import (
+    Bootloader,
+    GuidedChoice,
+    GuidedStorageResponse,
     ProbeStatus,
     StorageResponse,
-    )
-from subiquity.models.filesystem import (
-    Bootloader,
     )
 from subiquity.server.controller import (
     SubiquityController,
@@ -108,35 +109,69 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 "autoinstall config did not create needed bootloader "
                 "partition")
 
-    async def GET(self, wait: bool = False) -> StorageResponse:
+    async def _probe_response(self, wait, resp_cls):
         if self._probe_task.task is None or not self._probe_task.task.done():
             if wait:
                 await self._start_task
                 await self._probe_task.wait()
             else:
-                return StorageResponse(status=ProbeStatus.PROBING)
+                return resp_cls(status=ProbeStatus.PROBING)
         if True in self._errors:
-            return StorageResponse(
+            return resp_cls(
                 status=ProbeStatus.FAILED,
                 error_report=self._errors[True][1].ref())
+        return None
+
+    def full_probe_error(self):
+        if False in self._errors:
+            return self._errors[False][1].ref()
         else:
-            if False in self._errors:
-                err_ref = self._errors[False][1].ref()
-            else:
-                err_ref = None
-            return StorageResponse(
-                status=ProbeStatus.DONE,
-                bootloader=self.model.bootloader,
-                error_report=err_ref,
-                orig_config=self.model._orig_config,
-                config=self.model._render_actions(include_all=True),
-                blockdev=self.model._probe_data['blockdev'],
-                dasd=self.model._probe_data.get('dasd', {}))
+            return None
+
+    async def GET(self, wait: bool = False) -> StorageResponse:
+        probe_resp = await self._probe_response(wait, StorageResponse)
+        if probe_resp is not None:
+            return probe_resp
+        return StorageResponse(
+            status=ProbeStatus.DONE,
+            bootloader=self.model.bootloader,
+            error_report=self.full_probe_error(),
+            orig_config=self.model._orig_config,
+            config=self.model._render_actions(include_all=True),
+            blockdev=self.model._probe_data['blockdev'],
+            dasd=self.model._probe_data.get('dasd', {}))
 
     async def POST(self, config: list):
         self.model._actions = self.model._actions_from_config(
             config, self.model._probe_data['blockdev'], is_probe_data=False)
         self.configured()
+
+    async def guided_GET(self, wait: bool = False) -> GuidedStorageResponse:
+        probe_resp = await self._probe_response(wait, GuidedStorageResponse)
+        if probe_resp is not None:
+            return probe_resp
+        return GuidedStorageResponse(
+            status=ProbeStatus.DONE,
+            error_report=self.full_probe_error(),
+            disks=[d.for_client() for d in self.model._all(type='disk')])
+
+    async def guided_POST(self, choice: Optional[GuidedChoice]) \
+            -> StorageResponse:
+        if choice is not None:
+            disk = self.model._one(type='disk', id=choice.disk_id)
+            if choice.use_lvm:
+                lvm_options = None
+                if choice.password is not None:
+                    lvm_options = {
+                        'encrypt': True,
+                        'luks_options': {
+                            'password': choice.password,
+                            },
+                        }
+                self.guided_lvm(disk, lvm_options)
+            else:
+                self.guided_direct(disk)
+        return await self.GET()
 
     async def reset_POST(self, context, request) -> StorageResponse:
         log.info("Resetting Filesystem model")
