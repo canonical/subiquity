@@ -617,6 +617,10 @@ class _Formattable(ABC):
 # space for the GPT data.
 GPT_OVERHEAD = 2 * (1 << 20)
 
+# Disks larger than this are considered sensible targets for guided
+# installation.
+MIN_SIZE_GUIDED = 6 * (1 << 30)
+
 
 @attr.s(cmp=False)
 class _Device(_Formattable, ABC):
@@ -908,7 +912,8 @@ class Disk(_Device):
             type=self.desc(),
             size=self.size,
             usage_labels=self.usage_labels(),
-            partitions=[p.for_client() for p in self._partitions])
+            partitions=[p.for_client() for p in self._partitions],
+            ok_for_guided=self.size >= MIN_SIZE_GUIDED)
 
 
 @fsobj("partition")

@@ -223,6 +223,7 @@ class Disk:
     size: int
     usage_labels: List[str]
     partitions: List[Partition]
+    ok_for_guided: bool
 
 
 @attr.s(auto_attribs=True)

@@ -119,7 +119,7 @@ class GuidedChoiceForm(SubForm):
                 table = TablePile([TableRow(cells)])
                 tables.append(table)
                 enabled = False
-                if obj is disk and disk.size > 6*(2**30):
+                if obj is disk and disk.ok_for_guided:
                     enabled = True
                     if initial < 0:
                         initial = len(options)
@@ -205,12 +205,7 @@ class GuidedDiskSelectionView(BaseView):
         self.controller = controller
 
         if disks:
-            found_ok_disk = False
-            for disk in disks:
-                if disk.size > 6*(2**30):
-                    found_ok_disk = True
-                    break
-            if found_ok_disk:
+            if any(disk.ok_for_guided for disk in disks):
                 self.form = GuidedForm(disks=disks)
 
                 connect_signal(self.form, 'submit', self.done)
