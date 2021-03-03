@@ -20,13 +20,16 @@ import sys
 
 import jsonschema
 
-from subiquity.cmd.tui import parse_options
-from subiquity.core import Subiquity
+from subiquity.cmd.tui import make_client_args_parser
+from subiquity.cmd.server import make_server_args_parser
+from subiquity.client.client import SubiquityClient
+from subiquity.server.server import SubiquityServer
 
 
-def make_schema(app):
-    schema = copy.deepcopy(app.base_schema)
-    for controller in app.controllers.instances:
+def make_schema(server, client):
+    schema = copy.deepcopy(server.base_schema)
+    instances = server.controllers.instances + client.controllers.instances
+    for controller in instances:
         ckey = getattr(controller, 'autoinstall_key', None)
         if ckey is None:
             continue
@@ -37,15 +40,35 @@ def make_schema(app):
     return schema
 
 
-def main():
-    opts = parse_options([])
+def make(server):
+    if server:
+        parser = make_server_args_parser()
+    else:
+        parser = make_client_args_parser()
+    args = []
+    opts, unknown = parser.parse_known_args(args)
     opts.dry_run = True
-    app = Subiquity(opts, None)
-    app.base_model = app.make_model()
-    app.controllers.load_all()
-    schema = make_schema(app)
+    if server:
+        result = SubiquityServer(opts, '')
+    else:
+        result = SubiquityClient(opts)
+    result.base_model = result.make_model()
+    result.controllers.load_all()
+    return result
+
+
+def make_client():
+    return make(False)
+
+
+def make_server():
+    return make(True)
+
+
+def main():
+    schema = make_schema(make_server(), make_client())
     jsonschema.validate({"version": 1}, schema)
-    print(json.dumps(make_schema(app), indent=4))
+    print(json.dumps(schema, indent=4))
 
 
 if __name__ == '__main__':
