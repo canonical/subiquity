@@ -2,6 +2,8 @@
 set -eux
 python3 -m unittest discover
 
+testschema=.subiquity/test-autoinstall-schema.json
+
 validate () {
     python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf
     if [ ! -e .subiquity/subiquity-client-debug.log ] || [ ! -e .subiquity/subiquity-server-debug.log ]; then
@@ -18,6 +20,7 @@ validate () {
 clean () {
     rm -f .subiquity/subiquity-curtin-install.conf
     rm -f .subiquity/subiquity-*.log
+    rm -f "$testschema"
     rm -rf .subiquity/run/
 }
 
@@ -54,3 +57,6 @@ clean
 timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall-user-data.yaml \
                                --dry-run --machine-config examples/simple.json --kernel-cmdline 'autoinstall'"
 validate
+
+python3 -m subiquity.cmd.schema > "$testschema"
+diff -u "autoinstall-schema.json" "$testschema"
