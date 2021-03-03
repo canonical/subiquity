@@ -47,9 +47,6 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
     endpoint_name = 'storage'
 
-    autoinstall_key = "storage"
-    autoinstall_schema = {'type': 'object'}  # ...
-
     def __init__(self, app):
         super().__init__(app)
         self.model = None
