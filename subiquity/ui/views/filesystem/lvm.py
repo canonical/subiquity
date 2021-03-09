@@ -77,8 +77,10 @@ VGNameField = simple_field(VGNameEditor)
 
 class VolGroupForm(CompoundDiskForm):
 
-    def __init__(self, model, possible_components, initial, vg_names):
+    def __init__(self, model, possible_components, initial,
+                 vg_names, deleted_vg_names):
         self.vg_names = vg_names
+        self.deleted_vg_names = deleted_vg_names
         super().__init__(model, possible_components, initial)
         connect_signal(self.encrypt.widget, 'change', self._change_encrypt)
         setup_password_validation(self, _("passphrases"))
@@ -109,12 +111,13 @@ class VolGroupForm(CompoundDiskForm):
             return _("The name of a volume group cannot be empty")
         if v.startswith('-'):
             return _("The name of a volume group cannot start with a hyphen")
-        if v in ('.', '..', 'md') or os.path.exists('/dev/' + v):
-            return _("{name} is not a valid name for a volume group").format(
-                name=v)
         if v in self.vg_names:
             return _("There is already a volume group named '{name}'").format(
                 name=self.name.value)
+        if v in ('.', '..', 'md') or os.path.exists('/dev/' + v):
+            if v not in self.deleted_vg_names:
+                return _("{name} is not a valid name for a volume "
+                         "group").format(name=v)
 
     def validate_password(self):
         if self.encrypt.value and len(self.password.value) < 1:
@@ -131,6 +134,10 @@ class VolGroupStretchy(Stretchy):
         self.parent = parent
         self.existing = existing
         vg_names = {vg.name for vg in parent.model.all_volgroups()}
+        orig_vg_names = {
+            action['name'] for action in parent.model._orig_config
+            if action['type'] == 'lvm_volgroup'
+            }
         if existing is None:
             title = _('Create LVM volume group')
             label = _('Create')
@@ -168,8 +175,10 @@ class VolGroupStretchy(Stretchy):
             self.parent.model, existing, initial['devices'],
             lambda dev: dev.ok_for_lvm_vg)
 
+        deleted_vg_names = orig_vg_names - vg_names
         form = self.form = VolGroupForm(
-            self.parent.model, possible_components, initial, vg_names)
+            self.parent.model, possible_components, initial,
+            vg_names, deleted_vg_names)
         self.form.buttons.base_widget[0].set_label(label)
 
         self.form.devices.widget.set_supports_spares(False)
