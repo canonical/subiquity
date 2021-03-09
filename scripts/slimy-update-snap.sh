@@ -55,6 +55,6 @@ add_overlay old new
 rm -rf new/lib/python3.6/site-packages/subiquity
 rm -rf new/lib/python3.6/site-packages/subiquitycore
 
-git -C $src archive HEAD subiquity subiquitycore | tar -C new/lib/python3.6/site-packages/ -x
+rsync -a $src/subiquity $src/subiquitycore new/lib/python3.6/site-packages
 
 mksquashfs new $new -comp gzip -Xcompression-level 3
