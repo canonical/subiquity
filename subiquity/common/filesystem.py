@@ -398,7 +398,12 @@ class FilesystemManipulator:
                 size=disk.free_for_partitions,
                 fstype=None,
                 ))
-        spec = dict(name="ubuntu-vg", devices=set([part]))
+        vg_name = 'ubuntu-vg'
+        i = 0
+        while self.model._one(type='lvm_volgroup', name=vg_name) is not None:
+            i += 1
+            vg_name = 'ubuntu-vg-{}'.format(i)
+        spec = dict(name=vg_name, devices=set([part]))
         if lvm_options and lvm_options['encrypt']:
             spec['password'] = lvm_options['luks_options']['password']
         vg = self.create_volgroup(spec)
