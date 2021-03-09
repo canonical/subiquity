@@ -111,13 +111,13 @@ class VolGroupForm(CompoundDiskForm):
             return _("The name of a volume group cannot be empty")
         if v.startswith('-'):
             return _("The name of a volume group cannot start with a hyphen")
+        if v in self.vg_names:
+            return _("There is already a volume group named '{name}'").format(
+                name=self.name.value)
         if v in ('.', '..', 'md') or os.path.exists('/dev/' + v):
             if v not in self.deleted_vg_names:
                 return _("{name} is not a valid name for a volume "
                          "group").format(name=v)
-        if v in self.vg_names:
-            return _("There is already a volume group named '{name}'").format(
-                name=self.name.value)
 
     def validate_password(self):
         if self.encrypt.value and len(self.password.value) < 1:
