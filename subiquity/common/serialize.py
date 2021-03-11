@@ -33,6 +33,8 @@ class Serializer:
             typing.Union: self._walk_Union,
             list: self._walk_List,
             typing.List: self._walk_List,
+            dict: self._walk_Dict,
+            typing.Dict: self._walk_Dict,
             }
         self.type_serializers = {}
         self.type_deserializers = {}
@@ -45,11 +47,11 @@ class Serializer:
         self.type_deserializers[datetime.datetime] = self._deserialize_datetime
 
     def _scalar(self, annotation, value, metadata, path):
-        assert type(value) is annotation, "at {}, {} is not a {}".format(
+        assert type(value) is annotation, "at {}, {!r} is not a {}".format(
             path, value, annotation)
         return value
 
-    def _walk_Union(self, meth, args, value, metadata, path):
+    def _walk_Union(self, meth, args, value, metadata, path, serializing):
         NoneType = type(None)
         assert NoneType in args, "at {}, can only serialize Optional"
         args = [a for a in args if a is not NoneType]
@@ -58,11 +60,29 @@ class Serializer:
             return value
         return meth(args[0], value, metadata, path)
 
-    def _walk_List(self, meth, args, value, metadata, path):
+    def _walk_List(self, meth, args, value, metadata, path, serializing):
         return [
             meth(args[0], v, metadata, f'{path}[{i}]')
             for i, v in enumerate(value)
             ]
+
+    def _walk_Dict(self, meth, args, value, m, p, serializing):
+        k_ann, v_ann = args
+        if k_ann is str:
+            return {
+                meth(k_ann, k, m, f'{p}/{k}'): meth(v_ann, v, m, f'{p}[{k}]')
+                for k, v in value.items()
+                }
+        elif serializing:
+            return [
+                [meth(k_ann, k, m, f'{p}/{k}'), meth(v_ann, v, m, f'{p}[{k}]')]
+                for k, v in value.items()
+                ]
+        else:
+            return dict([
+                (meth(k_ann, k, m, f'{p}/{k}'), meth(v_ann, v, m, f'{p}[{k}]'))
+                for k, v in value
+                ])
 
     def _serialize_dict(self, annotation, value, metadata, path):
         assert type(value) is annotation, "at {}, {} is not a {}".format(
@@ -114,7 +134,7 @@ class Serializer:
         if origin is not None:
             args = annotation.__args__
             return self.typing_walkers[origin](
-                self.serialize, args, value, metadata, path)
+                self.serialize, args, value, metadata, path, True)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
             return value.name
         try:
@@ -166,7 +186,7 @@ class Serializer:
         if origin is not None:
             args = annotation.__args__
             return self.typing_walkers[origin](
-                self.deserialize, args, value, metadata, path)
+                self.deserialize, args, value, metadata, path, False)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
             return getattr(annotation, value)
         return self.type_deserializers[annotation](
