@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import locale
 import logging
 
 from urwid import (
@@ -44,7 +45,7 @@ from subiquitycore.ui.stretchy import (
 from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
-from subiquity.client.keyboard import latinizable, for_ui
+from subiquity.client.keyboard import for_ui, latinizable
 from subiquity.common.types import KeyboardSetting
 from subiquity.ui.views import pc105
 
@@ -127,21 +128,23 @@ another layout or run the automated detection again.
 """)
 
     def ok(self, sender):
-        self.keyboard_detector.keyboard_view.found_layout(self.step.result)
+        self.keyboard_detector.keyboard_view.found_layout(
+            self.layout, self.variant)
 
     def make_body(self):
-        kl = self.keyboard_detector.keyboard_view.keyboard_list
-        layout, variant = kl.lookup(self.step.result)
-        var_desc = []
+        if ':' in self.step.result:
+            layout_code, variant_code = self.step.result.split(':')
+        else:
+            layout_code, variant_code = self.step.result, ""
+        view = self.keyboard_detector.keyboard_view
+        self.layout, self.variant = view.lookup(layout_code, variant_code)
         layout_text = _("Layout")
         var_text = _("Variant")
         width = max(len(layout_text), len(var_text), 12)
-        if variant is not None:
-            var_desc = [Text("%*s: %s" % (width, var_text, variant))]
         return Pile([
                 Text(_(self.preamble)),
-                Text("%*s: %s" % (width, layout_text, layout)),
-            ] + var_desc + [
+                Text("%*s: %s" % (width, layout_text, self.layout.name)),
+                Text("%*s: %s" % (width, var_text, self.variant.name)),
                 Text(_(self.postamble)),
                 button_pile([ok_btn(label=_("OK"), on_press=self.ok)]),
                 ])
@@ -394,25 +397,16 @@ class KeyboardView(BaseView):
 
         self.form = KeyboardForm()
         opts = []
-        for layout, desc in self.keyboard_list.layouts.items():
-            opts.append(Option((desc, True, layout)))
-        opts.sort(key=lambda o: o.label.text)
+        for layout in self.keyboard_list.layouts:
+            opts.append(Option((layout.name, True, layout)))
+        opts.sort(key=lambda o: locale.strxfrm(o.label.text))
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget.options = opts
         setting = for_ui(initial_setting)
-        try:
-            self.form.layout.widget.value = setting.layout
-        except AttributeError:
-            # Don't crash on pre-existing invalid config.
-            pass
-        self.select_layout(None, setting.layout)
-        try:
-            self.form.variant.widget.value = setting.variant
-        except AttributeError:
-            # Don't crash on pre-existing invalid config.
-            pass
+        layout, variant = self.lookup(setting.layout, setting.variant)
+        self.set_values(layout, variant)
 
         if self.controller.opts.run_on_serial:
             excerpt = _('Please select the layout of the keyboard directly '
@@ -437,32 +431,24 @@ class KeyboardView(BaseView):
             narrow_rows=True))
 
     def detect(self, sender):
-        detector = Detector(self)
-        detector.start()
+        Detector(self).start()
 
-    def found_layout(self, result):
+    def found_layout(self, layout, variant):
         self.remove_overlay()
-        log.debug("found_layout %s", result)
-        if ':' in result:
-            layout, variant = result.split(':')
-        else:
-            layout, variant = result, ""
-        self.form.layout.widget.value = layout
-        self.select_layout(None, layout)
-        self.form.variant.widget.value = variant
+        log.debug("found_layout %r %r", layout.code, variant.code)
+        self.set_values(layout, variant)
         self._w.base_widget.focus_position = 4
 
     def done(self, result):
-        layout = self.form.layout.widget.value
-        variant = ''
-        if self.form.variant.widget.value is not None:
-            variant = self.form.variant.widget.value
-        setting = KeyboardSetting(layout=layout, variant=variant)
-        new_setting = latinizable(setting)
-        if new_setting != setting:
-            self.show_stretchy_overlay(ToggleQuestion(self, new_setting))
-            return
-        self.really_done(setting)
+        data = result.as_data()
+        layout = data['layout']
+        variant = data.get('variant', layout.variants[0])
+        setting = KeyboardSetting(layout=layout.code, variant=variant.code)
+        other = latinizable(setting)
+        if setting != other:
+            self.show_stretchy_overlay(ToggleQuestion(self, other))
+        else:
+            self.really_done(setting)
 
     def really_done(self, setting):
         apply = False
@@ -479,18 +465,29 @@ class KeyboardView(BaseView):
         if sender is not None:
             log.debug("select_layout %s", layout)
         opts = []
-        default_i = -1
-        layout_items = enumerate(self.keyboard_list.variants[layout].items())
-        for i, (variant, variant_desc) in layout_items:
-            if variant == "":
-                default_i = i
-            opts.append(Option((variant_desc, True, variant)))
-        opts.sort(key=lambda o: o.label.text)
-        if default_i < 0:
-            opts.insert(0, Option(("default", True, "")))
+        for variant in layout.variants:
+            opts.append(Option((variant.name, True, variant)))
+        # ./scripts/make-kbd-info.py checks that the default is always
+        # at index 0
+        opts[1:] = sorted(opts[1:], key=lambda o: locale.strxfrm(o.label.text))
         self.form.variant.widget.options = opts
-        if default_i < 0:
-            self.form.variant.widget.index = 0
-        else:
-            self.form.variant.widget.index = default_i
+        self.form.variant.widget.index = 0
         self.form.variant.enabled = len(opts) > 1
+
+    def lookup(self, layout_code, variant_code):
+        for layout in self.keyboard_list.layouts:
+            if layout.code == layout_code:
+                break
+            if layout.code == "us":
+                default = layout
+        else:
+            layout = default
+        for variant in layout.variants:
+            if variant.code == variant_code:
+                return layout, variant
+        return layout, layout.variants[0]
+
+    def set_values(self, layout, variant):
+        self.form.layout.widget.value = layout
+        self.select_layout(None, layout)
+        self.form.variant.widget.value = variant
