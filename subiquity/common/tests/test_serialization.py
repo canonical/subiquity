@@ -98,6 +98,20 @@ class CommonSerializerTests:
         self.assertRaises(
             Exception, self.serializer.serialize, dict, {1: 2})
 
+    def test_roundtrip_dict(self):
+        ann = typing.Dict[int, str]
+        self.assertRoundtrips(ann, {1: "2"})
+
+    def test_roundtrip_dict_strkey(self):
+        ann = typing.Dict[str, int]
+        self.assertRoundtrips(ann, {"a": 2})
+
+    def test_serialize_dict(self):
+        self.assertSerialization(typing.Dict[int, str], {1: "a"}, [[1, "a"]])
+
+    def test_serialize_dict_strkeys(self):
+        self.assertSerialization(typing.Dict[str, str], {"a": "b"}, {"a": "b"})
+
 
 class TestSerializer(CommonSerializerTests, unittest.TestCase):
 
