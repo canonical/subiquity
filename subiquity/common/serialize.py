@@ -27,7 +27,8 @@ import attr
 
 class Serializer:
 
-    def __init__(self):
+    def __init__(self, *, compact=False):
+        self.compact = compact
         self.typing_walkers = {
             typing.Union: self._walk_Union,
             list: self._walk_List,
@@ -76,11 +77,19 @@ class Serializer:
             }
 
     def _serialize_attr(self, annotation, value, metadata, path):
-        r = {}
-        for field in attr.fields(annotation):
-            r.update(self._serialize_field(
-                field, getattr(value, field.name), path))
-        return r
+        if self.compact:
+            r = []
+            for field in attr.fields(annotation):
+                r.append(self.serialize(
+                    field.type, getattr(value, field.name), field.metadata,
+                    f'{path}.{field.name}'))
+            return r
+        else:
+            r = {}
+            for field in attr.fields(annotation):
+                r.update(self._serialize_field(
+                    field, getattr(value, field.name), path))
+            return r
 
     def serialize(self, annotation, value, metadata=None, path=''):
         if annotation is None:
@@ -115,11 +124,19 @@ class Serializer:
             }
 
     def _deserialize_attr(self, annotation, value, metadata, path):
-        args = {}
-        for field in attr.fields(annotation):
-            args.update(self._deserialize_field(
-                field, value[field.name], path))
-        return annotation(**args)
+        if self.compact:
+            args = []
+            for field, v in zip(attr.fields(annotation), value):
+                args.append(self.deserialize(
+                    field.type, v, field.metadata,
+                    f'{path}.{field.name}'))
+            return annotation(*args)
+        else:
+            args = {}
+            for field in attr.fields(annotation):
+                args.update(self._deserialize_field(
+                    field, value[field.name], path))
+            return annotation(**args)
 
     def deserialize(self, annotation, value, metadata=None, path=''):
         if annotation is None:
