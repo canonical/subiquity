@@ -1476,6 +1476,8 @@ class FilesystemModel(object):
                             "of {}".format(p, parent))
                     p.size = 0
                     p.size = parent.free_for_partitions
+                    if p.type == 'lvm_partition':
+                        p.size = align_down(p.size, LVM_CHUNK_SIZE)
             elif isinstance(p.size, str):
                 if p.size.endswith("%"):
                     percentage = int(p.size[:-1])
