@@ -20,9 +20,9 @@ import os
 import attr
 
 from subiquitycore.context import with_context
+from subiquitycore.utils import arun_command
 
 from subiquity.common.apidef import API
-from subiquity.common.keyboard import set_keyboard
 from subiquity.common.serialize import Serializer
 from subiquity.common.types import (
     AnyStep,
@@ -146,11 +146,25 @@ class KeyboardController(SubiquityController):
     @with_context()
     async def apply_autoinstall_config(self, context):
         if self.needs_set_keyboard:
-            await set_keyboard(
-                self.app.root, self.model.setting, self.opts.dry_run)
+            await self.set_keyboard()
 
     def make_autoinstall(self):
         return attr.asdict(self.model.setting)
+
+    async def set_keyboard(self):
+        path = self.model.config_path
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w') as fp:
+            fp.write(self.model.render_config_file())
+        cmds = [
+            ['setupcon', '--save', '--force', '--keyboard-only'],
+            ['/snap/bin/subiquity.subiquity-loadkeys'],
+            ]
+        if self.opts.dry_run:
+            scale = os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1")
+            cmds = [['sleep', str(1/float(scale))]]
+        for cmd in cmds:
+            await arun_command(cmd)
 
     async def GET(self) -> KeyboardSetting:
         return for_ui(self.model.setting)
@@ -160,9 +174,8 @@ class KeyboardController(SubiquityController):
         if new is not None:
             data = KeyboardSetting(new[0], new[1], data.toggle)
         if data != self.model.setting:
-            await set_keyboard(
-                self.app.root, data, self.opts.dry_run)
-        self.model.setting = data
+            self.model.setting = data
+            await self.set_keyboard()
         self.configured()
 
     async def needs_toggle_GET(self, layout_code: str,
