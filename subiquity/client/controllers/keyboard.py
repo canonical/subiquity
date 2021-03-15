@@ -65,6 +65,9 @@ class KeyboardController(SubiquityTuiController):
         await set_keyboard(self.app.root, setting, self.opts.dry_run)
         self.done(setting, False)
 
+    async def get_step(self, index):
+        return await self.endpoint.steps.GET(index)
+
     def done(self, setting, apply):
         log.debug("KeyboardController.done %s next_screen", setting)
         if apply:

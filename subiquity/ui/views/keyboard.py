@@ -85,7 +85,7 @@ class AutoDetectBase(WidgetWrap):
 class AutoDetectIntro(AutoDetectBase):
 
     def ok(self, sender):
-        self.keyboard_detector.do_step("0")
+        self.keyboard_detector.do_step(None)
 
     def cancel(self, sender):
         self.keyboard_detector.abort()
@@ -228,7 +228,6 @@ class Detector:
 
     def __init__(self, kview):
         self.keyboard_view = kview
-        self.pc105_steps = kview.keyboard_list.load_pc105()
         self.seen_steps = []
 
     def start(self):
@@ -261,11 +260,16 @@ class Detector:
 
     def do_step(self, step_index):
         self.abort()
+        self.keyboard_view.controller.app.aio_loop.create_task(
+            self._do_step(step_index))
 
+    async def _do_step(self, step_index):
         log.debug("moving to step %s", step_index)
-        step = self.pc105_steps[step_index]
+        step = await self.keyboard_view.controller.app.wait_with_text_dialog(
+            self.keyboard_view.controller.get_step(step_index),
+            "...")
         self.seen_steps.append(step_index)
-        log.debug("step: %s", repr(step))
+        log.debug("step: %s", step)
         self.overlay = self.step_cls_to_view_cls[type(step)](self, step)
 
         self.overlay.start()
