@@ -45,7 +45,6 @@ from subiquitycore.ui.stretchy import (
 from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
-from subiquity.client.keyboard import for_ui, latinizable
 from subiquity.common.types import (
     KeyboardSetting,
     StepKeyPresent,
@@ -378,10 +377,10 @@ class KeyboardView(BaseView):
 
     title = _("Keyboard configuration")
 
-    def __init__(self, controller, initial_setting):
+    def __init__(self, controller, setting):
         self.controller = controller
         self.keyboard_list = controller.keyboard_list
-        self.initial_setting = initial_setting
+        self.initial_setting = setting
 
         self.form = KeyboardForm()
         opts = []
@@ -392,7 +391,6 @@ class KeyboardView(BaseView):
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget.options = opts
-        setting = for_ui(initial_setting)
         layout, variant = self.lookup(setting.layout, setting.variant)
         self.set_values(layout, variant)
 
@@ -427,16 +425,20 @@ class KeyboardView(BaseView):
         self.set_values(layout, variant)
         self._w.base_widget.focus_position = 4
 
+    async def _check_toggle(self, setting):
+        needs_toggle = await self.controller.app.wait_with_text_dialog(
+            self.controller.needs_toggle(setting), "...")
+        if needs_toggle:
+            self.show_stretchy_overlay(ToggleQuestion(self, setting))
+        else:
+            self.really_done(setting)
+
     def done(self, result):
         data = result.as_data()
         layout = data['layout']
         variant = data.get('variant', layout.variants[0])
         setting = KeyboardSetting(layout=layout.code, variant=variant.code)
-        other = latinizable(setting)
-        if setting != other:
-            self.show_stretchy_overlay(ToggleQuestion(self, other))
-        else:
-            self.really_done(setting)
+        self.controller.app.aio_loop.create_task(self._check_toggle(setting))
 
     def really_done(self, setting):
         apply = False

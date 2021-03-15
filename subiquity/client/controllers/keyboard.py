@@ -68,6 +68,10 @@ class KeyboardController(SubiquityTuiController):
     async def get_step(self, index):
         return await self.endpoint.steps.GET(index)
 
+    async def needs_toggle(self, setting):
+        return await self.endpoint.needs_toggle.GET(
+            layout_code=setting.layout, variant_code=setting.variant)
+
     def done(self, setting, apply):
         log.debug("KeyboardController.done %s next_screen", setting)
         if apply:
