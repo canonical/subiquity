@@ -112,6 +112,11 @@ class CommonSerializerTests:
     def test_serialize_dict_strkeys(self):
         self.assertSerialization(typing.Dict[str, str], {"a": "b"}, {"a": "b"})
 
+    def test_rountrip_union(self):
+        ann = typing.Union[Data, Container]
+        self.assertRoundtrips(ann, Data.make_random())
+        self.assertRoundtrips(ann, Container.make_random())
+
 
 class TestSerializer(CommonSerializerTests, unittest.TestCase):
 
@@ -134,6 +139,15 @@ class TestSerializer(CommonSerializerTests, unittest.TestCase):
             }
         self.assertSerialization(Container, container, expected)
 
+    def test_serialize_union(self):
+        data = Data.make_random()
+        expected = {
+            '$type': 'Data',
+            'field1': data.field1,
+            'field2': data.field2,
+            }
+        self.assertSerialization(typing.Union[Data, Container], data, expected)
+
 
 class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):
 
@@ -153,3 +167,8 @@ class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):
             [[data2.field1, data2.field2]],
             ]
         self.assertSerialization(Container, container, expected)
+
+    def test_serialize_union(self):
+        data = Data.make_random()
+        expected = ['Data', data.field1, data.field2]
+        self.assertSerialization(typing.Union[Data, Container], data, expected)

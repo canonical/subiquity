@@ -53,12 +53,35 @@ class Serializer:
 
     def _walk_Union(self, meth, args, value, metadata, path, serializing):
         NoneType = type(None)
-        assert NoneType in args, "at {}, can only serialize Optional"
-        args = [a for a in args if a is not NoneType]
-        assert len(args) == 1, "at {}, can only serialize Optional"
-        if value is None:
-            return value
-        return meth(args[0], value, metadata, path)
+        if NoneType in args:
+            args = [a for a in args if a is not NoneType]
+            if len(args) == 1:
+                # I.e. Optional[thing]
+                if value is None:
+                    return value
+                return meth(args[0], value, metadata, path)
+        if all(attr.has(a) for a in args):
+            if serializing:
+                for a in args:
+                    if isinstance(value, a):
+                        r = meth(a, value, metadata, path)
+                        if self.compact:
+                            r.insert(0, a.__name__)
+                        else:
+                            r['$type'] = a.__name__
+                        return r
+                raise Exception(
+                    f"at {path}, type of {value} not found in {args}")
+            else:
+                if self.compact:
+                    n = value.pop(0)
+                else:
+                    n = value.pop('$type')
+                for a in args:
+                    if a.__name__ == n:
+                        return meth(a, value, metadata, path)
+                raise Exception(f"at {path}, type {n} not found in {args}")
+        raise Exception(f"at {path}, cannot serialize Union[{args}]")
 
     def _walk_List(self, meth, args, value, metadata, path, serializing):
         return [
