@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections import defaultdict
 import os
 
-from subiquity.common.types import KeyboardSetting
+from subiquity.common.serialize import Serializer
+from subiquity.common.types import KeyboardLayout, KeyboardSetting
 
 
 # Non-latin keyboard layouts that are handled in a uniform way
@@ -107,14 +107,15 @@ def for_ui(setting):
 class KeyboardList:
 
     def __init__(self):
-        self._kbnames_file = os.path.join(
-            os.environ.get("SNAP", '.'),
-            'kbdnames.txt')
+        self._kbnames_dir = os.path.join(os.environ.get("SNAP", '.'), 'kbds')
+        self.serializer = Serializer(compact=True)
         self._clear()
 
+    def _file_for_lang(self, code):
+        return os.path.join(self._kbnames_dir, code + '.jsonl')
+
     def has_language(self, code):
-        self.load_language(code)
-        return bool(self.layouts)
+        return os.path.exists(self._file_for_lang(code))
 
     def load_language(self, code):
         if code == self.current_lang:
@@ -122,33 +123,13 @@ class KeyboardList:
 
         self._clear()
 
-        with open(self._kbnames_file, encoding='utf-8') as kbdnames:
-            self._load_file(code, kbdnames)
+        with open(self._file_for_lang(code)) as kbdnames:
+            self.layouts = [
+                self.serializer.from_json(KeyboardLayout, line)
+                for line in kbdnames
+                ]
         self.current_lang = code
 
     def _clear(self):
         self.current_lang = None
-        self.layouts = {}
-        self.variants = defaultdict(dict)
-
-    def _load_file(self, code, kbdnames):
-        for line in kbdnames:
-            line = line.rstrip('\n')
-            got_lang, element, name, value = line.split("*", 3)
-            if got_lang != code:
-                continue
-
-            if element == "layout":
-                self.layouts[name] = value
-            elif element == "variant":
-                variantname, variantdesc = value.split("*", 1)
-                self.variants[name][variantname] = variantdesc
-
-    def lookup(self, code):
-        if ':' in code:
-            layout_code, variant_code = code.split(":", 1)
-            layout = self.layouts.get(layout_code, '?')
-            variant = self.variants.get(layout_code, {}).get(variant_code, '?')
-            return (layout, variant)
-        else:
-            return self.layouts.get(code, '?'), None
+        self.layouts = []

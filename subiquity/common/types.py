@@ -100,6 +100,19 @@ class KeyboardSetting:
 
 
 @attr.s(auto_attribs=True)
+class KeyboardVariant:
+    code: str
+    name: str
+
+
+@attr.s(auto_attribs=True)
+class KeyboardLayout:
+    code: str
+    name: str
+    variants: List[KeyboardVariant]
+
+
+@attr.s(auto_attribs=True)
 class ZdevInfo:
     id: str
     type: str

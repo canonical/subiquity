@@ -122,19 +122,20 @@ parts:
     stage:
       - users-and-groups
       - reserved-usernames
-  kbdnames:
+  keyboard-data:
     plugin: nil
     build-packages:
       - console-setup
       - locales
       - xkb-data-i18n
-    override-build: |
-      /usr/share/console-setup/kbdnames-maker /usr/share/console-setup/KeyboardNames.pl > $SNAPCRAFT_PART_INSTALL/kbdnames.txt
+      - python3-attr
+    override-build: PYTHONPATH=$SNAPCRAFT_PROJECT_DIR/ $SNAPCRAFT_PROJECT_DIR/scripts/make-kbd-info.py
     stage:
-      - kbdnames.txt
+      - kbds/
   font:
     plugin: dump
     source: ./
+    source-type: git
     organize:
       font/subiquity.psf: subiquity.psf
     stage:
