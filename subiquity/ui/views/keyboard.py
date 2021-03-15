@@ -46,15 +46,18 @@ from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
 from subiquity.client.keyboard import for_ui, latinizable
-from subiquity.common.types import KeyboardSetting
-from subiquity.ui.views import pc105
+from subiquity.common.types import (
+    KeyboardSetting,
+    StepKeyPresent,
+    StepPressKey,
+    StepResult,
+    )
 
 log = logging.getLogger("subiquity.ui.views.keyboard")
 
 
 class AutoDetectBase(WidgetWrap):
     def __init__(self, keyboard_detector, step):
-        # step is an instance of pc105.Step
         self.keyboard_detector = keyboard_detector
         self.step = step
         lb = LineBox(
@@ -82,7 +85,7 @@ class AutoDetectBase(WidgetWrap):
 class AutoDetectIntro(AutoDetectBase):
 
     def ok(self, sender):
-        self.keyboard_detector.do_step(0)
+        self.keyboard_detector.do_step("0")
 
     def cancel(self, sender):
         self.keyboard_detector.abort()
@@ -100,19 +103,6 @@ class AutoDetectIntro(AutoDetectBase):
                 ])
 
 
-class AutoDetectFailed(AutoDetectBase):
-
-    def ok(self, sender):
-        self.keyboard_detector.abort()
-
-    def make_body(self):
-        return Pile([
-                Text(_("Keyboard auto detection failed, sorry")),
-                Text(""),
-                button_pile([ok_btn(label="OK", on_press=self.ok)]),
-                ])
-
-
 class AutoDetectResult(AutoDetectBase):
 
     preamble = _("""\
@@ -127,17 +117,16 @@ another layout or run the automated detection again.
 
 """)
 
+    @property
+    def _kview(self):
+        return self.keyboard_detector.keyboard_view
+
     def ok(self, sender):
-        self.keyboard_detector.keyboard_view.found_layout(
-            self.layout, self.variant)
+        self._kview.found_layout(self.layout, self.variant)
 
     def make_body(self):
-        if ':' in self.step.result:
-            layout_code, variant_code = self.step.result.split(':')
-        else:
-            layout_code, variant_code = self.step.result, ""
-        view = self.keyboard_detector.keyboard_view
-        self.layout, self.variant = view.lookup(layout_code, variant_code)
+        self.layout, self.variant = self._kview.lookup(
+            self.step.layout, self.step.variant)
         layout_text = _("Layout")
         var_text = _("Variant")
         width = max(len(layout_text), len(var_text), 12)
@@ -239,8 +228,7 @@ class Detector:
 
     def __init__(self, kview):
         self.keyboard_view = kview
-        self.pc105tree = pc105.PC105Tree()
-        self.pc105tree.read_steps()
+        self.pc105_steps = kview.keyboard_list.load_pc105()
         self.seen_steps = []
 
     def start(self):
@@ -252,9 +240,9 @@ class Detector:
         self.keyboard_view.remove_overlay()
 
     step_cls_to_view_cls = {
-        pc105.StepResult: AutoDetectResult,
-        pc105.StepPressKey: AutoDetectPressKey,
-        pc105.StepKeyPresent: AutoDetectKeyPresent,
+        StepResult: AutoDetectResult,
+        StepPressKey: AutoDetectPressKey,
+        StepKeyPresent: AutoDetectKeyPresent,
         }
 
     def backup(self):
@@ -275,14 +263,10 @@ class Detector:
         self.abort()
 
         log.debug("moving to step %s", step_index)
-        try:
-            step = self.pc105tree.steps[step_index]
-        except KeyError:
-            self.overlay = AutoDetectFailed(self, None)
-        else:
-            self.seen_steps.append(step_index)
-            log.debug("step: %s", repr(step))
-            self.overlay = self.step_cls_to_view_cls[type(step)](self, step)
+        step = self.pc105_steps[step_index]
+        self.seen_steps.append(step_index)
+        log.debug("step: %s", repr(step))
+        self.overlay = self.step_cls_to_view_cls[type(step)](self, step)
 
         self.overlay.start()
         self.keyboard_view.show_overlay(self.overlay)

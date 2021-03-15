@@ -39,6 +39,7 @@ subiquity/common/serialize.py
 subiquity/common/tests/__init__.py
 subiquity/common/tests/test_filesystem.py
 subiquity/common/tests/test_keyboard.py
+subiquity/common/tests/test_serialization.py
 subiquity/common/types.py
 subiquitycore/async_helpers.py
 subiquitycore/contextlib38.py
@@ -165,7 +166,6 @@ subiquity/ui/views/__init__.py
 subiquity/ui/views/installprogress.py
 subiquity/ui/views/keyboard.py
 subiquity/ui/views/mirror.py
-subiquity/ui/views/pc105.py
 subiquity/ui/views/proxy.py
 subiquity/ui/views/refresh.py
 subiquity/ui/views/snaplist.py
