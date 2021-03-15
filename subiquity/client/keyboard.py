@@ -14,11 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from typing import Dict
 
 from subiquity.common.serialize import Serializer
 from subiquity.common.types import (
-    AnyStep,
     KeyboardLayout,
     KeyboardSetting,
     )
@@ -138,8 +136,3 @@ class KeyboardList:
     def _clear(self):
         self.current_lang = None
         self.layouts = []
-
-    def load_pc105(self):
-        path = os.path.join(self._kbnames_dir, 'pc105.json')
-        with open(path) as fp:
-            return self.serializer.from_json(Dict[str, AnyStep], fp.read())

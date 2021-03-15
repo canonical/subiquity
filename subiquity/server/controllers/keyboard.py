@@ -14,15 +14,19 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from typing import Dict, Optional
+import os
 
 import attr
 
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
-from subiquity.common.types import KeyboardSetting
-from subiquity.common.keyboard import (
-    set_keyboard,
+from subiquity.common.keyboard import set_keyboard
+from subiquity.common.serialize import Serializer
+from subiquity.common.types import (
+    AnyStep,
+    KeyboardSetting,
     )
 from subiquity.server.controller import SubiquityController
 
@@ -46,6 +50,9 @@ class KeyboardController(SubiquityController):
         }
 
     def __init__(self, app):
+        self._kbds_dir = os.path.join(os.environ.get("SNAP", '.'), 'kbds')
+        self.serializer = Serializer(compact=True)
+        self.pc105_steps = None
         self.needs_set_keyboard = False
         super().__init__(app)
 
@@ -72,3 +79,13 @@ class KeyboardController(SubiquityController):
     async def POST(self, data: KeyboardSetting):
         self.model.setting = data
         self.configured()
+
+    async def steps_GET(self, index: Optional[str]) -> AnyStep:
+        if self.pc105_steps is None:
+            path = os.path.join(self._kbds_dir, 'pc105.json')
+            with open(path) as fp:
+                self.pc105_steps = self.serializer.from_json(
+                    Dict[str, AnyStep], fp.read())
+        if index is None:
+            index = "0"
+        return self.pc105_steps[index]
