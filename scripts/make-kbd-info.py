@@ -4,12 +4,22 @@ from collections import defaultdict
 import os
 import shutil
 import subprocess
+import sys
+from typing import Dict
 
 from subiquity.common.serialize import Serializer
 from subiquity.common.types import (
+    AnyStep,
     KeyboardLayout,
     KeyboardVariant,
+    StepPressKey,
+    StepKeyPresent,
     )
+
+sys.path.insert(0, os.path.dirname(__file__))
+
+import pc105 # noqa
+
 
 tdir = os.path.join(os.environ.get('SNAPCRAFT_PART_INSTALL', '.'), 'kbds')
 if os.path.exists(tdir):
@@ -57,3 +67,27 @@ for lang, layouts in lang_to_layouts.items():
                     "subiquity assumes all keyboard layouts have at least one "
                     "variant!")
             out.write(s.to_json(KeyboardLayout, layout) + "\n")
+
+
+pc105tree = pc105.PC105Tree()
+pc105tree.read_steps()
+
+if '0' not in pc105tree.steps:
+    raise Exception("subiquity assumes there is a step '0' in the pc105 steps")
+
+for index, step in pc105tree.steps.items():
+    if isinstance(step, StepPressKey):
+        if len(step.symbols) == 0 or len(step.keycodes) == 0:
+            raise Exception(f"step {index} {step} appears to be incomplete")
+        for v in step.keycodes.values():
+            if v not in pc105tree.steps:
+                raise Exception(
+                    f"step {index} {step} references missing step {v}")
+    elif isinstance(step, StepKeyPresent):
+        for v in step.yes, step.no:
+            if v not in pc105tree.steps:
+                raise Exception(
+                    f"step {index} {step} references missing step {v}")
+
+with open(os.path.join(tdir, 'pc105.json'), 'w') as out:
+    out.write(s.to_json(Dict[str, AnyStep], pc105tree.steps))

@@ -20,7 +20,7 @@
 import datetime
 import enum
 import shlex
-from typing import List, Optional
+from typing import Dict, List, Optional, Union
 
 import attr
 
@@ -90,6 +90,31 @@ class RefreshStatus:
     availability: RefreshCheckState
     current_snap_version: str = ''
     new_snap_version: str = ''
+
+
+@attr.s(auto_attribs=True)
+class StepPressKey:
+    # "Press a key with one of the following symbols"
+    symbols: List[str]
+    keycodes: Dict[int, str]
+
+
+@attr.s(auto_attribs=True)
+class StepKeyPresent:
+    # "Is this symbol present on your keyboard"
+    symbol: str
+    yes: str
+    no: str
+
+
+@attr.s(auto_attribs=True)
+class StepResult:
+    # "This is the autodetected layout"
+    layout: str
+    variant: str
+
+
+AnyStep = Union[StepPressKey, StepKeyPresent, StepResult]
 
 
 @attr.s(auto_attribs=True)
