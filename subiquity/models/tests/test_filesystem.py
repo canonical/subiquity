@@ -27,6 +27,8 @@ from subiquity.models.filesystem import (
     get_raid_size,
     humanize_size,
     Partition,
+    align_down,
+    LVM_CHUNK_SIZE,
     )
 
 
@@ -1135,7 +1137,9 @@ class TestAutoInstallConfig(unittest.TestCase):
         vg = model._one(type="lvm_volgroup")
         lv2 = model._one(type="lvm_partition", id='lv2')
         self.assertEqual(
-            lv2.size, vg.available_for_partitions - dehumanize_size("50M"))
+            lv2.size, align_down(
+                vg.available_for_partitions - dehumanize_size("50M"),
+                LVM_CHUNK_SIZE))
 
     def test_render_does_not_include_unreferenced(self):
         model = make_model(Bootloader.NONE)
