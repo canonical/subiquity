@@ -36,9 +36,11 @@ class Serializer:
             }
         self.type_serializers = {}
         self.type_deserializers = {}
-        for typ in int, str, dict, bool, list, type(None):
+        for typ in int, str, bool, list, type(None):
             self.type_serializers[typ] = self._scalar
             self.type_deserializers[typ] = self._scalar
+        self.type_serializers[dict] = self._serialize_dict
+        self.type_deserializers[dict] = self._scalar
         self.type_serializers[datetime.datetime] = self._serialize_datetime
         self.type_deserializers[datetime.datetime] = self._deserialize_datetime
 
@@ -61,6 +63,15 @@ class Serializer:
             meth(args[0], v, metadata, f'{path}[{i}]')
             for i, v in enumerate(value)
             ]
+
+    def _serialize_dict(self, annotation, value, metadata, path):
+        assert type(value) is annotation, "at {}, {} is not a {}".format(
+            path, value, annotation)
+        for k in value:
+            if not isinstance(k, str):
+                raise Exception(
+                    f"at {path}, dict must have only string keys, found {k!r}")
+        return value
 
     def _serialize_datetime(self, annotation, value, metadata, path):
         assert type(value) is annotation, "at {}, {} is not a {}".format(
@@ -106,8 +117,13 @@ class Serializer:
                 self.serialize, args, value, metadata, path)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
             return value.name
-        return self.type_serializers[annotation](
-            annotation, value, metadata, path)
+        try:
+            serializer = self.type_serializers[annotation]
+        except KeyError:
+            raise Exception(
+                "do not know how to handle %s at %s", annotation, path)
+        else:
+            return serializer(annotation, value, metadata, path)
 
     def _deserialize_datetime(self, annotation, value, metadata, path):
         assert type(value) is str, f'at {path}'

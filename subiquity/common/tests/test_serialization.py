@@ -53,7 +53,7 @@ class CommonSerializerTests:
         (int, 1),
         (str, "v"),
         (list, [1]),
-        (dict, {2: 3}),
+        (dict, {"2": 3}),
         (type(None), None),
         ]
 
@@ -66,8 +66,9 @@ class CommonSerializerTests:
             self.serializer.deserialize(annotation, value), expected)
 
     def assertRoundtrips(self, annotation, value):
-        serialized = self.serializer.serialize(annotation, value)
-        self.assertDeserializesTo(annotation, serialized, value)
+        serialized = self.serializer.to_json(annotation, value)
+        self.assertEqual(
+            self.serializer.from_json(annotation, serialized), value)
 
     def assertSerialization(self, annotation, value, expected):
         self.assertSerializesTo(annotation, value, expected)
@@ -92,6 +93,10 @@ class CommonSerializerTests:
     def test_scalars(self):
         for typ, val in self.simple_examples:
             self.assertSerialization(typ, val, val)
+
+    def test_non_string_key_dict(self):
+        self.assertRaises(
+            Exception, self.serializer.serialize, dict, {1: 2})
 
 
 class TestSerializer(CommonSerializerTests, unittest.TestCase):
