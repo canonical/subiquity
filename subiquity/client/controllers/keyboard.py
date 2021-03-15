@@ -19,9 +19,6 @@ import logging
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.client.keyboard import KeyboardList
 from subiquity.common.types import KeyboardSetting
-from subiquity.common.keyboard import (
-    set_keyboard,
-    )
 from subiquity.ui.views import KeyboardView
 
 log = logging.getLogger('subiquity.client.controllers.keyboard')
@@ -55,15 +52,12 @@ class KeyboardController(SubiquityTuiController):
         view = KeyboardView(self, initial_setting)
         return view
 
-    def run_answers(self):
+    async def run_answers(self):
         if 'layout' in self.answers:
             layout = self.answers['layout']
             variant = self.answers.get('variant', '')
-            self.done(KeyboardSetting(layout=layout, variant=variant), True)
-
-    async def set_keyboard(self, setting):
-        await set_keyboard(self.app.root, setting, self.opts.dry_run)
-        self.done(setting, False)
+            await self.apply(KeyboardSetting(layout=layout, variant=variant))
+            self.done()
 
     async def get_step(self, index):
         return await self.endpoint.steps.GET(index)
@@ -72,12 +66,11 @@ class KeyboardController(SubiquityTuiController):
         return await self.endpoint.needs_toggle.GET(
             layout_code=setting.layout, variant_code=setting.variant)
 
-    def done(self, setting, apply):
-        log.debug("KeyboardController.done %s next_screen", setting)
-        if apply:
-            self.app.aio_loop.create_task(self.set_keyboard(setting))
-        else:
-            self.app.next_screen(self.endpoint.POST(setting))
+    async def apply(self, setting):
+        await self.endpoint.POST(setting)
+
+    def done(self):
+        self.app.next_screen()
 
     def cancel(self):
         self.app.prev_screen()

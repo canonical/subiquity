@@ -38,7 +38,6 @@ from subiquitycore.ui.form import (
     Form,
     )
 from subiquitycore.ui.selector import Selector, Option
-from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import (
     Stretchy,
     )
@@ -275,22 +274,6 @@ class Detector:
         self.keyboard_view.show_overlay(self.overlay)
 
 
-class ApplyingConfig(WidgetWrap):
-    def __init__(self, aio_loop):
-        spinner = Spinner(aio_loop, style='dots')
-        spinner.start()
-        text = _("Applying config")
-        # | text |
-        # 12    34
-        self.width = len(text) + 4
-        super().__init__(
-            LineBox(
-                Pile([
-                    ('pack', Text(' ' + text)),
-                    ('pack', spinner),
-                    ])))
-
-
 toggle_text = _("""\
 You will need a way to toggle the keyboard between the national layout and \
 the standard Latin layout.
@@ -440,13 +423,13 @@ class KeyboardView(BaseView):
         setting = KeyboardSetting(layout=layout.code, variant=variant.code)
         self.controller.app.aio_loop.create_task(self._check_toggle(setting))
 
+    async def _apply(self, setting):
+        await self.controller.app.wait_with_text_dialog(
+            self.controller.apply(setting), _("Applying config"))
+        self.controller.done()
+
     def really_done(self, setting):
-        apply = False
-        if setting != self.initial_setting:
-            apply = True
-            ac = ApplyingConfig(self.controller.app.aio_loop)
-            self.show_overlay(ac, width=ac.width, min_width=None)
-        self.controller.done(setting, apply=apply)
+        self.controller.app.aio_loop.create_task(self._apply(setting))
 
     def cancel(self, result=None):
         self.controller.cancel()

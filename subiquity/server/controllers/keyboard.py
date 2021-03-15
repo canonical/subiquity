@@ -159,6 +159,9 @@ class KeyboardController(SubiquityController):
         new = latinizable(data.layout, data.variant)
         if new is not None:
             data = KeyboardSetting(new[0], new[1], data.toggle)
+        if data != self.model.setting:
+            await set_keyboard(
+                self.app.root, data, self.opts.dry_run)
         self.model.setting = data
         self.configured()
 
