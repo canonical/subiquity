@@ -1,0 +1,17 @@
+name: snap
+
+on: [pull_request]
+
+jobs:
+  build-snap:
+    runs-on: ubuntu-20.04
+    environment: test-snap
+    steps:
+    - uses: actions/checkout@v2
+    - uses: snapcore/action-build@v1
+      id: build
+    - uses: snapcore/action-publish@v1
+      with:
+        store_login: ${{ secrets.STORE_LOGIN }}
+        snap: ${{ steps.build.outputs.snap }}
+        release: latest/edge/pr-${{ github.event.issue.number }}
