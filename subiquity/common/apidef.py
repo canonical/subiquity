@@ -29,6 +29,7 @@ from subiquity.common.types import (
     ApplicationStatus,
     ErrorReportRef,
     KeyboardSetting,
+    KeyboardSetup,
     IdentityData,
     RefreshStatus,
     SnapInfo,
@@ -91,7 +92,7 @@ class API:
             def GET(change_id: str) -> dict: ...
 
     class keyboard:
-        def GET() -> KeyboardSetting: ...
+        def GET() -> KeyboardSetup: ...
         def POST(data: Payload[KeyboardSetting]): ...
 
         class needs_toggle:

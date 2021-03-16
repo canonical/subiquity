@@ -360,21 +360,22 @@ class KeyboardView(BaseView):
 
     title = _("Keyboard configuration")
 
-    def __init__(self, controller, setting):
+    def __init__(self, controller, setup):
         self.controller = controller
-        self.keyboard_list = controller.keyboard_list
-        self.initial_setting = setting
+        self.initial_setting = setup.setting
+        self.layouts = setup.layouts
 
         self.form = KeyboardForm()
         opts = []
-        for layout in self.keyboard_list.layouts:
+        for layout in self.layouts:
             opts.append(Option((layout.name, True, layout)))
         opts.sort(key=lambda o: locale.strxfrm(o.label.text))
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget.options = opts
-        layout, variant = self.lookup(setting.layout, setting.variant)
+        layout, variant = self.lookup(
+            setup.setting.layout, setup.setting.variant)
         self.set_values(layout, variant)
 
         if self.controller.opts.run_on_serial:
@@ -448,7 +449,7 @@ class KeyboardView(BaseView):
         self.form.variant.enabled = len(opts) > 1
 
     def lookup(self, layout_code, variant_code):
-        for layout in self.keyboard_list.layouts:
+        for layout in self.layouts:
             if layout.code == layout_code:
                 break
             if layout.code == "us":

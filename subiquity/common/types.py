@@ -138,6 +138,12 @@ class KeyboardLayout:
 
 
 @attr.s(auto_attribs=True)
+class KeyboardSetup:
+    setting: KeyboardSetting
+    layouts: List[KeyboardLayout]
+
+
+@attr.s(auto_attribs=True)
 class ZdevInfo:
     id: str
     type: str

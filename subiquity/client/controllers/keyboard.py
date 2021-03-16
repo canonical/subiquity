@@ -17,7 +17,6 @@
 import logging
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.client.keyboard import KeyboardList
 from subiquity.common.types import KeyboardSetting
 from subiquity.ui.views import KeyboardView
 
@@ -28,29 +27,9 @@ class KeyboardController(SubiquityTuiController):
 
     endpoint_name = 'keyboard'
 
-    signals = [
-        ('l10n:language-selected', 'language_selected'),
-        ]
-
-    def __init__(self, app):
-        super().__init__(app)
-        self.keyboard_list = KeyboardList()
-
-    def language_selected(self, code):
-        log.debug("language_selected %s", code)
-        if not self.keyboard_list.has_language(code):
-            code = code.split('_')[0]
-        if not self.keyboard_list.has_language(code):
-            code = 'C'
-        log.debug("loading language %s", code)
-        self.keyboard_list.load_language(code)
-
     async def make_ui(self):
-        if self.keyboard_list.current_lang is None:
-            self.keyboard_list.load_language('C')
-        initial_setting = await self.endpoint.GET()
-        view = KeyboardView(self, initial_setting)
-        return view
+        setup = await self.endpoint.GET()
+        return KeyboardView(self, setup)
 
     async def run_answers(self):
         if 'layout' in self.answers:

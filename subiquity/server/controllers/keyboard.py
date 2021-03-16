@@ -26,7 +26,9 @@ from subiquity.common.apidef import API
 from subiquity.common.serialize import Serializer
 from subiquity.common.types import (
     AnyStep,
+    KeyboardLayout,
     KeyboardSetting,
+    KeyboardSetup,
     )
 from subiquity.server.controller import SubiquityController
 
@@ -112,6 +114,44 @@ def for_ui(setting):
         layout=layout, variant=variant, toggle=setting.toggle)
 
 
+class KeyboardList:
+
+    def __init__(self):
+        self._kbnames_dir = os.path.join(os.environ.get("SNAP", '.'), 'kbds')
+        self.serializer = Serializer(compact=True)
+        self._clear()
+
+    def _file_for_lang(self, code):
+        return os.path.join(self._kbnames_dir, code + '.jsonl')
+
+    def _has_language(self, code):
+        return os.path.exists(self._file_for_lang(code))
+
+    def load_language(self, code):
+        if '.' in code:
+            code = code.split('.')[0]
+        if not self._has_language(code):
+            code = code.split('_')[0]
+        if not self._has_language(code):
+            code = 'C'
+
+        if code == self.current_lang:
+            return
+
+        self._clear()
+
+        with open(self._file_for_lang(code)) as kbdnames:
+            self.layouts = [
+                self.serializer.from_json(KeyboardLayout, line)
+                for line in kbdnames
+                ]
+        self.current_lang = code
+
+    def _clear(self):
+        self.current_lang = None
+        self.layouts = []
+
+
 class KeyboardController(SubiquityController):
 
     endpoint = API.keyboard
@@ -133,6 +173,7 @@ class KeyboardController(SubiquityController):
         self.serializer = Serializer(compact=True)
         self.pc105_steps = None
         self.needs_set_keyboard = False
+        self.keyboard_list = KeyboardList()
         super().__init__(app)
 
     def load_autoinstall_data(self, data):
@@ -166,8 +207,12 @@ class KeyboardController(SubiquityController):
         for cmd in cmds:
             await arun_command(cmd)
 
-    async def GET(self) -> KeyboardSetting:
-        return for_ui(self.model.setting)
+    async def GET(self) -> KeyboardSetup:
+        self.keyboard_list.load_language(
+            self.app.base_model.locale.selected_language)
+        return KeyboardSetup(
+            setting=for_ui(self.model.setting),
+            layouts=self.keyboard_list.layouts)
 
     async def POST(self, data: KeyboardSetting):
         new = latinizable(data.layout, data.variant)

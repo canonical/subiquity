@@ -15,7 +15,6 @@ subiquity/client/controllers/ssh.py
 subiquity/client/controllers/welcome.py
 subiquity/client/controllers/zdev.py
 subiquity/client/__init__.py
-subiquity/client/keyboard.py
 subiquity/client/keycodes.py
 subiquity/cmd/common.py
 subiquity/cmd/__init__.py
