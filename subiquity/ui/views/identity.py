@@ -40,9 +40,11 @@ from subiquity.common.types import IdentityData
 log = logging.getLogger("subiquity.views.identity")
 
 HOSTNAME_MAXLEN = 64
+HOSTNAME_REGEX = r'[a-z0-9_][a-z0-9_-]*'
 REALNAME_MAXLEN = 160
 SSH_IMPORT_MAXLEN = 256 + 3  # account for lp: or gh:
 USERNAME_MAXLEN = 32
+USERNAME_REGEX = r'[a-z_][a-z0-9_-]*'
 
 
 class RealnameEditor(StringEditor, WantsToKnowFormField):
@@ -107,8 +109,9 @@ class IdentityForm(Form):
                 "Server name too long, must be less than {limit}"
                 ).format(limit=HOSTNAME_MAXLEN)
 
-        if not re.match(r'[a-z0-9_][a-z0-9_-]*', self.hostname.value):
-            return _("Hostname must match NAME_REGEX, i.e. [a-z0-9_][a-z0-9_-]*")
+        if not re.match(HOSTNAME_REGEX, self.hostname.value):
+            return _(
+                "Hostname must match HOSTNAME_REGEX: " + HOSTNAME_REGEX)
 
     def validate_username(self):
         username = self.username.value
@@ -121,7 +124,8 @@ class IdentityForm(Form):
                 ).format(limit=USERNAME_MAXLEN)
 
         if not re.match(r'[a-z_][a-z0-9_-]*', username):
-            return _("Username must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
+            return _(
+                "Username must match USERNAME_REGEX: " + USERNAME_REGEX)
 
         if username in self.reserved_usernames:
             return _(
