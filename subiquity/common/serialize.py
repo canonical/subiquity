@@ -33,34 +33,88 @@ class Serializer:
             typing.Union: self._walk_Union,
             list: self._walk_List,
             typing.List: self._walk_List,
+            dict: self._walk_Dict,
+            typing.Dict: self._walk_Dict,
             }
         self.type_serializers = {}
         self.type_deserializers = {}
-        for typ in int, str, dict, bool, list, type(None):
+        for typ in int, str, bool, list, type(None):
             self.type_serializers[typ] = self._scalar
             self.type_deserializers[typ] = self._scalar
+        self.type_serializers[dict] = self._serialize_dict
+        self.type_deserializers[dict] = self._scalar
         self.type_serializers[datetime.datetime] = self._serialize_datetime
         self.type_deserializers[datetime.datetime] = self._deserialize_datetime
 
     def _scalar(self, annotation, value, metadata, path):
-        assert type(value) is annotation, "at {}, {} is not a {}".format(
+        assert type(value) is annotation, "at {}, {!r} is not a {}".format(
             path, value, annotation)
         return value
 
-    def _walk_Union(self, meth, args, value, metadata, path):
+    def _walk_Union(self, meth, args, value, metadata, path, serializing):
         NoneType = type(None)
-        assert NoneType in args, "at {}, can only serialize Optional"
-        args = [a for a in args if a is not NoneType]
-        assert len(args) == 1, "at {}, can only serialize Optional"
-        if value is None:
-            return value
-        return meth(args[0], value, metadata, path)
+        if NoneType in args:
+            args = [a for a in args if a is not NoneType]
+            if len(args) == 1:
+                # I.e. Optional[thing]
+                if value is None:
+                    return value
+                return meth(args[0], value, metadata, path)
+        if all(attr.has(a) for a in args):
+            if serializing:
+                for a in args:
+                    if isinstance(value, a):
+                        r = meth(a, value, metadata, path)
+                        if self.compact:
+                            r.insert(0, a.__name__)
+                        else:
+                            r['$type'] = a.__name__
+                        return r
+                raise Exception(
+                    f"at {path}, type of {value} not found in {args}")
+            else:
+                if self.compact:
+                    n = value.pop(0)
+                else:
+                    n = value.pop('$type')
+                for a in args:
+                    if a.__name__ == n:
+                        return meth(a, value, metadata, path)
+                raise Exception(f"at {path}, type {n} not found in {args}")
+        raise Exception(f"at {path}, cannot serialize Union[{args}]")
 
-    def _walk_List(self, meth, args, value, metadata, path):
+    def _walk_List(self, meth, args, value, metadata, path, serializing):
         return [
             meth(args[0], v, metadata, f'{path}[{i}]')
             for i, v in enumerate(value)
             ]
+
+    def _walk_Dict(self, meth, args, value, m, p, serializing):
+        k_ann, v_ann = args
+        if k_ann is str:
+            return {
+                meth(k_ann, k, m, f'{p}/{k}'): meth(v_ann, v, m, f'{p}[{k}]')
+                for k, v in value.items()
+                }
+        elif serializing:
+            return [
+                [meth(k_ann, k, m, f'{p}/{k}'), meth(v_ann, v, m, f'{p}[{k}]')]
+                for k, v in value.items()
+                ]
+        else:
+            return dict([
+                (meth(k_ann, k, m, f'{p}/{k}'), meth(v_ann, v, m, f'{p}[{k}]'))
+                for k, v in value
+                ])
+
+    def _serialize_dict(self, annotation, value, metadata, path):
+        assert type(value) is annotation, "at {}, {} is not a {}".format(
+            path, value, annotation)
+        for k in value:
+            if not isinstance(k, str):
+                raise Exception(
+                    f"at {path}, dict must have only string keys, found {k!r}")
+        return value
 
     def _serialize_datetime(self, annotation, value, metadata, path):
         assert type(value) is annotation, "at {}, {} is not a {}".format(
@@ -103,11 +157,16 @@ class Serializer:
         if origin is not None:
             args = annotation.__args__
             return self.typing_walkers[origin](
-                self.serialize, args, value, metadata, path)
+                self.serialize, args, value, metadata, path, True)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
             return value.name
-        return self.type_serializers[annotation](
-            annotation, value, metadata, path)
+        try:
+            serializer = self.type_serializers[annotation]
+        except KeyError:
+            raise Exception(
+                "do not know how to handle %s at %s", annotation, path)
+        else:
+            return serializer(annotation, value, metadata, path)
 
     def _deserialize_datetime(self, annotation, value, metadata, path):
         assert type(value) is str, f'at {path}'
@@ -150,7 +209,7 @@ class Serializer:
         if origin is not None:
             args = annotation.__args__
             return self.typing_walkers[origin](
-                self.deserialize, args, value, metadata, path)
+                self.deserialize, args, value, metadata, path, False)
         if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
             return getattr(annotation, value)
         return self.type_deserializers[annotation](

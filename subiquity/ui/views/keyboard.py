@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import locale
 import logging
 
 from urwid import (
@@ -37,23 +38,24 @@ from subiquitycore.ui.form import (
     Form,
     )
 from subiquitycore.ui.selector import Selector, Option
-from subiquitycore.ui.spinner import Spinner
 from subiquitycore.ui.stretchy import (
     Stretchy,
     )
 from subiquitycore.ui.utils import button_pile, Color, Padding, screen
 from subiquitycore.view import BaseView
 
-from subiquity.client.keyboard import latinizable, for_ui
-from subiquity.common.types import KeyboardSetting
-from subiquity.ui.views import pc105
+from subiquity.common.types import (
+    KeyboardSetting,
+    StepKeyPresent,
+    StepPressKey,
+    StepResult,
+    )
 
 log = logging.getLogger("subiquity.ui.views.keyboard")
 
 
 class AutoDetectBase(WidgetWrap):
     def __init__(self, keyboard_detector, step):
-        # step is an instance of pc105.Step
         self.keyboard_detector = keyboard_detector
         self.step = step
         lb = LineBox(
@@ -81,7 +83,7 @@ class AutoDetectBase(WidgetWrap):
 class AutoDetectIntro(AutoDetectBase):
 
     def ok(self, sender):
-        self.keyboard_detector.do_step(0)
+        self.keyboard_detector.do_step(None)
 
     def cancel(self, sender):
         self.keyboard_detector.abort()
@@ -99,19 +101,6 @@ class AutoDetectIntro(AutoDetectBase):
                 ])
 
 
-class AutoDetectFailed(AutoDetectBase):
-
-    def ok(self, sender):
-        self.keyboard_detector.abort()
-
-    def make_body(self):
-        return Pile([
-                Text(_("Keyboard auto detection failed, sorry")),
-                Text(""),
-                button_pile([ok_btn(label="OK", on_press=self.ok)]),
-                ])
-
-
 class AutoDetectResult(AutoDetectBase):
 
     preamble = _("""\
@@ -126,22 +115,23 @@ another layout or run the automated detection again.
 
 """)
 
+    @property
+    def _kview(self):
+        return self.keyboard_detector.keyboard_view
+
     def ok(self, sender):
-        self.keyboard_detector.keyboard_view.found_layout(self.step.result)
+        self._kview.found_layout(self.layout, self.variant)
 
     def make_body(self):
-        kl = self.keyboard_detector.keyboard_view.keyboard_list
-        layout, variant = kl.lookup(self.step.result)
-        var_desc = []
+        self.layout, self.variant = self._kview.lookup(
+            self.step.layout, self.step.variant)
         layout_text = _("Layout")
         var_text = _("Variant")
         width = max(len(layout_text), len(var_text), 12)
-        if variant is not None:
-            var_desc = [Text("%*s: %s" % (width, var_text, variant))]
         return Pile([
                 Text(_(self.preamble)),
-                Text("%*s: %s" % (width, layout_text, layout)),
-            ] + var_desc + [
+                Text("%*s: %s" % (width, layout_text, self.layout.name)),
+                Text("%*s: %s" % (width, var_text, self.variant.name)),
                 Text(_(self.postamble)),
                 button_pile([ok_btn(label=_("OK"), on_press=self.ok)]),
                 ])
@@ -236,8 +226,6 @@ class Detector:
 
     def __init__(self, kview):
         self.keyboard_view = kview
-        self.pc105tree = pc105.PC105Tree()
-        self.pc105tree.read_steps()
         self.seen_steps = []
 
     def start(self):
@@ -249,9 +237,9 @@ class Detector:
         self.keyboard_view.remove_overlay()
 
     step_cls_to_view_cls = {
-        pc105.StepResult: AutoDetectResult,
-        pc105.StepPressKey: AutoDetectPressKey,
-        pc105.StepKeyPresent: AutoDetectKeyPresent,
+        StepResult: AutoDetectResult,
+        StepPressKey: AutoDetectPressKey,
+        StepKeyPresent: AutoDetectKeyPresent,
         }
 
     def backup(self):
@@ -270,35 +258,20 @@ class Detector:
 
     def do_step(self, step_index):
         self.abort()
+        self.keyboard_view.controller.app.aio_loop.create_task(
+            self._do_step(step_index))
 
+    async def _do_step(self, step_index):
         log.debug("moving to step %s", step_index)
-        try:
-            step = self.pc105tree.steps[step_index]
-        except KeyError:
-            self.overlay = AutoDetectFailed(self, None)
-        else:
-            self.seen_steps.append(step_index)
-            log.debug("step: %s", repr(step))
-            self.overlay = self.step_cls_to_view_cls[type(step)](self, step)
+        step = await self.keyboard_view.controller.app.wait_with_text_dialog(
+            self.keyboard_view.controller.get_step(step_index),
+            "...")
+        self.seen_steps.append(step_index)
+        log.debug("step: %s", step)
+        self.overlay = self.step_cls_to_view_cls[type(step)](self, step)
 
         self.overlay.start()
         self.keyboard_view.show_overlay(self.overlay)
-
-
-class ApplyingConfig(WidgetWrap):
-    def __init__(self, aio_loop):
-        spinner = Spinner(aio_loop, style='dots')
-        spinner.start()
-        text = _("Applying config")
-        # | text |
-        # 12    34
-        self.width = len(text) + 4
-        super().__init__(
-            LineBox(
-                Pile([
-                    ('pack', Text(' ' + text)),
-                    ('pack', spinner),
-                    ])))
 
 
 toggle_text = _("""\
@@ -387,32 +360,23 @@ class KeyboardView(BaseView):
 
     title = _("Keyboard configuration")
 
-    def __init__(self, controller, initial_setting):
+    def __init__(self, controller, setup):
         self.controller = controller
-        self.keyboard_list = controller.keyboard_list
-        self.initial_setting = initial_setting
+        self.initial_setting = setup.setting
+        self.layouts = setup.layouts
 
         self.form = KeyboardForm()
         opts = []
-        for layout, desc in self.keyboard_list.layouts.items():
-            opts.append(Option((desc, True, layout)))
-        opts.sort(key=lambda o: o.label.text)
+        for layout in self.layouts:
+            opts.append(Option((layout.name, True, layout)))
+        opts.sort(key=lambda o: locale.strxfrm(o.label.text))
         connect_signal(self.form, 'submit', self.done)
         connect_signal(self.form, 'cancel', self.cancel)
         connect_signal(self.form.layout.widget, "select", self.select_layout)
         self.form.layout.widget.options = opts
-        setting = for_ui(initial_setting)
-        try:
-            self.form.layout.widget.value = setting.layout
-        except AttributeError:
-            # Don't crash on pre-existing invalid config.
-            pass
-        self.select_layout(None, setting.layout)
-        try:
-            self.form.variant.widget.value = setting.variant
-        except AttributeError:
-            # Don't crash on pre-existing invalid config.
-            pass
+        layout, variant = self.lookup(
+            setup.setting.layout, setup.setting.variant)
+        self.set_values(layout, variant)
 
         if self.controller.opts.run_on_serial:
             excerpt = _('Please select the layout of the keyboard directly '
@@ -437,40 +401,36 @@ class KeyboardView(BaseView):
             narrow_rows=True))
 
     def detect(self, sender):
-        detector = Detector(self)
-        detector.start()
+        Detector(self).start()
 
-    def found_layout(self, result):
+    def found_layout(self, layout, variant):
         self.remove_overlay()
-        log.debug("found_layout %s", result)
-        if ':' in result:
-            layout, variant = result.split(':')
-        else:
-            layout, variant = result, ""
-        self.form.layout.widget.value = layout
-        self.select_layout(None, layout)
-        self.form.variant.widget.value = variant
+        log.debug("found_layout %r %r", layout.code, variant.code)
+        self.set_values(layout, variant)
         self._w.base_widget.focus_position = 4
 
+    async def _check_toggle(self, setting):
+        needs_toggle = await self.controller.app.wait_with_text_dialog(
+            self.controller.needs_toggle(setting), "...")
+        if needs_toggle:
+            self.show_stretchy_overlay(ToggleQuestion(self, setting))
+        else:
+            self.really_done(setting)
+
     def done(self, result):
-        layout = self.form.layout.widget.value
-        variant = ''
-        if self.form.variant.widget.value is not None:
-            variant = self.form.variant.widget.value
-        setting = KeyboardSetting(layout=layout, variant=variant)
-        new_setting = latinizable(setting)
-        if new_setting != setting:
-            self.show_stretchy_overlay(ToggleQuestion(self, new_setting))
-            return
-        self.really_done(setting)
+        data = result.as_data()
+        layout = data['layout']
+        variant = data.get('variant', layout.variants[0])
+        setting = KeyboardSetting(layout=layout.code, variant=variant.code)
+        self.controller.app.aio_loop.create_task(self._check_toggle(setting))
+
+    async def _apply(self, setting):
+        await self.controller.app.wait_with_text_dialog(
+            self.controller.apply(setting), _("Applying config"))
+        self.controller.done()
 
     def really_done(self, setting):
-        apply = False
-        if setting != self.initial_setting:
-            apply = True
-            ac = ApplyingConfig(self.controller.app.aio_loop)
-            self.show_overlay(ac, width=ac.width, min_width=None)
-        self.controller.done(setting, apply=apply)
+        self.controller.app.aio_loop.create_task(self._apply(setting))
 
     def cancel(self, result=None):
         self.controller.cancel()
@@ -479,18 +439,29 @@ class KeyboardView(BaseView):
         if sender is not None:
             log.debug("select_layout %s", layout)
         opts = []
-        default_i = -1
-        layout_items = enumerate(self.keyboard_list.variants[layout].items())
-        for i, (variant, variant_desc) in layout_items:
-            if variant == "":
-                default_i = i
-            opts.append(Option((variant_desc, True, variant)))
-        opts.sort(key=lambda o: o.label.text)
-        if default_i < 0:
-            opts.insert(0, Option(("default", True, "")))
+        for variant in layout.variants:
+            opts.append(Option((variant.name, True, variant)))
+        # ./scripts/make-kbd-info.py checks that the default is always
+        # at index 0
+        opts[1:] = sorted(opts[1:], key=lambda o: locale.strxfrm(o.label.text))
         self.form.variant.widget.options = opts
-        if default_i < 0:
-            self.form.variant.widget.index = 0
-        else:
-            self.form.variant.widget.index = default_i
+        self.form.variant.widget.index = 0
         self.form.variant.enabled = len(opts) > 1
+
+    def lookup(self, layout_code, variant_code):
+        for layout in self.layouts:
+            if layout.code == layout_code:
+                break
+            if layout.code == "us":
+                default = layout
+        else:
+            layout = default
+        for variant in layout.variants:
+            if variant.code == variant_code:
+                return layout, variant
+        return layout, layout.variants[0]
+
+    def set_values(self, layout, variant):
+        self.form.layout.widget.value = layout
+        self.select_layout(None, layout)
+        self.form.variant.widget.value = variant

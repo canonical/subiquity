@@ -15,7 +15,6 @@ subiquity/client/controllers/ssh.py
 subiquity/client/controllers/welcome.py
 subiquity/client/controllers/zdev.py
 subiquity/client/__init__.py
-subiquity/client/keyboard.py
 subiquity/client/keycodes.py
 subiquity/cmd/common.py
 subiquity/cmd/__init__.py
@@ -34,11 +33,10 @@ subiquity/common/api/tests/test_server.py
 subiquity/common/errorreport.py
 subiquity/common/filesystem.py
 subiquity/common/__init__.py
-subiquity/common/keyboard.py
 subiquity/common/serialize.py
 subiquity/common/tests/__init__.py
 subiquity/common/tests/test_filesystem.py
-subiquity/common/tests/test_keyboard.py
+subiquity/common/tests/test_serialization.py
 subiquity/common/types.py
 subiquitycore/async_helpers.py
 subiquitycore/contextlib38.py
@@ -131,6 +129,7 @@ subiquity/server/controllers/refresh.py
 subiquity/server/controllers/reporting.py
 subiquity/server/controllers/snaplist.py
 subiquity/server/controllers/ssh.py
+subiquity/server/controllers/tests/test_keyboard.py
 subiquity/server/controllers/userdata.py
 subiquity/server/controllers/zdev.py
 subiquity/server/dryrun.py
@@ -165,7 +164,6 @@ subiquity/ui/views/__init__.py
 subiquity/ui/views/installprogress.py
 subiquity/ui/views/keyboard.py
 subiquity/ui/views/mirror.py
-subiquity/ui/views/pc105.py
 subiquity/ui/views/proxy.py
 subiquity/ui/views/refresh.py
 subiquity/ui/views/snaplist.py

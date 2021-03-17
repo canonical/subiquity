@@ -24,10 +24,12 @@ from subiquitycore.models.network import (
 
 from subiquity.common.api.defs import api, Payload, simple_endpoint
 from subiquity.common.types import (
+    AnyStep,
     ApplicationState,
     ApplicationStatus,
     ErrorReportRef,
     KeyboardSetting,
+    KeyboardSetup,
     IdentityData,
     RefreshStatus,
     SnapInfo,
@@ -43,7 +45,6 @@ from subiquity.common.types import (
 class API:
     """The API offered by the subiquity installer process."""
     locale = simple_endpoint(str)
-    keyboard = simple_endpoint(KeyboardSetting)
     proxy = simple_endpoint(str)
     mirror = simple_endpoint(str)
     identity = simple_endpoint(IdentityData)
@@ -89,6 +90,16 @@ class API:
 
         class progress:
             def GET(change_id: str) -> dict: ...
+
+    class keyboard:
+        def GET() -> KeyboardSetup: ...
+        def POST(data: Payload[KeyboardSetting]): ...
+
+        class needs_toggle:
+            def GET(layout_code: str, variant_code: str) -> bool: ...
+
+        class steps:
+            def GET(index: Optional[str]) -> AnyStep: ...
 
     class zdev:
         def GET() -> List[ZdevInfo]: ...
