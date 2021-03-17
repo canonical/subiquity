@@ -107,8 +107,8 @@ class IdentityForm(Form):
                 "Server name too long, must be less than {limit}"
                 ).format(limit=HOSTNAME_MAXLEN)
 
-        if not re.match(r'[a-z_][a-z0-9_-]*', self.hostname.value):
-            return _("Hostname must match NAME_REGEX, i.e. [a-z_][a-z0-9_-]*")
+        if not re.match(r'[a-z0-9_][a-z0-9_-]*', self.hostname.value):
+            return _("Hostname must match NAME_REGEX, i.e. [a-z0-9_][a-z0-9_-]*")
 
     def validate_username(self):
         username = self.username.value
