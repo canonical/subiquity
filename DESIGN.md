@@ -213,6 +213,7 @@ The simplest possible server controller would be something like this:
 import logging
 
 from subiquity.common.apidef import API
+from subiquity.common.types import Type
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.example')
@@ -492,12 +493,17 @@ file". This yaml file provides data that controllers can use to drive the UI
 automatically.  There are some answers files in the `examples/` directory that
 are run as a sort of integration test for the UI.
 
-Tests (and lint checks) are run by travis using lxd.  See `.travis.yml` and
-`./scripts/test-in-lxd.sh` and so on.
+Tests (and lint checks) are run by github actions using lxd.  See
+`.github/workflows/build.yaml` and `./scripts/test-in-lxd.sh` and so
+on.
 
-For "real" testing, you need to make a snap (`snapcraft snap`), mash it into an
-existing ISO using `./scripts/inject-subiquity-snap.sh`, and boot the result in
-a VM.
+For "real" testing, you need to make a snap (`snapcraft snap`), mash
+it into an existing ISO using `./scripts/inject-subiquity-snap.sh`,
+and boot the result in a VM. There is an even hackier pair of scripts
+(`./scripts/slimy-update-snap.sh` and
+`./scripts/quick-test-this-branch.sh`) that can be useful for getting
+small changes into an ISO much more quickly than making the snap from
+scratch.
 
 There are integration tests that run daily at
 https://platform-qa-jenkins.ubuntu.com/view/server (unfortunately you need to
