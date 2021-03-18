@@ -162,6 +162,8 @@ class ZdevInfo:
                 row[k] = True
             if v == "no":
                 row[k] = False
+            if k == "pers" and v == "auto":
+                row[k] = True
         return ZdevInfo(**row)
 
     @property

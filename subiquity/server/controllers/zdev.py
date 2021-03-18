@@ -34,7 +34,7 @@ lszdev_cmd = ['lszdev', '--pairs', '--columns',
               'id,type,on,exists,pers,auto,failed,names']
 
 lszdev_stock = '''id="0.0.1500" type="dasd-eckd" on="no" exists="yes" pers="no" auto="no" failed="no" names=""
-id="0.0.1501" type="dasd-eckd" on="no" exists="yes" pers="no" auto="no" failed="no" names=""
+id="0.0.1501" type="dasd-eckd" on="yes" exists="yes" pers="auto" auto="yes" failed="no" names=""
 id="0.0.1502" type="dasd-eckd" on="no" exists="yes" pers="no" auto="no" failed="no" names=""
 id="0.0.1503" type="dasd-eckd" on="no" exists="yes" pers="no" auto="no" failed="no" names=""
 id="0.0.1504" type="dasd-eckd" on="no" exists="yes" pers="no" auto="no" failed="no" names=""
