@@ -43,6 +43,9 @@ class RebootController(SubiquityController):
         self.user_reboot_event.set()
         await self.rebooting_event.wait()
 
+    def interactive(self):
+        return self.app.interactive
+
     def start(self):
         self.app.aio_loop.create_task(self._run())
 
