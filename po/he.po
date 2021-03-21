@@ -1963,8 +1963,8 @@ msgid "Import Username:"
 msgstr "יבוא שם משתמש:"
 
 #: ../subiquity/ui/views/ssh.py:73
-msgid "Github Username:"
-msgstr "שם משתמש ב־Github:"
+msgid "GitHub Username:"
+msgstr "שם משתמש ב־GitHub:"
 
 #: ../subiquity/ui/views/ssh.py:74
 #, fuzzy
@@ -2000,16 +2000,16 @@ msgid "Import SSH identity:"
 msgstr "יבוא זהות SSH:"
 
 #: ../subiquity/ui/views/ssh.py:98
-msgid "from Github"
-msgstr "מ־Github"
+msgid "from GitHub"
+msgstr "מ־GitHub"
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from Launchpad"
 msgstr "מ־Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:101
-msgid "You can import your SSH keys from Github or Launchpad."
-msgstr "ניתן לייבא את מפתחות ה־SSH שלך מ־Github או מ־Launchpad."
+msgid "You can import your SSH keys from GitHub or Launchpad."
+msgstr "ניתן לייבא את מפתחות ה־SSH שלך מ־GitHub או מ־Launchpad."
 
 #: ../subiquity/ui/views/ssh.py:105
 msgid "Allow password authentication over SSH"
@@ -2034,10 +2034,10 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:150
 msgid ""
-"A Github username may only contain alphanumeric characters or single "
+"A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
-"שם משתמש ב־Github יכול להכיל רק תווים אלפאנומריים או סימני מינוס בודדים ולא "
+"שם משתמש ב־GitHub יכול להכיל רק תווים אלפאנומריים או סימני מינוס בודדים ולא "
 "יכול להתחיל או להסתיים במינוס."
 
 #: ../subiquity/ui/views/ssh.py:160

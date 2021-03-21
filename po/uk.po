@@ -1826,8 +1826,8 @@ msgid "Import Username:"
 msgstr "Користувач імпортування:"
 
 #: ../subiquity/ui/views/ssh.py:73
-msgid "Github Username:"
-msgstr "Користувач github:"
+msgid "GitHub Username:"
+msgstr "Користувач GitHub:"
 
 #: ../subiquity/ui/views/ssh.py:74
 #, fuzzy
@@ -1863,16 +1863,16 @@ msgid "Import SSH identity:"
 msgstr "Імпортувати профіль SSH:"
 
 #: ../subiquity/ui/views/ssh.py:98
-msgid "from Github"
-msgstr "з Github"
+msgid "from GitHub"
+msgstr "з GitHub"
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from Launchpad"
 msgstr "з Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:101
-msgid "You can import your SSH keys from Github or Launchpad."
-msgstr "Ви можете імпортувати ваші ключі SSH з Github або Launchpad."
+msgid "You can import your SSH keys from GitHub or Launchpad."
+msgstr "Ви можете імпортувати ваші ключі SSH з GitHub або Launchpad."
 
 #: ../subiquity/ui/views/ssh.py:105
 msgid "Allow password authentication over SSH"
@@ -1895,10 +1895,10 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:150
 msgid ""
-"A Github username may only contain alphanumeric characters or single "
+"A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
-"Ім'я користувача Github може складатися лише літер, цифр та одинарних "
+"Ім'я користувача GitHub може складатися лише літер, цифр та одинарних "
 "дефісів і не може починатися або завершуватися дефісом."
 
 #: ../subiquity/ui/views/ssh.py:160

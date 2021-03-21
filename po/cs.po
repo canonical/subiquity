@@ -2003,8 +2003,8 @@ msgid "Import Username:"
 msgstr "Uživatelské jméno importu:"
 
 #: ../subiquity/ui/views/ssh.py:73
-msgid "Github Username:"
-msgstr "Github uživatelské jméno:"
+msgid "GitHub Username:"
+msgstr "GitHub uživatelské jméno:"
 
 #: ../subiquity/ui/views/ssh.py:74
 #, fuzzy
@@ -2040,16 +2040,16 @@ msgid "Import SSH identity:"
 msgstr "Importovat SSH identitu:"
 
 #: ../subiquity/ui/views/ssh.py:98
-msgid "from Github"
-msgstr "z účtu na Github"
+msgid "from GitHub"
+msgstr "z účtu na GitHub"
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from Launchpad"
 msgstr "z účtu na Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:101
-msgid "You can import your SSH keys from Github or Launchpad."
-msgstr "Můžete importovat své SSH klíče z portálů Github nebo Launchpad."
+msgid "You can import your SSH keys from GitHub or Launchpad."
+msgstr "Můžete importovat své SSH klíče z portálů GitHub nebo Launchpad."
 
 #: ../subiquity/ui/views/ssh.py:105
 msgid "Allow password authentication over SSH"
@@ -2075,10 +2075,10 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:150
 msgid ""
-"A Github username may only contain alphanumeric characters or single "
+"A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
-"Github uživatelské jméno může obsahovat pouze písmena a číslice a jednotlivé "
+"GitHub uživatelské jméno může obsahovat pouze písmena a číslice a jednotlivé "
 "spojovníky a nemůže začínat nebo končit na spojovník."
 
 #: ../subiquity/ui/views/ssh.py:160
