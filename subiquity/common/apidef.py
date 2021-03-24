@@ -36,6 +36,7 @@ from subiquity.common.types import (
     SnapListResponse,
     SnapSelection,
     SSHData,
+    LiveSessionSSHInfo,
     StorageResponse,
     ZdevInfo,
     )
@@ -67,6 +68,10 @@ class API:
         class restart:
             def POST() -> None:
                 """Restart the server process."""
+
+        class ssh_info:
+            def GET() -> Optional[LiveSessionSSHInfo]: ...
+
     class errors:
         class wait:
             def GET(error_ref: ErrorReportRef) -> ErrorReportRef:

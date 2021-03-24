@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import io
 import logging
 import os
 import shlex
@@ -51,6 +52,7 @@ from subiquity.common.types import (
     ApplicationState,
     ApplicationStatus,
     ErrorReportRef,
+    LiveSessionSSHInfo,
     )
 from subiquity.server.controller import SubiquityController
 from subiquity.models.subiquity import SubiquityModel
@@ -63,6 +65,23 @@ from subiquitycore.snapd import (
 
 
 log = logging.getLogger('subiquity.server.server')
+
+
+def get_installer_password(dry_run=False):
+    if dry_run:
+        fp = io.StringIO('installer:rAnd0Mpass')
+    else:
+        try:
+            fp = open("/var/log/cloud-init-output.log")
+        except FileNotFoundError:
+            fp = io.StringIO('')
+
+    with fp:
+        for line in fp:
+            if line.startswith("installer:"):
+                return line[len("installer:"):].strip()
+
+    return None
 
 
 class MetaController:
@@ -97,6 +116,20 @@ class MetaController:
         for controller in self.app.controllers.instances:
             if controller.endpoint in endpoints:
                 controller.configured()
+
+    async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
+        password = get_installer_password(self.app.opts.dry_run)
+        if password is None:
+            return None
+        ips = []
+        for dev in self.app.base_model.network.get_all_netdevs():
+            ips.extend(map(str, dev.actual_global_ip_addresses))
+        if not ips:
+            return None
+        return LiveSessionSSHInfo(
+            username='installer',
+            password=password,
+            ips=ips)
 
 
 class SubiquityServer(Application):

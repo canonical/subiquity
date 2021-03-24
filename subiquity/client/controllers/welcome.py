@@ -31,10 +31,10 @@ class WelcomeController(SubiquityTuiController):
         i18n.switch_language(language)
         serial = self.app.opts.run_on_serial
         if serial:
-            ips = await self.app.client.network.global_addresses.GET()
+            ssh_info = await self.app.client.meta.ssh_info.GET()
         else:
-            ips = None
-        return WelcomeView(self, language, serial, ips)
+            ssh_info = None
+        return WelcomeView(self, language, serial, ssh_info)
 
     def run_answers(self):
         if 'lang' in self.answers:

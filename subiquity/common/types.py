@@ -79,6 +79,13 @@ class ApplicationStatus:
     event_syslog_id: str
 
 
+@attr.s(auto_attribs=True)
+class LiveSessionSSHInfo:
+    username: str
+    password: str
+    ips: List[str]
+
+
 class RefreshCheckState(enum.Enum):
     UNKNOWN = enum.auto()
     AVAILABLE = enum.auto()

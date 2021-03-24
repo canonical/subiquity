@@ -15,7 +15,6 @@
 
 import logging
 import os
-import io
 
 from urwid import (
     connect_signal,
@@ -25,7 +24,6 @@ from urwid import (
     Text,
     )
 
-from subiquitycore.async_helpers import schedule_task
 from subiquitycore.lsb_release import lsb_release
 from subiquitycore.ssh import host_key_info
 from subiquitycore.ui.buttons import (
@@ -110,7 +108,7 @@ To connect, SSH to any of these addresses:
 """)
 
 SSH_HELP_ONE_ADDRESSES = _("""
-To connect, SSH to installer@{ip}.
+To connect, SSH to {username}@{ip}.
 """)
 
 SSH_HELP_EPILOGUE = _("""
@@ -128,24 +126,24 @@ been set.
 """)
 
 
-def ssh_help_texts(ips, password):
+def ssh_help_texts(ssh_info):
 
     texts = [_(SSH_HELP_PROLOGUE), ""]
 
-    if len(ips) > 0:
-        if len(ips) > 1:
+    if len(ssh_info.ips) > 0:
+        if len(ssh_info.ips) > 1:
             texts.append(rewrap(_(SSH_HELP_MULTIPLE_ADDRESSES)))
             texts.append("")
-            for ip in ips:
+            for ip in ssh_info.ips:
                 texts.append(Text(
-                    "installer@" + str(ip), align='center'))
+                    "{}@{}".format(ssh_info.username, ip), align='center'))
         else:
             texts.append(_(SSH_HELP_ONE_ADDRESSES).format(
-                ip=str(ips[0])))
+                username=ssh_info.username, ip=str(ssh_info.ips[0])))
         texts.append("")
         texts.append(
             rewrap(_(SSH_HELP_EPILOGUE).format(
-                password=password)))
+                password=ssh_info.password)))
         texts.append("")
         texts.append(Text(host_key_info()))
     else:
@@ -241,30 +239,6 @@ def menu_item(text, on_press=None):
     return Color.frame_button(icon)
 
 
-async def get_global_addresses(app):
-    return await app.wait_with_text_dialog(
-        app.client.network.global_addresses.GET(),
-        _("Getting network info"),
-        can_cancel=True)
-
-
-def get_installer_password(dry_run=False):
-    if dry_run:
-        fp = io.StringIO('installer:rAnd0Mpass')
-    else:
-        try:
-            fp = open("/var/log/cloud-init-output.log")
-        except FileNotFoundError:
-            fp = io.StringIO('')
-
-    with fp:
-        for line in fp:
-            if line.startswith("installer:"):
-                return line[len("installer:"):].strip()
-
-    return None
-
-
 class OpenHelpMenu(WidgetWrap):
 
     def __init__(self, parent):
@@ -282,7 +256,7 @@ class OpenHelpMenu(WidgetWrap):
             drop_to_shell,
             keys,
             }
-        if self.parent.ssh_password is not None:
+        if self.parent.ssh_info is not None:
             ssh_help = menu_item(
                 _("Help on SSH access"), on_press=self.parent.ssh_help)
             buttons.add(ssh_help)
@@ -324,7 +298,7 @@ class OpenHelpMenu(WidgetWrap):
             about,
             ]
 
-        if self.parent.ssh_password is not None:
+        if self.parent.ssh_info is not None:
             entries.append(ssh_help)
 
         if self.parent.app.opts.run_on_serial:
@@ -379,17 +353,20 @@ class HelpMenu(PopUpLauncher):
     def __init__(self, app):
         self.app = app
         self.btn = header_btn(_("Help"), on_press=self._open)
-        self.ssh_password = None
+        self.ssh_info = None
         self.current_help = None
         super().__init__(self.btn)
 
-    def _open(self, sender):
-        log.debug("open help menu")
+    async def _get_ssh_info(self):
+        self.ssh_info = await self.app.wait_with_text_dialog(
+            self.app.client.meta.ssh_info.GET(), "Getting SSH info")
         self.open_pop_up()
 
+    def _open(self, sender):
+        log.debug("open help menu")
+        self.app.aio_loop.create_task(self._get_ssh_info())
+
     def create_pop_up(self):
-        if self.ssh_password is None:
-            self.ssh_password = get_installer_password(self.app.opts.dry_run)
         self._menu = OpenHelpMenu(self)
         return self._menu
 
@@ -435,10 +412,8 @@ class HelpMenu(PopUpLauncher):
                 _("About the installer"),
                 template.format(**info)))
 
-    async def _ssh_help(self):
-        texts = ssh_help_texts(
-            await get_global_addresses(self.app),
-            self.ssh_password)
+    def ssh_help(self, sender=None):
+        texts = ssh_help_texts(self.ssh_info)
 
         self._show_overlay(
             SimpleTextStretchy(
@@ -446,9 +421,6 @@ class HelpMenu(PopUpLauncher):
                 _("Help on SSH access"),
                 *texts,
                 ))
-
-    def ssh_help(self, sender=None):
-        schedule_task(self._ssh_help())
 
     def show_local(self, local_title, local_doc):
 
