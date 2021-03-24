@@ -14,9 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import io
 import logging
 import os
+import pwd
 import shlex
 import sys
 import time
@@ -25,6 +25,7 @@ from typing import List, Optional
 from aiohttp import web
 
 from cloudinit import atomic_helper, safeyaml, stages
+from cloudinit.config.cc_set_passwords import rand_user_password
 
 import jsonschema
 
@@ -36,7 +37,7 @@ from subiquitycore.async_helpers import run_in_thread, schedule_task
 from subiquitycore.context import with_context
 from subiquitycore.core import Application
 from subiquitycore.prober import Prober
-from subiquitycore.utils import arun_command
+from subiquitycore.utils import arun_command, run_command
 
 from subiquity.common.api.server import (
     bind,
@@ -65,23 +66,6 @@ from subiquitycore.snapd import (
 
 
 log = logging.getLogger('subiquity.server.server')
-
-
-def get_installer_password(dry_run=False):
-    if dry_run:
-        fp = io.StringIO('installer:rAnd0Mpass')
-    else:
-        try:
-            fp = open("/var/log/cloud-init-output.log")
-        except FileNotFoundError:
-            fp = io.StringIO('')
-
-    with fp:
-        for line in fp:
-            if line.startswith("installer:"):
-                return line[len("installer:"):].strip()
-
-    return None
 
 
 class MetaController:
@@ -118,7 +102,7 @@ class MetaController:
                 controller.configured()
 
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
-        password = get_installer_password(self.app.opts.dry_run)
+        password = self.app.installer_user_passwd
         if password is None:
             return None
         ips = []
@@ -190,6 +174,7 @@ class SubiquityServer(Application):
         self.confirming_tty = ''
         self.fatal_error = None
         self.running_error_commands = False
+        self.installer_user_passwd = None
 
         self.echo_syslog_id = 'subiquity_echo.{}'.format(os.getpid())
         self.event_syslog_id = 'subiquity_event.{}'.format(os.getpid())
@@ -415,11 +400,28 @@ class SubiquityServer(Application):
                 "cloud-init status: %r, assumed disabled",
                 status_txt)
 
+    def set_installer_password(self):
+        if self.opts.dry_run:
+            self.installer_user_passwd = rand_user_password()
+            return
+        try:
+            pwd.getpwnam('installer')
+        except KeyError:
+            log.info("no installer user")
+            return
+        passwd = rand_user_password()
+        cp = run_command('chpasswd', input='installer:'+passwd+'\n')
+        if cp.returncode == 0:
+            self.installer_user_passwd = passwd
+        else:
+            log.info("setting installer password failed %s", cp)
+
     async def start(self):
         self.controllers.load_all()
         await self.start_api_server()
         self.update_state(ApplicationState.CLOUD_INIT_WAIT)
         await self.wait_for_cloudinit()
+        self.set_installer_password()
         self.load_autoinstall_config(only_early=True)
         if self.autoinstall_config and self.controllers.Early.cmds:
             stamp_file = self.state_path("early-commands")
