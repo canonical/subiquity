@@ -116,6 +116,20 @@ class MetaController:
             ips=ips)
 
 
+def get_installer_password_from_cloudinit_log():
+    try:
+        fp = open("/var/log/cloud-init-output.log")
+    except FileNotFoundError:
+        return None
+
+    with fp:
+        for line in fp:
+            if line.startswith("installer:"):
+                return line[len("installer:"):].strip()
+
+    return None
+
+
 class SubiquityServer(Application):
 
     snapd_socket_path = '/run/snapd.socket'
@@ -408,6 +422,13 @@ class SubiquityServer(Application):
             return
         if self.opts.dry_run:
             self.installer_user_passwd = rand_user_password()
+            return
+        # refreshing from a version of subiquity that relied on
+        # cloud-init to set the password to one that does not should
+        # not reset the password.
+        passwd = get_installer_password_from_cloudinit_log()
+        if passwd:
+            self.installer_user_passwd = passwd
             return
         try:
             pwd.getpwnam('installer')
