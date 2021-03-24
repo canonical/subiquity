@@ -401,6 +401,11 @@ class SubiquityServer(Application):
                 status_txt)
 
     def set_installer_password(self):
+        passfile = self.state_path("installer-passwd")
+        if os.path.exists(passfile):
+            with open(passfile) as fp:
+                self.installer_user_passwd = fp.read()
+            return
         if self.opts.dry_run:
             self.installer_user_passwd = rand_user_password()
             return
@@ -413,6 +418,8 @@ class SubiquityServer(Application):
         cp = run_command('chpasswd', input='installer:'+passwd+'\n')
         if cp.returncode == 0:
             self.installer_user_passwd = passwd
+            with open(passfile, 'w') as fp:
+                fp.write(passwd)
         else:
             log.info("setting installer password failed %s", cp)
 
