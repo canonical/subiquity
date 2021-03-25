@@ -65,7 +65,7 @@ class Upload(metaclass=urwid.MetaSignals):
         asyncio.get_event_loop().add_reader(self.pipe_r, self._progress)
 
     def _progress(self):
-        os.read(self.pipe_w, 4096)
+        os.read(self.pipe_r, 4096)
         urwid.emit_signal(self, 'progress')
 
     def _bg_update(self, sent, to_send=None):
