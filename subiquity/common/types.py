@@ -79,11 +79,26 @@ class ApplicationStatus:
     event_syslog_id: str
 
 
+class PasswordKind(enum.Enum):
+    NONE = enum.auto()
+    KNOWN = enum.auto()
+    UNKNOWN = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class KeyFingerprint:
+    keytype: str
+    fingerprint: str
+
+
 @attr.s(auto_attribs=True)
 class LiveSessionSSHInfo:
     username: str
-    password: str
+    password_kind: PasswordKind
+    password: Optional[str]
+    authorized_key_fingerprints: List[KeyFingerprint]
     ips: List[str]
+    host_key_fingerprints: List[KeyFingerprint]
 
 
 class RefreshCheckState(enum.Enum):

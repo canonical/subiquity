@@ -16,7 +16,6 @@
 import asyncio
 import logging
 import os
-import pwd
 import shlex
 import sys
 import time
@@ -26,6 +25,7 @@ from aiohttp import web
 
 from cloudinit import atomic_helper, safeyaml, stages
 from cloudinit.config.cc_set_passwords import rand_user_password
+from cloudinit.distros import ug_util
 
 import jsonschema
 
@@ -37,6 +37,10 @@ from subiquitycore.async_helpers import run_in_thread, schedule_task
 from subiquitycore.context import with_context
 from subiquitycore.core import Application
 from subiquitycore.prober import Prober
+from subiquitycore.ssh import (
+    host_key_fingerprints,
+    user_key_fingerprints,
+    )
 from subiquitycore.utils import arun_command, run_command
 
 from subiquity.common.api.server import (
@@ -53,7 +57,9 @@ from subiquity.common.types import (
     ApplicationState,
     ApplicationStatus,
     ErrorReportRef,
+    KeyFingerprint,
     LiveSessionSSHInfo,
+    PasswordKind,
     )
 from subiquity.server.controller import SubiquityController
 from subiquity.models.subiquity import SubiquityModel
@@ -102,18 +108,32 @@ class MetaController:
                 controller.configured()
 
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
-        password = self.app.installer_user_passwd
-        if password is None:
-            return None
         ips = []
         for dev in self.app.base_model.network.get_all_netdevs():
             ips.extend(map(str, dev.actual_global_ip_addresses))
         if not ips:
             return None
+        username = self.app.installer_user_name
+        if username is None:
+            return None
+        user_fingerprints = [
+            KeyFingerprint(keytype, fingerprint)
+            for keytype, fingerprint in user_key_fingerprints(username)
+            ]
+        if self.app.installer_user_passwd_kind == PasswordKind.NONE:
+            if not user_key_fingerprints:
+                return None
+        host_fingerprints = [
+            KeyFingerprint(keytype, fingerprint)
+            for keytype, fingerprint in host_key_fingerprints()
+            ]
         return LiveSessionSSHInfo(
-            username='installer',
-            password=password,
-            ips=ips)
+            username=username,
+            password_kind=self.app.installer_user_passwd_kind,
+            password=self.app.installer_user_passwd,
+            authorized_key_fingerprints=user_fingerprints,
+            ips=ips,
+            host_key_fingerprints=host_fingerprints)
 
 
 def get_installer_password_from_cloudinit_log():
@@ -188,6 +208,8 @@ class SubiquityServer(Application):
         self.confirming_tty = ''
         self.fatal_error = None
         self.running_error_commands = False
+        self.installer_user_name = None
+        self.installer_user_passwd_kind = PasswordKind.NONE
         self.installer_user_passwd = None
 
         self.echo_syslog_id = 'subiquity_echo.{}'.format(os.getpid())
@@ -398,14 +420,14 @@ class SubiquityServer(Application):
             init = stages.Init()
             init.read_cfg()
             init.fetch(existing="trust")
-            cloud = init.cloudify()
+            self.cloud = init.cloudify()
             autoinstall_path = '/autoinstall.yaml'
-            if 'autoinstall' in cloud.cfg:
+            if 'autoinstall' in self.cloud.cfg:
                 if not os.path.exists(autoinstall_path):
                     atomic_helper.write_file(
                         autoinstall_path,
                         safeyaml.dumps(
-                            cloud.cfg['autoinstall']).encode('utf-8'),
+                            self.cloud.cfg['autoinstall']).encode('utf-8'),
                         mode=0o600)
             if os.path.exists(autoinstall_path):
                 self.opts.autoinstall = autoinstall_path
@@ -414,35 +436,60 @@ class SubiquityServer(Application):
                 "cloud-init status: %r, assumed disabled",
                 status_txt)
 
+    def _user_has_password(self, username):
+        with open('/etc/shadow') as fp:
+            for line in fp:
+                if line.startswith(username + ":$"):
+                    return True
+        return False
+
     def set_installer_password(self):
-        passfile = self.state_path("installer-passwd")
+        passfile = self.state_path("installer-user-passwd")
+
         if os.path.exists(passfile):
             with open(passfile) as fp:
-                self.installer_user_passwd = fp.read()
+                contents = fp.read()
+            self.installer_user_passwd_kind = PasswordKind.KNOWN
+            self.installer_user_name, self.installer_user_passwd = \
+                contents.split(':', 1)
             return
-        if self.opts.dry_run:
-            self.installer_user_passwd = rand_user_password()
-            return
-        # refreshing from a version of subiquity that relied on
-        # cloud-init to set the password to one that does not should
-        # not reset the password.
-        passwd = get_installer_password_from_cloudinit_log()
-        if passwd:
+
+        def use_passwd(passwd):
             self.installer_user_passwd = passwd
-            return
-        try:
-            pwd.getpwnam('installer')
-        except KeyError:
-            log.info("no installer user")
-            return
-        passwd = rand_user_password()
-        cp = run_command('chpasswd', input='installer:'+passwd+'\n')
-        if cp.returncode == 0:
-            self.installer_user_passwd = passwd
+            self.installer_user_passwd_kind = PasswordKind.KNOWN
             with open(passfile, 'w') as fp:
-                fp.write(passwd)
+                fp.write(self.installer_user_name + ':' + passwd)
+
+        if self.opts.dry_run:
+            self.installer_user_name = os.environ['USER']
+            use_passwd(rand_user_password())
+            return
+
+        (users, _groups) = ug_util.normalize_users_groups(
+            self.cloud.cfg, self.cloud.distro)
+        (username, _user_config) = ug_util.extract_default(users)
+
+        self.installer_user_name = username
+
+        if self._user_has_password(username):
+            # Was the password set to a random password by a version of
+            # cloud-init that records the username in the log?  (This is the
+            # case we hit on upgrading the subiquity snap)
+            passwd = get_installer_password_from_cloudinit_log()
+            if passwd:
+                use_passwd(passwd)
+            else:
+                self.installer_user_passwd_kind = PasswordKind.UNKNOWN
+        elif not user_key_fingerprints(username):
+            passwd = rand_user_password()
+            cp = run_command('chpasswd', input=username + ':'+passwd+'\n')
+            if cp.returncode == 0:
+                use_passwd(passwd)
+            else:
+                log.info("setting installer password failed %s", cp)
+                self.installer_user_passwd_kind = PasswordKind.NONE
         else:
-            log.info("setting installer password failed %s", cp)
+            self.installer_user_passwd_kind = PasswordKind.NONE
 
     async def start(self):
         self.controllers.load_all()

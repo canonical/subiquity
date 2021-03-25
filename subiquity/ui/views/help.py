@@ -25,7 +25,7 @@ from urwid import (
     )
 
 from subiquitycore.lsb_release import lsb_release
-from subiquitycore.ssh import host_key_info
+from subiquitycore.ssh import summarize_host_keys
 from subiquitycore.ui.buttons import (
     header_btn,
     other_btn,
@@ -55,6 +55,7 @@ from subiquitycore.ui.width import (
     widget_width,
     )
 
+from subiquity.common.types import PasswordKind
 from subiquity.ui.views.error import ErrorReportListStretchy
 
 log = logging.getLogger('subiquity.ui.help')
@@ -108,12 +109,29 @@ To connect, SSH to any of these addresses:
 """)
 
 SSH_HELP_ONE_ADDRESSES = _("""
-To connect, SSH to {username}@{ip}.
+To connect, SSH to {username}@{ip}.""")
+
+SSH_HELP_EPILOGUE_KNOWN_PASS_NO_KEYS = _("""\
+The password you should use is "{password}".""")
+
+SSH_HELP_EPILOGUE_UNKNOWN_PASS_NO_KEYS = _("""\
+You should use the preconfigured password passed to cloud-init.""")
+
+SSH_HELP_EPILOGUE_ONE_KEY = _("""\
+You can log in with the {keytype} key with fingerprint:
+
+    {fingerprint}
 """)
 
-SSH_HELP_EPILOGUE = _("""
-The password you should use is "{password}".
+SSH_HELP_EPILOGUE_MULTIPLE_KEYS = _("""\
+You can log in with one of the following keys:
 """)
+
+SSH_HELP_EPILOGUE_KNOWN_PASS_KEYS = _("""
+Or you can use the password "{password}".""")
+
+SSH_HELP_EPILOGUE_UNKNOWN_PASS_KEYS = _("""
+Or you can use the preconfigured password passed to cloud-init.""")
 
 SSH_HELP_NO_ADDRESSES = _("""
 Unfortunately this system seems to have no global IP addresses at this
@@ -132,7 +150,7 @@ def ssh_help_texts(ssh_info):
 
     if len(ssh_info.ips) > 0:
         if len(ssh_info.ips) > 1:
-            texts.append(rewrap(_(SSH_HELP_MULTIPLE_ADDRESSES)))
+            texts.append(_(SSH_HELP_MULTIPLE_ADDRESSES))
             texts.append("")
             for ip in ssh_info.ips:
                 texts.append(Text(
@@ -141,11 +159,37 @@ def ssh_help_texts(ssh_info):
             texts.append(_(SSH_HELP_ONE_ADDRESSES).format(
                 username=ssh_info.username, ip=str(ssh_info.ips[0])))
         texts.append("")
-        texts.append(
-            rewrap(_(SSH_HELP_EPILOGUE).format(
-                password=ssh_info.password)))
+        if ssh_info.authorized_key_fingerprints:
+            if len(ssh_info.authorized_key_fingerprints) == 1:
+                key = ssh_info.authorized_key_fingerprints[0]
+                texts.append(Text(_(SSH_HELP_EPILOGUE_ONE_KEY).format(
+                    keytype=key.keytype, fingerprint=key.fingerprint)))
+            else:
+                texts.append(_(SSH_HELP_EPILOGUE_MULTIPLE_KEYS))
+                texts.append("")
+                rows = []
+                for key in ssh_info.authorized_key_fingerprints:
+                    rows.append(
+                        TableRow([Text(key.keytype), Text(key.fingerprint)]))
+                texts.append(TablePile(rows))
+            if ssh_info.password_kind == PasswordKind.KNOWN:
+                texts.append("")
+                texts.append(SSH_HELP_EPILOGUE_KNOWN_PASS_KEYS.format(
+                    password=ssh_info.password))
+            elif ssh_info.password_kind == PasswordKind.UNKNOWN:
+                texts.append("")
+                texts.append(SSH_HELP_EPILOGUE_UNKNOWN_PASS_KEYS)
+        else:
+            if ssh_info.password_kind == PasswordKind.KNOWN:
+                texts.append(SSH_HELP_EPILOGUE_KNOWN_PASS_NO_KEYS.format(
+                    password=ssh_info.password))
+            elif ssh_info.password_kind == PasswordKind.UNKNOWN:
+                texts.append(SSH_HELP_EPILOGUE_UNKNOWN_PASS_NO_KEYS)
         texts.append("")
-        texts.append(Text(host_key_info()))
+        texts.append(Text(summarize_host_keys([
+            (key.keytype, key.fingerprint)
+            for key in ssh_info.host_key_fingerprints
+            ])))
     else:
         texts.append("")
         texts.append(_(SSH_HELP_NO_ADDRESSES))
