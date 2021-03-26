@@ -47,11 +47,12 @@ from subiquity.common.types import (
 @api
 class API:
     """The API offered by the subiquity installer process."""
-    locale = simple_endpoint(str)
-    proxy = simple_endpoint(str)
-    mirror = simple_endpoint(str)
     identity = simple_endpoint(IdentityData)
+    locale = simple_endpoint(str)
+    mirror = simple_endpoint(str)
+    proxy = simple_endpoint(str)
     ssh = simple_endpoint(SSHData)
+    updates = simple_endpoint(str)
 
     class meta:
         class status:

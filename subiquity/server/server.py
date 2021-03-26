@@ -188,6 +188,7 @@ class SubiquityServer(Application):
         "SSH",
         "SnapList",
         "Install",
+        "Updates",
         "Late",
         "Reboot",
         ]
