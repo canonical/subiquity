@@ -50,7 +50,7 @@ from subiquity.common.types import (
 from subiquity.journald import journald_listen
 from subiquity.ui.frame import SubiquityUI
 from subiquity.ui.views.error import ErrorReportStretchy
-from subiquity.ui.views.help import HelpMenu
+from subiquity.ui.views.help import HelpMenu, ssh_help_texts
 from subiquity.ui.views.installprogress import (
     InstallConfirmation,
     )
@@ -283,12 +283,11 @@ class SubiquityClient(TuiApplication):
         self.interactive = status.interactive
         if self.interactive:
             if self.opts.ssh:
-                from subiquity.ui.views.help import (
-                    ssh_help_texts, get_installer_password)
-                from subiquitycore.ssh import get_ips_standalone
-                texts = ssh_help_texts(
-                    get_ips_standalone(),
-                    get_installer_password(self.opts.dry_run))
+                ssh_info = self.client.meta.ssh_info.GET()
+                if ssh_info is None:
+                    print("no ssh?")
+                    return
+                texts = ssh_help_texts(ssh_info)
                 for line in texts:
                     if hasattr(line, 'text'):
                         if line.text.startswith('installer@'):

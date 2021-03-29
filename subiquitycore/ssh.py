@@ -14,6 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+import pwd
 
 from subiquitycore.utils import run_command
 
@@ -36,13 +38,20 @@ def host_key_fingerprints():
             keyfiles.append(line.split(None, 1)[1])
     info = []
     for keyfile in keyfiles:
-        cp = run_command(['ssh-keygen', '-lf', keyfile])
-        if cp.returncode != 0:
-            log.debug("ssh-keygen -lf %s failed %r", keyfile, cp.stderr)
-            continue
-        parts = cp.stdout.strip().split()
-        length, fingerprint, host, keytype = parts
-        keytype = keytype.strip('()')
+        info.extend(fingerprints(keyfile))
+    return info
+
+
+def fingerprints(keyfile):
+    info = []
+    cp = run_command(['ssh-keygen', '-lf', keyfile])
+    if cp.returncode != 0:
+        log.debug("ssh-keygen -lf %s failed %r", keyfile, cp.stderr)
+        return info
+    for line in cp.stdout.splitlines():
+        parts = line.strip().replace('\r', '').split()
+        fingerprint = parts[1]
+        keytype = parts[-1].strip('()')
         info.append((keytype, fingerprint))
     return info
 
@@ -55,13 +64,16 @@ host_key_tmpl = """
     {keytype:{width}} {fingerprint}"""
 
 single_host_key_tmpl = _("""\
-The {keytype} host key fingerprints is:
+The {keytype} host key fingerprint is:
     {fingerprint}
 """)
 
 
 def host_key_info():
-    fingerprints = host_key_fingerprints()
+    return summarize_host_keys(host_key_fingerprints())
+
+
+def summarize_host_keys(fingerprints):
     if len(fingerprints) == 0:
         return ''
     if len(fingerprints) == 1:
@@ -75,6 +87,19 @@ def host_key_info():
                                           fingerprint=fingerprint,
                                           width=longest_type))
     return "".join(lines)
+
+
+def user_key_fingerprints(username):
+    try:
+        user_info = pwd.getpwnam(username)
+    except KeyError:
+        log.exception("getpwnam(%s) failed", username)
+        return []
+    user_key_file = '{}/.ssh/authorized_keys'.format(user_info.pw_dir)
+    if os.path.exists(user_key_file):
+        return fingerprints(user_key_file)
+    else:
+        return []
 
 
 def get_ips_standalone():

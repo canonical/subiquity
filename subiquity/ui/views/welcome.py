@@ -30,10 +30,6 @@ from subiquitycore.ui.utils import button_pile, rewrap, screen
 from subiquitycore.screen import is_linux_tty
 from subiquitycore.view import BaseView
 
-from subiquity.ui.views.help import (
-    get_installer_password,
-    )
-
 log = logging.getLogger("subiquity.views.welcome")
 
 
@@ -85,11 +81,11 @@ def get_languages():
 class WelcomeView(BaseView):
     title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
 
-    def __init__(self, controller, cur_lang, serial, ips):
+    def __init__(self, controller, cur_lang, serial, ssh_info):
         self.controller = controller
         self.cur_lang = cur_lang
         if serial and not controller.app.rich_mode:
-            s = self.make_serial_choices(ips)
+            s = self.make_serial_choices(ssh_info)
             self.title = "Welcome!"
         else:
             s = self.make_language_choices()
@@ -119,8 +115,7 @@ class WelcomeView(BaseView):
             lb, buttons=None, narrow_rows=True,
             excerpt=_("Use UP, DOWN and ENTER keys to select your language."))
 
-    def make_serial_choices(self, ips):
-        ssh_password = get_installer_password(self.controller.opts.dry_run)
+    def make_serial_choices(self, ssh_info):
         btns = [
             other_btn(
                 label="Switch to rich mode",
@@ -135,13 +130,13 @@ class WelcomeView(BaseView):
             Text(rewrap(SERIAL_TEXT)),
             Text(""),
         ]
-        if ssh_password and ips:
+        if ssh_info:
             widgets.append(Text(rewrap(SSH_TEXT)))
             widgets.append(Text(""))
             btns.insert(1, other_btn(
                 label="View SSH instructions",
                 on_press=self.ssh_help,
-                user_arg=ssh_password))
+                user_arg=ssh_info))
         widgets.extend([
             button_pile(btns),
             ])
@@ -154,9 +149,9 @@ class WelcomeView(BaseView):
         self.controller.ui.set_header(self.title)
         self._w = self.make_language_choices()
 
-    def ssh_help(self, sender, password):
+    def ssh_help(self, sender, ssh_info):
         menu = self.controller.app.help_menu
-        menu.ssh_password = password
+        menu.ssh_info = ssh_info
         menu.ssh_help()
 
     def choose_language(self, sender, code):
