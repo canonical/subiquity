@@ -77,7 +77,8 @@ class ProgressController(SubiquityTuiController):
             try:
                 app_status = await self.app.client.meta.status.GET(
                     cur=self.app_state)
-            except aiohttp.ClientError:
+            except Exception:
+                log.exception("getting status failed")
                 await asyncio.sleep(1)
                 continue
             self.app_state = app_status.state
