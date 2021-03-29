@@ -14,8 +14,6 @@ apps:
     command: usr/bin/subiquity-loadkeys
   subiquity-configure-apt:
     command: usr/bin/subiquity-configure-apt
-  subiquity-configure-run:
-    command: usr/bin/subiquity-configure-run
   console-conf:
     command: usr/bin/console-conf
   probert:
@@ -109,7 +107,6 @@ parts:
       'bin/subiquity-service': usr/bin/subiquity-service
       'bin/subiquity-server': usr/bin/subiquity-server
       'bin/subiquity-configure-apt': usr/bin/subiquity-configure-apt
-      'bin/subiquity-configure-run': usr/bin/subiquity-configure-run
   users-and-groups:
     plugin: nil
     build-packages:
