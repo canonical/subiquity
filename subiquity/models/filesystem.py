@@ -1533,7 +1533,6 @@ class FilesystemModel(object):
         byid = {}
         objs = []
         exclusions = set()
-        seen_multipaths = set()
         for action in config:
             if is_probe_data and action['type'] == 'mount':
                 if not action['path'].startswith(self.target):
@@ -1571,12 +1570,6 @@ class FilesystemModel(object):
             if is_probe_data:
                 kw['preserve'] = True
             obj = byid[action['id']] = c(m=self, **kw)
-            multipath = kw.get('multipath')
-            if multipath:
-                if multipath in seen_multipaths:
-                    exclusions.add(obj)
-                else:
-                    seen_multipaths.add(multipath)
             objs.append(obj)
 
         while True:
