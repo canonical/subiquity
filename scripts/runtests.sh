@@ -60,8 +60,7 @@ clean
 timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall-user-data.yaml \
                                --dry-run --machine-config examples/simple.json --kernel-cmdline 'autoinstall'"
 validate
-grep -q 'finish: subiquity/Install/install: SUCCESS: skipping updates per request' \
-    .subiquity/subiquity-server-debug.log
+grep -q 'finish: subiquity/Install/install/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 
 python3 -m subiquity.cmd.schema > "$testschema"
 diff -u "autoinstall-schema.json" "$testschema"

@@ -326,7 +326,6 @@
         "updates": {
             "type": "string",
             "enum": [
-                "none",
                 "security",
                 "all"
             ]

@@ -29,7 +29,7 @@ class UpdatesController(SubiquityController):
     autoinstall_key = model_name = "updates"
     autoinstall_schema = {
         'type': 'string',
-        'enum': ['none', 'security', 'all'],
+        'enum': ['security', 'all'],
     }
     autoinstall_default = 'security'
 

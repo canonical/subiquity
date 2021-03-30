@@ -235,13 +235,8 @@ class InstallController(SubiquityController):
             if self.model.network.has_network:
                 self.app.update_state(ApplicationState.UU_RUNNING)
                 policy = self.model.updates.updates
-                if policy != 'none':
-                    await self.run_unattended_upgrades(context=context,
-                                                       policy=policy)
-                else:
-                    with context.parent.child("install",
-                                              "skipping updates per request"):
-                        pass
+                await self.run_unattended_upgrades(context=context,
+                                                   policy=policy)
 
             self.app.update_state(ApplicationState.DONE)
         except Exception:

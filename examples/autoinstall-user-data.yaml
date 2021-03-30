@@ -13,7 +13,7 @@ late-commands:
   - echo a
 keyboard:
   layout: gb
-updates: none
+updates: security
 user-data:
   users:
     - username: ubuntu
