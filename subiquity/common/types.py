@@ -209,10 +209,42 @@ class Bootloader(enum.Enum):
 
 
 @attr.s(auto_attribs=True)
+class Partition:
+    size: int
+    number: int
+    annotations: List[str]
+
+
+@attr.s(auto_attribs=True)
+class Disk:
+    id: str
+    label: str
+    type: str
+    size: int
+    usage_labels: List[str]
+    partitions: List[Partition]
+    ok_for_guided: bool
+
+
+@attr.s(auto_attribs=True)
+class GuidedChoice:
+    disk_id: str
+    use_lvm: bool = False
+    password: Optional[str] = attr.ib(default=None, repr=False)
+
+
+@attr.s(auto_attribs=True)
+class GuidedStorageResponse:
+    status: ProbeStatus
+    error_report: Optional[ErrorReportRef] = None
+    disks: Optional[List[Disk]] = None
+
+
+@attr.s(auto_attribs=True)
 class StorageResponse:
     status: ProbeStatus
-    bootloader: Optional[Bootloader] = None
     error_report: Optional[ErrorReportRef] = None
+    bootloader: Optional[Bootloader] = None
     orig_config: Optional[list] = None
     config: Optional[list] = None
     blockdev: Optional[dict] = None

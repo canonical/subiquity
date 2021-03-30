@@ -38,12 +38,14 @@ from subiquitycore.ui.table import (
     TableRow,
     )
 from subiquitycore.ui.utils import (
+    Color,
     rewrap,
     screen,
     )
 from subiquitycore.view import BaseView
 
-from .helpers import summarize_device
+from subiquity.common.types import GuidedChoice
+from subiquity.models.filesystem import humanize_size
 
 
 log = logging.getLogger("subiquity.ui.views.filesystem.guided")
@@ -79,6 +81,28 @@ class LVMOptionsForm(SubForm):
     luks_options = SubFormField(LUKSOptionsForm, "", help=NO_HELP)
 
 
+def summarize_device(disk):
+    label = disk.label
+    rows = [(disk, [
+        (2, Text(label)),
+        Text(disk.type),
+        Text(humanize_size(disk.size), align="right"),
+        ])]
+    if disk.partitions:
+        for part in disk.partitions:
+            details = ", ".join(part.annotations)
+            rows.append((part, [
+                Text(_("partition {number}").format(number=part.number)),
+                (2, Text(details)),
+                Text(humanize_size(part.size), align="right"),
+                ]))
+    else:
+        rows.append((None, [
+            (4, Color.info_minor(Text(", ".join(disk.usage_labels))))
+            ]))
+    return rows
+
+
 class GuidedChoiceForm(SubForm):
 
     disk = ChoiceField(caption=NO_CAPTION, help=NO_HELP, choices=["x"])
@@ -90,12 +114,12 @@ class GuidedChoiceForm(SubForm):
         options = []
         tables = []
         initial = -1
-        for disk in parent.model.all_disks():
+        for disk in parent.disks:
             for obj, cells in summarize_device(disk):
                 table = TablePile([TableRow(cells)])
                 tables.append(table)
                 enabled = False
-                if obj is disk and disk.size > 6*(2**30):
+                if obj is disk and disk.ok_for_guided:
                     enabled = True
                     if initial < 0:
                         initial = len(options)
@@ -122,8 +146,8 @@ class GuidedForm(Form):
 
     cancel_label = _("Back")
 
-    def __init__(self, model):
-        self.model = model
+    def __init__(self, disks):
+        self.disks = disks
         super().__init__()
         connect_signal(self.guided.widget, 'change', self._toggle_guided)
 
@@ -173,34 +197,28 @@ installation will not be possible.
 """)
 
 
-class GuidedDiskSelectionView (BaseView):
+class GuidedDiskSelectionView(BaseView):
 
     title = _("Guided storage configuration")
 
-    def __init__(self, controller):
+    def __init__(self, controller, disks):
         self.controller = controller
 
-        found_disk = False
-        found_ok_disk = False
-        for disk in controller.model.all_disks():
-            found_disk = True
-            if disk.size > 6*(2**30):
-                found_ok_disk = True
-                break
+        if disks:
+            if any(disk.ok_for_guided for disk in disks):
+                self.form = GuidedForm(disks=disks)
 
-        if found_ok_disk:
-            self.form = GuidedForm(model=controller.model)
+                connect_signal(self.form, 'submit', self.done)
+                connect_signal(self.form, 'cancel', self.cancel)
 
-            connect_signal(self.form, 'submit', self.done)
-            connect_signal(self.form, 'cancel', self.cancel)
-
-            super().__init__(
-                self.form.as_screen(focus_buttons=False, excerpt=_(subtitle)))
-        elif found_disk:
-            super().__init__(
-                screen(
-                    [Text(rewrap(_(no_big_disks)))],
-                    [other_btn(_("OK"), on_press=self.manual)]))
+                super().__init__(
+                    self.form.as_screen(
+                        focus_buttons=False, excerpt=_(subtitle)))
+            else:
+                super().__init__(
+                    screen(
+                        [Text(rewrap(_(no_big_disks)))],
+                        [other_btn(_("OK"), on_press=self.manual)]))
         else:
             super().__init__(
                 screen(
@@ -212,17 +230,18 @@ class GuidedDiskSelectionView (BaseView):
 
     def done(self, sender):
         results = sender.as_data()
+        choice = None
         if results['guided']:
-            disk = results['guided_choice']['disk']
-            if results['guided_choice']['use_lvm']:
-                self.controller.guided_lvm(
-                    disk, results['guided_choice']['lvm_options'])
-            else:
-                self.controller.guided_direct(disk)
-        self.controller.manual()
+            choice = GuidedChoice(
+                disk_id=results['guided_choice']['disk'].id,
+                use_lvm=results['guided_choice']['use_lvm'])
+            opts = results['guided_choice'].get('lvm_options', {})
+            if opts.get('encrypt', False):
+                choice.password = opts['luks_options']['password']
+        self.controller.guided_choice(choice)
 
     def manual(self, sender):
-        self.controller.manual()
+        self.controller.guided_choice(None)
 
     def cancel(self, btn=None):
         self.controller.cancel()

@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import select
+from typing import Optional
 
 import pyudev
 
@@ -37,11 +38,15 @@ from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem import FilesystemManipulator
 from subiquity.common.types import (
+    Bootloader,
+    GuidedChoice,
+    GuidedStorageResponse,
     ProbeStatus,
     StorageResponse,
     )
 from subiquity.models.filesystem import (
-    Bootloader,
+    dehumanize_size,
+    DeviceAction,
     )
 from subiquity.server.controller import (
     SubiquityController,
@@ -108,35 +113,126 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 "autoinstall config did not create needed bootloader "
                 "partition")
 
-    async def GET(self, wait: bool = False) -> StorageResponse:
+    def guided_direct(self, disk):
+        self.reformat(disk)
+        result = {
+            "size": disk.free_for_partitions,
+            "fstype": "ext4",
+            "mount": "/",
+            }
+        self.partition_disk_handler(disk, None, result)
+
+    def guided_lvm(self, disk, lvm_options=None):
+        self.reformat(disk)
+        if DeviceAction.TOGGLE_BOOT in disk.supported_actions:
+            self.add_boot_disk(disk)
+        self.create_partition(
+            device=disk, spec=dict(
+                size=dehumanize_size('1G'),
+                fstype="ext4",
+                mount='/boot'
+                ))
+        part = self.create_partition(
+            device=disk, spec=dict(
+                size=disk.free_for_partitions,
+                fstype=None,
+                ))
+        vg_name = 'ubuntu-vg'
+        i = 0
+        while self.model._one(type='lvm_volgroup', name=vg_name) is not None:
+            i += 1
+            vg_name = 'ubuntu-vg-{}'.format(i)
+        spec = dict(name=vg_name, devices=set([part]))
+        if lvm_options and lvm_options['encrypt']:
+            spec['password'] = lvm_options['luks_options']['password']
+        vg = self.create_volgroup(spec)
+        # There's no point using LVM and unconditionally filling the
+        # VG with a single LV, but we should use more of a smaller
+        # disk to avoid the user running into out of space errors
+        # earlier than they probably expect to.
+        if vg.size < 10 * (2 << 30):
+            # Use all of a small (<10G) disk.
+            lv_size = vg.size
+        elif vg.size < 20 * (2 << 30):
+            # Use 10G of a smallish (<20G) disk.
+            lv_size = 10 * (2 << 30)
+        elif vg.size < 200 * (2 << 30):
+            # Use half of a larger (<200G) disk.
+            lv_size = vg.size // 2
+        else:
+            # Use at most 100G of a large disk.
+            lv_size = 100 * (2 << 30)
+        self.create_logical_volume(
+            vg=vg, spec=dict(
+                size=lv_size,
+                name="ubuntu-lv",
+                fstype="ext4",
+                mount="/",
+                ))
+
+    async def _probe_response(self, wait, resp_cls):
         if self._probe_task.task is None or not self._probe_task.task.done():
             if wait:
                 await self._start_task
                 await self._probe_task.wait()
             else:
-                return StorageResponse(status=ProbeStatus.PROBING)
+                return resp_cls(status=ProbeStatus.PROBING)
         if True in self._errors:
-            return StorageResponse(
+            return resp_cls(
                 status=ProbeStatus.FAILED,
                 error_report=self._errors[True][1].ref())
+        return None
+
+    def full_probe_error(self):
+        if False in self._errors:
+            return self._errors[False][1].ref()
         else:
-            if False in self._errors:
-                err_ref = self._errors[False][1].ref()
-            else:
-                err_ref = None
-            return StorageResponse(
-                status=ProbeStatus.DONE,
-                bootloader=self.model.bootloader,
-                error_report=err_ref,
-                orig_config=self.model._orig_config,
-                config=self.model._render_actions(include_all=True),
-                blockdev=self.model._probe_data['blockdev'],
-                dasd=self.model._probe_data.get('dasd', {}))
+            return None
+
+    async def GET(self, wait: bool = False) -> StorageResponse:
+        probe_resp = await self._probe_response(wait, StorageResponse)
+        if probe_resp is not None:
+            return probe_resp
+        return StorageResponse(
+            status=ProbeStatus.DONE,
+            bootloader=self.model.bootloader,
+            error_report=self.full_probe_error(),
+            orig_config=self.model._orig_config,
+            config=self.model._render_actions(include_all=True),
+            blockdev=self.model._probe_data['blockdev'],
+            dasd=self.model._probe_data.get('dasd', {}))
 
     async def POST(self, config: list):
         self.model._actions = self.model._actions_from_config(
             config, self.model._probe_data['blockdev'], is_probe_data=False)
         self.configured()
+
+    async def guided_GET(self, wait: bool = False) -> GuidedStorageResponse:
+        probe_resp = await self._probe_response(wait, GuidedStorageResponse)
+        if probe_resp is not None:
+            return probe_resp
+        return GuidedStorageResponse(
+            status=ProbeStatus.DONE,
+            error_report=self.full_probe_error(),
+            disks=[d.for_client() for d in self.model._all(type='disk')])
+
+    async def guided_POST(self, choice: Optional[GuidedChoice]) \
+            -> StorageResponse:
+        if choice is not None:
+            disk = self.model._one(type='disk', id=choice.disk_id)
+            if choice.use_lvm:
+                lvm_options = None
+                if choice.password is not None:
+                    lvm_options = {
+                        'encrypt': True,
+                        'luks_options': {
+                            'password': choice.password,
+                            },
+                        }
+                self.guided_lvm(disk, lvm_options)
+            else:
+                self.guided_direct(disk)
+        return await self.GET()
 
     async def reset_POST(self, context, request) -> StorageResponse:
         log.info("Resetting Filesystem model")
