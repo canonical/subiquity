@@ -26,33 +26,31 @@ class UpdatesController(SubiquityController):
 
     endpoint = API.updates
 
+    possible = ['security', 'all']
+
     autoinstall_key = model_name = "updates"
     autoinstall_schema = {
         'type': 'string',
-        'enum': ['security', 'all'],
+        'enum': possible,
     }
     autoinstall_default = 'security'
 
-    def __init__(self, app):
-        super().__init__(app)
-
     def load_autoinstall_data(self, data):
-        if data is None:
-            return
-        self.model.updates = data
+        self.deserialize(data)
 
     def make_autoinstall(self):
-        return self.model.updates
+        return self.serialize()
 
     def serialize(self):
         return self.model.updates
 
     def deserialize(self, data):
+        if data not in self.possible:
+            raise ValueError
         self.model.updates = data
 
     async def GET(self) -> str:
-        return self.model.updates
+        return self.serialize()
 
     async def POST(self, data: str):
-        self.model.updates = data
-        self.configured()
+        self.deserialize(data)

@@ -82,7 +82,6 @@ POSTINSTALL_MODEL_NAMES = [
     "packages",
     "snaplist",
     "ssh",
-    # "updates", # FIXME hey mwhudson - do I need this?
     "userdata",
     ]
 
