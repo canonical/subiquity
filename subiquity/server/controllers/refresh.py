@@ -191,7 +191,6 @@ class RefreshController(SubiquityController):
 
     @with_context()
     async def start_update(self, context):
-        open(self.app.state_path('updating'), 'w').close()
         change = await self.app.snapd.post(
             'v2/snaps/{}'.format(self.snap_name),
             {'action': 'refresh'})
