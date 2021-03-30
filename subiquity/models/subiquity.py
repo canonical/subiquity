@@ -279,9 +279,6 @@ class SubiquityModel:
                 },
 
             'curthooks_commands': {
-                '000-configure-run': [
-                    '/snap/bin/subiquity.subiquity-configure-run',
-                    ],
                 '001-configure-apt': [
                     '/snap/bin/subiquity.subiquity-configure-apt',
                     sys.executable, str(self.network.has_network).lower(),
