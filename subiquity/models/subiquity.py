@@ -29,14 +29,15 @@ from subiquitycore.file_util import write_file
 from subiquitycore.utils import run_command
 
 from .filesystem import FilesystemModel
+from .identity import IdentityModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
-from .proxy import ProxyModel
 from .mirror import MirrorModel
 from .network import NetworkModel
+from .proxy import ProxyModel
 from .snaplist import SnapListModel
 from .ssh import SSHModel
-from .identity import IdentityModel
+from .updates import UpdatesModel
 
 
 log = logging.getLogger('subiquity.models.subiquity')
@@ -117,6 +118,7 @@ class SubiquityModel:
         self.proxy = ProxyModel()
         self.snaplist = SnapListModel()
         self.ssh = SSHModel()
+        self.updates = UpdatesModel()
         self.userdata = {}
 
         self.confirmation = asyncio.Event()

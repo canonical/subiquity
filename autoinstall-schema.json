@@ -323,6 +323,13 @@
                 "additionalProperties": false
             }
         },
+        "updates": {
+            "type": "string",
+            "enum": [
+                "security",
+                "all"
+            ]
+        },
         "late-commands": {
             "type": "array",
             "items": {
