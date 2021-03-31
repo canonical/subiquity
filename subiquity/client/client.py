@@ -283,19 +283,16 @@ class SubiquityClient(TuiApplication):
         self.interactive = status.interactive
         if self.interactive:
             if self.opts.ssh:
-                ssh_info = self.client.meta.ssh_info.GET()
-                if ssh_info is None:
-                    print("no ssh?")
-                    return
+                ssh_info = await self.client.meta.ssh_info.GET()
                 texts = ssh_help_texts(ssh_info)
                 for line in texts:
-                    if hasattr(line, 'text'):
-                        if line.text.startswith('installer@'):
-                            print(' ' * 4 + line.text)
-                        else:
-                            print(line.text)
-                    else:
-                        print(line)
+                    import urwid
+                    if isinstance(line, urwid.Widget):
+                        line = '\n'.join([
+                            line.decode('utf-8').rstrip()
+                            for line in line.render((1000,)).text
+                            ])
+                    print(line)
                 return
             await super().start()
             journald_listen(

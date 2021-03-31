@@ -148,7 +148,7 @@ def ssh_help_texts(ssh_info):
 
     texts = [_(SSH_HELP_PROLOGUE), ""]
 
-    if len(ssh_info.ips) > 0:
+    if ssh_info is not None:
         if len(ssh_info.ips) > 1:
             texts.append(_(SSH_HELP_MULTIPLE_ADDRESSES))
             texts.append("")
