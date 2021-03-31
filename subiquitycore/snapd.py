@@ -118,6 +118,9 @@ class ResponseSet:
         return _FakeFileResponse(f)
 
 
+update_marker_file = '.subiquity/run/subiquity/updating'
+
+
 class FakeSnapdConnection:
     def __init__(self, snap_data_dir, scale_factor):
         self.snap_data_dir = snap_data_dir
@@ -130,6 +133,8 @@ class FakeSnapdConnection:
 
     def post(self, path, body, **args):
         if path == "v2/snaps/subiquity" and body['action'] == 'refresh':
+            # The post-refresh hook does this in the real world.
+            open(update_marker_file, 'w').close()
             return _FakeMemoryResponse({
                 "type": "async",
                 "change": "7",

@@ -1,6 +1,3 @@
 #!/bin/sh
-# snapd will restart snap.subiquity.subiquity-service.service for us,
-# but any processes running on the serial lines are created via
-# systemd overrides in the installer layer of the squashfs and so need
-# restarting separately.
-systemctl restart 'serial-subiquity@*.service'
+mkdir -p /run/subiquity
+touch /run/subiquity/updating
