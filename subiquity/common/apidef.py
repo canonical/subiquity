@@ -34,6 +34,7 @@ from subiquity.common.types import (
     KeyboardSetup,
     IdentityData,
     RefreshStatus,
+    RstResponse,
     SnapInfo,
     SnapListResponse,
     SnapSelection,
@@ -200,6 +201,11 @@ class API:
 
         class reset:
             def POST() -> StorageResponse: ...
+
+        class has_rst:
+            def GET() -> RstResponse:
+                pass
+
 
     class snaplist:
         def GET(wait: bool = False) -> SnapListResponse: ...
