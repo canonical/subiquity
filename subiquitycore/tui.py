@@ -33,7 +33,7 @@ from subiquitycore.screen import make_screen
 from subiquitycore.tuicontroller import Skip
 from subiquitycore.ui.utils import LoadingDialog
 from subiquitycore.ui.frame import SubiquityCoreUI
-from subiquitycore.utils import arun_command
+from subiquitycore.utils import astart_command
 
 log = logging.getLogger('subiquitycore.tui')
 
@@ -81,14 +81,19 @@ class TuiApplication(Application):
         self.rich_mode = opts.run_on_serial
         self.urwid_loop = None
         self.cur_screen = None
+        self.fg_proc = None
 
     def run_command_in_foreground(self, cmd, before_hook=None, after_hook=None,
                                   **kw):
+        if self.fg_proc is not None:
+            raise Exception("cannot run two fg processes at once")
         screen = self.urwid_loop.screen
 
         async def _run():
-            await arun_command(
+            self.fg_proc = proc = await astart_command(
                 cmd, stdin=None, stdout=None, stderr=None, **kw)
+            await proc.communicate()
+            self.fg_proc = None
             # One of the main use cases for this function is to run interactive
             # bash in a subshell. Interactive bash of course creates a process
             # group for itself and sets it as the foreground process group for

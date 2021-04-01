@@ -63,7 +63,7 @@ log = logging.getLogger('subiquity.client.client')
 
 
 class Abort(Exception):
-    def __init__(self, error_report_ref):
+    def __init__(self, error_report_ref=None):
         self.error_report_ref = error_report_ref
 
 
@@ -118,7 +118,7 @@ class SubiquityClient(TuiApplication):
         super().__init__(opts)
         self.interactive = None
         self.server_updated = None
-        self.restarting_server = False
+        self.restarting = False
         self.global_overlays = []
 
         try:
@@ -144,12 +144,27 @@ class SubiquityClient(TuiApplication):
             pass
         self.restart(remove_last_screen=False)
 
+    async def _kill_fg_proc(self, remove_last_screen, restart_server):
+        proc = self.fg_proc
+        proc.kill()
+        await proc.wait()
+        self.fg_proc = None
+        self.restart(remove_last_screen, restart_server)
+
     def restart(self, remove_last_screen=True, restart_server=False):
         log.debug(f"restart {remove_last_screen} {restart_server}")
+        if self.fg_proc is not None:
+            log.debug(
+                "killing foreground process %s before restarting",
+                self.fg_proc)
+            self.restarting = True
+            self.aio_loop.create_task(
+                self._kill_fg_proc(remove_last_screen, restart_server))
+            return
         if remove_last_screen:
             self._remove_last_screen()
         if restart_server:
-            self.restarting_server = True
+            self.restarting = True
             self.ui.block_input = True
             self.aio_loop.create_task(self._restart_server())
             return
@@ -173,6 +188,7 @@ class SubiquityClient(TuiApplication):
                 self.server_updated = headers['x-updated']
             elif self.server_updated != headers['x-updated']:
                 self.restart(remove_last_screen=False)
+                raise Abort
         status = headers.get('x-status')
         if status == 'skip':
             raise Skip
@@ -330,7 +346,7 @@ class SubiquityClient(TuiApplication):
 
     def _exception_handler(self, loop, context):
         exc = context.get('exception')
-        if self.restarting_server:
+        if self.restarting:
             log.debug('ignoring %s %s during restart', exc, type(exc))
             return
         if isinstance(exc, Abort):
