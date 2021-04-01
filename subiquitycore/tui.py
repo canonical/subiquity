@@ -16,9 +16,12 @@
 import asyncio
 import inspect
 import logging
-import yaml
+import os
+import signal
 
 import urwid
+
+import yaml
 
 from subiquitycore.async_helpers import schedule_task
 from subiquitycore.core import Application
@@ -86,6 +89,23 @@ class TuiApplication(Application):
         async def _run():
             await arun_command(
                 cmd, stdin=None, stdout=None, stderr=None, **kw)
+            # One of the main use cases for this function is to run interactive
+            # bash in a subshell. Interactive bash of course creates a process
+            # group for itself and sets it as the foreground process group for
+            # the controlling terminal. Usually on exit, our process group
+            # becomes the foreground process group again but when the subshell
+            # is killed for some reason it does not. This causes the tcsetattr
+            # that screen.start() does to either cause SIGTTOU to be sent, or
+            # if that is ignored (either because there is no shell around to do
+            # job control things or we are ignoring it) fail with EIO. So we
+            # force our process group back into the foreground with this
+            # call. That's not quite enough though because tcsetpgrp *also*
+            # causes SIGTTOU to be sent to a background process that calls it,
+            # but fortunately if we ignore that (done in start_urwid below),
+            # the call still succeeds.
+            #
+            # I would now like a drink.
+            os.tcsetpgrp(0, os.getpgrp())
             screen.start()
             if after_hook is not None:
                 after_hook()
@@ -315,6 +335,9 @@ class TuiApplication(Application):
         return make_screen(self.opts.ascii, inputf, outputf)
 
     def start_urwid(self, input=None, output=None):
+        # This stops the tcsetpgrp call in run_command_in_foreground from
+        # suspending us. See the rant there for more details.
+        signal.signal(signal.SIGTTOU, signal.SIG_IGN)
         screen = self.make_screen(input, output)
         screen.register_palette(PALETTE_COLOR)
         self.urwid_loop = urwid.MainLoop(
