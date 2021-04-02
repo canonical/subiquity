@@ -206,7 +206,6 @@ class API:
             def GET() -> RstResponse:
                 pass
 
-
     class snaplist:
         def GET(wait: bool = False) -> SnapListResponse: ...
         def POST(data: Payload[List[SnapSelection]]): ...
