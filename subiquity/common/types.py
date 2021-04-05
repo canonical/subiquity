@@ -241,11 +241,6 @@ class GuidedStorageResponse:
 
 
 @attr.s(auto_attribs=True)
-class RstResponse:
-    has_rst: bool = False
-
-
-@attr.s(auto_attribs=True)
 class StorageResponse:
     status: ProbeStatus
     error_report: Optional[ErrorReportRef] = None
