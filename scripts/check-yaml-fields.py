@@ -17,7 +17,14 @@ def main():
             k, expected = arg, None
         v = config
         for part in k.split('.'):
+            if '[' in part:
+                part, index = part.split('[')
+                index = int(index[:-1])
+            else:
+                index = None
             v = v[part]
+            if index is not None:
+                v = v[index]
         if expected is None:
             print(v)
         else:

@@ -51,5 +51,5 @@ storage:
   - {type: raid, name: md1, raidlevel: raid1, devices: [partition-system-1, partition-system-2], preserve: false, id: raid-system}
   - {type: format, fstype: ext4, volume: raid-boot, preserve: false, id: format-boot}
   - {type: format, fstype: ext4, volume: raid-system, preserve: false, id: format-system}
-  - {type: mount, device: format-boot, path: /boot, id: mount-boot}
   - {type: mount, device: format-system, path: /, id: mount-system}
+  - {type: mount, device: format-boot, path: /boot, id: mount-boot, options: 'errors=remount-ro'}
