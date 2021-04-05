@@ -201,6 +201,10 @@ class API:
         class reset:
             def POST() -> StorageResponse: ...
 
+        class has_rst:
+            def GET() -> bool:
+                pass
+
     class snaplist:
         def GET(wait: bool = False) -> SnapListResponse: ...
         def POST(data: Payload[List[SnapSelection]]): ...

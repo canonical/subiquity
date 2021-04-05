@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import glob
 import json
 import logging
 import os
@@ -238,6 +239,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.info("Resetting Filesystem model")
         self.model.reset()
         return await self.GET(context)
+
+    async def has_rst_GET(self) -> bool:
+        search = '/sys/module/ahci/drivers/pci:ahci/*/remapped_nvme'
+        for remapped_nvme in glob.glob(search):
+            with open(remapped_nvme, 'r') as f:
+                if int(f.read()) > 0:
+                    return True
+        return False
 
     @with_context(name='probe_once', description='restricted={restricted}')
     async def _probe_once(self, *, context, restricted):
