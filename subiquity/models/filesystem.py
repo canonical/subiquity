@@ -165,7 +165,7 @@ raidlevels = [
     RaidLevel(_("1 (mirrored)"), "raid1",  2),
     RaidLevel(_("5"),            "raid5",  3),
     RaidLevel(_("6"),            "raid6",  4),
-    RaidLevel(_("10"),           "raid10", 4),
+    RaidLevel(_("10"),           "raid10", 2),
     ]
 
 
