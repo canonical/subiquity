@@ -926,6 +926,8 @@ class Partition(_Formattable):
     number = attr.ib(default=None)
     preserve = attr.ib(default=False)
     grub_device = attr.ib(default=False)
+    name = attr.ib(default=None)
+    multipath = attr.ib(default=None)
 
     @property
     def annotations(self):
@@ -1087,7 +1089,9 @@ class Raid(_Device):
         backlink="_constructed_device", default=attr.Factory(set))
 
     preserve = attr.ib(default=False)
+    wipe = attr.ib(default=None)
     ptable = attributes.ptable()
+    metadata = attr.ib(default=None)
 
     @property
     def size(self):
@@ -1217,6 +1221,7 @@ class LVM_LogicalVolume(_Formattable):
     name = attr.ib()
     volgroup = attributes.ref(backlink="_partitions")  # LVM_VolGroup
     size = attributes.size()
+    wipe = attr.ib(default=None)
 
     preserve = attr.ib(default=False)
 
@@ -1305,6 +1310,7 @@ class Filesystem:
     label = attr.ib(default=None)
     uuid = attr.ib(default=None)
     preserve = attr.ib(default=False)
+    extra_options = attr.ib(default=None)
 
     _mount = attributes.backlink()
 
@@ -1326,6 +1332,9 @@ class Filesystem:
 class Mount:
     device = attributes.ref(backlink="_mount")  # Filesystem
     path = attr.ib()
+    fstype = attr.ib(default=None)
+    options = attr.ib(default=None)
+    spec = attr.ib(default=None)
 
     def can_delete(self):
         # Can't delete mount of /boot/efi or swap, anything else is fine.
