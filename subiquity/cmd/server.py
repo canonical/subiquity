@@ -37,9 +37,6 @@ def make_server_args_parser():
     parser.add_argument('--machine-config', metavar='CONFIG',
                         dest='machine_config',
                         help="Don't Probe. Use probe data file")
-    parser.add_argument('--source', default=[], action='append',
-                        dest='sources', metavar='URL',
-                        help='install from url instead of default.')
     parser.add_argument('--bootloader',
                         choices=['none', 'bios', 'prep', 'uefi'],
                         help='Override style of bootloader to use')

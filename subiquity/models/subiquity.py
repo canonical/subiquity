@@ -102,7 +102,7 @@ class SubiquityModel:
 
     target = '/target'
 
-    def __init__(self, root, sources=()):
+    def __init__(self, root):
         self.root = root
         if root != '/':
             self.target = root
