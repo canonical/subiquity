@@ -30,6 +30,7 @@ from subiquitycore.utils import run_command
 
 from .filesystem import FilesystemModel
 from .identity import IdentityModel
+from .kernel import KernelModel
 from .keyboard import KeyboardModel
 from .locale import LocaleModel
 from .mirror import MirrorModel
@@ -69,6 +70,7 @@ ff02::2 ip6-allrouters
 INSTALL_MODEL_NAMES = [
     "debconf_selections",
     "filesystem",
+    "kernel",
     "keyboard",
     "mirror",
     "network",
@@ -110,6 +112,7 @@ class SubiquityModel:
         self.debconf_selections = DebconfSelectionsModel()
         self.filesystem = FilesystemModel()
         self.identity = IdentityModel()
+        self.kernel = KernelModel()
         self.keyboard = KeyboardModel(self.root)
         self.locale = LocaleModel()
         self.mirror = MirrorModel()
@@ -350,13 +353,5 @@ class SubiquityModel:
             model = getattr(self, model_name)
             log.debug("merging config from %s", model)
             merge_config(config, model.render())
-
-        mp_file = os.path.join(self.root, "run/kernel-meta-package")
-        if os.path.exists(mp_file):
-            with open(mp_file) as fp:
-                kernel_package = fp.read().strip()
-            config['kernel'] = {
-                'package': kernel_package,
-                }
 
         return config

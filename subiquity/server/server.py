@@ -178,6 +178,7 @@ class SubiquityServer(Application):
         "Debconf",
         "Locale",
         "Refresh",
+        "Kernel",
         "Keyboard",
         "Zdev",
         "Network",

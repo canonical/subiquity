@@ -19,6 +19,7 @@ from .filesystem import FilesystemController
 from .identity import IdentityController
 from .install import InstallController
 from .keyboard import KeyboardController
+from .kernel import KernelController
 from .locale import LocaleController
 from .mirror import MirrorController
 from .network import NetworkController
@@ -40,6 +41,7 @@ __all__ = [
     'FilesystemController',
     'IdentityController',
     'InstallController',
+    'KernelController',
     'KeyboardController',
     'LateController',
     'LocaleController',
