@@ -34,6 +34,8 @@ class ProxyController(SubiquityController):
         'format': 'uri',
         }
 
+    _set_task = None
+
     def load_autoinstall_data(self, data):
         if data is not None:
             self.model.proxy = data
@@ -42,13 +44,12 @@ class ProxyController(SubiquityController):
         if self.model.proxy:
             os.environ['http_proxy'] = os.environ['https_proxy'] = \
               self.model.proxy
-            self.app.hub.broadcast('network-proxy-set')
+            self._set_task = self.app.hub.broadcast('network-proxy-set')
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
-        # XXX want to wait until signal sent by .start() has been seen
-        # by everything; don't have a way to do that today.
-        pass
+        if self._set_task is not None:
+            await self._set_task
 
     def serialize(self):
         return self.model.proxy
