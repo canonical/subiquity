@@ -129,9 +129,6 @@ class SnapListController(SubiquityController):
             },
         }
     model_name = "snaplist"
-    signals = [
-        ('snapd-network-change', 'snapd_network_changed'),
-    ]
 
     def _make_loader(self):
         return SnapdSnapInfoLoader(
@@ -141,6 +138,8 @@ class SnapListController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.loader = self._make_loader()
+        self.app.hub.subscribe(
+            'snapd-network-change', self.snapd_network_changed)
 
     def load_autoinstall_data(self, ai_data):
         to_install = []

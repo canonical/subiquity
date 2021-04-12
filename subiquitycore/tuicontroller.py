@@ -98,9 +98,6 @@ class RepeatedController(BaseController):
         self.index = index
         self.context = orig.context
 
-    def register_signals(self):
-        pass
-
     def make_ui(self):
         return self.orig.make_ui(self.index)
 

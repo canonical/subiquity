@@ -57,8 +57,8 @@ subiquitycore/models/network.py
 subiquitycore/netplan.py
 subiquitycore/palette.py
 subiquitycore/prober.py
+subiquitycore/pubsub.py
 subiquitycore/screen.py
-subiquitycore/signals.py
 subiquitycore/snapd.py
 subiquitycore/ssh.py
 subiquitycore/testing/__init__.py
@@ -111,6 +111,7 @@ subiquity/models/tests/__init__.py
 subiquity/models/tests/test_filesystem.py
 subiquity/models/tests/test_mirror.py
 subiquity/models/tests/test_subiquity.py
+subiquity/models/updates.py
 subiquity/server/controller.py
 subiquity/server/controllers/cmdlist.py
 subiquity/server/controllers/debconf.py
@@ -130,6 +131,7 @@ subiquity/server/controllers/reporting.py
 subiquity/server/controllers/snaplist.py
 subiquity/server/controllers/ssh.py
 subiquity/server/controllers/tests/test_keyboard.py
+subiquity/server/controllers/updates.py
 subiquity/server/controllers/userdata.py
 subiquity/server/controllers/zdev.py
 subiquity/server/dryrun.py

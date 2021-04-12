@@ -55,15 +55,14 @@ class MirrorController(SubiquityController):
             },
         }
     model_name = "mirror"
-    signals = [
-        ('snapd-network-change', 'snapd_network_changed'),
-    ]
 
     def __init__(self, app):
         super().__init__(app)
         self.geoip_enabled = True
         self.check_state = CheckState.NOT_STARTED
         self.lookup_task = SingleInstanceTask(self.lookup)
+        self.app.hub.subscribe('network-up', self.maybe_start_check)
+        self.app.hub.subscribe('network-proxy-set', self.maybe_start_check)
 
     def load_autoinstall_data(self, data):
         if data is None:
@@ -84,7 +83,7 @@ class MirrorController(SubiquityController):
         except asyncio.TimeoutError:
             pass
 
-    def snapd_network_changed(self):
+    def maybe_start_check(self):
         if not self.geoip_enabled:
             return
         if self.check_state != CheckState.DONE:
