@@ -31,9 +31,6 @@ class LocaleController(SubiquityController):
     autoinstall_schema = {'type': 'string'}
     autoinstall_default = 'en_US.UTF-8'
 
-    def interactive(self):
-        return self.app.interactive
-
     def load_autoinstall_data(self, data):
         os.environ["LANG"] = data
 
