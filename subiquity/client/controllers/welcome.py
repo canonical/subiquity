@@ -43,7 +43,6 @@ class WelcomeController(SubiquityTuiController):
     def done(self, code):
         log.debug("WelcomeController.done %s next_screen", code)
         i18n.switch_language(code)
-        self.signal.emit_signal('l10n:language-selected', code)
         self.app.next_screen(self.endpoint.POST(code))
 
     def cancel(self):
