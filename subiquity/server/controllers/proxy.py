@@ -64,5 +64,6 @@ class ProxyController(SubiquityController):
 
     async def POST(self, data: str):
         self.model.proxy = data
+        os.environ['http_proxy'] = os.environ['https_proxy'] = data
         self.app.hub.broadcast('network-proxy-set')
         self.configured()
