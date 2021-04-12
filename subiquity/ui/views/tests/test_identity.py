@@ -1,7 +1,6 @@
 import unittest
 from unittest import mock
 
-from subiquitycore.signals import Signal
 from subiquitycore.testing import view_helpers
 
 from subiquity.client.controllers.identity import IdentityController
@@ -22,7 +21,6 @@ class IdentityViewTests(unittest.TestCase):
 
     def make_view(self):
         controller = mock.create_autospec(spec=IdentityController)
-        controller.signal = mock.create_autospec(spec=Signal)
         return IdentityView(controller, IdentityData())
 
     def test_initial_focus(self):

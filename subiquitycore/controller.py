@@ -22,24 +22,15 @@ log = logging.getLogger("subiquitycore.controller")
 class BaseController(ABC):
     """Base class for controllers."""
 
-    signals = []
     model_name = None
 
     def __init__(self, app):
         self.name = type(self).__name__[:-len("Controller")]
-        self.signal = app.signal
         self.opts = app.opts
         self.app = app
         self.context = self.app.context.child(self.name, childlevel="DEBUG")
         if self.model_name is not None:
             self.model = getattr(self.app.base_model, self.model_name)
-
-    def register_signals(self):
-        """Defines signals associated with controller from model."""
-        signals = []
-        for sig, cb in self.signals:
-            signals.append((sig, getattr(self, cb)))
-        self.signal.connect_signals(signals)
 
     def start(self):
         """Called just before the main loop is started.

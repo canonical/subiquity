@@ -470,7 +470,7 @@ class BaseNetworkController(BaseController):
     @abc.abstractmethod
     def update_default_routes(self, routes):
         if routes:
-            self.signal.emit_signal('network-change')
+            self.app.hub.broadcast('network-up')
 
     @abc.abstractmethod
     def new_link(self, netdev):

@@ -22,7 +22,7 @@ from subiquitycore.context import (
     Context,
     )
 from subiquitycore.controllerset import ControllerSet
-from subiquitycore.signals import Signal
+from subiquitycore.pubsub import MessageHub
 
 log = logging.getLogger('subiquitycore.core')
 
@@ -69,7 +69,7 @@ class Application:
         self.scale_factor = float(
             os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1"))
         self.updated = os.path.exists(self.state_path('updating'))
-        self.signal = Signal()
+        self.hub = MessageHub()
         self.aio_loop = asyncio.get_event_loop()
         self.aio_loop.set_exception_handler(self._exception_handler)
         self.controllers = ControllerSet(
@@ -83,13 +83,6 @@ class Application:
             self._exc = exc
         else:
             loop.default_exception_handler(context)
-
-    def _connect_base_signals(self):
-        """Connect signals used in the core controller."""
-        # Registers signals from each controller
-        for controller in self.controllers.instances:
-            controller.register_signals()
-        log.debug("known signals: %s", self.signal.known_signals)
 
     def state_path(self, *parts):
         return os.path.join(self.state_dir, *parts)
@@ -124,7 +117,6 @@ class Application:
 
     async def start(self):
         self.controllers.load_all()
-        self._connect_base_signals()
         self.start_controllers()
 
     def run(self):

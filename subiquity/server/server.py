@@ -235,10 +235,10 @@ class SubiquityServer(Application):
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.event_listeners = []
         self.autoinstall_config = None
-        self.signal.connect_signals([
-            ('network-proxy-set', lambda: schedule_task(self._proxy_set())),
-            ('network-change', self._network_change),
-            ])
+        self.hub.subscribe(
+            'network-up', self._network_change)
+        self.hub.subscribe(
+            'network-proxy-set', lambda: schedule_task(self._proxy_set()))
 
     def load_serialized_state(self):
         for controller in self.controllers.instances:
@@ -523,12 +523,12 @@ class SubiquityServer(Application):
         await self.apply_autoinstall_config()
 
     def _network_change(self):
-        self.signal.emit_signal('snapd-network-change')
+        self.hub.broadcast('snapd-network-change')
 
     async def _proxy_set(self):
         await run_in_thread(
             self.snapd.connection.configure_proxy, self.base_model.proxy)
-        self.signal.emit_signal('snapd-network-change')
+        self.hub.broadcast('snapd-network-change')
 
     def restart(self):
         cmdline = ['snap', 'run', 'subiquity.subiquity-server']

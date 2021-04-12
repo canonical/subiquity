@@ -55,15 +55,14 @@ class MirrorController(SubiquityController):
             },
         }
     model_name = "mirror"
-    signals = [
-        ('snapd-network-change', 'snapd_network_changed'),
-    ]
 
     def __init__(self, app):
         super().__init__(app)
         self.geoip_enabled = True
         self.check_state = CheckState.NOT_STARTED
         self.lookup_task = SingleInstanceTask(self.lookup)
+        self.app.hub.subscribe(
+            'snapd-network-change', self.snapd_network_changed)
 
     def load_autoinstall_data(self, data):
         if data is None:

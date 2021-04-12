@@ -52,10 +52,6 @@ class RefreshController(SubiquityController):
         'additionalProperties': False,
         }
 
-    signals = [
-        ('snapd-network-change', 'snapd_network_changed'),
-    ]
-
     def __init__(self, app):
         super().__init__(app)
         self.ai_data = {}
@@ -63,6 +59,8 @@ class RefreshController(SubiquityController):
         self.configure_task = None
         self.check_task = None
         self.status = RefreshStatus(availability=RefreshCheckState.UNKNOWN)
+        self.app.hub.subscribe(
+            'snapd-network-change', self.snapd_network_changed)
 
     def load_autoinstall_data(self, data):
         if data is not None:
