@@ -33,7 +33,7 @@ from systemd import journal
 
 import yaml
 
-from subiquitycore.async_helpers import run_in_thread, schedule_task
+from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.context import with_context
 from subiquitycore.core import Application
 from subiquitycore.prober import Prober
@@ -235,10 +235,8 @@ class SubiquityServer(Application):
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.event_listeners = []
         self.autoinstall_config = None
-        self.hub.subscribe(
-            'network-up', self._network_change)
-        self.hub.subscribe(
-            'network-proxy-set', lambda: schedule_task(self._proxy_set()))
+        self.hub.subscribe('network-up', self._network_change)
+        self.hub.subscribe('network-proxy-set', self._proxy_set)
 
     def load_serialized_state(self):
         for controller in self.controllers.instances:

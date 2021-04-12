@@ -13,6 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
+import inspect
+
 
 class MessageHub:
 
@@ -22,6 +25,11 @@ class MessageHub:
     def subscribe(self, channel, method, *args):
         self.subscriptions.setdefault(channel, []).append((method, args))
 
-    def broadcast(self, channel):
+    async def abroadcast(self, channel):
         for m, args in self.subscriptions.get(channel, []):
-            m(*args)
+            v = m(*args)
+            if inspect.iscoroutine(v):
+                await v
+
+    def broadcast(self, channel):
+        return asyncio.get_event_loop().create_task(self.abroadcast(channel))
