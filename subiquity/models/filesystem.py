@@ -617,10 +617,6 @@ class _Formattable(ABC):
 # space for the GPT data.
 GPT_OVERHEAD = 2 * (1 << 20)
 
-# Disks larger than this are considered sensible targets for guided
-# installation.
-MIN_SIZE_GUIDED = 6 * (1 << 30)
-
 
 @attr.s(cmp=False)
 class _Device(_Formattable, ABC):
@@ -904,7 +900,7 @@ class Disk(_Device):
 
     ok_for_lvm_vg = ok_for_raid
 
-    def for_client(self):
+    def for_client(self, min_size):
         from subiquity.common.types import Disk
         return Disk(
             id=self.id,
@@ -913,7 +909,7 @@ class Disk(_Device):
             size=self.size,
             usage_labels=self.usage_labels(),
             partitions=[p.for_client() for p in self._partitions],
-            ok_for_guided=self.size >= MIN_SIZE_GUIDED)
+            ok_for_guided=self.size >= min_size)
 
 
 @fsobj("partition")
