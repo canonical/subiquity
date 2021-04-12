@@ -57,6 +57,10 @@ from subiquity.server.controller import (
 log = logging.getLogger("subiquity.server.controller.filesystem")
 block_discover_log = logging.getLogger('block-discover')
 
+# Disks larger than this are considered sensible targets for guided
+# installation.
+DEFAULT_MIN_SIZE_GUIDED = 6 * (1 << 30)
+
 
 class FilesystemController(SubiquityController, FilesystemManipulator):
 
@@ -208,14 +212,19 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             config, self.model._probe_data['blockdev'], is_probe_data=False)
         self.configured()
 
-    async def guided_GET(self, wait: bool = False) -> GuidedStorageResponse:
+    async def guided_GET(self, min_size: int = None, wait: bool = False) \
+            -> GuidedStorageResponse:
         probe_resp = await self._probe_response(wait, GuidedStorageResponse)
         if probe_resp is not None:
             return probe_resp
+        if not min_size:
+            min_size = DEFAULT_MIN_SIZE_GUIDED
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
-            disks=[d.for_client() for d in self.model._all(type='disk')])
+            disks=[
+                d.for_client(min_size) for d in self.model._all(type='disk')
+            ])
 
     async def guided_POST(self, choice: Optional[GuidedChoice]) \
             -> StorageResponse:
