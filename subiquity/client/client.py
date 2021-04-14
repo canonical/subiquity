@@ -56,7 +56,6 @@ from subiquity.ui.views.installprogress import (
     )
 from subiquity.ui.views.welcome import (
     CloudInitFail,
-    SerialChoices,
     )
 
 
@@ -94,6 +93,7 @@ class SubiquityClient(TuiApplication):
         return SubiquityUI(self, self.help_menu)
 
     controllers = [
+        "Serial",
         "Welcome",
         "Refresh",
         "Keyboard",
@@ -327,10 +327,6 @@ class SubiquityClient(TuiApplication):
                 if report.kind == ErrorReportKind.UI and not report.seen:
                     self.show_error_report(report.ref())
                     break
-            if self.opts.run_on_serial and not self.rich_mode:
-                ssh_info = await self.client.meta.ssh_info.GET()
-                sc = SerialChoices(self, ssh_info)
-                self.add_global_overlay(sc)
         else:
             if self.opts.run_on_serial:
                 # Thanks to the fact that we are launched with agetty's

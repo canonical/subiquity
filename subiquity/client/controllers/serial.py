@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical, Ltd.
+# Copyright 2021 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,32 +13,30 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from console_conf.ui.views import WelcomeView, ChooserWelcomeView
+import logging
 
-from subiquitycore.tuicontroller import TuiController
+from subiquitycore import i18n
+from subiquity.client.controller import SubiquityTuiController
+from subiquity.ui.views.serial import SerialView
+
+log = logging.getLogger('subiquity.client.controllers.serial')
 
 
-class WelcomeController(TuiController):
+class SerialController(SubiquityTuiController):
 
-    welcome_view = WelcomeView
+    endpoint_name = 'serial'
 
-    def make_ui(self):
-        return self.welcome_view(self)
+    async def make_ui(self):
+        serial = self.app.opts.run_on_serial
+        ssh_info = await self.app.client.meta.ssh_info.GET()
+        return SerialView(self, serial, ssh_info)
 
-    def done(self):
+    def done(self, rich):
+        log.debug("SerialController.done rich %s next_screen", rich)
+        if rich:
+            self.app.toggle_rich()
         self.app.next_screen()
 
     def cancel(self):
-        if not self.app.opts.run_on_serial:
-            # Can't go back from here!
-            return
-        self.app.prev_screen()
-
-
-class RecoveryChooserWelcomeController(WelcomeController):
-
-    welcome_view = ChooserWelcomeView
-
-    def __init__(self, app):
-        super().__init__(app)
-        self.model = app.base_model
+        # Can't go back from here!
+        pass

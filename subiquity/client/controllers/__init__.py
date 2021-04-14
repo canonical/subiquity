@@ -22,11 +22,13 @@ from .network import NetworkController
 from .progress import ProgressController
 from .proxy import ProxyController
 from .refresh import RefreshController
+from .serial import SerialController
 from .snaplist import SnapListController
 from .ssh import SSHController
 from .welcome import WelcomeController
 from .zdev import ZdevController
 
+# see SubiquityClient.controllers for another list
 __all__ = [
     'FilesystemController',
     'IdentityController',
@@ -37,6 +39,7 @@ __all__ = [
     'ProxyController',
     'RefreshController',
     'RepeatedController',
+    'SerialController',
     'SnapListController',
     'SSHController',
     'WelcomeController',

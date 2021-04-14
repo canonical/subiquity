@@ -38,23 +38,6 @@ Select the language to use for the installer and to be configured in the
 installed system.
 """)
 
-SERIAL_TEXT = """
-
-As the installer is running on a serial console, it has started in
-basic mode, using only the ASCII character set and black and white
-colours.
-
-If you are connecting from a terminal emulator such as gnome-terminal
-that supports unicode and rich colours you can switch to "rich mode"
-which uses unicode, colours and supports many languages.
-
-"""
-
-SSH_TEXT = """
-You can also connect to the installer over the network via SSH, which
-will allow use of rich mode.
-"""
-
 CLOUD_INIT_FAIL_TEXT = """
 cloud-init failed to complete after 10 minutes of waiting. This
 suggests a bug, which we would appreciate help understanding.  If you
@@ -81,7 +64,7 @@ def get_languages():
 class WelcomeView(BaseView):
     title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
 
-    def __init__(self, controller, cur_lang, serial):
+    def __init__(self, controller, cur_lang, serial = None):
         self.controller = controller
         self.cur_lang = cur_lang
         if serial and not controller.app.rich_mode:
@@ -143,47 +126,3 @@ class CloudInitFail(Stretchy):
 
     def _close(self, sender):
         self.app.remove_global_overlay(self)
-
-
-class SerialChoices(Stretchy):
-    def __init__(self, app, ssh_info):
-        self.app = app
-        btns = [
-            other_btn(
-                label="Switch to rich mode",
-                on_press=self.enable_rich),
-            forward_btn(
-                label="Continue in basic mode",
-                on_press=self._close),
-            ]
-        widgets = [
-            Text(""),
-            Text(rewrap(SERIAL_TEXT)),
-            Text(""),
-        ]
-        if ssh_info:
-            widgets.append(Text(rewrap(SSH_TEXT)))
-            widgets.append(Text(""))
-            btns.insert(1, other_btn(
-                label="View SSH instructions",
-                on_press=self.ssh_help,
-                user_arg=ssh_info))
-        widgets.append(button_pile(btns))
-        focus_index = len(widgets) - 1
-        super().__init__(
-            "",
-            widgets,
-            stretchy_index=0,
-            focus_index=focus_index)
-
-    def _close(self, sender=None):
-        self.app.remove_global_overlay(self)
-
-    def enable_rich(self, sender):
-        self.app.toggle_rich()
-        self._close()
-
-    def ssh_help(self, sender, ssh_info):
-        menu = self.app.help_menu
-        menu.ssh_info = ssh_info
-        menu.ssh_help()
