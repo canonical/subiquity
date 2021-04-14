@@ -85,8 +85,6 @@ class WelcomeView(BaseView):
         self.controller = controller
         self.cur_lang = cur_lang
         if serial and not controller.app.rich_mode:
-            sc = SerialChoices(controller.app)
-            controller.app.add_global_overlay(sc)
             self.title = "Welcome!"
         super().__init__(self.make_language_choices())
 
@@ -148,7 +146,7 @@ class CloudInitFail(Stretchy):
 
 
 class SerialChoices(Stretchy):
-    def __init__(self, app):
+    def __init__(self, app, ssh_info):
         self.app = app
         btns = [
             other_btn(
@@ -163,7 +161,6 @@ class SerialChoices(Stretchy):
             Text(rewrap(SERIAL_TEXT)),
             Text(""),
         ]
-        ssh_info = await self.app.client.meta.ssh_info.GET()
         if ssh_info:
             widgets.append(Text(rewrap(SSH_TEXT)))
             widgets.append(Text(""))
