@@ -85,11 +85,10 @@ class WelcomeView(BaseView):
         self.controller = controller
         self.cur_lang = cur_lang
         if serial and not controller.app.rich_mode:
-            s = self.make_serial_choices(ssh_info)
+            sc = SerialChoices(controller, ssh_info)
+            controller.app.add_global_overlay(sc)
             self.title = "Welcome!"
-        else:
-            s = self.make_language_choices()
-        super().__init__(s)
+        super().__init__(self.make_language_choices())
 
     def make_language_choices(self):
         btns = []
@@ -114,45 +113,6 @@ class WelcomeView(BaseView):
         return screen(
             lb, buttons=None, narrow_rows=True,
             excerpt=_("Use UP, DOWN and ENTER keys to select your language."))
-
-    def make_serial_choices(self, ssh_info):
-        btns = [
-            other_btn(
-                label="Switch to rich mode",
-                on_press=self.enable_rich),
-            forward_btn(
-                label="Continue in basic mode",
-                on_press=self.choose_language,
-                user_arg='C'),
-            ]
-        widgets = [
-            Text(""),
-            Text(rewrap(SERIAL_TEXT)),
-            Text(""),
-        ]
-        if ssh_info:
-            widgets.append(Text(rewrap(SSH_TEXT)))
-            widgets.append(Text(""))
-            btns.insert(1, other_btn(
-                label="View SSH instructions",
-                on_press=self.ssh_help,
-                user_arg=ssh_info))
-        widgets.extend([
-            button_pile(btns),
-            ])
-        lb = ListBox(widgets)
-        return screen(lb, buttons=None)
-
-    def enable_rich(self, sender):
-        self.controller.app.toggle_rich()
-        self.title = self.__class__.title
-        self.controller.ui.set_header(self.title)
-        self._w = self.make_language_choices()
-
-    def ssh_help(self, sender, ssh_info):
-        menu = self.controller.app.help_menu
-        menu.ssh_info = ssh_info
-        menu.ssh_help()
 
     def choose_language(self, sender, code):
         log.debug('WelcomeView %s', code)
@@ -185,3 +145,49 @@ class CloudInitFail(Stretchy):
 
     def _close(self, sender):
         self.app.remove_global_overlay(self)
+
+
+class SerialChoices(Stretchy):
+    def __init__(self, controller, ssh_info):
+        self.controller = controller
+        self.app = controller.app
+        btns = [
+            other_btn(
+                label="Switch to rich mode",
+                on_press=self.enable_rich),
+            forward_btn(
+                label="Continue in basic mode",
+                on_press=self._close),
+            ]
+        widgets = [
+            Text(""),
+            Text(rewrap(SERIAL_TEXT)),
+            Text(""),
+        ]
+        if ssh_info:
+            widgets.append(Text(rewrap(SSH_TEXT)))
+            widgets.append(Text(""))
+            btns.insert(1, other_btn(
+                label="View SSH instructions",
+                on_press=self.ssh_help,
+                user_arg=ssh_info))
+        widgets.append(button_pile(btns))
+        focus_index = len(widgets) - 1
+        super().__init__(
+            "",
+            widgets,
+            stretchy_index=0,
+            focus_index=focus_index)
+
+    def _close(self, sender=None):
+        self.app.remove_global_overlay(self)
+
+    def enable_rich(self, sender):
+        self.app.toggle_rich()
+        self.controller.ui.set_header(WelcomeView.title)
+        self._close()
+
+    def ssh_help(self, sender, ssh_info):
+        menu = self.app.help_menu
+        menu.ssh_info = ssh_info
+        menu.ssh_help()
