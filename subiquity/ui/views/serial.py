@@ -19,7 +19,6 @@ Welcome provides user with language selection
 """
 
 import logging
-import os
 
 from urwid import Text
 
@@ -76,7 +75,6 @@ class SerialView(BaseView):
             btns.insert(1, other_btn(
                 label="View SSH instructions",
                 on_press=self.ssh_help))
-        focus_index = len(widgets) - 1
         return screen(widgets, btns)
 
     def enable_rich(self, sender):

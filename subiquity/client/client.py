@@ -420,6 +420,9 @@ class SubiquityClient(TuiApplication):
             for i, controller in enumerate(self.controllers.instances):
                 if controller.name == last_screen:
                     index = i
+        # only show the first (Serial) screen if relevant
+        if index < 1 and not self.opts.run_on_serial:
+            index = 1
         self.aio_loop.create_task(self._select_initial_screen(index))
 
     async def _select_initial_screen(self, index):

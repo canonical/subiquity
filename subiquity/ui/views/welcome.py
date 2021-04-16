@@ -64,11 +64,10 @@ def get_languages():
 class WelcomeView(BaseView):
     title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
 
-    def __init__(self, controller, cur_lang, serial = None):
+    def __init__(self, controller, cur_lang, serial):
         self.controller = controller
         self.cur_lang = cur_lang
-        if serial and not controller.app.rich_mode:
-            self.title = "Welcome!"
+        self.serial = serial
         super().__init__(self.make_language_choices())
 
     def make_language_choices(self):
@@ -89,10 +88,14 @@ class WelcomeView(BaseView):
                     user_arg=code))
 
         lb = ListBox(btns)
+        back = None
+        if self.serial:
+            back = other_btn(_("Back"), on_press=self.controller.cancel)
         if current_index is not None:
             lb.base_widget.focus_position = current_index
         return screen(
-            lb, buttons=None, narrow_rows=True,
+            lb, focus_buttons=False, narrow_rows=True,
+            buttons=[back] if back else None,
             excerpt=_("Use UP, DOWN and ENTER keys to select your language."))
 
     def choose_language(self, sender, code):

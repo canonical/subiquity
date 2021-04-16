@@ -53,7 +53,6 @@ class API:
     proxy = simple_endpoint(str)
     ssh = simple_endpoint(SSHData)
     updates = simple_endpoint(str)
-    serial = simple_endpoint(bool)
 
     class meta:
         class status:

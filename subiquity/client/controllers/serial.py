@@ -15,7 +15,6 @@
 
 import logging
 
-from subiquitycore import i18n
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views.serial import SerialView
 
@@ -23,9 +22,6 @@ log = logging.getLogger('subiquity.client.controllers.serial')
 
 
 class SerialController(SubiquityTuiController):
-
-    endpoint_name = 'serial'
-
     async def make_ui(self):
         serial = self.app.opts.run_on_serial
         ssh_info = await self.app.client.meta.ssh_info.GET()
@@ -33,8 +29,7 @@ class SerialController(SubiquityTuiController):
 
     def done(self, rich):
         log.debug("SerialController.done rich %s next_screen", rich)
-        if rich:
-            self.app.toggle_rich()
+        self.app.set_rich(rich)
         self.app.next_screen()
 
     def cancel(self):
