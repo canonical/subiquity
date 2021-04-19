@@ -111,8 +111,12 @@ class SSHController(SubiquityTuiController):
                 ssh_data.authorized_keys = key_material.splitlines()
                 self.done(ssh_data)
             else:
-                self.ui.body.confirm_ssh_keys(
-                    ssh_data, ssh_import_id, key_material, fingerprints)
+                if isinstance(self.ui.body, SSHView):
+                    self.ui.body.confirm_ssh_keys(
+                        ssh_data, ssh_import_id, key_material, fingerprints)
+                else:
+                    log.debug("ui.body of unexpected instance: %s",
+                              type(self.ui.body).__name__)
 
     def fetch_ssh_keys(self, ssh_import_id, ssh_data):
         self._fetch_task = schedule_task(
