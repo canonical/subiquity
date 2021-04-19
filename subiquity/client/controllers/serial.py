@@ -17,15 +17,17 @@ import logging
 
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views.serial import SerialView
+from subiquitycore.tuicontroller import Skip
 
 log = logging.getLogger('subiquity.client.controllers.serial')
 
 
 class SerialController(SubiquityTuiController):
     async def make_ui(self):
-        serial = self.app.opts.run_on_serial
+        if not self.app.opts.run_on_serial:
+            raise Skip()
         ssh_info = await self.app.client.meta.ssh_info.GET()
-        return SerialView(self, serial, ssh_info)
+        return SerialView(self, ssh_info)
 
     def done(self, rich):
         log.debug("SerialController.done rich %s next_screen", rich)

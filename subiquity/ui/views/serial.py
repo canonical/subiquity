@@ -50,19 +50,19 @@ will allow use of rich mode.
 class SerialView(BaseView):
     title = "Serial"
 
-    def __init__(self, controller, serial, ssh_info):
+    def __init__(self, controller, ssh_info):
         self.controller = controller
         self.ssh_info = ssh_info
         super().__init__(self.make_serial())
 
     def make_serial(self):
         btns = [
-            other_btn(
-                label="Switch to rich mode",
-                on_press=self.enable_rich),
+            forward_btn(
+                label="Continue in rich mode",
+                on_press=self.rich_mode),
             forward_btn(
                 label="Continue in basic mode",
-                on_press=self.basic),
+                on_press=self.basic_mode),
             ]
         widgets = [
             Text(""),
@@ -72,18 +72,18 @@ class SerialView(BaseView):
         if self.ssh_info:
             widgets.append(Text(rewrap(SSH_TEXT)))
             widgets.append(Text(""))
-            btns.insert(1, other_btn(
+            btns.append(other_btn(
                 label="View SSH instructions",
                 on_press=self.ssh_help))
         return screen(widgets, btns)
 
-    def enable_rich(self, sender):
+    def rich_mode(self, sender):
         self.controller.done(True)
+
+    def basic_mode(self, sender):
+        self.controller.done(False)
 
     def ssh_help(self, sender):
         menu = self.controller.app.help_menu
         menu.ssh_info = self.ssh_info
         menu.ssh_help()
-
-    def basic(self, sender):
-        self.controller.done(False)

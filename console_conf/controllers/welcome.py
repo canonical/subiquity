@@ -29,10 +29,8 @@ class WelcomeController(TuiController):
         self.app.next_screen()
 
     def cancel(self):
-        if not self.app.opts.run_on_serial:
-            # Can't go back from here!
-            return
-        self.app.prev_screen()
+        # Can't go back from here!
+        return
 
 
 class RecoveryChooserWelcomeController(WelcomeController):
