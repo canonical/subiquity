@@ -116,7 +116,7 @@ class SSHController(SubiquityTuiController):
                         ssh_data, ssh_import_id, key_material, fingerprints)
                 else:
                     log.debug("ui.body of unexpected instance: %s",
-                            type(self.ui.body).__name__)
+                              type(self.ui.body).__name__)
 
     def fetch_ssh_keys(self, ssh_import_id, ssh_data):
         self._fetch_task = schedule_task(
