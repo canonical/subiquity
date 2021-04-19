@@ -18,7 +18,6 @@ import unittest
 import attr
 
 from subiquity.models.filesystem import (
-    attributes,
     Bootloader,
     dehumanize_size,
     DeviceAction,
@@ -114,7 +113,7 @@ class TestDehumanizeSize(unittest.TestCase):
 class FakeDev:
 
     size = attr.ib()
-    id = attributes.idfield("fakedev")
+    id = attr.ib(default="id")
 
 
 class TestRoundRaidSize(unittest.TestCase):

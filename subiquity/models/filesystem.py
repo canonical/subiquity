@@ -41,6 +41,16 @@ log = logging.getLogger('subiquity.models.filesystem')
 
 
 def _set_backlinks(obj):
+    if obj.id is None:
+        base = obj.type
+        i = 0
+        while True:
+            val = "%s-%s" % (base, i)
+            if val not in obj._m._all_ids:
+                break
+            i += 1
+        obj.id = val
+    obj._m._all_ids.add(obj.id)
     for field in attr.fields(type(obj)):
         backlink = field.metadata.get('backlink')
         if backlink is None:
@@ -111,7 +121,7 @@ def fsobj(typ):
     def wrapper(c):
         c.__attrs_post_init__ = _set_backlinks
         c.type = attributes.const(typ)
-        c.id = attributes.idfield(typ)
+        c.id = attr.ib(default=None)
         c._m = attr.ib(repr=None, default=None)
         c = attr.s(cmp=False, repr=False)(c)
         c.__repr__ = fsobj__repr
@@ -347,17 +357,6 @@ def _conv_size(s):
 
 class attributes:
     # Just a namespace to hang our wrappers around attr.ib() off.
-
-    @staticmethod
-    def idfield(base):
-        i = 0
-
-        def factory():
-            nonlocal i
-            r = "%s-%s" % (base, i)
-            i += 1
-            return r
-        return attr.ib(default=attr.Factory(factory))
 
     @staticmethod
     def ref(*, backlink=None):
@@ -1387,6 +1386,7 @@ class FilesystemModel(object):
         self.reset()
 
     def reset(self):
+        self._all_ids = set()
         if self._probe_data is not None:
             self._orig_config = storage_config.extract_storage_config(
                 self._probe_data)["storage"]["config"]
@@ -1402,6 +1402,7 @@ class FilesystemModel(object):
 
     def load_server_data(self, status):
         log.debug('load_server_data %s', status)
+        self._all_ids = set()
         self._orig_config = status.orig_config
         self._probe_data = {
             'blockdev': status.blockdev,
@@ -1826,7 +1827,7 @@ class FilesystemModel(object):
     def add_dm_crypt(self, volume, key):
         if not volume.available:
             raise Exception("{} is not available".format(volume))
-        dm_crypt = DM_Crypt(volume=volume, key=key)
+        dm_crypt = DM_Crypt(m=self, volume=volume, key=key)
         self._actions.append(dm_crypt)
         return dm_crypt
 
