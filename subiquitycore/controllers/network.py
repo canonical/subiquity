@@ -218,7 +218,7 @@ class BaseNetworkController(BaseController):
             try:
                 await arun_command(cmd, check=True)
             except subprocess.CalledProcessError as cp:
-                log.info("%s of dev %s failed with %r", op, dev.name, cp.stderr)
+                log.info("%s: dev %s failed with %r", op, dev.name, cp.stderr)
 
     async def _down_devs(self, devs):
         await self._operate_on_devs('down', devs)
