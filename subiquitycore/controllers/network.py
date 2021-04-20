@@ -212,24 +212,19 @@ class BaseNetworkController(BaseController):
     def apply_config(self, context=None, silent=False):
         self.apply_config_task.start_sync(context=context, silent=silent)
 
-    async def _down_devs(self, devs):
+    async def _operate_on_devs(self, op, devs):
         for dev in devs:
-            try:
-                log.debug('downing %s', dev.name)
-                self.observer.rtlistener.unset_link_flags(dev.ifindex, IFF_UP)
-            except RuntimeError:
-                # We don't actually care very much about this
-                log.exception('unset_link_flags failed for %s', dev.name)
-
-    async def _delete_devs(self, devs):
-        for dev in devs:
-            # XXX would be nicer to do this via rtlistener eventually.
-            log.debug('deleting %s', dev.name)
-            cmd = ['ip', 'link', 'delete', 'dev', dev.name]
+            cmd = ['networkctl', op, str(dev.ifindex)]
             try:
                 await arun_command(cmd, check=True)
             except subprocess.CalledProcessError as cp:
-                log.info("deleting %s failed with %r", dev.name, cp.stderr)
+                log.info("%s of dev %s failed with %r", op, dev.name, cp.stderr)
+
+    async def _down_devs(self, devs):
+        await self._operate_on_devs('down', devs)
+
+    async def _delete_devs(self, devs):
+        await self._operate_on_devs('delete', devs)
 
     def _write_config(self):
         config = self.model.render_config()
@@ -299,41 +294,10 @@ class BaseNetworkController(BaseController):
                         ['netplan', 'generate', '--root', self.root],
                         check=True)
             else:
-                if devs_to_down or devs_to_delete:
-                    try:
-                        await arun_command(
-                            ['systemctl', 'mask', '--runtime',
-                             'systemd-networkd.service',
-                             'systemd-networkd.socket'],
-                            check=True)
-                        await arun_command(
-                            ['systemctl', 'stop',
-                             'systemd-networkd.service',
-                             'systemd-networkd.socket'],
-                            check=True)
-                    except subprocess.CalledProcessError:
-                        error("stop-networkd")
-                        raise
                 if devs_to_down:
                     await self._down_devs(devs_to_down)
                 if devs_to_delete:
                     await self._delete_devs(devs_to_delete)
-                if devs_to_down or devs_to_delete:
-                    await arun_command(
-                        ['systemctl', 'unmask', '--runtime',
-                         'systemd-networkd.service',
-                         'systemd-networkd.socket'],
-                        check=True)
-                try:
-                    await arun_command(['netplan', 'apply'], check=True)
-                except subprocess.CalledProcessError:
-                    error("apply")
-                    raise
-                if devs_to_down or devs_to_delete:
-                    # It's probably running already, but just in case.
-                    await arun_command(
-                        ['systemctl', 'start', 'systemd-networkd.socket'],
-                        check=False)
         finally:
             if not silent:
                 self.apply_stopping()
