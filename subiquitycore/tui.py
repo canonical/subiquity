@@ -312,6 +312,11 @@ class TuiApplication(Application):
 
         self.aio_loop.call_later(0.06, _run_script)
 
+    def set_rich(self, rich):
+        if rich == self.rich_mode:
+            return
+        self.toggle_rich()
+
     def toggle_rich(self):
         if self.rich_mode:
             urwid.util.set_encoding('ascii')

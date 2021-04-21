@@ -93,6 +93,7 @@ class SubiquityClient(TuiApplication):
         return SubiquityUI(self, self.help_menu)
 
     controllers = [
+        "Serial",
         "Welcome",
         "Refresh",
         "Keyboard",

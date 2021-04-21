@@ -38,23 +38,6 @@ Select the language to use for the installer and to be configured in the
 installed system.
 """)
 
-SERIAL_TEXT = """
-
-As the installer is running on a serial console, it has started in
-basic mode, using only the ASCII character set and black and white
-colours.
-
-If you are connecting from a terminal emulator such as gnome-terminal
-that supports unicode and rich colours you can switch to "rich mode"
-which uses unicode, colours and supports many languages.
-
-"""
-
-SSH_TEXT = """
-You can also connect to the installer over the network via SSH, which
-will allow use of rich mode.
-"""
-
 CLOUD_INIT_FAIL_TEXT = """
 cloud-init failed to complete after 10 minutes of waiting. This
 suggests a bug, which we would appreciate help understanding.  If you
@@ -81,15 +64,11 @@ def get_languages():
 class WelcomeView(BaseView):
     title = "Willkommen! Bienvenue! Welcome! Добро пожаловать! Welkom!"
 
-    def __init__(self, controller, cur_lang, serial, ssh_info):
+    def __init__(self, controller, cur_lang, serial):
         self.controller = controller
         self.cur_lang = cur_lang
-        if serial and not controller.app.rich_mode:
-            s = self.make_serial_choices(ssh_info)
-            self.title = "Welcome!"
-        else:
-            s = self.make_language_choices()
-        super().__init__(s)
+        self.serial = serial
+        super().__init__(self.make_language_choices())
 
     def make_language_choices(self):
         btns = []
@@ -109,50 +88,15 @@ class WelcomeView(BaseView):
                     user_arg=code))
 
         lb = ListBox(btns)
+        back = None
+        if self.serial:
+            back = other_btn(_("Back"), on_press=self.controller.cancel)
         if current_index is not None:
             lb.base_widget.focus_position = current_index
         return screen(
-            lb, buttons=None, narrow_rows=True,
+            lb, focus_buttons=False, narrow_rows=True,
+            buttons=[back] if back else None,
             excerpt=_("Use UP, DOWN and ENTER keys to select your language."))
-
-    def make_serial_choices(self, ssh_info):
-        btns = [
-            other_btn(
-                label="Switch to rich mode",
-                on_press=self.enable_rich),
-            forward_btn(
-                label="Continue in basic mode",
-                on_press=self.choose_language,
-                user_arg='C'),
-            ]
-        widgets = [
-            Text(""),
-            Text(rewrap(SERIAL_TEXT)),
-            Text(""),
-        ]
-        if ssh_info:
-            widgets.append(Text(rewrap(SSH_TEXT)))
-            widgets.append(Text(""))
-            btns.insert(1, other_btn(
-                label="View SSH instructions",
-                on_press=self.ssh_help,
-                user_arg=ssh_info))
-        widgets.extend([
-            button_pile(btns),
-            ])
-        lb = ListBox(widgets)
-        return screen(lb, buttons=None)
-
-    def enable_rich(self, sender):
-        self.controller.app.toggle_rich()
-        self.title = self.__class__.title
-        self.controller.ui.set_header(self.title)
-        self._w = self.make_language_choices()
-
-    def ssh_help(self, sender, ssh_info):
-        menu = self.controller.app.help_menu
-        menu.ssh_info = ssh_info
-        menu.ssh_help()
 
     def choose_language(self, sender, code):
         log.debug('WelcomeView %s', code)

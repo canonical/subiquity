@@ -16,6 +16,7 @@
 import logging
 
 from subiquitycore import i18n
+from subiquitycore.tuicontroller import Skip
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.ui.views.welcome import WelcomeView
 
@@ -27,14 +28,12 @@ class WelcomeController(SubiquityTuiController):
     endpoint_name = 'locale'
 
     async def make_ui(self):
+        if not self.app.rich_mode:
+            raise Skip()
         language = await self.endpoint.GET()
         i18n.switch_language(language)
-        serial = self.app.opts.run_on_serial
-        if serial:
-            ssh_info = await self.app.client.meta.ssh_info.GET()
-        else:
-            ssh_info = None
-        return WelcomeView(self, language, serial, ssh_info)
+        self.serial = self.app.opts.run_on_serial
+        return WelcomeView(self, language, self.serial)
 
     def run_answers(self):
         if 'lang' in self.answers:
@@ -45,6 +44,8 @@ class WelcomeController(SubiquityTuiController):
         i18n.switch_language(code)
         self.app.next_screen(self.endpoint.POST(code))
 
-    def cancel(self):
-        # Can't go back from here!
-        pass
+    def cancel(self, sender=None):
+        if not self.serial:
+            # Can't go back from here unless we're on serial!
+            pass
+        self.app.prev_screen()

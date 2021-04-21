@@ -14,7 +14,7 @@ class WelcomeViewTests(unittest.TestCase):
         controller = mock.create_autospec(spec=WelcomeController)
         with mock.patch("subiquity.ui.views.welcome.get_languages") as p:
             p.return_value = languages
-            return WelcomeView(controller, languages[0][0], False, None)
+            return WelcomeView(controller, languages[0][0], False)
 
     def test_basic(self):
         # Clicking the button for a language calls "switch_language"
