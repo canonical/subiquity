@@ -30,7 +30,7 @@ class WelcomeController(TuiController):
 
     def cancel(self):
         # Can't go back from here!
-        return
+        pass
 
 
 class RecoveryChooserWelcomeController(WelcomeController):
