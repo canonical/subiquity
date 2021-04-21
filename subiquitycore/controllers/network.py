@@ -212,8 +212,9 @@ class BaseNetworkController(BaseController):
     def apply_config(self, context=None, silent=False):
         self.apply_config_task.start_sync(context=context, silent=silent)
 
-    async def _operate_on_devs(self, op, devs):
+    async def _networkctl_op_devs(self, op, devs):
         for dev in devs:
+            log.debug('%s on %s', op, dev.name)
             cmd = ['networkctl', op, str(dev.ifindex)]
             try:
                 await arun_command(cmd, check=True)
@@ -221,10 +222,10 @@ class BaseNetworkController(BaseController):
                 log.info("%s: dev %s failed with %r", op, dev.name, cp.stderr)
 
     async def _down_devs(self, devs):
-        await self._operate_on_devs('down', devs)
+        await self._networkctl_op_devs('down', devs)
 
     async def _delete_devs(self, devs):
-        await self._operate_on_devs('delete', devs)
+        await self._networkctl_op_devs('delete', devs)
 
     def _write_config(self):
         config = self.model.render_config()
@@ -298,6 +299,16 @@ class BaseNetworkController(BaseController):
                     await self._down_devs(devs_to_down)
                 if devs_to_delete:
                     await self._delete_devs(devs_to_delete)
+                try:
+                    await arun_command(['netplan', 'apply'], check=True)
+                except subprocess.CalledProcessError:
+                    error("apply")
+                    raise
+                if devs_to_down or devs_to_delete:
+                    # It's probably running already, but just in case.
+                    await arun_command(
+                        ['systemctl', 'start', 'systemd-networkd.socket'],
+                        check=False)
         finally:
             if not silent:
                 self.apply_stopping()
