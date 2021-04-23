@@ -400,7 +400,8 @@ class SubiquityClient(TuiApplication):
             self.ui.body.show_stretchy_overlay(overlay)
 
     def remove_global_overlay(self, overlay):
-        self.global_overlays.remove(overlay)
+        if overlay in self.global_overlays:
+            self.global_overlays.remove(overlay)
         if isinstance(self.ui.body, BaseView):
             self.ui.body.remove_overlay(overlay)
 
