@@ -256,7 +256,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         self._call_clients("apply_stopping")
 
     def apply_error(self, stage):
-        super().apply_error()
+        super().apply_error(stage)
         self._call_clients("apply_error", stage)
 
     def update_default_routes(self, routes):
