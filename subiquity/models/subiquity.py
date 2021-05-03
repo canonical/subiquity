@@ -138,16 +138,20 @@ class SubiquityModel:
             return
         self._events[model_name].set()
         if model_name in INSTALL_MODEL_NAMES:
+            stage = 'install'
             unconfigured = {
                 mn for mn in INSTALL_MODEL_NAMES
-                if not self._events[model_name].is_set()
+                if not self._events[mn].is_set()
                 }
         elif model_name in POSTINSTALL_MODEL_NAMES:
+            stage = 'postinstall'
             unconfigured = {
                 mn for mn in POSTINSTALL_MODEL_NAMES
-                if not self._events[model_name].is_set()
+                if not self._events[mn].is_set()
                 }
-        log.debug("model %s is configured, to go %s", model_name, unconfigured)
+        log.debug(
+            "model %s for %s is configured, to go %s",
+            model_name, stage, unconfigured)
 
     def needs_configuration(self, model_name):
         if model_name is None:
