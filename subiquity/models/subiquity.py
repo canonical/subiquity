@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import copy
 from collections import OrderedDict
 import logging
 import os
@@ -41,6 +40,27 @@ from .updates import UpdatesModel
 
 
 log = logging.getLogger('subiquity.models.subiquity')
+
+
+def merge_cloud_init_config(target, source):
+    # type: (dict, dict) -> None
+    """
+    Merges the ``source`` dictionary into the ``target`` dictionary:
+
+    * If both items are dictionaries, they are merged recursively.
+    * If both items are lists, contents of the source list are appended
+    to the target list.
+    * Otherwise, the source item overwrites the target item.
+
+    Based on the ``curtin.config.merge_config`` function.
+    """
+    for k, v in source.items():
+        if isinstance(v, dict) and isinstance(target.get(k, None), dict):
+            merge_cloud_init_config(target[k], v)
+        elif isinstance(v, list) and isinstance(target.get(k, None), list):
+            target[k].extend(v)
+        else:
+            target[k] = v
 
 
 def setup_yaml():
@@ -223,9 +243,8 @@ class SubiquityModel:
             config['snap'] = {
                 'commands': cmds,
                 }
-        userdata = copy.deepcopy(self.userdata)
-        merge_config(userdata, config)
-        return userdata
+        merge_cloud_init_config(config, self.userdata)
+        return config
 
     def _cloud_init_files(self):
         # TODO, this should be moved to the in-target cloud-config seed so on
