@@ -61,7 +61,7 @@ else
 fi
 
 cat > "$TARGET_MOUNT_POINT/etc/apt/sources.list" <<EOF
-deb [trusted=yes,check-date=no] file:///cdrom $(lsb_release -sc) main restricted
+deb [check-date=no] file:///cdrom $(lsb_release -sc) main restricted
 EOF
 
 $PY -m curtin in-target -- apt-get update
