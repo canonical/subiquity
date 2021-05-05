@@ -36,6 +36,7 @@ class LocaleController(SubiquityController):
 
     def start(self):
         self.model.selected_language = os.environ.get("LANG")
+        self.configured()
 
     def serialize(self):
         return self.model.selected_language

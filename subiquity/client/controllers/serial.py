@@ -29,6 +29,13 @@ class SerialController(SubiquityTuiController):
         ssh_info = await self.app.client.meta.ssh_info.GET()
         return SerialView(self, ssh_info)
 
+    def run_answers(self):
+        if 'rich' in self.answers:
+            if self.answers['rich']:
+                self.ui.body.rich_btn.base_widget._emit('click')
+            else:
+                self.ui.body.basic_btn.base_widget._emit('click')
+
     def done(self, rich):
         log.debug("SerialController.done rich %s next_screen", rich)
         self.app.set_rich(rich)
