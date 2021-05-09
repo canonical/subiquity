@@ -56,14 +56,13 @@ class SerialView(BaseView):
         super().__init__(self.make_serial())
 
     def make_serial(self):
-        btns = [
-            forward_btn(
+        self.rich_btn = forward_btn(
                 label="Continue in rich mode",
-                on_press=self.rich_mode),
-            forward_btn(
+                on_press=self.rich_mode)
+        self.basic_btn = forward_btn(
                 label="Continue in basic mode",
-                on_press=self.basic_mode),
-            ]
+                on_press=self.basic_mode)
+        btns = [self.rich_btn, self.basic_btn]
         widgets = [
             Text(""),
             Text(rewrap(SERIAL_TEXT)),

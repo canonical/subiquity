@@ -33,8 +33,13 @@ for answers in examples/answers*.yaml; do
     if [ -z "$config" ]; then
         config=examples/simple.json
     fi
+    serial=$(sed -n 's/^#serial/x/p' $answers || true)
+    opts=''
+    if [ -n "$serial" ]; then
+        opts='--serial'
+    fi
     # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
-    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --answers $answers --dry-run --snaps-from-examples --machine-config $config" < $tty
+    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --answers $answers --dry-run --snaps-from-examples --machine-config $config $opts" < $tty
     validate
     grep -q 'finish: subiquity/Install/install/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 done
