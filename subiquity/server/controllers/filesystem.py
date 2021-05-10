@@ -314,7 +314,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             meth(disk)
         elif 'config' in self.ai_data:
             self.model.apply_autoinstall_config(self.ai_data['config'])
-            self.model.grub = self.ai_data.get('grub', {})
+            self.model.grub = self.ai_data.get('grub')
             self.model.swap = self.ai_data.get('swap')
 
     def start(self):
