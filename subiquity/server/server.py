@@ -308,7 +308,12 @@ class SubiquityServer(Application):
         await report._info_task
         Error = getattr(self.controllers, "Error", None)
         if Error is not None and Error.cmds:
-            await Error.run()
+            try:
+                await Error.run()
+            except Exception:
+                log.exception("running error-commands failed")
+        if not self.interactive:
+            self.update_state(ApplicationState.ERROR)
 
     def _exception_handler(self, loop, context):
         exc = context.get('exception')
@@ -322,7 +327,8 @@ class SubiquityServer(Application):
                 ErrorReportKind.UNKNOWN, "unknown error",
                 exc=exc)
         self.fatal_error = report
-        self.update_state(ApplicationState.ERROR)
+        if self.interactive:
+            self.update_state(ApplicationState.ERROR)
         if not self.running_error_commands:
             self.running_error_commands = True
             self.aio_loop.create_task(self._run_error_cmds(report))

@@ -234,6 +234,11 @@ class SubiquityClient(TuiApplication):
             elif confirm_task is not None:
                 confirm_task.cancel()
                 confirm_task = None
+            if app_state == ApplicationState.ERROR:
+                await asyncio.sleep(1)
+                print("An error occurred. Press enter to start a shell")
+                await run_in_thread(input)
+                os.execvp("/bin/bash", ["/bin/bash"])
             try:
                 app_status = await self.client.meta.status.GET(
                     cur=app_state)
