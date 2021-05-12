@@ -6,6 +6,8 @@ PYTHONSRC=$(NAME)
 PYTHONPATH=$(shell pwd):$(shell pwd)/probert
 PROBERTDIR=./probert
 PROBERT_REPO=https://github.com/canonical/probert
+DRYRUN_ARGS:=--dry-run --bootloader uefi --machine-config examples/simple.json
+CONSOLE_CONF_DRYRUN_ARGS:=--dry-run
 export PYTHONPATH
 CWD := $(shell pwd)
 
@@ -32,10 +34,10 @@ i18n:
 	cd po; intltool-update -r -g subiquity
 
 dryrun: probert i18n
-	$(MAKE) ui-view DRYRUN="--dry-run --bootloader uefi"
+	$(MAKE) ui-view DRYRUN="$(DRYRUN_ARGS)"
 
 dryrun-console-conf:
-	$(MAKE) ui-view-console-conf DRYRUN="--dry-run"
+	$(MAKE) ui-view-console-conf DRYRUN="$(CONSOLE_CONF_DRYRUN_ARGS)"
 
 ui-view-console-conf:
 	$(PYTHON) -m console_conf.cmd.tui $(DRYRUN) $(MACHARGS)
