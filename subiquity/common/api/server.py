@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
+import traceback
 
 from aiohttp import web
 
@@ -123,7 +124,9 @@ def _make_handler(controller, definition, implementation, serializer):
                     serializer.serialize(def_ret_ann, result),
                     headers={'x-status': 'ok'})
             except Exception as exc:
+                tb = traceback.TracebackException.from_exception(exc)
                 resp = web.Response(
+                    text="".join(tb.format()),
                     status=500,
                     headers={
                         'x-status': 'error',

@@ -400,6 +400,17 @@ All of these errors result in an error report (using the same format
 as apport) being generated, before the error-commands (if any) are
 run.
 
+Error reports are represented over the API by the `ErrorReportRef`
+type. This contains enough information to find the error report and
+know if it is complete yet (there is an API method `errors.wait.GET()`
+that will block until the error report has been completed).
+
+Immediate errors end up in the `error` field in the return value for
+`meta.status.GET()`.
+
+When an API error happens, the server puts a serialized
+`ErrorReportRef` in the `x-error-report` header of the response.
+
 Some things that could be considered "errors", like failing to contact
 the snap store are ignored and not presented to the user, instead the
 relevant screens are skipped.
