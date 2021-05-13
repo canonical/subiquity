@@ -135,8 +135,9 @@ class ErrorReport(metaclass=urwid.MetaSignals):
             # Add basic info to report.
             self.pr.add_proc_info()
             self.pr.add_os_info()
-            self.pr.add_hooks_info(None)
-            apport.hookutils.attach_hardware(self.pr)
+            if not self.reporter.dry_run:
+                self.pr.add_hooks_info(None)
+                apport.hookutils.attach_hardware(self.pr)
             # Because apport-cli will in general be run on a different
             # machine, we make some slightly obscure alterations to the report
             # to make this go better.
