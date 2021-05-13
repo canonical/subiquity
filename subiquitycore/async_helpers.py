@@ -15,10 +15,18 @@
 
 import asyncio
 import concurrent.futures
+import enum
 import logging
 
 
 log = logging.getLogger("subiquitycore.async_helpers")
+
+
+class CheckState(enum.IntEnum):
+    NOT_STARTED = enum.auto()
+    CHECKING = enum.auto()
+    FAILED = enum.auto()
+    DONE = enum.auto()
 
 
 def _done(fut):
@@ -49,7 +57,6 @@ async def run_in_thread(func, *args):
 
 
 class SingleInstanceTask:
-
     def __init__(self, func, propagate_errors=True):
         self.func = func
         self.propagate_errors = propagate_errors
@@ -83,3 +90,26 @@ class SingleInstanceTask:
                 return await self.task
             except asyncio.CancelledError:
                 pass
+
+
+class CheckedSingleInstanceTask(SingleInstanceTask):
+    # FIXME if people call directly to start() things get weird
+    def __init__(self, func, propagate_errors=True):
+        self.check_state = CheckState.NOT_STARTED
+        super().__init__(func, propagate_errors)
+
+    def has_started(self):
+        # Have we ever started the task?
+        # Intentionally includes DONE as a True result because that's
+        # what the original caller expects.
+        return self.check_state != CheckState.NOT_STARTED
+
+    def maybe_start_sync(self):
+        if self.check_state == CheckState.DONE:
+            return
+        self.check_state = CheckState.CHECKING
+        try:
+            self.start_sync()
+            self.check_state = CheckState.DONE
+        finally:
+            self.check_state = CheckState.FAILED

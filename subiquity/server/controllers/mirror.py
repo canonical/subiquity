@@ -14,30 +14,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import enum
 import logging
-import requests
-from xml.etree import ElementTree
 
 from curtin.config import merge_config
 
-from subiquitycore.async_helpers import (
-    run_in_thread,
-    SingleInstanceTask,
-    )
+from subiquitycore.async_helpers import CheckedSingleInstanceTask
 from subiquitycore.context import with_context
+from subiquitycore.geoip import GeoIP
 
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.mirror')
-
-
-class CheckState(enum.IntEnum):
-    NOT_STARTED = enum.auto()
-    CHECKING = enum.auto()
-    FAILED = enum.auto()
-    DONE = enum.auto()
 
 
 class MirrorController(SubiquityController):
@@ -59,23 +47,22 @@ class MirrorController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.geoip_enabled = True
-        self.check_state = CheckState.NOT_STARTED
-        self.lookup_task = SingleInstanceTask(self.lookup)
+        self.lookup_task = CheckedSingleInstanceTask(self.lookup)
         self.app.hub.subscribe('network-up', self.maybe_start_check)
         self.app.hub.subscribe('network-proxy-set', self.maybe_start_check)
 
     def load_autoinstall_data(self, data):
         if data is None:
             return
-        geoip = data.pop('geoip', True)
+        use_geoip = data.pop('geoip', True)
         merge_config(self.model.config, data)
-        self.geoip_enabled = geoip and self.model.is_default()
+        self.geoip_enabled = use_geoip and self.model.is_default()
 
     @with_context()
     async def apply_autoinstall_config(self, context):
         if not self.geoip_enabled:
             return
-        if self.lookup_task.task is None:
+        if not self.lookup_task.has_started():
             return
         try:
             with context.child('waiting'):
@@ -86,38 +73,19 @@ class MirrorController(SubiquityController):
     def maybe_start_check(self):
         if not self.geoip_enabled:
             return
-        if self.check_state != CheckState.DONE:
-            self.check_state = CheckState.CHECKING
-            self.lookup_task.start_sync()
+        # FIXME Q to mwhudson: there are multiple triggers for
+        # maybe_start_check, should we not use the cached result if asked again?
+        self.lookup_task.maybe_start_sync()
 
     @with_context()
     async def lookup(self, context):
+        geoip = GeoIP()
         try:
-            response = await run_in_thread(
-                requests.get, "https://geoip.ubuntu.com/lookup")
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
-            log.exception("geoip lookup failed")
-            self.check_state = CheckState.FAILED
+            await geoip.lookup()
+        except RuntimeError as re:
+            log.debug(re)
             return
-        try:
-            e = ElementTree.fromstring(response.text)
-        except ElementTree.ParseError:
-            log.exception("parsing %r failed", response.text)
-            self.check_state = CheckState.FAILED
-            return
-        cc = e.find("CountryCode")
-        if cc is None:
-            log.debug("no CountryCode found in %r", response.text)
-            self.check_state = CheckState.FAILED
-            return
-        cc = cc.text.lower()
-        if len(cc) != 2:
-            log.debug("bogus CountryCode found in %r", response.text)
-            self.check_state = CheckState.FAILED
-            return
-        self.check_state = CheckState.DONE
-        self.model.set_country(cc)
+        self.model.set_country(geoip.get_country_code())
 
     def serialize(self):
         return self.model.get_mirror()
