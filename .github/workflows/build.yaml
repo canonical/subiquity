@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: run
-      run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} ./scripts/runtests.sh
+      run: sudo ./scripts/test-in-lxd.sh ${{ matrix.image }} "make check"
   lint:
     runs-on: ubuntu-20.04
     steps:

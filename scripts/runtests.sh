@@ -1,6 +1,5 @@
 #!/bin/bash
 set -eux
-python3 -m unittest discover
 
 testschema=.subiquity/test-autoinstall-schema.json
 

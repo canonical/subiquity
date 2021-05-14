@@ -55,10 +55,13 @@ flake8:
 	$(PYTHON) -m flake8 $(CHECK_DIRS) --exclude gettext38.py,contextlib38.py
 
 unit:
-	echo "Running unit tests..."
+	python3 -m unittest discover
+
+integration:
+	echo "Running integration tests..."
 	./scripts/runtests.sh
 
-check: unit
+check: unit integration
 
 probert:
 	@if [ ! -d "$(PROBERTDIR)" ]; then \
