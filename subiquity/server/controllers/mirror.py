@@ -73,8 +73,6 @@ class MirrorController(SubiquityController):
     def maybe_start_check(self):
         if not self.geoip_enabled:
             return
-        # FIXME Q to mwhudson: there are multiple triggers for
-        # maybe_start_check, should we not use the cached result if asked again?
         self.lookup_task.maybe_start_sync()
 
     @with_context()

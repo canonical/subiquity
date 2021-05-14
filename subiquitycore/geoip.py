@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
 import requests
 from xml.etree import ElementTree
@@ -24,6 +23,7 @@ log = logging.getLogger('subiquitycore.geoip')
 
 # FIXME Q for mwhudson: Is this something we should worry about?
 # https://docs.python.org/3/library/xml.html#xml-vulnerabilities
+
 
 class GeoIP:
     """query geoip for CountryCode, TimeZone, other useful things"""
@@ -76,7 +76,7 @@ class GeoIP:
 
     def get_country_code(self):
         cc = self.element.find("CountryCode")
-        if cc is None:
+        if cc is None or cc.text is None:
             raise RuntimeError(f"no CountryCode found in {self.response_text}")
         cc = cc.text.lower()
         if len(cc) != 2:
