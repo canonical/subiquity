@@ -48,10 +48,10 @@ class TestGeoIP(SubiTestCase):
         self.geoip._load_element()
 
     def test_country_code(self):
-        self.assertEqual("us", self.geoip.get_country_code())
+        self.assertEqual("us", self.geoip.country_code)
 
     def test_time_zone(self):
-        self.assertEqual("America/Los_Angeles", self.geoip.get_time_zone())
+        self.assertEqual("America/Los_Angeles", self.geoip.time_zone)
 
 
 class TestGeoIPBadData(SubiTestCase):
@@ -68,7 +68,7 @@ class TestGeoIPBadData(SubiTestCase):
             self.geoip.response_text = text
             self.geoip._load_element()
             with self.assertRaises(RuntimeError):
-                self.geoip.get_country_code()
+                self.geoip.country_code
 
     def test_bad_tzs(self):
         self.geoip = GeoIP()
@@ -76,4 +76,4 @@ class TestGeoIPBadData(SubiTestCase):
             self.geoip.response_text = text
             self.geoip._load_element()
             with self.assertRaises(RuntimeError):
-                self.geoip.get_country_code()
+                self.geoip.time_zone

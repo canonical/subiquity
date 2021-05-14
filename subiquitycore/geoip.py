@@ -68,13 +68,15 @@ class GeoIP:
         except ElementTree.ParseError as pe:
             raise RuntimeError(f"parsing {self.response_text} failed") from pe
 
-    def get_time_zone(self):
+    @property
+    def time_zone(self):
         tz = self.element.find("TimeZone")
         if tz is None or not tz.text:
             raise RuntimeError(f"no TimeZone found in {self.response_text}")
         return tz.text
 
-    def get_country_code(self):
+    @property
+    def country_code(self):
         cc = self.element.find("CountryCode")
         if cc is None or cc.text is None:
             raise RuntimeError(f"no CountryCode found in {self.response_text}")
