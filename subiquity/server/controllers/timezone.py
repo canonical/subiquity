@@ -1,4 +1,4 @@
-# Copyright 2018 Canonical, Ltd.
+# Copyright 2021 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -14,26 +14,36 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import subprocess
 
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
+from subiquitycore.geoip import GeoIP
+
+log = logging.getLogger('subiquity.server.controllers.timezone')
 
 
-log = logging.getLogger('subiquity.server.controllers.updates')
+def generate_possible_tzs():
+    special_keys = ['', 'geoip']
+    tzcmd = ['timedatectl', 'list-timezones']
+    list_tz_out = subprocess.check_output(tzcmd, text=True)
+    real_tzs = list_tz_out.splitlines()
+    return special_keys + real_tzs
 
 
-class UpdatesController(SubiquityController):
+class TimeZoneController(SubiquityController):
 
-    endpoint = API.updates
+    endpoint = API.timezone
 
-    possible = ['security', 'all']
+    possible = generate_possible_tzs()
 
-    autoinstall_key = model_name = "updates"
+    autoinstall_key = model_name = 'timezone'
     autoinstall_schema = {
         'type': 'string',
-        'enum': possible,
-    }
-    autoinstall_default = 'security'
+        'enum': possible
+        }
+
+    autoinstall_default = ''  # FIXME handling of default status
 
     def load_autoinstall_data(self, data):
         self.deserialize(data)
@@ -42,15 +52,25 @@ class UpdatesController(SubiquityController):
         return self.serialize()
 
     def serialize(self):
-        return self.model.updates
+        return self.model.request
 
     def deserialize(self, data):
         if data not in self.possible:
-            raise ValueError(f'Unrecognized update type {data}')
-        self.model.updates = data
+            raise ValueError(f'Unrecognized time zone request "{data}"')
+        self.model.set(data)
+        if self.model.detect_with_geoip:
+            sechedule_task(geoip_lookup)
+
+    async def geoip_lookup(self):
+        await self.app.geoip.lookup()
+        self.model.timezone = self.app.geoip.time_zone
 
     async def GET(self) -> str:
         return self.serialize()
 
     async def POST(self, data: str):
         self.deserialize(data)
+
+    async def geoip_lookup_POST(self) -> str:
+        await self.geoip_lookup()
+        return self.model.timezone

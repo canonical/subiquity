@@ -104,12 +104,14 @@ class CheckedSingleInstanceTask(SingleInstanceTask):
         # what the original caller expects.
         return self.check_state != CheckState.NOT_STARTED
 
-    def maybe_start_sync(self):
+    async def start(self, *args, **kw):
         if self.check_state == CheckState.DONE:
             return
         self.check_state = CheckState.CHECKING
         try:
-            self.start_sync()
+            await self.start_sync(*args, **kw)
             self.check_state = CheckState.DONE
-        finally:
+            return self.task
+        except:
             self.check_state = CheckState.FAILED
+            raise

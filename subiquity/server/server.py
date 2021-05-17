@@ -36,6 +36,7 @@ import yaml
 from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.context import with_context
 from subiquitycore.core import Application
+from subiquitycore.geoip import GeoIP
 from subiquitycore.prober import Prober
 from subiquitycore.ssh import (
     host_key_fingerprints,
@@ -69,7 +70,6 @@ from subiquitycore.snapd import (
     FakeSnapdConnection,
     SnapdConnection,
     )
-
 
 log = logging.getLogger('subiquity.server.server')
 
@@ -188,6 +188,7 @@ class SubiquityServer(Application):
         "Identity",
         "SSH",
         "SnapList",
+        "TimeZone",
         "Install",
         "Updates",
         "Late",
@@ -239,6 +240,7 @@ class SubiquityServer(Application):
         self.autoinstall_config = None
         self.hub.subscribe('network-up', self._network_change)
         self.hub.subscribe('network-proxy-set', self._proxy_set)
+        self.geoip = GeoIP(self)
 
     def load_serialized_state(self):
         for controller in self.controllers.instances:

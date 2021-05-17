@@ -15,7 +15,7 @@
 import unittest
 from unittest import mock
 
-from subiquitycore.context import Context
+from subiquity.tests.mocks import make_app
 from console_conf.controllers.chooser import (
     RecoveryChooserController,
     RecoveryChooserConfirmController,
@@ -24,29 +24,6 @@ from console_conf.models.systems import (
     RecoverySystemsModel,
     SelectedSystemAction,
     )
-
-
-class MockedApplication:
-    signal = loop = None
-    project = "mini"
-    autoinstall_config = {}
-    answers = {}
-    opts = None
-
-
-def make_app(model=None):
-    app = MockedApplication()
-    app.ui = mock.Mock()
-    if model is not None:
-        app.base_model = model
-    else:
-        app.base_model = mock.Mock()
-    app.context = Context.new(app)
-    app.exit = mock.Mock()
-    app.respond = mock.Mock()
-    app.next_screen = mock.Mock()
-    app.prev_screen = mock.Mock()
-    return app
 
 
 model1_non_current = {

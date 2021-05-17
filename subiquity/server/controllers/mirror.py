@@ -20,7 +20,6 @@ from curtin.config import merge_config
 
 from subiquitycore.async_helpers import CheckedSingleInstanceTask
 from subiquitycore.context import with_context
-from subiquitycore.geoip import GeoIP
 
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
@@ -47,43 +46,24 @@ class MirrorController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.geoip_enabled = True
-        self.lookup_task = CheckedSingleInstanceTask(self.lookup)
-        self.app.hub.subscribe('network-up', self.maybe_start_check)
-        self.app.hub.subscribe('network-proxy-set', self.maybe_start_check)
+        self.app.hub.subscribe('geoip-data-ready', self.on_geoip_ready)
 
     def load_autoinstall_data(self, data):
         if data is None:
             return
-        use_geoip = data.pop('geoip', True)
+        geoip = data.pop('geoip', True)
         merge_config(self.model.config, data)
-        self.geoip_enabled = use_geoip and self.model.is_default()
+        self.geoip_enabled = geoip and self.model.is_default()
+        if not self.geoip_enabled:
+            self.app.geoip.lookup_desired = False
 
     @with_context()
     async def apply_autoinstall_config(self, context):
-        if not self.geoip_enabled:
-            return
-        if not self.lookup_task.has_started():
-            return
-        try:
-            with context.child('waiting'):
-                await asyncio.wait_for(self.lookup_task.wait(), 10)
-        except asyncio.TimeoutError:
-            pass
+        self.geoip.wait_for(10, context)
 
-    def maybe_start_check(self):
-        if not self.geoip_enabled:
-            return
-        self.lookup_task.maybe_start_sync()
-
-    @with_context()
-    async def lookup(self, context):
-        geoip = GeoIP()
-        try:
-            await geoip.lookup()
-        except RuntimeError as re:
-            log.debug(re)
-            return
-        self.model.set_country(geoip.get_country_code())
+    def on_geoip_ready(self):
+        if self.geoip_enabled:
+            self.model.set_country(self.app.geoip.country_code)
 
     def serialize(self):
         return self.model.get_mirror()

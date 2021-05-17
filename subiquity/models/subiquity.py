@@ -39,6 +39,7 @@ from .proxy import ProxyModel
 from .snaplist import SnapListModel
 from .ssh import SSHModel
 from .updates import UpdatesModel
+from .timezone import TimeZoneModel
 
 
 log = logging.getLogger('subiquity.models.subiquity')
@@ -122,6 +123,7 @@ class SubiquityModel:
         self.snaplist = SnapListModel()
         self.ssh = SSHModel()
         self.updates = UpdatesModel()
+        self.timezone = TimeZoneModel()
         self.userdata = {}
 
         self.confirmation = asyncio.Event()

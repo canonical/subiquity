@@ -13,11 +13,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 import requests
 from xml.etree import ElementTree
 
 from subiquitycore.async_helpers import run_in_thread
+from subiquitycore.context import with_context
+from subiquitycore.async_helpers import CheckedSingleInstanceTask
 
 log = logging.getLogger('subiquitycore.geoip')
 
@@ -45,13 +48,23 @@ class GeoIP:
     #     <TimeZone>America/Los_Angeles</TimeZone>
     #   </Response>
 
-    def __init__(self):
+    def __init__(self, app):
+        self.app = app
         self.element = None
         self.response_text = ''
+        self.valid = False
+        self.lookup_desired = True
+        self.lookup_task = task = CheckedSingleInstanceTask(self.lookup)
+        self.app.hub.subscribe('network-up', task.start)
+        self.app.hub.subscribe('network-proxy-set', task.start)
 
     async def lookup(self):
+        if self.valid or not self.lookup_desired:
+            return
         await self.request_geoip_data()
         self._load_element()
+        self.app.hub.broadcast('geoip-data-ready')
+        self.valid = True
 
     async def request_geoip_data(self):
         try:
@@ -61,6 +74,16 @@ class GeoIP:
             self.response_text = response.text
         except requests.exceptions.RequestException as re:
             raise RuntimeError("geoip lookup failed") from re
+
+    @with_context()
+    async def wait_for(self, timeout, context):
+        if not self.lookup_task.has_started():
+            return
+        try:
+            with context.child('waiting'):
+                await asyncio.wait_for(self.lookup_task.wait(), timeout)
+        except asyncio.TimeoutError:
+            pass
 
     def _load_element(self):
         try:

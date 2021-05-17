@@ -223,6 +223,13 @@ class API:
     class reboot:
         def POST(): ...
 
+    class timezone:
+        def POST(data: str): ...
+        def GET() -> str: ...
+
+        class geoip_lookup:
+            def POST() -> str: ...
+
 
 class LinkAction(enum.Enum):
     NEW = enum.auto()
