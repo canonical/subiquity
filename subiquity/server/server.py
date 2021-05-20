@@ -202,6 +202,7 @@ class SubiquityServer(Application):
     def __init__(self, opts, block_log_dir):
         super().__init__(opts)
         self.block_log_dir = block_log_dir
+        self.cloud = None
         self.cloud_init_ok = None
         self._state = ApplicationState.STARTING_UP
         self.state_event = asyncio.Event()
@@ -443,6 +444,9 @@ class SubiquityServer(Application):
         return False
 
     def set_installer_password(self):
+        if self.cloud is None:
+            return
+
         passfile = self.state_path("installer-user-passwd")
 
         if os.path.exists(passfile):
