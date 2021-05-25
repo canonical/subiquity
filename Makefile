@@ -6,8 +6,7 @@ PYTHONSRC=$(NAME)
 PYTHONPATH=$(shell pwd):$(shell pwd)/probert
 PROBERTDIR=./probert
 PROBERT_REPO=https://github.com/canonical/probert
-DRYRUN_ARGS:=--dry-run --bootloader uefi --machine-config examples/simple.json
-CONSOLE_CONF_DRYRUN_ARGS:=--dry-run
+DRYRUN?=--dry-run --bootloader uefi --machine-config examples/simple.json
 export PYTHONPATH
 CWD := $(shell pwd)
 
@@ -33,20 +32,17 @@ i18n:
 	$(PYTHON) setup.py build_i18n
 	cd po; intltool-update -r -g subiquity
 
-dryrun: probert i18n
-	$(MAKE) ui-view DRYRUN="$(DRYRUN_ARGS)"
-
-dryrun-console-conf:
-	$(MAKE) ui-view-console-conf DRYRUN="$(CONSOLE_CONF_DRYRUN_ARGS)"
-
-ui-view-console-conf:
-	$(PYTHON) -m console_conf.cmd.tui $(DRYRUN) $(MACHARGS)
-
-ui-view:
+dryrun ui-view: probert i18n
 	$(PYTHON) -m subiquity $(DRYRUN) $(MACHARGS)
 
-ui-view-serial:
+dryrun-console-conf ui-view-console-conf:
+	$(PYTHON) -m console_conf.cmd.tui --dry-run $(MACHARGS)
+
+dryrun-serial ui-view-serial:
 	(TERM=att4424 $(PYTHON) -m subiquity $(DRYRUN) --serial)
+
+dryrun-server:
+	$(PYTHON) -m subiquity.cmd.server $(DRYRUN)
 
 lint: flake8
 
@@ -67,7 +63,7 @@ probert:
 	@if [ ! -d "$(PROBERTDIR)" ]; then \
 		git clone -q $(PROBERT_REPO) $(PROBERTDIR); \
 		(cd probert && $(PYTHON) setup.py build_ext -i); \
-    fi
+	fi
 
 schema: probert
 	@$(PYTHON) -m subiquity.cmd.schema > autoinstall-schema.json
