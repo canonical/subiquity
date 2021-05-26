@@ -81,7 +81,7 @@ def main():
             opts.socket = '.subiquity/socket'
         else:
             opts.socket = '/run/subiquity/socket'
-    os.makedirs(os.path.basename(opts.socket), exist_ok=True)
+    os.makedirs(os.path.dirname(opts.socket), exist_ok=True)
 
     block_log_dir = os.path.join(logdir, "block")
     os.makedirs(block_log_dir, exist_ok=True)
