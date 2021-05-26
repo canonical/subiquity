@@ -405,6 +405,8 @@ class SubiquityServer(Application):
         await runner.setup()
         site = web.UnixSite(runner, self.opts.socket)
         await site.start()
+        # It is intended that a non-root client can connect.
+        os.chmod(self.opts.socket, 0o666)
 
     async def wait_for_cloudinit(self):
         if self.opts.dry_run:

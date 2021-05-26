@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
+import os
 import traceback
 
 from aiohttp import web
@@ -174,4 +175,6 @@ async def make_server_at_path(socket_path, endpoint, controller):
     await runner.setup()
     site = web.UnixSite(runner, socket_path)
     await site.start()
+    # It is intended that a non-root client can connect.
+    os.chmod(socket_path, 0o666)
     return site
