@@ -85,6 +85,7 @@ POSTINSTALL_MODEL_NAMES = [
     "packages",
     "snaplist",
     "ssh",
+    "timezone",
     "userdata",
     ]
 
@@ -228,6 +229,12 @@ class SubiquityModel:
             config['snap'] = {
                 'commands': cmds,
                 }
+        for model_name in POSTINSTALL_MODEL_NAMES:
+            model = getattr(self, model_name)
+            if getattr(model, 'make_cloudinit', None):
+                fragment = model.make_cloudinit()
+                if fragment:
+                    config = {**config, **fragment}
         userdata = copy.deepcopy(self.userdata)
         merge_config(userdata, config)
         return userdata

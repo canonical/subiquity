@@ -76,6 +76,10 @@ class API:
         class ssh_info:
             def GET() -> Optional[LiveSessionSSHInfo]: ...
 
+        class client_variant:
+            def POST(variant: str) -> None:
+                """Choose the install variant - desktop/server"""
+
     class errors:
         class wait:
             def GET(error_ref: ErrorReportRef) -> ErrorReportRef:
@@ -226,9 +230,6 @@ class API:
     class timezone:
         def POST(data: str): ...
         def GET() -> str: ...
-
-        class geoip_lookup:
-            def POST() -> str: ...
 
 
 class LinkAction(enum.Enum):

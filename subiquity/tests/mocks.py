@@ -15,6 +15,7 @@
 
 import mock
 from subiquitycore.context import Context
+from subiquitycore.pubsub import MessageHub
 
 
 class MockedApplication:
@@ -37,4 +38,5 @@ def make_app(model=None):
     app.respond = mock.Mock()
     app.next_screen = mock.Mock()
     app.prev_screen = mock.Mock()
+    app.hub = MessageHub()
     return app

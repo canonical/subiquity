@@ -13,12 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
 
 from curtin.config import merge_config
 
-from subiquitycore.async_helpers import CheckedSingleInstanceTask
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
@@ -54,16 +52,15 @@ class MirrorController(SubiquityController):
         geoip = data.pop('geoip', True)
         merge_config(self.model.config, data)
         self.geoip_enabled = geoip and self.model.is_default()
-        if not self.geoip_enabled:
-            self.app.geoip.lookup_desired = False
 
     @with_context()
     async def apply_autoinstall_config(self, context):
-        self.geoip.wait_for(10, context)
+        await self.app.geoip.wait_for(10, context)
 
     def on_geoip_ready(self):
         if self.geoip_enabled:
-            self.model.set_country(self.app.geoip.country_code)
+            log.debug('mirror: got cc %s', self.app.geoip.countrycode)
+            self.model.set_country(self.app.geoip.countrycode)
 
     def serialize(self):
         return self.model.get_mirror()

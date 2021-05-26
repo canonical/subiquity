@@ -18,14 +18,13 @@ import logging
 import requests
 from xml.etree import ElementTree
 
-from subiquitycore.async_helpers import run_in_thread
-from subiquitycore.context import with_context
-from subiquitycore.async_helpers import CheckedSingleInstanceTask
+from subiquitycore.async_helpers import (
+    CheckedSingleInstanceTask,
+    run_in_thread,
+    TaskFailure,
+)
 
 log = logging.getLogger('subiquitycore.geoip')
-
-# FIXME Q for mwhudson: Is this something we should worry about?
-# https://docs.python.org/3/library/xml.html#xml-vulnerabilities
 
 
 class GeoIP:
@@ -53,18 +52,21 @@ class GeoIP:
         self.element = None
         self.response_text = ''
         self.valid = False
-        self.lookup_desired = True
-        self.lookup_task = task = CheckedSingleInstanceTask(self.lookup)
+        self.lookup_task = task = CheckedSingleInstanceTask(self._lookup)
         self.app.hub.subscribe('network-up', task.start)
         self.app.hub.subscribe('network-proxy-set', task.start)
 
     async def lookup(self):
-        if self.valid or not self.lookup_desired:
+        await self.lookup_task.start()
+        return self.valid
+
+    async def _lookup(self):
+        if self.valid:
             return
         await self.request_geoip_data()
-        self._load_element()
-        self.app.hub.broadcast('geoip-data-ready')
+        self.load_element()
         self.valid = True
+        self.app.hub.broadcast('geoip-data-ready')
 
     async def request_geoip_data(self):
         try:
@@ -73,9 +75,8 @@ class GeoIP:
             response.raise_for_status()
             self.response_text = response.text
         except requests.exceptions.RequestException as re:
-            raise RuntimeError("geoip lookup failed") from re
+            raise TaskFailure(f'geoip lookup failed: {re}') from re
 
-    @with_context()
     async def wait_for(self, timeout, context):
         if not self.lookup_task.has_started():
             return
@@ -85,26 +86,31 @@ class GeoIP:
         except asyncio.TimeoutError:
             pass
 
-    def _load_element(self):
+    def load_element(self):
         try:
             self.element = ElementTree.fromstring(self.response_text)
         except ElementTree.ParseError as pe:
-            raise RuntimeError(f"parsing {self.response_text} failed") from pe
+            raise TaskFailure(f"parsing {self.response_text} failed") from pe
+        return self.element is not None
 
     @property
-    def time_zone(self):
+    def timezone(self):
+        if not self.element:
+            return None
         tz = self.element.find("TimeZone")
         if tz is None or not tz.text:
-            raise RuntimeError(f"no TimeZone found in {self.response_text}")
+            log.debug(f"no TimeZone found in {self.response_text}")
+            return None
         return tz.text
 
     @property
-    def country_code(self):
+    def countrycode(self):
         cc = self.element.find("CountryCode")
         if cc is None or cc.text is None:
-            raise RuntimeError(f"no CountryCode found in {self.response_text}")
+            log.debug(f"no CountryCode found in {self.response_text}")
+            return None
         cc = cc.text.lower()
         if len(cc) != 2:
-            raise RuntimeError(
-                f"bogus CountryCode found in {self.response_text}")
+            log.debug(f"bogus CountryCode found in {self.response_text}")
+            return None
         return cc

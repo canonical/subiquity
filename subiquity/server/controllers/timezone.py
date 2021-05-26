@@ -18,7 +18,6 @@ import subprocess
 
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
-from subiquitycore.geoip import GeoIP
 
 log = logging.getLogger('subiquity.server.controllers.timezone')
 
@@ -26,7 +25,7 @@ log = logging.getLogger('subiquity.server.controllers.timezone')
 def generate_possible_tzs():
     special_keys = ['', 'geoip']
     tzcmd = ['timedatectl', 'list-timezones']
-    list_tz_out = subprocess.check_output(tzcmd, text=True)
+    list_tz_out = subprocess.check_output(tzcmd, universal_newlines=True)
     real_tzs = list_tz_out.splitlines()
     return special_keys + real_tzs
 
@@ -43,7 +42,8 @@ class TimeZoneController(SubiquityController):
         'enum': possible
         }
 
-    autoinstall_default = ''  # FIXME handling of default status
+    autoinstall_default = ''
+    relevant_variants = ('desktop', )
 
     def load_autoinstall_data(self, data):
         self.deserialize(data)
@@ -55,22 +55,23 @@ class TimeZoneController(SubiquityController):
         return self.model.request
 
     def deserialize(self, data):
+        if data is None:
+            return
         if data not in self.possible:
             raise ValueError(f'Unrecognized time zone request "{data}"')
         self.model.set(data)
-        if self.model.detect_with_geoip:
-            sechedule_task(geoip_lookup)
-
-    async def geoip_lookup(self):
-        await self.app.geoip.lookup()
-        self.model.timezone = self.app.geoip.time_zone
+        # We could schedule a lookup here, but we already do so on
+        # network-up, so that should be redundant.
 
     async def GET(self) -> str:
-        return self.serialize()
+        if self.model.timezone:
+            return self.model.timezone
+        tz = self.app.geoip.timezone
+        if tz:
+            self.model.timezone = tz
+        else:
+            tz = 'UTC'
+        return tz
 
     async def POST(self, data: str):
         self.deserialize(data)
-
-    async def geoip_lookup_POST(self) -> str:
-        await self.geoip_lookup()
-        return self.model.timezone

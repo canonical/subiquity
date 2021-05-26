@@ -93,8 +93,8 @@ class SingleInstanceTask:
 
 
 class CheckedSingleInstanceTask(SingleInstanceTask):
-    # FIXME if people call directly to start() things get weird
     def __init__(self, func, propagate_errors=True):
+        self.lock = asyncio.Lock()
         self.check_state = CheckState.NOT_STARTED
         super().__init__(func, propagate_errors)
 
@@ -104,14 +104,22 @@ class CheckedSingleInstanceTask(SingleInstanceTask):
         # what the original caller expects.
         return self.check_state != CheckState.NOT_STARTED
 
+    def start_sync(self, *args, **kw):
+        raise NotImplementedError
+
     async def start(self, *args, **kw):
-        if self.check_state == CheckState.DONE:
+        if self.check_state in (CheckState.DONE, CheckState.CHECKING):
             return
-        self.check_state = CheckState.CHECKING
-        try:
-            await self.start_sync(*args, **kw)
-            self.check_state = CheckState.DONE
-            return self.task
-        except:
-            self.check_state = CheckState.FAILED
-            raise
+        async with self.lock:
+            self.check_state = CheckState.CHECKING
+            try:
+                await super().start_sync(*args, **kw)
+                self.check_state = CheckState.DONE
+                return self.task
+            except:  # noqa: E722  yes we really want bare except
+                self.check_state = CheckState.FAILED
+                raise
+
+
+class TaskFailure(Exception):
+    pass

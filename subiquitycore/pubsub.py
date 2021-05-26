@@ -15,6 +15,9 @@
 
 import asyncio
 import inspect
+import logging
+
+log = logging.getLogger('subiquitycore.pubsub')
 
 
 class MessageHub:
@@ -32,4 +35,5 @@ class MessageHub:
                 await v
 
     def broadcast(self, channel):
+        log.debug('broadcast %s', channel)
         return asyncio.get_event_loop().create_task(self.abroadcast(channel))

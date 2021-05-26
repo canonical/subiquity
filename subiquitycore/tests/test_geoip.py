@@ -13,8 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from subiquitycore.tests import SubiTestCase
+from subiquitycore.async_helpers import TaskFailure
 from subiquitycore.geoip import GeoIP
+from subiquitycore.tests import SubiTestCase
+from subiquity.tests.mocks import make_app
 
 xml = '''
 <Response>
@@ -43,37 +45,34 @@ empty_cc = '<Response><CountryCode></CountryCode></Response>'
 class TestGeoIP(SubiTestCase):
 
     def setUp(self):
-        self.geoip = GeoIP()
+        self.geoip = GeoIP(make_app())
         self.geoip.response_text = xml
-        self.geoip._load_element()
+        self.geoip.load_element()
 
-    def test_country_code(self):
-        self.assertEqual("us", self.geoip.country_code)
+    def test_countrycode(self):
+        self.assertEqual("us", self.geoip.countrycode)
 
-    def test_time_zone(self):
-        self.assertEqual("America/Los_Angeles", self.geoip.time_zone)
+    def test_timezone(self):
+        self.assertEqual("America/Los_Angeles", self.geoip.timezone)
 
 
 class TestGeoIPBadData(SubiTestCase):
+    def setUp(self):
+        self.geoip = GeoIP(make_app())
 
     def test_partial_reponse(self):
-        self.geoip = GeoIP()
         self.geoip.response_text = partial
-        with self.assertRaises(RuntimeError):
-            self.geoip._load_element()
+        with self.assertRaises(TaskFailure):
+            self.geoip.load_element()
 
     def test_bad_ccs(self):
-        self.geoip = GeoIP()
         for text in (incomplete, long_cc, empty_cc):
             self.geoip.response_text = text
-            self.geoip._load_element()
-            with self.assertRaises(RuntimeError):
-                self.geoip.country_code
+            self.geoip.load_element()
+            self.assertIsNone(self.geoip.countrycode)
 
     def test_bad_tzs(self):
-        self.geoip = GeoIP()
         for text in (incomplete, empty_tz):
             self.geoip.response_text = text
-            self.geoip._load_element()
-            with self.assertRaises(RuntimeError):
-                self.geoip.time_zone
+            self.geoip.load_element()
+            self.assertIsNone(self.geoip.timezone)

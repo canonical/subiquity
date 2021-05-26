@@ -25,14 +25,14 @@ class TimeZoneModel(object):
 
     def __init__(self):
         self._request = None
-        self._time_zone = ''
+        self._timezone = ''
 
     def set(self, value):
         self._request = value
-        if value != 'geoip' and value != '':
-            self._time_zone = value
+        if value == 'geoip':
+            self._timezone = ''
         else:
-            self._time_zone = ''
+            self._timezone = value
 
     @property
     def detect_with_geoip(self):
@@ -40,20 +40,25 @@ class TimeZoneModel(object):
 
     @property
     def should_set_tz(self):
-        return bool(self._time_zone)
+        return bool(self._timezone)
 
     @property
     def timezone(self):
-        return self._time_zone
+        return self._timezone
 
     @timezone.setter
     def timezone(self, tz):
-        self._time_zone = tz
+        self._timezone = tz
 
     @property
     def request(self):
         return self._request
 
+    def make_cloudinit(self):
+        if not self.should_set_tz:
+            return {}
+        return {'timezone': self.timezone}
+
     def __repr__(self):
         return "<TimeZone: detect {} should_set {} timezone {}>".format(
-            self.detect_with_geoip, self.should_set_tz, self._time_zone)
+            self.detect_with_geoip, self.should_set_tz, self._timezone)
