@@ -32,6 +32,7 @@ subiquity/common/api/tests/test_client.py
 subiquity/common/api/tests/test_endtoend.py
 subiquity/common/api/tests/test_server.py
 subiquity/common/errorreport.py
+subiquity/common/filesystem/actions.py
 subiquity/common/filesystem/__init__.py
 subiquity/common/filesystem/manipulator.py
 subiquity/common/filesystem/tests/__init__.py

@@ -17,10 +17,13 @@ import unittest
 
 import attr
 
+from subiquity.common.filesystem.actions import (
+    DeviceAction,
+    supported_actions,
+    )
 from subiquity.models.filesystem import (
     Bootloader,
     dehumanize_size,
-    DeviceAction,
     Disk,
     FilesystemModel,
     get_raid_size,
@@ -376,14 +379,14 @@ class TestFilesystemModel(unittest.TestCase):
             ["to be reformatted as ext4", "mounted at /"])
 
     def assertActionNotSupported(self, obj, action):
-        self.assertNotIn(action, obj.supported_actions)
+        self.assertNotIn(action, supported_actions(obj))
 
     def assertActionPossible(self, obj, action):
-        self.assertIn(action, obj.supported_actions)
+        self.assertIn(action, supported_actions(obj))
         self.assertTrue(obj.action_possible(action)[0])
 
     def assertActionNotPossible(self, obj, action):
-        self.assertIn(action, obj.supported_actions)
+        self.assertIn(action, supported_actions(obj))
         self.assertFalse(obj.action_possible(action)[0])
 
     def _test_remove_action(self, model, objects):

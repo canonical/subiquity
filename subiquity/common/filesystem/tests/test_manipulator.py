@@ -15,6 +15,10 @@
 
 import unittest
 
+from subiquity.common.filesystem.actions import (
+    DeviceAction,
+    supported_actions,
+    )
 from subiquity.common.filesystem.manipulator import (
     FilesystemManipulator,
     )
@@ -24,7 +28,6 @@ from subiquity.models.tests.test_filesystem import (
     )
 from subiquity.models.filesystem import (
     Bootloader,
-    DeviceAction,
     )
 
 
@@ -60,7 +63,7 @@ class TestFilesystemManipulator(unittest.TestCase):
         # manipulator around.
         for bl in Bootloader:
             manipulator, disk = make_manipulator_and_disk(bl)
-            if DeviceAction.TOGGLE_BOOT not in disk.supported_actions:
+            if DeviceAction.TOGGLE_BOOT not in supported_actions(disk):
                 continue
             manipulator.add_boot_disk(disk)
             self.assertFalse(

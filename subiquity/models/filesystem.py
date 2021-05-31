@@ -16,7 +16,6 @@
 from abc import ABC, abstractmethod
 import attr
 import collections
-import enum
 import fnmatch
 import itertools
 import logging
@@ -31,8 +30,6 @@ from curtin.block import partition_kname
 from curtin.util import human2bytes
 
 from probert.storage import StorageInfo
-
-from subiquitycore.gettext38 import pgettext
 
 from subiquity.common.types import Bootloader
 
@@ -422,23 +419,6 @@ def asdict(inst):
 # in the FilesystemModel or FilesystemController classes.
 
 
-class DeviceAction(enum.Enum):
-    # Information about a drive
-    INFO = pgettext("DeviceAction", "Info")
-    # Edit a device (partition, logical volume, RAID, etc)
-    EDIT = pgettext("DeviceAction", "Edit")
-    REFORMAT = pgettext("DeviceAction", "Reformat")
-    PARTITION = pgettext("DeviceAction", "Add Partition")
-    CREATE_LV = pgettext("DeviceAction", "Create Logical Volume")
-    FORMAT = pgettext("DeviceAction", "Format")
-    REMOVE = pgettext("DeviceAction", "Remove from RAID/LVM")
-    DELETE = pgettext("DeviceAction", "Delete")
-    TOGGLE_BOOT = pgettext("DeviceAction", "Make Boot Device")
-
-    def str(self):
-        return pgettext(type(self).__name__, self.value)
-
-
 def _generic_can_EDIT(obj):
     cd = obj.constructed_device()
     if cd is None:
@@ -586,13 +566,11 @@ class _Formattable(ABC):
         else:
             return cd
 
-    @property
-    @abstractmethod
-    def supported_actions(self):
-        pass
-
     def action_possible(self, action):
-        assert action in self.supported_actions
+        from subiquity.common.filesystem.actions import (
+            supported_actions,
+        )
+        assert action in supported_actions(self)
         r = getattr(self, "_can_" + action.name)
         if isinstance(r, bool):
             return r, None
@@ -822,19 +800,6 @@ class Disk(_Device):
         else:
             return True
 
-    @property
-    def supported_actions(self):
-        actions = [
-            DeviceAction.INFO,
-            DeviceAction.REFORMAT,
-            DeviceAction.PARTITION,
-            DeviceAction.FORMAT,
-            DeviceAction.REMOVE,
-            ]
-        if self._m.bootloader != Bootloader.NONE:
-            actions.append(DeviceAction.TOGGLE_BOOT)
-        return actions
-
     _can_INFO = True
 
     @property
@@ -1027,12 +992,6 @@ class Partition(_Formattable):
         else:
             return False
 
-    supported_actions = [
-        DeviceAction.EDIT,
-        DeviceAction.REMOVE,
-        DeviceAction.DELETE,
-        ]
-
     _can_EDIT = property(_generic_can_EDIT)
 
     _can_REMOVE = property(_generic_can_REMOVE)
@@ -1106,15 +1065,6 @@ class Raid(_Device):
     def desc(self):
         return _("software RAID {level}").format(level=self.raidlevel[4:])
 
-    supported_actions = [
-        DeviceAction.EDIT,
-        DeviceAction.PARTITION,
-        DeviceAction.FORMAT,
-        DeviceAction.REMOVE,
-        DeviceAction.DELETE,
-        DeviceAction.REFORMAT,
-        ]
-
     @property
     def _can_EDIT(self):
         if self.preserve:
@@ -1183,12 +1133,6 @@ class LVM_VolGroup(_Device):
     def desc(self):
         return _("LVM volume group")
 
-    supported_actions = [
-        DeviceAction.EDIT,
-        DeviceAction.CREATE_LV,
-        DeviceAction.DELETE,
-        ]
-
     @property
     def _can_EDIT(self):
         if self.preserve:
@@ -1246,11 +1190,6 @@ class LVM_LogicalVolume(_Formattable):
         return self.name
 
     label = short_label
-
-    supported_actions = [
-        DeviceAction.EDIT,
-        DeviceAction.DELETE,
-        ]
 
     _can_EDIT = True
 
