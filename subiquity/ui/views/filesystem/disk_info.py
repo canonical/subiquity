@@ -21,6 +21,8 @@ from subiquitycore.ui.utils import button_pile
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.table import ColSpec, TablePile, TableRow
 
+from subiquity.common.filesystem import labels
+
 
 log = logging.getLogger('subiquity.ui.filesystem.disk_info')
 
@@ -52,7 +54,7 @@ class DiskInfoStretchy(Stretchy):
             Text(""),
             button_pile([done_btn(_("Close"), on_press=self.close)]),
             ]
-        title = _("Info for {device}").format(device=disk.label)
+        title = _("Info for {device}").format(device=labels.label(disk))
         super().__init__(title, widgets, 0, 2)
 
     def close(self, button=None):

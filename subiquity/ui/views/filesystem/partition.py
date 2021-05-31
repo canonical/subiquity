@@ -37,6 +37,7 @@ from subiquitycore.ui.container import Pile
 from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import rewrap
 
+from subiquity.common.filesystem import labels
 from subiquity.models.filesystem import (
     align_up,
     Disk,
@@ -258,7 +259,7 @@ class PartitionForm(Form):
         dev = self.mountpoints.get(mount)
         if dev is not None:
             return _("{device} is already mounted at {path}.").format(
-                device=dev.label.title(), path=mount)
+                device=labels.label(dev).title(), path=mount)
         if self.existing_fs_type is not None:
             if self.fstype.value is None:
                 if mount in common_mountpoints:
@@ -510,22 +511,22 @@ class PartitionStretchy(Stretchy):
         if partition is None:
             if isinstance(disk, LVM_VolGroup):
                 title = _("Adding logical volume to {vgname}").format(
-                    vgname=disk.label)
+                    vgname=labels.label(disk))
             else:
                 title = _("Adding {ptype} partition to {device}").format(
                     ptype=disk.ptable_for_new_partition().upper(),
-                    device=disk.label)
+                    device=labels.label(disk))
         else:
             if isinstance(disk, LVM_VolGroup):
                 title = _(
                     "Editing logical volume {lvname} of {vgname}"
                     ).format(
                         lvname=partition.name,
-                        vgname=disk.label)
+                        vgname=labels.label(disk))
             else:
                 title = _("Editing partition {number} of {device}").format(
                     number=partition.number,
-                    device=disk.label)
+                    device=labels.label(disk))
 
         super().__init__(title, widgets, 0, focus_index)
 
@@ -588,7 +589,8 @@ class FormatEntireStretchy(Stretchy):
             self.form.buttons,
         ]
 
-        title = _("Format and/or mount {device}").format(device=device.label)
+        title = _("Format and/or mount {device}").format(
+            device=labels.label(device))
 
         super().__init__(title, widgets, 0, 0)
 

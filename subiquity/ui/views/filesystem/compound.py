@@ -42,6 +42,7 @@ from subiquitycore.ui.utils import (
     Color,
     )
 
+from subiquity.common.filesystem import labels
 from subiquity.models.filesystem import (
     humanize_size,
     )
@@ -141,7 +142,7 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
         for kind, device in bff.form.possible_components:
             if kind == LABEL:
                 self.all_rows.append(TableRow([
-                    Text("    " + device.label),
+                    Text("    " + labels.label(device)),
                     Text(humanize_size(device.size), align='right')
                 ]))
                 self.no_selector_rows.append(self.all_rows[-1])
@@ -151,7 +152,7 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                 self.no_selector_rows.append(self.all_rows[-1])
             else:
                 if kind == DEVICE:
-                    label = device.label
+                    label = labels.label(device)
                     prefix = "    "
                 elif kind == PART:
                     label = "  " + device.short_label

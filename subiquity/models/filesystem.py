@@ -424,11 +424,6 @@ class _Formattable(ABC):
     # Base class for anything that can be formatted and mounted,
     # e.g. a disk or a RAID or a partition.
 
-    @property
-    @abstractmethod
-    def label(self):
-        pass
-
     # Filesystem
     _fs = attributes.backlink()
     # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
@@ -622,12 +617,6 @@ class Disk(_Device):
             return _("multipath device")
         return _("local disk")
 
-    @property
-    def label(self):
-        if self.multipath and self.wwn:
-            return self.wwn
-        return self.serial or self.path
-
     def dasd(self):
         return self._m._one(type='dasd', device_id=self.device_id)
 
@@ -670,14 +659,14 @@ class Disk(_Device):
     ok_for_lvm_vg = ok_for_raid
 
     def for_client(self, min_size):
-        from subiquity.common.filesystem.labels import usage_labels
+        from subiquity.common.filesystem import labels
         from subiquity.common.types import Disk
         return Disk(
             id=self.id,
-            label=self.label,
+            label=labels.label(self),
             type=self.desc(),
             size=self.size,
-            usage_labels=usage_labels(self),
+            usage_labels=labels.usage_labels(self),
             partitions=[p.for_client() for p in self._partitions],
             ok_for_guided=self.size >= min_size)
 
@@ -697,11 +686,6 @@ class Partition(_Formattable):
 
     def desc(self):
         return _("partition of {device}").format(device=self.device.desc())
-
-    @property
-    def label(self):
-        return _("partition {number} of {device}").format(
-            number=self._number, device=self.device.label)
 
     @property
     def short_label(self):
@@ -774,15 +758,12 @@ class Partition(_Formattable):
     ok_for_lvm_vg = ok_for_raid
 
     def for_client(self):
-        from subiquity.common.filesystem.labels import (
-            annotations,
-            usage_labels,
-            )
+        from subiquity.common.filesystem import labels
         from subiquity.common.types import Partition
         return Partition(
             size=self.size,
             number=self._number,
-            annotations=annotations(self) + usage_labels(self))
+            annotations=labels.annotations(self) + labels.usage_labels(self))
 
 
 @fsobj("raid")
@@ -815,10 +796,6 @@ class Raid(_Device):
         # higher (may be related to alignment of underlying
         # partitions)
         return self.size - 2*GPT_OVERHEAD
-
-    @property
-    def label(self):
-        return self.name
 
     def desc(self):
         return _("software RAID {level}").format(level=self.raidlevel[4:])
@@ -856,10 +833,6 @@ class LVM_VolGroup(_Device):
     @property
     def available_for_partitions(self):
         return self.size
-
-    @property
-    def label(self):
-        return self.name
 
     def desc(self):
         return _("LVM volume group")
@@ -904,8 +877,6 @@ class LVM_LogicalVolume(_Formattable):
     @property
     def short_label(self):
         return self.name
-
-    label = short_label
 
     ok_for_raid = False
     ok_for_lvm_vg = False
@@ -1390,11 +1361,13 @@ class FilesystemModel(object):
             elif isinstance(a, _Device):
                 compounds.append(a)
         compounds.reverse()
-        disks.sort(key=lambda x: x.label)
+        from subiquity.common.filesystem import labels
+        disks.sort(key=labels.label)
         return compounds + disks
 
     def all_disks(self):
-        return sorted(self._all(type='disk'), key=lambda x: x.label)
+        from subiquity.common.filesystem import labels
+        return sorted(self._all(type='disk'), key=labels.label)
 
     def all_raids(self):
         return self._all(type='raid')
@@ -1413,7 +1386,7 @@ class FilesystemModel(object):
         real_size = align_up(size)
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
         if device._fs is not None:
-            raise Exception("%s is already formatted" % (device.label,))
+            raise Exception("%s is already formatted" % (device,))
         p = Partition(
             m=self, device=device, size=real_size, flag=flag, wipe=wipe,
             grub_device=grub_device)

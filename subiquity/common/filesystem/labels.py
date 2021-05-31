@@ -17,8 +17,10 @@ import functools
 
 from subiquity.models.filesystem import (
     Disk,
+    LVM_LogicalVolume,
     LVM_VolGroup,
     Partition,
+    Raid,
     )
 
 
@@ -87,6 +89,33 @@ def _annotations_vg(vg):
         # Flag for a LVM volume group
         r.append(_("encrypted"))
     return r
+
+
+@functools.singledispatch
+def label(device):
+    raise NotImplementedError(repr(device))
+
+
+@label.register(Disk)
+def _label_disk(disk):
+    if disk.multipath and disk.wwn:
+        return disk.wwn
+    if disk.serial:
+        return disk.serial
+    return disk.path
+
+
+@label.register(Raid)
+@label.register(LVM_VolGroup)
+@label.register(LVM_LogicalVolume)
+def _label_just_name(device):
+    return device.name
+
+
+@label.register(Partition)
+def _label_partition(partition):
+    return _("partition {number} of {device}").format(
+        number=partition._number, device=label(partition.device))
 
 
 def _usage_labels_generic(device):
