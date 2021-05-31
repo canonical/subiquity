@@ -22,7 +22,7 @@ from subiquity.models.filesystem import (
     Partition,
     )
 
-log = logging.getLogger('subiquity.common.filesystem')
+log = logging.getLogger('subiquity.common.filesystem.manipulator')
 
 
 BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024    # 1MiB

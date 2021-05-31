@@ -15,7 +15,7 @@
 
 import unittest
 
-from subiquity.common.filesystem import (
+from subiquity.common.filesystem.manipulator import (
     FilesystemManipulator,
     )
 from subiquity.models.tests.test_filesystem import (
