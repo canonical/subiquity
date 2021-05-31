@@ -36,6 +36,7 @@ subiquity/common/filesystem/actions.py
 subiquity/common/filesystem/__init__.py
 subiquity/common/filesystem/manipulator.py
 subiquity/common/filesystem/tests/__init__.py
+subiquity/common/filesystem/tests/test_actions.py
 subiquity/common/filesystem/tests/test_manipulator.py
 subiquity/common/__init__.py
 subiquity/common/serialize.py
