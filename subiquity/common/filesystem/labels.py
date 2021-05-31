@@ -124,12 +124,12 @@ def _desc_lv(lv):
 
 
 @functools.singledispatch
-def label(device):
+def label(device, *, short=False):
     raise NotImplementedError(repr(device))
 
 
 @label.register(Disk)
-def _label_disk(disk):
+def _label_disk(disk, *, short=False):
     if disk.multipath and disk.wwn:
         return disk.wwn
     if disk.serial:
@@ -140,29 +140,17 @@ def _label_disk(disk):
 @label.register(Raid)
 @label.register(LVM_VolGroup)
 @label.register(LVM_LogicalVolume)
-def _label_just_name(device):
+def _label_just_name(device, *, short=False):
     return device.name
 
 
 @label.register(Partition)
-def _label_partition(partition):
-    return _("partition {number} of {device}").format(
-        number=partition._number, device=label(partition.device))
-
-
-@functools.singledispatch
-def short_label(device):
-    raise NotImplementedError(repr(device))
-
-
-@short_label.register(Partition)
-def _short_label_partition(partition):
-    return _("partition {number}").format(number=partition._number)
-
-
-@short_label.register(LVM_LogicalVolume)
-def _short_label_lv(lv):
-    return lv.name
+def _label_partition(partition, *, short=False):
+    if short:
+        return _("partition {number}").format(number=partition._number)
+    else:
+        return _("partition {number} of {device}").format(
+            number=partition._number, device=label(partition.device))
 
 
 def _usage_labels_generic(device):

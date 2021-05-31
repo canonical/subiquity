@@ -51,7 +51,7 @@ def summarize_device(device, part_filter=lambda p: True):
             details = ", ".join(
                 labels.annotations(part) + labels.usage_labels(part))
             rows.append((part, [
-                Text(labels.short_label(part)),
+                Text(labels.label(part, short=True)),
                 (2, Text(details)),
                 Text(humanize_size(part.size), align="right"),
                 ]))

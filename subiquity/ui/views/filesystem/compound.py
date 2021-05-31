@@ -152,11 +152,11 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                 ]))
                 self.no_selector_rows.append(self.all_rows[-1])
             else:
+                label = labels.label(device, short=True)
                 if kind == DEVICE:
-                    label = labels.label(device)
                     prefix = "    "
                 elif kind == PART:
-                    label = "  " + labels.short_label(device)
+                    label = "  " + label
                     prefix = "      "
                 else:
                     raise Exception("unexpected kind {}".format(kind))
