@@ -419,18 +419,6 @@ def asdict(inst):
 # in the FilesystemModel or FilesystemController classes.
 
 
-def _generic_can_EDIT(obj):
-    cd = obj.constructed_device()
-    if cd is None:
-        return True
-    return _(
-        "Cannot edit {selflabel} as it is part of the {cdtype} "
-        "{cdname}.").format(
-            selflabel=obj.label,
-            cdtype=cd.desc(),
-            cdname=cd.label)
-
-
 def _generic_can_REMOVE(obj):
     cd = obj.constructed_device()
     if cd is None:
@@ -568,10 +556,13 @@ class _Formattable(ABC):
 
     def action_possible(self, action):
         from subiquity.common.filesystem.actions import (
-            supported_actions,
+            DeviceAction,
         )
-        assert action in supported_actions(self)
-        r = getattr(self, "_can_" + action.name)
+        assert action in DeviceAction.supported(self)
+        if action == DeviceAction.EDIT:
+            r = action.can(self)
+        else:
+            r = getattr(self, "_can_" + action.name)
         if isinstance(r, bool):
             return r, None
         elif isinstance(r, str):
@@ -992,8 +983,6 @@ class Partition(_Formattable):
         else:
             return False
 
-    _can_EDIT = property(_generic_can_EDIT)
-
     _can_REMOVE = property(_generic_can_REMOVE)
 
     @property
@@ -1065,17 +1054,6 @@ class Raid(_Device):
     def desc(self):
         return _("software RAID {level}").format(level=self.raidlevel[4:])
 
-    @property
-    def _can_EDIT(self):
-        if self.preserve:
-            return _("Cannot edit pre-existing RAIDs.")
-        elif len(self._partitions) > 0:
-            return _(
-                "Cannot edit {selflabel} because it has partitions.").format(
-                    selflabel=self.label)
-        else:
-            return _generic_can_EDIT(self)
-
     _can_PARTITION = Disk._can_PARTITION
     _can_REFORMAT = Disk._can_REFORMAT
     _can_FORMAT = property(
@@ -1133,18 +1111,6 @@ class LVM_VolGroup(_Device):
     def desc(self):
         return _("LVM volume group")
 
-    @property
-    def _can_EDIT(self):
-        if self.preserve:
-            return _("Cannot edit pre-existing volume groups.")
-        elif len(self._partitions) > 0:
-            return _(
-                "Cannot edit {selflabel} because it has logical "
-                "volumes.").format(
-                    selflabel=self.label)
-        else:
-            return _generic_can_EDIT(self)
-
     _can_CREATE_LV = property(
         lambda self: not self.preserve and self.free_for_partitions > 0)
 
@@ -1190,8 +1156,6 @@ class LVM_LogicalVolume(_Formattable):
         return self.name
 
     label = short_label
-
-    _can_EDIT = True
 
     @property
     def _can_DELETE(self):

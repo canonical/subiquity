@@ -17,7 +17,6 @@ import logging
 
 from subiquity.common.filesystem.actions import (
     DeviceAction,
-    supported_actions,
     )
 from subiquity.common.types import Bootloader
 from subiquity.models.filesystem import (
@@ -217,7 +216,7 @@ class FilesystemManipulator:
 
         needs_boot = self.model.needs_bootloader_partition()
         log.debug('model needs a bootloader partition? {}'.format(needs_boot))
-        can_be_boot = DeviceAction.TOGGLE_BOOT in supported_actions(disk)
+        can_be_boot = DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk)
         if needs_boot and len(disk.partitions()) == 0 and can_be_boot:
             part = self._create_boot_partition(disk)
 

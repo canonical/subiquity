@@ -62,7 +62,6 @@ from subiquitycore.view import BaseView
 
 from subiquity.common.filesystem.actions import (
     DeviceAction,
-    supported_actions,
     )
 from subiquity.models.filesystem import (
     humanize_size,
@@ -340,7 +339,7 @@ class DeviceList(WidgetWrap):
 
     def _action_menu_for_device(self, device):
         device_actions = []
-        for action in supported_actions(device):
+        for action in DeviceAction.supported(device):
             label_meth = getattr(
                 self, '_label_{}'.format(action.name), lambda a, d: a.str())
             label = label_meth(action, device)
