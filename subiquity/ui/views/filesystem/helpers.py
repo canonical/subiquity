@@ -21,6 +21,7 @@ from subiquitycore.ui.utils import (
 
 from subiquity.common.filesystem.labels import (
     annotations,
+    usage_labels,
     )
 from subiquity.models.filesystem import (
     humanize_size,
@@ -49,7 +50,7 @@ def summarize_device(device, part_filter=lambda p: True):
         for part in device.partitions():
             if not part_filter(part):
                 continue
-            details = ", ".join(annotations(part) + part.usage_labels())
+            details = ", ".join(annotations(part) + usage_labels(part))
             rows.append((part, [
                 Text(part.short_label),
                 (2, Text(details)),
@@ -57,6 +58,6 @@ def summarize_device(device, part_filter=lambda p: True):
                 ]))
     else:
         rows.append((None, [
-            (4, Color.info_minor(Text(", ".join(device.usage_labels()))))
+            (4, Color.info_minor(Text(", ".join(usage_labels(device)))))
             ]))
     return rows

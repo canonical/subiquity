@@ -434,45 +434,6 @@ class _Formattable(ABC):
     # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
     _constructed_device = attributes.backlink()
 
-    def usage_labels(self):
-        cd = self.constructed_device()
-        if cd is not None:
-            return [
-                _("{component_name} of {desc} {name}").format(
-                    component_name=cd.component_name,
-                    desc=cd.desc(),
-                    name=cd.name),
-                ]
-        fs = self.fs()
-        if fs is not None:
-            if fs.preserve:
-                format_desc = _("already formatted as {fstype}")
-            elif self.original_fstype() is not None:
-                format_desc = _("to be reformatted as {fstype}")
-            else:
-                format_desc = _("to be formatted as {fstype}")
-            r = [format_desc.format(fstype=fs.fstype)]
-            if self._m.is_mounted_filesystem(fs.fstype):
-                m = fs.mount()
-                if m:
-                    # A filesytem
-                    r.append(_("mounted at {path}").format(path=m.path))
-                elif not getattr(self, 'is_esp', False):
-                    # A filesytem
-                    r.append(_("not mounted"))
-            elif fs.preserve:
-                if fs.mount() is None:
-                    # A filesytem that cannot be mounted (i.e. swap)
-                    # is used or unused
-                    r.append(_("unused"))
-                else:
-                    # A filesytem that cannot be mounted (i.e. swap)
-                    # is used or unused
-                    r.append(_("used"))
-            return r
-        else:
-            return [_("unused")]
-
     def _is_entirely_used(self):
         return self._fs is not None or self._constructed_device is not None
 
@@ -709,13 +670,14 @@ class Disk(_Device):
     ok_for_lvm_vg = ok_for_raid
 
     def for_client(self, min_size):
+        from subiquity.common.filesystem.labels import usage_labels
         from subiquity.common.types import Disk
         return Disk(
             id=self.id,
             label=self.label,
             type=self.desc(),
             size=self.size,
-            usage_labels=self.usage_labels(),
+            usage_labels=usage_labels(self),
             partitions=[p.for_client() for p in self._partitions],
             ok_for_guided=self.size >= min_size)
 
@@ -732,11 +694,6 @@ class Partition(_Formattable):
     grub_device = attr.ib(default=False)
     name = attr.ib(default=None)
     multipath = attr.ib(default=None)
-
-    def usage_labels(self):
-        if self.flag == "prep" or self.flag == "bios_grub":
-            return []
-        return super().usage_labels()
 
     def desc(self):
         return _("partition of {device}").format(device=self.device.desc())
@@ -817,12 +774,15 @@ class Partition(_Formattable):
     ok_for_lvm_vg = ok_for_raid
 
     def for_client(self):
-        from subiquity.common.filesystem.labels import annotations
+        from subiquity.common.filesystem.labels import (
+            annotations,
+            usage_labels,
+            )
         from subiquity.common.types import Partition
         return Partition(
             size=self.size,
             number=self._number,
-            annotations=annotations(self) + self.usage_labels())
+            annotations=annotations(self) + usage_labels(self))
 
 
 @fsobj("raid")

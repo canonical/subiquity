@@ -19,6 +19,7 @@ import attr
 
 from subiquity.common.filesystem.labels import (
     annotations,
+    usage_labels,
     )
 from subiquity.models.filesystem import (
     Bootloader,
@@ -356,25 +357,25 @@ class TestFilesystemModel(unittest.TestCase):
 
     def test_partition_usage_labels(self):
         model, partition = make_model_and_partition()
-        self.assertEqual(partition.usage_labels(), ["unused"])
+        self.assertEqual(usage_labels(partition), ["unused"])
         fs = model.add_filesystem(partition, 'ext4')
         self.assertEqual(
-            partition.usage_labels(),
+            usage_labels(partition),
             ["to be formatted as ext4", "not mounted"])
         model._orig_config = model._render_actions()
         fs.preserve = True
         partition.preserve = True
         self.assertEqual(
-            partition.usage_labels(),
+            usage_labels(partition),
             ["already formatted as ext4", "not mounted"])
         model.remove_filesystem(fs)
         fs2 = model.add_filesystem(partition, 'ext4')
         self.assertEqual(
-            partition.usage_labels(),
+            usage_labels(partition),
             ["to be reformatted as ext4", "not mounted"])
         model.add_mount(fs2, '/')
         self.assertEqual(
-            partition.usage_labels(),
+            usage_labels(partition),
             ["to be reformatted as ext4", "mounted at /"])
 
     def test_is_esp(self):

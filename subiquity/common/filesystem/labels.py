@@ -87,3 +87,55 @@ def _annotations_vg(vg):
         # Flag for a LVM volume group
         r.append(_("encrypted"))
     return r
+
+
+def _usage_labels_generic(device):
+    cd = device.constructed_device()
+    if cd is not None:
+        return [
+            _("{component_name} of {desc} {name}").format(
+                component_name=cd.component_name,
+                desc=cd.desc(),
+                name=cd.name),
+            ]
+    fs = device.fs()
+    if fs is not None:
+        if fs.preserve:
+            format_desc = _("already formatted as {fstype}")
+        elif device.original_fstype() is not None:
+            format_desc = _("to be reformatted as {fstype}")
+        else:
+            format_desc = _("to be formatted as {fstype}")
+        r = [format_desc.format(fstype=fs.fstype)]
+        if device._m.is_mounted_filesystem(fs.fstype):
+            m = fs.mount()
+            if m:
+                # A filesytem
+                r.append(_("mounted at {path}").format(path=m.path))
+            elif not getattr(device, 'is_esp', False):
+                # A filesytem
+                r.append(_("not mounted"))
+        elif fs.preserve:
+            if fs.mount() is None:
+                # A filesytem that cannot be mounted (i.e. swap)
+                # is used or unused
+                r.append(_("unused"))
+            else:
+                # A filesytem that cannot be mounted (i.e. swap)
+                # is used or unused
+                r.append(_("used"))
+        return r
+    else:
+        return [_("unused")]
+
+
+@functools.singledispatch
+def usage_labels(device):
+    return _usage_labels_generic(device)
+
+
+@usage_labels.register(Partition)
+def _usage_labels_partition(partition):
+    if partition.flag == "prep" or partition.flag == "bios_grub":
+        return []
+    return _usage_labels_generic(partition)
