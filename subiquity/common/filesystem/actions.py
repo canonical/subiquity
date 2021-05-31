@@ -18,7 +18,7 @@ import functools
 
 from subiquitycore.gettext38 import pgettext
 
-from subiquity.common.filesystem import labels
+from subiquity.common.filesystem import boot, labels
 from subiquity.models.filesystem import (
     Bootloader,
     Disk,
@@ -341,12 +341,12 @@ _can_toggle_boot = make_checker(DeviceAction.TOGGLE_BOOT)
 
 @_can_toggle_boot.register(Disk)
 def _can_toggle_boot_disk(disk):
-    if disk._is_boot_device():
-        for disk2 in disk._m.all_disks():
-            if disk2 is not disk and disk2._is_boot_device():
+    if boot.is_boot_device(disk):
+        for disk2 in boot.all_boot_devices(disk._m):
+            if disk2 is not disk:
                 return True
         return False
     elif disk._fs is not None or disk._constructed_device is not None:
         return False
     else:
-        return disk._can_be_boot_disk()
+        return boot.can_be_boot_device(disk)

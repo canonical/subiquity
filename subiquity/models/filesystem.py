@@ -615,30 +615,6 @@ class Disk(_Device):
     def dasd(self):
         return self._m._one(type='dasd', device_id=self.device_id)
 
-    def _can_be_boot_disk(self):
-        bl = self._m.bootloader
-        if self._has_preexisting_partition():
-            if bl == Bootloader.BIOS:
-                if self.ptable == "msdos":
-                    return True
-                else:
-                    return self._partitions[0].flag == "bios_grub"
-            elif bl == Bootloader.UEFI:
-                return any(p.is_esp for p in self._partitions)
-            elif bl == Bootloader.PREP:
-                return any(p.flag == "prep" for p in self._partitions)
-        else:
-            return True
-
-    def _is_boot_device(self):
-        bl = self._m.bootloader
-        if bl == Bootloader.NONE:
-            return False
-        elif bl == Bootloader.BIOS:
-            return self.grub_device
-        elif bl in [Bootloader.PREP, Bootloader.UEFI]:
-            return any(p.grub_device for p in self._partitions)
-
     @property
     def ok_for_raid(self):
         if self._fs is not None:
