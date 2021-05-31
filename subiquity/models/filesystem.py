@@ -745,14 +745,6 @@ class Partition(_Formattable):
 
     ok_for_lvm_vg = ok_for_raid
 
-    def for_client(self):
-        from subiquity.common.filesystem import labels
-        from subiquity.common.types import Partition
-        return Partition(
-            size=self.size,
-            number=self._number,
-            annotations=labels.annotations(self) + labels.usage_labels(self))
-
 
 @fsobj("raid")
 class Raid(_Device):

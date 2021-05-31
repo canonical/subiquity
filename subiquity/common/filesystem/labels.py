@@ -15,6 +15,7 @@
 
 import functools
 
+from subiquity.common import types
 from subiquity.models.filesystem import (
     Disk,
     LVM_LogicalVolume,
@@ -225,3 +226,29 @@ def _usage_labels_partition(partition):
     if partition.flag == "prep" or partition.flag == "bios_grub":
         return []
     return _usage_labels_generic(partition)
+
+
+@functools.singledispatch
+def for_client(device, *, min_size=0):
+    """Return an API-friendly description of `device`"""
+    raise NotImplementedError(repr(device))
+
+
+@for_client.register(Disk)
+def _for_client_disk(disk, *, min_size=0):
+    return types.Disk(
+        id=disk.id,
+        label=label(disk),
+        type=desc(disk),
+        size=disk.size,
+        usage_labels=usage_labels(disk),
+        partitions=[for_client(p) for p in disk._partitions],
+        ok_for_guided=disk.size >= min_size)
+
+
+@for_client.register(Partition)
+def _for_client_partition(partition, *, min_size=0):
+    return types.Partition(
+        size=partition.size,
+        number=partition._number,
+        annotations=annotations(partition) + usage_labels(partition))
