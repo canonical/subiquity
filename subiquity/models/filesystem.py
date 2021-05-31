@@ -612,11 +612,6 @@ class Disk(_Device):
     def size(self):
         return align_down(self._info.size)
 
-    def desc(self):
-        if self.multipath:
-            return _("multipath device")
-        return _("local disk")
-
     def dasd(self):
         return self._m._one(type='dasd', device_id=self.device_id)
 
@@ -664,7 +659,7 @@ class Disk(_Device):
         return Disk(
             id=self.id,
             label=labels.label(self),
-            type=self.desc(),
+            type=labels.desc(self),
             size=self.size,
             usage_labels=labels.usage_labels(self),
             partitions=[p.for_client() for p in self._partitions],
@@ -683,13 +678,6 @@ class Partition(_Formattable):
     grub_device = attr.ib(default=False)
     name = attr.ib(default=None)
     multipath = attr.ib(default=None)
-
-    def desc(self):
-        return _("partition of {device}").format(device=self.device.desc())
-
-    @property
-    def short_label(self):
-        return _("partition {number}").format(number=self._number)
 
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:
@@ -797,9 +785,6 @@ class Raid(_Device):
         # partitions)
         return self.size - 2*GPT_OVERHEAD
 
-    def desc(self):
-        return _("software RAID {level}").format(level=self.raidlevel[4:])
-
     @property
     def ok_for_raid(self):
         if self._fs is not None:
@@ -834,9 +819,6 @@ class LVM_VolGroup(_Device):
     def available_for_partitions(self):
         return self.size
 
-    def desc(self):
-        return _("LVM volume group")
-
     ok_for_raid = False
     ok_for_lvm_vg = False
 
@@ -870,13 +852,6 @@ class LVM_LogicalVolume(_Formattable):
     @property
     def is_esp(self):
         return False  # another hack!
-
-    def desc(self):
-        return _("LVM logical volume")
-
-    @property
-    def short_label(self):
-        return self.name
 
     ok_for_raid = False
     ok_for_lvm_vg = False

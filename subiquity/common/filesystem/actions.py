@@ -151,7 +151,7 @@ def _can_edit_generic(device):
         "Cannot edit {selflabel} as it is part of the {cdtype} "
         "{cdname}.").format(
             selflabel=labels.label(device),
-            cdtype=cd.desc(),
+            cdtype=labels.desc(cd),
             cdname=labels.label(cd))
 
 
@@ -247,7 +247,7 @@ def _can_remove_device(device):
         return _("Cannot remove {selflabel} from pre-existing {cdtype} "
                  "{cdlabel}.").format(
                     selflabel=labels.label(device),
-                    cdtype=cd.desc(),
+                    cdtype=labels.desc(cd),
                     cdlabel=labels.label(cd))
     if isinstance(cd, Raid):
         if device in cd.spare_devices:
@@ -258,7 +258,7 @@ def _can_remove_device(device):
                 "Removing {selflabel} would leave the {cdtype} {cdlabel} with "
                 "less than {min_devices} devices.").format(
                     selflabel=labels.label(device),
-                    cdtype=cd.desc(),
+                    cdtype=labels.desc(cd),
                     cdlabel=labels.label(cd),
                     min_devices=min_devices)
     elif isinstance(cd, LVM_VolGroup):
@@ -267,7 +267,7 @@ def _can_remove_device(device):
                 "Removing {selflabel} would leave the {cdtype} {cdlabel} with "
                 "no devices.").format(
                     selflabel=labels.label(device),
-                    cdtype=cd.desc(),
+                    cdtype=labels.desc(cd),
                     cdlabel=labels.label(cd))
     return True
 
@@ -283,7 +283,7 @@ def _can_delete_generic(device):
         "Cannot delete {selflabel} as it is part of the {cdtype} "
         "{cdname}.").format(
             selflabel=labels.label(device),
-            cdtype=cd.desc(),
+            cdtype=labels.desc(cd),
             cdname=labels.label(cd))
 
 
@@ -311,7 +311,7 @@ def _can_delete_raid_vg(device):
                 "of the {cdtype} {cdname}.").format(
                     devicelabel=labels.label(device),
                     partnum=p._number,
-                    cdtype=cd.desc(),
+                    cdtype=labels.desc(cd),
                     cdname=labels.label(cd),
                     )
     if mounted_partitions > 1:

@@ -133,7 +133,8 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
             else:
                 text += _(", not mounted")
         else:
-            text = prefix + _("unused {device}").format(device=device.desc())
+            text = prefix + _("unused {device}").format(
+                device=labels.desc(device))
         return TableRow([(2, Color.info_minor(Text(text)))])
 
     def set_bound_form_field(self, bff):
@@ -147,7 +148,7 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                 ]))
                 self.no_selector_rows.append(self.all_rows[-1])
                 self.all_rows.append(TableRow([
-                    (2, Color.info_minor(Text("      " + device.desc())))
+                    (2, Color.info_minor(Text("      " + labels.desc(device))))
                 ]))
                 self.no_selector_rows.append(self.all_rows[-1])
             else:
@@ -155,7 +156,7 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
                     label = labels.label(device)
                     prefix = "    "
                 elif kind == PART:
-                    label = "  " + device.short_label
+                    label = "  " + labels.short_label(device)
                     prefix = "      "
                 else:
                     raise Exception("unexpected kind {}".format(kind))

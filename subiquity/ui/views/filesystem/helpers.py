@@ -40,7 +40,7 @@ def summarize_device(device, part_filter=lambda p: True):
         label = "{} ({})".format(label, ", ".join(anns))
     rows = [(device, [
         (2, Text(label)),
-        Text(device.desc()),
+        Text(labels.desc(device)),
         Text(humanize_size(device.size), align="right"),
         ])]
     partitions = device.partitions()
@@ -51,7 +51,7 @@ def summarize_device(device, part_filter=lambda p: True):
             details = ", ".join(
                 labels.annotations(part) + labels.usage_labels(part))
             rows.append((part, [
-                Text(part.short_label),
+                Text(labels.short_label(part)),
                 (2, Text(details)),
                 Text(humanize_size(part.size), align="right"),
                 ]))

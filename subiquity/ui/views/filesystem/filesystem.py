@@ -63,9 +63,7 @@ from subiquitycore.view import BaseView
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem.labels import (
-    annotations,
-    )
+from subiquity.common.filesystem import labels
 from subiquity.models.filesystem import (
     humanize_size,
     )
@@ -107,8 +105,8 @@ class MountInfo:
 
     @property
     def desc(self):
-        anns = annotations(self.mount.device.volume)
-        desc = self.mount.device.volume.desc()
+        anns = labels.annotations(self.mount.device.volume)
+        desc = labels.desc(self.mount.device.volume)
         if anns:
             desc = anns[0] + " " + desc
         return desc
@@ -226,7 +224,7 @@ class WhyNotStretchy(Stretchy):
 
         title = "Cannot {action} {type}".format(
             action=_(action.value).lower(),
-            type=obj.desc())
+            type=labels.desc(obj))
         widgets = [
             Text(whynot),
             Text(""),
@@ -322,7 +320,7 @@ class DeviceList(WidgetWrap):
     def _label_REMOVE(self, action, device):
         cd = device.constructed_device()
         if cd:
-            return _("Remove from {device}").format(device=cd.desc())
+            return _("Remove from {device}").format(device=labels.desc(cd))
         else:
             return action.str()
 

@@ -92,6 +92,38 @@ def _annotations_vg(vg):
 
 
 @functools.singledispatch
+def desc(device):
+    raise NotImplementedError(repr(device))
+
+
+@desc.register(Disk)
+def _desc_disk(disk):
+    if disk.multipath:
+        return _("multipath device")
+    return _("local disk")
+
+
+@desc.register(Partition)
+def _desc_partition(partition):
+    return _("partition of {device}").format(device=desc(partition.device))
+
+
+@desc.register(Raid)
+def _desc_raid(raid):
+    return _("software RAID {level}").format(level=raid.raidlevel[4:])
+
+
+@desc.register(LVM_VolGroup)
+def _desc_vg(vg):
+    return _("LVM volume group")
+
+
+@desc.register(LVM_LogicalVolume)
+def _desc_lv(lv):
+    return _("LVM logival volume")
+
+
+@functools.singledispatch
 def label(device):
     raise NotImplementedError(repr(device))
 
@@ -118,13 +150,28 @@ def _label_partition(partition):
         number=partition._number, device=label(partition.device))
 
 
+@functools.singledispatch
+def short_label(device):
+    raise NotImplementedError(repr(device))
+
+
+@short_label.register(Partition)
+def _short_label_partition(partition):
+    return _("partition {number}").format(number=partition._number)
+
+
+@short_label.register(LVM_LogicalVolume)
+def _short_label_lv(lv):
+    return lv.name
+
+
 def _usage_labels_generic(device):
     cd = device.constructed_device()
     if cd is not None:
         return [
             _("{component_name} of {desc} {name}").format(
                 component_name=cd.component_name,
-                desc=cd.desc(),
+                desc=desc(cd),
                 name=cd.name),
             ]
     fs = device.fs()
