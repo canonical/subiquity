@@ -66,7 +66,7 @@ class TestFilesystemManipulator(unittest.TestCase):
                 continue
             manipulator.add_boot_disk(disk)
             self.assertFalse(
-                disk._can_TOGGLE_BOOT,
+                DeviceAction.TOGGLE_BOOT.can(disk)[0],
                 "add_boot_disk(disk) did not make _can_TOGGLE_BOOT false "
                 "with bootloader {}".format(bl))
 

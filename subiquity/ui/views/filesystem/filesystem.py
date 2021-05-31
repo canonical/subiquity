@@ -343,7 +343,7 @@ class DeviceList(WidgetWrap):
             label_meth = getattr(
                 self, '_label_{}'.format(action.name), lambda a, d: a.str())
             label = label_meth(action, device)
-            enabled, whynot = device.action_possible(action)
+            enabled, whynot = action.can(device)
             if whynot:
                 assert not enabled
                 enabled = True
