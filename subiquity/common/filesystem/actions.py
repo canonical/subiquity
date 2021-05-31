@@ -31,11 +31,14 @@ from subiquity.models.filesystem import (
 _checkers = {}
 
 
-def checker(action):
-    def w(f):
-        _checkers[action] = f
-        return f
-    return w
+def make_checker(action):
+    @functools.singledispatch
+    def impl(device):
+        raise NotImplementedError(
+            "checker for %s on %s not implemented" % (
+                action, device))
+    _checkers[action] = impl
+    return impl
 
 
 class DeviceAction(enum.Enum):
@@ -120,6 +123,17 @@ def _lv_actions(lv):
         ]
 
 
+_can_info = make_checker(DeviceAction.INFO)
+
+
+@_can_info.register(Disk)
+def _disk_info(disk):
+    return True
+
+
+_can_edit = make_checker(DeviceAction.EDIT)
+
+
 def _generic_edit(device):
     cd = device.constructed_device()
     if cd is None:
@@ -130,13 +144,6 @@ def _generic_edit(device):
             selflabel=device.label,
             cdtype=cd.desc(),
             cdname=cd.label)
-
-
-@checker(DeviceAction.EDIT)
-@functools.singledispatch
-def _can_edit(device):
-    raise NotImplementedError(
-        "can_edit({}) not defined".format(device))
 
 
 _can_edit.register(Partition, _generic_edit)
