@@ -63,6 +63,9 @@ from subiquitycore.view import BaseView
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
+from subiquity.common.filesystem.labels import (
+    annotations,
+    )
 from subiquity.models.filesystem import (
     humanize_size,
     )
@@ -104,10 +107,10 @@ class MountInfo:
 
     @property
     def desc(self):
-        annotations = self.mount.device.volume.annotations
+        anns = annotations(self.mount.device.volume)
         desc = self.mount.device.volume.desc()
-        if annotations:
-            desc = annotations[0] + " " + desc
+        if anns:
+            desc = anns[0] + " " + desc
         return desc
 
     def startswith(self, other):

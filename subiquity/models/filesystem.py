@@ -429,18 +429,6 @@ class _Formattable(ABC):
     def label(self):
         pass
 
-    @property
-    def annotations(self):
-        preserve = getattr(self, 'preserve', None)
-        if preserve is None:
-            return []
-        elif preserve:
-            # A pre-existing device such as a partition or RAID
-            return [_("existing")]
-        else:
-            # A newly created device such as a partition or RAID
-            return [_("new")]
-
     # Filesystem
     _fs = attributes.backlink()
     # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
@@ -668,10 +656,6 @@ class Disk(_Device):
     def size(self):
         return align_down(self._info.size)
 
-    @property
-    def annotations(self):
-        return []
-
     def desc(self):
         if self.multipath:
             return _("multipath device")
@@ -748,40 +732,6 @@ class Partition(_Formattable):
     grub_device = attr.ib(default=False)
     name = attr.ib(default=None)
     multipath = attr.ib(default=None)
-
-    @property
-    def annotations(self):
-        r = super().annotations
-        if self.flag == "prep":
-            r.append("PReP")
-            if self.preserve:
-                if self.grub_device:
-                    # boot loader partition
-                    r.append(_("configured"))
-                else:
-                    # boot loader partition
-                    r.append(_("unconfigured"))
-        elif self.is_esp:
-            if self.fs() and self.fs().mount():
-                r.append(_("primary ESP"))
-            elif self.grub_device:
-                r.append(_("backup ESP"))
-            else:
-                r.append(_("unused ESP"))
-        elif self.flag == "bios_grub":
-            if self.preserve:
-                if self.device.grub_device:
-                    r.append(_("configured"))
-                else:
-                    r.append(_("unconfigured"))
-            r.append("bios_grub")
-        elif self.flag == "extended":
-            # extended partition
-            r.append(_("extended"))
-        elif self.flag == "logical":
-            # logical partition
-            r.append(_("logical"))
-        return r
 
     def usage_labels(self):
         if self.flag == "prep" or self.flag == "bios_grub":
@@ -867,11 +817,12 @@ class Partition(_Formattable):
     ok_for_lvm_vg = ok_for_raid
 
     def for_client(self):
+        from subiquity.common.filesystem.labels import annotations
         from subiquity.common.types import Partition
         return Partition(
             size=self.size,
             number=self._number,
-            annotations=self.annotations + self.usage_labels())
+            annotations=annotations(self) + self.usage_labels())
 
 
 @fsobj("raid")
@@ -945,15 +896,6 @@ class LVM_VolGroup(_Device):
     @property
     def available_for_partitions(self):
         return self.size
-
-    @property
-    def annotations(self):
-        r = super().annotations
-        member = next(iter(self.devices))
-        if member.type == "dm_crypt":
-            # Flag for a LVM volume group
-            r.append(_("encrypted"))
-        return r
 
     @property
     def label(self):

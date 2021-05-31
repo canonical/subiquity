@@ -17,6 +17,9 @@ import unittest
 
 import attr
 
+from subiquity.common.filesystem.labels import (
+    annotations,
+    )
 from subiquity.models.filesystem import (
     Bootloader,
     dehumanize_size,
@@ -216,68 +219,68 @@ class TestFilesystemModel(unittest.TestCase):
     def test_disk_annotations(self):
         # disks never have annotations
         model, disk = make_model_and_disk()
-        self.assertEqual(disk.annotations, [])
+        self.assertEqual(annotations(disk), [])
         disk.preserve = True
-        self.assertEqual(disk.annotations, [])
+        self.assertEqual(annotations(disk), [])
 
     def test_partition_annotations(self):
         model = make_model()
         part = make_partition(model)
-        self.assertEqual(part.annotations, ['new'])
+        self.assertEqual(annotations(part), ['new'])
         part.preserve = True
-        self.assertEqual(part.annotations, ['existing'])
+        self.assertEqual(annotations(part), ['existing'])
 
         model = make_model()
         part = make_partition(model, flag="bios_grub")
         self.assertEqual(
-            part.annotations, ['new', 'bios_grub'])
+            annotations(part), ['new', 'bios_grub'])
         part.preserve = True
         self.assertEqual(
-            part.annotations, ['existing', 'unconfigured', 'bios_grub'])
+            annotations(part), ['existing', 'unconfigured', 'bios_grub'])
         part.device.grub_device = True
         self.assertEqual(
-            part.annotations, ['existing', 'configured', 'bios_grub'])
+            annotations(part), ['existing', 'configured', 'bios_grub'])
 
         model = make_model()
         part = make_partition(model, flag="boot", grub_device=True)
-        self.assertEqual(part.annotations, ['new', 'backup ESP'])
+        self.assertEqual(annotations(part), ['new', 'backup ESP'])
         fs = model.add_filesystem(part, fstype="fat32")
         model.add_mount(fs, "/boot/efi")
-        self.assertEqual(part.annotations, ['new', 'primary ESP'])
+        self.assertEqual(annotations(part), ['new', 'primary ESP'])
 
         model = make_model()
         part = make_partition(model, flag="boot", preserve=True)
-        self.assertEqual(part.annotations, ['existing', 'unused ESP'])
+        self.assertEqual(annotations(part), ['existing', 'unused ESP'])
         part.grub_device = True
-        self.assertEqual(part.annotations, ['existing', 'backup ESP'])
+        self.assertEqual(annotations(part), ['existing', 'backup ESP'])
         fs = model.add_filesystem(part, fstype="fat32")
         model.add_mount(fs, "/boot/efi")
-        self.assertEqual(part.annotations, ['existing', 'primary ESP'])
+        self.assertEqual(annotations(part), ['existing', 'primary ESP'])
 
         model = make_model()
         part = make_partition(model, flag="prep", grub_device=True)
-        self.assertEqual(part.annotations, ['new', 'PReP'])
+        self.assertEqual(annotations(part), ['new', 'PReP'])
 
         model = make_model()
         part = make_partition(model, flag="prep", preserve=True)
         self.assertEqual(
-            part.annotations, ['existing', 'PReP', 'unconfigured'])
+            annotations(part), ['existing', 'PReP', 'unconfigured'])
         part.grub_device = True
         self.assertEqual(
-            part.annotations, ['existing', 'PReP', 'configured'])
+            annotations(part), ['existing', 'PReP', 'configured'])
 
     def test_vg_default_annotations(self):
         model, disk = make_model_and_disk()
         vg = model.add_volgroup('vg-0', {disk})
-        self.assertEqual(vg.annotations, ['new'])
+        self.assertEqual(annotations(vg), ['new'])
         vg.preserve = True
-        self.assertEqual(vg.annotations, ['existing'])
+        self.assertEqual(annotations(vg), ['existing'])
 
     def test_vg_encrypted_annotations(self):
         model, disk = make_model_and_disk()
         dm_crypt = model.add_dm_crypt(disk, key='passw0rd')
         vg = model.add_volgroup('vg-0', {dm_crypt})
-        self.assertEqual(vg.annotations, ['new', 'encrypted'])
+        self.assertEqual(annotations(vg), ['new', 'encrypted'])
 
     def _test_ok_for_xxx(self, model, make_new_device, attr,
                          test_partitions=True):

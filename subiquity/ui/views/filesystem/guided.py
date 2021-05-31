@@ -44,6 +44,9 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
+from subiquity.common.filesystem.labels import (
+    annotations,
+    )
 from subiquity.common.types import GuidedChoice
 from subiquity.models.filesystem import humanize_size
 
@@ -90,7 +93,7 @@ def summarize_device(disk):
         ])]
     if disk.partitions:
         for part in disk.partitions:
-            details = ", ".join(part.annotations)
+            details = ", ".join(annotations(part))
             rows.append((part, [
                 Text(_("partition {number}").format(number=part.number)),
                 (2, Text(details)),
