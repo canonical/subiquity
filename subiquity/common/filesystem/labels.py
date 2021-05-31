@@ -38,6 +38,12 @@ def _annotations_generic(device):
 
 @functools.singledispatch
 def annotations(device):
+    """annotations that should be displayed alongside `device`
+
+    The main example is whether this is a new or pre-existing device but
+    partitions, particularly bootloader partitions, can get a richer set
+    of annotations.
+    """
     return _annotations_generic(device)
 
 
@@ -93,6 +99,10 @@ def _annotations_vg(vg):
 
 @functools.singledispatch
 def desc(device):
+    """A description of the class of thing device is part of.
+
+    E.g. "partition of local disk" or "LVM volume group".
+    """
     raise NotImplementedError(repr(device))
 
 
@@ -125,6 +135,13 @@ def _desc_lv(lv):
 
 @functools.singledispatch
 def label(device, *, short=False):
+    """A label that identifies `device`
+
+    E.g. the serial number for a disk, or the name of a logical volume
+    or a string like "partition $n of $disk_serial". Passing short=True
+    returns just "partition $n" for a partition, for when what it is a
+    partition of is obvious.
+    """
     raise NotImplementedError(repr(device))
 
 
@@ -195,6 +212,11 @@ def _usage_labels_generic(device):
 
 @functools.singledispatch
 def usage_labels(device):
+    """A list of strings that describe how `device` is used.
+
+    E.g. ["component of software RAID 5 md0"] or ["to be reformatted as
+    xfs", "not mounted"].
+    """
     return _usage_labels_generic(device)
 
 
