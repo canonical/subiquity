@@ -17,7 +17,7 @@ import logging
 import subprocess
 
 from subiquity.common.apidef import API
-from subiquity.server.controller import SubiquityController
+from subiquity.server.controller import NonInteractiveController
 
 log = logging.getLogger('subiquity.server.controllers.timezone')
 
@@ -30,7 +30,7 @@ def generate_possible_tzs():
     return special_keys + real_tzs
 
 
-class TimeZoneController(SubiquityController):
+class TimeZoneController(NonInteractiveController):
 
     endpoint = API.timezone
 
