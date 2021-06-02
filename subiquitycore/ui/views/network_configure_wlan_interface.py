@@ -84,9 +84,10 @@ class NetworkConfigureWLANStretchy(Stretchy):
         self.psk_row = self.form.psk._table
         self.ssid_row.bind(self.psk_row)
 
+        self.error = Text("")
+
         self.inputs = Pile(self._build_iface_inputs())
 
-        self.error = Text("")
         widgets = [
             self.inputs,
             Padding.center_79(Color.info_error(self.error)),
@@ -104,11 +105,7 @@ class NetworkConfigureWLANStretchy(Stretchy):
         while not self.inputs.contents[fp][0].selectable():
             fp -= 1
         self.inputs.focus_position = fp
-        try:
-            self.parent.controller.start_scan(self.dev_info.name)
-        except RuntimeError as r:
-            log.exception("start_scan failed")
-            self.error.set_text("%s" % (r,))
+        self.parent.controller.start_scan(self.dev_info.name)
 
     def _build_iface_inputs(self):
         visible_ssids = self.dev_info.wlan.visible_ssids
@@ -118,8 +115,12 @@ class NetworkConfigureWLANStretchy(Stretchy):
         else:
             networks_btn = disabled(menu_btn("No visible networks"))
 
-        if not self.dev_info.wlan.scan_state:
+        scan_state = self.dev_info.wlan.scan_state
+        if scan_state:
             scan_btn = menu_btn("Scan for networks", on_press=self.start_scan)
+        elif scan_state.startswith('error'):
+            self.error.set_text('scan failed: %s' % (scan_state,))
+            scan_btn = disabled(menu_btn("Scanning for networks failed"))
         else:
             scan_btn = disabled(menu_btn("Scanning for networks"))
 

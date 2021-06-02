@@ -453,7 +453,10 @@ class BaseNetworkController(BaseController):
 
     def start_scan(self, dev_name: str) -> None:
         device = self.model.get_netdev_by_name(dev_name)
-        self.observer.trigger_scan(device.ifindex)
+        try:
+            self.observer.trigger_scan(device.ifindex)
+        except RuntimeError as r:
+            device.info.wlan['scan_state'] = 'error %s' % (r,)
         self.update_link(device)
 
     @abc.abstractmethod
