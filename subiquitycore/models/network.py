@@ -82,8 +82,8 @@ class VLANConfig:
 
 @attr.s(auto_attribs=True)
 class WLANConfig:
-    ssid: str
-    psk: str
+    ssid: Optional[str]
+    psk: Optional[str]
 
 
 @attr.s(auto_attribs=True)
@@ -133,7 +133,7 @@ class NetDevInfo:
 
     vlan: Optional[VLANConfig]
     bond: Optional[BondConfig]
-    wlan: Optional[WLANConfig]
+    wlan: Optional[WLANStatus]
 
     dhcp4: DHCPStatus
     dhcp6: DHCPStatus
