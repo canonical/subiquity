@@ -184,8 +184,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
             log.exception("_apply_config failed")
             self.model.has_network = False
             self.app.make_apport_report(
-                ErrorReportKind.NETWORK_FAIL, "applying network",
-                interrupt=True)
+                ErrorReportKind.NETWORK_FAIL, "applying network")
             if not self.interactive():
                 raise
 
