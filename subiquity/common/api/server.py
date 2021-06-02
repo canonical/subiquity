@@ -168,8 +168,8 @@ def bind(router, endpoint, controller, serializer=None, _depth=None):
                 handler=_make_handler(controller, v, impl, serializer))
 
 
-async def make_server_at_path(socket_path, endpoint, controller):
-    app = web.Application()
+async def make_server_at_path(socket_path, endpoint, controller, **kw):
+    app = web.Application(**kw)
     bind(app.router, endpoint, controller)
     runner = web.AppRunner(app)
     await runner.setup()

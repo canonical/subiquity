@@ -19,6 +19,8 @@ import shutil
 import tempfile
 from typing import List, Optional
 
+from aiohttp import web
+
 from subiquitycore.controllers.network import NetworkAnswersMixin
 from subiquitycore.models.network import (
     BondConfig,
@@ -30,6 +32,7 @@ from subiquitycore.ui.views.network import NetworkView
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.api.server import make_server_at_path
 from subiquity.common.apidef import LinkAction, NetEventAPI
+from subiquity.common.types import ErrorReportKind
 
 log = logging.getLogger('subiquity.client.controllers.network')
 
@@ -41,6 +44,19 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
     def __init__(self, app):
         super().__init__(app)
         self.view = None
+
+    @web.middleware
+    async def middleware(self, request, handler):
+        resp = await handler(request)
+        if resp.get('exception'):
+            exc = resp['exception']
+            log.debug(
+                'request to {} crashed'.format(request.raw_path), exc_info=exc)
+            self.app.make_apport_report(
+                ErrorReportKind.NETWORK_CLIENT_FAIL,
+                "request to {}".format(request.raw_path),
+                exc=exc, interrupt=True)
+        return resp
 
     async def update_link_POST(self, act: LinkAction,
                                info: NetDevInfo) -> None:
@@ -73,7 +89,7 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
         self.tdir = tempfile.mkdtemp()
         self.sock_path = os.path.join(self.tdir, 'socket')
         self.site = await make_server_at_path(
-            self.sock_path, NetEventAPI, self)
+            self.sock_path, NetEventAPI, self, middlewares=[self.middleware])
         await self.endpoint.subscription.PUT(self.sock_path)
 
     async def unsubscribe(self):
