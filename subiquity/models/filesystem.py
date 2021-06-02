@@ -16,7 +16,6 @@
 from abc import ABC, abstractmethod
 import attr
 import collections
-import enum
 import fnmatch
 import itertools
 import logging
@@ -31,8 +30,6 @@ from curtin.block import partition_kname
 from curtin.util import human2bytes
 
 from probert.storage import StorageInfo
-
-from subiquitycore.gettext38 import pgettext
 
 from subiquity.common.types import Bootloader
 
@@ -422,80 +419,6 @@ def asdict(inst):
 # in the FilesystemModel or FilesystemController classes.
 
 
-class DeviceAction(enum.Enum):
-    # Information about a drive
-    INFO = pgettext("DeviceAction", "Info")
-    # Edit a device (partition, logical volume, RAID, etc)
-    EDIT = pgettext("DeviceAction", "Edit")
-    REFORMAT = pgettext("DeviceAction", "Reformat")
-    PARTITION = pgettext("DeviceAction", "Add Partition")
-    CREATE_LV = pgettext("DeviceAction", "Create Logical Volume")
-    FORMAT = pgettext("DeviceAction", "Format")
-    REMOVE = pgettext("DeviceAction", "Remove from RAID/LVM")
-    DELETE = pgettext("DeviceAction", "Delete")
-    TOGGLE_BOOT = pgettext("DeviceAction", "Make Boot Device")
-
-    def str(self):
-        return pgettext(type(self).__name__, self.value)
-
-
-def _generic_can_EDIT(obj):
-    cd = obj.constructed_device()
-    if cd is None:
-        return True
-    return _(
-        "Cannot edit {selflabel} as it is part of the {cdtype} "
-        "{cdname}.").format(
-            selflabel=obj.label,
-            cdtype=cd.desc(),
-            cdname=cd.label)
-
-
-def _generic_can_REMOVE(obj):
-    cd = obj.constructed_device()
-    if cd is None:
-        return False
-    if cd.preserve:
-        return _("Cannot remove {selflabel} from pre-existing {cdtype} "
-                 "{cdlabel}.").format(
-                    selflabel=obj.label,
-                    cdtype=cd.desc(),
-                    cdlabel=cd.label)
-    if isinstance(cd, Raid):
-        if obj in cd.spare_devices:
-            return True
-        min_devices = raidlevels_by_value[cd.raidlevel].min_devices
-        if len(cd.devices) == min_devices:
-            return _(
-                "Removing {selflabel} would leave the {cdtype} {cdlabel} with "
-                "less than {min_devices} devices.").format(
-                    selflabel=obj.label,
-                    cdtype=cd.desc(),
-                    cdlabel=cd.label,
-                    min_devices=min_devices)
-    elif isinstance(cd, LVM_VolGroup):
-        if len(cd.devices) == 1:
-            return _(
-                "Removing {selflabel} would leave the {cdtype} {cdlabel} with "
-                "no devices.").format(
-                    selflabel=obj.label,
-                    cdtype=cd.desc(),
-                    cdlabel=cd.label)
-    return True
-
-
-def _generic_can_DELETE(obj):
-    cd = obj.constructed_device()
-    if cd is None:
-        return True
-    return _(
-        "Cannot delete {selflabel} as it is part of the {cdtype} "
-        "{cdname}.").format(
-            selflabel=obj.label,
-            cdtype=cd.desc(),
-            cdname=cd.label)
-
-
 @attr.s(cmp=False)
 class _Formattable(ABC):
     # Base class for anything that can be formatted and mounted,
@@ -588,21 +511,6 @@ class _Formattable(ABC):
 
     @property
     @abstractmethod
-    def supported_actions(self):
-        pass
-
-    def action_possible(self, action):
-        assert action in self.supported_actions
-        r = getattr(self, "_can_" + action.name)
-        if isinstance(r, bool):
-            return r, None
-        elif isinstance(r, str):
-            return False, r
-        else:
-            return r
-
-    @property
-    @abstractmethod
     def ok_for_raid(self):
         pass
 
@@ -685,35 +593,6 @@ class _Device(_Formattable, ABC):
 
     def _has_preexisting_partition(self):
         return any(p.preserve for p in self._partitions)
-
-    @property
-    def _can_DELETE(self):
-        mounted_partitions = 0
-        for p in self._partitions:
-            if p.fs() and p.fs().mount():
-                mounted_partitions += 1
-            elif p.constructed_device():
-                cd = p.constructed_device()
-                return _(
-                    "Cannot delete {selflabel} as partition {partnum} is part "
-                    "of the {cdtype} {cdname}.").format(
-                        selflabel=self.label,
-                        partnum=p._number,
-                        cdtype=cd.desc(),
-                        cdname=cd.label,
-                        )
-        if mounted_partitions > 1:
-            return _(
-                "Cannot delete {selflabel} because it has {count} mounted "
-                "partitions.").format(
-                    selflabel=self.label,
-                    count=mounted_partitions)
-        elif mounted_partitions == 1:
-            return _(
-                "Cannot delete {selflabel} because it has 1 mounted partition."
-                ).format(selflabel=self.label)
-        else:
-            return _generic_can_DELETE(self)
 
 
 @fsobj("dasd")
@@ -822,48 +701,6 @@ class Disk(_Device):
         else:
             return True
 
-    @property
-    def supported_actions(self):
-        actions = [
-            DeviceAction.INFO,
-            DeviceAction.REFORMAT,
-            DeviceAction.PARTITION,
-            DeviceAction.FORMAT,
-            DeviceAction.REMOVE,
-            ]
-        if self._m.bootloader != Bootloader.NONE:
-            actions.append(DeviceAction.TOGGLE_BOOT)
-        return actions
-
-    _can_INFO = True
-
-    @property
-    def _can_REFORMAT(self):
-        if len(self._partitions) == 0:
-            return False
-        for p in self._partitions:
-            if p._constructed_device is not None:
-                return False
-        return True
-
-    @property
-    def _can_PARTITION(self):
-        if self._has_preexisting_partition():
-            return False
-        if self.free_for_partitions <= 0:
-            return False
-        # We only create msdos partition tables with FBA dasds, which
-        # only support 3 partitions. As and when we support editing
-        # partition msdos tables we'll need to be more clever here.
-        if self.ptable in ['vtoc', 'msdos'] and len(self._partitions) >= 3:
-            return False
-        return True
-
-    _can_FORMAT = property(
-        lambda self: len(self._partitions) == 0 and
-        self._constructed_device is None)
-    _can_REMOVE = property(_generic_can_REMOVE)
-
     def _is_boot_device(self):
         bl = self._m.bootloader
         if bl == Bootloader.NONE:
@@ -872,18 +709,6 @@ class Disk(_Device):
             return self.grub_device
         elif bl in [Bootloader.PREP, Bootloader.UEFI]:
             return any(p.grub_device for p in self._partitions)
-
-    @property
-    def _can_TOGGLE_BOOT(self):
-        if self._is_boot_device():
-            for disk in self._m.all_disks():
-                if disk is not self and disk._is_boot_device():
-                    return True
-            return False
-        elif self._fs is not None or self._constructed_device is not None:
-            return False
-        else:
-            return self._can_be_boot_disk()
 
     @property
     def ok_for_raid(self):
@@ -1027,25 +852,6 @@ class Partition(_Formattable):
         else:
             return False
 
-    supported_actions = [
-        DeviceAction.EDIT,
-        DeviceAction.REMOVE,
-        DeviceAction.DELETE,
-        ]
-
-    _can_EDIT = property(_generic_can_EDIT)
-
-    _can_REMOVE = property(_generic_can_REMOVE)
-
-    @property
-    def _can_DELETE(self):
-        if self.device._has_preexisting_partition():
-            return _("Cannot delete a single partition from a device that "
-                     "already has partitions.")
-        if self.is_bootloader_partition:
-            return _("Cannot delete required bootloader partition")
-        return _generic_can_DELETE(self)
-
     @property
     def ok_for_raid(self):
         if self.is_bootloader_partition:
@@ -1106,33 +912,6 @@ class Raid(_Device):
     def desc(self):
         return _("software RAID {level}").format(level=self.raidlevel[4:])
 
-    supported_actions = [
-        DeviceAction.EDIT,
-        DeviceAction.PARTITION,
-        DeviceAction.FORMAT,
-        DeviceAction.REMOVE,
-        DeviceAction.DELETE,
-        DeviceAction.REFORMAT,
-        ]
-
-    @property
-    def _can_EDIT(self):
-        if self.preserve:
-            return _("Cannot edit pre-existing RAIDs.")
-        elif len(self._partitions) > 0:
-            return _(
-                "Cannot edit {selflabel} because it has partitions.").format(
-                    selflabel=self.label)
-        else:
-            return _generic_can_EDIT(self)
-
-    _can_PARTITION = Disk._can_PARTITION
-    _can_REFORMAT = Disk._can_REFORMAT
-    _can_FORMAT = property(
-        lambda self: len(self._partitions) == 0 and
-        self._constructed_device is None)
-    _can_REMOVE = property(_generic_can_REMOVE)
-
     @property
     def ok_for_raid(self):
         if self._fs is not None:
@@ -1183,27 +962,6 @@ class LVM_VolGroup(_Device):
     def desc(self):
         return _("LVM volume group")
 
-    supported_actions = [
-        DeviceAction.EDIT,
-        DeviceAction.CREATE_LV,
-        DeviceAction.DELETE,
-        ]
-
-    @property
-    def _can_EDIT(self):
-        if self.preserve:
-            return _("Cannot edit pre-existing volume groups.")
-        elif len(self._partitions) > 0:
-            return _(
-                "Cannot edit {selflabel} because it has logical "
-                "volumes.").format(
-                    selflabel=self.label)
-        else:
-            return _generic_can_EDIT(self)
-
-    _can_CREATE_LV = property(
-        lambda self: not self.preserve and self.free_for_partitions > 0)
-
     ok_for_raid = False
     ok_for_lvm_vg = False
 
@@ -1246,20 +1004,6 @@ class LVM_LogicalVolume(_Formattable):
         return self.name
 
     label = short_label
-
-    supported_actions = [
-        DeviceAction.EDIT,
-        DeviceAction.DELETE,
-        ]
-
-    _can_EDIT = True
-
-    @property
-    def _can_DELETE(self):
-        if self.volgroup._has_preexisting_partition():
-            return _("Cannot delete a single logical volume from a volume "
-                     "group that already has logical volumes.")
-        return True
 
     ok_for_raid = False
     ok_for_lvm_vg = False

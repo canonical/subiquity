@@ -37,7 +37,10 @@ from subiquitycore.lsb_release import lsb_release
 
 from subiquity.common.apidef import API
 from subiquity.common.errorreport import ErrorReportKind
-from subiquity.common.filesystem import FilesystemManipulator
+from subiquity.common.filesystem.actions import (
+    DeviceAction,
+    )
+from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.types import (
     Bootloader,
     GuidedChoice,
@@ -47,7 +50,6 @@ from subiquity.common.types import (
     )
 from subiquity.models.filesystem import (
     dehumanize_size,
-    DeviceAction,
     )
 from subiquity.server.controller import (
     SubiquityController,
@@ -129,7 +131,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     def guided_lvm(self, disk, lvm_options=None):
         self.reformat(disk)
-        if DeviceAction.TOGGLE_BOOT in disk.supported_actions:
+        if DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk):
             self.add_boot_disk(disk)
         self.create_partition(
             device=disk, spec=dict(

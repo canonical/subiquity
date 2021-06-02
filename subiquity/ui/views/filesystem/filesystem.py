@@ -60,8 +60,10 @@ from subiquitycore.ui.utils import (
     )
 from subiquitycore.view import BaseView
 
-from subiquity.models.filesystem import (
+from subiquity.common.filesystem.actions import (
     DeviceAction,
+    )
+from subiquity.models.filesystem import (
     humanize_size,
     )
 
@@ -337,11 +339,11 @@ class DeviceList(WidgetWrap):
 
     def _action_menu_for_device(self, device):
         device_actions = []
-        for action in device.supported_actions:
+        for action in DeviceAction.supported(device):
             label_meth = getattr(
                 self, '_label_{}'.format(action.name), lambda a, d: a.str())
             label = label_meth(action, device)
-            enabled, whynot = device.action_possible(action)
+            enabled, whynot = action.can(device)
             if whynot:
                 assert not enabled
                 enabled = True

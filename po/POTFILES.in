@@ -10,6 +10,7 @@ subiquity/client/controllers/network.py
 subiquity/client/controllers/progress.py
 subiquity/client/controllers/proxy.py
 subiquity/client/controllers/refresh.py
+subiquity/client/controllers/serial.py
 subiquity/client/controllers/snaplist.py
 subiquity/client/controllers/ssh.py
 subiquity/client/controllers/welcome.py
@@ -31,11 +32,15 @@ subiquity/common/api/tests/test_client.py
 subiquity/common/api/tests/test_endtoend.py
 subiquity/common/api/tests/test_server.py
 subiquity/common/errorreport.py
-subiquity/common/filesystem.py
+subiquity/common/filesystem/actions.py
+subiquity/common/filesystem/__init__.py
+subiquity/common/filesystem/manipulator.py
+subiquity/common/filesystem/tests/__init__.py
+subiquity/common/filesystem/tests/test_actions.py
+subiquity/common/filesystem/tests/test_manipulator.py
 subiquity/common/__init__.py
 subiquity/common/serialize.py
 subiquity/common/tests/__init__.py
-subiquity/common/tests/test_filesystem.py
 subiquity/common/tests/test_serialization.py
 subiquity/common/types.py
 subiquitycore/async_helpers.py
@@ -168,6 +173,7 @@ subiquity/ui/views/keyboard.py
 subiquity/ui/views/mirror.py
 subiquity/ui/views/proxy.py
 subiquity/ui/views/refresh.py
+subiquity/ui/views/serial.py
 subiquity/ui/views/snaplist.py
 subiquity/ui/views/ssh.py
 subiquity/ui/views/tests/__init__.py

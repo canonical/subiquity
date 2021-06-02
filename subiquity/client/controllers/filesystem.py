@@ -19,7 +19,7 @@ import logging
 from subiquitycore.lsb_release import lsb_release
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.filesystem import FilesystemManipulator
+from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.types import ProbeStatus
 from subiquity.models.filesystem import (
     Bootloader,

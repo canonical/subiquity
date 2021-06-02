@@ -15,14 +15,16 @@
 
 import logging
 
+from subiquity.common.filesystem.actions import (
+    DeviceAction,
+    )
 from subiquity.common.types import Bootloader
 from subiquity.models.filesystem import (
     align_up,
-    DeviceAction,
     Partition,
     )
 
-log = logging.getLogger('subiquity.common.filesystem')
+log = logging.getLogger('subiquity.common.filesystem.manipulator')
 
 
 BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024    # 1MiB
@@ -214,7 +216,7 @@ class FilesystemManipulator:
 
         needs_boot = self.model.needs_bootloader_partition()
         log.debug('model needs a bootloader partition? {}'.format(needs_boot))
-        can_be_boot = DeviceAction.TOGGLE_BOOT in disk.supported_actions
+        can_be_boot = DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk)
         if needs_boot and len(disk.partitions()) == 0 and can_be_boot:
             part = self._create_boot_partition(disk)
 
