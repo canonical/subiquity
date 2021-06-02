@@ -131,7 +131,7 @@ def _desc_vg(vg):
 
 @desc.register(LVM_LogicalVolume)
 def _desc_lv(lv):
-    return _("LVM logival volume")
+    return _("LVM logical volume")
 
 
 @functools.singledispatch
