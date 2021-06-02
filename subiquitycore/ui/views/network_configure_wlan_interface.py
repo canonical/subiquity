@@ -146,10 +146,6 @@ class NetworkConfigureWLANStretchy(Stretchy):
                                 for obj in self._build_iface_inputs()]
 
     def done(self, sender):
-        if self.dev_info.wlan.config.ssid is None and self.form.ssid.value:
-            # Turn DHCP4 on by default when specifying an SSID for
-            # the first time...
-            self.parent.controller.enable_dhcp(self.dev_info.name, 4)
         if self.form.ssid.value:
             ssid = self.form.ssid.value
         else:

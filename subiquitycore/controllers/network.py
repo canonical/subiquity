@@ -447,6 +447,10 @@ class BaseNetworkController(BaseController):
 
     def set_wlan(self, dev_name: str, wlan: WLANConfig) -> None:
         device = self.model.get_netdev_by_name(dev_name)
+        if wlan.ssid and not device.configured_ssid:
+            # Turn DHCP4 on by default when specifying an SSID for
+            # the first time...
+            device.config['dhcp4'] = True
         device.set_ssid_psk(wlan.ssid, wlan.psk)
         self.update_link(device)
         self.apply_config()
