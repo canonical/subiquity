@@ -57,7 +57,7 @@ def _annotations_disk(disk):
 def _annotations_partition(partition):
     r = _annotations_generic(partition)
     if partition.flag == "prep":
-        r.append("PReP")
+        r.append(_("PReP"))
         if partition.preserve:
             if partition.grub_device:
                 # boot loader partition
@@ -78,7 +78,7 @@ def _annotations_partition(partition):
                 r.append(_("configured"))
             else:
                 r.append(_("unconfigured"))
-        r.append("bios_grub")
+        r.append(_("bios_grub"))
     elif partition.flag == "extended":
         # extended partition
         r.append(_("extended"))
