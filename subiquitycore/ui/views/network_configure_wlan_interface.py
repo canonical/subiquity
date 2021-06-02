@@ -105,7 +105,7 @@ class NetworkConfigureWLANStretchy(Stretchy):
             fp -= 1
         self.inputs.focus_position = fp
         try:
-            self.parent.controller.start_scan(self.dev_info)
+            self.parent.controller.start_scan(self.dev_info.name)
         except RuntimeError as r:
             log.exception("start_scan failed")
             self.error.set_text("%s" % (r,))
@@ -146,7 +146,7 @@ class NetworkConfigureWLANStretchy(Stretchy):
         if self.dev_info.wlan.config.ssid is None and self.form.ssid.value:
             # Turn DHCP4 on by default when specifying an SSID for
             # the first time...
-            self.parent.controller.enable_dhcp(self.dev_info, 4)
+            self.parent.controller.enable_dhcp(self.dev_info.name, 4)
         if self.form.ssid.value:
             ssid = self.form.ssid.value
         else:
@@ -157,7 +157,7 @@ class NetworkConfigureWLANStretchy(Stretchy):
             psk = None
         self.parent.controller.set_wlan(
             self.dev_info, WLANConfig(ssid=ssid, psk=psk))
-        self.parent.update_link(self.dev_info)
+        self.parent.update_link(self.dev_info.name)
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
