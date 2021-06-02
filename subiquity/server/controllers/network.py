@@ -238,7 +238,10 @@ class NetworkController(BaseNetworkController, SubiquityController):
             if conn.closed:
                 log.debug('closed')
                 return
-            await getattr(client, meth_name).POST(*args)
+            try:
+                await getattr(client, meth_name).POST(*args)
+            except aiohttp.ClientError:
+                log.error("call to %s on %s failed", meth_name, conn.path)
 
     def _call_clients(self, meth_name, *args):
         for client, conn, lock in self.clients.values():
