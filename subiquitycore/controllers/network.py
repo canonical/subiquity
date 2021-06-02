@@ -449,6 +449,7 @@ class BaseNetworkController(BaseController):
         device = self.model.get_netdev_by_name(dev_name)
         device.set_ssid_psk(wlan.ssid, wlan.psk)
         self.update_link(device)
+        self.apply_config()
 
     def start_scan(self, dev_name: str) -> None:
         device = self.model.get_netdev_by_name(dev_name)
