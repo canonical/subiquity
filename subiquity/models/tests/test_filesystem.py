@@ -17,10 +17,6 @@ import unittest
 
 import attr
 
-from subiquity.common.filesystem.labels import (
-    annotations,
-    usage_labels,
-    )
 from subiquity.models.filesystem import (
     Bootloader,
     dehumanize_size,
@@ -217,74 +213,6 @@ def make_model_and_lv(bootloader=None):
 
 class TestFilesystemModel(unittest.TestCase):
 
-    def test_disk_annotations(self):
-        # disks never have annotations
-        model, disk = make_model_and_disk()
-        self.assertEqual(annotations(disk), [])
-        disk.preserve = True
-        self.assertEqual(annotations(disk), [])
-
-    def test_partition_annotations(self):
-        model = make_model()
-        part = make_partition(model)
-        self.assertEqual(annotations(part), ['new'])
-        part.preserve = True
-        self.assertEqual(annotations(part), ['existing'])
-
-        model = make_model()
-        part = make_partition(model, flag="bios_grub")
-        self.assertEqual(
-            annotations(part), ['new', 'BIOS grub spacer'])
-        part.preserve = True
-        self.assertEqual(
-            annotations(part),
-            ['existing', 'unconfigured', 'BIOS grub spacer'])
-        part.device.grub_device = True
-        self.assertEqual(
-            annotations(part),
-            ['existing', 'configured', 'BIOS grub spacer'])
-
-        model = make_model()
-        part = make_partition(model, flag="boot", grub_device=True)
-        self.assertEqual(annotations(part), ['new', 'backup ESP'])
-        fs = model.add_filesystem(part, fstype="fat32")
-        model.add_mount(fs, "/boot/efi")
-        self.assertEqual(annotations(part), ['new', 'primary ESP'])
-
-        model = make_model()
-        part = make_partition(model, flag="boot", preserve=True)
-        self.assertEqual(annotations(part), ['existing', 'unused ESP'])
-        part.grub_device = True
-        self.assertEqual(annotations(part), ['existing', 'backup ESP'])
-        fs = model.add_filesystem(part, fstype="fat32")
-        model.add_mount(fs, "/boot/efi")
-        self.assertEqual(annotations(part), ['existing', 'primary ESP'])
-
-        model = make_model()
-        part = make_partition(model, flag="prep", grub_device=True)
-        self.assertEqual(annotations(part), ['new', 'PReP'])
-
-        model = make_model()
-        part = make_partition(model, flag="prep", preserve=True)
-        self.assertEqual(
-            annotations(part), ['existing', 'PReP', 'unconfigured'])
-        part.grub_device = True
-        self.assertEqual(
-            annotations(part), ['existing', 'PReP', 'configured'])
-
-    def test_vg_default_annotations(self):
-        model, disk = make_model_and_disk()
-        vg = model.add_volgroup('vg-0', {disk})
-        self.assertEqual(annotations(vg), ['new'])
-        vg.preserve = True
-        self.assertEqual(annotations(vg), ['existing'])
-
-    def test_vg_encrypted_annotations(self):
-        model, disk = make_model_and_disk()
-        dm_crypt = model.add_dm_crypt(disk, key='passw0rd')
-        vg = model.add_volgroup('vg-0', {dm_crypt})
-        self.assertEqual(annotations(vg), ['new', 'encrypted'])
-
     def _test_ok_for_xxx(self, model, make_new_device, attr,
                          test_partitions=True):
         # Newly formatted devs are ok_for_raid
@@ -356,29 +284,6 @@ class TestFilesystemModel(unittest.TestCase):
         model, lv = make_model_and_lv()
         self.assertFalse(lv.ok_for_raid)
         self.assertFalse(lv.ok_for_lvm_vg)
-
-    def test_partition_usage_labels(self):
-        model, partition = make_model_and_partition()
-        self.assertEqual(usage_labels(partition), ["unused"])
-        fs = model.add_filesystem(partition, 'ext4')
-        self.assertEqual(
-            usage_labels(partition),
-            ["to be formatted as ext4", "not mounted"])
-        model._orig_config = model._render_actions()
-        fs.preserve = True
-        partition.preserve = True
-        self.assertEqual(
-            usage_labels(partition),
-            ["already formatted as ext4", "not mounted"])
-        model.remove_filesystem(fs)
-        fs2 = model.add_filesystem(partition, 'ext4')
-        self.assertEqual(
-            usage_labels(partition),
-            ["to be reformatted as ext4", "not mounted"])
-        model.add_mount(fs2, '/')
-        self.assertEqual(
-            usage_labels(partition),
-            ["to be reformatted as ext4", "mounted at /"])
 
     def test_is_esp(self):
         model = make_model(Bootloader.UEFI)
