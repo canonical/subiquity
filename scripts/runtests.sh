@@ -68,5 +68,10 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
 validate
 grep -q 'finish: subiquity/Install/install/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 
-python3 -m subiquity.cmd.schema > "$testschema"
-diff -u "autoinstall-schema.json" "$testschema"
+# Limit schema check to Focal+
+# Timezones changed between bionic and focal.
+# I kind of like that the schema adjusts live based on system capabilities.
+if (( $(echo "$release >= 20.04" |bc -l) )); then
+    python3 -m subiquity.cmd.schema > "$testschema"
+    diff -u "autoinstall-schema.json" "$testschema"
+fi
