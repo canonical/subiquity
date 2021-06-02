@@ -241,7 +241,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
             try:
                 await getattr(client, meth_name).POST(*args)
             except aiohttp.ClientError:
-                log.error("call to %s on %s failed", meth_name, conn.path)
+                log.exception("call to %s on %s failed", meth_name, conn.path)
 
     def _call_clients(self, meth_name, *args):
         for client, conn, lock in self.clients.values():
