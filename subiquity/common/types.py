@@ -39,6 +39,7 @@ class ErrorReportKind(enum.Enum):
     INSTALL_FAIL = _("Install failure")
     UI = _("Installer crash")
     NETWORK_FAIL = _("Network error")
+    NETWORK_CLIENT_FAIL = _("Network client error")
     SERVER_REQUEST_FAIL = _("Server request failure")
     UNKNOWN = _("Unknown error")
 

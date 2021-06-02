@@ -184,8 +184,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
             log.exception("_apply_config failed")
             self.model.has_network = False
             self.app.make_apport_report(
-                ErrorReportKind.NETWORK_FAIL, "applying network",
-                interrupt=True)
+                ErrorReportKind.NETWORK_FAIL, "applying network")
             if not self.interactive():
                 raise
 
@@ -239,7 +238,10 @@ class NetworkController(BaseNetworkController, SubiquityController):
             if conn.closed:
                 log.debug('closed')
                 return
-            await getattr(client, meth_name).POST(*args)
+            try:
+                await getattr(client, meth_name).POST(*args)
+            except aiohttp.ClientError:
+                log.exception("call to %s on %s failed", meth_name, conn.path)
 
     def _call_clients(self, meth_name, *args):
         for client, conn, lock in self.clients.values():
