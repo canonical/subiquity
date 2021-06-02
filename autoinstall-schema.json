@@ -72,6 +72,31 @@
             },
             "additionalProperties": false
         },
+        "kernel": {
+            "type": "object",
+            "properties": {
+                "package": {
+                    "type": "string"
+                },
+                "flavor": {
+                    "type": "string"
+                }
+            },
+            "oneOf": [
+                {
+                    "type": "object",
+                    "required": [
+                        "package"
+                    ]
+                },
+                {
+                    "type": "object",
+                    "required": [
+                        "flavor"
+                    ]
+                }
+            ]
+        },
         "keyboard": {
             "type": "object",
             "properties": {
