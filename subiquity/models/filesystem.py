@@ -424,66 +424,10 @@ class _Formattable(ABC):
     # Base class for anything that can be formatted and mounted,
     # e.g. a disk or a RAID or a partition.
 
-    @property
-    @abstractmethod
-    def label(self):
-        pass
-
-    @property
-    def annotations(self):
-        preserve = getattr(self, 'preserve', None)
-        if preserve is None:
-            return []
-        elif preserve:
-            # A pre-existing device such as a partition or RAID
-            return [_("existing")]
-        else:
-            # A newly created device such as a partition or RAID
-            return [_("new")]
-
     # Filesystem
     _fs = attributes.backlink()
     # Raid or LVM_VolGroup for now, but one day ZPool, BCache...
     _constructed_device = attributes.backlink()
-
-    def usage_labels(self):
-        cd = self.constructed_device()
-        if cd is not None:
-            return [
-                _("{component_name} of {desc} {name}").format(
-                    component_name=cd.component_name,
-                    desc=cd.desc(),
-                    name=cd.name),
-                ]
-        fs = self.fs()
-        if fs is not None:
-            if fs.preserve:
-                format_desc = _("already formatted as {fstype}")
-            elif self.original_fstype() is not None:
-                format_desc = _("to be reformatted as {fstype}")
-            else:
-                format_desc = _("to be formatted as {fstype}")
-            r = [format_desc.format(fstype=fs.fstype)]
-            if self._m.is_mounted_filesystem(fs.fstype):
-                m = fs.mount()
-                if m:
-                    # A filesytem
-                    r.append(_("mounted at {path}").format(path=m.path))
-                elif not getattr(self, 'is_esp', False):
-                    # A filesytem
-                    r.append(_("not mounted"))
-            elif fs.preserve:
-                if fs.mount() is None:
-                    # A filesytem that cannot be mounted (i.e. swap)
-                    # is used or unused
-                    r.append(_("unused"))
-                else:
-                    # A filesytem that cannot be mounted (i.e. swap)
-                    # is used or unused
-                    r.append(_("used"))
-            return r
-        else:
-            return [_("unused")]
 
     def _is_entirely_used(self):
         return self._fs is not None or self._constructed_device is not None
@@ -668,21 +612,6 @@ class Disk(_Device):
     def size(self):
         return align_down(self._info.size)
 
-    @property
-    def annotations(self):
-        return []
-
-    def desc(self):
-        if self.multipath:
-            return _("multipath device")
-        return _("local disk")
-
-    @property
-    def label(self):
-        if self.multipath and self.wwn:
-            return self.wwn
-        return self.serial or self.path
-
     def dasd(self):
         return self._m._one(type='dasd', device_id=self.device_id)
 
@@ -725,13 +654,14 @@ class Disk(_Device):
     ok_for_lvm_vg = ok_for_raid
 
     def for_client(self, min_size):
+        from subiquity.common.filesystem import labels
         from subiquity.common.types import Disk
         return Disk(
             id=self.id,
-            label=self.label,
-            type=self.desc(),
+            label=labels.label(self),
+            type=labels.desc(self),
             size=self.size,
-            usage_labels=self.usage_labels(),
+            usage_labels=labels.usage_labels(self),
             partitions=[p.for_client() for p in self._partitions],
             ok_for_guided=self.size >= min_size)
 
@@ -748,57 +678,6 @@ class Partition(_Formattable):
     grub_device = attr.ib(default=False)
     name = attr.ib(default=None)
     multipath = attr.ib(default=None)
-
-    @property
-    def annotations(self):
-        r = super().annotations
-        if self.flag == "prep":
-            r.append("PReP")
-            if self.preserve:
-                if self.grub_device:
-                    # boot loader partition
-                    r.append(_("configured"))
-                else:
-                    # boot loader partition
-                    r.append(_("unconfigured"))
-        elif self.is_esp:
-            if self.fs() and self.fs().mount():
-                r.append(_("primary ESP"))
-            elif self.grub_device:
-                r.append(_("backup ESP"))
-            else:
-                r.append(_("unused ESP"))
-        elif self.flag == "bios_grub":
-            if self.preserve:
-                if self.device.grub_device:
-                    r.append(_("configured"))
-                else:
-                    r.append(_("unconfigured"))
-            r.append("bios_grub")
-        elif self.flag == "extended":
-            # extended partition
-            r.append(_("extended"))
-        elif self.flag == "logical":
-            # logical partition
-            r.append(_("logical"))
-        return r
-
-    def usage_labels(self):
-        if self.flag == "prep" or self.flag == "bios_grub":
-            return []
-        return super().usage_labels()
-
-    def desc(self):
-        return _("partition of {device}").format(device=self.device.desc())
-
-    @property
-    def label(self):
-        return _("partition {number} of {device}").format(
-            number=self._number, device=self.device.label)
-
-    @property
-    def short_label(self):
-        return _("partition {number}").format(number=self._number)
 
     def available(self):
         if self.flag in ['bios_grub', 'prep'] or self.grub_device:
@@ -866,13 +745,6 @@ class Partition(_Formattable):
 
     ok_for_lvm_vg = ok_for_raid
 
-    def for_client(self):
-        from subiquity.common.types import Partition
-        return Partition(
-            size=self.size,
-            number=self._number,
-            annotations=self.annotations + self.usage_labels())
-
 
 @fsobj("raid")
 class Raid(_Device):
@@ -904,13 +776,6 @@ class Raid(_Device):
         # higher (may be related to alignment of underlying
         # partitions)
         return self.size - 2*GPT_OVERHEAD
-
-    @property
-    def label(self):
-        return self.name
-
-    def desc(self):
-        return _("software RAID {level}").format(level=self.raidlevel[4:])
 
     @property
     def ok_for_raid(self):
@@ -946,22 +811,6 @@ class LVM_VolGroup(_Device):
     def available_for_partitions(self):
         return self.size
 
-    @property
-    def annotations(self):
-        r = super().annotations
-        member = next(iter(self.devices))
-        if member.type == "dm_crypt":
-            # Flag for a LVM volume group
-            r.append(_("encrypted"))
-        return r
-
-    @property
-    def label(self):
-        return self.name
-
-    def desc(self):
-        return _("LVM volume group")
-
     ok_for_raid = False
     ok_for_lvm_vg = False
 
@@ -995,15 +844,6 @@ class LVM_LogicalVolume(_Formattable):
     @property
     def is_esp(self):
         return False  # another hack!
-
-    def desc(self):
-        return _("LVM logical volume")
-
-    @property
-    def short_label(self):
-        return self.name
-
-    label = short_label
 
     ok_for_raid = False
     ok_for_lvm_vg = False
@@ -1488,11 +1328,13 @@ class FilesystemModel(object):
             elif isinstance(a, _Device):
                 compounds.append(a)
         compounds.reverse()
-        disks.sort(key=lambda x: x.label)
+        from subiquity.common.filesystem import labels
+        disks.sort(key=labels.label)
         return compounds + disks
 
     def all_disks(self):
-        return sorted(self._all(type='disk'), key=lambda x: x.label)
+        from subiquity.common.filesystem import labels
+        return sorted(self._all(type='disk'), key=labels.label)
 
     def all_raids(self):
         return self._all(type='raid')
@@ -1511,7 +1353,7 @@ class FilesystemModel(object):
         real_size = align_up(size)
         log.debug("add_partition: rounded size from %s to %s", size, real_size)
         if device._fs is not None:
-            raise Exception("%s is already formatted" % (device.label,))
+            raise Exception("%s is already formatted" % (device,))
         p = Partition(
             m=self, device=device, size=real_size, flag=flag, wipe=wipe,
             grub_device=grub_device)

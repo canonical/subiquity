@@ -42,6 +42,7 @@ from subiquitycore.ui.utils import (
     Color,
     )
 
+from subiquity.common.filesystem import labels
 from subiquity.models.filesystem import (
     humanize_size,
     )
@@ -132,7 +133,8 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
             else:
                 text += _(", not mounted")
         else:
-            text = prefix + _("unused {device}").format(device=device.desc())
+            text = prefix + _("unused {device}").format(
+                device=labels.desc(device))
         return TableRow([(2, Color.info_minor(Text(text)))])
 
     def set_bound_form_field(self, bff):
@@ -141,20 +143,20 @@ class MultiDeviceChooser(WidgetWrap, WantsToKnowFormField):
         for kind, device in bff.form.possible_components:
             if kind == LABEL:
                 self.all_rows.append(TableRow([
-                    Text("    " + device.label),
+                    Text("    " + labels.label(device)),
                     Text(humanize_size(device.size), align='right')
                 ]))
                 self.no_selector_rows.append(self.all_rows[-1])
                 self.all_rows.append(TableRow([
-                    (2, Color.info_minor(Text("      " + device.desc())))
+                    (2, Color.info_minor(Text("      " + labels.desc(device))))
                 ]))
                 self.no_selector_rows.append(self.all_rows[-1])
             else:
+                label = labels.label(device, short=True)
                 if kind == DEVICE:
-                    label = device.label
                     prefix = "    "
                 elif kind == PART:
-                    label = "  " + device.short_label
+                    label = "  " + label
                     prefix = "      "
                 else:
                     raise Exception("unexpected kind {}".format(kind))

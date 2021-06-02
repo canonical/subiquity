@@ -25,6 +25,8 @@ from subiquitycore.ui.table import (
 from subiquitycore.ui.utils import button_pile
 from subiquitycore.ui.stretchy import Stretchy
 
+from subiquity.common.filesystem import labels
+
 from .helpers import summarize_device
 
 
@@ -39,7 +41,7 @@ class ConfirmDeleteStretchy(Stretchy):
 
         lines = [
             Text(_("Do you really want to delete the {desc} {label}?").format(
-                desc=obj.desc(), label=obj.label)),
+                desc=labels.desc(obj), label=labels.label(obj))),
             Text(""),
         ]
         stretchy_index = 0
@@ -108,12 +110,12 @@ class ConfirmReformatStretchy(Stretchy):
         if fs is not None:
             title = _(
                 "Remove filesystem from {device}"
-                ).format(device=obj.desc())
+                ).format(device=labels.desc(obj))
             lines = [
                 _(
                     "Do you really want to remove the existing filesystem "
                     "from {device}?"
-                    ).format(device=obj.label),
+                    ).format(device=labels.label(obj)),
                 "",
             ]
             m = fs.mount()
@@ -134,12 +136,12 @@ class ConfirmReformatStretchy(Stretchy):
                 things = _("partitions")
             # things is either "logical volumes" or "partitions"
             title = _("Remove all {things} from {obj}").format(
-                things=things, obj=obj.desc())
+                things=things, obj=labels.desc(obj))
             lines = [
                 _(
                     "Do you really want to remove all {things} from "
                     "{obj}?").format(
-                    things=things, obj=obj.label),
+                    things=things, obj=labels.label(obj)),
                 "",
             ]
             # XXX summarize partitions here?

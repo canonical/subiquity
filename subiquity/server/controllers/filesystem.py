@@ -40,6 +40,7 @@ from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
+from subiquity.common.filesystem import labels
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.types import (
     Bootloader,
@@ -225,7 +226,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
             disks=[
-                d.for_client(min_size) for d in self.model._all(type='disk')
+                labels.for_client(d, min_size=min_size)
+                for d in self.model._all(type='disk')
             ])
 
     async def guided_POST(self, choice: Optional[GuidedChoice]) \
