@@ -33,11 +33,13 @@ class NetworkModel(NetworkModel):
             return super().render_config()
 
     def render(self):
-        return {
+        netplan = self.render_config()
+        wifis = netplan['network'].pop('wifis', None)
+        r = {
             'write_files': {
                 'etc_netplan_installer': {
                     'path': 'etc/netplan/00-installer-config.yaml',
-                    'content': self.stringify_config(self.render_config()),
+                    'content': self.stringify_config(netplan),
                     },
                 'nonet': {
                     'path': ('etc/cloud/cloud.cfg.d/'
@@ -46,3 +48,16 @@ class NetworkModel(NetworkModel):
                     },
                 },
             }
+        if wifis is not None:
+            netplan_wifi = {
+                'network': {
+                    'version': 2,
+                    'wifis': wifis,
+                    },
+                }
+            r['write_files']['etc_netplan_installer_wifi'] = {
+                'path': 'etc/netplan/00-installer-config-wifi.yaml',
+                'content': self.stringify_config(netplan_wifi),
+                'permissions': '0600',
+                }
+        return r
