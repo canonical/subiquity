@@ -78,7 +78,7 @@ def _annotations_partition(partition):
                 r.append(_("configured"))
             else:
                 r.append(_("unconfigured"))
-        r.append(_("bios_grub"))
+        r.append(_("BIOS grub spacer"))
     elif partition.flag == "extended":
         # extended partition
         r.append(_("extended"))

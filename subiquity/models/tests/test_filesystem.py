@@ -234,13 +234,15 @@ class TestFilesystemModel(unittest.TestCase):
         model = make_model()
         part = make_partition(model, flag="bios_grub")
         self.assertEqual(
-            annotations(part), ['new', 'bios_grub'])
+            annotations(part), ['new', 'BIOS grub spacer'])
         part.preserve = True
         self.assertEqual(
-            annotations(part), ['existing', 'unconfigured', 'bios_grub'])
+            annotations(part),
+            ['existing', 'unconfigured', 'BIOS grub spacer'])
         part.device.grub_device = True
         self.assertEqual(
-            annotations(part), ['existing', 'configured', 'bios_grub'])
+            annotations(part),
+            ['existing', 'configured', 'BIOS grub spacer'])
 
         model = make_model()
         part = make_partition(model, flag="boot", grub_device=True)
