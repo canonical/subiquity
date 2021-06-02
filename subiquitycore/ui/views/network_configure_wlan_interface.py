@@ -138,6 +138,8 @@ class NetworkConfigureWLANStretchy(Stretchy):
         return col
 
     def update_link(self, dev_info):
+        if dev_info.name != self.dev_info.name:
+            return
         self.dev_info = dev_info
         self.inputs.contents = [(obj, ('pack', None))
                                 for obj in self._build_iface_inputs()]
