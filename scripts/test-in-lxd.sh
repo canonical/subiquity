@@ -5,7 +5,7 @@ SCRIPT=$2
 
 lxd init --auto
 
-lxc launch $IMAGE tester -c security.privileged=true
+lxc launch $IMAGE tester
 lxc config device add tester code disk source=`pwd` path=/subiquity
 
 attempts=0
