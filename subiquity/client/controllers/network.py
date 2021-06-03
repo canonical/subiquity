@@ -26,6 +26,7 @@ from subiquitycore.models.network import (
     BondConfig,
     NetDevInfo,
     StaticConfig,
+    WLANConfig,
     )
 from subiquitycore.ui.views.network import NetworkView
 
@@ -131,6 +132,14 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
     def add_vlan(self, dev_name: str, vlan_id: int):
         self.app.aio_loop.create_task(
             self.endpoint.vlan.PUT(dev_name, vlan_id))
+
+    def set_wlan(self, dev_name: str, wlan: WLANConfig) -> None:
+        self.app.aio_loop.create_task(
+            self.endpoint.set_wlan.POST(dev_name, wlan))
+
+    def start_scan(self, dev_name: str) -> None:
+        self.app.aio_loop.create_task(
+            self.endpoint.start_scan.POST(dev_name))
 
     def delete_link(self, dev_name: str):
         self.app.aio_loop.create_task(self.endpoint.delete.POST(dev_name))

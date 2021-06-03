@@ -20,6 +20,7 @@ from subiquitycore.models.network import (
     BondConfig,
     NetDevInfo,
     StaticConfig,
+    WLANConfig,
     )
 
 from subiquity.common.api.defs import api, Payload, simple_endpoint
@@ -179,6 +180,12 @@ class API:
         class add_or_edit_bond:
             def POST(existing_name: Optional[str], new_name: str,
                      bond_config: Payload[BondConfig]) -> None: ...
+
+        class start_scan:
+            def POST(dev_name: str) -> None: ...
+
+        class set_wlan:
+            def POST(dev_name: str, wlan: WLANConfig) -> None: ...
 
         class delete:
             def POST(dev_name: str) -> None: ...

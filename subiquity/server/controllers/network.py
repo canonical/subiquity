@@ -26,6 +26,7 @@ from subiquitycore.models.network import (
     BondConfig,
     NetDevInfo,
     StaticConfig,
+    WLANConfig,
     )
 
 from subiquity.common.api.client import make_client_for_conn
@@ -301,6 +302,12 @@ class NetworkController(BaseNetworkController, SubiquityController):
                                     new_name: str,
                                     bond_config: BondConfig) -> None:
         self.add_or_update_bond(existing_name, new_name, bond_config)
+
+    async def set_wlan_POST(self, dev_name: str, wlan: WLANConfig) -> None:
+        self.set_wlan(dev_name, wlan)
+
+    async def start_scan_POST(self, dev_name: str) -> None:
+        self.start_scan(dev_name)
 
     async def delete_POST(self, dev_name: str) -> None:
         self.delete_link(dev_name)
