@@ -154,5 +154,5 @@ parts:
     build-packages: [python-setuptools, build-essential, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
     source: https://github.com/canonical/probert.git
     source-type: git
-    source-commit: 844c957b7f61f78bbd814cceef87f0d8eb218675
+    source-commit: abf7c7c399bdc9909a14194f579f2e53c226cb8e
     requirements: [requirements.txt]

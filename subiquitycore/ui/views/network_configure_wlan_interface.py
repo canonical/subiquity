@@ -84,9 +84,10 @@ class NetworkConfigureWLANStretchy(Stretchy):
         self.psk_row = self.form.psk._table
         self.ssid_row.bind(self.psk_row)
 
+        self.error = Text("")
+
         self.inputs = Pile(self._build_iface_inputs())
 
-        self.error = Text("")
         widgets = [
             self.inputs,
             Padding.center_79(Color.info_error(self.error)),
@@ -104,11 +105,7 @@ class NetworkConfigureWLANStretchy(Stretchy):
         while not self.inputs.contents[fp][0].selectable():
             fp -= 1
         self.inputs.focus_position = fp
-        try:
-            self.parent.controller.start_scan(self.dev_info)
-        except RuntimeError as r:
-            log.exception("start_scan failed")
-            self.error.set_text("%s" % (r,))
+        self.parent.controller.start_scan(self.dev_info.name)
 
     def _build_iface_inputs(self):
         visible_ssids = self.dev_info.wlan.visible_ssids
@@ -118,8 +115,12 @@ class NetworkConfigureWLANStretchy(Stretchy):
         else:
             networks_btn = disabled(menu_btn("No visible networks"))
 
-        if not self.dev_info.wlan.scan_state:
+        scan_state = self.dev_info.wlan.scan_state
+        if scan_state:
             scan_btn = menu_btn("Scan for networks", on_press=self.start_scan)
+        elif scan_state.startswith('error'):
+            self.error.set_text('scan failed: %s' % (scan_state,))
+            scan_btn = disabled(menu_btn("Scanning for networks failed"))
         else:
             scan_btn = disabled(menu_btn("Scanning for networks"))
 
@@ -138,15 +139,13 @@ class NetworkConfigureWLANStretchy(Stretchy):
         return col
 
     def update_link(self, dev_info):
+        if dev_info.name != self.dev_info.name:
+            return
         self.dev_info = dev_info
         self.inputs.contents = [(obj, ('pack', None))
                                 for obj in self._build_iface_inputs()]
 
     def done(self, sender):
-        if self.dev_info.wlan.config.ssid is None and self.form.ssid.value:
-            # Turn DHCP4 on by default when specifying an SSID for
-            # the first time...
-            self.parent.controller.enable_dhcp(self.dev_info, 4)
         if self.form.ssid.value:
             ssid = self.form.ssid.value
         else:
@@ -157,7 +156,7 @@ class NetworkConfigureWLANStretchy(Stretchy):
             psk = None
         self.parent.controller.set_wlan(
             self.dev_info, WLANConfig(ssid=ssid, psk=psk))
-        self.parent.update_link(self.dev_info)
+        self.parent.update_link(self.dev_info.name)
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):

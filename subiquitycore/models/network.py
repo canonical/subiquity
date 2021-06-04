@@ -82,8 +82,8 @@ class VLANConfig:
 
 @attr.s(auto_attribs=True)
 class WLANConfig:
-    ssid: str
-    psk: str
+    ssid: Optional[str]
+    psk: Optional[str]
 
 
 @attr.s(auto_attribs=True)
@@ -133,7 +133,7 @@ class NetDevInfo:
 
     vlan: Optional[VLANConfig]
     bond: Optional[BondConfig]
-    wlan: Optional[WLANConfig]
+    wlan: Optional[WLANStatus]
 
     dhcp4: DHCPStatus
     dhcp6: DHCPStatus
@@ -421,11 +421,18 @@ class NetworkModel(object):
     def new_link(self, ifindex, link):
         log.debug("new_link %s %s %s", ifindex, link.name, link.type)
         if link.type in NETDEV_IGNORED_IFACE_TYPES:
+            log.debug('ignoring based on type')
             return
         if not self.support_wlan and link.type == "wlan":
+            log.debug('ignoring based on support_wlan')
             return
-        if link.is_virtual and (
-                link.type not in NETDEV_ALLOWED_VIRTUAL_IFACE_TYPES):
+        is_virtual = link.is_virtual
+        if link.type == "wlan":
+            # mac80211_hwsim nics show up as virtual but we pretend
+            # they are real for testing purposes.
+            is_virtual = False
+        if is_virtual and link.type not in NETDEV_ALLOWED_VIRTUAL_IFACE_TYPES:
+            log.debug('ignoring based on is_virtual')
             return
         dev = self.devices_by_name.get(link.name)
         if dev is not None:
@@ -438,9 +445,10 @@ class NetworkModel(object):
                 dev.info = link
         else:
             config = self.config.config_for_device(link)
-            if link.is_virtual and not config:
+            if is_virtual and not config:
                 # If we see a virtual device without there already
                 # being a config for it, we just ignore it.
+                log.debug('ignoring virtual device with no config')
                 return
             dev = NetworkDev(self, link.name, link.type)
             dev.info = link
