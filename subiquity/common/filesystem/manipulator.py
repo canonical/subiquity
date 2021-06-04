@@ -343,7 +343,7 @@ class FilesystemManipulator:
             elif bootloader == Bootloader.UEFI:
                 should_mount = self.model._mount_for_path('/boot/efi') is None
                 for p in new_boot_disk.partitions():
-                    if p.is_esp:
+                    if boot.is_esp(p):
                         p.grub_device = True
                         if should_mount:
                             self._mount_esp(p)

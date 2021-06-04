@@ -18,6 +18,7 @@ import functools
 from subiquity.models.filesystem import (
     Disk,
     Bootloader,
+    Partition,
     )
 
 
@@ -58,11 +59,38 @@ def _can_be_boot_device_disk(disk, *, with_reformatting=False):
             else:
                 return disk._partitions[0].flag == "bios_grub"
         elif bl == Bootloader.UEFI:
-            return any(p.is_esp for p in disk._partitions)
+            return any(is_esp(p) for p in disk._partitions)
         elif bl == Bootloader.PREP:
             return any(p.flag == "prep" for p in disk._partitions)
     else:
         return True
+
+
+@functools.singledispatch
+def is_esp(device):
+    """Is `device` a UEFI ESP?"""
+    return False
+
+
+@is_esp.register(Partition)
+def _is_esp_partition(partition):
+    if partition.device.type != "disk":
+        return False
+    if partition.device.ptable == "gpt":
+        return partition.flag == "boot"
+    else:
+        blockdev_raw = partition._m._probe_data['blockdev'].get(
+            partition._path())
+        if blockdev_raw is None:
+            return False
+        typecode = blockdev_raw.get("ID_PART_ENTRY_TYPE")
+        if typecode is None:
+            return False
+        try:
+            return int(typecode, 0) == 0xef
+        except ValueError:
+            # In case there was garbage in the udev entry...
+            return False
 
 
 def all_boot_devices(model):

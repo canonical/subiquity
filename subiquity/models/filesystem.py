@@ -678,30 +678,12 @@ class Partition(_Formattable):
         return partition_kname(self.device.path, self._number)
 
     @property
-    def is_esp(self):
-        if self.device.type != "disk":
-            return False
-        if self.device.ptable == "gpt":
-            return self.flag == "boot"
-        else:
-            blockdev_raw = self._m._probe_data['blockdev'].get(self._path())
-            if blockdev_raw is None:
-                return False
-            typecode = blockdev_raw.get("ID_PART_ENTRY_TYPE")
-            if typecode is None:
-                return False
-            try:
-                return int(typecode, 0) == 0xef
-            except ValueError:
-                # In case there was garbage in the udev entry...
-                return False
-
-    @property
     def is_bootloader_partition(self):
+        from subiquity.common.filesystem import boot
         if self._m.bootloader == Bootloader.BIOS:
             return self.flag == "bios_grub"
         elif self._m.bootloader == Bootloader.UEFI:
-            return self.is_esp
+            return boot.is_esp(self)
         elif self._m.bootloader == Bootloader.PREP:
             return self.flag == "prep"
         else:
@@ -817,10 +799,6 @@ class LVM_LogicalVolume(_Formattable):
     def flag(self):
         return None  # hack!
 
-    @property
-    def is_esp(self):
-        return False  # another hack!
-
     ok_for_raid = False
     ok_for_lvm_vg = False
 
@@ -892,6 +870,7 @@ class Mount:
     spec = attr.ib(default=None)
 
     def can_delete(self):
+        from subiquity.common.filesystem import boot
         # Can't delete mount of /boot/efi or swap, anything else is fine.
         if not self.path:
             # swap mount
@@ -899,7 +878,7 @@ class Mount:
         if not isinstance(self.device.volume, Partition):
             # Can't be /boot/efi if volume is not a partition
             return True
-        if self.device.volume.is_esp:
+        if boot.is_esp(self.device.volume):
             # /boot/efi
             return False
         return True

@@ -285,26 +285,6 @@ class TestFilesystemModel(unittest.TestCase):
         self.assertFalse(lv.ok_for_raid)
         self.assertFalse(lv.ok_for_lvm_vg)
 
-    def test_is_esp(self):
-        model = make_model(Bootloader.UEFI)
-        gpt_disk = make_disk(model, ptable='gpt')
-        not_gpt_esp = make_partition(model, gpt_disk)
-        self.assertFalse(not_gpt_esp.is_esp)
-        gpt_esp = make_partition(model, gpt_disk, flag='boot')
-        self.assertTrue(gpt_esp.is_esp)
-
-        dos_disk = make_disk(model, ptable='msdos')
-        not_dos_esp = make_partition(model, dos_disk)
-        dos_esp = make_partition(model, dos_disk)
-        model._probe_data = {
-            'blockdev': {
-                dos_esp._path(): {'ID_PART_ENTRY_TYPE': '0xef'},
-                not_dos_esp._path(): {'ID_PART_ENTRY_TYPE': '0x83'},
-                }
-            }
-        self.assertFalse(not_dos_esp.is_esp)
-        self.assertTrue(dos_esp.is_esp)
-
 
 def fake_up_blockdata_disk(disk, **kw):
     model = disk._m
