@@ -74,7 +74,7 @@ def is_esp(device):
 
 @is_esp.register(Partition)
 def _is_esp_partition(partition):
-    if partition.device.type != "disk":
+    if not can_be_boot_device(partition.device, with_reformatting=True):
         return False
     if partition.device.ptable == "gpt":
         return partition.flag == "boot"
