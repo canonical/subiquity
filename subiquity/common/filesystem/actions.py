@@ -292,7 +292,7 @@ def _can_delete_partition(partition):
     if partition.device._has_preexisting_partition():
         return _("Cannot delete a single partition from a device that "
                  "already has partitions.")
-    if partition.is_bootloader_partition:
+    if boot.is_bootloader_partition(partition):
         return _("Cannot delete required bootloader partition")
     return _can_delete_generic(partition)
 

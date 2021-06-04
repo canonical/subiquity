@@ -296,7 +296,7 @@ class FilesystemManipulator:
             boot_disk.grub_device = False
         partitions = [
             p for p in boot_disk.partitions()
-            if p.is_bootloader_partition
+            if boot.is_bootloader_partition(p)
             ]
         remount = False
         if boot_disk.preserve:

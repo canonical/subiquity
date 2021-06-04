@@ -678,20 +678,9 @@ class Partition(_Formattable):
         return partition_kname(self.device.path, self._number)
 
     @property
-    def is_bootloader_partition(self):
-        from subiquity.common.filesystem import boot
-        if self._m.bootloader == Bootloader.BIOS:
-            return self.flag == "bios_grub"
-        elif self._m.bootloader == Bootloader.UEFI:
-            return boot.is_esp(self)
-        elif self._m.bootloader == Bootloader.PREP:
-            return self.flag == "prep"
-        else:
-            return False
-
-    @property
     def ok_for_raid(self):
-        if self.is_bootloader_partition:
+        from subiquity.common.filesystem import boot
+        if boot.is_bootloader_partition(self):
             return False
         if self._fs is not None:
             if self._fs.preserve:
@@ -1303,6 +1292,7 @@ class FilesystemModel(object):
 
     def add_partition(self, device, size, flag="", wipe=None,
                       grub_device=None):
+        from subiquity.common.filesystem import boot
         if size > device.free_for_partitions:
             raise Exception("%s > %s", size, device.free_for_partitions)
         real_size = align_up(size)
@@ -1312,7 +1302,7 @@ class FilesystemModel(object):
         p = Partition(
             m=self, device=device, size=real_size, flag=flag, wipe=wipe,
             grub_device=grub_device)
-        if p.is_bootloader_partition:
+        if boot.is_bootloader_partition(p):
             device._partitions.insert(0, device._partitions.pop())
         device.ptable = device.ptable_for_new_partition()
         dasd = device.dasd()

@@ -96,3 +96,14 @@ def _is_esp_partition(partition):
 def all_boot_devices(model):
     """Return all current boot devices for `model`."""
     return [disk for disk in model.all_disks() if is_boot_device(disk)]
+
+
+def is_bootloader_partition(partition):
+    if partition._m.bootloader == Bootloader.BIOS:
+        return partition.flag == "bios_grub"
+    elif partition._m.bootloader == Bootloader.UEFI:
+        return is_esp(partition)
+    elif partition._m.bootloader == Bootloader.PREP:
+        return partition.flag == "prep"
+    else:
+        return False
