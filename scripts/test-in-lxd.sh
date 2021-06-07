@@ -5,7 +5,7 @@ SCRIPT=$2
 
 lxd init --auto
 
-lxc launch $IMAGE tester -c security.privileged=true
+lxc launch $IMAGE tester
 lxc config device add tester code disk source=`pwd` path=/subiquity
 
 attempts=0
@@ -32,4 +32,11 @@ then
     done
 fi
 
-lxc exec tester -- sh -c "cd /subiquity && ./scripts/installdeps.sh && $SCRIPT"
+# copy is allowed to fail, in case the subiquity directory being tested
+# includes some uncopyable stuff
+lxc exec tester -- sh -ec "
+    cd /home/ubuntu
+    sudo cp -a /subiquity . || true
+    cd subiquity
+    ./scripts/installdeps.sh
+    $SCRIPT"
