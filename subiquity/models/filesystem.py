@@ -615,30 +615,6 @@ class Disk(_Device):
     def dasd(self):
         return self._m._one(type='dasd', device_id=self.device_id)
 
-    def _can_be_boot_disk(self):
-        bl = self._m.bootloader
-        if self._has_preexisting_partition():
-            if bl == Bootloader.BIOS:
-                if self.ptable == "msdos":
-                    return True
-                else:
-                    return self._partitions[0].flag == "bios_grub"
-            elif bl == Bootloader.UEFI:
-                return any(p.is_esp for p in self._partitions)
-            elif bl == Bootloader.PREP:
-                return any(p.flag == "prep" for p in self._partitions)
-        else:
-            return True
-
-    def _is_boot_device(self):
-        bl = self._m.bootloader
-        if bl == Bootloader.NONE:
-            return False
-        elif bl == Bootloader.BIOS:
-            return self.grub_device
-        elif bl in [Bootloader.PREP, Bootloader.UEFI]:
-            return any(p.grub_device for p in self._partitions)
-
     @property
     def ok_for_raid(self):
         if self._fs is not None:
@@ -702,38 +678,9 @@ class Partition(_Formattable):
         return partition_kname(self.device.path, self._number)
 
     @property
-    def is_esp(self):
-        if self.device.type != "disk":
-            return False
-        if self.device.ptable == "gpt":
-            return self.flag == "boot"
-        else:
-            blockdev_raw = self._m._probe_data['blockdev'].get(self._path())
-            if blockdev_raw is None:
-                return False
-            typecode = blockdev_raw.get("ID_PART_ENTRY_TYPE")
-            if typecode is None:
-                return False
-            try:
-                return int(typecode, 0) == 0xef
-            except ValueError:
-                # In case there was garbage in the udev entry...
-                return False
-
-    @property
-    def is_bootloader_partition(self):
-        if self._m.bootloader == Bootloader.BIOS:
-            return self.flag == "bios_grub"
-        elif self._m.bootloader == Bootloader.UEFI:
-            return self.is_esp
-        elif self._m.bootloader == Bootloader.PREP:
-            return self.flag == "prep"
-        else:
-            return False
-
-    @property
     def ok_for_raid(self):
-        if self.is_bootloader_partition:
+        from subiquity.common.filesystem import boot
+        if boot.is_bootloader_partition(self):
             return False
         if self._fs is not None:
             if self._fs.preserve:
@@ -841,10 +788,6 @@ class LVM_LogicalVolume(_Formattable):
     def flag(self):
         return None  # hack!
 
-    @property
-    def is_esp(self):
-        return False  # another hack!
-
     ok_for_raid = False
     ok_for_lvm_vg = False
 
@@ -916,6 +859,7 @@ class Mount:
     spec = attr.ib(default=None)
 
     def can_delete(self):
+        from subiquity.common.filesystem import boot
         # Can't delete mount of /boot/efi or swap, anything else is fine.
         if not self.path:
             # swap mount
@@ -923,7 +867,7 @@ class Mount:
         if not isinstance(self.device.volume, Partition):
             # Can't be /boot/efi if volume is not a partition
             return True
-        if self.device.volume.is_esp:
+        if boot.is_esp(self.device.volume):
             # /boot/efi
             return False
         return True
@@ -1348,6 +1292,7 @@ class FilesystemModel(object):
 
     def add_partition(self, device, size, flag="", wipe=None,
                       grub_device=None):
+        from subiquity.common.filesystem import boot
         if size > device.free_for_partitions:
             raise Exception("%s > %s", size, device.free_for_partitions)
         real_size = align_up(size)
@@ -1357,7 +1302,7 @@ class FilesystemModel(object):
         p = Partition(
             m=self, device=device, size=real_size, flag=flag, wipe=wipe,
             grub_device=grub_device)
-        if p.is_bootloader_partition:
+        if boot.is_bootloader_partition(p):
             device._partitions.insert(0, device._partitions.pop())
         device.ptable = device.ptable_for_new_partition()
         dasd = device.dasd()

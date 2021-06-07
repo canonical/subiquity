@@ -33,6 +33,7 @@ subiquity/common/api/tests/test_endtoend.py
 subiquity/common/api/tests/test_server.py
 subiquity/common/errorreport.py
 subiquity/common/filesystem/actions.py
+subiquity/common/filesystem/boot.py
 subiquity/common/filesystem/__init__.py
 subiquity/common/filesystem/labels.py
 subiquity/common/filesystem/manipulator.py
@@ -106,6 +107,7 @@ subiquity/__main__.py
 subiquity/models/filesystem.py
 subiquity/models/identity.py
 subiquity/models/__init__.py
+subiquity/models/kernel.py
 subiquity/models/keyboard.py
 subiquity/models/locale.py
 subiquity/models/mirror.py
@@ -126,6 +128,7 @@ subiquity/server/controllers/filesystem.py
 subiquity/server/controllers/identity.py
 subiquity/server/controllers/__init__.py
 subiquity/server/controllers/install.py
+subiquity/server/controllers/kernel.py
 subiquity/server/controllers/keyboard.py
 subiquity/server/controllers/locale.py
 subiquity/server/controllers/mirror.py

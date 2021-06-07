@@ -16,6 +16,7 @@
 import functools
 
 from subiquity.common import types
+from subiquity.common.filesystem import boot
 from subiquity.models.filesystem import (
     Disk,
     LVM_LogicalVolume,
@@ -65,7 +66,7 @@ def _annotations_partition(partition):
             else:
                 # boot loader partition
                 r.append(_("unconfigured"))
-    elif partition.is_esp:
+    elif boot.is_esp(partition):
         if partition.fs() and partition.fs().mount():
             r.append(_("primary ESP"))
         elif partition.grub_device:
@@ -194,7 +195,7 @@ def _usage_labels_generic(device):
             if m:
                 # A filesytem
                 r.append(_("mounted at {path}").format(path=m.path))
-            elif not getattr(device, 'is_esp', False):
+            elif not boot.is_esp(device):
                 # A filesytem
                 r.append(_("not mounted"))
         elif fs.preserve:

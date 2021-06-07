@@ -63,7 +63,7 @@ from subiquitycore.view import BaseView
 from subiquity.common.filesystem.actions import (
     DeviceAction,
     )
-from subiquity.common.filesystem import labels
+from subiquity.common.filesystem import boot, labels
 from subiquity.models.filesystem import (
     humanize_size,
     )
@@ -286,7 +286,7 @@ class DeviceList(WidgetWrap):
         self.parent.refresh_model_inputs()
 
     def _disk_TOGGLE_BOOT(self, disk):
-        if disk._is_boot_device():
+        if boot.is_boot_device(disk):
             self.parent.controller.remove_boot_disk(disk)
         else:
             self.parent.controller.add_boot_disk(disk)
@@ -329,13 +329,12 @@ class DeviceList(WidgetWrap):
             ptype=device.ptable_for_new_partition().upper())
 
     def _label_TOGGLE_BOOT(self, action, device):
-        if device._is_boot_device():
+        if boot.is_boot_device(device):
             return _("Stop Using As Boot Device")
         else:
             if self.parent.controller.supports_resilient_boot:
-                for other in self.parent.model.all_disks():
-                    if other._is_boot_device():
-                        return _("Add As Another Boot Device")
+                if boot.all_boot_devices(self.parent.model):
+                    return _("Add As Another Boot Device")
             return _("Use As Boot Device")
 
     def _action_menu_for_device(self, device):

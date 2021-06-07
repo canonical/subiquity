@@ -15,9 +15,7 @@
 
 import logging
 
-from subiquity.common.filesystem.actions import (
-    DeviceAction,
-    )
+from subiquity.common.filesystem import boot
 from subiquity.common.types import Bootloader
 from subiquity.models.filesystem import (
     align_up,
@@ -40,9 +38,8 @@ class FilesystemManipulator:
         mount = self.model.add_mount(fs, spec['mount'])
         if self.model.needs_bootloader_partition():
             vol = fs.volume
-            if vol.type == "partition" and vol.device.type == "disk":
-                if vol.device._can_be_boot_disk():
-                    self.add_boot_disk(vol.device)
+            if vol.type == "partition" and boot.can_be_boot_device(vol.device):
+                self.add_boot_disk(vol.device)
         return mount
 
     def delete_mount(self, mount):
@@ -216,7 +213,7 @@ class FilesystemManipulator:
 
         needs_boot = self.model.needs_bootloader_partition()
         log.debug('model needs a bootloader partition? {}'.format(needs_boot))
-        can_be_boot = DeviceAction.TOGGLE_BOOT in DeviceAction.supported(disk)
+        can_be_boot = boot.can_be_boot_device(disk)
         if needs_boot and len(disk.partitions()) == 0 and can_be_boot:
             part = self._create_boot_partition(disk)
 
@@ -299,7 +296,7 @@ class FilesystemManipulator:
             boot_disk.grub_device = False
         partitions = [
             p for p in boot_disk.partitions()
-            if p.is_bootloader_partition
+            if boot.is_bootloader_partition(p)
             ]
         remount = False
         if boot_disk.preserve:
@@ -338,16 +335,15 @@ class FilesystemManipulator:
     def add_boot_disk(self, new_boot_disk):
         bootloader = self.model.bootloader
         if not self.supports_resilient_boot:
-            for disk in self.model.all_disks():
-                if disk._is_boot_device():
-                    self.remove_boot_disk(disk)
+            for disk in boot.all_boot_devices(self.model):
+                self.remove_boot_disk(disk)
         if new_boot_disk._has_preexisting_partition():
             if bootloader == Bootloader.BIOS:
                 new_boot_disk.grub_device = True
             elif bootloader == Bootloader.UEFI:
                 should_mount = self.model._mount_for_path('/boot/efi') is None
                 for p in new_boot_disk.partitions():
-                    if p.is_esp:
+                    if boot.is_esp(p):
                         p.grub_device = True
                         if should_mount:
                             self._mount_esp(p)
