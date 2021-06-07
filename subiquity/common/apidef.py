@@ -42,6 +42,7 @@ from subiquity.common.types import (
     LiveSessionSSHInfo,
     StorageResponse,
     ZdevInfo,
+    TimeZoneInfo,
     )
 
 
@@ -229,7 +230,7 @@ class API:
 
     class timezone:
         def POST(data: str): ...
-        def GET() -> str: ...
+        def GET() -> TimeZoneInfo: ...
 
 
 class LinkAction(enum.Enum):

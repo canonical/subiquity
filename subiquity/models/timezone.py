@@ -25,10 +25,12 @@ class TimeZoneModel(object):
 
     def __init__(self):
         self._request = None
+        self.should_set = False
         self._timezone = ''
 
     def set(self, value):
         self._request = value
+        self.should_set = bool(value)
         if value == 'geoip':
             self._timezone = ''
         else:
@@ -40,7 +42,7 @@ class TimeZoneModel(object):
 
     @property
     def should_set_tz(self):
-        return bool(self._timezone)
+        return self.should_set
 
     @property
     def timezone(self):

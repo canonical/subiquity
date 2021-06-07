@@ -17,7 +17,8 @@ import logging
 import subprocess
 
 from subiquity.common.apidef import API
-from subiquity.server.controller import NonInteractiveController
+from subiquity.common.types import TimeZoneInfo
+from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.timezone')
 
@@ -30,7 +31,7 @@ def generate_possible_tzs():
     return special_keys + real_tzs
 
 
-class TimeZoneController(NonInteractiveController):
+class TimeZoneController(SubiquityController):
 
     endpoint = API.timezone
 
@@ -63,15 +64,21 @@ class TimeZoneController(NonInteractiveController):
         # We could schedule a lookup here, but we already do so on
         # network-up, so that should be redundant.
 
-    async def GET(self) -> str:
+    async def GET(self) -> TimeZoneInfo:
         if self.model.timezone:
-            return self.model.timezone
+            return TimeZoneInfo(self.model.timezone,
+                                self.model.detect_with_geoip)
+
+        # a bare call to GET() is equivalent to autoinstall
+        # timezone: geoip
+        self.deserialize('geoip')
         tz = self.app.geoip.timezone
         if tz:
             self.model.timezone = tz
         else:
             tz = 'UTC'
-        return tz
+        return TimeZoneInfo(tz, self.model.detect_with_geoip)
 
     async def POST(self, data: str):
+        log.debug('tz POST() %r', data)
         self.deserialize(data)

@@ -71,7 +71,7 @@ grep -q 'finish: subiquity/Install/install/run_unattended_upgrades: SUCCESS: dow
 # Limit schema check to Focal+
 # Timezones changed between bionic and focal.
 # I kind of like that the schema adjusts live based on system capabilities.
-if (( $(echo "$(lsb_release -sr) >= 20.04" |bc -l) )); then
+if (( $(echo "$(lsb_release -sr) >= 20.04" | bc -l) )); then
     python3 -m subiquity.cmd.schema > "$testschema"
     diff -u "autoinstall-schema.json" "$testschema"
 fi
