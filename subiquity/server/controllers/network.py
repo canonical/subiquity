@@ -283,6 +283,8 @@ class NetworkController(BaseNetworkController, SubiquityController):
     def configured(self):
         self.model.has_network = bool(
             self.network_event_receiver.default_routes)
+        self.model.needs_wpasupplicant = (
+            self.wlan_support_install_state() == WLANSupportInstallState.DONE)
         super().configured()
 
     async def POST(self) -> None:

@@ -268,6 +268,8 @@ class InstallController(SubiquityController):
         packages = []
         if self.model.ssh.install_server:
             packages = ['openssh-server']
+        if self.model.network.needs_wpasupplicant:
+            packages.append('wpasupplicant')
         packages.extend(self.app.base_model.packages)
         for package in packages:
             await self.install_package(context=context, package=package)
