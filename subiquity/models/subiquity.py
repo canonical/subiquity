@@ -175,14 +175,10 @@ class SubiquityModel:
         return groups
 
     def _cloud_init_config(self):
-        locale = self.locale.selected_language
-        if '.' not in locale and '_' in locale:
-            locale += '.UTF-8'
         config = {
             'growpart': {
                 'mode': 'off',
                 },
-            'locale': locale,
             'resize_rootfs': False,
         }
         if self.identity.hostname is not None:
@@ -215,17 +211,10 @@ class SubiquityModel:
                 config['ssh_authorized_keys'] = self.ssh.authorized_keys
         if self.ssh.install_server:
             config['ssh_pwauth'] = self.ssh.pwauth
-        if self.snaplist.selections:
-            cmds = []
-            for selection in self.snaplist.selections:
-                cmd = ['snap', 'install', '--channel=' + selection.channel]
-                if selection.is_classic:
-                    cmd.append('--classic')
-                cmd.append(selection.name)
-                cmds.append(' '.join(cmd))
-            config['snap'] = {
-                'commands': cmds,
-                }
+        for model_name in POSTINSTALL_MODEL_NAMES:
+            model = getattr(self, model_name)
+            if getattr(model, 'make_cloudconfig', None):
+                merge_config(config, model.make_cloudconfig())
         userdata = copy.deepcopy(self.userdata)
         merge_config(userdata, config)
         return userdata

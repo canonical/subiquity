@@ -31,3 +31,11 @@ class LocaleModel(object):
 
     def __repr__(self):
         return "<Selected: {}>".format(self.selected_language)
+
+    def make_cloudconfig(self):
+        if not self.selected_language:
+            return {}
+        locale = self.selected_language
+        if '.' not in locale and '_' in locale:
+            locale += '.UTF-8'
+        return {'locale': locale}

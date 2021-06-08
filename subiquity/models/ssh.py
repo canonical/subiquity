@@ -15,7 +15,6 @@
 
 import logging
 
-
 log = logging.getLogger("subiquity.models.ssh")
 
 

@@ -37,6 +37,9 @@ identity:
   username: ubuntu
   password: '$6$wdAcoXrU039hKYPd$508Qvbe7ObUnxoj15DRCkzC3qO7edjH0VV7BPNRDYK4QR8ofJaEEF2heacn0QgD.f8pO8SNp83XNdWG6tocBM1'
   hostname: ubuntu
+snaps:
+  - name: etcd
+    channel: 3.2/stable
 updates: all
 storage:
   config:
