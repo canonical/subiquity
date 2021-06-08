@@ -39,6 +39,8 @@ then
     done
 fi
 
+lxc exec tester -- cloud-init status --wait
+
 lxc exec tester -- sh -ec "
     cd ~/subiquity
     ./scripts/installdeps.sh
