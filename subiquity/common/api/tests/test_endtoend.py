@@ -24,10 +24,10 @@ from subiquitycore import contextlib38
 
 from subiquity.common.api.client import make_client
 from subiquity.common.api.defs import api, Payload
+from subiquity.tests.util import run_coro
 
 from .test_server import (
     makeTestClient,
-    run_coro,
     TestControllerBase,
     )
 
