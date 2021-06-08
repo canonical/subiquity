@@ -16,8 +16,6 @@
 import datetime
 import logging
 
-from subiquitycore.model import CloudConfigModel
-
 from subiquity.common.types import (
     ChannelSnapInfo,
     SnapInfo,
@@ -29,7 +27,7 @@ log = logging.getLogger("subiquity.models.snaplist")
 risks = ["stable", "candidate", "beta", "edge"]
 
 
-class SnapListModel(CloudConfigModel):
+class SnapListModel:
     """The overall model for subiquity."""
 
     def __init__(self):

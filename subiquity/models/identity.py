@@ -17,7 +17,6 @@ import logging
 
 import attr
 
-from subiquitycore.model import CloudConfigModel
 
 log = logging.getLogger('subiquity.models.identity')
 
@@ -29,7 +28,7 @@ class User(object):
     password = attr.ib()
 
 
-class IdentityModel(CloudConfigModel):
+class IdentityModel(object):
     """ Model representing user identity
     """
 

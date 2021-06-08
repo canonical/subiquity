@@ -15,12 +15,10 @@
 
 import logging
 
-from subiquitycore.model import CloudConfigModel
-
 log = logging.getLogger("subiquity.models.ssh")
 
 
-class SSHModel(CloudConfigModel):
+class SSHModel:
 
     def __init__(self):
         self.install_server = False

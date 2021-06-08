@@ -214,9 +214,7 @@ class SubiquityModel:
         for model_name in POSTINSTALL_MODEL_NAMES:
             model = getattr(self, model_name)
             if getattr(model, 'make_cloudconfig', None):
-                fragment = model.make_cloudconfig()
-                if fragment:
-                    merge_config(config, fragment)
+                merge_config(config, model.make_cloudconfig())
         userdata = copy.deepcopy(self.userdata)
         merge_config(userdata, config)
         return userdata

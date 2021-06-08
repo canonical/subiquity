@@ -192,7 +192,7 @@ attached as an attribute to the `SubiquityModel` class and the name of the
 attribute added to `INSTALL_MODEL_NAMES` or `POSTINSTALL_MODEL_NAMES` as
 appropriate. Models that go into `INSTALL_MODEL_NAMES` need to define a
 render() method that returns a fragment of curtin config.  POSTINSTALL models
-need to define a make_cloudconfig() method that returns a cloud config
+should define a make_cloudconfig() method that returns a cloud config
 fragment.
 
 #### Defining the API

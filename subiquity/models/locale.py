@@ -15,12 +15,10 @@
 
 import logging
 
-from subiquitycore.model import CloudConfigModel
-
 log = logging.getLogger('subiquity.models.locale')
 
 
-class LocaleModel(CloudConfigModel):
+class LocaleModel(object):
     """ Model representing locale selection
 
     XXX Only represents *language* selection for now.
