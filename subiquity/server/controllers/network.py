@@ -15,9 +15,12 @@
 
 import asyncio
 import logging
+import os
 from typing import List, Optional
 
 import aiohttp
+
+import apt
 
 from subiquitycore.async_helpers import schedule_task
 from subiquitycore.context import with_context
@@ -28,6 +31,7 @@ from subiquitycore.models.network import (
     StaticConfig,
     WLANConfig,
     )
+from subiquitycore.utils import arun_command
 
 from subiquity.common.api.client import make_client_for_conn
 from subiquity.common.apidef import (
@@ -104,6 +108,46 @@ class NetworkController(BaseNetworkController, SubiquityController):
         app.note_file_for_apport("NetplanConfig", self.netplan_path)
         self.view_shown = False
         self.clients = {}
+        self.install_wpasupplicant_task = None
+
+    def maybe_start_install_wpasupplicant(self):
+        log.debug('maybe_start_install_wpasupplicant')
+        if self.install_wpasupplicant_task is not None:
+            return
+        self.install_wpasupplicant_task = self.app.aio_loop.create_task(
+            self._install_wpasupplicant())
+
+    async def _install_wpasupplicant(self):
+        if self.opts.dry_run:
+            await asyncio.sleep(10/self.app.scale_factor)
+        else:
+            await self._really_install_wpasupplicant()
+
+    async def _really_install_wpasupplicant(self):
+        log.debug('checking if wpasupplicant is available')
+        cache = apt.Cache()
+        binpkg = cache.get('wpasupplicant')
+        if not binpkg:
+            log.debug('wpasupplicant not found')
+            return
+        if binpkg.installed:
+            log.debug('wpasupplicant already installed')
+            return
+        if not binpkg.candidate.uri.startswith('cdrom:'):
+            log.debug(
+                'wpasupplicant not available from cdrom (rather %s)',
+                binpkg.candidate.uri)
+            return
+        env = os.environ.copy()
+        env['DEBIAN_FRONTEND'] = 'noninteractive'
+        apt_opts = [
+            '--quiet', '--assume-yes',
+            '--option=Dpkg::Options::=--force-unsafe-io',
+            '--option=Dpkg::Options::=--force-confold',
+            ]
+        cp = await arun_command(
+            ['apt-get', 'install'] + apt_opts + ['wpasupplicant'], env=env)
+        log.debug('apt-get install wpasupplicant returned %s', cp)
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -275,6 +319,8 @@ class NetworkController(BaseNetworkController, SubiquityController):
 
     def new_link(self, dev):
         super().new_link(dev)
+        if dev.type == 'wlan':
+            self.maybe_start_install_wpasupplicant()
         self._send_update(LinkAction.NEW, dev)
 
     def update_link(self, dev):
