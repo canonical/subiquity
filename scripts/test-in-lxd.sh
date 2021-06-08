@@ -39,6 +39,9 @@ then
     done
 fi
 
+# debugging a github issue where the source.list is possibly malformed
+lxc file pull tester/etc/apt/sources.list -
+
 lxc exec tester -- sh -ec "
     cd ~/subiquity
     ./scripts/installdeps.sh
