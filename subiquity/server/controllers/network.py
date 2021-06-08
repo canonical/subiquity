@@ -40,6 +40,9 @@ from subiquity.common.apidef import (
     NetEventAPI,
     )
 from subiquity.common.errorreport import ErrorReportKind
+from subiquity.common.types import (
+    WLANSupportInstallState,
+    )
 from subiquity.server.controller import SubiquityController
 
 
@@ -109,6 +112,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         self.view_shown = False
         self.clients = {}
         self.install_wpasupplicant_task = None
+        self.pending_wlan_devices = set()
 
     def maybe_start_install_wpasupplicant(self):
         log.debug('maybe_start_install_wpasupplicant')
@@ -117,11 +121,30 @@ class NetworkController(BaseNetworkController, SubiquityController):
         self.install_wpasupplicant_task = self.app.aio_loop.create_task(
             self._install_wpasupplicant())
 
+    def wlan_support_install_state(self):
+        if self.install_wpasupplicant_task is None:
+            return WLANSupportInstallState.NOT_NEEDED
+        elif self.install_wpasupplicant_task.done():
+            return self.install_wpasupplicant_task.result()
+        else:
+            return WLANSupportInstallState.INSTALLING
+
     async def _install_wpasupplicant(self):
         if self.opts.dry_run:
             await asyncio.sleep(10/self.app.scale_factor)
+            a = 'DONE'
+            for k in self.app.debug_flags:
+                if k.startswith('wlan_install='):
+                    a = k.split('=', 2)[1]
+            r = getattr(WLANSupportInstallState, a)
         else:
-            await self._really_install_wpasupplicant()
+            r = await self._really_install_wpasupplicant()
+        log.debug("wlan_support_install_finished %s", r)
+        if r == WLANSupportInstallState.DONE:
+            for dev in self.pending_wlan_devices:
+                self._send_update(LinkAction.NEW, dev)
+        self.pending_wlan_devices = set()
+        return r
 
     async def _really_install_wpasupplicant(self):
         log.debug('checking if wpasupplicant is available')
@@ -129,15 +152,15 @@ class NetworkController(BaseNetworkController, SubiquityController):
         binpkg = cache.get('wpasupplicant')
         if not binpkg:
             log.debug('wpasupplicant not found')
-            return
+            return WLANSupportInstallState.NOT_AVAILABLE
         if binpkg.installed:
             log.debug('wpasupplicant already installed')
-            return
+            return WLANSupportInstallState.DONE
         if not binpkg.candidate.uri.startswith('cdrom:'):
             log.debug(
                 'wpasupplicant not available from cdrom (rather %s)',
                 binpkg.candidate.uri)
-            return
+            return WLANSupportInstallState.NOT_AVAILABLE
         env = os.environ.copy()
         env['DEBIAN_FRONTEND'] = 'noninteractive'
         apt_opts = [
@@ -148,6 +171,10 @@ class NetworkController(BaseNetworkController, SubiquityController):
         cp = await arun_command(
             ['apt-get', 'install'] + apt_opts + ['wpasupplicant'], env=env)
         log.debug('apt-get install wpasupplicant returned %s', cp)
+        if cp.returncode == 0:
+            return WLANSupportInstallState.DONE
+        else:
+            return WLANSupportInstallState.FAILED
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -240,9 +267,15 @@ class NetworkController(BaseNetworkController, SubiquityController):
         if not self.view_shown:
             self.apply_config(silent=True)
             self.view_shown = True
-        return [
-            netdev.netdev_info() for netdev in self.model.get_all_netdevs()
-            ]
+        if self.wlan_support_install_state() == \
+           WLANSupportInstallState.DONE:
+            devices = self.model.get_all_netdevs()
+        else:
+            devices = [
+                dev for dev in self.model.get_all_netdevs()
+                if dev.type != 'wlan'
+                ]
+        return [dev.netdev_info() for dev in devices]
 
     def configured(self):
         self.model.has_network = bool(
@@ -321,6 +354,14 @@ class NetworkController(BaseNetworkController, SubiquityController):
         super().new_link(dev)
         if dev.type == 'wlan':
             self.maybe_start_install_wpasupplicant()
+            state = self.wlan_support_install_state()
+            if state == WLANSupportInstallState.INSTALLING:
+                self.pending_wlan_devices.add(dev)
+                return
+            elif state in [WLANSupportInstallState.FAILED.
+                           WLANSupportInstallState.NOT_AVAILABLE]:
+                return
+            # WLANSupportInstallState.DONE falls through
         self._send_update(LinkAction.NEW, dev)
 
     def update_link(self, dev):

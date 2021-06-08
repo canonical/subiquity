@@ -196,6 +196,14 @@ class ZdevInfo:
         return self.type
 
 
+class WLANSupportInstallState(enum.Enum):
+    NOT_NEEDED = enum.auto()
+    NOT_AVAILABLE = enum.auto()
+    INSTALLING = enum.auto()
+    FAILED = enum.auto()
+    DONE = enum.auto()
+
+
 class ProbeStatus(enum.Enum):
     PROBING = enum.auto()
     FAILED = enum.auto()
