@@ -408,8 +408,7 @@ class NetworkDev(object):
 class NetworkModel(object):
     """ """
 
-    def __init__(self, project, support_wlan=True):
-        self.support_wlan = support_wlan
+    def __init__(self, project):
         self.devices_by_name = {}  # Maps interface names to NetworkDev
         self.has_network = False
         self.project = project
@@ -422,9 +421,6 @@ class NetworkModel(object):
         log.debug("new_link %s %s %s", ifindex, link.name, link.type)
         if link.type in NETDEV_IGNORED_IFACE_TYPES:
             log.debug('ignoring based on type')
-            return
-        if not self.support_wlan and link.type == "wlan":
-            log.debug('ignoring based on support_wlan')
             return
         is_virtual = link.is_virtual
         if link.type == "wlan":
