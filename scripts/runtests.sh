@@ -21,6 +21,7 @@ clean () {
     rm -f .subiquity/subiquity-*.log
     rm -f "$testschema"
     rm -rf .subiquity/run/
+    rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg
 }
 
 tty=$(tty) || tty=/dev/console
@@ -53,7 +54,8 @@ python3 scripts/check-yaml-fields.py .subiquity/subiquity-curtin-install.conf \
 python3 scripts/check-yaml-fields.py .subiquity/subiquity-curtin-install.conf \
         storage.config[-1].options='"errors=remount-ro"'
 python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg datasource.None.userdata_raw) \
-        locale='"en_GB.UTF-8"'
+        locale='"en_GB.UTF-8"' \
+        'snap.commands=[snap install --channel=3.2/stable etcd]'
 grep -q 'finish: subiquity/Install/install/postinstall/install_package1: SUCCESS: installing package1' \
      .subiquity/subiquity-server-debug.log
 grep -q 'finish: subiquity/Install/install/postinstall/install_package2: SUCCESS: installing package2' \

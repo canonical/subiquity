@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import attr
 import logging
 
-import attr
-
+from subiquitycore.model import CloudConfigModel
 
 log = logging.getLogger('subiquity.models.identity')
 
@@ -28,7 +28,7 @@ class User(object):
     password = attr.ib()
 
 
-class IdentityModel(object):
+class IdentityModel(CloudConfigModel):
     """ Model representing user identity
     """
 

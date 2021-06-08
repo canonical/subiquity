@@ -16,6 +16,8 @@
 import datetime
 import logging
 
+from subiquitycore.model import CloudConfigModel
+
 from subiquity.common.types import (
     ChannelSnapInfo,
     SnapInfo,
@@ -27,7 +29,7 @@ log = logging.getLogger("subiquity.models.snaplist")
 risks = ["stable", "candidate", "beta", "edge"]
 
 
-class SnapListModel:
+class SnapListModel(CloudConfigModel):
     """The overall model for subiquity."""
 
     def __init__(self):
@@ -93,3 +95,15 @@ class SnapListModel:
         for selection in selections:
             self._snap_for_name(selection.name)
         self.selections = selections
+
+    def make_cloudconfig(self):
+        if not self.selections:
+            return {}
+        cmds = []
+        for selection in self.selections:
+            cmd = ['snap', 'install', '--channel=' + selection.channel]
+            if selection.is_classic:
+                cmd.append('--classic')
+            cmd.append(selection.name)
+            cmds.append(' '.join(cmd))
+        return {'snap': {'commands': cmds}}

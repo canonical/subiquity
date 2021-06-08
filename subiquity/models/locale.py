@@ -15,10 +15,12 @@
 
 import logging
 
+from subiquitycore.model import CloudConfigModel
+
 log = logging.getLogger('subiquity.models.locale')
 
 
-class LocaleModel(object):
+class LocaleModel(CloudConfigModel):
     """ Model representing locale selection
 
     XXX Only represents *language* selection for now.
@@ -31,3 +33,11 @@ class LocaleModel(object):
 
     def __repr__(self):
         return "<Selected: {}>".format(self.selected_language)
+
+    def make_cloudconfig(self):
+        if not self.selected_language:
+            return {}
+        locale = self.selected_language
+        if '.' not in locale and '_' in locale:
+            locale += '.UTF-8'
+        return {'locale': locale}

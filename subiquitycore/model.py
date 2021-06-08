@@ -1,4 +1,4 @@
-# Copyright 2018 Canonical, Ltd.
+# Copyright 2021 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -13,20 +13,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from abc import ABC
 import logging
 
-from subiquitycore.model import CloudConfigModel
-
-log = logging.getLogger("subiquity.models.ssh")
+log = logging.getLogger("subiquitycore.model")
 
 
-class SSHModel(CloudConfigModel):
-
-    def __init__(self):
-        self.install_server = False
-        self.authorized_keys = None
-        self.pwauth = True
-        # Although the generated config just contains the key above,
-        # we store the imported id so that we can re-fill the form if
-        # we go back to it.
-        self.ssh_import_id = ''
+class CloudConfigModel(ABC):
+    def make_cloudconfig(self):
+        return {}
