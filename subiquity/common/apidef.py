@@ -65,6 +65,10 @@ class API:
             def POST(endpoint_names: List[str]) -> None:
                 """Mark the controllers for endpoint_names as configured."""
 
+        class client_variant:
+            def POST(variant: str) -> None:
+                """Choose the install variant - desktop/server"""
+
         class confirm:
             def POST(tty: str) -> None:
                 """Confirm that the installation should proceed."""
