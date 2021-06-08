@@ -33,11 +33,18 @@ class NetworkModel(NetworkModel):
             return super().render_config()
 
     def render(self):
-        return {
+        netplan = self.render_config()
+        # We write wifi config -- which almost certainly contains secrets -- to
+        # a separate file with more restrictive permissions. This isn't a
+        # perfect solution because in principle there could be wired 802.1x
+        # stuff that has secrets too but the subiquity UI does not support any
+        # of that yet so this will do for now.
+        wifis = netplan['network'].pop('wifis', None)
+        r = {
             'write_files': {
                 'etc_netplan_installer': {
                     'path': 'etc/netplan/00-installer-config.yaml',
-                    'content': self.stringify_config(self.render_config()),
+                    'content': self.stringify_config(netplan),
                     },
                 'nonet': {
                     'path': ('etc/cloud/cloud.cfg.d/'
@@ -46,3 +53,16 @@ class NetworkModel(NetworkModel):
                     },
                 },
             }
+        if wifis is not None:
+            netplan_wifi = {
+                'network': {
+                    'version': 2,
+                    'wifis': wifis,
+                    },
+                }
+            r['write_files']['etc_netplan_installer_wifi'] = {
+                'path': 'etc/netplan/00-installer-config-wifi.yaml',
+                'content': self.stringify_config(netplan_wifi),
+                'permissions': '0600',
+                }
+        return r
