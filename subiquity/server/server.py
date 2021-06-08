@@ -107,6 +107,13 @@ class MetaController:
             if controller.endpoint in endpoints:
                 controller.configured()
 
+    async def client_variant_POST(self, variant: str) -> None:
+        if variant not in ('desktop', 'server'):
+            raise ValueError(f'unrecognized client variant {variant}')
+        for controller in self.app.controllers.instances:
+            if variant not in controller.relevant_variants:
+                controller.configured()
+
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
         ips = []
         for dev in self.app.base_model.network.get_all_netdevs():
