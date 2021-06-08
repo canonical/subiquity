@@ -33,7 +33,10 @@ from subiquitycore.ui.views.network import NetworkView
 from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.api.server import make_server_at_path
 from subiquity.common.apidef import LinkAction, NetEventAPI
-from subiquity.common.types import ErrorReportKind
+from subiquity.common.types import (
+    ErrorReportKind,
+    WLANSupportInstallState,
+    )
 
 log = logging.getLogger('subiquity.client.controllers.network')
 
@@ -86,6 +89,10 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
         if self.view is not None:
             self.view.show_network_error(stage)
 
+    async def wlan_support_install_finished_POST(
+            self, state: WLANSupportInstallState) -> None:
+        pass
+
     async def subscribe(self):
         self.tdir = tempfile.mkdtemp()
         self.sock_path = os.path.join(self.tdir, 'socket')
@@ -99,8 +106,8 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
         shutil.rmtree(self.tdir)
 
     async def make_ui(self):
-        netdev_infos = await self.endpoint.GET()
-        self.view = NetworkView(self, netdev_infos)
+        network_status = await self.endpoint.GET()
+        self.view = NetworkView(self, network_status.devices)
         await self.subscribe()
         return self.view
 

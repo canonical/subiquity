@@ -27,7 +27,6 @@ from subiquitycore.context import with_context
 from subiquitycore.controllers.network import BaseNetworkController
 from subiquitycore.models.network import (
     BondConfig,
-    NetDevInfo,
     StaticConfig,
     WLANConfig,
     )
@@ -41,6 +40,7 @@ from subiquity.common.apidef import (
     )
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import (
+    NetworkStatus,
     WLANSupportInstallState,
     )
 from subiquity.server.controller import SubiquityController
@@ -140,6 +140,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
         else:
             r = await self._really_install_wpasupplicant()
         log.debug("wlan_support_install_finished %s", r)
+        self._call_clients("wlan_support_install_finished", r)
         if r == WLANSupportInstallState.DONE:
             for dev in self.pending_wlan_devices:
                 self._send_update(LinkAction.NEW, dev)
@@ -263,7 +264,7 @@ class NetworkController(BaseNetworkController, SubiquityController):
     def make_autoinstall(self):
         return self.model.render_config()['network']
 
-    async def GET(self) -> List[NetDevInfo]:
+    async def GET(self) -> NetworkStatus:
         if not self.view_shown:
             self.apply_config(silent=True)
             self.view_shown = True
@@ -275,7 +276,9 @@ class NetworkController(BaseNetworkController, SubiquityController):
                 dev for dev in self.model.get_all_netdevs()
                 if dev.type != 'wlan'
                 ]
-        return [dev.netdev_info() for dev in devices]
+        return NetworkStatus(
+            devices=[dev.netdev_info() for dev in devices],
+            wlan_support_install_state=self.wlan_support_install_state())
 
     def configured(self):
         self.model.has_network = bool(
