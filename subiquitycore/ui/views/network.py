@@ -47,6 +47,7 @@ from subiquitycore.ui.utils import (
     button_pile,
     Color,
     make_action_menu_row,
+    rewrap,
     screen,
     )
 from subiquitycore.ui.width import widget_width
@@ -208,13 +209,31 @@ class NetworkDeviceTable(WidgetWrap):
         self.table.insert_rows(1, self._address_rows())
 
 
+wlan_support_install_state_texts = {
+    "NOT_AVAILABLE": _("""\
+A wifi device was detected but the necessary support packages were not
+available.
+"""),
+    "INSTALLING": _("""\
+Wifi support packages are being installed.
+"""),
+    "FAILED": _("""\
+Wifi support packages failed to install. Please check the logs.
+"""),
+    "DONE": _("""\
+Wifi support packages will be installed in the target system.
+"""),
+    }
+
+
 class NetworkView(BaseView):
     title = _("Network connections")
     excerpt = _("Configure at least one interface this server can use to talk "
                 "to other machines, and which preferably provides sufficient "
                 "access for updates.")
 
-    def __init__(self, controller, netdev_infos):
+    def __init__(self, controller, netdev_infos,
+                 wlan_support_install_state="NOT_NEEDED"):
         self.controller = controller
         self.dev_name_to_table = {}
         self.cur_netdev_names = []
@@ -258,7 +277,10 @@ class NetworkView(BaseView):
             ('pack', self.buttons),
         ])
 
+        self.wlan_support_install_state_showing = False
         self.error_showing = False
+
+        self.update_for_wlan_support_install_state(wlan_support_install_state)
 
         super().__init__(screen(
             rows=rows,
@@ -409,9 +431,31 @@ class NetworkView(BaseView):
         stretchy.attach_context(self.controller.context.child("add_bond"))
         self.show_stretchy_overlay(stretchy)
 
+    def update_for_wlan_support_install_state(self, state):
+        if state == "NOT_NEEDED":
+            return
+        if self.error_showing:
+            b = 2
+        else:
+            b = 0
+        if self.wlan_support_install_state_showing:
+            i = slice(b, b+2)
+        else:
+            i = slice(b, b)
+        self.wlan_support_install_state_showing = True
+        text = wlan_support_install_state_texts[state]
+        self.bottom.contents[i] = [
+            (Text(rewrap(text), align='center'), self.bottom.options()),
+            (Text(""), self.bottom.options()),
+            ]
+
     def show_network_error(self, action, info=None):
-        self.error_showing = True
-        self.bottom.contents[0:0] = [
+        if not self.error_showing:
+            i = slice(0, 0)
+            self.error_showing = True
+        else:
+            i = slice(0, 2)
+        self.bottom.contents[i] = [
             (Color.info_error(self.error), self.bottom.options()),
             (Text(""), self.bottom.options()),
             ]
