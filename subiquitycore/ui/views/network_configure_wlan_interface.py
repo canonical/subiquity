@@ -116,7 +116,7 @@ class NetworkConfigureWLANStretchy(Stretchy):
             networks_btn = disabled(menu_btn("No visible networks"))
 
         scan_state = self.dev_info.wlan.scan_state
-        if scan_state:
+        if not scan_state:
             scan_btn = menu_btn("Scan for networks", on_press=self.start_scan)
         elif scan_state.startswith('error'):
             self.error.set_text('scan failed: %s' % (scan_state,))
@@ -155,8 +155,8 @@ class NetworkConfigureWLANStretchy(Stretchy):
         else:
             psk = None
         self.parent.controller.set_wlan(
-            self.dev_info, WLANConfig(ssid=ssid, psk=psk))
-        self.parent.update_link(self.dev_info.name)
+            self.dev_info.name, WLANConfig(ssid=ssid, psk=psk))
+        self.parent.update_link(self.dev_info)
         self.parent.remove_overlay()
 
     def cancel(self, sender=None):
