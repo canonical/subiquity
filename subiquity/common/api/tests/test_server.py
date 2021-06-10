@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import unittest
 
 from aiohttp.test_utils import TestClient, TestServer
@@ -29,10 +28,7 @@ from subiquity.common.api.server import (
     MissingImplementationError,
     SignatureMisatchError,
     )
-
-
-def run_coro(coro):
-    asyncio.get_event_loop().run_until_complete(coro)
+from subiquity.tests.util import run_coro
 
 
 class TestApp:

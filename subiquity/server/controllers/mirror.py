@@ -16,18 +16,14 @@
 import asyncio
 import enum
 import logging
-import requests
-from xml.etree import ElementTree
 
 from curtin.config import merge_config
 
-from subiquitycore.async_helpers import (
-    run_in_thread,
-    SingleInstanceTask,
-    )
+from subiquitycore.async_helpers import SingleInstanceTask
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
+from subiquity.common.geoip import GeoIP
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.mirror')
@@ -61,6 +57,7 @@ class MirrorController(SubiquityController):
         self.geoip_enabled = True
         self.check_state = CheckState.NOT_STARTED
         self.lookup_task = SingleInstanceTask(self.lookup)
+        self.geoip = GeoIP()
         self.app.hub.subscribe('network-up', self.maybe_start_check)
         self.app.hub.subscribe('network-proxy-set', self.maybe_start_check)
 
@@ -92,32 +89,13 @@ class MirrorController(SubiquityController):
 
     @with_context()
     async def lookup(self, context):
-        try:
-            response = await run_in_thread(
-                requests.get, "https://geoip.ubuntu.com/lookup")
-            response.raise_for_status()
-        except requests.exceptions.RequestException:
-            log.exception("geoip lookup failed")
-            self.check_state = CheckState.FAILED
-            return
-        try:
-            e = ElementTree.fromstring(response.text)
-        except ElementTree.ParseError:
-            log.exception("parsing %r failed", response.text)
-            self.check_state = CheckState.FAILED
-            return
-        cc = e.find("CountryCode")
-        if cc is None:
-            log.debug("no CountryCode found in %r", response.text)
-            self.check_state = CheckState.FAILED
-            return
-        cc = cc.text.lower()
-        if len(cc) != 2:
-            log.debug("bogus CountryCode found in %r", response.text)
-            self.check_state = CheckState.FAILED
-            return
-        self.check_state = CheckState.DONE
-        self.model.set_country(cc)
+        if await self.geoip.lookup():
+            cc = self.geoip.countrycode
+            if cc:
+                self.model.set_country(cc)
+                self.check_state = CheckState.DONE
+                return
+        self.check_state = CheckState.FAILED
 
     def serialize(self):
         return self.model.get_mirror()
