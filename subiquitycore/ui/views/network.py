@@ -435,27 +435,28 @@ class NetworkView(BaseView):
         if state == "NOT_NEEDED":
             return
         if self.error_showing:
-            b = 2
+            start_i = 2
         else:
-            b = 0
+            start_i = 0
         if self.wlan_support_install_state_showing:
-            i = slice(b, b+2)
+            end_i = start_i + 2
         else:
-            i = slice(b, b)
+            end_i = start_i
         self.wlan_support_install_state_showing = True
         text = wlan_support_install_state_texts[state]
-        self.bottom.contents[i] = [
+        self.bottom.contents[start_i:end_i] = [
             (Text(rewrap(text), align='center'), self.bottom.options()),
             (Text(""), self.bottom.options()),
             ]
 
     def show_network_error(self, action, info=None):
         if not self.error_showing:
-            i = slice(0, 0)
+            start_i = end_i = 0
             self.error_showing = True
         else:
-            i = slice(0, 2)
-        self.bottom.contents[i] = [
+            start_i = 0
+            end_i = 2
+        self.bottom.contents[start_i:end_i] = [
             (Color.info_error(self.error), self.bottom.options()),
             (Text(""), self.bottom.options()),
             ]
