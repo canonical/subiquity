@@ -34,6 +34,7 @@ from subiquity.common.types import (
     KeyboardSetting,
     KeyboardSetup,
     IdentityData,
+    NetworkStatus,
     RefreshStatus,
     SnapInfo,
     SnapListResponse,
@@ -41,6 +42,7 @@ from subiquity.common.types import (
     SSHData,
     LiveSessionSSHInfo,
     StorageResponse,
+    WLANSupportInstallState,
     ZdevInfo,
     )
 
@@ -121,7 +123,7 @@ class API:
             def POST(action: str, zdev: ZdevInfo) -> List[ZdevInfo]: ...
 
     class network:
-        def GET() -> List[NetDevInfo]: ...
+        def GET() -> NetworkStatus: ...
         def POST() -> None: ...
 
         class global_addresses:
@@ -236,6 +238,9 @@ class LinkAction(enum.Enum):
 
 @api
 class NetEventAPI:
+    class wlan_support_install_finished:
+        def POST(state: WLANSupportInstallState) -> None: ...
+
     class update_link:
         def POST(act: LinkAction, info: Payload[NetDevInfo]) -> None: ...
 

@@ -24,6 +24,8 @@ from typing import Dict, List, Optional, Union
 
 import attr
 
+from subiquitycore.models.network import NetDevInfo
+
 
 class ErrorReportState(enum.Enum):
     INCOMPLETE = enum.auto()
@@ -194,6 +196,20 @@ class ZdevInfo:
         if self.type.startswith('zfcp'):
             return 'zfcp'
         return self.type
+
+
+class WLANSupportInstallState(enum.Enum):
+    NOT_NEEDED = enum.auto()
+    NOT_AVAILABLE = enum.auto()
+    INSTALLING = enum.auto()
+    FAILED = enum.auto()
+    DONE = enum.auto()
+
+
+@attr.s(auto_attribs=True)
+class NetworkStatus:
+    devices: List[NetDevInfo]
+    wlan_support_install_state: WLANSupportInstallState
 
 
 class ProbeStatus(enum.Enum):

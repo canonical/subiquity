@@ -23,7 +23,7 @@ log = logging.getLogger('subiquity.models.network')
 class NetworkModel(NetworkModel):
 
     def __init__(self):
-        super().__init__("subiquity", support_wlan=False)
+        super().__init__("subiquity")
         self.override_config = None
 
     def render_config(self):
