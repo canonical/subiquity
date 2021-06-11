@@ -21,7 +21,10 @@ from subiquitycore.tests.util import run_coro
 
 
 async def wait_other_tasks():
-    tasks = asyncio.all_tasks()
+    if hasattr(asyncio, 'all_tasks'):
+        tasks = asyncio.all_tasks()  # py 3.7+
+    else:
+        tasks = asyncio.Task.all_tasks()  # py 3.6
     tasks.remove(asyncio.current_task())
     await asyncio.wait(tasks)
 
