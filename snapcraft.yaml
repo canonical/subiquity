@@ -126,6 +126,7 @@ parts:
       - locales
       - xkb-data-i18n
       - python3-attr
+      - python3-yaml
     override-build: PYTHONPATH=$SNAPCRAFT_PROJECT_DIR/ $SNAPCRAFT_PROJECT_DIR/scripts/make-kbd-info.py
     stage:
       - kbds/
