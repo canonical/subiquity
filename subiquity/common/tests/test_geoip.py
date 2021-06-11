@@ -16,8 +16,9 @@
 import mock
 
 from subiquitycore.tests import SubiTestCase
+from subiquitycore.tests.mocks import make_app
+from subiquitycore.tests.util import run_coro
 from subiquity.common.geoip import GeoIP
-from subiquity.tests.util import run_coro
 
 
 xml = '''
@@ -62,7 +63,7 @@ def requests_get_factory(text):
 class TestGeoIP(SubiTestCase):
     @mock.patch('requests.get', new=requests_get_factory(xml))
     def setUp(self):
-        self.geoip = GeoIP()
+        self.geoip = GeoIP(make_app())
 
         async def fn():
             self.assertTrue(await self.geoip.lookup())
@@ -77,7 +78,7 @@ class TestGeoIP(SubiTestCase):
 
 class TestGeoIPBadData(SubiTestCase):
     def setUp(self):
-        self.geoip = GeoIP()
+        self.geoip = GeoIP(make_app())
 
     @mock.patch('requests.get', new=requests_get_factory(partial))
     def test_partial_reponse(self):
@@ -88,7 +89,7 @@ class TestGeoIPBadData(SubiTestCase):
     @mock.patch('requests.get', new=requests_get_factory(incomplete))
     def test_incomplete(self):
         async def fn():
-            self.assertTrue(await self.geoip.lookup())
+            self.assertFalse(await self.geoip.lookup())
         run_coro(fn())
         self.assertIsNone(self.geoip.countrycode)
         self.assertIsNone(self.geoip.timezone)
@@ -96,20 +97,20 @@ class TestGeoIPBadData(SubiTestCase):
     @mock.patch('requests.get', new=requests_get_factory(long_cc))
     def test_long_cc(self):
         async def fn():
-            self.assertTrue(await self.geoip.lookup())
+            self.assertFalse(await self.geoip.lookup())
         run_coro(fn())
         self.assertIsNone(self.geoip.countrycode)
 
     @mock.patch('requests.get', new=requests_get_factory(empty_cc))
     def test_empty_cc(self):
         async def fn():
-            self.assertTrue(await self.geoip.lookup())
+            self.assertFalse(await self.geoip.lookup())
         run_coro(fn())
         self.assertIsNone(self.geoip.countrycode)
 
     @mock.patch('requests.get', new=requests_get_factory(empty_tz))
     def test_empty_tz(self):
         async def fn():
-            self.assertTrue(await self.geoip.lookup())
+            self.assertFalse(await self.geoip.lookup())
         run_coro(fn())
         self.assertIsNone(self.geoip.timezone)

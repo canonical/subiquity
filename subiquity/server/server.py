@@ -52,6 +52,7 @@ from subiquity.common.errorreport import (
     ErrorReportKind,
     ErrorReporter,
     )
+from subiquity.common.geoip import GeoIP
 from subiquity.common.serialize import to_json
 from subiquity.common.types import (
     ApplicationState,
@@ -246,6 +247,7 @@ class SubiquityServer(Application):
         self.autoinstall_config = None
         self.hub.subscribe('network-up', self._network_change)
         self.hub.subscribe('network-proxy-set', self._proxy_set)
+        self.geoip = GeoIP(self)
 
     def load_serialized_state(self):
         for controller in self.controllers.instances:
