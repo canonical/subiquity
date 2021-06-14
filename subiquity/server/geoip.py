@@ -14,19 +14,53 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import enum
 import requests
 from xml.etree import ElementTree
 
-from subiquitycore.async_helpers import run_in_thread
+from subiquitycore.async_helpers import (
+    run_in_thread,
+    SingleInstanceTask,
+)
+from subiquitycore.pubsub import EventCallback
 
 log = logging.getLogger('subiquity.common.geoip')
 
 
+class CheckState(enum.IntEnum):
+    NOT_STARTED = enum.auto()
+    CHECKING = enum.auto()
+    FAILED = enum.auto()
+    DONE = enum.auto()
+
+
 class GeoIP:
-    def __init__(self):
+    def __init__(self, app):
+        self.app = app
         self.element = None
+        self.cc = None
+        self.tz = None
+        self.check_state = CheckState.NOT_STARTED
+        self.on_countrycode = EventCallback()
+        self.on_timezone = EventCallback()
+        self.lookup_task = SingleInstanceTask(self.lookup)
+        self.app.hub.subscribe('network-up', self.maybe_start_check)
+        self.app.hub.subscribe('network-proxy-set', self.maybe_start_check)
+
+    def maybe_start_check(self):
+        if self.check_state != CheckState.DONE:
+            self.check_state = CheckState.CHECKING
+            self.lookup_task.start_sync()
 
     async def lookup(self):
+        rv = await self._lookup()
+        if rv:
+            self.check_state = CheckState.DONE
+        else:
+            self.check_state = CheckState.FAILED
+        return rv
+
+    async def _lookup(self):
         try:
             response = await run_in_thread(
                 requests.get, "https://geoip.ubuntu.com/lookup")
@@ -40,28 +74,33 @@ class GeoIP:
         except ElementTree.ParseError:
             log.exception("parsing %r failed", self.response_text)
             return False
+
+        cc = self.element.find("CountryCode")
+        if cc is None or cc.text is None:
+            log.debug("no CountryCode found in %r", self.response_text)
+            return False
+        cc = cc.text.lower()
+        if len(cc) != 2:
+            log.debug("bogus CountryCode found in %r", self.response_text)
+            return False
+        if cc != self.cc:
+            self.on_countrycode.broadcast(cc)
+            self.cc = cc
+
+        tz = self.element.find("TimeZone")
+        if tz is None or not tz.text:
+            log.debug("no TimeZone found in %r", self.response_text)
+            return False
+        if tz != self.tz:
+            self.on_timezone.broadcast(tz)
+            self.tz = tz.text
+
         return True
 
     @property
     def countrycode(self):
-        if not self.element:
-            return None
-        cc = self.element.find("CountryCode")
-        if cc is None or cc.text is None:
-            log.debug("no CountryCode found in %r", self.response_text)
-            return None
-        cc = cc.text.lower()
-        if len(cc) != 2:
-            log.debug("bogus CountryCode found in %r", self.response_text)
-            return None
-        return cc
+        return self.cc
 
     @property
     def timezone(self):
-        if not self.element:
-            return None
-        tz = self.element.find("TimeZone")
-        if tz is None or not tz.text:
-            log.debug("no TimeZone found in %r", self.response_text)
-            return None
-        return tz.text
+        return self.tz

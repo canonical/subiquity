@@ -19,6 +19,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from aiohttp import web
 
 from subiquitycore.context import Context
+from subiquitycore.tests.util import run_coro
 from subiquitycore import contextlib38
 
 from subiquity.common.api.defs import api, Payload
@@ -28,7 +29,6 @@ from subiquity.common.api.server import (
     MissingImplementationError,
     SignatureMisatchError,
     )
-from subiquity.tests.util import run_coro
 
 
 class TestApp:

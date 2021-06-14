@@ -14,26 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import enum
 import logging
 
 from curtin.config import merge_config
 
-from subiquitycore.async_helpers import SingleInstanceTask
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
-from subiquity.common.geoip import GeoIP
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.mirror')
-
-
-class CheckState(enum.IntEnum):
-    NOT_STARTED = enum.auto()
-    CHECKING = enum.auto()
-    FAILED = enum.auto()
-    DONE = enum.auto()
 
 
 class MirrorController(SubiquityController):
@@ -55,11 +45,8 @@ class MirrorController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.geoip_enabled = True
-        self.check_state = CheckState.NOT_STARTED
-        self.lookup_task = SingleInstanceTask(self.lookup)
-        self.geoip = GeoIP()
-        self.app.hub.subscribe('network-up', self.maybe_start_check)
-        self.app.hub.subscribe('network-proxy-set', self.maybe_start_check)
+        self.app.geoip.on_countrycode.subscribe(self.on_countrycode)
+        self.cc_event = asyncio.Event()
 
     def load_autoinstall_data(self, data):
         if data is None:
@@ -72,30 +59,16 @@ class MirrorController(SubiquityController):
     async def apply_autoinstall_config(self, context):
         if not self.geoip_enabled:
             return
-        if self.lookup_task.task is None:
-            return
         try:
             with context.child('waiting'):
-                await asyncio.wait_for(self.lookup_task.wait(), 10)
+                await asyncio.wait_for(self.cc_event.wait(), 10)
         except asyncio.TimeoutError:
             pass
 
-    def maybe_start_check(self):
-        if not self.geoip_enabled:
-            return
-        if self.check_state != CheckState.DONE:
-            self.check_state = CheckState.CHECKING
-            self.lookup_task.start_sync()
-
-    @with_context()
-    async def lookup(self, context):
-        if await self.geoip.lookup():
-            cc = self.geoip.countrycode
-            if cc:
-                self.model.set_country(cc)
-                self.check_state = CheckState.DONE
-                return
-        self.check_state = CheckState.FAILED
+    def on_countrycode(self, cc):
+        if self.geoip_enabled:
+            self.model.set_country(cc)
+        self.cc_event.set()
 
     def serialize(self):
         return self.model.get_mirror()

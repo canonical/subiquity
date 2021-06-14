@@ -61,8 +61,9 @@ from subiquity.common.types import (
     LiveSessionSSHInfo,
     PasswordKind,
     )
-from subiquity.server.controller import SubiquityController
 from subiquity.models.subiquity import SubiquityModel
+from subiquity.server.controller import SubiquityController
+from subiquity.server.geoip import GeoIP
 from subiquity.server.errors import ErrorController
 from subiquitycore.snapd import (
     AsyncSnapd,
@@ -246,6 +247,7 @@ class SubiquityServer(Application):
         self.autoinstall_config = None
         self.hub.subscribe('network-up', self._network_change)
         self.hub.subscribe('network-proxy-set', self._proxy_set)
+        self.geoip = GeoIP(self)
 
     def load_serialized_state(self):
         for controller in self.controllers.instances:
