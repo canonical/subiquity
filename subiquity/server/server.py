@@ -52,7 +52,6 @@ from subiquity.common.errorreport import (
     ErrorReportKind,
     ErrorReporter,
     )
-from subiquity.common.geoip import GeoIP
 from subiquity.common.serialize import to_json
 from subiquity.common.types import (
     ApplicationState,
@@ -62,8 +61,9 @@ from subiquity.common.types import (
     LiveSessionSSHInfo,
     PasswordKind,
     )
-from subiquity.server.controller import SubiquityController
 from subiquity.models.subiquity import SubiquityModel
+from subiquity.server.controller import SubiquityController
+from subiquity.server.geoip import GeoIP
 from subiquity.server.errors import ErrorController
 from subiquitycore.snapd import (
     AsyncSnapd,

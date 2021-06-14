@@ -57,13 +57,11 @@ class MirrorController(SubiquityController):
 
     @with_context()
     async def apply_autoinstall_config(self, context):
-        async def cc_is_set():
-            await self.cc_event.wait()
         if not self.geoip_enabled:
             return
         try:
             with context.child('waiting'):
-                await asyncio.wait_for(cc_is_set(), 10)
+                await asyncio.wait_for(self.cc_event.wait(), 10)
         except asyncio.TimeoutError:
             pass
 
