@@ -55,6 +55,7 @@ python3 scripts/check-yaml-fields.py .subiquity/subiquity-curtin-install.conf \
         storage.config[-1].options='"errors=remount-ro"'
 python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg datasource.None.userdata_raw) \
         locale='"en_GB.UTF-8"' \
+        timezone='"Pacific/Guam"' \
         'snap.commands=[snap install --channel=3.2/stable etcd]'
 grep -q 'finish: subiquity/Install/install/postinstall/install_package1: SUCCESS: installing package1' \
      .subiquity/subiquity-server-debug.log
@@ -70,5 +71,8 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
 validate
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 
-python3 -m subiquity.cmd.schema > "$testschema"
-diff -u "autoinstall-schema.json" "$testschema"
+# Limit schema check to Focal+ - the timezone list on bionic is different
+if (( $(echo "$(lsb_release -sr) >= 20.04" | bc -l) )); then
+    python3 -m subiquity.cmd.schema > "$testschema"
+    diff -u "autoinstall-schema.json" "$testschema"
+fi

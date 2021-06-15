@@ -196,6 +196,7 @@ class SubiquityServer(Application):
         "Identity",
         "SSH",
         "SnapList",
+        "TimeZone",
         "Install",
         "Updates",
         "Late",

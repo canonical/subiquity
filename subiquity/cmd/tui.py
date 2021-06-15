@@ -37,7 +37,7 @@ class ClickAction(argparse.Action):
 
 def make_client_args_parser():
     parser = argparse.ArgumentParser(
-        description='SUbiquity - Ubiquity for Servers',
+        description='Subiquity - Ubiquity for Servers',
         prog='subiquity')
     try:
         ascii_default = os.ttyname(0) == "/dev/ttysclp0"

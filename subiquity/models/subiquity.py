@@ -38,6 +38,7 @@ from .network import NetworkModel
 from .proxy import ProxyModel
 from .snaplist import SnapListModel
 from .ssh import SSHModel
+from .timezone import TimeZoneModel
 from .updates import UpdatesModel
 
 
@@ -84,6 +85,7 @@ POSTINSTALL_MODEL_NAMES = [
     "packages",
     "snaplist",
     "ssh",
+    "timezone",
     "userdata",
     ]
 
@@ -121,6 +123,7 @@ class SubiquityModel:
         self.proxy = ProxyModel()
         self.snaplist = SnapListModel()
         self.ssh = SSHModel()
+        self.timezone = TimeZoneModel()
         self.updates = UpdatesModel()
         self.userdata = {}
 
