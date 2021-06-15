@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-import contextlib
 import datetime
 import logging
 import os
@@ -232,12 +231,6 @@ class InstallController(SubiquityController):
 
             await self.postinstall(context=context)
 
-            if self.model.network.has_network:
-                self.app.update_state(ApplicationState.UU_RUNNING)
-                policy = self.model.updates.updates
-                await self.run_unattended_upgrades(context=context,
-                                                   policy=policy)
-
             self.app.update_state(ApplicationState.DONE)
         except Exception:
             kw = {}
@@ -273,6 +266,11 @@ class InstallController(SubiquityController):
         packages.extend(self.app.base_model.packages)
         for package in packages:
             await self.install_package(context=context, package=package)
+
+        if self.model.network.has_network:
+            self.app.update_state(ApplicationState.UU_RUNNING)
+            policy = self.model.updates.updates
+            await self.run_unattended_upgrades(context=context, policy=policy)
         await self.restore_apt_config(context=context)
 
     @with_context(description="configuring cloud-init")
@@ -315,11 +313,11 @@ class InstallController(SubiquityController):
     async def run_unattended_upgrades(self, context, policy):
         if self.app.opts.dry_run:
             command = ["sleep", str(5/self.app.scale_factor)]
-            aptdir = os.path.join(self.model.target, "tmp")
+            aptdir = self.tpath("tmp")
         else:
             command = [sys.executable, "-m", "curtin", "in-target",
                        "-t", "/target", "--", "unattended-upgrades", "-v"]
-            aptdir = os.path.join(self.model.target, "etc/apt/apt.conf.d")
+            aptdir = self.tpath("etc/apt/apt.conf.d")
         os.makedirs(aptdir, exist_ok=True)
         apt_conf_contents = uu_apt_conf
         if policy == 'all':
@@ -327,7 +325,7 @@ class InstallController(SubiquityController):
         else:
             apt_conf_contents += uu_apt_conf_update_security
         fname = 'zzzz-temp-installer-unattended-upgrade'
-        with external_temp_file(aptdir, fname) as apt_conf:
+        with open(os.path.join(aptdir, fname), 'wb') as apt_conf:
             apt_conf.write(apt_conf_contents)
             apt_conf.close()
             self.unattended_upgrades_ctx = context
@@ -351,17 +349,6 @@ class InstallController(SubiquityController):
                     'unattended-upgrade-shutdown',
                     '--stop-only',
                     ]), check=True)
-
-
-@contextlib.contextmanager
-def external_temp_file(dir, fname):
-    path = os.path.join(dir, fname)
-    fid = open(path, 'wb')
-    try:
-        yield fid
-    finally:
-        fid.close()
-        os.remove(path)
 
 
 uu_apt_conf = b"""\

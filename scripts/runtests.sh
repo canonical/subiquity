@@ -41,7 +41,7 @@ for answers in examples/answers*.yaml; do
     # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
     timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --answers $answers --dry-run --snaps-from-examples --machine-config $config $opts" < $tty
     validate
-    grep -q 'finish: subiquity/Install/install/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
+    grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 done
 
 clean
@@ -61,14 +61,14 @@ grep -q 'finish: subiquity/Install/install/postinstall/install_package1: SUCCESS
 grep -q 'finish: subiquity/Install/install/postinstall/install_package2: SUCCESS: installing package2' \
      .subiquity/subiquity-server-debug.log
 grep -q 'switching subiquity to edge' .subiquity/subiquity-server-debug.log
-grep -q 'finish: subiquity/Install/install/run_unattended_upgrades: SUCCESS: downloading and installing all updates' \
+grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing all updates' \
     .subiquity/subiquity-server-debug.log
 
 clean
 timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall-user-data.yaml \
                                --dry-run --machine-config examples/simple.json --kernel-cmdline 'autoinstall'"
 validate
-grep -q 'finish: subiquity/Install/install/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
+grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 
 python3 -m subiquity.cmd.schema > "$testschema"
 diff -u "autoinstall-schema.json" "$testschema"
