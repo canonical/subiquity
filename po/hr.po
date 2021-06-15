@@ -1998,19 +1998,19 @@ msgid "Import Username:"
 msgstr "Uvezi korisničko ime:"
 
 #: ../subiquity/ui/views/ssh.py:73
-msgid "Github Username:"
-msgstr "Github korisničko ime:"
+msgid "GitHub Username:"
+msgstr "GitHub korisničko ime:"
 
 #: ../subiquity/ui/views/ssh.py:74
 #, fuzzy
-msgid "Enter your Github username."
-msgstr "Github korisničko ime:"
+msgid "Enter your GitHub username."
+msgstr "GitHub korisničko ime:"
 
 #: ../subiquity/ui/views/ssh.py:76
 #, fuzzy
-msgid "A Github username may only contain alphanumeric characters or hyphens."
+msgid "A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
-"Github korisničko ime može sadržavati samo slovno-brojčane znakove ili "
+"GitHub korisničko ime može sadržavati samo slovno-brojčane znakove ili "
 "pojedinačne crtice i ne može započeti niti završavati crticom."
 
 #: ../subiquity/ui/views/ssh.py:80
@@ -2023,7 +2023,7 @@ msgid ""
 "A Launchpad username may only contain lower-case alphanumeric characters, "
 "hyphens, plus, or periods."
 msgstr ""
-"Github korisničko ime može sadržavati samo slovno-brojčane znakove ili "
+"GitHub korisničko ime može sadržavati samo slovno-brojčane znakove ili "
 "pojedinačne crtice i ne može započeti niti završavati crticom."
 
 #: ../subiquity/ui/views/ssh.py:92
@@ -2035,16 +2035,16 @@ msgid "Import SSH identity:"
 msgstr "Uvezi SSH identitet:"
 
 #: ../subiquity/ui/views/ssh.py:98
-msgid "from Github"
-msgstr "iz Githuba"
+msgid "from GitHub"
+msgstr "iz GitHuba"
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from Launchpad"
 msgstr "iz Launchpada"
 
 #: ../subiquity/ui/views/ssh.py:101
-msgid "You can import your SSH keys from Github or Launchpad."
-msgstr "Možete uvesti vaše SSH ključeve iz Githuba ili Launchpada."
+msgid "You can import your SSH keys from GitHub or Launchpad."
+msgstr "Možete uvesti vaše SSH ključeve iz GitHuba ili Launchpada."
 
 #: ../subiquity/ui/views/ssh.py:105
 msgid "Allow password authentication over SSH"
@@ -2069,10 +2069,10 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:150
 msgid ""
-"A Github username may only contain alphanumeric characters or single "
+"A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
-"Github korisničko ime može sadržavati samo slovno-brojčane znakove ili "
+"GitHub korisničko ime može sadržavati samo slovno-brojčane znakove ili "
 "pojedinačne crtice i ne može započeti niti završavati crticom."
 
 #: ../subiquity/ui/views/ssh.py:160
