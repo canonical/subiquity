@@ -1806,19 +1806,19 @@ msgid "Import Username:"
 msgstr "Importer brukernavn:"
 
 #: ../subiquity/ui/views/ssh.py:73
-msgid "Github Username:"
-msgstr "Github-brukernavn:"
+msgid "GitHub Username:"
+msgstr "GitHub-brukernavn:"
 
 #: ../subiquity/ui/views/ssh.py:74
 #, fuzzy
-msgid "Enter your Github username."
-msgstr "Github-brukernavn:"
+msgid "Enter your GitHub username."
+msgstr "GitHub-brukernavn:"
 
 #: ../subiquity/ui/views/ssh.py:76
 #, fuzzy
-msgid "A Github username may only contain alphanumeric characters or hyphens."
+msgid "A GitHub username may only contain alphanumeric characters or hyphens."
 msgstr ""
-"Github-brukernavn kan bare inneholde alfanumeriske tegn og bindestreker, og "
+"GitHub-brukernavn kan bare inneholde alfanumeriske tegn og bindestreker, og "
 "de kan ikke begynne med bindestrek."
 
 #: ../subiquity/ui/views/ssh.py:80
@@ -1831,7 +1831,7 @@ msgid ""
 "A Launchpad username may only contain lower-case alphanumeric characters, "
 "hyphens, plus, or periods."
 msgstr ""
-"Github-brukernavn kan bare inneholde alfanumeriske tegn og bindestreker, og "
+"GitHub-brukernavn kan bare inneholde alfanumeriske tegn og bindestreker, og "
 "de kan ikke begynne med bindestrek."
 
 #: ../subiquity/ui/views/ssh.py:92
@@ -1843,16 +1843,16 @@ msgid "Import SSH identity:"
 msgstr "Importer SSH-identitet:"
 
 #: ../subiquity/ui/views/ssh.py:98
-msgid "from Github"
-msgstr "fra Github"
+msgid "from GitHub"
+msgstr "fra GitHub"
 
 #: ../subiquity/ui/views/ssh.py:99
 msgid "from Launchpad"
 msgstr "fra Launchpad"
 
 #: ../subiquity/ui/views/ssh.py:101
-msgid "You can import your SSH keys from Github or Launchpad."
-msgstr "Du kan importere SSH-nøkler fra Github eller Launchpad."
+msgid "You can import your SSH keys from GitHub or Launchpad."
+msgstr "Du kan importere SSH-nøkler fra GitHub eller Launchpad."
 
 #: ../subiquity/ui/views/ssh.py:105
 msgid "Allow password authentication over SSH"
@@ -1875,10 +1875,10 @@ msgstr ""
 
 #: ../subiquity/ui/views/ssh.py:150
 msgid ""
-"A Github username may only contain alphanumeric characters or single "
+"A GitHub username may only contain alphanumeric characters or single "
 "hyphens, and cannot begin or end with a hyphen."
 msgstr ""
-"Github-brukernavn kan bare inneholde alfanumeriske tegn og bindestreker, og "
+"GitHub-brukernavn kan bare inneholde alfanumeriske tegn og bindestreker, og "
 "de kan ikke begynne med bindestrek."
 
 #: ../subiquity/ui/views/ssh.py:160
