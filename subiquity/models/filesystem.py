@@ -629,18 +629,6 @@ class Disk(_Device):
 
     ok_for_lvm_vg = ok_for_raid
 
-    def for_client(self, min_size):
-        from subiquity.common.filesystem import labels
-        from subiquity.common.types import Disk
-        return Disk(
-            id=self.id,
-            label=labels.label(self),
-            type=labels.desc(self),
-            size=self.size,
-            usage_labels=labels.usage_labels(self),
-            partitions=[p.for_client() for p in self._partitions],
-            ok_for_guided=self.size >= min_size)
-
 
 @fsobj("partition")
 class Partition(_Formattable):
