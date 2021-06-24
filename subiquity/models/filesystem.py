@@ -703,6 +703,12 @@ class Raid(_Device):
 
     @property
     def size(self):
+        if self.preserve and self._m._probe_data:
+            bd = self._m._probe_data['blockdev'].get('/dev/' + self.name)
+            if bd:
+                s = int(bd['attrs']['size'])
+                if s > 0:
+                    return s
         return get_raid_size(self.raidlevel, self.devices)
 
     @property
