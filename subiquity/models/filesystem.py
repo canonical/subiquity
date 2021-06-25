@@ -1232,24 +1232,22 @@ class FilesystemModel(object):
         self._probe_data = probe_data
         self.reset()
 
-    def _matcher(self, type, kw):
+    def _matcher(self, kw):
         for a in self._actions:
-            if a.type != type:
-                continue
             for k, v in kw.items():
                 if getattr(a, k) != v:
                     break
             else:
                 yield a
 
-    def _one(self, *, type, **kw):
+    def _one(self, **kw):
         try:
-            return next(self._matcher(type, kw))
+            return next(self._matcher(kw))
         except StopIteration:
             return None
 
-    def _all(self, *, type, **kw):
-        return list(self._matcher(type, kw))
+    def _all(self, **kw):
+        return list(self._matcher(kw))
 
     def all_mounts(self):
         return self._all(type='mount')
