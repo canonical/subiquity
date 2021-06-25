@@ -56,7 +56,10 @@ log = logging.getLogger('subiquity.ui.raid')
 
 
 raidlevel_choices = [
-    Option((_(level.name), True, level)) for level in raidlevels]
+    Option((_(level.name), True, level))
+    for level in raidlevels
+    if level.value != "container"
+]
 
 
 class RaidnameEditor(StringEditor, WantsToKnowFormField):

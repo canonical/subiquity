@@ -134,6 +134,8 @@ class FilesystemManipulator:
         if raid is None:
             return
         self.clear(raid)
+        for v in raid._subvolumes:
+            self.delete_raid(v)
         for p in list(raid.partitions()):
             self.delete_partition(p)
         for d in set(raid.devices) | set(raid.spare_devices):

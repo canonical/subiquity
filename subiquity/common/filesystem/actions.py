@@ -105,14 +105,20 @@ def _part_actions(part):
 
 @_supported_actions.register(Raid)
 def _raid_actions(raid):
-    return [
-        DeviceAction.EDIT,
-        DeviceAction.PARTITION,
-        DeviceAction.FORMAT,
-        DeviceAction.REMOVE,
-        DeviceAction.DELETE,
-        DeviceAction.REFORMAT,
-        ]
+    if raid.raidlevel == "container":
+        return [
+            DeviceAction.EDIT,
+            DeviceAction.DELETE,
+            ]
+    else:
+        return [
+            DeviceAction.EDIT,
+            DeviceAction.PARTITION,
+            DeviceAction.FORMAT,
+            DeviceAction.REMOVE,
+            DeviceAction.DELETE,
+            DeviceAction.REFORMAT,
+            ]
 
 
 @_supported_actions.register(LVM_VolGroup)

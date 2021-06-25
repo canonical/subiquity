@@ -122,7 +122,17 @@ def _desc_partition(partition):
 
 @desc.register(Raid)
 def _desc_raid(raid):
-    return _("software RAID {level}").format(level=raid.raidlevel[4:])
+    level = raid.raidlevel
+    if level.lower().startswith('raid'):
+        level = level[4:]
+    if raid.container:
+        raid_type = raid.container.metadata
+    elif raid.metadata == "imsm":
+        raid_type = 'imsm'  # maybe VROC?
+    else:
+        raid_type = _("software")
+    return _("{type} RAID {level}").format(
+        type=raid_type, level=level)
 
 
 @desc.register(LVM_VolGroup)
@@ -227,6 +237,16 @@ def _usage_labels_partition(partition):
     if partition.flag == "prep" or partition.flag == "bios_grub":
         return []
     return _usage_labels_generic(partition)
+
+
+@usage_labels.register(Raid)
+def _usage_labels_raid(raid):
+    if raid.metadata == 'imsm' and raid._subvolumes:
+        return [
+            _('container for {devices}').format(
+                devices=', '.join([label(v) for v in raid._subvolumes]))
+            ]
+    return _usage_labels_generic(raid)
 
 
 @functools.singledispatch
