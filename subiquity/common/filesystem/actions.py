@@ -111,7 +111,7 @@ def _raid_actions(raid):
             DeviceAction.DELETE,
             ]
     else:
-        return [
+        actions = [
             DeviceAction.EDIT,
             DeviceAction.PARTITION,
             DeviceAction.FORMAT,
@@ -119,6 +119,10 @@ def _raid_actions(raid):
             DeviceAction.DELETE,
             DeviceAction.REFORMAT,
             ]
+        if raid._m.bootloader == Bootloader.UEFI:
+            if raid.container and raid.container.metadata == 'imsm':
+                actions.append(DeviceAction.TOGGLE_BOOT)
+        return actions
 
 
 @_supported_actions.register(LVM_VolGroup)
@@ -346,6 +350,7 @@ _can_toggle_boot = make_checker(DeviceAction.TOGGLE_BOOT)
 
 
 @_can_toggle_boot.register(Disk)
+@_can_toggle_boot.register(Raid)
 def _can_toggle_boot_disk(disk):
     if boot.is_boot_device(disk):
         for disk2 in boot.all_boot_devices(disk._m):

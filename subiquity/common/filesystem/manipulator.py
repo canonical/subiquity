@@ -356,7 +356,8 @@ class FilesystemManipulator:
                         p.wipe = 'zero'
                         p.grub_device = True
         else:
-            new_boot_disk.preserve = False
+            if new_boot_disk.type == "disk":
+                new_boot_disk.preserve = False
             if bootloader == Bootloader.UEFI:
                 part_size = UEFI_GRUB_SIZE_BYTES
                 if UEFI_GRUB_SIZE_BYTES*2 >= new_boot_disk.size:

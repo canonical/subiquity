@@ -17,6 +17,7 @@ import functools
 
 from subiquity.models.filesystem import (
     Disk,
+    Raid,
     Bootloader,
     Partition,
     )
@@ -37,6 +38,16 @@ def _is_boot_device_disk(disk):
         return disk.grub_device
     elif bl in [Bootloader.PREP, Bootloader.UEFI]:
         return any(p.grub_device for p in disk._partitions)
+
+
+@is_boot_device.register(Raid)
+def _is_boot_device_raid(raid):
+    bl = raid._m.bootloader
+    if bl != Bootloader.UEFI:
+        return False
+    if not raid.container or raid.container.metadata != 'imsm':
+        return False
+    return any(p.grub_device for p in raid._partitions)
 
 
 @functools.singledispatch
@@ -66,6 +77,19 @@ def _can_be_boot_device_disk(disk, *, with_reformatting=False):
         return True
 
 
+@can_be_boot_device.register(Raid)
+def _can_be_boot_device_raid(raid, *, with_reformatting=False):
+    bl = raid._m.bootloader
+    if bl != Bootloader.UEFI:
+        return False
+    if not raid.container or raid.container.metadata != 'imsm':
+        return False
+    if raid._has_preexisting_partition() and not with_reformatting:
+        return any(is_esp(p) for p in raid._partitions)
+    else:
+        return True
+
+
 @functools.singledispatch
 def is_esp(device):
     """Is `device` a UEFI ESP?"""
@@ -78,7 +102,7 @@ def _is_esp_partition(partition):
         return False
     if partition.device.ptable == "gpt":
         return partition.flag == "boot"
-    else:
+    elif isinstance(partition.device, Disk):
         blockdev_raw = partition._m._probe_data['blockdev'].get(
             partition._path())
         if blockdev_raw is None:
@@ -91,11 +115,14 @@ def _is_esp_partition(partition):
         except ValueError:
             # In case there was garbage in the udev entry...
             return False
+    else:
+        return False
 
 
 def all_boot_devices(model):
     """Return all current boot devices for `model`."""
-    return [disk for disk in model.all_disks() if is_boot_device(disk)]
+    candidates = model.all_disks() + model.all_raids()
+    return [cand for cand in candidates if is_boot_device(cand)]
 
 
 def is_bootloader_partition(partition):

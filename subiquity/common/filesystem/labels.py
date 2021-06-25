@@ -256,6 +256,7 @@ def for_client(device, *, min_size=0):
 
 
 @for_client.register(Disk)
+@for_client.register(Raid)
 def _for_client_disk(disk, *, min_size=0):
     return types.Disk(
         id=disk.id,
