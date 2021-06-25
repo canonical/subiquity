@@ -51,6 +51,7 @@ from subiquity.common.types import (
     )
 from subiquity.models.filesystem import (
     dehumanize_size,
+    Raid,
     )
 from subiquity.server.controller import (
     SubiquityController,
@@ -222,14 +223,27 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             return probe_resp
         if not min_size:
             min_size = DEFAULT_MIN_SIZE_GUIDED
+        disks = []
+        for raid in self.model._all(type='raid'):
+            if not boot.can_be_boot_device(raid, with_reformatting=True):
+                continue
+            disks.append(raid)
+        for disk in self.model._all(type='disk'):
+            if not boot.can_be_boot_device(disk, with_reformatting=True):
+                continue
+            cd = disk.constructed_device()
+            if isinstance(cd, Raid):
+                can_be_boot = False
+                for v in cd._subvolumes:
+                    if boot.can_be_boot_device(v, with_reformatting=True):
+                        can_be_boot = True
+                if can_be_boot:
+                    continue
+            disks.append(disk)
         return GuidedStorageResponse(
             status=ProbeStatus.DONE,
             error_report=self.full_probe_error(),
-            disks=[
-                labels.for_client(device, min_size=min_size)
-                for device in self.model._actions
-                if boot.can_be_boot_device(device, with_reformatting=True)
-            ])
+            disks=[labels.for_client(d, min_size=min_size) for d in disks])
 
     async def guided_POST(self, choice: Optional[GuidedChoice]) \
             -> StorageResponse:
