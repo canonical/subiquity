@@ -85,7 +85,12 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             await asyncio.sleep(0.1)
 
         if self.answers['guided']:
-            disk = self.ui.body.form.disks[self.answers['guided-index']]
+            if 'guided-index' in self.answers:
+                disk = self.ui.body.form.disks[self.answers['guided-index']]
+            elif 'guided-label' in self.answers:
+                label = self.answers['guided-label']
+                [disk] = [d for d in self.ui.body.form.disks
+                          if d.label == label]
             method = self.answers.get('guided-method')
             self.ui.body.form.guided_choice.value = {
                 'disk': disk,
