@@ -356,11 +356,11 @@ class attributes:
     # Just a namespace to hang our wrappers around attr.ib() off.
 
     @staticmethod
-    def ref(*, backlink=None):
+    def ref(*, backlink=None, default=attr.NOTHING):
         metadata = {'ref': True}
         if backlink:
             metadata['backlink'] = backlink
-        return attr.ib(metadata=metadata)
+        return attr.ib(metadata=metadata, default=default)
 
     @staticmethod
     def reflist(*, backlink=None, default=attr.NOTHING):
@@ -846,8 +846,8 @@ class Filesystem:
 
 @fsobj("mount")
 class Mount:
-    device = attributes.ref(backlink="_mount")  # Filesystem
     path = attr.ib()
+    device = attributes.ref(backlink="_mount", default=None)  # Filesystem
     fstype = attr.ib(default=None)
     options = attr.ib(default=None)
     spec = attr.ib(default=None)
