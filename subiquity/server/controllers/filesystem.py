@@ -234,7 +234,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided_POST(self, choice: Optional[GuidedChoice]) \
             -> StorageResponse:
         if choice is not None:
-            disk = self.model._one(type='disk', id=choice.disk_id)
+            disk = self.model._one(id=choice.disk_id)
             if choice.use_lvm:
                 lvm_options = None
                 if choice.password is not None:
