@@ -170,9 +170,9 @@ raidlevels = [
     RaidLevel(_("0 (striped)"),  "raid0",  2, False),
     # for translators: this is a description of a RAID level
     RaidLevel(_("1 (mirrored)"), "raid1",  2),
-    RaidLevel(_("5"),            "raid5",  3),
+    RaidLevel(_("5"),            "raid5",  2),
     RaidLevel(_("6"),            "raid6",  4),
-    RaidLevel(_("10"),           "raid10", 4),
+    RaidLevel(_("10"),           "raid10", 2),
     ]
 
 
