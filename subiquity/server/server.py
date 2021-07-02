@@ -240,9 +240,15 @@ class SubiquityServer(Application):
                             os.path.dirname(__file__))),
                     "examples", "snaps"),
                 self.scale_factor)
-        else:
+            self.snapd = AsyncSnapd(connection)
+        elif os.path.exists(self.snapd_socket_path):
             connection = SnapdConnection(self.root, self.snapd_socket_path)
-        self.snapd = AsyncSnapd(connection)
+            self.snapd = AsyncSnapd(connection)
+        else:
+            log.info("no snapd socket found. Snap support is disabled")
+            self.controllers.remove("Refresh")
+            self.controllers.remove("SnapList")
+            self.snapd = None
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.event_listeners = []
         self.autoinstall_config = None
@@ -544,14 +550,20 @@ class SubiquityServer(Application):
         await self.apply_autoinstall_config()
 
     def _network_change(self):
+        if not self.snapd:
+            return
         self.hub.broadcast('snapd-network-change')
 
     async def _proxy_set(self):
+        if not self.snapd:
+            return
         await run_in_thread(
             self.snapd.connection.configure_proxy, self.base_model.proxy)
         self.hub.broadcast('snapd-network-change')
 
     def restart(self):
+        if not self.snapd:
+            return
         cmdline = ['snap', 'run', 'subiquity.subiquity-server']
         if self.opts.dry_run:
             cmdline = [
