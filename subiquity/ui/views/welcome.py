@@ -19,7 +19,6 @@ Welcome provides user with language selection
 """
 
 import logging
-import os
 
 from urwid import Text
 
@@ -29,6 +28,8 @@ from subiquitycore.ui.stretchy import Stretchy
 from subiquitycore.ui.utils import button_pile, rewrap, screen
 from subiquitycore.screen import is_linux_tty
 from subiquitycore.view import BaseView
+
+from subiquity.common.resources import resource_path
 
 log = logging.getLogger("subiquity.views.welcome")
 
@@ -47,8 +48,7 @@ attach the contents of /var/log, it would be most appreciated.
 
 
 def get_languages():
-    base = os.environ.get("SNAP", ".")
-    lang_path = os.path.join(base, "languagelist")
+    lang_path = resource_path('languagelist')
 
     languages = []
     with open(lang_path) as lang_file:

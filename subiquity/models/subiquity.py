@@ -28,6 +28,8 @@ from curtin.config import merge_config
 from subiquitycore.file_util import write_file
 from subiquitycore.utils import run_command
 
+from subiquity.common.resources import resource_path
+
 from .filesystem import FilesystemModel
 from .identity import IdentityModel
 from .kernel import KernelModel
@@ -188,9 +190,7 @@ class SubiquityModel:
             config['preserve_hostname'] = True
         user = self.identity.user
         if user:
-            users_and_groups_path = (
-                os.path.join(os.environ.get("SNAP", "."),
-                             "users-and-groups"))
+            users_and_groups_path = resource_path('users-and-groups')
             if os.path.exists(users_and_groups_path):
                 groups = open(users_and_groups_path).read().split()
             else:

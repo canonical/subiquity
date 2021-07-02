@@ -34,6 +34,7 @@ from subiquitycore.ui.utils import screen
 from subiquitycore.utils import crypt_password
 from subiquitycore.view import BaseView
 
+from subiquity.common.resources import resource_path
 from subiquity.common.types import IdentityData
 
 
@@ -163,8 +164,7 @@ class IdentityView(BaseView):
     def __init__(self, controller, identity_data):
         self.controller = controller
 
-        reserved_usernames_path = (
-            os.path.join(os.environ.get("SNAP", "."), "reserved-usernames"))
+        reserved_usernames_path = resource_path('reserved-usernames')
         reserved_usernames = set()
         if os.path.exists(reserved_usernames_path):
             with open(reserved_usernames_path) as fp:
