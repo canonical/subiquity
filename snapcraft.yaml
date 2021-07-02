@@ -10,12 +10,6 @@ apps:
     command: usr/bin/subiquity
     environment:
       PYTHONIOENCODING: utf-8
-  subiquity-loadkeys:
-    command: usr/bin/subiquity-loadkeys
-  subiquity-configure-apt:
-    command: usr/bin/subiquity-configure-apt
-  console-conf:
-    command: usr/bin/console-conf
   probert:
     command: bin/probert
   subiquity-server:

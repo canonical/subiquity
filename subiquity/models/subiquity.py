@@ -280,7 +280,7 @@ class SubiquityModel:
 
             'curthooks_commands': {
                 '001-configure-apt': [
-                    '/snap/bin/subiquity.subiquity-configure-apt',
+                    'subiquity-configure-apt',
                     sys.executable, str(self.network.has_network).lower(),
                     ],
                 },
