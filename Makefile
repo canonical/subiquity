@@ -50,23 +50,21 @@ flake8:
 	@echo 'tox -e flake8' is preferred to 'make flake8'
 	$(PYTHON) -m flake8 $(CHECK_DIRS) --exclude gettext38.py,contextlib38.py
 
-unit:
+unit: gitdeps
 	python3 -m unittest discover
 
-integration:
+integration: gitdeps
 	echo "Running integration tests..."
 	./scripts/runtests.sh
 
 check: unit integration
 
-curtin:
-	./scripts/checkout-part.py curtin
+curtin: snapcraft.yaml
+	./scripts/update-part.py curtin
 
-probert:
-	@if [ ! -d "$(PROBERTDIR)" ]; then \
-		./scripts/checkout-part.py probert && \
-		(cd probert && $(PYTHON) setup.py build_ext -i); \
-	fi
+probert: snapcraft.yaml
+	./scripts/update-part.py probert
+	(cd probert && $(PYTHON) setup.py build_ext -i);
 
 gitdeps: curtin probert
 
