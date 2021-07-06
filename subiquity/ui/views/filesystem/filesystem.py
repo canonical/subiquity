@@ -303,6 +303,7 @@ class DeviceList(WidgetWrap):
     _raid_REFORMAT = _disk_REFORMAT
     _raid_REMOVE = _disk_REMOVE
     _raid_DELETE = _partition_DELETE
+    _raid_TOGGLE_BOOT = _disk_TOGGLE_BOOT
 
     _lvm_volgroup_EDIT = _stretchy_shower(VolGroupStretchy)
     _lvm_volgroup_CREATE_LV = _disk_PARTITION

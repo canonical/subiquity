@@ -78,6 +78,14 @@ class ConfirmDeleteStretchy(Stretchy):
                 if p not in [None, obj]:
                     rows.append(TableRow(cells))
             lines.append(TablePile(rows))
+        elif obj.type == "raid" and obj._subvolumes:
+            n = len(obj._subvolumes)
+            line = ngettext(
+                    "It contains 1 volume.",
+                    "It contains {n} volumes.",
+                    n)
+            lines.append(Text(line.format(n=n)))
+            lines.append(Text(""))
         else:
             lines.append(Text(_("It is not formatted or mounted.")))
 

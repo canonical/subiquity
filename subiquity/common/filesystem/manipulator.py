@@ -134,6 +134,8 @@ class FilesystemManipulator:
         if raid is None:
             return
         self.clear(raid)
+        for v in raid._subvolumes:
+            self.delete_raid(v)
         for p in list(raid.partitions()):
             self.delete_partition(p)
         for d in set(raid.devices) | set(raid.spare_devices):
@@ -354,7 +356,8 @@ class FilesystemManipulator:
                         p.wipe = 'zero'
                         p.grub_device = True
         else:
-            new_boot_disk.preserve = False
+            if new_boot_disk.type == "disk":
+                new_boot_disk.preserve = False
             if bootloader == Bootloader.UEFI:
                 part_size = UEFI_GRUB_SIZE_BYTES
                 if UEFI_GRUB_SIZE_BYTES*2 >= new_boot_disk.size:
