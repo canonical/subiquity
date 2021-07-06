@@ -48,6 +48,12 @@ dryrun-serial ui-view-serial:
 dryrun-server:
 	$(PYTHON) -m subiquity.cmd.server $(DRYRUN)
 
+dryrun-system-setup:
+	$(PYTHON) -m system_setup.cmd.tui $(DRYRUN)
+
+dryrun-system-setup-server:
+	$(PYTHON) -m system_setup.cmd.server $(DRYRUN)
+
 lint: flake8
 
 flake8:
