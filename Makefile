@@ -3,7 +3,7 @@
 #
 NAME=subiquity
 PYTHONSRC=$(NAME)
-PYTHONPATH=$(shell pwd):$(shell pwd)/probert
+PYTHONPATH=$(shell pwd):$(shell pwd)/probert:$(shell pwd)/curtin
 PROBERTDIR=./probert
 PROBERT_REPO=https://github.com/canonical/probert
 DRYRUN?=--dry-run --bootloader uefi --machine-config examples/simple.json
@@ -25,7 +25,7 @@ install_deps:
 	sudo apt-get install -y python3-urwid python3-pyudev python3-nose python3-flake8 \
 		python3-yaml python3-coverage python3-dev pkg-config libnl-genl-3-dev \
 		libnl-route-3-dev python3-attr python3-distutils-extra python3-requests \
-		python3-requests-unixsocket python3-jsonschema python3-curtin python3-apport \
+		python3-requests-unixsocket python3-jsonschema python3-apport \
 		python3-bson xorriso isolinux python3-aiohttp probert cloud-init ssh-import-id
 
 i18n:
@@ -50,20 +50,23 @@ flake8:
 	@echo 'tox -e flake8' is preferred to 'make flake8'
 	$(PYTHON) -m flake8 $(CHECK_DIRS) --exclude gettext38.py,contextlib38.py
 
-unit:
+unit: gitdeps
 	python3 -m unittest discover
 
-integration:
+integration: gitdeps
 	echo "Running integration tests..."
 	./scripts/runtests.sh
 
 check: unit integration
 
-probert:
-	@if [ ! -d "$(PROBERTDIR)" ]; then \
-		git clone -q $(PROBERT_REPO) $(PROBERTDIR); \
-		(cd probert && $(PYTHON) setup.py build_ext -i); \
-	fi
+curtin: snapcraft.yaml
+	./scripts/update-part.py curtin
+
+probert: snapcraft.yaml
+	./scripts/update-part.py probert
+	(cd probert && $(PYTHON) setup.py build_ext -i);
+
+gitdeps: curtin probert
 
 schema: probert
 	@$(PYTHON) -m subiquity.cmd.schema > autoinstall-schema.json

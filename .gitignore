@@ -63,8 +63,9 @@ logs/*
 venv
 .pybuild
 
-# probert as its pulled externally, ignore top level only.
+# top level dependencies fetched from git, ignore top level only.
 /probert/
+/curtin/
 
 # installer isos
 *.iso
