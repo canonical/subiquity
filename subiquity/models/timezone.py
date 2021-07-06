@@ -24,7 +24,14 @@ class TimeZoneModel(object):
     timezone = ''
 
     def __init__(self):
+        # This is the raw request from the API / autoinstall.
+        # Storing the raw request allows us to also report the requested
+        # value in /var/log/installer/autoinstall-user-data,
+        # so that if 'geoip' is requested, and multiple installs are
+        # done in different zones, they get a geoip-customized answer.
         self._request = None
+        # The actually timezone to set, possibly post-geoip lookup or
+        # possibly manually specified.
         self.timezone = ''
         self.got_from_geoip = False
 
