@@ -24,7 +24,7 @@ class LocaleModel(object):
     XXX Only represents *language* selection for now.
     """
 
-    selected_language = None
+    selected_language = 'C'
 
     def switch_language(self, code):
         self.selected_language = code
@@ -33,7 +33,7 @@ class LocaleModel(object):
         return "<Selected: {}>".format(self.selected_language)
 
     def make_cloudconfig(self):
-        if not self.selected_language:
+        if not self.selected_language or self.selected_language == 'C':
             return {}
         locale = self.selected_language
         if '.' not in locale and '_' in locale:
