@@ -73,3 +73,6 @@ venv
 
 # Runtime output
 .subiquity
+
+# ignore local vscode config
+.vscode
