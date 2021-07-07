@@ -71,6 +71,7 @@ from subiquitycore.snapd import (
     SnapdConnection,
     )
 
+NOPROBERARG = "NOPROBER"
 
 log = logging.getLogger('subiquity.server.server')
 
@@ -230,7 +231,10 @@ class SubiquityServer(Application):
 
         self.error_reporter = ErrorReporter(
             self.context.child("ErrorReporter"), self.opts.dry_run, self.root)
-        self.prober = Prober(opts.machine_config, self.debug_flags)
+        if opts.machine_config == NOPROBERARG:
+            self.prober = None
+        else:
+            self.prober = Prober(opts.machine_config, self.debug_flags)
         self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
         if opts.snaps_from_examples:
             connection = FakeSnapdConnection(
