@@ -71,8 +71,15 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
 validate
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 
-# Limit schema check to Focal+ - the timezone list on bionic is different
-if (( $(echo "$(lsb_release -sr) >= 20.04" | bc -l) )); then
-    python3 -m subiquity.cmd.schema > "$testschema"
-    diff -u "autoinstall-schema.json" "$testschema"
-fi
+case "$(lsb_release -sr)" in
+    # Limit schema check to Focal+ - the timezone list on bionic is different
+    # And Impish adds more ...
+    # Temporarily disable on Impish until a better answer is available
+    "20.04"|"20.10"|"21.04")
+        python3 -m subiquity.cmd.schema > "$testschema"
+        diff -u "autoinstall-schema.json" "$testschema"
+        ;;
+esac
+
+# if (( $(echo "$(lsb_release -sr) >= 20.04" | bc -l) )); then
+# fi
