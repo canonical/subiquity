@@ -27,12 +27,12 @@ def setup_environment():
     except locale.Error:
         locale.setlocale(locale.LC_CTYPE, "C.UTF-8")
 
-    # Prefer utils from $SNAP, over system-wide
-    snap = os.environ.get('SNAP')
-    if snap:
+    # Prefer utils from $SUBIQUITY_ROOT, over system-wide
+    root = os.environ.get('SUBIQUITY_ROOT')
+    if root:
         os.environ['PATH'] = os.pathsep.join([
-            os.path.join(snap, 'bin'),
-            os.path.join(snap, 'usr', 'bin'),
+            os.path.join(root, 'bin'),
+            os.path.join(root, 'usr', 'bin'),
             os.environ['PATH'],
         ])
-        os.environ["APPORT_DATA_DIR"] = os.path.join(snap, 'share/apport')
+        os.environ["APPORT_DATA_DIR"] = os.path.join(root, 'share/apport')
