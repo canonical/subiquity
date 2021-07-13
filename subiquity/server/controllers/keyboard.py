@@ -23,6 +23,7 @@ from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command
 
 from subiquity.common.apidef import API
+from subiquity.common.resources import resource_path
 from subiquity.common.serialize import Serializer
 from subiquity.common.types import (
     AnyStep,
@@ -117,7 +118,7 @@ def for_ui(setting):
 class KeyboardList:
 
     def __init__(self):
-        self._kbnames_dir = os.path.join(os.environ.get("SNAP", '.'), 'kbds')
+        self._kbnames_dir = resource_path('kbds')
         self.serializer = Serializer(compact=True)
         self._clear()
 
@@ -169,7 +170,7 @@ class KeyboardController(SubiquityController):
         }
 
     def __init__(self, app):
-        self._kbds_dir = os.path.join(os.environ.get("SNAP", '.'), 'kbds')
+        self._kbds_dir = resource_path('kbds')
         self.serializer = Serializer(compact=True)
         self.pc105_steps = None
         self.needs_set_keyboard = False
@@ -199,7 +200,7 @@ class KeyboardController(SubiquityController):
             fp.write(self.model.render_config_file())
         cmds = [
             ['setupcon', '--save', '--force', '--keyboard-only'],
-            ['subiquity-loadkeys'],
+            [resource_path('bin/subiquity-loadkeys')],
             ]
         if self.opts.dry_run:
             scale = os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1")

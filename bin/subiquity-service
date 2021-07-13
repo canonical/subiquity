@@ -5,7 +5,7 @@ if [ -n "$1" ]; then
 fi
 /bin/dmesg -n 1
 if [ "$port" = "tty1" ]; then
-	$SNAP/usr/bin/subiquity-loadkeys
+	$SNAP/bin/subiquity-loadkeys
 	setfont $SNAP/subiquity.psf
 	exec /sbin/agetty -n --noclear -l $SNAP/usr/bin/python3 -o $SNAP/usr/bin/subiquity $port $TERM
 else
