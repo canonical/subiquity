@@ -118,8 +118,9 @@ class MetaController:
 
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
         ips = []
-        for dev in self.app.base_model.network.get_all_netdevs():
-            ips.extend(map(str, dev.actual_global_ip_addresses))
+        if self.app.base_model.network:
+            for dev in self.app.base_model.network.get_all_netdevs():
+                ips.extend(map(str, dev.actual_global_ip_addresses))
         if not ips:
             return None
         username = self.app.installer_user_name
