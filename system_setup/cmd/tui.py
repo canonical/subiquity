@@ -23,11 +23,11 @@ import sys
 
 from subiquitycore.log import setup_logger
 
-from subiquity.common import (
+from subiquity.cmd.common import (
     LOGDIR,
     setup_environment,
     )
-from .server import make_server_args_parser
+from system_setup.cmd.server import make_server_args_parser
 
 
 class ClickAction(argparse.Action):
@@ -80,7 +80,7 @@ def main():
     setup_environment()
     # setup_environment sets $APPORT_DATA_DIR which must be set before
     # apport is imported, which is done by this import:
-    from subiquity.client.client import SubiquityClient
+    from system_setup.client.client import SystemSetupClient
     parser = make_client_args_parser()
     args = sys.argv[1:]
     if '--dry-run' in args:
@@ -93,7 +93,7 @@ def main():
             server_parser = make_server_args_parser()
             server_parser.parse_args(server_args)  # just to check
             server_output = open('.subiquity/server-output', 'w')
-            server_cmd = [sys.executable, '-m', 'subiquity.cmd.server'] + \
+            server_cmd = [sys.executable, '-m', 'system_setup.cmd.server'] + \
                 server_args
             server_proc = subprocess.Popen(
                 server_cmd, stdout=server_output, stderr=subprocess.STDOUT)
@@ -111,11 +111,11 @@ def main():
     logdir = LOGDIR
     if opts.dry_run:
         logdir = ".subiquity"
-    logfiles = setup_logger(dir=logdir, base='subiquity-client')
+    logfiles = setup_logger(dir=logdir, base='system_setup-client')
 
     logger = logging.getLogger('subiquity')
-    version = os.environ.get("SNAP_REVISION", "unknown")
-    logger.info("Starting Subiquity revision {}".format(version))
+    version = "unknown"
+    logger.info("Starting System Setup revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
 
     if opts.answers is None and os.path.exists(AUTO_ANSWERS_FILE):
@@ -132,7 +132,7 @@ def main():
             opts.answers.close()
             opts.answers = None
 
-    subiquity_interface = SubiquityClient(opts)
+    subiquity_interface = SystemSetupClient(opts)
 
     subiquity_interface.note_file_for_apport(
         "InstallerLog", logfiles['debug'])
