@@ -324,3 +324,9 @@ class SnapListResponse:
     status: SnapCheckState
     snaps: List[SnapInfo] = attr.Factory(list)
     selections: List[SnapSelection] = attr.Factory(list)
+
+
+@attr.s(auto_attribs=True)
+class TimeZoneInfo:
+    timezone: str
+    from_geoip: bool

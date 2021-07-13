@@ -42,6 +42,7 @@ from subiquity.common.types import (
     SSHData,
     LiveSessionSSHInfo,
     StorageResponse,
+    TimeZoneInfo,
     WLANSupportInstallState,
     ZdevInfo,
     )
@@ -225,6 +226,10 @@ class API:
 
         class snap_info:
             def GET(snap_name: str) -> SnapInfo: ...
+
+    class timezone:
+        def GET() -> TimeZoneInfo: ...
+        def POST(tz: str): ...
 
     class reboot:
         def POST(): ...
