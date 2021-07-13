@@ -68,7 +68,7 @@ probert: snapcraft.yaml
 
 gitdeps: curtin probert
 
-schema: probert
+schema: gitdeps
 	@$(PYTHON) -m subiquity.cmd.schema > autoinstall-schema.json
 
 clean:
