@@ -283,7 +283,7 @@ class SubiquityModel:
 
             'curthooks_commands': {
                 '001-configure-apt': [
-                    'subiquity-configure-apt',
+                    resource_path('bin/subiquity-configure-apt'),
                     sys.executable, str(self.network.has_network).lower(),
                     ],
                 },

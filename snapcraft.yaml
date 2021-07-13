@@ -97,10 +97,8 @@ parts:
     organize:
       'bin/console-conf-tui': usr/bin/console-conf
       'bin/subiquity-tui': usr/bin/subiquity
-      'bin/subiquity-loadkeys': usr/bin/subiquity-loadkeys
       'bin/subiquity-service': usr/bin/subiquity-service
       'bin/subiquity-server': usr/bin/subiquity-server
-      'bin/subiquity-configure-apt': usr/bin/subiquity-configure-apt
   users-and-groups:
     plugin: nil
     build-packages:

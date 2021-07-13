@@ -200,7 +200,7 @@ class KeyboardController(SubiquityController):
             fp.write(self.model.render_config_file())
         cmds = [
             ['setupcon', '--save', '--force', '--keyboard-only'],
-            [resource_path('usr/bin/subiquity-loadkeys')],
+            [resource_path('bin/subiquity-loadkeys')],
             ]
         if self.opts.dry_run:
             scale = os.environ.get('SUBIQUITY_REPLAY_TIMESCALE', "1")
