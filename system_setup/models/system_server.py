@@ -24,6 +24,7 @@ from subiquitycore.utils import run_command, is_wsl
 from subiquity.models.locale import LocaleModel
 from subiquity.models.identity import IdentityModel
 from .wslconf1 import WSLConfiguration1Model
+from .wslconf2 import WSLConfiguration2Model
 
 
 log = logging.getLogger('system_setup.models.system_server')
@@ -45,6 +46,7 @@ ALL_MODEL_NAMES = [
     "identity",
     "locale",
     "wslconf1",
+    "wslconf2",
 ]
 
 
@@ -74,6 +76,7 @@ class SystemSetupModel(SubiquityModel):
         self.locale = LocaleModel()
         self.identity = IdentityModel()
         self.wslconf1 = WSLConfiguration1Model()
+        self.wslconf2 = WSLConfiguration2Model()
 
         self.confirmation = asyncio.Event()
 

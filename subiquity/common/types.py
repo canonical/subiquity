@@ -339,15 +339,9 @@ class WSLConfiguration1Data:
     gen_resolvconf: bool = attr.ib(default=True)
 
 
-class LookType(enum.Enum):
-    Default = "default"
-    Light = "light"
-    Dark = "dark"
-
-
 @attr.s(auto_attribs=True)
 class WSLConfiguration2Data:
-    gui_theme: LookType = attr.ib(default=LookType.Default)
+    gui_theme: str = attr.ib(default='default')
     gui_followwintheme: bool = attr.ib(default=True)
     legacy_gui: bool = attr.ib(default=False)
     legacy_audio: bool = attr.ib(default=False)

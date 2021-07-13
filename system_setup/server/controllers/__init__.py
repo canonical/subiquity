@@ -4,6 +4,7 @@ from subiquity.server.controllers.locale import LocaleController
 from subiquity.server.controllers.reporting import ReportingController
 from subiquity.server.controllers.userdata import UserdataController
 from .wslconf1 import WSLConfiguration1Controller
+from .wslconf2 import WSLConfiguration2Controller
 
 __all__ = [
     'EarlyController',
@@ -14,4 +15,5 @@ __all__ = [
     'ReportingController',
     'UserdataController',
     "WSLConfiguration1Controller",
+    "WSLConfiguration2Controller",
 ]

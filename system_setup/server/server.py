@@ -27,7 +27,8 @@ class SystemSetupServer(SubiquityServer):
         "Userdata",
         "Locale",
         "Identity",
-        "WSLConfiguration1"
+        "WSLConfiguration1",
+        "WSLConfiguration2"
         ]
 
     def make_model(self):
