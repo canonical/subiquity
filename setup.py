@@ -111,10 +111,10 @@ setup(name='subiquity',
           'bin/subiquity-configure-apt',
           'bin/subiquity-loadkeys',
           'bin/subiquity-service',
-          'bin/subiquity-server',
       ],
       entry_points={
           'console_scripts': [
+              'subiquity-server = subiquity.cmd.server:main',
               'subiquity-tui = subiquity.cmd.tui:main',
               'console-conf-tui = console_conf.cmd.tui:main',
               ('console-conf-write-login-details = '

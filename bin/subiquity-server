@@ -1,5 +1,0 @@
-#!/bin/sh
-# the backend part of subiquity
-export PYTHON=$SNAP/usr/bin/python3
-export SUBIQUITY_ROOT=$SNAP
-$PYTHON -m subiquity.cmd.server

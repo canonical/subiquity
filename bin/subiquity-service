@@ -1,11 +1,9 @@
 #!/bin/sh
-# the frontend part of subiquity
 port=tty1
 if [ -n "$1" ]; then
    port=$1
 fi
 /bin/dmesg -n 1
-export SUBIQUITY_ROOT=$SNAP
 if [ "$port" = "tty1" ]; then
 	$SNAP/bin/subiquity-loadkeys
 	setfont $SNAP/subiquity.psf
