@@ -9,8 +9,7 @@ import sys
 def load(filename):
     with open(filename, 'r') as f:
         data = json.load(f)
-    tz = data['properties']['timezone']['enum']
-    del data['properties']['timezone']['enum']
+    tz = data['properties']['timezone'].pop('enum')
     return data, tz
 
 expected, _ = load(sys.argv[1])
