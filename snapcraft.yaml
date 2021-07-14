@@ -10,6 +10,7 @@ apps:
     command: usr/bin/subiquity
     environment:
       PYTHONIOENCODING: utf-8
+      SUBIQUITY_ROOT: $SNAP
   probert:
     command: bin/probert
   subiquity-server:
@@ -18,12 +19,15 @@ apps:
     restart-condition: always
     environment:
       PYTHONIOENCODING: utf-8
+      SUBIQUITY_ROOT: $SNAP
+      PYTHON: $SNAP/usr/bin/python3
   subiquity-service:
     command: usr/bin/subiquity-service
     daemon: simple
     restart-condition: always
     environment:
       PYTHONIOENCODING: utf-8
+      SUBIQUITY_ROOT: $SNAP
 
 parts:
   curtin:

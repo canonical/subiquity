@@ -23,4 +23,4 @@ log = logging.getLogger('subiquity.common.resources')
 
 
 def resource_path(relative_path):
-    return os.path.join(os.environ.get("SNAP", "."), relative_path)
+    return os.path.join(os.environ.get("SUBIQUITY_ROOT", "."), relative_path)
