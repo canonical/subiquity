@@ -44,6 +44,7 @@ def parse_options(argv):
                         help='Run the installer in ascii mode.')
     parser.add_argument('--machine-config', metavar='CONFIG',
                         dest='machine_config',
+                        type=argparse.FileType(),
                         help="Don't Probe. Use probe data file")
     parser.add_argument('--screens', action='append', dest='screens',
                         default=[])

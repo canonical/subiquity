@@ -36,6 +36,7 @@ def make_server_args_parser():
     parser.add_argument('--socket')
     parser.add_argument('--machine-config', metavar='CONFIG',
                         dest='machine_config',
+                        type=argparse.FileType(),
                         help="Don't Probe. Use probe data file")
     parser.add_argument('--bootloader',
                         choices=['none', 'bios', 'prep', 'uefi'],
