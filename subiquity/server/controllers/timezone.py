@@ -118,3 +118,4 @@ class TimeZoneController(SubiquityController):
 
     async def POST(self, tz: str):
         self.deserialize(tz)
+        self.configured()
