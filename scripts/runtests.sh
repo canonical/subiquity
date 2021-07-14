@@ -39,7 +39,7 @@ for answers in examples/answers*.yaml; do
         opts='--serial'
     fi
     # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
-    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --answers $answers --dry-run --snaps-from-examples --machine-config $config $opts" < $tty
+    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --bootloader uefi --answers $answers --dry-run --snaps-from-examples --machine-config $config $opts" < $tty
     validate
     grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 done
