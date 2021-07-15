@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import mock
-import subprocess
 
 from subiquity.common.types import TimeZoneInfo
 from subiquity.models.timezone import TimeZoneModel
@@ -102,3 +101,9 @@ class TestTimeZoneController(SubiTestCase):
         self.tzc.app.dry_run = True
         self.tzc.deserialize('geoip')
         self.assertEqual('sleep', subprocess_run.call_args.args[0][0])
+
+    @mock.patch('subiquity.server.controllers.timezone.timedatectl_settz')
+    def test_get_tz_should_not_set(self, tdc_settz):
+        run_coro(self.tzc.GET())
+        self.assertFalse(self.tzc.model.should_set_tz)
+        tdc_settz.assert_not_called()

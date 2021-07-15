@@ -108,16 +108,17 @@ class TimeZoneController(SubiquityController):
             timedatectl_settz(self.app, self.model.timezone)
 
     async def GET(self) -> TimeZoneInfo:
+        # if someone POSTed before, return that
         if self.model.timezone:
             return TimeZoneInfo(self.model.timezone,
                                 self.model.got_from_geoip)
 
-        # a bare call to GET() is equivalent to autoinstall "timezone: geoip"
-        self.deserialize('geoip')
-        tz = self.model.timezone
-        if not tz:
-            tz = timedatectl_gettz()
-        return TimeZoneInfo(tz, self.model.got_from_geoip)
+        # GET requests geoip results
+        if self.app.geoip.timezone:
+            return TimeZoneInfo(self.app.geoip.timezone, True)
+
+        # geoip wasn't ready for some reason, so ask the system
+        return TimeZoneInfo(timedatectl_gettz(), False)
 
     async def POST(self, tz: str):
         self.deserialize(tz)
