@@ -15,6 +15,7 @@
 
 
 from .identity import WSLIdentityController
+from .integration import IntegrationController
 
 from subiquity.client.controllers import (ProgressController, WelcomeController)
 
@@ -23,5 +24,6 @@ __all__ = [
     'WelcomeController',
     'WSLIdentityController',
     'ProgressController',
+    'IntegrationController',
 ]
 
