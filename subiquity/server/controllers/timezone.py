@@ -31,8 +31,11 @@ def generate_possible_tzs():
     return special_keys + real_tzs
 
 
-def timedatectl_settz(tz):
+def timedatectl_settz(app, tz):
     tzcmd = ['timedatectl', 'set-timezone', tz]
+    if app.opts.dry_run:
+        tzcmd = ['sleep', str(1/app.scale_factor)]
+
     try:
         subprocess.run(tzcmd, universal_newlines=True)
     except subprocess.CalledProcessError as cpe:
@@ -59,7 +62,7 @@ def timedatectl_gettz():
         log.error('Failed to get live system timezone: %r', cpe)
     except IndexError:
         log.error('Failed to acquire system time zone')
-    log.debug('Failed to fine Time zone in timedatectl output')
+    log.debug('Failed to find Time zone in timedatectl output')
     return 'Etc/UTC'
 
 
@@ -102,7 +105,7 @@ class TimeZoneController(SubiquityController):
 
     def set_system_timezone(self):
         if self.model.should_set_tz:
-            timedatectl_settz(self.model.timezone)
+            timedatectl_settz(self.app, self.model.timezone)
 
     async def GET(self) -> TimeZoneInfo:
         if self.model.timezone:

@@ -41,7 +41,7 @@ snaps:
   - name: etcd
     channel: 3.2/stable
 updates: all
-# timezone: Pacific/Guam
+timezone: Pacific/Guam
 storage:
   config:
   - {type: disk, ptable: gpt, path: /dev/vdb, wipe: superblock, preserve: false, grub_device: true, id: disk-1}

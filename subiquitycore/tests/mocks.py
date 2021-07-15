@@ -39,4 +39,7 @@ def make_app(model=None):
     app.next_screen = mock.Mock()
     app.prev_screen = mock.Mock()
     app.hub = MessageHub()
+    app.opts = mock.Mock()
+    app.opts.dry_run = True
+    app.scale_factor = 1000
     return app
