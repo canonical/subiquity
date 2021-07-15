@@ -81,7 +81,7 @@ class TestTimeZoneController(SubiTestCase):
             cloudconfig = {}
             if self.tzc.model.should_set_tz:
                 cloudconfig = {'timezone': tz.timezone}
-                tdc_settz.assert_called_with(tz.timezone)
+                tdc_settz.assert_called_with(self.tzc.app, tz.timezone)
             self.assertEqual(cloudconfig, self.tzc.model.make_cloudconfig(),
                              self.tzc.model)
 
@@ -93,3 +93,17 @@ class TestTimeZoneController(SubiTestCase):
         for b in bads:
             with self.assertRaises(ValueError):
                 self.tzc.deserialize(b)
+
+    @mock.patch('subprocess.run')
+    @mock.patch('subiquity.server.controllers.timezone.timedatectl_gettz')
+    def test_set_tz_escape_dryrun(self, tdc_gettz, subprocess_run):
+        tdc_gettz.return_value = tz_utc
+        self.tzc.app.dry_run = True
+        self.tzc.deserialize('geoip')
+        self.assertEqual('sleep', subprocess_run.call_args.args[0][0])
+
+    @mock.patch('subiquity.server.controllers.timezone.timedatectl_settz')
+    def test_get_tz_should_not_set(self, tdc_settz):
+        run_coro(self.tzc.GET())
+        self.assertFalse(self.tzc.model.should_set_tz)
+        tdc_settz.assert_not_called()
