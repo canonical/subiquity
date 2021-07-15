@@ -29,8 +29,7 @@ class Prober():
     def __init__(self, machine_config, debug_flags):
         self.saved_config = None
         if machine_config:
-            with open(machine_config) as mc:
-                self.saved_config = yaml.safe_load(mc)
+            self.saved_config = yaml.safe_load(machine_config)
         self.debug_flags = debug_flags
         log.debug('Prober() init finished, data:{}'.format(self.saved_config))
 
