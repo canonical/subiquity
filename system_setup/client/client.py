@@ -30,6 +30,7 @@ class SystemSetupClient(SubiquityClient):
         #"Serial",
         "Welcome",
         "WSLIdentity",
+        "Integration",
         "Progress",
         ]
 

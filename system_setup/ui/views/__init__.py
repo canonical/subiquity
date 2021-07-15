@@ -14,7 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .identity import WSLIdentityView
+from .integration import IntegrationView
 
 __all__ = [
     'WSLIdentityView',
+    'IntegrationView',
 ]
