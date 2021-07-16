@@ -15,8 +15,10 @@
 
 from .identity import WSLIdentityView
 from .integration import IntegrationView
+from .overview import OverviewView
 
 __all__ = [
     'WSLIdentityView',
     'IntegrationView',
+    'OverviewView',
 ]
