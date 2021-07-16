@@ -31,6 +31,7 @@ class SystemSetupClient(SubiquityClient):
         "Welcome",
         "WSLIdentity",
         "Integration",
+        "Overview",
         "Progress",
         ]
 
