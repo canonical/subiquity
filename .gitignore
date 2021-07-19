@@ -66,6 +66,7 @@ venv
 # top level dependencies fetched from git, ignore top level only.
 /probert/
 /curtin/
+/livefs-editor/
 
 # installer isos
 *.iso
