@@ -12,6 +12,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import asyncio
 from unittest import mock
 
 from subiquitycore.context import Context
@@ -33,7 +34,10 @@ def make_app(model=None):
         app.base_model = model
     else:
         app.base_model = mock.Mock()
+        app.base_model.target = '.'
+    app.aio_loop = asyncio.get_event_loop()
     app.context = Context.new(app)
+    app.controllers = mock.Mock()
     app.exit = mock.Mock()
     app.respond = mock.Mock()
     app.next_screen = mock.Mock()
@@ -41,5 +45,8 @@ def make_app(model=None):
     app.hub = MessageHub()
     app.opts = mock.Mock()
     app.opts.dry_run = True
+    app.report_start_event = mock.Mock()
+    app.report_finish_event = mock.Mock()
+    app.debug_flags = []
     app.scale_factor = 1000
     return app
