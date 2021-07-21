@@ -149,7 +149,7 @@ class InstallController(SubiquityController):
             if 'install-fail' in self.app.debug_flags:
                 event_file = "examples/curtin-events-fail.json"
             curtin_cmd = [
-                "python3", "scripts/replay-curtin-log.py", event_file,
+                sys.executable, "scripts/replay-curtin-log.py", event_file,
                 self._event_syslog_id, log_location,
                 ]
         else:
