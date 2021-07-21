@@ -111,7 +111,7 @@ def main():
     logdir = LOGDIR
     if opts.dry_run:
         logdir = ".subiquity"
-    logfiles = setup_logger(dir=logdir, base='system_setup-client')
+    logfiles = setup_logger(dir=logdir, base='systemsetup-client')
 
     logger = logging.getLogger('subiquity')
     version = "unknown"

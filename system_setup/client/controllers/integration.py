@@ -4,7 +4,7 @@ from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import WSLConfiguration1Data
 from system_setup.ui.views.integration import IntegrationView
 
-log = logging.getLogger('ubuntu_wsl_oobe.controllers.integration')
+log = logging.getLogger('system_setup.client.controllers.integration')
 
 
 class IntegrationController(SubiquityTuiController):
