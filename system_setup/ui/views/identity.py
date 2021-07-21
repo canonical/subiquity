@@ -30,6 +30,7 @@ class WSLIdentityForm(Form):
 
     realname = IdentityForm.realname
     username = IdentityForm.username
+    username.help = _("The username does not need to match your Windows username")
     password = IdentityForm.password
     confirm_password = IdentityForm.confirm_password
 
@@ -52,7 +53,8 @@ class WSLIdentityForm(Form):
 
 class WSLIdentityView(BaseView):
     title = IdentityView.title
-    excerpt = _("Enter the username and password you will use to log in.")
+    excerpt = _("Please create a default UNIX user account. "
+                "For more information visit: https://aka.ms/wslusers")
 
     def __init__(self, controller, identity_data):
         self.controller = controller
