@@ -28,8 +28,17 @@ class SystemSetupServer(SubiquityServer):
         "Locale",
         "Identity",
         "WSLConfiguration1",
-        "WSLConfiguration2"
-        ]
+    ]
+
+    def __init__(self, opts, block_log_dir):
+        if opts.reconfigure:
+            self.controllers = [
+                "Reporting",
+                "Error",
+                "Locale",
+                "WSLConfiguration2",
+            ]
+        super().__init__(opts, block_log_dir)
 
     def make_model(self):
         root = '/'

@@ -70,6 +70,7 @@ def make_client_args_parser():
                         help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
     parser.add_argument('--server-pid')
+    parser.add_argument('--reconfigure', action='store_true')
     return parser
 
 
@@ -90,6 +91,8 @@ def main():
             sock_path = '.subiquity/socket'
             opts.socket = sock_path
             server_args = ['--dry-run', '--socket=' + sock_path] + unknown
+            if '--reconfigure' in args:
+                server_args.append('--reconfigure')
             server_parser = make_server_args_parser()
             server_parser.parse_args(server_args)  # just to check
             server_output = open('.subiquity/server-output', 'w')

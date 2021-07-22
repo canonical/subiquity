@@ -50,6 +50,7 @@ class WSLConfiguration2Model(object):
 
     def apply_settings(self, result, is_dry_run=False):
         d = {}
+        #TODO: placholder settings; should be dynamically assgined using ubuntu-wsl-integration
         d['custom_path'] = result.custom_path
         d['custom_mount_opt'] = result.custom_mount_opt
         d['gen_host'] = result.gen_host
@@ -70,6 +71,7 @@ class WSLConfiguration2Model(object):
             run_command(["/usr/bin/ubuntuwsl", "reset", "-y"],
                         stdout=subprocess.DEVNULL)
             # set the settings
+            #TODO: placholder settings; should be dynamically generated using ubuntu-wsl-integration
             run_command(["/usr/bin/ubuntuwsl", "update",
                          "WSL.automount.enabled", result.automount],
                         stdout=subprocess.DEVNULL)

@@ -8,6 +8,7 @@ PROBERTDIR=./probert
 PROBERT_REPO=https://github.com/canonical/probert
 DRYRUN?=--dry-run --bootloader uefi --machine-config examples/simple.json
 SYSTEM_SETUP_DRYRUN?=--dry-run
+RECONFIG?=--reconfigure
 export PYTHONPATH
 CWD := $(shell pwd)
 
@@ -54,6 +55,12 @@ dryrun-system-setup:
 
 dryrun-system-setup-server:
 	$(PYTHON) -m system_setup.cmd.server $(SYSTEM_SETUP_DRYRUN)
+
+dryrun-system-setup-recon:
+	$(PYTHON) -m system_setup.cmd.tui $(SYSTEM_SETUP_DRYRUN) $(RECONFIG)
+
+dryrun-system-setup-server-recon:
+	$(PYTHON) -m system_setup.cmd.server $(SYSTEM_SETUP_DRYRUN) $(RECONFIG)
 
 lint: flake8
 
