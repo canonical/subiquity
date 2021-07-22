@@ -16,12 +16,7 @@
 import asyncio
 
 
-def run_coro(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
-
-
-# this has different behavior on bionic python, so is seperate from run_coro
-def run_coro_timeout(coro, timeout=None):
+def run_coro(coro, timeout=None):
     async def f():
         return await asyncio.wait_for(coro, timeout=timeout)
     return asyncio.get_event_loop().run_until_complete(f())

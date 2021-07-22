@@ -18,7 +18,7 @@ import sys
 
 from subiquitycore.tests import SubiTestCase
 from subiquitycore.tests.mocks import make_app
-from subiquitycore.tests.util import run_coro_timeout
+from subiquitycore.tests.util import run_coro
 
 from subiquity.common.types import ApplicationState
 from subiquity.server.controllers.reboot import RebootController
@@ -39,7 +39,7 @@ if sys.version >= '3.7.0':
 
             async def poster():
                 # There is a subtle timing difference between when
-                # run_coro_timeout exits, and when the POST exits, which is
+                # run_coro exits, and when the POST exits, which is
                 # enough to skew results.
                 nonlocal controller
                 nonlocal returned
@@ -60,7 +60,7 @@ if sys.version >= '3.7.0':
                 controller = RebootController(app)
                 controller.start()
                 app.exit.assert_not_called()
-                rv = run_coro_timeout(poster(), 1)
+                rv = run_coro(poster(), 1)
                 self.assertTrue(rv)
                 app.exit.assert_called()
                 self.assertTrue(returned < exited,
