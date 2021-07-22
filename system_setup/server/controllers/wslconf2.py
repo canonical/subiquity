@@ -16,7 +16,8 @@
 import logging
 
 import attr
-
+from os import path
+import configparser
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
@@ -48,14 +49,92 @@ class WSLConfiguration2Controller(SubiquityController):
             'wsl_motd_news': {'type': 'boolean'},
             'automount': {'type': 'boolean'},
             'mountfstab': {'type': 'boolean'}
-            },
+        },
         'required': [],
         'additionalProperties': False,
+    }
+
+    # this is a temporary simplified reference. The future complete reference
+    # should use the default.json in `ubuntu-wsl-integration`.
+    config_ref = {
+        "wsl": {
+            "automount": {
+                "enabled": "automount",
+                "mountfstab": "mountfstab",
+                "root": "custom_path",
+                "options": "custom_mount_opt",
+            },
+            "network": {
+                "generatehosts": "gen_host",
+                "generateresolvconf": "gen_resolvconf",
+            },
+            "interop": {
+                "enabled": "interop_enabled",
+                "appendwindowspath": "interop_appendwindowspath",
+            }
+        },
+        "ubuntu": {
+            "GUI": {
+                "theme": "gui_theme",
+                "followwintheme": "gui_followwintheme",
+            },
+            "Interop": {
+                "guiintegration": "legacy_gui",
+                "audiointegration": "legacy_audio",
+                "advancedipdetection": "adv_ip_detect",
+            },
+            "Motd": {
+                "wslnewsenabled": "wsl_motd_news",
+            }
         }
+    }
+
+    def __init__(self, app):
+        super().__init__(app)
+
+        # load the config file
+        data = {}
+        if path.exists('/etc/wsl.conf'):
+            wslconfig = configparser.ConfigParser()
+            wslconfig.read('/etc/wsl.conf')
+            for a in wslconfig:
+                if a in self.config_ref['wsl']:
+                    a_x = wslconfig[a]
+                    for b in a_x:
+                        if b in self.config_ref['wsl'][a]:
+                            data[self.config_ref['wsl'][a][b]] = a_x[b]
+        if path.exists('/etc/ubuntu-wsl.conf'):
+            ubuntuconfig = configparser.ConfigParser()
+            ubuntuconfig.read('/etc/ubuntu-wsl.conf')
+            for a in ubuntuconfig:
+                if a in self.config_ref['ubuntu']:
+                    a_x = ubuntuconfig[a]
+                    for b in a_x:
+                        if b in self.config_ref['ubuntu'][a]:
+                            data[self.config_ref['ubuntu'][a][b]] = a_x[b]
+        if data:
+            yes_no_converter = lambda x: x == 'true'
+            reconf_data = WSLConfiguration2Data(
+                custom_path=data['custom_path'],
+                custom_mount_opt=data['custom_mount_opt'],
+                gen_host=yes_no_converter(data['gen_host']),
+                gen_resolvconf=yes_no_converter(data['gen_resolvconf']),
+                interop_enabled=yes_no_converter(data['interop_enabled']),
+                interop_appendwindowspath=yes_no_converter(data['interop_appendwindowspath']),
+                gui_theme=data['gui_theme'],
+                gui_followwintheme=yes_no_converter(data['gui_followwintheme']),
+                legacy_gui=yes_no_converter(data['legacy_gui']),
+                legacy_audio=yes_no_converter(data['legacy_audio']),
+                adv_ip_detect=yes_no_converter(data['adv_ip_detect']),
+                wsl_motd_news=yes_no_converter(data['wsl_motd_news']),
+                automount=yes_no_converter(data['automount']),
+                mountfstab=yes_no_converter(data['mountfstab']),
+            )
+            self.model.apply_settings(reconf_data, self.opts.dry_run)
 
     def load_autoinstall_data(self, data):
         if data is not None:
-            identity_data = WSLConfiguration2Data(
+            reconf_data = WSLConfiguration2Data(
                 custom_path=data['custom_path'],
                 custom_mount_opt=data['custom_mount_opt'],
                 gen_host=data['gen_host'],
@@ -71,7 +150,7 @@ class WSLConfiguration2Controller(SubiquityController):
                 automount=data['automount'],
                 mountfstab=data['mountfstab']
             )
-            self.model.apply_settings(identity_data, self.opts.dry_run)
+            self.model.apply_settings(reconf_data, self.opts.dry_run)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
