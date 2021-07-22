@@ -24,6 +24,8 @@ log = logging.getLogger('system_setup.client.client')
 
 class SystemSetupClient(SubiquityClient):
 
+    from system_setup.client import controllers as controllers_mod
+
     snapd_socket_path = None
 
     controllers = [
@@ -34,8 +36,16 @@ class SystemSetupClient(SubiquityClient):
         "Overview",
         "Progress",
         ]
+    def __init__(self, opts):
+        if opts.reconfigure:
+            self.controllers = [
+                "Welcome",
+                "Reconfiguration",
+                "Progress",
+            ]
+        super().__init__(opts)
 
-    from system_setup.client import controllers as controllers_mod
+    
 
     def restart(self, remove_last_screen=True, restart_server=False):
         log.debug(f"restart {remove_last_screen} {restart_server}")
