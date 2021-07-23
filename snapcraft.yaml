@@ -38,7 +38,7 @@ parts:
     plugin: python
     source-type: git
     source: https://git.launchpad.net/curtin
-    source-commit: 82765ab3e59273db0623337787209f0c9836935c
+    source-commit: 1f663e5104bbd3304c215a2b5f32a9f8103cba80
     python-packages:
       - pyyaml==5.3.1
       - oauthlib
