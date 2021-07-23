@@ -36,10 +36,12 @@ class RebootController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.user_reboot_event = asyncio.Event()
+        self.rebooting_event = asyncio.Event()
 
     async def POST(self) -> bool:
         self.app.controllers.Install.stop_uu()
         self.user_reboot_event.set()
+        await self.rebooting_event.wait()
         return True
 
     def interactive(self):
@@ -81,9 +83,13 @@ class RebootController(SubiquityController):
 
     @with_context()
     def reboot(self, context):
-        if self.opts.dry_run:
-            self.app.exit()
-        else:
-            if platform.machine() == 's390x':
-                run_command(["chreipl", "/target/boot"])
-            run_command(["/sbin/reboot"])
+        self.rebooting_event.set()
+
+        def f():
+            if self.opts.dry_run:
+                self.app.exit()
+            else:
+                if platform.machine() == 's390x':
+                    run_command(["chreipl", "/target/boot"])
+                run_command(["/sbin/reboot"])
+        self.app.aio_loop.call_soon(f)
