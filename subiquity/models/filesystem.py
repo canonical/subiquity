@@ -578,10 +578,10 @@ class Disk(_Device):
         try:
             dev = os.path.basename(devpath)
             rfile = '/sys/class/block/{}/queue/rotational'.format(dev)
-            rotational = open(rfile, 'r').read().strip()
+            with open(rfile, 'r') as f:
+                rotational = f.read().strip()
         except (PermissionError, FileNotFoundError, IOError):
             log.exception('WARNING: Failed to read file {}'.format(rfile))
-            pass
 
         dinfo = {
             'bus': bus,
