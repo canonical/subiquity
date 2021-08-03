@@ -212,6 +212,8 @@ class FilesystemManipulator:
             if disk.type == "disk":
                 disk.preserve = False
                 disk.wipe = 'superblock-recursive'
+            elif disk.type == "raid":
+                disk.wipe = 'superblock-recursive'
 
         needs_boot = self.model.needs_bootloader_partition()
         log.debug('model needs a bootloader partition? {}'.format(needs_boot))
