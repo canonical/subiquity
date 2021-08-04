@@ -21,7 +21,7 @@ endif
 
 all: dryrun
 
-install_deps:
+install_deps: gitdeps
 	sudo apt-get install -y python3-urwid python3-pyudev python3-nose python3-flake8 \
 		python3-yaml python3-coverage python3-dev pkg-config libnl-genl-3-dev \
 		libnl-route-3-dev python3-attr python3-distutils-extra python3-requests \
