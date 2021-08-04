@@ -52,9 +52,12 @@ do_mount $old old
 
 add_overlay old new
 
+rm -rf new/lib/python3.6/site-packages/curtin
 rm -rf new/lib/python3.6/site-packages/subiquity
 rm -rf new/lib/python3.6/site-packages/subiquitycore
 
-rsync -a $src/subiquity $src/subiquitycore new/lib/python3.6/site-packages
+(cd "${src}" && ./scripts/update-part.py curtin)
+
+rsync -a $src/subiquity $src/subiquitycore $src/curtin/curtin new/lib/python3.6/site-packages
 
 mksquashfs new $new -comp gzip -Xcompression-level 3
