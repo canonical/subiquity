@@ -28,6 +28,7 @@ from subiquity.common.types import (
     AnyStep,
     ApplicationState,
     ApplicationStatus,
+    Disk,
     ErrorReportRef,
     GuidedChoice,
     GuidedStorageResponse,
@@ -219,6 +220,9 @@ class API:
         class has_rst:
             def GET() -> bool:
                 pass
+
+        class has_bitlocker:
+            def GET() -> List[Disk]: ...
 
     class snaplist:
         def GET(wait: bool = False) -> SnapListResponse: ...
