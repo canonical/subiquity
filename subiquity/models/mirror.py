@@ -52,11 +52,11 @@ class MirrorModel(object):
         self.architecture = get_architecture()
         self.default_mirror = self.get_mirror()
 
-    def is_default(self):
+    def mirror_is_default(self):
         return self.get_mirror() == self.default_mirror
 
     def set_country(self, cc):
-        if not self.is_default():
+        if not self.mirror_is_default():
             return
         uri = self.get_mirror()
         parsed = parse.urlparse(uri)

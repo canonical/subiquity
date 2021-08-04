@@ -55,7 +55,7 @@ class MirrorController(SubiquityController):
             return
         geoip = data.pop('geoip', True)
         merge_config(self.model.config, data)
-        self.geoip_enabled = geoip and self.model.is_default()
+        self.geoip_enabled = geoip and self.model.mirror_is_default()
 
     @with_context()
     async def apply_autoinstall_config(self, context):
