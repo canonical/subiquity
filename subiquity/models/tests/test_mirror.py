@@ -42,3 +42,13 @@ class TestMirrorModel(unittest.TestCase):
         model.set_mirror("http://mymirror.invalid/")
         model.set_country("CC")
         self.assertEqual(model.get_mirror(), "http://mymirror.invalid/")
+
+    def test_default_disable_components(self):
+        config = MirrorModel().get_config()
+        self.assertEqual([], config['disable_components'])
+
+    def test_set_disable_components(self):
+        model = MirrorModel()
+        model.disable_components = set(['universe'])
+        config = model.get_config()
+        self.assertEqual(['universe'], config['disable_components'])

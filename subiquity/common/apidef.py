@@ -60,7 +60,6 @@ class API:
     """The API offered by the subiquity installer process."""
     identity = simple_endpoint(IdentityData)
     locale = simple_endpoint(str)
-    mirror = simple_endpoint(str)
     proxy = simple_endpoint(str)
     ssh = simple_endpoint(SSHData)
     updates = simple_endpoint(str)
@@ -296,6 +295,14 @@ class API:
 
     class shutdown:
         def POST(mode: ShutdownMode, immediate: bool = False): ...
+
+    class mirror:
+        def GET() -> str: ...
+        def POST(data: Payload[str]): ...
+
+        class disable_components:
+            def GET() -> List[str]: ...
+            def POST(data: Payload[List[str]]): ...
 
 
 class LinkAction(enum.Enum):

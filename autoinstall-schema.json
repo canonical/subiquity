@@ -281,6 +281,19 @@
                 },
                 "sources": {
                     "type": "object"
+                },
+                "disable_components": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "universe",
+                            "multiverse",
+                            "restricted",
+                            "contrib",
+                            "non-free"
+                        ]
+                    }
                 }
             }
         },

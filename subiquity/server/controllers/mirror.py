@@ -16,6 +16,7 @@
 import asyncio
 import copy
 import logging
+from typing import List
 
 from curtin.config import merge_config
 
@@ -40,8 +41,16 @@ class MirrorController(SubiquityController):
             'primary': {'type': 'array'},
             'geoip':  {'type': 'boolean'},
             'sources': {'type': 'object'},
-            },
+            'disable_components': {
+                'type': 'array',
+                'items': {
+                    'type': 'string',
+                    'enum': ['universe', 'multiverse', 'restricted',
+                             'contrib', 'non-free']
+                }
+            }
         }
+    }
     model_name = "mirror"
 
     def __init__(self, app):
@@ -89,3 +98,9 @@ class MirrorController(SubiquityController):
     async def POST(self, data: str):
         self.model.set_mirror(data)
         await self.configured()
+
+    async def disable_components_GET(self) -> List[str]:
+        return list(self.model.disable_components)
+
+    async def disable_components_POST(self, data: List[str]):
+        self.model.disable_components = set(data)

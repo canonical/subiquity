@@ -51,6 +51,12 @@ class MirrorModel(object):
         self.config = copy.deepcopy(DEFAULT)
         self.architecture = get_architecture()
         self.default_mirror = self.get_mirror()
+        self.disable_components = set()
+
+    def get_config(self):
+        config = copy.deepcopy(self.config)
+        config['disable_components'] = list(self.disable_components)
+        return config
 
     def mirror_is_default(self):
         return self.get_mirror() == self.default_mirror
