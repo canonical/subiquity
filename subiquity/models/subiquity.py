@@ -121,6 +121,7 @@ class SubiquityModel:
         self.userdata = {}
 
         self._confirmation = asyncio.Event()
+        self._confirmation_task = None
 
         self._configured_names = set()
         self._install_model_names = install_model_names
@@ -136,6 +137,15 @@ class SubiquityModel:
             self._install_model_names.for_variant(variant)
         self._cur_postinstall_model_names = \
             self._postinstall_model_names.for_variant(variant)
+        unconfigured_install_model_names = \
+            self._cur_install_model_names - self._configured_names
+        if unconfigured_install_model_names:
+            if self._install_event.is_set():
+                self._install_event = asyncio.Event()
+            if self._confirmation_task is not None:
+                self._confirmation_task.cancel()
+        else:
+            self._install_event.set()
 
     def configured(self, model_name):
         self._configured_names.add(model_name)
@@ -163,7 +173,17 @@ class SubiquityModel:
         await self._postinstall_event.wait()
 
     async def wait_confirmation(self):
-        await self._confirmation.wait()
+        if self._confirmation_task is None:
+            self._confirmation_task = asyncio.get_event_loop().create_task(
+                self._confirmation.wait())
+        try:
+            await self._confirmation_task
+        except asyncio.CancelledError:
+            return False
+        else:
+            return True
+        finally:
+            self._confirmation_task = None
 
     def is_postinstall_only(self, model_name):
         return model_name in self._cur_postinstall_model_names and \
