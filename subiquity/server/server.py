@@ -376,7 +376,7 @@ class SubiquityServer(Application):
             if not controller.interactive():
                 override_status = 'skip'
             elif self.state == ApplicationState.NEEDS_CONFIRMATION:
-                if self.base_model.needs_configuration(controller.model_name):
+                if self.base_model.is_postinstall_only(controller.model_name):
                     override_status = 'confirm'
         if override_status is not None:
             resp = web.Response(headers={'x-status': override_status})

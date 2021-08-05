@@ -165,10 +165,9 @@ class SubiquityModel:
     async def wait_confirmation(self):
         await self._confirmation.wait()
 
-    def needs_configuration(self, model_name):
-        if model_name is None:
-            return False
-        return model_name not in self._configured_names
+    def is_postinstall_only(self, model_name):
+        return model_name in self._cur_postinstall_model_names and \
+               model_name not in self._cur_install_model_names
 
     def confirm(self):
         self._confirmation.set()
