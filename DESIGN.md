@@ -345,7 +345,10 @@ The server code proceeds in stages:
     commands.
  2. Then it waits for all the model objects that feed into the curtin
     config to be configured.
- 3. It waits for confirmation.
+ 3. It waits for confirmation. This can in theory be interrupted by a
+    change in the model objects which are considered 'interesting',
+    see below, so it is possible to transition from here to the
+    previous state.
  4. It runs "curtin install" and waits for that to finish.
  5. It waits for the model objects that feed into the cloud-init config to be
     configured.
@@ -360,6 +363,14 @@ Each of these states gets a different value of the `ApplicationState`
 enum, so the client gets notified via long-polling `meta.status.GET()`
 of progress. In addition, `ApplicationState.ERROR` indicates something
 has gone wrong.
+
+Originally subiquity was just the server installer and so the set of
+models that have to be configured for each step was just static. But
+subiquity can also install desktop systems and maybe one day Ubuntu
+core, and different information is needed to fully configure each
+different variant. This information is handled by the
+`subiquity.models.subiquity.SubiquityModel.set_source_variant` method
+and surrounding code.
 
 ### Error handling
 
