@@ -36,5 +36,5 @@ if expected != actual:
     try:
         r('git', '-c', 'advice.detachedHead=false', '-C', part, 'checkout', c)
     except subprocess.CalledProcessError:
-        r('git', '-C', part, 'fetch', config['source'])
+        r('git', '-C', part, 'fetch', config['source'], c)
         r('git', '-c', 'advice.detachedHead=false', '-C', part, 'checkout', c)
