@@ -199,7 +199,9 @@ class InstallController(SubiquityController):
     async def install(self, *, context):
         context.set('is-install-context', True)
         try:
-            await asyncio.wait({e.wait() for e in self.model.install_events})
+            self.app.update_state(ApplicationState.WAITING)
+
+            await self.model.wait_install()
 
             if not self.app.interactive:
                 if 'autoinstall' in self.app.kernel_cmdline:
@@ -207,7 +209,7 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.NEEDS_CONFIRMATION)
 
-            await self.model.confirmation.wait()
+            await self.model.wait_confirmation()
 
             self.app.update_state(ApplicationState.RUNNING)
 
@@ -224,8 +226,7 @@ class InstallController(SubiquityController):
 
             self.app.update_state(ApplicationState.POST_WAIT)
 
-            await asyncio.wait(
-                {e.wait() for e in self.model.postinstall_events})
+            await self.model.wait_postinstall()
 
             self.app.update_state(ApplicationState.POST_RUNNING)
 
