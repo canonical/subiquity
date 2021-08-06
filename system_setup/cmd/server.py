@@ -70,7 +70,7 @@ def main():
 
     logfiles = setup_logger(dir=logdir, base='systemsetup-server')
 
-    logger = logging.getLogger('systemsetup')
+    logger = logging.getLogger('systemsetup-server')
     version = "unknown"
     logger.info("Starting System Setup server revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))

@@ -31,7 +31,8 @@ class SystemSetupServer(SubiquityServer):
     ]
 
     def __init__(self, opts, block_log_dir):
-        if opts.reconfigure:
+        self.is_reconfig = opts.reconfigure
+        if self.is_reconfig:
             self.controllers = [
                 "Reporting",
                 "Error",
@@ -44,4 +45,4 @@ class SystemSetupServer(SubiquityServer):
         root = '/'
         if self.opts.dry_run:
             root = os.path.abspath('.subiquity')
-        return SystemSetupModel(root)
+        return SystemSetupModel(root, self.is_reconfig)
