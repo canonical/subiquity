@@ -41,21 +41,24 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 """
 
-# Models that will be used in WSL system setup
-ALL_MODEL_NAMES = [
-    "identity",
-    "locale",
-    "wslconf1",
-    "wslconf2",
-]
-
-
 class SystemSetupModel(SubiquityModel):
     """The overall model for subiquity."""
 
     target = '/'
 
-    def __init__(self, root):
+    # Models that will be used in WSL system setup
+    ALL_MODEL_NAMES = [
+        "identity",
+        "locale",
+        "wslconf1",
+    ]
+
+    def __init__(self, root, reconfigure=False):
+        if reconfigure:
+            self.ALL_MODEL_NAMES = [
+                "locale",
+                "wslconf2",
+            ]
         # Parent class init is not called to not load models we don't need.
         self.root = root
         self.is_wsl = is_wsl()
@@ -81,24 +84,23 @@ class SystemSetupModel(SubiquityModel):
         self.confirmation = asyncio.Event()
 
         self._events = {
-            name: asyncio.Event() for name in ALL_MODEL_NAMES
-            }
+            name: asyncio.Event() for name in self.ALL_MODEL_NAMES
+        }
         self.postinstall_events = {
-            self._events[name] for name in ALL_MODEL_NAMES
-            }
+            self._events[name] for name in self.ALL_MODEL_NAMES
+        }
 
     def configured(self, model_name):
         # We need to override the parent class as *_MODEL_NAMES are global variables
         # in server.py
-        if model_name not in ALL_MODEL_NAMES:
+        if model_name not in self.ALL_MODEL_NAMES:
             return
         self._events[model_name].set()
-        stage = 'wslinstall'
+        stage = 'install'
         unconfigured = {
-            mn for mn in ALL_MODEL_NAMES
+            mn for mn in self.ALL_MODEL_NAMES
             if not self._events[mn].is_set()
-            }
+        }
         log.debug(
             "model %s for %s is configured, to go %s",
             model_name, stage, unconfigured)
-
