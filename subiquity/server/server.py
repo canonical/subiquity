@@ -412,7 +412,7 @@ class SubiquityServer(Application):
             bind(app.router, API.dry_run, DryRunController(self))
         for controller in self.controllers.instances:
             controller.add_routes(app)
-        runner = web.AppRunner(app)
+        runner = web.AppRunner(app, keepalive_timeout=0xffffffff)
         await runner.setup()
         site = web.UnixSite(runner, self.opts.socket)
         await site.start()
