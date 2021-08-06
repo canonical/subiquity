@@ -330,3 +330,34 @@ class SnapListResponse:
 class TimeZoneInfo:
     timezone: str
     from_geoip: bool
+
+
+class WSLConfiguration1Data:
+    custom_path: str = attr.ib(default='/mnt/')
+    custom_mount_opt: str = ''
+    gen_host: bool = attr.ib(default=True)
+    gen_resolvconf: bool = attr.ib(default=True)
+
+
+class LookType(enum.Enum):
+    Default = "default"
+    Light = "light"
+    Dark = "dark"
+
+
+@attr.s(auto_attribs=True)
+class WSLConfiguration2Data:
+    gui_theme: LookType = attr.ib(default=LookType.Default)
+    gui_followwintheme: bool = attr.ib(default=True)
+    legacy_gui: bool = attr.ib(default=False)
+    legacy_audio: bool = attr.ib(default=False)
+    adv_ip_detect: bool = attr.ib(default=False)
+    wsl_motd_news: bool = attr.ib(default=True)
+    automount:  bool = attr.ib(default=True)
+    mountfstab:  bool = attr.ib(default=True)
+    custom_path: str = attr.ib(default='/mnt/')
+    custom_mount_opt: str = ''
+    gen_host: bool = attr.ib(default=True)
+    gen_resolvconf: bool = attr.ib(default=True)
+    interop_enabled:  bool = attr.ib(default=True)
+    interop_appendwindowspath: bool = attr.ib(default=True)
