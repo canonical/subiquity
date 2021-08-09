@@ -10,7 +10,6 @@ jobs:
         image:
           - ubuntu-daily:bionic
           - ubuntu-daily:focal
-          - ubuntu-daily:groovy
           - ubuntu-daily:hirsute
           - ubuntu-daily:impish
     steps:
