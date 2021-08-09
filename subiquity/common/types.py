@@ -332,6 +332,7 @@ class TimeZoneInfo:
     from_geoip: bool
 
 
+@attr.s(auto_attribs=True)
 class WSLConfiguration1Data:
     custom_path: str = attr.ib(default='/mnt/')
     custom_mount_opt: str = ''
