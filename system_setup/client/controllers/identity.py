@@ -36,3 +36,15 @@ class WSLIdentityController(IdentityController):
                 username=self.answers['username'],
                 crypted_password=self.answers['password'])
             self.done(identity)
+
+    def done(self, identity_data):
+        log.debug(
+            "IdentityController.done next_screen user_spec=%s",
+            identity_data)
+        if self.opts.dry_run:
+            username = "dryrun_user"
+        else:
+            username = identity_data.username
+        with open('/var/run/ubuntu_wsl_oobe_assigned_account', 'w') as f:
+            f.write(username)
+        self.app.next_screen(self.endpoint.POST(identity_data))

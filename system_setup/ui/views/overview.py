@@ -5,7 +5,7 @@ Overview provides user with the overview of all the current settings.
 """
 
 
-
+import os
 import logging
 
 from subiquitycore.ui.buttons import done_btn
@@ -20,9 +20,10 @@ class OverviewView(BaseView):
 
     def __init__(self, controller):
         self.controller = controller
-        user_name = "test"
-        #with open('/var/lib/ubuntu-wsl/assigned_account', 'r') as f:
-        #    user_name = f.read()
+        user_name = ""
+        with open('/var/run/ubuntu_wsl_oobe_assigned_account', 'r') as f:
+            user_name = f.read()
+        os.remove('/var/run/ubuntu_wsl_oobe_assigned_account')
         complete_text = _("Hi {username},\n"
                           "You have complete the setup!\n\n"
                           "It is suggested to run the following command to update your Ubuntu "
