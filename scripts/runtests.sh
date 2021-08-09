@@ -2,6 +2,7 @@
 set -eux
 
 testschema=.subiquity/test-autoinstall-schema.json
+export PYTHONPATH=$PWD:$PWD/probert:$PWD/curtin
 
 validate () {
     python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf
@@ -22,8 +23,23 @@ clean () {
     rm -f "$testschema"
     rm -rf .subiquity/run/
     rm -rf .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg
+    jobslist="$(jobs -p)"
+    if [ -n "$jobslist" ] ; then
+        kill $jobslist
+    fi
 }
 
+scurl () {
+    curl --unix-socket .subiquity/socket $*
+}
+
+error () {
+    set +x  # show PASS/FAIL as the last line of output
+    echo 'Runtests FAILURE'
+}
+
+trap error ERR
+trap clean EXIT
 tty=$(tty) || tty=/dev/console
 
 export SUBIQUITY_REPLAY_TIMESCALE=100
@@ -71,5 +87,18 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
 validate
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 
+timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall.yaml \
+                               --dry-run --machine-config examples/existing-partitions.json --bootloader bios \
+                               --kernel-cmdline 'autoinstall'"
+
+timeout 30 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.server --dry-run --bootloader uefi --machine-config examples/win10.json" &
+while ! scurl a/meta/status >& /dev/null ; do
+    sleep .5
+done
+scurl a/storage/has_bitlocker | jq -M '. [0].partitions[2]' | grep -q BitLocker
+
 python3 -m subiquity.cmd.schema > "$testschema"
 scripts/schema-cmp.py "autoinstall-schema.json" "$testschema"
+
+set +x  # show PASS/FAIL as the last line of output
+echo 'Runtests all PASSED'
