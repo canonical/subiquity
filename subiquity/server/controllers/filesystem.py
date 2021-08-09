@@ -19,7 +19,7 @@ import json
 import logging
 import os
 import select
-from typing import Optional
+from typing import List, Optional
 
 import pyudev
 
@@ -44,6 +44,7 @@ from subiquity.common.filesystem import boot, labels
 from subiquity.common.filesystem.manipulator import FilesystemManipulator
 from subiquity.common.types import (
     Bootloader,
+    Disk,
     GuidedChoice,
     GuidedStorageResponse,
     ProbeStatus,
@@ -275,6 +276,20 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 if int(f.read()) > 0:
                     return True
         return False
+
+    async def has_bitlocker_GET(self) -> List[Disk]:
+        '''list of Disks that contain a partition that is BitLockered'''
+        bitlockered_disks = []
+        for disk in self.model.all_disks():
+            for part in disk.partitions():
+                fs = part.fs()
+                if not fs:
+                    continue
+                fstype = fs.fstype
+                if fstype == "BitLocker":
+                    bitlockered_disks.append(disk)
+                    break
+        return [labels.for_client(disk) for disk in bitlockered_disks]
 
     @with_context(name='probe_once', description='restricted={restricted}')
     async def _probe_once(self, *, context, restricted):
