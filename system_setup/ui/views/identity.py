@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from urwid import (
     connect_signal,
     )
@@ -20,36 +21,20 @@ from urwid import (
 
 from subiquity.common.types import IdentityData
 from subiquity.ui.views.identity import IdentityForm, IdentityView, setup_password_validation
-from subiquitycore.ui.form import Form
 from subiquitycore.ui.utils import screen
 from subiquitycore.utils import crypt_password
 from subiquitycore.view import BaseView
 
+from subiquity.common.resources import resource_path
 
-class WSLIdentityForm(Form):
+
+class WSLIdentityForm(IdentityForm):
 
     realname = IdentityForm.realname
     username = IdentityForm.username
     username.help = _("The username does not need to match your Windows username")
     password = IdentityForm.password
     confirm_password = IdentityForm.confirm_password
-
-    def __init__(self, initial):
-        self.identityForm = IdentityForm([], initial)
-        super().__init__(initial=initial)
-
-    def validate_realname(self):
-        self.identityForm.validate_realname()
-
-    def validate_username(self):
-        self.identityForm.validate_username()
-
-    def validate_password(self):
-        self.identityForm.validate_password()
-
-    def validate_confirm_password(self):
-        self.identityForm.validate_confirm_password()
-
 
 class WSLIdentityView(BaseView):
     title = IdentityView.title
@@ -59,12 +44,25 @@ class WSLIdentityView(BaseView):
     def __init__(self, controller, identity_data):
         self.controller = controller
 
+        reserved_usernames_path = resource_path('reserved-usernames')
+        reserved_usernames = set()
+        if os.path.exists(reserved_usernames_path):
+            with open(reserved_usernames_path) as fp:
+                for line in fp:
+                    line = line.strip()
+                    if line.startswith('#') or not line:
+                        continue
+                    reserved_usernames.add(line)
+        else:
+            reserved_usernames.add('root')
+
         initial = {
             'realname': identity_data.realname,
             'username': identity_data.username,
             }
 
-        self.form = WSLIdentityForm(initial)
+        # This is the different form model with IdentityView which prevents us from inheriting it
+        self.form = WSLIdentityForm([], initial)
 
         connect_signal(self.form, 'submit', self.done)
         setup_password_validation(self.form, _("passwords"))
