@@ -28,11 +28,12 @@ class SystemSetupServer(SubiquityServer):
         "Locale",
         "Identity",
         "WSLConfiguration1",
+        "WSLConfiguration2",
     ]
 
     def __init__(self, opts, block_log_dir):
         self.is_reconfig = opts.reconfigure
-        if self.is_reconfig:
+        if self.is_reconfig and not opts.dry_run:
             self.controllers = [
                 "Reporting",
                 "Error",
