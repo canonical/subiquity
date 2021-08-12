@@ -12,7 +12,7 @@ RECONFIG?=--reconfigure
 export PYTHONPATH
 CWD := $(shell pwd)
 
-CHECK_DIRS := console_conf/ subiquity/ subiquitycore/
+CHECK_DIRS := console_conf/ subiquity/ subiquitycore/ system_setup/
 PYTHON := python3
 
 ifneq (,$(MACHINE))
