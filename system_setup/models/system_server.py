@@ -18,7 +18,7 @@ import logging
 
 from subiquity.models.subiquity import SubiquityModel
 
-from subiquitycore.utils import run_command, is_wsl
+from subiquitycore.utils import is_wsl
 
 
 from subiquity.models.locale import LocaleModel
@@ -40,6 +40,7 @@ ff00::0 ip6-mcastprefix
 ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 """
+
 
 class SystemSetupModel(SubiquityModel):
     """The overall model for subiquity."""
@@ -91,8 +92,8 @@ class SystemSetupModel(SubiquityModel):
         }
 
     def configured(self, model_name):
-        # We need to override the parent class as *_MODEL_NAMES are global variables
-        # in server.py
+        # We need to override the parent class as
+        # *_MODEL_NAMES are global variables in server.py
         if model_name not in self.ALL_MODEL_NAMES:
             return
         self._events[model_name].set()

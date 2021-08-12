@@ -16,7 +16,6 @@
 import logging
 import subprocess
 import attr
-import json
 
 from subiquitycore.utils import run_command
 
@@ -50,7 +49,8 @@ class WSLConfiguration2Model(object):
 
     def apply_settings(self, result, is_dry_run=False):
         d = {}
-        #TODO: placholder settings; should be dynamically assgined using ubuntu-wsl-integration
+        # TODO: placholder settings; should be dynamically assgined using
+        # ubuntu-wsl-integration
         d['custom_path'] = result.custom_path
         d['custom_mount_opt'] = result.custom_mount_opt
         d['gen_host'] = result.gen_host
@@ -71,7 +71,8 @@ class WSLConfiguration2Model(object):
             run_command(["/usr/bin/ubuntuwsl", "reset", "-y"],
                         stdout=subprocess.DEVNULL)
             # set the settings
-            #TODO: placholder settings; should be dynamically generated using ubuntu-wsl-integration
+            # TODO: placholder settings; should be dynamically generated using
+            # ubuntu-wsl-integration
             run_command(["/usr/bin/ubuntuwsl", "update",
                          "WSL.automount.enabled", result.automount],
                         stdout=subprocess.DEVNULL)
@@ -100,7 +101,8 @@ class WSLConfiguration2Model(object):
                         result.interop_appendwindowspath],
                         stdout=subprocess.DEVNULL)
             run_command(["/usr/bin/ubuntuwsl", "update",
-                         "ubuntu.GUI.followwintheme", result.gui_followwintheme],
+                         "ubuntu.GUI.followwintheme",
+                         result.gui_followwintheme],
                         stdout=subprocess.DEVNULL)
             run_command(["/usr/bin/ubuntuwsl", "update",
                          "ubuntu.GUI.theme", result.gui_theme],
@@ -109,15 +111,16 @@ class WSLConfiguration2Model(object):
                          "ubuntu.Interop.guiintergration", result.legacy_gui],
                         stdout=subprocess.DEVNULL)
             run_command(["/usr/bin/ubuntuwsl", "update",
-                         "ubuntu.Interop.audiointegration", result.legacy_audio],
+                         "ubuntu.Interop.audiointegration",
+                        result.legacy_audio],
                         stdout=subprocess.DEVNULL)
             run_command(["/usr/bin/ubuntuwsl", "update",
-                         "ubuntu.Interop.advancedipdetection", result.adv_ip_detect],
+                         "ubuntu.Interop.advancedipdetection",
+                         result.adv_ip_detect],
                         stdout=subprocess.DEVNULL)
             run_command(["/usr/bin/ubuntuwsl", "update",
                          "ubuntu.Motd.wslnewsenabled", result.wsl_motd_news],
-                        stdout=subprocess.DEVNULL)               
-            
+                        stdout=subprocess.DEVNULL)
 
     @property
     def wslconf2(self):

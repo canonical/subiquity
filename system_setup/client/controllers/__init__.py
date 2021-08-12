@@ -19,7 +19,8 @@ from .integration import IntegrationController
 from .overview import OverviewController
 from .reconfiguration import ReconfigurationController
 
-from subiquity.client.controllers import (ProgressController, WelcomeController)
+from subiquity.client.controllers import (ProgressController,
+                                          WelcomeController)
 
 
 __all__ = [
@@ -30,4 +31,3 @@ __all__ = [
     'OverviewController',
     'ReconfigurationController',
 ]
-
