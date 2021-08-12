@@ -113,22 +113,24 @@ class WSLConfiguration2Controller(SubiquityController):
                         if b in self.config_ref['ubuntu'][a]:
                             data[self.config_ref['ubuntu'][a][b]] = a_x[b]
         if data:
-            yes_no_converter = lambda x: x == 'true'
+            def bool_converter(x):
+                return x == 'true'
             reconf_data = WSLConfiguration2Data(
                 custom_path=data['custom_path'],
                 custom_mount_opt=data['custom_mount_opt'],
-                gen_host=yes_no_converter(data['gen_host']),
-                gen_resolvconf=yes_no_converter(data['gen_resolvconf']),
-                interop_enabled=yes_no_converter(data['interop_enabled']),
-                interop_appendwindowspath=yes_no_converter(data['interop_appendwindowspath']),
+                gen_host=bool_converter(data['gen_host']),
+                gen_resolvconf=bool_converter(data['gen_resolvconf']),
+                interop_enabled=bool_converter(data['interop_enabled']),
+                interop_appendwindowspath=bool_converter(
+                    data['interop_appendwindowspath']),
                 gui_theme=data['gui_theme'],
-                gui_followwintheme=yes_no_converter(data['gui_followwintheme']),
-                legacy_gui=yes_no_converter(data['legacy_gui']),
-                legacy_audio=yes_no_converter(data['legacy_audio']),
-                adv_ip_detect=yes_no_converter(data['adv_ip_detect']),
-                wsl_motd_news=yes_no_converter(data['wsl_motd_news']),
-                automount=yes_no_converter(data['automount']),
-                mountfstab=yes_no_converter(data['mountfstab']),
+                gui_followwintheme=bool_converter(data['gui_followwintheme']),
+                legacy_gui=bool_converter(data['legacy_gui']),
+                legacy_audio=bool_converter(data['legacy_audio']),
+                adv_ip_detect=bool_converter(data['adv_ip_detect']),
+                wsl_motd_news=bool_converter(data['wsl_motd_news']),
+                automount=bool_converter(data['automount']),
+                mountfstab=bool_converter(data['mountfstab']),
             )
             self.model.apply_settings(reconf_data, self.opts.dry_run)
 
@@ -168,7 +170,8 @@ class WSLConfiguration2Controller(SubiquityController):
             data.gen_host = self.model.wslconf2.gen_host
             data.gen_resolvconf = self.model.wslconf2.gen_resolvconf
             data.interop_enabled = self.model.wslconf2.interop_enabled
-            data.interop_appendwindowspath = self.model.wslconf2.interop_appendwindowspath
+            data.interop_appendwindowspath = \
+                self.model.wslconf2.interop_appendwindowspath
             data.gui_theme = self.model.wslconf2.gui_theme
             data.gui_followwintheme = self.model.wslconf2.gui_followwintheme
             data.legacy_gui = self.model.wslconf2.legacy_gui

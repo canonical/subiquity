@@ -20,7 +20,11 @@ from urwid import (
 
 
 from subiquity.common.types import IdentityData
-from subiquity.ui.views.identity import IdentityForm, IdentityView, setup_password_validation
+from subiquity.ui.views.identity import (
+    IdentityForm,
+    IdentityView,
+    setup_password_validation,
+    )
 from subiquitycore.ui.utils import screen
 from subiquitycore.utils import crypt_password
 from subiquitycore.view import BaseView
@@ -32,9 +36,11 @@ class WSLIdentityForm(IdentityForm):
 
     realname = IdentityForm.realname
     username = IdentityForm.username
-    username.help = _("The username does not need to match your Windows username")
+    username.help = \
+        _("The username does not need to match your Windows username")
     password = IdentityForm.password
     confirm_password = IdentityForm.confirm_password
+
 
 class WSLIdentityView(BaseView):
     title = IdentityView.title
@@ -61,7 +67,8 @@ class WSLIdentityView(BaseView):
             'username': identity_data.username,
             }
 
-        # This is the different form model with IdentityView which prevents us from inheriting it
+        # This is the different form model with IdentityView
+        # which prevents us from inheriting it
         self.form = WSLIdentityForm([], initial)
 
         connect_signal(self.form, 'submit', self.done)

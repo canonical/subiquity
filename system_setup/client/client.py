@@ -29,13 +29,14 @@ class SystemSetupClient(SubiquityClient):
     snapd_socket_path = None
 
     controllers = [
-        #"Serial",
+        # "Serial",
         "Welcome",
         "WSLIdentity",
         "Integration",
         "Overview",
         "Progress",
         ]
+
     def __init__(self, opts):
         if opts.reconfigure:
             self.controllers = [
@@ -44,8 +45,6 @@ class SystemSetupClient(SubiquityClient):
                 "Progress",
             ]
         super().__init__(opts)
-
-    
 
     def restart(self, remove_last_screen=True, restart_server=False):
         log.debug(f"restart {remove_last_screen} {restart_server}")

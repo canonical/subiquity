@@ -17,8 +17,6 @@ import logging
 
 import attr
 
-from subiquitycore.context import with_context
-
 from subiquity.common.types import IdentityData
 from subiquity.server.controllers.identity import IdentityController
 

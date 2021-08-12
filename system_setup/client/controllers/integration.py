@@ -16,7 +16,8 @@ class IntegrationController(SubiquityTuiController):
 
     def run_answers(self):
         if all(elem in self.answers for elem in
-               ['custom_path', 'custom_mount_opt', 'gen_host', 'gen_resolvconf']):
+               ['custom_path', 'custom_mount_opt',
+                'gen_host', 'gen_resolvconf']):
             integration = WSLConfiguration1Data(
                 custom_path=self.answers['custom_path'],
                 custom_mount_opt=self.answers['custom_mount_opt'],
