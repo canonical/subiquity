@@ -41,10 +41,8 @@ class WSLIdentityController(IdentityController):
         log.debug(
             "IdentityController.done next_screen user_spec=%s",
             identity_data)
-        if self.opts.dry_run:
-            username = "dryrun_user"
-        else:
+        if not self.opts.dry_run:
             username = identity_data.username
-        with open('/var/run/ubuntu_wsl_oobe_assigned_account', 'w') as f:
-            f.write(username)
+            with open('/var/run/ubuntu_wsl_oobe_assigned_account', 'w') as f:
+                f.write(username)
         self.app.next_screen(self.endpoint.POST(identity_data))

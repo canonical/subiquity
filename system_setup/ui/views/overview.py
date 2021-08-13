@@ -14,16 +14,19 @@ from subiquitycore.view import BaseView
 
 log = logging.getLogger("ubuntu_wsl_oobe.ui.views.overview")
 
+WSL_USERNAME_PATH = "/var/run/ubuntu_wsl_oobe_assigned_account"
+
 
 class OverviewView(BaseView):
     title = _("Setup Complete")
 
     def __init__(self, controller):
         self.controller = controller
-        user_name = ""
-        with open('/var/run/ubuntu_wsl_oobe_assigned_account', 'r') as f:
-            user_name = f.read()
-        os.remove('/var/run/ubuntu_wsl_oobe_assigned_account')
+        user_name = "dryrun_user"
+        if os.path.isfile(WSL_USERNAME_PATH):
+            with open(WSL_USERNAME_PATH, 'r') as f:
+                user_name = f.read()
+            os.remove(WSL_USERNAME_PATH)
         complete_text = _("Hi {username},\n"
                           "You have complete the setup!\n\n"
                           "It is suggested to run the following command"
