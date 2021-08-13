@@ -49,8 +49,8 @@ class SystemSetupModel(SubiquityModel):
 
     # Models that will be used in WSL system setup
     ALL_MODEL_NAMES = [
-        "identity",
         "locale",
+        "identity",
         "wslconf1",
     ]
 
@@ -87,7 +87,7 @@ class SystemSetupModel(SubiquityModel):
         self._events = {
             name: asyncio.Event() for name in self.ALL_MODEL_NAMES
         }
-        self.postinstall_events = {
+        self.install_events = {
             self._events[name] for name in self.ALL_MODEL_NAMES
         }
 
