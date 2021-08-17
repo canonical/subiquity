@@ -16,7 +16,9 @@
 import asyncio
 import logging
 
-from subiquity.models.subiquity import SubiquityModel
+from subiquity.models.subiquity import (
+    SubiquityModel,
+    )
 
 from subiquitycore.utils import is_wsl
 
@@ -47,33 +49,10 @@ class SystemSetupModel(SubiquityModel):
 
     target = '/'
 
-    # Models that will be used in WSL system setup
-    ALL_MODEL_NAMES = [
-        "locale",
-        "identity",
-        "wslconf1",
-    ]
-
     def __init__(self, root, reconfigure=False):
-        if reconfigure:
-            self.ALL_MODEL_NAMES = [
-                "locale",
-                "wslconf2",
-            ]
         # Parent class init is not called to not load models we don't need.
         self.root = root
         self.is_wsl = is_wsl()
-
-        self.debconf_selections = None
-        self.filesystem = None
-        self.kernel = None
-        self.keyboard = None
-        self.mirror = None
-        self.network = None
-        self.proxy = None
-        self.snaplist = None
-        self.ssh = None
-        self.updates = None
 
         self.packages = []
         self.userdata = {}
@@ -84,24 +63,9 @@ class SystemSetupModel(SubiquityModel):
 
         self.confirmation = asyncio.Event()
 
-        self._events = {
-            name: asyncio.Event() for name in self.ALL_MODEL_NAMES
-        }
-        self.install_events = {
-            self._events[name] for name in self.ALL_MODEL_NAMES
-        }
+        self._configured_names = set()
+        self._cur_install_model_names = set()
+        self._cur_postinstall_model_names = set()
 
-    def configured(self, model_name):
-        # We need to override the parent class as
-        # *_MODEL_NAMES are global variables in server.py
-        if model_name not in self.ALL_MODEL_NAMES:
-            return
-        self._events[model_name].set()
-        stage = 'install'
-        unconfigured = {
-            mn for mn in self.ALL_MODEL_NAMES
-            if not self._events[mn].is_set()
-        }
-        log.debug(
-            "model %s for %s is configured, to go %s",
-            model_name, stage, unconfigured)
+    def set_source_variant(self, variant):
+        pass
