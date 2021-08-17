@@ -69,29 +69,20 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 """
 
-# Models that contribute to the curtin config
-INSTALL_MODEL_NAMES = [
-    "debconf_selections",
-    "filesystem",
-    "kernel",
-    "keyboard",
-    "mirror",
-    "network",
-    "proxy",
-    ]
 
-# Models that contribute to the cloud-init config (and other postinstall steps)
-POSTINSTALL_MODEL_NAMES = [
-    "identity",
-    "locale",
-    "packages",
-    "snaplist",
-    "ssh",
-    "timezone",
-    "userdata",
-    ]
+class ModelNames:
+    def __init__(self, default_names, **per_variant_names):
+        self.default_names = default_names
+        self.per_variant_names = per_variant_names
 
-ALL_MODEL_NAMES = INSTALL_MODEL_NAMES + POSTINSTALL_MODEL_NAMES
+    def for_variant(self, variant):
+        return self.default_names | self.per_variant_names.get(variant, set())
+
+    def all(self):
+        r = set(self.default_names)
+        for v in self.per_variant_names.values():
+            r |= v
+        return r
 
 
 class DebconfSelectionsModel:
@@ -108,7 +99,7 @@ class SubiquityModel:
 
     target = '/target'
 
-    def __init__(self, root):
+    def __init__(self, root, install_model_names, postinstall_model_names):
         self.root = root
         if root != '/':
             self.target = root
@@ -129,45 +120,77 @@ class SubiquityModel:
         self.updates = UpdatesModel()
         self.userdata = {}
 
-        self.confirmation = asyncio.Event()
+        self._confirmation = asyncio.Event()
+        self._confirmation_task = None
 
-        self._events = {
-            name: asyncio.Event() for name in ALL_MODEL_NAMES
-            }
-        self.install_events = {
-            self._events[name] for name in INSTALL_MODEL_NAMES
-            }
-        self.postinstall_events = {
-            self._events[name] for name in POSTINSTALL_MODEL_NAMES
-            }
+        self._configured_names = set()
+        self._install_model_names = install_model_names
+        self._postinstall_model_names = postinstall_model_names
+        self._cur_install_model_names = install_model_names.default_names
+        self._cur_postinstall_model_names = \
+            postinstall_model_names.default_names
+        self._install_event = asyncio.Event()
+        self._postinstall_event = asyncio.Event()
+
+    def set_source_variant(self, variant):
+        self._cur_install_model_names = \
+            self._install_model_names.for_variant(variant)
+        self._cur_postinstall_model_names = \
+            self._postinstall_model_names.for_variant(variant)
+        unconfigured_install_model_names = \
+            self._cur_install_model_names - self._configured_names
+        if unconfigured_install_model_names:
+            if self._install_event.is_set():
+                self._install_event = asyncio.Event()
+            if self._confirmation_task is not None:
+                self._confirmation_task.cancel()
+        else:
+            self._install_event.set()
 
     def configured(self, model_name):
-        if model_name not in ALL_MODEL_NAMES:
-            return
-        self._events[model_name].set()
-        if model_name in INSTALL_MODEL_NAMES:
+        self._configured_names.add(model_name)
+        if model_name in self._cur_install_model_names:
             stage = 'install'
-            unconfigured = {
-                mn for mn in INSTALL_MODEL_NAMES
-                if not self._events[mn].is_set()
-                }
-        elif model_name in POSTINSTALL_MODEL_NAMES:
+            names = self._cur_install_model_names
+            event = self._install_event
+        elif model_name in self._cur_postinstall_model_names:
             stage = 'postinstall'
-            unconfigured = {
-                mn for mn in POSTINSTALL_MODEL_NAMES
-                if not self._events[mn].is_set()
-                }
+            names = self._cur_postinstall_model_names
+            event = self._postinstall_event
+        else:
+            return
+        unconfigured = names - self._configured_names
         log.debug(
-            "model %s for %s is configured, to go %s",
+            "model %s for %s stage is configured, to go %s",
             model_name, stage, unconfigured)
+        if not unconfigured:
+            event.set()
 
-    def needs_configuration(self, model_name):
-        if model_name is None:
+    async def wait_install(self):
+        await self._install_event.wait()
+
+    async def wait_postinstall(self):
+        await self._postinstall_event.wait()
+
+    async def wait_confirmation(self):
+        if self._confirmation_task is None:
+            self._confirmation_task = asyncio.get_event_loop().create_task(
+                self._confirmation.wait())
+        try:
+            await self._confirmation_task
+        except asyncio.CancelledError:
             return False
-        return not self._events[model_name].is_set()
+        else:
+            return True
+        finally:
+            self._confirmation_task = None
+
+    def is_postinstall_only(self, model_name):
+        return model_name in self._cur_postinstall_model_names and \
+               model_name not in self._cur_install_model_names
 
     def confirm(self):
-        self.confirmation.set()
+        self._confirmation.set()
 
     def get_target_groups(self):
         command = ['chroot', self.target, 'getent', 'group']
@@ -214,7 +237,7 @@ class SubiquityModel:
                 config['ssh_authorized_keys'] = self.ssh.authorized_keys
         if self.ssh.install_server:
             config['ssh_pwauth'] = self.ssh.pwauth
-        for model_name in POSTINSTALL_MODEL_NAMES:
+        for model_name in self._postinstall_model_names.all():
             model = getattr(self, model_name)
             if getattr(model, 'make_cloudconfig', None):
                 merge_config(config, model.make_cloudconfig())
@@ -341,7 +364,7 @@ class SubiquityModel:
                     'permissions': 0o644,
                     }
 
-        for model_name in INSTALL_MODEL_NAMES:
+        for model_name in self._install_model_names.all():
             model = getattr(self, model_name)
             log.debug("merging config from %s", model)
             merge_config(config, model.render())

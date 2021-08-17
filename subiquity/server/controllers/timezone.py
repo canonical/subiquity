@@ -79,7 +79,6 @@ class TimeZoneController(SubiquityController):
         }
 
     autoinstall_default = ''
-    relevant_variants = ('desktop', )
 
     def load_autoinstall_data(self, data):
         self.deserialize(data)

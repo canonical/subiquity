@@ -35,7 +35,6 @@ class SubiquityController(BaseController):
     autoinstall_schema = None
     autoinstall_default = None
     endpoint = None
-    relevant_variants = ('desktop', 'server')
 
     def __init__(self, app):
         super().__init__(app)

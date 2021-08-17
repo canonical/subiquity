@@ -61,7 +61,10 @@ from subiquity.common.types import (
     LiveSessionSSHInfo,
     PasswordKind,
     )
-from subiquity.models.subiquity import SubiquityModel
+from subiquity.models.subiquity import (
+    ModelNames,
+    SubiquityModel,
+    )
 from subiquity.server.controller import SubiquityController
 from subiquity.server.geoip import GeoIP
 from subiquity.server.errors import ErrorController
@@ -111,9 +114,7 @@ class MetaController:
     async def client_variant_POST(self, variant: str) -> None:
         if variant not in ('desktop', 'server'):
             raise ValueError(f'unrecognized client variant {variant}')
-        for controller in self.app.controllers.instances:
-            if variant not in controller.relevant_variants:
-                controller.configured()
+        self.app.base_model.set_source_variant(variant)
 
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
         ips = []
@@ -156,6 +157,27 @@ def get_installer_password_from_cloudinit_log():
                 return line[len("installer:"):].strip()
 
     return None
+
+
+INSTALL_MODEL_NAMES = ModelNames({
+    "debconf_selections",
+    "filesystem",
+    "kernel",
+    "keyboard",
+    "mirror",
+    "network",
+    "proxy",
+    })
+
+POSTINSTALL_MODEL_NAMES = ModelNames({
+    "identity",
+    "locale",
+    "packages",
+    "snaplist",
+    "ssh",
+    "userdata",
+    },
+    desktop={"timezone"})
 
 
 class SubiquityServer(Application):
@@ -207,7 +229,8 @@ class SubiquityServer(Application):
         root = '/'
         if self.opts.dry_run:
             root = os.path.abspath('.subiquity')
-        return SubiquityModel(root)
+        return SubiquityModel(
+            root, INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES)
 
     def __init__(self, opts, block_log_dir):
         super().__init__(opts)
@@ -353,7 +376,7 @@ class SubiquityServer(Application):
             if not controller.interactive():
                 override_status = 'skip'
             elif self.state == ApplicationState.NEEDS_CONFIRMATION:
-                if self.base_model.needs_configuration(controller.model_name):
+                if self.base_model.is_postinstall_only(controller.model_name):
                     override_status = 'confirm'
         if override_status is not None:
             resp = web.Response(headers={'x-status': override_status})
