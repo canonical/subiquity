@@ -35,25 +35,37 @@ class ShutdownController(SubiquityController):
 
     def __init__(self, app):
         super().__init__(app)
+        # user_shutdown_event is set when the user requests the shutdown.
+        # server_reboot_event is set when the server is ready for shutdown
+        # shuttingdown_event is set when the shutdown has begun (so don't
+        # depend on anything actually happening after it is set, it's all a bag
+        # of races from that point!)
         self.user_shutdown_event = asyncio.Event()
+        self.server_reboot_event = asyncio.Event()
         self.shuttingdown_event = asyncio.Event()
 
-    async def POST(self):
+    async def POST(self, immediate: bool = False):
         self.app.controllers.Install.stop_uu()
         self.user_shutdown_event.set()
+        if immediate:
+            self.server_reboot_event.set()
         await self.shuttingdown_event.wait()
 
     def interactive(self):
         return self.app.interactive
 
     def start(self):
+        self.app.aio_loop.create_task(self._wait_install())
         self.app.aio_loop.create_task(self._run())
 
-    async def _run(self):
-        Install = self.app.controllers.Install
-        await Install.install_task
+    async def _wait_install(self):
+        await self.app.controllers.Install.install_task
         await self.app.controllers.Late.run_event.wait()
         await self.copy_logs_to_target()
+        self.server_reboot_event.set()
+
+    async def _run(self):
+        await self.server_reboot_event.wait()
         if self.app.interactive:
             await self.user_shutdown_event.wait()
             self.shutdown()
@@ -86,6 +98,7 @@ class ShutdownController(SubiquityController):
         if self.opts.dry_run:
             self.app.exit()
         else:
-            if platform.machine() == 's390x':
-                run_command(["chreipl", "/target/boot"])
+            if self.app.state == ApplicationState.DONE:
+                if platform.machine() == 's390x':
+                    run_command(["chreipl", "/target/boot"])
             run_command(["/sbin/reboot"])
