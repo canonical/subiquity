@@ -23,6 +23,7 @@ from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command, run_command
 
 from subiquity.common.apidef import API
+from subiquity.common.types import ShutdownMode
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.install import ApplicationState
 
@@ -43,8 +44,10 @@ class ShutdownController(SubiquityController):
         self.user_shutdown_event = asyncio.Event()
         self.server_reboot_event = asyncio.Event()
         self.shuttingdown_event = asyncio.Event()
+        self.mode = ShutdownMode.REBOOT
 
-    async def POST(self, immediate: bool = False):
+    async def POST(self, mode: ShutdownMode, immediate: bool = False):
+        self.mode = mode
         self.app.controllers.Install.stop_uu()
         self.user_shutdown_event.set()
         if immediate:
@@ -92,7 +95,7 @@ class ShutdownController(SubiquityController):
         except Exception:
             log.exception("saving journal failed")
 
-    @with_context()
+    @with_context(description='mode={self.mode.name}')
     def shutdown(self, context):
         self.shuttingdown_event.set()
         if self.opts.dry_run:
@@ -101,4 +104,7 @@ class ShutdownController(SubiquityController):
             if self.app.state == ApplicationState.DONE:
                 if platform.machine() == 's390x':
                     run_command(["chreipl", "/target/boot"])
-            run_command(["/sbin/reboot"])
+            if self.mode == ShutdownMode.REBOOT:
+                run_command(["/sbin/reboot"])
+            elif self.mode == ShutdownMode.POWEROFF:
+                run_command(["/sbin/poweroff"])

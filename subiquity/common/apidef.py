@@ -37,6 +37,7 @@ from subiquity.common.types import (
     IdentityData,
     NetworkStatus,
     RefreshStatus,
+    ShutdownMode,
     SnapInfo,
     SnapListResponse,
     SnapSelection,
@@ -236,7 +237,7 @@ class API:
         def POST(tz: str): ...
 
     class shutdown:
-        def POST(immediate: bool = False): ...
+        def POST(mode: ShutdownMode, immediate: bool = False): ...
 
 
 class LinkAction(enum.Enum):
