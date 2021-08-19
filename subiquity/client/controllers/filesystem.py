@@ -42,10 +42,6 @@ BIOS_GRUB_SIZE_BYTES = 1 * 1024 * 1024    # 1MiB
 PREP_GRUB_SIZE_BYTES = 8 * 1024 * 1024    # 8MiB
 UEFI_GRUB_SIZE_BYTES = 512 * 1024 * 1024  # 512MiB EFI partition
 
-# Disks larger than this are considered sensible targets for guided
-# installation.
-MIN_SIZE_GUIDED = 6 * (1 << 30)
-
 
 class FilesystemController(SubiquityTuiController, FilesystemManipulator):
 
@@ -59,7 +55,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.answers.setdefault('manual', [])
 
     async def make_ui(self):
-        status = await self.endpoint.guided.GET(MIN_SIZE_GUIDED)
+        status = await self.endpoint.guided.GET()
         if status.status == ProbeStatus.PROBING:
             self.app.aio_loop.create_task(self._wait_for_probing())
             return SlowProbing(self)
@@ -67,7 +63,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
             return self.make_guided_ui(status)
 
     async def _wait_for_probing(self):
-        status = await self.endpoint.guided.GET(MIN_SIZE_GUIDED, wait=True)
+        status = await self.endpoint.guided.GET(wait=True)
         if isinstance(self.ui.body, SlowProbing):
             self.ui.set_body(self.make_guided_ui(status))
 

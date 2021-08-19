@@ -213,8 +213,7 @@ class API:
 
     class storage:
         class guided:
-            def GET(min_size: int = None, wait: bool = False) \
-                    -> GuidedStorageResponse:
+            def GET(wait: bool = False) -> GuidedStorageResponse:
                 pass
 
             def POST(choice: Optional[GuidedChoice]) \
