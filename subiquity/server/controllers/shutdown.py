@@ -33,6 +33,11 @@ log = logging.getLogger("subiquity.controllers.restart")
 class ShutdownController(SubiquityController):
 
     endpoint = API.shutdown
+    autoinstall_key = 'shutdown'
+    autoinstall_schema = {
+        'type': 'string',
+        'enum': ['reboot', 'poweroff']
+    }
 
     def __init__(self, app):
         super().__init__(app)
@@ -45,6 +50,12 @@ class ShutdownController(SubiquityController):
         self.server_reboot_event = asyncio.Event()
         self.shuttingdown_event = asyncio.Event()
         self.mode = ShutdownMode.REBOOT
+
+    def load_autoinstall_data(self, data):
+        if data == 'reboot':
+            self.mode = ShutdownMode.REBOOT
+        elif data == 'poweroff':
+            self.mode = ShutdownMode.POWEROFF
 
     async def POST(self, mode: ShutdownMode, immediate: bool = False):
         self.mode = mode

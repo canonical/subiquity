@@ -721,6 +721,13 @@
                     "type": "string"
                 }
             }
+        },
+        "shutdown": {
+            "type": "string",
+            "enum": [
+                "reboot",
+                "poweroff"
+            ]
         }
     },
     "required": [
