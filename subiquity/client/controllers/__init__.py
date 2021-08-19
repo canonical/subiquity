@@ -24,6 +24,7 @@ from .proxy import ProxyController
 from .refresh import RefreshController
 from .serial import SerialController
 from .snaplist import SnapListController
+from .source import SourceController
 from .ssh import SSHController
 from .welcome import WelcomeController
 from .zdev import ZdevController
@@ -41,6 +42,7 @@ __all__ = [
     'RepeatedController',
     'SerialController',
     'SnapListController',
+    'SourceController',
     'SSHController',
     'WelcomeController',
     'ZdevController',
