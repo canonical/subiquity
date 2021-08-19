@@ -118,11 +118,13 @@ subiquity/models/mirror.py
 subiquity/models/network.py
 subiquity/models/proxy.py
 subiquity/models/snaplist.py
+subiquity/models/source.py
 subiquity/models/ssh.py
 subiquity/models/subiquity.py
 subiquity/models/tests/__init__.py
 subiquity/models/tests/test_filesystem.py
 subiquity/models/tests/test_mirror.py
+subiquity/models/tests/test_source.py
 subiquity/models/tests/test_subiquity.py
 subiquity/models/timezone.py
 subiquity/models/updates.py
@@ -144,8 +146,11 @@ subiquity/server/controllers/refresh.py
 subiquity/server/controllers/reporting.py
 subiquity/server/controllers/shutdown.py
 subiquity/server/controllers/snaplist.py
+subiquity/server/controllers/source.py
 subiquity/server/controllers/ssh.py
+subiquity/server/controllers/tests/__init__.py
 subiquity/server/controllers/tests/test_keyboard.py
+subiquity/server/controllers/tests/test_source.py
 subiquity/server/controllers/timezone.py
 subiquity/server/controllers/updates.py
 subiquity/server/controllers/userdata.py

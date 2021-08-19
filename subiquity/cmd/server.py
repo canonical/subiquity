@@ -61,6 +61,8 @@ def make_server_args_parser():
         '--snap-section', action='store', default='server',
         help=("Show snaps from this section of the store in the snap "
               "list screen."))
+    parser.add_argument(
+        '--source-catalog', dest='source_catalog', action='store')
     return parser
 
 

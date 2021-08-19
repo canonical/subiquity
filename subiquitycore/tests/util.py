@@ -14,7 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import random
+import string
 
 
 def run_coro(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
+
+
+def random_string():
+    return ''.join(random.choice(string.ascii_letters) for _ in range(8))

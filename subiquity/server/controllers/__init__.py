@@ -29,6 +29,7 @@ from .refresh import RefreshController
 from .reporting import ReportingController
 from .shutdown import ShutdownController
 from .snaplist import SnapListController
+from .source import SourceController
 from .ssh import SSHController
 from .timezone import TimeZoneController
 from .updates import UpdatesController
@@ -54,6 +55,7 @@ __all__ = [
     'ReportingController',
     'ShutdownController',
     'SnapListController',
+    'SourceController',
     'SSHController',
     'TimeZoneController',
     'UpdatesController',

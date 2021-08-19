@@ -41,6 +41,7 @@ from subiquity.common.types import (
     SnapInfo,
     SnapListResponse,
     SnapSelection,
+    SourceSelectionAndSetting,
     SSHData,
     LiveSessionSSHInfo,
     StorageResponse,
@@ -122,6 +123,10 @@ class API:
 
         class steps:
             def GET(index: Optional[str]) -> AnyStep: ...
+
+    class source:
+        def GET() -> SourceSelectionAndSetting: ...
+        def POST(source_id: str) -> None: ...
 
     class zdev:
         def GET() -> List[ZdevInfo]: ...
