@@ -6,6 +6,10 @@ import yaml
 
 part = sys.argv[1]
 
+# unset GIT_DIR if set (because then the -C arguments we pass to git
+# do nothing)
+os.environ.pop('GIT_DIR', None)
+
 
 def r(*args, **kw):
     print('running', args)
