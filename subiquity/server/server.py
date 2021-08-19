@@ -222,7 +222,7 @@ class SubiquityServer(Application):
         "Install",
         "Updates",
         "Late",
-        "Reboot",
+        "Shutdown",
         ]
 
     def make_model(self):

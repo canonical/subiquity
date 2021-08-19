@@ -29,19 +29,19 @@ from subiquity.server.controllers.install import ApplicationState
 log = logging.getLogger("subiquity.controllers.restart")
 
 
-class RebootController(SubiquityController):
+class ShutdownController(SubiquityController):
 
-    endpoint = API.reboot
+    endpoint = API.shutdown
 
     def __init__(self, app):
         super().__init__(app)
-        self.user_reboot_event = asyncio.Event()
-        self.rebooting_event = asyncio.Event()
+        self.user_shutdown_event = asyncio.Event()
+        self.shuttingdown_event = asyncio.Event()
 
     async def POST(self):
         self.app.controllers.Install.stop_uu()
-        self.user_reboot_event.set()
-        await self.rebooting_event.wait()
+        self.user_shutdown_event.set()
+        await self.shuttingdown_event.wait()
 
     def interactive(self):
         return self.app.interactive
@@ -55,10 +55,10 @@ class RebootController(SubiquityController):
         await self.app.controllers.Late.run_event.wait()
         await self.copy_logs_to_target()
         if self.app.interactive:
-            await self.user_reboot_event.wait()
-            self.reboot()
+            await self.user_shutdown_event.wait()
+            self.shutdown()
         elif self.app.state == ApplicationState.DONE:
-            self.reboot()
+            self.shutdown()
 
     @with_context()
     async def copy_logs_to_target(self, context):
@@ -81,8 +81,8 @@ class RebootController(SubiquityController):
             log.exception("saving journal failed")
 
     @with_context()
-    def reboot(self, context):
-        self.rebooting_event.set()
+    def shutdown(self, context):
+        self.shuttingdown_event.set()
         if self.opts.dry_run:
             self.app.exit()
         else:

@@ -65,7 +65,7 @@ class ProgressController(SubiquityTuiController):
 
     async def send_reboot_and_wait(self):
         try:
-            await self.app.client.reboot.POST()
+            await self.app.client.shutdown.POST()
         except aiohttp.ClientError:
             pass
         self.app.exit()
