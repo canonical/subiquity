@@ -1,23 +1,22 @@
-# Latvian translation for subiquity
-# Copyright (c) 2019 Rosetta Contributors and Canonical Ltd 2019
+# Japanese translation for subiquity
+# Copyright (c) 2020 Rosetta Contributors and Canonical Ltd 2020
 # This file is distributed under the same license as the subiquity package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: subiquity\n"
-"Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: FULL NAME <EMAIL@ADDRESS>\n"
 "POT-Creation-Date: 2021-06-04 13:18+1200\n"
-"PO-Revision-Date: 2017-09-17 14:15+0000\n"
-"Last-Translator: Dimitri John Ledkov <dimitri.ledkov+lp@canonical.com>\n"
-"Language-Team: Latvian <lv@li.org>\n"
+"PO-Revision-Date: 2020-09-07 01:40+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Japanese <ja@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2;\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "X-Launchpad-Export-Date: 2021-06-05 04:52+0000\n"
 "X-Generator: Launchpad (build b45bdbe3a00b6b668fa7f2069bd545c35c41f7f4)\n"
-"Language: lv\n"
 
 #: ../subiquity/client/client.py:70
 msgid ""
@@ -424,7 +423,7 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/filesystem.py:494
 #: ../subiquity/ui/views/snaplist.py:454
 msgid "Done"
-msgstr "Gatavs"
+msgstr ""
 
 #: ../subiquitycore/ui/form.py:452 ../subiquitycore/ui/utils.py:382
 #: ../subiquitycore/ui/views/network_configure_wlan_interface.py:33
@@ -433,19 +432,19 @@ msgstr "Gatavs"
 #: ../subiquity/ui/views/keyboard.py:99 ../subiquity/ui/views/keyboard.py:333
 #: ../subiquity/ui/views/snaplist.py:265 ../subiquity/ui/views/ssh.py:162
 msgid "Cancel"
-msgstr "Atcelt"
+msgstr ""
 
 #: ../subiquitycore/ui/interactive.py:109 ../subiquity/ui/views/keyboard.py:218
 #: ../subiquity/ui/views/ssh.py:185
 msgid "Yes"
-msgstr "Jā"
+msgstr ""
 
 #: ../subiquitycore/ui/interactive.py:109
 #: ../subiquity/ui/views/installprogress.py:247
 #: ../subiquity/ui/views/keyboard.py:219 ../subiquity/ui/views/ssh.py:98
 #: ../subiquity/ui/views/ssh.py:186
 msgid "No"
-msgstr "Nē"
+msgstr ""
 
 #: ../subiquitycore/ui/utils.py:349
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:319
@@ -455,7 +454,7 @@ msgstr "Nē"
 #: ../subiquity/ui/views/help.py:66 ../subiquity/ui/views/installprogress.py:82
 #: ../subiquity/ui/views/snaplist.py:315 ../subiquity/ui/views/welcome.py:115
 msgid "Close"
-msgstr "Aizvērt"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:86
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:152
@@ -466,7 +465,7 @@ msgstr "Aizvērt"
 #: ../subiquity/ui/views/filesystem/partition.py:387
 #: ../subiquity/ui/views/filesystem/raid.py:144
 msgid "Save"
-msgstr "Saglabāt"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:88
 msgid "Subnet:"
@@ -474,11 +473,11 @@ msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:89
 msgid "Address:"
-msgstr "Adrese:"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:90
 msgid "Gateway:"
-msgstr "Vārteja:"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:91
 msgid "Name servers:"
@@ -514,7 +513,7 @@ msgstr ""
 #. A choice for how to configure a network interface
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:145
 msgid "Manual"
-msgstr "Manuālā"
+msgstr ""
 
 #. A choice for how to configure a network interface
 #: ../subiquitycore/ui/views/network_configure_manual_interface.py:147
@@ -671,7 +670,7 @@ msgstr ""
 #: ../subiquity/ui/views/ssh.py:108 ../subiquity/ui/views/welcome.py:93
 #: ../subiquity/ui/views/zdev.py:163
 msgid "Back"
-msgstr "Atpakaļ"
+msgstr ""
 
 #: ../subiquitycore/ui/views/network.py:310
 msgid "Continue without network"
@@ -842,7 +841,7 @@ msgstr ""
 #: ../subiquity/ui/views/snaplist.py:352 ../subiquity/ui/views/snaplist.py:377
 #: ../subiquity/ui/views/zdev.py:162
 msgid "Continue"
-msgstr "Turpināt"
+msgstr ""
 
 #: ../subiquity/ui/views/error.py:160
 #: ../subiquity/ui/views/installprogress.py:282
@@ -1110,7 +1109,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/filesystem/filesystem.py:498
 msgid "Reset"
-msgstr "Atstatīt"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:53
 msgid "Configure a guided storage layout, or create a custom one:"
@@ -1134,7 +1133,7 @@ msgstr ""
 #: ../subiquity/ui/views/filesystem/guided.py:67
 #: ../subiquity/ui/views/identity.py:141
 msgid "Passwords do not match"
-msgstr "Paroles nesakrīt"
+msgstr ""
 
 #: ../subiquity/ui/views/filesystem/guided.py:80
 msgid "Encrypt the LVM group with LUKS"
@@ -1781,7 +1780,7 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:89
 msgid "Your name:"
-msgstr "Jūsu vārds:"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:91
 msgid "Your server's name:"
@@ -1789,19 +1788,19 @@ msgstr ""
 
 #: ../subiquity/ui/views/identity.py:92
 msgid "The name it uses when it talks to other computers."
-msgstr "Šo nosaukumu izmanto saziņā ar citiem datoriem."
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:93
 msgid "Pick a username:"
-msgstr "Izvēlieties lietotājvārdu:"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:94
 msgid "Choose a password:"
-msgstr "Izvēlieties paroli:"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:95
 msgid "Confirm your password:"
-msgstr "Apstipriniet paroli:"
+msgstr ""
 
 #: ../subiquity/ui/views/identity.py:100
 #, python-brace-format
@@ -1888,7 +1887,7 @@ msgstr ""
 #: ../subiquity/ui/views/installprogress.py:151
 #: ../subiquity/ui/views/installprogress.py:154
 msgid "Installing system"
-msgstr "Instalēju sistēmu"
+msgstr ""
 
 #: ../subiquity/ui/views/installprogress.py:157
 #: ../subiquity/ui/views/installprogress.py:165
