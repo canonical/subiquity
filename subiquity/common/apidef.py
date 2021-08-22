@@ -37,6 +37,7 @@ from subiquity.common.types import (
     IdentityData,
     NetworkStatus,
     RefreshStatus,
+    ShutdownMode,
     SnapInfo,
     SnapListResponse,
     SnapSelection,
@@ -235,8 +236,8 @@ class API:
         def GET() -> TimeZoneInfo: ...
         def POST(tz: str): ...
 
-    class reboot:
-        def POST(): ...
+    class shutdown:
+        def POST(mode: ShutdownMode, immediate: bool = False): ...
 
 
 class LinkAction(enum.Enum):

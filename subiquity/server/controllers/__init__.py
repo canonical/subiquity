@@ -25,9 +25,9 @@ from .mirror import MirrorController
 from .network import NetworkController
 from .package import PackageController
 from .proxy import ProxyController
-from .reboot import RebootController
 from .refresh import RefreshController
 from .reporting import ReportingController
+from .shutdown import ShutdownController
 from .snaplist import SnapListController
 from .ssh import SSHController
 from .timezone import TimeZoneController
@@ -50,9 +50,9 @@ __all__ = [
     'NetworkController',
     'PackageController',
     'ProxyController',
-    'RebootController',
     'RefreshController',
     'ReportingController',
+    'ShutdownController',
     'SnapListController',
     'SSHController',
     'TimeZoneController',

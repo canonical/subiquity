@@ -23,42 +23,68 @@ from subiquitycore.context import with_context
 from subiquitycore.utils import arun_command, run_command
 
 from subiquity.common.apidef import API
+from subiquity.common.types import ShutdownMode
 from subiquity.server.controller import SubiquityController
 from subiquity.server.controllers.install import ApplicationState
 
 log = logging.getLogger("subiquity.controllers.restart")
 
 
-class RebootController(SubiquityController):
+class ShutdownController(SubiquityController):
 
-    endpoint = API.reboot
+    endpoint = API.shutdown
+    autoinstall_key = 'shutdown'
+    autoinstall_schema = {
+        'type': 'string',
+        'enum': ['reboot', 'poweroff']
+    }
 
     def __init__(self, app):
         super().__init__(app)
-        self.user_reboot_event = asyncio.Event()
-        self.rebooting_event = asyncio.Event()
+        # user_shutdown_event is set when the user requests the shutdown.
+        # server_reboot_event is set when the server is ready for shutdown
+        # shuttingdown_event is set when the shutdown has begun (so don't
+        # depend on anything actually happening after it is set, it's all a bag
+        # of races from that point!)
+        self.user_shutdown_event = asyncio.Event()
+        self.server_reboot_event = asyncio.Event()
+        self.shuttingdown_event = asyncio.Event()
+        self.mode = ShutdownMode.REBOOT
 
-    async def POST(self):
+    def load_autoinstall_data(self, data):
+        if data == 'reboot':
+            self.mode = ShutdownMode.REBOOT
+        elif data == 'poweroff':
+            self.mode = ShutdownMode.POWEROFF
+
+    async def POST(self, mode: ShutdownMode, immediate: bool = False):
+        self.mode = mode
         self.app.controllers.Install.stop_uu()
-        self.user_reboot_event.set()
-        await self.rebooting_event.wait()
+        self.user_shutdown_event.set()
+        if immediate:
+            self.server_reboot_event.set()
+        await self.shuttingdown_event.wait()
 
     def interactive(self):
         return self.app.interactive
 
     def start(self):
+        self.app.aio_loop.create_task(self._wait_install())
         self.app.aio_loop.create_task(self._run())
 
-    async def _run(self):
-        Install = self.app.controllers.Install
-        await Install.install_task
+    async def _wait_install(self):
+        await self.app.controllers.Install.install_task
         await self.app.controllers.Late.run_event.wait()
         await self.copy_logs_to_target()
+        self.server_reboot_event.set()
+
+    async def _run(self):
+        await self.server_reboot_event.wait()
         if self.app.interactive:
-            await self.user_reboot_event.wait()
-            self.reboot()
+            await self.user_shutdown_event.wait()
+            self.shutdown()
         elif self.app.state == ApplicationState.DONE:
-            self.reboot()
+            self.shutdown()
 
     @with_context()
     async def copy_logs_to_target(self, context):
@@ -80,12 +106,16 @@ class RebootController(SubiquityController):
         except Exception:
             log.exception("saving journal failed")
 
-    @with_context()
-    def reboot(self, context):
-        self.rebooting_event.set()
+    @with_context(description='mode={self.mode.name}')
+    def shutdown(self, context):
+        self.shuttingdown_event.set()
         if self.opts.dry_run:
             self.app.exit()
         else:
-            if platform.machine() == 's390x':
-                run_command(["chreipl", "/target/boot"])
-            run_command(["/sbin/reboot"])
+            if self.app.state == ApplicationState.DONE:
+                if platform.machine() == 's390x':
+                    run_command(["chreipl", "/target/boot"])
+            if self.mode == ShutdownMode.REBOOT:
+                run_command(["/sbin/reboot"])
+            elif self.mode == ShutdownMode.POWEROFF:
+                run_command(["/sbin/poweroff"])

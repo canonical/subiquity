@@ -330,3 +330,8 @@ class SnapListResponse:
 class TimeZoneInfo:
     timezone: str
     from_geoip: bool
+
+
+class ShutdownMode(enum.Enum):
+    REBOOT = enum.auto()
+    POWEROFF = enum.auto()

@@ -21,7 +21,10 @@ import aiohttp
 from subiquitycore.context import with_context
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.types import ApplicationState
+from subiquity.common.types import (
+    ApplicationState,
+    ShutdownMode,
+    )
 from subiquity.ui.views.installprogress import (
     InstallRunning,
     ProgressView,
@@ -65,7 +68,7 @@ class ProgressController(SubiquityTuiController):
 
     async def send_reboot_and_wait(self):
         try:
-            await self.app.client.reboot.POST()
+            await self.app.client.shutdown.POST(mode=ShutdownMode.REBOOT)
         except aiohttp.ClientError:
             pass
         self.app.exit()

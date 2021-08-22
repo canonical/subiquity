@@ -252,7 +252,7 @@ class SubiquityClient(TuiApplication):
         elif event['SUBIQUITY_EVENT_TYPE'] == 'finish':
             print('finish: ' + event["MESSAGE"])
             context_name = event.get('SUBIQUITY_CONTEXT_NAME', '')
-            if context_name == 'subiquity/Reboot/reboot':
+            if context_name == 'subiquity/Shutdown/shutdown':
                 self.exit()
 
     async def connect(self):
