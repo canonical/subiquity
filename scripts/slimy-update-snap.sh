@@ -58,6 +58,6 @@ rm -rf new/lib/python3.6/site-packages/subiquitycore
 
 (cd "${src}" && ./scripts/update-part.py curtin)
 
-rsync -a $src/subiquity $src/subiquitycore $src/curtin/curtin new/lib/python3.6/site-packages
+rsync -a --chown 0:0 $src/subiquity $src/subiquitycore $src/curtin/curtin new/lib/python3.6/site-packages
 
-mksquashfs new $new -comp gzip -Xcompression-level 3
+snapcraft pack new --output $new
