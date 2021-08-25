@@ -29,7 +29,6 @@ class SystemSetupClient(SubiquityClient):
     snapd_socket_path = None
 
     controllers = [
-        # "Serial",
         "Welcome",
         "WSLIdentity",
         "Integration",

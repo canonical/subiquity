@@ -16,9 +16,7 @@
 import asyncio
 import logging
 
-from subiquity.models.subiquity import (
-    SubiquityModel,
-    )
+from subiquity.models.subiquity import ModelNames, SubiquityModel
 
 from subiquitycore.utils import is_wsl
 
@@ -49,7 +47,19 @@ class SystemSetupModel(SubiquityModel):
 
     target = '/'
 
+    # Models that will be used in WSL system setup
+    INSTALL_MODEL_NAMES = ModelNames({
+        "locale",
+        "identity",
+        "wslconf1",
+    })
+
     def __init__(self, root, reconfigure=False):
+        if reconfigure:
+            self.INSTALL_MODEL_NAMES = ModelNames({
+                "locale",
+                "wslconf2",
+            })
         # Parent class init is not called to not load models we don't need.
         self.root = root
         self.is_wsl = is_wsl()
@@ -61,11 +71,44 @@ class SystemSetupModel(SubiquityModel):
         self.wslconf1 = WSLConfiguration1Model()
         self.wslconf2 = WSLConfiguration2Model()
 
-        self.confirmation = asyncio.Event()
+        self._confirmation = asyncio.Event()
+        self._confirmation_task = None
 
         self._configured_names = set()
-        self._cur_install_model_names = set()
-        self._cur_postinstall_model_names = set()
+        self._install_model_names = self.INSTALL_MODEL_NAMES
+        self._postinstall_model_names = None
+        self._cur_install_model_names = self.INSTALL_MODEL_NAMES.default_names
+        self._cur_postinstall_model_names = None
+        self._install_event = asyncio.Event()
+        self._postinstall_event = asyncio.Event()
 
     def set_source_variant(self, variant):
-        pass
+        self._cur_install_model_names = \
+            self._install_model_names.for_variant(variant)
+        if self._cur_postinstall_model_names is not None:
+            self._cur_postinstall_model_names = \
+                self._postinstall_model_names.for_variant(variant)
+        unconfigured_install_model_names = \
+            self._cur_install_model_names - self._configured_names
+        if unconfigured_install_model_names:
+            if self._install_event.is_set():
+                self._install_event = asyncio.Event()
+            if self._confirmation_task is not None:
+                self._confirmation_task.cancel()
+        else:
+            self._install_event.set()
+
+    def configured(self, model_name):
+        self._configured_names.add(model_name)
+        if model_name in self._cur_install_model_names:
+            stage = 'install'
+            names = self._cur_install_model_names
+            event = self._install_event
+        else:
+            return
+        unconfigured = names - self._configured_names
+        log.debug(
+            "model %s for %s stage is configured, to go %s",
+            model_name, stage, unconfigured)
+        if not unconfigured:
+            event.set()

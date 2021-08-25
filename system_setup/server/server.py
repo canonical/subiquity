@@ -43,7 +43,7 @@ from subiquitycore.ssh import user_key_fingerprints
 from subiquitycore.utils import arun_command, run_command
 from system_setup.models.system_server import SystemSetupModel
 
-log = logging.getLogger('subiquity.server.server')
+log = logging.getLogger('system_setup.server.server')
 
 NOPROBERARG = "NOPROBER"
 
@@ -106,8 +106,6 @@ class SystemSetupServer(Application):
             self.context.child("ErrorReporter"), self.opts.dry_run, self.root)
         self.prober = None
         self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
-        self.controllers.remove("Refresh")
-        self.controllers.remove("SnapList")
         self.snapd = None
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.event_listeners = []
@@ -123,7 +121,6 @@ class SystemSetupServer(Application):
                 "Locale",
                 "WSLConfiguration2",
             ]
-        super().__init__(opts, block_log_dir)
 
     def make_model(self):
         root = '/'
