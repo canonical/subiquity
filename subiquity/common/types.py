@@ -336,6 +336,8 @@ class ShutdownMode(enum.Enum):
     REBOOT = enum.auto()
     POWEROFF = enum.auto()
 
+
+@attr.s(auto_attribs=True)
 class WSLConfiguration1Data:
     custom_path: str = attr.ib(default='/mnt/')
     custom_mount_opt: str = ''
