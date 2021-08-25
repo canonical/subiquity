@@ -19,6 +19,7 @@ import logging
 import os
 import random
 import subprocess
+import pathlib
 
 log = logging.getLogger("subiquitycore.utils")
 
@@ -143,3 +144,8 @@ def disable_subiquity():
                  "snap.subiquity.subiquity-service.service",
                  "serial-subiquity@*.service"])
     return
+
+""""""
+def is_wsl():
+    """ Returns True if we are on a WSL system """
+    return pathlib.Path("/proc/sys/fs/binfmt_misc/WSLInterop").is_file()
