@@ -50,6 +50,18 @@ class WSLIdentityView(BaseView):
     def __init__(self, controller, identity_data):
         self.controller = controller
 
+        reserved_usernames_path = resource_path('reserved-usernames')
+        reserved_usernames = set()
+        if os.path.exists(reserved_usernames_path):
+            with open(reserved_usernames_path) as fp:
+                for line in fp:
+                    line = line.strip()
+                    if line.startswith('#') or not line:
+                        continue
+                    reserved_usernames.add(line)
+        else:
+            reserved_usernames.add('root')
+
         initial = {
             'realname': identity_data.realname,
             'username': identity_data.username,
