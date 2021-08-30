@@ -31,7 +31,7 @@ https://translations.launchpad.net/ubuntu/focal/+source/subiquity/+export
 `cd subiquity && make install_deps`
 
 # Testing out the installer Text-UI (TUI)
-SUbiquity's text UI is available for testing without actually installing
+Subiquity's text UI is available for testing without actually installing
 anything to a system or a VM.  Subiquity developers make use of this for rapid
 development.  After checking out subiquity you can start it:
 
