@@ -76,6 +76,7 @@ class SystemSetupServer(Application):
     controllers = [
         "Reporting",
         "Error",
+        "Install",
         "Userdata",
         "Locale",
         "Identity",

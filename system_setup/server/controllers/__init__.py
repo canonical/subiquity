@@ -21,6 +21,7 @@ from subiquity.server.controllers.cmdlist import (
 from subiquity.server.controllers.locale import LocaleController
 from subiquity.server.controllers.reporting import ReportingController
 from subiquity.server.controllers.userdata import UserdataController
+from subiquity.server.controllers.install import InstallController
 from .identity import IdentityController
 from .wslconf1 import WSLConfiguration1Controller
 from .wslconf2 import WSLConfiguration2Controller
@@ -28,6 +29,7 @@ from .wslconf2 import WSLConfiguration2Controller
 __all__ = [
     'EarlyController',
     'ErrorController',
+    'InstallController',
     'IdentityController',
     'LateController',
     'LocaleController',
