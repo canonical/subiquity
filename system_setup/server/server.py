@@ -29,6 +29,9 @@ class SystemSetupServer(SubiquityServer):
         "Identity",
         "WSLConfiguration1",
         "WSLConfiguration2",
+        "Configure",
+        "SetupShutdown",
+        "Late",
     ]
 
     def __init__(self, opts, block_log_dir):
@@ -39,6 +42,9 @@ class SystemSetupServer(SubiquityServer):
                 "Error",
                 "Locale",
                 "WSLConfiguration2",
+                "Configure",
+                "SetupShutdown",
+                "Late",
             ]
         super().__init__(opts, block_log_dir)
 

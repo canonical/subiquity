@@ -24,6 +24,8 @@ from subiquity.server.controllers.userdata import UserdataController
 from .identity import IdentityController
 from .wslconf1 import WSLConfiguration1Controller
 from .wslconf2 import WSLConfiguration2Controller
+from .configure import ConfigureController
+from .shutdown import SetupShutdownController
 
 __all__ = [
     'EarlyController',
@@ -32,7 +34,9 @@ __all__ = [
     'LateController',
     'LocaleController',
     'ReportingController',
+    'SetupShutdownController',
     'UserdataController',
     "WSLConfiguration1Controller",
     "WSLConfiguration2Controller",
+    'ConfigureController',
 ]
