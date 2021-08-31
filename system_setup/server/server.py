@@ -30,8 +30,8 @@ class SystemSetupServer(SubiquityServer):
         "WSLConfigurationBase",
         "WSLConfigurationAdvanced",
         "Configure",
-        "SetupShutdown",
         "Late",
+        "SetupShutdown",
     ]
 
     def make_model(self):
