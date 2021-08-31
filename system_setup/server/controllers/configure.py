@@ -57,10 +57,10 @@ class ConfigureController(SubiquityController):
             # 1. Use self.model to get all data to commit
             # 2. Write directly (without wsl utilities) to wsl.conf and other
             #    fstab files
-            # 3. If not in reconfigure mode: create User, otherwise just write wsl.conf files.
+            # 3. If not in reconfigure mode: create User, otherwise just write
+            #    wsl.conf files.
             # This must not use subprocesses.
             # If dry-run: write in .subiquity
-
 
             self.app.update_state(ApplicationState.POST_RUNNING)
 
