@@ -43,6 +43,8 @@ class WSLIdentityController(IdentityController):
             identity_data)
         if not self.opts.dry_run:
             username = identity_data.username
+            # TODO WSL: remove this as a way to pass the values to the backend and keep that in memory
+            # Then, remove the dry_run condition.
             with open('/var/run/ubuntu_wsl_oobe_assigned_account', 'w') as f:
                 f.write(username)
         self.app.next_screen(self.endpoint.POST(identity_data))

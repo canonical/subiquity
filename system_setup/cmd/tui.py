@@ -36,6 +36,7 @@ class ClickAction(argparse.Action):
 
 
 def make_client_args_parser():
+    # TODO WSL: update this. We have already done it on the past…
     parser = argparse.ArgumentParser(
         description='SUbiquity - Ubiquity for Servers',
         prog='subiquity')
@@ -47,6 +48,7 @@ def make_client_args_parser():
     parser.add_argument('--dry-run', action='store_true',
                         dest='dry_run',
                         help='menu-only, do not call installer function')
+    # TODO WSL: remove any uneeded arguments
     parser.add_argument('--socket')
     parser.add_argument('--serial', action='store_true',
                         dest='run_on_serial',
@@ -70,6 +72,7 @@ def make_client_args_parser():
                         help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
     parser.add_argument('--server-pid')
+    # TODO WSL: remove reconfigure flag and use dynamic decision (see below)
     parser.add_argument('--reconfigure', action='store_true')
     return parser
 

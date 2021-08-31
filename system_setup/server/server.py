@@ -35,6 +35,8 @@ class SystemSetupServer(SubiquityServer):
     ]
 
     def __init__(self, opts, block_log_dir):
+        # TODO WSL: remove reconfigure argument parser option and check dynamically what needs to be presented.
+        # TODO WSL: we should have WSLConfiguration1 (renamed) here to show multiple pages.
         self.is_reconfig = opts.reconfigure
         if self.is_reconfig and not opts.dry_run:
             self.controllers = [

@@ -14,6 +14,7 @@ from subiquitycore.view import BaseView
 
 log = logging.getLogger("ubuntu_wsl_oobe.ui.views.overview")
 
+# TODO WSL: remove this
 WSL_USERNAME_PATH = "/var/run/ubuntu_wsl_oobe_assigned_account"
 
 
@@ -22,6 +23,7 @@ class OverviewView(BaseView):
 
     def __init__(self, controller):
         self.controller = controller
+        # TODO WSL: remove this and always use in memory value
         user_name = "dryrun_user"
         if os.path.isfile(WSL_USERNAME_PATH):
             with open(WSL_USERNAME_PATH, 'r') as f:

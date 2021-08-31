@@ -21,6 +21,8 @@ from subiquitycore.utils import run_command
 
 log = logging.getLogger('subiquity.models.wsl_integration_2')
 
+# TODO WSL: Remove all attributes in wslconf1
+# TODO WSL: remove from WSLConfiguration1Model to something more meaningful
 
 @attr.s
 class WSLConfiguration2(object):
@@ -66,6 +68,7 @@ class WSLConfiguration2Model(object):
         d['automount'] = result.automount
         d['mountfstab'] = result.mountfstab
         self._wslconf2 = WSLConfiguration2(**d)
+        # TODO WSL: Drop all calls of ubuntuwsl here and ensure the data are passed to the app model
         if not is_dry_run:
             # reset to keep everything as refreshed as new
             run_command(["/usr/bin/ubuntuwsl", "reset", "-y"],

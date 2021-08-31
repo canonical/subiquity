@@ -26,7 +26,7 @@ from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.wsl_integration_2')
 
-
+# TODO WSL: remove all duplicates from WSL config 1 controller
 class WSLConfiguration2Controller(SubiquityController):
 
     endpoint = API.wslconf2

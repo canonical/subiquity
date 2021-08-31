@@ -21,6 +21,10 @@ from subiquitycore.view import BaseView
 from subiquity.common.types import WSLConfiguration1Data
 
 
+# TODO WSL: rename from "integration" to something more meaningful
+
+# TODO WSL: add another view for configure in another file
+
 class MountEditor(StringEditor, WantsToKnowFormField):
     def keypress(self, size, key):
         ''' restrict what chars we allow for mountpoints '''

@@ -355,6 +355,7 @@ class WSLConfiguration2Data:
     wsl_motd_news: bool = attr.ib(default=True)
     automount:  bool = attr.ib(default=True)
     mountfstab:  bool = attr.ib(default=True)
+    # TODO WSL: remove all duplications from WSLConfiguration1Data
     custom_path: str = attr.ib(default='/mnt/')
     custom_mount_opt: str = ''
     gen_host: bool = attr.ib(default=True)

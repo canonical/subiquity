@@ -6,6 +6,7 @@ from system_setup.ui.views.integration import IntegrationView
 
 log = logging.getLogger('system_setup.client.controllers.integration')
 
+# TODO WSL: rename Integration  to something else and change endpoint name
 
 class IntegrationController(SubiquityTuiController):
     endpoint_name = 'wslconf1'

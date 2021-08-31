@@ -30,6 +30,7 @@ class WSLConfiguration1(object):
     gen_resolvconf = attr.ib()
 
 
+# TODO WSL: remove from WSLConfiguration1Model to something more meaningful
 class WSLConfiguration1Model(object):
     """ Model representing integration
     """
@@ -44,6 +45,7 @@ class WSLConfiguration1Model(object):
         d['gen_host'] = result.gen_host
         d['gen_resolvconf'] = result.gen_resolvconf
         self._wslconf1 = WSLConfiguration1(**d)
+        # TODO WSL: Drop all calls of ubuntuwsl here and ensure the data are passed to the app model
         if not is_dry_run:
             # reset to keep everything as refreshed as new
             run_command(["/usr/bin/ubuntuwsl", "reset", "-y"],
