@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 
 from subiquitycore.context import with_context
@@ -46,6 +47,12 @@ class ConfigureController(SubiquityController):
         try:
 
             self.app.update_state(ApplicationState.WAITING)
+
+            # TODO WSL:
+            # This is a test automation workaround.
+            # If this returns too quickly then the answers automation
+            # will crash.  That all needs a proper fix.
+            await asyncio.sleep(3)
 
             self.app.update_state(ApplicationState.NEEDS_CONFIRMATION)
 
