@@ -76,7 +76,7 @@ class SystemSetupServer(Application):
     controllers = [
         "Reporting",
         "Error",
-        "Install",
+        "WSLInstall",
         "Userdata",
         "Locale",
         "Identity",
@@ -119,7 +119,7 @@ class SystemSetupServer(Application):
             self.controllers = [
                 "Reporting",
                 "Error",
-                "Install",
+                "WSLInstall",
                 "Locale",
                 "WSLConfiguration2",
             ]
