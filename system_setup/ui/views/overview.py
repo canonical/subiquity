@@ -14,32 +14,20 @@ from subiquitycore.view import BaseView
 
 log = logging.getLogger("ubuntu_wsl_oobe.ui.views.overview")
 
-# TODO WSL: remove this
-WSL_USERNAME_PATH = "/var/run/ubuntu_wsl_oobe_assigned_account"
-
 
 class OverviewView(BaseView):
     title = _("Setup Complete")
 
-    def __init__(self, controller):
+    def __init__(self, controller, real_name):
         self.controller = controller
-        # TODO WSL: remove this and always use in memory value
-        user_name = "dryrun_user"
-        if os.path.isfile(WSL_USERNAME_PATH):
-            with open(WSL_USERNAME_PATH, 'r') as f:
-                user_name = f.read()
-            os.remove(WSL_USERNAME_PATH)
-        complete_text = _("Hi {username},\n"
+        complete_text = _("Hi {real_name},\n\n"
                           "You have complete the setup!\n\n"
-                          "It is suggested to run the following command"
+                          "It is suggested to run the following commands"
                           " to update your Ubuntu to the latest version:"
                           "\n\n\n"
                           "  $ sudo apt update\n  $ sudo apt upgrade\n\n\n"
-                          "You can use the builtin `ubuntuwsl` command to "
-                          "manage your WSL settings:\n\n\n"
-                          "  $ sudo ubuntuwsl ...\n\n\n"
-                          "* All settings will take effect after first "
-                          "restart of Ubuntu.").format(username=user_name)
+                          "All settings will take effect after next "
+                          "restart of Ubuntu.").format(real_name=real_name)
 
         super().__init__(
             screen(

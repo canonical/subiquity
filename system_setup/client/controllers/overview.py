@@ -9,7 +9,12 @@ log = logging.getLogger('ubuntu_wsl_oobe.controllers.overview')
 class OverviewController(SubiquityTuiController):
 
     async def make_ui(self):
-        return OverviewView(self)
+        real_name = ""
+        identity = getattr(self.app.client, "identity")
+        if identity is not None:
+            data = await identity.GET()
+            real_name = data.realname
+        return OverviewView(self, real_name)
 
     def cancel(self):
         self.app.cancel()
