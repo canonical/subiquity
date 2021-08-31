@@ -338,7 +338,7 @@ class ShutdownMode(enum.Enum):
 
 
 @attr.s(auto_attribs=True)
-class WSLConfiguration1Data:
+class WSLConfigurationBase:
     custom_path: str = attr.ib(default='/mnt/')
     custom_mount_opt: str = ''
     gen_host: bool = attr.ib(default=True)
@@ -346,7 +346,7 @@ class WSLConfiguration1Data:
 
 
 @attr.s(auto_attribs=True)
-class WSLConfiguration2Data:
+class WSLConfigurationAdvanced:
     gui_theme: str = attr.ib(default='default')
     gui_followwintheme: bool = attr.ib(default=True)
     legacy_gui: bool = attr.ib(default=False)
@@ -355,7 +355,7 @@ class WSLConfiguration2Data:
     wsl_motd_news: bool = attr.ib(default=True)
     automount:  bool = attr.ib(default=True)
     mountfstab:  bool = attr.ib(default=True)
-    # TODO WSL: remove all duplications from WSLConfiguration1Data
+    # TODO WSL: remove all duplications from WSLConfigurationBase
     custom_path: str = attr.ib(default='/mnt/')
     custom_mount_opt: str = ''
     gen_host: bool = attr.ib(default=True)

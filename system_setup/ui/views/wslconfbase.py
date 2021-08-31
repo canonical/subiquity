@@ -1,6 +1,6 @@
-""" Integration
+""" WSLConfBase
 
-Integration provides user with options to set up integration configurations.
+WSLConfBase provides user with options to set up basic WSL configuration, requested on first setup.
 
 """
 import re
@@ -18,12 +18,8 @@ from subiquitycore.ui.form import (
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.utils import screen
 from subiquitycore.view import BaseView
-from subiquity.common.types import WSLConfiguration1Data
+from subiquity.common.types import WSLConfigurationBase
 
-
-# TODO WSL: rename from "integration" to something more meaningful
-
-# TODO WSL: add another view for configure in another file
 
 class MountEditor(StringEditor, WantsToKnowFormField):
     def keypress(self, size, key):
@@ -40,7 +36,7 @@ MountField = simple_field(MountEditor)
 StringField = simple_field(StringEditor)
 
 
-class IntegrationForm(Form):
+class WSLConfBaseForm(Form):
     def __init__(self, initial):
         super().__init__(initial=initial)
 
@@ -93,20 +89,20 @@ class IntegrationForm(Form):
                          "for correct valid input").format(e_t)
 
 
-class IntegrationView(BaseView):
-    title = _("Tweaks")
-    excerpt = _("In this page, you can tweak Ubuntu WSL to your needs. \n")
+class WSLConfigurationBaseView(BaseView):
+    title = _("WSL configuration options")
+    excerpt = _("In this page, you can configure Ubuntu WSL options to your needs.\n")
 
-    def __init__(self, controller, integration_data):
+    def __init__(self, controller, configuration_data):
         self.controller = controller
 
         initial = {
-            'custom_path': integration_data.custom_path,
-            'custom_mount_opt': integration_data.custom_mount_opt,
-            'gen_host': integration_data.gen_host,
-            'gen_resolvconf': integration_data.gen_resolvconf,
+            'custom_path': configuration_data.custom_path,
+            'custom_mount_opt': configuration_data.custom_mount_opt,
+            'gen_host': configuration_data.gen_host,
+            'gen_resolvconf': configuration_data.gen_resolvconf,
         }
-        self.form = IntegrationForm(initial=initial)
+        self.form = WSLConfBaseForm(initial=initial)
 
         connect_signal(self.form, 'submit', self.done)
         super().__init__(
@@ -119,7 +115,7 @@ class IntegrationView(BaseView):
         )
 
     def done(self, result):
-        self.controller.done(WSLConfiguration1Data(
+        self.controller.done(WSLConfigurationBase(
             custom_path=self.form.custom_path.value,
             custom_mount_opt=self.form.custom_mount_opt.value,
             gen_host=self.form.gen_host.value,

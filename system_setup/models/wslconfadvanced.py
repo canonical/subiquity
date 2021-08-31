@@ -19,13 +19,12 @@ import attr
 
 from subiquitycore.utils import run_command
 
-log = logging.getLogger('subiquity.models.wsl_integration_2')
+log = logging.getLogger('subiquity.models.wsl_configuration_advanced')
 
-# TODO WSL: Remove all attributes in wslconf1
-# TODO WSL: remove from WSLConfiguration1Model to something more meaningful
+# TODO WSL: Remove all attributes in wslconfbase
 
 @attr.s
-class WSLConfiguration2(object):
+class WSLConfigurationAdvanced(object):
     gui_theme = attr.ib()
     gui_followwintheme = attr.ib()
     legacy_gui = attr.ib()
@@ -42,12 +41,13 @@ class WSLConfiguration2(object):
     interop_appendwindowspath = attr.ib()
 
 
-class WSLConfiguration2Model(object):
+class WSLConfigurationAdvancedModel(object):
     """ Model representing integration
     """
 
     def __init__(self):
-        self._wslconf2 = None
+        self._wslconfadvanced = None
+        # TODO WSL: Load settings from system
 
     def apply_settings(self, result, is_dry_run=False):
         d = {}
@@ -67,7 +67,7 @@ class WSLConfiguration2Model(object):
         d['wsl_motd_news'] = result.wsl_motd_news
         d['automount'] = result.automount
         d['mountfstab'] = result.mountfstab
-        self._wslconf2 = WSLConfiguration2(**d)
+        self._wslconfadvanced = WSLConfigurationAdvancedModel(**d)
         # TODO WSL: Drop all calls of ubuntuwsl here and ensure the data are passed to the app model
         if not is_dry_run:
             # reset to keep everything as refreshed as new
@@ -126,8 +126,8 @@ class WSLConfiguration2Model(object):
                         stdout=subprocess.DEVNULL)
 
     @property
-    def wslconf2(self):
-        return self._wslconf2
+    def wslconfadvanced(self):
+        return self._wslconfadvanced
 
     def __repr__(self):
-        return "<WSL Conf 2: {}>".format(self.wslconf2)
+        return "<WSL Conf Advanced: {}>".format(self.wslconfadvanced)

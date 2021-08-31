@@ -31,7 +31,7 @@ class SystemSetupClient(SubiquityClient):
     controllers = [
         "Welcome",
         "WSLIdentity",
-        "Integration",
+        "WSLConfigurationBase",
         "Overview",
         "Progress",
         ]
@@ -41,10 +41,12 @@ class SystemSetupClient(SubiquityClient):
         # 1. remove reconfigure flag
         # 2. decide on which UI to show up based on existing user UID >=1000 (or default user set in wsl.conf?)
         # 3. provide an API for this for the flutter UI to know about it
+        # 4. Add Configuration Base page before Advanced
+        # 5. Add language page
         if opts.reconfigure:
             self.controllers = [
                 "Welcome",
-                "Reconfiguration",
+                "WSLConfigurationAdvanced",
                 "Progress",
             ]
         super().__init__(opts)

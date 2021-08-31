@@ -23,8 +23,8 @@ from subiquitycore.utils import is_wsl
 
 from subiquity.models.locale import LocaleModel
 from subiquity.models.identity import IdentityModel
-from .wslconf1 import WSLConfiguration1Model
-from .wslconf2 import WSLConfiguration2Model
+from .wslconfbase import WSLConfigurationBaseModel
+from .wslconfadvanced import WSLConfigurationAdvancedModel
 
 
 log = logging.getLogger('system_setup.models.system_server')
@@ -51,14 +51,15 @@ class SystemSetupModel(SubiquityModel):
     INSTALL_MODEL_NAMES = ModelNames({
         "locale",
         "identity",
-        "wslconf1",
+        "wslconfbase",
     })
 
     def __init__(self, root, reconfigure=False):
+        # TODO WSL: add base model here to prevent overlap
         if reconfigure:
             self.INSTALL_MODEL_NAMES = ModelNames({
                 "locale",
-                "wslconf2",
+                "wslconfadvanced",
             })
         # Parent class init is not called to not load models we don't need.
         self.root = root
@@ -68,8 +69,8 @@ class SystemSetupModel(SubiquityModel):
         self.userdata = {}
         self.locale = LocaleModel()
         self.identity = IdentityModel()
-        self.wslconf1 = WSLConfiguration1Model()
-        self.wslconf2 = WSLConfiguration2Model()
+        self.wslconfbase = WSLConfigurationBaseModel()
+        self.wslconfadvanced = WSLConfigurationAdvancedModel()
 
         self._confirmation = asyncio.Event()
         self._confirmation_task = None

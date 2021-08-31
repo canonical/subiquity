@@ -19,24 +19,24 @@ import attr
 
 from subiquitycore.utils import run_command
 
-log = logging.getLogger('subiquity.models.wsl_integration_1')
+log = logging.getLogger('subiquity.models.wsl_configuration_base')
 
 
 @attr.s
-class WSLConfiguration1(object):
+class WSLConfigurationBase(object):
     custom_path = attr.ib()
     custom_mount_opt = attr.ib()
     gen_host = attr.ib()
     gen_resolvconf = attr.ib()
 
 
-# TODO WSL: remove from WSLConfiguration1Model to something more meaningful
-class WSLConfiguration1Model(object):
-    """ Model representing integration
+class WSLConfigurationBaseModel(object):
+    """ Model representing basic wsl configuration
     """
 
     def __init__(self):
-        self._wslconf1 = None
+        self._wslconfbase = None
+        # TODO WSL: Load settings from system
 
     def apply_settings(self, result, is_dry_run=False):
         d = {}
@@ -44,7 +44,7 @@ class WSLConfiguration1Model(object):
         d['custom_mount_opt'] = result.custom_mount_opt
         d['gen_host'] = result.gen_host
         d['gen_resolvconf'] = result.gen_resolvconf
-        self._wslconf1 = WSLConfiguration1(**d)
+        self._wslconfbase = WSLConfigurationBase(**d)
         # TODO WSL: Drop all calls of ubuntuwsl here and ensure the data are passed to the app model
         if not is_dry_run:
             # reset to keep everything as refreshed as new
@@ -66,8 +66,8 @@ class WSLConfiguration1Model(object):
                         stdout=subprocess.DEVNULL)
 
     @property
-    def wslconf1(self):
-        return self._wslconf1
+    def wslconfbase(self):
+        return self._wslconfbase
 
     def __repr__(self):
-        return "<WSL Conf 1: {}>".format(self.wslconf1)
+        return "<WSL Conf Base: {}>".format(self.wslconfbase)

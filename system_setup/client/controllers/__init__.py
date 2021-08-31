@@ -15,9 +15,9 @@
 
 
 from .identity import WSLIdentityController
-from .integration import IntegrationController
+from .wslconfbase import WSLConfigurationBaseController
 from .overview import OverviewController
-from .reconfiguration import ReconfigurationController
+from .wslconfadvanced import WSLConfigurationAdvancedController
 
 from subiquity.client.controllers import (ProgressController,
                                           WelcomeController)
@@ -27,7 +27,7 @@ __all__ = [
     'WelcomeController',
     'WSLIdentityController',
     'ProgressController',
-    'IntegrationController',
+    'WSLConfigurationBaseController',
+    'WSLConfigurationAdvancedController',
     'OverviewController',
-    'ReconfigurationController',
 ]

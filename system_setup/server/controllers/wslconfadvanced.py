@@ -21,17 +21,17 @@ import configparser
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
-from subiquity.common.types import WSLConfiguration2Data
+from subiquity.common.types import WSLConfigurationAdvanced
 from subiquity.server.controller import SubiquityController
 
-log = logging.getLogger('subiquity.server.controllers.wsl_integration_2')
+log = logging.getLogger('subiquity.server.controllers.wsl_configuration_advanced')
 
-# TODO WSL: remove all duplicates from WSL config 1 controller
-class WSLConfiguration2Controller(SubiquityController):
+# TODO WSL: remove all duplicates from WSL config base controller
+class WSLConfigurationAdvancedController(SubiquityController):
 
-    endpoint = API.wslconf2
+    endpoint = API.wslconfadvanced
 
-    autoinstall_key = model_name = "wslconf2"
+    autoinstall_key = model_name = "wslconfadvanced"
     autoinstall_schema = {
         'type': 'object',
         'properties': {
@@ -115,7 +115,7 @@ class WSLConfiguration2Controller(SubiquityController):
         if data:
             def bool_converter(x):
                 return x == 'true'
-            reconf_data = WSLConfiguration2Data(
+            reconf_data = WSLConfigurationAdvanced(
                 custom_path=data['custom_path'],
                 custom_mount_opt=data['custom_mount_opt'],
                 gen_host=bool_converter(data['gen_host']),
@@ -136,7 +136,7 @@ class WSLConfiguration2Controller(SubiquityController):
 
     def load_autoinstall_data(self, data):
         if data is not None:
-            reconf_data = WSLConfiguration2Data(
+            reconf_data = WSLConfigurationAdvanced(
                 custom_path=data['custom_path'],
                 custom_mount_opt=data['custom_mount_opt'],
                 gen_host=data['gen_host'],
@@ -159,29 +159,29 @@ class WSLConfiguration2Controller(SubiquityController):
         pass
 
     def make_autoinstall(self):
-        r = attr.asdict(self.model.wslconf2)
+        r = attr.asdict(self.model.wslconfadvanced)
         return r
 
-    async def GET(self) -> WSLConfiguration2Data:
-        data = WSLConfiguration2Data()
-        if self.model.wslconf2 is not None:
-            data.custom_path = self.model.wslconf2.custom_path
-            data.custom_mount_opt = self.model.wslconf2.custom_mount_opt
-            data.gen_host = self.model.wslconf2.gen_host
-            data.gen_resolvconf = self.model.wslconf2.gen_resolvconf
-            data.interop_enabled = self.model.wslconf2.interop_enabled
+    async def GET(self) -> WSLConfigurationAdvanced:
+        data = WSLConfigurationAdvanced()
+        if self.model.wslconfadvanced is not None:
+            data.custom_path = self.model.wslconfadvanced.custom_path
+            data.custom_mount_opt = self.model.wslconfadvanced.custom_mount_opt
+            data.gen_host = self.model.wslconfadvanced.gen_host
+            data.gen_resolvconf = self.model.wslconfadvanced.gen_resolvconf
+            data.interop_enabled = self.model.wslconfadvanced.interop_enabled
             data.interop_appendwindowspath = \
-                self.model.wslconf2.interop_appendwindowspath
-            data.gui_theme = self.model.wslconf2.gui_theme
-            data.gui_followwintheme = self.model.wslconf2.gui_followwintheme
-            data.legacy_gui = self.model.wslconf2.legacy_gui
-            data.legacy_audio = self.model.wslconf2.legacy_audio
-            data.adv_ip_detect = self.model.wslconf2.adv_ip_detect
-            data.wsl_motd_news = self.model.wslconf2.wsl_motd_news
-            data.automount = self.model.wslconf2.automount
-            data.mountfstab = self.model.wslconf2.mountfstab
+                self.model.wslconfadvanced.interop_appendwindowspath
+            data.gui_theme = self.model.wslconfadvanced.gui_theme
+            data.gui_followwintheme = self.model.wslconfadvanced.gui_followwintheme
+            data.legacy_gui = self.model.wslconfadvanced.legacy_gui
+            data.legacy_audio = self.model.wslconfadvanced.legacy_audio
+            data.adv_ip_detect = self.model.wslconfadvanced.adv_ip_detect
+            data.wsl_motd_news = self.model.wslconfadvanced.wsl_motd_news
+            data.automount = self.model.wslconfadvanced.automount
+            data.mountfstab = self.model.wslconfadvanced.mountfstab
         return data
 
-    async def POST(self, data: WSLConfiguration2Data):
+    async def POST(self, data: WSLConfigurationAdvanced):
         self.model.apply_settings(data, self.opts.dry_run)
         self.configured()

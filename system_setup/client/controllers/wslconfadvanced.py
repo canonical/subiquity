@@ -16,18 +16,18 @@
 import logging
 
 from subiquity.client.controller import SubiquityTuiController
-from subiquity.common.types import WSLConfiguration2Data
-from system_setup.ui.views.reconfiguration import ReconfigurationView
+from subiquity.common.types import WSLConfigurationAdvanced
+from system_setup.ui.views.wslconfadvanced import WSLConfigurationAdvancedView
 
-log = logging.getLogger('system_setup.client.controllers.reconfiguration')
+log = logging.getLogger('system_setup.client.controllers.wslconfigurationadvanced')
 
 
-class ReconfigurationController(SubiquityTuiController):
-    endpoint_name = 'wslconf2'
+class WSLConfigurationAdvancedController(SubiquityTuiController):
+    endpoint_name = 'wslconfadvanced'
 
     async def make_ui(self):
         data = await self.endpoint.GET()
-        return ReconfigurationView(self, data)
+        return WSLConfigurationAdvancedView(self, data)
 
     def run_answers(self):
         if all(elem in self.answers for elem in
@@ -37,7 +37,7 @@ class ReconfigurationController(SubiquityTuiController):
                 'gui_followwintheme', 'legacy_gui',
                 'legacy_audio', 'adv_ip_detect',
                 'wsl_motd_news', 'automount', 'mountfstab']):
-            reconfiguration = WSLConfiguration2Data(
+            reconfiguration = WSLConfigurationAdvanced(
                 custom_path=self.answers['custom_path'],
                 custom_mount_opt=self.answers['custom_mount_opt'],
                 gen_host=self.answers['gen_host'],
@@ -58,7 +58,7 @@ class ReconfigurationController(SubiquityTuiController):
 
     def done(self, reconf_data):
         log.debug(
-            "ConfigurationController.done next_screen user_spec=%s",
+            "WSLConfigurationAdvancedController.done next_screen user_spec=%s",
             reconf_data)
         self.app.next_screen(self.endpoint.POST(reconf_data))
 

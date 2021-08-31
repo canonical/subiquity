@@ -47,8 +47,8 @@ from subiquity.common.types import (
     TimeZoneInfo,
     WLANSupportInstallState,
     ZdevInfo,
-    WSLConfiguration1Data,
-    WSLConfiguration2Data,
+    WSLConfigurationBase,
+    WSLConfigurationAdvanced,
     )
 
 
@@ -61,8 +61,8 @@ class API:
     proxy = simple_endpoint(str)
     ssh = simple_endpoint(SSHData)
     updates = simple_endpoint(str)
-    wslconf1 = simple_endpoint(WSLConfiguration1Data)
-    wslconf2 = simple_endpoint(WSLConfiguration2Data)
+    wslconfbase = simple_endpoint(WSLConfigurationBase)
+    wslconfadvanced = simple_endpoint(WSLConfigurationAdvanced)
 
     class meta:
         class status:

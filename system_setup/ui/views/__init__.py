@@ -14,13 +14,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from .identity import WSLIdentityView
-from .integration import IntegrationView
+from .wslconfbase import WSLConfigurationBaseView
+from .wslconfadvanced import WSLConfigurationAdvancedView
 from .overview import OverviewView
-from .reconfiguration import ReconfigurationView
 
 __all__ = [
     'WSLIdentityView',
-    'IntegrationView',
+    'WSLConfigurationBaseView',
+    'WSLConfigurationAdvancedView',
     'OverviewView',
-    'ReconfigurationView',
 ]

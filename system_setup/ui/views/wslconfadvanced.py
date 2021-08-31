@@ -1,6 +1,6 @@
-""" Reconfiguration View
+""" WSLConfigurationAdvanced View
 
-Integration provides user with options to set up integration configurations.
+WSLConfigurationAdvanced provides user with options with additional settings for advanced configuration.
 
 """
 import re
@@ -19,7 +19,7 @@ from subiquitycore.ui.form import (
 from subiquitycore.ui.interactive import StringEditor
 from subiquitycore.ui.utils import screen
 from subiquitycore.view import BaseView
-from subiquity.common.types import WSLConfiguration2Data
+from subiquity.common.types import WSLConfigurationAdvanced
 
 
 class MountEditor(StringEditor, WantsToKnowFormField):
@@ -37,12 +37,12 @@ MountField = simple_field(MountEditor)
 StringField = simple_field(StringEditor)
 
 
-class ReconfigurationForm(Form):
+# TODO WSL: Advanced should not contain base configuration (it must be in 2 pages).
+
+class WSLConfigurationAdvancedForm(Form):
     def __init__(self, initial):
         super().__init__(initial=initial)
 
-    # TODO: placholder settings UI; should be dynamically generated using
-    #  ubuntu-wsl-integration
     automount = BooleanField(_("Enable Auto-Mount"),
                              help=_("Whether the Auto-Mount freature is"
                                     " enabled. This feature allows you "
@@ -141,31 +141,31 @@ class ReconfigurationForm(Form):
                          "for correct valid input").format(e_t)
 
 
-class ReconfigurationView(BaseView):
-    title = _("Configuration")
-    excerpt = _("In this page, you can tweak Ubuntu WSL to your needs. \n")
+class WSLConfigurationAdvancedView(BaseView):
+    title = _("WSL advanced options")
+    excerpt = _("In this page, you can configure Ubuntu WSL advanced options your needs. \n")
 
-    def __init__(self, controller, integration_data):
+    def __init__(self, controller, configuration_data):
         self.controller = controller
 
         initial = {
-            'custom_path': integration_data.custom_path,
-            'custom_mount_opt': integration_data.custom_mount_opt,
-            'gen_host': integration_data.gen_host,
-            'gen_resolvconf': integration_data.gen_resolvconf,
-            'interop_enabled': integration_data.interop_enabled,
+            'custom_path': configuration_data.custom_path,
+            'custom_mount_opt': configuration_data.custom_mount_opt,
+            'gen_host': configuration_data.gen_host,
+            'gen_resolvconf': configuration_data.gen_resolvconf,
+            'interop_enabled': configuration_data.interop_enabled,
             'interop_appendwindowspath':
-                integration_data.interop_appendwindowspath,
-            'gui_theme': integration_data.gui_theme,
-            'gui_followwintheme': integration_data.gui_followwintheme,
-            'legacy_gui': integration_data.legacy_gui,
-            'legacy_audio': integration_data.legacy_audio,
-            'adv_ip_detect': integration_data.adv_ip_detect,
-            'wsl_motd_news': integration_data.wsl_motd_news,
-            'automount': integration_data.automount,
-            'mountfstab': integration_data.mountfstab,
+                configuration_data.interop_appendwindowspath,
+            'gui_theme': configuration_data.gui_theme,
+            'gui_followwintheme': configuration_data.gui_followwintheme,
+            'legacy_gui': configuration_data.legacy_gui,
+            'legacy_audio': configuration_data.legacy_audio,
+            'adv_ip_detect': configuration_data.adv_ip_detect,
+            'wsl_motd_news': configuration_data.wsl_motd_news,
+            'automount': configuration_data.automount,
+            'mountfstab': configuration_data.mountfstab,
         }
-        self.form = ReconfigurationForm(initial=initial)
+        self.form = WSLConfigurationAdvancedForm(initial=initial)
 
         connect_signal(self.form, 'submit', self.done)
         super().__init__(
@@ -178,7 +178,7 @@ class ReconfigurationView(BaseView):
         )
 
     def done(self, result):
-        self.controller.done(WSLConfiguration2Data(
+        self.controller.done(WSLConfigurationAdvanced(
             custom_path=self.form.custom_path.value,
             custom_mount_opt=self.form.custom_mount_opt.value,
             gen_host=self.form.gen_host.value,

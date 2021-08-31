@@ -20,17 +20,17 @@ import attr
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
-from subiquity.common.types import WSLConfiguration1Data
+from subiquity.common.types import WSLConfigurationBase
 from subiquity.server.controller import SubiquityController
 
-log = logging.getLogger('subiquity.server.controllers.wsl_integration_1')
+log = logging.getLogger('subiquity.server.controllers.wsl_configuration_base')
 
 
-class WSLConfiguration1Controller(SubiquityController):
+class WSLConfigurationBaseController(SubiquityController):
 
-    endpoint = API.wslconf1
+    endpoint = API.wslconfbase
 
-    autoinstall_key = model_name = "wslconf1"
+    autoinstall_key = model_name = "wslconfbase"
     autoinstall_schema = {
         'type': 'object',
         'properties': {
@@ -45,7 +45,7 @@ class WSLConfiguration1Controller(SubiquityController):
 
     def load_autoinstall_data(self, data):
         if data is not None:
-            identity_data = WSLConfiguration1Data(
+            identity_data = WSLConfigurationBase(
                 custom_path=data['custom_path'],
                 custom_mount_opt=data['custom_mount_opt'],
                 gen_host=data['gen_host'],
@@ -58,18 +58,18 @@ class WSLConfiguration1Controller(SubiquityController):
         pass
 
     def make_autoinstall(self):
-        r = attr.asdict(self.model.wslconf1)
+        r = attr.asdict(self.model.wslconfbase)
         return r
 
-    async def GET(self) -> WSLConfiguration1Data:
-        data = WSLConfiguration1Data()
-        if self.model.wslconf1 is not None:
-            data.custom_path = self.model.wslconf1.custom_path
-            data.custom_mount_opt = self.model.wslconf1.custom_mount_opt
-            data.gen_host = self.model.wslconf1.gen_host
-            data.gen_resolvconf = self.model.wslconf1.gen_resolvconf
+    async def GET(self) -> WSLConfigurationBase:
+        data = WSLConfigurationBase()
+        if self.model.wslconfbase is not None:
+            data.custom_path = self.model.wslconfbase.custom_path
+            data.custom_mount_opt = self.model.wslconfbase.custom_mount_opt
+            data.gen_host = self.model.wslconfbase.gen_host
+            data.gen_resolvconf = self.model.wslconfbase.gen_resolvconf
         return data
 
-    async def POST(self, data: WSLConfiguration1Data):
+    async def POST(self, data: WSLConfigurationBase):
         self.model.apply_settings(data, self.opts.dry_run)
         self.configured()
