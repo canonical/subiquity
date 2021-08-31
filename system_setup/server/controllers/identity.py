@@ -30,7 +30,6 @@ class WSLIdentityController(IdentityController):
         'properties': {
             'realname': {'type': 'string'},
             'username': {'type': 'string'},
-            'hostname': {'type': 'string'},
             'password': {'type': 'string'},
             },
         'required': ['username', 'password'],
