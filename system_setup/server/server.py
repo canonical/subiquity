@@ -34,27 +34,8 @@ class SystemSetupServer(SubiquityServer):
         "Late",
     ]
 
-    def __init__(self, opts, block_log_dir):
-        # TODO WSL:
-        # remove reconfigure argument parser option and check dynamically
-        # what needs to be presented.
-        # TODO WSL:
-        # we should have WSLConfigurationBase here to show multiple pages.
-        self.is_reconfig = opts.reconfigure
-        if self.is_reconfig and not opts.dry_run:
-            self.controllers = [
-                "Reporting",
-                "Error",
-                "Locale",
-                "WSLConfigurationAdvanced",
-                "Configure",
-                "SetupShutdown",
-                "Late",
-            ]
-        super().__init__(opts, block_log_dir)
-
     def make_model(self):
         root = '/'
         if self.opts.dry_run:
             root = os.path.abspath('.subiquity')
-        return SystemSetupModel(root, self.is_reconfig)
+        return SystemSetupModel(root)

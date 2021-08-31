@@ -52,15 +52,10 @@ class SystemSetupModel(SubiquityModel):
         "locale",
         "identity",
         "wslconfbase",
+        "wslconfadvanced",
     })
 
-    def __init__(self, root, reconfigure=False):
-        # TODO WSL: add base model here to prevent overlap
-        if reconfigure:
-            self.INSTALL_MODEL_NAMES = ModelNames({
-                "locale",
-                "wslconfadvanced",
-            })
+    def __init__(self, root):
         # Parent class init is not called to not load models we don't need.
         self.root = root
         self.is_wsl = is_wsl()

@@ -21,7 +21,7 @@ from subiquitycore.utils import run_command
 
 log = logging.getLogger('subiquity.models.wsl_configuration_advanced')
 
-# TODO WSL: Remove all attributes in wslconfbase
+# TODO WSL: Remove all common attributes with wslconfbase
 
 
 @attr.s

@@ -35,7 +35,6 @@ def make_server_args_parser():
                         help='menu-only, do not call installer function')
     parser.add_argument('--socket')
     parser.add_argument('--autoinstall', action='store')
-    parser.add_argument('--reconfigure', action='store_true')
     return parser
 
 
