@@ -15,6 +15,11 @@
 
 import asyncio
 import logging
+import os
+import sys
+from subiquity.common.resources import resource_path
+
+from curtin.commands.install import CONFIG_BUILTIN
 
 from subiquity.models.subiquity import ModelNames, SubiquityModel
 
@@ -85,9 +90,6 @@ class SystemSetupModel(SubiquityModel):
     def set_source_variant(self, variant):
         self._cur_install_model_names = \
             self._install_model_names.for_variant(variant)
-        if self._cur_postinstall_model_names is not None:
-            self._cur_postinstall_model_names = \
-                self._postinstall_model_names.for_variant(variant)
         unconfigured_install_model_names = \
             self._cur_install_model_names - self._configured_names
         if unconfigured_install_model_names:
@@ -112,3 +114,82 @@ class SystemSetupModel(SubiquityModel):
             model_name, stage, unconfigured)
         if not unconfigured:
             event.set()
+
+    def render(self, syslog_identifier):
+        # Until https://bugs.launchpad.net/curtin/+bug/1876984 gets
+        # fixed, the only way to get curtin to leave the network
+        # config entirely alone is to omit the 'network' stage.
+        stages = [
+            stage for stage in CONFIG_BUILTIN['stages'] if stage != 'network'
+            ]
+        curhooks_commands_network = "false"
+        if hasattr(self, 'network'):
+            curhooks_commands_network = str(self.network.has_network).lower()
+        config = {
+            'stages': stages,
+
+            'sources': {
+                'ubuntu00': 'cp:///media/filesystem'
+                },
+
+            'curthooks_commands': {
+                '001-configure-apt': [
+                    resource_path('bin/subiquity-configure-apt'),
+                    sys.executable, curhooks_commands_network,
+                    ],
+                },
+            'grub': {
+                'terminal': 'unmodified',
+                'probe_additional_os': True
+                },
+
+            'install': {
+                'target': self.target,
+                'unmount': 'disabled',
+                'save_install_config':
+                    '/var/log/installer/curtin-install-cfg.yaml',
+                'save_install_log':
+                    '/var/log/installer/curtin-install.log',
+                },
+
+            'verbosity': 3,
+
+            'pollinate': {
+                'user_agent': {
+                    'subiquity': "%s_%s" % (os.environ.get("SNAP_VERSION",
+                                                           'dry-run'),
+                                            os.environ.get("SNAP_REVISION",
+                                                           'dry-run')),
+                    },
+                },
+
+            'reporting': {
+                'subiquity': {
+                    'type': 'journald',
+                    'identifier': syslog_identifier,
+                    },
+                },
+
+            'write_files': {
+                'etc_machine_id': {
+                    'path': 'etc/machine-id',
+                    'content': self._machine_id(),
+                    'permissions': 0o444,
+                    },
+                'media_info': {
+                    'path': 'var/log/installer/media-info',
+                    'content': self._media_info(),
+                    'permissions': 0o644,
+                    },
+                },
+            }
+
+        if os.path.exists('/run/casper-md5check.json'):
+            with open('/run/casper-md5check.json') as fp:
+                config['write_files']['md5check'] = {
+                    'path': 'var/log/installer/casper-md5check.json',
+                    'content': fp.read(),
+                    'permissions': 0o644,
+                    }
+
+        return config
