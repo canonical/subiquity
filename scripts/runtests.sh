@@ -5,16 +5,26 @@ testschema=.subiquity/test-autoinstall-schema.json
 export PYTHONPATH=$PWD:$PWD/probert:$PWD/curtin
 
 validate () {
-    python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf
-    if [ ! -e .subiquity/subiquity-client-debug.log ] || [ ! -e .subiquity/subiquity-server-debug.log ]; then
-        echo "log file not created"
-        exit 1
+    mode="install"
+    [ $# -gt 0 ] && mode="$1"
+
+    if [ "${mode}" = "install" ]; then 
+        python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf
+        if [ ! -e .subiquity/subiquity-client-debug.log ] || [ ! -e .subiquity/subiquity-server-debug.log ]; then
+            echo "log file not created"
+            exit 1
+        fi
+        if grep passw0rd .subiquity/subiquity-client-debug.log .subiquity/subiquity-server-debug.log | grep -v "Loaded answers" | grep -v "answers_action"; then
+            echo "password leaked into log file"
+            exit 1
+        fi
+        netplan generate --root .subiquity
+    elif [ "${mode}" = "system_setup" ]; then
+        # TODO WSL: Compare generated wsl.conf to oracle
+        echo "system setup validation"
+    else
+        echo "W: Unknown validation mode: ${mode}"
     fi
-    if grep passw0rd .subiquity/subiquity-client-debug.log .subiquity/subiquity-server-debug.log | grep -v "Loaded answers" | grep -v "answers_action"; then
-        echo "password leaked into log file"
-        exit 1
-    fi
-    netplan generate --root .subiquity
 }
 
 clean () {
@@ -45,19 +55,24 @@ tty=$(tty) || tty=/dev/console
 export SUBIQUITY_REPLAY_TIMESCALE=100
 for answers in examples/answers*.yaml; do
     clean
-    config=$(sed -n 's/^#machine-config: \(.*\)/\1/p' $answers || true)
-    if [ -z "$config" ]; then
-        config=examples/simple.json
+    if echo $answers|grep -vq system-setup; then
+        config=$(sed -n 's/^#machine-config: \(.*\)/\1/p' $answers || true)
+        if [ -z "$config" ]; then
+            config=examples/simple.json
+        fi
+        serial=$(sed -n 's/^#serial/x/p' $answers || true)
+        opts=''
+        if [ -n "$serial" ]; then
+            opts='--serial'
+        fi
+        # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
+        timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --bootloader uefi --answers $answers --dry-run --snaps-from-examples --machine-config $config $opts" < $tty
+        validate
+        grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
+    else
+        timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --answers $answers --dry-run " < $tty
+        validate "system_setup"
     fi
-    serial=$(sed -n 's/^#serial/x/p' $answers || true)
-    opts=''
-    if [ -n "$serial" ]; then
-        opts='--serial'
-    fi
-    # The --foreground is important to avoid subiquity getting SIGTTOU-ed.
-    timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --bootloader uefi --answers $answers --dry-run --snaps-from-examples --machine-config $config $opts" < $tty
-    validate
-    grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 done
 
 clean
