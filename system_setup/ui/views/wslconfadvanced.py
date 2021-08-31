@@ -1,6 +1,7 @@
 """ WSLConfigurationAdvanced View
 
-WSLConfigurationAdvanced provides user with options with additional settings for advanced configuration.
+WSLConfigurationAdvanced provides user with options with additional settings
+for advanced configuration.
 
 """
 import re
@@ -37,7 +38,8 @@ MountField = simple_field(MountEditor)
 StringField = simple_field(StringEditor)
 
 
-# TODO WSL: Advanced should not contain base configuration (it must be in 2 pages).
+# TODO WSL: Advanced should not contain base configuration
+# (it must be in 2 pages).
 
 class WSLConfigurationAdvancedForm(Form):
     def __init__(self, initial):
@@ -143,7 +145,8 @@ class WSLConfigurationAdvancedForm(Form):
 
 class WSLConfigurationAdvancedView(BaseView):
     title = _("WSL advanced options")
-    excerpt = _("In this page, you can configure Ubuntu WSL advanced options your needs. \n")
+    excerpt = _("In this page, you can configure Ubuntu WSL"
+                "advanced options your needs. \n")
 
     def __init__(self, controller, configuration_data):
         self.controller = controller

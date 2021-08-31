@@ -4,8 +4,6 @@ Overview provides user with the overview of all the current settings.
 
 """
 
-
-import os
 import logging
 
 from subiquitycore.ui.buttons import done_btn

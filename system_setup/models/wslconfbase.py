@@ -45,7 +45,8 @@ class WSLConfigurationBaseModel(object):
         d['gen_host'] = result.gen_host
         d['gen_resolvconf'] = result.gen_resolvconf
         self._wslconfbase = WSLConfigurationBase(**d)
-        # TODO WSL: Drop all calls of ubuntuwsl here and ensure the data are passed to the app model
+        # TODO WSL: Drop all calls of ubuntuwsl here and ensure the data
+        # are passed to the app model
         if not is_dry_run:
             # reset to keep everything as refreshed as new
             run_command(["/usr/bin/ubuntuwsl", "reset", "-y"],

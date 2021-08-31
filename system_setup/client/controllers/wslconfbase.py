@@ -6,6 +6,7 @@ from system_setup.ui.views.wslconfbase import WSLConfigurationBaseView
 
 log = logging.getLogger('system_setup.client.controllers.wslconfigurationbase')
 
+
 class WSLConfigurationBaseController(SubiquityTuiController):
     endpoint_name = 'wslconfbase'
 

@@ -39,7 +39,8 @@ class SystemSetupClient(SubiquityClient):
     def __init__(self, opts):
         # TODO WSL:
         # 1. remove reconfigure flag
-        # 2. decide on which UI to show up based on existing user UID >=1000 (or default user set in wsl.conf?)
+        # 2. decide on which UI to show up based on existing user UID >=1000
+        #    (or default user set in wsl.conf?)
         # 3. provide an API for this for the flutter UI to know about it
         # 4. Add Configuration Base page before Advanced
         # 5. Add language page

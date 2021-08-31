@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import re
 
 from subiquitycore.context import with_context
 
@@ -36,7 +35,6 @@ class ConfigureController(SubiquityController):
         super().__init__(app)
         self.model = app.base_model
 
-
     def start(self):
         self.install_task = self.app.aio_loop.create_task(self.configure())
 
@@ -57,7 +55,8 @@ class ConfigureController(SubiquityController):
 
             # TODO WSL:
             # 1. Use self.model to get all data to commit
-            # 2. Write directly (without wsl utilities) to wsl.conf and other fstab files
+            # 2. Write directly (without wsl utilities) to wsl.conf and other
+            #    fstab files
             # This must not use subprocesses.
             # If dry-run: write in .subiquity
 

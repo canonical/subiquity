@@ -24,7 +24,9 @@ from subiquity.common.apidef import API
 from subiquity.common.types import WSLConfigurationAdvanced
 from subiquity.server.controller import SubiquityController
 
-log = logging.getLogger('subiquity.server.controllers.wsl_configuration_advanced')
+log = logging.getLogger(
+    'subiquity.server.controllers.wsl_configuration_advanced')
+
 
 # TODO WSL: remove all duplicates from WSL config base controller
 class WSLConfigurationAdvancedController(SubiquityController):
@@ -173,7 +175,8 @@ class WSLConfigurationAdvancedController(SubiquityController):
             data.interop_appendwindowspath = \
                 self.model.wslconfadvanced.interop_appendwindowspath
             data.gui_theme = self.model.wslconfadvanced.gui_theme
-            data.gui_followwintheme = self.model.wslconfadvanced.gui_followwintheme
+            data.gui_followwintheme = \
+                self.model.wslconfadvanced.gui_followwintheme
             data.legacy_gui = self.model.wslconfadvanced.legacy_gui
             data.legacy_audio = self.model.wslconfadvanced.legacy_audio
             data.adv_ip_detect = self.model.wslconfadvanced.adv_ip_detect

@@ -13,15 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
 import logging
-import os
-import platform
-import subprocess
 
 from subiquitycore.context import with_context
-from subiquitycore.utils import arun_command, run_command
-
 from subiquity.common.types import ShutdownMode
 from subiquity.server.controllers import ShutdownController
 
@@ -31,7 +25,8 @@ log = logging.getLogger("system_setup.controllers.restart")
 class SetupShutdownController(ShutdownController):
 
     def __init__(self, app):
-        # This isn't the most beautiful way, but the shutdown controller depends on Install, override with our configure one.
+        # This isn't the most beautiful way, but the shutdown controller
+        # depends on Install, override with our configure one.
         super().__init__(app)
         self.app.controllers.Install = self.app.controllers.Configure
 
@@ -39,7 +34,6 @@ class SetupShutdownController(ShutdownController):
         # Do not copy logs to target
         self.server_reboot_event.set()
         self.app.aio_loop.create_task(self._run())
-
 
     @with_context(description='mode={self.mode.name}')
     def shutdown(self, context):

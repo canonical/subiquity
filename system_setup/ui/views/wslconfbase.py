@@ -1,6 +1,7 @@
 """ WSLConfBase
 
-WSLConfBase provides user with options to set up basic WSL configuration, requested on first setup.
+WSLConfBase provides user with options to set up basic WSL configuration,
+requested on first setup.
 
 """
 import re
@@ -91,7 +92,8 @@ class WSLConfBaseForm(Form):
 
 class WSLConfigurationBaseView(BaseView):
     title = _("WSL configuration options")
-    excerpt = _("In this page, you can configure Ubuntu WSL options to your needs.\n")
+    excerpt = _(
+        "In this page, you can configure Ubuntu WSL options to your needs.\n")
 
     def __init__(self, controller, configuration_data):
         self.controller = controller
