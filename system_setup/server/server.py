@@ -119,6 +119,7 @@ class SystemSetupServer(Application):
             self.controllers = [
                 "Reporting",
                 "Error",
+                "Install",
                 "Locale",
                 "WSLConfiguration2",
             ]

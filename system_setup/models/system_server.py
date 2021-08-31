@@ -86,6 +86,7 @@ class SystemSetupModel(SubiquityModel):
         self._cur_postinstall_model_names = None
         self._install_event = asyncio.Event()
         self._postinstall_event = asyncio.Event()
+        self._postinstall_event.set()  # no postinstall for WSL
 
     def set_source_variant(self, variant):
         self._cur_install_model_names = \
