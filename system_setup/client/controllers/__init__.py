@@ -18,9 +18,9 @@ from .identity import WSLIdentityController
 from .integration import IntegrationController
 from .overview import OverviewController
 from .reconfiguration import ReconfigurationController
+from .progress import ProgressController
 
-from subiquity.client.controllers import (ProgressController,
-                                          WelcomeController)
+from subiquity.client.controllers import WelcomeController
 
 
 __all__ = [
