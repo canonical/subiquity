@@ -28,6 +28,8 @@ class SystemSetupClient(SubiquityClient):
 
     snapd_socket_path = None
 
+    variant = "wsl_setup"
+
     controllers = [
         "Welcome",
         "WSLIdentity",
@@ -44,6 +46,7 @@ class SystemSetupClient(SubiquityClient):
         # 3. provide an API for this for the flutter UI to know about it
         # 4. Add Configuration Base page before Advanced
         # 5. Add language page
+        # self.variant = "wsl_configuration"
         if opts.reconfigure:
             self.controllers = [
                 "Welcome",

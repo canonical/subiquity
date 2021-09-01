@@ -34,6 +34,8 @@ class SystemSetupServer(SubiquityServer):
         "SetupShutdown",
     ]
 
+    supported_variants = ["wsl_setup", "wsl_configuration"]
+
     def make_model(self):
         root = '/'
         if self.opts.dry_run:
