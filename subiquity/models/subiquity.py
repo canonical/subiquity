@@ -76,7 +76,8 @@ class ModelNames:
         self.per_variant_names = per_variant_names
 
     def for_variant(self, variant):
-        return set(self.default_names) | self.per_variant_names.get(variant, set())
+        return set(self.default_names) | self.per_variant_names.get(variant,
+                                                                    set())
 
     def all(self):
         r = set(self.default_names)

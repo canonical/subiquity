@@ -16,10 +16,7 @@
 import asyncio
 import logging
 
-from subiquity.models.subiquity import ModelNames, SubiquityModel
-
-from subiquitycore.utils import is_wsl
-
+from subiquity.models.subiquity import SubiquityModel
 
 from subiquity.models.locale import LocaleModel
 from subiquity.models.identity import IdentityModel
