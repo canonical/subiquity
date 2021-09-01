@@ -16,18 +16,16 @@
 
 from .identity import WSLIdentityController
 from .wslconfbase import WSLConfigurationBaseController
-from .overview import OverviewController
+from .summary import SummaryController
 from .wslconfadvanced import WSLConfigurationAdvancedController
 
-from subiquity.client.controllers import (ProgressController,
-                                          WelcomeController)
+from subiquity.client.controllers import (WelcomeController)
 
 
 __all__ = [
     'WelcomeController',
     'WSLIdentityController',
-    'ProgressController',
     'WSLConfigurationBaseController',
     'WSLConfigurationAdvancedController',
-    'OverviewController',
+    'SummaryController',
 ]

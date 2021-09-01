@@ -34,8 +34,7 @@ class SystemSetupClient(SubiquityClient):
         "Welcome",
         "WSLIdentity",
         "WSLConfigurationBase",
-        "Overview",
-        "Progress",
+        "Summary",
         ]
 
     def __init__(self, opts):
@@ -49,9 +48,9 @@ class SystemSetupClient(SubiquityClient):
         # self.variant = "wsl_configuration"
         if opts.reconfigure:
             self.controllers = [
-                "Welcome",
+                "WSLConfigurationBase",
                 "WSLConfigurationAdvanced",
-                "Progress",
+                "Summary",
             ]
         super().__init__(opts)
 

@@ -16,11 +16,11 @@
 from .identity import WSLIdentityView
 from .wslconfbase import WSLConfigurationBaseView
 from .wslconfadvanced import WSLConfigurationAdvancedView
-from .overview import OverviewView
+from .summary import SummaryView
 
 __all__ = [
     'WSLIdentityView',
     'WSLConfigurationBaseView',
     'WSLConfigurationAdvancedView',
-    'OverviewView',
+    'SummaryView',
 ]

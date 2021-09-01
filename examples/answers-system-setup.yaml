@@ -10,7 +10,5 @@ WSLConfigurationBase:
   custom_mount_opt: 'opt1 opt2 opt3'
   gen_host: false
   gen_resolvconf: false
-Overview:
-  noproperty: "there is no property for this view, just a done button but subiquity requires something to proceed"
-InstallProgress:
+Summary:
   reboot: yes
