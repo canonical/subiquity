@@ -22,6 +22,7 @@ class MessageChannels(enum.IntEnum):
     NETWORK_UP = enum.auto()
     NETWORK_PROXY_SET = enum.auto()
     SNAPD_NETWORK_CHANGE = enum.auto()
+    GEOIP = enum.auto()
 
 
 class MessageHub:
