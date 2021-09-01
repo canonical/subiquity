@@ -16,18 +16,28 @@
 import asyncio
 
 from subiquitycore.tests import SubiTestCase
-from subiquitycore.pubsub import EventCallback
+from subiquitycore.pubsub import (MessageHub, EventCallback)
 from subiquitycore.tests.util import run_coro
 
 
-async def wait_other_tasks():
-    if hasattr(asyncio, 'all_tasks'):
-        tasks = asyncio.all_tasks()  # py 3.7+
-        tasks.remove(asyncio.current_task())
-    else:
-        tasks = asyncio.Task.all_tasks()  # py 3.6
-        tasks.remove(asyncio.Task.current_task())
-    await asyncio.wait(tasks)
+class TestMessageHub(SubiTestCase):
+    def test_basic(self):
+        def cb(mydata):
+            self.assertEqual(private_data, mydata)
+            self.called += 1
+
+        async def fn():
+            calls_expected = 3
+            for _ in range(calls_expected):
+                self.hub.subscribe(channel_id, cb, private_data)
+            await self.hub.broadcast(channel_id)
+            self.assertEqual(calls_expected, self.called)
+
+        self.called = 0
+        channel_id = 1234
+        private_data = 42
+        self.hub = MessageHub()
+        run_coro(fn())
 
 
 class TestEventCallback(SubiTestCase):
@@ -46,8 +56,7 @@ class TestEventCallback(SubiTestCase):
             calls_expected = 3
             for _ in range(calls_expected):
                 self.thething.subscribe(cb, 'bacon')
-            job()
-            await wait_other_tasks()
+            await self.thething.broadcast(42)
             self.assertEqual(calls_expected, self.called)
 
         run_coro(fn())
