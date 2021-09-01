@@ -42,14 +42,18 @@ class ConfigureController(SubiquityController):
         description="final system configuration", level="INFO",
         childlevel="DEBUG")
     async def configure(self, *, context):
-        context.set('is-configure-context', True)
+        context.set('is-install-context', True)
         try:
 
             self.app.update_state(ApplicationState.WAITING)
 
+            await self.model.wait_install()
+
             self.app.update_state(ApplicationState.NEEDS_CONFIRMATION)
 
             self.app.update_state(ApplicationState.RUNNING)
+
+            await self.model.wait_postinstall()
 
             self.app.update_state(ApplicationState.POST_WAIT)
 
