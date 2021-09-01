@@ -319,14 +319,18 @@ class SubiquityClient(TuiApplication):
                     print(line)
                 return
             await super().start()
-            journald_listen(
-                self.aio_loop,
-                [status.event_syslog_id],
-                self.controllers.Progress.event)
-            journald_listen(
-                self.aio_loop,
-                [status.log_syslog_id],
-                self.controllers.Progress.log_line)
+            # Progress uses systemd to collect and display the installation
+            # logs. Although some system don't have systemd, so we disable
+            # the progress page
+            if hasattr(self.controllers, "Progress"):
+                journald_listen(
+                    self.aio_loop,
+                    [status.event_syslog_id],
+                    self.controllers.Progress.event)
+                journald_listen(
+                    self.aio_loop,
+                    [status.log_syslog_id],
+                    self.controllers.Progress.log_line)
             if not status.cloud_init_ok:
                 self.add_global_overlay(CloudInitFail(self))
             self.error_reporter.load_reports()
