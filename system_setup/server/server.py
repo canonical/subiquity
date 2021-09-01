@@ -14,8 +14,24 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from subiquity.server.server import SubiquityServer
-from system_setup.models.system_server import SystemSetupModel
+from system_setup.models.system_setup import SystemSetupModel
+from subiquity.models.subiquity import ModelNames
+
 import os
+
+
+INSTALL_MODEL_NAMES = ModelNames({
+        "locale",
+        "wslconfbase",
+    },
+    wsl_setup={
+        "identity",
+    },
+    wsl_configuration={
+        "wslconfadvanced",
+    })
+
+POSTINSTALL_MODEL_NAMES = ModelNames({})
 
 
 class SystemSetupServer(SubiquityServer):
@@ -24,7 +40,6 @@ class SystemSetupServer(SubiquityServer):
     controllers = [
         "Reporting",
         "Error",
-        "Userdata",
         "Locale",
         "Identity",
         "WSLConfigurationBase",
@@ -40,4 +55,4 @@ class SystemSetupServer(SubiquityServer):
         root = '/'
         if self.opts.dry_run:
             root = os.path.abspath('.subiquity')
-        return SystemSetupModel(root)
+        return SystemSetupModel(root, INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES)
