@@ -36,6 +36,7 @@ from subiquitycore.models.network import (
     )
 from subiquitycore import netplan
 from subiquitycore.controller import BaseController
+from subiquitycore.pubsub import MessageChannels
 from subiquitycore.tuicontroller import TuiController
 from subiquitycore.ui.stretchy import StretchyOverlay
 from subiquitycore.ui.views.network import (
@@ -479,7 +480,7 @@ class BaseNetworkController(BaseController):
     @abc.abstractmethod
     def update_default_routes(self, routes):
         if routes:
-            self.app.hub.broadcast('network-up')
+            self.app.hub.broadcast(MessageChannels.NETWORK_UP)
 
     @abc.abstractmethod
     def new_link(self, netdev):

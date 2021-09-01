@@ -14,7 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import enum
 import inspect
+
+
+class MessageChannels(enum.IntEnum):
+    NETWORK_UP = enum.auto()
+    NETWORK_PROXY_SET = enum.auto()
+    SNAPD_NETWORK_CHANGE = enum.auto()
 
 
 class MessageHub:

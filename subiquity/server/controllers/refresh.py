@@ -24,6 +24,7 @@ from subiquitycore.async_helpers import (
     SingleInstanceTask,
     )
 from subiquitycore.context import with_context
+from subiquitycore.pubsub import MessageChannels
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
@@ -59,8 +60,8 @@ class RefreshController(SubiquityController):
         self.configure_task = None
         self.check_task = None
         self.status = RefreshStatus(availability=RefreshCheckState.UNKNOWN)
-        self.app.hub.subscribe(
-            'snapd-network-change', self.snapd_network_changed)
+        self.app.hub.subscribe(MessageChannels.SNAPD_NETWORK_CHANGE,
+                               self.snapd_network_changed)
 
     def load_autoinstall_data(self, data):
         if data is not None:
