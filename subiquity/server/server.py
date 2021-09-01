@@ -276,8 +276,13 @@ class SubiquityServer(Application):
             self.snapd = AsyncSnapd(connection)
         else:
             log.info("no snapd socket found. Snap support is disabled")
-            self.controllers.remove("Refresh")
-            self.controllers.remove("SnapList")
+            reload_needed = False
+            for controller in ["Refresh", "Snaplist"]:
+                if controller in self.controllers.controller_names:
+                    self.controllers.controller_names.remove(controller)
+                    reload_needed = True
+            if reload_needed:
+                self.controllers.load_all()
             self.snapd = None
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.event_listeners = []
