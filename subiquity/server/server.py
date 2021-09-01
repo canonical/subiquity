@@ -37,6 +37,7 @@ from subiquitycore.async_helpers import run_in_thread
 from subiquitycore.context import with_context
 from subiquitycore.core import Application
 from subiquitycore.prober import Prober
+from subiquitycore.pubsub import MessageChannels
 from subiquitycore.ssh import (
     host_key_fingerprints,
     user_key_fingerprints,
@@ -280,8 +281,8 @@ class SubiquityServer(Application):
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.event_listeners = []
         self.autoinstall_config = None
-        self.hub.subscribe('network-up', self._network_change)
-        self.hub.subscribe('network-proxy-set', self._proxy_set)
+        self.hub.subscribe(MessageChannels.NETWORK_UP, self._network_change)
+        self.hub.subscribe(MessageChannels.NETWORK_PROXY_SET, self._proxy_set)
         self.geoip = GeoIP(self)
 
     def load_serialized_state(self):
@@ -580,14 +581,14 @@ class SubiquityServer(Application):
     def _network_change(self):
         if not self.snapd:
             return
-        self.hub.broadcast('snapd-network-change')
+        self.hub.broadcast(MessageChannels.SNAPD_NETWORK_CHANGE)
 
     async def _proxy_set(self):
         if not self.snapd:
             return
         await run_in_thread(
             self.snapd.connection.configure_proxy, self.base_model.proxy)
-        self.hub.broadcast('snapd-network-change')
+        self.hub.broadcast(MessageChannels.SNAPD_NETWORK_CHANGE)
 
     def restart(self):
         if not self.snapd:

@@ -22,7 +22,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     SingleInstanceTask,
 )
-from subiquitycore.pubsub import EventCallback
+from subiquitycore.pubsub import (EventCallback, MessageChannels)
 
 log = logging.getLogger('subiquity.common.geoip')
 
@@ -44,8 +44,10 @@ class GeoIP:
         self.on_countrycode = EventCallback()
         self.on_timezone = EventCallback()
         self.lookup_task = SingleInstanceTask(self.lookup)
-        self.app.hub.subscribe('network-up', self.maybe_start_check)
-        self.app.hub.subscribe('network-proxy-set', self.maybe_start_check)
+        self.app.hub.subscribe(MessageChannels.NETWORK_UP,
+                               self.maybe_start_check)
+        self.app.hub.subscribe(MessageChannels.NETWORK_PROXY_SET,
+                               self.maybe_start_check)
 
     def maybe_start_check(self):
         if self.check_state != CheckState.DONE:
