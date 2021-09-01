@@ -13,10 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
-
 from subiquitycore.tests import SubiTestCase
-from subiquitycore.pubsub import (MessageHub, EventCallback)
+from subiquitycore.pubsub import MessageHub
 from subiquitycore.tests.util import run_coro
 
 
@@ -37,26 +35,4 @@ class TestMessageHub(SubiTestCase):
         channel_id = 1234
         private_data = 42
         self.hub = MessageHub()
-        run_coro(fn())
-
-
-class TestEventCallback(SubiTestCase):
-    def test_basic(self):
-        def job():
-            self.thething.broadcast(42)
-
-        def cb(val, mydata):
-            self.assertEqual(42, val)
-            self.assertEqual('bacon', mydata)
-            self.called += 1
-
-        async def fn():
-            self.called = 0
-            self.thething = EventCallback()
-            calls_expected = 3
-            for _ in range(calls_expected):
-                self.thething.subscribe(cb, 'bacon')
-            await self.thething.broadcast(42)
-            self.assertEqual(calls_expected, self.called)
-
         run_coro(fn())
