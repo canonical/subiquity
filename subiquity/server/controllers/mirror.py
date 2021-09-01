@@ -19,6 +19,7 @@ import logging
 from curtin.config import merge_config
 
 from subiquitycore.context import with_context
+from subiquitycore.pubsub import MessageChannels
 
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
@@ -45,7 +46,7 @@ class MirrorController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.geoip_enabled = True
-        self.app.geoip.on_countrycode.subscribe(self.on_countrycode)
+        self.app.hub.subscribe(MessageChannels.GEOIP, self.on_geoip)
         self.cc_event = asyncio.Event()
 
     def load_autoinstall_data(self, data):
@@ -65,7 +66,7 @@ class MirrorController(SubiquityController):
         except asyncio.TimeoutError:
             pass
 
-    def on_countrycode(self, unused):
+    def on_geoip(self):
         if self.geoip_enabled:
             self.model.set_country(self.app.geoip.countrycode)
         self.cc_event.set()

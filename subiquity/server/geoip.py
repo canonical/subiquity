@@ -22,7 +22,7 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     SingleInstanceTask,
 )
-from subiquitycore.pubsub import (EventCallback, MessageChannels)
+from subiquitycore.pubsub import MessageChannels
 
 log = logging.getLogger('subiquity.common.geoip')
 
@@ -41,8 +41,6 @@ class GeoIP:
         self.cc = None
         self.tz = None
         self.check_state = CheckState.NOT_STARTED
-        self.on_countrycode = EventCallback()
-        self.on_timezone = EventCallback()
         self.lookup_task = SingleInstanceTask(self.lookup)
         self.app.hub.subscribe(MessageChannels.NETWORK_UP,
                                self.maybe_start_check)
@@ -77,6 +75,7 @@ class GeoIP:
             log.exception("parsing %r failed", self.response_text)
             return False
 
+        changed = False
         cc = self.element.find("CountryCode")
         if cc is None or cc.text is None:
             log.debug("no CountryCode found in %r", self.response_text)
@@ -86,7 +85,7 @@ class GeoIP:
             log.debug("bogus CountryCode found in %r", self.response_text)
             return False
         if cc != self.cc:
-            self.on_countrycode.broadcast(cc)
+            changed = True
             self.cc = cc
 
         tz = self.element.find("TimeZone")
@@ -94,8 +93,11 @@ class GeoIP:
             log.debug("no TimeZone found in %r", self.response_text)
             return False
         if tz != self.tz:
-            self.on_timezone.broadcast(tz)
+            changed = True
             self.tz = tz.text
+
+        if changed:
+            self.app.hub.broadcast(MessageChannels.GEOIP)
 
         return True
 
