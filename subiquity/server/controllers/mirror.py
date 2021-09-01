@@ -65,9 +65,9 @@ class MirrorController(SubiquityController):
         except asyncio.TimeoutError:
             pass
 
-    def on_countrycode(self, cc):
+    def on_countrycode(self, unused):
         if self.geoip_enabled:
-            self.model.set_country(cc)
+            self.model.set_country(self.app.geoip.countrycode)
         self.cc_event.set()
 
     def serialize(self):
