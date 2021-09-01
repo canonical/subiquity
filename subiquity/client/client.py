@@ -83,6 +83,8 @@ class SubiquityClient(TuiApplication):
 
     snapd_socket_path = '/run/snapd.socket'
 
+    variant = "server"
+
     from subiquity.client import controllers as controllers_mod
     project = "subiquity"
 
@@ -435,7 +437,7 @@ class SubiquityClient(TuiApplication):
                 endpoint_names.append(c.endpoint_name)
         if endpoint_names:
             await self.client.meta.mark_configured.POST(endpoint_names)
-        await self.client.meta.client_variant.POST('server')
+        await self.client.meta.client_variant.POST(self.variant)
         self.controllers.index = index - 1
         self.next_screen()
 

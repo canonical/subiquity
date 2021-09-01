@@ -113,7 +113,7 @@ class MetaController:
                 controller.configured()
 
     async def client_variant_POST(self, variant: str) -> None:
-        if variant not in ('desktop', 'server'):
+        if variant not in self.app.supported_variants:
             raise ValueError(f'unrecognized client variant {variant}')
         self.app.base_model.set_source_variant(variant)
 
@@ -226,6 +226,8 @@ class SubiquityServer(Application):
         "Late",
         "Shutdown",
         ]
+
+    supported_variants = ["server", "desktop"]
 
     def make_model(self):
         root = '/'
