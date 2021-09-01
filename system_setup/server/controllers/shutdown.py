@@ -38,9 +38,7 @@ class SetupShutdownController(ShutdownController):
     @with_context(description='mode={self.mode.name}')
     def shutdown(self, context):
         self.shuttingdown_event.set()
-        if self.opts.dry_run:
-            self.app.exit()
-        else:
+        if not self.opts.dry_run:
             if self.mode == ShutdownMode.REBOOT:
                 # TODO WSL:
                 # Implement a reboot that doesn't depend on systemd
@@ -49,3 +47,4 @@ class SetupShutdownController(ShutdownController):
                 # TODO WSL:
                 # Implement a poweroff that doesn't depend on systemd
                 log.Warning("poweroff command not implemented")
+        self.app.exit()
