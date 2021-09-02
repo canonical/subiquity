@@ -72,10 +72,6 @@ def make_client_args_parser():
                         help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
     parser.add_argument('--server-pid')
-    # TODO WSL: remove reconfigure flag and use dynamic decision (see below)
-    # Expose that as an endpoint on the server and decide in the client what
-    # to show
-    parser.add_argument('--reconfigure', action='store_true')
     return parser
 
 

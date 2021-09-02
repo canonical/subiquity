@@ -15,6 +15,7 @@
 
 import logging
 import sys
+from system_setup.common.helpers import is_reconfigure
 
 from subiquity.client.client import SubiquityClient
 
@@ -40,15 +41,12 @@ class SystemSetupClient(SubiquityClient):
 
     def __init__(self, opts):
         # TODO WSL:
-        # 1. remove reconfigure flag
-        # 2. decide on which UI to show up based on existing user UID >=1000
-        #    (or default user set in wsl.conf?)
         # 3. provide an API for this for the flutter UI to know about it
-        # 4. Add Configuration Base page before Advanced
-        # 5. Add language page
-        # self.variant = "wsl_configuration"
-        if opts.reconfigure:
+
+        if is_reconfigure(opts.dry_run):
+            self.variant = "wsl_configuration"
             self.controllers = [
+                "Welcome",
                 "WSLConfigurationBase",
                 "WSLConfigurationAdvanced",
                 "Summary",
