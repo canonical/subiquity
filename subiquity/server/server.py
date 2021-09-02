@@ -124,6 +124,9 @@ class MetaController:
         else:
             self.app.base_model.set_source_variant(variant)
 
+    async def client_variant_GET(self) -> str:
+        return self.app.base_model.client_variant
+
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
         ips = []
         if self.app.base_model.network:

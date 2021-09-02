@@ -78,6 +78,8 @@ class API:
         class client_variant:
             def POST(variant: str) -> None:
                 """Choose the install variant - desktop/server"""
+            def GET() -> str:
+                """Get the install variant - desktop/server"""
 
         class confirm:
             def POST(tty: str) -> None:

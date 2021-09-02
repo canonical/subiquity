@@ -40,9 +40,6 @@ class SystemSetupClient(SubiquityClient):
         ]
 
     def __init__(self, opts):
-        # TODO WSL:
-        # 3. provide an API for this for the flutter UI to know about it
-
         if is_reconfigure(opts.dry_run):
             self.variant = "wsl_configuration"
             self.controllers = [
