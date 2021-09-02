@@ -363,7 +363,7 @@ class WSLConfigurationBase:
 
 
 @attr.s(auto_attribs=True)
-class WSLConfigurationAdvanced:
+class WSLConfigurationAdvanced(WSLConfigurationBase):
     gui_theme: str = attr.ib(default='default')
     gui_followwintheme: bool = attr.ib(default=True)
     legacy_gui: bool = attr.ib(default=False)

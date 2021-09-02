@@ -18,12 +18,13 @@ import subprocess
 import attr
 
 from subiquitycore.utils import run_command
+from .wslconfbase import WSLConfigurationBase
 
 log = logging.getLogger('subiquity.models.wsl_configuration_advanced')
 
 
 @attr.s
-class WSLConfigurationAdvanced(object):
+class WSLConfigurationAdvanced(WSLConfigurationBase):
     gui_theme = attr.ib()
     gui_followwintheme = attr.ib()
     legacy_gui = attr.ib()
