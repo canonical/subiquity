@@ -346,7 +346,7 @@ class WSLConfigurationBase:
 
 
 @attr.s(auto_attribs=True)
-class WSLConfigurationAdvanced:
+class WSLConfigurationAdvanced(WSLConfigurationBase):
     gui_theme: str = attr.ib(default='default')
     gui_followwintheme: bool = attr.ib(default=True)
     legacy_gui: bool = attr.ib(default=False)
@@ -355,10 +355,5 @@ class WSLConfigurationAdvanced:
     wsl_motd_news: bool = attr.ib(default=True)
     automount:  bool = attr.ib(default=True)
     mountfstab:  bool = attr.ib(default=True)
-    # TODO WSL: remove all duplications from WSLConfigurationBase
-    custom_path: str = attr.ib(default='/mnt/')
-    custom_mount_opt: str = ''
-    gen_host: bool = attr.ib(default=True)
-    gen_resolvconf: bool = attr.ib(default=True)
     interop_enabled:  bool = attr.ib(default=True)
     interop_appendwindowspath: bool = attr.ib(default=True)

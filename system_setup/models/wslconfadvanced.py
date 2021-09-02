@@ -18,6 +18,7 @@ import subprocess
 import attr
 
 from subiquitycore.utils import run_command
+from .wslconfbase import WSLConfigurationBase
 
 log = logging.getLogger('subiquity.models.wsl_configuration_advanced')
 
@@ -25,7 +26,7 @@ log = logging.getLogger('subiquity.models.wsl_configuration_advanced')
 
 
 @attr.s
-class WSLConfigurationAdvanced(object):
+class WSLConfigurationAdvanced(WSLConfigurationBase):
     gui_theme = attr.ib()
     gui_followwintheme = attr.ib()
     legacy_gui = attr.ib()
@@ -34,10 +35,6 @@ class WSLConfigurationAdvanced(object):
     wsl_motd_news = attr.ib()
     automount = attr.ib()
     mountfstab = attr.ib()
-    custom_path = attr.ib()
-    custom_mount_opt = attr.ib()
-    gen_host = attr.ib()
-    gen_resolvconf = attr.ib()
     interop_enabled = attr.ib()
     interop_appendwindowspath = attr.ib()
 
@@ -68,7 +65,7 @@ class WSLConfigurationAdvancedModel(object):
         d['wsl_motd_news'] = result.wsl_motd_news
         d['automount'] = result.automount
         d['mountfstab'] = result.mountfstab
-        self._wslconfadvanced = WSLConfigurationAdvancedModel(**d)
+        self._wslconfadvanced = WSLConfigurationAdvanced(**d)
         # TODO WSL: Drop all calls of ubuntuwsl here and ensure the data
         # are passed to the app model
         if not is_dry_run:
