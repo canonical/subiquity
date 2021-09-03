@@ -24,22 +24,23 @@ import os
 
 log = logging.getLogger('subiquity.server.controllers.timezone')
 
-TIMEDATECTLCMD = which('timedatectl')
-SD_BOOTED = os.path.exists('/run/systemd/system')
+
+def active_timedatectl():
+    return which('timedatectl') and os.path.exists('/run/systemd/system')
 
 
 def generate_possible_tzs():
     special_keys = ['', 'geoip']
-    if not TIMEDATECTLCMD or not SD_BOOTED:
+    if not active_timedatectl():
         return special_keys
-    tzcmd = [TIMEDATECTLCMD, 'list-timezones']
+    tzcmd = ['timedatectl', 'list-timezones']
     list_tz_out = subprocess.check_output(tzcmd, universal_newlines=True)
     real_tzs = list_tz_out.splitlines()
     return special_keys + real_tzs
 
 
 def timedatectl_settz(app, tz):
-    tzcmd = [TIMEDATECTLCMD, 'set-timezone', tz]
+    tzcmd = ['timedatectl', 'set-timezone', tz]
     if app.opts.dry_run:
         tzcmd = ['sleep', str(1/app.scale_factor)]
 
@@ -51,7 +52,7 @@ def timedatectl_settz(app, tz):
 
 def timedatectl_gettz():
     # timedatectl show would be easier, but isn't on bionic
-    tzcmd = [TIMEDATECTLCMD, 'status']
+    tzcmd = ['timedatectl', 'status']
     env = {'LC_ALL': 'C'}
     # ...
     #    Time zone: America/Denver (MDT, -0600)
