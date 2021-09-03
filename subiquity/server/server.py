@@ -243,7 +243,7 @@ class SubiquityServer(Application):
         if self.opts.dry_run:
             root = os.path.abspath('.subiquity')
         return SubiquityModel(
-            root, INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES)
+            root, self.hub, INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES)
 
     def __init__(self, opts, block_log_dir):
         super().__init__(opts)

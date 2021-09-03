@@ -16,6 +16,7 @@
 import asyncio
 import copy
 from collections import OrderedDict
+import functools
 import logging
 import os
 import sys
@@ -29,6 +30,7 @@ from subiquitycore.file_util import write_file
 from subiquitycore.utils import run_command
 
 from subiquity.common.resources import resource_path
+from subiquity.server.types import InstallerChannels
 
 from .filesystem import FilesystemModel
 from .identity import IdentityModel
@@ -100,8 +102,10 @@ class SubiquityModel:
 
     target = '/target'
 
-    def __init__(self, root, install_model_names, postinstall_model_names):
+    def __init__(self, root, hub, install_model_names,
+                 postinstall_model_names):
         self.root = root
+        self.hub = hub
         if root != '/':
             self.target = root
 
@@ -133,6 +137,13 @@ class SubiquityModel:
             postinstall_model_names.default_names
         self._install_event = asyncio.Event()
         self._postinstall_event = asyncio.Event()
+        all_names = set()
+        all_names.update(install_model_names.all())
+        all_names.update(postinstall_model_names.all())
+        for name in all_names:
+            hub.subscribe(
+                (InstallerChannels.CONFIGURED, name),
+                functools.partial(self._configured, name))
 
     def set_source_variant(self, variant):
         self._cur_install_model_names = \
@@ -156,7 +167,7 @@ class SubiquityModel:
         else:
             self._postinstall_event.set()
 
-    def configured(self, model_name):
+    def _configured(self, model_name):
         self._configured_names.add(model_name)
         if model_name in self._cur_install_model_names:
             stage = 'install'

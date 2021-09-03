@@ -55,5 +55,5 @@ class SystemSetupServer(SubiquityServer):
         root = '/'
         if self.opts.dry_run:
             root = os.path.abspath('.subiquity')
-        return SystemSetupModel(root, INSTALL_MODEL_NAMES,
+        return SystemSetupModel(root, self.hub, INSTALL_MODEL_NAMES,
                                 POSTINSTALL_MODEL_NAMES)

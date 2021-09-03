@@ -14,12 +14,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import functools
 import logging
 
 from subiquity.models.subiquity import SubiquityModel
-
 from subiquity.models.locale import LocaleModel
 from subiquity.models.identity import IdentityModel
+from subiquity.server.types import InstallerChannels
+
 from .wslconfbase import WSLConfigurationBaseModel
 from .wslconfadvanced import WSLConfigurationAdvancedModel
 
@@ -44,7 +46,8 @@ class SystemSetupModel(SubiquityModel):
 
     target = '/'
 
-    def __init__(self, root, install_model_names, postinstall_model_names):
+    def __init__(self, root, hub, install_model_names,
+                 postinstall_model_names):
         # Parent class init is not called to not load models we don't need.
         self.root = root
         if root != '/':
@@ -68,3 +71,10 @@ class SystemSetupModel(SubiquityModel):
             postinstall_model_names.default_names
         self._install_event = asyncio.Event()
         self._postinstall_event = asyncio.Event()
+        all_names = set()
+        all_names.update(install_model_names.all())
+        all_names.update(postinstall_model_names.all())
+        for name in all_names:
+            hub.subscribe(
+                (InstallerChannels.CONFIGURED, name),
+                functools.partial(self._configured, name))

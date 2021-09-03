@@ -25,6 +25,7 @@ from subiquitycore.controller import (
     )
 
 from subiquity.common.api.server import bind
+from subiquity.server.types import InstallerChannels
 
 log = logging.getLogger("subiquity.server.controller")
 
@@ -83,7 +84,8 @@ class SubiquityController(BaseController):
         with open(self.app.state_path('states', self.name), 'w') as fp:
             json.dump(self.serialize(), fp)
         if self.model_name is not None:
-            self.app.base_model.configured(self.model_name)
+            self.app.hub.broadcast(
+                (InstallerChannels.CONFIGURED, self.model_name))
 
     def load_state(self):
         state_path = self.app.state_path('states', self.name)

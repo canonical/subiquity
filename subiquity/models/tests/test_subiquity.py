@@ -17,11 +17,15 @@ import fnmatch
 import unittest
 import yaml
 
+from subiquitycore.pubsub import MessageHub
+from subiquitycore.tests.util import run_coro
+
 from subiquity.models.subiquity import ModelNames, SubiquityModel
 from subiquity.server.server import (
     INSTALL_MODEL_NAMES,
     POSTINSTALL_MODEL_NAMES,
     )
+from subiquity.server.types import InstallerChannels
 
 
 class TestModelNames(unittest.TestCase):
@@ -90,18 +94,22 @@ class TestSubiquityModel(unittest.TestCase):
             cur = cur[component]
         self.fail("config has value {} for {}".format(cur, path))
 
-    def test_configure(self):
+    async def _test_configure(self):
+        hub = MessageHub()
         model = SubiquityModel(
-            'test', ModelNames({'a', 'b'}), ModelNames(set()))
+            'test', hub, ModelNames({'a', 'b'}), ModelNames(set()))
         model.set_source_variant('var')
-        model.configured('a')
+        await hub.abroadcast((InstallerChannels.CONFIGURED, 'a'))
         self.assertFalse(model._install_event.is_set())
-        model.configured('b')
+        await hub.abroadcast((InstallerChannels.CONFIGURED, 'b'))
         self.assertTrue(model._install_event.is_set())
+
+    def test_configure(self):
+        run_coro(self._test_configure())
 
     def make_model(self):
         return SubiquityModel(
-            'test', INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES)
+            'test', MessageHub(), INSTALL_MODEL_NAMES, POSTINSTALL_MODEL_NAMES)
 
     def test_proxy_set(self):
         model = self.make_model()
