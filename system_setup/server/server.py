@@ -31,7 +31,7 @@ INSTALL_MODEL_NAMES = ModelNames({
         "wslconfadvanced",
     })
 
-POSTINSTALL_MODEL_NAMES = ModelNames({})
+POSTINSTALL_MODEL_NAMES = ModelNames(set())
 
 
 class SystemSetupServer(SubiquityServer):
