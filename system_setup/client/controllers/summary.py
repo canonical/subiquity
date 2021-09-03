@@ -67,10 +67,6 @@ class SummaryController(SubiquityTuiController):
                         self.ui.set_body(self.summary_view)
                     self.app.show_error_report(self.crash_report_ref)
 
-            if self.app_state == ApplicationState.NEEDS_CONFIRMATION:
-                if self.showing:
-                    self.app.show_confirm_install()
-
             if self.app_state == ApplicationState.RUNNING:
                 if app_status.confirming_tty != self.app.our_tty:
                     install_running = InstallRunning(
