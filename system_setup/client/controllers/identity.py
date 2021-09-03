@@ -15,14 +15,16 @@
 
 import logging
 
-from subiquity.client.controllers import IdentityController
+from subiquity.client.controller import SubiquityTuiController
 from subiquity.common.types import IdentityData
 from system_setup.ui.views import WSLIdentityView
 
 log = logging.getLogger('system_setup.client.controllers.identity')
 
 
-class WSLIdentityController(IdentityController):
+class WSLIdentityController(SubiquityTuiController):
+
+    endpoint_name = 'identity'
 
     async def make_ui(self):
         data = await self.endpoint.GET()
@@ -36,6 +38,9 @@ class WSLIdentityController(IdentityController):
                 username=self.answers['username'],
                 crypted_password=self.answers['password'])
             self.done(identity)
+
+    def cancel(self):
+        self.app.prev_screen()
 
     def done(self, identity_data):
         log.debug(
