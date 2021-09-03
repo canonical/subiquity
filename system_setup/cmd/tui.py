@@ -89,6 +89,7 @@ def main():
     from system_setup.client.client import SystemSetupClient
     parser = make_client_args_parser()
     args = sys.argv[1:]
+    # TODO: make that a common helper between subiquity and system_setup
     if '--dry-run' in args:
         opts, unknown = parser.parse_known_args(args)
         if opts.socket is None:
