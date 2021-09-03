@@ -63,4 +63,4 @@ class SSHController(SubiquityController):
         self.model.install_server = data.install_server
         self.model.authorized_keys = data.authorized_keys
         self.model.pwauth = data.allow_pw
-        self.configured()
+        await self.configured()

@@ -37,7 +37,7 @@ class LocaleController(SubiquityController):
     def start(self):
         self.model.selected_language = os.environ.get("LANG") \
                 or self.autoinstall_default
-        self.configured()
+        self.app.aio_loop.create_task(self.configured())
 
     def serialize(self):
         return self.model.selected_language

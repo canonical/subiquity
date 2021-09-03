@@ -168,7 +168,7 @@ class SnapListController(SubiquityController):
 
     async def GET(self, wait: bool = False) -> SnapListResponse:
         if self.loader.failed or not self.app.base_model.network.has_network:
-            self.configured()
+            await self.configured()
             return SnapListResponse(status=SnapCheckState.FAILED)
         if not self.loader.snap_list_fetched and not wait:
             return SnapListResponse(status=SnapCheckState.LOADING)
@@ -180,7 +180,7 @@ class SnapListController(SubiquityController):
 
     async def POST(self, data: List[SnapSelection]):
         self.model.set_installed_list(data)
-        self.configured()
+        await self.configured()
 
     async def snap_info_GET(self, snap_name: str) -> SnapInfo:
         snap = self.model._snap_for_name(snap_name)

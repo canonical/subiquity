@@ -99,8 +99,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         log.debug("self.ai_data = %s", data)
         self.ai_data = data
 
-    def configured(self):
-        super().configured()
+    async def configured(self):
+        await super().configured()
         self.stop_listening_udev()
 
     @with_context()
@@ -211,7 +211,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def POST(self, config: list):
         self.model._actions = self.model._actions_from_config(
             config, self.model._probe_data['blockdev'], is_probe_data=False)
-        self.configured()
+        await self.configured()
 
     async def guided_GET(self, wait: bool = False) -> GuidedStorageResponse:
         probe_resp = await self._probe_response(wait, GuidedStorageResponse)

@@ -78,13 +78,13 @@ class SubiquityController(BaseController):
             'interactive-sections', [])
         return '*' in i_sections or self.autoinstall_key in i_sections
 
-    def configured(self):
+    async def configured(self):
         """Let the world know that this controller's model is now configured.
         """
         with open(self.app.state_path('states', self.name), 'w') as fp:
             json.dump(self.serialize(), fp)
         if self.model_name is not None:
-            self.app.hub.broadcast(
+            await self.app.hub.abroadcast(
                 (InstallerChannels.CONFIGURED, self.model_name))
 
     def load_state(self):

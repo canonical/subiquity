@@ -111,7 +111,7 @@ class MetaController:
         endpoints = {getattr(API, en, None) for en in endpoint_names}
         for controller in self.app.controllers.instances:
             if controller.endpoint in endpoints:
-                controller.configured()
+                await controller.configured()
 
     async def client_variant_POST(self, variant: str) -> None:
         if variant not in self.app.supported_variants:
@@ -428,7 +428,7 @@ class SubiquityServer(Application):
                     controller.name)
                 continue
             await controller.apply_autoinstall_config()
-            controller.configured()
+            await controller.configured()
 
     def load_autoinstall_config(self, *, only_early):
         log.debug("load_autoinstall_config only_early %s", only_early)
