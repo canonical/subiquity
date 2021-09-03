@@ -19,7 +19,6 @@ import logging
 import os
 import random
 import subprocess
-import pathlib
 
 log = logging.getLogger("subiquitycore.utils")
 
