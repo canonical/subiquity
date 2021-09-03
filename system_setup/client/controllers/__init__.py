@@ -19,7 +19,7 @@ from .wslconfbase import WSLConfigurationBaseController
 from .summary import SummaryController
 from .wslconfadvanced import WSLConfigurationAdvancedController
 
-from subiquity.client.controllers import (WelcomeController)
+from subiquity.client.controllers import WelcomeController
 
 
 __all__ = [
