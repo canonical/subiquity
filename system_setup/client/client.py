@@ -29,6 +29,8 @@ class SystemSetupClient(SubiquityClient):
     snapd_socket_path = None
 
     variant = "wsl_setup"
+    cmdline = sys.argv
+    dryrun_cmdline_module = 'system_setup.cmd.tui'
 
     controllers = [
         "Welcome",
@@ -54,32 +56,4 @@ class SystemSetupClient(SubiquityClient):
             ]
         super().__init__(opts)
 
-    def restart(self, remove_last_screen=True, restart_server=False):
-        log.debug(f"restart {remove_last_screen} {restart_server}")
-        if self.fg_proc is not None:
-            log.debug(
-                "killing foreground process %s before restarting",
-                self.fg_proc)
-            self.restarting = True
-            self.aio_loop.create_task(
-                self._kill_fg_proc(remove_last_screen, restart_server))
-            return
-        if remove_last_screen:
-            self._remove_last_screen()
-        if restart_server:
-            self.restarting = True
-            self.ui.block_input = True
-            self.aio_loop.create_task(self._restart_server())
-            return
-        if self.urwid_loop is not None:
-            self.urwid_loop.stop()
-        cmdline = sys.argv
-        if self.opts.dry_run:
-            cmdline = [
-                sys.executable, '-m', 'system_setup.cmd.tui',
-                ] + sys.argv[1:] + ['--socket', self.opts.socket]
-            if self.opts.server_pid is not None:
-                cmdline.extend(['--server-pid', self.opts.server_pid])
-            log.debug("restarting %r", cmdline)
 
-        os.execvp(cmdline[0], cmdline)

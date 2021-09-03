@@ -84,6 +84,8 @@ class SubiquityClient(TuiApplication):
     snapd_socket_path = '/run/snapd.socket'
 
     variant = "server"
+    cmdline = ['snap', 'run', 'subiquity']
+    dryrun_cmdline_module = 'subiquity.cmd.tui'
 
     from subiquity.client import controllers as controllers_mod
     project = "subiquity"
@@ -173,10 +175,10 @@ class SubiquityClient(TuiApplication):
             return
         if self.urwid_loop is not None:
             self.urwid_loop.stop()
-        cmdline = ['snap', 'run', 'subiquity']
+        cmdline = self.cmdline
         if self.opts.dry_run:
             cmdline = [
-                sys.executable, '-m', 'subiquity.cmd.tui',
+                sys.executable, '-m', self.dryrun_cmdline_module,
                 ] + sys.argv[1:] + ['--socket', self.opts.socket]
             if self.opts.server_pid is not None:
                 cmdline.extend(['--server-pid', self.opts.server_pid])
