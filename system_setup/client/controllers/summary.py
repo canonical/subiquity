@@ -1,3 +1,5 @@
+import os
+import pwd
 import aiohttp
 import asyncio
 import logging
@@ -83,10 +85,21 @@ class SummaryController(SubiquityTuiController):
 
     async def make_ui(self):
         real_name = ""
+
+        tmp_variant = "wsl_setup"
+        onsite_variant = getattr(self.app, "variant")
+        if onsite_variant is not None:
+            tmp_variant = onsite_variant
+
         identity = getattr(self.app.client, "identity")
         if identity is not None:
             data = await identity.GET()
             real_name = data.realname
+        if tmp_variant == "wsl_configuration":
+            tmp_uid = os.getuid()
+            if tmp_uid >= 1000 and tmp_uid < 65534:
+                real_name = pwd.getpwuid(tmp_uid)[0]
+
         self.summary_view = SummaryView(self, real_name)
         # We may reach the DONE or ERROR state even before we had a chance
         # to show the UI.

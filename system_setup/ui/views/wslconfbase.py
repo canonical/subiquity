@@ -95,9 +95,11 @@ class WSLConfigurationBaseView(BaseView):
     excerpt = _(
         "In this page, you can configure Ubuntu WSL options to your needs.\n")
 
-    def __init__(self, controller, configuration_data):
+    def __init__(self, controller, configuration_data, variant):
         self.controller = controller
-
+        self.is_conf = variant == "wsl_configuration"
+        if self.is_conf:
+            self.title = _("WSL configuration - Base options")
         initial = {
             'custom_path': configuration_data.custom_path,
             'custom_mount_opt': configuration_data.custom_mount_opt,
