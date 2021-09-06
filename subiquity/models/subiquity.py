@@ -146,6 +146,13 @@ class SubiquityModel:
                 self._confirmation_task.cancel()
         else:
             self._install_event.set()
+        unconfigured_postinstall_model_names = \
+            self._cur_postinstall_model_names - self._configured_names
+        if unconfigured_postinstall_model_names:
+            if self._postinstall_event.is_set():
+                self._postinstall_event = asyncio.Event()
+        else:
+            self._postinstall_event.set()
 
     def configured(self, model_name):
         self._configured_names.add(model_name)

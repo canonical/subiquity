@@ -7,10 +7,12 @@ PYTHONPATH=$(shell pwd):$(shell pwd)/probert:$(shell pwd)/curtin
 PROBERTDIR=./probert
 PROBERT_REPO=https://github.com/canonical/probert
 DRYRUN?=--dry-run --bootloader uefi --machine-config examples/simple.json
+SYSTEM_SETUP_DRYRUN?=--dry-run
+RECONFIG?=--reconfigure
 export PYTHONPATH
 CWD := $(shell pwd)
 
-CHECK_DIRS := console_conf/ subiquity/ subiquitycore/
+CHECK_DIRS := console_conf/ subiquity/ subiquitycore/ system_setup/
 PYTHON := python3
 
 ifneq (,$(MACHINE))
@@ -47,6 +49,18 @@ dryrun-serial ui-view-serial:
 
 dryrun-server:
 	$(PYTHON) -m subiquity.cmd.server $(DRYRUN)
+
+dryrun-system-setup:
+	$(PYTHON) -m system_setup.cmd.tui $(SYSTEM_SETUP_DRYRUN)
+
+dryrun-system-setup-server:
+	$(PYTHON) -m system_setup.cmd.server $(SYSTEM_SETUP_DRYRUN)
+
+dryrun-system-setup-recon:
+	$(PYTHON) -m system_setup.cmd.tui $(SYSTEM_SETUP_DRYRUN) $(RECONFIG)
+
+dryrun-system-setup-server-recon:
+	$(PYTHON) -m system_setup.cmd.server $(SYSTEM_SETUP_DRYRUN) $(RECONFIG)
 
 lint: flake8
 

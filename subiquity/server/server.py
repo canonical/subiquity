@@ -74,6 +74,7 @@ from subiquitycore.snapd import (
     SnapdConnection,
     )
 
+NOPROBERARG = "NOPROBER"
 
 log = logging.getLogger('subiquity.server.server')
 
@@ -112,14 +113,15 @@ class MetaController:
                 controller.configured()
 
     async def client_variant_POST(self, variant: str) -> None:
-        if variant not in ('desktop', 'server'):
+        if variant not in self.app.supported_variants:
             raise ValueError(f'unrecognized client variant {variant}')
         self.app.base_model.set_source_variant(variant)
 
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
         ips = []
-        for dev in self.app.base_model.network.get_all_netdevs():
-            ips.extend(map(str, dev.actual_global_ip_addresses))
+        if self.app.base_model.network:
+            for dev in self.app.base_model.network.get_all_netdevs():
+                ips.extend(map(str, dev.actual_global_ip_addresses))
         if not ips:
             return None
         username = self.app.installer_user_name
@@ -225,6 +227,8 @@ class SubiquityServer(Application):
         "Shutdown",
         ]
 
+    supported_variants = ["server", "desktop"]
+
     def make_model(self):
         root = '/'
         if self.opts.dry_run:
@@ -253,7 +257,10 @@ class SubiquityServer(Application):
 
         self.error_reporter = ErrorReporter(
             self.context.child("ErrorReporter"), self.opts.dry_run, self.root)
-        self.prober = Prober(opts.machine_config, self.debug_flags)
+        if opts.machine_config == NOPROBERARG:
+            self.prober = None
+        else:
+            self.prober = Prober(opts.machine_config, self.debug_flags)
         self.kernel_cmdline = shlex.split(opts.kernel_cmdline)
         if opts.snaps_from_examples:
             connection = FakeSnapdConnection(
@@ -263,9 +270,13 @@ class SubiquityServer(Application):
                             os.path.dirname(__file__))),
                     "examples", "snaps"),
                 self.scale_factor)
-        else:
+            self.snapd = AsyncSnapd(connection)
+        elif os.path.exists(self.snapd_socket_path):
             connection = SnapdConnection(self.root, self.snapd_socket_path)
-        self.snapd = AsyncSnapd(connection)
+            self.snapd = AsyncSnapd(connection)
+        else:
+            log.info("no snapd socket found. Snap support is disabled")
+            self.snapd = None
         self.note_data_for_apport("SnapUpdated", str(self.updated))
         self.event_listeners = []
         self.autoinstall_config = None
@@ -567,14 +578,20 @@ class SubiquityServer(Application):
         await self.apply_autoinstall_config()
 
     def _network_change(self):
+        if not self.snapd:
+            return
         self.hub.broadcast('snapd-network-change')
 
     async def _proxy_set(self):
+        if not self.snapd:
+            return
         await run_in_thread(
             self.snapd.connection.configure_proxy, self.base_model.proxy)
         self.hub.broadcast('snapd-network-change')
 
     def restart(self):
+        if not self.snapd:
+            return
         cmdline = ['snap', 'run', 'subiquity.subiquity-server']
         if self.opts.dry_run:
             cmdline = [

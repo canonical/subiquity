@@ -83,6 +83,10 @@ class SubiquityClient(TuiApplication):
 
     snapd_socket_path = '/run/snapd.socket'
 
+    variant = "server"
+    cmdline = ['snap', 'run', 'subiquity']
+    dryrun_cmdline_module = 'subiquity.cmd.tui'
+
     from subiquity.client import controllers as controllers_mod
     project = "subiquity"
 
@@ -171,10 +175,10 @@ class SubiquityClient(TuiApplication):
             return
         if self.urwid_loop is not None:
             self.urwid_loop.stop()
-        cmdline = ['snap', 'run', 'subiquity']
+        cmdline = self.cmdline
         if self.opts.dry_run:
             cmdline = [
-                sys.executable, '-m', 'subiquity.cmd.tui',
+                sys.executable, '-m', self.dryrun_cmdline_module,
                 ] + sys.argv[1:] + ['--socket', self.opts.socket]
             if self.opts.server_pid is not None:
                 cmdline.extend(['--server-pid', self.opts.server_pid])
@@ -317,14 +321,18 @@ class SubiquityClient(TuiApplication):
                     print(line)
                 return
             await super().start()
-            journald_listen(
-                self.aio_loop,
-                [status.event_syslog_id],
-                self.controllers.Progress.event)
-            journald_listen(
-                self.aio_loop,
-                [status.log_syslog_id],
-                self.controllers.Progress.log_line)
+            # Progress uses systemd to collect and display the installation
+            # logs. Although some system don't have systemd, so we disable
+            # the progress page
+            if hasattr(self.controllers, "Progress"):
+                journald_listen(
+                    self.aio_loop,
+                    [status.event_syslog_id],
+                    self.controllers.Progress.event)
+                journald_listen(
+                    self.aio_loop,
+                    [status.log_syslog_id],
+                    self.controllers.Progress.log_line)
             if not status.cloud_init_ok:
                 self.add_global_overlay(CloudInitFail(self))
             self.error_reporter.load_reports()
@@ -435,7 +443,7 @@ class SubiquityClient(TuiApplication):
                 endpoint_names.append(c.endpoint_name)
         if endpoint_names:
             await self.client.meta.mark_configured.POST(endpoint_names)
-        await self.client.meta.client_variant.POST('server')
+        await self.client.meta.client_variant.POST(self.variant)
         self.controllers.index = index - 1
         self.next_screen()
 

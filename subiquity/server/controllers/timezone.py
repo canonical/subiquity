@@ -19,12 +19,20 @@ import subprocess
 from subiquity.common.apidef import API
 from subiquity.common.types import TimeZoneInfo
 from subiquity.server.controller import SubiquityController
+from shutil import which
+import os
 
 log = logging.getLogger('subiquity.server.controllers.timezone')
 
 
+def active_timedatectl():
+    return which('timedatectl') and os.path.exists('/run/systemd/system')
+
+
 def generate_possible_tzs():
     special_keys = ['', 'geoip']
+    if not active_timedatectl():
+        return special_keys
     tzcmd = ['timedatectl', 'list-timezones']
     list_tz_out = subprocess.check_output(tzcmd, universal_newlines=True)
     real_tzs = list_tz_out.splitlines()
