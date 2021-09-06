@@ -462,6 +462,10 @@ class SnapListView(BaseView):
                 "package, publisher and versions available."))
 
     def done(self, sender=None):
+        if not hasattr(self, 'selections_by_name'):
+            log.warning('failed to obtain a snaps selection')
+            return self.offer_retry()
+        
         log.debug("snaps to install %s", self.selections_by_name)
         self.controller.done(sorted(
             self.selections_by_name.values(),
