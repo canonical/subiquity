@@ -107,8 +107,17 @@ while ! scurl a/meta/status >& /dev/null ; do
 done
 scurl a/storage/has_bitlocker | jq -M '. [0].partitions[2]' | grep -q BitLocker
 
+# NOTE:
+# This test doesnt do much ATM but it will be useful when we have more complex scenarios to test with the server and client code.
+# Like generating a wsl.conf file and comparing it to the oracle.
+clean
+timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m system_setup.cmd.tui --autoinstall examples/autoinstall-system-setup.yaml --dry-run"
+
 python3 -m subiquity.cmd.schema > "$testschema"
 scripts/schema-cmp.py "autoinstall-schema.json" "$testschema"
+
+python3 -m system_setup.cmd.schema > "$testschema"
+scripts/schema-cmp.py "autoinstall-system-setup-schema.json" "$testschema" --ignore-tz
 
 set +x  # show PASS/FAIL as the last line of output
 echo 'Runtests all PASSED'
