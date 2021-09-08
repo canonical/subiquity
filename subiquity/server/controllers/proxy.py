@@ -17,9 +17,9 @@ import logging
 import os
 
 from subiquitycore.context import with_context
-from subiquitycore.pubsub import MessageChannels
 
 from subiquity.common.apidef import API
+from subiquity.common.types import InstallerChannels
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.proxy')
@@ -46,7 +46,7 @@ class ProxyController(SubiquityController):
             os.environ['http_proxy'] = os.environ['https_proxy'] = \
               self.model.proxy
             self._set_task = self.app.hub.broadcast(
-                MessageChannels.NETWORK_PROXY_SET)
+                InstallerChannels.NETWORK_PROXY_SET)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -68,5 +68,5 @@ class ProxyController(SubiquityController):
     async def POST(self, data: str):
         self.model.proxy = data
         os.environ['http_proxy'] = os.environ['https_proxy'] = data
-        self.app.hub.broadcast(MessageChannels.NETWORK_PROXY_SET)
+        self.app.hub.broadcast(InstallerChannels.NETWORK_PROXY_SET)
         self.configured()
