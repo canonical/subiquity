@@ -187,9 +187,13 @@ class SubiquityModel:
             event.set()
 
     async def wait_install(self):
+        if len(self._cur_install_model_names) == 0:
+            self._install_event.set()
         await self._install_event.wait()
 
     async def wait_postinstall(self):
+        if len(self._cur_postinstall_model_names) == 0:
+            self._postinstall_event.set()
         await self._postinstall_event.wait()
 
     async def wait_confirmation(self):
