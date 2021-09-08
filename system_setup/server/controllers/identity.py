@@ -41,7 +41,6 @@ class WSLIdentityController(IdentityController):
             identity_data = IdentityData(
                 realname=data.get('realname', ''),
                 username=data['username'],
-                hostname='',
                 crypted_password=data['password'],
                 )
             self.model.add_user(identity_data)

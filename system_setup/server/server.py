@@ -42,7 +42,7 @@ class SystemSetupServer(SubiquityServer):
         "Reporting",
         "Error",
         "WSLLocale",
-        "Identity",
+        "WSLIdentity",
         "WSLConfigurationBase",
         "WSLConfigurationAdvanced",
         "Configure",
