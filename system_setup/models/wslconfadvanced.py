@@ -18,7 +18,6 @@ import subprocess
 import attr
 
 from subiquitycore.utils import run_command
-from .wslconfbase import WSLConfigurationBase
 
 log = logging.getLogger('subiquity.models.wsl_configuration_advanced')
 
@@ -26,7 +25,7 @@ log = logging.getLogger('subiquity.models.wsl_configuration_advanced')
 
 
 @attr.s
-class WSLConfigurationAdvanced(WSLConfigurationBase):
+class WSLConfigurationAdvanced(object):
     gui_theme = attr.ib()
     gui_followwintheme = attr.ib()
     legacy_gui = attr.ib()
@@ -51,10 +50,6 @@ class WSLConfigurationAdvancedModel(object):
         d = {}
         # TODO: placholder settings; should be dynamically assgined using
         # ubuntu-wsl-integration
-        d['custom_path'] = result.custom_path
-        d['custom_mount_opt'] = result.custom_mount_opt
-        d['gen_host'] = result.gen_host
-        d['gen_resolvconf'] = result.gen_resolvconf
         d['interop_enabled'] = result.interop_enabled
         d['interop_appendwindowspath'] = result.interop_appendwindowspath
         d['gui_theme'] = result.gui_theme
@@ -80,19 +75,6 @@ class WSLConfigurationAdvancedModel(object):
                         stdout=subprocess.DEVNULL)
             run_command(["/usr/bin/ubuntuwsl", "update",
                          "WSL.automount.mountfstab", result.mountfstab],
-                        stdout=subprocess.DEVNULL)
-            run_command(["/usr/bin/ubuntuwsl", "update",
-                         "WSL.automount.root", result.custom_path],
-                        stdout=subprocess.DEVNULL)
-            run_command(["/usr/bin/ubuntuwsl", "update",
-                         "WSL.automount.options", result.custom_mount_opt],
-                        stdout=subprocess.DEVNULL)
-            run_command(["/usr/bin/ubuntuwsl", "update",
-                         "WSL.network.generatehosts", result.gen_host],
-                        stdout=subprocess.DEVNULL)
-            run_command(["/usr/bin/ubuntuwsl", "update",
-                         "WSL.network.generateresolvconf",
-                        result.gen_resolvconf],
                         stdout=subprocess.DEVNULL)
             run_command(["/usr/bin/ubuntuwsl", "update",
                          "WSL.interop.enabled",
