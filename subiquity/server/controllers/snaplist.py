@@ -24,10 +24,10 @@ from subiquitycore.async_helpers import (
     schedule_task,
     )
 from subiquitycore.context import with_context
-from subiquitycore.pubsub import MessageChannels
 
 from subiquity.common.apidef import API
 from subiquity.common.types import (
+    InstallerChannels,
     SnapCheckState,
     SnapInfo,
     SnapListResponse,
@@ -139,7 +139,7 @@ class SnapListController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.loader = self._make_loader()
-        self.app.hub.subscribe(MessageChannels.SNAPD_NETWORK_CHANGE,
+        self.app.hub.subscribe(InstallerChannels.SNAPD_NETWORK_CHANGE,
                                self.snapd_network_changed)
 
     def load_autoinstall_data(self, ai_data):

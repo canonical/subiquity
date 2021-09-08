@@ -19,9 +19,9 @@ import logging
 from curtin.config import merge_config
 
 from subiquitycore.context import with_context
-from subiquitycore.pubsub import MessageChannels
 
 from subiquity.common.apidef import API
+from subiquity.common.types import InstallerChannels
 from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger('subiquity.server.controllers.mirror')
@@ -46,7 +46,7 @@ class MirrorController(SubiquityController):
     def __init__(self, app):
         super().__init__(app)
         self.geoip_enabled = True
-        self.app.hub.subscribe(MessageChannels.GEOIP, self.on_geoip)
+        self.app.hub.subscribe(InstallerChannels.GEOIP, self.on_geoip)
         self.cc_event = asyncio.Event()
 
     def load_autoinstall_data(self, data):

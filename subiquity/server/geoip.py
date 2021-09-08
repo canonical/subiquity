@@ -22,7 +22,8 @@ from subiquitycore.async_helpers import (
     run_in_thread,
     SingleInstanceTask,
 )
-from subiquitycore.pubsub import MessageChannels
+
+from subiquity.common.types import InstallerChannels
 
 log = logging.getLogger('subiquity.common.geoip')
 
@@ -42,9 +43,9 @@ class GeoIP:
         self.tz = None
         self.check_state = CheckState.NOT_STARTED
         self.lookup_task = SingleInstanceTask(self.lookup)
-        self.app.hub.subscribe(MessageChannels.NETWORK_UP,
+        self.app.hub.subscribe(InstallerChannels.NETWORK_UP,
                                self.maybe_start_check)
-        self.app.hub.subscribe(MessageChannels.NETWORK_PROXY_SET,
+        self.app.hub.subscribe(InstallerChannels.NETWORK_PROXY_SET,
                                self.maybe_start_check)
 
     def maybe_start_check(self):
@@ -97,7 +98,7 @@ class GeoIP:
             self.tz = tz.text
 
         if changed:
-            self.app.hub.broadcast(MessageChannels.GEOIP)
+            self.app.hub.broadcast(InstallerChannels.GEOIP)
 
         return True
 
