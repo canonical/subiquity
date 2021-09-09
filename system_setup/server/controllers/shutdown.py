@@ -31,9 +31,13 @@ class SetupShutdownController(ShutdownController):
         self.app.controllers.Install = self.app.controllers.Configure
 
     def start(self):
-        # Do not copy logs to target
-        self.server_reboot_event.set()
+        self.app.aio_loop.create_task(self._wait_install())
         self.app.aio_loop.create_task(self._run())
+
+    async def _wait_install(self):
+        await self.app.controllers.Install.install_task
+        await self.app.controllers.Late.run_event.wait()
+        self.server_reboot_event.set()
 
     @with_context(description='mode={self.mode.name}')
     def shutdown(self, context):
