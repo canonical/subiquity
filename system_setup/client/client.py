@@ -43,7 +43,6 @@ class SystemSetupClient(SubiquityClient):
         if is_reconfigure(opts.dry_run):
             self.variant = "wsl_configuration"
             self.controllers = [
-                "Welcome",
                 "WSLConfigurationBase",
                 "WSLConfigurationAdvanced",
                 "Summary",
