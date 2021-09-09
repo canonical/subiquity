@@ -25,7 +25,6 @@ from typing import Dict, List, Optional, Union
 import attr
 
 from subiquitycore.models.network import NetDevInfo
-from subiquitycore.pubsub import CoreChannels
 
 
 class ErrorReportState(enum.Enum):
@@ -336,12 +335,6 @@ class TimeZoneInfo:
 class ShutdownMode(enum.Enum):
     REBOOT = enum.auto()
     POWEROFF = enum.auto()
-
-
-class InstallerChannels(CoreChannels):
-    NETWORK_PROXY_SET = 'network-proxy-set'
-    SNAPD_NETWORK_CHANGE = 'snapd-network-change'
-    GEOIP = 'geoip'
 
 
 @attr.s(auto_attribs=True)
