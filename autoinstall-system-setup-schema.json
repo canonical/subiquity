@@ -83,7 +83,6 @@
                     "type": "boolean"
                 }
             },
-            "required": [],
             "additionalProperties": false
         },
         "wslconfadvanced": {
@@ -120,7 +119,6 @@
                     "type": "boolean"
                 }
             },
-            "required": [],
             "additionalProperties": false
         },
         "late-commands": {

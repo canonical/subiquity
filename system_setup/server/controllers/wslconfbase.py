@@ -44,7 +44,6 @@ class WSLConfigurationBaseController(SubiquityController):
             'gen_host': {'type': 'boolean'},
             'gen_resolvconf': {'type': 'boolean'},
             },
-        'required': [],
         'additionalProperties': False,
         }
 
