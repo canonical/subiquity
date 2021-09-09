@@ -57,7 +57,6 @@ from subiquity.common.types import (
     ApplicationState,
     ApplicationStatus,
     ErrorReportRef,
-    InstallerChannels,
     KeyFingerprint,
     LiveSessionSSHInfo,
     PasswordKind,
@@ -69,6 +68,7 @@ from subiquity.models.subiquity import (
 from subiquity.server.controller import SubiquityController
 from subiquity.server.geoip import GeoIP
 from subiquity.server.errors import ErrorController
+from subiquity.server.types import InstallerChannels
 from subiquitycore.snapd import (
     AsyncSnapd,
     FakeSnapdConnection,

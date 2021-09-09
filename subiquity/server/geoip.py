@@ -23,7 +23,7 @@ from subiquitycore.async_helpers import (
     SingleInstanceTask,
 )
 
-from subiquity.common.types import InstallerChannels
+from subiquity.server.types import InstallerChannels
 
 log = logging.getLogger('subiquity.common.geoip')
 
