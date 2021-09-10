@@ -246,18 +246,20 @@ class Bootloader(enum.Enum):
 class Partition:
     size: int
     number: int
-    annotations: List[str]
+    annotations: Optional[List[str]]
+    mount: Optional[str] = None
+    format: Optional[str] = None
 
 
 @attr.s(auto_attribs=True)
 class Disk:
     id: str
-    label: str
-    type: str
-    size: int
-    usage_labels: List[str]
     partitions: List[Partition]
-    ok_for_guided: bool
+    label: Optional[str]
+    type: Optional[str]
+    size: Optional[int]
+    usage_labels: Optional[List[str]]
+    ok_for_guided: Optional[bool]
 
 
 @attr.s(auto_attribs=True)
@@ -283,6 +285,12 @@ class StorageResponse:
     config: Optional[list] = None
     blockdev: Optional[dict] = None
     dasd: Optional[dict] = None
+
+
+@attr.s(auto_attribs=True)
+class StorageResponseV2:
+    disks: List[Disk]
+    error_report: Optional[ErrorReportRef] = None
 
 
 @attr.s(auto_attribs=True)

@@ -49,6 +49,7 @@ from subiquity.common.types import (
     GuidedStorageResponse,
     ProbeStatus,
     StorageResponse,
+    StorageResponseV2,
     )
 from subiquity.models.filesystem import (
     align_down,
@@ -291,6 +292,14 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     bitlockered_disks.append(disk)
                     break
         return [labels.for_client(disk) for disk in bitlockered_disks]
+
+    async def v2_GET(self) -> StorageResponseV2:
+        disks = self.model._all(type='disk')
+        return StorageResponseV2(disks=[labels.for_client(d) for d in disks])
+
+    async def v2_reformat_disk_POST(self, disk_id: str) -> StorageResponseV2:
+        self.reformat(self.model._one(id=disk_id))
+        return await self.v2_GET()
 
     @with_context(name='probe_once', description='restricted={restricted}')
     async def _probe_once(self, *, context, restricted):

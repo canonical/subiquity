@@ -45,6 +45,7 @@ from subiquity.common.types import (
     SSHData,
     LiveSessionSSHInfo,
     StorageResponse,
+    StorageResponseV2,
     TimeZoneInfo,
     WLANSupportInstallState,
     ZdevInfo,
@@ -236,6 +237,18 @@ class API:
 
         class has_bitlocker:
             def GET() -> List[Disk]: ...
+
+        class v2:
+            def GET() -> StorageResponseV2: ...
+
+            class reformat_disk:
+                def POST(disk_id: str) -> StorageResponseV2: ...
+
+            # def add_partition(disk_id: str, partition: Partition) \
+            #     -> StorageResponseV2: ...
+
+            # def edit_partition(partition: Partition) \
+            #     -> StorageResponseV2: ...
 
     class snaplist:
         def GET(wait: bool = False) -> SnapListResponse: ...
