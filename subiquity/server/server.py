@@ -424,7 +424,9 @@ class SubiquityServer(Application):
 
     def load_autoinstall_config(self, *, only_early):
         log.debug("load_autoinstall_config only_early %s", only_early)
-        if self.opts.autoinstall is None:
+        if not self.opts.autoinstall:
+            # autoinstall is None -> no autoinstall file supplied or found
+            # autoinstall is empty -> explicitly disabling autoinstall
             return
         with open(self.opts.autoinstall) as fp:
             self.autoinstall_config = yaml.safe_load(fp)
@@ -476,16 +478,17 @@ class SubiquityServer(Application):
             init.read_cfg()
             init.fetch(existing="trust")
             self.cloud = init.cloudify()
-            autoinstall_path = '/autoinstall.yaml'
-            if 'autoinstall' in self.cloud.cfg:
-                if not os.path.exists(autoinstall_path):
-                    atomic_helper.write_file(
-                        autoinstall_path,
-                        safeyaml.dumps(
-                            self.cloud.cfg['autoinstall']).encode('utf-8'),
-                        mode=0o600)
-            if os.path.exists(autoinstall_path):
-                self.opts.autoinstall = autoinstall_path
+            if self.opts.autoinstall is None:
+                autoinstall_path = '/autoinstall.yaml'
+                if 'autoinstall' in self.cloud.cfg:
+                    if not os.path.exists(autoinstall_path):
+                        atomic_helper.write_file(
+                            autoinstall_path,
+                            safeyaml.dumps(
+                                self.cloud.cfg['autoinstall']).encode('utf-8'),
+                            mode=0o600)
+                if os.path.exists(autoinstall_path):
+                    self.opts.autoinstall = autoinstall_path
         else:
             log.debug(
                 "cloud-init status: %r, assumed disabled",
