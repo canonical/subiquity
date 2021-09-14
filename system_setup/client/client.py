@@ -15,6 +15,7 @@
 
 import logging
 import sys
+from system_setup.common.helpers import is_reconfigure
 
 from subiquity.client.client import SubiquityClient
 

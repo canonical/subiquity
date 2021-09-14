@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import subprocess
 
 config_ref = {
@@ -66,3 +67,17 @@ def get_windows_locale():
             return tmp_code
     except OSError:
         return None
+
+
+def is_reconfigure(is_dryrun):
+    is_dryrun_reconfigure = is_dryrun and \
+        os.getenv("DRYRUN_RECONFIG") == "true"
+    count = 0
+    with open('/etc/passwd', 'r') as f:
+        for line in f:
+            # check every normal user except nobody (65534)
+            if int(line.split(':')[2]) >= 1000 and \
+               int(line.split(':')[2]) != 65534:
+                count += 1
+    is_none_dryrun_normaluser = not is_dryrun and count != 0
+    return is_dryrun_reconfigure or is_none_dryrun_normaluser
