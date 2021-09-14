@@ -116,7 +116,13 @@ class MetaController:
     async def client_variant_POST(self, variant: str) -> None:
         if variant not in self.app.supported_variants:
             raise ValueError(f'unrecognized client variant {variant}')
-        self.app.base_model.set_source_variant(variant)
+        from subiquity.models.source import fake_entries
+        if variant in fake_entries:
+            if self.app.base_model.source.current.variant != variant:
+                self.app.base_model.source.current = fake_entries[variant]
+            self.app.controllers.Source.configured()
+        else:
+            self.app.base_model.set_source_variant(variant)
 
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
         ips = []
@@ -170,6 +176,7 @@ INSTALL_MODEL_NAMES = ModelNames({
     "mirror",
     "network",
     "proxy",
+    "source",
     })
 
 POSTINSTALL_MODEL_NAMES = ModelNames({
@@ -214,6 +221,7 @@ class SubiquityServer(Application):
         "Kernel",
         "Keyboard",
         "Zdev",
+        "Source",
         "Network",
         "Proxy",
         "Mirror",

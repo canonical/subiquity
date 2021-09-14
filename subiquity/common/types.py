@@ -169,6 +169,22 @@ class KeyboardSetup:
 
 
 @attr.s(auto_attribs=True)
+class SourceSelection:
+    name: str
+    description: str
+    id: str
+    size: int
+    variant: str
+    default: bool
+
+
+@attr.s(auto_attribs=True)
+class SourceSelectionAndSetting:
+    sources: List[SourceSelection]
+    current_id: str
+
+
+@attr.s(auto_attribs=True)
 class ZdevInfo:
     id: str
     type: str
