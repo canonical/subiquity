@@ -1,0 +1,4 @@
+#!/bin/sh
+
+export PYTHONPATH=$PYTHONPATH:$SNAP/lib/python3.8/site-packages
+$PYTHON -m subiquity.cmd.server
