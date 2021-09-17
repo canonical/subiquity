@@ -320,6 +320,23 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.create_partition(disk, spec, flag, wipe, grub_device)
         return await self.v2_GET()
 
+    async def v2_edit_partition_POST(self, disk_id: str,
+                                     partition: Partition) \
+             -> StorageResponseV2:
+
+        disk = self.model._one(id=disk_id)
+        current_partition = None
+        for p in disk.partitions():
+            if p._number == partition.number:
+                current_partition = p
+        if not current_partition:
+            raise ValueError(f'Partition {partition.number} on '
+                             + f'{disk_id} not found')
+
+        partition.size = current_partition.size
+        self.delete_partition(current_partition)
+        return await self.v2_add_partition_POST(disk_id, partition)
+
     @with_context(name='probe_once', description='restricted={restricted}')
     async def _probe_once(self, *, context, restricted):
         if restricted:
