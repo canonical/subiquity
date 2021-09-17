@@ -47,6 +47,7 @@ from subiquity.common.types import (
     Disk,
     GuidedChoice,
     GuidedStorageResponse,
+    Partition,
     ProbeStatus,
     StorageResponse,
     StorageResponseV2,
@@ -299,6 +300,24 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_reformat_disk_POST(self, disk_id: str) -> StorageResponseV2:
         self.reformat(self.model._one(id=disk_id))
+        return await self.v2_GET()
+
+    async def v2_add_partition_POST(self, disk_id: str, partition: Partition) \
+            -> StorageResponseV2:
+        disk = self.model._one(id=disk_id)
+        size = partition.size
+        if not size:
+            size = disk.free_for_partitions
+        flag = ""
+        wipe = "superblock"
+        grub_device = False
+        spec = {
+            "size": size,
+            "fstype": partition.format,
+            "mount": partition.mount
+        }
+
+        self.create_partition(disk, spec, flag, wipe, grub_device)
         return await self.v2_GET()
 
     @with_context(name='probe_once', description='restricted={restricted}')

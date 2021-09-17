@@ -36,6 +36,7 @@ from subiquity.common.types import (
     KeyboardSetup,
     IdentityData,
     NetworkStatus,
+    Partition,
     RefreshStatus,
     ShutdownMode,
     SnapInfo,
@@ -244,10 +245,12 @@ class API:
             class reformat_disk:
                 def POST(disk_id: str) -> StorageResponseV2: ...
 
-            # def add_partition(disk_id: str, partition: Partition) \
-            #     -> StorageResponseV2: ...
+            class add_partition:
+                def POST(disk_id: str, partition: Partition) \
+                    -> StorageResponseV2: ...
 
-            # def edit_partition(partition: Partition) \
+            # class edit_partition:
+            # def POST(partition: Partition) \
             #     -> StorageResponseV2: ...
 
     class snaplist:
