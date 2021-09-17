@@ -67,7 +67,7 @@ class NetworkModel(NetworkModel):
                 }
         return r
 
-    def target_packages(self):
+    async def target_packages(self):
         if self.needs_wpasupplicant:
             return ['wpasupplicant']
         else:

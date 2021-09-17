@@ -254,12 +254,12 @@ class SubiquityModel:
         merge_config(userdata, config)
         return userdata
 
-    def target_packages(self):
+    async def target_packages(self):
         packages = list(self.packages)
         for model_name in self._postinstall_model_names.all():
             meth = getattr(getattr(self, model_name), 'target_packages', None)
             if meth is not None:
-                packages.extend(meth())
+                packages.extend(await meth())
         return packages
 
     def _cloud_init_files(self):

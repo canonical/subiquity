@@ -29,7 +29,7 @@ class SSHModel:
         # we go back to it.
         self.ssh_import_id = ''
 
-    def target_packages(self):
+    async def target_packages(self):
         if self.install_server:
             return ['openssh-server']
         else:
