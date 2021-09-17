@@ -298,6 +298,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         disks = self.model._all(type='disk')
         return StorageResponseV2(disks=[labels.for_client(d) for d in disks])
 
+    async def v2_POST(self):
+        await self.configured()
+
     async def v2_reformat_disk_POST(self, disk_id: str) -> StorageResponseV2:
         self.reformat(self.model._one(id=disk_id))
         return await self.v2_GET()
