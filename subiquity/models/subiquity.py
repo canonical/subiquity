@@ -254,6 +254,14 @@ class SubiquityModel:
         merge_config(userdata, config)
         return userdata
 
+    def target_packages(self):
+        packages = list(self.packages)
+        for model_name in self._postinstall_model_names.all():
+            meth = getattr(getattr(self, model_name), 'target_packages', None)
+            if meth is not None:
+                packages.extend(meth())
+        return packages
+
     def _cloud_init_files(self):
         # TODO, this should be moved to the in-target cloud-config seed so on
         # first boot of the target, it reconfigures datasource_list to none

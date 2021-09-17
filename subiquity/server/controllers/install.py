@@ -261,13 +261,7 @@ class InstallController(SubiquityController):
             {"autoinstall": self.app.make_autoinstall()})
         write_file(autoinstall_path, autoinstall_config, mode=0o600)
         await self.configure_cloud_init(context=context)
-        packages = []
-        if self.model.ssh.install_server:
-            packages.append('openssh-server')
-        if self.model.network.needs_wpasupplicant:
-            packages.append('wpasupplicant')
-        packages.extend(self.app.base_model.packages)
-        for package in packages:
+        for package in self.app.base_model.target_packages():
             await self.install_package(context=context, package=package)
 
         if self.model.network.has_network:

@@ -182,6 +182,7 @@ INSTALL_MODEL_NAMES = ModelNames({
 POSTINSTALL_MODEL_NAMES = ModelNames({
     "identity",
     "locale",
+    "network",
     "packages",
     "snaplist",
     "ssh",
