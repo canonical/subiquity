@@ -294,6 +294,12 @@ class StorageResponseV2:
 
 
 @attr.s(auto_attribs=True)
+class ModifyPartitionV2:
+    disk_id: str
+    partition: Partition
+
+
+@attr.s(auto_attribs=True)
 class IdentityData:
     realname: str = ''
     username: str = ''

@@ -47,7 +47,7 @@ from subiquity.common.types import (
     Disk,
     GuidedChoice,
     GuidedStorageResponse,
-    Partition,
+    ModifyPartitionV2,
     ProbeStatus,
     StorageResponse,
     StorageResponseV2,
@@ -305,10 +305,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.reformat(self.model._one(id=disk_id))
         return await self.v2_GET()
 
-    async def v2_add_partition_POST(self, disk_id: str, partition: Partition) \
+    async def v2_add_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
-        disk = self.model._one(id=disk_id)
-        size = partition.size
+        disk = self.model._one(id=data.disk_id)
+        size = data.partition.size
         if not size:
             size = disk.free_for_partitions
         flag = ""
@@ -316,29 +316,28 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         grub_device = False
         spec = {
             "size": size,
-            "fstype": partition.format,
-            "mount": partition.mount
+            "fstype": data.partition.format,
+            "mount": data.partition.mount
         }
 
         self.create_partition(disk, spec, flag, wipe, grub_device)
         return await self.v2_GET()
 
-    async def v2_edit_partition_POST(self, disk_id: str,
-                                     partition: Partition) \
-             -> StorageResponseV2:
+    async def v2_edit_partition_POST(self, data: ModifyPartitionV2) \
+            -> StorageResponseV2:
 
-        disk = self.model._one(id=disk_id)
+        disk = self.model._one(id=data.disk_id)
         current_partition = None
         for p in disk.partitions():
-            if p._number == partition.number:
+            if p._number == data.partition.number:
                 current_partition = p
         if not current_partition:
-            raise ValueError(f'Partition {partition.number} on '
-                             + f'{disk_id} not found')
+            raise ValueError(f'Partition {data.partition.number} on '
+                             + f'{data.disk_id} not found')
 
-        partition.size = current_partition.size
+        data.partition.size = current_partition.size
         self.delete_partition(current_partition)
-        return await self.v2_add_partition_POST(disk_id, partition)
+        return await self.v2_add_partition_POST(data)
 
     @with_context(name='probe_once', description='restricted={restricted}')
     async def _probe_once(self, *, context, restricted):
