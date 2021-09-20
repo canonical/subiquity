@@ -250,6 +250,15 @@ class SubiquityClient(TuiApplication):
                 app_status = await self.client.meta.status.GET(
                     cur=app_state)
             except aiohttp.ClientError:
+                try:
+                    fp = open(self.state_path("server-state"))
+                except FileNotFoundError:
+                    pass
+                else:
+                    with fp:
+                        state = getattr(ApplicationState, fp.read(), None)
+                    if state == ApplicationState.EXITED:
+                        self.exit()
                 await asyncio.sleep(1)
                 continue
 
@@ -258,9 +267,6 @@ class SubiquityClient(TuiApplication):
             print('start: ' + event["MESSAGE"])
         elif event['SUBIQUITY_EVENT_TYPE'] == 'finish':
             print('finish: ' + event["MESSAGE"])
-            context_name = event.get('SUBIQUITY_CONTEXT_NAME', '')
-            if context_name == 'subiquity/Shutdown/shutdown':
-                self.exit()
 
     async def connect(self):
 
