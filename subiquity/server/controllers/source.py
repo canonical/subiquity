@@ -72,12 +72,12 @@ class SourceController(SubiquityController):
             ],
             self.model.current.id)
 
-    def configured(self):
-        super().configured()
+    async def configured(self):
+        await super().configured()
         self.app.base_model.set_source_variant(self.model.current.variant)
 
     async def POST(self, source_id: str) -> None:
         for source in self.model.sources:
             if source.id == source_id:
                 self.model.current = source
-        self.configured()
+        await self.configured()

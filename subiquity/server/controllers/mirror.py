@@ -87,4 +87,4 @@ class MirrorController(SubiquityController):
 
     async def POST(self, data: str):
         self.model.set_mirror(data)
-        self.configured()
+        await self.configured()

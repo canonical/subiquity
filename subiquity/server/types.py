@@ -20,3 +20,4 @@ class InstallerChannels(CoreChannels):
     NETWORK_PROXY_SET = 'network-proxy-set'
     SNAPD_NETWORK_CHANGE = 'snapd-network-change'
     GEOIP = 'geoip'
+    CONFIGURED = 'configured'

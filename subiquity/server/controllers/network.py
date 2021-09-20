@@ -280,15 +280,15 @@ class NetworkController(BaseNetworkController, SubiquityController):
             devices=[dev.netdev_info() for dev in devices],
             wlan_support_install_state=self.wlan_support_install_state())
 
-    def configured(self):
+    async def configured(self):
         self.model.has_network = bool(
             self.network_event_receiver.default_routes)
         self.model.needs_wpasupplicant = (
             self.wlan_support_install_state() == WLANSupportInstallState.DONE)
-        super().configured()
+        await super().configured()
 
     async def POST(self) -> None:
-        self.configured()
+        await self.configured()
 
     async def global_addresses_GET(self) -> List[str]:
         ips = []

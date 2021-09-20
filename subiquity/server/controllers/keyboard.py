@@ -222,7 +222,7 @@ class KeyboardController(SubiquityController):
         if data != self.model.setting:
             self.model.setting = data
             await self.set_keyboard()
-        self.configured()
+        await self.configured()
 
     async def needs_toggle_GET(self, layout_code: str,
                                variant_code: str) -> bool:

@@ -69,4 +69,4 @@ class ProxyController(SubiquityController):
         self.model.proxy = data
         os.environ['http_proxy'] = os.environ['https_proxy'] = data
         self.app.hub.broadcast(InstallerChannels.NETWORK_PROXY_SET)
-        self.configured()
+        await self.configured()

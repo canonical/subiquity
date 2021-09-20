@@ -77,4 +77,4 @@ class IdentityController(SubiquityController):
 
     async def POST(self, data: IdentityData):
         self.model.add_user(data)
-        self.configured()
+        await self.configured()
