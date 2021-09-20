@@ -12,11 +12,7 @@ class WSLConfigurationBaseController(SubiquityTuiController):
 
     async def make_ui(self):
         data = await self.endpoint.GET()
-        variant = "wsl_setup"
-        onsite_variant = getattr(self.app, "variant")
-        if onsite_variant is not None:
-            variant = onsite_variant
-        return WSLConfigurationBaseView(self, data, variant)
+        return WSLConfigurationBaseView(self, data)
 
     def run_answers(self):
         if all(elem in self.answers for elem in

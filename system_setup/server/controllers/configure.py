@@ -33,6 +33,7 @@ class ConfigureController(SubiquityController):
 
     def __init__(self, app):
         super().__init__(app)
+        self.app = app
         self.model = app.base_model
 
     def start(self):

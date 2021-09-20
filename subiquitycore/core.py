@@ -72,9 +72,16 @@ class Application:
         self.hub = MessageHub()
         self.aio_loop = asyncio.get_event_loop()
         self.aio_loop.set_exception_handler(self._exception_handler)
-        self.controllers = ControllerSet(
-            self.controllers_mod, self.controllers, init_args=(self,))
+        self.load_controllers(self.controllers)
         self.context = Context.new(self)
+
+    def load_controllers(self, controllers):
+        """ Load the corresponding list of controllers
+
+        Those will need to be restarted if already started """
+        self.controllers = ControllerSet(
+            self.controllers_mod, controllers,
+            init_args=(self,))
 
     def _exception_handler(self, loop, context):
         exc = context.get('exception')

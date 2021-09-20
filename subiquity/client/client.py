@@ -114,6 +114,8 @@ class SubiquityClient(TuiApplication):
         "Progress",
         ]
 
+    variant_to_controllers = {}
+
     def __init__(self, opts):
         if is_linux_tty():
             self.input_filter = KeyCodesFilter()
@@ -321,6 +323,16 @@ class SubiquityClient(TuiApplication):
                             ])
                     print(line)
                 return
+
+            # Get the variant from the server and reload desired
+            # controllers if an override exists
+            variant = await self.client.meta.client_variant.GET()
+            if variant != self.variant:
+                self.variant = variant
+                controllers = self.variant_to_controllers.get(variant)
+                if controllers:
+                    self.load_controllers(controllers)
+
             await super().start()
             # Progress uses systemd to collect and display the installation
             # logs. Although some system don't have systemd, so we disable

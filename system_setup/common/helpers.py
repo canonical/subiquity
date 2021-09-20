@@ -18,14 +18,15 @@ import os
 
 
 def is_reconfigure(is_dryrun):
-    is_dryrun_reconfigure = is_dryrun and \
-        os.getenv("DRYRUN_RECONFIG") == "true"
-    count = 0
+    if is_dryrun and \
+                 os.getenv("DRYRUN_RECONFIG") == "true":
+        return True
+    if_normaluser = False
     with open('/etc/passwd', 'r') as f:
         for line in f:
             # check every normal user except nobody (65534)
             if int(line.split(':')[2]) >= 1000 and \
                int(line.split(':')[2]) != 65534:
-                count += 1
-    is_none_dryrun_normaluser = not is_dryrun and count != 0
-    return is_dryrun_reconfigure or is_none_dryrun_normaluser
+                if_normaluser = True
+                break
+    return not is_dryrun and if_normaluser
