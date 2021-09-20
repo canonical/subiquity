@@ -261,12 +261,7 @@ class InstallController(SubiquityController):
             {"autoinstall": self.app.make_autoinstall()})
         write_file(autoinstall_path, autoinstall_config, mode=0o600)
         await self.configure_cloud_init(context=context)
-        packages = []
-        if self.model.ssh.install_server:
-            packages.append('openssh-server')
-        if self.model.network.needs_wpasupplicant:
-            packages.append('wpasupplicant')
-        packages.extend(self.app.base_model.packages)
+        packages = await self.get_target_packages(context=context)
         for package in packages:
             await self.install_package(context=context, package=package)
 
@@ -279,6 +274,10 @@ class InstallController(SubiquityController):
     @with_context(description="configuring cloud-init")
     async def configure_cloud_init(self, context):
         await run_in_thread(self.model.configure_cloud_init)
+
+    @with_context(description="calculating extra packages to install")
+    async def get_target_packages(self, context):
+        return await self.app.base_model.target_packages()
 
     @with_context(
         name="install_{package}",

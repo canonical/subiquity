@@ -66,3 +66,9 @@ class NetworkModel(NetworkModel):
                 'permissions': '0600',
                 }
         return r
+
+    async def target_packages(self):
+        if self.needs_wpasupplicant:
+            return ['wpasupplicant']
+        else:
+            return []

@@ -28,3 +28,9 @@ class SSHModel:
         # we store the imported id so that we can re-fill the form if
         # we go back to it.
         self.ssh_import_id = ''
+
+    async def target_packages(self):
+        if self.install_server:
+            return ['openssh-server']
+        else:
+            return []
