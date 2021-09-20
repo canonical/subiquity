@@ -8,7 +8,7 @@ validate () {
     mode="install"
     [ $# -gt 0 ] && mode="$1"
 
-    if [ "${mode}" = "install" ]; then 
+    if [ "${mode}" = "install" ]; then
         python3 scripts/validate-yaml.py .subiquity/subiquity-curtin-install.conf
         if [ ! -e .subiquity/subiquity-client-debug.log ] || [ ! -e .subiquity/subiquity-server-debug.log ]; then
             echo "log file not created"
@@ -81,8 +81,7 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
                                --kernel-cmdline 'autoinstall'"
 validate
 python3 scripts/check-yaml-fields.py .subiquity/subiquity-curtin-install.conf \
-        debconf_selections.subiquity='"eek"'
-python3 scripts/check-yaml-fields.py .subiquity/subiquity-curtin-install.conf \
+        debconf_selections.subiquity='"eek"' \
         storage.config[-1].options='"errors=remount-ro"'
 python3 scripts/check-yaml-fields.py <(python3 scripts/check-yaml-fields.py .subiquity/etc/cloud/cloud.cfg.d/99-installer.cfg datasource.None.userdata_raw) \
         locale='"en_GB.UTF-8"' \
@@ -101,10 +100,6 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
                                --dry-run --machine-config examples/simple.json --kernel-cmdline 'autoinstall'"
 validate
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
-
-timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoinstall examples/autoinstall.yaml \
-                               --dry-run --machine-config examples/existing-partitions.json --bootloader bios \
-                               --kernel-cmdline 'autoinstall'"
 
 timeout 30 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.server --dry-run --bootloader uefi --machine-config examples/win10.json" &
 while ! scurl a/meta/status >& /dev/null ; do
