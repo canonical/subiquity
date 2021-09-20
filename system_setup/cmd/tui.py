@@ -89,31 +89,41 @@ def main():
     from system_setup.client.client import SystemSetupClient
     parser = make_client_args_parser()
     args = sys.argv[1:]
-    # TODO: make that a common helper between subiquity and system_setup
+
+    need_start_server = False
+    server_args = []
+    server_output_dir = "/var/log/installer"
     if '--dry-run' in args:
         opts, unknown = parser.parse_known_args(args)
         if opts.socket is None:
-            os.makedirs('.subiquity', exist_ok=True)
-            sock_path = '.subiquity/socket'
+            need_start_server = True
+            server_output_dir = '/tmp/.subiquity'
+            sock_path = os.path.join(server_output_dir, 'socket')
             opts.socket = sock_path
             server_args = ['--dry-run', '--socket=' + sock_path] + unknown
-            server_parser = make_server_args_parser()
-            server_parser.parse_args(server_args)  # just to check
-            server_output = open('.subiquity/server-output', 'w')
-            server_cmd = [sys.executable, '-m', 'system_setup.cmd.server'] + \
-                server_args
-            server_proc = subprocess.Popen(
-                server_cmd, stdout=server_output, stderr=subprocess.STDOUT)
-            opts.server_pid = str(server_proc.pid)
-            print("running server pid {}".format(server_proc.pid))
-        elif opts.server_pid is not None:
-            print("reconnecting to server pid {}".format(opts.server_pid))
         else:
             opts = parser.parse_args(args)
     else:
         opts = parser.parse_args(args)
         if opts.socket is None:
+            need_start_server = True
             opts.socket = '/run/subiquity/socket'
+
+    os.makedirs(server_output_dir, exist_ok=True)
+    server_output = open(os.path.join(server_output_dir, 'server-output'), 'w')
+
+    if need_start_server:
+        server_parser = make_server_args_parser()
+        server_parser.parse_args(server_args)  # just to check
+        server_cmd = [sys.executable, '-m', 'system_setup.cmd.server'] + \
+            server_args
+        server_proc = subprocess.Popen(
+            server_cmd, stdout=server_output, stderr=subprocess.STDOUT)
+        opts.server_pid = str(server_proc.pid)
+        print("running server pid {}".format(server_proc.pid))
+    elif opts.server_pid is not None:
+        print("reconnecting to server pid {}".format(opts.server_pid))
+
     os.makedirs(os.path.basename(opts.socket), exist_ok=True)
     logdir = LOGDIR
     if opts.dry_run:
