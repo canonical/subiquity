@@ -330,20 +330,30 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.create_partition(disk, spec, flag, wipe, grub_device)
         return await self.v2_GET()
 
+    def get_partition(self, disk_id, partition_number):
+        disk = self.model._one(id=disk_id)
+        partition = None
+        for p in disk.partitions():
+            if p._number == partition_number:
+                partition = p
+        if not partition:
+            raise ValueError(f'Partition {partition_number} on '
+                             + f'{disk_id} not found')
+        return partition
+
+    async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \
+            -> StorageResponseV2:
+
+        partition = self.get_partition(data.disk_id, data.partition.number)
+        self.delete_partition(partition)
+        return await self.v2_GET()
+
     async def v2_edit_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
 
-        disk = self.model._one(id=data.disk_id)
-        current_partition = None
-        for p in disk.partitions():
-            if p._number == data.partition.number:
-                current_partition = p
-        if not current_partition:
-            raise ValueError(f'Partition {data.partition.number} on '
-                             + f'{data.disk_id} not found')
-
-        data.partition.size = current_partition.size
-        self.delete_partition(current_partition)
+        partition = self.get_partition(data.disk_id, data.partition.number)
+        data.partition.size = partition.size
+        self.delete_partition(partition)
         return await self.v2_add_partition_POST(data)
 
     @with_context(name='probe_once', description='restricted={restricted}')
