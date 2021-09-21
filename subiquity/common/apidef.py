@@ -253,6 +253,10 @@ class API:
                 def POST(data: Payload[ModifyPartitionV2]) \
                     -> StorageResponseV2: ...
 
+            class delete_partition:
+                def POST(data: Payload[ModifyPartitionV2]) \
+                    -> StorageResponseV2: ...
+
             class edit_partition:
                 def POST(data: Payload[ModifyPartitionV2]) \
                     -> StorageResponseV2: ...
