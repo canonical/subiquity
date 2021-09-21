@@ -246,6 +246,9 @@ class API:
             class guided:
                 def POST(choice: GuidedChoice) -> StorageResponseV2: ...
 
+            class reset:
+                def POST() -> StorageResponseV2: ...
+
             class reformat_disk:
                 def POST(disk_id: str) -> StorageResponseV2: ...
 
