@@ -304,6 +304,11 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_POST(self):
         await self.configured()
 
+    async def v2_reset_POST(self) -> StorageResponseV2:
+        log.info("Resetting Filesystem model")
+        self.model.reset()
+        return await self.v2_GET()
+
     async def v2_guided_POST(self, choice: GuidedChoice) -> StorageResponseV2:
         await self.guided(choice)
         return await self.v2_GET()
