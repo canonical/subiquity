@@ -181,6 +181,21 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                 mount="/",
                 ))
 
+    async def guided(self, choice):
+        disk = self.model._one(id=choice.disk_id)
+        if choice.use_lvm:
+            lvm_options = None
+            if choice.password is not None:
+                lvm_options = {
+                    'encrypt': True,
+                    'luks_options': {
+                        'password': choice.password,
+                        },
+                    }
+            self.guided_lvm(disk, lvm_options)
+        else:
+            self.guided_direct(disk)
+
     async def _probe_response(self, wait, resp_cls):
         if self._probe_task.task is None or not self._probe_task.task.done():
             if wait:
@@ -252,19 +267,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def guided_POST(self, choice: Optional[GuidedChoice]) \
             -> StorageResponse:
         if choice is not None:
-            disk = self.model._one(id=choice.disk_id)
-            if choice.use_lvm:
-                lvm_options = None
-                if choice.password is not None:
-                    lvm_options = {
-                        'encrypt': True,
-                        'luks_options': {
-                            'password': choice.password,
-                            },
-                        }
-                self.guided_lvm(disk, lvm_options)
-            else:
-                self.guided_direct(disk)
+            await self.guided(choice)
         return await self.GET()
 
     async def reset_POST(self, context, request) -> StorageResponse:
@@ -300,6 +303,10 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_POST(self):
         await self.configured()
+
+    async def v2_guided_POST(self, choice: GuidedChoice) -> StorageResponseV2:
+        await self.guided(choice)
+        return await self.v2_GET()
 
     async def v2_reformat_disk_POST(self, disk_id: str) -> StorageResponseV2:
         self.reformat(self.model._one(id=disk_id))
