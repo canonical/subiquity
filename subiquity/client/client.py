@@ -229,6 +229,22 @@ class SubiquityClient(TuiApplication):
             answer = await run_in_thread(input)
         await self.confirm_install()
 
+    async def _status_get(self, cur=None):
+        while True:
+            try:
+                return await self.client.meta.status.GET(cur=cur)
+            except aiohttp.ClientError:
+                try:
+                    fp = open(self.state_path("server-state"))
+                except FileNotFoundError:
+                    pass
+                else:
+                    with fp:
+                        state = getattr(ApplicationState, fp.read(), None)
+                    if state == ApplicationState.EXITED:
+                        self.exit()
+                await asyncio.sleep(1)
+
     async def noninteractive_watch_app_state(self, initial_status):
         app_status = initial_status
         confirm_task = None
@@ -246,21 +262,7 @@ class SubiquityClient(TuiApplication):
                 print("An error occurred. Press enter to start a shell")
                 await run_in_thread(input)
                 os.execvp("/bin/bash", ["/bin/bash"])
-            try:
-                app_status = await self.client.meta.status.GET(
-                    cur=app_state)
-            except aiohttp.ClientError:
-                try:
-                    fp = open(self.state_path("server-state"))
-                except FileNotFoundError:
-                    pass
-                else:
-                    with fp:
-                        state = getattr(ApplicationState, fp.read(), None)
-                    if state == ApplicationState.EXITED:
-                        self.exit()
-                await asyncio.sleep(1)
-                continue
+            app_status = await self._status_get(app_state)
 
     def subiquity_event_noninteractive(self, event):
         if event['SUBIQUITY_EVENT_TYPE'] == 'start':
@@ -288,28 +290,21 @@ class SubiquityClient(TuiApplication):
                 spinner.cancel()
                 p('\x08 \n')
 
-        async def _connect():
-            while True:
-                try:
-                    return await self.client.meta.status.GET()
-                except aiohttp.ClientError:
-                    await asyncio.sleep(1)
-
-        status = await spinning_wait("connecting", _connect())
+        status = await spinning_wait("connecting", self._status_get())
         journald_listen(
             self.aio_loop,
             [status.echo_syslog_id],
             lambda e: print(e['MESSAGE']))
         if status.state == ApplicationState.STARTING_UP:
             status = await spinning_wait(
-                "starting up", self.client.meta.status.GET(cur=status.state))
+                "starting up", self._status_get(cur=status.state))
         if status.state == ApplicationState.CLOUD_INIT_WAIT:
             status = await spinning_wait(
-                "waiting for cloud-init",
-                self.client.meta.status.GET(cur=status.state))
+                "waiting for cloud-init", self._status_get(cur=status.state))
         if status.state == ApplicationState.EARLY_COMMANDS:
             print("running early commands")
-            status = await self.client.meta.status.GET(cur=status.state)
+            status = await spinning_wait(
+                "waiting for cloud-init", self._status_get(cur=status.state))
             await asyncio.sleep(0.5)
         return status
 

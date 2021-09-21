@@ -87,6 +87,8 @@ def main():
         opts, unknown = parser.parse_known_args(args)
         if opts.socket is None:
             os.makedirs('.subiquity', exist_ok=True)
+            if os.path.exists('.subiquity/run/subiquity/server-state'):
+                os.unlink('.subiquity/run/subiquity/server-state')
             sock_path = '.subiquity/socket'
             opts.socket = sock_path
             server_args = ['--dry-run', '--socket=' + sock_path] + unknown

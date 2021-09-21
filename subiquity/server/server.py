@@ -256,8 +256,8 @@ class SubiquityServer(Application):
         self.block_log_dir = block_log_dir
         self.cloud = None
         self.cloud_init_ok = None
-        self._state = ApplicationState.STARTING_UP
         self.state_event = asyncio.Event()
+        self.update_state(ApplicationState.STARTING_UP)
         self.interactive = None
         self.confirming_tty = ''
         self.fatal_error = None
