@@ -303,8 +303,7 @@ class SubiquityClient(TuiApplication):
                 "waiting for cloud-init", self._status_get(cur=status.state))
         if status.state == ApplicationState.EARLY_COMMANDS:
             print("running early commands")
-            status = await spinning_wait(
-                "waiting for cloud-init", self._status_get(cur=status.state))
+            status = await self._status_get(cur=status.state)
             await asyncio.sleep(0.5)
         return status
 
