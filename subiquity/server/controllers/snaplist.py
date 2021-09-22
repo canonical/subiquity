@@ -124,7 +124,18 @@ class SnapListController(SubiquityController):
                 'name': {'type': 'string'},
                 'channel': {'type': 'string'},
                 'classic': {'type': 'boolean'},
+                'is_classic': {'type': 'boolean'},
+            },
+            'oneOf': [
+                {
+                    'type': 'object',
+                    'required': ['classic'],
                 },
+                {
+                    'type': 'object',
+                    'required': ['is_classic'],
+                }
+            ],
             'required': ['name'],
             'additionalProperties': False,
             },
@@ -148,7 +159,7 @@ class SnapListController(SubiquityController):
             to_install.append(SnapSelection(
                 name=snap['name'],
                 channel=snap.get('channel', 'stable'),
-                is_classic=snap.get('classic', False)))
+                is_classic=snap.get('classic', snap.get('is_classic', False))))
         self.model.set_installed_list(to_install)
 
     def snapd_network_changed(self):
