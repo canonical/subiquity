@@ -340,25 +340,8 @@
                     },
                     "classic": {
                         "type": "boolean"
-                    },
-                    "is_classic": {
-                        "type": "boolean"
                     }
                 },
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "required": [
-                            "classic"
-                        ]
-                    },
-                    {
-                        "type": "object",
-                        "required": [
-                            "is_classic"
-                        ]
-                    }
-                ],
                 "required": [
                     "name"
                 ],

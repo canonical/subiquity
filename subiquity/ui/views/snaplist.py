@@ -128,7 +128,7 @@ class SnapInfoView(WidgetWrap):
             selection = SnapSelection(
                 name=self.snap.name,
                 channel=csi.channel_name,
-                is_classic=csi.confinement == "classic")
+                classic=csi.confinement == "classic")
             btn = StarRadioButton(
                 radio_group,
                 csi.channel_name,
@@ -328,7 +328,7 @@ class SnapCheckBox(CheckBox):
             self.parent.selections_by_name[self.snap.name] = SnapSelection(
                 name=self.snap.name,
                 channel='stable',
-                is_classic=self.snap.confinement == "classic")
+                classic=self.snap.confinement == "classic")
         else:
             log.debug("unselecting %s", self.snap.name)
             self.parent.selections_by_name.pop(self.snap.name, None)

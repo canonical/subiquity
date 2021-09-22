@@ -100,7 +100,7 @@ class SnapListModel:
         cmds = []
         for selection in self.selections:
             cmd = ['snap', 'install', '--channel=' + selection.channel]
-            if selection.is_classic:
+            if selection.classic:
                 cmd.append('--classic')
             cmd.append(selection.name)
             cmds.append(' '.join(cmd))
