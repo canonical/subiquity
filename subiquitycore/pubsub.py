@@ -29,11 +29,14 @@ class MessageHub:
     def subscribe(self, channel, method, *args):
         self.subscriptions.setdefault(channel, []).append((method, args))
 
-    async def abroadcast(self, channel):
+    async def abroadcast(self, channel, data=None):
         for m, args in self.subscriptions.get(channel, []):
+            if data:
+                args = [data] + list(args)
             v = m(*args)
             if inspect.iscoroutine(v):
                 await v
 
-    def broadcast(self, channel):
-        return asyncio.get_event_loop().create_task(self.abroadcast(channel))
+    def broadcast(self, channel, data=None):
+        loop = asyncio.get_event_loop()
+        return loop.create_task(self.abroadcast(channel, data))
