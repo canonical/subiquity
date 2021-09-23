@@ -332,7 +332,7 @@ class SnapInfo:
 class SnapSelection:
     name: str
     channel: str
-    is_classic: bool = False
+    classic: bool = False
 
 
 @attr.s(auto_attribs=True)

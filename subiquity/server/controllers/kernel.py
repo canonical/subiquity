@@ -75,8 +75,4 @@ class KernelController(NonInteractiveController):
         self.model.metapkg_name = package
 
     def make_autoinstall(self):
-        return {
-            'kernel': {
-                'package': self.model.metapkg_name,
-                },
-            }
+        return {'package': self.model.metapkg_name}

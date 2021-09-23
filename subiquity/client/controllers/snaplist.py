@@ -48,6 +48,8 @@ class SnapListController(SubiquityTuiController):
         if 'snaps' in self.answers:
             selections = []
             for snap_name, selection in self.answers['snaps'].items():
+                if 'is_classic' in selection:
+                    selection['classic'] = selection.pop('is_classic')
                 selections.append(SnapSelection(name=snap_name, **selection))
             self.done(selections)
 

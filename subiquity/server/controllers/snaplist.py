@@ -148,7 +148,7 @@ class SnapListController(SubiquityController):
             to_install.append(SnapSelection(
                 name=snap['name'],
                 channel=snap.get('channel', 'stable'),
-                is_classic=snap.get('classic', False)))
+                classic=snap.get('classic', False)))
         self.model.set_installed_list(to_install)
 
     def snapd_network_changed(self):

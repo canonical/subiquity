@@ -26,7 +26,7 @@ SnapList:
   snaps:
     hello:
       channel: stable
-      is_classic: false
+      classic: false
 InstallProgress:
   reboot: yes
 
