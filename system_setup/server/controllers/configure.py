@@ -15,19 +15,13 @@
 
 import logging
 import os
-import subprocess
-from subiquitycore.utils import run_command
-
-from subiquitycore.context import with_context
 
 from subiquity.common.errorreport import ErrorReportKind
-from subiquity.server.controller import (
-    SubiquityController,
-    )
-
-from subiquity.common.types import (
-    ApplicationState,
-    )
+from subiquity.common.types import ApplicationState
+from subiquity.server.controller import SubiquityController
+from subiquitycore.context import with_context
+from subiquitycore.utils import run_command
+from system_setup.common.conf import WSLConfigHandler
 
 log = logging.getLogger("system_setup.server.controllers.configure")
 
@@ -72,110 +66,63 @@ class ConfigureController(SubiquityController):
 
             self.app.update_state(ApplicationState.POST_RUNNING)
 
+            dryrun = self.app.opts.dry_run
             variant = self.app.variant
+            config = WSLConfigHandler(dryrun)
             if variant == "wsl_setup":
-                wsl_identity = self.model.identity
-                run_command(["/usr/sbin/useradd", "-m", "-s", "/bin/bash",
-                             "-p", wsl_identity.password,
-                             wsl_identity.username])
-                run_command(["/usr/sbin/usermod", "-a",
-                             "-c", wsl_identity.realname,
-                             "-G", self.get_userandgroups(),
-                             wsl_identity.username])
-
-                wslconf_base = self.model.wslconfbase
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.automount.root",
-                             wslconf_base.custom_path],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.automount.options",
-                             wslconf_base.custom_mount_opt],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.network.generatehosts",
-                             wslconf_base.gen_host],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.network.generateresolvconf",
-                             wslconf_base.gen_resolvconf],
-                            stdout=subprocess.DEVNULL)
+                wsl_identity = self.model.identity.user
+                if dryrun:
+                    log.debug("mimicking creating user %s",
+                              wsl_identity.username)
+                else:
+                    run_command(["/usr/sbin/useradd", "-m", "-s", "/bin/bash",
+                                 "-p", wsl_identity.password,
+                                 wsl_identity.username])
+                    run_command(["/usr/sbin/usermod", "-a",
+                                 "-c", wsl_identity.realname,
+                                 "-G", self.get_userandgroups(),
+                                 wsl_identity.username])
             else:
-                wslconf_ad = self.model.wslconfadvanced
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.automount.enabled",
-                             wslconf_ad.automount],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.automount.mountfstab",
-                             wslconf_ad.mountfstab],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.automount.root",
-                             wslconf_ad.custom_path],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.automount.options",
-                             wslconf_ad.custom_mount_opt],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.network.generatehosts",
-                             wslconf_ad.gen_host],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.network.generateresolvconf",
-                             wslconf_ad.gen_resolvconf],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.interop.enabled",
-                             wslconf_ad.interop_enabled],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.interop.appendwindowspath",
-                             wslconf_ad.interop_appendwindowspath],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "ubuntu.GUI.followwintheme",
-                             wslconf_ad.gui_followwintheme],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "ubuntu.GUI.theme",
-                             wslconf_ad.gui_theme],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "ubuntu.Interop.guiintergration",
-                             wslconf_ad.legacy_gui],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "ubuntu.Interop.audiointegration",
-                             wslconf_ad.legacy_audio],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "ubuntu.Interop.advancedipdetection",
-                             wslconf_ad.adv_ip_detect],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "ubuntu.Motd.wslnewsenabled",
-                             wslconf_ad.wsl_motd_news],
-                            stdout=subprocess.DEVNULL)
-   
-                wslconf_base = self.model.wslconfbase
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.automount.root",
-                             wslconf_base.custom_path],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.automount.options",
-                             wslconf_base.custom_mount_opt],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.network.generatehosts",
-                             wslconf_base.gen_host],
-                            stdout=subprocess.DEVNULL)
-                run_command(["/usr/bin/ubuntuwsl", "update",
-                             "WSL.network.generateresolvconf",
-                             wslconf_base.gen_resolvconf],
-                            stdout=subprocess.DEVNULL)
+                wslconf_ad = self.model.wslconfadvanced.wslconfadvanced
+                config.update("WSL.automount.enabled",
+                              wslconf_ad.automount)
+                config.update("WSL.automount.mountfstab",
+                              wslconf_ad.mountfstab)
+                config.update("WSL.automount.root",
+                              wslconf_ad.custom_path)
+                config.update("WSL.automount.options",
+                              wslconf_ad.custom_mount_opt)
+                config.update("WSL.network.generatehosts",
+                              wslconf_ad.gen_host)
+                config.update("WSL.network.generateresolvconf",
+                              wslconf_ad.gen_resolvconf)
+                config.update("WSL.interop.enabled",
+                              wslconf_ad.interop_enabled)
+                config.update(
+                    "WSL.interop.appendwindowspath",
+                    wslconf_ad.interop_appendwindowspath)
+                config.update("ubuntu.GUI.followwintheme",
+                              wslconf_ad.gui_followwintheme)
+                config.update("ubuntu.GUI.theme",
+                              wslconf_ad.gui_theme)
+                config.update("ubuntu.Interop.guiintergration",
+                              wslconf_ad.legacy_gui)
+                config.update("ubuntu.Interop.audiointegration",
+                              wslconf_ad.legacy_audio)
+                config.update("ubuntu.Interop.advancedipdetection",
+                              wslconf_ad.adv_ip_detect)
+                config.update("ubuntu.Motd.wslnewsenabled",
+                              wslconf_ad.wsl_motd_news)
+
+            wslconf_base = self.model.wslconfbase.wslconfbase
+            config.update("WSL.automount.root",
+                          wslconf_base.custom_path)
+            config.update("WSL.automount.options",
+                          wslconf_base.custom_mount_opt)
+            config.update("WSL.network.generatehosts",
+                          wslconf_base.gen_host)
+            config.update("WSL.network.generateresolvconf",
+                          wslconf_base.gen_resolvconf)
 
             self.app.update_state(ApplicationState.DONE)
         except Exception:
