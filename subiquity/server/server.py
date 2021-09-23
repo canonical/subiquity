@@ -123,7 +123,7 @@ class MetaController:
             self.app.controllers.Source.configured()
         else:
             self.app.base_model.set_source_variant(variant)
-        self.app.variant = variant
+        self.app.set_source_variant(variant)
 
     async def client_variant_GET(self) -> str:
         return self.app.variant
