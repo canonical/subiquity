@@ -13,12 +13,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import grp
 import logging
 import os
 
 
 def setup_logger(dir, base='subiquity'):
     os.makedirs(dir, exist_ok=True)
+    if os.getuid() == 0:
+        os.chmod(dir, 0o775)
+        os.chown(dir, -1, grp.getgrnam('adm').gr_gid)
 
     logger = logging.getLogger("")
     logger.setLevel(logging.DEBUG)
