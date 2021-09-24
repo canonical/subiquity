@@ -263,6 +263,25 @@ class Disk:
 
 
 @attr.s(auto_attribs=True)
+class PartitionV2:
+    size: int
+    number: int
+    mount: Optional[str] = None
+    format: Optional[str] = None
+
+
+@attr.s(auto_attribs=True)
+class DiskV2:
+    id: str
+    display_name: str
+    partitions: List[PartitionV2]
+    label: Optional[str]
+    type: Optional[str]
+    size: Optional[int]
+    ok_for_guided: Optional[bool]
+
+
+@attr.s(auto_attribs=True)
 class GuidedChoice:
     disk_id: str
     use_lvm: bool = False
@@ -296,7 +315,7 @@ class StorageResponseV2:
 @attr.s(auto_attribs=True)
 class ModifyPartitionV2:
     disk_id: str
-    partition: Partition
+    partition: PartitionV2
 
 
 @attr.s(auto_attribs=True)
