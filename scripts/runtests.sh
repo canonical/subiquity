@@ -106,11 +106,8 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
 validate
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 
-timeout 30 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.server --dry-run --bootloader uefi --machine-config examples/win10.json" &
-while ! scurl a/meta/status >& /dev/null ; do
-    sleep .5
-done
-scurl a/storage/has_bitlocker | jq -M '. [0].partitions[2]' | grep -q BitLocker
+timeout 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.server --dry-run --bootloader uefi --machine-config examples/simple.json" &
+./scripts/subiquity-client
 
 # The OOBE doesn't exist in WSL < 20.04
 if [ "${RELEASE%.*}" -ge 20 ]; then
