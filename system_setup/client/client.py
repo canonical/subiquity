@@ -36,21 +36,13 @@ class SystemSetupClient(SubiquityClient):
         "WSLIdentity",
         "WSLConfigurationBase",
         "Summary",
-        ]
+    ]
 
-    def __init__(self, opts):
-        # TODO WSL:
-        # 1. remove reconfigure flag
-        # 2. decide on which UI to show up based on existing user UID >=1000
-        #    (or default user set in wsl.conf?)
-        # 3. provide an API for this for the flutter UI to know about it
-        # 4. Add Configuration Base page before Advanced
-        # 5. Add language page
-        # self.variant = "wsl_configuration"
-        if opts.reconfigure:
-            self.controllers = [
-                "WSLConfigurationBase",
-                "WSLConfigurationAdvanced",
-                "Summary",
-            ]
-        super().__init__(opts)
+    variant_to_controllers = {
+        "wsl_setup": controllers,
+        "wsl_configuration": [
+            "WSLConfigurationBase",
+            "WSLConfigurationAdvanced",
+            "Summary",
+        ]
+    }

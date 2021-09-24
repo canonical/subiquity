@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from system_setup.common.helpers import is_reconfigure
 from subiquity.server.server import SubiquityServer
 from system_setup.models.system_setup import SystemSetupModel
 from subiquity.models.subiquity import ModelNames
@@ -50,6 +51,11 @@ class SystemSetupServer(SubiquityServer):
     ]
 
     supported_variants = ["wsl_setup", "wsl_configuration"]
+
+    def __init__(self, opts, block_log_dir):
+        super().__init__(opts, block_log_dir)
+        if is_reconfigure(opts.dry_run):
+            self.set_source_variant("wsl_configuration")
 
     def make_model(self):
         root = '/'

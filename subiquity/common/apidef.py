@@ -77,7 +77,11 @@ class API:
 
         class client_variant:
             def POST(variant: str) -> None:
-                """Choose the install variant - desktop/server"""
+                """Choose the install variant -
+                desktop/server/wsl_setup/wsl_reconfigure"""
+            def GET() -> str:
+                """Get the install variant -
+                desktop/server/wsl_setup/wsl_reconfigure"""
 
         class confirm:
             def POST(tty: str) -> None:

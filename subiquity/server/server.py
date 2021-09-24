@@ -123,6 +123,10 @@ class MetaController:
             self.app.controllers.Source.configured()
         else:
             self.app.base_model.set_source_variant(variant)
+        self.app.set_source_variant(variant)
+
+    async def client_variant_GET(self) -> str:
+        return self.app.variant
 
     async def ssh_info_GET(self) -> Optional[LiveSessionSSHInfo]:
         ips = []
@@ -248,6 +252,7 @@ class SubiquityServer(Application):
 
     def __init__(self, opts, block_log_dir):
         super().__init__(opts)
+        self.set_source_variant(self.supported_variants[0])
         self.block_log_dir = block_log_dir
         self.cloud = None
         self.cloud_init_ok = None
@@ -294,6 +299,9 @@ class SubiquityServer(Application):
         self.hub.subscribe(InstallerChannels.NETWORK_PROXY_SET,
                            self._proxy_set)
         self.geoip = GeoIP(self)
+
+    def set_source_variant(self, variant):
+        self.variant = variant
 
     def load_serialized_state(self):
         for controller in self.controllers.instances:

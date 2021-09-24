@@ -25,14 +25,18 @@ class SummaryView(BaseView):
 
     def __init__(self, controller, real_name):
         self.controller = controller
-        complete_text = _("Hi {real_name},\n\n"
-                          "You have completed the setup!\n\n"
-                          "It is suggested to run the following commands"
-                          " to update your Ubuntu to the latest version:"
-                          "\n\n\n"
-                          "  $ sudo apt update\n  $ sudo apt upgrade\n\n\n"
+        complete_text = _("You have completed the setup!\n\n"
                           "All settings will take effect after next "
-                          "restart of Ubuntu.").format(real_name=real_name)
+                          "restart of Ubuntu.")
+        if real_name != '':
+            complete_text = _("Hi {real_name},\n\n"
+                              "You have completed the setup!\n\n"
+                              "It is suggested to run the following commands"
+                              " to update your Ubuntu to the latest version:"
+                              "\n\n\n"
+                              "  $ sudo apt update\n  $ sudo apt upgrade\n\n\n"
+                              "All settings will take effect after next "
+                              "restart of Ubuntu.").format(real_name=real_name)
 
         self.reboot_btn = Toggleable(ok_btn(
             _("Reboot Now"), on_press=self.reboot))

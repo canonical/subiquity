@@ -94,8 +94,8 @@ class WSLConfigurationAdvancedForm(Form):
 
 
 class WSLConfigurationAdvancedView(BaseView):
-    title = _("WSL advanced options")
-    excerpt = _("In this page, you can configure Ubuntu WSL"
+    title = _("WSL Configuration - Advanced options")
+    excerpt = _("In this page, you can configure Ubuntu WSL "
                 "advanced options your needs. \n")
 
     def __init__(self, controller, configuration_data):
