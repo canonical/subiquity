@@ -4,6 +4,7 @@ import argparse
 import aiohttp
 import asyncio
 import contextlib
+from functools import wraps
 import json
 import logging
 import os
@@ -12,10 +13,23 @@ import sys
 logging.basicConfig(level=logging.DEBUG)
 
 
+scenarios = {}
+
+
+def scenario(f):
+    @wraps(f)
+    async def wrapper(*args, **kwds):
+        return await f(*args, **kwds)
+    scenarios[f.__name__] = f
+    return wrapper
+
+
 def get_args():
     parser = argparse.ArgumentParser()
-    # parser.add_argument('scenario')
-    return parser.parse_args()
+    parser.add_argument('scenario')
+    args = parser.parse_args()
+    args.scenario = scenarios.get(args.scenario)
+    return args
 
 
 def find_socket():
@@ -30,10 +44,7 @@ def json_print(json_data):
 
 
 def loads(data):
-    if data:
-        return json.loads(data)
-    else:
-        return None
+    return json.loads(data) if data else None
 
 
 def dumps(data):
@@ -71,16 +82,16 @@ class Client:
                 joiner = '?' if i == 0 else '&'
                 info += f'{joiner}{key}={params[key]}'
         print(info)
-        try:
-            async with self.session.request(method, f'http://a{query}',
-                                            data=data, params=params) as resp:
-                content = await resp.content.read()
-                content = content.decode()
-                if resp.status != 200:
-                    raise ClientException(content)
-                return loads(content)
-        except aiohttp.client_exceptions.ServerDisconnectedError:
-            return None
+        # try:
+        async with self.session.request(method, f'http://a{query}',
+                                        data=data, params=params) as resp:
+            content = await resp.content.read()
+            content = content.decode()
+            if resp.status != 200:
+                raise ClientException(content)
+            return loads(content)
+# except aiohttp.client_exceptions.ServerDisconnectedError:
+#     return None
 
 
 @contextlib.asynccontextmanager
@@ -90,57 +101,34 @@ async def client_factory(socket_path):
         yield Client(session)
 
 
+async def server_startup(client):
+    for _ in range(20):
+        try:
+            await client.get('/meta/status')
+            return
+        except aiohttp.client_exceptions.ClientConnectorError:
+            await asyncio.sleep(.5)
+    raise Exception('timeout on server startup')
+
+
+async def server_shutdown(client, immediate=True):
+    try:
+        await client.post('/shutdown', mode='POWEROFF', immediate=immediate)
+        raise Exception('expected ServerDisconnectedError')
+    except aiohttp.client_exceptions.ServerDisconnectedError:
+        return
+
+
 async def guided(client):
     resp = await client.get('/storage/guided')
-    json_print(resp)
     disk_id = resp['disks'][0]['id']
-    json_print(disk_id)
     choice = {
             "disk_id": disk_id,
             "use_lvm": False,
             "password": None,
     }
-    json_print(await client.post('/storage/v2/guided', choice=choice))
+    await client.post('/storage/v2/guided', choice=choice)
     await client.post('/storage/v2')
-
-
-async def auto_server_install(client, storage=guided):
-    await client.post('/locale', 'en_US.UTF-8')
-    keyboard = {
-        'layout': 'us',
-        'variant': '',
-        'toggle': None
-    }
-    await client.post('/keyboard', keyboard)
-    await client.post('/source', source_id='ubuntu-server')
-    await client.post('/network')
-    await client.post('/proxy', '')
-    await client.post('/mirror', 'http://us.archive.ubuntu.com/ubuntu')
-    await storage(client)
-    await client.get('/meta/status', cur='WAITING')
-    await client.post('/meta/confirm', tty='/dev/tty1')
-    await client.get('/meta/status', cur='NEEDS_CONFIRMATION')
-    identity = {
-        'realname': 'ubuntu',
-        'username': 'ubuntu',
-        'hostname': 'ubuntu-server',
-        'crypted_password': '$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/'
-                            + 'b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kx'
-                            + 'KwuX1kqLG/ygbJ1f8wxED22bTL4F46P0'
-    }
-    await client.post('/identity', identity)
-    ssh = {
-        'install_server': False,
-        'allow_pw': False,
-        'authorized_keys': []
-    }
-    await client.post('/ssh', ssh)
-    await client.post('/snaplist', [])
-    await client.get('/meta/status', cur='RUNNING')
-    await client.get('/meta/status', cur='POST_WAIT')
-    await client.get('/meta/status', cur='POST_RUNNING')
-    await client.get('/meta/status', cur='UU_RUNNING')
-    await client.post('/shutdown', mode='REBOOT', immediate=False)
 
 
 async def v2(client):
@@ -178,24 +166,61 @@ async def v2(client):
         "use_lvm": False,
         "password": None,
     }
-    json_print(await client.post('/storage/v2/guided', choice=choice))
+    # json_print()
+    await client.post('/storage/v2/guided', choice=choice)
     await client.post('/storage/v2')
 
 
-async def server_startup(client):
-    for _ in range(60):
-        try:
-            await client.get('/meta/status')
-            return
-        except aiohttp.client_exceptions.ClientConnectorError:
-            await asyncio.sleep(.5)
-    raise Exception('timeout on server startup')
+@scenario
+async def auto_server_install(client, storage=guided):
+    await client.post('/locale', 'en_US.UTF-8')
+    keyboard = {
+        'layout': 'us',
+        'variant': '',
+        'toggle': None
+    }
+    await client.post('/keyboard', keyboard)
+    await client.post('/source', source_id='ubuntu-server')
+    await client.post('/network')
+    await client.post('/proxy', '')
+    await client.post('/mirror', 'http://us.archive.ubuntu.com/ubuntu')
+    await storage(client)
+    await client.get('/meta/status', cur='WAITING')
+    await client.post('/meta/confirm', tty='/dev/tty1')
+    await client.get('/meta/status', cur='NEEDS_CONFIRMATION')
+    identity = {
+        'realname': 'ubuntu',
+        'username': 'ubuntu',
+        'hostname': 'ubuntu-server',
+        'crypted_password': '$6$exDY1mhS4KUYCE/2$zmn9ToZwTKLhCw.b4/'
+                            + 'b.ZRTIZM30JZ4QrOQ2aOXJ8yk96xpcCof0kx'
+                            + 'KwuX1kqLG/ygbJ1f8wxED22bTL4F46P0'
+    }
+    await client.post('/identity', identity)
+    ssh = {
+        'install_server': False,
+        'allow_pw': False,
+        'authorized_keys': []
+    }
+    await client.post('/ssh', ssh)
+    await client.post('/snaplist', [])
+    await client.get('/meta/status', cur='RUNNING')
+    await client.get('/meta/status', cur='POST_WAIT')
+    await client.get('/meta/status', cur='POST_RUNNING')
+    await client.get('/meta/status', cur='UU_RUNNING')
+
+
+@scenario
+async def has_bitlocker(client):
+    resp = await client.get('/storage/has_bitlocker')
+    assert resp[0]['partitions'][2]['format'] == 'BitLocker'
 
 
 async def main(args):
     async with client_factory(find_socket()) as client:
         await server_startup(client)
-        await auto_server_install(client)
+        await args.scenario(client)
+        await server_shutdown(client)
 
 
 if __name__ == "__main__":
