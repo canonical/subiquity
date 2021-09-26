@@ -30,7 +30,7 @@ from subiquity.server.controller import SubiquityController
 
 log = logging.getLogger("subiquity.server.controller.zdev")
 
-lszdev_cmd = ['lszdev', '--pairs', '--columns',
+lszdev_cmd = ['lszdev', '--quiet', '--pairs', '--columns',
               'id,type,on,exists,pers,auto,failed,names']
 
 lszdev_stock = '''id="0.0.1500" type="dasd-eckd" on="no" exists="yes" pers="no" auto="no" failed="no" names=""

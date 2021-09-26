@@ -12,6 +12,6 @@ for row in rows:
     record = dict([k.split('=',1) for k in row])
     if record['COLUMN'] not in ('TYPE', 'ATTR:', 'ATTRPATH:'):
         desired_columns.append(record['COLUMN'].lower())
-cmd = ['lszdev','--pairs','--columns',','.join(desired_columns)]
+cmd = ['lszdev','--quiet','--pairs','--columns',','.join(desired_columns)]
 print(cmd)
 print(' '.join(cmd))
