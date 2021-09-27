@@ -19,7 +19,7 @@ from subiquitycore.context import with_context
 from subiquity.common.types import ShutdownMode
 from subiquity.server.controllers import ShutdownController
 
-log = logging.getLogger("system_setup.controllers.restart")
+log = logging.getLogger("system_setup.server.controllers.restart")
 
 
 class SetupShutdownController(ShutdownController):

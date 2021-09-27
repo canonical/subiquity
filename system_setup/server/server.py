@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from system_setup.common.helpers import is_reconfigure
+from system_setup.common.wsl_utils import is_reconfigure
 from subiquity.server.server import SubiquityServer
 from system_setup.models.system_setup import SystemSetupModel
 from subiquity.models.subiquity import ModelNames
@@ -41,7 +41,7 @@ class SystemSetupServer(SubiquityServer):
     controllers = [
         "Reporting",
         "Error",
-        "Locale",
+        "WSLLocale",
         "Identity",
         "WSLConfigurationBase",
         "WSLConfigurationAdvanced",
