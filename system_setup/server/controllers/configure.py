@@ -26,7 +26,7 @@ from subiquity.common.types import (
     ApplicationState,
     )
 
-log = logging.getLogger("subiquity.system_setup.controllers.configure")
+log = logging.getLogger("system_setup.server.controllers.configure")
 
 
 class ConfigureController(SubiquityController):

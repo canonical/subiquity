@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-# Copyright 2015-2021 Canonical, Ltd.
+# Copyright 2021 Canonical, Ltd.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -15,18 +14,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from system_setup.common.wsl_utils import get_windows_locale
+from subiquity.server.controllers.locale import LocaleController
 
 
-def is_reconfigure(is_dryrun):
-    if is_dryrun and \
-                 os.getenv("DRYRUN_RECONFIG") == "true":
-        return True
-    if_normaluser = False
-    with open('/etc/passwd', 'r') as f:
-        for line in f:
-            # check every normal user except nobody (65534)
-            if int(line.split(':')[2]) >= 1000 and \
-               int(line.split(':')[2]) != 65534:
-                if_normaluser = True
-                break
-    return not is_dryrun and if_normaluser
+class WSLLocaleController(LocaleController):
+
+    def start(self):
+        win_lang = get_windows_locale()
+        self.model.selected_language = os.environ.get("LANG") \
+            or self.autoinstall_default
+        if win_lang:
+            self.model.selected_language = win_lang + ".UTF-8"
+        self.app.aio_loop.create_task(self.configured())

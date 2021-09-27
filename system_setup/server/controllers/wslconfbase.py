@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import configparser
 import logging
+from os import path
 
 import attr
 
@@ -23,7 +25,10 @@ from subiquity.common.apidef import API
 from subiquity.common.types import WSLConfigurationBase
 from subiquity.server.controller import SubiquityController
 
-log = logging.getLogger('subiquity.server.controllers.wsl_configuration_base')
+from system_setup.common.wsl_utils import config_ref
+
+log = logging.getLogger('system_setup.server' +
+                        '.controllers.wsl_configuration_base')
 
 
 class WSLConfigurationBaseController(SubiquityController):
@@ -42,6 +47,33 @@ class WSLConfigurationBaseController(SubiquityController):
         'required': [],
         'additionalProperties': False,
         }
+
+    def __init__(self, app):
+        super().__init__(app)
+
+        # load the config file
+        data = {}
+
+        if path.exists('/etc/wsl.conf'):
+            wslconfig = configparser.ConfigParser()
+            wslconfig.read('/etc/wsl.conf')
+            for conf_sec in wslconfig:
+                if conf_sec in config_ref['wsl']:
+                    conf_sec_list = wslconfig[conf_sec]
+                    for conf_item in conf_sec_list:
+                        if conf_item in config_ref['wsl'][conf_sec]:
+                            data[config_ref['wsl'][conf_sec][conf_item]] = \
+                                 conf_sec_list[conf_item]
+        if data:
+            def bool_converter(x):
+                return x.lower() == 'true'
+            conf_data = WSLConfigurationBase(
+                custom_path=data['custom_path'],
+                custom_mount_opt=data['custom_mount_opt'],
+                gen_host=bool_converter(data['gen_host']),
+                gen_resolvconf=bool_converter(data['gen_resolvconf']),
+            )
+            self.model.apply_settings(conf_data, self.opts.dry_run)
 
     def load_autoinstall_data(self, data):
         if data is not None:

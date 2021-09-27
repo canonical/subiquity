@@ -24,8 +24,10 @@ from subiquity.common.apidef import API
 from subiquity.common.types import WSLConfigurationAdvanced
 from subiquity.server.controller import SubiquityController
 
+from system_setup.common.wsl_utils import config_ref
+
 log = logging.getLogger(
-    'subiquity.server.controllers.wsl_configuration_advanced')
+    'system_setup.server.controllers.wsl_configuration_advanced')
 
 
 class WSLConfigurationAdvancedController(SubiquityController):
@@ -88,24 +90,26 @@ class WSLConfigurationAdvancedController(SubiquityController):
         if path.exists('/etc/wsl.conf'):
             wslconfig = configparser.ConfigParser()
             wslconfig.read('/etc/wsl.conf')
-            for a in wslconfig:
-                if a in self.config_ref['wsl']:
-                    a_x = wslconfig[a]
-                    for b in a_x:
-                        if b in self.config_ref['wsl'][a]:
-                            data[self.config_ref['wsl'][a][b]] = a_x[b]
+            for conf_sec in wslconfig:
+                if conf_sec in config_ref['wsl']:
+                    conf_sec_list = wslconfig[conf_sec]
+                    for conf_item in conf_sec_list:
+                        if conf_item in config_ref['wsl'][conf_sec]:
+                            data[config_ref['wsl'][conf_sec][conf_item]] = \
+                                 conf_sec_list[conf_item]
         if path.exists('/etc/ubuntu-wsl.conf'):
             ubuntuconfig = configparser.ConfigParser()
             ubuntuconfig.read('/etc/ubuntu-wsl.conf')
-            for a in ubuntuconfig:
-                if a in self.config_ref['ubuntu']:
-                    a_x = ubuntuconfig[a]
-                    for b in a_x:
-                        if b in self.config_ref['ubuntu'][a]:
-                            data[self.config_ref['ubuntu'][a][b]] = a_x[b]
+            for conf_sec in ubuntuconfig:
+                if conf_sec in self.config_ref['ubuntu']:
+                    conf_sec_list = ubuntuconfig[conf_sec]
+                    for conf_item in conf_sec_list:
+                        if conf_item in config_ref['ubuntu'][conf_sec]:
+                            data[config_ref['ubuntu'][conf_sec][conf_item]] = \
+                                conf_sec_list[conf_item]
         if data:
             def bool_converter(x):
-                return x == 'true'
+                return x.lower() == 'true'
             reconf_data = WSLConfigurationAdvanced(
                 interop_enabled=bool_converter(data['interop_enabled']),
                 interop_appendwindowspath=bool_converter(
