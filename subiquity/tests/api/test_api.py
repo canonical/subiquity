@@ -165,11 +165,20 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
             pass
 
 
+class TestBitlocker(TestAPI):
+    machine_config = 'examples/win10.json'
+
+    @timeout(5)
+    async def test_bitlocker(self):
+        resp = await self.get('/storage/has_bitlocker')
+        json_print(resp)
+        self.assertEqual(resp[0]['partitions'][2]['format'], 'BitLocker')
+
+
 class TestSimple(TestAPI):
     @timeout(5)
     async def test_not_bitlocker(self):
         resp = await self.get('/storage/has_bitlocker')
-        json_print(resp)
         self.assertEqual(len(resp), 0)
 
     @timeout(10)
@@ -208,12 +217,16 @@ class TestSimple(TestAPI):
         for state in 'RUNNING', 'POST_WAIT', 'POST_RUNNING', 'UU_RUNNING':
             await self.get('/meta/status', cur=state)
 
-
-class TestBitlocker(TestAPI):
-    machine_config = 'examples/win10.json'
+    @timeout(5)
+    async def test_json_handling(self):
+        choice = {
+                'disk_id': 'disk-sda',
+                'use_lvm': False,
+                # 'password':  # it should cope with absent data w/ a default
+        }
+        await self.post('/storage/guided', choice=choice)
 
     @timeout(5)
-    async def test_bitlocker(self):
-        resp = await self.get('/storage/has_bitlocker')
-        json_print(resp)
-        self.assertEqual(resp[0]['partitions'][2]['format'], 'BitLocker')
+    async def test_missing_but_has_default_value(self):
+        choice = {'disk_id': 'disk-sda'}
+        await self.post('/storage/guided', choice=choice)
