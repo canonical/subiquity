@@ -98,19 +98,6 @@ timeout --foreground 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.tui --autoi
 validate
 grep -q 'finish: subiquity/Install/install/postinstall/run_unattended_upgrades: SUCCESS: downloading and installing security updates' .subiquity/subiquity-server-debug.log
 
-release=$(lsb_release -sr)
-if [ "${release%.*}" -gt "18" ] ; then
-    timeout 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.server --dry-run \
-                      --bootloader uefi \
-                      --machine-config examples/simple.json" &
-    ./scripts/subiquity-client auto_server_install
-
-    timeout 60 sh -c "LANG=C.UTF-8 python3 -m subiquity.cmd.server --dry-run \
-                      --bootloader uefi \
-                      --machine-config examples/win10.json" &
-    ./scripts/subiquity-client has_bitlocker
-fi
-
 # The OOBE doesn't exist in WSL < 20.04
 if [ "${RELEASE%.*}" -ge 20 ]; then
     # NOTE:

@@ -29,7 +29,7 @@ aptdeps:
 		libnl-route-3-dev python3-attr python3-distutils-extra python3-requests \
 		python3-requests-unixsocket python3-jsonschema python3-apport \
 		python3-bson xorriso isolinux python3-aiohttp cloud-init ssh-import-id \
-		curl jq build-essential python3-pytest
+		curl jq build-essential python3-pytest python3-async-timeout
 
 install_deps: aptdeps gitdeps
 
@@ -68,13 +68,17 @@ flake8:
 	$(PYTHON) -m flake8 $(CHECK_DIRS) --exclude gettext38.py,contextlib38.py
 
 unit: gitdeps
-	python3 -m pytest --ignore curtin --ignore probert
+	python3 -m pytest --ignore curtin --ignore probert \
+		--ignore subiquity/tests/api
+
+api:
+	$(PYTHON) -m pytest subiquity/tests/api
 
 integration: gitdeps
 	echo "Running integration tests..."
 	./scripts/runtests.sh
 
-check: unit integration
+check: unit integration api
 
 curtin: snapcraft.yaml
 	./scripts/update-part.py curtin
