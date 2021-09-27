@@ -348,14 +348,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
-
         partition = self.get_partition(data.disk_id, data.partition.number)
         self.delete_partition(partition)
         return await self.v2_GET()
 
     async def v2_edit_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
-
         partition = self.get_partition(data.disk_id, data.partition.number)
         data.partition.size = partition.size
         self.delete_partition(partition)
