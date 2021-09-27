@@ -68,6 +68,7 @@ class ApplicationState(enum.Enum):
     UU_CANCELLING = enum.auto()
     DONE = enum.auto()
     ERROR = enum.auto()
+    EXITED = enum.auto()
 
 
 @attr.s(auto_attribs=True)

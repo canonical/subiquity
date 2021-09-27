@@ -256,8 +256,8 @@ class SubiquityServer(Application):
         self.block_log_dir = block_log_dir
         self.cloud = None
         self.cloud_init_ok = None
-        self._state = ApplicationState.STARTING_UP
         self.state_event = asyncio.Event()
+        self.update_state(ApplicationState.STARTING_UP)
         self.interactive = None
         self.confirming_tty = ''
         self.fatal_error = None
@@ -356,6 +356,8 @@ class SubiquityServer(Application):
 
     def update_state(self, state):
         self._state = state
+        atomic_helper.write_file(
+            self.state_path("server-state"), state.name, omode='w')
         self.state_event.set()
         self.state_event.clear()
 
@@ -598,6 +600,10 @@ class SubiquityServer(Application):
         self.update_state(ApplicationState.WAITING)
         await super().start()
         await self.apply_autoinstall_config()
+
+    def exit(self):
+        self.update_state(ApplicationState.EXITED)
+        super().exit()
 
     def _network_change(self):
         if not self.snapd:

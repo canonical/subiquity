@@ -95,6 +95,8 @@ def main():
             need_start_server = True
             server_output_dir = '/tmp/.subiquity'
             sock_path = os.path.join(server_output_dir, 'socket')
+            if os.path.exists('.subiquity/run/subiquity/server-state'):
+                os.unlink('.subiquity/run/subiquity/server-state')
             opts.socket = sock_path
             server_args = ['--dry-run', '--socket=' + sock_path] + unknown
         else:
