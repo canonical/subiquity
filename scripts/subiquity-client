@@ -138,11 +138,10 @@ async def v2(client):
     data = {
         'disk_id': disk_id,
         'partition': {
-            'size': 0,
+            'size': -1,
             'number': 4,
             'mount': '',
             'format': '',
-            'annotations': None
         }
     }
     await client.post('/storage/v2/delete_partition', data)
@@ -150,11 +149,10 @@ async def v2(client):
     data = {
         'disk_id': disk_id,
         'partition': {
-            'size': 0,
+            'size': -1,
             'number': 2,
             'mount': '/',
             'format': 'ext3',
-            'annotations': None
         }
     }
     await client.post('/storage/v2/add_partition', data)

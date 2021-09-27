@@ -321,7 +321,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             -> StorageResponseV2:
         disk = self.model._one(id=data.disk_id)
         size = data.partition.size
-        if not size:
+        if size is None or size < 0:
             size = disk.free_for_partitions
         flag = ""
         wipe = "superblock"
