@@ -380,8 +380,8 @@ class attributes:
         return attr.ib(default=value)
 
     @staticmethod
-    def size():
-        return attr.ib(converter=_conv_size)
+    def size(default=None):
+        return attr.ib(converter=_conv_size, default=None)
 
     @staticmethod
     def ptable():
@@ -774,13 +774,16 @@ class LVM_VolGroup(_Device):
 class LVM_LogicalVolume(_Formattable):
     name = attr.ib()
     volgroup = attributes.ref(backlink="_partitions")  # LVM_VolGroup
-    size = attributes.size()
+    size = attributes.size(default=None)
     wipe = attr.ib(default=None)
 
     preserve = attr.ib(default=False)
 
     def serialize_size(self):
-        return {'size': "{}B".format(self.size)}
+        if self.size is None:
+            return {}
+        else:
+            return {'size': "{}B".format(self.size)}
 
     def available(self):
         if self._constructed_device is not None:
