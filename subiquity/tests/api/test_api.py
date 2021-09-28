@@ -54,44 +54,6 @@ class ClientException(Exception):
     pass
 
 
-async def guided(client):
-    resp = await client.get('/storage/guided')
-    disk_id = resp['disks'][0]['id']
-    choice = {"disk_id": disk_id}
-    await client.post('/storage/v2/guided', choice=choice)
-    await client.post('/storage/v2')
-
-
-async def v2(client):
-    storage_resp = await client.get('/storage/v2')
-    disk = storage_resp['disks'][0]
-    disk_id = disk['id']
-    data = {
-        'disk_id': disk_id,
-        'partition': {
-            'size': -1,
-            'number': 4,
-            'mount': '',
-            'format': '',
-        }
-    }
-    await client.post('/storage/v2/delete_partition', data)
-    await client.post('/storage/v2/reformat_disk', disk_id=disk_id)
-    data['partition']['number'] = 2
-    data['partition']['format'] = 'ext3'
-    await client.post('/storage/v2/add_partition', data)
-    data['partition']['format'] = 'ext4'
-    await client.post('/storage/v2/edit_partition', data)
-    await client.post('/storage/v2/reset')
-    choice = {
-        "disk_id": disk_id,
-        "use_lvm": False,
-        "password": None,
-    }
-    await client.post('/storage/v2/guided', choice=choice)
-    await client.post('/storage/v2')
-
-
 class TestAPI(unittest.IsolatedAsyncioTestCase):
     machine_config = 'examples/simple.json'
 
@@ -161,16 +123,6 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
             pass
 
 
-class TestBitlocker(TestAPI):
-    machine_config = 'examples/win10.json'
-
-    @timeout(5)
-    async def test_bitlocker(self):
-        resp = await self.get('/storage/has_bitlocker')
-        json_print(resp)
-        self.assertEqual('BitLocker', resp[0]['partitions'][2]['format'])
-
-
 class TestSimple(TestAPI):
     @timeout(5)
     async def test_not_bitlocker(self):
@@ -190,7 +142,11 @@ class TestSimple(TestAPI):
         await self.post('/network')
         await self.post('/proxy', '')
         await self.post('/mirror', 'http://us.archive.ubuntu.com/ubuntu')
-        await guided(self)
+        resp = await self.get('/storage/guided')
+        disk_id = resp['disks'][0]['id']
+        choice = {"disk_id": disk_id}
+        await self.post('/storage/v2/guided', choice=choice)
+        await self.post('/storage/v2')
         await self.get('/meta/status', cur='WAITING')
         await self.post('/meta/confirm', tty='/dev/tty1')
         await self.get('/meta/status', cur='NEEDS_CONFIRMATION')
@@ -226,3 +182,73 @@ class TestSimple(TestAPI):
         resp = await self.post('/storage/v2/guided', choice=choice)
         self.assertEqual(1, len(resp['disks']))
         self.assertEqual('disk-sda', resp['disks'][0]['id'])
+
+
+class TestWin10Start(TestAPI):
+    machine_config = 'examples/win10.json'
+
+    @timeout(5)
+    async def test_bitlocker(self):
+        resp = await self.get('/storage/has_bitlocker')
+        json_print(resp)
+        self.assertEqual('BitLocker', resp[0]['partitions'][2]['format'])
+
+    @timeout(5)
+    async def test_delete_bad(self):
+        data = {
+            'disk_id': 'disk-sda',
+            'partition': {
+                'size': -1,
+                'number': 5,
+            }
+        }
+        with self.assertRaises(ClientException):
+            await self.post('/storage/v2/delete_partition', data)
+
+    @timeout(5)
+    async def test_v2_flow(self):
+        disk_id = 'disk-sda'
+        orig_resp = await self.get('/storage/v2')
+        self.assertEqual(1, len(orig_resp['disks']))
+        self.assertEqual('disk-sda', orig_resp['disks'][0]['id'])
+        self.assertEqual(4, len(orig_resp['disks'][0]['partitions']))
+
+        data = {
+            'disk_id': disk_id,
+            'partition': {
+                'size': -1,
+                'number': 4,
+            }
+        }
+        resp = await self.post('/storage/v2/delete_partition', data)
+        self.assertEqual(3, len(resp['disks'][0]['partitions']))
+
+        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+        self.assertEqual(0, len(resp['disks'][0]['partitions']))
+
+        data['partition']['number'] = 1
+        data['partition']['format'] = 'ext3'
+        data['partition']['mount'] = '/'
+        data['partition']['grub_device'] = True
+        add_resp = await self.post('/storage/v2/add_partition', data)
+        self.assertEqual(2, len(add_resp['disks'][0]['partitions']))
+        self.assertEqual('ext3',
+                         add_resp['disks'][0]['partitions'][1]['format'])
+
+        data['partition']['number'] = 2
+        data['partition']['format'] = 'ext4'
+        resp = await self.post('/storage/v2/edit_partition', data)
+        expected = add_resp['disks'][0]['partitions'][1]
+        actual = resp['disks'][0]['partitions'][1]
+        for key in 'size', 'number', 'mount', 'grub_device':
+            self.assertEqual(expected[key], actual[key])
+        self.assertEqual('ext4', resp['disks'][0]['partitions'][1]['format'])
+
+        resp = await self.post('/storage/v2/reset')
+        self.assertEqual(orig_resp, resp)
+
+        choice = {'disk_id': disk_id}
+        resp = await self.post('/storage/v2/guided', choice=choice)
+        json_print(resp)
+
+        await self.post('/storage/v2')
