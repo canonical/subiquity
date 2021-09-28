@@ -94,7 +94,7 @@ class WSLConfigurationAdvancedController(SubiquityController):
                 automount=bool_converter(data['automount']),
                 mountfstab=bool_converter(data['mountfstab']),
             )
-            self.model.apply_settings(reconf_data, self.opts.dry_run)
+            self.model.apply_settings(reconf_data)
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -110,7 +110,7 @@ class WSLConfigurationAdvancedController(SubiquityController):
                 automount=data['automount'],
                 mountfstab=data['mountfstab']
             )
-            self.model.apply_settings(reconf_data, self.opts.dry_run)
+            self.model.apply_settings(reconf_data)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -138,5 +138,5 @@ class WSLConfigurationAdvancedController(SubiquityController):
         return data
 
     async def POST(self, data: WSLConfigurationAdvanced):
-        self.model.apply_settings(data, self.opts.dry_run)
-        await self.configured()
+        self.model.apply_settings(data)
+        self.configured()

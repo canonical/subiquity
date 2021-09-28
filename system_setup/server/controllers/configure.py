@@ -14,6 +14,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
+import subprocess
+from subiquitycore.utils import run_command
 
 from subiquitycore.context import with_context
 
@@ -69,12 +72,134 @@ class ConfigureController(SubiquityController):
 
             self.app.update_state(ApplicationState.POST_RUNNING)
 
+            variant = self.model.client_variant
+            if variant == "wsl_setup":
+                wsl_identity = self.model.identity
+                run_command(["/usr/sbin/useradd", "-m", "-s", "/bin/bash",
+                             "-p", wsl_identity.password,
+                             wsl_identity.username])
+                run_command(["/usr/sbin/usermod", "-a",
+                             "-c", wsl_identity.realname,
+                             "-G", self.get_userandgroups(),
+                             wsl_identity.username])
+
+                wslconf_base = self.model.wslconfbase
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.automount.root",
+                             wslconf_base.custom_path],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.automount.options",
+                             wslconf_base.custom_mount_opt],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.network.generatehosts",
+                             wslconf_base.gen_host],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.network.generateresolvconf",
+                             wslconf_base.gen_resolvconf],
+                            stdout=subprocess.DEVNULL)
+            else:
+                wslconf_ad = self.model.wslconfadvanced
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.automount.enabled",
+                             wslconf_ad.automount],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.automount.mountfstab",
+                             wslconf_ad.mountfstab],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.automount.root",
+                             wslconf_ad.custom_path],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.automount.options",
+                             wslconf_ad.custom_mount_opt],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.network.generatehosts",
+                             wslconf_ad.gen_host],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.network.generateresolvconf",
+                             wslconf_ad.gen_resolvconf],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.interop.enabled",
+                             wslconf_ad.interop_enabled],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.interop.appendwindowspath",
+                             wslconf_ad.interop_appendwindowspath],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "ubuntu.GUI.followwintheme",
+                             wslconf_ad.gui_followwintheme],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "ubuntu.GUI.theme",
+                             wslconf_ad.gui_theme],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "ubuntu.Interop.guiintergration",
+                             wslconf_ad.legacy_gui],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "ubuntu.Interop.audiointegration",
+                             wslconf_ad.legacy_audio],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "ubuntu.Interop.advancedipdetection",
+                             wslconf_ad.adv_ip_detect],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "ubuntu.Motd.wslnewsenabled",
+                             wslconf_ad.wsl_motd_news],
+                            stdout=subprocess.DEVNULL)
+   
+                wslconf_base = self.model.wslconfbase
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.automount.root",
+                             wslconf_base.custom_path],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.automount.options",
+                             wslconf_base.custom_mount_opt],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.network.generatehosts",
+                             wslconf_base.gen_host],
+                            stdout=subprocess.DEVNULL)
+                run_command(["/usr/bin/ubuntuwsl", "update",
+                             "WSL.network.generateresolvconf",
+                             wslconf_base.gen_resolvconf],
+                            stdout=subprocess.DEVNULL)
+
             self.app.update_state(ApplicationState.DONE)
         except Exception:
             kw = {}
             self.app.make_apport_report(
                 ErrorReportKind.INSTALL_FAIL, "configuration failed", **kw)
             raise
+
+    def get_userandgroups(self):
+        usergroups_path = '/usr/share/subiquity/users-and-groups'
+        build_usergroups_path = \
+            os.path.realpath(__file__ + '/../../../users-and-groups')
+        if os.path.isfile(build_usergroups_path):
+            usergroups_path = build_usergroups_path
+        user_groups = set()
+        if os.path.exists(usergroups_path):
+            with open(usergroups_path) as fp:
+                for line in fp:
+                    line = line.strip()
+                    if line.startswith('#') or not line:
+                        continue
+                    user_groups.add(line)
+        oneline_usergroups = ",".join(user_groups)
+        return oneline_usergroups
 
     def stop_uu(self):
         # This is a no-op to allow Shutdown controller to depend on this one

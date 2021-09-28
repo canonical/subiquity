@@ -83,7 +83,7 @@ class WSLConfigurationBaseController(SubiquityController):
                 gen_host=data['gen_host'],
                 gen_resolvconf=data['gen_resolvconf'],
             )
-            self.model.apply_settings(identity_data, self.opts.dry_run)
+            self.model.apply_settings(identity_data)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -103,5 +103,5 @@ class WSLConfigurationBaseController(SubiquityController):
         return data
 
     async def POST(self, data: WSLConfigurationBase):
-        self.model.apply_settings(data, self.opts.dry_run)
-        await self.configured()
+        self.model.apply_settings(data)
+        self.configured()
