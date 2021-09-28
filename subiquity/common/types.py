@@ -246,9 +246,10 @@ class Bootloader(enum.Enum):
 class Partition:
     size: int
     number: int
-    annotations: Optional[List[str]]
+    annotations: Optional[List[str]] = []
     mount: Optional[str] = None
     format: Optional[str] = None
+    grub_device: Optional[bool] = None
 
 
 @attr.s(auto_attribs=True)
@@ -258,27 +259,8 @@ class Disk:
     label: Optional[str]
     type: Optional[str]
     size: Optional[int]
-    usage_labels: Optional[List[str]]
     ok_for_guided: Optional[bool]
-
-
-@attr.s(auto_attribs=True)
-class PartitionV2:
-    size: int
-    number: int
-    mount: Optional[str] = None
-    format: Optional[str] = None
-
-
-@attr.s(auto_attribs=True)
-class DiskV2:
-    id: str
-    display_name: str
-    partitions: List[PartitionV2]
-    label: Optional[str]
-    type: Optional[str]
-    size: Optional[int]
-    ok_for_guided: Optional[bool]
+    usage_labels: Optional[List[str]] = []
 
 
 @attr.s(auto_attribs=True)
@@ -315,7 +297,7 @@ class StorageResponseV2:
 @attr.s(auto_attribs=True)
 class ModifyPartitionV2:
     disk_id: str
-    partition: PartitionV2
+    partition: Partition
 
 
 @attr.s(auto_attribs=True)
