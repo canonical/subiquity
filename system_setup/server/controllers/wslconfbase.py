@@ -13,10 +13,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import configparser
 import logging
-from os import path
-
 import attr
 
 from subiquitycore.context import with_context
@@ -25,7 +22,7 @@ from subiquity.common.apidef import API
 from subiquity.common.types import WSLConfigurationBase
 from subiquity.server.controller import SubiquityController
 
-from system_setup.common.wsl_utils import config_ref
+from system_setup.common.wsl_conf import wsl_config_loader
 
 log = logging.getLogger('system_setup.server' +
                         '.controllers.wsl_configuration_base')
@@ -53,16 +50,8 @@ class WSLConfigurationBaseController(SubiquityController):
         # load the config file
         data = {}
 
-        if path.exists('/etc/wsl.conf'):
-            wslconfig = configparser.ConfigParser()
-            wslconfig.read('/etc/wsl.conf')
-            for conf_sec in wslconfig:
-                if conf_sec in config_ref['wsl']:
-                    conf_sec_list = wslconfig[conf_sec]
-                    for conf_item in conf_sec_list:
-                        if conf_item in config_ref['wsl'][conf_sec]:
-                            data[config_ref['wsl'][conf_sec][conf_item]] = \
-                                 conf_sec_list[conf_item]
+        data = wsl_config_loader(data, "/etc/wsl.conf", "wsl")
+
         if data:
             def bool_converter(x):
                 return x.lower() == 'true'

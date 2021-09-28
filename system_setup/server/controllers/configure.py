@@ -21,7 +21,7 @@ from subiquity.common.types import ApplicationState
 from subiquity.server.controller import SubiquityController
 from subiquitycore.context import with_context
 from subiquitycore.utils import run_command
-from system_setup.common.conf import WSLConfigHandler
+from system_setup.common.wsl_conf import WSLConfigHandler
 
 log = logging.getLogger("system_setup.server.controllers.configure")
 

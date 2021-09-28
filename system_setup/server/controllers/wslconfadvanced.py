@@ -16,15 +16,13 @@
 import logging
 
 import attr
-from os import path
-import configparser
 from subiquitycore.context import with_context
 
 from subiquity.common.apidef import API
 from subiquity.common.types import WSLConfigurationAdvanced
 from subiquity.server.controller import SubiquityController
 
-from system_setup.common.wsl_utils import config_ref
+from system_setup.common.wsl_conf import wsl_config_loader
 
 log = logging.getLogger(
     'system_setup.server.controllers.wsl_configuration_advanced')
@@ -57,26 +55,10 @@ class WSLConfigurationAdvancedController(SubiquityController):
 
         # load the config file
         data = {}
-        if path.exists('/etc/wsl.conf'):
-            wslconfig = configparser.ConfigParser()
-            wslconfig.read('/etc/wsl.conf')
-            for conf_sec in wslconfig:
-                if conf_sec in config_ref['wsl']:
-                    conf_sec_list = wslconfig[conf_sec]
-                    for conf_item in conf_sec_list:
-                        if conf_item in config_ref['wsl'][conf_sec]:
-                            data[config_ref['wsl'][conf_sec][conf_item]] = \
-                                 conf_sec_list[conf_item]
-        if path.exists('/etc/ubuntu-wsl.conf'):
-            ubuntuconfig = configparser.ConfigParser()
-            ubuntuconfig.read('/etc/ubuntu-wsl.conf')
-            for conf_sec in ubuntuconfig:
-                if conf_sec in config_ref['ubuntu']:
-                    conf_sec_list = ubuntuconfig[conf_sec]
-                    for conf_item in conf_sec_list:
-                        if conf_item in config_ref['ubuntu'][conf_sec]:
-                            data[config_ref['ubuntu'][conf_sec][conf_item]] = \
-                                conf_sec_list[conf_item]
+
+        data = wsl_config_loader(data, "/etc/wsl.conf", "wsl")
+        data = wsl_config_loader(data, "/etc/ubuntu-wsl.conf", "ubuntu")
+
         if data:
             def bool_converter(x):
                 return x.lower() == 'true'

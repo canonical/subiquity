@@ -20,39 +20,6 @@ import subprocess
 
 log = logging.getLogger("subiquity.system_setup.common.wsl_utils")
 
-config_ref = {
-    "wsl": {
-        "automount": {
-            "enabled": "automount",
-            "mountfstab": "mountfstab",
-            "root": "custom_path",
-            "options": "custom_mount_opt",
-        },
-        "network": {
-            "generatehosts": "gen_host",
-            "generateresolvconf": "gen_resolvconf",
-        },
-        "interop": {
-            "enabled": "interop_enabled",
-            "appendwindowspath": "interop_appendwindowspath",
-        }
-    },
-    "ubuntu": {
-        "GUI": {
-            "theme": "gui_theme",
-            "followwintheme": "gui_followwintheme",
-        },
-        "Interop": {
-            "guiintegration": "legacy_gui",
-            "audiointegration": "legacy_audio",
-            "advancedipdetection": "adv_ip_detect",
-        },
-        "Motd": {
-            "wslnewsenabled": "wsl_motd_news",
-        }
-    }
-}
-
 
 def is_reconfigure(is_dryrun):
     if is_dryrun and \
