@@ -52,35 +52,6 @@ class WSLConfigurationAdvancedController(SubiquityController):
         'additionalProperties': False,
     }
 
-    # this is a temporary simplified reference. The future complete reference
-    # should use the default.json in `ubuntu-wsl-integration`.
-    config_ref = {
-        "wsl": {
-            "automount": {
-                "enabled": "automount",
-                "mountfstab": "mountfstab",
-            },
-            "interop": {
-                "enabled": "interop_enabled",
-                "appendwindowspath": "interop_appendwindowspath",
-            }
-        },
-        "ubuntu": {
-            "GUI": {
-                "theme": "gui_theme",
-                "followwintheme": "gui_followwintheme",
-            },
-            "Interop": {
-                "guiintegration": "legacy_gui",
-                "audiointegration": "legacy_audio",
-                "advancedipdetection": "adv_ip_detect",
-            },
-            "Motd": {
-                "wslnewsenabled": "wsl_motd_news",
-            }
-        }
-    }
-
     def __init__(self, app):
         super().__init__(app)
 
@@ -100,7 +71,7 @@ class WSLConfigurationAdvancedController(SubiquityController):
             ubuntuconfig = configparser.ConfigParser()
             ubuntuconfig.read('/etc/ubuntu-wsl.conf')
             for conf_sec in ubuntuconfig:
-                if conf_sec in self.config_ref['ubuntu']:
+                if conf_sec in config_ref['ubuntu']:
                     conf_sec_list = ubuntuconfig[conf_sec]
                     for conf_item in conf_sec_list:
                         if conf_item in config_ref['ubuntu'][conf_sec]:
@@ -122,7 +93,7 @@ class WSLConfigurationAdvancedController(SubiquityController):
                 automount=bool_converter(data['automount']),
                 mountfstab=bool_converter(data['mountfstab']),
             )
-            self.model.apply_settings(reconf_data, self.opts.dry_run)
+            self.model.apply_settings(reconf_data)
 
     def load_autoinstall_data(self, data):
         if data is not None:
@@ -138,7 +109,7 @@ class WSLConfigurationAdvancedController(SubiquityController):
                 automount=data['automount'],
                 mountfstab=data['mountfstab']
             )
-            self.model.apply_settings(reconf_data, self.opts.dry_run)
+            self.model.apply_settings(reconf_data)
 
     @with_context()
     async def apply_autoinstall_config(self, context=None):
@@ -166,5 +137,5 @@ class WSLConfigurationAdvancedController(SubiquityController):
         return data
 
     async def POST(self, data: WSLConfigurationAdvanced):
-        self.model.apply_settings(data, self.opts.dry_run)
-        await self.configured()
+        self.model.apply_settings(data)
+        self.configured()
