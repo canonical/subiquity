@@ -138,4 +138,4 @@ class WSLConfigurationAdvancedController(SubiquityController):
 
     async def POST(self, data: WSLConfigurationAdvanced):
         self.model.apply_settings(data)
-        self.configured()
+        await self.configured()

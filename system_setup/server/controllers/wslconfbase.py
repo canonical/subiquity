@@ -103,4 +103,4 @@ class WSLConfigurationBaseController(SubiquityController):
 
     async def POST(self, data: WSLConfigurationBase):
         self.model.apply_settings(data)
-        self.configured()
+        await self.configured()
