@@ -56,6 +56,7 @@ class ClientException(Exception):
 
 class TestAPI(unittest.IsolatedAsyncioTestCase):
     machine_config = 'examples/simple.json'
+    need_spawn_server = True
 
     async def get(self, query, **kwargs):
         return await self.request('GET', query, **kwargs)
@@ -98,7 +99,7 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
         except aiohttp.client_exceptions.ServerDisconnectedError:
             return
 
-    async def asyncSetUp(self):
+    async def spawn_server(self):
         # start server process
         env = os.environ.copy()
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
@@ -108,19 +109,24 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
         self.proc = await astart_command(cmd, env=env)
         self.server = asyncio.create_task(self.proc.communicate())
 
+    async def asyncSetUp(self):
+        if self.need_spawn_server:
+            await self.spawn_server()
+
         # setup client
         conn = aiohttp.UnixConnector(path=socket_path)
         self.session = aiohttp.ClientSession(connector=conn)
         await self.server_startup()
 
     async def asyncTearDown(self):
-        await self.server_shutdown()
-        await self.session.close()
-        await self.server
-        try:
-            self.proc.kill()
-        except ProcessLookupError:
-            pass
+        if self.need_spawn_server:
+            await self.server_shutdown()
+            await self.session.close()
+            await self.server
+            try:
+                self.proc.kill()
+            except ProcessLookupError:
+                pass
 
 
 class TestSimple(TestAPI):
@@ -213,27 +219,19 @@ class TestWin10Start(TestAPI):
         self.assertEqual('disk-sda', orig_resp['disks'][0]['id'])
         self.assertEqual(4, len(orig_resp['disks'][0]['partitions']))
 
+        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+        self.assertEqual(0, len(resp['disks'][0]['partitions']))
+
         data = {
             'disk_id': disk_id,
             'partition': {
                 'size': -1,
-                'number': 4,
+                'number': 1,
+                'format': 'ext3',
+                'mount': '/',
+                'grub_device': True,
                 'preserve': False,
             }
-        }
-        resp = await self.post('/storage/v2/delete_partition', data)
-        self.assertEqual(3, len(resp['disks'][0]['partitions']))
-
-        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
-        self.assertEqual(0, len(resp['disks'][0]['partitions']))
-
-        data['partition'] = {
-            'size': -1,
-            'number': 1,
-            'format': 'ext3',
-            'mount': '/',
-            'grub_device': True,
-            'preserve': False,
         }
         add_resp = await self.post('/storage/v2/add_partition', data)
         self.assertEqual(2, len(add_resp['disks'][0]['partitions']))
@@ -248,6 +246,9 @@ class TestWin10Start(TestAPI):
         for key in 'size', 'number', 'mount', 'grub_device':
             self.assertEqual(expected[key], actual[key])
         self.assertEqual('ext4', resp['disks'][0]['partitions'][1]['format'])
+
+        resp = await self.post('/storage/v2/delete_partition', data)
+        self.assertEqual(1, len(resp['disks'][0]['partitions']))
 
         resp = await self.post('/storage/v2/reset')
         self.assertEqual(orig_resp, resp)
@@ -278,3 +279,38 @@ class TestWin10Start(TestAPI):
         self.assertEqual(2, len(resp['disks'][0]['partitions']))
         self.assertEqual('ext4', resp['disks'][0]['partitions'][1]['format'])
         self.assertEqual(42410704896, resp['disks'][0]['free_for_partitions'])
+
+    @timeout(5)
+    async def test_v2_delete_requires_reformat(self):
+        disk_id = 'disk-sda'
+        data = {
+            'disk_id': disk_id,
+            'partition': {
+                'size': -1,
+                'number': 4,
+                'mount': '/',
+                'format': 'ext4',
+                'preserve': False,
+            }
+        }
+        await self.post('/storage/v2/edit_partition', data)
+        with self.assertRaises(Exception):
+            await self.post('/storage/v2/delete_partition', data)
+
+# class TestDebug(TestAPI):
+#     machine_config = 'examples/win10.json'
+#     need_spawn_server = False
+
+#     @unittest.skip("useful for interactive debug only")
+#     async def test_v2_delete_debug(self):
+#         data = {
+#             'disk_id': 'disk-sda',
+#             'partition': {
+#                 'size': -1,
+#                 'number': 4,
+#                 'mount': '/',
+#                 'format': 'ext4',
+#                 'preserve': False,
+#             }
+#         }
+#         await self.post('/storage/v2/delete_partition', data)

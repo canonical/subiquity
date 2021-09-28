@@ -356,7 +356,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
             -> StorageResponseV2:
         partition = self.get_partition(data.disk_id, data.partition.number)
         data.partition.size = partition.size
-        self.delete_partition(partition)
+        self.delete_partition(partition, True)
         return await self.v2_add_partition_POST(data)
 
     @with_context(name='probe_once', description='restricted={restricted}')
