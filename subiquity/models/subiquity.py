@@ -109,6 +109,8 @@ class SubiquityModel:
         if root != '/':
             self.target = root
 
+        self.client_variant = ''
+
         self.debconf_selections = DebconfSelectionsModel()
         self.filesystem = FilesystemModel()
         self.identity = IdentityModel()
@@ -146,6 +148,7 @@ class SubiquityModel:
                 functools.partial(self._configured, name))
 
     def set_source_variant(self, variant):
+        self.client_variant = variant
         self._cur_install_model_names = \
             self._install_model_names.for_variant(variant)
         self._cur_postinstall_model_names = \
