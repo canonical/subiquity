@@ -49,7 +49,6 @@ class WSLConfigurationAdvancedController(SubiquityController):
             'automount': {'type': 'boolean'},
             'mountfstab': {'type': 'boolean'}
         },
-        'required': [],
         'additionalProperties': False,
     }
 

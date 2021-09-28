@@ -6,14 +6,20 @@
 import json
 import sys
 
-def load(filename):
+def load(filename, ignore_tz):
     with open(filename, 'r') as f:
         data = json.load(f)
-    tz = data['properties']['timezone'].pop('enum')
+    tz = None
+    if not ignore_tz:
+        tz = data['properties']['timezone'].pop('enum')
     return data, tz
 
-expected, _ = load(sys.argv[1])
-actual, actual_tz = load(sys.argv[2])
+ignore_tz = False
+if len(sys.argv) > 3 and sys.argv[3].lower() == "--ignore-tz":
+    ignore_tz = True
+
+expected, _ = load(sys.argv[1], ignore_tz)
+actual, actual_tz = load(sys.argv[2], ignore_tz)
 
 if expected != actual:
     print('schema mismatch')
@@ -22,6 +28,9 @@ if expected != actual:
     print('actual:')
     print(actual)
     sys.exit(1)
+
+if ignore_tz:
+    sys.exit(0)
 
 expected_tz = [
     '',

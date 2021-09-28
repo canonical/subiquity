@@ -1,0 +1,148 @@
+{
+    "type": "object",
+    "properties": {
+        "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1
+        },
+        "early-commands": {
+            "type": "array",
+            "items": {
+                "type": [
+                    "string",
+                    "array"
+                ],
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "reporting": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "type"
+                ],
+                "additionalProperties": true
+            }
+        },
+        "error-commands": {
+            "type": "array",
+            "items": {
+                "type": [
+                    "string",
+                    "array"
+                ],
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "locale": {
+            "type": "string"
+        },
+        "identity": {
+            "type": "object",
+            "properties": {
+                "realname": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "username",
+                "password"
+            ],
+            "additionalProperties": false
+        },
+        "wslconfbase": {
+            "type": "object",
+            "properties": {
+                "custom_path": {
+                    "type": "string"
+                },
+                "custom_mount_opt": {
+                    "type": "string"
+                },
+                "gen_host": {
+                    "type": "boolean"
+                },
+                "gen_resolvconf": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false
+        },
+        "wslconfadvanced": {
+            "type": "object",
+            "properties": {
+                "interop_enabled": {
+                    "type": "boolean"
+                },
+                "interop_appendwindowspath": {
+                    "type": "boolean"
+                },
+                "gui_theme": {
+                    "type": "string"
+                },
+                "gui_followwintheme": {
+                    "type": "boolean"
+                },
+                "legacy_gui": {
+                    "type": "boolean"
+                },
+                "legacy_audio": {
+                    "type": "boolean"
+                },
+                "adv_ip_detect": {
+                    "type": "boolean"
+                },
+                "wsl_motd_news": {
+                    "type": "boolean"
+                },
+                "automount": {
+                    "type": "boolean"
+                },
+                "mountfstab": {
+                    "type": "boolean"
+                }
+            },
+            "additionalProperties": false
+        },
+        "late-commands": {
+            "type": "array",
+            "items": {
+                "type": [
+                    "string",
+                    "array"
+                ],
+                "items": {
+                    "type": "string"
+                }
+            }
+        },
+        "shutdown": {
+            "type": "string",
+            "enum": [
+                "reboot",
+                "poweroff"
+            ]
+        }
+    },
+    "required": [
+        "version"
+    ],
+    "additionalProperties": true
+}

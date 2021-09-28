@@ -87,6 +87,7 @@ gitdeps: curtin probert
 
 schema: gitdeps
 	@$(PYTHON) -m subiquity.cmd.schema > autoinstall-schema.json
+	@$(PYTHON) -m system_setup.cmd.schema > autoinstall-system-setup-schema.json
 
 clean:
 	./debian/rules clean
