@@ -47,6 +47,14 @@ class Container:
                        for i in range(random.randint(10, 20))])
 
 
+@attr.s(auto_attribs=True)
+class OptionalAndDefault:
+    int: int
+    optional_int: typing.Optional[int]
+    int_default: int = 3
+    optional_int_default: typing.Optional[int] = 4
+
+
 class CommonSerializerTests:
 
     simple_examples = [
@@ -172,3 +180,92 @@ class TestCompactSerializer(CommonSerializerTests, unittest.TestCase):
         data = Data.make_random()
         expected = ['Data', data.field1, data.field2]
         self.assertSerialization(typing.Union[Data, Container], data, expected)
+
+
+class TestOptionalAndDefault(CommonSerializerTests, unittest.TestCase):
+
+    serializer = Serializer()
+
+    def test_happy(self):
+        data = {
+            'int': 11,
+            'optional_int': 12,
+            'int_default': 3,
+            'optional_int_default': 4
+        }
+        expected = OptionalAndDefault(11, 12)
+        self.assertDeserializesTo(OptionalAndDefault, data, expected)
+
+    def test_skip_int(self):
+        data = {
+            'optional_int': 12,
+            'int_default': 13,
+            'optional_int_default': 14
+        }
+
+        with self.assertRaises(TypeError):
+            self.serializer.deserialize(OptionalAndDefault, data)
+
+    def test_skip_optional_int(self):
+        data = {
+            'int': 11,
+            'int_default': 13,
+            'optional_int_default': 14
+        }
+
+        with self.assertRaises(TypeError):
+            self.serializer.deserialize(OptionalAndDefault, data)
+
+    def test_optional_int_none(self):
+        data = {
+            'int': 11,
+            'optional_int': None,
+            'int_default': 13,
+            'optional_int_default': 14
+        }
+
+        expected = OptionalAndDefault(11, None, 13, 14)
+        self.assertDeserializesTo(OptionalAndDefault, data, expected)
+
+    def test_skip_int_default(self):
+        data = {
+            'int': 11,
+            'optional_int': 12,
+            'optional_int_default': 14
+        }
+
+        expected = OptionalAndDefault(11, 12, 3, 14)
+        self.assertDeserializesTo(OptionalAndDefault, data, expected)
+
+    def test_skip_optional_int_default(self):
+        data = {
+            'int': 11,
+            'optional_int': 12,
+            'int_default': 13,
+        }
+
+        expected = OptionalAndDefault(11, 12, 13, 4)
+        self.assertDeserializesTo(OptionalAndDefault, data, expected)
+
+    def test_optional_int_default_none(self):
+        data = {
+            'int': 11,
+            'optional_int': 12,
+            'int_default': 13,
+            'optional_int_default': None,
+        }
+
+        expected = OptionalAndDefault(11, 12, 13, None)
+        self.assertDeserializesTo(OptionalAndDefault, data, expected)
+
+    def test_extra(self):
+        data = {
+            'int': 11,
+            'optional_int': 12,
+            'int_default': 13,
+            'optional_int_default': 14,
+            'extra': 15
+        }
+
+        with self.assertRaises(KeyError):
+            self.serializer.deserialize(OptionalAndDefault, data)
