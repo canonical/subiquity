@@ -87,7 +87,9 @@ class FilesystemManipulator:
         self.create_filesystem(part, spec)
         return part
 
-    def delete_partition(self, part):
+    def delete_partition(self, part, override_preserve=False):
+        if not override_preserve and part.device.preserve:
+            raise Exception("cannot delete partitions from preserved disks")
         self.clear(part)
         self.model.remove_partition(part)
 
@@ -137,7 +139,7 @@ class FilesystemManipulator:
         for v in raid._subvolumes:
             self.delete_raid(v)
         for p in list(raid.partitions()):
-            self.delete_partition(p)
+            self.delete_partition(p, True)
         for d in set(raid.devices) | set(raid.spare_devices):
             d.wipe = 'superblock'
         self.model.remove_raid(raid)
@@ -192,7 +194,7 @@ class FilesystemManipulator:
     def reformat(self, disk):
         disk.grub_device = False
         for p in list(disk.partitions()):
-            self.delete_partition(p)
+            self.delete_partition(p, True)
         self.clear(disk)
 
     def partition_disk_handler(self, disk, partition, spec):
