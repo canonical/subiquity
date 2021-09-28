@@ -246,6 +246,7 @@ class Bootloader(enum.Enum):
 class Partition:
     size: int
     number: int
+    preserve: bool
     annotations: Optional[List[str]] = []
     mount: Optional[str] = None
     format: Optional[str] = None
@@ -258,7 +259,7 @@ class Disk:
     partitions: List[Partition]
     label: Optional[str]
     type: Optional[str]
-    size: Optional[int]
+    size: int
     ok_for_guided: Optional[bool]
     free_for_partitions: Optional[int] = 0
     usage_labels: Optional[List[str]] = []
