@@ -320,12 +320,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
     async def v2_add_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
         disk = self.model._one(id=data.disk_id)
+        flag = ""
+        wipe = "superblock"
+        grub_device = data.partition.grub_device
         size = data.partition.size
         if size is None or size < 0:
             size = disk.free_for_partitions
-        flag = ""
-        wipe = "superblock"
-        grub_device = False
         spec = {
             "size": size,
             "fstype": data.partition.format,
