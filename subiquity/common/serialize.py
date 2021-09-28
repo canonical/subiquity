@@ -192,9 +192,10 @@ class Serializer:
             return annotation(*args)
         else:
             args = {}
-            for field in attr.fields(annotation):
+            fields = {field.name: field for field in attr.fields(annotation)}
+            for key in value.keys():
                 args.update(self._deserialize_field(
-                    field, value[field.name], path))
+                    fields[key], value[key], path))
             return annotation(**args)
 
     def deserialize(self, annotation, value, metadata=None, path=''):
