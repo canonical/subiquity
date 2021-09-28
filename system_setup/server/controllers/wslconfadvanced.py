@@ -53,35 +53,6 @@ class WSLConfigurationAdvancedController(SubiquityController):
         'additionalProperties': False,
     }
 
-    # this is a temporary simplified reference. The future complete reference
-    # should use the default.json in `ubuntu-wsl-integration`.
-    config_ref = {
-        "wsl": {
-            "automount": {
-                "enabled": "automount",
-                "mountfstab": "mountfstab",
-            },
-            "interop": {
-                "enabled": "interop_enabled",
-                "appendwindowspath": "interop_appendwindowspath",
-            }
-        },
-        "ubuntu": {
-            "GUI": {
-                "theme": "gui_theme",
-                "followwintheme": "gui_followwintheme",
-            },
-            "Interop": {
-                "guiintegration": "legacy_gui",
-                "audiointegration": "legacy_audio",
-                "advancedipdetection": "adv_ip_detect",
-            },
-            "Motd": {
-                "wslnewsenabled": "wsl_motd_news",
-            }
-        }
-    }
-
     def __init__(self, app):
         super().__init__(app)
 
