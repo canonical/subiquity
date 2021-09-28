@@ -57,11 +57,7 @@ class ClientException(Exception):
 async def guided(client):
     resp = await client.get('/storage/guided')
     disk_id = resp['disks'][0]['id']
-    choice = {
-            "disk_id": disk_id,
-            "use_lvm": False,
-            "password": None,
-    }
+    choice = {"disk_id": disk_id}
     await client.post('/storage/v2/guided', choice=choice)
     await client.post('/storage/v2')
 
@@ -172,14 +168,14 @@ class TestBitlocker(TestAPI):
     async def test_bitlocker(self):
         resp = await self.get('/storage/has_bitlocker')
         json_print(resp)
-        self.assertEqual(resp[0]['partitions'][2]['format'], 'BitLocker')
+        self.assertEqual('BitLocker', resp[0]['partitions'][2]['format'])
 
 
 class TestSimple(TestAPI):
     @timeout(5)
     async def test_not_bitlocker(self):
         resp = await self.get('/storage/has_bitlocker')
-        self.assertEqual(len(resp), 0)
+        self.assertEqual(0, len(resp))
 
     @timeout(10)
     async def test_server_flow(self):
@@ -218,15 +214,15 @@ class TestSimple(TestAPI):
             await self.get('/meta/status', cur=state)
 
     @timeout(5)
-    async def test_json_handling(self):
-        choice = {
-                'disk_id': 'disk-sda',
-                'use_lvm': False,
-                # 'password':  # it should cope with absent data w/ a default
-        }
-        await self.post('/storage/guided', choice=choice)
+    async def test_default(self):
+        choice = {'disk_id': 'disk-sda'}
+        resp = await self.post('/storage/guided', choice=choice)
+        self.assertEqual(7, len(resp['config']))
+        self.assertEqual('/dev/sda', resp['config'][0]['path'])
 
     @timeout(5)
-    async def test_missing_but_has_default_value(self):
+    async def test_guided_v2(self):
         choice = {'disk_id': 'disk-sda'}
-        await self.post('/storage/guided', choice=choice)
+        resp = await self.post('/storage/v2/guided', choice=choice)
+        self.assertEqual(1, len(resp['disks']))
+        self.assertEqual('disk-sda', resp['disks'][0]['id'])
