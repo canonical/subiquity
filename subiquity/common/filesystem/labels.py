@@ -265,6 +265,7 @@ def _for_client_disk(disk, *, min_size=0):
         size=disk.size,
         usage_labels=usage_labels(disk),
         partitions=[for_client(p) for p in disk._partitions],
+        free_for_partitions=disk.free_for_partitions,
         ok_for_guided=disk.size >= min_size)
 
 

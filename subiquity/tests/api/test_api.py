@@ -252,3 +252,23 @@ class TestWin10Start(TestAPI):
         json_print(resp)
 
         await self.post('/storage/v2')
+
+    @timeout(5)
+    async def test_v2_free_for_partitions(self):
+        disk_id = 'disk-sda'
+        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+
+        data = {
+            'disk_id': disk_id,
+            'partition': {
+                'size': resp['disks'][0]['size'] // 2,
+                'number': 1,
+                'format': 'ext4',
+                'mount': '/',
+                'grub_device': True
+            }
+        }
+        resp = await self.post('/storage/v2/add_partition', data)
+        self.assertEqual(2, len(resp['disks'][0]['partitions']))
+        self.assertEqual('ext4', resp['disks'][0]['partitions'][1]['format'])
+        self.assertEqual(42410704896, resp['disks'][0]['free_for_partitions'])
