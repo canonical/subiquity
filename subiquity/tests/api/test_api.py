@@ -218,6 +218,7 @@ class TestWin10Start(TestAPI):
             'partition': {
                 'size': -1,
                 'number': 4,
+                'preserve': False,
             }
         }
         resp = await self.post('/storage/v2/delete_partition', data)
@@ -226,10 +227,14 @@ class TestWin10Start(TestAPI):
         resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
         self.assertEqual(0, len(resp['disks'][0]['partitions']))
 
-        data['partition']['number'] = 1
-        data['partition']['format'] = 'ext3'
-        data['partition']['mount'] = '/'
-        data['partition']['grub_device'] = True
+        data['partition'] = {
+            'size': -1,
+            'number': 1,
+            'format': 'ext3',
+            'mount': '/',
+            'grub_device': True,
+            'preserve': False,
+        }
         add_resp = await self.post('/storage/v2/add_partition', data)
         self.assertEqual(2, len(add_resp['disks'][0]['partitions']))
         self.assertEqual('ext3',
@@ -265,7 +270,8 @@ class TestWin10Start(TestAPI):
                 'number': 1,
                 'format': 'ext4',
                 'mount': '/',
-                'grub_device': True
+                'grub_device': True,
+                'preserve': False,
             }
         }
         resp = await self.post('/storage/v2/add_partition', data)
