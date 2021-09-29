@@ -299,6 +299,8 @@ class TestWin10Start(TestAPI):
 
     @timeout(5)
     async def test_v2_reuse(self):
+        orig_resp = await self.get('/storage/v2')
+
         disk_id = 'disk-sda'
         data = {
             'disk_id': disk_id,
@@ -312,10 +314,27 @@ class TestWin10Start(TestAPI):
             }
         }
         resp = await self.post('/storage/v2/edit_partition', data)
-        json_print(resp)
-        await self.post('/storage/v2')
-        # resp = await self.get('/storage')
-        # json_print(resp)
+        orig_disk = orig_resp['disks'][0]
+        disk = resp['disks'][0]
+
+        esp = disk['partitions'][0]
+        self.assertIsNone(esp['wipe'])
+        self.assertEqual('/boot/efi', esp['mount'])
+        self.assertEqual('vfat', esp['format'])
+
+        one = disk['partitions'][1]
+        expected_one = orig_disk['partitions'][1]
+        self.assertEqual(expected_one, one)
+
+        root = disk['partitions'][2]
+        self.assertEqual('superblock', root['wipe'])
+        self.assertEqual('/', root['mount'])
+        self.assertEqual('ext4', root['format'])
+
+        three = disk['partitions'][3]
+        expected_three = orig_disk['partitions'][3]
+        self.assertEqual(expected_three, three)
+
 
 # class TestDebug(TestAPI):
 #     machine_config = 'examples/win10.json'
