@@ -18,6 +18,7 @@ import os
 
 from subiquity.common.apidef import API
 from subiquity.server.controller import SubiquityController
+from subiquity.server.types import InstallerChannels
 
 
 log = logging.getLogger('subiquity.server.controllers.locale')
@@ -38,6 +39,12 @@ class LocaleController(SubiquityController):
         self.model.selected_language = os.environ.get("LANG") \
                 or self.autoinstall_default
         self.app.aio_loop.create_task(self.configured())
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'source'), self._set_source)
+
+    def _set_source(self):
+        current = self.app.base_model.source.current
+        self.model.locale_support = current.locale_support
 
     def serialize(self):
         return self.model.selected_language

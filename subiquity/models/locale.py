@@ -18,13 +18,14 @@ import logging
 log = logging.getLogger('subiquity.models.locale')
 
 
-class LocaleModel(object):
+class LocaleModel:
     """ Model representing locale selection
 
     XXX Only represents *language* selection for now.
     """
 
     selected_language = None
+    locale_support = "locale-only"
 
     def switch_language(self, code):
         self.selected_language = code
