@@ -252,6 +252,9 @@ class API:
             class reformat_disk:
                 def POST(disk_id: str) -> StorageResponseV2: ...
 
+            class add_boot_partition:
+                def POST(disk_id: str) -> StorageResponseV2: ...
+
             class add_partition:
                 def POST(data: Payload[ModifyPartitionV2]) \
                     -> StorageResponseV2: ...

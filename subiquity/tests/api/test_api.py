@@ -22,6 +22,16 @@ if ver.major < 3 or ver.minor < 8:
     raise Exception('skip asyncio testing')
 
 
+def find(items, key, value):
+    for item in items:
+        if item[key] == value:
+            yield item
+
+
+def first(items, key, value):
+    return next(find(items, key, value))
+
+
 def timeout(_timeout):
     def wrapper(coro):
         @wraps(coro)
@@ -128,6 +138,14 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
                 pass
 
 
+# class TestDebug(TestAPI):
+#     need_spawn_server = False
+
+#     @unittest.skip("useful for interactive debug only")
+#     async def test_v2_delete_debug(self):
+#         await self.get('/storage/v2')
+
+
 class TestSimple(TestAPI):
     @timeout(5)
     async def test_not_bitlocker(self):
@@ -188,24 +206,26 @@ class TestSimple(TestAPI):
         self.assertEqual(1, len(resp['disks']))
         self.assertEqual('disk-sda', resp['disks'][0]['id'])
 
+    @timeout(5)
+    async def test_v2_add_boot_manually(self):
+        self.maxDiff = None
+        disk_id = 'disk-sda'
 
-# class TestDebug(TestAPI):
-#     machine_config = 'examples/win10.json'
-#     need_spawn_server = False
+        data = {
+            'disk_id': disk_id,
+            'partition': {
+                'format': 'ext4',
+                'mount': '/',
+            }
+        }
+        simple_add = await self.post('/storage/v2/add_partition', data)
+        self.assertEqual(2, len(simple_add['disks'][0]['partitions']))
 
-#     @unittest.skip("useful for interactive debug only")
-#     async def test_v2_delete_debug(self):
-#         data = {
-#             'disk_id': 'disk-sda',
-#             'partition': {
-#                 'size': -1,
-#                 'number': 4,
-#                 'mount': '/',
-#                 'format': 'ext4',
-#                 'preserve': False,
-#             }
-#         }
-#         await self.post('/storage/v2/delete_partition', data)
+        await self.post('/storage/v2/reset')
+
+        await self.post('/storage/v2/add_boot_partition', disk_id=disk_id)
+        manual_add = await self.post('/storage/v2/add_partition', data)
+        self.assertEqual(simple_add, manual_add)
 
 
 class TestWin10Start(TestAPI):
@@ -359,8 +379,7 @@ class TestWin10Start(TestAPI):
     @timeout(5)
     async def test_v2_gpt(self):
         resp = await self.get('/storage/v2')
-        disks = resp['disks']
-        sda = next(disk for disk in disks if disk['id'] == 'disk-sda')
+        sda = first(resp['disks'], 'id', 'disk-sda')
         self.assertEqual('gpt', sda['ptable'])
 
 
@@ -369,7 +388,15 @@ class TestManyDisks(TestAPI):
 
     @timeout(5)
     async def test_v2_msdos(self):
+        disk_id = 'disk-sda'
         resp = await self.get('/storage/v2')
-        disks = resp['disks']
-        sda = next(disk for disk in disks if disk['id'] == 'disk-sda')
+        sda = first(resp['disks'], 'id', disk_id)
         self.assertEqual('msdos', sda['ptable'])
+
+        sda5 = first(sda['partitions'], 'number', 5)
+        sda5.update({'format': 'ext4', 'mount': '/'})
+        data = {
+            'disk_id': disk_id,
+            'partition': sda5
+        }
+        await self.post('/storage/v2/edit_partition', data)

@@ -317,12 +317,22 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.reformat(self.model._one(id=disk_id))
         return await self.v2_GET()
 
+    async def v2_add_boot_partition_POST(self, disk_id: str) \
+            -> StorageResponseV2:
+        disk = self.model._one(id=disk_id)
+        if DeviceAction.TOGGLE_BOOT not in DeviceAction.supported(disk):
+            raise ValueError("disk does not support boot partiton")
+        self.add_boot_disk(disk)
+        return await self.v2_GET()
+
     async def v2_add_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
         disk = self.model._one(id=data.disk_id)
         flag = ""
         wipe = "superblock"
         grub_device = data.partition.grub_device
+        if grub_device:
+            flag = "boot"
         size = data.partition.size
         if size is None or size < 0:
             size = disk.free_for_partitions
@@ -335,16 +345,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         self.create_partition(disk, spec, flag, wipe, grub_device)
         return await self.v2_GET()
 
-    def get_partition(self, disk_id, partition_number):
+    def get_partition(self, disk_id, number):
         disk = self.model._one(id=disk_id)
-        partition = None
         for p in disk.partitions():
-            if p._number == partition_number:
-                partition = p
-        if not partition:
-            raise ValueError(f'Partition {partition_number} on '
-                             + f'{disk_id} not found')
-        return partition
+            if p._number == number:
+                return p
+        raise ValueError(f'Partition {number} on {disk_id} not found')
 
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
@@ -358,7 +364,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         disk = self.model._one(id=data.disk_id)
         spec = {
             "fstype": data.partition.format,
-            "mount": data.partition.mount
+            "mount": data.partition.mount,
+            "grub_device": data.partition.grub_device,
         }
         self.partition_disk_handler(disk, partition, spec)
         return await self.v2_GET()
