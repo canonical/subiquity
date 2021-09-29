@@ -990,6 +990,8 @@ class FilesystemModel(object):
         matchers = self._make_matchers(match)
         candidates = []
         for candidate in disks:
+            if candidate.size == 0:
+                continue
             for matcher in matchers:
                 if not matcher(candidate):
                     break

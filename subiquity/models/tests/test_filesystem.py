@@ -334,6 +334,41 @@ class TestAutoInstallConfig(unittest.TestCase):
         new_disk = model._one(type="disk", id="disk0")
         self.assertEqual(new_disk.serial, "larger")
 
+    def test_smallest(self):
+        model = make_model()
+        make_disk(model, serial='smaller', size=10*(2**30))
+        make_disk(model, serial='larger', size=11*(2**30))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'match': {
+                    'size': 'smallest',
+                    },
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.serial, "smaller")
+
+    def test_smallest_skips_zero_size(self):
+        model = make_model()
+        make_disk(model, serial='smallest', size=0)
+        make_disk(model, serial='smaller', size=10*(2**30))
+        make_disk(model, serial='larger', size=11*(2**30))
+        fake_up_blockdata(model)
+        model.apply_autoinstall_config([
+            {
+                'type': 'disk',
+                'id': 'disk0',
+                'match': {
+                    'size': 'smallest',
+                    },
+            },
+            ])
+        new_disk = model._one(type="disk", id="disk0")
+        self.assertEqual(new_disk.serial, "smaller")
+
     def test_serial_exact(self):
         model = make_model()
         make_disk(model, serial='aaaa', path='/dev/aaa')
