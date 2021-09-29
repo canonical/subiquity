@@ -196,7 +196,6 @@ class TestWin10Start(TestAPI):
     @timeout(5)
     async def test_bitlocker(self):
         resp = await self.get('/storage/has_bitlocker')
-        json_print(resp)
         self.assertEqual('BitLocker', resp[0]['partitions'][2]['format'])
 
     @timeout(5)
@@ -254,9 +253,7 @@ class TestWin10Start(TestAPI):
         self.assertEqual(orig_resp, resp)
 
         choice = {'disk_id': disk_id}
-        resp = await self.post('/storage/v2/guided', choice=choice)
-        json_print(resp)
-
+        await self.post('/storage/v2/guided', choice=choice)
         await self.post('/storage/v2')
 
     @timeout(5)
@@ -322,19 +319,21 @@ class TestWin10Start(TestAPI):
         self.assertIsNone(esp['wipe'])
         self.assertEqual('/boot/efi', esp['mount'])
         self.assertEqual('vfat', esp['format'])
+        self.assertTrue(esp['grub_device'])
 
-        one = disk['partitions'][1]
-        expected_one = orig_disk['partitions'][1]
-        self.assertEqual(expected_one, one)
+        part = disk['partitions'][1]
+        expected = orig_disk['partitions'][1]
+        self.assertEqual(expected, part)
 
         root = disk['partitions'][2]
         self.assertEqual('superblock', root['wipe'])
         self.assertEqual('/', root['mount'])
         self.assertEqual('ext4', root['format'])
+        self.assertFalse(root['grub_device'])
 
-        three = disk['partitions'][3]
-        expected_three = orig_disk['partitions'][3]
-        self.assertEqual(expected_three, three)
+        part = disk['partitions'][3]
+        expected = orig_disk['partitions'][3]
+        self.assertEqual(expected, part)
 
 
 # class TestDebug(TestAPI):
