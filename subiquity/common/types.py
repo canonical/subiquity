@@ -244,8 +244,8 @@ class Bootloader(enum.Enum):
 
 @attr.s(auto_attribs=True)
 class Partition:
-    size: int
-    number: int
+    size: Optional[int] = None
+    number: Optional[int] = None
     preserve: Optional[bool] = None
     wipe: Optional[str] = None
     annotations: Optional[List[str]] = []
