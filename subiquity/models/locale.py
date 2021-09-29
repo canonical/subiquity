@@ -36,6 +36,8 @@ class LocaleModel:
     def make_cloudconfig(self):
         if not self.selected_language:
             return {}
+        if self.locale_support == "none":
+            return {}
         locale = self.selected_language
         if '.' not in locale and '_' in locale:
             locale += '.UTF-8'
