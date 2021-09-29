@@ -37,7 +37,7 @@ class SnapListController(SubiquityTuiController):
     endpoint_name = 'snaplist'
 
     async def make_ui(self):
-        data = await self.endpoint.GET()
+        data = await self.endpoint1.GET()
         if data.status == SnapCheckState.FAILED:
             # If loading snaps failed or the network is disabled, skip the
             # screen.

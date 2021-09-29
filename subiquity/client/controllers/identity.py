@@ -27,7 +27,7 @@ class IdentityController(SubiquityTuiController):
     endpoint_name = 'identity'
 
     async def make_ui(self):
-        data = await self.endpoint.GET()
+        data = await self.endpoint1.GET()
         return IdentityView(self, data)
 
     def run_answers(self):

@@ -67,11 +67,13 @@ def make_client(endpoint_cls, make_request, serializer=None):
 
 
 def make_client_for_conn(
-        endpoint_cls, conn, resp_hook=lambda r: r, serializer=None):
+        endpoint_cls, conn, resp_hook=lambda r: r, serializer=None,
+        headers={}):
     @contextlib38.asynccontextmanager
     async def make_request(method, path, *, params, json):
         async with aiohttp.ClientSession(
-                connector=conn, connector_owner=False) as session:
+                connector=conn, connector_owner=False,
+                headers=headers) as session:
             # session.request needs a full URL with scheme and host
             # even though that's in some ways a bit silly with a unix
             # socket, so we just hardcode something here (I guess the

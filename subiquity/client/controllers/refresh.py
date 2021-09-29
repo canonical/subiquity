@@ -54,7 +54,7 @@ class RefreshController(SubiquityTuiController):
         if self.app.updated:
             raise Skip()
         show = False
-        self.status = await self.endpoint.GET()
+        self.status = await self.endpoint1.GET()
         if index == 1:
             if self.status.availability == RefreshCheckState.AVAILABLE:
                 show = True

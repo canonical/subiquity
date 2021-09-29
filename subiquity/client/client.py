@@ -136,6 +136,8 @@ class SubiquityClient(TuiApplication):
 
         self.conn = aiohttp.UnixConnector(self.opts.socket)
         self.client = make_client_for_conn(API, self.conn, self.resp_hook)
+        self.client1 = make_client_for_conn(
+            API, self.conn, self.resp_hook, headers={'x-first-request': 'yes'})
 
         self.error_reporter = ErrorReporter(
             self.context.child("ErrorReporter"), self.opts.dry_run, self.root,

@@ -30,7 +30,7 @@ class WelcomeController(SubiquityTuiController):
     async def make_ui(self):
         if not self.app.rich_mode:
             raise Skip()
-        language = await self.endpoint.GET()
+        language = await self.endpoint1.GET()
         i18n.switch_language(language)
         self.serial = self.app.opts.run_on_serial
         return WelcomeView(self, language, self.serial)

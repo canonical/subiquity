@@ -55,7 +55,7 @@ class FilesystemController(SubiquityTuiController, FilesystemManipulator):
         self.answers.setdefault('manual', [])
 
     async def make_ui(self):
-        status = await self.endpoint.guided.GET()
+        status = await self.endpoint1.guided.GET()
         if status.status == ProbeStatus.PROBING:
             self.app.aio_loop.create_task(self._wait_for_probing())
             return SlowProbing(self)
