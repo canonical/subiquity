@@ -316,6 +316,7 @@ class TestWin10Start(TestAPI):
         resp = await self.post('/storage/v2/edit_partition', data)
         orig_disk = orig_resp['disks'][0]
         disk = resp['disks'][0]
+        self.assertEqual('/dev/sda', disk['path'])
 
         esp = disk['partitions'][0]
         self.assertIsNone(esp['wipe'])
