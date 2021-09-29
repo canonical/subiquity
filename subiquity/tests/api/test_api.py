@@ -297,6 +297,26 @@ class TestWin10Start(TestAPI):
         with self.assertRaises(Exception):
             await self.post('/storage/v2/delete_partition', data)
 
+    @timeout(5)
+    async def test_v2_reuse(self):
+        disk_id = 'disk-sda'
+        data = {
+            'disk_id': disk_id,
+            'partition': {
+                'size': 0,
+                'number': 3,
+                'format': 'ext4',
+                'mount': '/',
+                'grub_device': False,
+                # 'preserve': False,
+            }
+        }
+        resp = await self.post('/storage/v2/edit_partition', data)
+        json_print(resp)
+        await self.post('/storage/v2')
+        # resp = await self.get('/storage')
+        # json_print(resp)
+
 # class TestDebug(TestAPI):
 #     machine_config = 'examples/win10.json'
 #     need_spawn_server = False
