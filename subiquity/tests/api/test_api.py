@@ -100,7 +100,6 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
             return
 
     async def spawn_server(self):
-        # start server process
         env = os.environ.copy()
         env['SUBIQUITY_REPLAY_TIMESCALE'] = '100'
         cmd = 'python3 -m subiquity.cmd.server --dry-run --bootloader uefi' \
@@ -190,6 +189,25 @@ class TestSimple(TestAPI):
         self.assertEqual('disk-sda', resp['disks'][0]['id'])
 
 
+# class TestDebug(TestAPI):
+#     machine_config = 'examples/win10.json'
+#     need_spawn_server = False
+
+#     @unittest.skip("useful for interactive debug only")
+#     async def test_v2_delete_debug(self):
+#         data = {
+#             'disk_id': 'disk-sda',
+#             'partition': {
+#                 'size': -1,
+#                 'number': 4,
+#                 'mount': '/',
+#                 'format': 'ext4',
+#                 'preserve': False,
+#             }
+#         }
+#         await self.post('/storage/v2/delete_partition', data)
+
+
 class TestWin10Start(TestAPI):
     machine_config = 'examples/win10.json'
 
@@ -253,8 +271,11 @@ class TestWin10Start(TestAPI):
         self.assertEqual(orig_resp, resp)
 
         choice = {'disk_id': disk_id}
-        await self.post('/storage/v2/guided', choice=choice)
+        orig_resp = await self.post('/storage/v2/guided', choice=choice)
         await self.post('/storage/v2')
+        resp = await self.get('/storage/v2')
+        # posting to the endpoint shouldn't change the answer
+        self.assertEqual(orig_resp, resp)
 
     @timeout(5)
     async def test_v2_free_for_partitions(self):
@@ -335,21 +356,20 @@ class TestWin10Start(TestAPI):
         expected = orig_disk['partitions'][3]
         self.assertEqual(expected, part)
 
+    @timeout(5)
+    async def test_v2_gpt(self):
+        resp = await self.get('/storage/v2')
+        disks = resp['disks']
+        sda = next(disk for disk in disks if disk['id'] == 'disk-sda')
+        self.assertEqual('gpt', sda['ptable'])
 
-# class TestDebug(TestAPI):
-#     machine_config = 'examples/win10.json'
-#     need_spawn_server = False
 
-#     @unittest.skip("useful for interactive debug only")
-#     async def test_v2_delete_debug(self):
-#         data = {
-#             'disk_id': 'disk-sda',
-#             'partition': {
-#                 'size': -1,
-#                 'number': 4,
-#                 'mount': '/',
-#                 'format': 'ext4',
-#                 'preserve': False,
-#             }
-#         }
-#         await self.post('/storage/v2/delete_partition', data)
+class TestManyDisks(TestAPI):
+    machine_config = 'examples/many-nics-and-disks.json'
+
+    @timeout(5)
+    async def test_v2_msdos(self):
+        resp = await self.get('/storage/v2')
+        disks = resp['disks']
+        sda = next(disk for disk in disks if disk['id'] == 'disk-sda')
+        self.assertEqual('msdos', sda['ptable'])
