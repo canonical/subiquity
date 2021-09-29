@@ -247,6 +247,7 @@ class Partition:
     size: int
     number: int
     preserve: bool
+    wipe: Optional[str] = None
     annotations: Optional[List[str]] = []
     mount: Optional[str] = None
     format: Optional[str] = None

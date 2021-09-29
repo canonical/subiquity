@@ -281,6 +281,7 @@ def _for_client_partition(partition, *, min_size=0):
     return types.Partition(
         size=partition.size,
         number=partition._number,
+        wipe=partition.wipe,
         preserve=partition.preserve,
         annotations=annotations(partition) + usage_labels(partition),
         mount=mount,
