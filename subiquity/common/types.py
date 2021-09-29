@@ -262,6 +262,7 @@ class Disk:
     type: Optional[str]
     size: int
     ok_for_guided: Optional[bool]
+    path: Optional[str] = None
     free_for_partitions: Optional[int] = 0
     usage_labels: Optional[List[str]] = []
 
