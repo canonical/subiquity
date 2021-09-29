@@ -262,6 +262,7 @@ class Disk:
     type: Optional[str]
     size: int
     ok_for_guided: Optional[bool]
+    ptable: Optional[str]
     preserve: Optional[bool] = None
     path: Optional[str] = None
     free_for_partitions: Optional[int] = 0

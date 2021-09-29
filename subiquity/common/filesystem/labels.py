@@ -265,6 +265,7 @@ def _for_client_disk(disk, *, min_size=0):
         path=path,
         type=desc(disk),
         size=disk.size,
+        ptable=disk.ptable,
         preserve=disk.preserve,
         usage_labels=usage_labels(disk),
         partitions=[for_client(p) for p in disk._partitions],
