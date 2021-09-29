@@ -15,6 +15,8 @@
 
 import logging
 
+from subiquitycore.utils import split_cmd_output
+
 log = logging.getLogger('subiquity.models.locale')
 
 
@@ -26,6 +28,9 @@ class LocaleModel:
 
     selected_language = None
     locale_support = "locale-only"
+
+    def __init__(self, chroot_prefix):
+        self.chroot_prefix = chroot_prefix
 
     def switch_language(self, code):
         self.selected_language = code
@@ -42,3 +47,15 @@ class LocaleModel:
         if '.' not in locale and '_' in locale:
             locale += '.UTF-8'
         return {'locale': locale}
+
+    async def target_packages(self):
+        if self.selected_language is None:
+            return []
+        if self.locale_support != "langpack":
+            return []
+        lang = self.selected_language.split('.')[0]
+        if lang == "C":
+            return []
+
+        return await split_cmd_output(
+            self.chroot_prefix + ['check-language-support', '-l', lang], None)

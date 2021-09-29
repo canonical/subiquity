@@ -60,4 +60,4 @@ class LocaleController(SubiquityController):
 
     async def POST(self, data: str):
         self.model.switch_language(data)
-        self.configured()
+        await self.configured()

@@ -52,10 +52,11 @@ class SystemSetupModel(SubiquityModel):
         self.root = root
         if root != '/':
             self.target = root
+            self.chroot_prefix = []
 
         self.packages = []
         self.userdata = {}
-        self.locale = LocaleModel()
+        self.locale = LocaleModel(self.chroot_prefix)
         self.identity = IdentityModel()
         self.wslconfbase = WSLConfigurationBaseModel()
         self.wslconfadvanced = WSLConfigurationAdvancedModel()

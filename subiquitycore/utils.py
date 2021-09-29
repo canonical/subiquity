@@ -97,6 +97,11 @@ async def astart_command(cmd, *, stdout=subprocess.PIPE,
         env=_clean_env(env), **kw)
 
 
+async def split_cmd_output(cmd, split_on):
+    cp = await arun_command(cmd, check=True)
+    return cp.stdout.split(split_on)
+
+
 def start_command(cmd, *, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                   stderr=subprocess.PIPE, encoding='utf-8', errors='replace',
                   env=None, **kw):

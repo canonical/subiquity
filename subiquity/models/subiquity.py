@@ -116,7 +116,7 @@ class SubiquityModel:
         self.identity = IdentityModel()
         self.kernel = KernelModel()
         self.keyboard = KeyboardModel(self.root)
-        self.locale = LocaleModel()
+        self.locale = LocaleModel(self.chroot_prefix)
         self.mirror = MirrorModel()
         self.network = NetworkModel()
         self.packages = []
