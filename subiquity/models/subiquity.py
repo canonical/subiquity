@@ -101,6 +101,7 @@ class SubiquityModel:
     """The overall model for subiquity."""
 
     target = '/target'
+    chroot_prefix = ['chroot', target]
 
     def __init__(self, root, hub, install_model_names,
                  postinstall_model_names):
@@ -108,6 +109,7 @@ class SubiquityModel:
         self.hub = hub
         if root != '/':
             self.target = root
+            self.chroot_prefix = []
 
         self.debconf_selections = DebconfSelectionsModel()
         self.filesystem = FilesystemModel()
@@ -217,9 +219,7 @@ class SubiquityModel:
         self._confirmation.set()
 
     def get_target_groups(self):
-        command = ['chroot', self.target, 'getent', 'group']
-        if self.root != '/':
-            del command[:2]
+        command = self.chroot_prefix + ['getent', 'group']
         cp = run_command(command, check=True)
         groups = set()
         for line in cp.stdout.splitlines():
