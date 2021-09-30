@@ -228,7 +228,7 @@ class TestSimple(TestAPI):
         self.assertEqual(simple_add, manual_add)
 
 
-class TestWin10Start(TestAPI):
+class TestWin10(TestAPI):
     machine_config = 'examples/win10.json'
 
     @timeout(5)
@@ -262,12 +262,9 @@ class TestWin10Start(TestAPI):
         data = {
             'disk_id': disk_id,
             'partition': {
-                'size': -1,
                 'number': 1,
                 'format': 'ext3',
                 'mount': '/',
-                'grub_device': True,
-                'preserve': False,
             }
         }
         add_resp = await self.post('/storage/v2/add_partition', data)
@@ -324,7 +321,6 @@ class TestWin10Start(TestAPI):
         data = {
             'disk_id': disk_id,
             'partition': {
-                'size': -1,
                 'number': 4,
                 'mount': '/',
                 'format': 'ext4',
@@ -343,12 +339,10 @@ class TestWin10Start(TestAPI):
         data = {
             'disk_id': disk_id,
             'partition': {
-                'size': 0,
                 'number': 3,
                 'format': 'ext4',
                 'mount': '/',
                 'grub_device': False,
-                # 'preserve': False,
             }
         }
         resp = await self.post('/storage/v2/edit_partition', data)
@@ -381,6 +375,69 @@ class TestWin10Start(TestAPI):
         resp = await self.get('/storage/v2')
         sda = first(resp['disks'], 'id', 'disk-sda')
         self.assertEqual('gpt', sda['ptable'])
+
+    @timeout(5)
+    async def test_add_rules(self):
+        disk_id = 'disk-sda'
+        await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+
+        bad_partitions = [
+            {'partition': {}},
+            {'partition': {'format': 'ext4'}},
+            {'partition': {'mount': '/'}},
+        ]
+        for partition in bad_partitions:
+            with self.assertRaises(ClientException):
+                data = {'disk_id': disk_id, 'partition': partition}
+                await self.post('/storage/v2/add_partition', data)
+
+        for size, expected in ((None, 85360377856), (20 << 30, 20 << 30)):
+            partition = {'format': 'ext4', 'mount': '/', 'size': size}
+            data = {'disk_id': disk_id, 'partition': partition}
+            resp = await self.post('/storage/v2/add_partition', data)
+            sda = first(resp['disks'], 'id', disk_id)
+            sda2 = first(sda['partitions'], 'number', 2)
+            self.assertEqual(expected, sda2['size'])
+            await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+
+
+                # required field number
+                #    optional fields wipe, mount, format
+                #    It is an error to modify other Partition fields.
+                # size: Optional[int] = None
+                # number: Optional[int] = None
+                # preserve: Optional[bool] = None
+                # wipe: Optional[str] = None
+                # annotations: Optional[List[str]] = []
+                # mount: Optional[str] = None
+                # format: Optional[str] = None
+                # grub_device: Optional[bool] = None
+    @timeout(5)
+    async def test_edit_rules(self):
+        disk_id = 'disk-sda'
+        data = {
+            'disk_id': disk_id,
+            'partition': {
+                'number': 3,
+                'format': 'ext4',
+                'mount': '/',
+                'wipe': None,
+            }
+        }
+        await self.post('/storage/v2/edit_partition', data)
+
+        data['partition']['size'] = 85240896512 // 2
+        with self.assertRaises(ClientException):
+            await self.post('/storage/v2/edit_partition', data)
+
+        data['partition']['size'] = None
+        data['partition']['grub_device'] = True
+        with self.assertRaises(ClientException):
+            await self.post('/storage/v2/edit_partition', data)
+
+        data['partition']['grub_device'] = None
+        data['partition']['format'] = 'btrfs'
+        await self.post('/storage/v2/edit_partition', data)
 
 
 class TestManyDisks(TestAPI):
