@@ -22,7 +22,7 @@ from subiquity.common.apidef import API
 from subiquity.common.types import WSLConfigurationAdvanced
 from subiquity.server.controller import SubiquityController
 
-from system_setup.common.wsl_conf import wsl_config_loader
+from system_setup.common.wsl_conf import default_loader
 
 log = logging.getLogger(
     'system_setup.server.controllers.wsl_configuration_advanced')
@@ -54,10 +54,7 @@ class WSLConfigurationAdvancedController(SubiquityController):
         super().__init__(app)
 
         # load the config file
-        data = {}
-
-        data = wsl_config_loader(data, "/etc/wsl.conf", "wsl")
-        data = wsl_config_loader(data, "/etc/ubuntu-wsl.conf", "ubuntu")
+        data = default_loader(True)
 
         if data:
             def bool_converter(x):

@@ -23,17 +23,37 @@ from os import path
 
 log = logging.getLogger("system_setup.common.wsl_conf")
 
-config_ref = {
+config_base_ref = {
     "wsl": {
         "automount": {
-            "enabled": "automount",
-            "mountfstab": "mountfstab",
             "root": "custom_path",
             "options": "custom_mount_opt",
         },
         "network": {
             "generatehosts": "gen_host",
             "generateresolvconf": "gen_resolvconf",
+        },
+    }
+}
+
+config_base_default = {
+    "wsl": {
+        "automount": {
+            "root": "/mnt/",
+            "options": ""
+        },
+        "network": {
+            "generatehosts": "true",
+            "generateresolvconf": "true"
+        }
+    }
+}
+
+config_adv_ref = {
+    "wsl": {
+        "automount": {
+            "enabled": "automount",
+            "mountfstab": "mountfstab",
         },
         "interop": {
             "enabled": "interop_enabled",
@@ -56,8 +76,35 @@ config_ref = {
     }
 }
 
+config_adv_default = {
+    "wsl": {
+        "automount": {
+            "enabled": "true",
+            "mountfstab": "true"
+        },
+        "interop": {
+            "enabled": "true",
+            "appendwindowspath": "true"
+        }
+    },
+    "ubuntu": {
+        "GUI": {
+            "theme": "default",
+            "followwintheme": "false"
+        },
+        "Interop": {
+            "guiintegration": "false",
+            "audiointegration": "false",
+            "advancedipdetection": "false"
+        },
+        "Motd": {
+            "wslnewsenabled": "true"
+        }
+    }
+}
 
-def wsl_config_loader(data, pathname, id):
+
+def wsl_config_loader(data, pathname, config_ref, id):
     if path.exists(pathname):
         config = ConfigParser()
         config.read(pathname)
@@ -71,14 +118,29 @@ def wsl_config_loader(data, pathname, id):
     return data
 
 
+def default_loader(is_advanced):
+    data = {}
+    conf_ref = config_adv_ref if is_advanced else config_base_ref
+    data = wsl_config_loader(data, "/etc/wsl.conf", conf_ref, "wsl")
+    if is_advanced:
+        data = \
+            wsl_config_loader(data, "/etc/ubuntu-wsl.conf", conf_ref, "ubuntu")
+    return data
+
+
 class WSLConfig:
-    def __init__(self, inst_type,  conf_file):
-        self.inst_type = inst_type
+    def __init__(self, conf_file):
         self.conf_file = conf_file
 
         self.config = ConfigParser()
         self.config.BasicInterpolcation = None
         self.config.read(conf_file)
+
+    def drop_if_exists(self, config_section, config_setting):
+        if config_setting in self.config[config_section]:
+            self.config.remove_option(config_section, config_setting)
+            with open(self.conf_file, 'w') as configfile:
+                self.config.write(configfile)
 
     def update(self, config_section, config_setting, config_value):
         self.config[config_section][config_setting] = config_value
@@ -91,8 +153,8 @@ class WSLConfigHandler:
     def __init__(self, is_dry_run):
         self.is_dry_run = is_dry_run
         self.ubuntu_conf = \
-            WSLConfig("ubuntu", "/etc/ubuntu-wsl.conf")
-        self.wsl_conf = WSLConfig("wsl", "/etc/wsl.conf")
+            WSLConfig("/etc/ubuntu-wsl.conf")
+        self.wsl_conf = WSLConfig("/etc/wsl.conf")
 
     def _select_config(self, type_input):
         type_input = type_input.lower()
@@ -101,27 +163,39 @@ class WSLConfigHandler:
         elif type_input == "wsl":
             return self.wsl_conf
         else:
-            raise ValueError("Invalid config name. Please check again.")
+            raise ValueError("Invalid config type '{}'.".format(type_input))
 
-    def _update(self, config_type, section, config, value):
-        self._select_config(config_type).update(section, config, value)
-
-    def update(self, config_name, value):
+    def update(self, config_class):
         if self.is_dry_run:
-            log.debug("mimicking setting config %s with %s",
-                      config_name, value)
+            log.debug("mimicking setting config %s",
+                      config_class)
+        temp_conf_ref = {}
+        temp_conf_default = {}
+        test_confname = config_class.__str__()
+        if test_confname.startswith("WSLConfigurationBase"):
+            temp_conf_ref = config_base_ref
+            temp_conf_default = config_base_default
+        elif test_confname.startswith("WSLConfigurationAdvanced"):
+            temp_conf_ref = config_adv_ref
+            temp_conf_default = config_adv_default
+        else:
+            raise TypeError("Invalid type name.")
+        if self.is_dry_run:
             return
-        config_name_set = config_name.split(".")
-        # it should always be three level: type, section, and config.
-        if len(config_name_set) == 3:
-            self._update(config_name_set[0], config_name_set[1],
-                         config_name_set[2], value)
-        elif len(config_name_set) == 2:  # if type is missing, guess
-            if not (config_name_set[0] in ("ubuntu", "wsl")
-                    and config_name_set[1] == "*"):  # no top level wild card
-                type_name = "ubuntu" if config_name_set[0] in (
-                    "Motd", "Interop", "GUI") else "wsl"
-                self._update(type_name, config_name_set[0],
-                             config_name_set[1], value)
-        else:  # invaild name
-            raise ValueError("Invalid config name '{}'.".format(config_name))
+        for config_type in temp_conf_ref:
+            config_sections = temp_conf_ref[config_type]
+            for config_section in config_sections:
+                config_settings = config_sections[config_section]
+                for config_setting in config_settings:
+                    config_realname = config_settings[config_setting]
+                    config_value = config_class.__dict__[config_realname]
+                    if temp_conf_default[config_type][config_section][
+                            config_setting] == config_value:
+                        self._select_config(config_type). \
+                            drop_if_exists(config_section,
+                                           config_setting)
+                    else:
+                        self._select_config(config_type). \
+                            update(config_section,
+                                   config_setting,
+                                   config_value)

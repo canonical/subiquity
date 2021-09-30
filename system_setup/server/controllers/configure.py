@@ -83,46 +83,9 @@ class ConfigureController(SubiquityController):
                                  "-G", self.get_userandgroups(),
                                  wsl_identity.username])
             else:
-                wslconf_ad = self.model.wslconfadvanced.wslconfadvanced
-                config.update("WSL.automount.enabled",
-                              wslconf_ad.automount)
-                config.update("WSL.automount.mountfstab",
-                              wslconf_ad.mountfstab)
-                config.update("WSL.automount.root",
-                              wslconf_ad.custom_path)
-                config.update("WSL.automount.options",
-                              wslconf_ad.custom_mount_opt)
-                config.update("WSL.network.generatehosts",
-                              wslconf_ad.gen_host)
-                config.update("WSL.network.generateresolvconf",
-                              wslconf_ad.gen_resolvconf)
-                config.update("WSL.interop.enabled",
-                              wslconf_ad.interop_enabled)
-                config.update(
-                    "WSL.interop.appendwindowspath",
-                    wslconf_ad.interop_appendwindowspath)
-                config.update("ubuntu.GUI.followwintheme",
-                              wslconf_ad.gui_followwintheme)
-                config.update("ubuntu.GUI.theme",
-                              wslconf_ad.gui_theme)
-                config.update("ubuntu.Interop.guiintergration",
-                              wslconf_ad.legacy_gui)
-                config.update("ubuntu.Interop.audiointegration",
-                              wslconf_ad.legacy_audio)
-                config.update("ubuntu.Interop.advancedipdetection",
-                              wslconf_ad.adv_ip_detect)
-                config.update("ubuntu.Motd.wslnewsenabled",
-                              wslconf_ad.wsl_motd_news)
+                config.update(self.model.wslconfadvanced.wslconfadvanced)
 
-            wslconf_base = self.model.wslconfbase.wslconfbase
-            config.update("WSL.automount.root",
-                          wslconf_base.custom_path)
-            config.update("WSL.automount.options",
-                          wslconf_base.custom_mount_opt)
-            config.update("WSL.network.generatehosts",
-                          wslconf_base.gen_host)
-            config.update("WSL.network.generateresolvconf",
-                          wslconf_base.gen_resolvconf)
+            config.update(self.model.wslconfbase.wslconfbase)
 
             self.app.update_state(ApplicationState.DONE)
         except Exception:
