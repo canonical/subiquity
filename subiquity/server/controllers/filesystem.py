@@ -297,6 +297,12 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
                     break
         return [labels.for_client(disk) for disk in bitlockered_disks]
 
+    def get_partition(self, disk, number):
+        for p in disk.partitions():
+            if p._number == number:
+                return p
+        raise ValueError(f'Partition {number} on {disk.id} not found')
+
     async def v2_GET(self) -> StorageResponseV2:
         disks = self.model._all(type='disk')
         return StorageResponseV2(disks=[labels.for_client(d) for d in disks])
@@ -328,45 +334,45 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_add_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
+        if data.partition.format is None or data.partition.mount is None:
+            raise ValueError('add_partition must supply format and mount')
+        if data.partition.grub_device is not None:
+            raise ValueError('add_partition does not support changing '
+                             + 'grub_device')
+
         disk = self.model._one(id=data.disk_id)
-        flag = ""
-        wipe = "superblock"
-        grub_device = data.partition.grub_device
-        if grub_device:
-            flag = "boot"
         size = data.partition.size
         if size is None or size < 0:
             size = disk.free_for_partitions
         spec = {
-            "size": size,
-            "fstype": data.partition.format,
-            "mount": data.partition.mount
+            'size': size,
+            'fstype': data.partition.format,
+            'mount': data.partition.mount,
         }
 
-        self.create_partition(disk, spec, flag, wipe, grub_device)
+        self.create_partition(disk, spec, '', 'superblock', None)
         return await self.v2_GET()
-
-    def get_partition(self, disk_id, number):
-        disk = self.model._one(id=disk_id)
-        for p in disk.partitions():
-            if p._number == number:
-                return p
-        raise ValueError(f'Partition {number} on {disk_id} not found')
 
     async def v2_delete_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
-        partition = self.get_partition(data.disk_id, data.partition.number)
+        disk = self.model._one(id=data.disk_id)
+        partition = self.get_partition(disk, data.partition.number)
         self.delete_partition(partition)
         return await self.v2_GET()
 
     async def v2_edit_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
-        partition = self.get_partition(data.disk_id, data.partition.number)
         disk = self.model._one(id=data.disk_id)
+        partition = self.get_partition(disk, data.partition.number)
+        if data.partition.size not in (None, partition.size):
+            raise ValueError('edit_partition does not support changing size')
+        if data.partition.grub_device not in (None, partition.grub_device):
+            raise ValueError('edit_partition does not support changing '
+                             + 'grub_device')
+
         spec = {
-            "fstype": data.partition.format,
-            "mount": data.partition.mount,
-            "grub_device": data.partition.grub_device,
+            'fstype': data.partition.format,
+            'mount': data.partition.mount,
         }
         self.partition_disk_handler(disk, partition, spec)
         return await self.v2_GET()
