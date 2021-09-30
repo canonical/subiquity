@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import os
 
 from subiquity.common.errorreport import ErrorReportKind
 from subiquity.common.types import ApplicationState
@@ -22,6 +21,7 @@ from subiquity.server.controller import SubiquityController
 from subiquitycore.context import with_context
 from subiquitycore.utils import run_command
 from system_setup.common.wsl_conf import WSLConfigHandler
+from system_setup.common.wsl_utils import get_userandgroups
 
 log = logging.getLogger("system_setup.server.controllers.configure")
 
@@ -80,7 +80,7 @@ class ConfigureController(SubiquityController):
                                  wsl_identity.username])
                     run_command(["/usr/sbin/usermod", "-a",
                                  "-c", wsl_identity.realname,
-                                 "-G", self.get_userandgroups(),
+                                 "-G", get_userandgroups(),
                                  wsl_identity.username])
             else:
                 config.update(self.model.wslconfadvanced.wslconfadvanced)
@@ -93,23 +93,6 @@ class ConfigureController(SubiquityController):
             self.app.make_apport_report(
                 ErrorReportKind.INSTALL_FAIL, "configuration failed", **kw)
             raise
-
-    def get_userandgroups(self):
-        usergroups_path = '/usr/share/subiquity/users-and-groups'
-        build_usergroups_path = \
-            os.path.realpath(__file__ + '/../../../users-and-groups')
-        if os.path.isfile(build_usergroups_path):
-            usergroups_path = build_usergroups_path
-        user_groups = set()
-        if os.path.exists(usergroups_path):
-            with open(usergroups_path) as fp:
-                for line in fp:
-                    line = line.strip()
-                    if line.startswith('#') or not line:
-                        continue
-                    user_groups.add(line)
-        oneline_usergroups = ",".join(user_groups)
-        return oneline_usergroups
 
     def stop_uu(self):
         # This is a no-op to allow Shutdown controller to depend on this one

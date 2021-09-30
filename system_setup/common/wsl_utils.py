@@ -18,6 +18,8 @@ import os
 import logging
 import subprocess
 
+from subiquity.common.resources import resource_path
+
 log = logging.getLogger("subiquity.system_setup.common.wsl_utils")
 
 
@@ -59,3 +61,22 @@ def get_windows_locale():
     except OSError as e:
         log.info(windows_locale_failed_msg + e.strerror)
         return None
+
+
+def get_userandgroups():
+    usergroups_path = resource_path('users-and-groups')
+    build_usergroups_path = \
+        os.path.realpath(__file__ + '/../../../users-and-groups')
+    if os.path.isfile(build_usergroups_path):
+        usergroups_path = build_usergroups_path
+
+    user_groups = set()
+    if os.path.exists(usergroups_path):
+        with open(usergroups_path) as fp:
+            for line in fp:
+                line = line.strip()
+                if line.startswith('#') or not line:
+                    continue
+                user_groups.add(line)
+    oneline_usergroups = ",".join(user_groups)
+    return oneline_usergroups
