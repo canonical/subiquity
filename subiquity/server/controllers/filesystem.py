@@ -301,8 +301,9 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         disks = self.model._all(type='disk')
         return StorageResponseV2(disks=[labels.for_client(d) for d in disks])
 
-    async def v2_POST(self):
+    async def v2_POST(self) -> StorageResponseV2:
         await self.configured()
+        return await self.v2_GET()
 
     async def v2_reset_POST(self) -> StorageResponseV2:
         log.info("Resetting Filesystem model")
