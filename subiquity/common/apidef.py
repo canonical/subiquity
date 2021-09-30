@@ -256,14 +256,30 @@ class API:
                 def POST(disk_id: str) -> StorageResponseV2: ...
 
             class add_partition:
+                """required field format and mount, optional field size
+                   default behavior expands partition to fill disk if size not
+                   supplied or -1.
+                   Other partition fields are ignored.
+                   adding a partion when there is not yet a boot partition can
+                   result in the boot partition being added automatically - see
+                   add_boot_partition for more control over this.
+                """
                 def POST(data: Payload[ModifyPartitionV2]) \
                     -> StorageResponseV2: ...
 
             class delete_partition:
+                """required field number
+                   It is an error to modify other Partition fields.
+                """
                 def POST(data: Payload[ModifyPartitionV2]) \
                     -> StorageResponseV2: ...
 
             class edit_partition:
+                """required field number
+                   optional fields wipe, mount, format
+                   It is an error to do wipe=null and change the format.
+                   It is an error to modify other Partition fields.
+                """
                 def POST(data: Payload[ModifyPartitionV2]) \
                     -> StorageResponseV2: ...
 
