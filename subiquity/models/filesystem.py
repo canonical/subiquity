@@ -763,6 +763,11 @@ class LVM_VolGroup(_Device):
     def available_for_partitions(self):
         return self.size
 
+    @property
+    def free_for_partitions(self):
+        return align_down(
+            self.available_for_partitions - self.used, LVM_CHUNK_SIZE)
+
     ok_for_raid = False
     ok_for_lvm_vg = False
 

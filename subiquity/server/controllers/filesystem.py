@@ -51,7 +51,9 @@ from subiquity.common.types import (
     StorageResponse,
     )
 from subiquity.models.filesystem import (
+    align_down,
     dehumanize_size,
+    LVM_CHUNK_SIZE,
     Raid,
     )
 from subiquity.server.controller import (
@@ -168,6 +170,7 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         else:
             # Use at most 100G of a large disk.
             lv_size = 100 * (2 << 30)
+        lv_size = align_down(lv_size, LVM_CHUNK_SIZE)
         self.create_logical_volume(
             vg=vg, spec=dict(
                 size=lv_size,

@@ -44,6 +44,7 @@ from subiquity.models.filesystem import (
     HUMAN_UNITS,
     dehumanize_size,
     humanize_size,
+    LVM_CHUNK_SIZE,
     LVM_VolGroup,
 )
 from subiquity.ui.mount import (
@@ -54,6 +55,9 @@ from subiquity.ui.mount import (
 
 
 log = logging.getLogger('subiquity.ui.filesystem.add_partition')
+
+
+DEFAULT_ALIGNMENT = 1 << 20
 
 
 class FSTypeField(FormField):
@@ -111,13 +115,14 @@ class SizeWidget(StringEditor):
                 ('info_minor',
                  _("Capped partition size at {size}").format(
                      size=self.form.size_str)))
-        elif (align_up(sz) != sz and
-              humanize_size(align_up(sz)) != self.form.size.value):
-            sz_str = humanize_size(align_up(sz))
-            self.value = sz_str
-            self.form.size.show_extra(
-                ('info_minor', _("Rounded size up to {size}").format(
-                    size=sz_str)))
+        else:
+            aligned_sz = align_up(sz, self.form.alignment)
+            aligned_sz_str = humanize_size(aligned_sz)
+            if aligned_sz != sz and aligned_sz_str != self.form.size.value:
+                self.value = aligned_sz_str
+                self.form.size.show_extra(
+                    ('info_minor', _("Rounded size up to {size}").format(
+                        size=aligned_sz_str)))
 
 
 class SizeField(FormField):
@@ -147,7 +152,7 @@ LVNameField = simple_field(LVNameEditor)
 
 class PartitionForm(Form):
 
-    def __init__(self, model, max_size, initial, lvm_names, device):
+    def __init__(self, model, max_size, initial, lvm_names, device, alignment):
         self.model = model
         self.device = device
         self.existing_fs_type = None
@@ -165,6 +170,7 @@ class PartitionForm(Form):
             self.size.caption = _("Size (max {size}):").format(
                 size=self.size_str)
         self.lvm_names = lvm_names
+        self.alignment = alignment
         super().__init__(initial)
         if max_size is None:
             self.remove_field('size')
@@ -374,8 +380,10 @@ class PartitionStretchy(Stretchy):
         initial = {}
         label = _("Create")
         if isinstance(disk, LVM_VolGroup):
+            alignment = LVM_CHUNK_SIZE
             lvm_names = {p.name for p in disk.partitions()}
         else:
+            alignment = DEFAULT_ALIGNMENT
             lvm_names = None
         if self.partition:
             if partition.flag in ["bios_grub", "prep"]:
@@ -410,7 +418,7 @@ class PartitionStretchy(Stretchy):
                 initial['name'] = name
 
         self.form = PartitionForm(
-            self.model, max_size, initial, lvm_names, partition)
+            self.model, max_size, initial, lvm_names, partition, alignment)
 
         if not isinstance(disk, LVM_VolGroup):
             self.form.remove_field('name')
@@ -567,7 +575,8 @@ class FormatEntireStretchy(Stretchy):
             initial.update(initial_data_for_fs(fs))
         elif not isinstance(device, Disk):
             initial['fstype'] = 'ext4'
-        self.form = PartitionForm(self.model, 0, initial, None, device)
+        self.form = PartitionForm(
+            self.model, 0, initial, None, device, DEFAULT_ALIGNMENT)
         self.form.remove_field('size')
         self.form.remove_field('name')
 
