@@ -207,7 +207,7 @@ class TestSimple(TestAPI):
         self.assertEqual('disk-sda', resp['disks'][0]['id'])
 
     @timeout(5)
-    async def test_v2_add_boot_manually(self):
+    async def test_v2_add_boot_partition(self):
         self.maxDiff = None
         disk_id = 'disk-sda'
 
@@ -306,8 +306,6 @@ class TestWin10(TestAPI):
                 'number': 1,
                 'format': 'ext4',
                 'mount': '/',
-                'grub_device': True,
-                'preserve': False,
             }
         }
         resp = await self.post('/storage/v2/add_partition', data)
@@ -324,7 +322,6 @@ class TestWin10(TestAPI):
                 'number': 4,
                 'mount': '/',
                 'format': 'ext4',
-                'preserve': False,
             }
         }
         await self.post('/storage/v2/edit_partition', data)
@@ -342,7 +339,6 @@ class TestWin10(TestAPI):
                 'number': 3,
                 'format': 'ext4',
                 'mount': '/',
-                'grub_device': False,
             }
         }
         resp = await self.post('/storage/v2/edit_partition', data)
@@ -400,18 +396,6 @@ class TestWin10(TestAPI):
             self.assertEqual(expected, sda2['size'])
             await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
 
-
-                # required field number
-                #    optional fields wipe, mount, format
-                #    It is an error to modify other Partition fields.
-                # size: Optional[int] = None
-                # number: Optional[int] = None
-                # preserve: Optional[bool] = None
-                # wipe: Optional[str] = None
-                # annotations: Optional[List[str]] = []
-                # mount: Optional[str] = None
-                # format: Optional[str] = None
-                # grub_device: Optional[bool] = None
     @timeout(5)
     async def test_edit_rules(self):
         disk_id = 'disk-sda'
