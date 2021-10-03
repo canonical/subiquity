@@ -33,6 +33,7 @@ class CatalogEntry:
     size: int
     type: str
     default: bool = False
+    locale_support: str = attr.ib(default="locale-only")
 
 
 fake_entries = {
@@ -44,7 +45,8 @@ fake_entries = {
         path='/media/filesystem',
         type='cp',
         default=True,
-        size=2 << 30),
+        size=2 << 30,
+        locale_support="locale-only"),
     'desktop': CatalogEntry(
         variant='desktop',
         id='synthesized',
@@ -53,7 +55,8 @@ fake_entries = {
         path='/media/filesystem',
         type='cp',
         default=True,
-        size=5 << 30),
+        size=5 << 30,
+        locale_support="langpack"),
     }
 
 
