@@ -70,18 +70,28 @@ class ConfigureController(SubiquityController):
             variant = self.app.variant
             config = WSLConfigHandler(dryrun)
             if variant == "wsl_setup":
-                wsl_identity = self.model.identity.user
+                wsl_id = self.model.identity.user
                 if dryrun:
                     log.debug("mimicking creating user %s",
-                              wsl_identity.username)
+                              wsl_id.username)
                 else:
-                    run_command(["/usr/sbin/useradd", "-m", "-s", "/bin/bash",
-                                 "-p", wsl_identity.password,
-                                 wsl_identity.username])
-                    run_command(["/usr/sbin/usermod", "-a",
-                                 "-c", wsl_identity.realname,
-                                 "-G", get_userandgroups(),
-                                 wsl_identity.username])
+                    create_user_act = \
+                        run_command(["/usr/sbin/useradd", "-m", "-s",
+                                     "/bin/bash", "-p",
+                                     wsl_id.password,
+                                     wsl_id.username])
+                    if create_user_act.returncode != 0:
+                        raise Exception("Failed to create user %s"
+                                        % wsl_id.username)
+                    log.debug("created user %s", wsl_id.username)
+                    assign_grp_act = \
+                        run_command(["/usr/sbin/usermod", "-a",
+                                     "-c", wsl_id.realname,
+                                     "-G", get_userandgroups(),
+                                     wsl_id.username])
+                    if assign_grp_act.returncode != 0:
+                        raise Exception("Failed to assign groups to user %s" %
+                                        wsl_id.username)
             else:
                 config.update(self.model.wslconfadvanced.wslconfadvanced)
 
