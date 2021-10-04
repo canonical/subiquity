@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import aiohttp
+from aiohttp.client_exceptions import ClientResponseError
 import async_timeout
 import asyncio
 from functools import wraps
@@ -87,11 +88,9 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
         print(info)
         async with self.session.request(method, f'http://a{query}',
                                         data=data, params=params) as resp:
+            resp.raise_for_status()
             content = await resp.content.read()
-            content = content.decode()
-            if resp.status != 200:
-                raise ClientException(content)
-            return loads(content)
+            return loads(content.decode())
 
     async def server_startup(self):
         for _ in range(20):
@@ -245,7 +244,7 @@ class TestWin10(TestAPI):
                 'number': 5,
             }
         }
-        with self.assertRaises(ClientException):
+        with self.assertRaises(ClientResponseError):
             await self.post('/storage/v2/delete_partition', data)
 
     @timeout(5)
@@ -325,7 +324,7 @@ class TestWin10(TestAPI):
             }
         }
         await self.post('/storage/v2/edit_partition', data)
-        with self.assertRaises(Exception):
+        with self.assertRaises(ClientResponseError):
             await self.post('/storage/v2/delete_partition', data)
 
     @timeout(5)
@@ -383,7 +382,7 @@ class TestWin10(TestAPI):
             {'partition': {'mount': '/'}},
         ]
         for partition in bad_partitions:
-            with self.assertRaises(ClientException):
+            with self.assertRaises(ClientResponseError):
                 data = {'disk_id': disk_id, 'partition': partition}
                 await self.post('/storage/v2/add_partition', data)
 
@@ -411,12 +410,12 @@ class TestWin10(TestAPI):
         await self.post('/storage/v2/edit_partition', data)
 
         data['partition']['size'] = 85240896512 // 2
-        with self.assertRaises(ClientException):
+        with self.assertRaises(ClientResponseError):
             await self.post('/storage/v2/edit_partition', data)
 
         data['partition']['size'] = None
         data['partition']['grub_device'] = True
-        with self.assertRaises(ClientException):
+        with self.assertRaises(ClientResponseError):
             await self.post('/storage/v2/edit_partition', data)
 
         data['partition']['grub_device'] = None
