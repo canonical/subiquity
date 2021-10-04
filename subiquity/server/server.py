@@ -120,7 +120,7 @@ class MetaController:
         if variant in fake_entries:
             if self.app.base_model.source.current.variant != variant:
                 self.app.base_model.source.current = fake_entries[variant]
-            self.app.controllers.Source.configured()
+            await self.app.controllers.Source.configured()
         else:
             self.app.base_model.set_source_variant(variant)
         self.app.set_source_variant(variant)
