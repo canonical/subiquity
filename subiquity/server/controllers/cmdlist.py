@@ -60,7 +60,7 @@ class CmdListController(NonInteractiveController):
             with context.child("command_{}".format(i), desc):
                 if isinstance(cmd, str):
                     cmd = ['sh', '-c', cmd]
-                if self.syslog_id is not None:
+                if self.syslog_id:
                     journal.send(
                         "  running " + desc, SYSLOG_IDENTIFIER=self.syslog_id)
                     cmd = [
