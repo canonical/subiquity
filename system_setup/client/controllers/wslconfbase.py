@@ -16,13 +16,14 @@ class WSLConfigurationBaseController(SubiquityTuiController):
 
     def run_answers(self):
         if all(elem in self.answers for elem in
-               ['custom_path', 'custom_mount_opt',
-                'gen_host', 'gen_resolvconf']):
+               ['automount_root', 'automount_options',
+                'network_generatehosts', 'network_generateresolvconf']):
             configuration = WSLConfigurationBase(
-                custom_path=self.answers['custom_path'],
-                custom_mount_opt=self.answers['custom_mount_opt'],
-                gen_host=self.answers['gen_host'],
-                gen_resolvconf=self.answers['gen_resolvconf'])
+                automount_root=self.answers['automount_root'],
+                automount_options=self.answers['automount_options'],
+                network_generatehosts=self.answers['network_generatehosts'],
+                network_generateresolvconf=self
+                .answers['network_generateresolvconf'])
             self.done(configuration)
 
     def done(self, configuration_data):

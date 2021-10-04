@@ -36,10 +36,10 @@ class WSLConfigurationBaseController(SubiquityController):
     autoinstall_schema = {
         'type': 'object',
         'properties': {
-            'custom_path': {'type': 'string'},
-            'custom_mount_opt': {'type': 'string'},
-            'gen_host': {'type': 'boolean'},
-            'gen_resolvconf': {'type': 'boolean'},
+            'automount_root': {'type': 'string'},
+            'automount_options': {'type': 'string'},
+            'network_generatehosts': {'type': 'boolean'},
+            'network_generateresolvconf': {'type': 'boolean'},
             },
         'additionalProperties': False,
         }
@@ -54,20 +54,22 @@ class WSLConfigurationBaseController(SubiquityController):
             def bool_converter(x):
                 return x.lower() == 'true'
             conf_data = WSLConfigurationBase(
-                custom_path=data['custom_path'],
-                custom_mount_opt=data['custom_mount_opt'],
-                gen_host=bool_converter(data['gen_host']),
-                gen_resolvconf=bool_converter(data['gen_resolvconf']),
+                automount_root=data['automount_root'],
+                automount_options=data['automount_options'],
+                network_generatehosts=bool_converter(
+                    data['network_generatehosts']),
+                network_generateresolvconf=bool_converter(
+                    data['network_generateresolvconf']),
             )
             self.model.apply_settings(conf_data)
 
     def load_autoinstall_data(self, data):
         if data is not None:
             identity_data = WSLConfigurationBase(
-                custom_path=data['custom_path'],
-                custom_mount_opt=data['custom_mount_opt'],
-                gen_host=data['gen_host'],
-                gen_resolvconf=data['gen_resolvconf'],
+                automount_root=data['automount_root'],
+                automount_options=data['automount_options'],
+                network_generatehosts=data['network_generatehosts'],
+                network_generateresolvconf=data['network_generateresolvconf'],
             )
             self.model.apply_settings(identity_data)
 
@@ -82,10 +84,12 @@ class WSLConfigurationBaseController(SubiquityController):
     async def GET(self) -> WSLConfigurationBase:
         data = WSLConfigurationBase()
         if self.model.wslconfbase is not None:
-            data.custom_path = self.model.wslconfbase.custom_path
-            data.custom_mount_opt = self.model.wslconfbase.custom_mount_opt
-            data.gen_host = self.model.wslconfbase.gen_host
-            data.gen_resolvconf = self.model.wslconfbase.gen_resolvconf
+            data.automount_root = self.model.wslconfbase.automount_root
+            data.automount_options = self.model.wslconfbase.automount_options
+            data.network_generatehosts = \
+                self.model.wslconfbase.network_generatehosts
+            data.network_generateresolvconf = \
+                self.model.wslconfbase.network_generateresolvconf
         return data
 
     async def POST(self, data: WSLConfigurationBase):

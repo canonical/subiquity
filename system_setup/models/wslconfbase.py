@@ -21,10 +21,10 @@ log = logging.getLogger('system_setup.models.wsl_configuration_base')
 
 @attr.s
 class WSLConfigurationBase(object):
-    custom_path = attr.ib()
-    custom_mount_opt = attr.ib()
-    gen_host = attr.ib()
-    gen_resolvconf = attr.ib()
+    automount_root = attr.ib()
+    automount_options = attr.ib()
+    network_generatehosts = attr.ib()
+    network_generateresolvconf = attr.ib()
 
 
 class WSLConfigurationBaseModel(object):
@@ -37,10 +37,10 @@ class WSLConfigurationBaseModel(object):
 
     def apply_settings(self, result):
         d = {}
-        d['custom_path'] = result.custom_path
-        d['custom_mount_opt'] = result.custom_mount_opt
-        d['gen_host'] = result.gen_host
-        d['gen_resolvconf'] = result.gen_resolvconf
+        d['automount_root'] = result.automount_root
+        d['automount_options'] = result.automount_options
+        d['network_generatehosts'] = result.network_generatehosts
+        d['network_generateresolvconf'] = result.network_generateresolvconf
         self._wslconfbase = WSLConfigurationBase(**d)
 
     @property

@@ -20,7 +20,7 @@ from subiquity.common.types import ApplicationState
 from subiquity.server.controller import SubiquityController
 from subiquitycore.context import with_context
 from subiquitycore.utils import run_command
-from system_setup.common.wsl_conf import WSLConfigHandler
+from system_setup.common.wsl_conf import wsl_config_update
 from system_setup.common.wsl_utils import get_userandgroups
 
 log = logging.getLogger("system_setup.server.controllers.configure")
@@ -68,7 +68,6 @@ class ConfigureController(SubiquityController):
 
             dryrun = self.app.opts.dry_run
             variant = self.app.variant
-            config = WSLConfigHandler(dryrun)
             if variant == "wsl_setup":
                 wsl_id = self.model.identity.user
                 if dryrun:
@@ -93,9 +92,10 @@ class ConfigureController(SubiquityController):
                         raise Exception("Failed to assign groups to user %s" %
                                         wsl_id.username)
             else:
-                config.update(self.model.wslconfadvanced.wslconfadvanced)
+                wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
+                                  dryrun)
 
-            config.update(self.model.wslconfbase.wslconfbase)
+            wsl_config_update(self.model.wslconfbase.wslconfbase, dryrun)
 
             self.app.update_state(ApplicationState.DONE)
         except Exception:

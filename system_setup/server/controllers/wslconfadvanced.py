@@ -40,12 +40,12 @@ class WSLConfigurationAdvancedController(SubiquityController):
             'interop_appendwindowspath': {'type': 'boolean'},
             'gui_theme': {'type': 'string'},
             'gui_followwintheme': {'type': 'boolean'},
-            'legacy_gui': {'type': 'boolean'},
-            'legacy_audio': {'type': 'boolean'},
-            'adv_ip_detect': {'type': 'boolean'},
-            'wsl_motd_news': {'type': 'boolean'},
-            'automount': {'type': 'boolean'},
-            'mountfstab': {'type': 'boolean'}
+            'interop_guiintegration': {'type': 'boolean'},
+            'interop_audiointegration': {'type': 'boolean'},
+            'interop_advancedipdetection': {'type': 'boolean'},
+            'motd_wslnewsenabled': {'type': 'boolean'},
+            'automount_enabled': {'type': 'boolean'},
+            'automount_mountfstab': {'type': 'boolean'}
         },
         'additionalProperties': False,
     }
@@ -65,12 +65,17 @@ class WSLConfigurationAdvancedController(SubiquityController):
                     data['interop_appendwindowspath']),
                 gui_theme=data['gui_theme'],
                 gui_followwintheme=bool_converter(data['gui_followwintheme']),
-                legacy_gui=bool_converter(data['legacy_gui']),
-                legacy_audio=bool_converter(data['legacy_audio']),
-                adv_ip_detect=bool_converter(data['adv_ip_detect']),
-                wsl_motd_news=bool_converter(data['wsl_motd_news']),
-                automount=bool_converter(data['automount']),
-                mountfstab=bool_converter(data['mountfstab']),
+                interop_guiintegration=bool_converter(
+                    data['interop_guiintegration']),
+                interop_audiointegration=bool_converter(
+                    data['interop_audiointegration']),
+                interop_advancedipdetection=bool_converter(
+                    data['interop_advancedipdetection']),
+                motd_wslnewsenabled=bool_converter(
+                    data['motd_wslnewsenabled']),
+                automount_enabled=bool_converter(data['automount_enabled']),
+                automount_mountfstab=bool_converter(
+                    data['automount_mountfstab']),
             )
             self.model.apply_settings(reconf_data)
 
@@ -81,12 +86,13 @@ class WSLConfigurationAdvancedController(SubiquityController):
                 interop_appendwindowspath=data['interop_appendwindowspath'],
                 gui_theme=data['gui_theme'],
                 gui_followwintheme=data['gui_followwintheme'],
-                legacy_gui=data['legacy_gui'],
-                legacy_audio=data['legacy_audio'],
-                adv_ip_detect=data['adv_ip_detect'],
-                wsl_motd_news=data['wsl_motd_news'],
-                automount=data['automount'],
-                mountfstab=data['mountfstab']
+                interop_guiintegration=data['interop_guiintegration'],
+                interop_audiointegration=data['interop_audiointegration'],
+                interop_advancedipdetection=data[
+                    'interop_advancedipdetection'],
+                motd_wslnewsenabled=data['motd_wslnewsenabled'],
+                automount_enabled=data['automount_enabled'],
+                automount_mountfstab=data['automount_mountfstab']
             )
             self.model.apply_settings(reconf_data)
 
@@ -101,18 +107,26 @@ class WSLConfigurationAdvancedController(SubiquityController):
     async def GET(self) -> WSLConfigurationAdvanced:
         data = WSLConfigurationAdvanced()
         if self.model.wslconfadvanced is not None:
-            data.interop_enabled = self.model.wslconfadvanced.interop_enabled
+            data.interop_enabled = \
+                self.model.wslconfadvanced.interop_enabled
             data.interop_appendwindowspath = \
                 self.model.wslconfadvanced.interop_appendwindowspath
-            data.gui_theme = self.model.wslconfadvanced.gui_theme
+            data.gui_theme = \
+                self.model.wslconfadvanced.gui_theme
             data.gui_followwintheme = \
                 self.model.wslconfadvanced.gui_followwintheme
-            data.legacy_gui = self.model.wslconfadvanced.legacy_gui
-            data.legacy_audio = self.model.wslconfadvanced.legacy_audio
-            data.adv_ip_detect = self.model.wslconfadvanced.adv_ip_detect
-            data.wsl_motd_news = self.model.wslconfadvanced.wsl_motd_news
-            data.automount = self.model.wslconfadvanced.automount
-            data.mountfstab = self.model.wslconfadvanced.mountfstab
+            data.interop_guiintegration = \
+                self.model.wslconfadvanced.interop_guiintegration
+            data.interop_audiointegration = \
+                self.model.wslconfadvanced.interop_audiointegration
+            data.interop_advancedipdetection = \
+                self.model.wslconfadvanced.interop_advancedipdetection
+            data.motd_wslnewsenabled = \
+                self.model.wslconfadvanced.motd_wslnewsenabled
+            data.automount_enabled = \
+                self.model.wslconfadvanced.automount_enabled
+            data.automount_mountfstab = \
+                self.model.wslconfadvanced.automount_mountfstab
         return data
 
     async def POST(self, data: WSLConfigurationAdvanced):

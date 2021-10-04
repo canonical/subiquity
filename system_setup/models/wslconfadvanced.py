@@ -23,12 +23,12 @@ log = logging.getLogger('system_setup.models.wsl_configuration_advanced')
 class WSLConfigurationAdvanced(object):
     gui_theme = attr.ib()
     gui_followwintheme = attr.ib()
-    legacy_gui = attr.ib()
-    legacy_audio = attr.ib()
-    adv_ip_detect = attr.ib()
-    wsl_motd_news = attr.ib()
-    automount = attr.ib()
-    mountfstab = attr.ib()
+    interop_guiintegration = attr.ib()
+    interop_audiointegration = attr.ib()
+    interop_advancedipdetection = attr.ib()
+    motd_wslnewsenabled = attr.ib()
+    automount_enabled = attr.ib()
+    automount_mountfstab = attr.ib()
     interop_enabled = attr.ib()
     interop_appendwindowspath = attr.ib()
 
@@ -48,12 +48,12 @@ class WSLConfigurationAdvancedModel(object):
         d['interop_appendwindowspath'] = result.interop_appendwindowspath
         d['gui_theme'] = result.gui_theme
         d['gui_followwintheme'] = result.gui_followwintheme
-        d['legacy_gui'] = result.legacy_gui
-        d['legacy_audio'] = result.legacy_audio
-        d['adv_ip_detect'] = result.adv_ip_detect
-        d['wsl_motd_news'] = result.wsl_motd_news
-        d['automount'] = result.automount
-        d['mountfstab'] = result.mountfstab
+        d['interop_guiintegration'] = result.interop_guiintegration
+        d['interop_audiointegration'] = result.interop_audiointegration
+        d['interop_advancedipdetection'] = result.interop_advancedipdetection
+        d['motd_wslnewsenabled'] = result.motd_wslnewsenabled
+        d['automount_enabled'] = result.automount_enabled
+        d['automount_mountfstab'] = result.automount_mountfstab
         self._wslconfadvanced = WSLConfigurationAdvanced(**d)
 
     @property
