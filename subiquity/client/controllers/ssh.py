@@ -47,7 +47,7 @@ class SSHController(SubiquityTuiController):
                     'ssh-import-id']
 
     async def make_ui(self):
-        ssh_data = await self.endpoint1.GET()
+        ssh_data = await self.endpoint.GET()
         return SSHView(self, ssh_data)
 
     def run_answers(self):

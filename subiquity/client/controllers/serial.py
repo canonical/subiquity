@@ -26,7 +26,7 @@ class SerialController(SubiquityTuiController):
     async def make_ui(self):
         if not self.app.opts.run_on_serial:
             raise Skip()
-        ssh_info = await self.app.client1.meta.ssh_info.GET()
+        ssh_info = await self.app.client.meta.ssh_info.GET()
         return SerialView(self, ssh_info)
 
     def run_answers(self):

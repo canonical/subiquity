@@ -27,7 +27,7 @@ class ZdevController(SubiquityTuiController):
     endpoint_name = 'zdev'
 
     async def make_ui(self):
-        infos = await self.endpoint1.GET()
+        infos = await self.endpoint.GET()
         return ZdevView(self, infos)
 
     def run_answers(self):

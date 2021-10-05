@@ -35,4 +35,3 @@ class SubiquityTuiController(TuiController):
         self.answers = app.answers.get(self.name, {})
         if self.endpoint_name is not None:
             self.endpoint = getattr(self.app.client, self.endpoint_name)
-            self.endpoint1 = getattr(self.app.client1, self.endpoint_name)

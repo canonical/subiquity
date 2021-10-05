@@ -68,22 +68,25 @@ def make_client(endpoint_cls, make_request, serializer=None):
 
 def make_client_for_conn(
         endpoint_cls, conn, resp_hook=lambda r: r, serializer=None,
-        headers={}):
+        header_func=None):
+    session = aiohttp.ClientSession(
+        connector=conn, connector_owner=False)
+
     @contextlib38.asynccontextmanager
     async def make_request(method, path, *, params, json):
-        async with aiohttp.ClientSession(
-                connector=conn, connector_owner=False,
-                headers=headers) as session:
-            # session.request needs a full URL with scheme and host
-            # even though that's in some ways a bit silly with a unix
-            # socket, so we just hardcode something here (I guess the
-            # "a" gets sent along to the server in the Host: header
-            # and the server could in principle do something like
-            # virtual host based selection but well....)
-            url = 'http://a' + path
-            async with session.request(
-                    method, url, json=json, params=params,
-                    timeout=0) as response:
-                yield resp_hook(response)
+        # session.request needs a full URL with scheme and host even though
+        # that's in some ways a bit silly with a unix socket, so we just
+        # hardcode something here (I guess the "a" gets sent along to the
+        # server in the Host: header and the server could in principle do
+        # something like virtual host based selection but well....)
+        url = 'http://a' + path
+        if header_func is not None:
+            headers = header_func()
+        else:
+            headers = None
+        async with session.request(
+                method, url, json=json, params=params,
+                headers=headers, timeout=0) as response:
+            yield resp_hook(response)
 
     return make_client(endpoint_cls, make_request, serializer)

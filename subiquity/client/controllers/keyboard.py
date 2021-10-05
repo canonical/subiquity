@@ -28,7 +28,7 @@ class KeyboardController(SubiquityTuiController):
     endpoint_name = 'keyboard'
 
     async def make_ui(self):
-        setup = await self.endpoint1.GET()
+        setup = await self.endpoint.GET()
         return KeyboardView(self, setup)
 
     async def run_answers(self):

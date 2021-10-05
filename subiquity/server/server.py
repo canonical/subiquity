@@ -408,7 +408,7 @@ class SubiquityServer(Application):
             if not controller.interactive():
                 override_status = 'skip'
             elif (self.state == ApplicationState.NEEDS_CONFIRMATION and
-                  request.headers.get('x-first-request') == 'yes'):
+                  request.headers.get('x-make-view-request') == 'yes'):
                 if self.base_model.is_postinstall_only(controller.model_name):
                     override_status = 'confirm'
         if override_status is not None:

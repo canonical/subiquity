@@ -26,7 +26,7 @@ class SourceController(SubiquityTuiController):
     endpoint_name = 'source'
 
     async def make_ui(self):
-        sources = await self.endpoint1.GET()
+        sources = await self.endpoint.GET()
         return SourceView(self, sources.sources, sources.current_id)
 
     def run_answers(self):

@@ -26,7 +26,7 @@ class ProxyController(SubiquityTuiController):
     endpoint_name = 'proxy'
 
     async def make_ui(self):
-        proxy = await self.endpoint1.GET()
+        proxy = await self.endpoint.GET()
         return ProxyView(self, proxy)
 
     def run_answers(self):

@@ -107,7 +107,7 @@ class NetworkController(SubiquityTuiController, NetworkAnswersMixin):
         shutil.rmtree(self.tdir)
 
     async def make_ui(self):
-        network_status = await self.endpoint1.GET()
+        network_status = await self.endpoint.GET()
         self.view = NetworkView(
             self, network_status.devices,
             network_status.wlan_support_install_state.name)
