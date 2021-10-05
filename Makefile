@@ -29,7 +29,7 @@ aptdeps:
 		libnl-route-3-dev python3-attr python3-distutils-extra python3-requests \
 		python3-requests-unixsocket python3-jsonschema python3-apport \
 		python3-bson xorriso isolinux python3-aiohttp cloud-init ssh-import-id \
-		curl jq build-essential
+		curl jq build-essential python3-pytest
 
 install_deps: aptdeps gitdeps
 
@@ -68,7 +68,7 @@ flake8:
 	$(PYTHON) -m flake8 $(CHECK_DIRS) --exclude gettext38.py,contextlib38.py
 
 unit: gitdeps
-	python3 -m unittest discover
+	python3 -m pytest --ignore curtin --ignore probert
 
 integration: gitdeps
 	echo "Running integration tests..."
