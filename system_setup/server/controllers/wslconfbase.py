@@ -23,6 +23,7 @@ from subiquity.common.types import WSLConfigurationBase
 from subiquity.server.controller import SubiquityController
 
 from system_setup.common.wsl_conf import default_loader
+from system_setup.common.wsl_utils import convert_if_bool
 
 log = logging.getLogger('system_setup.server' +
                         '.controllers.wsl_configuration_base')
@@ -48,29 +49,17 @@ class WSLConfigurationBaseController(SubiquityController):
         super().__init__(app)
 
         # load the config file
-        data = default_loader(False)
+        data = default_loader()
 
         if data:
-            def bool_converter(x):
-                return x.lower() == 'true'
-            conf_data = WSLConfigurationBase(
-                automount_root=data['automount_root'],
-                automount_options=data['automount_options'],
-                network_generatehosts=bool_converter(
-                    data['network_generatehosts']),
-                network_generateresolvconf=bool_converter(
-                    data['network_generateresolvconf']),
-            )
+            proc_data = \
+                {key: convert_if_bool(value) for (key, value) in data.items()}
+            conf_data = WSLConfigurationBase(**proc_data)
             self.model.apply_settings(conf_data)
 
     def load_autoinstall_data(self, data):
         if data is not None:
-            identity_data = WSLConfigurationBase(
-                automount_root=data['automount_root'],
-                automount_options=data['automount_options'],
-                network_generatehosts=data['network_generatehosts'],
-                network_generateresolvconf=data['network_generateresolvconf'],
-            )
+            identity_data = WSLConfigurationBase(**data)
             self.model.apply_settings(identity_data)
 
     @with_context()

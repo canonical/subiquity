@@ -80,8 +80,9 @@ class ConfigureController(SubiquityController):
                                      wsl_id.password,
                                      wsl_id.username])
                     if create_user_act.returncode != 0:
-                        raise Exception("Failed to create user %s"
-                                        % wsl_id.username)
+                        raise Exception("Failed to create user %s: %s"
+                                        % (wsl_id.username,
+                                           create_user_act.stderr))
                     log.debug("created user %s", wsl_id.username)
                     assign_grp_act = \
                         run_command(["/usr/sbin/usermod", "-a",
@@ -89,8 +90,10 @@ class ConfigureController(SubiquityController):
                                      "-G", get_userandgroups(),
                                      wsl_id.username])
                     if assign_grp_act.returncode != 0:
-                        raise Exception("Failed to assign groups to user %s" %
-                                        wsl_id.username)
+                        raise Exception(("Failed to assign group"
+                                         " to user %s: %s")
+                                        % (wsl_id.username,
+                                           assign_grp_act.stderr))
             else:
                 wsl_config_update(self.model.wslconfadvanced.wslconfadvanced,
                                   dryrun)

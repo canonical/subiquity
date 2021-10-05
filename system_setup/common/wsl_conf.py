@@ -63,8 +63,13 @@ config_adv_default = {
     }
 }
 
+conf_type_to_file = {
+    "wsl": "/etc/wsl.conf",
+    "ubuntu": "/etc/ubuntu-wsl.conf"
+}
 
-def wsl_config_loader(data, pathname, config_ref, id):
+
+def wsl_config_loader(data, config_ref, id):
     """
     Loads the configuration from the given file type,
     section and reference config.
@@ -73,6 +78,7 @@ def wsl_config_loader(data, pathname, config_ref, id):
     :param pathname: string, the path to the file to load
     :param id: string, the name of the section to load
     """
+    pathname = conf_type_to_file[id]
     if not os.path.exists(pathname):
         return data
     config = ConfigParser()
@@ -88,7 +94,7 @@ def wsl_config_loader(data, pathname, config_ref, id):
     return data
 
 
-def default_loader(is_advanced):
+def default_loader(is_advanced=False):
     """
     This will load the default WSL config for the given type.
 
@@ -97,10 +103,10 @@ def default_loader(is_advanced):
     """
     data = {}
     conf_ref = config_adv_default if is_advanced else config_base_default
-    data = wsl_config_loader(data, "/etc/wsl.conf", conf_ref, "wsl")
+    data = wsl_config_loader(data, conf_ref, "wsl")
     if is_advanced:
         data = \
-            wsl_config_loader(data, "/etc/ubuntu-wsl.conf", conf_ref, "ubuntu")
+            wsl_config_loader(data, conf_ref, "ubuntu")
     return data
 
 
@@ -132,12 +138,7 @@ def wsl_config_update(config_class, is_dry_run):
         config = ConfigParser()
         config.BasicInterpolcation = None
 
-        if config_type == "wsl":
-            conf_file = "/etc/wsl.conf"
-        elif config_type == "ubuntu":
-            conf_file = "/etc/ubuntu-wsl.conf"
-        else:
-            raise TypeError("Invalid type name " % config_type)
+        conf_file = conf_type_to_file[config_type]
 
         config.read(conf_file)
 
@@ -165,6 +166,4 @@ def wsl_config_update(config_class, is_dry_run):
         with open(conf_file + ".new", 'w+') as configfile:
             config.write(configfile)
 
-        if os.isfile(conf_file):
-            os.rename(conf_file, conf_file + ".old")
-        os.move(conf_file + ".new", conf_file)
+        os.rename(conf_file + ".new", conf_file)

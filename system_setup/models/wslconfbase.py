@@ -36,11 +36,7 @@ class WSLConfigurationBaseModel(object):
         # TODO WSL: Load settings from system
 
     def apply_settings(self, result):
-        d = {}
-        d['automount_root'] = result.automount_root
-        d['automount_options'] = result.automount_options
-        d['network_generatehosts'] = result.network_generatehosts
-        d['network_generateresolvconf'] = result.network_generateresolvconf
+        d = result.__dict__
         self._wslconfbase = WSLConfigurationBase(**d)
 
     @property

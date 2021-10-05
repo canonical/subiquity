@@ -37,21 +37,8 @@ class WSLConfigurationAdvancedController(SubiquityTuiController):
                 'interop_audiointegration', 'interop_advancedipdetection',
                 'motd_wslnewsenabled', 'automount_enabled',
                 'automount_mountfstab']):
-            reconfiguration = WSLConfigurationAdvanced(
-                interop_enabled=self.answers['interop_enabled'],
-                interop_appendwindowspath=self
-                .answers['interop_appendwindowspath'],
-                gui_theme=self.answers['gui_theme'],
-                gui_followwintheme=self.answers['gui_followwintheme'],
-                interop_guiintegration=self.answers['interop_guiintegration'],
-                interop_audiointegration=self
-                .answers['interop_audiointegration'],
-                interop_advancedipdetection=self
-                .answers['interop_advancedipdetection'],
-                motd_wslnewsenabled=self.answers['motd_wslnewsenabled'],
-                automount_enabled=self.answers['automount_enabled'],
-                automount_mountfstab=self.answers['automount_mountfstab']
-            )
+
+            reconfiguration = WSLConfigurationAdvanced(**self.answers)
             self.done(reconfiguration)
 
     def done(self, reconf_data):

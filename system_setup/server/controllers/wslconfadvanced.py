@@ -23,6 +23,7 @@ from subiquity.common.types import WSLConfigurationAdvanced
 from subiquity.server.controller import SubiquityController
 
 from system_setup.common.wsl_conf import default_loader
+from system_setup.common.wsl_utils import convert_if_bool
 
 log = logging.getLogger(
     'system_setup.server.controllers.wsl_configuration_advanced')
@@ -54,46 +55,17 @@ class WSLConfigurationAdvancedController(SubiquityController):
         super().__init__(app)
 
         # load the config file
-        data = default_loader(True)
+        data = default_loader(is_advanced=True)
 
         if data:
-            def bool_converter(x):
-                return x.lower() == 'true'
-            reconf_data = WSLConfigurationAdvanced(
-                interop_enabled=bool_converter(data['interop_enabled']),
-                interop_appendwindowspath=bool_converter(
-                    data['interop_appendwindowspath']),
-                gui_theme=data['gui_theme'],
-                gui_followwintheme=bool_converter(data['gui_followwintheme']),
-                interop_guiintegration=bool_converter(
-                    data['interop_guiintegration']),
-                interop_audiointegration=bool_converter(
-                    data['interop_audiointegration']),
-                interop_advancedipdetection=bool_converter(
-                    data['interop_advancedipdetection']),
-                motd_wslnewsenabled=bool_converter(
-                    data['motd_wslnewsenabled']),
-                automount_enabled=bool_converter(data['automount_enabled']),
-                automount_mountfstab=bool_converter(
-                    data['automount_mountfstab']),
-            )
+            proc_data = \
+                {key: convert_if_bool(value) for (key, value) in data.items()}
+            reconf_data = WSLConfigurationAdvanced(**proc_data)
             self.model.apply_settings(reconf_data)
 
     def load_autoinstall_data(self, data):
         if data is not None:
-            reconf_data = WSLConfigurationAdvanced(
-                interop_enabled=data['interop_enabled'],
-                interop_appendwindowspath=data['interop_appendwindowspath'],
-                gui_theme=data['gui_theme'],
-                gui_followwintheme=data['gui_followwintheme'],
-                interop_guiintegration=data['interop_guiintegration'],
-                interop_audiointegration=data['interop_audiointegration'],
-                interop_advancedipdetection=data[
-                    'interop_advancedipdetection'],
-                motd_wslnewsenabled=data['motd_wslnewsenabled'],
-                automount_enabled=data['automount_enabled'],
-                automount_mountfstab=data['automount_mountfstab']
-            )
+            reconf_data = WSLConfigurationAdvanced(**data)
             self.model.apply_settings(reconf_data)
 
     @with_context()

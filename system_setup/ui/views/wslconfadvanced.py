@@ -100,20 +100,26 @@ class WSLConfigurationAdvancedView(BaseView):
         self.controller = controller
 
         initial = {
-            'interop_enabled': configuration_data.interop_enabled,
+            'interop_enabled':
+                configuration_data.interop_enabled,
             'interop_appendwindowspath':
                 configuration_data.interop_appendwindowspath,
-            'gui_theme': configuration_data.gui_theme,
-            'gui_followwintheme': configuration_data.gui_followwintheme,
-            'interop_guiintegration': configuration_data
-            .interop_guiintegration,
-            'interop_audiointegration': configuration_data
-            .interop_audiointegration,
-            'interop_advancedipdetection': configuration_data
-            .interop_advancedipdetection,
-            'motd_wslnewsenabled': configuration_data.motd_wslnewsenabled,
-            'automount_enabled': configuration_data.automount_enabled,
-            'automount_mountfstab': configuration_data.automount_mountfstab,
+            'gui_theme':
+                configuration_data.gui_theme,
+            'gui_followwintheme':
+                configuration_data.gui_followwintheme,
+            'interop_guiintegration':
+                configuration_data.interop_guiintegration,
+            'interop_audiointegration':
+                configuration_data.interop_audiointegration,
+            'interop_advancedipdetection':
+                configuration_data.interop_advancedipdetection,
+            'motd_wslnewsenabled':
+                configuration_data.motd_wslnewsenabled,
+            'automount_enabled':
+                configuration_data.automount_enabled,
+            'automount_mountfstab':
+                configuration_data.automount_mountfstab,
         }
         self.form = WSLConfigurationAdvancedForm(initial=initial)
 
@@ -129,16 +135,24 @@ class WSLConfigurationAdvancedView(BaseView):
 
     def done(self, result):
         self.controller.done(WSLConfigurationAdvanced(
-            interop_enabled=self.form.interop_enabled.value,
+            interop_enabled=self.form
+            .interop_enabled.value,
             interop_appendwindowspath=self.form
             .interop_appendwindowspath.value,
-            gui_theme=self.form.gui_theme.value,
-            gui_followwintheme=self.form.gui_followwintheme.value,
-            interop_guiintegration=self.form.interop_guiintegration.value,
-            interop_audiointegration=self.form.interop_audiointegration.value,
-            interop_advancedipdetection=self
-            .form.interop_advancedipdetection.value,
-            motd_wslnewsenabled=self.form.motd_wslnewsenabled.value,
-            automount_enabled=self.form.automount_enabled.value,
-            automount_mountfstab=self.form.automount_mountfstab.value,
+            gui_theme=self.form
+            .gui_theme.value,
+            gui_followwintheme=self.form
+            .gui_followwintheme.value,
+            interop_guiintegration=self.form
+            .interop_guiintegration.value,
+            interop_audiointegration=self.form
+            .interop_audiointegration.value,
+            interop_advancedipdetection=self.form
+            .interop_advancedipdetection.value,
+            motd_wslnewsenabled=self.form
+            .motd_wslnewsenabled.value,
+            automount_enabled=self.form
+            .automount_enabled.value,
+            automount_mountfstab=self.form
+            .automount_mountfstab.value,
             ))

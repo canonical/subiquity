@@ -18,12 +18,7 @@ class WSLConfigurationBaseController(SubiquityTuiController):
         if all(elem in self.answers for elem in
                ['automount_root', 'automount_options',
                 'network_generatehosts', 'network_generateresolvconf']):
-            configuration = WSLConfigurationBase(
-                automount_root=self.answers['automount_root'],
-                automount_options=self.answers['automount_options'],
-                network_generatehosts=self.answers['network_generatehosts'],
-                network_generateresolvconf=self
-                .answers['network_generateresolvconf'])
+            configuration = WSLConfigurationBase(**self.answers)
             self.done(configuration)
 
     def done(self, configuration_data):

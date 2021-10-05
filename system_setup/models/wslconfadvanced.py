@@ -41,19 +41,7 @@ class WSLConfigurationAdvancedModel(object):
         self._wslconfadvanced = None
 
     def apply_settings(self, result):
-        d = {}
-        # TODO: placholder settings; should be dynamically assgined using
-        # ubuntu-wsl-integration
-        d['interop_enabled'] = result.interop_enabled
-        d['interop_appendwindowspath'] = result.interop_appendwindowspath
-        d['gui_theme'] = result.gui_theme
-        d['gui_followwintheme'] = result.gui_followwintheme
-        d['interop_guiintegration'] = result.interop_guiintegration
-        d['interop_audiointegration'] = result.interop_audiointegration
-        d['interop_advancedipdetection'] = result.interop_advancedipdetection
-        d['motd_wslnewsenabled'] = result.motd_wslnewsenabled
-        d['automount_enabled'] = result.automount_enabled
-        d['automount_mountfstab'] = result.automount_mountfstab
+        d = result.__dict__
         self._wslconfadvanced = WSLConfigurationAdvanced(**d)
 
     @property

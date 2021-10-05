@@ -103,11 +103,14 @@ class WSLConfigurationBaseView(BaseView):
         self.controller = controller
 
         initial = {
-            'automount_root': configuration_data.automount_root,
-            'automount_options': configuration_data.automount_options,
-            'network_generatehosts': configuration_data.network_generatehosts,
-            'network_generateresolvconf': configuration_data
-            .network_generateresolvconf,
+            'automount_root':
+                configuration_data.automount_root,
+            'automount_options':
+                configuration_data.automount_options,
+            'network_generatehosts':
+                configuration_data.network_generatehosts,
+            'network_generateresolvconf':
+                configuration_data.network_generateresolvconf,
         }
         self.form = WSLConfBaseForm(initial=initial)
 
@@ -123,9 +126,12 @@ class WSLConfigurationBaseView(BaseView):
 
     def done(self, result):
         self.controller.done(WSLConfigurationBase(
-            automount_root=self.form.automount_root.value,
-            automount_options=self.form.automount_options.value,
-            network_generatehosts=self.form.network_generatehosts.value,
-            network_generateresolvconf=self
-            .form.network_generateresolvconf.value
+            automount_root=self.form
+            .automount_root.value,
+            automount_options=self.form
+            .automount_options.value,
+            network_generatehosts=self.form
+            .network_generatehosts.value,
+            network_generateresolvconf=self.form
+            .network_generateresolvconf.value
             ))

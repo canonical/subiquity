@@ -18,8 +18,6 @@ import os
 import logging
 import subprocess
 
-from subiquity.common.resources import resource_path
-
 log = logging.getLogger("subiquity.system_setup.common.wsl_utils")
 
 
@@ -64,19 +62,28 @@ def get_windows_locale():
 
 
 def get_userandgroups():
-    usergroups_path = resource_path('users-and-groups')
-    build_usergroups_path = \
-        os.path.realpath(__file__ + '/../../../users-and-groups')
-    if os.path.isfile(build_usergroups_path):
-        usergroups_path = build_usergroups_path
+    from subiquity.common.resources import resource_path
+    from subiquitycore.utils import run_command
 
-    user_groups = set()
-    if os.path.exists(usergroups_path):
-        with open(usergroups_path) as fp:
-            for line in fp:
-                line = line.strip()
-                if line.startswith('#') or not line:
-                    continue
-                user_groups.add(line)
-    oneline_usergroups = ",".join(user_groups)
+    users_and_groups_path = resource_path('users-and-groups')
+    if os.path.exists(users_and_groups_path):
+        groups = open(users_and_groups_path).read().split()
+    else:
+        groups = ['admin']
+    groups.append('sudo')
+
+    command = ['getent', 'group']
+    cp = run_command(command, check=True)
+    target_groups = set()
+    for line in cp.stdout.splitlines():
+        target_groups.add(line.split(':')[0])
+
+    groups = [group for group in groups if group in target_groups]
+    oneline_usergroups = ",".join(groups)
     return oneline_usergroups
+
+
+def convert_if_bool(value):
+    if value.lower() in ('true', 'false'):
+        return value.lower() == 'true'
+    return value
