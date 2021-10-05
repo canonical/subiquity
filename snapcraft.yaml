@@ -1,5 +1,5 @@
 name: subiquity
-base: core18
+base: core20
 version: git
 summary: Ubuntu installer
 description: The Ubuntu server installer
@@ -20,7 +20,9 @@ apps:
     environment:
       PYTHONIOENCODING: utf-8
       SUBIQUITY_ROOT: $SNAP
-      PYTHON: $SNAP/usr/bin/python3
+      PYTHON: $SNAP/usr/bin/python3.8
+      PY3OR2_PYTHON: $SNAP/usr/bin/python3.8
+      PATH: $PATH:$SNAP/bin
   subiquity-service:
     command: usr/bin/subiquity-service
     daemon: simple
@@ -28,6 +30,7 @@ apps:
     environment:
       PYTHONIOENCODING: utf-8
       SUBIQUITY_ROOT: $SNAP
+      PYTHON: $SNAP/usr/bin/python3.8
 
 parts:
   curtin:
@@ -39,67 +42,80 @@ parts:
     source-type: git
     source: https://git.launchpad.net/curtin
     source-commit: 809817fdac257de1769e385a42aeaf3d5bcc2c60
+    build-packages:
+      - shared-mime-info
+      - zlib1g-dev
     python-packages:
       - pyyaml==5.3.1
       - oauthlib
       - jsonschema
       - pyrsistent
+      - wheel
+      - setuptools
+      - pip
+      - bson
+      - urwid
+      - requests
+      - requests-unixsocket
     organize:
       'lib/python*/site-packages/usr/lib/curtin': 'usr/lib/'
     stage:
      - "*"
      - "-lib/python*/site-packages/_yaml.*.so"
+     - "-lib/python*/site-packages/setuptools"
+     - "-lib/python*/site-packages/pip"
+     - "-lib/python*/site-packages/pkg_resources"
      - "-lib/python*/site-packages/jsonschema"
-  apport:
-    plugin: python
-    source-type: bzr
-    source: lp:~ubuntu-core-dev/ubuntu/focal/apport/ubuntu
-    build-packages:
-      - python3-distutils-extra
-      - python3-apt
-      - python3-httplib2
-      - python3-problem-report
-      - python3-requests-unixsocket
-    stage-packages:
-      - python3-distutils-extra
-      - python3-apt
-      - python3-httplib2
-      - python3-problem-report
-      - python3-requests-unixsocket
-    stage:
-      - "lib/python*/site-packages/"
-      - "-lib/python*/site-packages/etc/*"
-      - "-lib/python*/site-packages/lib/*"
-      - "share/apport/general-hooks/"
-      - "usr/"
+     - "-lib/python*/site-packages/wheel*"
+     - "-lib/python*/site-packages/probert"
+     - "-bin/activate*"
+     - "-lib/python3.8/site-packages/__pycache__/six.cpython*"
+     - "-lib/python3.8/site-packages/pip-*.dist-info/RECORD"
+     - "-lib/python3.8/site-packages/wheel-*.dist-info/RECORD"
+     - "-lib/python3.8/site-packages/_distutils_hack"
   subiquity:
     plugin: python
     build-packages:
+      - gettext
       - libsystemd-dev
       - lsb-release
       - pkg-config
+      - python3-yaml
+      - python3-attr
+      - python3-systemd
+      - python3-aiohttp
+      - python3-yarl
       - python3-urwid
+      - python3-bson
+      - python3-requests-unixsocket
+      - python3-requests
     stage-packages:
       - cloud-init
       - libsystemd0
       - iso-codes
       - lsb-release
-      - python3-bson
-      - python3-urwid
-      - python3-requests
-      - python3-requests-unixsocket
       - ssh-import-id
-    python-packages:
-      - attrs
-      - pyyaml==5.3.1
-      - systemd-python
-      - aiohttp
-      - yarl==1.5.1
-      #- urwid
+      - libpython3.8-minimal
+      - libpython3.8-stdlib
+      - libpython3-stdlib
+      - python3.8-minimal
+      - python3-minimal
+      - python3-yaml
+      - python3-apport
+      - python3-attr
+      - python3-systemd
+      - python3-aiohttp
+      - python3-yarl
+      - python3-urwid
+      - python3-bson
+      - python3-requests-unixsocket
+      - python3-requests
+      - python3-pyudev
     source: .
     source-type: git
+    build-environment:
+      - PATH: "/usr/bin:$PATH"
     organize:
-      'bin/console-conf-tui': usr/bin/console-conf
       'bin/subiquity-tui': usr/bin/subiquity
       'bin/subiquity-service': usr/bin/subiquity-service
       'bin/subiquity-server': usr/bin/subiquity-server
@@ -120,7 +136,6 @@ parts:
     build-packages:
       - console-setup
       - locales
-      - xkb-data-i18n
       - python3-attr
       - python3-yaml
     override-build: PYTHONPATH=$SNAPCRAFT_PROJECT_DIR/ $SNAPCRAFT_PROJECT_DIR/scripts/make-kbd-info.py
@@ -146,10 +161,25 @@ parts:
       $SNAPCRAFT_PROJECT_DIR/scripts/make-language-lists $SNAPCRAFT_PROJECT_DIR/po > $SNAPCRAFT_PART_INSTALL/languagelist
     stage:
       - languagelist
+
   probert:
     plugin: python
-    build-packages: [python-setuptools, build-essential, libnl-3-dev, libnl-genl-3-dev, libnl-route-3-dev]
+    build-packages:
+      - python-setuptools
+      - build-essential
+      - libnl-3-dev
+      - libnl-genl-3-dev
+      - libnl-route-3-dev
     source: https://github.com/canonical/probert.git
     source-type: git
     source-commit: 2bb505172b5f97372eb1abd12ced4629e852504b
     requirements: [requirements.txt]
+    stage:
+      - "*"
+      - -bin/python3*
+      - -bin/activate*
+      - -lib/python3.8/site-packages/_distutils_hack
+      - -lib/python3.8/site-packages/pip*
+      - -lib/python3.8/site-packages/pkg_resources
+      - -lib/python3.8/site-packages/setuptools
+      - -lib/python3.8/site-packages/wheel*

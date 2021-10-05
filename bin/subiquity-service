@@ -1,5 +1,7 @@
 #!/bin/sh
 port=tty1
+export PYTHONPATH=$SNAP/lib/python3.8/site-packages
+
 if [ -n "$1" ]; then
    port=$1
 fi
@@ -7,7 +9,7 @@ fi
 if [ "$port" = "tty1" ]; then
 	$SNAP/bin/subiquity-loadkeys
 	setfont $SNAP/subiquity.psf
-	exec /sbin/agetty -n --noclear -l $SNAP/usr/bin/python3 -o $SNAP/usr/bin/subiquity $port $TERM
+	exec /sbin/agetty -n --noclear -l $PYTHON -o $SNAP/usr/bin/subiquity $port $TERM
 else
-	exec /sbin/agetty -n --keep-baud -l $SNAP/usr/bin/python3 -o "$SNAP/usr/bin/subiquity --serial" $port 115200,38400,9600 $TERM
+	exec /sbin/agetty -n --keep-baud -l $PYTHON -o "$SNAP/usr/bin/subiquity --serial" $port 115200,38400,9600 $TERM
 fi
