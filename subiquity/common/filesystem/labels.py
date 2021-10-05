@@ -258,7 +258,7 @@ def for_client(device, *, min_size=0):
 @for_client.register(Disk)
 @for_client.register(Raid)
 def _for_client_disk(disk, *, min_size=0):
-    path = disk.path if getattr(disk, 'path', None) else None
+    path = getattr(disk, 'path', None)
     return types.Disk(
         id=disk.id,
         label=label(disk),
