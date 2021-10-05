@@ -24,3 +24,23 @@ log = logging.getLogger('subiquity.common.resources')
 
 def resource_path(relative_path):
     return os.path.join(os.environ.get("SUBIQUITY_ROOT", "."), relative_path)
+
+
+def get_users_and_groups(chroot_prefix=[]):
+    # prevent import when calling just resource_path
+    from subiquitycore.utils import run_command
+
+    users_and_groups_path = resource_path('users-and-groups')
+    groups = ['admin']
+    if os.path.exists(users_and_groups_path):
+        groups = open(users_and_groups_path).read().split()
+    groups.append('sudo')
+
+    command = chroot_prefix + ['getent', 'group']
+    cp = run_command(command, check=True)
+    target_groups = set()
+    for line in cp.stdout.splitlines():
+        target_groups.add(line.split(':')[0])
+
+    groups = target_groups.intersection(groups)
+    return groups

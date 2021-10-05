@@ -61,28 +61,6 @@ def get_windows_locale():
         return None
 
 
-def get_userandgroups():
-    from subiquity.common.resources import resource_path
-    from subiquitycore.utils import run_command
-
-    users_and_groups_path = resource_path('users-and-groups')
-    if os.path.exists(users_and_groups_path):
-        groups = open(users_and_groups_path).read().split()
-    else:
-        groups = ['admin']
-    groups.append('sudo')
-
-    command = ['getent', 'group']
-    cp = run_command(command, check=True)
-    target_groups = set()
-    for line in cp.stdout.splitlines():
-        target_groups.add(line.split(':')[0])
-
-    groups = [group for group in groups if group in target_groups]
-    oneline_usergroups = ",".join(groups)
-    return oneline_usergroups
-
-
 def convert_if_bool(value):
     if value.lower() in ('true', 'false'):
         return value.lower() == 'true'
