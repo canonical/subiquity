@@ -21,6 +21,7 @@ from subiquity.common.types import (
     SourceSelectionAndSetting,
     )
 from subiquity.server.controller import SubiquityController
+from subiquity.server.types import InstallerChannels
 
 
 def _translate(d, lang):
@@ -55,6 +56,12 @@ class SourceController(SubiquityController):
             return
         with open(path) as fp:
             self.model.load_from_file(fp)
+        self.app.hub.subscribe(
+            (InstallerChannels.CONFIGURED, 'locale'), self._set_locale)
+
+    def _set_locale(self):
+        current = self.app.base_model.locale.selected_language
+        self.model.lang = current.split('_')[0]
 
     def interactive(self):
         if len(self.model.sources) <= 1:
