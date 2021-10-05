@@ -116,6 +116,7 @@ class SnapInfoView(WidgetWrap):
         self.parent = parent
         self.snap = snap
         self.needs_focus = True
+        self.selections_by_name = {}
 
         self.description = Text(snap.description.replace('\r', '').strip())
         self.lb_description = ListBox([self.description])
