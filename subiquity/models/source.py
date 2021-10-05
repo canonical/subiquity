@@ -34,6 +34,7 @@ class CatalogEntry:
     type: str
     default: bool = False
     locale_support: str = attr.ib(default="locale-only")
+    preinstalled_langs: typing.List[str] = attr.ib(default=attr.Factory(list))
 
 
 fake_entries = {
@@ -66,6 +67,7 @@ class SourceModel:
         self._dir = '/cdrom/casper'
         self.current = fake_entries['server']
         self.sources = [self.current]
+        self.lang = None
 
     def load_from_file(self, fp):
         self._dir = os.path.dirname(fp.name)
@@ -87,6 +89,13 @@ class SourceModel:
 
     def render(self):
         path = os.path.join(self._dir, self.current.path)
+        if self.current.preinstalled_langs:
+            base, ext = os.path.splitext(path)
+            if self.lang in self.current.preinstalled_langs:
+                suffix = self.lang
+            else:
+                suffix = 'no-languages'
+            path = base + '.' + suffix + ext
         scheme = self.current.type
         return {
             'sources': {
