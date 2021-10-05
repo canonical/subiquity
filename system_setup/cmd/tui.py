@@ -48,28 +48,7 @@ def make_client_args_parser():
     parser.add_argument('--dry-run', action='store_true',
                         dest='dry_run',
                         help='menu-only, do not call installer function')
-    # TODO WSL: remove any uneeded arguments
     parser.add_argument('--socket')
-    parser.add_argument('--serial', action='store_true',
-                        dest='run_on_serial',
-                        help='Run the installer over serial console.')
-    parser.add_argument('--ssh', action='store_true',
-                        dest='ssh',
-                        help='Print ssh login details')
-    parser.add_argument('--ascii', action='store_true',
-                        dest='ascii',
-                        help='Run the installer in ascii mode.')
-    parser.add_argument('--unicode', action='store_false',
-                        dest='ascii',
-                        help='Run the installer in unicode mode.')
-    parser.add_argument('--screens', action='append', dest='screens',
-                        default=[])
-    parser.add_argument('--script', metavar="SCRIPT", action='append',
-                        dest='scripts', default=[],
-                        help=('Execute SCRIPT in a namespace containing view '
-                              'helpers and "ui"'))
-    parser.add_argument('--click', metavar="PAT", action=ClickAction,
-                        help='Synthesize a click on a button matching PAT')
     parser.add_argument('--answers')
     parser.add_argument('--server-pid')
     return parser
@@ -133,6 +112,10 @@ def main():
     logger.info("Starting System Setup revision {}".format(version))
     logger.info("Arguments passed: {}".format(sys.argv))
 
+    opts.ssh = False
+    opts.screens = []
+    opts.scripts = []
+    opts.run_on_serial = False
     if opts.answers is None and os.path.exists(AUTO_ANSWERS_FILE):
         logger.debug("Autoloading answers from %s", AUTO_ANSWERS_FILE)
         opts.answers = AUTO_ANSWERS_FILE
