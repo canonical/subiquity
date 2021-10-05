@@ -52,12 +52,12 @@ do_mount $old old
 
 add_overlay old new
 
-rm -rf new/lib/python3.6/site-packages/curtin
-rm -rf new/lib/python3.6/site-packages/subiquity
-rm -rf new/lib/python3.6/site-packages/subiquitycore
+rm -rf new/lib/python3.8/site-packages/curtin
+rm -rf new/lib/python3.8/site-packages/subiquity
+rm -rf new/lib/python3.8/site-packages/subiquitycore
 
 (cd "${src}" && ./scripts/update-part.py curtin)
 
-rsync -a --chown 0:0 $src/subiquity $src/subiquitycore $src/curtin/curtin new/lib/python3.6/site-packages
+rsync -a --chown 0:0 $src/subiquity $src/subiquitycore $src/curtin/curtin new/lib/python3.8/site-packages
 
 snapcraft pack new --output $new
