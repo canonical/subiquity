@@ -375,10 +375,15 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
         if data.partition.grub_device not in (None, partition.grub_device):
             raise ValueError('edit_partition does not support changing '
                              + 'grub_device')
-
+        existing_format = ''
+        existing_mount = ''
+        if partition._fs:
+            existing_format = partition._fs.fstype
+            if partition._fs._mount:
+                existing_mount = partition._fs._mount.path
         spec = {
-            'fstype': data.partition.format,
-            'mount': data.partition.mount,
+            'fstype': data.partition.format or existing_format,
+            'mount': data.partition.mount or existing_mount,
         }
         self.partition_disk_handler(disk, partition, spec)
         return await self.v2_GET()

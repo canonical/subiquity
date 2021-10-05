@@ -475,6 +475,32 @@ class TestWin10(TestAPI):
         self.assertFalse(resp['todos_needs_root_mounted'])
         self.assertFalse(resp['todos_needs_bootloader_partition'])
 
+    @timeout(5)
+    async def test_edit_partial(self):
+        disk_id = 'disk-sda'
+        await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+
+        data = {
+            'disk_id': disk_id,
+            'partition': {
+                'format': 'ext4',
+                'mount': '/',
+            }
+        }
+        await self.post('/storage/v2/add_partition', data)
+
+        data['partition'].update({
+            'number': 2,
+            'format': None,
+            'mount': '/home'
+        })
+        resp = await self.post('/storage/v2/edit_partition', data)
+
+        sda = first(resp['disks'], 'id', disk_id)
+        sda2 = first(sda['partitions'], 'number', 2)
+        self.assertEqual('ext4', sda2['format'])
+        self.assertEqual('/home', sda2['mount'])
+
 
 class TestManyDisks(TestAPI):
     machine_config = 'examples/many-nics-and-disks.json'
