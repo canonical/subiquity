@@ -340,8 +340,8 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_add_partition_POST(self, data: ModifyPartitionV2) \
             -> StorageResponseV2:
-        if data.partition.format is None or data.partition.mount is None:
-            raise ValueError('add_partition must supply format and mount')
+        if data.partition.format is None:
+            raise ValueError('add_partition must supply format')
         if data.partition.grub_device is not None:
             raise ValueError('add_partition does not support changing '
                              + 'grub_device')
