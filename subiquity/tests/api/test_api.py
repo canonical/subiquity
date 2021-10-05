@@ -422,6 +422,59 @@ class TestWin10(TestAPI):
         data['partition']['format'] = 'btrfs'
         await self.post('/storage/v2/edit_partition', data)
 
+    @timeout(5)
+    async def test_todos_simple(self):
+        disk_id = 'disk-sda'
+        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+        self.assertTrue(resp['todos_needs_root_mounted'])
+        self.assertTrue(resp['todos_needs_bootloader_partition'])
+
+        data = {
+            'disk_id': disk_id,
+            'partition': {
+                'format': 'ext4',
+                'mount': '/',
+            }
+        }
+        resp = await self.post('/storage/v2/add_partition', data)
+        self.assertFalse(resp['todos_needs_root_mounted'])
+        self.assertFalse(resp['todos_needs_bootloader_partition'])
+
+    @timeout(5)
+    async def test_todos_manual(self):
+        disk_id = 'disk-sda'
+        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+        self.assertTrue(resp['todos_needs_root_mounted'])
+        self.assertTrue(resp['todos_needs_bootloader_partition'])
+
+        resp = await self.post('/storage/v2/add_boot_partition',
+                               disk_id=disk_id)
+        self.assertTrue(resp['todos_needs_root_mounted'])
+        self.assertFalse(resp['todos_needs_bootloader_partition'])
+
+        data = {
+            'disk_id': disk_id,
+            'partition': {
+                'format': 'ext4',
+                'mount': '/',
+            }
+        }
+        resp = await self.post('/storage/v2/add_partition', data)
+        self.assertFalse(resp['todos_needs_root_mounted'])
+        self.assertFalse(resp['todos_needs_bootloader_partition'])
+
+    @timeout(5)
+    async def test_todos_guided(self):
+        disk_id = 'disk-sda'
+        resp = await self.post('/storage/v2/reformat_disk', disk_id=disk_id)
+        self.assertTrue(resp['todos_needs_root_mounted'])
+        self.assertTrue(resp['todos_needs_bootloader_partition'])
+
+        choice = {'disk_id': disk_id}
+        resp = await self.post('/storage/v2/guided', choice=choice)
+        self.assertFalse(resp['todos_needs_root_mounted'])
+        self.assertFalse(resp['todos_needs_bootloader_partition'])
+
 
 class TestManyDisks(TestAPI):
     machine_config = 'examples/many-nics-and-disks.json'

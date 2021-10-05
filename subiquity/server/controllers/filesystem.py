@@ -305,7 +305,13 @@ class FilesystemController(SubiquityController, FilesystemManipulator):
 
     async def v2_GET(self) -> StorageResponseV2:
         disks = self.model._all(type='disk')
-        return StorageResponseV2(disks=[labels.for_client(d) for d in disks])
+        need_root = not self.model.is_root_mounted()
+        need_boot = self.model.needs_bootloader_partition()
+        return StorageResponseV2(
+                disks=[labels.for_client(d) for d in disks],
+                todos_needs_root_mounted=need_root,
+                todos_needs_bootloader_partition=need_boot,
+                )
 
     async def v2_POST(self) -> StorageResponseV2:
         await self.configured()
