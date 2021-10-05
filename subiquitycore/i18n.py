@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from . import gettext38
+import gettext
 import os
 import syslog
 
@@ -38,8 +38,8 @@ def switch_language(code='en_US'):
         def my_gettext(message):
             return message
     elif code:
-        translation = gettext38.translation('subiquity', localedir=localedir,
-                                            languages=[code], fallback=True)
+        translation = gettext.translation(
+            'subiquity', localedir=localedir, languages=[code], fallback=True)
 
         def my_gettext(message):
             if not message:

@@ -13,9 +13,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from systemd import journal
+import contextlib
 
-from subiquitycore import contextlib38
+from systemd import journal
 
 
 def journald_listen(loop, identifiers, callback, seek=False):
@@ -37,7 +37,7 @@ def journald_listen(loop, identifiers, callback, seek=False):
     return reader.fileno()
 
 
-@contextlib38.contextmanager
+@contextlib.contextmanager
 def journald_subscriptions(loop, ids_callbacks):
     fds = set()
     for id, callback in ids_callbacks:

@@ -15,8 +15,7 @@
 
 import enum
 import functools
-
-from subiquitycore.gettext38 import pgettext
+from gettext import pgettext
 
 from subiquity.common.filesystem import boot, labels
 from subiquity.models.filesystem import (

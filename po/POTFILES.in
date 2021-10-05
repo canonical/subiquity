@@ -48,7 +48,6 @@ subiquity/common/tests/__init__.py
 subiquity/common/tests/test_serialization.py
 subiquity/common/types.py
 subiquitycore/async_helpers.py
-subiquitycore/contextlib38.py
 subiquitycore/context.py
 subiquitycore/controller.py
 subiquitycore/controllerset.py
@@ -56,7 +55,6 @@ subiquitycore/controllers/__init__.py
 subiquitycore/controllers/network.py
 subiquitycore/core.py
 subiquitycore/file_util.py
-subiquitycore/gettext38.py
 subiquitycore/i18n.py
 subiquitycore/__init__.py
 subiquitycore/log.py

@@ -13,9 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import unittest
-
-from subiquitycore import contextlib38
 
 from subiquity.common.api.client import make_client
 from subiquity.common.api.defs import api, Payload
@@ -51,7 +50,7 @@ class TestClient(unittest.TestCase):
                 def GET() -> str: ...
                 def POST(data: Payload[str]) -> None: ...
 
-        @contextlib38.asynccontextmanager
+        @contextlib.asynccontextmanager
         async def make_request(method, path, *, params, json):
             requests.append((method, path, params, json))
             if method == "GET":
@@ -79,7 +78,7 @@ class TestClient(unittest.TestCase):
         class API:
             def GET(arg: str) -> str: ...
 
-        @contextlib38.asynccontextmanager
+        @contextlib.asynccontextmanager
         async def make_request(method, path, *, params, json):
             requests.append((method, path, params, json))
             yield FakeResponse(params['arg'])

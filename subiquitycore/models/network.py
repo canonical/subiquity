@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import enum
+from gettext import pgettext
 import ipaddress
 import logging
 import yaml
@@ -21,7 +22,6 @@ from socket import AF_INET, AF_INET6
 import attr
 from typing import List, Optional
 
-from subiquitycore.gettext38 import pgettext
 from subiquitycore import netplan
 
 

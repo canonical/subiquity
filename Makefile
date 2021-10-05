@@ -66,7 +66,7 @@ lint: flake8
 
 flake8:
 	@echo 'tox -e flake8' is preferred to 'make flake8'
-	$(PYTHON) -m flake8 $(CHECK_DIRS) --exclude gettext38.py,contextlib38.py
+	$(PYTHON) -m flake8 $(CHECK_DIRS)
 
 unit: gitdeps
 	python3 -m pytest --ignore curtin --ignore probert \

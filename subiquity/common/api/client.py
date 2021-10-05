@@ -13,11 +13,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import contextlib
 import inspect
 
 import aiohttp
-
-from subiquitycore import contextlib38
 
 from subiquity.common.serialize import Serializer
 from .defs import Payload
@@ -72,7 +71,7 @@ def make_client_for_conn(
     session = aiohttp.ClientSession(
         connector=conn, connector_owner=False)
 
-    @contextlib38.asynccontextmanager
+    @contextlib.asynccontextmanager
     async def make_request(method, path, *, params, json):
         # session.request needs a full URL with scheme and host even though
         # that's in some ways a bit silly with a unix socket, so we just
