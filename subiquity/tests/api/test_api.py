@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 import unittest
+from urllib.parse import unquote
 
 from subiquitycore.utils import astart_command
 
@@ -80,14 +81,9 @@ class TestAPI(unittest.IsolatedAsyncioTestCase):
         for key in kwargs:
             params[key] = dumps(kwargs[key])
         data = dumps(data)
-        info = f'{method} {query}'
-        if params:
-            for i, key in enumerate(params):
-                joiner = '?' if i == 0 else '&'
-                info += f'{joiner}{key}={params[key]}'
-        print(info)
         async with self.session.request(method, f'http://a{query}',
                                         data=data, params=params) as resp:
+            print(unquote(str(resp.url)))
             resp.raise_for_status()
             content = await resp.content.read()
             return loads(content.decode())
